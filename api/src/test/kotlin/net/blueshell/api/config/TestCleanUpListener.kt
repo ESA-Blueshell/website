@@ -1,6 +1,7 @@
 package net.blueshell.api.config
 
 import net.blueshell.api.platform.config.JobQueueProperties
+import org.flywaydb.core.Flyway
 import org.springframework.amqp.core.AmqpAdmin
 import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer
@@ -30,46 +31,8 @@ class TestCleanUpListener : TestExecutionListener {
         cleanRabbitState(context)
 
         val dataSource = context.getBean<DataSource>()
-        val conn = DataSourceUtils.getConnection(dataSource)
-        try {
-            conn.createStatement().use { st ->
-                conn.autoCommit = true
-
-                val currentDb = st.executeQuery("SELECT DATABASE()").use { rs ->
-                    rs.next()
-                    rs.getString(1)
-                }
-                check(currentDb == TEST_SCHEMA) {
-                    "Refusing to wipe non-test database. Connected to '$currentDb', expected '$TEST_SCHEMA'."
-                }
-
-                val tables = conn.prepareStatement(
-                    "SELECT TABLE_NAME " +
-                            "FROM INFORMATION_SCHEMA.TABLES " +
-                            "WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' " +
-                            "AND TABLE_NAME NOT IN (?, ?)"
-                ).use { ps ->
-                    ps.setString(1, TEST_SCHEMA)
-                    ps.setString(2, FLYWAY_V5_TABLE)
-                    ps.setString(3, FLYWAY_V3_TABLE)
-                    ps.executeQuery().use { rs ->
-                        val names = mutableListOf<String>()
-                        while (rs.next()) {
-                            names.add(rs.getString(1))
-                        }
-                        names
-                    }
-                }
-
-                st.execute("SET FOREIGN_KEY_CHECKS = 0")
-                for (table in tables) {
-                    st.execute("TRUNCATE TABLE `$TEST_SCHEMA`.`$table`")
-                }
-                st.execute("SET FOREIGN_KEY_CHECKS = 1")
-            }
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource)
-        }
+        ensureTestSchemaInitialized(context, dataSource)
+        truncateAllUserTables(dataSource)
     }
 
     override fun afterTestMethod(testContext: TestContext) {
@@ -130,6 +93,88 @@ class TestCleanUpListener : TestExecutionListener {
             }
         }
         stopLatch.await(RABBIT_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+    }
+
+    private fun ensureTestSchemaInitialized(context: ApplicationContext, dataSource: DataSource) {
+        val hasTables = withConnection(dataSource) { conn ->
+            requireTestSchema(conn)
+            loadUserTables(conn).isNotEmpty()
+        }
+        if (hasTables) {
+            return
+        }
+
+        val flyway = context.getBeanProvider<Flyway>().ifAvailable
+            ?: error("Flyway bean not found in test context; cannot initialize '$TEST_SCHEMA' schema.")
+        flyway.migrate()
+
+        val initialized = withConnection(dataSource) { conn ->
+            requireTestSchema(conn)
+            loadUserTables(conn).isNotEmpty()
+        }
+        check(initialized) {
+            "Flyway migration finished but '$TEST_SCHEMA' still has no application tables."
+        }
+    }
+
+    private fun truncateAllUserTables(dataSource: DataSource) {
+        withConnection(dataSource) { conn ->
+            requireTestSchema(conn)
+            val tables = loadUserTables(conn)
+            if (tables.isEmpty()) {
+                return@withConnection
+            }
+
+            conn.createStatement().use { st ->
+                st.execute("SET FOREIGN_KEY_CHECKS = 0")
+                for (table in tables) {
+                    st.execute("TRUNCATE TABLE `$TEST_SCHEMA`.`$table`")
+                }
+                st.execute("SET FOREIGN_KEY_CHECKS = 1")
+            }
+        }
+    }
+
+    private fun requireTestSchema(conn: java.sql.Connection) {
+        val currentDb = conn.createStatement().use { st ->
+            st.executeQuery("SELECT DATABASE()").use { rs ->
+                rs.next()
+                rs.getString(1)
+            }
+        }
+        check(currentDb == TEST_SCHEMA) {
+            "Refusing to wipe non-test database. Connected to '$currentDb', expected '$TEST_SCHEMA'."
+        }
+    }
+
+    private fun loadUserTables(conn: java.sql.Connection): List<String> {
+        return conn.prepareStatement(
+            "SELECT TABLE_NAME " +
+                    "FROM INFORMATION_SCHEMA.TABLES " +
+                    "WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' " +
+                    "AND TABLE_NAME NOT IN (?, ?)"
+        ).use { ps ->
+            ps.setString(1, TEST_SCHEMA)
+            ps.setString(2, FLYWAY_V5_TABLE)
+            ps.setString(3, FLYWAY_V3_TABLE)
+            ps.executeQuery().use { rs ->
+                val names = mutableListOf<String>()
+                while (rs.next()) {
+                    names.add(rs.getString(1))
+                }
+                names
+            }
+        }
+    }
+
+    private fun <T> withConnection(dataSource: DataSource, block: (java.sql.Connection) -> T): T {
+        val conn = DataSourceUtils.getConnection(dataSource)
+        return try {
+            conn.autoCommit = true
+            block(conn)
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource)
+        }
     }
 
     private companion object {

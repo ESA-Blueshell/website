@@ -84,6 +84,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -98,8 +99,6 @@ dependencies {
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20251207-2.0.0")
     implementation("com.google.auth:google-auth-library-oauth2-http:1.43.0")
-
-    implementation("org.flywaydb:flyway-core")
 
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation("jakarta.validation:jakarta.validation-api")

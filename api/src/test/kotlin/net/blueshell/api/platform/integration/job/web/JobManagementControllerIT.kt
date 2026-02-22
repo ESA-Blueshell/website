@@ -71,6 +71,50 @@ class JobManagementControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `admin filters jobs by search initiatedByType and jobType`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val actor = createUserWithRole(Role.MEMBER)
+
+            val matching = createJobExecutionFixture(jobType = "calendar.sync-user")
+            matching.status = JobExecutionStatus.FAILED
+            matching.errorReason = "Recurring sync mismatch"
+            matching.initiatedByType = ActionActorType.USER
+            matching.initiatedByRole = Role.MEMBER
+            matching.initiatedByUserId = actor.id
+            jobExecutions.saveAndFlush(matching)
+
+            val wrongSearch = createJobExecutionFixture(jobType = "calendar.sync-alt")
+            wrongSearch.status = JobExecutionStatus.FAILED
+            wrongSearch.errorReason = "Different failure text"
+            wrongSearch.initiatedByType = ActionActorType.USER
+            wrongSearch.initiatedByRole = Role.MEMBER
+            wrongSearch.initiatedByUserId = actor.id
+            jobExecutions.saveAndFlush(wrongSearch)
+
+            val wrongActorType = createJobExecutionFixture(jobType = "calendar.sync-system")
+            wrongActorType.status = JobExecutionStatus.FAILED
+            wrongActorType.errorReason = "Recurring sync mismatch"
+            wrongActorType.initiatedByType = ActionActorType.SYSTEM
+            wrongActorType.initiatedByRole = Role.SYSTEM
+            wrongActorType.initiatedByUserId = null
+            jobExecutions.saveAndFlush(wrongActorType)
+
+            mvc.perform(
+                get("/management/jobs")
+                    .queryParam("search", "Recurring sync mismatch")
+                    .queryParam("initiatedByType", "USER")
+                    .queryParam("jobType", "calendar.sync")
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(matching.id!!.toInt()))
+                .andExpect(jsonPath("$.content[0].jobType").value("calendar.sync-user"))
+                .andExpect(jsonPath("$.content[0].initiatedByType").value("USER"))
+                .andExpect(jsonPath("$.content[0].payload").doesNotExist())
+        }
+
+        @Test
         fun `admin receives 50 items per page`() {
             val admin = createUserWithRole(Role.ADMIN)
             repeat(51) { index ->

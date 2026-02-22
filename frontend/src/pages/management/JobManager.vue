@@ -345,13 +345,21 @@ onMounted(async () => {
                 <v-select
                   v-model="selectedCategory"
                   :items="categoryOptions"
+                  data-testid="job-filter-category"
                   density="comfortable"
                   hide-details
                   item-title="title"
                   item-value="value"
                   label="Category"
                   variant="outlined"
-                />
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item
+                      v-bind="props"
+                      :data-testid="`job-filter-category-option-${item.raw.value}`"
+                    />
+                  </template>
+                </v-select>
               </v-col>
               <v-col
                 cols="12"
@@ -361,13 +369,21 @@ onMounted(async () => {
                 <v-select
                   v-model="selectedStatus"
                   :items="statusOptions"
+                  data-testid="job-filter-status"
                   density="comfortable"
                   hide-details
                   item-title="title"
                   item-value="value"
                   label="Status"
                   variant="outlined"
-                />
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item
+                      v-bind="props"
+                      :data-testid="`job-filter-status-option-${String(item.raw.value).toLowerCase()}`"
+                    />
+                  </template>
+                </v-select>
               </v-col>
               <v-col
                 cols="12"
@@ -377,6 +393,7 @@ onMounted(async () => {
                 <v-text-field
                   v-model="searchQuery"
                   clearable
+                  data-testid="job-filter-search"
                   density="comfortable"
                   hide-details
                   label="Search summary, type, actor or related entities"

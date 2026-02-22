@@ -51,7 +51,7 @@ class AddContactToListJob(
                 isMember = user.hasRole(Role.MEMBER)
             )
             val syncedContactId = contactAdapter.syncContact(user.id!!, contactData)
-            users.updateContactId(user.id!!, syncedContactId.toLong())
+            users.updateContactLink(user, syncedContactId.toLong())
             syncedContactId
         } else {
             user.contactId.toString()

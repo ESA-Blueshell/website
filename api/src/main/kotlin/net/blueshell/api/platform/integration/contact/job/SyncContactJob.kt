@@ -37,8 +37,9 @@ class SyncContactJob(
 
         // Sync contact and update user's contact ID if needed
         val contactId = contactAdapter.syncContact(user.id!!, contactData)
-        if (user.contactId == null) {
-            users.updateContactId(user.id!!, contactId.toLong())
+        val syncedContactId = contactId.toLong()
+        if (user.contactId != syncedContactId) {
+            users.updateContactLink(user, syncedContactId)
         }
     }
 }

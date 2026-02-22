@@ -34,7 +34,6 @@ env:
   JAVA_VERSION: '24'
   NODE_VERSION: '24'
   YARN_VERSION: '4.10.3'
-  DEV_COMPOSE_FILE: docker-compose.dev.yml
 
   MYSQL_ROOT_PASSWORD: blueshell
   MYSQL_DATABASE: blueshell-test
@@ -600,51 +599,100 @@ jobs:
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      db:
+        image: mariadb:10.11.10
+        ports: ["3306:3306"]
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_PORT: ${{ env.MYSQL_PORT }}
+          MYSQL_USER: ${{ env.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        ports: ["5672:5672"]
+        env:
+          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
+          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare environment files
+      - name: Wait for database service
         run: |
-          cp env/.api.env.example env/.api.env
-          cp env/.db.env.example env/.db.env
-          cp env/.rabbitmq.env.example env/.rabbitmq.env
-
-      - name: Start development stack via Docker Compose
-        run: docker compose -f "$DEV_COMPOSE_FILE" up -d
-
-      - name: Wait for API container health check
-        run: |
-          set -euo pipefail
-          for i in {1..24}; do
-            CID="$(docker compose -f "$DEV_COMPOSE_FILE" ps -q api || true)"
-            if [ -z "$CID" ]; then
-              echo "api container not created yet (attempt $i/24)"
-            else
-              STATUS="$(docker inspect --format='{{.State.Health.Status}}' "$CID" 2>/dev/null || echo 'unknown')"
-              echo "api health status: $STATUS (attempt $i/24)"
-              if [ "$STATUS" = "healthy" ]; then
-                echo "api is healthy"
-                exit 0
-              fi
+          sudo apt-get update && sudo apt-get install -y default-mysql-client
+          for i in {1..30}; do
+            if mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+              echo "Database is ready!"
+              exit 0
             fi
-            sleep 10
+            echo "Waiting for database... ($i/30)"
+            sleep 2
           done
-          echo "api did not become healthy in time"
-          docker compose -f "$DEV_COMPOSE_FILE" ps
+          echo "Database did not become ready in time."
           exit 1
 
-      - name: Generate OpenAPI client code
+      - name: Prepare test database schema
         run: |
-          chmod +x ./generate_openapi.sh
-          ./generate_openapi.sh
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < env/0_init.sql
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
+
+      - name: Wait for RabbitMQ service
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            if (echo > /dev/tcp/$RABBITMQ_HOST/$RABBITMQ_PORT) >/dev/null 2>&1; then
+              echo "RabbitMQ is ready!"
+              exit 0
+            fi
+            echo "Waiting for RabbitMQ... ($i/30)"
+            sleep 2
+          done
+          echo "RabbitMQ did not become ready in time."
+          exit 1
+
+      - name: Set up Java Development Kit
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Generate OpenAPI spec and frontend clients
+        run: |
+          chmod +x ./scripts/generate-openapi-local.sh
+          ./scripts/generate-openapi-local.sh
 
       - name: Assert OpenAPI spec and client are in sync
         run: git diff --exit-code -- openapi frontend
 
-      - name: Tear down development stack
-        if: always()
-        run: docker compose -f "$DEV_COMPOSE_FILE" down -v
+      - name: Upload OpenAPI generation logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-sync-logs
+          path: openapi-api.log
+          if-no-files-found: ignore
 
   api-build-push:
     name: Build and publish API Docker image

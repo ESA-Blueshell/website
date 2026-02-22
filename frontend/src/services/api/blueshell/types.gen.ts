@@ -693,7 +693,7 @@ export type UserActivationRequest = {
 export type UserDetailResponse = {
     addressId?: number;
     createdAt: string;
-    discord: string;
+    discord?: string;
     email: string;
     enabled: boolean;
     firstName: string;
@@ -702,7 +702,7 @@ export type UserDetailResponse = {
     initials: string;
     lastName: string;
     newsletter: boolean;
-    phoneNumber: string;
+    phoneNumber?: string;
     prefix?: string;
     roles: Array<Role>;
     updatedAt: string;
@@ -712,11 +712,11 @@ export type UserDetailResponse = {
 
 export type UserSummaryResponse = {
     createdAt: string;
-    discord: string;
+    discord?: string;
     email: string;
     fullName: string;
     id: number;
-    phoneNumber: string;
+    phoneNumber?: string;
     updatedAt: string;
     version: number;
 };

@@ -474,8 +474,7 @@ jobs:
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [ check-changes, coverage, openapi-sync ]
-    if: needs.check-changes.outputs.api == 'true'
+    needs: [ coverage, openapi-sync ]
     runs-on: ubuntu-latest
     permissions:
       contents: read

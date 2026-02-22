@@ -108,6 +108,7 @@ jobs:
       run_openapi_sync: ${{ steps.derive.outputs.run_openapi_sync }}
       run_api_image: ${{ steps.derive.outputs.run_api_image }}
       run_frontend_image: ${{ steps.derive.outputs.run_frontend_image }}
+      api_verification_matrix: ${{ steps.derive.outputs.api_verification_matrix }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -186,6 +187,19 @@ jobs:
           run_api_image="$(bool_or "$api" "$ci")"
           run_frontend_image="$(bool_or "$frontend" "$ci")"
 
+          matrix_entries=()
+          if [[ "$run_api_tests" == 'true' ]]; then
+            matrix_entries+=('{"id":"api","name":"Run API tests","timeout_minutes":30}')
+          fi
+          if [[ "$run_system_tests" == 'true' ]]; then
+            matrix_entries+=('{"id":"system","name":"Run system tests","timeout_minutes":45}')
+          fi
+          if [[ ${#matrix_entries[@]} -eq 0 ]]; then
+            api_verification_matrix='{"include":[]}'
+          else
+            api_verification_matrix="{\"include\":[$(IFS=,; echo "${matrix_entries[*]}")]}"
+          fi
+
           {
             echo "api=$api"
             echo "frontend=$frontend"
@@ -200,6 +214,7 @@ jobs:
             echo "run_openapi_sync=$run_openapi_sync"
             echo "run_api_image=$run_api_image"
             echo "run_frontend_image=$run_frontend_image"
+            echo "api_verification_matrix=$api_verification_matrix"
           } >> "$GITHUB_OUTPUT"
 
   fe-static:
@@ -252,8 +267,8 @@ jobs:
       ${{
         always()
         && (
-          (matrix.id == 'api' && needs.check-changes.outputs.run_api_tests == 'true')
-          || (matrix.id == 'system' && needs.check-changes.outputs.run_system_tests == 'true')
+          needs.check-changes.outputs.run_api_tests == 'true'
+          || needs.check-changes.outputs.run_system_tests == 'true'
         )
         && (needs.check-changes.outputs.run_api_static == 'false' || needs.api-static.result == 'success')
         && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
@@ -262,14 +277,7 @@ jobs:
     timeout-minutes: ${{ matrix.timeout_minutes }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - id: api
-            name: Run API tests
-            timeout_minutes: 30
-          - id: system
-            name: Run system tests
-            timeout_minutes: 45
+      matrix: ${{ fromJSON(needs.check-changes.outputs.api_verification_matrix) }}
 
     services:
       db:

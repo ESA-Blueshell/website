@@ -5,14 +5,28 @@ import type {Page} from "@playwright/test"
 const inputByTestId = (page: Page, testId: string) =>
   page.getByTestId(testId).locator("input").first()
 
+const loadCreateAccountForm = async (page: Page) => {
+  const formState = page.getByTestId("create-account-form-state")
+  const userForm = page.getByTestId("create-account-user-form")
+
+  await page.goto("/account/create")
+  await expect(page).toHaveURL(/\/account\/create$/)
+
+  if (await formState.count() === 0) {
+    await page.reload()
+    await expect(page).toHaveURL(/\/account\/create$/)
+  }
+
+  await expect(formState).toBeVisible()
+  await expect(userForm).toBeVisible()
+}
+
 test.describe("create account validation", () => {
   test("blocks invalid client-side input before submit", async ({page}) => {
     await installApiMocks(page)
     const suffix = String(Date.now()).slice(-6)
 
-    await page.goto("/account/create")
-    await expect(page.getByTestId("create-account-form-state")).toBeVisible()
-    await expect(page.getByTestId("create-account-user-form")).toBeVisible()
+    await loadCreateAccountForm(page)
 
     await inputByTestId(page, "user-form-initials-field").fill("VA")
     await inputByTestId(page, "user-form-first-name-field").fill("Validation")

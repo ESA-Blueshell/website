@@ -1367,7 +1367,7 @@ export type ResourceChannelResponse = {
 /**
  * Ratelimit error object returned by the Discord API
  */
-export type RatelimitedResponse = _Error & {
+export type RatelimitedResponse = Error & {
     /**
      * Whether you are being ratelimited by the global ratelimit or a per-endpoint ratelimit
      */
@@ -1381,7 +1381,7 @@ export type RatelimitedResponse = _Error & {
 /**
  * A single error, either for an API response or a specific field.
  */
-export type _Error = {
+export type Error = {
     /**
      * Discord internal error code. See error code reference
      */
@@ -1732,7 +1732,7 @@ export type InnerErrors = {
     /**
      * The list of errors for this field
      */
-    _errors: Array<_Error>;
+    _errors: Array<Error>;
 };
 
 export type IconEmojiResponse = {
@@ -2446,7 +2446,7 @@ export type ExternalConnectionIntegrationResponse = {
 /**
  * Errors object returned by the Discord API
  */
-export type ErrorResponse = _Error & {
+export type ErrorResponse = Error & {
     errors?: ErrorDetails;
 };
 

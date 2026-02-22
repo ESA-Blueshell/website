@@ -80,7 +80,6 @@ import {useDisplay, useLocale} from "vuetify"
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import {type EventResponse, findEvents} from "@/services/api"
-import {VCalendar} from "vuetify/labs/VCalendar"
 import EventDetails from "@/components/base/EventDetails.vue"
 
 type CalendarEvent = {
@@ -96,7 +95,7 @@ const GOOGLE_CALENDAR_SUBSCRIBE_URL =
 
 const displayedMonth = ref<string>(DateTime.now().toISODate()!)
 const selectedEvent = ref<EventResponse | null>(null)
-const selectedElement = ref<HTMLElement | null>(null)
+const selectedElement = ref<HTMLElement>()
 const selectedOpen = ref(false)
 const events = ref<EventResponse[]>([])
 const calendarEvents = ref<CalendarEvent[]>([])
@@ -182,11 +181,11 @@ onMounted(() => {
 })
 
 
-const showEvent = (nativeEvent: MouseEvent, {event}: { event: CalendarEventEx }) => {
+const showEvent = (nativeEvent: Event, {event}: { event: CalendarEventEx }) => {
   nativeEvent.stopPropagation()
   const toggle = () => {
     selectedEvent.value = event.raw
-    selectedElement.value = nativeEvent.target as HTMLElement
+    selectedElement.value = (nativeEvent.target as HTMLElement | null) ?? undefined
     selectedOpen.value = !selectedOpen.value
   }
   if (selectedOpen.value) {

@@ -1,6 +1,4 @@
-import { defineConfig } from '@hey-api/openapi-ts';
-
-export default defineConfig({
+export default {
   input: '../openapi/blueshell.json',
   output: {
     path: 'src/services/api/blueshell',
@@ -22,4 +20,4 @@ export default defineConfig({
       paramsStructure: 'grouped',
     },
   ],
-});
+}

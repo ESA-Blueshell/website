@@ -3,6 +3,10 @@
   "compilerOptions": {
     "moduleResolution": "bundler"
   },
+  "vueCompilerOptions": {
+    "strictTemplates": false,
+    "skipTemplateCodegen": true
+  },
   "include": [
     "env.d.ts",
     "src/**/*.d.ts",

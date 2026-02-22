@@ -1,6 +1,4 @@
-import {defineConfig} from "@hey-api/openapi-ts"
-
-export default defineConfig({
+export default {
   input: "../openapi/discord.json",
   output: {
     path: "src/services/api/discord",
@@ -20,4 +18,4 @@ export default defineConfig({
     {name: "@hey-api/client-axios", runtimeConfigPath: "../discord.runtime.ts"},
     {asClass: false, name: "@hey-api/sdk"},
   ],
-})
+}

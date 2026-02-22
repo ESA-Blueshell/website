@@ -32,7 +32,7 @@ vi.mock("vuex", async (importOriginal) => {
   }
 })
 vi.mock("flag-icons/css/flag-icons.min.css", () => ({}))
-vi.mock("v-phone-input/dist/v-phone-input.css", () => ({}))
+vi.mock("v-phone-input/styles", () => ({}))
 vi.mock("v-phone-input", () => ({
   VPhoneInput: {
     name: "VPhoneInput",

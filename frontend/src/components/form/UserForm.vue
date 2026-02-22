@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import "flag-icons/css/flag-icons.min.css"
-import "v-phone-input/dist/v-phone-input.css"
+import "v-phone-input/styles"
 import {VPhoneInput} from "v-phone-input"
 import {
   createUser,

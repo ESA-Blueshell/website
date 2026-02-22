@@ -48,7 +48,7 @@ const RAW_RUNTIME_STATE =
           ["@vue/test-utils", "npm:2.4.6"],\
           ["@vue/tsconfig", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:0.8.1"],\
           ["@vue/typescript-plugin", "npm:3.1.4"],\
-          ["axios", "npm:1.13.2"],\
+          ["axios", "npm:1.13.5"],\
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.47.0"],\
           ["countries-list", "npm:3.2.0"],\
@@ -1023,7 +1023,7 @@ const RAW_RUNTIME_STATE =
           ["@hey-api/openapi-ts", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:0.88.0"],\
           ["@types/axios", null],\
           ["@types/hey-api__openapi-ts", null],\
-          ["axios", "npm:1.13.2"]\
+          ["axios", "npm:1.13.5"]\
         ],\
         "packagePeers": [\
           "@hey-api/openapi-ts",\
@@ -2979,12 +2979,12 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["axios", [\
-      ["npm:1.13.2", {\
-        "packageLocation": "./.yarn/cache/axios-npm-1.13.2-90e3ae8f5d-e8a42e37e5.zip/node_modules/axios/",\
+      ["npm:1.13.5", {\
+        "packageLocation": "./.yarn/cache/axios-npm-1.13.5-ed8865f696-abf468c34f.zip/node_modules/axios/",\
         "packageDependencies": [\
-          ["axios", "npm:1.13.2"],\
-          ["follow-redirects", "virtual:90e3ae8f5d1081a2ebe4b7d99c8598618635aa223fffb3774885e7f413ad9bd6e2700dac780ec12f15baa5a1a39c5137b65b9a0b781e508a9f050aac6152f2f5#npm:1.15.11"],\
-          ["form-data", "npm:4.0.4"],\
+          ["axios", "npm:1.13.5"],\
+          ["follow-redirects", "virtual:ed8865f696cebfbc109886bcd430c823f73cb3daaa6597dac1f006748e0fc10ed81734823f049aec03fadda2608be9aa560f98b843c8321891f307f4a175db89#npm:1.15.11"],\
+          ["form-data", "npm:4.0.5"],\
           ["proxy-from-env", "npm:1.1.0"]\
         ],\
         "linkType": "HARD"\
@@ -3041,7 +3041,7 @@ const RAW_RUNTIME_STATE =
           ["@vue/test-utils", "npm:2.4.6"],\
           ["@vue/tsconfig", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:0.8.1"],\
           ["@vue/typescript-plugin", "npm:3.1.4"],\
-          ["axios", "npm:1.13.2"],\
+          ["axios", "npm:1.13.5"],\
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.47.0"],\
           ["countries-list", "npm:3.2.0"],\
@@ -4872,12 +4872,12 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:90e3ae8f5d1081a2ebe4b7d99c8598618635aa223fffb3774885e7f413ad9bd6e2700dac780ec12f15baa5a1a39c5137b65b9a0b781e508a9f050aac6152f2f5#npm:1.15.11", {\
-        "packageLocation": "./.yarn/__virtual__/follow-redirects-virtual-de41ee3d23/0/cache/follow-redirects-npm-1.15.11-ae7b2db266-d301f43054.zip/node_modules/follow-redirects/",\
+      ["virtual:ed8865f696cebfbc109886bcd430c823f73cb3daaa6597dac1f006748e0fc10ed81734823f049aec03fadda2608be9aa560f98b843c8321891f307f4a175db89#npm:1.15.11", {\
+        "packageLocation": "./.yarn/__virtual__/follow-redirects-virtual-eba31d82f7/0/cache/follow-redirects-npm-1.15.11-ae7b2db266-d301f43054.zip/node_modules/follow-redirects/",\
         "packageDependencies": [\
           ["@types/debug", null],\
           ["debug", null],\
-          ["follow-redirects", "virtual:90e3ae8f5d1081a2ebe4b7d99c8598618635aa223fffb3774885e7f413ad9bd6e2700dac780ec12f15baa5a1a39c5137b65b9a0b781e508a9f050aac6152f2f5#npm:1.15.11"]\
+          ["follow-redirects", "virtual:ed8865f696cebfbc109886bcd430c823f73cb3daaa6597dac1f006748e0fc10ed81734823f049aec03fadda2608be9aa560f98b843c8321891f307f4a175db89#npm:1.15.11"]\
         ],\
         "packagePeers": [\
           "@types/debug",\
@@ -4898,13 +4898,13 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["form-data", [\
-      ["npm:4.0.4", {\
-        "packageLocation": "./.yarn/cache/form-data-npm-4.0.4-10eb4ef9c3-373525a9a0.zip/node_modules/form-data/",\
+      ["npm:4.0.5", {\
+        "packageLocation": "./.yarn/cache/form-data-npm-4.0.5-c35fce815a-dd6b767ee0.zip/node_modules/form-data/",\
         "packageDependencies": [\
           ["asynckit", "npm:0.4.0"],\
           ["combined-stream", "npm:1.0.8"],\
           ["es-set-tostringtag", "npm:2.1.0"],\
-          ["form-data", "npm:4.0.4"],\
+          ["form-data", "npm:4.0.5"],\
           ["hasown", "npm:2.0.2"],\
           ["mime-types", "npm:2.1.35"]\
         ],\
@@ -8203,7 +8203,7 @@ const RAW_RUNTIME_STATE =
         "packageDependencies": [\
           ["@types/axios", null],\
           ["@types/vue", null],\
-          ["axios", "npm:1.13.2"],\
+          ["axios", "npm:1.13.5"],\
           ["vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:3.5.24"],\
           ["vue-axios", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:3.5.2"]\
         ],\

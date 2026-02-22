@@ -132,7 +132,7 @@ google:
 
 server:
   error:
-    include-message: always
+    include-message: never
     include-binding-errors: never
     include-stacktrace: never
     include-exception: false

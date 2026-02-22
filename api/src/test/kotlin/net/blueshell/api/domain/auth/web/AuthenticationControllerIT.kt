@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
@@ -77,6 +78,42 @@ class AuthenticationControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(user.id))
+        }
+
+        @Test
+        fun `logout revokes token jti so bearer token can no longer authenticate`() {
+            val user = createUserWithRole(Role.MEMBER)
+
+            val auth = mvc.perform(
+                post("/auth")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
+            )
+                .andExpect(status().isOk)
+                .andReturn()
+
+            val token = mapper.readTree(auth.response.contentAsByteArray).path("token").asText()
+            assertThat(token).isNotBlank()
+
+            mvc.perform(
+                get("/users/${user.id}")
+                    .header("Authorization", "Bearer $token")
+            )
+                .andExpect(status().isOk)
+
+            mvc.perform(
+                post("/auth/logout")
+                    .header("Authorization", "Bearer $token")
+            )
+                .andExpect(status().isNoContent)
+                .andExpect(header().string("Set-Cookie", containsString("BSH_AUTH=")))
+                .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")))
+
+            mvc.perform(
+                get("/users/${user.id}")
+                    .header("Authorization", "Bearer $token")
+            )
+                .andExpect(status().isUnauthorized)
         }
 
         @Test

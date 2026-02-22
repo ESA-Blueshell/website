@@ -65,3 +65,4 @@ backups
 .kotlin
 *.md
 .idea
+*dump.sql*

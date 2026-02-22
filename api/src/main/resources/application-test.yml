@@ -92,3 +92,7 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+server:
+  error:
+    include-message: always

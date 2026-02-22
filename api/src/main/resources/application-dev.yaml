@@ -24,6 +24,10 @@ springdoc:
   swagger-ui:
     enabled: true
 
+server:
+  error:
+    include-message: always
+
 security:
   cors:
     allowed-origins:

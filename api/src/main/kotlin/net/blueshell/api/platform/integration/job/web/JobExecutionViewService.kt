@@ -14,6 +14,7 @@ import net.blueshell.api.platform.integration.job.dto.JobExecutionDTO
 import net.blueshell.api.platform.integration.job.dto.JobExecutionRelatedEntityDTO
 import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
+import net.blueshell.api.shared.enums.JobExecutionCategory
 import org.springframework.stereotype.Service
 
 @Service
@@ -197,15 +198,29 @@ class JobExecutionViewService(
         return execution.initiatedByType.name
     }
 
-    private fun categoryFor(jobType: String): String {
+    private fun categoryFor(jobType: String): JobExecutionCategory {
         val normalized = jobType.trim()
-        if (normalized.isBlank()) return "other"
+        if (normalized.isBlank()) return JobExecutionCategory.other
 
-        val separatorIndexes = listOf('.', '_', '-')
-            .map { separator -> normalized.indexOf(separator).takeIf { it > 0 } ?: Int.MAX_VALUE }
-        val firstSeparator = separatorIndexes.minOrNull() ?: Int.MAX_VALUE
-        if (firstSeparator == Int.MAX_VALUE) return normalized.lowercase()
-        return normalized.substring(0, firstSeparator).lowercase()
+        val lowered = normalized.lowercase()
+        return when {
+            lowered == "calendar" ||
+                lowered.startsWith("calendar.") ||
+                lowered.startsWith("calendar_") ||
+                lowered.startsWith("calendar-") -> JobExecutionCategory.calendar
+
+            lowered == "contact" ||
+                lowered.startsWith("contact.") ||
+                lowered.startsWith("contact_") ||
+                lowered.startsWith("contact-") -> JobExecutionCategory.contact
+
+            lowered == "email" ||
+                lowered.startsWith("email.") ||
+                lowered.startsWith("email_") ||
+                lowered.startsWith("email-") -> JobExecutionCategory.email
+
+            else -> JobExecutionCategory.other
+        }
     }
 
     private fun buildSummary(jobType: String, relatedEntities: List<JobExecutionRelatedEntityDTO>): String {

@@ -4,7 +4,7 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
-import {type JobExecution, list, retry as retryJob} from "@/services/api"
+import {JobExecutionCategory, type JobExecution, list, retry as retryJob} from "@/services/api"
 
 defineOptions({name: "JobManagerPage"})
 
@@ -19,7 +19,7 @@ type JobRelatedEntity = {
 }
 
 type JobExecutionView = JobExecution & {
-  category?: string
+  category?: JobExecutionCategory
   summary?: string
   stackTrace?: string | null
   initiatedByDisplay?: string
@@ -42,14 +42,14 @@ type JobListQuery = {
   page: number
   size: number
   sort: string[]
-  category?: string
+  category?: JobExecutionCategory
   status?: JobExecution["status"]
   search?: string
 }
 
 const executions = ref<JobExecutionView[]>([])
 const loading = ref<boolean>(false)
-const selectedCategory = ref<string>("all")
+const selectedCategory = ref<JobExecutionCategory | "all">("all")
 const selectedStatus = ref<string>("all")
 const searchQuery = ref<string | null>("")
 const expandedRows = ref<number[]>([])
@@ -77,20 +77,9 @@ const statusCounts = computed(() => {
 })
 
 const categoryOptions = computed(() => {
-  const values = Array.from(
-    new Set(
-      executions.value
-        .map((execution) => execution.category)
-        .filter((category): category is string => !!category),
-    ),
-  ).sort((a, b) => a.localeCompare(b))
-  if (selectedCategory.value !== "all" && !values.includes(selectedCategory.value)) {
-    values.push(selectedCategory.value)
-  }
-
   return [
     {title: "All categories", value: "all"},
-    ...values.map((value) => ({title: titleCase(value), value})),
+    ...Object.values(JobExecutionCategory).map((value) => ({title: titleCase(value), value})),
   ]
 })
 

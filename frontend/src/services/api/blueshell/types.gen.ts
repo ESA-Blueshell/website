@@ -401,21 +401,40 @@ export type GuestResponse = {
 export type JobExecution = {
     actor?: Actor;
     attempts: number;
+    category?: JobExecutionCategory;
     createdAt?: string;
     errorMessage?: string;
     errorReason?: string;
     errorType?: string;
     finishedAt?: string;
     id?: number;
+    initiatedByDisplay?: string;
+    initiatedByFullName?: string;
     initiatedByRole?: Role;
     initiatedByType?: 'USER' | 'SYSTEM';
     initiatedByUserId?: number;
+    initiatedByUsername?: string;
     jobType: string;
-    payload?: string;
     queuedAt?: string;
+    relatedEntities: Array<JobExecutionRelatedEntity>;
+    stackTrace?: string;
     startedAt?: string;
     status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+    summary?: string;
     updatedAt?: string;
+};
+
+export enum JobExecutionCategory {
+    CALENDAR = 'calendar',
+    CONTACT = 'contact',
+    EMAIL = 'email',
+    OTHER = 'other'
+}
+
+export type JobExecutionRelatedEntity = {
+    id?: number;
+    label: string;
+    type: string;
 };
 
 export type JwtRequest = {
@@ -484,13 +503,13 @@ export type PagedModelEventResponse = {
     page?: PageMetadata;
 };
 
-export type PagedModelUserDetailResponse = {
-    content?: Array<UserDetailResponse>;
+export type PagedModelJobExecution = {
+    content?: Array<JobExecution>;
     page?: PageMetadata;
 };
 
-export type PagedModelJobExecution = {
-    content?: Array<JobExecution>;
+export type PagedModelUserDetailResponse = {
+    content?: Array<UserDetailResponse>;
     page?: PageMetadata;
 };
 
@@ -3018,7 +3037,7 @@ export type ListData = {
          */
         sort?: Array<string>;
         status?: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED';
-        category?: string;
+        category?: JobExecutionCategory;
         search?: string;
         initiatedByType?: 'USER' | 'SYSTEM';
         jobType?: string;

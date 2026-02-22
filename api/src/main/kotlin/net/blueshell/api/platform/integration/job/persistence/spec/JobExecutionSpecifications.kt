@@ -7,6 +7,7 @@ import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
 import net.blueshell.api.platform.integration.job.model.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
+import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springframework.data.jpa.domain.Specification
 import java.util.Locale
@@ -22,17 +23,26 @@ object JobExecutionSpecifications {
         return Specification { root, _, cb -> cb.equal(root.get<ActionActorType>("initiatedByType"), type) }
     }
 
-    fun category(category: String?): Specification<JobExecution> {
-        val normalized = category?.trim()?.lowercase(Locale.getDefault())?.takeIf { it.isNotBlank() }
-            ?: return Specification { _, _, cb -> cb.conjunction() }
+    fun category(category: JobExecutionCategory?): Specification<JobExecution> {
+        if (category == null) {
+            return Specification { _, _, cb -> cb.conjunction() }
+        }
         return Specification { root, _, cb ->
             val jobType = cb.lower(root.get<String>("jobType"))
-            cb.or(
-                cb.equal(jobType, normalized),
-                cb.like(jobType, "${normalized}.%"),
-                cb.like(jobType, "${normalized}_%"),
-                cb.like(jobType, "${normalized}-%")
-            )
+            val calendar = categoryPrefix(jobType, cb, JobExecutionCategory.calendar.name)
+            val contact = categoryPrefix(jobType, cb, JobExecutionCategory.contact.name)
+            val email = categoryPrefix(jobType, cb, JobExecutionCategory.email.name)
+
+            when (category) {
+                JobExecutionCategory.calendar -> calendar
+                JobExecutionCategory.contact -> contact
+                JobExecutionCategory.email -> email
+                JobExecutionCategory.other -> cb.and(
+                    cb.not(calendar),
+                    cb.not(contact),
+                    cb.not(email)
+                )
+            }
         }
     }
 
@@ -66,9 +76,7 @@ object JobExecutionSpecifications {
 
         filter.status?.let { spec = spec.and(status(it)) }
         filter.initiatedByType?.let { spec = spec.and(initiatedByType(it)) }
-        if (!filter.category.isNullOrBlank()) {
-            spec = spec.and(category(filter.category))
-        }
+        filter.category?.let { spec = spec.and(category(it)) }
         if (!filter.jobType.isNullOrBlank()) {
             spec = spec.and(jobTypeContains(filter.jobType))
         }
@@ -85,6 +93,17 @@ object JobExecutionSpecifications {
             cb.like(cb.lower(root.get<String>(fieldName)), pattern)
         }
     }
+
+    private fun categoryPrefix(
+        jobType: jakarta.persistence.criteria.Expression<String>,
+        cb: CriteriaBuilder,
+        prefix: String
+    ) = cb.or(
+        cb.equal(jobType, prefix),
+        cb.like(jobType, "$prefix.%"),
+        cb.like(jobType, "${prefix}_%"),
+        cb.like(jobType, "${prefix}-%")
+    )
 
     private fun containsLargeText(fieldName: String, value: String): Specification<JobExecution> {
         val variants = linkedSetOf(

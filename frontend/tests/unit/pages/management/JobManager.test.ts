@@ -36,6 +36,12 @@ vi.mock("@/plugins/store", () => ({
 }))
 
 vi.mock("@/services/api", () => ({
+  JobExecutionCategory: {
+    CALENDAR: "calendar",
+    CONTACT: "contact",
+    EMAIL: "email",
+    OTHER: "other",
+  },
   list: mockList,
   retry: mockRetry,
 }))
@@ -124,6 +130,19 @@ describe("JobManager page", () => {
         status: "FAILED",
       }),
     }))
+  })
+
+  it("shows all category options from enum, not from current page rows", async () => {
+    const wrapper = shallowMount(JobManager)
+    await settle()
+
+    expect((wrapper.vm as any).categoryOptions).toEqual([
+      {title: "All categories", value: "all"},
+      {title: "Calendar", value: "calendar"},
+      {title: "Contact", value: "contact"},
+      {title: "Email", value: "email"},
+      {title: "Other", value: "other"},
+    ])
   })
 
   it("handles cleared search filter value without trim error", async () => {

@@ -11,6 +11,10 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 
 @Tag("system")
 class CsrfSystemTest : FrontendSystemTestBase() {
@@ -23,25 +27,20 @@ class CsrfSystemTest : FrontendSystemTestBase() {
 
     @Test
     fun `cross-origin state changing request without csrf token is rejected`() {
-        withPage { page ->
-            page.navigate(frontendUrl)
+        val response = HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder(URI.create("${appUrl.trimEnd('/')}/auth"))
+                .header("Origin", frontendUrl)
+                .header("Content-Type", "application/json")
+                .POST(
+                    HttpRequest.BodyPublishers.ofString(
+                        """{"username":"does-not-exist","password":"invalid-password"}"""
+                    )
+                )
+                .build(),
+            HttpResponse.BodyHandlers.ofString()
+        )
 
-            val status = (page.evaluate(
-                """
-                async (baseUrl) => {
-                  const response = await fetch(`${'$'}{baseUrl}/auth`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({username: 'does-not-exist', password: 'invalid-password'})
-                  })
-                  return response.status
-                }
-                """.trimIndent(),
-                appUrl
-            ) as Number).toInt()
-
-            assertThat(status).isEqualTo(403)
-        }
+        assertThat(response.statusCode()).isEqualTo(403)
     }
 
     @Test

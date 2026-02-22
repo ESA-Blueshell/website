@@ -65,7 +65,7 @@ jobs:
 
   api-tests:
     name: Run API tests
-    needs: check-changes
+    needs: [ check-changes, fe-static ]
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -215,7 +215,7 @@ jobs:
 
   system-tests:
     name: Run system tests
-    needs: check-changes
+    needs: [ check-changes, fe-static ]
     if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -411,16 +411,7 @@ jobs:
 
   coverage:
     name: Merge and enforce code coverage
-    needs: [ check-changes, api-tests, system-tests, fe-unit, fe-e2e ]
-    if: >-
-      ${{
-        always()
-        && (needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true')
-        && needs.api-tests.result == 'success'
-        && needs.system-tests.result == 'success'
-        && (needs.check-changes.outputs.frontend == 'false' || needs.fe-unit.result == 'success')
-        && (needs.check-changes.outputs.frontend == 'false' || needs.fe-e2e.result == 'success')
-      }}
+    needs: [ api-tests, system-tests, fe-unit, fe-e2e ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -479,6 +470,7 @@ jobs:
           ./scripts/check-cobertura-threshold.sh \
             --file coverage/merged/Cobertura.xml \
             --min-line-rate "${COVERAGE_MIN_LINE_RATE}"
+
 
   api-build-push:
     name: Build and publish API Docker image
@@ -550,8 +542,7 @@ jobs:
 
   fe-unit:
     name: Frontend unit tests with coverage
-    needs: check-changes
-    if: needs.check-changes.outputs.frontend == 'true'
+    needs: [ fe-static ]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -584,8 +575,7 @@ jobs:
 
   fe-e2e:
     name: Frontend end-to-end tests
-    needs: check-changes
-    if: needs.check-changes.outputs.frontend == 'true'
+    needs: [ fe-static ]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -620,8 +610,7 @@ jobs:
 
   fe-build-push:
     name: Build and publish frontend Docker image
-    needs: [ check-changes, coverage, fe-static, fe-unit, fe-e2e, openapi-sync ]
-    if: needs.check-changes.outputs.frontend == 'true'
+    needs: [ coverage, openapi-sync ]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -664,8 +653,7 @@ jobs:
 
   openapi-sync:
     name: Validate OpenAPI client generation
-    needs: check-changes
-    if: needs.check-changes.outputs.openapi == 'true'
+    needs: [ fe-static ]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

@@ -43,6 +43,7 @@ describe("handleNetworkError plugin", () => {
 
   it("redirects to login for 401", () => {
     $handleNetworkError(axiosStatusError(401))
+    expect(mockCommit).toHaveBeenCalledWith("logout")
     expect(mockPush).toHaveBeenCalledWith({
       path: "/login",
       query: {redirect: "/events"},

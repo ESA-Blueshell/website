@@ -32,6 +32,7 @@ export function $handleNetworkError(err: unknown): void {
         break
       case 401:
         errorMessage = "Woah there, looks like you're not logged in (anymore). Just log in and try again."
+        store.commit("logout")
         if (!currentRoute.fullPath.startsWith("/login")) {
           const redirect: RouteLocationRaw = {
             path: "/login",

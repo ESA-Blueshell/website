@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:8080}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:8080}"
 API_SPEC_URL="${API_SPEC_URL:-${API_BASE_URL}/v3/api-docs}"
 DISCORD_OPENAPI_URL="${DISCORD_OPENAPI_URL:-https://raw.githubusercontent.com/discord/discord-api-spec/refs/heads/main/specs/openapi.json}"
 API_LOG_FILE="${API_LOG_FILE:-openapi-api.log}"

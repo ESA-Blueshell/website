@@ -5,14 +5,20 @@ on:
     paths:
       - 'api/**'
       - 'frontend/**'
-      - 'pom.xml'
+      - 'openapi/**'
       - 'env/**'
+      - 'scripts/**'
       - '.github/actions/**'
       - '.github/workflows/**'
-      - 'openapi/**'
       - 'docker-compose.yml'
       - 'docker-compose.dev.yml'
-      - 'scripts/**'
+      - 'generate_openapi.sh'
+      - 'merge-coverage.sh'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
       - 'nginx/**'
   workflow_dispatch:
 
@@ -25,211 +31,256 @@ env:
   OWNER: ${{ github.repository_owner }}
   COVERAGE_MIN_LINE_RATE: "0.80"
 
+  JAVA_VERSION: '24'
+  NODE_VERSION: '24'
+  YARN_VERSION: '4.10.3'
+  DEV_COMPOSE_FILE: docker-compose.dev.yml
+
+  MYSQL_ROOT_PASSWORD: blueshell
+  MYSQL_DATABASE: blueshell-test
+  MYSQL_PORT: '3306'
+  MYSQL_USER: blueshell
+  MYSQL_PASSWORD: blueshell
+  MYSQL_HOST: 127.0.0.1
+
+  RABBITMQ_HOST: 127.0.0.1
+  RABBITMQ_PORT: '5672'
+  RABBITMQ_USERNAME: guest
+  RABBITMQ_PASSWORD: guest
+
+  APP_URL: http://127.0.0.1:8080
+  FRONTEND_URL: http://127.0.0.1:3000
+
+  JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
+
+  SMTP_HOST: mail.blueshell.utwente.nl
+  SMTP_PORT: '465'
+  SMTP_USERNAME: your_smtp_username
+  SMTP_PASSWORD: your_smtp_password
+
+  STORAGE_LOCATION: ./storage
+
+  BREVO_API_KEY: something
+  BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
+
+  GOOGLE_CALENDAR_ID: something
+  GOOGLE_CALENDAR_CLIENT_ID: something
+  GOOGLE_CALENDAR_CLIENT_EMAIL: something
+  GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8: |
+    -----BEGIN PRIVATE KEY-----
+    MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAJNOI74ADXzV2H63
+    s/wyuR7hW61c0ORfHSBSSIgmdglGqtSb8ERzet79zodXvmeZu2Cl6phtEIsXZ0uF
+    dfNBmIFjI2i3LT9+7zb+n5OcwKgwSxyKCeL6sB4aOQ/gljH2mpsTFkk6UdoKZ0NH
+    4Kkmbq2qsMr1P0y1j3X0uXg+uGNhAgMBAAECgYAePOMPZJlgL9GSKYmT0qG3mhEk
+    pDHpPzEOanWjJSoDu3Lj0+LdWks1rSoRFEzsnV0eeNCQW4sS0koM8aeFuMhiLc8Q
+    KP7UecthtjLxzjqQPDwj5z90pkSg9GPKkoKC9h83Ioj6KqhvE3vN2NfGrWX/Gcmr
+    BvVnw+btaoFgxzjncQJBAOtwr4+8qTHVxDApKteymCljlli4hS3KQGOrPiQUtszl
+    HpckKJfFJeuvB8kLxPEdhKSegu1BCd7WCPbWPfiYL3UCQQCgKy3Dkx29PcP+O36m
+    aS9G2rvivUh0ceD3fIqeUuhcCa+Gd4JH4g3/HUpOj8lV8HacI+MM4B/DF46lbLoy
+    JrK9AkB3hY86kvX5vKGKKXv8YEfqywmqJJJHeqNRdb9oJbPfNHlhFRQeaBEmIob7
+    QyRJm0iZIXcp5piSLWoDlSOErg15AkARLlCMaB2KjTOW897UDvhpS1FYMyGwi/6r
+    zYo5DX+rT8aqT+uDtnX15bhw0O+x7kdq3FagrPH7RW2hxRX8BzapAkB8TTIWgCgu
+    YOYLy5TUv9YKShgfe50C6j1HyZajzJBV1PdS7298SB2n2dvbUGWvUohXXMCXVRdS
+    wRRHv41dPOIL
+    -----END PRIVATE KEY-----
+  GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
+
+  GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+
 permissions:
   contents: read
 
 jobs:
   check-changes:
-    name: Detect affected components
+    name: Detect affected layers
     runs-on: ubuntu-latest
     outputs:
-      api: ${{ steps.filter.outputs.api }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      openapi: ${{ steps.filter.outputs.openapi }}
+      api: ${{ steps.derive.outputs.api }}
+      frontend: ${{ steps.derive.outputs.frontend }}
+      openapi: ${{ steps.derive.outputs.openapi }}
+      ci: ${{ steps.derive.outputs.ci }}
+      run_api_static: ${{ steps.derive.outputs.run_api_static }}
+      run_frontend_static: ${{ steps.derive.outputs.run_frontend_static }}
+      run_api_tests: ${{ steps.derive.outputs.run_api_tests }}
+      run_system_tests: ${{ steps.derive.outputs.run_system_tests }}
+      run_frontend_tests: ${{ steps.derive.outputs.run_frontend_tests }}
+      run_coverage: ${{ steps.derive.outputs.run_coverage }}
+      run_openapi_sync: ${{ steps.derive.outputs.run_openapi_sync }}
+      run_api_image: ${{ steps.derive.outputs.run_api_image }}
+      run_frontend_image: ${{ steps.derive.outputs.run_frontend_image }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Detect changed paths
         id: filter
         uses: dorny/paths-filter@v3
         with:
+          list-files: shell
           filters: |
             api:
               - 'api/**'
-              - 'pom.xml'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
               - 'env/**'
               - 'scripts/**'
               - 'docker-compose.dev.yml'
+              - 'api/Dockerfile'
+              - 'api/Dockerfile-dev'
             frontend:
               - 'frontend/**'
+              - 'frontend/Dockerfile'
+              - 'frontend/Dockerfile-dev'
             openapi:
-              - 'api/**'
-              - 'frontend/**'
               - 'openapi/**'
               - 'generate_openapi.sh'
               - 'docker-compose.dev.yml'
               - 'env/**'
+            ci:
+              - '.github/actions/**'
+              - '.github/workflows/**'
+              - 'docker-compose.yml'
+              - 'merge-coverage.sh'
 
-  api-tests:
-    name: Run API tests
-    needs: [ check-changes, fe-static ]
-    if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    services:
-      db:
-        image: mariadb:10.11.10
-        ports: [ "3306:3306" ]
-        env:
-          MYSQL_ROOT_PASSWORD: "blueshell"
-          MYSQL_DATABASE: "blueshell-test"
-          MYSQL_PORT: 3306
-          MYSQL_USER: "blueshell"
-          MYSQL_PASSWORD: "blueshell"
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
-      rabbitmq:
-        image: rabbitmq:3.13-management
-        ports: [ "5672:5672" ]
-        env:
-          RABBITMQ_DEFAULT_USER: "guest"
-          RABBITMQ_DEFAULT_PASS: "guest"
-        options: >-
-          --health-cmd="rabbitmq-diagnostics -q ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
-
-    env:
-      MYSQL_ROOT_PASSWORD: blueshell
-      MYSQL_DATABASE: blueshell-test
-      MYSQL_PORT: '3306'
-      MYSQL_USER: blueshell
-      MYSQL_PASSWORD: blueshell
-      MYSQL_HOST: 127.0.0.1
-      RABBITMQ_HOST: 127.0.0.1
-      RABBITMQ_PORT: '5672'
-      RABBITMQ_USERNAME: guest
-      RABBITMQ_PASSWORD: guest
-
-      APP_URL: http://127.0.0.1:8080
-      FRONTEND_URL: http://127.0.0.1:3000
-
-      JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
-
-      SMTP_HOST: mail.blueshell.utwente.nl
-      SMTP_PORT: '465'
-      SMTP_USERNAME: your_smtp_username
-      SMTP_PASSWORD: your_smtp_password
-
-      STORAGE_LOCATION: ./storage
-
-      BREVO_API_KEY: something
-      BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
-
-      GOOGLE_CALENDAR_ID: something
-      GOOGLE_CALENDAR_CLIENT_ID: something
-      GOOGLE_CALENDAR_CLIENT_EMAIL: something
-      GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8: |
-        -----BEGIN PRIVATE KEY-----
-        MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAJNOI74ADXzV2H63
-        s/wyuR7hW61c0ORfHSBSSIgmdglGqtSb8ERzet79zodXvmeZu2Cl6phtEIsXZ0uF
-        dfNBmIFjI2i3LT9+7zb+n5OcwKgwSxyKCeL6sB4aOQ/gljH2mpsTFkk6UdoKZ0NH
-        4Kkmbq2qsMr1P0y1j3X0uXg+uGNhAgMBAAECgYAePOMPZJlgL9GSKYmT0qG3mhEk
-        pDHpPzEOanWjJSoDu3Lj0+LdWks1rSoRFEzsnV0eeNCQW4sS0koM8aeFuMhiLc8Q
-        KP7UecthtjLxzjqQPDwj5z90pkSg9GPKkoKC9h83Ioj6KqhvE3vN2NfGrWX/Gcmr
-        BvVnw+btaoFgxzjncQJBAOtwr4+8qTHVxDApKteymCljlli4hS3KQGOrPiQUtszl
-        HpckKJfFJeuvB8kLxPEdhKSegu1BCd7WCPbWPfiYL3UCQQCgKy3Dkx29PcP+O36m
-        aS9G2rvivUh0ceD3fIqeUuhcCa+Gd4JH4g3/HUpOj8lV8HacI+MM4B/DF46lbLoy
-        JrK9AkB3hY86kvX5vKGKKXv8YEfqywmqJJJHeqNRdb9oJbPfNHlhFRQeaBEmIob7
-        QyRJm0iZIXcp5piSLWoDlSOErg15AkARLlCMaB2KjTOW897UDvhpS1FYMyGwi/6r
-        zYo5DX+rT8aqT+uDtnX15bhw0O+x7kdq3FagrPH7RW2hxRX8BzapAkB8TTIWgCgu
-        YOYLy5TUv9YKShgfe50C6j1HyZajzJBV1PdS7298SB2n2dvbUGWvUohXXMCXVRdS
-        wRRHv41dPOIL
-        -----END PRIVATE KEY-----
-      GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Wait for database service
-        run: |
-          sudo apt-get update && sudo apt-get install -y default-mysql-client
-          for i in {1..30}; do
-            if mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SELECT 1;" >/dev/null 2>&1; then
-              echo "Database is ready!"
-              exit 0
-            fi
-            echo "Waiting for database... ($i/30)"
-            sleep 2
-          done
-          echo "Database did not become ready in time."
-          exit 1
-
-      - name: Prepare test database schema
-        run: |
-          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell < env/0_init.sql
-          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SHOW DATABASES;"
-          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "USE blueshell-test; SHOW TABLES;"
-
-      - name: Wait for RabbitMQ service
-        run: |
-          set -euo pipefail
-          for i in {1..30}; do
-            if (echo > /dev/tcp/127.0.0.1/5672) >/dev/null 2>&1; then
-              echo "RabbitMQ is ready!"
-              exit 0
-            fi
-            echo "Waiting for RabbitMQ... ($i/30)"
-            sleep 2
-          done
-          echo "RabbitMQ did not become ready in time."
-          exit 1
-
-      - name: Set up Java Development Kit
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 24
-          cache: gradle
-
-      - name: Run API Gradle tests
+      - name: Derive layered execution flags
+        id: derive
         shell: bash
         run: |
           set -euo pipefail
 
-          ./gradlew --no-daemon :api:test :api:jacocoTestReport
-        env:
-          GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+          api='${{ steps.filter.outputs.api }}'
+          frontend='${{ steps.filter.outputs.frontend }}'
+          openapi='${{ steps.filter.outputs.openapi }}'
+          ci='${{ steps.filter.outputs.ci }}'
 
-      - name: Upload API test coverage artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-test-coverage
-          path: |
-            api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-            api/build/reports/jacoco/jacocoTestReport/html
-            api/build/reports/tests/test
-          if-no-files-found: warn
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            api=true
+            frontend=true
+            openapi=true
+            ci=true
+          fi
 
-  system-tests:
-    name: Run system tests
-    needs: [ check-changes, fe-static ]
-    if: needs.check-changes.outputs.api == 'true' || needs.check-changes.outputs.frontend == 'true'
+          bool_or() {
+            local result=false
+            for value in "$@"; do
+              if [[ "$value" == 'true' ]]; then
+                result=true
+                break
+              fi
+            done
+            printf '%s' "$result"
+          }
+
+          run_api_static="$(bool_or "$api" "$ci")"
+          run_frontend_static="$(bool_or "$frontend" "$openapi" "$ci")"
+          run_api_tests="$(bool_or "$api" "$ci")"
+          run_system_tests="$(bool_or "$api" "$frontend" "$ci")"
+          run_frontend_tests="$(bool_or "$frontend" "$ci")"
+          run_coverage="$(bool_or "$api" "$frontend" "$ci")"
+          run_openapi_sync="$(bool_or "$api" "$frontend" "$openapi" "$ci")"
+          run_api_image="$(bool_or "$api" "$ci")"
+          run_frontend_image="$(bool_or "$frontend" "$ci")"
+
+          {
+            echo "api=$api"
+            echo "frontend=$frontend"
+            echo "openapi=$openapi"
+            echo "ci=$ci"
+            echo "run_api_static=$run_api_static"
+            echo "run_frontend_static=$run_frontend_static"
+            echo "run_api_tests=$run_api_tests"
+            echo "run_system_tests=$run_system_tests"
+            echo "run_frontend_tests=$run_frontend_tests"
+            echo "run_coverage=$run_coverage"
+            echo "run_openapi_sync=$run_openapi_sync"
+            echo "run_api_image=$run_api_image"
+            echo "run_frontend_image=$run_frontend_image"
+          } >> "$GITHUB_OUTPUT"
+
+  fe-static:
+    name: Frontend typecheck and lint
+    needs: check-changes
+    if: needs.check-changes.outputs.run_frontend_static == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Run TypeScript type checks
+        run: yarn typecheck
+
+      - name: Run ESLint
+        run: yarn lint --max-warnings=0
+
+  api-static:
+    name: API compile checks
+    needs: check-changes
+    if: needs.check-changes.outputs.run_api_static == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java Development Kit
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Compile API main and test sources
+        run: ./gradlew --no-daemon :api:compileKotlin :api:compileTestKotlin
+
+  api-verification:
+    name: ${{ matrix.name }}
+    needs: [check-changes, api-static, fe-static]
+    if: >-
+      ${{
+        always()
+        && (
+          (matrix.id == 'api' && needs.check-changes.outputs.run_api_tests == 'true')
+          || (matrix.id == 'system' && needs.check-changes.outputs.run_system_tests == 'true')
+        )
+        && (needs.check-changes.outputs.run_api_static == 'false' || needs.api-static.result == 'success')
+        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ matrix.timeout_minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: api
+            name: Run API tests
+            timeout_minutes: 30
+          - id: system
+            name: Run system tests
+            timeout_minutes: 45
 
     services:
       db:
         image: mariadb:10.11.10
-        ports: [ "3306:3306" ]
+        ports: ["3306:3306"]
         env:
-          MYSQL_ROOT_PASSWORD: "blueshell"
-          MYSQL_DATABASE: "blueshell-test"
-          MYSQL_PORT: 3306
-          MYSQL_USER: "blueshell"
-          MYSQL_PASSWORD: "blueshell"
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_PORT: ${{ env.MYSQL_PORT }}
+          MYSQL_USER: ${{ env.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
         options: >-
           --health-cmd="mysqladmin ping -h localhost"
           --health-interval=10s
@@ -238,65 +289,16 @@ jobs:
           --health-start-period=30s
       rabbitmq:
         image: rabbitmq:3.13-management
-        ports: [ "5672:5672" ]
+        ports: ["5672:5672"]
         env:
-          RABBITMQ_DEFAULT_USER: "guest"
-          RABBITMQ_DEFAULT_PASS: "guest"
+          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
+          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
         options: >-
           --health-cmd="rabbitmq-diagnostics -q ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
           --health-start-period=30s
-
-    env:
-      MYSQL_ROOT_PASSWORD: blueshell
-      MYSQL_DATABASE: blueshell-test
-      MYSQL_PORT: '3306'
-      MYSQL_USER: blueshell
-      MYSQL_PASSWORD: blueshell
-      MYSQL_HOST: 127.0.0.1
-      RABBITMQ_HOST: 127.0.0.1
-      RABBITMQ_PORT: '5672'
-      RABBITMQ_USERNAME: guest
-      RABBITMQ_PASSWORD: guest
-
-      APP_URL: http://127.0.0.1:8080
-      FRONTEND_URL: http://127.0.0.1:3000
-
-      JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
-
-      SMTP_HOST: mail.blueshell.utwente.nl
-      SMTP_PORT: '465'
-      SMTP_USERNAME: your_smtp_username
-      SMTP_PASSWORD: your_smtp_password
-
-      STORAGE_LOCATION: ./storage
-
-      BREVO_API_KEY: something
-      BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
-
-      GOOGLE_CALENDAR_ID: something
-      GOOGLE_CALENDAR_CLIENT_ID: something
-      GOOGLE_CALENDAR_CLIENT_EMAIL: something
-      GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8: |
-        -----BEGIN PRIVATE KEY-----
-        MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAJNOI74ADXzV2H63
-        s/wyuR7hW61c0ORfHSBSSIgmdglGqtSb8ERzet79zodXvmeZu2Cl6phtEIsXZ0uF
-        dfNBmIFjI2i3LT9+7zb+n5OcwKgwSxyKCeL6sB4aOQ/gljH2mpsTFkk6UdoKZ0NH
-        4Kkmbq2qsMr1P0y1j3X0uXg+uGNhAgMBAAECgYAePOMPZJlgL9GSKYmT0qG3mhEk
-        pDHpPzEOanWjJSoDu3Lj0+LdWks1rSoRFEzsnV0eeNCQW4sS0koM8aeFuMhiLc8Q
-        KP7UecthtjLxzjqQPDwj5z90pkSg9GPKkoKC9h83Ioj6KqhvE3vN2NfGrWX/Gcmr
-        BvVnw+btaoFgxzjncQJBAOtwr4+8qTHVxDApKteymCljlli4hS3KQGOrPiQUtszl
-        HpckKJfFJeuvB8kLxPEdhKSegu1BCd7WCPbWPfiYL3UCQQCgKy3Dkx29PcP+O36m
-        aS9G2rvivUh0ceD3fIqeUuhcCa+Gd4JH4g3/HUpOj8lV8HacI+MM4B/DF46lbLoy
-        JrK9AkB3hY86kvX5vKGKKXv8YEfqywmqJJJHeqNRdb9oJbPfNHlhFRQeaBEmIob7
-        QyRJm0iZIXcp5piSLWoDlSOErg15AkARLlCMaB2KjTOW897UDvhpS1FYMyGwi/6r
-        zYo5DX+rT8aqT+uDtnX15bhw0O+x7kdq3FagrPH7RW2hxRX8BzapAkB8TTIWgCgu
-        YOYLy5TUv9YKShgfe50C6j1HyZajzJBV1PdS7298SB2n2dvbUGWvUohXXMCXVRdS
-        wRRHv41dPOIL
-        -----END PRIVATE KEY-----
-      GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
 
     steps:
       - name: Checkout repository
@@ -306,7 +308,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y default-mysql-client
           for i in {1..30}; do
-            if mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SELECT 1;" >/dev/null 2>&1; then
+            if mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
               echo "Database is ready!"
               exit 0
             fi
@@ -318,15 +320,15 @@ jobs:
 
       - name: Prepare test database schema
         run: |
-          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell < env/0_init.sql
-          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "SHOW DATABASES;"
-          mysql -h 127.0.0.1 -P 3306 -uroot -pblueshell -e "USE blueshell-test; SHOW TABLES;"
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < env/0_init.sql
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
       - name: Wait for RabbitMQ service
         run: |
           set -euo pipefail
           for i in {1..30}; do
-            if (echo > /dev/tcp/127.0.0.1/5672) >/dev/null 2>&1; then
+            if (echo > /dev/tcp/$RABBITMQ_HOST/$RABBITMQ_PORT) >/dev/null 2>&1; then
               echo "RabbitMQ is ready!"
               exit 0
             fi
@@ -340,27 +342,30 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 24
+          java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
 
       - name: Set up Node.js and Yarn
+        if: matrix.id == 'system'
         uses: ./.github/actions/setup-node-yarn
         with:
-          node-version: '24'
-          yarn-version: '4.10.3'
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
 
       - name: Start instrumented frontend for system tests
+        if: matrix.id == 'system'
         run: |
           set -euo pipefail
-          VITE_COVERAGE=true VITE_APP_URL=http://127.0.0.1:8080 \
+          VITE_COVERAGE=true VITE_APP_URL="$APP_URL" \
             yarn --cwd frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
           echo $! > frontend-dev.pid
 
       - name: Wait for frontend readiness
+        if: matrix.id == 'system'
         run: |
           set -euo pipefail
           for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1; then
+            if curl -fsS "$FRONTEND_URL" >/dev/null 2>&1; then
               echo "Frontend is ready."
               exit 0
             fi
@@ -370,33 +375,45 @@ jobs:
           echo "Frontend failed to start."
           exit 1
 
-      - name: Run system tests and JaCoCo system report
-        shell: bash
-        run: |
-          set -euo pipefail
+      - name: Run API Gradle tests
+        if: matrix.id == 'api'
+        run: ./gradlew --no-daemon :api:test :api:jacocoTestReport
 
+      - name: Run system tests and JaCoCo system report
+        if: matrix.id == 'system'
+        run: |
           ./gradlew --no-daemon :api:systemTest :api:jacocoSystemTestReport \
-            -Dsystem.frontend.url=http://127.0.0.1:3000 \
+            -Dsystem.frontend.url="$FRONTEND_URL" \
             -Dfrontend.coverage.enabled=true \
             -Dfrontend.coverage.required=true
-        env:
-          GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 
       - name: Convert frontend raw coverage to LCOV
+        if: matrix.id == 'system'
         run: |
           yarn --cwd frontend coverage:system:report \
             --raw-dir ../api/build/coverage/frontend-system/raw \
             --out-dir ../api/build/coverage/frontend-system
 
       - name: Stop frontend process
-        if: always()
+        if: always() && matrix.id == 'system'
         run: |
           if [ -f frontend-dev.pid ]; then
             kill "$(cat frontend-dev.pid)" || true
           fi
 
+      - name: Upload API test coverage artifacts
+        if: always() && matrix.id == 'api'
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-coverage
+          path: |
+            api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+            api/build/reports/jacoco/jacocoTestReport/html
+            api/build/reports/tests/test
+          if-no-files-found: warn
+
       - name: Upload API system coverage artifacts
-        if: always()
+        if: always() && matrix.id == 'system'
         uses: actions/upload-artifact@v4
         with:
           name: api-system-coverage
@@ -409,9 +426,100 @@ jobs:
             frontend-dev.log
           if-no-files-found: warn
 
+  fe-unit:
+    name: Frontend unit tests with coverage
+    needs: [check-changes, fe-static]
+    if: >-
+      ${{
+        always()
+        && needs.check-changes.outputs.run_frontend_tests == 'true'
+        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
+      }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Run frontend unit tests with coverage
+        run: yarn test:unit:coverage
+
+      - name: Upload frontend unit coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-unit-coverage
+          path: |
+            frontend/coverage/unit/coverage-final.json
+            frontend/coverage/unit/coverage-summary.json
+            frontend/coverage/unit/lcov.info
+            frontend/coverage/unit/lcov-report
+            frontend/coverage/unit/index.html
+          if-no-files-found: error
+
+  fe-e2e:
+    name: Frontend end-to-end tests
+    needs: [check-changes, fe-static]
+    if: >-
+      ${{
+        always()
+        && needs.check-changes.outputs.run_frontend_tests == 'true'
+        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
+      }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Install Playwright browser dependencies
+        run: yarn playwright install --with-deps chromium
+
+      - name: Run frontend end-to-end tests
+        run: yarn test:e2e
+
+      - name: Upload frontend e2e coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-e2e-coverage
+          path: |
+            frontend/coverage/e2e/coverage-final.json
+            frontend/coverage/e2e/coverage-summary.json
+            frontend/coverage/e2e/lcov.info
+            frontend/coverage/e2e/html
+          if-no-files-found: error
+
   coverage:
     name: Merge and enforce code coverage
-    needs: [ api-tests, system-tests, fe-unit, fe-e2e ]
+    needs: [check-changes, api-verification, fe-unit, fe-e2e]
+    if: >-
+      ${{
+        always()
+        && needs.check-changes.outputs.run_coverage == 'true'
+        && (needs.check-changes.outputs.run_api_tests == 'false' || needs.api-verification.result == 'success')
+        && (needs.check-changes.outputs.run_system_tests == 'false' || needs.api-verification.result == 'success')
+        && (
+          needs.check-changes.outputs.run_frontend_tests == 'false'
+          || (needs.fe-unit.result == 'success' && needs.fe-e2e.result == 'success')
+        )
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -419,26 +527,28 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download API test coverage artifact
+        if: needs.check-changes.outputs.run_api_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: api-test-coverage
           path: coverage-inputs/api-test
 
       - name: Download API system coverage artifact
+        if: needs.check-changes.outputs.run_system_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: api-system-coverage
           path: coverage-inputs/api-system
 
       - name: Download frontend unit coverage artifact
-        if: needs.check-changes.outputs.frontend == 'true'
+        if: needs.check-changes.outputs.run_frontend_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: frontend-unit-coverage
           path: coverage-inputs/frontend-unit
 
       - name: Download frontend e2e coverage artifact
-        if: needs.check-changes.outputs.frontend == 'true'
+        if: needs.check-changes.outputs.run_frontend_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: frontend-e2e-coverage
@@ -447,13 +557,12 @@ jobs:
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
         with:
-          node-version: '24'
-          yarn-version: '4.10.3'
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
 
       - name: Merge all discovered coverage reports
         run: |
           set -euo pipefail
-
           chmod +x ./merge-coverage.sh
           ./merge-coverage.sh --out "coverage/merged"
 
@@ -471,10 +580,74 @@ jobs:
             --file coverage/merged/Cobertura.xml \
             --min-line-rate "${COVERAGE_MIN_LINE_RATE}"
 
+  openapi-sync:
+    name: Validate OpenAPI client generation
+    needs: [check-changes, api-static, fe-static]
+    if: >-
+      ${{
+        always()
+        && needs.check-changes.outputs.run_openapi_sync == 'true'
+        && (needs.check-changes.outputs.run_api_static == 'false' || needs.api-static.result == 'success')
+        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare environment files
+        run: |
+          cp env/.api.env.example env/.api.env
+          cp env/.db.env.example env/.db.env
+          cp env/.rabbitmq.env.example env/.rabbitmq.env
+
+      - name: Start development stack via Docker Compose
+        run: docker compose -f "$DEV_COMPOSE_FILE" up -d
+
+      - name: Wait for API container health check
+        run: |
+          set -euo pipefail
+          for i in {1..24}; do
+            CID="$(docker compose -f "$DEV_COMPOSE_FILE" ps -q api || true)"
+            if [ -z "$CID" ]; then
+              echo "api container not created yet (attempt $i/24)"
+            else
+              STATUS="$(docker inspect --format='{{.State.Health.Status}}' "$CID" 2>/dev/null || echo 'unknown')"
+              echo "api health status: $STATUS (attempt $i/24)"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "api is healthy"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo "api did not become healthy in time"
+          docker compose -f "$DEV_COMPOSE_FILE" ps
+          exit 1
+
+      - name: Generate OpenAPI client code
+        run: |
+          chmod +x ./generate_openapi.sh
+          ./generate_openapi.sh
+
+      - name: Assert OpenAPI spec and client are in sync
+        run: git diff --exit-code -- openapi frontend
+
+      - name: Tear down development stack
+        if: always()
+        run: docker compose -f "$DEV_COMPOSE_FILE" down -v
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [ coverage, openapi-sync ]
+    needs: [check-changes, coverage, openapi-sync]
+    if: >-
+      ${{
+        always()
+        && needs.check-changes.outputs.run_api_image == 'true'
+        && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
+        && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -487,8 +660,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
         if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -515,101 +688,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  fe-static:
-    name: Frontend typecheck and lint
-    needs: check-changes
-    if: needs.check-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js and Yarn
-        uses: ./.github/actions/setup-node-yarn
-        with:
-          node-version: '24'
-          yarn-version: '4.10.3'
-
-      - name: Run TypeScript type checks
-        run: yarn typecheck
-
-      - name: Run ESLint
-        run: yarn lint --max-warnings=0
-
-  fe-unit:
-    name: Frontend unit tests with coverage
-    needs: [ fe-static ]
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js and Yarn
-        uses: ./.github/actions/setup-node-yarn
-        with:
-          node-version: '24'
-          yarn-version: '4.10.3'
-
-      - name: Run frontend unit tests with coverage
-        run: yarn test:unit:coverage
-
-      - name: Upload frontend unit coverage artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-unit-coverage
-          path: |
-            frontend/coverage/unit/coverage-final.json
-            frontend/coverage/unit/coverage-summary.json
-            frontend/coverage/unit/lcov.info
-            frontend/coverage/unit/lcov-report
-            frontend/coverage/unit/index.html
-          if-no-files-found: error
-
-  fe-e2e:
-    name: Frontend end-to-end tests
-    needs: [ fe-static ]
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js and Yarn
-        uses: ./.github/actions/setup-node-yarn
-        with:
-          node-version: '24'
-          yarn-version: '4.10.3'
-
-      - name: Install Playwright browser dependencies
-        run: yarn playwright install --with-deps chromium
-
-      - name: Run frontend end-to-end tests
-        run: yarn test:e2e
-
-      - name: Upload frontend e2e coverage artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-e2e-coverage
-          path: |
-            frontend/coverage/e2e/coverage-final.json
-            frontend/coverage/e2e/coverage-summary.json
-            frontend/coverage/e2e/lcov.info
-            frontend/coverage/e2e/html
-          if-no-files-found: error
-
   fe-build-push:
     name: Build and publish frontend Docker image
-    needs: [ coverage, openapi-sync ]
+    needs: [check-changes, coverage, openapi-sync]
+    if: >-
+      ${{
+        always()
+        && needs.check-changes.outputs.run_frontend_image == 'true'
+        && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
+        && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -622,8 +710,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
         if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -650,68 +738,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  openapi-sync:
-    name: Validate OpenAPI client generation
-    needs: [ fe-static ]
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Prepare environment files
-        run: |
-          cp env/.api.env.example env/.api.env
-          cp env/.db.env.example env/.db.env
-          cp env/.rabbitmq.env.example env/.rabbitmq.env
-
-      - name: Start development stack via Docker Compose
-        run: |
-          docker compose -f docker-compose.dev.yml up -d
-
-      - name: Wait for API container health check
-        run: |
-          set -euo pipefail
-          for i in {1..24}; do
-            CID="$(docker compose -f docker-compose.dev.yml ps -q api || true)"
-            if [ -z "$CID" ]; then
-              echo "api container not created yet (attempt $i/24)"
-            else
-              STATUS="$(docker inspect --format='{{.State.Health.Status}}' "$CID" 2>/dev/null || echo 'unknown')"
-              echo "api health status: $STATUS (attempt $i/24)"
-              if [ "$STATUS" = "healthy" ]; then
-                echo "api is healthy"
-                exit 0
-              fi
-            fi
-            sleep 10
-          done
-          echo "api did not become healthy in time"
-          docker compose -f docker-compose.dev.yml ps
-          exit 1
-
-      - name: Generate OpenAPI client code
-        run: |
-          chmod +x ./generate_openapi.sh
-          ./generate_openapi.sh
-
-      - name: Assert OpenAPI spec and client are in sync
-        run: |
-          git diff --exit-code -- openapi frontend
-
-      - name: Tear down development stack
-        if: always()
-        run: docker compose -f docker-compose.dev.yml down -v
-
   deploy:
     name: Deploy to production
-    needs: [ check-changes, api-build-push, fe-build-push, coverage ]
-    if: ${{
-      always()
-      && github.ref == 'refs/heads/main'
-      && (needs.check-changes.outputs.api == 'false' || needs.api-build-push.result == 'success')
-      && (needs.check-changes.outputs.frontend == 'false' || needs.fe-build-push.result == 'success')
-      && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
+    needs: [check-changes, api-build-push, fe-build-push, coverage, openapi-sync]
+    if: >-
+      ${{
+        always()
+        && github.ref == 'refs/heads/main'
+        && (needs.check-changes.outputs.run_api_image == 'false' || needs.api-build-push.result == 'success')
+        && (needs.check-changes.outputs.run_frontend_image == 'false' || needs.fe-build-push.result == 'success')
+        && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
+        && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

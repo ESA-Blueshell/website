@@ -278,6 +278,7 @@ defineExpose({validate, save})
         >
           <VvField
             v-model="event.title"
+            test-id="event-form-title-field"
             label="Event name"
             name="title"
             rules="required"
@@ -289,6 +290,7 @@ defineExpose({validate, save})
         >
           <VvField
             v-model="event.location"
+            test-id="event-form-location-field"
             label="Location"
             name="location"
             rules="required"
@@ -300,6 +302,7 @@ defineExpose({validate, save})
         <v-col>
           <VvField
             v-model="event.description"
+            test-id="event-form-description-field"
             :component="MarkdownField"
             label="Description"
             name="description"
@@ -352,6 +355,7 @@ defineExpose({validate, save})
           <VvField
             v-if="isBoard"
             v-model="event.approved"
+            test-id="event-form-approved-field"
             :component="VCheckbox"
             :component-props="{ label: 'Approved' }"
             name="approved"
@@ -417,6 +421,7 @@ defineExpose({validate, save})
         <v-col>
           <VvField
             v-model="event.committeeId"
+            test-id="event-form-committee-field"
             :component="VSelect"
             :component-props="{
               items: committees,
@@ -434,6 +439,7 @@ defineExpose({validate, save})
         <v-col>
           <VvField
             v-model="bannerFile"
+            test-id="event-form-banner-field"
             :component="VFileInput"
             :component-props="{
               accept: 'image/png, image/jpeg, image/jpg, image/webp, image/gif',
@@ -528,6 +534,8 @@ defineExpose({validate, save})
           :submit-state="submitState"
           class="mt-8 mx-auto"
           color="primary"
+          data-testid="event-form-submit-btn"
+          :data-submit-mode="event.id ? 'update' : 'create'"
           text="Submit event"
           @click="save"
         />

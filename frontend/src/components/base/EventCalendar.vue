@@ -3,12 +3,16 @@
     class="px-0"
     color="transparent"
   >
-    <v-toolbar-title class="text-h5 ml-2 toolbar-title">
+    <v-toolbar-title
+      class="text-h5 ml-2 toolbar-title"
+      data-testid="event-calendar-month-title"
+    >
       {{ monthTitle }}
     </v-toolbar-title>
 
     <div class="ms-auto d-flex align-center">
       <v-btn
+        data-testid="event-calendar-prev-month-btn"
         icon
         variant="text"
         @click="goPrevMonth"
@@ -16,6 +20,7 @@
         <v-icon>mdi-chevron-left</v-icon>
       </v-btn>
       <v-btn
+        data-testid="event-calendar-next-month-btn"
         icon
         variant="text"
         @click="goNextMonth"
@@ -24,6 +29,7 @@
       </v-btn>
       <v-btn
         class="ml-2"
+        data-testid="event-calendar-today-btn"
         size="small"
         variant="text"
         @click="goToCurrentMonth"
@@ -35,6 +41,7 @@
         :href="GOOGLE_CALENDAR_SUBSCRIBE_URL"
         aria-label="Add the Blueshell events to my Google Calendar"
         class="ml-2"
+        data-testid="event-calendar-subscribe-btn"
         rel="noopener"
         size="small"
         target="_blank"

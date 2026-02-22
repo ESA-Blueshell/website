@@ -1,20 +1,29 @@
 package net.blueshell.api.system.frontend.helper
 
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
 import java.nio.file.Paths
 
 object EventFormHelper {
+    private const val TITLE_FIELD_TEST_ID = "event-form-title-field"
+    private const val LOCATION_FIELD_TEST_ID = "event-form-location-field"
+    private const val DESCRIPTION_FIELD_TEST_ID = "event-form-description-field"
+    private const val COMMITTEE_FIELD_TEST_ID = "event-form-committee-field"
+    private const val APPROVED_FIELD_TEST_ID = "event-form-approved-field"
+    private const val BANNER_FIELD_TEST_ID = "event-form-banner-field"
+    private const val SUBMIT_BUTTON_TEST_ID = "event-form-submit-btn"
+
     fun openCreatePage(page: Page, frontendUrl: String) {
         page.navigate("$frontendUrl/events/create")
         page.waitForURL("**/events/create**")
-        page.getByLabel("Event name").first().waitFor()
+        TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
     }
 
     fun openEditPage(page: Page, frontendUrl: String, eventId: Long) {
         page.navigate("$frontendUrl/events/edit/$eventId")
         page.waitForURL("**/events/edit/$eventId**")
-        page.getByLabel("Event name").first().waitFor()
+        TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
     }
 
     fun fillRequiredFields(
@@ -23,13 +32,21 @@ object EventFormHelper {
         location: String,
         description: String
     ) {
-        page.getByLabel("Event name").fill(title)
-        page.getByLabel("Location").fill(location)
-        page.getByLabel("Description").fill(description)
+        TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).fill(title)
+        TestIdLocatorHelper.textInput(page, LOCATION_FIELD_TEST_ID).fill(location)
+        val descriptionField = TestIdLocatorHelper.byTestId(page, DESCRIPTION_FIELD_TEST_ID)
+        val descriptionTextarea = descriptionField.locator("textarea").first()
+        if (descriptionTextarea.count() > 0) {
+            descriptionTextarea.fill(description)
+        } else {
+            TestIdLocatorHelper.textInput(page, DESCRIPTION_FIELD_TEST_ID).fill(description)
+        }
     }
 
     fun openCommitteeSelect(page: Page) {
-        page.getByRole(AriaRole.COMBOBOX).first().click()
+        val committeeField = TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
+        val combo = committeeField.getByRole(AriaRole.COMBOBOX).first()
+        combo.click(Locator.ClickOptions().setForce(true))
     }
 
     fun selectCommittee(page: Page, committeeName: String) {
@@ -38,10 +55,7 @@ object EventFormHelper {
     }
 
     fun setApproved(page: Page, approved: Boolean) {
-        val checkbox = page.getByRole(
-            AriaRole.CHECKBOX,
-            Page.GetByRoleOptions().setName("Approved").setExact(false)
-        )
+        val checkbox = TestIdLocatorHelper.byTestId(page, APPROVED_FIELD_TEST_ID).locator("input[type='checkbox']").first()
         if (approved) {
             checkbox.check()
         } else {
@@ -50,16 +64,11 @@ object EventFormHelper {
     }
 
     fun uploadBanner(page: Page, filePath: String) {
-        page.getByLabel(
-            "Promo image (Max 2MB)",
-            Page.GetByLabelOptions().setExact(false)
-        ).nth(1).setInputFiles(Paths.get(filePath))
+        TestIdLocatorHelper.byTestId(page, BANNER_FIELD_TEST_ID).locator("input[type='file']").first()
+            .setInputFiles(Paths.get(filePath))
     }
 
     fun submit(page: Page) {
-        page.getByRole(
-            AriaRole.BUTTON,
-            Page.GetByRoleOptions().setName("Submit event").setExact(false)
-        ).click()
+        TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID).click()
     }
 }

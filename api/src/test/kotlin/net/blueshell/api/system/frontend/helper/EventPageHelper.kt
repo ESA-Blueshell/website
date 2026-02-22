@@ -2,9 +2,14 @@ package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 
 object EventPageHelper {
+    private const val CALENDAR_SUBSCRIBE_BUTTON_TEST_ID = "event-calendar-subscribe-btn"
+    private const val CALENDAR_MONTH_TITLE_TEST_ID = "event-calendar-month-title"
+    private const val CALENDAR_NEXT_MONTH_BUTTON_TEST_ID = "event-calendar-next-month-btn"
+    private const val CALENDAR_PREV_MONTH_BUTTON_TEST_ID = "event-calendar-prev-month-btn"
+    private const val CALENDAR_TODAY_BUTTON_TEST_ID = "event-calendar-today-btn"
+
     fun open(page: Page, frontendUrl: String) {
         page.navigate("$frontendUrl/events")
         page.waitForURL("**/events**")
@@ -16,26 +21,23 @@ object EventPageHelper {
     }
 
     fun subscribeLink(page: Page): Locator {
-        return page.getByText("Subscribe to calendar", Page.GetByTextOptions().setExact(false)).first()
+        return TestIdLocatorHelper.byTestId(page, CALENDAR_SUBSCRIBE_BUTTON_TEST_ID)
     }
 
     fun monthTitle(page: Page): String {
-        return page.locator(".toolbar-title").first().textContent()?.trim().orEmpty()
+        return TestIdLocatorHelper.byTestId(page, CALENDAR_MONTH_TITLE_TEST_ID).textContent()?.trim().orEmpty()
     }
 
     fun goNextMonth(page: Page) {
-        page.locator("button:has(i.mdi-chevron-right)").first().click()
+        TestIdLocatorHelper.byTestId(page, CALENDAR_NEXT_MONTH_BUTTON_TEST_ID).click()
     }
 
     fun goPrevMonth(page: Page) {
-        page.locator("button:has(i.mdi-chevron-left)").first().click()
+        TestIdLocatorHelper.byTestId(page, CALENDAR_PREV_MONTH_BUTTON_TEST_ID).click()
     }
 
     fun goToday(page: Page) {
-        page.getByRole(
-            AriaRole.BUTTON,
-            Page.GetByRoleOptions().setName("Today").setExact(true)
-        ).click()
+        TestIdLocatorHelper.byTestId(page, CALENDAR_TODAY_BUTTON_TEST_ID).click()
     }
 
     fun waitForEventVisible(page: Page, eventTitle: String) {

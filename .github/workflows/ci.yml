@@ -796,7 +796,7 @@ jobs:
 
   deploy:
     name: Deploy to production
-    needs: [ check-changes, api-build-push, fe-build-push, coverage, openapi-sync ]
+    needs: [ check-changes, api-build-push, fe-build-push, coverage ]
     if: >-
       ${{
         always()
@@ -804,7 +804,6 @@ jobs:
         && (needs.check-changes.outputs.run_api_image == 'false' || needs.api-build-push.result == 'success')
         && (needs.check-changes.outputs.run_frontend_image == 'false' || needs.fe-build-push.result == 'success')
         && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
-        && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

@@ -82,14 +82,14 @@ VALUES ('BSC', 'Applied Computer Science', b'1'),
        ('MSC', 'Electrical Engineering', b'1');
 
 INSERT INTO study_programs (level, name, active)
-SELECT 'BSC', u.study, b'1'
+SELECT DISTINCT 'BSC', u.study COLLATE utf8mb4_unicode_ci, b'1'
 FROM users u
 WHERE u.study IS NOT NULL
   AND TRIM(u.study) <> ''
   AND NOT EXISTS(
         SELECT 1
         FROM study_programs sp
-        WHERE sp.name COLLATE utf8mb4_unicode_ci = u.study
+        WHERE sp.name COLLATE utf8mb4_unicode_ci = u.study COLLATE utf8mb4_unicode_ci
           AND sp.level = 'BSC'
           AND sp.deleted_at = '9999-12-31 23:59:59'
     );

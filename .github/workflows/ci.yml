@@ -261,7 +261,7 @@ jobs:
 
   api-verification:
     name: ${{ matrix.name }}
-    needs: [check-changes, api-static, fe-static]
+    needs: [ check-changes, api-static, fe-static ]
     if: >-
       ${{
         always()
@@ -281,7 +281,7 @@ jobs:
     services:
       db:
         image: mariadb:10.11.10
-        ports: ["3306:3306"]
+        ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
           MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
@@ -296,7 +296,7 @@ jobs:
           --health-start-period=30s
       rabbitmq:
         image: rabbitmq:3.13-management
-        ports: ["5672:5672"]
+        ports: [ "5672:5672" ]
         env:
           RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
           RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
@@ -435,7 +435,7 @@ jobs:
 
   fe-unit:
     name: Frontend unit tests with coverage
-    needs: [check-changes, fe-static]
+    needs: [ check-changes, fe-static ]
     if: >-
       ${{
         always()
@@ -474,7 +474,7 @@ jobs:
 
   fe-e2e:
     name: Frontend end-to-end tests
-    needs: [check-changes, fe-static]
+    needs: [ check-changes, fe-static ]
     if: >-
       ${{
         always()
@@ -515,7 +515,7 @@ jobs:
 
   coverage:
     name: Merge and enforce code coverage
-    needs: [check-changes, api-verification, fe-unit, fe-e2e]
+    needs: [ check-changes, api-verification, fe-unit, fe-e2e ]
     if: >-
       ${{
         always()
@@ -589,7 +589,7 @@ jobs:
 
   openapi-sync:
     name: Validate OpenAPI client generation
-    needs: [check-changes, api-static, fe-static]
+    needs: [ check-changes, api-static, fe-static ]
     if: >-
       ${{
         always()
@@ -602,7 +602,7 @@ jobs:
     services:
       db:
         image: mariadb:10.11.10
-        ports: ["3306:3306"]
+        ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
           MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
@@ -617,7 +617,7 @@ jobs:
           --health-start-period=30s
       rabbitmq:
         image: rabbitmq:3.13-management
-        ports: ["5672:5672"]
+        ports: [ "5672:5672" ]
         env:
           RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
           RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
@@ -696,7 +696,7 @@ jobs:
 
   api-build-push:
     name: Build and publish API Docker image
-    needs: [check-changes, coverage, openapi-sync]
+    needs: [ check-changes, coverage, openapi-sync ]
     if: >-
       ${{
         always()
@@ -746,7 +746,7 @@ jobs:
 
   fe-build-push:
     name: Build and publish frontend Docker image
-    needs: [check-changes, coverage, openapi-sync]
+    needs: [ check-changes, coverage, openapi-sync ]
     if: >-
       ${{
         always()
@@ -796,7 +796,7 @@ jobs:
 
   deploy:
     name: Deploy to production
-    needs: [check-changes, api-build-push, fe-build-push, coverage, openapi-sync]
+    needs: [ check-changes, api-build-push, fe-build-push, coverage, openapi-sync ]
     if: >-
       ${{
         always()

@@ -74,7 +74,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         val user = User(
             username = username,
             email = email,
-            password = passwordEncoder.encode("Password123!"),
+            password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
             initials = "TU",
             firstName = "Test",
             lastName = "User",

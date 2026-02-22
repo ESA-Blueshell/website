@@ -8,17 +8,15 @@ import com.fasterxml.jackson.databind.cfg.CoercionInputShape
 import com.fasterxml.jackson.databind.type.LogicalType
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 
 @Configuration
 class JacksonConfig {
     @Bean
-    fun objectMapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
-        val mapper = builder
-            .failOnUnknownProperties(false)
-            .serializationInclusion(JsonInclude.Include.NON_NULL)
-            .featuresToEnable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
-            .build<ObjectMapper>()
+    fun objectMapper(): ObjectMapper {
+        val mapper = ObjectMapper().findAndRegisterModules()
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        mapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
         mapper.coercionConfigFor(LogicalType.Textual)
             .setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull)
         mapper.coercionConfigFor(LogicalType.Integer)

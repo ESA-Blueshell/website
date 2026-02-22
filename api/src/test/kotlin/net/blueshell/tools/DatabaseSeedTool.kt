@@ -215,7 +215,7 @@ private class DatabaseSeedRunner(
                 this.firstName = firstName
                 this.lastName = lastName
                 phoneNumber = "06${sequence.toString().padStart(8, '0').takeLast(8)}"
-                password = passwordEncoder.encode(defaultPassword)
+                password = requireNotNull(passwordEncoder.encode(defaultPassword)) { "PasswordEncoder returned null hash" }
             }
 
             val persisted = persistence.persist(user)
@@ -236,7 +236,7 @@ private class DatabaseSeedRunner(
                 firstName = named.firstName ?: named.username
                 lastName = named.lastName ?: named.role.name.lowercase().replaceFirstChar { it.uppercase() }
                 phoneNumber = "06${suffix.takeLast(8).padStart(8, '0')}"
-                password = passwordEncoder.encode(config.defaultPassword)
+                password = requireNotNull(passwordEncoder.encode(config.defaultPassword)) { "PasswordEncoder returned null hash" }
             }
 
             val persisted = persistence.persist(user)

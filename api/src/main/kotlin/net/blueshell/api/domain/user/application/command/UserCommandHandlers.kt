@@ -30,9 +30,13 @@ class CreateUserHandler(
             phoneNumber = command.phoneNumber,
             newsletter = command.newsletter,
             password = if (command.isBoard) {
-                passwordEncoder.encode(MappingUtil.generateRandomString())
+                requireNotNull(passwordEncoder.encode(MappingUtil.generateRandomString())) { "PasswordEncoder returned null hash" }
             } else {
-                passwordEncoder.encode(requireNotNull(command.password) { "Password is required for public user registration" })
+                requireNotNull(
+                    passwordEncoder.encode(
+                        requireNotNull(command.password) { "Password is required for public user registration" }
+                    )
+                ) { "PasswordEncoder returned null hash" }
             },
         ).apply {
             command.memberProfile?.let { replaceMemberProfile(it.toEntity(this)) }

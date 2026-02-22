@@ -24,7 +24,7 @@ class JobManagementController(
     private val views: JobExecutionViewService
 ) {
     @GetMapping
-    @PreAuthorize("hasPermission(null, 'JobExecution', 'read')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'read')")
     fun list(
         @ParameterObject
         @PageableDefault(size = PAGE_SIZE, sort = ["createdAt"], direction = Sort.Direction.DESC)
@@ -37,7 +37,7 @@ class JobManagementController(
     }
 
     @PostMapping("/{id}/retry")
-    @PreAuthorize("hasPermission(null, 'JobExecution', 'retry')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'retry')")
     fun retry(@PathVariable id: Long): JobExecutionDTO {
         val execution = jobExecutionService.findById(id)
         val requeued = jobExecutionService.requeue(execution)

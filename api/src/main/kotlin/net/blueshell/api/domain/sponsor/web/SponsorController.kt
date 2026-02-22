@@ -22,13 +22,13 @@ class SponsorController(
     service: SponsorService,
     private val commandBus: CommandBus
 ) : BaseController<SponsorService>(service) {
-    @PreAuthorize("hasPermission(null, 'Sponsor', 'read')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Sponsor', 'read')")
     @GetMapping("/sponsors")
     fun findSponsors(): List<SponsorResponse> {
         return commandBus.dispatch(FindSponsorsCommand()).map { it.asResponse() }
     }
 
-    @PreAuthorize("hasPermission(null, 'Sponsor', 'write')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Sponsor', 'write')")
     @PostMapping("/sponsors")
     @ResponseStatus(HttpStatus.CREATED)
     fun createSponsor(@Valid @RequestBody request: CreateSponsorRequest): SponsorResponse {

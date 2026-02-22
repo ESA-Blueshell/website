@@ -29,7 +29,7 @@ class BlogController(
     private lateinit var frontendUrl: String
 
     @PostMapping("/blogs")
-    @PreAuthorize("hasPermission(null, 'Blog', 'write')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Blog', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBlog(@Valid @RequestBody request: CreateBlogRequest): BlogResponse {
         val blog = commandBus.dispatch(request.asCommand())

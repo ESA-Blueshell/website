@@ -80,7 +80,7 @@ class UserController(
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasPermission(null, 'User', 'read')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
     fun findUsers(
         @ParameterObject query: UserQuery = UserQuery(),
         @ParameterObject pageable: Pageable = Pageable.unpaged()

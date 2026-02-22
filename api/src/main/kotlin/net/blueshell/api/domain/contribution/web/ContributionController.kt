@@ -21,7 +21,7 @@ class ContributionController @Autowired constructor(
     service: ContributionService,
     private val commandBus: CommandBus
 ) : BaseController<ContributionService>(service) {
-    @PreAuthorize("hasPermission(null, 'Contribution', 'write')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/contributions")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContribution(@Valid @RequestBody request: CreateContributionRequest): ContributionResponse {
@@ -29,21 +29,21 @@ class ContributionController @Autowired constructor(
         return contribution.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Contribution', 'read')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
     @GetMapping("/contributions")
     fun findContributions(@RequestParam contributionPeriodId: Long): List<ContributionResponse> {
         val contributions = commandBus.dispatch(FindContributionsCommand(contributionPeriodId))
         return contributions.map { it.asResponse() }
     }
 
-    @PreAuthorize("hasPermission(null, 'Contribution', 'delete')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'delete')")
     @DeleteMapping("contributionPeriods/{contributionPeriodId}/users/{userId}/contributions")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteContribution(@PathVariable userId: Long, @PathVariable contributionPeriodId: Long) {
         commandBus.dispatch(DeleteContributionCommand(userId, contributionPeriodId))
     }
 
-    @PreAuthorize("hasPermission(null, 'Contribution', 'read')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
     fun findContributionsByPeriodId(@PathVariable periodId: Long): MutableList<ContributionResponse> {
         val contributions = commandBus.dispatch(FindContributionsByPeriodIdCommand(periodId))

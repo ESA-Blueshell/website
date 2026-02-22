@@ -44,7 +44,7 @@ class RecoveryTokenFactory(
             user = user,
             type = type,
             selector = selector,
-            verifierHash = encoder.encode(verifier),
+            verifierHash = requireNotNull(encoder.encode(verifier)) { "PasswordEncoder returned null verifier hash" },
             expiresAt = Instant.now().plus(ttl),
         )
 

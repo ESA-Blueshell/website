@@ -30,7 +30,7 @@ class MembershipController(
     private val membershipService: MembershipService,
     private val commandBus: CommandBus
 ) : BaseController<MembershipService>(membershipService) {
-    @PreAuthorize("hasPermission(null, 'Membership', 'read')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'read')")
     @GetMapping("/memberships")
     fun findMemberships(@ParameterObject query: MembershipQuery = MembershipQuery()): MutableList<MembershipResponse> {
         return commandBus.dispatch(FindMembershipsCommand(query)).map { it.asResponse() }.toMutableList()
@@ -57,7 +57,7 @@ class MembershipController(
         return membership.asResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Membership', 'write')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
     @PostMapping("/users/{userId}/memberships")
     @ResponseStatus(HttpStatus.CREATED)
     fun boardCreateMembership(

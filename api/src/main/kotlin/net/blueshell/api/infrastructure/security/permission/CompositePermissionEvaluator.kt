@@ -10,35 +10,32 @@ import java.util.function.Function
 
 @Component
 class CompositePermissionEvaluator @Autowired constructor(
-    private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>?>
+    private val evaluators: MutableList<BasePermissionEvaluator<*, *, *>>
 ) :
     PermissionEvaluator {
-    override fun hasPermission(auth: Authentication?, target: Any?, perm: Any?): Boolean {
-        if (target == null || perm == null) return false
-        val domainClass = ClassUtils.getUserClass(target.javaClass)
+    override fun hasPermission(authentication: Authentication, targetDomainObject: Any, permission: Any): Boolean {
+        val domainClass = ClassUtils.getUserClass(targetDomainObject.javaClass)
         return evaluators.stream()
-            .filter { e: BasePermissionEvaluator<*, *, *>? -> e!!.supports(domainClass) }
+            .filter { evaluator -> evaluator.supports(domainClass) }
             .findFirst()
-            .map(Function { e: BasePermissionEvaluator<*, *, *>? ->
-                e!!.hasPermission(
-                    auth,
-                    target,
-                    perm.toString()
+            .map(Function { evaluator ->
+                evaluator.hasPermission(
+                    authentication,
+                    targetDomainObject,
+                    permission.toString()
                 )
             }).orElse(false)
     }
 
     override fun hasPermission(
-        auth: Authentication?,
-        targetId: Serializable?,
-        targetType: String?,
-        perm: Any?
+        authentication: Authentication,
+        targetId: Serializable,
+        targetType: String,
+        permission: Any
     ): Boolean {
-        if (targetType == null || perm == null) return false
-
         val evaluator = evaluators.stream()
-            .filter { e: BasePermissionEvaluator<*, *, *>? ->
-                val dt: Class<*> = e!!.domainType
+            .filter { evaluator ->
+                val dt: Class<*> = evaluator.domainType
                 dt.simpleName == targetType
                         || dt.name == targetType
             }
@@ -46,10 +43,14 @@ class CompositePermissionEvaluator @Autowired constructor(
             .orElse(null)
             ?: return false
 
-        return if (targetId == null) {
-            evaluator.hasPermission(auth, null, perm.toString())
-        } else {
-            evaluator.hasPermissionId(auth, targetId, perm.toString())
+        if (targetId.toString() == NO_TARGET_SENTINEL) {
+            return evaluator.hasPermission(authentication, null, permission.toString())
         }
+
+        return evaluator.hasPermissionId(authentication, targetId, permission.toString())
+    }
+
+    companion object {
+        private const val NO_TARGET_SENTINEL = "__NO_TARGET__"
     }
 }

@@ -36,7 +36,7 @@ class UserService @Autowired constructor(
         return try {
             findByUsername(username)
         } catch (ex: UserNotFoundException) {
-            throw UsernameNotFoundException(ex.message, ex)
+            throw UsernameNotFoundException(ex.message ?: "User not found", ex)
         }
     }
 
@@ -152,7 +152,7 @@ class UserService @Autowired constructor(
     @Transactional
     fun updatePassword(userId: Long, rawPassword: String) {
         val user = findById(userId)
-        user.password = passwordEncoder.encode(rawPassword)
+        user.password = requireNotNull(passwordEncoder.encode(rawPassword)) { "PasswordEncoder returned null hash" }
         update(user)
     }
 
@@ -167,7 +167,7 @@ class UserService @Autowired constructor(
     fun setUsernameAndPassword(userId: Long, username: String, rawPassword: String) {
         val user = findById(userId)
         user.username = username
-        user.password = passwordEncoder.encode(rawPassword)
+        user.password = requireNotNull(passwordEncoder.encode(rawPassword)) { "PasswordEncoder returned null hash" }
         update(user)
     }
 

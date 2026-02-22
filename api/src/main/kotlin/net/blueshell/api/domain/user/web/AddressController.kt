@@ -39,7 +39,7 @@ class AddressController(
     }
 
     @GetMapping("/addresses")
-    @PreAuthorize("hasPermission(null, 'Address', 'read')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Address', 'read')")
     fun findAllAddresses(): MutableList<AddressResponse> {
         val addresses = commandBus.dispatch(FindAllAddressesCommand())
         return addresses.map { it.asResponse() }.toMutableList()

@@ -105,7 +105,7 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
         val user = User(
             username = "testuser",
             email = "testuser@example.com",
-            password = passwordEncoder.encode("Password123!"),
+            password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
             initials = "TU",
             firstName = "Test",
             lastName = "User",

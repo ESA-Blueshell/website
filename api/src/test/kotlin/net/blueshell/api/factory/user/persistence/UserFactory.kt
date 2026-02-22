@@ -22,7 +22,7 @@ class UserFactory(
         val user = User(
             username = username,
             email = "$username@test.com",
-            password = passwordEncoder.encode("Password123!"),
+            password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
             initials = "TU",
             firstName = "Test",
             lastName = role.name,

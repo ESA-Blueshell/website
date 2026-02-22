@@ -23,7 +23,7 @@ class BoardController(
     private val commandBus: CommandBus
 ) {
     @PostMapping
-    @PreAuthorize("hasPermission(null, 'Board', 'write')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Board', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBoard(@Valid @RequestBody request: CreateBoardRequest): BoardResponse {
         val board = commandBus.dispatch(request.asCommand())

@@ -32,24 +32,6 @@ class CompositePermissionEvaluatorTest {
         }
 
         @Test
-        fun `returns false when target is null`() {
-            val evaluator = CompositePermissionEvaluator(mutableListOf(RecordingTelemetryEvaluator()))
-
-            val allowed = evaluator.hasPermission(authentication, null, "read")
-
-            assertThat(allowed).isFalse()
-        }
-
-        @Test
-        fun `returns false when permission is null`() {
-            val evaluator = CompositePermissionEvaluator(mutableListOf(RecordingTelemetryEvaluator()))
-
-            val allowed = evaluator.hasPermission(authentication, telemetry, null)
-
-            assertThat(allowed).isFalse()
-        }
-
-        @Test
         fun `returns false when no evaluator supports target class`() {
             val evaluator = CompositePermissionEvaluator(mutableListOf(RecordingTelemetryEvaluator()))
 
@@ -83,36 +65,6 @@ class CompositePermissionEvaluatorTest {
 
             assertThat(allowed).isTrue()
             assertThat(telemetryEvaluator.idCalls).isEqualTo(1)
-        }
-
-        @Test
-        fun `delegates to hasPermission when id is null`() {
-            val telemetryEvaluator = RecordingTelemetryEvaluator().apply { entityResult = true }
-            val evaluator = CompositePermissionEvaluator(mutableListOf(telemetryEvaluator))
-
-            val allowed = evaluator.hasPermission(authentication, null, "Telemetry", "write")
-
-            assertThat(allowed).isTrue()
-            assertThat(telemetryEvaluator.entityCalls).isEqualTo(1)
-            assertThat(telemetryEvaluator.idCalls).isEqualTo(0)
-        }
-
-        @Test
-        fun `returns false when target type is null`() {
-            val evaluator = CompositePermissionEvaluator(mutableListOf(RecordingTelemetryEvaluator()))
-
-            val allowed = evaluator.hasPermission(authentication, 1L, null, "read")
-
-            assertThat(allowed).isFalse()
-        }
-
-        @Test
-        fun `returns false when permission is null`() {
-            val evaluator = CompositePermissionEvaluator(mutableListOf(RecordingTelemetryEvaluator()))
-
-            val allowed = evaluator.hasPermission(authentication, 1L, "Telemetry", null)
-
-            assertThat(allowed).isFalse()
         }
 
         @Test

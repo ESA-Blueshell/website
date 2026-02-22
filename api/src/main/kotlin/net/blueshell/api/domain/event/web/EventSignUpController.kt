@@ -33,7 +33,7 @@ class EventSignUpController @Autowired constructor(
 
     @GetMapping(value = ["/events/signups"])
     @PreAuthorize(
-        "hasPermission(null, 'Event', 'signups') " +
+        "hasPermission('__NO_TARGET__', 'Event', 'signups') " +
                 "or (#filter.userId != null && hasPermission(#filter.userId, 'User', 'read')) " +
                 "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )

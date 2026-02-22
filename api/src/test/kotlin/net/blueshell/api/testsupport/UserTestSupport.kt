@@ -40,7 +40,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.FilterChainProxy
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
@@ -63,10 +62,8 @@ import java.time.LocalDate
  * - Email mock for verification
  * - Helper methods for user management
  */
-@AutoConfigureMockMvc
 abstract class UserTestSupport : ServiceTestSupport() {
 
-    @Autowired
     protected lateinit var mvc: MockMvc
 
     @Autowired

@@ -67,7 +67,7 @@ class CommitteeController(
         return committee.asSummaryResponse()
     }
 
-    @PreAuthorize("hasPermission(null, 'Committee', 'write')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Committee', 'write')")
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
     fun createCommittee(@Valid @RequestBody request: @Valid CreateCommitteeRequest): CommitteeDetailResponse {

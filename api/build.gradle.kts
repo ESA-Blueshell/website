@@ -8,9 +8,8 @@ import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
-    id("org.springframework.boot") version "3.5.7"
-    id("io.spring.dependency-management") version "1.1.7"
-    id("org.openapi.generator") version "7.15.0"
+    id("org.springframework.boot") version "4.0.3"
+    id("org.openapi.generator") version "7.19.0"
     jacoco
 
     val kotlinVersion = "2.3.10"
@@ -71,7 +70,10 @@ configurations.configureEach {
 repositories {
     mavenCentral()
 }
+
 dependencies {
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.3"))
+
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -80,16 +82,16 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
-    mockitoAgent("org.mockito:mockito-core")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
+    mockitoAgent("org.mockito:mockito-core:5.21.0")
 
-    implementation("com.nimbusds:nimbus-jose-jwt:10.5")
+    implementation("com.nimbusds:nimbus-jose-jwt:10.8")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
-    implementation("com.google.apis:google-api-services-calendar:v3-rev20250404-2.0.0")
-    implementation("com.google.auth:google-auth-library-oauth2-http:1.39.1")
+    implementation("com.google.apis:google-api-services-calendar:v3-rev20251207-2.0.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.43.0")
 
     implementation("org.flywaydb:flyway-core")
 
@@ -102,35 +104,35 @@ dependencies {
 
     implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
     implementation("org.apache.tika:tika-core:3.2.3")
-    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.15")
-    implementation("com.github.scribejava:scribejava-apis:8.3.1")
+    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.24")
+    implementation("com.github.scribejava:scribejava-apis:8.3.3")
 
-    implementation("org.springframework.retry:spring-retry")
-    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("org.springframework.retry:spring-retry:2.0.12")
+    implementation("org.springframework:spring-aop")
+    implementation("org.aspectj:aspectjweaver")
 
     implementation("org.springframework.data:spring-data-jpa")
     implementation("jakarta.persistence:jakarta.persistence-api")
 
-    implementation("org.flywaydb:flyway-mysql:11.13.2")
+    implementation("org.flywaydb:flyway-mysql:12.0.2")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0")
-    implementation("org.openapitools:jackson-databind-nullable:0.2.7")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.0")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.5")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
 
     implementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:mariadb")
-    testImplementation("io.rest-assured:spring-mock-mvc:5.5.6")
+    testImplementation("org.testcontainers:mariadb:1.21.4")
+    testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
-    testImplementation("io.github.classgraph:classgraph:4.8.179")
-    testImplementation("com.microsoft.playwright:playwright:1.52.0")
-    testImplementation("io.mockk:mockk:1.13.13")
-    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("io.github.classgraph:classgraph:4.8.184")
+    testImplementation("com.microsoft.playwright:playwright:1.58.0")
+    testImplementation("io.mockk:mockk:1.14.9")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
@@ -139,8 +141,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-mail")
 
-    implementation("org.commonmark:commonmark:0.21.0")
-    implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
+    implementation("org.commonmark:commonmark:0.27.1")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.27.1")
     implementation(files("libs/snakeyaml-2.5.jar"))
 }
 
@@ -177,7 +179,7 @@ tasks.register<JavaExec>("installChromium") {
 }
 
 jacoco {
-    toolVersion = "0.8.13"
+    toolVersion = "0.8.14"
 }
 
 val frontendCoverageRawDir = layout.buildDirectory.dir("coverage/frontend-system/raw")

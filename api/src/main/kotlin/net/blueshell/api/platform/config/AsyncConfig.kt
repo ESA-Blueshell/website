@@ -15,7 +15,7 @@ class AsyncConfig {
         executor.corePoolSize = 2
         executor.maxPoolSize = 10
         executor.queueCapacity = 500
-        executor.threadNamePrefix = "Job-"
+        executor.setThreadNamePrefix("Job-")
         executor.initialize()
         return executor
     }

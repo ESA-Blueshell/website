@@ -41,7 +41,7 @@ class ContributionPeriodController @Autowired constructor(
         }
     }
 
-    @PreAuthorize("hasPermission(null, 'ContributionPeriod', 'write')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionPeriod', 'write')")
     @PostMapping("/contributionPeriods")
     @ResponseStatus(HttpStatus.CREATED)
     fun createContributionPeriod(@Valid @RequestBody request: CreateContributionPeriodRequest): ContributionPeriodResponse {

@@ -60,6 +60,9 @@ function isValidationError(
 export function createClientConfig(defaultConfig: Config): Config {
   const axiosInstance = axios.create({
     baseURL: resolveBaseURL(),
+    // We set X-XSRF-TOKEN manually from /csrf response body.
+    // Disable Axios auto-cookie XSRF behavior to prevent header override.
+    withXSRFToken: false,
   })
 
   // Keep auth and CSRF in sync per request.

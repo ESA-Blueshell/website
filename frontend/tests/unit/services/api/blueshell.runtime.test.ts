@@ -126,6 +126,14 @@ describe("blueshell runtime csrf behavior", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setXsrfToken", "csrf-token")
   })
 
+  it("disables axios automatic xsrf header behavior", () => {
+    createClientConfig({} as never)
+
+    expect(mockAxiosCreate).toHaveBeenCalledWith(expect.objectContaining({
+      withXSRFToken: false,
+    }))
+  })
+
   it("does not bootstrap csrf token for safe methods", async () => {
     document.cookie = "XSRF-TOKEN=existing-token"
 

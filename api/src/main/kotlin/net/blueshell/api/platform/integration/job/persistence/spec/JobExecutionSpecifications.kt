@@ -43,14 +43,15 @@ object JobExecutionSpecifications {
     }
 
     fun search(value: String?): Specification<JobExecution> {
-        val normalized = value?.trim()?.lowercase(Locale.getDefault())?.takeIf { it.isNotBlank() }
+        val raw = value?.trim()?.takeIf { it.isNotBlank() }
             ?: return Specification { _, _, cb -> cb.conjunction() }
+        val normalized = raw.lowercase(Locale.getDefault())
 
         var spec = contains("jobType", normalized)
             .or(contains("errorType", normalized))
-            .or(contains("errorMessage", normalized))
-            .or(contains("errorReason", normalized))
-            .or(contains("payload", normalized))
+            .or(containsLargeText("errorMessage", raw))
+            .or(containsLargeText("errorReason", raw))
+            .or(containsLargeText("payload", raw))
             .or(initiatedByUserMatches(normalized))
 
         normalized.toLongOrNull()?.let { userId ->
@@ -85,6 +86,20 @@ object JobExecutionSpecifications {
         }
     }
 
+    private fun containsLargeText(fieldName: String, value: String): Specification<JobExecution> {
+        val variants = linkedSetOf(
+            value,
+            value.lowercase(Locale.getDefault()),
+            value.uppercase(Locale.getDefault())
+        )
+        return Specification { root, _, cb ->
+            val field = root.get<String>(fieldName)
+            cb.or(*variants.map { variant ->
+                cb.like(field, "%$variant%")
+            }.toTypedArray())
+        }
+    }
+
     private fun initiatedByUserId(userId: Long): Specification<JobExecution> {
         return Specification { root, _, cb ->
             cb.equal(root.get<Long>("initiatedByUserId"), userId)
@@ -100,12 +115,33 @@ object JobExecutionSpecifications {
 
             val subquery = query.subquery(Long::class.java)
             val user = subquery.from(User::class.java)
+            val firstName = user.get<String>("firstName")
+            val prefix = cb.coalesce(user.get<String>("prefix"), "")
+            val lastName = user.get<String>("lastName")
+            val fullName = cb.lower(
+                cb.concat(
+                    cb.concat(firstName, cb.literal(" ")),
+                    lastName
+                )
+            )
+            val fullNameWithPrefix = cb.lower(
+                cb.concat(
+                    cb.concat(
+                        cb.concat(firstName, cb.literal(" ")),
+                        cb.concat(prefix, cb.literal(" "))
+                    ),
+                    lastName
+                )
+            )
             subquery.select(cb.literal(1L))
                 .where(
                     cb.equal(user.get<Long>("id"), root.get<Long>("initiatedByUserId")),
                     cb.or(
                         cb.like(cb.lower(user.get("username")), pattern),
-                        cb.like(cb.lower(user.get("fullName")), pattern)
+                        cb.like(cb.lower(firstName), pattern),
+                        cb.like(cb.lower(lastName), pattern),
+                        cb.like(fullName, pattern),
+                        cb.like(fullNameWithPrefix, pattern)
                     )
                 )
 

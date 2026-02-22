@@ -51,7 +51,7 @@ const executions = ref<JobExecutionView[]>([])
 const loading = ref<boolean>(false)
 const selectedCategory = ref<string>("all")
 const selectedStatus = ref<string>("all")
-const searchQuery = ref<string>("")
+const searchQuery = ref<string | null>("")
 const expandedRows = ref<number[]>([])
 const page = ref<number>(1)
 const totalPages = ref<number>(1)
@@ -133,6 +133,16 @@ const actorDisplay = (execution: JobExecutionView): string => {
   return "System"
 }
 
+const previewActorDisplay = (execution: JobExecutionView): string => {
+  if (execution.initiatedByFullName?.trim()) return execution.initiatedByFullName
+  if (execution.initiatedByDisplay?.trim()) {
+    return execution.initiatedByDisplay.replace(/\s*\(@[^)]+\)\s*$/, "")
+  }
+  if (execution.initiatedByType === "SYSTEM") return "System"
+  if (execution.initiatedByUserId != null) return `User #${execution.initiatedByUserId}`
+  return "System"
+}
+
 const previewTitle = (execution: JobExecutionView): string => {
   if (execution.summary?.trim()) return execution.summary
   return `${titleCase(execution.category ?? "job")} job`
@@ -159,8 +169,21 @@ const formatDate = (value?: string): string => {
   return date.toLocaleString()
 }
 
+const formatDateNoSeconds = (value?: string): string => {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
 const attemptsLabel = (attempts?: number): string => {
-  const count = attempts ?? 0
+  const count = (attempts ?? 0) + 1
   return `${count} ${count === 1 ? "attempt" : "attempts"}`
 }
 
@@ -219,13 +242,14 @@ watch(page, () => {
 const refresh = async () => {
   loading.value = true
   try {
+    const normalizedSearch = (searchQuery.value ?? "").trim()
     const query: JobListQuery = {
       page: Math.max(0, page.value - 1),
       size: PAGE_SIZE,
       sort: ["createdAt,desc", "id,desc"],
       ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
       ...(selectedStatus.value !== "all" ? {status: selectedStatus.value as JobExecution["status"]} : {}),
-      ...(searchQuery.value.trim() ? {search: searchQuery.value.trim()} : {}),
+      ...(normalizedSearch ? {search: normalizedSearch} : {}),
     }
 
     const response = await list({query})
@@ -471,7 +495,7 @@ onMounted(async () => {
                 :data-testid="`job-row-${execution.id}`"
                 :aria-expanded="isExpanded(execution)"
                 :aria-label="`Toggle details for job ${execution.id}`"
-                :class="['job-row py-3', rowStatusClass(execution.status), {'job-row--expanded': isExpanded(execution)}]"
+                :class="['job-row py-2', rowStatusClass(execution.status), {'job-row--expanded': isExpanded(execution)}]"
                 role="button"
                 tabindex="0"
                 @click="toggleExpanded(execution)"
@@ -488,25 +512,28 @@ onMounted(async () => {
                   </v-chip>
                 </template>
 
-                <v-list-item-title class="text-body-1 font-weight-medium mb-1">
-                  {{ previewTitle(execution) }}
-                </v-list-item-title>
+                <v-list-item-title class="mb-0">
+                  <div class="job-preview">
+                    <p class="job-title">
+                      {{ previewTitle(execution) }}
+                    </p>
 
-                <v-list-item-subtitle class="text-caption">
-                  <div class="job-meta-preview">
-                    <span>Triggered by <strong>{{ actorDisplay(execution) }}</strong></span>
-                    <v-divider
-                      class="job-divider"
-                      vertical
-                    />
-                    <span>{{ attemptsLabel(execution.attempts) }}</span>
-                    <v-divider
-                      class="job-divider"
-                      vertical
-                    />
-                    <span>Queued {{ formatDate(execution.queuedAt) }}</span>
+                    <div class="job-meta-grid">
+                      <div class="job-meta-cell">
+                        <span class="job-meta-label">Triggered by</span>
+                        <span class="job-meta-value">{{ previewActorDisplay(execution) }}</span>
+                      </div>
+                      <div class="job-meta-cell">
+                        <span class="job-meta-label">Attempts</span>
+                        <span class="job-meta-value">{{ attemptsLabel(execution.attempts) }}</span>
+                      </div>
+                      <div class="job-meta-cell">
+                        <span class="job-meta-label">Queued at</span>
+                        <span class="job-meta-value">{{ formatDateNoSeconds(execution.queuedAt) }}</span>
+                      </div>
+                    </div>
                   </div>
-                </v-list-item-subtitle>
+                </v-list-item-title>
 
                 <template #append>
                   <div class="job-row-actions">
@@ -737,18 +764,75 @@ onMounted(async () => {
 
 .job-category-pill {
   min-height: 34px;
-  padding-inline: 12px;
+  width: 108px;
+  max-width: 108px;
+  min-width: 108px;
+  padding-inline: 8px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  justify-content: center;
 }
 
-.job-meta-preview {
-  display: flex;
+.job-category-pill :deep(.v-chip__content) {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.job-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.6fr);
+  gap: 10px 12px;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  line-height: 1.5;
+}
+
+.job-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.job-meta-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1.55fr);
+  gap: 0;
+}
+
+.job-meta-cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 10px;
+}
+
+.job-meta-cell + .job-meta-cell {
+  border-left: 1px solid rgba(var(--v-theme-success), 0.45);
+}
+
+.job-meta-label {
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(var(--v-theme-on-surface), 0.58);
+}
+
+.job-meta-value {
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .job-divider {
@@ -761,7 +845,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  min-width: 160px;
+  min-width: 140px;
 }
 
 .job-detail {
@@ -826,6 +910,14 @@ onMounted(async () => {
 }
 
 @media (max-width: 900px) {
+  .job-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .job-meta-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .job-detail-grid {
     grid-template-columns: 1fr;
   }
@@ -837,6 +929,23 @@ onMounted(async () => {
   .manager-pagination {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  .job-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .job-meta-cell {
+    padding: 0;
+  }
+
+  .job-meta-cell + .job-meta-cell {
+    border-left: 0;
+    border-top: 1px solid rgba(var(--v-theme-success), 0.45);
+    margin-top: 4px;
+    padding-top: 4px;
   }
 }
 </style>

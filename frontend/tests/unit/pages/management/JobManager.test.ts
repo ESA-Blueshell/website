@@ -126,6 +126,22 @@ describe("JobManager page", () => {
     }))
   })
 
+  it("handles cleared search filter value without trim error", async () => {
+    const wrapper = shallowMount(JobManager)
+    await settle()
+    mockList.mockClear()
+    mockHandleNetworkError.mockClear()
+
+    ;(wrapper.vm as any).searchQuery = null
+    await (wrapper.vm as any).refresh()
+    await settle()
+
+    expect(mockHandleNetworkError).not.toHaveBeenCalled()
+    const lastQuery = mockList.mock.lastCall?.[0]?.query as {search?: string} | undefined
+    expect(lastQuery).toBeDefined()
+    expect(lastQuery?.search).toBeUndefined()
+  })
+
   it("paginates jobs with 50 entries per page from backend", async () => {
     const jobs = Array.from({length: 51}, (_, index) => ({
       id: index + 1,

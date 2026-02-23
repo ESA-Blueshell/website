@@ -3,12 +3,12 @@ package net.blueshell.api.domain.user.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import java.sql.Date
+import java.time.LocalDate
 
 @Schema(name = "UpsertMemberProfileRequest")
 data class UpsertMemberProfileRequest(
     @field:NotNull
-    var dateOfBirth: Date? = null,
+    var dateOfBirth: LocalDate? = null,
 
     @field:NotBlank
     var studentNumber: String? = null,

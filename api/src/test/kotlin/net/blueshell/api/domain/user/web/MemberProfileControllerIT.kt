@@ -40,7 +40,7 @@ class MemberProfileControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").value(user.id))
-                .andExpect(jsonPath("$.dateOfBirth").isNotEmpty)
+                .andExpect(jsonPath("$.dateOfBirth").value("1999-04-12"))
                 .andExpect(jsonPath("$.studentNumber").value("s1234567"))
                 .andExpect(jsonPath("$.gender").value("X"))
                 .andExpect(jsonPath("$.photoConsent").value(true))
@@ -99,7 +99,7 @@ class MemberProfileControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.userId").value(user.id))
-                .andExpect(jsonPath("$.dateOfBirth").isNotEmpty)
+                .andExpect(jsonPath("$.dateOfBirth").value("2000-01-01"))
                 .andExpect(jsonPath("$.studentNumber").value("s7654321"))
                 .andExpect(jsonPath("$.gender").value("F"))
                 .andExpect(jsonPath("$.photoConsent").value(false))
@@ -145,7 +145,7 @@ class MemberProfileControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(profile.id))
                 .andExpect(jsonPath("$.userId").value(user.id))
-                .andExpect(jsonPath("$.dateOfBirth").isNotEmpty)
+                .andExpect(jsonPath("$.dateOfBirth").value(profile.dateOfBirth.toString()))
                 .andExpect(jsonPath("$.studentNumber").value(profile.studentNumber))
         }
 

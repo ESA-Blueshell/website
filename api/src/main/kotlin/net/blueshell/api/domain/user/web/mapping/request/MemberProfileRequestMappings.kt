@@ -6,11 +6,12 @@ import net.blueshell.api.domain.user.command.UpsertMemberProfileData
 import net.blueshell.api.domain.user.web.dto.request.CreateMemberProfileRequest
 import net.blueshell.api.domain.user.web.dto.request.UpdateMemberProfileRequest
 import net.blueshell.api.domain.user.web.dto.request.UpsertMemberProfileRequest
+import java.sql.Date
 
 fun CreateMemberProfileRequest.asCommand(): CreateMemberProfileCommand =
     CreateMemberProfileCommand(
         userId = this.userId!!,
-        dateOfBirth = this.dateOfBirth!!,
+        dateOfBirth = Date.valueOf(this.dateOfBirth!!),
         studentNumber = this.studentNumber!!,
         gender = this.gender!!,
         photoConsent = this.photoConsent!!,
@@ -22,7 +23,7 @@ fun CreateMemberProfileRequest.asCommand(): CreateMemberProfileCommand =
 fun UpdateMemberProfileRequest.asCommand(userId: Long): UpdateMemberProfileCommand =
     UpdateMemberProfileCommand(
         userId = userId,
-        dateOfBirth = this.dateOfBirth!!,
+        dateOfBirth = Date.valueOf(this.dateOfBirth!!),
         studentNumber = this.studentNumber!!,
         gender = this.gender!!,
         photoConsent = this.photoConsent!!,
@@ -35,7 +36,7 @@ fun UpdateMemberProfileRequest.asCommand(userId: Long): UpdateMemberProfileComma
 
 fun UpsertMemberProfileRequest.asCommandData(): UpsertMemberProfileData =
     UpsertMemberProfileData(
-        dateOfBirth = this.dateOfBirth!!,
+        dateOfBirth = Date.valueOf(this.dateOfBirth!!),
         studentNumber = this.studentNumber!!,
         gender = this.gender!!,
         photoConsent = this.photoConsent!!,

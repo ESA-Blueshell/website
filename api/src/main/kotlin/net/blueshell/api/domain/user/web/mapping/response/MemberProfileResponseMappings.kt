@@ -7,7 +7,7 @@ fun MemberProfile.asResponse(): MemberProfileResponse =
     MemberProfileResponse(
         id = this.id!!,
         userId = this.userId!!,
-        dateOfBirth = this.dateOfBirth,
+        dateOfBirth = this.dateOfBirth.toLocalDate(),
         studentNumber = this.studentNumber,
         gender = this.gender,
         photoConsent = this.photoConsent,

@@ -157,7 +157,7 @@ describe("UserForm", () => {
     expect(rules).toMatchObject({
       dateOfBirth: "dateRequired",
       nationality: "required",
-      gender: "required",
+      gender: "",
       studentNumber: "required",
     })
   })

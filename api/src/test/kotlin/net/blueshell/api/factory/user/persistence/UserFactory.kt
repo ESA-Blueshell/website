@@ -70,7 +70,7 @@ class UserFactory(
     fun buildMemberProfile(user: User): MemberProfile {
         return MemberProfile(
             user = user,
-            dateOfBirth = Date.valueOf(LocalDate.of(1998, 5, 5)),
+            dateOfBirth = Date.valueOf("1999-05-05"),
             studentNumber = "s${System.currentTimeMillis()}",
             gender = "X",
             photoConsent = true,

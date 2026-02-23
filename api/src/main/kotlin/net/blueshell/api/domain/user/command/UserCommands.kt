@@ -1,20 +1,20 @@
 package net.blueshell.api.domain.user.command
 
+import jakarta.validation.constraints.AssertTrue
 import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.application.validation.UniqueUserCommand
 import net.blueshell.api.domain.user.application.validation.UserUniquenessCandidate
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.Role
-import jakarta.validation.constraints.AssertTrue
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import java.time.LocalDate
+import java.sql.Date
 
 data class UpsertMemberProfileData(
-    val dateOfBirth: LocalDate,
+    val dateOfBirth: Date,
     val studentNumber: String,
-    val gender: String,
+    val gender: String?,
     val photoConsent: Boolean,
     val nationality: String,
     val bhv: Boolean,

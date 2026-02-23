@@ -74,7 +74,7 @@ class UserControllerIT : UserTestSupport() {
             assertThat(profile.nationality).isEqualTo("NL")
             assertThat(profile.bhv).isTrue()
             assertThat(profile.ehbo).isFalse()
-            assertThat(profile.dateOfBirth.toLocalDate().toString()).isEqualTo("1999-04-12")
+            assertThat(profile.dateOfBirth.toString()).isEqualTo("1999-04-12")
         }
 
         @Test
@@ -169,7 +169,7 @@ class UserControllerIT : UserTestSupport() {
             assertThat(profile.nationality).isEqualTo("DE")
             assertThat(profile.bhv).isFalse()
             assertThat(profile.ehbo).isTrue()
-            assertThat(profile.dateOfBirth.toLocalDate().toString()).isEqualTo("2000-06-15")
+            assertThat(profile.dateOfBirth.toString()).isEqualTo("2000-06-15")
         }
 
         @Test
@@ -195,7 +195,7 @@ class UserControllerIT : UserTestSupport() {
             assertThat(profileAfter.nationality).isEqualTo("FR")
             assertThat(profileAfter.bhv).isTrue()
             assertThat(profileAfter.ehbo).isTrue()
-            assertThat(profileAfter.dateOfBirth.toLocalDate().toString()).isEqualTo("2001-01-20")
+            assertThat(profileAfter.dateOfBirth.toString()).isEqualTo("2001-01-20")
             assertThat(profileAfter.version).isGreaterThan(profileVersionBefore)
         }
 

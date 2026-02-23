@@ -27,7 +27,6 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.sql.Date
-import java.time.LocalDate
 
 class UserCommandHandlersTest {
 
@@ -66,7 +65,7 @@ class UserCommandHandlersTest {
             assertThat(captured.firstValue.password).isEqualTo("encoded-pass")
             assertThat(captured.firstValue.memberProfile).isNotNull
             assertThat(captured.firstValue.memberProfile?.studentNumber).isEqualTo("s123")
-            assertThat(captured.firstValue.memberProfile?.dateOfBirth).isEqualTo(Date.valueOf(LocalDate.of(2000, 1, 1)))
+            assertThat(captured.firstValue.memberProfile?.dateOfBirth).isEqualTo(Date.valueOf("2000-01-01"))
             assertThat(result).isSameAs(captured.firstValue)
             verify(passwordEncoder).encode("Passw0rd!")
         }
@@ -179,7 +178,7 @@ class UserCommandHandlersTest {
             val existing = testUser("john")
             val existingProfile = MemberProfile(
                 user = existing,
-                dateOfBirth = Date.valueOf(LocalDate.of(1999, 1, 1)),
+                dateOfBirth = Date.valueOf("1999-01-01"),
                 studentNumber = "old",
                 gender = "F",
                 photoConsent = false,
@@ -279,7 +278,7 @@ class UserCommandHandlersTest {
     }
 
     private fun upsertMemberProfileData(version: Long?) = UpsertMemberProfileData(
-        dateOfBirth = LocalDate.of(2000, 1, 1),
+        dateOfBirth = Date.valueOf("2000-01-01"),
         studentNumber = "s123",
         gender = "M",
         photoConsent = true,

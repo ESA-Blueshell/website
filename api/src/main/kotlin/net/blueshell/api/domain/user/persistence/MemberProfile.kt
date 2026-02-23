@@ -19,20 +19,20 @@ class MemberProfile(
     @JoinColumn(name = "id", nullable = false)
     val user: User,
 
-    @Column(name = "date_of_birth", nullable = false)
-    var dateOfBirth: Date,
+    @Column(name = "date_of_birth")
+    var dateOfBirth: Date? = null,
 
-    @Column(name = "student_number", nullable = false)
-    var studentNumber: String,
+    @Column(name = "student_number")
+    var studentNumber: String? = null,
 
-    @Column(name = "gender", nullable = false, length = 64)
-    var gender: String,
+    @Column(name = "gender", length = 64)
+    var gender: String? = null,
 
     @Column(name = "photo_consent", nullable = false)
     var photoConsent: Boolean,
 
-    @Column(name = "nationality", nullable = false, length = 128)
-    var nationality: String,
+    @Column(name = "nationality", length = 128)
+    var nationality: String? = null,
 
     @Column(name = "bhv", nullable = false)
     var bhv: Boolean,
@@ -40,7 +40,7 @@ class MemberProfile(
     @Column(name = "ehbo", nullable = false)
     var ehbo: Boolean,
 
-    ) : AuditedCustomIdEntity<Long>() {
+) : AuditedCustomIdEntity<Long>() {
     val userId: Long?
         get() = user.id
 }

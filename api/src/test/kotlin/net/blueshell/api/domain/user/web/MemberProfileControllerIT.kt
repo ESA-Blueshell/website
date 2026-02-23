@@ -12,6 +12,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.sql.Date
 
 @SpringBootTest
 class MemberProfileControllerIT : UserTestSupport() {
@@ -39,6 +40,7 @@ class MemberProfileControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").value(user.id))
+                .andExpect(jsonPath("$.dateOfBirth").value("1999-04-12"))
                 .andExpect(jsonPath("$.studentNumber").value("s1234567"))
                 .andExpect(jsonPath("$.gender").value("X"))
                 .andExpect(jsonPath("$.photoConsent").value(true))
@@ -52,6 +54,7 @@ class MemberProfileControllerIT : UserTestSupport() {
             assertThat(profile.gender).isEqualTo("X")
             assertThat(profile.photoConsent).isTrue()
             assertThat(profile.nationality).isEqualTo("NL")
+            assertThat(profile.dateOfBirth).isEqualTo(Date.valueOf("1999-04-12"))
         }
 
         @Test
@@ -96,6 +99,7 @@ class MemberProfileControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.userId").value(user.id))
+                .andExpect(jsonPath("$.dateOfBirth").value("2000-01-01"))
                 .andExpect(jsonPath("$.studentNumber").value("s7654321"))
                 .andExpect(jsonPath("$.gender").value("F"))
                 .andExpect(jsonPath("$.photoConsent").value(false))
@@ -110,6 +114,7 @@ class MemberProfileControllerIT : UserTestSupport() {
             assertThat(updated.nationality).isEqualTo("DE")
             assertThat(updated.bhv).isFalse()
             assertThat(updated.ehbo).isTrue()
+            assertThat(updated.dateOfBirth).isEqualTo(Date.valueOf("2000-01-01"))
         }
 
         @Test
@@ -140,6 +145,7 @@ class MemberProfileControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(profile.id))
                 .andExpect(jsonPath("$.userId").value(user.id))
+                .andExpect(jsonPath("$.dateOfBirth").value(profile.dateOfBirth.toString()))
                 .andExpect(jsonPath("$.studentNumber").value(profile.studentNumber))
         }
 

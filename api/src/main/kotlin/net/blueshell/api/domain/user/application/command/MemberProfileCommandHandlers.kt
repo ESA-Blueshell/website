@@ -10,7 +10,6 @@ import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
-import java.sql.Date
 
 @Component
 class CreateMemberProfileHandler(
@@ -28,7 +27,7 @@ class CreateMemberProfileHandler(
         }
         val profile = MemberProfile(
             user = user,
-            dateOfBirth = Date.valueOf(command.dateOfBirth),
+            dateOfBirth = command.dateOfBirth,
             studentNumber = command.studentNumber,
             gender = command.gender,
             photoConsent = command.photoConsent,
@@ -50,7 +49,7 @@ class UpdateMemberProfileHandler(
 
     override fun handle(command: UpdateMemberProfileCommand): MemberProfile {
         val profile = memberProfileService.findById(command.userId).apply {
-            dateOfBirth = Date.valueOf(command.dateOfBirth)
+            dateOfBirth = command.dateOfBirth
             studentNumber = command.studentNumber
             gender = command.gender
             photoConsent = command.photoConsent

@@ -262,7 +262,7 @@ export type CreateMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender: string;
+    gender?: string;
     nationality: string;
     photoConsent: boolean;
     studentNumber: string;
@@ -669,7 +669,7 @@ export type UpdateMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender: string;
+    gender?: string;
     nationality: string;
     photoConsent: boolean;
     studentNumber: string;
@@ -703,7 +703,7 @@ export type UpsertMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender: string;
+    gender?: string;
     nationality: string;
     photoConsent: boolean;
     studentNumber: string;

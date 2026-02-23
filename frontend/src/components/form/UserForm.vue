@@ -416,9 +416,8 @@ defineExpose({validate, save})
             <VvField
               v-model="memberProfileModel.gender"
               test-id="user-form-gender-field"
-              label="Gender*"
+              label="Gender"
               name="gender"
-              rules="required"
             />
           </v-col>
           <v-col cols="6">

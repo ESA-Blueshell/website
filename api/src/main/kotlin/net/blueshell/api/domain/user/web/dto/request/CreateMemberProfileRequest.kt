@@ -16,7 +16,6 @@ data class CreateMemberProfileRequest(
     @field:NotBlank
     var studentNumber: String? = null,
 
-    @field:NotBlank
     var gender: String? = null,
 
     @field:NotNull

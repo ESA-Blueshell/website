@@ -8,9 +8,9 @@ import java.time.LocalDate
 data class MemberProfileResponse(
     var id: Long,
     var userId: Long,
-    var dateOfBirth: LocalDate,
-    var studentNumber: String,
-    var gender: String,
+    var dateOfBirth: LocalDate?,
+    var studentNumber: String?,
+    var gender: String?,
     var photoConsent: Boolean,
     var nationality: String?,
     var bhv: Boolean,

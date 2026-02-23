@@ -262,7 +262,7 @@ export type CreateMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender: string;
+    gender?: string;
     nationality: string;
     photoConsent: boolean;
     studentNumber: string;
@@ -280,7 +280,7 @@ export type CreateTelemetryRequest = {
 };
 
 export type CreateUserRequest = {
-    discord?: string;
+    discord: string;
     email: string;
     firstName: string;
     fullName?: string;
@@ -289,7 +289,7 @@ export type CreateUserRequest = {
     memberProfile?: UpsertMemberProfileRequest;
     newsletter: boolean;
     password?: string;
-    phoneNumber?: string;
+    phoneNumber: string;
     prefix?: string;
     username: string;
 };
@@ -669,7 +669,7 @@ export type UpdateMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender: string;
+    gender?: string;
     nationality: string;
     photoConsent: boolean;
     studentNumber: string;
@@ -692,10 +692,10 @@ export type UpdateSponsorRequest = {
 };
 
 export type UpdateUserRequest = {
-    discord?: string;
+    discord: string;
     memberProfile?: UpsertMemberProfileRequest;
     newsletter: boolean;
-    phoneNumber?: string;
+    phoneNumber: string;
     version: number;
 };
 
@@ -703,7 +703,7 @@ export type UpsertMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender: string;
+    gender?: string;
     nationality: string;
     photoConsent: boolean;
     studentNumber: string;

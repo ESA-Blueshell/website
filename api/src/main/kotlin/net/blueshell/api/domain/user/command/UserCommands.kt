@@ -14,7 +14,7 @@ import java.sql.Date
 data class UpsertMemberProfileData(
     val dateOfBirth: Date,
     val studentNumber: String,
-    val gender: String,
+    val gender: String?,
     val photoConsent: Boolean,
     val nationality: String,
     val bhv: Boolean,
@@ -33,8 +33,8 @@ data class CreateUserCommand(
     val lastName: String,
     val newsletter: Boolean,
     val password: String?,
-    override val discord: String?,
-    override val phoneNumber: String?,
+    override val discord: String,
+    override val phoneNumber: String,
     val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {
     override val subjectId: Long? = null
@@ -65,8 +65,8 @@ data class BoardUpdateUserCommand(
     val prefix: String?,
     val lastName: String,
     val newsletter: Boolean,
-    override val discord: String?,
-    override val phoneNumber: String?,
+    override val discord: String,
+    override val phoneNumber: String,
     val version: Long,
     val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {
@@ -76,8 +76,8 @@ data class BoardUpdateUserCommand(
 @UniqueUserCommand
 data class UpdateUserCommand(
     var id: Long,
-    override val discord: String?,
-    override val phoneNumber: String?,
+    override val discord: String,
+    override val phoneNumber: String,
     val newsletter: Boolean,
     val version: Long,
     val memberProfile: UpsertMemberProfileData? = null

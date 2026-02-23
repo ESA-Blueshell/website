@@ -2,14 +2,13 @@ package net.blueshell.api.domain.user.command
 
 import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.shared.command.Command
-import java.time.LocalDate
 import java.sql.Date
 
 data class CreateMemberProfileCommand(
     val userId: Long,
     val dateOfBirth: Date,
     val studentNumber: String,
-    val gender: String,
+    val gender: String?,
     val photoConsent: Boolean,
     val nationality: String,
     val bhv: Boolean,
@@ -20,7 +19,7 @@ data class UpdateMemberProfileCommand(
     val userId: Long,
     val dateOfBirth: Date,
     val studentNumber: String,
-    val gender: String,
+    val gender: String?,
     val photoConsent: Boolean,
     val nationality: String,
     val bhv: Boolean,

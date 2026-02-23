@@ -32,8 +32,10 @@ class CreateUserRequest(
     @field:NotBlank
     var email: String? = null,
 
+    @field:NotBlank
     var discord: String? = null,
 
+    @field:NotBlank
     var phoneNumber: String? = null,
 
     @field:Valid

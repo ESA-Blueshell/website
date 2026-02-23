@@ -31,8 +31,8 @@ class MemberProfile(
     @Column(name = "photo_consent", nullable = false)
     var photoConsent: Boolean,
 
-    @Column(name = "nationality", nullable = false, length = 128)
-    var nationality: String,
+    @Column(name = "nationality", length = 128)
+    var nationality: String ?= null,
 
     @Column(name = "bhv", nullable = false)
     var bhv: Boolean,

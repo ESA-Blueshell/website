@@ -12,7 +12,7 @@ data class MemberProfileResponse(
     var studentNumber: String,
     var gender: String,
     var photoConsent: Boolean,
-    var nationality: String,
+    var nationality: String?,
     var bhv: Boolean,
     var ehbo: Boolean,
     var version: Long,

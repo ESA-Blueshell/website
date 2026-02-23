@@ -280,7 +280,7 @@ export type CreateTelemetryRequest = {
 };
 
 export type CreateUserRequest = {
-    discord: string;
+    discord?: string;
     email: string;
     firstName: string;
     fullName?: string;
@@ -289,7 +289,7 @@ export type CreateUserRequest = {
     memberProfile?: UpsertMemberProfileRequest;
     newsletter: boolean;
     password?: string;
-    phoneNumber: string;
+    phoneNumber?: string;
     prefix?: string;
     username: string;
 };
@@ -692,10 +692,10 @@ export type UpdateSponsorRequest = {
 };
 
 export type UpdateUserRequest = {
-    discord: string;
+    discord?: string;
     memberProfile?: UpsertMemberProfileRequest;
     newsletter: boolean;
-    phoneNumber: string;
+    phoneNumber?: string;
     version: number;
 };
 

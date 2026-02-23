@@ -18,8 +18,8 @@ fun CreateUserRequest.asCommand(isBoard: Boolean): CreateUserCommand =
         newsletter = this.newsletter!!,
         password = this.password,
         email = this.email!!,
-        discord = this.discord!!,
-        phoneNumber = this.phoneNumber!!,
+        discord = this.discord,
+        phoneNumber = this.phoneNumber,
         memberProfile = this.memberProfile?.asCommandData()
     )
 
@@ -33,8 +33,8 @@ fun BoardUpdateUserRequest.asCommand(id: Long): BoardUpdateUserCommand =
         lastName = this.lastName!!,
         newsletter = this.newsletter!!,
         email = this.email!!,
-        discord = this.discord!!,
-        phoneNumber = this.phoneNumber!!,
+        discord = this.discord,
+        phoneNumber = this.phoneNumber,
         version = this.version!!,
         memberProfile = this.memberProfile?.asCommandData()
     )
@@ -42,8 +42,8 @@ fun BoardUpdateUserRequest.asCommand(id: Long): BoardUpdateUserCommand =
 fun UpdateUserRequest.asCommand(id: Long): UpdateUserCommand =
     UpdateUserCommand(
         id = id,
-        discord = this.discord!!,
-        phoneNumber = this.phoneNumber!!,
+        discord = this.discord,
+        phoneNumber = this.phoneNumber,
         newsletter = this.newsletter!!,
         version = this.version!!,
         memberProfile = this.memberProfile?.asCommandData()

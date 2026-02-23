@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.user.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.sql.Date
 import java.time.Instant
-import java.util.Date
 
 @Schema(name = "MemberProfileResponse")
 data class MemberProfileResponse(

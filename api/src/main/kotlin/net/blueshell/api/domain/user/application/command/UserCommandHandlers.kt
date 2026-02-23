@@ -9,7 +9,6 @@ import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
-import java.sql.Date
 
 @Component
 class CreateUserHandler(
@@ -139,7 +138,7 @@ class ToggleUserRoleHandler(
 private fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
     MemberProfile(
         user = user,
-        dateOfBirth = Date.valueOf(dateOfBirth),
+        dateOfBirth = dateOfBirth,
         studentNumber = studentNumber,
         gender = gender,
         photoConsent = photoConsent,
@@ -155,7 +154,7 @@ private fun UpsertMemberProfileData.upsertInto(user: User) {
         return
     }
 
-    existing.dateOfBirth = Date.valueOf(dateOfBirth)
+    existing.dateOfBirth = dateOfBirth
     existing.studentNumber = studentNumber
     existing.gender = gender
     existing.photoConsent = photoConsent

@@ -33,7 +33,7 @@ class MemberProfileCommandHandlersTest {
             val user = testUser("john")
             whenever(userService.findById(1L)).thenReturn(user)
             whenever(userService.update(user)).thenReturn(user)
-            val birthDate = LocalDate.of(2000, 1, 1)
+            val birthDate = Date.valueOf("2000-01-01")
 
             val result = handler.handle(
                 CreateMemberProfileCommand(
@@ -49,7 +49,7 @@ class MemberProfileCommandHandlersTest {
             )
 
             assertThat(result.user).isSameAs(user)
-            assertThat(result.dateOfBirth).isEqualTo(Date.valueOf(birthDate))
+            assertThat(result.dateOfBirth).isEqualTo(birthDate)
             assertThat(result.studentNumber).isEqualTo("s123")
             assertThat(result.gender).isEqualTo("M")
             assertThat(result.photoConsent).isTrue()
@@ -64,7 +64,7 @@ class MemberProfileCommandHandlersTest {
             user.replaceMemberProfile(
                 MemberProfile(
                     user = user,
-                    dateOfBirth = Date.valueOf(LocalDate.of(1999, 1, 1)),
+                    dateOfBirth = Date.valueOf("2000-01-01"),
                     studentNumber = "old",
                     gender = "F",
                     photoConsent = false,
@@ -79,7 +79,7 @@ class MemberProfileCommandHandlersTest {
                 handler.handle(
                     CreateMemberProfileCommand(
                         userId = 1L,
-                        dateOfBirth = LocalDate.of(2000, 1, 1),
+                        dateOfBirth = Date.valueOf("2000-01-01"),
                         studentNumber = "s123",
                         gender = "M",
                         photoConsent = true,
@@ -104,7 +104,7 @@ class MemberProfileCommandHandlersTest {
             val user = testUser("john")
             val profile = MemberProfile(
                 user = user,
-                dateOfBirth = Date.valueOf(LocalDate.of(1998, 1, 1)),
+                dateOfBirth = Date.valueOf("1998-01-01"),
                 studentNumber = "old",
                 gender = "F",
                 photoConsent = false,
@@ -114,7 +114,7 @@ class MemberProfileCommandHandlersTest {
             )
             whenever(memberProfileService.findById(1L)).thenReturn(profile)
             whenever(memberProfileService.update(profile)).thenReturn(profile)
-            val birthDate = LocalDate.of(2001, 2, 3)
+            val birthDate = Date.valueOf("2000-01-01")
 
             val result = handler.handle(
                 UpdateMemberProfileCommand(
@@ -130,7 +130,7 @@ class MemberProfileCommandHandlersTest {
                 )
             )
 
-            assertThat(profile.dateOfBirth).isEqualTo(Date.valueOf(birthDate))
+            assertThat(profile.dateOfBirth).isEqualTo(birthDate)
             assertThat(profile.studentNumber).isEqualTo("new")
             assertThat(profile.gender).isEqualTo("M")
             assertThat(profile.photoConsent).isTrue()
@@ -152,7 +152,7 @@ class MemberProfileCommandHandlersTest {
             val user = testUser("john")
             val profile = MemberProfile(
                 user = user,
-                dateOfBirth = Date.valueOf(LocalDate.of(1998, 1, 1)),
+                dateOfBirth = Date.valueOf("1998-01-01"),
                 studentNumber = "s123",
                 gender = "M",
                 photoConsent = true,

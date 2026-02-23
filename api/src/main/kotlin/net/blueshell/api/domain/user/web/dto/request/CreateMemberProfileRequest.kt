@@ -3,8 +3,7 @@ package net.blueshell.api.domain.user.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import org.springframework.format.annotation.DateTimeFormat
-import java.time.LocalDate
+import java.sql.Date
 
 @Schema(name = "CreateMemberProfileRequest")
 data class CreateMemberProfileRequest(
@@ -12,8 +11,7 @@ data class CreateMemberProfileRequest(
     var userId: Long? = null,
 
     @field:NotNull
-    @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    var dateOfBirth: LocalDate? = null,
+    var dateOfBirth: Date? = null,
 
     @field:NotBlank
     var studentNumber: String? = null,

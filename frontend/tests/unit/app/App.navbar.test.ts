@@ -1,6 +1,11 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import App from "@/App.vue"
+import {
+  COOKIE_CONSENT_STORAGE_KEY,
+  encodeCookieConsentPayload,
+  hasAcceptedCookiePolicy,
+} from "@/config/policies"
 import {settle} from "../helpers/testUtils"
 
 const {
@@ -193,7 +198,7 @@ describe("App navbar behavior", () => {
   })
 
   it("toggles dark mode and persists the preference", async () => {
-    localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
+    localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, encodeCookieConsentPayload())
     const wrapper = shallowMount(App)
     await settle()
 
@@ -211,8 +216,17 @@ describe("App navbar behavior", () => {
     expect((wrapper.vm as any).showCookieSnackbar).toBe(true)
     ;(wrapper.vm as any).acceptCookies()
 
-    expect(localStorage.getItem("esa-blueshell.nl:cookiesAccepted")).toBe("true")
+    expect(hasAcceptedCookiePolicy(localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY))).toBe(true)
     expect((wrapper.vm as any).showCookieSnackbar).toBe(false)
+  })
+
+  it("does not treat legacy cookie-consent key as accepted for the active policy", async () => {
+    localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, "true")
+    const wrapper = shallowMount(App)
+    await settle()
+
+    expect((wrapper.vm as any).showCookieSnackbar).toBe(true)
+    expect(hasAcceptedCookiePolicy(localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY))).toBe(false)
   })
 
   it("logs out and redirects to home when the active route requires auth", async () => {

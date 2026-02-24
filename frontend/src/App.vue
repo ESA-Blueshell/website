@@ -453,8 +453,8 @@
     >
       We're using cookies to keep you logged in. You can read more about how we use cookies in our
       <a
+        :href="activeCookiePolicyUrl"
         class="text-decoration-none"
-        href="https://esa-blueshell.nl/api/download/bsCookiePolicy.pdf"
         target="_blank"
       >Cookie Policy</a>.
 
@@ -479,13 +479,19 @@ import {useDisplay, useTheme} from "vuetify"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {useCookiePolicyConsent} from "@/composables/useCookiePolicyConsent"
 import DOMPurify from "dompurify"
 import {findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
 
 // Reactive state
 const drawer = ref<boolean>(false)
 const poggers = ref<boolean>(false)
-const showCookieSnackbar = ref<boolean>(false)
+const {
+  activeCookiePolicyUrl,
+  showCookieSnackbar,
+  refreshCookieConsentPrompt,
+  acceptCookies,
+} = useCookiePolicyConsent()
 
 // Composables
 const store = useStore()
@@ -547,16 +553,9 @@ const logOut = async (): Promise<void> => {
   }
 }
 
-const acceptCookies = (): void => {
-  localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
-  showCookieSnackbar.value = false
-}
-
 // Lifecycle
 onMounted(async () => {
-  if (localStorage.getItem("esa-blueshell.nl:cookiesAccepted") !== "true") {
-    showCookieSnackbar.value = true
-  }
+  refreshCookieConsentPrompt()
 
   const loginData: LoginResponse = login.value
   if (loginData) {

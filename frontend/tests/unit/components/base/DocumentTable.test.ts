@@ -1,6 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import DocumentTable from "@/components/base/DocumentTable.vue"
+import {ACTIVE_COOKIE_POLICY_PATHS} from "@/config/policies"
 
 const {mockRequire} = vi.hoisted(() => ({
   mockRequire: vi.fn((path: string) => `https://assets.example.test/${encodeURIComponent(path)}`),
@@ -91,5 +92,31 @@ describe("DocumentTable", () => {
     expect(createdLinks[1].click).toHaveBeenCalledTimes(1)
     expect(appendSpy).toHaveBeenCalledTimes(2)
     expect(removeSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it("downloads cookie policy files from active policy metadata", async () => {
+    const wrapper = shallowMount(DocumentTable, {
+      global: {
+        stubs: {
+          VSheet: {template: "<div><slot /></div>"},
+          VRow: {template: "<div><slot /></div>"},
+          VCol: {template: "<div><slot /></div>"},
+          VDivider: {template: "<hr />"},
+          VBtn: {
+            template: "<button @click=\"$emit('click')\"><slot /></button>",
+            emits: ["click"],
+          },
+        },
+      },
+    })
+
+    const buttons = wrapper.findAll("button")
+    await buttons.at(-2)?.trigger("click")
+    await buttons.at(-1)?.trigger("click")
+
+    expect(mockRequire).toHaveBeenCalledWith(ACTIVE_COOKIE_POLICY_PATHS.dutch)
+    expect(mockRequire).toHaveBeenCalledWith(ACTIVE_COOKIE_POLICY_PATHS.english)
+    expect(createdLinks.at(-2)?.download).toBe("ESA Blueshell - Cookiebeleid.pdf")
+    expect(createdLinks.at(-1)?.download).toBe("ESA Blueshell - Cookie Policy.pdf")
   })
 })

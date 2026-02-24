@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.Version
+import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant
@@ -51,7 +52,10 @@ class DeletedUser(
 
     @Column(name = "restore_until_at", nullable = false)
     var restoreUntilAt: Instant,
-) {
+) : Identifiable<Long> {
+    override val id: Long
+        get() = userId
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     lateinit var createdAt: Instant

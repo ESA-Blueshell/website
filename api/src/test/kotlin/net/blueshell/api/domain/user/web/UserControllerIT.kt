@@ -306,6 +306,70 @@ class UserControllerIT : UserTestSupport() {
             assertThat(restored.email).isEqualTo(originalEmail)
             assertThat(deletedUsers.findById(target.id!!)).isEmpty()
         }
+
+        @Test
+        fun `restore returns not found when user was not deleted`() {
+            val board = createUserWithRole(Role.BOARD)
+            val activeUser = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(put("/users/{userId}/restore", activeUser.id).with(bearer(board)))
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `second restore returns not found after first restore succeeded`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `restore returns conflict when username is already reused`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val originalUsername = target.username
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val conflictingUser = createUserWithRole(Role.GUEST).apply {
+                username = originalUsername
+            }
+            persist(conflictingUser)
+
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+                .andExpect(status().isConflict)
+
+            assertThat(deletedUsers.findById(target.id!!)).isPresent
+            assertThat(userRepository.findById(target.id!!)).isEmpty
+        }
+
+        @Test
+        fun `deleting an already deleted user returns not found and keeps single snapshot`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER).apply {
+                contactId = 991L
+            }
+            persist(target)
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNotFound)
+
+            assertThat(deletedUsers.findById(target.id!!)).isPresent
+            assertThat(userRepository.findById(target.id!!)).isEmpty
+            assertThat(findJobsByType(ContactJobs.DeleteContact.type))
+                .describedAs("Should enqueue contact delete only once when deleting same user repeatedly")
+                .hasSize(1)
+        }
     }
 
     @Nested

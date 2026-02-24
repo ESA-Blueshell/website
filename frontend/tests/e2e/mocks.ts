@@ -195,6 +195,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return haystack.includes(query)
   }
 
+  const parseUserId = (path: string, pattern: RegExp): number | null => {
+    const match = path.match(pattern)
+    if (match == null) return null
+    const id = Number(match[1])
+    return Number.isFinite(id) ? id : null
+  }
+
   const handleApiRoute = async (route: Route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -216,6 +223,38 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         return fulfillJson(route, user)
       }
       return fulfillJson(route, {id, roles: ["MEMBER"]})
+    }
+    if (method === "DELETE" && /^\/users\/\d+$/.test(path)) {
+      const id = parseUserId(path, /^\/users\/(\d+)$/)
+      if (id != null) {
+        const activeIndex = baseUsers.findIndex((candidate) => Number(candidate.id) === id)
+        if (activeIndex >= 0) {
+          const [deletedCandidate] = baseUsers.splice(activeIndex, 1)
+          if (!baseDeletedUsers.some((candidate) => Number(candidate.id) === id)) {
+            baseDeletedUsers.unshift({
+              ...deletedCandidate,
+              enabled: Boolean(deletedCandidate.enabled),
+            })
+          }
+        }
+      }
+      return fulfillJson(route, {}, 204)
+    }
+    if (method === "PUT" && /^\/users\/\d+\/restore$/.test(path)) {
+      const id = parseUserId(path, /^\/users\/(\d+)\/restore$/)
+      if (id != null) {
+        const deletedIndex = baseDeletedUsers.findIndex((candidate) => Number(candidate.id) === id)
+        if (deletedIndex >= 0) {
+          const [restoredCandidate] = baseDeletedUsers.splice(deletedIndex, 1)
+          if (!baseUsers.some((candidate) => Number(candidate.id) === id)) {
+            baseUsers.unshift({
+              ...restoredCandidate,
+              roles: Array.isArray(restoredCandidate.roles) ? restoredCandidate.roles : ["MEMBER"],
+            })
+          }
+        }
+      }
+      return fulfillJson(route, {}, 204)
     }
     if (method === "GET" && path === "/memberships") {
       return fulfillJson(route, baseMemberships)
@@ -323,9 +362,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {...baseEvents[0], approved: true})
     }
     if (method === "DELETE" && /\/events\/\d+$/.test(path)) {
-      return fulfillJson(route, {}, 204)
-    }
-    if (method === "PUT" && /^\/users\/\d+\/restore$/.test(path)) {
       return fulfillJson(route, {}, 204)
     }
     if (method === "GET" && /\/events\/\d+\/banners$/.test(path)) {

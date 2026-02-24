@@ -1,6 +1,7 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
+import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
 import net.blueshell.api.domain.user.persistence.repository.AddressRepository
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
@@ -21,6 +22,9 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
 
     @Autowired
     private lateinit var addressRepository: AddressRepository
+
+    @Autowired
+    private lateinit var lifecycle: UserLifecycleService
 
     @Test
     fun `board adds address for user without address`() {
@@ -143,6 +147,31 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
             onTimeoutMessage = { "Expected address ${checkNotNull(addressId)} to be deleted" }
         ) {
             addressRepository.findById(checkNotNull(addressId)).isEmpty
+        }
+    }
+
+    @Test
+    fun `deleted user remains visible in address manager users without address list`() {
+        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
+        val guest = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+        val guestId = checkNotNull(guest.id) { "Expected guest id" }
+
+        lifecycle.deleteUser(guestId)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            AddressManagerHelper.open(page, frontendUrl)
+            AddressManagerHelper.openUsersWithoutAddress(page)
+
+            waitFor(
+                onTimeoutMessage = {
+                    "Expected deleted user $guestId to stay visible in address manager users without address"
+                }
+            ) {
+                page.locator("[data-testid='address-user-row-$guestId']").count() > 0
+            }
         }
     }
 

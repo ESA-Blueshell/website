@@ -308,6 +308,70 @@ class UserControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `deleted user remains visible in users list as anonymized identity`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val targetId = checkNotNull(target.id) { "Expected target user id" }
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val listResult = mvc.perform(get("/users").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andReturn()
+
+            val content = mapper.readTree(listResult.response.contentAsByteArray).path("content")
+            val anonymized = content.firstOrNull { it.path("id").asLong() == targetId }
+
+            assertThat(anonymized)
+                .describedAs("Deleted user should still be returned by /users as anonymized identity")
+                .isNotNull
+            assertThat(anonymized!!.path("fullName").asText()).isEqualTo("Deleted User")
+            assertThat(anonymized.path("username").asText()).startsWith("deleted-")
+            assertThat(anonymized.path("enabled").asBoolean()).isFalse()
+        }
+
+        @Test
+        fun `deleted user remains readable by id as anonymized identity`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val targetId = checkNotNull(target.id) { "Expected target user id" }
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(targetId))
+                .andExpect(jsonPath("$.fullName").value("Deleted User"))
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.startsWith("deleted-")))
+                .andExpect(jsonPath("$.enabled").value(false))
+        }
+
+        @Test
+        fun `deleted snapshot keeps original identity while active user view is anonymized`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val targetId = checkNotNull(target.id) { "Expected target user id" }
+            val originalUsername = target.username
+            val originalFullName = target.fullName
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/deleted").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content[0].id").value(targetId))
+                .andExpect(jsonPath("$.content[0].username").value(originalUsername))
+                .andExpect(jsonPath("$.content[0].fullName").value(originalFullName))
+
+            mvc.perform(get("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.fullName").value("Deleted User"))
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.startsWith("deleted-")))
+        }
+
+        @Test
         fun `restore returns not found when user was not deleted`() {
             val board = createUserWithRole(Role.BOARD)
             val activeUser = createUserWithRole(Role.MEMBER)

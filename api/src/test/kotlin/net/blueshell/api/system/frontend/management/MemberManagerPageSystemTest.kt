@@ -305,6 +305,53 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
         }
     }
 
+    @Test
+    fun `deleted user stays visible in member manager as anonymized row`() {
+        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
+        val target = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+        val targetId = checkNotNull(target.id) { "Expected target id" }
+        val periodLabel = createFuturePeriodLabel()
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            MemberManagerHelper.open(page, frontendUrl)
+            selectPeriod(page, periodLabel)
+            MemberManagerHelper.openNonMembers(page)
+            MemberManagerHelper.searchNonMembers(page, target.username)
+
+            waitFor(
+                onTimeoutMessage = { "Expected target user ${target.username} to be visible before deletion" }
+            ) {
+                page.locator("[data-testid='member-user-row-$targetId']").count() > 0
+            }
+
+            val deleteResponse = page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "DELETE" &&
+                        response.url().contains("/users/$targetId")
+                }
+            ) {
+                MemberManagerHelper.clickDeleteUser(page, targetId)
+                MemberManagerHelper.confirmDelete(page)
+            }
+            assertThat(deleteResponse.status()).isEqualTo(204)
+
+            MemberManagerHelper.open(page, frontendUrl)
+            selectPeriod(page, periodLabel)
+            MemberManagerHelper.openNonMembers(page)
+
+            waitFor(
+                onTimeoutMessage = {
+                    "Expected deleted user $targetId to remain visible in member manager as anonymized row"
+                }
+            ) {
+                page.locator("[data-testid='member-user-row-$targetId']").count() > 0
+            }
+        }
+    }
+
     private fun createFuturePeriodLabel(): String {
         val uniqueOffset = System.currentTimeMillis() % 1_000
         val startDate = LocalDate.now().plusDays(900L + uniqueOffset)

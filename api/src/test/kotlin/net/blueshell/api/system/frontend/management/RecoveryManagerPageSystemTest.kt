@@ -165,6 +165,56 @@ class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
         }
     }
 
+    @Test
+    fun `deleted user remains visible in inactive pane while also present in deleted pane`() {
+        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
+        val target = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+        val targetId = checkNotNull(target.id) { "Expected target user id" }
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            MemberManagerHelper.open(page, frontendUrl)
+            MemberManagerHelper.openNonMembers(page)
+            MemberManagerHelper.searchNonMembers(page, target.username)
+
+            waitFor(
+                onTimeoutMessage = { "Expected target user ${target.username} to be visible before deletion" }
+            ) {
+                page.locator("[data-testid='member-user-row-$targetId']").count() > 0
+            }
+
+            val deleteResponse = page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
+                }
+            ) {
+                MemberManagerHelper.clickDeleteUser(page, targetId)
+                MemberManagerHelper.confirmDelete(page)
+            }
+            assertThat(deleteResponse.status()).isEqualTo(204)
+
+            RecoveryManagerHelper.open(page, frontendUrl)
+
+            RecoveryManagerHelper.openSection(page, "deleted")
+            waitFor(
+                onTimeoutMessage = { "Expected deleted user $targetId in deleted pane" }
+            ) {
+                RecoveryManagerHelper.rowCount(page, "deleted", targetId) > 0
+            }
+
+            RecoveryManagerHelper.openSection(page, "inactive")
+            waitFor(
+                onTimeoutMessage = {
+                    "Expected deleted user $targetId to remain visible in inactive pane as anonymized user"
+                }
+            ) {
+                RecoveryManagerHelper.rowCount(page, "inactive", targetId) > 0
+            }
+        }
+    }
+
     private companion object {
         const val DEFAULT_PASSWORD = "Password123!"
     }

@@ -1,6 +1,7 @@
 package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
+import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUpAnswer
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
@@ -42,6 +43,9 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
 
     @Autowired
     private lateinit var persistence: FactoryPersistenceSupport
+
+    @Autowired
+    private lateinit var lifecycle: UserLifecycleService
 
     @Test
     fun `committee member sees sign-up respondents answers and totals`() {
@@ -104,6 +108,46 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
             assertThat(
                 page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count()
             ).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun `deleted signup user remains visible on sign-up page as anonymized identity`() {
+        val seeded = seedEventSignUpsData()
+        val deletedUserId = checkNotNull(seeded.memberRespondent.id) { "Expected member respondent id" }
+        lifecycle.deleteUser(deletedUserId)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, seeded.viewer.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            val signupsResponse = page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/events/${seeded.eventId}/signups")
+                }
+            ) {
+                page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+            }
+            assertThat(signupsResponse.status()).isEqualTo(200)
+
+            waitFor(
+                onTimeoutMessage = { "Expected respondent rows on sign-ups page for event=${seeded.eventId}" }
+            ) {
+                page.locator(".attendees-table tbody tr").count() >= 2
+            }
+
+            waitFor(
+                onTimeoutMessage = {
+                    "Expected deleted signup user to remain visible as anonymized identity 'Deleted User'"
+                }
+            ) {
+                page.getByText("Deleted User", Page.GetByTextOptions().setExact(true)).count() > 0
+            }
+
+            assertThat(
+                page.getByText(seeded.memberOpenAnswer, Page.GetByTextOptions().setExact(true)).count()
+            ).isGreaterThan(0)
         }
     }
 
@@ -224,6 +268,7 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
             eventId = eventId,
             viewer = viewer,
             outsider = outsider,
+            memberRespondent = memberRespondent,
             guestName = guestName,
             memberOpenAnswer = memberOpenAnswer,
             guestOpenAnswer = guestOpenAnswer,
@@ -250,6 +295,7 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
         val eventId: Long,
         val viewer: net.blueshell.api.domain.user.persistence.User,
         val outsider: net.blueshell.api.domain.user.persistence.User,
+        val memberRespondent: net.blueshell.api.domain.user.persistence.User,
         val guestName: String,
         val memberOpenAnswer: String,
         val guestOpenAnswer: String,

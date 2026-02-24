@@ -33,6 +33,34 @@ class EventSignUpControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))
         }
+
+        @Test
+        fun `signup filter keeps deleted user with anonymized identity`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+            )
+                .andExpect(status().isCreated)
+
+            mvc.perform(delete("/users/{userId}", member.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(
+                get("/events/signups")
+                    .param("eventId", event.id!!.toString())
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[0].user").isMap)
+                .andExpect(jsonPath("$[0].user.fullName").value("Deleted User"))
+                .andExpect(jsonPath("$[0].user.email").value(org.hamcrest.Matchers.startsWith("deleted-")))
+        }
     }
 
     @Nested
@@ -77,6 +105,30 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))
+        }
+
+        @Test
+        fun `event signup list keeps deleted user with anonymized identity`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+            )
+                .andExpect(status().isCreated)
+
+            mvc.perform(delete("/users/{userId}", member.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[0].user").isMap)
+                .andExpect(jsonPath("$[0].user.fullName").value("Deleted User"))
+                .andExpect(jsonPath("$[0].user.email").value(org.hamcrest.Matchers.startsWith("deleted-")))
         }
     }
 

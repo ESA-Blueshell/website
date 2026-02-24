@@ -1,4 +1,8 @@
 import type {BrowserContext, Page, Route} from "@playwright/test"
+import {
+  COOKIE_CONSENT_STORAGE_KEY,
+  encodeCookieConsentPayload,
+} from "@/config/policies.ts"
 
 type Fixtures = {
   users?: Array<Record<string, unknown>>
@@ -51,11 +55,14 @@ export async function loginAsAdmin(context: BrowserContext) {
 }
 
 export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
-  await page.addInitScript(() => {
-    localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
+  await page.addInitScript((params: {cookieConsentStorageKey: string; cookieConsentPayload: string}) => {
+    localStorage.setItem(params.cookieConsentStorageKey, params.cookieConsentPayload)
     if (localStorage.getItem("esa-blueshell.nl:darkMode") == null) {
       localStorage.setItem("esa-blueshell.nl:darkMode", "false")
     }
+  }, {
+    cookieConsentStorageKey: COOKIE_CONSENT_STORAGE_KEY,
+    cookieConsentPayload: encodeCookieConsentPayload(),
   })
 
   const baseUsers = fixtures.users ?? [

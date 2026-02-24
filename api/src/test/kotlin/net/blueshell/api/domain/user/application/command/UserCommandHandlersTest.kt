@@ -52,6 +52,7 @@ class UserCommandHandlersTest {
                 prefix = null,
                 lastName = "Doe",
                 newsletter = true,
+                consentPrivacy = true,
                 password = "Passw0rd!",
                 discord = "john#0001",
                 phoneNumber = "0612345678",
@@ -63,6 +64,7 @@ class UserCommandHandlersTest {
             assertThat(captured.firstValue.username).isEqualTo("john")
             assertThat(captured.firstValue.email).isEqualTo("john@example.com")
             assertThat(captured.firstValue.password).isEqualTo("encoded-pass")
+            assertThat(captured.firstValue.consentPrivacy).isTrue()
             assertThat(captured.firstValue.memberProfile).isNotNull
             assertThat(captured.firstValue.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(captured.firstValue.memberProfile?.dateOfBirth).isEqualTo(Date.valueOf("2000-01-01"))
@@ -85,6 +87,7 @@ class UserCommandHandlersTest {
                 prefix = null,
                 lastName = "User",
                 newsletter = false,
+                consentPrivacy = false,
                 password = null,
                 discord = "board#0001",
                 phoneNumber = "0611111111",
@@ -110,6 +113,7 @@ class UserCommandHandlersTest {
                 prefix = null,
                 lastName = "Doe",
                 newsletter = true,
+                consentPrivacy = false,
                 password = null,
                 discord = "john#0001",
                 phoneNumber = "0612345678",

@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 class UserControllerSecurityTest : UserTestSupport() {
     private fun createUserPayload(username: String, email: String): String =
-        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":false,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
+        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":false,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
 
     @Nested
     inner class CreateUser {

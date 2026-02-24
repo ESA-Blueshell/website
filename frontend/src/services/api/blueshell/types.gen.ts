@@ -280,6 +280,7 @@ export type CreateTelemetryRequest = {
 };
 
 export type CreateUserRequest = {
+    consentPrivacy?: boolean;
     discord: string;
     email: string;
     firstName: string;

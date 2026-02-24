@@ -57,6 +57,7 @@ function baseModel(overrides: Record<string, unknown> = {}) {
     email: "",
     phoneNumber: "",
     newsletter: true,
+    consentPrivacy: false,
     password: "",
     ...overrides,
   }
@@ -103,6 +104,7 @@ describe("UserForm", () => {
       phoneNumber: "required|phoneMobile:NL",
       password: "required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial",
       confirmPassword: "required|match:@password",
+      consentPrivacy: "acceptedPrivacyPolicy",
       newsletter: "",
     })
   })
@@ -134,9 +136,10 @@ describe("UserForm", () => {
       discord: "required",
       phoneNumber: "required|phoneMobile:NL",
     })
+    expect(rules.consentPrivacy).toBeUndefined()
   })
 
-  it("adds member profile validations when profile mode is enabled", () => {
+  it("does not require privacy agreement in board create mode", () => {
     const wrapper = shallowMount(UserForm, {
       props: {
         modelValue: baseModel(),
@@ -154,11 +157,33 @@ describe("UserForm", () => {
     })
     const rules = rulesByName(wrapper)
 
+    expect(rules.consentPrivacy).toBeUndefined()
+  })
+
+  it("adds member profile validations when profile mode is enabled", () => {
+    const wrapper = shallowMount(UserForm, {
+      props: {
+        modelValue: baseModel(),
+        options: {
+          includeMemberProfile: true,
+          updateKind: "auto",
+        },
+      },
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    const rules = rulesByName(wrapper)
+
     expect(rules).toMatchObject({
       dateOfBirth: "dateRequired",
       nationality: "required",
       gender: "",
       studentNumber: "required",
+      consentPrivacy: "acceptedPrivacyPolicy",
     })
   })
 

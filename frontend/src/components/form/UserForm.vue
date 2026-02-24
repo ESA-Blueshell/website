@@ -15,7 +15,7 @@ import {
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
-import {Form} from "vee-validate"
+import {defineRule, Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
@@ -31,6 +31,10 @@ import {
 } from "@/composables/formUtils"
 
 defineOptions({name: "UserForm"})
+defineRule(
+  "acceptedPrivacyPolicy",
+  (value: unknown) => value === true || "You must agree to the privacy policy to create an account.",
+)
 
 const props = withDefaults(defineProps<{
   showPassword?: boolean
@@ -60,6 +64,7 @@ const user = defineModel<EditableUser>({
     lastName: "",
     username: "",
     newsletter: true,
+    consentPrivacy: false,
     password: "",
   }),
 })
@@ -80,6 +85,7 @@ const effectiveUpdateKind = computed<"user" | "board">(() => {
   return configuredUpdateKind.value
 })
 const canEditIdentity = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
+const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effectiveUpdateKind.value !== "board")
 
 const {country, onCountryUpdate} = useCountry("NL")
 const {isSaving, withSaving} = useSaving()
@@ -170,6 +176,7 @@ const toCreateUserRequest = (model: EditableUser): CreateUserRequest => ({
   prefix: model.prefix,
   lastName: model.lastName,
   newsletter: model.newsletter,
+  consentPrivacy: model.consentPrivacy,
   email: model.email,
   discord: model.discord,
   phoneNumber: model.phoneNumber,
@@ -387,6 +394,28 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
+      <v-row
+        v-if="requiresPrivacyConsent"
+        class="checkbox-row"
+      >
+        <v-col
+          class="checkbox-col"
+          cols="12"
+          lg="10"
+          md="11"
+        >
+          <VvField
+            v-model="user.consentPrivacy"
+            test-id="user-form-privacy-consent-field"
+            :component="VCheckbox"
+            :component-props="{ hideDetails: true, class: 'w-100' }"
+            label="I have read and agree to the ESA Blueshell Privacy Policy for account creation and processing of my personal data needed to provide my account."
+            name="consentPrivacy"
+            :rules="requiresPrivacyConsent ? 'acceptedPrivacyPolicy' : ''"
+          />
+        </v-col>
+      </v-row>
+
       <template v-if="includeMemberProfile">
         <v-row>
           <v-col cols="6">
@@ -431,60 +460,74 @@ defineExpose({validate, save})
           </v-col>
         </v-row>
 
-        <v-row
-          align="center"
-          justify="space-evenly"
-        >
-          <v-col cols="auto">
+        <v-row class="checkbox-row">
+          <v-col
+            class="checkbox-col"
+            cols="12"
+            lg="10"
+            md="11"
+          >
             <VvField
               v-model="memberProfileModel.ehbo"
               test-id="user-form-ehbo-field"
               :component="VCheckbox"
-              :component-props="{ hideDetails: true }"
-              label="EHBO Diploma"
+              :component-props="{ hideDetails: true, class: 'w-100' }"
+              label="I hold a valid EHBO (first aid) diploma and allow ESA Blueshell to store this so event organizers can identify first-aid qualified members when needed."
               name="ehbo"
             />
           </v-col>
-          <v-col cols="auto">
+        </v-row>
+
+        <v-row class="checkbox-row">
+          <v-col
+            class="checkbox-col"
+            cols="12"
+            lg="10"
+            md="11"
+          >
             <VvField
               v-model="memberProfileModel.bhv"
               test-id="user-form-bhv-field"
               :component="VCheckbox"
-              :component-props="{ hideDetails: true }"
-              label="BHV Diploma"
+              :component-props="{ hideDetails: true, class: 'w-100' }"
+              label="I hold a valid BHV diploma and allow ESA Blueshell to store this so organizers can identify members trained for emergency response and evacuation support."
               name="bhv"
             />
           </v-col>
         </v-row>
 
-        <v-row
-          align="center"
-          justify="space-evenly"
-        >
-          <v-col cols="auto">
+        <v-row class="checkbox-row">
+          <v-col
+            class="checkbox-col"
+            cols="12"
+            lg="10"
+            md="11"
+          >
             <VvField
               v-model="memberProfileModel.photoConsent"
               test-id="user-form-photo-consent-field"
               :component="VCheckbox"
-              :component-props="{ hideDetails: true }"
-              label="Consent to pictures being taken at event"
+              :component-props="{ hideDetails: true, class: 'w-100' }"
+              label="I understand photos may be taken during association events under the privacy policy and allow ESA Blueshell to store my photo preference in my member profile for organizer reference."
               name="photoConsent"
             />
           </v-col>
         </v-row>
       </template>
 
-      <v-row
-        align="center"
-        justify="space-evenly"
-      >
-        <v-col cols="auto">
+      <v-row class="checkbox-row">
+        <v-col
+          class="checkbox-col"
+          cols="12"
+          lg="10"
+          md="11"
+        >
           <VvField
             v-model="user.newsletter"
             test-id="user-form-newsletter-field"
             :component="VCheckbox"
-            :component-props="{ hideDetails: true }"
-            label="Newsletter"
+            :component-props="{ hideDetails: true, class: 'w-100' }"
+            label="I want to receive the ESA Blueshell newsletter by e-mail with association updates, event announcements, and relevant member information. I can change this later in my account settings."
             name="newsletter"
           />
         </v-col>
@@ -524,5 +567,22 @@ span {
 .btn-tight {
   padding-inline: 6px !important;
   min-width: auto !important;
+}
+
+.checkbox-row {
+  justify-content: flex-end;
+}
+
+.checkbox-col {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.checkbox-col :deep(.v-selection-control) {
+  align-items: flex-start;
+}
+
+.checkbox-col :deep(.v-label) {
+  text-wrap: pretty;
 }
 </style>

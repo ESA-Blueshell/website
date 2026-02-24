@@ -28,6 +28,7 @@ class CreateUserHandler(
             discord = command.discord,
             phoneNumber = command.phoneNumber,
             newsletter = command.newsletter,
+            consentPrivacy = command.consentPrivacy,
             password = if (command.isBoard) {
                 requireNotNull(passwordEncoder.encode(MappingUtil.generateRandomString())) { "PasswordEncoder returned null hash" }
             } else {

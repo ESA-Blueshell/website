@@ -58,7 +58,7 @@ class UserControllerIT : UserTestSupport() {
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","photoConsent":true,"nationality":"NL","bhv":true,"ehbo":false}}"""
+                        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","photoConsent":true,"nationality":"NL","bhv":true,"ehbo":false}}"""
                     )
             )
                 .andExpect(status().isCreated)

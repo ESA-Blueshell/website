@@ -16,6 +16,7 @@ fun CreateUserRequest.asCommand(isBoard: Boolean): CreateUserCommand =
         prefix = this.prefix,
         lastName = this.lastName!!,
         newsletter = this.newsletter!!,
+        consentPrivacy = this.consentPrivacy ?: false,
         password = this.password,
         email = this.email!!,
         discord = this.discord!!,

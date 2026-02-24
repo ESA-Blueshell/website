@@ -32,6 +32,7 @@ data class CreateUserCommand(
     val prefix: String?,
     val lastName: String,
     val newsletter: Boolean,
+    val consentPrivacy: Boolean,
     val password: String?,
     override val discord: String,
     override val phoneNumber: String,
@@ -42,6 +43,10 @@ data class CreateUserCommand(
     @get:AssertTrue(message = "Password is required for public user registration.")
     val isPasswordPresentForPublicRegistration: Boolean
         get() = isBoard || !password.isNullOrBlank()
+
+    @get:AssertTrue(message = "Privacy policy consent is required for public user registration.")
+    val isPrivacyConsentGivenForPublicRegistration: Boolean
+        get() = isBoard || consentPrivacy
 
     @get:AssertTrue(
         message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)."

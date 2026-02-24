@@ -4,6 +4,7 @@ import jakarta.validation.constraints.AssertTrue
 import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.application.validation.UniqueUserCommand
 import net.blueshell.api.domain.user.application.validation.UserUniquenessCandidate
+import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.Role
@@ -101,7 +102,15 @@ data class FindUserByIdCommand(
     val userId: Long
 ) : Command<User>
 
+data class FindDeletedUsersCommand(
+    val pageable: Pageable
+) : Command<Page<DeletedUser>>
+
 data class DeleteUserByIdCommand(
+    val userId: Long
+) : Command<Unit>
+
+data class RestoreDeletedUserByIdCommand(
     val userId: Long
 ) : Command<Unit>
 

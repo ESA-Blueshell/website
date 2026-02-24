@@ -113,6 +113,20 @@ class BrevoContactAdapter(
         }
     }
 
+    override fun deleteContact(contactId: String) {
+        log.info("Deleting Brevo contact {}", contactId)
+
+        try {
+            brevoClient.deleteContact(contactId.toLong())
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to delete contact {}", contactId, e)
+            throw ContactServiceException("Failed to delete contact", e)
+        } catch (e: NumberFormatException) {
+            log.error("Invalid contact ID format: contactId={}", contactId, e)
+            throw ContactServiceException("Invalid ID format", e)
+        }
+    }
+
     override fun createList(listName: String, folderName: String): String {
         log.info("Creating Brevo list: {} in folder: {}", listName, folderName)
 

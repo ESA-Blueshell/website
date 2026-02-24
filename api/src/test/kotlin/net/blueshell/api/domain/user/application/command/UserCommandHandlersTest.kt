@@ -1,16 +1,20 @@
 package net.blueshell.api.domain.user.application.command
 
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
 import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.command.BoardUpdateUserCommand
 import net.blueshell.api.domain.user.command.CreateUserCommand
 import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
 import net.blueshell.api.domain.user.command.FindUserByIdCommand
+import net.blueshell.api.domain.user.command.FindDeletedUsersCommand
 import net.blueshell.api.domain.user.command.FindUsersCommand
+import net.blueshell.api.domain.user.command.RestoreDeletedUserByIdCommand
 import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
 import net.blueshell.api.domain.user.command.UpdateUserCommand
 import net.blueshell.api.domain.user.command.UpsertMemberProfileData
 import net.blueshell.api.domain.user.persistence.MemberProfile
+import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
@@ -31,6 +35,7 @@ import java.sql.Date
 class UserCommandHandlersTest {
 
     private val userService = mock<UserService>()
+    private val lifecycle = mock<UserLifecycleService>()
     private val passwordEncoder = mock<PasswordEncoder>()
 
     @Nested
@@ -254,13 +259,62 @@ class UserCommandHandlersTest {
     @Nested
     inner class DeleteUserById {
 
-        private val handler = DeleteUserByIdHandler(userService)
+        private val handler = DeleteUserByIdHandler(lifecycle)
 
         @Test
         fun `deletes user by id`() {
             handler.handle(DeleteUserByIdCommand(4L))
 
-            verify(userService).deleteById(eq(4L))
+            verify(lifecycle).deleteUser(eq(4L))
+        }
+    }
+
+    @Nested
+    inner class FindDeletedUsers {
+
+        private val handler = FindDeletedUsersHandler(lifecycle)
+
+        @Test
+        fun `returns deleted users by pageable`() {
+            val pageable = PageRequest.of(0, 10)
+            val page = PageImpl(
+                listOf(
+                    DeletedUser(
+                        userId = 8L,
+                        username = "restorable",
+                        email = "restorable@example.com",
+                        initials = "RS",
+                        firstName = "Rest",
+                        prefix = null,
+                        lastName = "Orable",
+                        phoneNumber = null,
+                        discord = null,
+                        newsletter = false,
+                        enabled = true,
+                        deletedAt = java.time.Instant.now(),
+                        restoreUntilAt = java.time.Instant.now().plusSeconds(3600)
+                    )
+                ),
+                pageable,
+                1
+            )
+            whenever(lifecycle.findDeletedUsers(pageable)).thenReturn(page)
+
+            val result = handler.handle(FindDeletedUsersCommand(pageable))
+
+            assertThat(result).isSameAs(page)
+            verify(lifecycle).findDeletedUsers(pageable)
+        }
+    }
+
+    @Nested
+    inner class RestoreDeletedUserById {
+        private val handler = RestoreDeletedUserByIdHandler(lifecycle)
+
+        @Test
+        fun `restores user by id`() {
+            handler.handle(RestoreDeletedUserByIdCommand(9L))
+            verify(lifecycle).restoreDeletedUser(9L)
         }
     }
 

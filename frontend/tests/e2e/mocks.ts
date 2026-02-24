@@ -6,6 +6,7 @@ import {
 
 type Fixtures = {
   users?: Array<Record<string, unknown>>
+  deletedUsers?: Array<Record<string, unknown>>
   memberships?: Array<Record<string, unknown>>
   contributionPeriods?: Array<Record<string, unknown>>
   contributions?: Array<Record<string, unknown>>
@@ -68,6 +69,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const baseUsers = fixtures.users ?? [
     {id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: true, roles: ["MEMBER"]},
     {id: 2, fullName: "Viktor Petrov", username: "ariosfury", enabled: false, roles: ["USER"]},
+  ]
+
+  const baseDeletedUsers = fixtures.deletedUsers ?? [
+    {
+      id: 9,
+      fullName: "Deleted User",
+      username: "deleted-user",
+      email: "deleted@example.com",
+      enabled: false,
+    },
   ]
 
   const baseMemberships = fixtures.memberships ?? [
@@ -195,6 +206,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users") {
       return fulfillJson(route, {content: baseUsers})
     }
+    if (method === "GET" && path === "/users/deleted") {
+      return fulfillJson(route, {content: baseDeletedUsers})
+    }
     if (method === "GET" && /^\/users\/\d+$/.test(path)) {
       const id = Number(path.split("/").at(-1))
       const user = baseUsers.find((candidate) => Number(candidate.id) === id)
@@ -309,6 +323,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {...baseEvents[0], approved: true})
     }
     if (method === "DELETE" && /\/events\/\d+$/.test(path)) {
+      return fulfillJson(route, {}, 204)
+    }
+    if (method === "PUT" && /^\/users\/\d+\/restore$/.test(path)) {
       return fulfillJson(route, {}, 204)
     }
     if (method === "GET" && /\/events\/\d+\/banners$/.test(path)) {

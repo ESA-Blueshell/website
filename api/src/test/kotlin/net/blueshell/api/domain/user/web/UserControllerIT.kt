@@ -2,6 +2,7 @@ package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.domain.user.persistence.repository.MemberProfileRepository
+import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.UserTestSupport
@@ -22,6 +23,9 @@ class UserControllerIT : UserTestSupport() {
 
     @Autowired
     private lateinit var userRequestFactory: UserRequestFactory
+
+    @Autowired
+    private lateinit var deletedUsers: DeletedUserRepository
 
     @Nested
     inner class CreateUser {
@@ -250,11 +254,57 @@ class UserControllerIT : UserTestSupport() {
         fun `board can delete user`() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER)
+            target.contactId = 321L
+            persist(target)
 
             mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             assertThat(userRepository.findById(target.id!!)).isEmpty
+            assertThat(deletedUsers.findById(target.id!!)).isPresent
+
+            val jobs = findJobsByType(ContactJobs.DeleteContact.type)
+            assertThat(jobs)
+                .describedAs("Should schedule contact delete job on user deletion")
+                .hasSize(1)
+                .anySatisfy {
+                    assertThat(it.payload).contains("\"userId\":${target.id}")
+                    assertThat(it.payload).contains("\"contactId\":321")
+                }
+        }
+
+        @Test
+        fun `board can list deleted users`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/deleted").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content").isArray)
+                .andExpect(jsonPath("$.content[0].id").value(target.id))
+                .andExpect(jsonPath("$.content[0].username").isNotEmpty)
+        }
+
+        @Test
+        fun `board can restore deleted user`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val originalUsername = target.username
+            val originalEmail = target.email
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val restored = userRepository.findById(target.id!!).orElseThrow()
+            assertThat(restored.username).isEqualTo(originalUsername)
+            assertThat(restored.email).isEqualTo(originalEmail)
+            assertThat(deletedUsers.findById(target.id!!)).isEmpty()
         }
     }
 

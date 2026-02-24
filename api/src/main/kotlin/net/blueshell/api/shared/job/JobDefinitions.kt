@@ -68,6 +68,11 @@ object ContactJobs {
         override val payloadType: Class<SyncContactPayload> = SyncContactPayload::class.java
     }
 
+    object DeleteContact : JobDefinition<DeleteContactPayload> {
+        override val type: String = "contact.delete"
+        override val payloadType: Class<DeleteContactPayload> = DeleteContactPayload::class.java
+    }
+
     object CreateContributionPeriodList : JobDefinition<CreateContributionPeriodListPayload> {
         override val type: String = "contact.create-period-list"
         override val payloadType: Class<CreateContributionPeriodListPayload> =
@@ -86,6 +91,11 @@ object ContactJobs {
 
     data class SyncContactPayload(
         val userId: Long
+    )
+
+    data class DeleteContactPayload(
+        val userId: Long,
+        val contactId: Long
     )
 
     data class CreateContributionPeriodListPayload(

@@ -3,10 +3,14 @@ import {shallowMount} from "@vue/test-utils"
 import RecoveryManager from "@/pages/management/RecoveryManager.vue"
 import {settle} from "../helpers"
 
-const mockFindUsers = vi.hoisted(() => vi.fn())
+const {mockFindUsers, mockFindDeletedUsers} = vi.hoisted(() => ({
+  mockFindUsers: vi.fn(),
+  mockFindDeletedUsers: vi.fn(),
+}))
 
 vi.mock("@/services/api", () => ({
   findUsers: mockFindUsers,
+  findDeletedUsers: mockFindDeletedUsers,
 }))
 
 describe("RecoveryManager page", () => {
@@ -18,6 +22,14 @@ describe("RecoveryManager page", () => {
         content: [
           {id: 1, enabled: false, username: "inactive"},
           {id: 2, enabled: true, username: "active"},
+        ],
+      },
+    })
+    mockFindDeletedUsers.mockResolvedValue({
+      status: 200,
+      data: {
+        content: [
+          {id: 3, enabled: false, username: "deleted"},
         ],
       },
     })
@@ -35,7 +47,9 @@ describe("RecoveryManager page", () => {
     await settle()
 
     expect(mockFindUsers).toHaveBeenCalledTimes(1)
+    expect(mockFindDeletedUsers).toHaveBeenCalledTimes(1)
     expect((wrapper.vm as any).inactiveUsers).toHaveLength(1)
     expect((wrapper.vm as any).activeUsers).toHaveLength(1)
+    expect((wrapper.vm as any).deletedUsers).toHaveLength(1)
   })
 })

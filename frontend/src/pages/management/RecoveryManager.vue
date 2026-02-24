@@ -20,6 +20,16 @@
           action-type="password"
           class="mt-3"
           title="Active accounts"
+          @action:done="reloadLists"
+        />
+
+        <recovery-user-list
+          panel-key="deleted"
+          :users="deletedUsers"
+          action-type="restore"
+          class="mt-3"
+          title="Deleted users"
+          @action:done="reloadLists"
         />
       </div>
     </div>
@@ -31,11 +41,12 @@ import {onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import RecoveryUserList from "@/components/common/lists/RecoveryUserList.vue"
 
-import {type UserDetailResponse, findUsers} from "@/services/api"
+import {type UserDetailResponse, findDeletedUsers, findUsers} from "@/services/api"
 
 const users = ref<UserDetailResponse[]>([])
 const activeUsers = ref<UserDetailResponse[]>([])
 const inactiveUsers = ref<UserDetailResponse[]>([])
+const deletedUsers = ref<UserDetailResponse[]>([])
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -47,6 +58,12 @@ const getUsers = async () => {
   else console.log(response.error)
 }
 
+const getDeletedUsers = async () => {
+  const response = await findDeletedUsers()
+  if (response.status === 200) deletedUsers.value = response.data?.content ?? []
+  else console.log(response.error)
+}
+
 const updateLists = () => {
   const all = users.value
   inactiveUsers.value = all.filter((u) => !u.enabled)
@@ -55,9 +72,13 @@ const updateLists = () => {
 
 watch([users], updateLists, {deep: true})
 
+const reloadLists = async () => {
+  await Promise.all([getUsers(), getDeletedUsers()])
+}
+
 onMounted(async () => {
   try {
-    await getUsers()
+    await reloadLists()
   } catch (error) {
     console.error("Error fetching users:", error)
   }

@@ -31,7 +31,7 @@
             :loading="loading"
             class="btn-tight"
             variant="text"
-            @click.stop="handleResend"
+            @click.stop="handleAction"
           >
             {{ buttonLabel }}
           </v-btn>
@@ -44,29 +44,38 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 import type {UserDetailResponse} from "@/services/api"
-import {resendUserActivation, resetPassword} from "@/services/api"
+import {resendUserActivation, resetPassword, restoreDeletedUserById} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const props = defineProps<{
   user: UserDetailResponse
-  actionType: "activation" | "password"
+  actionType: "activation" | "password" | "restore"
+}>()
+
+const emit = defineEmits<{
+  (e: "action:done"): void
 }>()
 
 const loading = ref(false)
 
-const buttonLabel = computed(() =>
-  props.actionType === "activation" ? "Resend Activation Email" : "Send Password Reset Email",
-)
+const buttonLabel = computed(() => {
+  if (props.actionType === "activation") return "Resend Activation Email"
+  if (props.actionType === "password") return "Send Password Reset Email"
+  return "Restore User"
+})
 
-const handleResend = async () => {
+const handleAction = async () => {
   if (loading.value) return
   loading.value = true
   try {
     if (props.actionType === "activation") {
       await resendUserActivation({path: {username: props.user.username}, throwOnError: true})
-    } else {
+    } else if (props.actionType === "password") {
       await resetPassword({path: {username: props.user.username}, throwOnError: true})
+    } else {
+      await restoreDeletedUserById({path: {userId: props.user.id}, throwOnError: true})
     }
+    emit("action:done")
   } catch (e: unknown) {
     $handleNetworkError(e)
   } finally {

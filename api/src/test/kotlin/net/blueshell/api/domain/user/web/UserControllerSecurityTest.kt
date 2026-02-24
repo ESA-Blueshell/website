@@ -282,6 +282,55 @@ class UserControllerSecurityTest : UserTestSupport() {
     }
 
     @Nested
+    inner class DeletedUsers {
+        @Test
+        fun `allows BOARD to list deleted users`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                get("/users/deleted")
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `denies regular user from listing deleted users`() {
+            val user = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                get("/users/deleted")
+                    .with(bearer(user))
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `allows BOARD to restore deleted users`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                put("/users/{userId}/restore", target.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `denies regular user from restoring deleted users`() {
+            val user = createUserWithRole(Role.MEMBER)
+            val target = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                put("/users/{userId}/restore", target.id)
+                    .with(bearer(user))
+            )
+                .andExpect(status().isForbidden)
+        }
+    }
+
+    @Nested
     inner class ToggleUserRole {
 
         @Test

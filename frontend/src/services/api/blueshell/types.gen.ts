@@ -3979,6 +3979,60 @@ export type CreateUserResponses = {
 
 export type CreateUserResponse = CreateUserResponses[keyof CreateUserResponses];
 
+export type FindDeletedUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+    };
+    url: '/users/deleted';
+};
+
+export type FindDeletedUsersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDeletedUsersError = FindDeletedUsersErrors[keyof FindDeletedUsersErrors];
+
+export type FindDeletedUsersResponses = {
+    /**
+     * OK
+     */
+    200: PagedModelUserDetailResponse;
+};
+
+export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
+
 export type UpdateUserData = {
     body: UpdateUserRequest;
     path: {
@@ -4236,6 +4290,49 @@ export type BoardCreateMembershipResponses = {
 };
 
 export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
+
+export type RestoreDeletedUserByIdData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/restore';
+};
+
+export type RestoreDeletedUserByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RestoreDeletedUserByIdError = RestoreDeletedUserByIdErrors[keyof RestoreDeletedUserByIdErrors];
+
+export type RestoreDeletedUserByIdResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RestoreDeletedUserByIdResponse = RestoreDeletedUserByIdResponses[keyof RestoreDeletedUserByIdResponses];
 
 export type ToggleUserRoleData = {
     body?: never;

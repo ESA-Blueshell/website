@@ -13,6 +13,7 @@ object UserFormHelper {
     private const val PHONE_NUMBER_FIELD_TEST_ID = "user-form-phone-number-field"
     private const val PASSWORD_FIELD_TEST_ID = "user-form-password-field"
     private const val PASSWORD_REPEAT_FIELD_TEST_ID = "user-form-password-repeat-field"
+    private const val PRIVACY_CONSENT_FIELD_TEST_ID = "user-form-privacy-consent-field"
     private const val DATE_OF_BIRTH_FIELD_TEST_ID = "user-form-date-of-birth-field"
     private const val GENDER_FIELD_TEST_ID = "user-form-gender-field"
     private const val STUDENT_NUMBER_FIELD_TEST_ID = "user-form-student-number-field"
@@ -76,6 +77,21 @@ object UserFormHelper {
 
     fun repeatedPasswordInput(page: Page): Locator {
         return TestIdLocatorHelper.textInput(page, PASSWORD_REPEAT_FIELD_TEST_ID)
+    }
+
+    fun privacyConsentCheckbox(page: Page): Locator {
+        return TestIdLocatorHelper.byTestId(page, PRIVACY_CONSENT_FIELD_TEST_ID)
+            .locator("input[type='checkbox']")
+            .first()
+    }
+
+    fun acceptPrivacyConsentIfVisible(page: Page): Boolean {
+        val checkbox = privacyConsentCheckbox(page)
+        if (checkbox.count() == 0) return false
+        if (!checkbox.isChecked) {
+            checkbox.check()
+        }
+        return checkbox.isChecked
     }
 
     fun dateOfBirthInput(page: Page): Locator {

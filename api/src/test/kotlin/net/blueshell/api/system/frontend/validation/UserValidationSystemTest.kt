@@ -44,6 +44,7 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
                     repeatedPassword = "Passw0rd!$candidateSuffix"
                 )
             )
+            UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
             val createResponse = page.waitForResponse({ response ->
                 response.request().method() == "POST" && response.url().contains("/users")
@@ -89,6 +90,7 @@ class UserValidationSystemTest : FrontendSystemTestBase() {
                     repeatedPassword = "Passw0rd!$candidateSuffix"
                 )
             )
+            UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
             val createResponse = page.waitForResponse({ response ->
                 response.request().method() == "POST" && response.url().contains("/users")

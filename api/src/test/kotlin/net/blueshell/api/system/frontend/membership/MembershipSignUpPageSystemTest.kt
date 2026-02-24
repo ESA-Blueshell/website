@@ -212,14 +212,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
             page.url().contains("step=4")
         }
 
-        assertPw(
-            page.getByRole(
-                AriaRole.CHECKBOX,
-                Page.GetByRoleOptions().setName(
-                    "I have understood and agree to the terms and conditions for membership listed above."
-                )
-            )
-        ).isVisible()
+        assertPw(membershipConsentCheckbox(page)).isVisible()
 
         assertPw(
             MembershipSignUpHelper.stepFourCompleteButton(page)
@@ -227,11 +220,7 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
     }
 
     private fun completeMembershipAtStepFour(page: Page) {
-        val consentLabel = "I have understood and agree to the terms and conditions for membership listed above."
-        val consentCheckbox = page.getByRole(
-            AriaRole.CHECKBOX,
-            Page.GetByRoleOptions().setName(consentLabel).setExact(true)
-        )
+        val consentCheckbox = membershipConsentCheckbox(page)
         assertPw(consentCheckbox).isVisible()
         if (!consentCheckbox.isChecked) {
             consentCheckbox.check()
@@ -253,6 +242,13 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
         assertThat(membershipResponse.status()).isEqualTo(201)
     }
 
+    private fun membershipConsentCheckbox(page: Page) = page.getByRole(
+        AriaRole.CHECKBOX,
+        Page.GetByRoleOptions()
+            .setName(MEMBERSHIP_CONSENT_LABEL_PREFIX)
+            .setExact(false)
+    )
+
     private fun assertMembershipPersisted(userId: Long) {
         waitFor(
             timeoutMs = 10_000,
@@ -273,5 +269,6 @@ class MembershipSignUpPageSystemTest : FrontendSystemTestBase() {
 
     private companion object {
         const val DEFAULT_PASSWORD = "Password123!"
+        const val MEMBERSHIP_CONSENT_LABEL_PREFIX = "I confirm that I have read and agree to the membership terms above"
     }
 }

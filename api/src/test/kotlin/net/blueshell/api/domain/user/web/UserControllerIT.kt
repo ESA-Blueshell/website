@@ -2,6 +2,8 @@ package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
+import net.blueshell.api.domain.user.application.event.UserDeleted
+import net.blueshell.api.domain.user.application.event.UserRestored
 import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
 import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
 import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
@@ -544,6 +546,182 @@ class UserControllerIT : UserTestSupport() {
 
             assertThat(memberProfileLifecycleRepository.findById(targetId)).isEmpty
             assertThat(addressLifecycleRepository.findById(addressId)).isEmpty
+        }
+
+        @Test
+        fun `board can delete and restore user without member profile`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val originalUsername = target.username
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/{userId}/memberProfiles", target.id).with(bearer(board)))
+                .andExpect(status().isNotFound)
+
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val restored = userRepository.findById(target.id!!).orElseThrow()
+            assertThat(restored.username).isEqualTo(originalUsername)
+            assertThat(deletedUsers.findById(target.id!!)).isEmpty()
+
+            mvc.perform(get("/users/{userId}/memberProfiles", target.id).with(bearer(board)))
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `board can delete and restore user without address`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = assignMemberProfile(createUserWithRole(Role.MEMBER))
+            val targetId = checkNotNull(target.id)
+            val originalUsername = target.username
+            val originalStudentNumber = memberProfileRepository.findById(targetId).orElseThrow().studentNumber
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+                .andExpect(status().isNotFound)
+
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val restored = userRepository.findById(targetId).orElseThrow()
+            assertThat(restored.username).isEqualTo(originalUsername)
+
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.studentNumber").value(originalStudentNumber))
+        }
+
+        @Test
+        fun `consent is cleared on user deletion`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER).apply { consentPrivacy = true }
+            persist(target)
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val persisted = userRepository.findById(target.id!!).orElseThrow()
+            assertThat(persisted.consentPrivacy).isFalse()
+        }
+
+        @Test
+        fun `consent remains cleared after restoration`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER).apply { consentPrivacy = true }
+            persist(target)
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val restored = userRepository.findById(target.id!!).orElseThrow()
+            assertThat(restored.consentPrivacy)
+                .describedAs("Consent is personal data and should not be auto-restored")
+                .isFalse()
+        }
+
+        @Test
+        fun `restore returns gone when restore window has expired`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+
+            lifecycle.deleteUser(checkNotNull(target.id))
+
+            transactionTemplate.execute {
+                val snapshot = deletedUsers.findById(target.id!!).orElseThrow()
+                snapshot.restoreUntilAt = Instant.now().minusSeconds(60)
+                deletedUsers.saveAndFlush(snapshot)
+            }
+
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+                .andExpect(status().isGone)
+        }
+
+        @Test
+        fun `finalization completes cleanly for user without member profile or address`() {
+            val target = createUserWithRole(Role.MEMBER)
+            val targetId = checkNotNull(target.id)
+
+            lifecycle.deleteUser(targetId)
+
+            transactionTemplate.execute {
+                val snapshot = deletedUsers.findById(targetId).orElseThrow()
+                snapshot.restoreUntilAt = Instant.now().minusSeconds(60)
+                deletedUsers.saveAndFlush(snapshot)
+            }
+
+            val finalized = lifecycle.finalizeExpiredDeletedUsers(50)
+            assertThat(finalized).isGreaterThanOrEqualTo(1)
+            assertThat(deletedUsers.findById(targetId)).isEmpty()
+        }
+
+        @Test
+        fun `second finalization run is a no-op`() {
+            val target = assignAddress(assignMemberProfile(createUserWithRole(Role.MEMBER)))
+            val targetId = checkNotNull(target.id)
+
+            lifecycle.deleteUser(targetId)
+
+            transactionTemplate.execute {
+                val snapshot = deletedUsers.findById(targetId).orElseThrow()
+                snapshot.restoreUntilAt = Instant.now().minusSeconds(60)
+                deletedUsers.saveAndFlush(snapshot)
+            }
+
+            val firstRun = lifecycle.finalizeExpiredDeletedUsers(50)
+            assertThat(firstRun).isGreaterThanOrEqualTo(1)
+
+            val secondRun = lifecycle.finalizeExpiredDeletedUsers(50)
+            assertThat(secondRun).isEqualTo(0)
+        }
+
+        @Test
+        fun `deleted users list includes restoreUntilAt`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/deleted").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content[0].restoreUntilAt").isNotEmpty)
+        }
+
+        @Test
+        fun `UserDeleted event is published on user deletion`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val targetId = checkNotNull(target.id)
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val events = applicationEvents.stream(UserDeleted::class.java).toList()
+            assertThat(events).hasSize(1)
+            assertThat(events.first().userId).isEqualTo(targetId)
+        }
+
+        @Test
+        fun `UserRestored event is published on user restoration`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+            val targetId = checkNotNull(target.id)
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            val events = applicationEvents.stream(UserRestored::class.java).toList()
+            assertThat(events).hasSize(1)
+            assertThat(events.first().userId).isEqualTo(targetId)
         }
 
         @Test

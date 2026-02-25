@@ -3,6 +3,16 @@
 Period: 2026-02 onward (current active cycle)  
 Versioning status: upcoming `1.1.0`
 
+## Privacy lifecycle simplification (2026-02-25)
+- Replaced all `ResponseStatusException` in `UserLifecycleService` with domain-specific exceptions (`DeletedUserNotFoundException`, `RestoreWindowExpiredException`, `RestoreConflictException`) and a `@RestControllerAdvice` mapping them to RFC 9457 Problem Details responses (ADR-008).
+- Added `UserDeleted` and `UserRestored` domain events published after lifecycle transitions. Moved contact deletion job dispatch from the lifecycle service to `UserLifecycleEventListener` (ADR-006).
+- Removed redundant boolean snapshot fields `hadMemberProfile` and `hadAddress` from `DeletedUser`. Restore and finalization now use query-based approaches instead of flag checks.
+- Cleared `consentPrivacy` on user deletion (privacy correctness: consent flags are personal data).
+- Removed dead code: `consentGdpr` field from `User` and `consent_gdpr` column from `users` table.
+- Added `restoreUntilAt` field to `UserDetailResponse` (previously not exposed in API). Frontend `RecoveryUserRow.vue` now shows a chip with remaining restore days (amber when < 7 days).
+- Expanded `UserControllerIT` with 10 new integration tests covering: delete/restore without member profile, delete/restore without address, consent cleared on deletion, consent not restored on restoration, 410 Gone on expired window, finalization without profile/address, idempotent finalization, `restoreUntilAt` in response, `UserDeleted` and `UserRestored` domain events.
+- Migration V48: drops `had_member_profile`, `had_address` from `deleted_users`; drops `consent_gdpr` from `users`.
+
 ## Implemented/in-progress functionality
 - Full backend migration track to Kotlin was executed across the codebase.
 - Queueing and async processing matured around RabbitMQ-backed job handling.

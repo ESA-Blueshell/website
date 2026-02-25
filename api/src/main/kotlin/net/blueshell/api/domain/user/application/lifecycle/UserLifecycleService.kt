@@ -9,14 +9,14 @@ import net.blueshell.api.domain.user.application.exception.RestoreWindowExpiredE
 import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
 import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
 import net.blueshell.api.domain.user.persistence.DeletedUser
-import net.blueshell.api.domain.user.persistence.lifecycle.LifecycleSoftDeleteTimestamps
-import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepository
+import net.blueshell.api.domain.user.persistence.lifecycle.SoftDeleteSentinels
+import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepo
 import net.blueshell.api.domain.user.persistence.repository.AddressRepository
 import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
-import net.blueshell.api.domain.user.persistence.repository.MemberProfileLifecycleRepository
+import net.blueshell.api.domain.user.persistence.repository.ProfileLifecycleRepo
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
-import net.blueshell.api.domain.user.persistence.spec.AddressLifecycleSpecifications
-import net.blueshell.api.domain.user.persistence.spec.MemberProfileLifecycleSpecifications
+import net.blueshell.api.domain.user.persistence.spec.AddressLifecycleSpecs
+import net.blueshell.api.domain.user.persistence.spec.ProfileLifecycleSpecs
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
@@ -32,8 +32,8 @@ class UserLifecycleService(
     private val users: UserService,
     private val userRepository: UserRepository,
     private val deletedUsers: DeletedUserRepository,
-    private val memberProfileLifecycles: MemberProfileLifecycleRepository,
-    private val addressLifecycles: AddressLifecycleRepository,
+    private val profileLifecycles: ProfileLifecycleRepo,
+    private val addressLifecycles: AddressLifecycleRepo,
     private val addresses: AddressRepository,
     private val trackedEvents: TrackedEventPublisher,
     @param:Value("\${app.user-lifecycle.restore-window-days:90}")
@@ -95,25 +95,25 @@ class UserLifecycleService(
         val user = users.findById(snapshot.userId)
 
         // Restore soft-deleted member profile if one exists
-        memberProfileLifecycles.findOne(
-            MemberProfileLifecycleSpecifications.fromQuery(
+        profileLifecycles.findOne(
+            ProfileLifecycleSpecs.fromQuery(
                 MemberProfileLifecycleQuery(userId = snapshot.userId, softDeleted = true)
             )
         ).ifPresent { profile ->
-            profile.deletedAt = LifecycleSoftDeleteTimestamps.ACTIVE_ROW_DELETED_AT
+            profile.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
             profile.updatedAt = now
-            memberProfileLifecycles.saveAndFlush(profile)
+            profileLifecycles.saveAndFlush(profile)
         }
 
         // Restore soft-deleted address if one exists
         val restoreAddressId = snapshot.addressId
         if (restoreAddressId != null) {
             addressLifecycles.findOne(
-                AddressLifecycleSpecifications.fromQuery(
+                AddressLifecycleSpecs.fromQuery(
                     AddressLifecycleQuery(id = restoreAddressId, softDeleted = true)
                 )
             ).ifPresent { addr ->
-                addr.deletedAt = LifecycleSoftDeleteTimestamps.ACTIVE_ROW_DELETED_AT
+                addr.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
                 addr.updatedAt = now
                 addressLifecycles.saveAndFlush(addr)
             }
@@ -155,19 +155,19 @@ class UserLifecycleService(
         }
 
         val profileUserIds = expired.map { it.userId }.toSet()
-        val memberProfilesToDelete = memberProfileLifecycles.findAll(
-            MemberProfileLifecycleSpecifications.fromQuery(
+        val memberProfilesToDelete = profileLifecycles.findAll(
+            ProfileLifecycleSpecs.fromQuery(
                 MemberProfileLifecycleQuery(userIds = profileUserIds, softDeleted = true)
             )
         )
         if (memberProfilesToDelete.isNotEmpty()) {
-            memberProfileLifecycles.deleteAllInBatch(memberProfilesToDelete)
+            profileLifecycles.deleteAllInBatch(memberProfilesToDelete)
         }
 
         val addressIds = expired.mapNotNull { it.addressId }.toSet()
         if (addressIds.isNotEmpty()) {
             val addressesToDelete = addressLifecycles.findAll(
-                AddressLifecycleSpecifications.fromQuery(
+                AddressLifecycleSpecs.fromQuery(
                     AddressLifecycleQuery(ids = addressIds, softDeleted = true)
                 )
             )

@@ -8,13 +8,13 @@ import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
 import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
 import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
 import net.blueshell.api.domain.user.persistence.repository.AddressRepository
-import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepository
+import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepo
 import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
 import net.blueshell.api.domain.user.persistence.repository.MemberRepository
-import net.blueshell.api.domain.user.persistence.repository.MemberProfileLifecycleRepository
+import net.blueshell.api.domain.user.persistence.repository.ProfileLifecycleRepo
 import net.blueshell.api.domain.user.persistence.repository.MemberProfileRepository
-import net.blueshell.api.domain.user.persistence.spec.AddressLifecycleSpecifications
-import net.blueshell.api.domain.user.persistence.spec.MemberProfileLifecycleSpecifications
+import net.blueshell.api.domain.user.persistence.spec.AddressLifecycleSpecs
+import net.blueshell.api.domain.user.persistence.spec.ProfileLifecycleSpecs
 import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
@@ -42,10 +42,10 @@ class UserControllerIT : UserTestSupport() {
     private lateinit var addressRepository: AddressRepository
 
     @Autowired
-    private lateinit var addressLifecycleRepository: AddressLifecycleRepository
+    private lateinit var addressLifecycleRepo: AddressLifecycleRepo
 
     @Autowired
-    private lateinit var memberProfileLifecycleRepository: MemberProfileLifecycleRepository
+    private lateinit var profileLifecycleRepo: ProfileLifecycleRepo
 
     @Autowired
     private lateinit var membershipRepository: MemberRepository
@@ -491,8 +491,8 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isNotFound)
 
             assertThat(
-                memberProfileLifecycleRepository.findOne(
-                    MemberProfileLifecycleSpecifications.fromQuery(
+                profileLifecycleRepo.findOne(
+                    ProfileLifecycleSpecs.fromQuery(
                         MemberProfileLifecycleQuery(
                             userId = targetId,
                             softDeleted = true
@@ -501,8 +501,8 @@ class UserControllerIT : UserTestSupport() {
                 )
             ).isPresent
             assertThat(
-                addressLifecycleRepository.findOne(
-                    AddressLifecycleSpecifications.fromQuery(
+                addressLifecycleRepo.findOne(
+                    AddressLifecycleSpecs.fromQuery(
                         AddressLifecycleQuery(
                             id = originalAddressId,
                             softDeleted = true
@@ -544,8 +544,8 @@ class UserControllerIT : UserTestSupport() {
             assertThat(finalized).isGreaterThanOrEqualTo(1)
             assertThat(deletedUsers.findById(targetId)).isEmpty
 
-            assertThat(memberProfileLifecycleRepository.findById(targetId)).isEmpty
-            assertThat(addressLifecycleRepository.findById(addressId)).isEmpty
+            assertThat(profileLifecycleRepo.findById(targetId)).isEmpty
+            assertThat(addressLifecycleRepo.findById(addressId)).isEmpty
         }
 
         @Test

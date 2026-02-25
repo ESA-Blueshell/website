@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.web
+package net.blueshell.api.domain.user.web.advice
 
 import jakarta.servlet.http.HttpServletRequest
 import net.blueshell.api.domain.user.application.exception.ErasureException
@@ -12,7 +12,7 @@ import java.net.URI
 
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
-class UserLifecycleProblemDetailsAdvice {
+class ErasureAdvice {
 
     @ExceptionHandler(ErasureException.NotFound::class)
     fun handleDeletedUserNotFound(ex: ErasureException.NotFound, request: HttpServletRequest): ProblemDetail {

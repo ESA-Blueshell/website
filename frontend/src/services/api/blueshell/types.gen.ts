@@ -404,6 +404,7 @@ export type JobExecution = {
     attempts: number;
     category?: JobExecutionCategory;
     createdAt?: string;
+    dedupKey?: string;
     errorMessage?: string;
     errorReason?: string;
     errorType?: string;
@@ -420,7 +421,7 @@ export type JobExecution = {
     relatedEntities: Array<JobExecutionRelatedEntity>;
     stackTrace?: string;
     startedAt?: string;
-    status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+    status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'DEAD';
     summary?: string;
     updatedAt?: string;
 };
@@ -3037,7 +3038,7 @@ export type ListData = {
          * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
          */
         sort?: Array<string>;
-        status?: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+        status?: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'DEAD';
         category?: JobExecutionCategory;
         search?: string;
         initiatedByType?: 'USER' | 'SYSTEM';

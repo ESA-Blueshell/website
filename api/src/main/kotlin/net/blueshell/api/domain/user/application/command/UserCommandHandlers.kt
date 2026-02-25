@@ -166,7 +166,6 @@ private fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
         dateOfBirth = dateOfBirth,
         studentNumber = studentNumber,
         gender = gender,
-        photoConsent = photoConsent,
         nationality = nationality,
         bhv = bhv,
         ehbo = ehbo
@@ -182,7 +181,6 @@ private fun UpsertMemberProfileData.upsertInto(user: User) {
     existing.dateOfBirth = dateOfBirth
     existing.studentNumber = studentNumber
     existing.gender = gender
-    existing.photoConsent = photoConsent
     existing.nationality = nationality
     existing.bhv = bhv
     existing.ehbo = ehbo

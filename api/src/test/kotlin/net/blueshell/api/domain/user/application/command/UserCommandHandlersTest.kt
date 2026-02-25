@@ -190,7 +190,6 @@ class UserCommandHandlersTest {
                 dateOfBirth = Date.valueOf("1999-01-01"),
                 studentNumber = "old",
                 gender = "F",
-                photoConsent = false,
                 nationality = "Dutch",
                 bhv = false,
                 ehbo = false
@@ -339,7 +338,6 @@ class UserCommandHandlersTest {
         dateOfBirth = Date.valueOf("2000-01-01"),
         studentNumber = "s123",
         gender = "M",
-        photoConsent = true,
         nationality = "Dutch",
         bhv = false,
         ehbo = true,

@@ -102,7 +102,6 @@ const defaultMemberProfile = (): UpsertMemberProfileRequest => ({
   dateOfBirth: "",
   studentNumber: "",
   gender: "",
-  photoConsent: false,
   nationality: "NL",
   bhv: false,
   ehbo: false,
@@ -136,7 +135,6 @@ const fromMemberProfileResponse = (data: MemberProfileResponse): UpsertMemberPro
   dateOfBirth: data.dateOfBirth ?? "",
   studentNumber: data.studentNumber ?? "",
   gender: data.gender ?? "",
-  photoConsent: data.photoConsent ?? false,
   nationality: data.nationality ?? "NL",
   bhv: data.bhv ?? false,
   ehbo: data.ehbo ?? false,
@@ -487,16 +485,6 @@ defineExpose({validate, save})
           />
         </div>
 
-        <div class="checkbox-row">
-          <VvField
-            v-model="memberProfileModel.photoConsent"
-            test-id="user-form-photo-consent-field"
-            :component="VCheckbox"
-            :component-props="{ hideDetails: true, class: 'w-100' }"
-            label="I understand photos may be taken during association events under the privacy policy and allow ESA Blueshell to store my photo preference in my member profile for organizer reference."
-            name="photoConsent"
-          />
-        </div>
       </template>
 
       <div class="checkbox-row">

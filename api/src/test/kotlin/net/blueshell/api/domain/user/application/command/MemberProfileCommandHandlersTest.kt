@@ -41,7 +41,6 @@ class MemberProfileCommandHandlersTest {
                     dateOfBirth = birthDate,
                     studentNumber = "s123",
                     gender = "M",
-                    photoConsent = true,
                     nationality = "Dutch",
                     bhv = false,
                     ehbo = true
@@ -52,7 +51,7 @@ class MemberProfileCommandHandlersTest {
             assertThat(result.dateOfBirth).isEqualTo(birthDate)
             assertThat(result.studentNumber).isEqualTo("s123")
             assertThat(result.gender).isEqualTo("M")
-            assertThat(result.photoConsent).isTrue()
+
             assertThat(result.nationality).isEqualTo("Dutch")
             assertThat(result.bhv).isFalse()
             assertThat(result.ehbo).isTrue()
@@ -67,7 +66,6 @@ class MemberProfileCommandHandlersTest {
                     dateOfBirth = Date.valueOf("2000-01-01"),
                     studentNumber = "old",
                     gender = "F",
-                    photoConsent = false,
                     nationality = "Dutch",
                     bhv = false,
                     ehbo = false
@@ -82,7 +80,6 @@ class MemberProfileCommandHandlersTest {
                         dateOfBirth = Date.valueOf("2000-01-01"),
                         studentNumber = "s123",
                         gender = "M",
-                        photoConsent = true,
                         nationality = "Dutch",
                         bhv = false,
                         ehbo = true
@@ -107,7 +104,6 @@ class MemberProfileCommandHandlersTest {
                 dateOfBirth = Date.valueOf("1998-01-01"),
                 studentNumber = "old",
                 gender = "F",
-                photoConsent = false,
                 nationality = "Dutch",
                 bhv = false,
                 ehbo = false
@@ -122,7 +118,6 @@ class MemberProfileCommandHandlersTest {
                     dateOfBirth = birthDate,
                     studentNumber = "new",
                     gender = "M",
-                    photoConsent = true,
                     nationality = "Belgian",
                     bhv = true,
                     ehbo = true,
@@ -133,7 +128,7 @@ class MemberProfileCommandHandlersTest {
             assertThat(profile.dateOfBirth).isEqualTo(birthDate)
             assertThat(profile.studentNumber).isEqualTo("new")
             assertThat(profile.gender).isEqualTo("M")
-            assertThat(profile.photoConsent).isTrue()
+
             assertThat(profile.nationality).isEqualTo("Belgian")
             assertThat(profile.bhv).isTrue()
             assertThat(profile.ehbo).isTrue()
@@ -155,7 +150,6 @@ class MemberProfileCommandHandlersTest {
                 dateOfBirth = Date.valueOf("1998-01-01"),
                 studentNumber = "s123",
                 gender = "M",
-                photoConsent = true,
                 nationality = "Dutch",
                 bhv = false,
                 ehbo = false

@@ -90,8 +90,6 @@ class UserControllerIT : UserTestSupport() {
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","photoConsent":true,"nationality":"NL","bhv":true,"ehbo":false}}"""
-                    )
             )
                 .andExpect(status().isCreated)
                 .andReturn()
@@ -102,7 +100,6 @@ class UserControllerIT : UserTestSupport() {
             assertThat(profile.userId).isEqualTo(userId)
             assertThat(profile.studentNumber).isEqualTo("s1234567")
             assertThat(profile.gender).isEqualTo("X")
-            assertThat(profile.photoConsent).isTrue()
             assertThat(profile.nationality).isEqualTo("NL")
             assertThat(profile.bhv).isTrue()
             assertThat(profile.ehbo).isFalse()
@@ -189,7 +186,7 @@ class UserControllerIT : UserTestSupport() {
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"kind":"user","discord":"guest_upserted#1234","phoneNumber":"+31612345671","newsletter":false,"version":${guest.version},"memberProfile":{"dateOfBirth":"2000-06-15","studentNumber":"s7654321","gender":"F","photoConsent":false,"nationality":"DE","bhv":false,"ehbo":true}}"""
+                        """{"kind":"user","discord":"guest_upserted#1234","phoneNumber":"+31612345671","newsletter":false,"version":${guest.version},"memberProfile":{"dateOfBirth":"2000-06-15","studentNumber":"s7654321","gender":"F","nationality":"DE","bhv":false,"ehbo":true}}"""
                     )
             )
                 .andExpect(status().isOk)
@@ -197,7 +194,6 @@ class UserControllerIT : UserTestSupport() {
             val profile = memberProfileRepository.findById(guest.id!!).orElseThrow()
             assertThat(profile.studentNumber).isEqualTo("s7654321")
             assertThat(profile.gender).isEqualTo("F")
-            assertThat(profile.photoConsent).isFalse()
             assertThat(profile.nationality).isEqualTo("DE")
             assertThat(profile.bhv).isFalse()
             assertThat(profile.ehbo).isTrue()
@@ -215,7 +211,7 @@ class UserControllerIT : UserTestSupport() {
                     .with(bearer(guestWithProfile))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"kind":"user","discord":"guest_profile_updated#1234","phoneNumber":"+31612345672","newsletter":false,"version":${guestWithProfile.version},"memberProfile":{"dateOfBirth":"2001-01-20","studentNumber":"s1111111","gender":"M","photoConsent":false,"nationality":"FR","bhv":true,"ehbo":true,"version":$profileVersionBefore}}"""
+                        """{"kind":"user","discord":"guest_profile_updated#1234","phoneNumber":"+31612345672","newsletter":false,"version":${guestWithProfile.version},"memberProfile":{"dateOfBirth":"2001-01-20","studentNumber":"s1111111","gender":"M","nationality":"FR","bhv":true,"ehbo":true,"version":$profileVersionBefore}}"""
                     )
             )
                 .andExpect(status().isOk)
@@ -223,7 +219,6 @@ class UserControllerIT : UserTestSupport() {
             val profileAfter = memberProfileRepository.findById(guestWithProfile.id!!).orElseThrow()
             assertThat(profileAfter.studentNumber).isEqualTo("s1111111")
             assertThat(profileAfter.gender).isEqualTo("M")
-            assertThat(profileAfter.photoConsent).isFalse()
             assertThat(profileAfter.nationality).isEqualTo("FR")
             assertThat(profileAfter.bhv).isTrue()
             assertThat(profileAfter.ehbo).isTrue()

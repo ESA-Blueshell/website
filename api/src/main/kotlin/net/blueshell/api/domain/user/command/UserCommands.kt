@@ -16,7 +16,6 @@ data class UpsertMemberProfileData(
     val dateOfBirth: Date,
     val studentNumber: String,
     val gender: String?,
-    val photoConsent: Boolean,
     val nationality: String,
     val bhv: Boolean,
     val ehbo: Boolean,

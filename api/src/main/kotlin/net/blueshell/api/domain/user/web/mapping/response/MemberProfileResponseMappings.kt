@@ -10,7 +10,6 @@ fun MemberProfile.asResponse(): MemberProfileResponse =
         dateOfBirth = this.dateOfBirth?.toLocalDate(),
         studentNumber = this.studentNumber,
         gender = this.gender,
-        photoConsent = this.photoConsent,
         nationality = this.nationality,
         bhv = this.bhv,
         ehbo = this.ehbo,

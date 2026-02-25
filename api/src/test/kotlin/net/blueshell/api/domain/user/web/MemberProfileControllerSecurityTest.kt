@@ -21,10 +21,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class MemberProfileControllerSecurityTest : UserTestSupport() {
 
     private fun createPayload(userId: Long): String =
-        """{"userId":$userId,"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","photoConsent":true,"nationality":"NL","bhv":true,"ehbo":false}"""
+        """{"userId":$userId,"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"NL","bhv":true,"ehbo":false}"""
 
     private fun updatePayload(version: Long): String =
-        """{"dateOfBirth":"2000-01-01","studentNumber":"s7654321","gender":"F","photoConsent":false,"nationality":"DE","bhv":false,"ehbo":true,"version":$version}"""
+        """{"dateOfBirth":"2000-01-01","studentNumber":"s7654321","gender":"F","nationality":"DE","bhv":false,"ehbo":true,"version":$version}"""
 
     @Nested
     inner class CreateMemberProfile {

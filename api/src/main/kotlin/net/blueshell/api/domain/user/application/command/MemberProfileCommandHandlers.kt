@@ -30,7 +30,6 @@ class CreateMemberProfileHandler(
             dateOfBirth = command.dateOfBirth,
             studentNumber = command.studentNumber,
             gender = command.gender,
-            photoConsent = command.photoConsent,
             nationality = command.nationality,
             bhv = command.bhv,
             ehbo = command.ehbo
@@ -52,7 +51,6 @@ class UpdateMemberProfileHandler(
             dateOfBirth = command.dateOfBirth
             studentNumber = command.studentNumber
             gender = command.gender
-            photoConsent = command.photoConsent
             nationality = command.nationality
             bhv = command.bhv
             ehbo = command.ehbo

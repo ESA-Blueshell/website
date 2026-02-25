@@ -73,7 +73,6 @@ class UserFactory(
             dateOfBirth = Date.valueOf("1999-05-05"),
             studentNumber = "s${System.currentTimeMillis()}",
             gender = "X",
-            photoConsent = true,
             bhv = false,
             ehbo = false,
             nationality = "NL"

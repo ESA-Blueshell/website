@@ -28,9 +28,6 @@ class MemberProfile(
     @Column(name = "gender", length = 64)
     var gender: String? = null,
 
-    @Column(name = "photo_consent", nullable = false)
-    var photoConsent: Boolean,
-
     @Column(name = "nationality", length = 128)
     var nationality: String? = null,
 

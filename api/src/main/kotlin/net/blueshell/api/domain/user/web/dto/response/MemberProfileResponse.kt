@@ -11,7 +11,6 @@ data class MemberProfileResponse(
     var dateOfBirth: LocalDate?,
     var studentNumber: String?,
     var gender: String?,
-    var photoConsent: Boolean,
     var nationality: String?,
     var bhv: Boolean,
     var ehbo: Boolean,

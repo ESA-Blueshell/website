@@ -47,4 +47,32 @@ test.describe("create account validation", () => {
     ).toBeVisible()
     await expect(page.getByTestId("create-account-success-state")).toHaveCount(0)
   })
+
+  test("requires privacy-policy agreement before account creation submit", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+    const phoneSuffix = suffix.slice(-4)
+
+    await loadCreateAccountForm(page)
+
+    await inputByTestId(page, "user-form-initials-field").fill("PA")
+    await inputByTestId(page, "user-form-first-name-field").fill("Privacy")
+    await inputByTestId(page, "user-form-last-name-field").fill("Agreement")
+    await inputByTestId(page, "user-form-username-field").fill(`privacy${suffix}`)
+    await inputByTestId(page, "user-form-discord-field").fill(`privacy${suffix}`)
+    await inputByTestId(page, "user-form-email-field").fill(`privacy${suffix}@example.com`)
+    await inputByTestId(page, "user-form-phone-number-field").fill(`+3161234${phoneSuffix}`)
+    await inputByTestId(page, "user-form-password-field").fill("Password123!")
+    await inputByTestId(page, "user-form-password-repeat-field").fill("Password123!")
+
+    await page.getByTestId("user-form-submit-btn").click()
+
+    await expect(page.getByTestId("create-account-success-state")).toHaveCount(0)
+    await expect(page.getByTestId("create-account-form-state")).toBeVisible()
+
+    await inputByTestId(page, "user-form-privacy-consent-field").check()
+    await page.getByTestId("user-form-submit-btn").click()
+
+    await expect(page.getByTestId("create-account-success-state")).toBeVisible()
+  })
 })

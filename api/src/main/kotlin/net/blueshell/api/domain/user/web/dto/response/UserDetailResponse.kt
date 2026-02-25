@@ -16,10 +16,12 @@ data class UserDetailResponse(
     var lastName: String,
     var fullName: String,
     var newsletter: Boolean,
+    var photoConsent: Boolean,
     var email: String,
     var discord: String?,
     var phoneNumber: String?,
     var addressId: Long? = null,
+    var restoreUntilAt: Instant? = null,
     var createdAt: Instant,
     var updatedAt: Instant,
     var version: Long

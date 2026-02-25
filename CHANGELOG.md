@@ -16,6 +16,7 @@ github, which is its current state.
 - Pre-versioning era: 2019 through most of 2025.
 - `1.0.0`: formal stable baseline at the end of the 2025 consolidation period.
 - `1.1.0` Kotlin + RabbitMQ + retry + test/coverage/security/DDD modernization period.
+- `1.1.1` Privacy and consent policy updates.
 
 ## Repository Lineage
 - Legacy GitLab org projects: https://gitlab.com/blueshell-esports

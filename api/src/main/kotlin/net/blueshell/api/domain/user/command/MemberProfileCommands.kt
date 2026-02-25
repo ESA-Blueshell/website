@@ -9,7 +9,6 @@ data class CreateMemberProfileCommand(
     val dateOfBirth: Date,
     val studentNumber: String,
     val gender: String?,
-    val photoConsent: Boolean,
     val nationality: String,
     val bhv: Boolean,
     val ehbo: Boolean
@@ -20,7 +19,6 @@ data class UpdateMemberProfileCommand(
     val dateOfBirth: Date,
     val studentNumber: String,
     val gender: String?,
-    val photoConsent: Boolean,
     val nationality: String,
     val bhv: Boolean,
     val ehbo: Boolean,

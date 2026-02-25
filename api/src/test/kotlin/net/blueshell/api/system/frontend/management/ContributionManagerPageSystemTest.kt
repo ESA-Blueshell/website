@@ -4,6 +4,7 @@ import com.microsoft.playwright.Page
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
@@ -29,6 +30,9 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
 
     @Autowired
     private lateinit var contributionRepository: ContributionRepository
+
+    @Autowired
+    private lateinit var erasure: UserErasureService
 
     @Test
     fun `board adds period and switches paid status between periods`() {
@@ -185,6 +189,41 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
             assertThat(markUnpaidResponse.status()).isEqualTo(204)
         }
 
+    }
+
+    @Test
+    fun `deleted member remains visible in contribution manager lists`() {
+        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
+        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        userFactory.createMembership(member)
+        val memberId = checkNotNull(member.id) { "Expected member id" }
+
+        val (startDate, endDate, _) = createFuturePeriod()
+        val periodLabel = "${startDate.format(FORMATTER)} - ${endDate.format(FORMATTER)}"
+
+        erasure.deleteUser(memberId)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            ContributionManagerHelper.open(page, frontendUrl)
+            waitFor(
+                onTimeoutMessage = { "Expected contribution period '$periodLabel' to be visible" }
+            ) {
+                page.getByText(periodLabel, Page.GetByTextOptions().setExact(false)).count() > 0
+            }
+            ContributionManagerHelper.selectPeriod(page, periodLabel)
+            ContributionManagerHelper.openSection(page, "unpaid")
+
+            waitFor(
+                onTimeoutMessage = {
+                    "Expected deleted member $memberId to stay visible in contribution unpaid list as anonymized user"
+                }
+            ) {
+                page.locator("[data-testid='contribution-user-row-$memberId']").count() > 0
+            }
+        }
     }
 
     private fun createFuturePeriod(): Triple<LocalDate, LocalDate, ContributionPeriod> {

@@ -287,23 +287,18 @@ Repository
 
 ---
 
-### 3. Object Mapping with Mappie
+### 3. Manual Object Mapping with Extension Functions
 
-**Mappie 2.3.10** is used for all DTO ↔ Command and Entity ↔ Response mappings.
+**Pattern:** Manual mapping with extension functions for all DTO ↔ Command and Entity ↔ Response conversions.
 
-**Pattern:**
+**Request to Command Mapping:**
 ```kotlin
-// domain/user/web/mapping/UserCommandMappings.kt
-object CreateUserRequestToCommandMapper : ObjectMappie<CreateUserRequest, CreateUserCommand>() {
-    override fun map(from: CreateUserRequest) = mapping {
-        CreateUserCommand::username fromProperty from::username
-        CreateUserCommand::email fromProperty from::email
-    }
-}
-
-// Extension function for clean API
+// domain/user/web/mapping/request/UserRequestMappings.kt
 fun CreateUserRequest.asCommand(): CreateUserCommand =
-    CreateUserRequestToCommandMapper.map(this)
+    CreateUserCommand(
+        username = this.username,
+        email = this.email
+    )
 
 // Usage in controller
 @PostMapping
@@ -313,18 +308,43 @@ fun createUser(@Valid @RequestBody request: CreateUserRequest): UserResponse {
 }
 ```
 
+**Entity to Response Mapping:**
+```kotlin
+// domain/committee/web/mapping/response/CommitteeResponseMappings.kt
+fun Committee.asDetailResponse(): CommitteeDetailResponse =
+    CommitteeDetailResponse(
+        id = this.id!!,
+        name = this.name,
+        description = this.description,
+        members = this.members.map { it.asDto() }.toMutableList(),
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
+
+fun CommitteeMember.asDto(): CommitteeMemberResponse =
+    CommitteeMemberResponse(
+        userId = this.userId,
+        committeeId = this.committeeId,
+        role = this.role!!,
+        version = this.version,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
+```
+
 **Mapping Responsibilities:**
-- **Web → Command**: Mappie in `web/mapping/`
+- **Web → Command**: Extension functions in `web/mapping/request/`
 - **Command → Entity**: Manual in handlers or factories
-- **Entity → Response**: Mappie in `web/mapping/`
+- **Entity → Response**: Extension functions in `web/mapping/response/`
 
 **Rules:**
-- ✅ Use Mappie for API boundaries (Request/Response)
-- ✅ Create extension functions (`.asCommand()`, `.asResponse()`)
-- ✅ Use `object` singletons for mappers (stateless)
-- ✅ Keep mappers in `web/mapping/` package
+- ✅ Use extension functions (`.asCommand()`, `.asResponse()`, `.asDto()`)
+- ✅ Keep mapping logic in `web/mapping/` package (separate request/response subdirectories)
+- ✅ Map at API boundaries (controllers map requests to commands, responses to DTOs)
+- ✅ Use straightforward property assignment
 - ❌ Don't put mapping logic in controllers or services
-- ❌ Don't mix Mappie and manual mapping inconsistently
+- ❌ Don't hide complex transformations in mappings
 
 **📚 See:** [ADR-004: Manual Mapping at API Boundaries](docs/adr/api/ADR-004-manual-mapping-at-api-boundaries.md)
 
@@ -869,7 +889,7 @@ Follow the git commit guidelines in CLAUDE.md:
 
 ### Backend
 - **Language**: Kotlin 2.3.10 with Java 24 toolchain
-- **Framework**: Spring Boot 3.5.7 (Web, Security, Data JPA, AMQP)
+- **Framework**: Spring Boot 4.0.3 (Web, Security, Data JPA, AMQP)
 - **Database**: MariaDB 10.11.10 with Flyway migrations
 - **Security**: Spring Security with JWT (nimbus-jose-jwt, jjwt)
 - **Mapping**: Mappie 2.3.10 for object mapping
@@ -878,13 +898,14 @@ Follow the git commit guidelines in CLAUDE.md:
 - **Integrations**: Google Calendar API, Mollie (payments), Brevo (email campaigns)
 
 ### Frontend
-- **Framework**: Vue.js 3.5.24 with TypeScript 5.7.2
-- **UI**: Vuetify 3.10.2 (Material Design)
+- **Framework**: Vue.js 3.5.28 with TypeScript 5.9.3
+- **UI**: Vuetify 3.12.0 (Material Design)
 - **State**: Vuex 4.1.0
-- **Routing**: Vue Router 4.5.1
-- **HTTP**: Axios 1.8.4 with OpenAPI-generated client
-- **Build**: Vite 6.2.0
+- **Routing**: Vue Router 5.0.3
+- **HTTP**: Axios 1.13.5 with OpenAPI-generated client
+- **Build**: Vite 7.3.1
 - **Validation**: VeeValidate 4.15.1
+- **Testing**: Playwright 1.58.2, Vitest 4.0.18
 - **Utilities**: Luxon (dates), Marked (Markdown), DOMPurify (XSS protection)
 
 ### Infrastructure

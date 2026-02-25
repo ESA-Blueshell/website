@@ -162,6 +162,15 @@ abstract class FrontendSystemTestBase {
             )
         )
 
+        if (UserFormHelper.acceptPrivacyConsentIfVisible(page)) {
+            waitFor(
+                timeoutMs = 5_000,
+                onTimeoutMessage = { "Expected privacy consent checkbox to be checked before submitting account form." }
+            ) {
+                UserFormHelper.privacyConsentCheckbox(page).isChecked
+            }
+        }
+
         if (submitButtonTestId != null) {
             page.locator("[data-testid='$submitButtonTestId']").first().click()
         } else {

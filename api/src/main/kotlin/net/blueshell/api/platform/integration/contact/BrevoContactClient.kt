@@ -90,6 +90,15 @@ class BrevoContactClient(
     }
 
     /**
+     * Delete a contact from Brevo by contact ID.
+     */
+    @Throws(RestClientResponseException::class)
+    fun deleteContact(contactId: Long) {
+        log.info("Deleting Brevo contact {}", contactId)
+        contactsApi.deleteContact(contactId.toString(), "contact_id")
+    }
+
+    /**
      * Create a new contact list in Brevo.
      * Returns the created list ID.
      */

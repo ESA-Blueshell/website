@@ -1,16 +1,20 @@
 package net.blueshell.api.domain.user.application.command
 
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.command.BoardUpdateUserCommand
 import net.blueshell.api.domain.user.command.CreateUserCommand
 import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
 import net.blueshell.api.domain.user.command.FindUserByIdCommand
+import net.blueshell.api.domain.user.command.FindDeletedUsersCommand
 import net.blueshell.api.domain.user.command.FindUsersCommand
+import net.blueshell.api.domain.user.command.RestoreDeletedUserByIdCommand
 import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
 import net.blueshell.api.domain.user.command.UpdateUserCommand
 import net.blueshell.api.domain.user.command.UpsertMemberProfileData
 import net.blueshell.api.domain.user.persistence.MemberProfile
+import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
@@ -31,6 +35,7 @@ import java.sql.Date
 class UserCommandHandlersTest {
 
     private val userService = mock<UserService>()
+    private val erasure = mock<UserErasureService>()
     private val passwordEncoder = mock<PasswordEncoder>()
 
     @Nested
@@ -52,6 +57,8 @@ class UserCommandHandlersTest {
                 prefix = null,
                 lastName = "Doe",
                 newsletter = true,
+                consentPrivacy = true,
+                photoConsent = true,
                 password = "Passw0rd!",
                 discord = "john#0001",
                 phoneNumber = "0612345678",
@@ -63,6 +70,8 @@ class UserCommandHandlersTest {
             assertThat(captured.firstValue.username).isEqualTo("john")
             assertThat(captured.firstValue.email).isEqualTo("john@example.com")
             assertThat(captured.firstValue.password).isEqualTo("encoded-pass")
+            assertThat(captured.firstValue.consentPrivacy).isTrue()
+            assertThat(captured.firstValue.photoConsent).isTrue()
             assertThat(captured.firstValue.memberProfile).isNotNull
             assertThat(captured.firstValue.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(captured.firstValue.memberProfile?.dateOfBirth).isEqualTo(Date.valueOf("2000-01-01"))
@@ -85,6 +94,8 @@ class UserCommandHandlersTest {
                 prefix = null,
                 lastName = "User",
                 newsletter = false,
+                consentPrivacy = false,
+                photoConsent = false,
                 password = null,
                 discord = "board#0001",
                 phoneNumber = "0611111111",
@@ -110,6 +121,8 @@ class UserCommandHandlersTest {
                 prefix = null,
                 lastName = "Doe",
                 newsletter = true,
+                consentPrivacy = false,
+                photoConsent = false,
                 password = null,
                 discord = "john#0001",
                 phoneNumber = "0612345678",
@@ -145,6 +158,7 @@ class UserCommandHandlersTest {
                     prefix = "van",
                     lastName = "User",
                     newsletter = false,
+                    photoConsent = true,
                     discord = "new#0001",
                     phoneNumber = "0622222222",
                     version = 4L,
@@ -159,6 +173,7 @@ class UserCommandHandlersTest {
             assertThat(existing.prefix).isEqualTo("van")
             assertThat(existing.lastName).isEqualTo("User")
             assertThat(existing.newsletter).isFalse()
+            assertThat(existing.photoConsent).isTrue()
             assertThat(existing.discord).isEqualTo("new#0001")
             assertThat(existing.phoneNumber).isEqualTo("0622222222")
             assertThat(existing.version).isEqualTo(4L)
@@ -181,7 +196,6 @@ class UserCommandHandlersTest {
                 dateOfBirth = Date.valueOf("1999-01-01"),
                 studentNumber = "old",
                 gender = "F",
-                photoConsent = false,
                 nationality = "Dutch",
                 bhv = false,
                 ehbo = false
@@ -196,6 +210,7 @@ class UserCommandHandlersTest {
                     discord = "upd#0001",
                     phoneNumber = "0633333333",
                     newsletter = true,
+                    photoConsent = true,
                     version = 8L,
                     memberProfile = upsertMemberProfileData(version = 9L)
                 )
@@ -204,6 +219,7 @@ class UserCommandHandlersTest {
             assertThat(existing.discord).isEqualTo("upd#0001")
             assertThat(existing.phoneNumber).isEqualTo("0633333333")
             assertThat(existing.newsletter).isTrue()
+            assertThat(existing.photoConsent).isTrue()
             assertThat(existing.version).isEqualTo(8L)
             assertThat(existing.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(existing.memberProfile?.version).isEqualTo(9L)
@@ -250,13 +266,63 @@ class UserCommandHandlersTest {
     @Nested
     inner class DeleteUserById {
 
-        private val handler = DeleteUserByIdHandler(userService)
+        private val handler = DeleteUserByIdHandler(erasure)
 
         @Test
         fun `deletes user by id`() {
             handler.handle(DeleteUserByIdCommand(4L))
 
-            verify(userService).deleteById(eq(4L))
+            verify(erasure).deleteUser(eq(4L))
+        }
+    }
+
+    @Nested
+    inner class FindDeletedUsers {
+
+        private val handler = FindDeletedUsersHandler(erasure)
+
+        @Test
+        fun `returns deleted users by pageable`() {
+            val pageable = PageRequest.of(0, 10)
+            val page = PageImpl(
+                listOf(
+                    DeletedUser(
+                        userId = 8L,
+                        username = "restorable",
+                        email = "restorable@example.com",
+                        initials = "RS",
+                        firstName = "Rest",
+                        prefix = null,
+                        lastName = "Orable",
+                        phoneNumber = null,
+                        discord = null,
+                        newsletter = false,
+                        photoConsent = false,
+                        enabled = true,
+                        deletedAt = java.time.Instant.now(),
+                        restoreUntilAt = java.time.Instant.now().plusSeconds(3600)
+                    )
+                ),
+                pageable,
+                1
+            )
+            whenever(erasure.findDeletedUsers(pageable)).thenReturn(page)
+
+            val result = handler.handle(FindDeletedUsersCommand(pageable))
+
+            assertThat(result).isSameAs(page)
+            verify(erasure).findDeletedUsers(pageable)
+        }
+    }
+
+    @Nested
+    inner class RestoreDeletedUserById {
+        private val handler = RestoreDeletedUserByIdHandler(erasure)
+
+        @Test
+        fun `restores user by id`() {
+            handler.handle(RestoreDeletedUserByIdCommand(9L))
+            verify(erasure).restoreDeletedUser(9L)
         }
     }
 
@@ -281,7 +347,6 @@ class UserCommandHandlersTest {
         dateOfBirth = Date.valueOf("2000-01-01"),
         studentNumber = "s123",
         gender = "M",
-        photoConsent = true,
         nationality = "Dutch",
         bhv = false,
         ehbo = true,

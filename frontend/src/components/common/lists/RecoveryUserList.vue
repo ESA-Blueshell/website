@@ -55,6 +55,7 @@
             <recovery-user-row
               :action-type="actionType"
               :user="user"
+              @action:done="emit('action:done')"
             />
             <v-divider />
           </template>
@@ -82,8 +83,8 @@ const props = withDefaults(defineProps<{
   title: string
   panelKey?: string
   users: UserDetailResponse[]
-  /** 'activation' => resend activation (inactive) | 'password' => password reset (active) */
-  actionType: "activation" | "password"
+  /** 'activation' => resend activation (inactive) | 'password' => password reset (active) | 'restore' => restore user */
+  actionType: "activation" | "password" | "restore"
   startOpen?: boolean
 }>(), {
   panelKey: "",
@@ -91,6 +92,9 @@ const props = withDefaults(defineProps<{
 })
 
 const {title, panelKey, users, actionType, startOpen} = toRefs(props)
+const emit = defineEmits<{
+  (e: "action:done"): void
+}>()
 
 const localSearch = ref("")
 const isOpen = ref<boolean>(startOpen.value)

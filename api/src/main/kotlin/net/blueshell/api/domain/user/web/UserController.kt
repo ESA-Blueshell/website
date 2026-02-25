@@ -7,7 +7,9 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
 import net.blueshell.api.domain.user.command.FindUserByIdCommand
+import net.blueshell.api.domain.user.command.FindDeletedUsersCommand
 import net.blueshell.api.domain.user.command.FindUsersCommand
+import net.blueshell.api.domain.user.command.RestoreDeletedUserByIdCommand
 import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
 import net.blueshell.api.domain.user.web.dto.request.BoardUpdateUserRequest
 import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
@@ -96,11 +98,27 @@ class UserController(
         return user.asDetailResponse()
     }
 
+    @GetMapping("/users/deleted")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
+    fun findDeletedUsers(
+        @ParameterObject pageable: Pageable = Pageable.unpaged()
+    ): Page<UserDetailResponse> {
+        val users = commandBus.dispatch(FindDeletedUsersCommand(pageable))
+        return users.map { it.asDetailResponse() }
+    }
+
     @DeleteMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserById(@PathVariable userId: Long) {
         commandBus.dispatch(DeleteUserByIdCommand(userId))
+    }
+
+    @PutMapping(value = ["/users/{userId}/restore"])
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'delete')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun restoreDeletedUserById(@PathVariable userId: Long) {
+        commandBus.dispatch(RestoreDeletedUserByIdCommand(userId))
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])

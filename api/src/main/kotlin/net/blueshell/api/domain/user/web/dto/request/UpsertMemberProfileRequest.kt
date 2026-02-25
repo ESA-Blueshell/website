@@ -15,9 +15,6 @@ data class UpsertMemberProfileRequest(
 
     var gender: String? = null,
 
-    @field:NotNull
-    var photoConsent: Boolean? = null,
-
     @field:NotBlank
     var nationality: String? = null,
 

@@ -2,15 +2,17 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import RecoveryUserRow from "@/components/common/rows/RecoveryUserRow.vue"
 
-const {mockResendUserActivation, mockResetPassword, mockHandleNetworkError} = vi.hoisted(() => ({
+const {mockResendUserActivation, mockResetPassword, mockRestoreDeletedUserById, mockHandleNetworkError} = vi.hoisted(() => ({
   mockResendUserActivation: vi.fn(),
   mockResetPassword: vi.fn(),
+  mockRestoreDeletedUserById: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
 vi.mock("@/services/api", () => ({
   resendUserActivation: mockResendUserActivation,
   resetPassword: mockResetPassword,
+  restoreDeletedUserById: mockRestoreDeletedUserById,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -22,6 +24,7 @@ describe("RecoveryUserRow", () => {
     vi.clearAllMocks()
     mockResendUserActivation.mockResolvedValue({})
     mockResetPassword.mockResolvedValue({})
+    mockRestoreDeletedUserById.mockResolvedValue({})
   })
 
   it("dispatches activation and password recovery actions", async () => {
@@ -32,7 +35,7 @@ describe("RecoveryUserRow", () => {
       },
     })
 
-    await (activation.vm as any).handleResend()
+    await (activation.vm as any).handleAction()
     expect(mockResendUserActivation).toHaveBeenCalledWith({
       path: {username: "emma"},
       throwOnError: true,
@@ -45,9 +48,22 @@ describe("RecoveryUserRow", () => {
       },
     })
 
-    await (password.vm as any).handleResend()
+    await (password.vm as any).handleAction()
     expect(mockResetPassword).toHaveBeenCalledWith({
       path: {username: "viktor"},
+      throwOnError: true,
+    })
+
+    const restore = mount(RecoveryUserRow, {
+      props: {
+        user: {id: 3, fullName: "Rest Ored", username: "restored", enabled: false},
+        actionType: "restore",
+      },
+    })
+
+    await (restore.vm as any).handleAction()
+    expect(mockRestoreDeletedUserById).toHaveBeenCalledWith({
+      path: {userId: 3},
       throwOnError: true,
     })
   })
@@ -62,7 +78,7 @@ describe("RecoveryUserRow", () => {
       },
     })
 
-    await (wrapper.vm as any).handleResend()
+    await (wrapper.vm as any).handleAction()
     expect(mockHandleNetworkError).toHaveBeenCalled()
   })
 })

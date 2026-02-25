@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 class UserControllerSecurityTest : UserTestSupport() {
     private fun createUserPayload(username: String, email: String): String =
-        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":false,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
+        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":false,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678"}"""
 
     @Nested
     inner class CreateUser {
@@ -278,6 +278,55 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(delete("/users/{userId}", user.id))
                 .andExpect(status().isUnauthorized)
+        }
+    }
+
+    @Nested
+    inner class DeletedUsers {
+        @Test
+        fun `allows BOARD to list deleted users`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                get("/users/deleted")
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `denies regular user from listing deleted users`() {
+            val user = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                get("/users/deleted")
+                    .with(bearer(user))
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `allows BOARD to restore deleted users`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                put("/users/{userId}/restore", target.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `denies regular user from restoring deleted users`() {
+            val user = createUserWithRole(Role.MEMBER)
+            val target = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                put("/users/{userId}/restore", target.id)
+                    .with(bearer(user))
+            )
+                .andExpect(status().isForbidden)
         }
     }
 

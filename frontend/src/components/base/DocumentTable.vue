@@ -76,7 +76,7 @@
         <v-btn
           class="w-100"
           color="primary"
-          @click="downloadFile('@/assets/documents/20191020 - ESA Blueshell Privacybeleid.pdf', 'ESA Blueshell - Privacybeleid.pdf')"
+          @click="downloadFile('@/assets/documents/20260223 - ESA Blueshell Privacybeleid.pdf', 'ESA Blueshell - Privacybeleid.pdf')"
         >
           Dutch
         </v-btn>
@@ -85,7 +85,7 @@
         <v-btn
           class="w-100"
           color="primary"
-          @click="downloadFile('@/assets/documents/20191020 - ESA Blueshell Privacy Policy.pdf', 'ESA Blueshell - Privacy Policy.pdf')"
+          @click="downloadFile('@/assets/documents/20260223 - ESA Blueshell Privacy Policy.pdf', 'ESA Blueshell - Privacy Policy.pdf')"
         >
           English
         </v-btn>
@@ -124,7 +124,7 @@
 
     <v-divider class="my-2" />
 
-    <!-- Cookie Policy (Only English) -->
+    <!-- Cookie Policy -->
     <v-row class="text-center py-4">
       <v-col
         class="text-h6"
@@ -133,13 +133,19 @@
         Cookie Policy
       </v-col>
       <v-col cols="4">
-        <!-- No Dutch version available -->
+        <v-btn
+          class="w-100"
+          color="primary"
+          @click="downloadFile(ACTIVE_COOKIE_POLICY_PATHS.dutch, ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.dutch)"
+        >
+          Dutch
+        </v-btn>
       </v-col>
       <v-col cols="4">
         <v-btn
           class="w-100"
           color="primary"
-          @click="downloadFile('@/assets/documents/20220813 - ESA Blueshell Cookie Policy.pdf', 'ESA Blueshell - Cookie Policy.pdf')"
+          @click="downloadFile(ACTIVE_COOKIE_POLICY_PATHS.english, ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.english)"
         >
           English
         </v-btn>
@@ -150,6 +156,10 @@
 
 <script lang="ts" setup>
 import {$require} from "@/plugins/require.ts"
+import {
+  ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES,
+  ACTIVE_COOKIE_POLICY_PATHS,
+} from "@/config/policies"
 
 function downloadFile(path: string, fileName: string) {
   const url = path.startsWith("http") ? path : $require(path)

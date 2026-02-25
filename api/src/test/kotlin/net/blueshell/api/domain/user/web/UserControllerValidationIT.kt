@@ -39,6 +39,41 @@ class UserControllerValidationIT : UserTestSupport() {
         }
 
         @Test
+        fun `missing privacy consent for anonymous registration returns validation error`() {
+            val username = "noconsent_${System.currentTimeMillis()}"
+            val payload =
+                """{"username":"$username","initials":"NC","firstName":"No","lastName":"Consent","newsletter":false,"password":"Password123!","email":"$username@example.com","discord":"noconsent#1234","phoneNumber":"+31699990001"}"""
+
+            mvc.perform(
+                post("/users")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload)
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.detail").value("Validation failed for request."))
+        }
+
+        @Test
+        fun `false privacy consent for anonymous registration returns validation error`() {
+            val username = "falseconsent_${System.currentTimeMillis()}"
+
+            mvc.perform(
+                post("/users")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        userRequestFactory.createUserPayload(
+                            username = username,
+                            email = "$username@example.com",
+                            password = "Password123!",
+                            consentPrivacy = false
+                        )
+                    )
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.detail").value("Validation failed for request."))
+        }
+
+        @Test
         fun `weak password for anonymous registration returns validation error`() {
             val username = "weakpass_${System.currentTimeMillis()}"
             val weakPassword = "WeakPass12"

@@ -1,7 +1,9 @@
 package net.blueshell.api.domain.user.application.command
 
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.user.command.*
+import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.CommandHandler
@@ -28,6 +30,8 @@ class CreateUserHandler(
             discord = command.discord,
             phoneNumber = command.phoneNumber,
             newsletter = command.newsletter,
+            consentPrivacy = command.consentPrivacy,
+            photoConsent = command.photoConsent,
             password = if (command.isBoard) {
                 requireNotNull(passwordEncoder.encode(MappingUtil.generateRandomString())) { "PasswordEncoder returned null hash" }
             } else {
@@ -60,6 +64,7 @@ class BoardUpdateUserHandler(
             discord = command.discord
             phoneNumber = command.phoneNumber
             newsletter = command.newsletter
+            photoConsent = command.photoConsent
             initials = command.initials
             firstName = command.firstName
             prefix = command.prefix
@@ -83,6 +88,7 @@ class UpdateUserHandler(
             discord = command.discord
             phoneNumber = command.phoneNumber
             newsletter = command.newsletter
+            photoConsent = command.photoConsent
             version = command.version
             command.memberProfile?.upsertInto(this)
         }
@@ -115,12 +121,34 @@ class FindUserByIdHandler(
 
 @Component
 class DeleteUserByIdHandler(
-    private val service: UserService
+    private val erasure: UserErasureService
 ) : CommandHandler<DeleteUserByIdCommand, Unit> {
     override val commandType = DeleteUserByIdCommand::class
 
     override fun handle(command: DeleteUserByIdCommand) {
-        service.deleteById(command.userId)
+        erasure.deleteUser(command.userId)
+    }
+}
+
+@Component
+class FindDeletedUsersHandler(
+    private val erasure: UserErasureService
+) : CommandHandler<FindDeletedUsersCommand, Page<DeletedUser>> {
+    override val commandType = FindDeletedUsersCommand::class
+
+    override fun handle(command: FindDeletedUsersCommand): Page<DeletedUser> {
+        return erasure.findDeletedUsers(command.pageable)
+    }
+}
+
+@Component
+class RestoreDeletedUserByIdHandler(
+    private val erasure: UserErasureService
+) : CommandHandler<RestoreDeletedUserByIdCommand, Unit> {
+    override val commandType = RestoreDeletedUserByIdCommand::class
+
+    override fun handle(command: RestoreDeletedUserByIdCommand) {
+        erasure.restoreDeletedUser(command.userId)
     }
 }
 
@@ -141,7 +169,6 @@ private fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
         dateOfBirth = dateOfBirth,
         studentNumber = studentNumber,
         gender = gender,
-        photoConsent = photoConsent,
         nationality = nationality,
         bhv = bhv,
         ehbo = ehbo
@@ -157,7 +184,6 @@ private fun UpsertMemberProfileData.upsertInto(user: User) {
     existing.dateOfBirth = dateOfBirth
     existing.studentNumber = studentNumber
     existing.gender = gender
-    existing.photoConsent = photoConsent
     existing.nationality = nationality
     existing.bhv = bhv
     existing.ehbo = ehbo

@@ -5,60 +5,45 @@ with Spring Boot backend and Vue.js frontend, containerized with Docker.
 
 ## 🏗️ Architecture
 
-The application follows a microservices architecture with the following components:
+y aFull-stack web application following **Domain-Driven Design (DDD)** with clean architecture principles:
 
-- **API**: Spring Boot REST API backend
-- **Frontend**: Vue.js 3 single-page application
+- **Backend**: Spring Boot 4.0.3 REST API (Kotlin)
+- **Frontend**: Vue.js 3 Single Page Application (TypeScript)
 - **Database**: MariaDB 10.11.10
-- **Reverse Proxy**: Nginx
-- **SSL Management**: Certbot (production only)
+- **Message Queue**: RabbitMQ (job dispatching)
+- **Infrastructure**: Docker, Nginx, Certbot (production SSL)
+
+**For detailed architecture patterns, layer structure, and design decisions, see:**
+- **[CLAUDE.md](CLAUDE.md)** - Developer guide with quick start commands and architecture overview
+- **[docs/adr/ADR-INDEX.md](docs/adr/ADR-INDEX.md)** - All architecture decision records
 
 ## 🚀 Technologies Used
 
 ### Backend (API)
 
-- **Framework**: Spring Boot 3.x with Spring MVC
-- **Language**: Java 25
-- **Database**: MariaDB 10.11.10
-- **ORM**: Spring Data JPA with Hibernate
-- **Database Migration**: Flyway
+- **Language**: Kotlin 2.3.10 with Java 24 toolchain
+- **Framework**: Spring Boot 4.0.3 (Web, Security, Data JPA, AMQP)
+- **Database**: MariaDB 10.11.10 with Flyway migrations
 - **Security**: Spring Security with JWT authentication
-- **API Documentation**: SpringDoc OpenAPI 3 (Swagger UI)
-- **Email**: Spring Mail with SMTP integration
-- **Build Tool**: Gradle 9.x
-- **Additional Libraries**:
-    - Lombok (code generation)
-    - Google Calendar API (event synchronization)
-    - Mollie API (payment processing)
-    - Brevo API (email campaigns)
-    - Flexmark (Markdown processing)
-    - Social Media APIs (Facebook, X/Twitter)
+- **API Docs**: SpringDoc OpenAPI 3 (Swagger UI)
+- **Testing**: JUnit 5, Testcontainers, ArchUnit, Playwright
 
 ### Frontend
 
-- **Framework**: Vue.js 3.5.21
-- **Language**: TypeScript 5.7.2
-- **UI Framework**: Vuetify 3.10.2
-- **State Management**: Vuex 4.1.0
-- **Routing**: Vue Router 4.5.1
-- **HTTP Client**: Axios 1.8.4
-- **Build Tool**: Vite 6.2.0
-- **Package Manager**: Yarn (Berry)
-- **Form Validation**: VeeValidate 4.15.1
-- **Additional Libraries**:
-    - Luxon (date handling)
-    - Marked (Markdown rendering)
-    - DOMPurify & XSS (security)
-    - Zod (schema validation)
-    - libphonenumber-js (phone validation)
-    - ics (calendar export)
+- **Framework**: Vue.js 3.5.28 with TypeScript 5.9.3
+- **UI**: Vuetify 3.12.0 (Material Design)
+- **Build**: Vite 7.3.1
+- **State**: Vuex 4.1.0
+- **Routing**: Vue Router 5.0.3
+- **HTTP**: Axios 1.13.5 with OpenAPI-generated client
+- **Validation**: VeeValidate 4.15.1
 
 ### Infrastructure
 
-- **Containerization**: Docker with Docker Compose
-- **Web Server**: Nginx
-- **SSL/TLS**: Let's Encrypt via Certbot
-- **Database**: MariaDB 10.11.10
+- **Containerization**: Docker & Docker Compose
+- **Web Server**: Nginx with SSL/TLS (Let's Encrypt via Certbot)
+- **Database**: MariaDB 10.11.10 (utf8mb4, Europe/Amsterdam timezone)
+- **Message Queue**: RabbitMQ (job dispatching)
 
 ## 📋 Prerequisites
 
@@ -69,7 +54,7 @@ The application follows a microservices architecture with the following componen
 
 ### Optional (for local development)
 
-- **Java 25** (for running API without Docker)
+- **Java 24** (for running API without Docker)
 - **Node.js** (for running frontend without Docker)
 - **Yarn** (Berry/v2+)
 

@@ -9,11 +9,17 @@ object MemberManagerHelper {
     }
 
     fun openNonMembers(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-non-members").click()
+        val toggle = TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-non-members")
+        if (toggle.getAttribute("aria-expanded") != "true") {
+            toggle.click()
+        }
     }
 
     fun openMembers(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-members").click()
+        val toggle = TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-members")
+        if (toggle.getAttribute("aria-expanded") != "true") {
+            toggle.click()
+        }
     }
 
     fun searchNonMembers(page: Page, query: String) {
@@ -38,5 +44,13 @@ object MemberManagerHelper {
 
     fun clickEndMembership(page: Page, userId: Long) {
         TestIdLocatorHelper.byTestId(page, "member-user-end-membership-btn-$userId").click()
+    }
+
+    fun clickDeleteUser(page: Page, userId: Long) {
+        TestIdLocatorHelper.byTestId(page, "member-user-delete-btn-$userId").click()
+    }
+
+    fun confirmDelete(page: Page) {
+        TestIdLocatorHelper.byTestId(page, "deletion-confirmation-confirm-btn").click()
     }
 }

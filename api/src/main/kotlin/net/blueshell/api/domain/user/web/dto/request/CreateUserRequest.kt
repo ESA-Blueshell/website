@@ -29,6 +29,10 @@ class CreateUserRequest(
     @field:NotNull
     var newsletter: Boolean? = null,
 
+    var consentPrivacy: Boolean? = null,
+
+    var photoConsent: Boolean? = null,
+
     @field:NotBlank
     var email: String? = null,
 

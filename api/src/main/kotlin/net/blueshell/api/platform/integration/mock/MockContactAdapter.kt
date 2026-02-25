@@ -91,6 +91,17 @@ class MockContactAdapter : ContactSyncAdapter {
         }
     }
 
+    override fun deleteContact(contactId: String) {
+        log.info("Mock: Deleting contact {}", contactId)
+        val removed = contacts.remove(contactId)
+            ?: throw IllegalArgumentException("Contact not found: $contactId")
+
+        lists.values.forEach { list ->
+            list.contactIds.remove(contactId)
+        }
+        log.info("Mock: Deleted contact {} ({})", contactId, removed.email)
+    }
+
     override fun createList(listName: String, folderName: String): String {
         log.info("Mock: Creating list '{}' in folder '{}'", listName, folderName)
 

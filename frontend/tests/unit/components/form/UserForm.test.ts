@@ -57,6 +57,8 @@ function baseModel(overrides: Record<string, unknown> = {}) {
     email: "",
     phoneNumber: "",
     newsletter: true,
+    consentPrivacy: false,
+    photoConsent: false,
     password: "",
     ...overrides,
   }
@@ -103,6 +105,7 @@ describe("UserForm", () => {
       phoneNumber: "required|phoneMobile:NL",
       password: "required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial",
       confirmPassword: "required|match:@password",
+      consentPrivacy: "acceptedPrivacyPolicy",
       newsletter: "",
     })
   })
@@ -134,9 +137,10 @@ describe("UserForm", () => {
       discord: "required",
       phoneNumber: "required|phoneMobile:NL",
     })
+    expect(rules.consentPrivacy).toBeUndefined()
   })
 
-  it("adds member profile validations when profile mode is enabled", () => {
+  it("does not require privacy agreement in board create mode", () => {
     const wrapper = shallowMount(UserForm, {
       props: {
         modelValue: baseModel(),
@@ -154,11 +158,33 @@ describe("UserForm", () => {
     })
     const rules = rulesByName(wrapper)
 
+    expect(rules.consentPrivacy).toBeUndefined()
+  })
+
+  it("adds member profile validations when profile mode is enabled", () => {
+    const wrapper = shallowMount(UserForm, {
+      props: {
+        modelValue: baseModel(),
+        options: {
+          includeMemberProfile: true,
+          updateKind: "auto",
+        },
+      },
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    const rules = rulesByName(wrapper)
+
     expect(rules).toMatchObject({
       dateOfBirth: "dateRequired",
       nationality: "required",
       gender: "",
       studentNumber: "required",
+      consentPrivacy: "acceptedPrivacyPolicy",
     })
   })
 
@@ -169,7 +195,6 @@ describe("UserForm", () => {
         dateOfBirth: "2000-01-01",
         studentNumber: "s123",
         gender: "X",
-        photoConsent: false,
         nationality: "NL",
         bhv: false,
         ehbo: false,
@@ -203,5 +228,108 @@ describe("UserForm", () => {
     await nextTick()
 
     expect(mockFindMemberProfileByUserId).toHaveBeenCalledTimes(1)
+  })
+
+  it("merges member profile fields into modelValue on successful load", async () => {
+    mockFindMemberProfileByUserId.mockResolvedValue({
+      status: 200,
+      data: {
+        dateOfBirth: "1999-06-15",
+        studentNumber: "s456",
+        gender: "M",
+        nationality: "DE",
+        bhv: true,
+        ehbo: false,
+        version: 3,
+      },
+    })
+
+    const model = baseModel({id: 10})
+    shallowMount(UserForm, {
+      props: {
+        modelValue: model,
+        "onUpdate:modelValue": (val: Record<string, unknown>) => Object.assign(model, val),
+        options: {
+          includeMemberProfile: true,
+          updateKind: "board",
+        },
+      },
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    await nextTick()
+    await nextTick()
+
+    expect(mockFindMemberProfileByUserId).toHaveBeenCalledWith({path: {userId: 10}})
+    // The member profile should have been merged via the model update
+    const profile = (model as Record<string, unknown>).memberProfile as Record<string, unknown> | undefined
+    expect(profile).toBeDefined()
+    if (profile) {
+      expect(profile.dateOfBirth).toBe("1999-06-15")
+      expect(profile.studentNumber).toBe("s456")
+      expect(profile.nationality).toBe("DE")
+    }
+  })
+
+  it("handles findMemberProfileByUserId returning non-200 gracefully", async () => {
+    mockFindMemberProfileByUserId.mockResolvedValue({
+      status: 500,
+      data: null,
+    })
+
+    const wrapper = shallowMount(UserForm, {
+      props: {
+        modelValue: baseModel({id: 99}),
+        options: {
+          includeMemberProfile: true,
+          updateKind: "board",
+        },
+      },
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    await nextTick()
+
+    expect(mockFindMemberProfileByUserId).toHaveBeenCalledTimes(1)
+    // Should not crash; memberProfile should remain the default
+    const emitted = wrapper.emitted("update:modelValue")
+    if (emitted) {
+      const lastEmit = emitted[emitted.length - 1][0] as Record<string, unknown>
+      const profile = lastEmit.memberProfile as Record<string, unknown> | undefined
+      if (profile) {
+        expect(profile.dateOfBirth).toBe("")
+      }
+    }
+  })
+
+  it("does not show member profile fields when includeMemberProfile is false", () => {
+    const wrapper = shallowMount(UserForm, {
+      props: {
+        modelValue: baseModel({id: 5}),
+        options: {
+          includeMemberProfile: false,
+          updateKind: "user",
+        },
+      },
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    const rules = rulesByName(wrapper)
+
+    expect(rules.dateOfBirth).toBeUndefined()
+    expect(rules.nationality).toBeUndefined()
+    expect(rules.studentNumber).toBeUndefined()
   })
 })

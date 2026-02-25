@@ -11,7 +11,6 @@ import net.blueshell.api.domain.user.persistence.Address
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -123,13 +122,19 @@ class AddressCommandHandlersTest {
     @Nested
     inner class DeleteAddressById {
 
-        private val handler = DeleteAddressByIdHandler(addressService)
+        private val handler = DeleteAddressByIdHandler(addressService, userService)
 
         @Test
-        fun `deletes address by id`() {
+        fun `deletes address by clearing user reference`() {
+            val user = testUser("jane")
+            val address = Address(user = user, country = "NL", city = "Enschede")
+            whenever(addressService.findById(4L)).thenReturn(address)
+            whenever(userService.update(user)).thenReturn(user)
+
             handler.handle(DeleteAddressByIdCommand(4L))
 
-            verify(addressService).deleteById(eq(4L))
+            assertThat(user.address).isNull()
+            verify(userService).update(user)
         }
     }
 

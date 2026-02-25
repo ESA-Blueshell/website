@@ -15,9 +15,10 @@ import {
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
-import {Form} from "vee-validate"
+import {defineRule, Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
+import {$require} from "@/plugins/require.ts"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 
 import {
@@ -31,6 +32,13 @@ import {
 } from "@/composables/formUtils"
 
 defineOptions({name: "UserForm"})
+
+const privacyPolicyUrl = $require("@/assets/documents/20260223 - ESA Blueshell Privacy Policy.pdf")
+
+defineRule(
+  "acceptedPrivacyPolicy",
+  (value: unknown) => value === true || "You must agree to the privacy policy to create an account.",
+)
 
 const props = withDefaults(defineProps<{
   showPassword?: boolean
@@ -60,6 +68,8 @@ const user = defineModel<EditableUser>({
     lastName: "",
     username: "",
     newsletter: true,
+    consentPrivacy: false,
+    photoConsent: false,
     password: "",
   }),
 })
@@ -80,6 +90,7 @@ const effectiveUpdateKind = computed<"user" | "board">(() => {
   return configuredUpdateKind.value
 })
 const canEditIdentity = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
+const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effectiveUpdateKind.value !== "board")
 
 const {country, onCountryUpdate} = useCountry("NL")
 const {isSaving, withSaving} = useSaving()
@@ -92,7 +103,6 @@ const defaultMemberProfile = (): UpsertMemberProfileRequest => ({
   dateOfBirth: "",
   studentNumber: "",
   gender: "",
-  photoConsent: false,
   nationality: "NL",
   bhv: false,
   ehbo: false,
@@ -126,7 +136,6 @@ const fromMemberProfileResponse = (data: MemberProfileResponse): UpsertMemberPro
   dateOfBirth: data.dateOfBirth ?? "",
   studentNumber: data.studentNumber ?? "",
   gender: data.gender ?? "",
-  photoConsent: data.photoConsent ?? false,
   nationality: data.nationality ?? "NL",
   bhv: data.bhv ?? false,
   ehbo: data.ehbo ?? false,
@@ -170,6 +179,8 @@ const toCreateUserRequest = (model: EditableUser): CreateUserRequest => ({
   prefix: model.prefix,
   lastName: model.lastName,
   newsletter: model.newsletter,
+  consentPrivacy: model.consentPrivacy,
+  photoConsent: model.photoConsent,
   email: model.email,
   discord: model.discord,
   phoneNumber: model.phoneNumber,
@@ -182,6 +193,7 @@ const toUpdateUserRequest = (model: EditableUser): UpdateUserRequest => {
     discord: model.discord,
     phoneNumber: model.phoneNumber,
     newsletter: model.newsletter,
+    photoConsent: model.photoConsent,
     version: model.version ?? 0,
     memberProfile: toMemberProfileRequest(model.memberProfile),
   }
@@ -431,68 +443,77 @@ defineExpose({validate, save})
           </v-col>
         </v-row>
 
-        <v-row
-          align="center"
-          justify="space-evenly"
-        >
-          <v-col cols="auto">
-            <VvField
-              v-model="memberProfileModel.ehbo"
-              test-id="user-form-ehbo-field"
-              :component="VCheckbox"
-              :component-props="{ hideDetails: true }"
-              label="EHBO Diploma"
-              name="ehbo"
-            />
-          </v-col>
-          <v-col cols="auto">
-            <VvField
-              v-model="memberProfileModel.bhv"
-              test-id="user-form-bhv-field"
-              :component="VCheckbox"
-              :component-props="{ hideDetails: true }"
-              label="BHV Diploma"
-              name="bhv"
-            />
-          </v-col>
-        </v-row>
+        <div class="checkbox-row">
+          <VvField
+            v-model="memberProfileModel.ehbo"
+            test-id="user-form-ehbo-field"
+            :component="VCheckbox"
+            :component-props="{ hideDetails: true, class: 'w-100' }"
+            label="I hold a valid EHBO (first aid) diploma."
+            name="ehbo"
+          />
+        </div>
 
-        <v-row
-          align="center"
-          justify="space-evenly"
-        >
-          <v-col cols="auto">
-            <VvField
-              v-model="memberProfileModel.photoConsent"
-              test-id="user-form-photo-consent-field"
-              :component="VCheckbox"
-              :component-props="{ hideDetails: true }"
-              label="Consent to pictures being taken at event"
-              name="photoConsent"
-            />
-          </v-col>
-        </v-row>
+        <div class="checkbox-row">
+          <VvField
+            v-model="memberProfileModel.bhv"
+            test-id="user-form-bhv-field"
+            :component="VCheckbox"
+            :component-props="{ hideDetails: true, class: 'w-100' }"
+            label="I hold a valid BHV diploma."
+            name="bhv"
+          />
+        </div>
       </template>
 
-      <v-row
-        align="center"
-        justify="space-evenly"
+      <div class="checkbox-row">
+        <VvField
+          v-model="user.newsletter"
+          test-id="user-form-newsletter-field"
+          :component="VCheckbox"
+          :component-props="{ hideDetails: true, class: 'w-100' }"
+          label="I want to receive the month ESA Blueshell newsletter by email."
+          name="newsletter"
+        />
+      </div>
+
+      <div class="checkbox-row">
+        <VvField
+          v-model="user.photoConsent"
+          test-id="user-form-photo-consent-field"
+          :component="VCheckbox"
+          :component-props="{ hideDetails: true, class: 'w-100' }"
+          label="I give consent to having my picture taken at ESA Blueshell events."
+          name="photoConsent"
+        />
+      </div>
+
+      <div
+        v-if="requiresPrivacyConsent"
+        class="checkbox-row checkbox-row--multiline"
       >
-        <v-col cols="auto">
-          <VvField
-            v-model="user.newsletter"
-            test-id="user-form-newsletter-field"
-            :component="VCheckbox"
-            :component-props="{ hideDetails: true }"
-            label="Newsletter"
-            name="newsletter"
-          />
-        </v-col>
-      </v-row>
+        <VvField
+          v-model="user.consentPrivacy"
+          test-id="user-form-privacy-consent-field"
+          :component="VCheckbox"
+          :component-props="{ hideDetails: true, class: 'w-100' }"
+          name="consentPrivacy"
+          :rules="requiresPrivacyConsent ? 'acceptedPrivacyPolicy' : ''"
+        >
+          <template #label>
+            <span class="checkbox-label-text">I have read and agree to the <a
+              :href="privacyPolicyUrl"
+              class="text-primary"
+              target="_blank"
+              @click.stop
+            >Privacy Policy</a> and consent to the processing of my personal data as described therein.</span>
+          </template>
+        </VvField>
+      </div>
 
       <v-row
         align="end"
-        class="mb-5"
+        class="mb-5 mt-3"
         justify="end"
       >
         <v-col
@@ -524,5 +545,26 @@ span {
 .btn-tight {
   padding-inline: 6px !important;
   min-width: auto !important;
+}
+
+.checkbox-row {
+  width: 100%;
+}
+
+.checkbox-row :deep(.v-selection-control) {
+  align-items: center;
+}
+
+.checkbox-row :deep(.v-label) {
+  white-space: normal;
+  text-wrap: pretty;
+}
+
+.checkbox-row--multiline :deep(.v-selection-control) {
+  align-items: flex-start;
+}
+
+.checkbox-label-text {
+  font-weight: normal;
 }
 </style>

@@ -25,7 +25,7 @@ plugins {
 }
 
 group = "net.blueshell"
-version = "1.0.0"
+version = "1.1.1"
 
 description = "The API for the Blueshell Esports website"
 

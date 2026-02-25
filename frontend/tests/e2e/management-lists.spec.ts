@@ -26,5 +26,6 @@ test.describe("management pages", () => {
     await page.goto("/recovery/manage")
     await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible({timeout: 30_000})
     await expect(page.getByTestId("recovery-user-list-active")).toBeVisible()
+    await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible()
   })
 })

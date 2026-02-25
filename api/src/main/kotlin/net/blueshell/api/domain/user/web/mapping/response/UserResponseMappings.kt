@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.user.web.mapping.response
 
+import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.web.dto.response.UserDetailResponse
 import net.blueshell.api.domain.user.web.dto.response.UserSummaryResponse
@@ -13,6 +14,7 @@ fun User.asDetailResponse(): UserDetailResponse =
         prefix = this.prefix,
         lastName = this.lastName,
         newsletter = this.newsletter,
+        photoConsent = this.photoConsent,
         email = this.email,
         discord = this.discord,
         phoneNumber = this.phoneNumber,
@@ -35,4 +37,27 @@ fun User.asSummaryResponse(): UserSummaryResponse =
         discord = this.discord,
         phoneNumber = this.phoneNumber,
         fullName = this.fullName,
+    )
+
+fun DeletedUser.asDetailResponse(): UserDetailResponse =
+    UserDetailResponse(
+        id = this.userId,
+        roles = emptySet(),
+        enabled = this.enabled,
+        username = this.username,
+        initials = this.initials,
+        firstName = this.firstName,
+        prefix = this.prefix,
+        lastName = this.lastName,
+        fullName = this.fullName,
+        newsletter = this.newsletter,
+        photoConsent = this.photoConsent,
+        email = this.email,
+        discord = this.discord,
+        phoneNumber = this.phoneNumber,
+        addressId = null,
+        restoreUntilAt = this.restoreUntilAt,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+        version = this.version
     )

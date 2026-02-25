@@ -12,7 +12,6 @@ import org.springframework.beans.factory.getBeansOfType
 import org.springframework.context.ApplicationContext
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
-import org.springframework.jdbc.datasource.DataSourceUtils
 import org.springframework.test.context.TestContext
 import org.springframework.test.context.TestExecutionListener
 import java.util.concurrent.CountDownLatch
@@ -168,12 +167,9 @@ class TestCleanUpListener : TestExecutionListener {
     }
 
     private fun <T> withConnection(dataSource: DataSource, block: (java.sql.Connection) -> T): T {
-        val conn = DataSourceUtils.getConnection(dataSource)
-        return try {
+        return dataSource.connection.use { conn ->
             conn.autoCommit = true
             block(conn)
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource)
         }
     }
 

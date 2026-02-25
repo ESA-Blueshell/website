@@ -1,7 +1,12 @@
 import type {BrowserContext, Page, Route} from "@playwright/test"
+import {
+  COOKIE_CONSENT_STORAGE_KEY,
+  encodeCookieConsentPayload,
+} from "@/config/policies.ts"
 
 type Fixtures = {
   users?: Array<Record<string, unknown>>
+  deletedUsers?: Array<Record<string, unknown>>
   memberships?: Array<Record<string, unknown>>
   contributionPeriods?: Array<Record<string, unknown>>
   contributions?: Array<Record<string, unknown>>
@@ -51,16 +56,29 @@ export async function loginAsAdmin(context: BrowserContext) {
 }
 
 export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
-  await page.addInitScript(() => {
-    localStorage.setItem("esa-blueshell.nl:cookiesAccepted", "true")
+  await page.addInitScript((params: {cookieConsentStorageKey: string; cookieConsentPayload: string}) => {
+    localStorage.setItem(params.cookieConsentStorageKey, params.cookieConsentPayload)
     if (localStorage.getItem("esa-blueshell.nl:darkMode") == null) {
       localStorage.setItem("esa-blueshell.nl:darkMode", "false")
     }
+  }, {
+    cookieConsentStorageKey: COOKIE_CONSENT_STORAGE_KEY,
+    cookieConsentPayload: encodeCookieConsentPayload(),
   })
 
   const baseUsers = fixtures.users ?? [
     {id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: true, roles: ["MEMBER"]},
     {id: 2, fullName: "Viktor Petrov", username: "ariosfury", enabled: false, roles: ["USER"]},
+  ]
+
+  const baseDeletedUsers = fixtures.deletedUsers ?? [
+    {
+      id: 9,
+      fullName: "Deleted User",
+      username: "deleted-user",
+      email: "deleted@example.com",
+      enabled: false,
+    },
   ]
 
   const baseMemberships = fixtures.memberships ?? [
@@ -177,6 +195,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return haystack.includes(query)
   }
 
+  const parseUserId = (path: string, pattern: RegExp): number | null => {
+    const match = path.match(pattern)
+    if (match == null) return null
+    const id = Number(match[1])
+    return Number.isFinite(id) ? id : null
+  }
+
   const handleApiRoute = async (route: Route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -188,6 +213,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users") {
       return fulfillJson(route, {content: baseUsers})
     }
+    if (method === "GET" && path === "/users/deleted") {
+      return fulfillJson(route, {content: baseDeletedUsers})
+    }
     if (method === "GET" && /^\/users\/\d+$/.test(path)) {
       const id = Number(path.split("/").at(-1))
       const user = baseUsers.find((candidate) => Number(candidate.id) === id)
@@ -195,6 +223,38 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         return fulfillJson(route, user)
       }
       return fulfillJson(route, {id, roles: ["MEMBER"]})
+    }
+    if (method === "DELETE" && /^\/users\/\d+$/.test(path)) {
+      const id = parseUserId(path, /^\/users\/(\d+)$/)
+      if (id != null) {
+        const activeIndex = baseUsers.findIndex((candidate) => Number(candidate.id) === id)
+        if (activeIndex >= 0) {
+          const [deletedCandidate] = baseUsers.splice(activeIndex, 1)
+          if (!baseDeletedUsers.some((candidate) => Number(candidate.id) === id)) {
+            baseDeletedUsers.unshift({
+              ...deletedCandidate,
+              enabled: Boolean(deletedCandidate.enabled),
+            })
+          }
+        }
+      }
+      return fulfillJson(route, {}, 204)
+    }
+    if (method === "PUT" && /^\/users\/\d+\/restore$/.test(path)) {
+      const id = parseUserId(path, /^\/users\/(\d+)\/restore$/)
+      if (id != null) {
+        const deletedIndex = baseDeletedUsers.findIndex((candidate) => Number(candidate.id) === id)
+        if (deletedIndex >= 0) {
+          const [restoredCandidate] = baseDeletedUsers.splice(deletedIndex, 1)
+          if (!baseUsers.some((candidate) => Number(candidate.id) === id)) {
+            baseUsers.unshift({
+              ...restoredCandidate,
+              roles: Array.isArray(restoredCandidate.roles) ? restoredCandidate.roles : ["MEMBER"],
+            })
+          }
+        }
+      }
+      return fulfillJson(route, {}, 204)
     }
     if (method === "GET" && path === "/memberships") {
       return fulfillJson(route, baseMemberships)

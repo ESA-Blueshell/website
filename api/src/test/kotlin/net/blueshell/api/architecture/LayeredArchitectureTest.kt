@@ -123,7 +123,7 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .ignoreDependency(
                     com.tngtech.archunit.base.DescribedPredicate.describe<com.tngtech.archunit.core.domain.JavaClass>(
                         "specification classes"
-                    ) { it.simpleName.endsWith("Specifications") || it.simpleName.endsWith("SpecificationsKt") },
+                    ) { it.simpleName.endsWith("Specifications") || it.simpleName.endsWith("SpecificationsKt") || it.simpleName.endsWith("Specs") || it.simpleName.endsWith("SpecsKt") },
                     com.tngtech.archunit.base.DescribedPredicate.describe<com.tngtech.archunit.core.domain.JavaClass>(
                         "query objects"
                     ) { it.packageName.contains(".application.query") }

@@ -51,6 +51,14 @@ interface ContactSyncAdapter {
     fun removeFromList(listId: String, contactId: String)
 
     /**
+     * Delete a contact from the external system.
+     *
+     * @param contactId The external contact ID
+     * @throws ContactServiceException if the operation fails
+     */
+    fun deleteContact(contactId: String)
+
+    /**
      * Create a new contact list in the external system.
      *
      * @param listName The name for the list

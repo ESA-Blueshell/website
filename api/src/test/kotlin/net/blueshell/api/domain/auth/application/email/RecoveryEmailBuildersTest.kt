@@ -116,7 +116,6 @@ class RecoveryEmailBuildersTest {
             newsletter = false,
             enabled = true,
             consentPrivacy = false,
-            consentGdpr = false,
             roles = mutableSetOf(Role.MEMBER),
             contactId = null
         )

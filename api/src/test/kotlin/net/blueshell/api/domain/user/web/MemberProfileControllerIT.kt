@@ -21,10 +21,10 @@ class MemberProfileControllerIT : UserTestSupport() {
     private lateinit var memberProfileRepository: MemberProfileRepository
 
     private fun createPayload(userId: Long): String =
-        """{"userId":$userId,"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","photoConsent":true,"nationality":"NL","bhv":true,"ehbo":false}"""
+        """{"userId":$userId,"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"NL","bhv":true,"ehbo":false}"""
 
     private fun updatePayload(version: Long): String =
-        """{"dateOfBirth":"2000-01-01","studentNumber":"s7654321","gender":"F","photoConsent":false,"nationality":"DE","bhv":false,"ehbo":true,"version":$version}"""
+        """{"dateOfBirth":"2000-01-01","studentNumber":"s7654321","gender":"F","nationality":"DE","bhv":false,"ehbo":true,"version":$version}"""
 
     @Nested
     inner class CreateMemberProfile {
@@ -43,7 +43,6 @@ class MemberProfileControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.dateOfBirth").value("1999-04-12"))
                 .andExpect(jsonPath("$.studentNumber").value("s1234567"))
                 .andExpect(jsonPath("$.gender").value("X"))
-                .andExpect(jsonPath("$.photoConsent").value(true))
                 .andExpect(jsonPath("$.nationality").value("NL"))
                 .andExpect(jsonPath("$.bhv").value(true))
                 .andExpect(jsonPath("$.ehbo").value(false))
@@ -52,7 +51,6 @@ class MemberProfileControllerIT : UserTestSupport() {
             assertThat(profile.userId).isEqualTo(user.id)
             assertThat(profile.studentNumber).isEqualTo("s1234567")
             assertThat(profile.gender).isEqualTo("X")
-            assertThat(profile.photoConsent).isTrue()
             assertThat(profile.nationality).isEqualTo("NL")
             assertThat(profile.dateOfBirth).isEqualTo(Date.valueOf("1999-04-12"))
         }
@@ -78,7 +76,7 @@ class MemberProfileControllerIT : UserTestSupport() {
                 post("/memberProfiles")
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"","gender":"X","photoConsent":true,"nationality":"NL","bhv":true,"ehbo":false}""")
+                    .content("""{"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"","gender":"X","nationality":"NL","bhv":true,"ehbo":false}""")
             )
                 .andExpect(status().isBadRequest)
         }
@@ -102,7 +100,6 @@ class MemberProfileControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.dateOfBirth").value("2000-01-01"))
                 .andExpect(jsonPath("$.studentNumber").value("s7654321"))
                 .andExpect(jsonPath("$.gender").value("F"))
-                .andExpect(jsonPath("$.photoConsent").value(false))
                 .andExpect(jsonPath("$.nationality").value("DE"))
                 .andExpect(jsonPath("$.bhv").value(false))
                 .andExpect(jsonPath("$.ehbo").value(true))
@@ -110,7 +107,6 @@ class MemberProfileControllerIT : UserTestSupport() {
             val updated = memberProfileRepository.findById(user.id!!).orElseThrow()
             assertThat(updated.studentNumber).isEqualTo("s7654321")
             assertThat(updated.gender).isEqualTo("F")
-            assertThat(updated.photoConsent).isFalse()
             assertThat(updated.nationality).isEqualTo("DE")
             assertThat(updated.bhv).isFalse()
             assertThat(updated.ehbo).isTrue()

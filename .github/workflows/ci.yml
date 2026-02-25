@@ -135,7 +135,14 @@ jobs:
     timeout-minutes: ${{ matrix.timeout_minutes }}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.check-changes.outputs.api_verification_matrix) }}
+      matrix:
+        include:
+          - id: api
+            name: API unit tests with coverage
+            timeout_minutes: 30
+          - id: system
+            name: System tests with coverage
+            timeout_minutes: 60
 
     services:
       db:

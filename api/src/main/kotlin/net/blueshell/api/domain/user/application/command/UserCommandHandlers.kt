@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.user.application.command
 
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.MemberProfile
@@ -118,34 +118,34 @@ class FindUserByIdHandler(
 
 @Component
 class DeleteUserByIdHandler(
-    private val lifecycle: UserLifecycleService
+    private val erasure: UserErasureService
 ) : CommandHandler<DeleteUserByIdCommand, Unit> {
     override val commandType = DeleteUserByIdCommand::class
 
     override fun handle(command: DeleteUserByIdCommand) {
-        lifecycle.deleteUser(command.userId)
+        erasure.deleteUser(command.userId)
     }
 }
 
 @Component
 class FindDeletedUsersHandler(
-    private val lifecycle: UserLifecycleService
+    private val erasure: UserErasureService
 ) : CommandHandler<FindDeletedUsersCommand, Page<DeletedUser>> {
     override val commandType = FindDeletedUsersCommand::class
 
     override fun handle(command: FindDeletedUsersCommand): Page<DeletedUser> {
-        return lifecycle.findDeletedUsers(command.pageable)
+        return erasure.findDeletedUsers(command.pageable)
     }
 }
 
 @Component
 class RestoreDeletedUserByIdHandler(
-    private val lifecycle: UserLifecycleService
+    private val erasure: UserErasureService
 ) : CommandHandler<RestoreDeletedUserByIdCommand, Unit> {
     override val commandType = RestoreDeletedUserByIdCommand::class
 
     override fun handle(command: RestoreDeletedUserByIdCommand) {
-        lifecycle.restoreDeletedUser(command.userId)
+        erasure.restoreDeletedUser(command.userId)
     }
 }
 

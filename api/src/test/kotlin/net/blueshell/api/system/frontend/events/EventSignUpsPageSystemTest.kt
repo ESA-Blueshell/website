@@ -1,7 +1,7 @@
 package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
-import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUpAnswer
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
@@ -45,7 +45,7 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
     private lateinit var persistence: FactoryPersistenceSupport
 
     @Autowired
-    private lateinit var lifecycle: UserLifecycleService
+    private lateinit var erasure: UserErasureService
 
     @Test
     fun `committee member sees sign-up respondents answers and totals`() {
@@ -115,7 +115,7 @@ class EventSignUpsPageSystemTest : FrontendSystemTestBase() {
     fun `deleted signup user remains visible on sign-up page as anonymized identity`() {
         val seeded = seedEventSignUpsData()
         val deletedUserId = checkNotNull(seeded.memberRespondent.id) { "Expected member respondent id" }
-        lifecycle.deleteUser(deletedUserId)
+        erasure.deleteUser(deletedUserId)
 
         withPage { page ->
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, seeded.viewer.username, DEFAULT_PASSWORD)

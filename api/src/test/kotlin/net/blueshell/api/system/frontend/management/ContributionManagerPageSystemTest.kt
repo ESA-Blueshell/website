@@ -4,7 +4,7 @@ import com.microsoft.playwright.Page
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
-import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
@@ -32,7 +32,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
     private lateinit var contributionRepository: ContributionRepository
 
     @Autowired
-    private lateinit var lifecycle: UserLifecycleService
+    private lateinit var erasure: UserErasureService
 
     @Test
     fun `board adds period and switches paid status between periods`() {
@@ -201,7 +201,7 @@ class ContributionManagerPageSystemTest : FrontendSystemTestBase() {
         val (startDate, endDate, _) = createFuturePeriod()
         val periodLabel = "${startDate.format(FORMATTER)} - ${endDate.format(FORMATTER)}"
 
-        lifecycle.deleteUser(memberId)
+        erasure.deleteUser(memberId)
 
         withPage { page ->
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)

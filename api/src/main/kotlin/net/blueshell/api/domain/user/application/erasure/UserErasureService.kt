@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.application.lifecycle
+package net.blueshell.api.domain.user.application.erasure
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.event.UserDeleted
@@ -26,7 +26,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 @Service
-class UserLifecycleService(
+class UserErasureService(
     private val users: UserService,
     private val userRepository: UserRepository,
     private val deletedUsers: DeletedUserRepository,
@@ -34,7 +34,7 @@ class UserLifecycleService(
     private val addressLifecycles: AddressLifecycleRepo,
     private val addresses: AddressRepository,
     private val trackedEvents: TrackedEventPublisher,
-    @param:Value("\${app.user-lifecycle.restore-window-days:90}")
+    @param:Value("\${app.user-erasure.restore-window-days:90}")
     private val restoreWindowDays: Long
 ) {
     @Transactional(readOnly = true)

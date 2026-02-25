@@ -4,7 +4,7 @@ import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserRestored
-import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
 import net.blueshell.api.domain.user.application.query.ProfileLifecycleQuery
 import net.blueshell.api.domain.user.persistence.repository.AddressRepository
@@ -33,7 +33,7 @@ import java.time.Instant
 @SpringBootTest
 class UserControllerIT : UserTestSupport() {
     @Autowired
-    private lateinit var lifecycle: UserLifecycleService
+    private lateinit var erasure: UserErasureService
 
     @Autowired
     private lateinit var memberProfileRepository: MemberProfileRepository
@@ -532,7 +532,7 @@ class UserControllerIT : UserTestSupport() {
             val targetId = checkNotNull(target.id)
             val addressId = checkNotNull(refreshUser(target).addressId)
 
-            lifecycle.deleteUser(targetId)
+            erasure.deleteUser(targetId)
 
             transactionTemplate.execute {
                 val snapshot = deletedUsers.findById(targetId).orElseThrow()
@@ -540,7 +540,7 @@ class UserControllerIT : UserTestSupport() {
                 deletedUsers.saveAndFlush(snapshot)
             }
 
-            val finalized = lifecycle.finalizeExpiredDeletedUsers(50)
+            val finalized = erasure.finalizeExpiredDeletedUsers(50)
             assertThat(finalized).isGreaterThanOrEqualTo(1)
             assertThat(deletedUsers.findById(targetId)).isEmpty
 
@@ -631,7 +631,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER)
 
-            lifecycle.deleteUser(checkNotNull(target.id))
+            erasure.deleteUser(checkNotNull(target.id))
 
             transactionTemplate.execute {
                 val snapshot = deletedUsers.findById(target.id!!).orElseThrow()
@@ -648,7 +648,7 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val targetId = checkNotNull(target.id)
 
-            lifecycle.deleteUser(targetId)
+            erasure.deleteUser(targetId)
 
             transactionTemplate.execute {
                 val snapshot = deletedUsers.findById(targetId).orElseThrow()
@@ -656,7 +656,7 @@ class UserControllerIT : UserTestSupport() {
                 deletedUsers.saveAndFlush(snapshot)
             }
 
-            val finalized = lifecycle.finalizeExpiredDeletedUsers(50)
+            val finalized = erasure.finalizeExpiredDeletedUsers(50)
             assertThat(finalized).isGreaterThanOrEqualTo(1)
             assertThat(deletedUsers.findById(targetId)).isEmpty()
         }
@@ -666,7 +666,7 @@ class UserControllerIT : UserTestSupport() {
             val target = assignAddress(assignMemberProfile(createUserWithRole(Role.MEMBER)))
             val targetId = checkNotNull(target.id)
 
-            lifecycle.deleteUser(targetId)
+            erasure.deleteUser(targetId)
 
             transactionTemplate.execute {
                 val snapshot = deletedUsers.findById(targetId).orElseThrow()
@@ -674,10 +674,10 @@ class UserControllerIT : UserTestSupport() {
                 deletedUsers.saveAndFlush(snapshot)
             }
 
-            val firstRun = lifecycle.finalizeExpiredDeletedUsers(50)
+            val firstRun = erasure.finalizeExpiredDeletedUsers(50)
             assertThat(firstRun).isGreaterThanOrEqualTo(1)
 
-            val secondRun = lifecycle.finalizeExpiredDeletedUsers(50)
+            val secondRun = erasure.finalizeExpiredDeletedUsers(50)
             assertThat(secondRun).isEqualTo(0)
         }
 

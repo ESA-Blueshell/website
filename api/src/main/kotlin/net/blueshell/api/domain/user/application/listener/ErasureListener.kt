@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 @Component
-class UserLifecycleEventListener(
+class ErasureListener(
     private val jobs: TrackedJobDispatcher
 ) {
     @EventListener

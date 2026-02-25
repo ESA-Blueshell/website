@@ -1,7 +1,7 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.user.persistence.repository.AddressRepository
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.Role
@@ -24,7 +24,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
     private lateinit var addressRepository: AddressRepository
 
     @Autowired
-    private lateinit var lifecycle: UserLifecycleService
+    private lateinit var erasure: UserErasureService
 
     @Test
     fun `board adds address for user without address`() {
@@ -156,7 +156,7 @@ class AddressManagerPageSystemTest : FrontendSystemTestBase() {
         val guest = userFactory.createUserWithRole(Role.GUEST, enabled = true)
         val guestId = checkNotNull(guest.id) { "Expected guest id" }
 
-        lifecycle.deleteUser(guestId)
+        erasure.deleteUser(guestId)
 
         withPage { page ->
             val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)

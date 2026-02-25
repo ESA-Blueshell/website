@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.application.lifecycle
+package net.blueshell.api.domain.user.application.erasure
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -6,16 +6,16 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 @Component
-class UserLifecycleFinalizationScheduler(
-    private val lifecycle: UserLifecycleService,
-    @param:Value("\${app.user-lifecycle.finalization-batch-size:100}")
+class ErasureScheduler(
+    private val erasure: UserErasureService,
+    @param:Value("\${app.user-erasure.finalization-batch-size:100}")
     private val batchSize: Int
 ) {
-    @Scheduled(fixedDelayString = "\${app.user-lifecycle.finalization-fixed-delay-ms:900000}")
+    @Scheduled(fixedDelayString = "\${app.user-erasure.finalization-fixed-delay-ms:900000}")
     fun finalizeExpiredUsers() {
         var totalFinalized = 0
         while (true) {
-            val finalized = lifecycle.finalizeExpiredDeletedUsers(batchSize)
+            val finalized = erasure.finalizeExpiredDeletedUsers(batchSize)
             totalFinalized += finalized
             if (finalized < batchSize) {
                 break
@@ -28,6 +28,6 @@ class UserLifecycleFinalizationScheduler(
     }
 
     private companion object {
-        private val log = LoggerFactory.getLogger(UserLifecycleFinalizationScheduler::class.java)
+        private val log = LoggerFactory.getLogger(ErasureScheduler::class.java)
     }
 }

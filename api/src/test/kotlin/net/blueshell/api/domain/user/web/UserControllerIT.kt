@@ -1,7 +1,6 @@
 package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserRestored
 import net.blueshell.api.domain.user.application.erasure.UserErasureService
@@ -49,9 +48,6 @@ class UserControllerIT : UserTestSupport() {
 
     @Autowired
     private lateinit var membershipRepository: MemberRepository
-
-    @Autowired
-    private lateinit var contributionRepository: ContributionRepository
 
     @Autowired
     private lateinit var userRequestFactory: UserRequestFactory
@@ -746,7 +742,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             assertThat(membershipRepository.findById(checkNotNull(membership.id))).isPresent
-            assertThat(contributionRepository.findById(Contribution.Id(targetId, checkNotNull(period.id)))).isPresent
+            assertThat(entityManager.find(Contribution::class.java, Contribution.Id(targetId, checkNotNull(period.id)))).isNotNull()
             mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))
@@ -756,7 +752,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             assertThat(membershipRepository.findById(checkNotNull(membership.id))).isPresent
-            assertThat(contributionRepository.findById(Contribution.Id(targetId, checkNotNull(period.id)))).isPresent
+            assertThat(entityManager.find(Contribution::class.java, Contribution.Id(targetId, checkNotNull(period.id)))).isNotNull()
             mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.Version
+import net.blueshell.api.shared.model.Identifiable
 import java.time.Instant
 
 object SoftDeleteSentinels {
@@ -15,7 +16,7 @@ object SoftDeleteSentinels {
 @Table(name = "addresses")
 class AddressLifecycle(
     @Id
-    var id: Long? = null,
+    override var id: Long? = null,
 
     @Version
     @Column(name = "version", nullable = false)
@@ -26,13 +27,13 @@ class AddressLifecycle(
 
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now()
-)
+) : Identifiable<Long>
 
 @Entity
 @Table(name = "member_profiles")
 class ProfileLifecycle(
     @Id
-    var id: Long? = null,
+    override var id: Long? = null,
 
     @Version
     @Column(name = "version", nullable = false)
@@ -43,4 +44,4 @@ class ProfileLifecycle(
 
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now()
-)
+) : Identifiable<Long>

@@ -90,136 +90,8 @@ permissions:
   contents: read
 
 jobs:
-  check-changes:
-    name: Detect affected layers
-    runs-on: ubuntu-latest
-    outputs:
-      api: ${{ steps.derive.outputs.api }}
-      frontend: ${{ steps.derive.outputs.frontend }}
-      openapi: ${{ steps.derive.outputs.openapi }}
-      ci: ${{ steps.derive.outputs.ci }}
-      run_api_static: ${{ steps.derive.outputs.run_api_static }}
-      run_frontend_static: ${{ steps.derive.outputs.run_frontend_static }}
-      run_api_tests: ${{ steps.derive.outputs.run_api_tests }}
-      run_system_tests: ${{ steps.derive.outputs.run_system_tests }}
-      run_frontend_tests: ${{ steps.derive.outputs.run_frontend_tests }}
-      run_coverage: ${{ steps.derive.outputs.run_coverage }}
-      run_openapi_sync: ${{ steps.derive.outputs.run_openapi_sync }}
-      run_api_image: ${{ steps.derive.outputs.run_api_image }}
-      run_frontend_image: ${{ steps.derive.outputs.run_frontend_image }}
-      api_verification_matrix: ${{ steps.derive.outputs.api_verification_matrix }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed paths
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          list-files: shell
-          filters: |
-            api:
-              - 'api/**'
-              - 'build.gradle.kts'
-              - 'settings.gradle.kts'
-              - 'gradle/**'
-              - 'gradlew'
-              - 'gradlew.bat'
-              - 'env/**'
-              - 'scripts/**'
-              - 'docker-compose.dev.yml'
-              - 'api/Dockerfile'
-              - 'api/Dockerfile-dev'
-            frontend:
-              - 'frontend/**'
-              - 'frontend/Dockerfile'
-              - 'frontend/Dockerfile-dev'
-            openapi:
-              - 'openapi/**'
-              - 'generate_openapi.sh'
-              - 'docker-compose.dev.yml'
-              - 'env/**'
-            ci:
-              - '.github/actions/**'
-              - '.github/workflows/**'
-              - 'docker-compose.yml'
-              - 'merge-coverage.sh'
-
-      - name: Derive layered execution flags
-        id: derive
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          api='${{ steps.filter.outputs.api }}'
-          frontend='${{ steps.filter.outputs.frontend }}'
-          openapi='${{ steps.filter.outputs.openapi }}'
-          ci='${{ steps.filter.outputs.ci }}'
-
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
-            api=true
-            frontend=true
-            openapi=true
-            ci=true
-          fi
-
-          bool_or() {
-            local result=false
-            for value in "$@"; do
-              if [[ "$value" == 'true' ]]; then
-                result=true
-                break
-              fi
-            done
-            printf '%s' "$result"
-          }
-
-          run_api_static="$(bool_or "$api" "$ci")"
-          run_frontend_static="$(bool_or "$frontend" "$openapi" "$ci")"
-          run_api_tests="$(bool_or "$api" "$ci")"
-          run_system_tests="$(bool_or "$api" "$frontend" "$ci")"
-          run_frontend_tests="$(bool_or "$frontend" "$ci")"
-          run_coverage="$(bool_or "$api" "$frontend" "$ci")"
-          run_openapi_sync="$(bool_or "$api" "$frontend" "$openapi" "$ci")"
-          run_api_image="$(bool_or "$api" "$ci")"
-          run_frontend_image="$(bool_or "$frontend" "$ci")"
-
-          matrix_entries=()
-          if [[ "$run_api_tests" == 'true' ]]; then
-            matrix_entries+=('{"id":"api","name":"Run API tests","timeout_minutes":30}')
-          fi
-          if [[ "$run_system_tests" == 'true' ]]; then
-            matrix_entries+=('{"id":"system","name":"Run system tests","timeout_minutes":45}')
-          fi
-          if [[ ${#matrix_entries[@]} -eq 0 ]]; then
-            api_verification_matrix='{"include":[]}'
-          else
-            api_verification_matrix="{\"include\":[$(IFS=,; echo "${matrix_entries[*]}")]}"
-          fi
-
-          {
-            echo "api=$api"
-            echo "frontend=$frontend"
-            echo "openapi=$openapi"
-            echo "ci=$ci"
-            echo "run_api_static=$run_api_static"
-            echo "run_frontend_static=$run_frontend_static"
-            echo "run_api_tests=$run_api_tests"
-            echo "run_system_tests=$run_system_tests"
-            echo "run_frontend_tests=$run_frontend_tests"
-            echo "run_coverage=$run_coverage"
-            echo "run_openapi_sync=$run_openapi_sync"
-            echo "run_api_image=$run_api_image"
-            echo "run_frontend_image=$run_frontend_image"
-            echo "api_verification_matrix=$api_verification_matrix"
-          } >> "$GITHUB_OUTPUT"
-
   fe-static:
     name: Frontend typecheck and lint
-    needs: check-changes
-    if: needs.check-changes.outputs.run_frontend_static == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -242,9 +114,9 @@ jobs:
 
   api-static:
     name: API compile checks
-    needs: check-changes
-    if: needs.check-changes.outputs.run_api_static == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      gradle-cache-key: ${{ steps.gradle-cache-key.outputs.key }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -254,29 +126,48 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+
+      - name: Compute Gradle cache key
+        id: gradle-cache-key
+        run: echo "key=gradle-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache-key.outputs.key }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Compile API main and test sources
-        run: ./gradlew --no-daemon :api:compileKotlin :api:compileTestKotlin
+        run: ./gradlew --no-daemon --build-cache :api:compileKotlin :api:compileTestKotlin
+
+      - name: Save Gradle cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache-key.outputs.key }}
 
   api-verification:
     name: ${{ matrix.name }}
-    needs: [ check-changes, api-static, fe-static ]
-    if: >-
-      ${{
-        always()
-        && (
-          needs.check-changes.outputs.run_api_tests == 'true'
-          || needs.check-changes.outputs.run_system_tests == 'true'
-        )
-        && (needs.check-changes.outputs.run_api_static == 'false' || needs.api-static.result == 'success')
-        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
-      }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ matrix.timeout_minutes }}
+    needs: [ api-static, fe-static ]
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.check-changes.outputs.api_verification_matrix) }}
+      matrix:
+        include:
+          - id: api
+            name: API unit tests with coverage
+            timeout_minutes: 30
+          - id: system
+            name: System tests with coverage
+            timeout_minutes: 60
 
     services:
       db:
@@ -350,7 +241,16 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+
+      - name: Restore Gradle cache from API build
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ needs.api-static.outputs.gradle-cache-key }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Set up Node.js and Yarn
         if: matrix.id == 'system'
@@ -384,12 +284,12 @@ jobs:
 
       - name: Run API Gradle tests
         if: matrix.id == 'api'
-        run: ./gradlew --no-daemon :api:test :api:jacocoTestReport
+        run: ./gradlew --no-daemon --build-cache :api:test :api:jacocoTestReport
 
       - name: Run system tests and JaCoCo system report
         if: matrix.id == 'system'
         run: |
-          ./gradlew --no-daemon :api:systemTest :api:jacocoSystemTestReport \
+          ./gradlew --no-daemon --build-cache :api:systemTest :api:jacocoSystemTestReport \
             -Dsystem.frontend.url="$FRONTEND_URL" \
             -Dfrontend.coverage.enabled=true \
             -Dfrontend.coverage.required=true
@@ -435,13 +335,7 @@ jobs:
 
   fe-unit:
     name: Frontend unit tests with coverage
-    needs: [ check-changes, fe-static ]
-    if: >-
-      ${{
-        always()
-        && needs.check-changes.outputs.run_frontend_tests == 'true'
-        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
-      }}
+    needs: fe-static
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -474,13 +368,7 @@ jobs:
 
   fe-e2e:
     name: Frontend end-to-end tests
-    needs: [ check-changes, fe-static ]
-    if: >-
-      ${{
-        always()
-        && needs.check-changes.outputs.run_frontend_tests == 'true'
-        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
-      }}
+    needs: fe-static
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -515,18 +403,7 @@ jobs:
 
   coverage:
     name: Merge and enforce code coverage
-    needs: [ check-changes, api-verification, fe-unit, fe-e2e ]
-    if: >-
-      ${{
-        always()
-        && needs.check-changes.outputs.run_coverage == 'true'
-        && (needs.check-changes.outputs.run_api_tests == 'false' || needs.api-verification.result == 'success')
-        && (needs.check-changes.outputs.run_system_tests == 'false' || needs.api-verification.result == 'success')
-        && (
-          needs.check-changes.outputs.run_frontend_tests == 'false'
-          || (needs.fe-unit.result == 'success' && needs.fe-e2e.result == 'success')
-        )
-      }}
+    needs: [ api-verification, fe-unit, fe-e2e ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -534,28 +411,24 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download API test coverage artifact
-        if: needs.check-changes.outputs.run_api_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: api-test-coverage
           path: coverage-inputs/api-test
 
       - name: Download API system coverage artifact
-        if: needs.check-changes.outputs.run_system_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: api-system-coverage
           path: coverage-inputs/api-system
 
       - name: Download frontend unit coverage artifact
-        if: needs.check-changes.outputs.run_frontend_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: frontend-unit-coverage
           path: coverage-inputs/frontend-unit
 
       - name: Download frontend e2e coverage artifact
-        if: needs.check-changes.outputs.run_frontend_tests == 'true'
         uses: actions/download-artifact@v4
         with:
           name: frontend-e2e-coverage
@@ -589,14 +462,7 @@ jobs:
 
   openapi-sync:
     name: Validate OpenAPI client generation
-    needs: [ check-changes, api-static, fe-static ]
-    if: >-
-      ${{
-        always()
-        && needs.check-changes.outputs.run_openapi_sync == 'true'
-        && (needs.check-changes.outputs.run_api_static == 'false' || needs.api-static.result == 'success')
-        && (needs.check-changes.outputs.run_frontend_static == 'false' || needs.fe-static.result == 'success')
-      }}
+    needs: [ api-static, fe-static ]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -670,7 +536,16 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+
+      - name: Restore Gradle cache from API build
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ needs.api-static.outputs.gradle-cache-key }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
@@ -694,16 +569,44 @@ jobs:
           path: openapi-api.log
           if-no-files-found: ignore
 
-  api-build-push:
-    name: Build and publish API Docker image
-    needs: [ check-changes, coverage, openapi-sync ]
-    if: >-
-      ${{
-        always()
-        && needs.check-changes.outputs.run_api_image == 'true'
-        && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
-        && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
-      }}
+  api-build:
+    name: Build API Docker image
+    needs: [ coverage, openapi-sync ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare Docker image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/api
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: api/Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  api-push:
+    name: Push API Docker image
+    if: github.ref == 'refs/heads/main'
+    needs: [ api-build ]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -716,7 +619,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -733,27 +635,55 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and optionally push API image
+      - name: Push API image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: api/Dockerfile
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  fe-build-push:
-    name: Build and publish frontend Docker image
-    needs: [ check-changes, coverage, openapi-sync ]
-    if: >-
-      ${{
-        always()
-        && needs.check-changes.outputs.run_frontend_image == 'true'
-        && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
-        && (needs.openapi-sync.result == 'success' || needs.openapi-sync.result == 'skipped')
-      }}
+  fe-build:
+    name: Build frontend Docker image
+    needs: [ coverage, openapi-sync ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare Docker image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/frontend
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  fe-push:
+    name: Push frontend Docker image
+    if: github.ref == 'refs/heads/main'
+    needs: [ fe-build ]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -766,7 +696,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -783,12 +712,12 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and optionally push frontend image
+      - name: Push frontend image
         uses: docker/build-push-action@v6
         with:
           context: frontend
           file: frontend/Dockerfile
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -796,15 +725,8 @@ jobs:
 
   deploy:
     name: Deploy to production
-    needs: [ check-changes, api-build-push, fe-build-push, coverage ]
-    if: >-
-      ${{
-        always()
-        && github.ref == 'refs/heads/main'
-        && (needs.check-changes.outputs.run_api_image == 'false' || needs.api-build-push.result == 'success')
-        && (needs.check-changes.outputs.run_frontend_image == 'false' || needs.fe-build-push.result == 'success')
-        && (needs.coverage.result == 'success' || needs.coverage.result == 'skipped')
-      }}
+    if: github.ref == 'refs/heads/main'
+    needs: [ api-push, fe-push ]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:

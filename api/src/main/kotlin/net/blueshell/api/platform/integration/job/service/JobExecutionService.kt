@@ -21,14 +21,25 @@ class JobExecutionService(
     fun createQueued(
         jobType: String,
         payload: String?,
-        actor: Actor
-    ): JobExecution {
+        actor: Actor,
+        dedupKey: String? = null
+    ): JobExecution? {
+        if (dedupKey != null) {
+            val active = jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(
+                jobType,
+                dedupKey,
+                listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
+            )
+            if (active) return null
+        }
+
         val execution = JobExecution(
             jobType = jobType,
             status = JobExecutionStatus.QUEUED,
             payload = payload,
             attempts = 0,
             queuedAt = Instant.now(),
+            dedupKey = dedupKey,
             initiatedByUserId = actor.userId,
             initiatedByType = actor.type,
             initiatedByRole = actor.role
@@ -70,6 +81,21 @@ class JobExecutionService(
         stackTrace: String? = null
     ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
+        execution.finishedAt = Instant.now()
+        execution.errorType = errorType
+        execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
+        execution.errorMessage = "$errorType: $errorReason"
+        return super.update(execution)
+    }
+
+    @Transactional
+    fun markDead(
+        execution: JobExecution,
+        errorType: String,
+        errorReason: String,
+        stackTrace: String? = null
+    ): JobExecution {
+        execution.status = JobExecutionStatus.DEAD
         execution.finishedAt = Instant.now()
         execution.errorType = errorType
         execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason

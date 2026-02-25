@@ -7,13 +7,15 @@ import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.CalendarEventRef
 import net.blueshell.api.shared.job.CalendarJobs
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 /**
- * Job handler for syncing events to external calendar.
+ * Unified job handler for all calendar operations (add/update/remove).
  *
  * Uses CalendarAdapter (ADR-019 ACL) to isolate from specific calendar provider.
- * Handles add/update/remove logic based on event approval status.
+ * Handles add/update/remove logic based on event approval status and soft-deletion.
  */
 @Component
 class SyncEventToCalendarJob(
@@ -24,16 +26,22 @@ class SyncEventToCalendarJob(
     override val jobType: String = CalendarJobs.SyncEvent.type
 
     override fun handlePayload(payload: CalendarEventRef) {
-        val event = events.findById(payload.eventId)
+        val event = events.findByIdIncludingDeletedOrNull(payload.eventId)
+        if (event == null) {
+            log.warn("Skipping calendar sync; event not found (hard-deleted). eventId={}", payload.eventId)
+            return
+        }
 
-        // Use adapter to sync event with external calendar
+        val isSoftDeleted = isDeleted(event.deletedAt)
+        val effectiveApproved = event.approved && !isSoftDeleted
+
         val eventData = CalendarEventData(
             title = event.title,
             location = event.location,
             description = event.description,
             startTime = event.startTime,
             endTime = event.endTime,
-            approved = event.approved
+            approved = effectiveApproved
         )
 
         val ref = calendarAdapter.syncEvent(
@@ -42,8 +50,17 @@ class SyncEventToCalendarJob(
             externalId = event.googleId
         )
 
-        // Update event with external calendar ID (null if removed) without triggering calendar re-scheduling.
-        events.updateCalendarLink(event, ref?.externalId)
+        if (!isSoftDeleted) {
+            events.updateCalendarLink(event, ref?.externalId)
+        }
     }
 
+    private fun isDeleted(deletedAt: Instant?): Boolean {
+        return deletedAt != null && deletedAt.isBefore(ACTIVE_ROW_THRESHOLD)
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(SyncEventToCalendarJob::class.java)
+        private val ACTIVE_ROW_THRESHOLD: Instant = Instant.parse("9999-01-01T00:00:00Z")
+    }
 }

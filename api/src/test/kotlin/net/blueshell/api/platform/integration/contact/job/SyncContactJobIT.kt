@@ -1,8 +1,7 @@
 package net.blueshell.api.platform.integration.contact.job
 
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.queue.JobConsumer
-import net.blueshell.api.platform.integration.queue.JobMessage
+import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
@@ -17,7 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class SyncContactJobIT : UserTestSupport() {
 
     @Autowired
-    private lateinit var consumer: JobConsumer
+    private lateinit var executor: JobExecutor
 
     @Autowired
     private lateinit var jobs: TrackedJobDispatcher
@@ -31,9 +30,9 @@ class SyncContactJobIT : UserTestSupport() {
         val execution = jobs.enqueue(
             ContactJobs.SyncContact,
             ContactJobs.SyncContactPayload(user.id!!)
-        )
+        )!!
         assertThat(findJobsByType(ContactJobs.SyncContact.type)).hasSize(1)
-        consumer.handle(JobMessage(execution.id!!, execution.jobType, execution.payload))
+        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val jobsAfterHandling = findJobsByType(ContactJobs.SyncContact.type)
         assertThat(jobsAfterHandling)

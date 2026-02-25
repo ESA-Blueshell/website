@@ -87,6 +87,7 @@ class JobExecutionViewService(
             errorReason = displayReason,
             stackTrace = stackTrace,
             attempts = execution.attempts,
+            dedupKey = execution.dedupKey,
             queuedAt = execution.queuedAt,
             startedAt = execution.startedAt,
             finishedAt = execution.finishedAt,

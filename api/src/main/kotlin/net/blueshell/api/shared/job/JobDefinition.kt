@@ -7,4 +7,11 @@ package net.blueshell.api.shared.job
 interface JobDefinition<T : Any> {
     val type: String
     val payloadType: Class<T>
+
+    /**
+     * Computes an optional dedup key from the payload.
+     * If non-null and an active job (QUEUED or RUNNING) exists with the same job type and dedup key,
+     * the new job will be suppressed.
+     */
+    fun dedupKey(payload: T): String? = null
 }

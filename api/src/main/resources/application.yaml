@@ -76,12 +76,6 @@ spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
-  rabbitmq:
-    host: ${RABBITMQ_HOST:rabbitmq}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-
 springdoc:
   api-docs:
     enabled: ${SPRINGDOC_API_DOCS_ENABLED:false}
@@ -103,12 +97,10 @@ app:
     audience: ${JWT_AUDIENCE:blueshell-web}
     revoked-jtis: ${JWT_REVOKED_JTIS:}
   jobs:
-    queue-name: ${JOB_QUEUE_NAME:jobs.queue}
-    exchange-name: ${JOB_EXCHANGE_NAME:jobs.exchange}
-    routing-key: ${JOB_ROUTING_KEY:jobs.routing}
     max-retries: ${JOB_MAX_RETRIES:3}
     initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:1000}
     backoff-multiplier: ${JOB_BACKOFF_MULTIPLIER:2.0}
+    stale-threshold-minutes: ${JOB_STALE_THRESHOLD_MINUTES:30}
 
 frontend:
   url: ${FRONTEND_URL}

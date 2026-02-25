@@ -58,6 +58,11 @@ class ContributionService @Autowired constructor(
         return repository.findByIdContributionPeriodId(contributionPeriodId)
     }
 
+    @Transactional(readOnly = true)
+    fun existsByUserIdAndPeriodId(userId: Long, periodId: Long): Boolean {
+        return repository.existsById(Contribution.Id(userId, periodId))
+    }
+
     private fun publishChange(contribution: Contribution, changeType: ContributionChange) {
         trackedEvents.publish { actor ->
             ContributionChanged(

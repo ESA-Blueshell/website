@@ -4,5 +4,6 @@ enum class JobExecutionStatus {
     QUEUED,
     RUNNING,
     SUCCESS,
-    FAILED
+    FAILED,
+    DEAD
 }

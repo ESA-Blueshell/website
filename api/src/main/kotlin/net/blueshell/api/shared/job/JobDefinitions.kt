@@ -36,58 +36,32 @@ object EmailJobs {
 }
 
 object CalendarJobs {
-    object AddEvent : JobDefinition<CalendarEventRef> {
-        override val type: String = "calendar.add-event"
-        override val payloadType: Class<CalendarEventRef> = CalendarEventRef::class.java
-    }
-
     object SyncEvent : JobDefinition<CalendarEventRef> {
         override val type: String = "calendar.sync-event"
         override val payloadType: Class<CalendarEventRef> = CalendarEventRef::class.java
-    }
-
-    object RemoveEvent : JobDefinition<CalendarEventRef> {
-        override val type: String = "calendar.remove-event"
-        override val payloadType: Class<CalendarEventRef> = CalendarEventRef::class.java
+        override fun dedupKey(payload: CalendarEventRef): String = "event=${payload.eventId}"
     }
 }
 
 object ContactJobs {
-    object AddToList : JobDefinition<AddToListPayload> {
-        override val type: String = "contact.add-to-list"
-        override val payloadType: Class<AddToListPayload> = AddToListPayload::class.java
-    }
-
-    object RemoveFromList : JobDefinition<RemoveFromListPayload> {
-        override val type: String = "contact.remove-from-list"
-        override val payloadType: Class<RemoveFromListPayload> = RemoveFromListPayload::class.java
-    }
-
     object SyncContact : JobDefinition<SyncContactPayload> {
         override val type: String = "contact.sync"
         override val payloadType: Class<SyncContactPayload> = SyncContactPayload::class.java
+        override fun dedupKey(payload: SyncContactPayload): String = "user=${payload.userId}"
     }
 
     object DeleteContact : JobDefinition<DeleteContactPayload> {
         override val type: String = "contact.delete"
         override val payloadType: Class<DeleteContactPayload> = DeleteContactPayload::class.java
+        override fun dedupKey(payload: DeleteContactPayload): String = "user=${payload.userId}"
     }
 
-    object CreateContributionPeriodList : JobDefinition<CreateContributionPeriodListPayload> {
-        override val type: String = "contact.create-period-list"
-        override val payloadType: Class<CreateContributionPeriodListPayload> =
-            CreateContributionPeriodListPayload::class.java
+    object SyncListMembership : JobDefinition<SyncListMembershipPayload> {
+        override val type: String = "contact.sync-list-membership"
+        override val payloadType: Class<SyncListMembershipPayload> = SyncListMembershipPayload::class.java
+        override fun dedupKey(payload: SyncListMembershipPayload): String =
+            "user=${payload.userId}:period=${payload.periodId}"
     }
-
-    data class AddToListPayload(
-        val userId: Long,
-        val periodId: Long
-    )
-
-    data class RemoveFromListPayload(
-        val userId: Long,
-        val periodId: Long
-    )
 
     data class SyncContactPayload(
         val userId: Long
@@ -98,7 +72,8 @@ object ContactJobs {
         val contactId: Long
     )
 
-    data class CreateContributionPeriodListPayload(
+    data class SyncListMembershipPayload(
+        val userId: Long,
         val periodId: Long
     )
 }

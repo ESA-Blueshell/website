@@ -396,29 +396,6 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <div
-        v-if="requiresPrivacyConsent"
-        class="checkbox-row"
-      >
-        <VvField
-          v-model="user.consentPrivacy"
-          test-id="user-form-privacy-consent-field"
-          :component="VCheckbox"
-          :component-props="{ hideDetails: true, class: 'w-100' }"
-          name="consentPrivacy"
-          :rules="requiresPrivacyConsent ? 'acceptedPrivacyPolicy' : ''"
-        >
-          <template #label>
-            <span class="checkbox-label-text">I have read and agree to the <a
-              :href="privacyPolicyUrl"
-              class="text-primary"
-              target="_blank"
-              @click.stop
-            >Privacy Policy</a> and consent to the processing of my personal data as described therein.</span>
-          </template>
-        </VvField>
-      </div>
-
       <template v-if="includeMemberProfile">
         <v-row>
           <v-col cols="6">
@@ -484,7 +461,6 @@ defineExpose({validate, save})
             name="bhv"
           />
         </div>
-
       </template>
 
       <div class="checkbox-row">
@@ -493,9 +469,32 @@ defineExpose({validate, save})
           test-id="user-form-newsletter-field"
           :component="VCheckbox"
           :component-props="{ hideDetails: true, class: 'w-100' }"
-          label="I want to receive the ESA Blueshell newsletter by e-mail."
+          label="I want to receive the month ESA Blueshell newsletter by email."
           name="newsletter"
         />
+      </div>
+
+      <div
+        v-if="requiresPrivacyConsent"
+        class="checkbox-row checkbox-row--multiline"
+      >
+        <VvField
+          v-model="user.consentPrivacy"
+          test-id="user-form-privacy-consent-field"
+          :component="VCheckbox"
+          :component-props="{ hideDetails: true, class: 'w-100' }"
+          name="consentPrivacy"
+          :rules="requiresPrivacyConsent ? 'acceptedPrivacyPolicy' : ''"
+        >
+          <template #label>
+            <span class="checkbox-label-text">I have read and agree to the <a
+              :href="privacyPolicyUrl"
+              class="text-primary"
+              target="_blank"
+              @click.stop
+            >Privacy Policy</a> and consent to the processing of my personal data as described therein.</span>
+          </template>
+        </VvField>
       </div>
 
       <v-row
@@ -539,12 +538,16 @@ span {
 }
 
 .checkbox-row :deep(.v-selection-control) {
-  align-items: flex-start;
+  align-items: center;
 }
 
 .checkbox-row :deep(.v-label) {
   white-space: normal;
   text-wrap: pretty;
+}
+
+.checkbox-row--multiline :deep(.v-selection-control) {
+  align-items: flex-start;
 }
 
 .checkbox-label-text {

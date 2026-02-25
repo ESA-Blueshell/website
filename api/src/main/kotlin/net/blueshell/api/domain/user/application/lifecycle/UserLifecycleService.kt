@@ -3,11 +3,9 @@ package net.blueshell.api.domain.user.application.lifecycle
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserRestored
-import net.blueshell.api.domain.user.application.exception.DeletedUserNotFoundException
-import net.blueshell.api.domain.user.application.exception.RestoreConflictException
-import net.blueshell.api.domain.user.application.exception.RestoreWindowExpiredException
+import net.blueshell.api.domain.user.application.exception.ErasureException
 import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
-import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
+import net.blueshell.api.domain.user.application.query.ProfileLifecycleQuery
 import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.lifecycle.SoftDeleteSentinels
 import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepo
@@ -84,11 +82,11 @@ class UserLifecycleService(
     @Transactional
     fun restoreDeletedUser(userId: Long) {
         val snapshot = deletedUsers.findById(userId)
-            .orElseThrow { DeletedUserNotFoundException(userId) }
+            .orElseThrow { ErasureException.NotFound(userId) }
 
         val now = Instant.now()
         if (snapshot.restoreUntilAt.isBefore(now)) {
-            throw RestoreWindowExpiredException(userId)
+            throw ErasureException.Expired(userId)
         }
 
         ensureNoRestoreConflicts(snapshot)
@@ -97,7 +95,7 @@ class UserLifecycleService(
         // Restore soft-deleted member profile if one exists
         profileLifecycles.findOne(
             ProfileLifecycleSpecs.fromQuery(
-                MemberProfileLifecycleQuery(userId = snapshot.userId, softDeleted = true)
+                ProfileLifecycleQuery(userId = snapshot.userId, softDeleted = true)
             )
         ).ifPresent { profile ->
             profile.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
@@ -157,7 +155,7 @@ class UserLifecycleService(
         val profileUserIds = expired.map { it.userId }.toSet()
         val memberProfilesToDelete = profileLifecycles.findAll(
             ProfileLifecycleSpecs.fromQuery(
-                MemberProfileLifecycleQuery(userIds = profileUserIds, softDeleted = true)
+                ProfileLifecycleQuery(userIds = profileUserIds, softDeleted = true)
             )
         )
         if (memberProfilesToDelete.isNotEmpty()) {
@@ -182,18 +180,18 @@ class UserLifecycleService(
 
     private fun ensureNoRestoreConflicts(snapshot: DeletedUser) {
         if (userRepository.existsByUsername(snapshot.username)) {
-            throw RestoreConflictException("username is already in use.")
+            throw ErasureException.Conflict("username is already in use.")
         }
         if (userRepository.existsByEmail(snapshot.email)) {
-            throw RestoreConflictException("email is already in use.")
+            throw ErasureException.Conflict("email is already in use.")
         }
         val discord = snapshot.discord?.takeIf { it.isNotBlank() }
         if (discord != null && userRepository.existsByDiscord(discord)) {
-            throw RestoreConflictException("discord is already in use.")
+            throw ErasureException.Conflict("discord is already in use.")
         }
         val phone = snapshot.phoneNumber?.takeIf { it.isNotBlank() }
         if (phone != null && userRepository.existsByPhoneNumber(phone)) {
-            throw RestoreConflictException("phone number is already in use.")
+            throw ErasureException.Conflict("phone number is already in use.")
         }
     }
 

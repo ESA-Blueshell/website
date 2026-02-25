@@ -4,7 +4,7 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
-import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
+import net.blueshell.api.domain.user.application.query.ProfileLifecycleQuery
 import net.blueshell.api.domain.user.persistence.lifecycle.AddressLifecycle
 import net.blueshell.api.domain.user.persistence.lifecycle.ProfileLifecycle
 import net.blueshell.api.domain.user.persistence.lifecycle.SoftDeleteSentinels
@@ -76,7 +76,7 @@ object ProfileLifecycleSpecs {
         }
     }
 
-    fun fromQuery(query: MemberProfileLifecycleQuery): Specification<ProfileLifecycle> {
+    fun fromQuery(query: ProfileLifecycleQuery): Specification<ProfileLifecycle> {
         var spec = Specification { _: Root<ProfileLifecycle>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 
         query.userId?.let {

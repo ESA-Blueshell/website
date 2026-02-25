@@ -6,7 +6,7 @@ import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserRestored
 import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
 import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
-import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
+import net.blueshell.api.domain.user.application.query.ProfileLifecycleQuery
 import net.blueshell.api.domain.user.persistence.repository.AddressRepository
 import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepo
 import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
@@ -493,7 +493,7 @@ class UserControllerIT : UserTestSupport() {
             assertThat(
                 profileLifecycleRepo.findOne(
                     ProfileLifecycleSpecs.fromQuery(
-                        MemberProfileLifecycleQuery(
+                        ProfileLifecycleQuery(
                             userId = targetId,
                             softDeleted = true
                         )

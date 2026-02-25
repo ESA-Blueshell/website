@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.queue
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import net.blueshell.api.shared.job.JobDefinition
@@ -12,13 +13,17 @@ import org.springframework.stereotype.Service
 /**
  * Async job dispatcher. Writes a DB row then calls JobExecutor.executeAsync().
  * No message broker required.
+ *
+ * When [JobQueueProperties.autoDispatch] is false (e.g. in tests), jobs are persisted
+ * but not automatically executed. Tests can call [JobExecutor.execute] explicitly.
  */
 @Service
 class JobDispatcher(
     private val objectMapper: ObjectMapper,
     private val jobExecutionService: JobExecutionService,
     private val actorProvider: ActorProvider,
-    private val jobExecutor: JobExecutor
+    private val jobExecutor: JobExecutor,
+    private val properties: JobQueueProperties
 ) : JobQueue {
     override fun <T : Any> enqueue(
         job: JobDefinition<T>,
@@ -44,7 +49,9 @@ class JobDispatcher(
             dedupKey = dedupKey
         ) ?: return null
 
-        jobExecutor.executeAsync(execution.id!!)
+        if (properties.autoDispatch) {
+            jobExecutor.executeAsync(execution.id!!)
+        }
         return execution
     }
 }

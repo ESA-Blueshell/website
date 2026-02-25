@@ -32,6 +32,7 @@ import net.blueshell.api.infrastructure.security.JwtTokenGenerator
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.enums.Role
@@ -289,8 +290,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         return telemetryFactory.create(platform, url)
     }
 
-    protected fun createJobExecutionFixture(jobType: String = "test-job"): JobExecution {
-        return jobExecutionFactory.create(jobType)
+    protected fun createJobExecutionFixture(
+        jobType: String = "test-job",
+        status: JobExecutionStatus = JobExecutionStatus.QUEUED
+    ): JobExecution {
+        return jobExecutionFactory.create(jobType, status)
     }
 
     /**

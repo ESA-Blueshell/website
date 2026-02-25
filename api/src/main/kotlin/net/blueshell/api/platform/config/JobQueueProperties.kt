@@ -7,5 +7,6 @@ data class JobQueueProperties(
     val maxRetries: Int = 3,
     val initialBackoffMillis: Long = 1000,
     val backoffMultiplier: Double = 2.0,
-    val staleThresholdMinutes: Long = 30
+    val staleThresholdMinutes: Long = 30,
+    val autoDispatch: Boolean = true
 )

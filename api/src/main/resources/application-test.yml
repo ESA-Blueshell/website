@@ -65,6 +65,7 @@ app:
     max-retries: 3
     initial-backoff-millis: 1
     backoff-multiplier: 2.0
+    auto-dispatch: false
 
 security:
   cors:

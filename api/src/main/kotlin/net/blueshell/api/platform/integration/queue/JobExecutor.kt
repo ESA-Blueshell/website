@@ -3,6 +3,7 @@ package net.blueshell.api.platform.integration.queue
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Lazy
 import org.springframework.retry.support.RetryTemplate
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Service
 @Service
 class JobExecutor(
     private val jobExecutionService: JobExecutionService,
-    private val jobHandlerRegistry: JobHandlerRegistry,
+    @Lazy private val jobHandlerRegistry: JobHandlerRegistry,
     private val jobRetryTemplate: RetryTemplate
 ) {
     private val logger = LoggerFactory.getLogger(JobExecutor::class.java)

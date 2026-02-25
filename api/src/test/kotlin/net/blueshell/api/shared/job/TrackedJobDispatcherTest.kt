@@ -7,6 +7,7 @@ import net.blueshell.api.shared.tracking.ActorProvider
 import net.blueshell.api.shared.tracking.ActorTracked
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -34,11 +35,11 @@ class TrackedJobDispatcherTest {
     fun `enqueue with job type uses current actor`() {
         val actor = Actor.system()
         whenever(actors.currentOrSystem()).thenReturn(actor)
-        whenever(queue.enqueue(eq("jobs.test"), eq("payload"), eq(actor))).thenReturn(mock())
+        whenever(queue.enqueue(eq("jobs.test"), eq("payload"), eq(actor), isNull())).thenReturn(mock())
 
         dispatcher.enqueue("jobs.test", "payload")
 
-        verify(queue).enqueue(eq("jobs.test"), eq("payload"), eq(actor))
+        verify(queue).enqueue(eq("jobs.test"), eq("payload"), eq(actor), isNull())
     }
 
     @Test
@@ -59,20 +60,20 @@ class TrackedJobDispatcherTest {
     @Test
     fun `explicit enqueue overload forwards provided actor`() {
         val actor = Actor(userId = 3L, type = ActionActorType.USER, role = Role.ADMIN)
-        whenever(queue.enqueue(eq("jobs.manual"), eq(null), eq(actor))).thenReturn(mock())
+        whenever(queue.enqueue(eq("jobs.manual"), eq(null), eq(actor), isNull())).thenReturn(mock())
 
         dispatcher.enqueue("jobs.manual", null, actor = actor)
 
-        verify(queue).enqueue(eq("jobs.manual"), eq(null), eq(actor))
+        verify(queue).enqueue(eq("jobs.manual"), eq(null), eq(actor), isNull())
     }
 
     @Test
     fun `explicit enqueue overload accepts null actor`() {
-        whenever(queue.enqueue(eq("jobs.manual"), eq(null), eq(null))).thenReturn(mock())
+        whenever(queue.enqueue(eq("jobs.manual"), eq(null), eq(null), isNull())).thenReturn(mock())
 
         dispatcher.enqueue("jobs.manual", null, actor = null)
 
-        verify(queue).enqueue(eq("jobs.manual"), eq(null), eq(null))
+        verify(queue).enqueue(eq("jobs.manual"), eq(null), eq(null), isNull())
     }
 
     private data class TestPayload(val value: String)

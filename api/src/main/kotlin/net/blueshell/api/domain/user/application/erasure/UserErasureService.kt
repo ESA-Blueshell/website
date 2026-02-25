@@ -66,7 +66,6 @@ class UserErasureService(
         user.newsletter = false
         user.enabled = false
         user.contactId = null
-        user.consentPrivacy = false
 
         user.replaceMemberProfile(null)
         user.replaceAddress(null)

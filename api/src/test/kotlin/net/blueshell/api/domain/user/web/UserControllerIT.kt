@@ -593,7 +593,7 @@ class UserControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `consent is cleared on user deletion`() {
+        fun `consent is preserved on user deletion`() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER).apply { consentPrivacy = true }
             persist(target)
@@ -602,11 +602,11 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             val persisted = userRepository.findById(target.id!!).orElseThrow()
-            assertThat(persisted.consentPrivacy).isFalse()
+            assertThat(persisted.consentPrivacy).isTrue()
         }
 
         @Test
-        fun `consent remains cleared after restoration`() {
+        fun `consent is preserved after restoration`() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER).apply { consentPrivacy = true }
             persist(target)
@@ -618,8 +618,8 @@ class UserControllerIT : UserTestSupport() {
 
             val restored = userRepository.findById(target.id!!).orElseThrow()
             assertThat(restored.consentPrivacy)
-                .describedAs("Consent is personal data and should not be auto-restored")
-                .isFalse()
+                .describedAs("Privacy consent must be retained through delete and restore")
+                .isTrue()
         }
 
         @Test

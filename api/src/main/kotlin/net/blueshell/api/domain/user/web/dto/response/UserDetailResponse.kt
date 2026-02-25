@@ -20,6 +20,7 @@ data class UserDetailResponse(
     var discord: String?,
     var phoneNumber: String?,
     var addressId: Long? = null,
+    var restoreUntilAt: Instant? = null,
     var createdAt: Instant,
     var updatedAt: Instant,
     var version: Long

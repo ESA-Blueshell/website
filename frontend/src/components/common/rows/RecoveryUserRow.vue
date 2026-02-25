@@ -12,12 +12,21 @@
         </div>
 
         <div
-          class="d-flex align-center"
+          class="d-flex align-center gap-2"
           style="flex-shrink: 0;"
         >
           <v-chip
+            v-if="actionType === 'restore' && restoreWindowLabel"
+            :color="restoreWindowUrgent ? 'warning' : undefined"
+            size="small"
+            variant="tonal"
+          >
+            {{ restoreWindowLabel }}
+          </v-chip>
+
+          <v-chip
             :color="user.enabled ? 'green' : 'red'"
-            class="mr-3 d-flex justify-center align-center"
+            class="d-flex justify-center align-center"
             size="small"
             style="width: 70px"
             variant="flat"
@@ -43,6 +52,7 @@
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
+import {DateTime} from "luxon"
 import type {UserDetailResponse} from "@/services/api"
 import {resendUserActivation, resetPassword, restoreDeletedUserById} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
@@ -62,6 +72,17 @@ const buttonLabel = computed(() => {
   if (props.actionType === "activation") return "Resend Activation Email"
   if (props.actionType === "password") return "Send Password Reset Email"
   return "Restore User"
+})
+
+const restoreWindowUrgent = computed(() => {
+  if (!props.user.restoreUntilAt) return false
+  return DateTime.fromISO(props.user.restoreUntilAt).diff(DateTime.now(), "days").days < 7
+})
+
+const restoreWindowLabel = computed(() => {
+  if (!props.user.restoreUntilAt) return null
+  const daysLeft = Math.ceil(DateTime.fromISO(props.user.restoreUntilAt).diff(DateTime.now(), "days").days)
+  return `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
 })
 
 const handleAction = async () => {

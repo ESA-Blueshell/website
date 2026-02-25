@@ -729,6 +729,7 @@ export type UserDetailResponse = {
     newsletter: boolean;
     phoneNumber?: string;
     prefix?: string;
+    restoreUntilAt?: string;
     roles: Array<Role>;
     updatedAt: string;
     username: string;

@@ -54,6 +54,7 @@ fun DeletedUser.asDetailResponse(): UserDetailResponse =
         discord = this.discord,
         phoneNumber = this.phoneNumber,
         addressId = null,
+        restoreUntilAt = this.restoreUntilAt,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
         version = this.version

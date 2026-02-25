@@ -133,6 +133,7 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: ${{ matrix.timeout_minutes }}
+    needs: [ api-static, fe-static ]
     strategy:
       fail-fast: false
       matrix:

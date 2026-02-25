@@ -115,6 +115,8 @@ jobs:
   api-static:
     name: API compile checks
     runs-on: ubuntu-latest
+    outputs:
+      gradle-cache-key: ${{ steps.gradle-cache-key.outputs.key }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -124,10 +126,32 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+
+      - name: Compute Gradle cache key
+        id: gradle-cache-key
+        run: echo "key=gradle-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache-key.outputs.key }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Compile API main and test sources
-        run: ./gradlew --no-daemon :api:compileKotlin :api:compileTestKotlin
+        run: ./gradlew --no-daemon --build-cache :api:compileKotlin :api:compileTestKotlin
+
+      - name: Save Gradle cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache-key.outputs.key }}
 
   api-verification:
     name: ${{ matrix.name }}
@@ -217,7 +241,16 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+
+      - name: Restore Gradle cache from API build
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ needs.api-static.outputs.gradle-cache-key }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Set up Node.js and Yarn
         if: matrix.id == 'system'
@@ -251,12 +284,12 @@ jobs:
 
       - name: Run API Gradle tests
         if: matrix.id == 'api'
-        run: ./gradlew --no-daemon :api:test :api:jacocoTestReport
+        run: ./gradlew --no-daemon --build-cache :api:test :api:jacocoTestReport
 
       - name: Run system tests and JaCoCo system report
         if: matrix.id == 'system'
         run: |
-          ./gradlew --no-daemon :api:systemTest :api:jacocoSystemTestReport \
+          ./gradlew --no-daemon --build-cache :api:systemTest :api:jacocoSystemTestReport \
             -Dsystem.frontend.url="$FRONTEND_URL" \
             -Dfrontend.coverage.enabled=true \
             -Dfrontend.coverage.required=true
@@ -503,7 +536,16 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+
+      - name: Restore Gradle cache from API build
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ needs.api-static.outputs.gradle-cache-key }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn

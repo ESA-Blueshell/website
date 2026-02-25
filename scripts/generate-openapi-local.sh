@@ -39,7 +39,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "Starting API via Gradle (:api:bootRun)..."
-./gradlew --no-daemon :api:bootRun > "$API_LOG_FILE" 2>&1 &
+./gradlew --no-daemon --build-cache :api:bootRun > "$API_LOG_FILE" 2>&1 &
 API_PID="$!"
 
 echo "Waiting for API OpenAPI endpoint: $API_SPEC_URL"

@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.user.web.dto.response
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.enums.Role
 import java.time.Instant
@@ -25,4 +26,8 @@ data class UserDetailResponse(
     var createdAt: Instant,
     var updatedAt: Instant,
     var version: Long
-)
+) {
+    @get:JsonProperty("roles")
+    val rolesSorted: List<Role>
+        get() = roles.sortedBy { it.ordinal }
+}

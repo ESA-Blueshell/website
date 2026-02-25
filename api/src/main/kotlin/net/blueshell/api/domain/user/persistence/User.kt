@@ -84,6 +84,9 @@ class User(
     @Column
     var consentPrivacy: Boolean = false,
 
+    @Column(nullable = false)
+    var photoConsent: Boolean = false,
+
     // Roles are managed through multiple mechanisms:
     // - GUEST: Default role assigned on user creation
     // - MEMBER: Granted through membership creation/management

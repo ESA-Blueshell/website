@@ -31,6 +31,8 @@ class CreateUserRequest(
 
     var consentPrivacy: Boolean? = null,
 
+    var photoConsent: Boolean? = null,
+
     @field:NotBlank
     var email: String? = null,
 

@@ -10,6 +10,8 @@ open class UpdateUserRequest(
     @field:NotNull
     var newsletter: Boolean? = null,
 
+    var photoConsent: Boolean? = null,
+
     @field:NotBlank
     var discord: String? = null,
 

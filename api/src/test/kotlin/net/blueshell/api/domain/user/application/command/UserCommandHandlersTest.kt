@@ -58,6 +58,7 @@ class UserCommandHandlersTest {
                 lastName = "Doe",
                 newsletter = true,
                 consentPrivacy = true,
+                photoConsent = true,
                 password = "Passw0rd!",
                 discord = "john#0001",
                 phoneNumber = "0612345678",
@@ -70,6 +71,7 @@ class UserCommandHandlersTest {
             assertThat(captured.firstValue.email).isEqualTo("john@example.com")
             assertThat(captured.firstValue.password).isEqualTo("encoded-pass")
             assertThat(captured.firstValue.consentPrivacy).isTrue()
+            assertThat(captured.firstValue.photoConsent).isTrue()
             assertThat(captured.firstValue.memberProfile).isNotNull
             assertThat(captured.firstValue.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(captured.firstValue.memberProfile?.dateOfBirth).isEqualTo(Date.valueOf("2000-01-01"))
@@ -93,6 +95,7 @@ class UserCommandHandlersTest {
                 lastName = "User",
                 newsletter = false,
                 consentPrivacy = false,
+                photoConsent = false,
                 password = null,
                 discord = "board#0001",
                 phoneNumber = "0611111111",
@@ -119,6 +122,7 @@ class UserCommandHandlersTest {
                 lastName = "Doe",
                 newsletter = true,
                 consentPrivacy = false,
+                photoConsent = false,
                 password = null,
                 discord = "john#0001",
                 phoneNumber = "0612345678",
@@ -154,6 +158,7 @@ class UserCommandHandlersTest {
                     prefix = "van",
                     lastName = "User",
                     newsletter = false,
+                    photoConsent = true,
                     discord = "new#0001",
                     phoneNumber = "0622222222",
                     version = 4L,
@@ -168,6 +173,7 @@ class UserCommandHandlersTest {
             assertThat(existing.prefix).isEqualTo("van")
             assertThat(existing.lastName).isEqualTo("User")
             assertThat(existing.newsletter).isFalse()
+            assertThat(existing.photoConsent).isTrue()
             assertThat(existing.discord).isEqualTo("new#0001")
             assertThat(existing.phoneNumber).isEqualTo("0622222222")
             assertThat(existing.version).isEqualTo(4L)
@@ -204,6 +210,7 @@ class UserCommandHandlersTest {
                     discord = "upd#0001",
                     phoneNumber = "0633333333",
                     newsletter = true,
+                    photoConsent = true,
                     version = 8L,
                     memberProfile = upsertMemberProfileData(version = 9L)
                 )
@@ -212,6 +219,7 @@ class UserCommandHandlersTest {
             assertThat(existing.discord).isEqualTo("upd#0001")
             assertThat(existing.phoneNumber).isEqualTo("0633333333")
             assertThat(existing.newsletter).isTrue()
+            assertThat(existing.photoConsent).isTrue()
             assertThat(existing.version).isEqualTo(8L)
             assertThat(existing.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(existing.memberProfile?.version).isEqualTo(9L)
@@ -289,6 +297,7 @@ class UserCommandHandlersTest {
                         phoneNumber = null,
                         discord = null,
                         newsletter = false,
+                        photoConsent = false,
                         enabled = true,
                         deletedAt = java.time.Instant.now(),
                         restoreUntilAt = java.time.Instant.now().plusSeconds(3600)

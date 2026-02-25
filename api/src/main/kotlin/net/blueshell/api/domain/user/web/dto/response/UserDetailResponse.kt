@@ -16,6 +16,7 @@ data class UserDetailResponse(
     var lastName: String,
     var fullName: String,
     var newsletter: Boolean,
+    var photoConsent: Boolean,
     var email: String,
     var discord: String?,
     var phoneNumber: String?,

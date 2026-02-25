@@ -44,6 +44,9 @@ class DeletedUser(
     @Column(name = "newsletter", nullable = false)
     var newsletter: Boolean,
 
+    @Column(name = "photo_consent", nullable = false)
+    var photoConsent: Boolean,
+
     @Column(name = "enabled", nullable = false)
     var enabled: Boolean,
 
@@ -93,6 +96,7 @@ class DeletedUser(
                 phoneNumber = user.phoneNumber,
                 discord = user.discord,
                 newsletter = user.newsletter,
+                photoConsent = user.photoConsent,
                 enabled = user.enabled,
                 addressId = user.addressId,
                 deletedAt = deletedAt,

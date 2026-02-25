@@ -31,6 +31,7 @@ class CreateUserHandler(
             phoneNumber = command.phoneNumber,
             newsletter = command.newsletter,
             consentPrivacy = command.consentPrivacy,
+            photoConsent = command.photoConsent,
             password = if (command.isBoard) {
                 requireNotNull(passwordEncoder.encode(MappingUtil.generateRandomString())) { "PasswordEncoder returned null hash" }
             } else {
@@ -63,6 +64,7 @@ class BoardUpdateUserHandler(
             discord = command.discord
             phoneNumber = command.phoneNumber
             newsletter = command.newsletter
+            photoConsent = command.photoConsent
             initials = command.initials
             firstName = command.firstName
             prefix = command.prefix
@@ -86,6 +88,7 @@ class UpdateUserHandler(
             discord = command.discord
             phoneNumber = command.phoneNumber
             newsletter = command.newsletter
+            photoConsent = command.photoConsent
             version = command.version
             command.memberProfile?.upsertInto(this)
         }

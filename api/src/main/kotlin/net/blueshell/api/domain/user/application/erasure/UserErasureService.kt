@@ -127,6 +127,7 @@ class UserErasureService(
         user.phoneNumber = snapshot.phoneNumber
         user.discord = snapshot.discord
         user.newsletter = snapshot.newsletter
+        user.photoConsent = snapshot.photoConsent
         user.enabled = snapshot.enabled
         user.contactId = null
 

@@ -58,6 +58,7 @@ function baseModel(overrides: Record<string, unknown> = {}) {
     phoneNumber: "",
     newsletter: true,
     consentPrivacy: false,
+    photoConsent: false,
     password: "",
     ...overrides,
   }

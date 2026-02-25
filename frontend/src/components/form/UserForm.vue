@@ -69,6 +69,7 @@ const user = defineModel<EditableUser>({
     username: "",
     newsletter: true,
     consentPrivacy: false,
+    photoConsent: false,
     password: "",
   }),
 })
@@ -179,6 +180,7 @@ const toCreateUserRequest = (model: EditableUser): CreateUserRequest => ({
   lastName: model.lastName,
   newsletter: model.newsletter,
   consentPrivacy: model.consentPrivacy,
+  photoConsent: model.photoConsent,
   email: model.email,
   discord: model.discord,
   phoneNumber: model.phoneNumber,
@@ -191,6 +193,7 @@ const toUpdateUserRequest = (model: EditableUser): UpdateUserRequest => {
     discord: model.discord,
     phoneNumber: model.phoneNumber,
     newsletter: model.newsletter,
+    photoConsent: model.photoConsent,
     version: model.version ?? 0,
     memberProfile: toMemberProfileRequest(model.memberProfile),
   }
@@ -471,6 +474,17 @@ defineExpose({validate, save})
           :component-props="{ hideDetails: true, class: 'w-100' }"
           label="I want to receive the month ESA Blueshell newsletter by email."
           name="newsletter"
+        />
+      </div>
+
+      <div class="checkbox-row">
+        <VvField
+          v-model="user.photoConsent"
+          test-id="user-form-photo-consent-field"
+          :component="VCheckbox"
+          :component-props="{ hideDetails: true, class: 'w-100' }"
+          label="I give consent to having my picture taken at ESA Blueshell events."
+          name="photoConsent"
         />
       </div>
 

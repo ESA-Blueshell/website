@@ -33,6 +33,7 @@ data class CreateUserCommand(
     val lastName: String,
     val newsletter: Boolean,
     val consentPrivacy: Boolean,
+    val photoConsent: Boolean,
     val password: String?,
     override val discord: String,
     override val phoneNumber: String,
@@ -70,6 +71,7 @@ data class BoardUpdateUserCommand(
     val prefix: String?,
     val lastName: String,
     val newsletter: Boolean,
+    val photoConsent: Boolean,
     override val discord: String,
     override val phoneNumber: String,
     val version: Long,
@@ -84,6 +86,7 @@ data class UpdateUserCommand(
     override val discord: String,
     override val phoneNumber: String,
     val newsletter: Boolean,
+    val photoConsent: Boolean,
     val version: Long,
     val memberProfile: UpsertMemberProfileData? = null
 ) : Command<User>, UserUniquenessCandidate {

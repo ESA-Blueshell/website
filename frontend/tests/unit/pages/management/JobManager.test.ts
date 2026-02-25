@@ -248,4 +248,86 @@ describe("JobManager page", () => {
     expect(mockRouterReplace).toHaveBeenCalledWith("/")
     expect(mockList).not.toHaveBeenCalled()
   })
+
+  it("statusColor returns correct Vuetify color for each status", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const vm = wrapper.vm as any
+    expect(vm.statusColor("SUCCESS")).toBe("success")
+    expect(vm.statusColor("FAILED")).toBe("error")
+    expect(vm.statusColor("RUNNING")).toBe("info")
+    expect(vm.statusColor("QUEUED")).toBe("warning")
+    expect(vm.statusColor("UNKNOWN")).toBe("secondary")
+    expect(vm.statusColor(undefined)).toBe("secondary")
+  })
+
+  it("actorDisplay formats actor names correctly", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const vm = wrapper.vm as any
+
+    expect(vm.actorDisplay({initiatedByDisplay: "Admin User"})).toBe("Admin User")
+    expect(vm.actorDisplay({
+      initiatedByFullName: "John Doe",
+      initiatedByUsername: "jdoe",
+    })).toBe("John Doe (@jdoe)")
+    expect(vm.actorDisplay({initiatedByType: "SYSTEM"})).toBe("System")
+    expect(vm.actorDisplay({initiatedByUserId: 42})).toBe("User #42")
+    expect(vm.actorDisplay({})).toBe("System")
+  })
+
+  it("previewActorDisplay formats preview actor names correctly", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const vm = wrapper.vm as any
+
+    expect(vm.previewActorDisplay({initiatedByFullName: "Jane Doe"})).toBe("Jane Doe")
+    expect(vm.previewActorDisplay({initiatedByDisplay: "Bob (@bob)"})).toBe("Bob")
+    expect(vm.previewActorDisplay({initiatedByType: "SYSTEM"})).toBe("System")
+    expect(vm.previewActorDisplay({initiatedByUserId: 7})).toBe("User #7")
+    expect(vm.previewActorDisplay({})).toBe("System")
+  })
+
+  it("formatDate formats timestamps and returns dash for falsy", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const vm = wrapper.vm as any
+    expect(vm.formatDate(undefined)).toBe("-")
+    expect(vm.formatDate("")).toBe("-")
+    expect(vm.formatDate("not-a-date")).toBe("not-a-date")
+    expect(vm.formatDate("2026-01-15T10:30:00Z")).toMatch(/2026/)
+  })
+
+  it("looksLikeStackTrace identifies Java stack traces", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const vm = wrapper.vm as any
+    expect(vm.looksLikeStackTrace("Error\n\tat com.example.Main.run(Main.java:42)")).toBe(true)
+    expect(vm.looksLikeStackTrace("Error\n at something")).toBe(true)
+    expect(vm.looksLikeStackTrace("Caused by: java.lang.NullPointerException")).toBe(true)
+    expect(vm.looksLikeStackTrace("just a normal message")).toBe(false)
+    expect(vm.looksLikeStackTrace(null)).toBe(false)
+    expect(vm.looksLikeStackTrace(undefined)).toBe(false)
+  })
+
+  it("expanded row toggle shows and hides job details", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+
+    const vm = wrapper.vm as any
+    const execution = {id: 1}
+
+    expect(vm.isExpanded(execution)).toBe(false)
+
+    vm.toggleExpanded(execution)
+    expect(vm.isExpanded(execution)).toBe(true)
+
+    vm.toggleExpanded(execution)
+    expect(vm.isExpanded(execution)).toBe(false)
+  })
 })

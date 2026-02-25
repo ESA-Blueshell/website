@@ -187,4 +187,34 @@ describe("MembershipSignUp page", () => {
     expect((wrapper.vm as any).currentStep).toBe(3)
     expect(mockRouterReplace).toHaveBeenCalledWith({query: {step: "3"}})
   })
+
+  it("loads user data when logged in and at step 2", async () => {
+    mockStore.getters.isLoggedIn = true
+    mockStore.getters.getLogin = {userId: 50}
+    mockRoute.query = {step: "2"}
+    mockFindUserById.mockResolvedValue({
+      data: {id: 50, username: "guest-user", roles: ["GUEST"]},
+    })
+
+    const wrapper = shallowMount(MembershipSignUp)
+    await settle()
+
+    expect(mockFindUserById).toHaveBeenCalledWith({
+      path: {userId: 50},
+      throwOnError: true,
+    })
+    // Step should advance beyond 2 since user is logged in at step 2
+    expect((wrapper.vm as any).currentStep).toBe(3)
+  })
+
+  it("handles findUserById failure gracefully", async () => {
+    mockStore.getters.isLoggedIn = true
+    mockStore.getters.getLogin = {userId: 99}
+    mockFindUserById.mockRejectedValue(new Error("API error"))
+
+    shallowMount(MembershipSignUp)
+    await settle()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+  })
 })

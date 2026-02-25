@@ -69,4 +69,62 @@ describe("Address page", () => {
     })
     expect(wrapper.find("[data-test='address-form']").text()).toContain("Enschede::5")
   })
+
+  it("calls handleNetworkError when address fetch fails", async () => {
+    const error = new Error("network failure")
+    mockFindAddressById.mockRejectedValue(error)
+
+    shallowMount(Address, {
+      global: {
+        stubs: {
+          AddressForm: {
+            props: ["modelValue", "userId"],
+            template: "<div data-test='address-form' />",
+          },
+        },
+      },
+    })
+
+    await settle()
+
+    expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
+  })
+
+  it("does not fetch address when login is missing", async () => {
+    mockStore.getters.getLogin = null
+
+    shallowMount(Address, {
+      global: {
+        stubs: {
+          AddressForm: {
+            props: ["modelValue", "userId"],
+            template: "<div data-test='address-form' />",
+          },
+        },
+      },
+    })
+
+    await settle()
+
+    expect(mockFindAddressById).not.toHaveBeenCalled()
+  })
+
+  it("does not fetch address when route has no id param", async () => {
+    mockRoute.params = {}
+
+    shallowMount(Address, {
+      global: {
+        stubs: {
+          AddressForm: {
+            props: ["modelValue", "userId"],
+            template: "<div data-test='address-form' />",
+          },
+        },
+      },
+    })
+
+    await settle()
+
+    expect(mockFindAddressById).not.toHaveBeenCalled()
+  })
 })

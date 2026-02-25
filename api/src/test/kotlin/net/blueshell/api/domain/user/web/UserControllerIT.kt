@@ -1,8 +1,19 @@
 package net.blueshell.api.domain.user.web
 
-import net.blueshell.api.factory.user.web.request.UserRequestFactory
-import net.blueshell.api.domain.user.persistence.repository.MemberProfileRepository
+import net.blueshell.api.domain.contribution.persistence.Contribution
+import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
+import net.blueshell.api.domain.user.application.lifecycle.UserLifecycleService
+import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
+import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
+import net.blueshell.api.domain.user.persistence.repository.AddressRepository
+import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepository
 import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
+import net.blueshell.api.domain.user.persistence.repository.MemberRepository
+import net.blueshell.api.domain.user.persistence.repository.MemberProfileLifecycleRepository
+import net.blueshell.api.domain.user.persistence.repository.MemberProfileRepository
+import net.blueshell.api.domain.user.persistence.spec.AddressLifecycleSpecifications
+import net.blueshell.api.domain.user.persistence.spec.MemberProfileLifecycleSpecifications
+import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.UserTestSupport
@@ -15,11 +26,30 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
 
 @SpringBootTest
 class UserControllerIT : UserTestSupport() {
     @Autowired
+    private lateinit var lifecycle: UserLifecycleService
+
+    @Autowired
     private lateinit var memberProfileRepository: MemberProfileRepository
+
+    @Autowired
+    private lateinit var addressRepository: AddressRepository
+
+    @Autowired
+    private lateinit var addressLifecycleRepository: AddressLifecycleRepository
+
+    @Autowired
+    private lateinit var memberProfileLifecycleRepository: MemberProfileLifecycleRepository
+
+    @Autowired
+    private lateinit var membershipRepository: MemberRepository
+
+    @Autowired
+    private lateinit var contributionRepository: ContributionRepository
 
     @Autowired
     private lateinit var userRequestFactory: UserRequestFactory
@@ -256,12 +286,16 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             target.contactId = 321L
             persist(target)
+            val targetId = checkNotNull(target.id)
 
-            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            assertThat(userRepository.findById(target.id!!)).isEmpty
-            assertThat(deletedUsers.findById(target.id!!)).isPresent
+            val persisted = userRepository.findById(targetId).orElseThrow()
+            assertThat(persisted.fullName).isEqualTo("Deleted User")
+            assertThat(persisted.username).startsWith("deleted-")
+            assertThat(persisted.enabled).isFalse()
+            assertThat(deletedUsers.findById(targetId)).isPresent
 
             val jobs = findJobsByType(ContactJobs.DeleteContact.type)
             assertThat(jobs)
@@ -412,11 +446,11 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isConflict)
 
             assertThat(deletedUsers.findById(target.id!!)).isPresent
-            assertThat(userRepository.findById(target.id!!)).isEmpty
+            assertThat(userRepository.findById(target.id!!)).isPresent
         }
 
         @Test
-        fun `deleting an already deleted user returns not found and keeps single snapshot`() {
+        fun `deleting an already deleted user is idempotent and keeps single snapshot`() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER).apply {
                 contactId = 991L
@@ -426,13 +460,130 @@ class UserControllerIT : UserTestSupport() {
             mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
             mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
-                .andExpect(status().isNotFound)
+                .andExpect(status().isNoContent)
 
             assertThat(deletedUsers.findById(target.id!!)).isPresent
-            assertThat(userRepository.findById(target.id!!)).isEmpty
+            val anonymized = userRepository.findById(target.id!!).orElseThrow()
+            assertThat(anonymized.fullName).isEqualTo("Deleted User")
             assertThat(findJobsByType(ContactJobs.DeleteContact.type))
                 .describedAs("Should enqueue contact delete only once when deleting same user repeatedly")
                 .hasSize(1)
+        }
+
+        @Test
+        fun `member profile and address are soft deleted and restored with user`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = assignAddress(assignMemberProfile(createUserWithRole(Role.MEMBER)))
+            val targetId = checkNotNull(target.id)
+
+            val originalProfile = memberProfileRepository.findById(targetId).orElseThrow()
+            val originalAddressId = checkNotNull(refreshUser(target).addressId)
+            val originalAddress = addressRepository.findById(originalAddressId).orElseThrow()
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+                .andExpect(status().isNotFound)
+            mvc.perform(get("/addresses/{id}", originalAddressId).with(bearer(board)))
+                .andExpect(status().isNotFound)
+
+            assertThat(
+                memberProfileLifecycleRepository.findOne(
+                    MemberProfileLifecycleSpecifications.fromQuery(
+                        MemberProfileLifecycleQuery(
+                            userId = targetId,
+                            softDeleted = true
+                        )
+                    )
+                )
+            ).isPresent
+            assertThat(
+                addressLifecycleRepository.findOne(
+                    AddressLifecycleSpecifications.fromQuery(
+                        AddressLifecycleQuery(
+                            id = originalAddressId,
+                            softDeleted = true
+                        )
+                    )
+                )
+            ).isPresent
+
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.studentNumber").value(originalProfile.studentNumber))
+                .andExpect(jsonPath("$.gender").value(originalProfile.gender))
+                .andExpect(jsonPath("$.nationality").value(originalProfile.nationality))
+            mvc.perform(get("/addresses/{id}", originalAddressId).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.city").value(originalAddress.city))
+                .andExpect(jsonPath("$.street").value(originalAddress.street))
+                .andExpect(jsonPath("$.zipCode").value(originalAddress.zipCode))
+        }
+
+        @Test
+        fun `expired deleted user finalization purges soft deleted profile and address`() {
+            val target = assignAddress(assignMemberProfile(createUserWithRole(Role.MEMBER)))
+            val targetId = checkNotNull(target.id)
+            val addressId = checkNotNull(refreshUser(target).addressId)
+
+            lifecycle.deleteUser(targetId)
+
+            transactionTemplate.execute {
+                val snapshot = deletedUsers.findById(targetId).orElseThrow()
+                snapshot.restoreUntilAt = Instant.now().minusSeconds(60)
+                deletedUsers.saveAndFlush(snapshot)
+            }
+
+            val finalized = lifecycle.finalizeExpiredDeletedUsers(50)
+            assertThat(finalized).isGreaterThanOrEqualTo(1)
+            assertThat(deletedUsers.findById(targetId)).isEmpty
+
+            assertThat(memberProfileLifecycleRepository.findById(targetId)).isEmpty
+            assertThat(addressLifecycleRepository.findById(addressId)).isEmpty
+        }
+
+        @Test
+        fun `memberships contributions and signups remain persisted through delete and restore`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = assignAddress(assignMemberProfile(createUserWithRole(Role.MEMBER)))
+            val targetId = checkNotNull(target.id)
+            val originalFullName = target.fullName
+            val membership = createMembershipFixture(user = target)
+            val period = createContributionPeriodFixture()
+            persist(
+                Contribution(
+                    id = Contribution.Id(targetId, period.id),
+                    user = target,
+                    contributionPeriod = period
+                )
+            )
+            val event = createEventFixture(approved = true, signUp = true)
+            val signUp = createEventSignUpFixture(event = event, user = target)
+
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            assertThat(membershipRepository.findById(checkNotNull(membership.id))).isPresent
+            assertThat(contributionRepository.findById(Contribution.Id(targetId, checkNotNull(period.id)))).isPresent
+            mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[0].id").value(signUp.id))
+                .andExpect(jsonPath("$[0].user.fullName").value("Deleted User"))
+
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+                .andExpect(status().isNoContent)
+
+            assertThat(membershipRepository.findById(checkNotNull(membership.id))).isPresent
+            assertThat(contributionRepository.findById(Contribution.Id(targetId, checkNotNull(period.id)))).isPresent
+            mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[0].id").value(signUp.id))
+                .andExpect(jsonPath("$[0].user.id").value(targetId))
+                .andExpect(jsonPath("$[0].user.fullName").value(originalFullName))
         }
     }
 

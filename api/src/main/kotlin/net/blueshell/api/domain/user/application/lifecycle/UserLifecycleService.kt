@@ -1,9 +1,17 @@
 package net.blueshell.api.domain.user.application.lifecycle
 
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.query.AddressLifecycleQuery
+import net.blueshell.api.domain.user.application.query.MemberProfileLifecycleQuery
 import net.blueshell.api.domain.user.persistence.DeletedUser
+import net.blueshell.api.domain.user.persistence.lifecycle.LifecycleSoftDeleteTimestamps
+import net.blueshell.api.domain.user.persistence.repository.AddressRepository
+import net.blueshell.api.domain.user.persistence.repository.AddressLifecycleRepository
 import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
+import net.blueshell.api.domain.user.persistence.repository.MemberProfileLifecycleRepository
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
+import net.blueshell.api.domain.user.persistence.spec.AddressLifecycleSpecifications
+import net.blueshell.api.domain.user.persistence.spec.MemberProfileLifecycleSpecifications
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.beans.factory.annotation.Value
@@ -22,6 +30,9 @@ class UserLifecycleService(
     private val users: UserService,
     private val userRepository: UserRepository,
     private val deletedUsers: DeletedUserRepository,
+    private val memberProfileLifecycles: MemberProfileLifecycleRepository,
+    private val addressLifecycles: AddressLifecycleRepository,
+    private val addresses: AddressRepository,
     private val jobs: TrackedJobDispatcher,
     @param:Value("\${app.user-lifecycle.restore-window-days:90}")
     private val restoreWindowDays: Long
@@ -33,41 +44,44 @@ class UserLifecycleService(
 
     @Transactional
     fun deleteUser(userId: Long) {
-        val existingSnapshot = deletedUsers.findById(userId).orElse(null)
-        val user = findActiveUserOrAlreadyDeleted(userId, existingSnapshot != null)
-        if (user == null) {
+        if (deletedUsers.existsById(userId)) {
             return
         }
 
+        val user = users.findById(userId)
         val now = Instant.now()
         val restoreUntilAt = now.plus(restoreWindowDays, ChronoUnit.DAYS)
-        deletedUsers.save(DeletedUser.fromUser(user, now, restoreUntilAt))
+        val snapshot = DeletedUser.fromUser(user, now, restoreUntilAt)
+        val contactId = user.contactId
 
         val anonymized = anonymizedIdentity(user.id!!, now)
-        val updatedRows = userRepository.markDeletedAndPseudonymized(
-            id = user.id!!,
-            username = anonymized.username,
-            email = anonymized.email,
-            initials = "DU",
-            firstName = "Deleted",
-            prefix = null,
-            lastName = "User",
-            phoneNumber = null,
-            discord = null,
-            newsletter = false,
-            enabled = false,
-            deletedAt = now,
-            updatedAt = now
-        )
+        user.username = anonymized.username
+        user.email = anonymized.email
+        user.initials = "DU"
+        user.firstName = "Deleted"
+        user.prefix = null
+        user.lastName = "User"
+        user.phoneNumber = null
+        user.discord = null
+        user.newsletter = false
+        user.enabled = false
+        user.contactId = null
 
-        if (updatedRows == 0) {
-            return
+        if (snapshot.hadMemberProfile) {
+            user.replaceMemberProfile(null)
+        }
+        if (snapshot.hadAddress) {
+            user.replaceAddress(null)
         }
 
-        user.contactId?.let { contactId ->
+        userRepository.saveAndFlush(user)
+
+        deletedUsers.save(snapshot)
+
+        contactId?.let {
             jobs.enqueue(
                 ContactJobs.DeleteContact,
-                ContactJobs.DeleteContactPayload(userId = user.id!!, contactId = contactId)
+                ContactJobs.DeleteContactPayload(userId = user.id!!, contactId = it)
             )
         }
     }
@@ -83,28 +97,80 @@ class UserLifecycleService(
         }
 
         ensureNoRestoreConflicts(snapshot)
+        val user = users.findById(snapshot.userId)
 
-        val restoredRows = userRepository.restoreFromDeletedSnapshot(
-            id = snapshot.userId,
-            username = snapshot.username,
-            email = snapshot.email,
-            initials = snapshot.initials,
-            firstName = snapshot.firstName,
-            prefix = snapshot.prefix,
-            lastName = snapshot.lastName,
-            phoneNumber = snapshot.phoneNumber,
-            discord = snapshot.discord,
-            newsletter = snapshot.newsletter,
-            enabled = snapshot.enabled,
-            updatedAt = now
-        )
+        if (snapshot.hadMemberProfile) {
+            val memberProfileLifecycle = memberProfileLifecycles.findOne(
+                MemberProfileLifecycleSpecifications.fromQuery(
+                    MemberProfileLifecycleQuery(
+                        userId = snapshot.userId,
+                        softDeleted = true
+                    )
+                )
+            ).orElseThrow {
+                ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cannot restore user: member profile is no longer restorable."
+                )
+            }
 
-        if (restoredRows == 0) {
-            throw ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "User cannot be restored because it is no longer in deleted-user state."
-            )
+            memberProfileLifecycle.deletedAt = LifecycleSoftDeleteTimestamps.ACTIVE_ROW_DELETED_AT
+            memberProfileLifecycle.updatedAt = now
+            memberProfileLifecycles.saveAndFlush(memberProfileLifecycle)
         }
+
+        val restoreAddressId = snapshot.addressId
+        if (snapshot.hadAddress) {
+            if (restoreAddressId == null) {
+                throw ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cannot restore user: address is no longer restorable."
+                )
+            }
+            val addressLifecycle = addressLifecycles.findOne(
+                AddressLifecycleSpecifications.fromQuery(
+                    AddressLifecycleQuery(
+                        id = restoreAddressId,
+                        softDeleted = true
+                    )
+                )
+            ).orElseThrow {
+                ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cannot restore user: address is no longer restorable."
+                )
+            }
+            addressLifecycle.deletedAt = LifecycleSoftDeleteTimestamps.ACTIVE_ROW_DELETED_AT
+            addressLifecycle.updatedAt = now
+            addressLifecycles.saveAndFlush(addressLifecycle)
+        }
+
+        if (snapshot.hadAddress && restoreAddressId != null) {
+            val restoredAddress = addresses.findById(restoreAddressId)
+                .orElseThrow {
+                    ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Cannot restore user: restored address cannot be loaded."
+                    )
+                }
+            user.replaceAddress(restoredAddress)
+        } else {
+            user.replaceAddress(null)
+        }
+
+        user.username = snapshot.username
+        user.email = snapshot.email
+        user.initials = snapshot.initials
+        user.firstName = snapshot.firstName
+        user.prefix = snapshot.prefix
+        user.lastName = snapshot.lastName
+        user.phoneNumber = snapshot.phoneNumber
+        user.discord = snapshot.discord
+        user.newsletter = snapshot.newsletter
+        user.enabled = snapshot.enabled
+        user.contactId = null
+
+        userRepository.saveAndFlush(user)
 
         deletedUsers.deleteById(snapshot.userId)
     }
@@ -121,20 +187,44 @@ class UserLifecycleService(
         if (expired.isEmpty()) {
             return 0
         }
-        deletedUsers.deleteAllInBatch(expired)
-        return expired.size
-    }
 
-    private fun findActiveUserOrAlreadyDeleted(userId: Long, snapshotExists: Boolean): net.blueshell.api.domain.user.persistence.User? {
-        return try {
-            users.findById(userId)
-        } catch (ex: ResponseStatusException) {
-            if (ex.statusCode == HttpStatus.NOT_FOUND && snapshotExists) {
-                null
-            } else {
-                throw ex
+        val profileUserIds = expired
+            .filter { it.hadMemberProfile }
+            .map { it.userId }
+            .toSet()
+        if (profileUserIds.isNotEmpty()) {
+            val memberProfilesToDelete = memberProfileLifecycles.findAll(
+                MemberProfileLifecycleSpecifications.fromQuery(
+                    MemberProfileLifecycleQuery(
+                        userIds = profileUserIds,
+                        softDeleted = true
+                    )
+                )
+            )
+            if (memberProfilesToDelete.isNotEmpty()) {
+                memberProfileLifecycles.deleteAllInBatch(memberProfilesToDelete)
             }
         }
+
+        val addressIds = expired.mapNotNull { snapshot ->
+            snapshot.addressId?.takeIf { snapshot.hadAddress }
+        }.toSet()
+        if (addressIds.isNotEmpty()) {
+            val addressesToDelete = addressLifecycles.findAll(
+                AddressLifecycleSpecifications.fromQuery(
+                    AddressLifecycleQuery(
+                        ids = addressIds,
+                        softDeleted = true
+                    )
+                )
+            )
+            if (addressesToDelete.isNotEmpty()) {
+                addressLifecycles.deleteAllInBatch(addressesToDelete)
+            }
+        }
+
+        deletedUsers.deleteAllInBatch(expired)
+        return expired.size
     }
 
     private fun ensureNoRestoreConflicts(snapshot: DeletedUser) {

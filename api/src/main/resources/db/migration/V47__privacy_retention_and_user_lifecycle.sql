@@ -16,6 +16,9 @@ CREATE TABLE deleted_users
     discord          VARCHAR(255) NULL,
     newsletter       BIT(1)       NOT NULL,
     enabled          BIT(1)       NOT NULL,
+    had_member_profile BIT(1)     NOT NULL DEFAULT b'0',
+    had_address      BIT(1)       NOT NULL DEFAULT b'0',
+    address_id       BIGINT       NULL,
     deleted_at       DATETIME     NOT NULL,
     restore_until_at DATETIME     NOT NULL,
     created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -31,3 +34,6 @@ CREATE INDEX idx_deleted_users_restore_until_at
 
 CREATE INDEX idx_deleted_users_deleted_at
     ON deleted_users (deleted_at);
+
+CREATE INDEX idx_deleted_users_address_id
+    ON deleted_users (address_id);

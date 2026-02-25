@@ -47,12 +47,6 @@ class DeletedUser(
     @Column(name = "enabled", nullable = false)
     var enabled: Boolean,
 
-    @Column(name = "had_member_profile", nullable = false)
-    var hadMemberProfile: Boolean = false,
-
-    @Column(name = "had_address", nullable = false)
-    var hadAddress: Boolean = false,
-
     @Column(name = "address_id")
     var addressId: Long? = null,
 
@@ -100,8 +94,6 @@ class DeletedUser(
                 discord = user.discord,
                 newsletter = user.newsletter,
                 enabled = user.enabled,
-                hadMemberProfile = user.personDetailsId != null,
-                hadAddress = user.addressId != null,
                 addressId = user.addressId,
                 deletedAt = deletedAt,
                 restoreUntilAt = restoreUntilAt

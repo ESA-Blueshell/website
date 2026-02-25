@@ -74,23 +74,16 @@ defineExpose({validate, save})
         is-form
       />
 
-      <v-row class="checkbox-row">
-        <v-col
-          class="checkbox-col"
-          cols="12"
-          lg="10"
-          md="11"
-        >
-          <VvField
-            v-model="consented"
-            :component="VCheckbox"
-            :component-props="{ hideDetails: true, class: 'w-100' }"
-            label="I confirm that I have read and agree to the membership terms above, including the Statutes, Domestic Regulations, and Privacy Policy, and I understand these conditions are required for membership."
-            name="consented"
-            rules="accepted"
-          />
-        </v-col>
-      </v-row>
+      <div class="checkbox-row">
+        <VvField
+          v-model="consented"
+          :component="VCheckbox"
+          :component-props="{ hideDetails: true, class: 'w-100' }"
+          label="I confirm that I have read and agree to the membership terms above, including the Statutes, Domestic Regulations, and Privacy Policy, and I understand these conditions are required for membership."
+          name="consented"
+          rules="accepted"
+        />
+      </div>
 
       <v-row
         align="end"
@@ -120,19 +113,15 @@ defineExpose({validate, save})
 
 <style lang="scss" scoped>
 .checkbox-row {
-  justify-content: flex-end;
+  width: 100%;
 }
 
-.checkbox-col {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.checkbox-col :deep(.v-selection-control) {
+.checkbox-row :deep(.v-selection-control) {
   align-items: flex-start;
 }
 
-.checkbox-col :deep(.v-label) {
+.checkbox-row :deep(.v-label) {
+  white-space: normal;
   text-wrap: pretty;
 }
 </style>

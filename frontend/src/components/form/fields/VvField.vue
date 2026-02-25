@@ -49,12 +49,19 @@ const model = defineModel<T>()
         :is="component"
         :disabled="disabled"
         :error-messages="errors"
-        :label="label"
+        :label="$slots.label ? undefined : label"
         :model-value="display(value as T)"
         v-bind="{...componentProps, ...$attrs}"
         @blur="handleBlur"
         @update:model-value="(v: T) => update(v, handleChange as (v: T) => void)"
-      />
+      >
+        <template
+          v-if="$slots.label"
+          #label
+        >
+          <slot name="label" />
+        </template>
+      </component>
     </div>
   </Field>
 </template>

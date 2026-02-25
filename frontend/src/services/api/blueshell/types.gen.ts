@@ -290,6 +290,7 @@ export type CreateUserRequest = {
     newsletter: boolean;
     password?: string;
     phoneNumber: string;
+    photoConsent?: boolean;
     prefix?: string;
     username: string;
 };
@@ -694,6 +695,7 @@ export type UpdateUserRequest = {
     memberProfile?: UpsertMemberProfileRequest;
     newsletter: boolean;
     phoneNumber: string;
+    photoConsent?: boolean;
     version: number;
 };
 
@@ -724,6 +726,7 @@ export type UserDetailResponse = {
     lastName: string;
     newsletter: boolean;
     phoneNumber?: string;
+    photoConsent: boolean;
     prefix?: string;
     restoreUntilAt?: string;
     roles: Array<Role>;

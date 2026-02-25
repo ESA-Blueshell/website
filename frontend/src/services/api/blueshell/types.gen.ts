@@ -264,7 +264,6 @@ export type CreateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string;
     nationality: string;
-    photoConsent: boolean;
     studentNumber: string;
     userId: number;
 };
@@ -466,7 +465,6 @@ export type MemberProfileResponse = {
     gender?: string;
     id?: number;
     nationality?: string;
-    photoConsent?: boolean;
     studentNumber?: string;
     updatedAt?: string;
     userId?: number;
@@ -672,7 +670,6 @@ export type UpdateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string;
     nationality: string;
-    photoConsent: boolean;
     studentNumber: string;
     version: number;
 };
@@ -706,7 +703,6 @@ export type UpsertMemberProfileRequest = {
     ehbo: boolean;
     gender?: string;
     nationality: string;
-    photoConsent: boolean;
     studentNumber: string;
     version?: number;
 };

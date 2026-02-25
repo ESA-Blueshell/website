@@ -1,17 +1,20 @@
-# 2026 1.1.0 Modernization
+# 2026 1.1.x Modernization
 
-Period: 2026-02 onward (current active cycle)  
-Versioning status: upcoming `1.1.0`
+Period: 2026-02 onward (current active cycle)
+Versioning status: `1.1.0` → `1.1.1`
 
-## Privacy lifecycle simplification (2026-02-25)
-- Replaced all `ResponseStatusException` in `UserLifecycleService` with domain-specific exceptions (`DeletedUserNotFoundException`, `RestoreWindowExpiredException`, `RestoreConflictException`) and a `@RestControllerAdvice` mapping them to RFC 9457 Problem Details responses (ADR-008).
-- Added `UserDeleted` and `UserRestored` domain events published after lifecycle transitions. Moved contact deletion job dispatch from the lifecycle service to `UserLifecycleEventListener` (ADR-006).
-- Removed redundant boolean snapshot fields `hadMemberProfile` and `hadAddress` from `DeletedUser`. Restore and finalization now use query-based approaches instead of flag checks.
-- Cleared `consentPrivacy` on user deletion (privacy correctness: consent flags are personal data).
-- Removed dead code: `consentGdpr` field from `User` and `consent_gdpr` column from `users` table.
-- Added `restoreUntilAt` field to `UserDetailResponse` (previously not exposed in API). Frontend `RecoveryUserRow.vue` now shows a chip with remaining restore days (amber when < 7 days).
-- Expanded `UserControllerIT` with 10 new integration tests covering: delete/restore without member profile, delete/restore without address, consent cleared on deletion, consent not restored on restoration, 410 Gone on expired window, finalization without profile/address, idempotent finalization, `restoreUntilAt` in response, `UserDeleted` and `UserRestored` domain events.
-- Migration V48: drops `had_member_profile`, `had_address` from `deleted_users`; drops `consent_gdpr` from `users`.
+## User account lifecycle improvements (2026-02)
+- Improved error responses for user deletion and restoration with clearer status codes and messages.
+- User deletion and restoration now publish domain events, enabling better audit trails and decoupled side-effects.
+- Simplified the deleted user snapshot by removing redundant flags in favour of query-based detection.
+- Removed the unused GDPR consent field.
+- The recovery manager now shows how many days remain before a deleted user can no longer be restored.
+
+## 1.1.1 — Privacy and consent policy updates (2026-02-25)
+- Updated the privacy policy and reworked the consent fields shown during registration and profile editing.
+- Photo consent is now a user-level setting that can be managed independently by both the user and the board, rather than being tied to the member profile.
+- Photo consent is preserved when a user account is deleted and included in the deleted user snapshot for restoration.
+- Simplified the privacy consent layout in the registration and profile forms.
 
 ## Implemented/in-progress functionality
 - Full backend migration track to Kotlin was executed across the codebase.
@@ -37,4 +40,4 @@ This release track is focused on:
 - enforcing clear cross-domain communication boundaries.
 
 ## Outcome
-- `1.1.0` is the large modernization release line following `1.0.0`, centered on architecture quality, operability, and reliability at scale.
+- `1.1.x` is the modernization release line following `1.0.0`, centered on architecture quality, operability, and reliability at scale.

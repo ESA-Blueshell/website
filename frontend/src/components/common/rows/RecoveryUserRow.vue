@@ -18,20 +18,11 @@
           <v-chip
             v-if="actionType === 'restore' && restoreWindowLabel"
             :color="restoreWindowUrgent ? 'warning' : undefined"
+            class="mx-2"
             size="small"
             variant="tonal"
           >
             {{ restoreWindowLabel }}
-          </v-chip>
-
-          <v-chip
-            :color="user.enabled ? 'green' : 'red'"
-            class="d-flex justify-center align-center"
-            size="small"
-            style="width: 70px"
-            variant="flat"
-          >
-            {{ user.enabled ? "Active" : "Inactive" }}
           </v-chip>
 
           <v-btn

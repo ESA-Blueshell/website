@@ -1,5 +1,5 @@
--- Concern(s): user lifecycle retention with deleted-user snapshot table
--- Intent: keep canonical users rows; store restore data in dedicated table
+-- Add deleted_users snapshot table for soft-delete restore flow
+-- and remove unused consent_gdpr column from users.
 
 DROP TABLE IF EXISTS deleted_users;
 
@@ -16,8 +16,6 @@ CREATE TABLE deleted_users
     discord          VARCHAR(255) NULL,
     newsletter       BIT(1)       NOT NULL,
     enabled          BIT(1)       NOT NULL,
-    had_member_profile BIT(1)     NOT NULL DEFAULT b'0',
-    had_address      BIT(1)       NOT NULL DEFAULT b'0',
     address_id       BIGINT       NULL,
     deleted_at       DATETIME     NOT NULL,
     restore_until_at DATETIME     NOT NULL,
@@ -37,3 +35,6 @@ CREATE INDEX idx_deleted_users_deleted_at
 
 CREATE INDEX idx_deleted_users_address_id
     ON deleted_users (address_id);
+
+-- Remove unused consent_gdpr column
+ALTER TABLE users DROP COLUMN consent_gdpr;

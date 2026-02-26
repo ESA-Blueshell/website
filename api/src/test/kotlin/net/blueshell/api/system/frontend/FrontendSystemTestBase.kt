@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @SpringBootTest(
     classes = [ApiApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080"]
+    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"]
 )
 abstract class FrontendSystemTestBase {
 

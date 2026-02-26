@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 @Service
 class JobExecutor(
     private val jobExecutionService: JobExecutionService,
-    @Lazy private val jobHandlerRegistry: JobHandlerRegistry,
+    @param:Lazy private val jobHandlerRegistry: JobHandlerRegistry,
     private val jobRetryTemplate: RetryTemplate
 ) {
     private val logger = LoggerFactory.getLogger(JobExecutor::class.java)

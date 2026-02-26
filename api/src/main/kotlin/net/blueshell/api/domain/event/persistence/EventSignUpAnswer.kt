@@ -31,7 +31,7 @@ import org.hibernate.annotations.SQLRestriction
     sql = """
       UPDATE event_sign_up_answers
       SET deleted_at = NOW(), version = version + 1
-      WHERE event_sign_up_id = ? AND answer_id = ? AND version = ?
+      WHERE answer_id = ? AND event_sign_up_id = ? AND version = ?
     """
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

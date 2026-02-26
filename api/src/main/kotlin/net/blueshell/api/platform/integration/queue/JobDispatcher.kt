@@ -9,6 +9,8 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 /**
  * Async job dispatcher. Writes a DB row then calls JobExecutor.executeAsync().
@@ -50,7 +52,16 @@ class JobDispatcher(
         ) ?: return null
 
         if (properties.autoDispatch) {
-            jobExecutor.executeAsync(execution.id!!)
+            val executionId = execution.id!!
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        jobExecutor.executeAsync(executionId)
+                    }
+                })
+            } else {
+                jobExecutor.executeAsync(executionId)
+            }
         }
         return execution
     }

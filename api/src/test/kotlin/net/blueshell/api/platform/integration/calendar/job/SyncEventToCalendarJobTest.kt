@@ -81,6 +81,29 @@ class SyncEventToCalendarJobTest : ServiceTestSupport() {
         assertThat(updated.googleId).isNotNull()
     }
 
+    @Test
+    fun `updates calendar event when approved event details change`() {
+        val (event, googleId) = createEventWithCalendarEntry()
+        val originalTitle = event.title
+
+        // Change event title
+        event.title = "Updated Calendar Event Title"
+        persist(event)
+
+        val payload = objectMapper.writeValueAsString(CalendarEventRef(event.id!!))
+        syncEventToCalendarJob.handle(payload)
+
+        // Same externalId, updated title
+        val storedEvent = mockCalendarAdapter.findByExternalId(googleId)
+        assertThat(storedEvent).isNotNull
+        assertThat(storedEvent!!.title).isEqualTo("Updated Calendar Event Title")
+        assertThat(storedEvent.title).isNotEqualTo(originalTitle)
+
+        // googleId should remain the same
+        val updated = eventService.findById(event.id!!)
+        assertThat(updated.googleId).isEqualTo(googleId)
+    }
+
     private fun createEventWithCalendarEntry(): Pair<Event, String> {
         val event = persist(buildEvent(approved = true))
 

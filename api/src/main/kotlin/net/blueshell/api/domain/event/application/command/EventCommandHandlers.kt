@@ -62,7 +62,7 @@ class UpdateEventHandler(
         val event = service.findById(command.id)
         val isBoard = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
         event.applyEditableFields(command, committeeService.findById(command.committeeId))
-        event.replaceBanner(command.banner?.toEntity(event, fileService))
+        event.replaceBanner(command.banner?.toEntity(event, fileService, existingBanner = event.banner))
         applySignUpFormUpdate(event, command.signUpForm, surveyFactory)
         event.approved = isBoard && command.approved
         event.version = command.version
@@ -121,7 +121,14 @@ private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
     return inherited.any { it.matchesRole(role) }
 }
 
-private fun EventBannerData.toEntity(event: Event, fileService: FileService): EventBanner {
+private fun EventBannerData.toEntity(
+    event: Event,
+    fileService: FileService,
+    existingBanner: EventBanner? = null
+): EventBanner {
+    if (existingBanner != null && existingBanner.fileId == fileId) {
+        return existingBanner  // Same file — reuse managed entity, no INSERT needed
+    }
     return EventBanner(
         event = event,
         file = fileService.findById(fileId),

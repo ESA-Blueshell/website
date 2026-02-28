@@ -37,9 +37,12 @@ class EventControllerSecurityTest : UserTestSupport() {
         title: String = "Updated Event",
         approved: Boolean = true,
         membersOnly: Boolean = false,
-        signUp: Boolean = true
-    ): String =
-        """{"committeeId":$committeeId,"title":"$title","description":"Updated event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp,"version":$version}"""
+        signUp: Boolean = true,
+        bannerFileId: Long? = null
+    ): String {
+        val bannerPart = if (bannerFileId == null) "" else ""","banner":{"fileId":$bannerFileId}"""
+        return """{"committeeId":$committeeId,"title":"$title","description":"Updated event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp,"version":$version$bannerPart}"""
+    }
 
     @Nested
     inner class CreateEvent {
@@ -193,6 +196,22 @@ class EventControllerSecurityTest : UserTestSupport() {
                     .content(updateEventPayload(event.committee.id!!, event.version, "Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
+        }
+
+        @Test
+        fun `allows updating an event that already has a banner without constraint violation`() {
+            val board = createUserWithRole(Role.BOARD)
+            val file = createFileFixture(uploader = board)
+            val event = attachEventBanner(createEventFixture(), file)
+            val eventId = event.id!!
+
+            mvc.perform(
+                put("/events/{id}", eventId)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updateEventPayload(event.committee.id!!, event.version, bannerFileId = file.id!!))
+            )
+                .andExpect(status().isOk)
         }
     }
 

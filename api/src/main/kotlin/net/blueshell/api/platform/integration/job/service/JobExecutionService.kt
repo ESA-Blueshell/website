@@ -82,9 +82,7 @@ class JobExecutionService(
     ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
-        execution.errorType = errorType
-        execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
-        execution.errorMessage = "$errorType: $errorReason"
+        applyErrorInfo(execution, errorType, errorReason, stackTrace)
         return super.update(execution)
     }
 
@@ -97,9 +95,7 @@ class JobExecutionService(
     ): JobExecution {
         execution.status = JobExecutionStatus.DEAD
         execution.finishedAt = Instant.now()
-        execution.errorType = errorType
-        execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
-        execution.errorMessage = "$errorType: $errorReason"
+        applyErrorInfo(execution, errorType, errorReason, stackTrace)
         return super.update(execution)
     }
 
@@ -114,11 +110,20 @@ class JobExecutionService(
         execution.queuedAt = Instant.now()
         execution.startedAt = null
         execution.finishedAt = null
+        applyErrorInfo(execution, errorType, errorReason, stackTrace)
+        execution.attempts += 1
+        return super.update(execution)
+    }
+
+    private fun applyErrorInfo(
+        execution: JobExecution,
+        errorType: String,
+        errorReason: String,
+        stackTrace: String?
+    ) {
         execution.errorType = errorType
         execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
         execution.errorMessage = "$errorType: $errorReason"
-        execution.attempts += 1
-        return super.update(execution)
     }
 
     @Transactional

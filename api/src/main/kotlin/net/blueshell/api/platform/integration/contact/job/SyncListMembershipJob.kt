@@ -4,10 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
+import net.blueshell.api.domain.user.application.contact.toContactData
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -57,14 +56,7 @@ class SyncListMembershipJob(
         if (hasContribution) {
             // Ensure user has a contactId (sync contact if null)
             val contactId = if (user.contactId == null) {
-                val contactData = ContactData(
-                    email = user.email,
-                    firstName = user.firstName,
-                    lastName = user.lastName,
-                    phoneNumber = user.phoneNumber,
-                    newsletter = user.newsletter,
-                    isMember = user.hasRole(Role.MEMBER)
-                )
+                val contactData = user.toContactData()
                 val syncedContactId = contactAdapter.syncContact(user.id!!, contactData)
                 users.updateContactLink(user, syncedContactId.toLong())
                 syncedContactId

@@ -56,7 +56,7 @@ const RAW_RUNTIME_STATE =
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.0.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.8.0"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.5.3"],\
-          ["fast-xml-parser", "npm:5.3.7"],\
+          ["fast-xml-parser", "npm:5.4.1"],\
           ["flag-icons", "npm:7.5.0"],\
           ["globals", "npm:17.3.0"],\
           ["i18n-nationality", "npm:1.4.0"],\
@@ -3123,7 +3123,7 @@ const RAW_RUNTIME_STATE =
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.0.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.8.0"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.5.3"],\
-          ["fast-xml-parser", "npm:5.3.7"],\
+          ["fast-xml-parser", "npm:5.4.1"],\
           ["flag-icons", "npm:7.5.0"],\
           ["globals", "npm:17.3.0"],\
           ["i18n-nationality", "npm:1.4.0"],\
@@ -4828,11 +4828,21 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
-    ["fast-xml-parser", [\
-      ["npm:5.3.7", {\
-        "packageLocation": "./.yarn/cache/fast-xml-parser-npm-5.3.7-8b2e6bb2a1-2452b8d455.zip/node_modules/fast-xml-parser/",\
+    ["fast-xml-builder", [\
+      ["npm:1.0.0", {\
+        "packageLocation": "./.yarn/cache/fast-xml-builder-npm-1.0.0-1d924494e5-2631fda265.zip/node_modules/fast-xml-builder/",\
         "packageDependencies": [\
-          ["fast-xml-parser", "npm:5.3.7"],\
+          ["fast-xml-builder", "npm:1.0.0"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["fast-xml-parser", [\
+      ["npm:5.4.1", {\
+        "packageLocation": "./.yarn/cache/fast-xml-parser-npm-5.4.1-48bbd2c631-8c696438a0.zip/node_modules/fast-xml-parser/",\
+        "packageDependencies": [\
+          ["fast-xml-builder", "npm:1.0.0"],\
+          ["fast-xml-parser", "npm:5.4.1"],\
           ["strnum", "npm:2.1.2"]\
         ],\
         "linkType": "HARD"\

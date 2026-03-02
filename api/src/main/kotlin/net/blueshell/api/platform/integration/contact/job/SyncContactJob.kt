@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.job
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import net.blueshell.api.domain.user.application.contact.toContactData

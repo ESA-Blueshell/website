@@ -1,6 +1,6 @@
 package net.blueshell.api.testsupport
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import jakarta.mail.Multipart
 import jakarta.mail.Part
 import jakarta.mail.internet.MimeMessage

@@ -44,4 +44,7 @@ class JacksonConfig {
             }
             .build()
     }
+
+    @Bean
+    fun objectMapper(): ObjectMapper = jsonMapper()
 }

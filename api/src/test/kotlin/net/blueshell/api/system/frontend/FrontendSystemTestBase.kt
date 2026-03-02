@@ -5,7 +5,7 @@ import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.options.AriaRole
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.config.TestCleanUpListener

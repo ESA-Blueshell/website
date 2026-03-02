@@ -130,6 +130,8 @@ class BrevoContactClient(
         log.info("Adding {} contacts to Brevo list {}", contactIds.size, listId)
         val payload = AddContactToListRequest()
         payload.ids = contactIds.toMutableList()
+        payload.emails = null
+        payload.extIds = null
         contactsApi.addContactToList(listId, payload)
     }
 
@@ -141,6 +143,8 @@ class BrevoContactClient(
         log.info("Removing {} contacts from Brevo list {}", contactIds.size, listId)
         val payload = RemoveContactFromListRequest()
         payload.ids = contactIds.toMutableList()
+        payload.emails = null
+        payload.extIds = null
         contactsApi.removeContactFromList(listId, payload)
     }
 

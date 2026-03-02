@@ -2,7 +2,7 @@
 
 # Generate OpenAPI Documentation Script
 # This script generates the OpenAPI documentation from the Spring Boot API,
-# downloads the latest Discord OpenAPI spec,
+# downloads the latest Discord and Brevo OpenAPI specs,
 # and then generates the frontend TypeScript client
 
 set -e  # Exit on any error
@@ -80,6 +80,30 @@ fi
 
 print_success "Downloaded latest Discord OpenAPI spec"
 
+print_status "Downloading latest Brevo OpenAPI spec..."
+
+BREVO_OPENAPI_URL="https://api.brevo.com/v3/swagger_definition_v3.yml"
+
+curl -sS -L "$BREVO_OPENAPI_URL" -o openapi/brevo.yml
+
+if [ $? -ne 0 ]; then
+    print_error "Failed to download Brevo OpenAPI spec"
+    exit 1
+fi
+
+print_success "Downloaded latest Brevo OpenAPI spec"
+
+print_status "Regenerating Brevo client..."
+
+./gradlew :brevo-client:generate
+
+if [ $? -ne 0 ]; then
+    print_error "Failed to regenerate Brevo client"
+    exit 1
+fi
+
+print_success "Brevo client regenerated"
+
 print_status "Sorting and minifying openapi jsons..."
 
 # Use a temporary file to avoid truncating on failure
@@ -120,6 +144,8 @@ print_success "🎉 OpenAPI documentation and TypeScript client generation compl
 print_status "Generated files:"
 print_status "  - API OpenAPI spec: openapi/blueshell.json"
 print_status "  - Discord OpenAPI spec: openapi/discord.json"
+print_status "  - Brevo OpenAPI spec: openapi/brevo.yml"
+print_status "  - Brevo client: brevo-client/src/main/kotlin/"
 print_status "  - Frontend clients: frontend/src/services/"
 
 echo ""

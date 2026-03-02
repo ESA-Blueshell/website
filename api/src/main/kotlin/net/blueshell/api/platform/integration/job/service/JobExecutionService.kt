@@ -21,14 +21,25 @@ class JobExecutionService(
     fun createQueued(
         jobType: String,
         payload: String?,
-        actor: Actor
-    ): JobExecution {
+        actor: Actor,
+        dedupKey: String? = null
+    ): JobExecution? {
+        if (dedupKey != null) {
+            val active = jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(
+                jobType,
+                dedupKey,
+                listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
+            )
+            if (active) return null
+        }
+
         val execution = JobExecution(
             jobType = jobType,
             status = JobExecutionStatus.QUEUED,
             payload = payload,
             attempts = 0,
             queuedAt = Instant.now(),
+            dedupKey = dedupKey,
             initiatedByUserId = actor.userId,
             initiatedByType = actor.type,
             initiatedByRole = actor.role
@@ -71,9 +82,20 @@ class JobExecutionService(
     ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
-        execution.errorType = errorType
-        execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
-        execution.errorMessage = "$errorType: $errorReason"
+        applyErrorInfo(execution, errorType, errorReason, stackTrace)
+        return super.update(execution)
+    }
+
+    @Transactional
+    fun markDead(
+        execution: JobExecution,
+        errorType: String,
+        errorReason: String,
+        stackTrace: String? = null
+    ): JobExecution {
+        execution.status = JobExecutionStatus.DEAD
+        execution.finishedAt = Instant.now()
+        applyErrorInfo(execution, errorType, errorReason, stackTrace)
         return super.update(execution)
     }
 
@@ -88,11 +110,20 @@ class JobExecutionService(
         execution.queuedAt = Instant.now()
         execution.startedAt = null
         execution.finishedAt = null
+        applyErrorInfo(execution, errorType, errorReason, stackTrace)
+        execution.attempts += 1
+        return super.update(execution)
+    }
+
+    private fun applyErrorInfo(
+        execution: JobExecution,
+        errorType: String,
+        errorReason: String,
+        stackTrace: String?
+    ) {
         execution.errorType = errorType
         execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
         execution.errorMessage = "$errorType: $errorReason"
-        execution.attempts += 1
-        return super.update(execution)
     }
 
     @Transactional

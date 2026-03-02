@@ -1,5 +1,8 @@
 package net.blueshell.api.domain.user.application.contact
 
+import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.Role
+
 /**
  * Domain interface for contact synchronization with external systems (ADR-019: Anti-Corruption Layer)
  *
@@ -82,6 +85,15 @@ data class ContactData(
     val newsletter: Boolean,
     val isMember: Boolean,
     val attributes: Map<String, Any> = emptyMap()
+)
+
+fun User.toContactData(): ContactData = ContactData(
+    email = this.email,
+    firstName = this.firstName,
+    lastName = this.lastName,
+    phoneNumber = this.phoneNumber,
+    newsletter = this.newsletter,
+    isMember = this.hasRole(Role.MEMBER)
 )
 
 /**

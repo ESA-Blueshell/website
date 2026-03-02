@@ -3,10 +3,8 @@ package net.blueshell.api.testsupport
 import jakarta.persistence.EntityManager
 import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
-import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestExecutionListeners
 import org.springframework.test.context.event.ApplicationEvents
@@ -23,7 +21,6 @@ import org.springframework.transaction.support.TransactionTemplate
  * - Transaction management
  * - Application event recording
  * - Job execution tracking
- * - Mocked RabbitMQ
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -44,9 +41,6 @@ abstract class ServiceTestSupport {
 
     @Autowired
     protected lateinit var jobExecutions: JobExecutionRepository
-
-    @MockitoBean
-    protected lateinit var rabbitTemplate: RabbitTemplate
 
     protected val transactionTemplate: TransactionTemplate by lazy {
         TransactionTemplate(transactionManager)

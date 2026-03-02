@@ -9,15 +9,15 @@ import org.springframework.stereotype.Component
 class JobExecutionFactory(
     private val persistence: FactoryPersistenceSupport
 ) {
-    fun build(jobType: String = "test-job"): JobExecution {
+    fun build(jobType: String = "test-job", status: JobExecutionStatus = JobExecutionStatus.QUEUED): JobExecution {
         return JobExecution(
             jobType = jobType,
-            status = JobExecutionStatus.QUEUED,
+            status = status,
             payload = """{"key":"value"}"""
         )
     }
 
-    fun create(jobType: String = "test-job"): JobExecution {
-        return persistence.persist(build(jobType))
+    fun create(jobType: String = "test-job", status: JobExecutionStatus = JobExecutionStatus.QUEUED): JobExecution {
+        return persistence.persist(build(jobType, status))
     }
 }

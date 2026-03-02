@@ -147,9 +147,11 @@ class JobManagementControllerIT : UserTestSupport() {
     @Nested
     inner class Retry {
         @Test
-        fun `admin retries job`() {
+        fun `admin retries failed job`() {
             val admin = createUserWithRole(Role.ADMIN)
             val job = createJobExecutionFixture(jobType = "retry-target")
+            job.status = JobExecutionStatus.FAILED
+            jobExecutions.saveAndFlush(job)
 
             mvc.perform(post("/management/jobs/{id}/retry", job.id).with(bearer(admin)))
                 .andExpect(status().isOk)
@@ -161,6 +163,27 @@ class JobManagementControllerIT : UserTestSupport() {
 
             val reloaded = jobExecutions.findById(job.id!!).orElseThrow()
             assertThat(reloaded.attempts).isEqualTo(1)
+        }
+
+        @Test
+        fun `admin retries dead job`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val job = createJobExecutionFixture(jobType = "dead-retry-target")
+            job.status = JobExecutionStatus.DEAD
+            jobExecutions.saveAndFlush(job)
+
+            mvc.perform(post("/management/jobs/{id}/retry", job.id).with(bearer(admin)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.status").value("QUEUED"))
+        }
+
+        @Test
+        fun `admin cannot retry queued job`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val job = createJobExecutionFixture(jobType = "queued-target")
+
+            mvc.perform(post("/management/jobs/{id}/retry", job.id).with(bearer(admin)))
+                .andExpect(status().isBadRequest)
         }
     }
 }

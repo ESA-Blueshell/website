@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.job.web
 
+import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Nested
@@ -79,7 +80,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows ADMIN to retry jobs`() {
             val admin = createUserWithRole(Role.ADMIN)
-            val jobId = createJobExecutionFixture().id!!
+            val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
             mvc.perform(
                 post("/management/jobs/{id}/retry", jobId)
@@ -91,7 +92,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies BOARD from retrying jobs`() {
             val board = createUserWithRole(Role.BOARD)
-            val jobId = createJobExecutionFixture().id!!
+            val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
             mvc.perform(
                 post("/management/jobs/{id}/retry", jobId)
@@ -103,7 +104,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         @Test
         fun `denies regular user from retrying jobs`() {
             val member = createUserWithRole(Role.MEMBER)
-            val jobId = createJobExecutionFixture().id!!
+            val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
             mvc.perform(
                 post("/management/jobs/{id}/retry", jobId)
@@ -114,7 +115,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            val jobId = createJobExecutionFixture().id!!
+            val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
             mvc.perform(post("/management/jobs/{id}/retry", jobId))
                 .andExpect(status().isUnauthorized)

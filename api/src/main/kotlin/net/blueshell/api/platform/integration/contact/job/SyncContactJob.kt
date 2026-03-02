@@ -2,11 +2,10 @@ package net.blueshell.api.platform.integration.contact.job
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
+import net.blueshell.api.domain.user.application.contact.toContactData
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.enums.Role
 import org.springframework.stereotype.Component
 
 /**
@@ -25,15 +24,7 @@ class SyncContactJob(
     override fun handlePayload(payload: ContactJobs.SyncContactPayload) {
         val user = users.findById(payload.userId)
 
-        // Create domain ContactData from User entity
-        val contactData = ContactData(
-            email = user.email,
-            firstName = user.firstName,
-            lastName = user.lastName,
-            phoneNumber = user.phoneNumber,
-            newsletter = user.newsletter,
-            isMember = user.hasRole(Role.MEMBER)
-        )
+        val contactData = user.toContactData()
 
         // Sync contact and update user's contact ID if needed
         val contactId = contactAdapter.syncContact(user.id!!, contactData)

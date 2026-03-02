@@ -12,7 +12,6 @@ import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.system.frontend.helper.UserFormHelper
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -35,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @SpringBootTest(
     classes = [ApiApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080"]
+    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"]
 )
 abstract class FrontendSystemTestBase {
 
@@ -47,9 +46,6 @@ abstract class FrontendSystemTestBase {
 
     @Autowired
     lateinit var mailSender: MockJavaMailSender
-
-    @Autowired(required = false)
-    var rabbitListenerRegistry: RabbitListenerEndpointRegistry? = null
 
     private lateinit var playwright: Playwright
     private lateinit var browser: Browser
@@ -73,17 +69,6 @@ abstract class FrontendSystemTestBase {
     @BeforeEach
     fun clearOutbox() {
         mailSender.clear()
-    }
-
-    @BeforeEach
-    fun startRabbitListeners() {
-        rabbitListenerRegistry?.listenerContainers?.forEach { container ->
-            if (!container.isRunning) {
-                runCatching {
-                    container.start()
-                }
-            }
-        }
     }
 
     @AfterAll

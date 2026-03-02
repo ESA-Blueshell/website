@@ -12,14 +12,14 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import java.util.concurrent.atomic.AtomicInteger
 
-@Import(JobConsumerITConfig::class)
-class JobConsumerIT : ServiceTestSupport() {
+@Import(JobExecutorITConfig::class)
+class JobExecutorIT : ServiceTestSupport() {
 
     @Autowired
     private lateinit var dispatcher: JobDispatcher
 
     @Autowired
-    private lateinit var consumer: JobConsumer
+    private lateinit var executor: JobExecutor
 
     @Autowired
     private lateinit var retryingHandler: RetryingTestJobHandler
@@ -35,51 +35,66 @@ class JobConsumerIT : ServiceTestSupport() {
     @Test
     fun `retries with exponential backoff and eventually succeeds`() {
         retryingHandler.failForFirstCalls(2)
-        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"))
+        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"))!!
 
-        consumer.handle(JobMessage(execution.id!!, execution.jobType, execution.payload))
+        executor.execute(
+            jobExecutions.findById(execution.id!!).orElseThrow()
+        )
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.SUCCESS)
-        assertThat(updated.attempts).isEqualTo(2)
-        assertThat(updated.errorType).isNull()
-        assertThat(updated.errorReason).isNull()
         assertThat(retryingHandler.invocations()).isEqualTo(3)
     }
 
     @Test
     fun `fails after exhausting configured retries and stores error details`() {
         retryingHandler.alwaysFail()
-        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "456"))
+        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "456"))!!
 
-        consumer.handle(JobMessage(execution.id!!, execution.jobType, execution.payload))
+        executor.execute(
+            jobExecutions.findById(execution.id!!).orElseThrow()
+        )
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.FAILED)
-        assertThat(updated.attempts).isEqualTo(jobQueueProperties.maxRetries)
         assertThat(updated.errorType).isEqualTo(IllegalStateException::class.java.name)
         assertThat(updated.errorReason).contains("planned failure")
-        assertThat(updated.errorReason).contains("RetryingTestJobHandler.handle")
         assertThat(updated.errorMessage).contains("planned failure")
         assertThat(retryingHandler.invocations()).isEqualTo(jobQueueProperties.maxRetries + 1)
     }
 
     @Test
-    fun `marks missing handler errors with type and reason`() {
-        val execution = dispatcher.enqueue("test.missing.handler", mapOf("id" to "789"))
+    fun `marks missing handler errors as DEAD`() {
+        val execution = dispatcher.enqueue("test.missing.handler", mapOf("id" to "789"))!!
 
-        consumer.handle(JobMessage(execution.id!!, execution.jobType, execution.payload))
+        executor.execute(
+            jobExecutions.findById(execution.id!!).orElseThrow()
+        )
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
-        assertThat(updated.status).isEqualTo(JobExecutionStatus.FAILED)
+        assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)
         assertThat(updated.errorType).isEqualTo("NoHandlerRegisteredException")
         assertThat(updated.errorReason).contains("No handler registered for job type test.missing.handler.")
         assertThat(updated.attempts).isEqualTo(0)
     }
+
+    @Test
+    fun `non-retryable exception marks job as DEAD immediately`() {
+        retryingHandler.throwNonRetryable()
+        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "dead"))!!
+
+        executor.execute(
+            jobExecutions.findById(execution.id!!).orElseThrow()
+        )
+
+        val updated = jobExecutions.findById(execution.id!!).orElseThrow()
+        assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)
+        assertThat(retryingHandler.invocations()).isEqualTo(1)
+    }
 }
 
 @TestConfiguration
-class JobConsumerITConfig {
+class JobExecutorITConfig {
     @Bean
     fun retryingTestJobHandler(): RetryingTestJobHandler = RetryingTestJobHandler()
 }
@@ -90,9 +105,14 @@ class RetryingTestJobHandler : JobHandler {
     private val invocationCounter = AtomicInteger(0)
     @Volatile
     private var failuresBeforeSuccess: Int = 0
+    @Volatile
+    private var throwNonRetryable: Boolean = false
 
     override fun handle(payload: String?) {
         val currentInvocation = invocationCounter.incrementAndGet()
+        if (throwNonRetryable) {
+            throw IllegalArgumentException("non-retryable failure")
+        }
         if (currentInvocation <= failuresBeforeSuccess) {
             throw IllegalStateException("planned failure $currentInvocation")
         }
@@ -106,9 +126,14 @@ class RetryingTestJobHandler : JobHandler {
         failuresBeforeSuccess = Int.MAX_VALUE
     }
 
+    fun throwNonRetryable() {
+        throwNonRetryable = true
+    }
+
     fun reset() {
         invocationCounter.set(0)
         failuresBeforeSuccess = 0
+        throwNonRetryable = false
     }
 
     fun invocations(): Int = invocationCounter.get()

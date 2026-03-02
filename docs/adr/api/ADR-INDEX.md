@@ -55,6 +55,12 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [012](ADR-012-api-documentation-with-openapi.md) | API Documentation with OpenAPI | Accepted | OpenAPI-first API documentation workflow |
 | [014](ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Accepted | Permission evaluators and authorization design |
 
+### Job System
+
+| # | Title | Status | Summary |
+|---|-------|--------|---------|
+| [023](ADR-023-job-consolidation-and-reliable-execution.md) | Job Consolidation and Reliable Execution | Accepted | Replace RabbitMQ with @Async + RetryTemplate, consolidate job types, add dedup |
+
 ### Testing
 
 | # | Title | Status | Summary |

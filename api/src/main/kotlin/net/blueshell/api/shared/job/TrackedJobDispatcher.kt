@@ -10,15 +10,11 @@ class TrackedJobDispatcher(
     private val queue: JobQueue,
     private val actors: ActorProvider
 ) {
-    fun <T : Any> enqueue(job: JobDefinition<T>, payload: T): JobExecution {
+    fun <T : Any> enqueue(job: JobDefinition<T>, payload: T): JobExecution? {
         return queue.enqueue(job, payload, actors.currentOrSystem())
     }
 
-    fun enqueue(jobType: String, payload: Any? = null): JobExecution {
-        return queue.enqueue(jobType, payload, actors.currentOrSystem())
-    }
-
-    fun <T : Any> enqueueFromActor(job: JobDefinition<T>, payload: T, actor: ActorTracked): JobExecution {
+    fun <T : Any> enqueueFromActor(job: JobDefinition<T>, payload: T, actor: ActorTracked): JobExecution? {
         return queue.enqueue(job, payload, actor.actor)
     }
 
@@ -26,7 +22,7 @@ class TrackedJobDispatcher(
         jobType: String,
         payload: Any? = null,
         actor: Actor? = null
-    ): JobExecution {
-        return queue.enqueue(jobType, payload, actor)
+    ): JobExecution? {
+        return queue.enqueue(jobType, payload, actor ?: actors.currentOrSystem())
     }
 }

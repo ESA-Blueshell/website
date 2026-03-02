@@ -1,8 +1,6 @@
 package net.blueshell.api.domain.event.application.listener
 
-import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.EventSignUpService
-import net.blueshell.api.domain.event.application.event.EventChange
 import net.blueshell.api.domain.event.application.event.EventChanged
 import net.blueshell.api.domain.event.application.event.EventSignUpCreated
 import net.blueshell.api.shared.job.CalendarEventRef
@@ -17,54 +15,25 @@ import org.springframework.transaction.annotation.Transactional
 @Component
 class EventJobsListener(
     private val jobs: TrackedJobDispatcher,
-    private val events: EventService,
     private val signUps: EventSignUpService
 ) {
     /**
-     * After commit, enqueue add if approved
+     * After commit, enqueue calendar sync for any event change.
+     * The SyncEventToCalendarJob handles all cases (add/update/remove)
+     * based on the event's current approval status and soft-deletion state.
      */
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onChange(evt: EventChanged) {
-        when (evt.changeType) {
-            EventChange.CREATED -> {
-                val e = events.findById(evt.eventId)
-                if (e.approved) {
-                    jobs.enqueueFromActor(
-                        CalendarJobs.AddEvent,
-                        CalendarEventRef(e.id!!),
-                        evt
-                    )
-                }
-            }
-
-            EventChange.UPDATED -> {
-                val e = events.findById(evt.eventId)
-                if (e.approved) {
-                    jobs.enqueueFromActor(
-                        CalendarJobs.SyncEvent,
-                        CalendarEventRef(e.id!!),
-                        evt
-                    )
-                } else {
-                    jobs.enqueueFromActor(
-                        CalendarJobs.RemoveEvent,
-                        CalendarEventRef(e.id!!),
-                        evt
-                    )
-                }
-            }
-
-            EventChange.DELETED -> jobs.enqueueFromActor(
-                CalendarJobs.RemoveEvent,
-                CalendarEventRef(evt.eventId),
-                evt
-            )
-        }
+        jobs.enqueueFromActor(
+            CalendarJobs.SyncEvent,
+            CalendarEventRef(evt.eventId),
+            evt
+        )
     }
 
     /**
-     * send e-mail only if the transaction COMMITTED successfully
+     * Send e-mail only if the transaction COMMITTED successfully.
      */
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)

@@ -1,10 +1,13 @@
 package net.blueshell.api.domain.contribution.web
 
+import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -13,6 +16,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class ContributionControllerIT : UserTestSupport() {
+
+    @Autowired
+    private lateinit var contributionService: ContributionService
 
     private fun createPayload(userId: Long, periodId: Long): String =
         """{"userId":$userId,"contributionPeriodId":$periodId}"""
@@ -113,6 +119,34 @@ class ContributionControllerIT : UserTestSupport() {
                     .with(bearer(board))
             )
                 .andExpect(status().isNoContent)
+        }
+
+        @Test
+        fun `soft-deleted contribution is not found by existsById`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            persist(
+                Contribution(
+                    id = Contribution.Id(user.id, period.id),
+                    user = user,
+                    contributionPeriod = period,
+                )
+            )
+
+            mvc.perform(
+                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNoContent)
+
+            val existsAfter = transactionTemplate.execute {
+                entityManager.clear()
+                contributionService.existsByUserIdAndPeriodId(user.id!!, period.id!!)
+            }
+            assertThat(existsAfter)
+                .describedAs("Contribution should NOT exist after soft-delete")
+                .isFalse()
         }
 
         @Test

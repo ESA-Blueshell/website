@@ -24,13 +24,6 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
 
-  rabbitmq:
-    listener:
-      simple:
-        auto-startup: false
-      direct:
-        auto-startup: false
-
 logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
@@ -72,6 +65,7 @@ app:
     max-retries: 3
     initial-backoff-millis: 1
     backoff-multiplier: 2.0
+    auto-dispatch: false
 
 security:
   cors:

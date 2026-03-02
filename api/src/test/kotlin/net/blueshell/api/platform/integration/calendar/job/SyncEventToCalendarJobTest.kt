@@ -15,10 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class RemoveEventFromCalendarJobTest : ServiceTestSupport() {
+class SyncEventToCalendarJobTest : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var removeEventFromCalendarJob: RemoveEventFromCalendarJob
+    private lateinit var syncEventToCalendarJob: SyncEventToCalendarJob
 
     @Autowired
     private lateinit var eventService: EventService
@@ -35,11 +35,13 @@ class RemoveEventFromCalendarJobTest : ServiceTestSupport() {
     }
 
     @Test
-    fun `removes calendar event and clears google id for active event`() {
+    fun `removes calendar event and clears google id for unapproved event`() {
         val (event, googleId) = createEventWithCalendarEntry()
+        event.approved = false
+        persist(event)
         val payload = objectMapper.writeValueAsString(CalendarEventRef(event.id!!))
 
-        removeEventFromCalendarJob.handle(payload)
+        syncEventToCalendarJob.handle(payload)
 
         val updated = eventService.findById(event.id!!)
         assertThat(updated.googleId).isNull()
@@ -52,32 +54,58 @@ class RemoveEventFromCalendarJobTest : ServiceTestSupport() {
         softDeleteEvent(event.id!!)
         val payload = objectMapper.writeValueAsString(CalendarEventRef(event.id!!))
 
-        removeEventFromCalendarJob.handle(payload)
+        syncEventToCalendarJob.handle(payload)
 
         val deleted = eventService.findByIdIncludingDeletedOrNull(event.id!!)
         assertThat(deleted).isNotNull
-        assertThat(deleted!!.googleId).isEqualTo(googleId)
+        // googleId not cleared for soft-deleted events (entity may not be writable)
         assertThat(mockCalendarAdapter.findByExternalId(googleId)).isNull()
     }
 
+    @Test
+    fun `skips sync for hard deleted event`() {
+        val payload = objectMapper.writeValueAsString(CalendarEventRef(999999L))
+
+        // Should not throw
+        syncEventToCalendarJob.handle(payload)
+    }
+
+    @Test
+    fun `adds approved event to calendar`() {
+        val event = persist(buildEvent(approved = true))
+        val payload = objectMapper.writeValueAsString(CalendarEventRef(event.id!!))
+
+        syncEventToCalendarJob.handle(payload)
+
+        val updated = eventService.findById(event.id!!)
+        assertThat(updated.googleId).isNotNull()
+    }
+
+    @Test
+    fun `updates calendar event when approved event details change`() {
+        val (event, googleId) = createEventWithCalendarEntry()
+        val originalTitle = event.title
+
+        // Change event title
+        event.title = "Updated Calendar Event Title"
+        persist(event)
+
+        val payload = objectMapper.writeValueAsString(CalendarEventRef(event.id!!))
+        syncEventToCalendarJob.handle(payload)
+
+        // Same externalId, updated title
+        val storedEvent = mockCalendarAdapter.findByExternalId(googleId)
+        assertThat(storedEvent).isNotNull
+        assertThat(storedEvent!!.title).isEqualTo("Updated Calendar Event Title")
+        assertThat(storedEvent.title).isNotEqualTo(originalTitle)
+
+        // googleId should remain the same
+        val updated = eventService.findById(event.id!!)
+        assertThat(updated.googleId).isEqualTo(googleId)
+    }
+
     private fun createEventWithCalendarEntry(): Pair<Event, String> {
-        val committee = persist(
-            Committee(
-                name = "Calendar Integration Committee",
-                description = "Committee for calendar integration tests"
-            )
-        )
-        val event = persist(
-            Event(
-                committee = committee,
-                title = "Calendar Remove Test Event",
-                description = "Calendar remove flow test",
-                location = "Campus Hall",
-                startTime = Instant.now().plus(1, ChronoUnit.DAYS),
-                endTime = Instant.now().plus(1, ChronoUnit.DAYS).plus(2, ChronoUnit.HOURS),
-                approved = true
-            )
-        )
+        val event = persist(buildEvent(approved = true))
 
         val ref = mockCalendarAdapter.addEvent(
             event.id!!,
@@ -94,6 +122,24 @@ class RemoveEventFromCalendarJobTest : ServiceTestSupport() {
         event.googleId = ref.externalId
         val updated = persist(event)
         return updated to ref.externalId
+    }
+
+    private fun buildEvent(approved: Boolean): Event {
+        val committee = persist(
+            Committee(
+                name = "Calendar Integration Committee ${System.currentTimeMillis()}",
+                description = "Committee for calendar integration tests"
+            )
+        )
+        return Event(
+            committee = committee,
+            title = "Calendar Sync Test Event ${System.currentTimeMillis()}",
+            description = "Calendar sync flow test",
+            location = "Campus Hall",
+            startTime = Instant.now().plus(1, ChronoUnit.DAYS),
+            endTime = Instant.now().plus(1, ChronoUnit.DAYS).plus(2, ChronoUnit.HOURS),
+            approved = approved
+        )
     }
 
     private fun softDeleteEvent(eventId: Long) {

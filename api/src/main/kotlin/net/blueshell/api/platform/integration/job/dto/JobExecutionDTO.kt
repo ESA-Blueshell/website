@@ -30,6 +30,8 @@ data class JobExecutionDTO(
     @field:NotNull
     var attempts: Int?,
 
+    val dedupKey: String?,
+
     val queuedAt: Instant?,
     val startedAt: Instant?,
     val finishedAt: Instant?,

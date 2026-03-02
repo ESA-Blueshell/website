@@ -25,13 +25,7 @@ class CalendarJobSchedulingLoopTest : ServiceTestSupport() {
     private lateinit var objectMapper: ObjectMapper
 
     @Autowired
-    private lateinit var addEventToCalendarJob: AddEventToCalendarJob
-
-    @Autowired
     private lateinit var syncEventToCalendarJob: SyncEventToCalendarJob
-
-    @Autowired
-    private lateinit var removeEventFromCalendarJob: RemoveEventFromCalendarJob
 
     @Autowired
     private lateinit var mockCalendarAdapter: MockCalendarAdapter
@@ -42,16 +36,14 @@ class CalendarJobSchedulingLoopTest : ServiceTestSupport() {
     }
 
     @Test
-    fun `processing add job does not enqueue follow-up sync job`() {
+    fun `processing sync job for approved event adds to calendar`() {
         val created = eventService.create(buildEvent(approved = true))
 
-        assertThat(findJobsByType(CalendarJobs.AddEvent.type)).hasSize(1)
-        assertThat(findJobsByType(CalendarJobs.SyncEvent.type)).isEmpty()
+        assertThat(findJobsByType(CalendarJobs.SyncEvent.type)).hasSize(1)
 
-        addEventToCalendarJob.handle(payload(created.id!!))
+        syncEventToCalendarJob.handle(payload(created.id!!))
 
-        assertThat(findJobsByType(CalendarJobs.AddEvent.type)).hasSize(1)
-        assertThat(findJobsByType(CalendarJobs.SyncEvent.type)).isEmpty()
+        assertThat(findJobsByType(CalendarJobs.SyncEvent.type)).hasSize(1)
         assertThat(eventService.findById(created.id!!).googleId).isNotNull()
     }
 
@@ -70,18 +62,18 @@ class CalendarJobSchedulingLoopTest : ServiceTestSupport() {
     }
 
     @Test
-    fun `processing remove job after unapproval keeps a single scheduled remove job`() {
+    fun `processing sync job after unapproval removes from calendar`() {
         val event = persist(buildEvent(approved = true))
         val ref = mockCalendarAdapter.addEvent(event.id!!, event.toCalendarData())
         val linked = persist(event.apply { googleId = ref.externalId })
         linked.approved = false
         val unapproved = eventService.update(linked)
 
-        assertThat(findJobsByType(CalendarJobs.RemoveEvent.type)).hasSize(1)
+        assertThat(findJobsByType(CalendarJobs.SyncEvent.type)).hasSize(1)
 
-        removeEventFromCalendarJob.handle(payload(unapproved.id!!))
+        syncEventToCalendarJob.handle(payload(unapproved.id!!))
 
-        assertThat(findJobsByType(CalendarJobs.RemoveEvent.type)).hasSize(1)
+        assertThat(findJobsByType(CalendarJobs.SyncEvent.type)).hasSize(1)
         assertThat(eventService.findById(unapproved.id!!).googleId).isNull()
     }
 

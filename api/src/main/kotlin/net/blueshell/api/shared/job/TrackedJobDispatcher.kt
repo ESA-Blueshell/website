@@ -23,6 +23,6 @@ class TrackedJobDispatcher(
         payload: Any? = null,
         actor: Actor? = null
     ): JobExecution? {
-        return queue.enqueue(jobType, payload, actor)
+        return queue.enqueue(jobType, payload, actor ?: actors.currentOrSystem())
     }
 }

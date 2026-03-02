@@ -1,9 +1,8 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
     id("org.openapi.generator") version "7.20.0"
-    kotlin("jvm")
+    `java-library`
 }
 
 java {
@@ -16,41 +15,51 @@ repositories {
     mavenCentral()
 }
 
+val springWebVersion = "7.0.5"
+val jacksonVersion = "3.1.0"
+val jakartaValidationVersion = "3.1.1"
+val jakartaAnnotationVersion = "3.0.0"
+
 dependencies {
-    implementation("io.ktor:ktor-client-core:2.3.12")
-    implementation("io.ktor:ktor-client-cio:2.3.12")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
+    implementation("org.springframework:spring-web:$springWebVersion")
+    implementation("org.springframework:spring-context:$springWebVersion")
 
-    implementation(platform("tools.jackson:jackson-bom:3.1.0"))
-    implementation("io.ktor:ktor-serialization-jackson:2.3.12")
-    implementation("tools.jackson.module:jackson-module-kotlin")
+    implementation(platform("tools.jackson:jackson-bom:$jacksonVersion"))
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.21")
+    implementation("tools.jackson.core:jackson-core")
+    implementation("tools.jackson.core:jackson-databind")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.1")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    compileOnly("jakarta.validation:jakarta.validation-api:$jakartaValidationVersion")
+    compileOnly("jakarta.annotation:jakarta.annotation-api:$jakartaAnnotationVersion")
 }
 
 // ---- OpenAPI generation locations ----
 val openApiSpec = rootProject.layout.projectDirectory.file("openapi/brevo.yml")
 val generatedRoot = layout.buildDirectory.dir("generated/openapi/brevo")
-val generatedKotlinSrc = generatedRoot.map { it.dir("src/main/kotlin") }
+val generatedJavaSrc = generatedRoot.map { it.dir("src/main/java") }
 
 tasks.register<GenerateTask>("generate") {
     group = "openapi"
-    description = "Generates the Brevo Kotlin client into build/generated/…"
+    description = "Generates the Brevo Java client into build/generated/…"
 
     validateSpec.set(false)
-    generatorName.set("kotlin")
-    library.set("jvm-ktor")
+    generatorName.set("java")
+    library.set("restclient")
 
     inputSpec.set(openApiSpec.asFile.absolutePath)
     outputDir.set(generatedRoot.get().asFile.absolutePath)
 
     configOptions.set(
         mapOf(
-            "sourceFolder" to "src/main/kotlin",
-            "jackson" to "true",
+            "sourceFolder" to "src/main/java",
             "serializationLibrary" to "jackson",
-            "modelMutable" to "true",
-            "enumPropertyNaming" to "UPPERCASE",
+            "dateLibrary" to "java8",
+            "useJakartaEe" to "true",
+            "useBeanValidation" to "true",
+            "useJackson3" to "true",
+            "enumPropertyNaming" to "MACRO_CASE",
         )
     )
 
@@ -67,11 +76,11 @@ tasks.register<GenerateTask>("generate") {
 
     schemaMappings.set(
         mapOf(
-            "getContactInfo_identifier_parameter" to "kotlin.String",
-            "updateContact_identifier_parameter" to "kotlin.String",
-            "createDoiContact_attributes_value" to "kotlin.Any",
-            "getContactInfo_identifierType_parameter" to "kotlin.String",
-            "updateContact_identifierType_parameter" to "kotlin.String",
+            "getContactInfo_identifier_parameter" to "java.lang.String",
+            "updateContact_identifier_parameter" to "java.lang.String",
+            "createDoiContact_attributes_value" to "java.lang.Object",
+            "getContactInfo_identifierType_parameter" to "java.lang.String",
+            "updateContact_identifierType_parameter" to "java.lang.String",
             "TemplatePreviewRequestBody" to "net.blueshell.clients.brevo.model.TemplatePreviewRequestBody",
         )
     )
@@ -104,16 +113,12 @@ tasks.register<GenerateTask>("generate") {
     outputs.cacheIf { true }
 }
 
-// Add generated sources to the main source set
-kotlin {
-    sourceSets {
-        val main by getting {
-            kotlin.srcDir(generatedKotlinSrc)
-        }
+sourceSets {
+    named("main") {
+        java.srcDir(generatedJavaSrc)
     }
 }
 
-// Make compilation use generated sources, but do not regenerate unless needed
-tasks.withType<KotlinCompile>().configureEach {
+tasks.withType<JavaCompile>().configureEach {
     dependsOn(tasks.named("generate"))
 }

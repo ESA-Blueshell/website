@@ -1,5 +1,7 @@
 package net.blueshell.api.platform.integration.contact
 
+import jakarta.validation.Valid
+import net.blueshell.clients.brevo.ApiClient
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.*
 import org.slf4j.LoggerFactory
@@ -30,13 +32,15 @@ class BrevoContactClient(
     // Built once: uses the application ObjectMapper which has NON_NULL configured,
     // ensuring null fields are never serialized in Brevo API requests.
     private val contactsApi: ContactsApi = ContactsApi(
-        restClientBuilder
-            .baseUrl(brevoBaseUrl)
-            .defaultHeader("api-key", apiKey)
-            .configureMessageConverters {
-                it.addCustomConverter(JacksonJsonHttpMessageConverter(jsonMapper))
-            }
-            .build()
+        ApiClient(
+            restClientBuilder
+                .baseUrl(brevoBaseUrl)
+                .defaultHeader("api-key", apiKey)
+                .configureMessageConverters {
+                    it.addCustomConverter(JacksonJsonHttpMessageConverter(jsonMapper))
+                }
+                .build()
+        )
     )
 
     /**
@@ -69,11 +73,11 @@ class BrevoContactClient(
         attributes: Map<String, Any>
     ): Long {
         log.info("Creating Brevo contact for email: {}", email)
-        val createContact = CreateContact(
-            email = email,
-            extId = externalId,
-            attributes = attributes.toMutableMap(),
-        )
+        val createContact = CreateContactRequest()
+        createContact.email = email
+        createContact.extId = externalId
+        @Suppress("UNCHECKED_CAST")
+        createContact.attributes = attributes as @Valid Map<String?, CreateContactRequestAttributesValue?>?
         val response = contactsApi.createContact(createContact)
         return response.id!!
     }
@@ -88,10 +92,10 @@ class BrevoContactClient(
         attributes: Map<String, Any>
     ) {
         log.info("Updating Brevo contact for email: {}", email)
-        val updateContact = UpdateContact(
-            extId = externalId,
-            attributes = attributes.toMutableMap(),
-        )
+        val updateContact = UpdateContactRequest()
+        updateContact.extId = externalId
+        @Suppress("UNCHECKED_CAST")
+        updateContact.attributes = attributes as @Valid Map<String?, CreateContactRequestAttributesValue?>?
         contactsApi.updateContact(email, updateContact, "email_id")
     }
 
@@ -111,7 +115,9 @@ class BrevoContactClient(
     @Throws(RestClientResponseException::class)
     fun createList(listName: String, folderId: Long): Long {
         log.info("Creating Brevo list: {}", listName)
-        val createList = CreateList(listName, folderId)
+        val createList = CreateListRequest()
+        createList.name = listName
+        createList.folderId = folderId
         val response = contactsApi.createList(createList)
         return response.id
     }
@@ -122,9 +128,8 @@ class BrevoContactClient(
     @Throws(RestClientResponseException::class)
     fun addContactsToList(listId: Long, contactIds: List<Long>) {
         log.info("Adding {} contacts to Brevo list {}", contactIds.size, listId)
-        val payload = AddContactToListRequest(
-            ids = contactIds.toMutableList()
-        )
+        val payload = AddContactToListRequest()
+        payload.ids = contactIds.toMutableList()
         contactsApi.addContactToList(listId, payload)
     }
 
@@ -134,9 +139,8 @@ class BrevoContactClient(
     @Throws(RestClientResponseException::class)
     fun removeContactsFromList(listId: Long, contactIds: List<Long>) {
         log.info("Removing {} contacts from Brevo list {}", contactIds.size, listId)
-        val payload = RemoveContactFromListRequest(
-            ids = contactIds.toMutableList()
-        )
+        val payload = RemoveContactFromListRequest()
+        payload.ids = contactIds.toMutableList()
         contactsApi.removeContactFromList(listId, payload)
     }
 

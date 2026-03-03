@@ -11778,6 +11778,119 @@ paths:
       summary: Create an event
       tags:
         - Event
+  /events/batch:
+    post:
+      description: Create multiple events to track contacts' interactions in a single request.
+      operationId: createBatchEvents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                properties:
+                  contact_properties:
+                    additionalProperties:
+                      anyOf:
+                        - type: string
+                        - type: integer
+                    description: 'Properties defining the state of the contact associated to this event. Useful to update contact attributes defined in your contacts database while passing the event. For example: **"FIRSTNAME": "Jane" , "AGE": 37**'
+                    example:
+                      AGE: 32
+                      GENDER: FEMALE
+                    type: object
+                  event_date:
+                    description: Timestamp of when the event occurred (e.g. "2024-01-24T17:39:57+01:00"). If no value is passed, the timestamp of the event creation is used.
+                    example: '2024-02-06T20:59:23.383Z'
+                    type: string
+                  event_name:
+                    description: The name of the event that occurred. This is how you will find your event in Brevo. Limited to 255 characters, alphanumerical characters and - _ only.
+                    example: order_created
+                    type: string
+                  event_properties:
+                    additionalProperties:
+                      anyOf:
+                        - type: string
+                        - type: integer
+                        - type: object
+                        - items: {}
+                          type: array
+                    description: 'Properties of the event. Top level properties and nested properties can be used to better segment contacts and personalise workflow conditions. The following field type are supported: string, number, boolean (true/false), date (Timestamp e.g. "2024-01-24T17:39:57+01:00"). Keys are limited to 255 characters, alphanumerical characters and - _ only. Size is limited to 50Kb.'
+                    example:
+                      autoplayed: false
+                      duration: 142
+                      upload_date: '2023-11-24T12:09:10+01:00'
+                      video_description: Create your free account today!
+                      video_title: Brevo — The most approachable CRM suite
+                    type: object
+                  identifiers:
+                    description: Identifies the contact associated with the event. At least one identifier is required.
+                    minProperties: 1
+                    properties:
+                      contact_id:
+                        description: Internal unique contact ID. When present, this takes priority over all other identifiers for event attribution and contact resolution.
+                        example: 211
+                        format: int64
+                        type: integer
+                      email_id:
+                        description: Email Id associated with the event
+                        example: jane.doe@example.com
+                        type: string
+                      ext_id:
+                        description: ext_id associated with the event
+                        example: abc123
+                        type: string
+                      landline_number_id:
+                        description: landline_number associated with the event
+                        example: +91xxxxxxxxxx
+                        type: string
+                      phone_id:
+                        description: SMS associated with the event
+                        example: +91xxxxxxxxxx
+                        type: string
+                      whatsapp_id:
+                        description: whatsapp associated with the event
+                        example: +91xxxxxxxxxx
+                        type: string
+                    type: object
+                  object:
+                    description: Identifiers of the object record associated with this event. Ignored if the object type or identifier for this record does not exist on the account.
+                    properties:
+                      identifiers:
+                        description: Identifiers for the object.
+                        properties:
+                          ext_id:
+                            description: External object ID
+                            example: sub-59374-linwn
+                            type: string
+                          id:
+                            description: Internal object ID
+                            example: '178140'
+                            type: string
+                        type: object
+                      type:
+                        description: Type of object (e.g., subscription, vehicle, etc.)
+                        example: subscription
+                        type: string
+                    type: object
+                required:
+                  - event_name
+                  - identifiers
+                type: object
+        required: true
+      responses:
+        '204':
+          content: {}
+          description: Events posted successfully
+        '207':
+          $ref: '#/components/responses/batchEventsPartialSuccess'
+        '400':
+          $ref: '#/components/responses/batchEventsBadRequest'
+        '401':
+          $ref: '#/components/responses/errorModel'
+      summary: Create events in batch
+      tags:
+        - Event
   /inbound/events:
     get:
       description: This endpoint will show the list of all the events for the received emails.
@@ -25246,26 +25359,23 @@ components:
                 description: Product ID of the red color shirts.
                 example: P100
                 type: string
+              quantity:
+                description: |
+                  **Required if quantityFloat is empty.**
+
+                  Number of product units added to the cart (whole numbers only, e.g., 10)
+                example: 10
+                type: integer
+              quantityFloat:
+                description: |
+                  **Required if quantity is empty.**
+
+                  Number of product units added to the cart(supports decimals, e.g., 20.52)
+                example: 20.52
+                type: number
             required:
               - productId
               - price
-            oneOf:
-              - properties:
-                  quantity:
-                    description: |
-                      **Required if quantityFloat is empty.** Number of product units added to the cart (whole numbers only)
-                    example: 10
-                    type: integer
-                required:
-                  - quantity
-              - properties:
-                  quantityFloat:
-                    description: |
-                      **Required if quantity is empty.** Number of product units added to the cart(supports decimals)
-                    example: 20.52
-                    type: number
-                required:
-                  - quantityFloat
             type: object
           type: array
         status:
@@ -25421,6 +25531,46 @@ components:
         - modifiedAt
         - s3ThumbAnalytics
         - s3ThumbEditor
+      type: object
+    batchEventsResponse:
+      description: Response returned when a batch of events is processed
+      properties:
+        status:
+          description: Status of the batch request
+          type: string
+        total_events:
+          description: Total number of events submitted in the batch
+          format: int32
+          type: integer
+        successful_events:
+          description: Number of events that were successfully processed
+          format: int32
+          type: integer
+        failed_events:
+          description: Number of events that failed to be processed
+          format: int32
+          type: integer
+        errors:
+          description: List of errors for the failed events
+          type: array
+          items:
+            type: object
+            properties:
+              eventIndex:
+                description: Index positions (0-based) of the events that caused the error
+                type: array
+                items:
+                  type: integer
+                  format: int32
+              message:
+                description: Description of the error
+                type: string
+      required:
+        - status
+        - total_events
+        - successful_events
+        - failed_events
+        - errors
       type: object
     balanceLimit:
       properties:
@@ -27006,5 +27156,43 @@ components:
               - processId
             type: object
       description: process id created
+    batchEventsPartialSuccess:
+      description: Partial success - some events were accepted and some failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/batchEventsResponse'
+          example:
+            status: partialSuccess
+            total_events: 7
+            successful_events: 6
+            failed_events: 1
+            errors:
+              - eventIndex:
+                  - 2
+                message: undefined event_name
+    batchEventsBadRequest:
+      description: Bad request - all events in the batch failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/batchEventsResponse'
+          example:
+            status: failed
+            total_events: 7
+            successful_events: 0
+            failed_events: 7
+            errors:
+              - eventIndex:
+                  - 0
+                  - 1
+                  - 2
+                  - 3
+                  - 4
+                  - 5
+                message: undefined event_name
+              - eventIndex:
+                  - 6
+                message: Please pass at least one identifier or contact id
 x-samples-languages:
   - curl

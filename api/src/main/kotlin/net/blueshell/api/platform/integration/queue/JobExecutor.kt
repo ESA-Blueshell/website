@@ -1,5 +1,7 @@
 package net.blueshell.api.platform.integration.queue
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
@@ -12,7 +14,8 @@ import org.springframework.stereotype.Service
 class JobExecutor(
     private val jobExecutionService: JobExecutionService,
     @param:Lazy private val jobHandlerRegistry: JobHandlerRegistry,
-    private val jobRetryTemplate: RetryTemplate
+    private val jobRetryTemplate: RetryTemplate,
+    private val meterRegistry: MeterRegistry
 ) {
     private val logger = LoggerFactory.getLogger(JobExecutor::class.java)
 
@@ -34,10 +37,12 @@ class JobExecutor(
                 errorType = "NoHandlerRegisteredException",
                 errorReason = "No handler registered for job type ${execution.jobType}."
             )
+            meterRegistry.counter("job.dead.count", "job_type", execution.jobType).increment()
             return
         }
 
         val current = jobExecutionService.markRunning(execution)
+        val sample = Timer.start(meterRegistry)
 
         try {
             jobRetryTemplate.execute<Unit, Exception> { context ->
@@ -45,6 +50,7 @@ class JobExecutor(
                 handler.handle(current.payload)
             }
             jobExecutionService.markSuccess(current)
+            sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "success"))
         } catch (ex: Exception) {
             val errorType = ex::class.java.name
             val errorReason = ex.message ?: "Unknown error"
@@ -56,12 +62,16 @@ class JobExecutor(
                     current.id, errorType, errorReason, ex
                 )
                 jobExecutionService.markDead(current, errorType, errorReason, stackTrace)
+                sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "dead"))
+                meterRegistry.counter("job.dead.count", "job_type", current.jobType).increment()
             } else {
                 logger.error(
                     "Job execution {} failed after retries exhausted. errorType={}, errorReason={}.",
                     current.id, errorType, errorReason, ex
                 )
                 jobExecutionService.markFailed(current, errorType, errorReason, stackTrace)
+                sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "failed"))
+                meterRegistry.counter("job.failed.count", "job_type", current.jobType).increment()
             }
         }
     }

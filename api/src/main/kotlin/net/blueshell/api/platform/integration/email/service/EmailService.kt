@@ -11,9 +11,12 @@ import net.blueshell.api.domain.event.application.email.createEventSignupEmail
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class EmailService(
@@ -26,7 +29,7 @@ class EmailService(
     @param:Value($$"${app.url}") private val appUrl: String
 ) {
     fun sendContributionReminderEmail(userId: Long, contributionPeriodId: Long) {
-        val reminder = reminders.findById(ContributionReminder.Id(userId, contributionPeriodId))
+        val reminder = requireExists { reminders.findById(ContributionReminder.Id(userId, contributionPeriodId)) }
         val emailContent = createContributionReminderEmail(
             reminder.user,
             reminder.contributionPeriod,
@@ -36,7 +39,7 @@ class EmailService(
     }
 
     fun sendEventSignupEmail(eventSignUpId: Long, guestAccessToken: String) {
-        val eventSignUp = eventSignUps.findById(eventSignUpId)
+        val eventSignUp = requireExists { eventSignUps.findById(eventSignUpId) }
         val emailContent = createEventSignupEmail(eventSignUp, frontendUrl, guestAccessToken)
         deliver(emailContent)
     }
@@ -62,7 +65,7 @@ class EmailService(
     }
 
     fun sendUserResetEmail(userId: Long, token: String, resetType: ResetType) {
-        val user = users.findById(userId)
+        val user = requireExists { users.findById(userId) }
         log.info("Sending {} email for user={}", resetType, userId)
 
         val emailContent = when (resetType) {
@@ -77,4 +80,12 @@ class EmailService(
     companion object {
         private val log = LoggerFactory.getLogger(EmailService::class.java)
     }
+}
+
+private inline fun <T> requireExists(block: () -> T): T = try {
+    block()
+} catch (ex: ResponseStatusException) {
+    if (ex.statusCode == HttpStatus.NOT_FOUND)
+        throw NonRetryableJobException(ex.reason ?: "Entity not found", ex)
+    throw ex
 }

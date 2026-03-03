@@ -118,7 +118,7 @@ dependencies {
     implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
-    implementation(project(":brevo-client"))
+    implementation(project(":api:brevo-client"))
 
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
 

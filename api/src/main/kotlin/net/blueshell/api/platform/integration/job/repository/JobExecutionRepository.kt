@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable
 import java.time.Instant
 
 interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
+    fun countByStatus(status: JobExecutionStatus): Long
+
     fun findByJobType(jobType: String): List<JobExecution>
 
     fun existsByJobTypeAndDedupKeyAndStatusIn(

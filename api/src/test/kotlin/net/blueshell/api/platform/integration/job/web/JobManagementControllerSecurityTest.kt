@@ -123,6 +123,40 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
     }
 
     @Nested
+    inner class GetStats {
+
+        @Test
+        fun `ADMIN can access stats`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            mvc.perform(get("/management/jobs/stats").with(bearer(admin)))
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `BOARD can access stats`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(get("/management/jobs/stats").with(bearer(board)))
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `MEMBER is denied stats`() {
+            val member = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(get("/management/jobs/stats").with(bearer(member)))
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `unauthenticated is denied stats`() {
+            mvc.perform(get("/management/jobs/stats"))
+                .andExpect(status().isUnauthorized)
+        }
+    }
+
+    @Nested
     inner class RoleExclusivity {
 
         @Test

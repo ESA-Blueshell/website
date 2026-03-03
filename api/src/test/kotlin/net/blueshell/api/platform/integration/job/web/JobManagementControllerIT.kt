@@ -145,6 +145,48 @@ class JobManagementControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class Stats {
+        @Test
+        fun `stats returns correct db counts per status`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            createJobExecutionFixture(status = JobExecutionStatus.SUCCESS)
+            createJobExecutionFixture(status = JobExecutionStatus.SUCCESS)
+            createJobExecutionFixture(status = JobExecutionStatus.FAILED)
+            createJobExecutionFixture(status = JobExecutionStatus.DEAD)
+
+            mvc.perform(get("/management/jobs/stats").with(bearer(admin)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.totalCount").value(4))
+                .andExpect(jsonPath("$.successCount").value(2))
+                .andExpect(jsonPath("$.failedCount").value(1))
+                .andExpect(jsonPath("$.deadCount").value(1))
+                .andExpect(jsonPath("$.queuedCount").value(0))
+        }
+
+        @Test
+        fun `stats runtime metrics are non-negative`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            mvc.perform(get("/management/jobs/stats").with(bearer(admin)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.deadSinceStartup").isNumber)
+                .andExpect(jsonPath("$.failedSinceStartup").isNumber)
+                .andExpect(jsonPath("$.recoveriesSinceStartup").isNumber)
+                .andExpect(jsonPath("$.avgSuccessDurationSeconds").isNumber)
+        }
+
+        @Test
+        fun `stats empty database returns all zeros`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            mvc.perform(get("/management/jobs/stats").with(bearer(admin)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.totalCount").value(0))
+                .andExpect(jsonPath("$.successCount").value(0))
+        }
+    }
+
+    @Nested
     inner class Retry {
         @Test
         fun `admin retries failed job`() {

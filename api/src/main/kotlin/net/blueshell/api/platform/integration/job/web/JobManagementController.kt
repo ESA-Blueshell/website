@@ -1,8 +1,11 @@
 package net.blueshell.api.platform.integration.job.web
 
+import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
 import net.blueshell.api.platform.integration.job.dto.JobExecutionDTO
+import net.blueshell.api.platform.integration.job.dto.JobStatsDTO
+import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
 import net.blueshell.api.platform.integration.job.service.JobExecutionService
 import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -17,14 +20,17 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
+import java.util.concurrent.TimeUnit
 
 @RestController
 @RequestMapping("/management/jobs")
 @Tag(name = "Job Management", description = "API for managing job executions")
 class JobManagementController(
     private val jobExecutionService: JobExecutionService,
+    private val jobExecutionRepository: JobExecutionRepository,
     private val jobExecutor: JobExecutor,
-    private val views: JobExecutionViewService
+    private val views: JobExecutionViewService,
+    private val meterRegistry: MeterRegistry
 ) {
     @GetMapping
     @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'read')")
@@ -52,6 +58,38 @@ class JobManagementController(
         val requeued = jobExecutionService.requeue(execution)
         jobExecutor.executeAsync(requeued.id!!)
         return views.toDto(requeued)
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyAuthority('BOARD', 'ADMIN')")
+    fun getStats(): JobStatsDTO {
+        val countByStatus = JobExecutionStatus.entries
+            .associateWith { jobExecutionRepository.countByStatus(it) }
+
+        val deadSinceStartup = meterRegistry.find("job.dead.count").counters()
+            .sumOf { it.count() }
+        val failedSinceStartup = meterRegistry.find("job.failed.count").counters()
+            .sumOf { it.count() }
+        val recoveriesSinceStartup = meterRegistry.find("job.recovery.count")
+            .counter()?.count() ?: 0.0
+        val avgSuccessDuration = meterRegistry.find("job.execution.duration")
+            .tag("outcome", "success").timers()
+            .filter { it.count() > 0 }
+            .map { it.mean(TimeUnit.SECONDS) }
+            .takeIf { it.isNotEmpty() }?.average() ?: 0.0
+
+        return JobStatsDTO(
+            totalCount = countByStatus.values.sum(),
+            successCount = countByStatus[JobExecutionStatus.SUCCESS] ?: 0L,
+            failedCount = countByStatus[JobExecutionStatus.FAILED] ?: 0L,
+            deadCount = countByStatus[JobExecutionStatus.DEAD] ?: 0L,
+            queuedCount = countByStatus[JobExecutionStatus.QUEUED] ?: 0L,
+            runningCount = countByStatus[JobExecutionStatus.RUNNING] ?: 0L,
+            deadSinceStartup = deadSinceStartup,
+            failedSinceStartup = failedSinceStartup,
+            recoveriesSinceStartup = recoveriesSinceStartup,
+            avgSuccessDurationSeconds = avgSuccessDuration,
+        )
     }
 
     private fun normalizePageable(pageable: Pageable): Pageable {

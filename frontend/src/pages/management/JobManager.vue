@@ -4,7 +4,7 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
-import {JobExecutionCategory, type JobExecution, list, retry as retryJob} from "@/services/api"
+import {JobExecutionCategory, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
 
 defineOptions({name: "JobManagerPage"})
 
@@ -49,6 +49,7 @@ type JobListQuery = {
 
 const executions = ref<JobExecutionView[]>([])
 const loading = ref<boolean>(false)
+const stats = ref<JobStatsDto | null>(null)
 const selectedCategory = ref<JobExecutionCategory | "all">("all")
 const selectedStatus = ref<string>("all")
 const searchQuery = ref<string | null>("")
@@ -64,6 +65,11 @@ const clearSearchDebounce = () => {
     searchDebounceHandle = undefined
   }
 }
+
+const successRate = computed(() => {
+  if (!stats.value || stats.value.totalCount === 0) return 0
+  return Math.round(stats.value.successCount / stats.value.totalCount * 100)
+})
 
 const statusCounts = computed(() => {
   const counts: Record<string, number> = {
@@ -238,7 +244,19 @@ watch(page, () => {
   void refresh()
 })
 
+const loadStats = async () => {
+  try {
+    const response = await getStats()
+    if (response.status === 200) {
+      stats.value = response.data ?? null
+    }
+  } catch {
+    // Stats panel is supplementary; silently ignore errors
+  }
+}
+
 const refresh = async () => {
+  void loadStats()
   loading.value = true
   try {
     const normalizedSearch = (searchQuery.value ?? "").trim()
@@ -317,6 +335,7 @@ onMounted(async () => {
     await router.replace("/")
     return
   }
+  void loadStats()
   await refresh()
 })
 </script>
@@ -329,6 +348,153 @@ onMounted(async () => {
       <div
         class="mx-auto my-3 job-manager-page"
       >
+        <v-card
+          v-if="stats !== null"
+          class="manager-card mb-4"
+          rounded="lg"
+          variant="flat"
+        >
+          <v-row
+            align="stretch"
+            class="ma-0 pa-3"
+            no-gutters
+          >
+            <v-col class="text-center px-3 py-1">
+              <p class="text-h6 font-weight-medium mb-2">
+                All-time
+              </p>
+              <v-row
+                align="center"
+                no-gutters
+              >
+                <v-col
+                  class="stats-cell"
+                  data-testid="job-stats-total"
+                >
+                  <div class="text-h5 font-weight-bold">
+                    {{ stats.totalCount }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Total
+                  </div>
+                </v-col>
+                <v-divider vertical />
+                <v-col
+                  class="stats-cell"
+                  data-testid="job-stats-success"
+                >
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.successCount > 0 ? 'text-success' : ''"
+                  >
+                    {{ stats.successCount }}
+                    <span
+                      v-if="stats.totalCount > 0"
+                      class="text-body-2 font-weight-medium ml-1"
+                    >{{ successRate }}%</span>
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Succeeded
+                  </div>
+                </v-col>
+                <v-divider vertical />
+                <v-col
+                  class="stats-cell"
+                  data-testid="job-stats-failed"
+                >
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.failedCount > 0 ? 'text-error' : ''"
+                  >
+                    {{ stats.failedCount }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Failed
+                  </div>
+                </v-col>
+                <v-divider vertical />
+                <v-col
+                  class="stats-cell"
+                  data-testid="job-stats-dead"
+                >
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.deadCount > 0 ? 'text-error' : ''"
+                  >
+                    {{ stats.deadCount }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Dead
+                  </div>
+                </v-col>
+              </v-row>
+            </v-col>
+
+            <v-divider
+              vertical
+              class="mx-2"
+            />
+
+            <v-col
+              class="text-center px-3 py-1"
+              data-testid="job-stats-runtime"
+            >
+              <p class="text-h6 font-weight-medium mb-2">
+                Since last startup
+              </p>
+              <v-row
+                align="center"
+                no-gutters
+              >
+                <v-col class="stats-cell">
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.deadSinceStartup > 0 ? 'text-error' : ''"
+                  >
+                    {{ stats.deadSinceStartup.toFixed(0) }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Dead
+                  </div>
+                </v-col>
+                <v-divider vertical />
+                <v-col class="stats-cell">
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.failedSinceStartup > 0 ? 'text-error' : ''"
+                  >
+                    {{ stats.failedSinceStartup.toFixed(0) }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Failed
+                  </div>
+                </v-col>
+                <v-divider vertical />
+                <v-col class="stats-cell">
+                  <div class="text-h5 font-weight-bold">
+                    {{ stats.avgSuccessDurationSeconds.toFixed(2) }}s
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Avg. exec
+                  </div>
+                </v-col>
+                <v-divider vertical />
+                <v-col class="stats-cell">
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.recoveriesSinceStartup > 0 ? 'text-warning' : ''"
+                  >
+                    {{ stats.recoveriesSinceStartup.toFixed(0) }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Recoveries
+                  </div>
+                </v-col>
+              </v-row>
+            </v-col>
+          </v-row>
+        </v-card>
+
         <v-card
           class="manager-card mb-4"
           rounded="lg"
@@ -906,6 +1072,10 @@ onMounted(async () => {
   line-height: 1.35;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.stats-cell {
+  padding: 4px 8px;
 }
 
 @media (max-width: 900px) {

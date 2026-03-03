@@ -9,12 +9,14 @@ import tools.jackson.databind.cfg.CoercionAction
 import tools.jackson.databind.cfg.CoercionInputShape
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.type.LogicalType
+import tools.jackson.module.kotlin.KotlinModule
 
 @Configuration
 class JacksonConfig {
     @Bean
     fun jsonMapper(): JsonMapper {
         return JsonMapper.builder()
+            .addModule(KotlinModule.Builder().build())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
             .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_NULL) }

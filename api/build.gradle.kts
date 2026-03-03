@@ -116,13 +116,16 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("tools.jackson.module:jackson-module-kotlin")
+    // Jackson 2.x Kotlin module — required for SpringDoc/swagger-core schema generation,
+    // which uses its own com.fasterxml.jackson ObjectMapper independently of our tools.jackson mapper.
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.0")
     implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
     implementation(project(":api:brevo-client"))
 
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
     implementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")

@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.calendar.job
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.calendar.CalendarAdapter
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData

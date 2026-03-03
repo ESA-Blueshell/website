@@ -460,17 +460,17 @@ export type MemberActivationRequest = {
 };
 
 export type MemberProfileResponse = {
-    bhv?: boolean;
-    createdAt?: string;
+    bhv: boolean;
+    createdAt: string;
     dateOfBirth?: string;
-    ehbo?: boolean;
+    ehbo: boolean;
     gender?: string;
-    id?: number;
+    id: number;
     nationality?: string;
     studentNumber?: string;
-    updatedAt?: string;
-    userId?: number;
-    version?: number;
+    updatedAt: string;
+    userId: number;
+    version: number;
 };
 
 export enum MemberType {

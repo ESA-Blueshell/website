@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.queue
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import org.springframework.transaction.annotation.Transactional
 
 abstract class AbstractJsonJobHandler<T : Any>(

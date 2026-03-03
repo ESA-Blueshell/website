@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.email.job
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.platform.integration.email.service.EmailService
 import net.blueshell.api.platform.integration.queue.AbstractMailJobHandler
 import net.blueshell.api.shared.job.EmailJobs

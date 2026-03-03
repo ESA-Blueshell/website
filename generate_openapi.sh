@@ -1,126 +1,46 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Generates the OpenAPI spec from the running Docker API container,
+# downloads external specs, regenerates the Brevo client,
+# and generates frontend TypeScript clients.
 
-# Generate OpenAPI Documentation Script
-# This script generates the OpenAPI documentation from the Spring Boot API,
-# downloads the latest Discord OpenAPI spec,
-# and then generates the frontend TypeScript client
+set -euo pipefail
 
-set -e  # Exit on any error
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
 
-echo "🚀 Starting OpenAPI documentation generation..."
+# shellcheck source=scripts/openapi-common.sh
+source "$ROOT_DIR/scripts/openapi-common.sh"
 
-# Colors for output
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# ---- Prerequisites ----
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
+check_common_prerequisites
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Check if docker compose is available
 if ! docker compose version >/dev/null 2>&1; then
-    print_error "Docker Compose is not available"
-    exit 1
+  echo "docker compose is not available" >&2
+  exit 1
 fi
 
-# Check if docker-compose.dev.yml exists
 if [ ! -f "docker-compose.dev.yml" ]; then
-    print_error "docker-compose.dev.yml not found in current directory"
-    exit 1
+  echo "docker-compose.dev.yml not found in current directory" >&2
+  exit 1
 fi
 
-# Check if jq is available
-if ! command -v jq >/dev/null 2>&1; then
-    print_error "jq is not installed or not available in PATH"
-    exit 1
-fi
+# ---- Fetch Blueshell spec from running API container ----
 
-# Ensure openapi directory exists
-if [ ! -d "openapi" ]; then
-    print_error "openapi directory not found in current directory"
-    exit 1
-fi
+echo "Fetching Blueshell OpenAPI spec from API container..."
+docker compose -f docker-compose.dev.yml exec api sh -c \
+  "curl -fsSS http://localhost:8080/v3/api-docs -o /app/openapi/blueshell.raw.json"
 
-print_status "Generating OpenAPI documentation from Spring Boot API..."
+# ---- Shared steps ----
 
-# Generate OpenAPI documentation using the running API container
-docker compose -f docker-compose.dev.yml exec api sh -c "\
-    curl -sS http://localhost:8080/v3/api-docs -o /app/openapi/blueshell.json\
-"
+download_external_specs
+regen_brevo_client
+normalize_json_specs
 
-if [ $? -ne 0 ]; then
-    print_error "Failed to generate OpenAPI documentation"
-    exit 1
-fi
+# ---- Generate frontend TypeScript clients ----
 
-print_success "OpenAPI documentation generated successfully"
+echo "Generating frontend TypeScript clients..."
+docker compose -f docker-compose.dev.yml exec frontend sh -c \
+  "cd /usr/app && yarn gen:all && (yarn lint:gen || true)"
 
-print_status "Downloading latest Discord OpenAPI spec..."
-
-DISCORD_OPENAPI_URL="https://raw.githubusercontent.com/discord/discord-api-spec/refs/heads/main/specs/openapi.json"
-
-# Download latest Discord OpenAPI JSON
-curl -sS -L "$DISCORD_OPENAPI_URL" -o openapi/discord.json
-
-if [ $? -ne 0 ]; then
-    print_error "Failed to download Discord OpenAPI spec"
-    exit 1
-fi
-
-print_success "Downloaded latest Discord OpenAPI spec"
-
-print_status "Sorting and minifying openapi jsons..."
-
-# Use a temporary file to avoid truncating on failure
-TMP_FILE="$(mktemp)"
-
-# Minify & sort blueshell.json
-if [ -f "openapi/blueshell.json" ]; then
-    jq -S -c . openapi/blueshell.json > "$TMP_FILE"
-    mv "$TMP_FILE" openapi/blueshell.json
-else
-    print_error "openapi/blueshell.json not found"
-    exit 1
-fi
-
-# Minify & sort discord.json
-jq -S -c . openapi/discord.json > "$TMP_FILE"
-mv "$TMP_FILE" openapi/discord.json
-
-print_success "OpenAPI jsons sorted and minified"
-
-print_status "Generating TypeScript client for frontend..."
-
-# Generate TypeScript client in the frontend container
-docker compose -f docker-compose.dev.yml exec frontend sh -c "
-    cd /usr/app && \
-    yarn gen:all && \
-    (yarn lint:gen || true)
-"
-
-if [ $? -ne 0 ]; then
-    print_error "Failed to generate TypeScript client"
-    exit 1
-fi
-
-print_success "TypeScript client generated successfully"
-
-print_success "🎉 OpenAPI documentation and TypeScript client generation completed!"
-print_status "Generated files:"
-print_status "  - API OpenAPI spec: openapi/blueshell.json"
-print_status "  - Discord OpenAPI spec: openapi/discord.json"
-print_status "  - Frontend clients: frontend/src/services/"
-
-echo ""
-print_status "You can now use the generated TypeScript client in your frontend application."
+echo "OpenAPI spec and frontend clients generated successfully."

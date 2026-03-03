@@ -1,14 +1,18 @@
 package net.blueshell.api.platform.integration.contact
 
+import jakarta.validation.Valid
+import net.blueshell.clients.brevo.ApiClient
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
 import org.springframework.http.HttpStatus
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
+import org.springframework.stereotype.Component
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
+import tools.jackson.databind.json.JsonMapper
 
 /**
  * Low-level Brevo Contact API client.
@@ -19,19 +23,25 @@ import org.springframework.web.client.RestClientResponseException
  */
 @Component
 class BrevoContactClient(
-    private val restClientBuilder: RestClient.Builder,
-    @param:Value("\${brevo.apiKey}") private val apiKey: String,
-    @param:Value("\${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
-    @param:Value("\${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long
+    restClientBuilder: RestClient.Builder,
+    jsonMapper: JsonMapper,
+    @param:Value($$"${brevo.apiKey}") private val apiKey: String,
+    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
+    @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long
 ) {
-    private val contactsApi: ContactsApi
-        get() {
-            val client = restClientBuilder
+    // Built once: uses the application ObjectMapper which has NON_NULL configured,
+    // ensuring null fields are never serialized in Brevo API requests.
+    private val contactsApi: ContactsApi = ContactsApi(
+        ApiClient(
+            restClientBuilder
                 .baseUrl(brevoBaseUrl)
                 .defaultHeader("api-key", apiKey)
+                .configureMessageConverters {
+                    it.addCustomConverter(JacksonJsonHttpMessageConverter(jsonMapper))
+                }
                 .build()
-            return ContactsApi(client)
-        }
+        )
+    )
 
     /**
      * Get contact information by email.
@@ -63,11 +73,11 @@ class BrevoContactClient(
         attributes: Map<String, Any>
     ): Long {
         log.info("Creating Brevo contact for email: {}", email)
-        val createContact = CreateContact().apply {
-            this.email = email
-            this.extId = externalId
-            this.attributes = attributes.toMutableMap()
-        }
+        val createContact = CreateContactRequest()
+        createContact.email = email
+        createContact.extId = externalId
+        @Suppress("UNCHECKED_CAST")
+        createContact.attributes = attributes as @Valid Map<String?, CreateContactRequestAttributesValue?>?
         val response = contactsApi.createContact(createContact)
         return response.id!!
     }
@@ -82,10 +92,10 @@ class BrevoContactClient(
         attributes: Map<String, Any>
     ) {
         log.info("Updating Brevo contact for email: {}", email)
-        val updateContact = UpdateContact().apply {
-            this.extId = externalId
-            this.attributes = attributes.toMutableMap()
-        }
+        val updateContact = UpdateContactRequest()
+        updateContact.extId = externalId
+        @Suppress("UNCHECKED_CAST")
+        updateContact.attributes = attributes as @Valid Map<String?, CreateContactRequestAttributesValue?>?
         contactsApi.updateContact(email, updateContact, "email_id")
     }
 
@@ -105,7 +115,9 @@ class BrevoContactClient(
     @Throws(RestClientResponseException::class)
     fun createList(listName: String, folderId: Long): Long {
         log.info("Creating Brevo list: {}", listName)
-        val createList = CreateList(listName, folderId)
+        val createList = CreateListRequest()
+        createList.name = listName
+        createList.folderId = folderId
         val response = contactsApi.createList(createList)
         return response.id
     }
@@ -116,9 +128,10 @@ class BrevoContactClient(
     @Throws(RestClientResponseException::class)
     fun addContactsToList(listId: Long, contactIds: List<Long>) {
         log.info("Adding {} contacts to Brevo list {}", contactIds.size, listId)
-        val payload = AddContactToListRequest().apply {
-            this.ids = contactIds.toMutableList()
-        }
+        val payload = AddContactToListRequest()
+        payload.ids = contactIds.toMutableList()
+        payload.emails = null
+        payload.extIds = null
         contactsApi.addContactToList(listId, payload)
     }
 
@@ -128,9 +141,10 @@ class BrevoContactClient(
     @Throws(RestClientResponseException::class)
     fun removeContactsFromList(listId: Long, contactIds: List<Long>) {
         log.info("Removing {} contacts from Brevo list {}", contactIds.size, listId)
-        val payload = RemoveContactFromListRequest().apply {
-            this.ids = contactIds.toMutableList()
-        }
+        val payload = RemoveContactFromListRequest()
+        payload.ids = contactIds.toMutableList()
+        payload.emails = null
+        payload.extIds = null
         contactsApi.removeContactFromList(listId, payload)
     }
 

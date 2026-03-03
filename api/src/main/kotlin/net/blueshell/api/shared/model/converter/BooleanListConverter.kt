@@ -1,16 +1,14 @@
 package net.blueshell.api.shared.model.converter
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.json.JsonMapper
-import com.fasterxml.jackson.databind.type.CollectionType
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.type.CollectionType
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 
 @Converter
 class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?> {
-    val objectMapper = ObjectMapper()
+    val objectMapper: ObjectMapper = JsonMapper.builder().build()
 
     override fun convertToDatabaseColumn(attribute: MutableList<Boolean?>?): String? {
         try {
@@ -34,9 +32,6 @@ class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?>
     }
 
     companion object {
-        val MAPPER: ObjectMapper = JsonMapper.builder()
-            .addModule(JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .build()
+        val MAPPER: ObjectMapper = JsonMapper.builder().build()
     }
 }

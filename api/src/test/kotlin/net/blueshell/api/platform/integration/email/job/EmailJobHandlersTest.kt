@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.email.job
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import jakarta.mail.Multipart
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.domain.committee.persistence.Committee

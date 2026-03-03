@@ -1,25 +1,18 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.gradle.api.artifacts.dsl.LockMode
-import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
-import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
-import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
     id("org.springframework.boot") version "4.0.3"
-    id("org.openapi.generator") version "7.19.0"
     jacoco
 
-    val kotlinVersion = "2.3.10"
-    kotlin("jvm") version kotlinVersion
-    kotlin("plugin.spring") version kotlinVersion
-    kotlin("plugin.jpa") version kotlinVersion
-    kotlin("plugin.allopen") version kotlinVersion
-    kotlin("plugin.noarg") version kotlinVersion
-    kotlin("kapt") version kotlinVersion
+    kotlin("jvm")
+    kotlin("plugin.spring")
+    kotlin("plugin.jpa")
+    kotlin("plugin.allopen")
+    kotlin("plugin.noarg")
+    kotlin("kapt")
 
     java
 }
@@ -79,12 +72,14 @@ dependencyLocking {
 
 dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.3"))
+    implementation(platform("tools.jackson:jackson-bom:3.1.0"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation(kotlin("stdlib"))
+    developmentOnly(platform("org.springframework.boot:spring-boot-dependencies:4.0.3"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
@@ -121,13 +116,17 @@ dependencies {
     implementation("org.flywaydb:flyway-mysql:12.0.2")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("tools.jackson.module:jackson-module-kotlin")
+    // Jackson 2.x Kotlin module — required for SpringDoc/swagger-core schema generation,
+    // which uses its own com.fasterxml.jackson ObjectMapper independently of our tools.jackson mapper.
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.0")
     implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
+    implementation(project(":api:brevo-client"))
+
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
     implementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
@@ -240,11 +239,25 @@ tasks.withType<Test>().configureEach {
 }
 
 tasks.named<Test>("test") {
-    description = "Runs API unit and integration tests excluding frontend system tests."
+    description = "Runs API unit and integration tests excluding frontend system tests and live external-API tests."
     useJUnitPlatform {
-        excludeTags("system")
+        excludeTags("system", "brevo-live")
     }
     finalizedBy(tasks.named("jacocoTestReport"))
+}
+
+val brevoLiveTest by tasks.registering(Test::class) {
+    description =
+        "Runs live Brevo API integration tests tagged with @Tag(\"brevo-live\"). Requires BREVO_API_KEY in environment."
+    group = "verification"
+
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    shouldRunAfter(tasks.named("test"))
+
+    useJUnitPlatform {
+        includeTags("brevo-live")
+    }
 }
 
 val systemTest by tasks.registering(Test::class) {
@@ -260,7 +273,7 @@ val systemTest by tasks.registering(Test::class) {
     }
 
     systemProperty("frontend.coverage.rawDir", frontendCoverageRawDir.get().asFile.absolutePath)
-     systemProperty("frontend.coverage.enabled", System.getProperty("frontend.coverage.enabled", "true"))
+    systemProperty("frontend.coverage.enabled", System.getProperty("frontend.coverage.enabled", "true"))
     systemProperty("frontend.coverage.required", System.getProperty("frontend.coverage.required", "true"))
 
     val frontendUrlOverride = System.getProperty("system.frontend.url")
@@ -331,88 +344,6 @@ tasks.withType<BootRun>().configureEach {
     jvmArgs("-Dspring.devtools.restart.enabled=true")
 }
 
-val brevoOutputDir: Provider<Directory> = layout.buildDirectory.dir("generated/sources/openapi/brevo")
-
-sourceSets["main"].kotlin.srcDir(brevoOutputDir.map { it.dir("src/main/kotlin") })
-
-tasks.register<GenerateTask>("generateBrevoClient") {
-    validateSpec.set(false)
-    generatorName.set("kotlin")
-    library.set("jvm-spring-restclient")
-    inputSpec.set(layout.projectDirectory.file("../openapi/brevo.yml").asFile.absolutePath)
-    outputDir.set(brevoOutputDir.get().asFile.absolutePath)
-    apiPackage.set("net.blueshell.clients.brevo.api")
-    modelPackage.set("net.blueshell.clients.brevo.model")
-    packageName.set("net.blueshell.clients.brevo.invoker")
-    generateModelTests.set(false)
-    generateApiTests.set(false)
-    generateApiDocumentation.set(false)
-    generateModelDocumentation.set(false)
-    configOptions.set(
-        mapOf(
-            "jackson" to "true",
-            "serializationLibrary" to "jackson",
-            "modelMutable" to "true",
-            "enumPropertyNaming" to "UPPERCASE",
-        )
-    )
-    additionalProperties.set(
-        mapOf(
-            "withXml" to "false",
-            "jackson" to "true",
-            "serializationLibrary" to "jackson",
-            "useSpringBoot3" to "true",
-        )
-    )
-    inlineSchemaOptions.set(
-        mapOf(
-            "RESOLVE_INLINE_ENUMS" to "true",
-        )
-    )
-    schemaMappings.set(
-        mapOf(
-            "getContactInfo_identifier_parameter" to "kotlin.String",
-            "updateContact_identifier_parameter" to "kotlin.String",
-            "createDoiContact_attributes_value" to "kotlin.Any",
-            "getContactInfo_identifierType_parameter" to "kotlin.String",
-            "updateContact_identifierType_parameter" to "kotlin.String",
-            "TemplatePreviewRequestBody" to "net.blueshell.clients.brevo.model.TemplatePreviewRequestBody",
-        )
-    )
-    globalProperties.set(
-        mapOf(
-            "apis" to "TransactionalEmails,Contacts",
-            "models" to "",
-            "supportingFiles" to "",
-        )
-    )
-    doLast {
-        val overridesSrc = file("openapi-overrides/net/blueshell/clients/brevo/model/TemplatePreviewRequestBody.kt")
-        val overridesDestDir = brevoOutputDir.get().dir("src/main/kotlin/net/blueshell/clients/brevo/model").asFile
-        val overridesDestFile = overridesDestDir.resolve("TemplatePreviewRequestBody.kt")
-        overridesDestDir.mkdirs()
-        overridesSrc.copyTo(overridesDestFile, overwrite = true)
-
-        val generatedApiFiles = listOf(
-            "net/blueshell/clients/brevo/api/ContactsApi.kt",
-            "net/blueshell/clients/brevo/api/TransactionalEmailsApi.kt",
-        )
-        generatedApiFiles.forEach { relativePath ->
-            val apiFile = brevoOutputDir.get().file("src/main/kotlin/$relativePath").asFile
-            if (!apiFile.exists()) return@forEach
-
-            val content = apiFile.readText()
-            if (content.contains("\"REDUNDANT_CALL_OF_CONVERSION_METHOD\"")) return@forEach
-
-            val updated = content.replace(
-                "\"UnusedImport\"\n)",
-                "\"UnusedImport\",\n    \"REDUNDANT_CALL_OF_CONVERSION_METHOD\"\n)",
-            )
-            apiFile.writeText(updated)
-        }
-    }
-}
-
 val classDependencyOutputDir = layout.buildDirectory.dir("reports/class-dependencies")
 
 tasks.register<JavaExec>("classDependencyGraph") {
@@ -460,11 +391,6 @@ tasks.named<JavaCompile>("compileTestJava") {
     doFirst {
         options.compilerArgs.removeAll(listOf("-proc:none"))
     }
-}
-
-tasks.matching { it.name.contains("Kotlin") }.configureEach {
-    dependsOn(tasks.named("generateBrevoClient"))
-    inputs.dir(brevoOutputDir)
 }
 
 val compileKotlin: KotlinCompile by tasks

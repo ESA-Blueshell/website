@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.queue
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.service.JobExecutionService

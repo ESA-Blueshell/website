@@ -443,6 +443,19 @@ export type JobExecutionRelatedEntity = {
     type: string;
 };
 
+export type JobStatsDto = {
+    avgSuccessDurationSeconds: number;
+    deadCount: number;
+    deadSinceStartup: number;
+    failedCount: number;
+    failedSinceStartup: number;
+    queuedCount: number;
+    recoveriesSinceStartup: number;
+    runningCount: number;
+    successCount: number;
+    totalCount: number;
+};
+
 export type JwtRequest = {
     password: string;
     username: string;
@@ -3086,6 +3099,47 @@ export type ListResponses = {
 };
 
 export type ListResponse = ListResponses[keyof ListResponses];
+
+export type GetStatsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/jobs/stats';
+};
+
+export type GetStatsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type GetStatsError = GetStatsErrors[keyof GetStatsErrors];
+
+export type GetStatsResponses = {
+    /**
+     * OK
+     */
+    200: JobStatsDto;
+};
+
+export type GetStatsResponse = GetStatsResponses[keyof GetStatsResponses];
 
 export type RetryData = {
     body?: never;

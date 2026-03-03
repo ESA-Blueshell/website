@@ -13,7 +13,9 @@ import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
+import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -228,6 +230,25 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             // Template should include some styling elements
             assertThat(content)
                 .containsAnyOf("<style", "style=", "class=")
+        }
+    }
+
+    @Nested
+    inner class SmtpFailures {
+
+        @Test
+        fun `SMTP failure is retryable RuntimeException, not NonRetryableJobException`() {
+            val user = createAndSaveUser("smtp.fail", "smtp@example.com")
+            mailSender.simulateSendFailure()
+            try {
+                assertThatThrownBy {
+                    emailService.sendUserResetEmail(user.id!!, "token", ResetType.PASSWORD_RESET)
+                }
+                    .isInstanceOf(RuntimeException::class.java)
+                    .isNotInstanceOf(NonRetryableJobException::class.java)
+            } finally {
+                mailSender.stopSimulateSendFailure()
+            }
         }
     }
 

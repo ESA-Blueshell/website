@@ -33,7 +33,7 @@ class JobRetryConfig(
         val backOffPolicy = ExponentialBackOffPolicy()
         backOffPolicy.initialInterval = properties.initialBackoffMillis
         backOffPolicy.multiplier = properties.backoffMultiplier
-        backOffPolicy.maxInterval = properties.initialBackoffMillis * 16
+        backOffPolicy.maxInterval = properties.maxBackoffMillis
         retryTemplate.setBackOffPolicy(backOffPolicy)
 
         return retryTemplate

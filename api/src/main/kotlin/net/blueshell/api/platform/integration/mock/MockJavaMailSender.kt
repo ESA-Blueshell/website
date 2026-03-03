@@ -32,6 +32,12 @@ class MockJavaMailSender : JavaMailSender {
 
     val simpleOutbox: MutableList<SimpleMailMessage> = CopyOnWriteArrayList()
 
+    @Volatile private var shouldFail = false
+
+    fun simulateSendFailure() { shouldFail = true }
+
+    fun stopSimulateSendFailure() { shouldFail = false }
+
     override fun createMimeMessage(): MimeMessage {
         return MimeMessage(session)
     }
@@ -47,6 +53,7 @@ class MockJavaMailSender : JavaMailSender {
 
     @Throws(MailException::class)
     override fun send(mimeMessage: MimeMessage) {
+        if (shouldFail) throw MailSendException("Simulated SMTP failure")
         outbox.add(cloneMessage(mimeMessage))
         log.info(
             "[mail-mock] captured email: subject='{}' to={}",
@@ -81,6 +88,8 @@ class MockJavaMailSender : JavaMailSender {
      */
     fun clear() {
         outbox.clear()
+        simpleOutbox.clear()
+        shouldFail = false
     }
 
     private fun cloneMessage(original: MimeMessage): MimeMessage {

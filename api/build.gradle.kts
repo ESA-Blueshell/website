@@ -65,10 +65,10 @@ repositories {
     mavenCentral()
 }
 
-//dependencyLocking {
-//    lockAllConfigurations()
-//    lockMode.set(LockMode.STRICT)
-//}
+dependencyLocking {
+    lockAllConfigurations()
+    lockMode.set(LockMode.STRICT)
+}
 
 dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:4.0.3"))
@@ -79,6 +79,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation(kotlin("stdlib"))
+    developmentOnly(platform("org.springframework.boot:spring-boot-dependencies:4.0.3"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

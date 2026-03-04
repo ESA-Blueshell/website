@@ -47,7 +47,7 @@ class JobExecutor(
         try {
             jobRetryTemplate.execute<Unit, Exception> { context ->
                 current.attempts = context.retryCount
-                handler.handle(current.payload)
+                handler.handle(current.payload, current.id)
             }
             jobExecutionService.markSuccess(current)
             sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "success"))

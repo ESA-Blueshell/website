@@ -238,6 +238,12 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresAdmin: true},
   },
   {
+    path: "/management/emails",
+    name: "emailManager",
+    component: () => import("@/pages/management/EmailManager.vue"),
+    meta: {requiresAuth: true, requiresAdmin: true},
+  },
+  {
     path: "/blogs",
     name: "BlogList",
     component: () => import("@/pages/blogs/BlogsView.vue"),

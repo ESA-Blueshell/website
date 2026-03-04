@@ -135,7 +135,8 @@ class SecurityConfig(
                         "/download/**",
                         "/committees/**",
                         "/contributionPeriods/current",
-                        "/health"
+                        "/health",
+                        "/track/email/**"
                     ).permitAll()
 
                 if (openApiPublicEnabled) {

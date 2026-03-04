@@ -303,6 +303,35 @@ export type CsrfToken = {
     token?: string;
 };
 
+export type EmailOutbox = {
+    attempts?: number;
+    createdAt?: string;
+    deliveredAt?: string;
+    deliveryStatus?: 'PENDING' | 'SENT' | 'DELIVERED' | 'OPENED' | 'BOUNCED' | 'FAILED';
+    emailType?: string;
+    errorReason?: string;
+    errorType?: string;
+    id?: number;
+    jobExecutionId?: number;
+    messageId?: string;
+    openedAt?: string;
+    recipientEmail?: string;
+    recipientName?: string;
+    sentAt?: string;
+    subject?: string;
+    updatedAt?: string;
+};
+
+export type EmailOutboxStats = {
+    bouncedCount: number;
+    deliveredCount: number;
+    failedCount: number;
+    openedCount: number;
+    pendingCount: number;
+    sentCount: number;
+    totalCount: number;
+};
+
 export type EventBannerRequest = {
     fileId: number;
     version?: number;
@@ -514,6 +543,11 @@ export type PageMetadata = {
     size?: number;
     totalElements?: number;
     totalPages?: number;
+};
+
+export type PagedModelEmailOutbox = {
+    content?: Array<EmailOutbox>;
+    page?: PageMetadata;
 };
 
 export type PagedModelEventResponse = {
@@ -3040,6 +3074,147 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type List1Data = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+        deliveryStatus?: 'PENDING' | 'SENT' | 'DELIVERED' | 'OPENED' | 'BOUNCED' | 'FAILED';
+        emailType?: string;
+        search?: string;
+    };
+    url: '/management/emails';
+};
+
+export type List1Errors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type List1Error = List1Errors[keyof List1Errors];
+
+export type List1Responses = {
+    /**
+     * OK
+     */
+    200: PagedModelEmailOutbox;
+};
+
+export type List1Response = List1Responses[keyof List1Responses];
+
+export type GetStats1Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/emails/stats';
+};
+
+export type GetStats1Errors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type GetStats1Error = GetStats1Errors[keyof GetStats1Errors];
+
+export type GetStats1Responses = {
+    /**
+     * OK
+     */
+    200: EmailOutboxStats;
+};
+
+export type GetStats1Response = GetStats1Responses[keyof GetStats1Responses];
+
+export type Retry1Data = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/emails/{id}/retry';
+};
+
+export type Retry1Errors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type Retry1Error = Retry1Errors[keyof Retry1Errors];
+
+export type Retry1Responses = {
+    /**
+     * OK
+     */
+    200: EmailOutbox;
+};
+
+export type Retry1Response = Retry1Responses[keyof Retry1Responses];
 
 export type ListData = {
     body?: never;

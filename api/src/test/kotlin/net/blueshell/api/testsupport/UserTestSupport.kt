@@ -12,6 +12,7 @@ import net.blueshell.api.factory.event.persistence.EventFactory
 import net.blueshell.api.factory.file.persistence.FileFactory
 import net.blueshell.api.factory.job.persistence.JobExecutionFactory
 import net.blueshell.api.factory.sponsor.persistence.SponsorFactory
+import net.blueshell.api.factory.email.persistence.EmailOutboxFactory
 import net.blueshell.api.factory.telemetry.persistence.TelemetryFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.domain.blog.persistence.Blog
@@ -31,6 +32,7 @@ import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.mock.MockJavaMailSender
+import net.blueshell.api.platform.integration.mock.MockSmtpEmailClient
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.MemberType
@@ -89,6 +91,9 @@ abstract class UserTestSupport : ServiceTestSupport() {
     protected lateinit var mailSender: MockJavaMailSender
 
     @Autowired
+    protected lateinit var emailTransportClient: MockSmtpEmailClient
+
+    @Autowired
     protected lateinit var userFactory: UserFactory
 
     @Autowired
@@ -117,6 +122,9 @@ abstract class UserTestSupport : ServiceTestSupport() {
 
     @Autowired
     protected lateinit var jobExecutionFactory: JobExecutionFactory
+
+    @Autowired
+    protected lateinit var emailOutboxFactory: EmailOutboxFactory
 
     @Value("\${app.frontend-url}")
     protected lateinit var frontendUrl: String

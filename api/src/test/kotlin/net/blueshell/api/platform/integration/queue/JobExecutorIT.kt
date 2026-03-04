@@ -108,7 +108,7 @@ class RetryingTestJobHandler : JobHandler {
     @Volatile
     private var throwNonRetryable: Boolean = false
 
-    override fun handle(payload: String?) {
+    override fun handle(payload: String?, executionId: Long?) {
         val currentInvocation = invocationCounter.incrementAndGet()
         if (throwNonRetryable) {
             throw IllegalArgumentException("non-retryable failure")

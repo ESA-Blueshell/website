@@ -98,4 +98,8 @@ class EmailService(
     }
 
     fun countByStatus(status: EmailDeliveryStatus): Long = repository.countByDeliveryStatus(status)
+
+    @Transactional(readOnly = true)
+    fun findRecentByRecipientEmail(email: String, since: Instant): Email? =
+        repository.findTopByRecipientEmailAndSentAtAfterOrderBySentAtDesc(email, since)
 }

@@ -124,6 +124,7 @@ dependencies {
     implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
     implementation(project(":api:brevo-client"))
+    implementation(project(":api:listmonk-client"))
 
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
 
@@ -143,7 +144,6 @@ dependencies {
     implementation("com.google.apis:google-api-services-groupssettings:v1-rev20220614-2.0.0")
 
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-    implementation("org.springframework.boot:spring-boot-starter-mail")
 
     implementation("org.commonmark:commonmark:0.27.1")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.27.1")

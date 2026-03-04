@@ -9,7 +9,9 @@ import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.email.createEventSignupEmail
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.email.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailService
+import net.blueshell.api.platform.integration.email.application.service.EmailSuppressionService
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -22,11 +24,12 @@ import org.springframework.web.server.ResponseStatusException
 @Service
 class EmailSenderService(
     private val templateService: EmailTemplateService,
-    private val mailDelivery: EmailDeliveryService,
+    private val emailClient: EmailTransportClient,
     private val users: UserService,
     private val reminders: ContributionReminderService,
     private val eventSignUps: EventSignUpService,
     private val emailService: EmailService,
+    private val suppressionService: EmailSuppressionService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val appUrl: String
 ) {
@@ -60,9 +63,15 @@ class EmailSenderService(
     }
 
     /**
-     * Render via template service, inject tracking pixel, create outbox record, and send via delivery service.
+     * Render via template service, inject tracking pixel, create outbox record, and send via Listmonk transactional API.
+     * Skips suppressed addresses (hard bounce, complaint, or soft bounce threshold).
      */
     private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
+        if (suppressionService.isSuppressed(emailContent.recipientEmail)) {
+            log.info("Skipping suppressed recipient: {} type={}", emailContent.recipientEmail, emailType)
+            return
+        }
+
         val htmlContent = templateService.createEmail(
             emailContent.recipientEmail,
             emailContent.recipientName,
@@ -76,7 +85,7 @@ class EmailSenderService(
             ?: htmlContent
 
         try {
-            val messageId = mailDelivery.sendHtmlEmail(
+            val messageId = emailClient.send(
                 emailContent.recipientEmail,
                 emailContent.recipientName,
                 emailContent.subject,
@@ -85,10 +94,12 @@ class EmailSenderService(
                 emailContent.senderAddress,
                 emailContent.replyTo
             )
+            log.info("Sent email to {} subject='{}'", emailContent.recipientEmail, emailContent.subject)
             emailService.markSent(outbox, messageId)
         } catch (e: Exception) {
+            log.error("Failed to send email to {} subject='{}': {}", emailContent.recipientEmail, emailContent.subject, e.message, e)
             emailService.markFailed(outbox, e.javaClass.simpleName, e.message ?: "Send error")
-            throw e
+            throw RuntimeException("Failed to send email", e)
         }
     }
 

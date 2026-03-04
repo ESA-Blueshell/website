@@ -54,8 +54,8 @@ env:
 
   SMTP_HOST: mail.blueshell.utwente.nl
   SMTP_PORT: '465'
-  SMTP_USERNAME: your_smtp_username
-  SMTP_PASSWORD: your_smtp_password
+  MAIL_USERNAME: your_mail_username
+  MAIL_PASSWORD: your_mail_password
 
   STORAGE_LOCATION: ./storage
 

@@ -60,19 +60,6 @@ spring:
     encoding: UTF-8
     cache: false
 
-  mail:
-    host: ${SMTP_HOST:localhost}
-    port: ${SMTP_PORT:465}
-    username: ${SMTP_USERNAME:}
-    password: ${SMTP_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          ssl:
-            enable: true
-          starttls:
-            enable: false
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
@@ -88,14 +75,6 @@ springdoc:
 
 app:
   url: ${APP_URL:http://localhost:8080}
-  email:
-    bounce-poll-interval-ms: ${IMAP_BOUNCE_POLL_INTERVAL_MS:300000}
-    bounce-imap:
-      enabled: ${IMAP_BOUNCE_ENABLED:false}
-      host: ${IMAP_BOUNCE_HOST:mail.blueshell.utwente.nl}
-      port: ${IMAP_BOUNCE_PORT:993}
-      username: ${IMAP_BOUNCE_USERNAME:}
-      password: ${IMAP_BOUNCE_PASSWORD:}
   security:
     require-https: false
   jwt:
@@ -154,6 +133,18 @@ security:
     max-buckets: 10000
     bucket-idle-ttl: PT30M
     cleanup-interval: 128
+
+listmonk:
+  api:
+    base-url: ${LISTMONK_API_BASE_URL:http://listmonk:9000/api}
+    username: ${LISTMONK_API_USERNAME:listmonk}
+    password: ${LISTMONK_API_PASSWORD:listmonk}
+  from:
+    address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.esa-blueshell.nl}
+  reply-to: ${LISTMONK_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
+  template-id: ${LISTMONK_TEMPLATE_ID:1}
+  bounce:
+    poll-interval-ms: ${LISTMONK_BOUNCE_POLL_INTERVAL_MS:300000}
 
 logging:
   level:

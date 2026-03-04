@@ -49,7 +49,7 @@ class JobAutoDispatchIT : UserTestSupport() {
 
     @BeforeEach
     fun clearMocks() {
-        mailSender.clear()
+        emailTransportClient.reset()
         mockCalendarAdapter.clear()
         mockContactAdapter.clear()
     }

@@ -6,11 +6,10 @@ import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.options.AriaRole
 import tools.jackson.databind.ObjectMapper
-import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
-import net.blueshell.api.platform.integration.mock.MockJavaMailSender
+import net.blueshell.api.platform.integration.email.MockListmonkEmailClient
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -45,7 +44,7 @@ abstract class FrontendSystemTestBase {
     lateinit var userRepository: UserRepository
 
     @Autowired
-    lateinit var mailSender: MockJavaMailSender
+    lateinit var emailTransportClient: MockListmonkEmailClient
 
     private lateinit var playwright: Playwright
     private lateinit var browser: Browser
@@ -68,7 +67,7 @@ abstract class FrontendSystemTestBase {
 
     @BeforeEach
     fun clearOutbox() {
-        mailSender.clear()
+        emailTransportClient.reset()
     }
 
     @AfterAll
@@ -222,10 +221,9 @@ abstract class FrontendSystemTestBase {
     protected fun findEmail(
         recipientEmail: String,
         subject: String
-    ): MimeMessage? {
-        return mailSender.outbox.firstOrNull { message ->
-            val recipients = (message.allRecipients ?: emptyArray()).map { it.toString() }
-            recipients.contains(recipientEmail) && message.subject == subject
+    ): MockListmonkEmailClient.SentEmail? {
+        return emailTransportClient.sentEmails.firstOrNull { email ->
+            email.toEmail == recipientEmail && email.subject == subject
         }
     }
 

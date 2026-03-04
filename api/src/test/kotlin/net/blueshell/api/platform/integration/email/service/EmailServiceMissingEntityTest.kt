@@ -6,7 +6,9 @@ import net.blueshell.api.domain.contribution.application.ContributionReminderSer
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.email.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailService
+import net.blueshell.api.platform.integration.email.application.service.EmailSuppressionService
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -21,19 +23,21 @@ import org.springframework.web.server.ResponseStatusException
 class EmailServiceMissingEntityTest {
 
     private val templateService = mockk<EmailTemplateService>(relaxed = true)
-    private val mailDelivery = mockk<EmailDeliveryService>(relaxed = true)
+    private val emailClient = mockk<EmailTransportClient>(relaxed = true)
     private val users = mockk<UserService>()
     private val reminders = mockk<ContributionReminderService>()
     private val eventSignUps = mockk<EventSignUpService>()
     private val emailService = mockk<EmailService>(relaxed = true)
+    private val suppressionService = mockk<EmailSuppressionService>(relaxed = true)
 
     private val emailSenderService = EmailSenderService(
         templateService = templateService,
-        mailDelivery = mailDelivery,
+        emailClient = emailClient,
         users = users,
         reminders = reminders,
         eventSignUps = eventSignUps,
         emailService = emailService,
+        suppressionService = suppressionService,
         frontendUrl = "http://localhost:3000",
         appUrl = "http://localhost:8080"
     )

@@ -76,14 +76,60 @@ services:
       - APP_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+      - LISTMONK_FROM_ADDRESS=no-reply@localhost
+      - LISTMONK_REPLY_TO_ADDRESS=dev@localhost
     depends_on:
       - db
+      - listmonk
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 20
       start_period: 30s
+
+  listmonk:
+    image: listmonk/listmonk:v4.1.0
+    ports:
+      - "9000:9000"
+    depends_on:
+      listmonk-db:
+        condition: service_healthy
+    environment:
+      LISTMONK_app__address: "0.0.0.0:9000"
+      LISTMONK_app__admin_username: listmonk
+      LISTMONK_app__admin_password: listmonk
+      LISTMONK_db__host: listmonk-db
+      LISTMONK_db__port: 5432
+      LISTMONK_db__user: listmonk
+      LISTMONK_db__password: listmonk
+      LISTMONK_db__database: listmonk
+      LISTMONK_db__ssl_mode: disable
+    command: sh -c "./listmonk --install --idempotent --yes --config '' && ./listmonk --upgrade --yes --config '' && ./listmonk --config ''"
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  listmonk-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: listmonk
+      POSTGRES_PASSWORD: listmonk
+      POSTGRES_DB: listmonk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U listmonk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - listmonk-data:/var/lib/postgresql/data
+    networks:
+      - global_network
 
 networks:
   global_network:
@@ -95,3 +141,4 @@ volumes:
   playwright-browsers:
   nginx_certs:
     driver: local
+  listmonk-data:

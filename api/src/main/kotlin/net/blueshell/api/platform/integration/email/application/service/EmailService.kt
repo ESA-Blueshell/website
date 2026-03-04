@@ -38,6 +38,9 @@ class EmailService(
     @Transactional(readOnly = true)
     fun findByTrackingToken(token: String): Email? = repository.findByTrackingToken(token)
 
+    @Transactional(readOnly = true)
+    fun findByMessageId(messageId: String): Email? = repository.findByMessageId(messageId)
+
     @Transactional
     fun markSent(email: Email, messageId: String): Email {
         email.deliveryStatus = EmailDeliveryStatus.SENT

@@ -1,0 +1,21 @@
+From: postmaster@mail.example.com
+To: sitecie@blueshell.utwente.nl
+Subject: Mail delivery failed: returning message to sender
+Date: Mon, 03 Mar 2026 10:00:00 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+
+This message was created automatically by the mail system (Exim).
+
+A message that you sent could not be delivered to one or more of its recipients.
+
+The following address(es) failed:
+  baduser@example.com
+
+--- The original message was received at Mon, 03 Mar 2026 09:55:00 +0100
+--- with the following headers:
+
+From: sitecie@blueshell.utwente.nl
+To: baduser@example.com
+Subject: Newsletter March
+Message-ID: <original-msg-003@blueshell.utwente.nl>

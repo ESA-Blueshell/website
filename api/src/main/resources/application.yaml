@@ -142,7 +142,7 @@ listmonk:
   from:
     address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.esa-blueshell.nl}
   reply-to: ${LISTMONK_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
-  template-id: ${LISTMONK_TEMPLATE_ID:1}
+  template-id: ${LISTMONK_TEMPLATE_ID:0}  # 0 = auto-detect/create on startup
   bounce:
     poll-interval-ms: ${LISTMONK_BOUNCE_POLL_INTERVAL_MS:300000}
 

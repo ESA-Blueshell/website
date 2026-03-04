@@ -36,8 +36,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      listmonk:
-        condition: service_healthy
+      listmonk-setup:
+        condition: service_completed_successfully
     networks:
       - frontback
       - database
@@ -94,24 +94,39 @@ services:
         condition: service_healthy
     environment:
       LISTMONK_app__address: "0.0.0.0:9000"
-      LISTMONK_app__admin_username: ${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME required}
-      LISTMONK_app__admin_password: ${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD required}
       LISTMONK_db__host: listmonk-db
       LISTMONK_db__port: 5432
       LISTMONK_db__user: listmonk
       LISTMONK_db__password: ${LISTMONK_DB_PASSWORD:?LISTMONK_DB_PASSWORD required}
       LISTMONK_db__database: listmonk
       LISTMONK_db__ssl_mode: disable
-    command: sh -c "./listmonk --install --idempotent --yes --config '' && ./listmonk --upgrade --yes --config '' && ./listmonk --config ''"
+    command: sh -c "./listmonk --install --idempotent --yes && ./listmonk --upgrade --yes && ./listmonk"
     networks:
       - frontback
       - database
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  listmonk-setup:
+    image: curlimages/curl:8.12.1
+    restart: "no"
+    depends_on:
+      listmonk:
+        condition: service_healthy
+    environment:
+      LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME required}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD required}
+      LISTMONK_ADMIN_EMAIL: ${LISTMONK_ADMIN_EMAIL:?LISTMONK_ADMIN_EMAIL required}
+    volumes:
+      - ./listmonk/setup.sh:/setup.sh:ro
+    entrypoint: ["sh", "/setup.sh"]
+    networks:
+      - frontback
+      - database
 
   listmonk-db:
     image: postgres:17-alpine

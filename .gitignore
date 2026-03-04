@@ -55,6 +55,7 @@ data
 /env/.mollie.env
 /storage/
 /env/.listmonk.env
+/env/.listmonk.env.prod
 /env/.api.env.prod
 /env/.db.env.prod
 /env/1_dump.sql

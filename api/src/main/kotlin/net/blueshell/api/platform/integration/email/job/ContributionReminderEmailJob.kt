@@ -18,6 +18,6 @@ class ContributionReminderEmailJob(
     override val jobType: String = EmailJobs.ContributionReminder.type
 
     override fun handlePayload(payload: EmailJobs.ContributionReminderPayload) {
-        emails.sendContributionReminderEmail(payload.userId, payload.contributionPeriodId)
+        emails.sendContributionReminderEmail(payload.userId, payload.contributionPeriodId, currentExecutionId)
     }
 }

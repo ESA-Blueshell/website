@@ -2,6 +2,8 @@ package net.blueshell.api.platform.integration.email.job
 
 import tools.jackson.databind.ObjectMapper
 import jakarta.mail.Multipart
+import jakarta.mail.Part
+import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
@@ -76,7 +78,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             // Then: Email is sent
             val emails = mailSender.outbox
             assertThat(emails).hasSize(1)
-            assertThat(emails.first().allRecipients.map { it.toString() })
+            assertThat(emails.first().allRecipients.filterIsInstance<InternetAddress>().map { it.address })
                 .contains("john@example.com")
             assertThat(emails.first().subject)
                 .contains("Reset Your")
@@ -147,7 +149,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             // Then: Signup email is sent
             val emails = mailSender.outbox
             assertThat(emails).hasSize(1)
-            assertThat(emails.first().allRecipients.map { it.toString() })
+            assertThat(emails.first().allRecipients.filterIsInstance<InternetAddress>().map { it.address })
                 .contains("guest@example.com")
             assertThat(emails.first().subject)
                 .contains("Event Registration Confirmed")
@@ -182,7 +184,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             // Then: Reminder email is sent
             val emails = mailSender.outbox
             assertThat(emails).hasSize(1)
-            assertThat(emails.first().allRecipients.map { it.toString() })
+            assertThat(emails.first().allRecipients.filterIsInstance<InternetAddress>().map { it.address })
                 .contains("contributor@example.com")
             assertThat(emails.first().subject)
                 .contains("Contribution Payment Reminder")
@@ -353,29 +355,18 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         return persist(signUp)
     }
 
-    /**
-     * Extract HTML content from MimeMessage (handles multipart messages)
-     */
-    private fun extractHtmlContent(message: MimeMessage): String {
-        val content = message.content
-        if (content is Multipart) {
-            for (i in 0 until content.count) {
-                val bodyPart = content.getBodyPart(i)
-                if (bodyPart.contentType.startsWith("text/html")) {
-                    return bodyPart.content.toString()
-                }
-                // Check nested multipart (related/alternative)
-                if (bodyPart.content is Multipart) {
-                    val nested = bodyPart.content as Multipart
-                    for (j in 0 until nested.count) {
-                        val nestedPart = nested.getBodyPart(j)
-                        if (nestedPart.contentType.startsWith("text/html")) {
-                            return nestedPart.content.toString()
-                        }
-                    }
-                }
+    private fun extractHtmlContent(message: MimeMessage): String =
+        extractHtmlFromPart(message) ?: message.content.toString()
+
+    private fun extractHtmlFromPart(part: Part): String? {
+        val ct = part.contentType.lowercase()
+        return when {
+            ct.startsWith("text/html") -> part.content.toString()
+            ct.startsWith("multipart/") -> {
+                val mp = part.content as Multipart
+                (0 until mp.count).firstNotNullOfOrNull { extractHtmlFromPart(mp.getBodyPart(it)) }
             }
+            else -> null
         }
-        return content.toString()
     }
 }

@@ -3,6 +3,7 @@ package net.blueshell.api.platform.integration.email
 import net.blueshell.api.platform.config.ListmonkConfig
 import net.blueshell.clients.listmonk.api.TransactionalApi
 import net.blueshell.clients.listmonk.model.TransactionalMessage
+import net.blueshell.clients.listmonk.model.TransactionalMessageSubscriberMode
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Profile
@@ -38,7 +39,7 @@ class ListmonkEmailClient(
 
         val message = TransactionalMessage().apply {
             subscriberEmail = toEmail
-            subscriberMode = "external"
+            subscriberMode = TransactionalMessageSubscriberMode.EXTERNAL
             this.templateId = this@ListmonkEmailClient.templateId
             this.subject = subject
             fromEmail = "$senderName <$senderAddress>"

@@ -1,16 +1,23 @@
 package net.blueshell.api.platform.config
 
 import net.blueshell.clients.listmonk.api.BouncesApi
+import net.blueshell.clients.listmonk.api.ListsApi
+import net.blueshell.clients.listmonk.api.SubscribersApi
 import net.blueshell.clients.listmonk.api.TemplatesApi
 import net.blueshell.clients.listmonk.api.TransactionalApi
-import net.blueshell.clients.listmonk.invoker.ApiClient
+import net.blueshell.clients.listmonk.ApiClient
 import net.blueshell.clients.listmonk.model.NewTemplate
+import net.blueshell.clients.listmonk.model.NewTemplateType
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpHeaders
+import org.springframework.web.client.RestClient
+import java.io.File
+import java.util.Base64
 
 @Configuration
 @EnableConfigurationProperties(ListmonkProperties::class)
@@ -21,8 +28,18 @@ class ListmonkConfig {
     fun listmonkApiClient(props: ListmonkProperties): ApiClient {
         val client = ApiClient()
         client.basePath = props.api.baseUrl
-        client.setUsername(props.api.username)
-        client.setPassword(props.api.password)
+
+        val apiCredentials = readApiTokenFile(props)
+        if (apiCredentials != null) {
+            val (apiUser, token) = apiCredentials
+            client.setUsername(apiUser)
+            client.setPassword(token)
+            log.info("Listmonk: using API token auth (user={})", apiUser)
+        } else {
+            client.setUsername(props.api.username)
+            client.setPassword(props.api.password)
+            log.info("Listmonk: using basic auth (user={})", props.api.username)
+        }
         return client
     }
 
@@ -34,9 +51,33 @@ class ListmonkConfig {
     @Profile("!test")
     fun listmonkBouncesApi(client: ApiClient): BouncesApi = BouncesApi(client)
 
+    /**
+     * Pre-configured [RestClient] for Listmonk admin API calls (e.g. settings).
+     * Uses the API token from the secrets volume when available; falls back to basic auth.
+     */
+    @Bean(ADMIN_REST_CLIENT_BEAN)
+    @Profile("!test")
+    fun listmonkAdminRestClient(props: ListmonkProperties): RestClient {
+        val baseUrl = props.api.baseUrl.removeSuffix("/api")
+        val (username, password) = readApiTokenFile(props) ?: (props.api.username to props.api.password)
+        val encoded = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
+        return RestClient.builder()
+            .baseUrl(baseUrl)
+            .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic $encoded")
+            .build()
+    }
+
     @Bean
     @Profile("!test")
     fun listmonkTemplatesApi(client: ApiClient): TemplatesApi = TemplatesApi(client)
+
+    @Bean
+    @Profile("!test")
+    fun listmonkSubscribersApi(client: ApiClient): SubscribersApi = SubscribersApi(client)
+
+    @Bean
+    @Profile("!test")
+    fun listmonkListsApi(client: ApiClient): ListsApi = ListsApi(client)
 
     /**
      * Resolves the Listmonk transactional template ID to use for sending emails.
@@ -74,7 +115,7 @@ class ListmonkConfig {
         val created = try {
             val req = NewTemplate()
                 .name(TEMPLATE_NAME)
-                .type("tx")
+                .type(NewTemplateType.TX)
                 .body(TEMPLATE_BODY)
             templatesApi.createTemplate(req)?.data
         } catch (e: Exception) {
@@ -89,6 +130,7 @@ class ListmonkConfig {
         private val log = LoggerFactory.getLogger(ListmonkConfig::class.java)
 
         const val TEMPLATE_ID_BEAN = "resolvedListmonkTemplateId"
+        const val ADMIN_REST_CLIENT_BEAN = "listmonkAdminRestClient"
 
         /** Name used to look up or create the passthrough transactional template. */
         const val TEMPLATE_NAME = "Blueshell Transactional"
@@ -98,5 +140,35 @@ class ListmonkConfig {
          * Listmonk wraps the body in its own MIME envelope, so this is all we need.
          */
         const val TEMPLATE_BODY = "{{ .Tx.Data.body }}"
+
+        /**
+         * Reads the API token written by Listmonk's `--install` step when
+         * `LISTMONK_ADMIN_API_USER` is set.
+         *
+         * The file contains a line like: `LISTMONK_ADMIN_API_TOKEN=<token>`
+         *
+         * @return (apiUser, token) pair, or null if the file is absent / empty.
+         */
+        fun readApiTokenFile(props: ListmonkProperties): Pair<String, String>? {
+            return try {
+                val file = File(props.api.tokenFile)
+                if (!file.exists() || file.length() == 0L) return null
+
+                val tokenLine = file.readLines()
+                    .firstOrNull { it.startsWith("LISTMONK_ADMIN_API_TOKEN=") }
+                    ?: return null
+
+                val token = tokenLine
+                    .removePrefix("LISTMONK_ADMIN_API_TOKEN=")
+                    .trim()
+                    .trim('"')
+
+                if (token.isEmpty()) null
+                else Pair(props.api.apiUser, token)
+            } catch (e: Exception) {
+                log.warn("Could not read Listmonk API token file '{}': {}", props.api.tokenFile, e.message)
+                null
+            }
+        }
     }
 }

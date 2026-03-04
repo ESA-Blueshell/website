@@ -4,12 +4,13 @@ import net.blueshell.api.platform.integration.email.application.service.EmailSer
 import net.blueshell.api.platform.integration.email.application.service.EmailSuppressionService
 import net.blueshell.clients.listmonk.api.BouncesApi
 import net.blueshell.clients.listmonk.model.BounceRecord
+import net.blueshell.clients.listmonk.model.GetBouncesOrderByParameter
+import net.blueshell.clients.listmonk.model.GetBouncesOrderParameter
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.Instant
-import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 
 /**
@@ -40,17 +41,15 @@ class ListmonkBouncePollingService(
                 1,     // page
                 1000,  // perPage — fetch up to 1000 most recent, ordered by created_at desc
                 null,  // source
-                "created_at",
-                "desc",
+                GetBouncesOrderByParameter.CREATED_AT,
+                GetBouncesOrderParameter.DESC,
             )
 
             val results: List<BounceRecord> = response?.data?.results ?: emptyList()
 
             // Only process bounces newer than our last poll time
             val newBounces = results.filter { bounce ->
-                val createdAt = bounce.createdAt?.let {
-                    OffsetDateTime.parse(it).toInstant()
-                } ?: return@filter false
+                val createdAt = bounce.createdAt?.toInstant() ?: return@filter false
                 createdAt.isAfter(lastPollTime)
             }
 

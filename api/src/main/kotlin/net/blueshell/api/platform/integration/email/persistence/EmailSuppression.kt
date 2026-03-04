@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import net.blueshell.api.shared.model.Identifiable
 import java.time.Instant
 
 @Entity
@@ -15,7 +16,7 @@ import java.time.Instant
 class EmailSuppression(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
+    override var id: Long? = null,
 
     @Column(nullable = false, unique = true)
     var email: String = "",
@@ -32,7 +33,7 @@ class EmailSuppression(
 
     @Column(name = "bounce_count", nullable = false)
     var bounceCount: Int = 1,
-)
+) : Identifiable<Long>
 
 enum class SuppressionReason {
     HARD_BOUNCE,

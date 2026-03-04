@@ -33,6 +33,7 @@ services:
       - FRONTEND_URL=https://esa-blueshell.nl
     volumes:
       - "./storage:/home/storage"
+      - "listmonk-secrets:/run/secrets/listmonk:ro"
     depends_on:
       db:
         condition: service_healthy
@@ -100,7 +101,18 @@ services:
       LISTMONK_db__password: ${LISTMONK_DB_PASSWORD:?LISTMONK_DB_PASSWORD required}
       LISTMONK_db__database: listmonk
       LISTMONK_db__ssl_mode: disable
-    command: sh -c "./listmonk --install --idempotent --yes && ./listmonk --upgrade --yes && ./listmonk"
+      LISTMONK_ADMIN_API_USER: ${LISTMONK_ADMIN_API_USER:-api}
+    volumes:
+      - listmonk-secrets:/secrets
+    # Capture the API token printed to stderr during --install (supported in newer Listmonk versions).
+    command: >-
+      sh -c "
+        ./listmonk --install --idempotent --yes 2>/tmp/install.err;
+        cat /tmp/install.err >&2;
+        grep 'LISTMONK_ADMIN_API_TOKEN' /tmp/install.err | sed 's/^export //' > /secrets/api-token.env;
+        ./listmonk --upgrade --yes &&
+        exec ./listmonk
+      "
     networks:
       - frontback
       - database
@@ -154,3 +166,4 @@ volumes:
   certbot-www:
   db_data:
   listmonk-data:
+  listmonk-secrets:

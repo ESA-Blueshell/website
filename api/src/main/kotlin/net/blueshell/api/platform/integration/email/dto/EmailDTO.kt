@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import java.time.Instant
 
-@Schema(name = "EmailOutbox")
-data class EmailOutboxDTO(
+@Schema(name = "Email")
+data class EmailDTO(
     val id: Long?,
     val recipientEmail: String?,
     val recipientName: String?,
@@ -24,8 +24,8 @@ data class EmailOutboxDTO(
     val updatedAt: Instant?,
 )
 
-@Schema(name = "EmailOutboxStats")
-data class EmailOutboxStatsDTO(
+@Schema(name = "EmailStats")
+data class EmailStatsDTO(
     val totalCount: Long,
     val pendingCount: Long,
     val sentCount: Long,

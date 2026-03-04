@@ -18,6 +18,7 @@ type Fixtures = {
   blogsById?: Record<string, Record<string, unknown>>
   blogStatusById?: Record<string, number>
   jobs?: Array<Record<string, unknown>>
+  emails?: Array<Record<string, unknown>>
 }
 
 async function fulfillJson(route: Route, data: unknown, status = 200) {
@@ -150,6 +151,24 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       queuedAt: "2025-01-01T12:00:00.000Z",
       startedAt: "2025-01-01T12:00:10.000Z",
       finishedAt: "2025-01-01T12:00:11.000Z",
+    },
+  ]
+
+  const baseEmails = fixtures.emails ?? [
+    {
+      id: 800,
+      recipientEmail: "alice@example.com",
+      recipientName: "Alice Example",
+      subject: "Welcome to Blueshell",
+      emailType: "email.activation",
+      deliveryStatus: "DELIVERED",
+      messageId: "<msg-800@blueshell.utwente.nl>",
+      sentAt: "2025-01-01T12:00:00.000Z",
+      deliveredAt: "2025-01-01T12:00:30.000Z",
+      openedAt: null,
+      attempts: 1,
+      jobExecutionId: 700,
+      createdAt: "2025-01-01T11:59:00.000Z",
     },
   ]
 
@@ -375,6 +394,81 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       } else {
         baseJobs.unshift(retried)
       }
+      return fulfillJson(route, retried)
+    }
+    if (method === "GET" && path === "/management/emails/stats") {
+      const counts: Record<string, number> = {PENDING: 0, SENT: 0, DELIVERED: 0, OPENED: 0, BOUNCED: 0, FAILED: 0}
+      for (const email of baseEmails) {
+        const s = toSearchableString(email.deliveryStatus).toUpperCase()
+        if (s in counts) counts[s] = (counts[s] ?? 0) + 1
+      }
+      return fulfillJson(route, {
+        totalCount: baseEmails.length,
+        pendingCount: counts["PENDING"],
+        sentCount: counts["SENT"],
+        deliveredCount: counts["DELIVERED"],
+        openedCount: counts["OPENED"],
+        bouncedCount: counts["BOUNCED"],
+        failedCount: counts["FAILED"],
+      })
+    }
+    if (method === "GET" && path === "/management/emails") {
+      const page = Number(url.searchParams.get("page") ?? "0")
+      const size = Number(url.searchParams.get("size") ?? "50")
+      const deliveryStatus = (url.searchParams.get("deliveryStatus") ?? "").trim().toUpperCase()
+      const search = (url.searchParams.get("search") ?? "").trim().toLowerCase()
+
+      let filtered = [...baseEmails]
+
+      if (deliveryStatus && deliveryStatus !== "ALL") {
+        filtered = filtered.filter((email) => toSearchableString(email.deliveryStatus).toUpperCase() === deliveryStatus)
+      }
+
+      if (search) {
+        filtered = filtered.filter((email) => {
+          const haystack = [
+            toSearchableString(email.recipientEmail),
+            toSearchableString(email.subject),
+            toSearchableString(email.recipientName),
+          ].join(" ").toLowerCase()
+          return haystack.includes(search)
+        })
+      }
+
+      filtered.sort((a, b) => Number(b.id ?? 0) - Number(a.id ?? 0))
+
+      const safePage = Number.isFinite(page) && page >= 0 ? page : 0
+      const safeSize = Number.isFinite(size) && size > 0 ? size : 50
+      const totalElements = filtered.length
+      const totalPages = Math.max(1, Math.ceil(totalElements / safeSize))
+      const start = safePage * safeSize
+      const content = filtered.slice(start, start + safeSize)
+
+      return fulfillJson(route, {
+        content,
+        page: {
+          number: safePage,
+          size: safeSize,
+          totalElements,
+          totalPages,
+        },
+      })
+    }
+    if (method === "POST" && /^\/management\/emails\/\d+\/retry$/.test(path)) {
+      const rawId = path.split("/")[3]
+      const id = Number(rawId)
+      const index = baseEmails.findIndex((email) => Number(email.id) === id)
+      const existing = index >= 0 ? baseEmails[index] : undefined
+      if (existing == null) {
+        return fulfillJson(route, {detail: "Not found"}, 404)
+      }
+      const retried = {
+        ...existing,
+        deliveryStatus: "SENT",
+        errorType: null,
+        errorReason: null,
+      }
+      baseEmails.splice(index, 1, retried)
       return fulfillJson(route, retried)
     }
     if (method === "POST" && path === "/users") {

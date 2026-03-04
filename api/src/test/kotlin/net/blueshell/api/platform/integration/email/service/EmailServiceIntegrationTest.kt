@@ -35,7 +35,7 @@ import java.time.temporal.ChronoUnit
 class EmailServiceIntegrationTest : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var emailService: EmailService
+    private lateinit var emailService: EmailSenderService
 
     @Autowired
     private lateinit var mailSender: MockJavaMailSender

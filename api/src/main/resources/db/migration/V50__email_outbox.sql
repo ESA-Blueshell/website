@@ -1,4 +1,7 @@
-CREATE TABLE email_outbox (
+DROP TABLE IF EXISTS email_outbox;
+DROP TABLE IF EXISTS emails;
+
+CREATE TABLE emails (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     deleted_at DATETIME DEFAULT '9999-12-31 23:59:59' NOT NULL,
     recipient_email VARCHAR(255) NOT NULL,
@@ -23,7 +26,7 @@ CREATE TABLE email_outbox (
     version     BIGINT NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_email_outbox_status     ON email_outbox (delivery_status);
-CREATE INDEX idx_email_outbox_email_type ON email_outbox (email_type);
-CREATE INDEX idx_email_outbox_recipient  ON email_outbox (recipient_email);
-CREATE INDEX idx_email_outbox_sent_at    ON email_outbox (sent_at);
+CREATE INDEX idx_emails_status    ON emails (delivery_status);
+CREATE INDEX idx_emails_email_type ON emails (email_type);
+CREATE INDEX idx_emails_recipient  ON emails (recipient_email);
+CREATE INDEX idx_emails_sent_at   ON emails (sent_at);

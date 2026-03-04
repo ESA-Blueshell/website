@@ -8,15 +8,15 @@ import java.time.Instant
 
 @Entity
 @Table(
-    name = "email_outbox",
+    name = "emails",
     indexes = [
-        Index(name = "idx_email_outbox_status", columnList = "delivery_status"),
-        Index(name = "idx_email_outbox_email_type", columnList = "email_type"),
-        Index(name = "idx_email_outbox_recipient", columnList = "recipient_email"),
-        Index(name = "idx_email_outbox_sent_at", columnList = "sent_at"),
+        Index(name = "idx_emails_status", columnList = "delivery_status"),
+        Index(name = "idx_emails_email_type", columnList = "email_type"),
+        Index(name = "idx_emails_recipient", columnList = "recipient_email"),
+        Index(name = "idx_emails_sent_at", columnList = "sent_at"),
     ]
 )
-class EmailOutbox(
+class Email(
     @Column(name = "recipient_email", nullable = false) val recipientEmail: String = "",
     @Column(name = "recipient_name", nullable = false) val recipientName: String = "",
     @Column(name = "subject", nullable = false) val subject: String = "",

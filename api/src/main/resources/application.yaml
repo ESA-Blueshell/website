@@ -88,6 +88,14 @@ springdoc:
 
 app:
   url: ${APP_URL:http://localhost:8080}
+  email:
+    bounce-poll-interval-ms: ${IMAP_BOUNCE_POLL_INTERVAL_MS:300000}
+    bounce-imap:
+      enabled: ${IMAP_BOUNCE_ENABLED:false}
+      host: ${IMAP_BOUNCE_HOST:mail.blueshell.utwente.nl}
+      port: ${IMAP_BOUNCE_PORT:993}
+      username: ${IMAP_BOUNCE_USERNAME:}
+      password: ${IMAP_BOUNCE_PASSWORD:}
   security:
     require-https: false
   jwt:

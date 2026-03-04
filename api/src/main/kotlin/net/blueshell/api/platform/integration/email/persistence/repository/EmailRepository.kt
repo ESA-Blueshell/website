@@ -11,6 +11,8 @@ interface EmailRepository : BaseRepository<Email, Long> {
 
     fun findByTrackingToken(trackingToken: String): Email?
 
+    fun findByMessageId(messageId: String): Email?
+
     fun findByDeliveryStatusAndSentAtBefore(
         status: EmailDeliveryStatus,
         threshold: Instant,

@@ -311,10 +311,10 @@
                     <tr>
                         <td align="center" bgcolor="#191919"
                             style="background-color:#191919; padding:8px 24px 8px;">
-                            <!-- Label -->
-                            <p style="margin:0 0 6px 0; color:#555555; font-size:10px; font-weight:600;
+                            <!-- Label: inline !important overrides the stylesheet's p { margin !important } reset -->
+                            <p style="margin:0 0 8px 0 !important; color:#555555; font-size:10px; font-weight:600;
                                       letter-spacing:2px; text-transform:uppercase; text-align:center;
-                                      line-height:1;">
+                                      line-height:1 !important;">
                                 Follow us
                             </p>
                             <!-- Icon row: no website icon — CSS filter not cross-client compatible -->
@@ -363,6 +363,30 @@
                                                  src="https://cdn-icons-png.flaticon.com/32/5968/5968819.png"
                                                  width="26" height="26"
                                                  style="width:26px; height:26px; display:block; border:0;">
+                                        </a>
+                                    </td>
+                                    <!--
+                                        Website icon: the flaticon globe is dark-coloured.
+                                        CSS filter (invert) is unsupported in Outlook/Gmail.
+                                        Solution: white pill background behind the icon makes it
+                                        visible on any dark surface without CSS filter tricks.
+                                    -->
+                                    <td width="38" align="center" style="padding:0 5px;">
+                                        <a href="https://esa-blueshell.nl/" target="_blank"
+                                           style="text-decoration:none;">
+                                            <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                                <tr>
+                                                    <td bgcolor="#FFFFFF" width="26" height="26" align="center"
+                                                        style="background-color:#FFFFFF; width:26px; height:26px;
+                                                               border-radius:4px; padding:0;">
+                                                        <img alt="Website"
+                                                             src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png"
+                                                             width="22" height="22"
+                                                             style="width:22px; height:22px; display:block; border:0;
+                                                                    margin:2px auto 0;">
+                                                    </td>
+                                                </tr>
+                                            </table>
                                         </a>
                                     </td>
                                 </tr>

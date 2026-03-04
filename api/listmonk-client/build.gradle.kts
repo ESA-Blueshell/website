@@ -83,7 +83,7 @@ tasks.register<GenerateTask>("generate") {
 
     globalProperties.set(
         mapOf(
-            "apis" to "Transactional,Bounces",
+            "apis" to "Transactional,Bounces,Templates",
             "models" to "",
             "supportingFiles" to "",
         )

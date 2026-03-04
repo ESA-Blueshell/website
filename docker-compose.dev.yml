@@ -79,8 +79,10 @@ services:
       - LISTMONK_FROM_ADDRESS=no-reply@localhost
       - LISTMONK_REPLY_TO_ADDRESS=dev@localhost
     depends_on:
-      - db
-      - listmonk
+      db:
+        condition: service_healthy
+      listmonk-setup:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8080/health" ]
       interval: 30s
@@ -97,23 +99,40 @@ services:
         condition: service_healthy
     environment:
       LISTMONK_app__address: "0.0.0.0:9000"
-      LISTMONK_app__admin_username: listmonk
-      LISTMONK_app__admin_password: listmonk
       LISTMONK_db__host: listmonk-db
       LISTMONK_db__port: 5432
       LISTMONK_db__user: listmonk
       LISTMONK_db__password: listmonk
       LISTMONK_db__database: listmonk
       LISTMONK_db__ssl_mode: disable
-    command: sh -c "./listmonk --install --idempotent --yes --config '' && ./listmonk --upgrade --yes --config '' && ./listmonk --config ''"
+    command: sh -c "./listmonk --install --idempotent --yes && ./listmonk --upgrade --yes && ./listmonk"
     networks:
       - global_network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  listmonk-setup:
+    image: curlimages/curl:8.12.1
+    restart: "no"
+    depends_on:
+      listmonk:
+        condition: service_healthy
+    env_file:
+      - path: ./env/.listmonk.env
+        required: false
+    environment:
+      LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:-listmonk}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:-listmonk}
+      LISTMONK_ADMIN_EMAIL: ${LISTMONK_ADMIN_EMAIL:-admin@listmonk.local}
+    volumes:
+      - ./listmonk/setup.sh:/setup.sh:ro
+    entrypoint: ["sh", "/setup.sh"]
+    networks:
+      - global_network
 
   listmonk-db:
     image: postgres:17-alpine
@@ -121,6 +140,8 @@ services:
       POSTGRES_USER: listmonk
       POSTGRES_PASSWORD: listmonk
       POSTGRES_DB: listmonk
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U listmonk"]
       interval: 10s

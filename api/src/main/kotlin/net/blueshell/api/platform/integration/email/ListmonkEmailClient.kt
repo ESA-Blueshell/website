@@ -1,9 +1,10 @@
 package net.blueshell.api.platform.integration.email
 
-import net.blueshell.api.platform.config.ListmonkProperties
+import net.blueshell.api.platform.config.ListmonkConfig
 import net.blueshell.clients.listmonk.api.TransactionalApi
 import net.blueshell.clients.listmonk.model.TransactionalMessage
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -21,7 +22,7 @@ import java.util.UUID
 @Profile("!test")
 class ListmonkEmailClient(
     private val transactionalApi: TransactionalApi,
-    private val props: ListmonkProperties,
+    @Qualifier(ListmonkConfig.TEMPLATE_ID_BEAN) private val templateId: Int,
 ) : EmailTransportClient {
 
     override fun send(
@@ -38,7 +39,7 @@ class ListmonkEmailClient(
         val message = TransactionalMessage().apply {
             subscriberEmail = toEmail
             subscriberMode = "external"
-            templateId = props.templateId
+            this.templateId = this@ListmonkEmailClient.templateId
             this.subject = subject
             fromEmail = "$senderName <$senderAddress>"
             // Pass the full HTML body via data.body — the template renders {{ .Tx.Data.body }}

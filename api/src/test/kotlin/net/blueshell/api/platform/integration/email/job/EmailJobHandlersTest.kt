@@ -1,10 +1,6 @@
 package net.blueshell.api.platform.integration.email.job
 
 import tools.jackson.databind.ObjectMapper
-import jakarta.mail.Multipart
-import jakarta.mail.Part
-import jakarta.mail.internet.InternetAddress
-import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
@@ -12,8 +8,8 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.email.MockListmonkEmailClient
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.mock.MockJavaMailSender
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
@@ -45,7 +41,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
     private lateinit var contributionReminderEmailJob: ContributionReminderEmailJob
 
     @Autowired
-    private lateinit var mailSender: MockJavaMailSender
+    private lateinit var emailClient: MockListmonkEmailClient
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
@@ -55,7 +51,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
     @BeforeEach
     fun clearMailbox() {
-        mailSender.clear()
+        emailClient.reset()
     }
 
     @Nested
@@ -63,7 +59,6 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
         @Test
         fun `processes password reset job and sends email`() {
-            // Given: User in database and job execution
             val user = createAndSaveUser("john.doe", "john@example.com")
             val payload = EmailJobs.RecoveryPayload(
                 userId = user.id!!,
@@ -72,21 +67,16 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
-            // When: Handling job
             recoveryEmailJob.handle(jobExecution.payload)
 
-            // Then: Email is sent
-            val emails = mailSender.outbox
+            val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
-            assertThat(emails.first().allRecipients.filterIsInstance<InternetAddress>().map { it.address })
-                .contains("john@example.com")
-            assertThat(emails.first().subject)
-                .contains("Reset Your")
+            assertThat(emails.first().toEmail).isEqualTo("john@example.com")
+            assertThat(emails.first().subject).contains("Reset Your")
         }
 
         @Test
         fun `processes user activation job and sends email`() {
-            // Given: User and activation job
             val user = createAndSaveUser("jane.smith", "jane@example.com")
             val payload = EmailJobs.RecoveryPayload(
                 userId = user.id!!,
@@ -95,18 +85,15 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
-            // When: Handling job
             recoveryEmailJob.handle(jobExecution.payload)
 
-            // Then: Activation email is sent
-            val emails = mailSender.outbox
+            val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
             assertThat(emails.first().subject).contains("Activate")
         }
 
         @Test
         fun `processes member activation job and sends email`() {
-            // Given: User and member activation job
             val user = createAndSaveUser("board.member", "board@example.com")
             val payload = EmailJobs.RecoveryPayload(
                 userId = user.id!!,
@@ -115,14 +102,11 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
-            // When: Handling job
             recoveryEmailJob.handle(jobExecution.payload)
 
-            // Then: Member activation email is sent
-            val emails = mailSender.outbox
+            val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
-            assertThat(extractHtmlContent(emails.first()))
-                .contains("board of Blueshell")
+            assertThat(emails.first().htmlContent).contains("board of Blueshell")
         }
 
         @Test
@@ -136,21 +120,17 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
         @Test
         fun `processes event signup job and sends email`() {
-            // Given: Event signup in database and job
             val event = createAndSaveEvent("Test Tournament", "Campus Hall")
             val guestAccessToken = "event-signup-token-${System.currentTimeMillis()}"
             val signUp = createAndSaveSignUp(event, "Guest User", "guest@example.com", guestAccessToken)
             val payload = EmailJobs.EventSignupPayload(eventSignUpId = signUp.id!!, guestAccessToken = guestAccessToken)
             val jobExecution = createJobExecution(EmailJobs.EventSignup.type, payload)
 
-            // When: Handling job
             eventSignupEmailJob.handle(jobExecution.payload)
 
-            // Then: Signup email is sent
-            val emails = mailSender.outbox
+            val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
-            assertThat(emails.first().allRecipients.filterIsInstance<InternetAddress>().map { it.address })
-                .contains("guest@example.com")
+            assertThat(emails.first().toEmail).isEqualTo("guest@example.com")
             assertThat(emails.first().subject)
                 .contains("Event Registration Confirmed")
                 .contains("Test Tournament")
@@ -167,7 +147,6 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
         @Test
         fun `processes contribution reminder job and sends email`() {
-            // Given: User, period, reminder, and job
             val user = createAndSaveUser("contributor", "contributor@example.com")
             val period = createAndSavePeriod()
             createAndSaveReminder(user, period)
@@ -178,16 +157,12 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             )
             val jobExecution = createJobExecution(EmailJobs.ContributionReminder.type, payload)
 
-            // When: Handling job
             contributionReminderEmailJob.handle(jobExecution.payload)
 
-            // Then: Reminder email is sent
-            val emails = mailSender.outbox
+            val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
-            assertThat(emails.first().allRecipients.filterIsInstance<InternetAddress>().map { it.address })
-                .contains("contributor@example.com")
-            assertThat(emails.first().subject)
-                .contains("Contribution Payment Reminder")
+            assertThat(emails.first().toEmail).isEqualTo("contributor@example.com")
+            assertThat(emails.first().subject).contains("Contribution Payment Reminder")
         }
 
         @Test
@@ -202,7 +177,6 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
         @Test
         fun `RecoveryEmailJob parses JSON payload correctly`() {
-            // Given: User and JSON payload
             val user = createAndSaveUser("parse.test", "parse@example.com")
             val payloadJson = """
                 {
@@ -217,16 +191,13 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             }
             persist(jobExecution)
 
-            // When: Handling job
             recoveryEmailJob.handle(jobExecution.payload)
 
-            // Then: Email is sent (payload parsed correctly)
-            assertThat(mailSender.outbox).hasSize(1)
+            assertThat(emailClient.sentEmails).hasSize(1)
         }
 
         @Test
         fun `EventSignupEmailJob parses JSON payload correctly`() {
-            // Given: Event signup and JSON payload
             val event = createAndSaveEvent("Parse Test", "Location")
             val guestAccessToken = "parse-token-${System.currentTimeMillis()}"
             val signUp = createAndSaveSignUp(event, "Guest", "guest@example.com", guestAccessToken)
@@ -242,16 +213,13 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             }
             persist(jobExecution)
 
-            // When: Handling job
             eventSignupEmailJob.handle(jobExecution.payload)
 
-            // Then: Email is sent (payload parsed correctly)
-            assertThat(mailSender.outbox).hasSize(1)
+            assertThat(emailClient.sentEmails).hasSize(1)
         }
 
         @Test
         fun `ContributionReminderEmailJob parses JSON payload correctly`() {
-            // Given: Reminder and JSON payload
             val user = createAndSaveUser("reminder.test", "reminder@example.com")
             val period = createAndSavePeriod()
             createAndSaveReminder(user, period)
@@ -268,11 +236,9 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             }
             persist(jobExecution)
 
-            // When: Handling job
             contributionReminderEmailJob.handle(jobExecution.payload)
 
-            // Then: Email is sent (payload parsed correctly)
-            assertThat(mailSender.outbox).hasSize(1)
+            assertThat(emailClient.sentEmails).hasSize(1)
         }
     }
 
@@ -353,20 +319,5 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
         val signUp = EventSignUp(event = event, guest = guest)
         return persist(signUp)
-    }
-
-    private fun extractHtmlContent(message: MimeMessage): String =
-        extractHtmlFromPart(message) ?: message.content.toString()
-
-    private fun extractHtmlFromPart(part: Part): String? {
-        val ct = part.contentType.lowercase()
-        return when {
-            ct.startsWith("text/html") -> part.content.toString()
-            ct.startsWith("multipart/") -> {
-                val mp = part.content as Multipart
-                (0 until mp.count).firstNotNullOfOrNull { extractHtmlFromPart(mp.getBodyPart(it)) }
-            }
-            else -> null
-        }
     }
 }

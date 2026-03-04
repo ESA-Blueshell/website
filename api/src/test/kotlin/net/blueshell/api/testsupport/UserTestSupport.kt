@@ -1,9 +1,6 @@
 package net.blueshell.api.testsupport
 
 import tools.jackson.databind.ObjectMapper
-import jakarta.mail.Multipart
-import jakarta.mail.Part
-import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.factory.blog.persistence.BlogFactory
 import net.blueshell.api.factory.board.persistence.BoardFactory
 import net.blueshell.api.factory.committee.persistence.CommitteeFactory
@@ -30,9 +27,8 @@ import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
+import net.blueshell.api.platform.integration.email.MockListmonkEmailClient
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.mock.MockJavaMailSender
-import net.blueshell.api.platform.integration.mock.MockSmtpEmailClient
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.MemberType
@@ -55,16 +51,6 @@ import org.springframework.web.context.WebApplicationContext
 import java.time.Instant
 import java.time.LocalDate
 
-/**
- * Base class for controller integration tests involving users.
- *
- * Provides:
- * - MockMvc for HTTP testing
- * - User repository and password encoder
- * - JWT token generation for authentication
- * - Email mock for verification
- * - Helper methods for user management
- */
 abstract class UserTestSupport : ServiceTestSupport() {
 
     protected lateinit var mvc: MockMvc
@@ -88,10 +74,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
     protected lateinit var mapper: ObjectMapper
 
     @Autowired
-    protected lateinit var mailSender: MockJavaMailSender
-
-    @Autowired
-    protected lateinit var emailTransportClient: MockSmtpEmailClient
+    protected lateinit var emailTransportClient: MockListmonkEmailClient
 
     @Autowired
     protected lateinit var userFactory: UserFactory
@@ -140,9 +123,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         mvc = builder.build()
     }
 
-    /**
-     * Creates bearer token authentication for a user.
-     */
+    @BeforeEach
+    fun resetEmailClient() {
+        emailTransportClient.reset()
+    }
+
     protected fun bearer(user: User): RequestPostProcessor {
         val principal = UserPrincipalMapper.fromUser(user)
         val token = tokenGenerator.generateToken(principal.username)
@@ -156,16 +141,10 @@ abstract class UserTestSupport : ServiceTestSupport() {
         return csrf().asHeader()
     }
 
-    /**
-     * Creates and persists a user with specific role.
-     */
     protected fun createUserWithRole(role: Role, enabled: Boolean = true): User {
         return userFactory.createUserWithRole(role, enabled)
     }
 
-    /**
-     * Refreshes user from database.
-     */
     protected fun refreshUser(user: User): User {
         return transactionTemplate.execute {
             entityManager.flush()
@@ -227,7 +206,6 @@ abstract class UserTestSupport : ServiceTestSupport() {
         country: String = "NL"
     ): Address {
         val address = userFactory.buildAddress(user = user, country = country, city = city)
-
         val persistedUser = assignAddress(user, address)
         return refreshUser(persistedUser).address!!
     }
@@ -239,7 +217,6 @@ abstract class UserTestSupport : ServiceTestSupport() {
 
     protected fun assignMemberProfile(user: User): User {
         val profile = userFactory.buildMemberProfile(user)
-
         user.replaceMemberProfile(profile)
         return persist(user)
     }
@@ -307,90 +284,28 @@ abstract class UserTestSupport : ServiceTestSupport() {
         return jobExecutionFactory.create(jobType, status)
     }
 
-    /**
-     * Asserts that an email was sent with specific criteria.
-     */
     protected fun assertEmailSent(
         toEmail: String,
         subject: String,
         bodyContains: String,
         timeoutMs: Long = 2000
     ) {
-        val message = awaitEmail(toEmail, subject, bodyContains, timeoutMs)
-        val recipients = (message.allRecipients ?: emptyArray()).map { it.toString() }
-        val body = messageBody(message)
+        val email = emailTransportClient.sentEmails.firstOrNull { sent ->
+            sent.toEmail == toEmail && sent.subject == subject && sent.htmlContent.contains(bodyContains)
+        }
 
-        assertThat(recipients)
+        assertThat(email)
+            .describedAs("Expected email to=$toEmail subject='$subject' bodyContains='$bodyContains'")
+            .isNotNull
+
+        assertThat(email!!.toEmail)
             .describedAs("Email recipients should contain $toEmail")
-            .contains(toEmail)
-        assertThat(message.subject)
+            .isEqualTo(toEmail)
+        assertThat(email.subject)
             .describedAs("Email subject should be: $subject")
             .isEqualTo(subject)
-        assertThat(body)
+        assertThat(email.htmlContent)
             .describedAs("Email body should contain: $bodyContains")
             .contains(bodyContains)
-    }
-
-    /**
-     * Waits for email matching criteria with timeout and polling.
-     */
-    private fun awaitEmail(
-        toEmail: String,
-        subject: String,
-        bodyContains: String,
-        timeoutMs: Long = 2000,
-        pollMs: Long = 50
-    ): MimeMessage {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val message = findMatchingEmail(toEmail, subject, bodyContains)
-            if (message != null) return message
-            Thread.sleep(pollMs)
-        }
-        val message = findMatchingEmail(toEmail, subject, bodyContains)
-        checkNotNull(message) {
-            "Expected email not found within ${timeoutMs}ms. " +
-                    "to=$toEmail, subject=$subject, bodyContains=$bodyContains"
-        }
-        return message
-    }
-
-    /**
-     * Finds email in outbox matching criteria.
-     */
-    private fun findMatchingEmail(toEmail: String, subject: String, bodyContains: String): MimeMessage? {
-        return mailSender.outbox.firstOrNull { message ->
-            val recipients = (message.allRecipients ?: emptyArray()).map { it.toString() }
-            val body = messageBody(message)
-            recipients.contains(toEmail) && message.subject == subject && body.contains(bodyContains)
-        }
-    }
-
-    /**
-     * Extracts text body from MIME message.
-     */
-    private fun messageBody(message: MimeMessage): String {
-        return when (val content = message.content) {
-            is String -> content
-            is Multipart -> extractFromMultipart(content)
-            else -> content.toString()
-        }
-    }
-
-    private fun extractFromMultipart(multipart: Multipart): String {
-        for (i in 0 until multipart.count) {
-            val part = multipart.getBodyPart(i)
-            val content = extractFromPart(part)
-            if (content != null) return content
-        }
-        return ""
-    }
-
-    private fun extractFromPart(part: Part): String? {
-        return when (val content = part.content) {
-            is String -> content
-            is Multipart -> extractFromMultipart(content)
-            else -> null
-        }
     }
 }

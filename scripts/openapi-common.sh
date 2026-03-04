@@ -32,6 +32,11 @@ regen_brevo_client() {
   ./gradlew :api:brevo-client:generate
 }
 
+regen_listmonk_client() {
+  echo "Regenerating Listmonk Java client..."
+  ./gradlew :api:listmonk-client:generate
+}
+
 # Normalizes openapi/blueshell.{raw.}json and openapi/discord.raw.json in-place.
 # Expects the caller to have written blueshell.raw.json (or blueshell.json) before calling.
 normalize_json_specs() {

@@ -18,4 +18,9 @@ interface EmailRepository : BaseRepository<Email, Long> {
         threshold: Instant,
         pageable: Pageable
     ): List<Email>
+
+    fun findTopByRecipientEmailAndSentAtAfterOrderBySentAtDesc(
+        recipientEmail: String,
+        since: Instant,
+    ): Email?
 }

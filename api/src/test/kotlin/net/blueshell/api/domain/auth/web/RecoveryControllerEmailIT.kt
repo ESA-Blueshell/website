@@ -35,7 +35,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
 
     @BeforeEach
     fun clearOutbox() {
-        mailSender.clear()
+        emailTransportClient.reset()
     }
 
     @Nested

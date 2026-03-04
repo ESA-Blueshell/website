@@ -139,12 +139,27 @@ listmonk:
     base-url: ${LISTMONK_API_BASE_URL:http://listmonk:9000/api}
     username: ${LISTMONK_API_USERNAME:listmonk}
     password: ${LISTMONK_API_PASSWORD:listmonk}
+    api-user: ${LISTMONK_ADMIN_API_USER:api}
+    token-file: ${LISTMONK_API_TOKEN_FILE:/run/secrets/listmonk/api-token.env}
   from:
     address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.esa-blueshell.nl}
   reply-to: ${LISTMONK_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
   template-id: ${LISTMONK_TEMPLATE_ID:0}  # 0 = auto-detect/create on startup
   bounce:
     poll-interval-ms: ${LISTMONK_BOUNCE_POLL_INTERVAL_MS:300000}
+    mailbox:
+      enabled: ${LISTMONK_BOUNCE_MAILBOX_ENABLED:false}
+      host: ${LISTMONK_BOUNCE_MAILBOX_HOST:}
+      port: ${LISTMONK_BOUNCE_MAILBOX_PORT:993}
+      username: ${LISTMONK_BOUNCE_MAILBOX_USERNAME:}
+      password: ${LISTMONK_BOUNCE_MAILBOX_PASSWORD:}
+      tls-enabled: ${LISTMONK_BOUNCE_MAILBOX_TLS:true}
+      tls-skip-verify: ${LISTMONK_BOUNCE_MAILBOX_TLS_SKIP_VERIFY:false}
+      folder: ${LISTMONK_BOUNCE_MAILBOX_FOLDER:INBOX}
+      return-path: ${LISTMONK_BOUNCE_MAILBOX_RETURN_PATH:}
+      scan-interval: ${LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL:10m}
+  contact:
+    sync-cron: ${LISTMONK_CONTACT_SYNC_CRON:0 0 2 * * *}
 
 logging:
   level:

@@ -78,12 +78,14 @@ tasks.register<GenerateTask>("generate") {
         mapOf(
             // The per_page param uses oneOf(integer, string "all") — map to Object to avoid generation issues
             "getBounces_per_page_parameter" to "java.lang.Object",
+            "getSubscribers_per_page_parameter" to "java.lang.Object",
+            "getLists_per_page_parameter" to "java.lang.Object",
         )
     )
 
     globalProperties.set(
         mapOf(
-            "apis" to "Transactional,Bounces,Templates",
+            "apis" to "Transactional,Bounces,Templates,Subscribers,Lists",
             "models" to "",
             "supportingFiles" to "",
         )

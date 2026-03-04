@@ -4,7 +4,6 @@ import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactServiceException
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
@@ -28,7 +27,6 @@ import org.springframework.web.client.RestClientResponseException
  * Active in production profile only (test/dev use MockContactAdapter)
  */
 @Service
-@Primary
 @Profile("!test & !dev")
 class BrevoContactAdapter(
     private val brevoClient: BrevoContactClient

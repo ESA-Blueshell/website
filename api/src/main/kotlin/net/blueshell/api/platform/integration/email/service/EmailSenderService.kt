@@ -9,7 +9,7 @@ import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.email.createEventSignupEmail
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.email.application.service.EmailOutboxService
+import net.blueshell.api.platform.integration.email.application.service.EmailService
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -20,13 +20,13 @@ import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
 @Service
-class EmailService(
+class EmailSenderService(
     private val templateService: EmailTemplateService,
     private val mailDelivery: EmailDeliveryService,
     private val users: UserService,
     private val reminders: ContributionReminderService,
     private val eventSignUps: EventSignUpService,
-    private val emailOutboxService: EmailOutboxService,
+    private val emailService: EmailService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val appUrl: String
 ) {
@@ -70,7 +70,7 @@ class EmailService(
             emailContent.markdownContent
         )
 
-        val outbox = emailOutboxService.createPending(emailContent, emailType, jobExecutionId)
+        val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
         val trackedHtml = outbox.trackingToken
             ?.let { token -> injectTrackingPixel(htmlContent, "$appUrl/track/email/open/$token") }
             ?: htmlContent
@@ -85,15 +85,15 @@ class EmailService(
                 emailContent.senderAddress,
                 emailContent.replyTo
             )
-            emailOutboxService.markSent(outbox, messageId)
+            emailService.markSent(outbox, messageId)
         } catch (e: Exception) {
-            emailOutboxService.markFailed(outbox, e.javaClass.simpleName, e.message ?: "Send error")
+            emailService.markFailed(outbox, e.javaClass.simpleName, e.message ?: "Send error")
             throw e
         }
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(EmailService::class.java)
+        private val log = LoggerFactory.getLogger(EmailSenderService::class.java)
 
         /**
          * Injects a 1x1 tracking pixel before </body>.

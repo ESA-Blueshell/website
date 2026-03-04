@@ -1,21 +1,21 @@
 package net.blueshell.api.platform.integration.email.persistence.spec
 
-import net.blueshell.api.platform.integration.email.application.query.EmailOutboxQuery
-import net.blueshell.api.platform.integration.email.persistence.EmailOutbox
+import net.blueshell.api.platform.integration.email.application.query.EmailQuery
+import net.blueshell.api.platform.integration.email.persistence.Email
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import org.springframework.data.jpa.domain.Specification
 import java.util.Locale
 
-object EmailOutboxSpecifications {
+object EmailSpecifications {
 
-    fun deliveryStatus(status: EmailDeliveryStatus?): Specification<EmailOutbox> {
+    fun deliveryStatus(status: EmailDeliveryStatus?): Specification<Email> {
         if (status == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
             cb.equal(root.get<EmailDeliveryStatus>("deliveryStatus"), status)
         }
     }
 
-    fun emailType(emailType: String?): Specification<EmailOutbox> {
+    fun emailType(emailType: String?): Specification<Email> {
         val value = emailType?.trim()?.lowercase(Locale.getDefault())?.takeIf { it.isNotBlank() }
             ?: return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
@@ -23,7 +23,7 @@ object EmailOutboxSpecifications {
         }
     }
 
-    fun search(value: String?): Specification<EmailOutbox> {
+    fun search(value: String?): Specification<Email> {
         val raw = value?.trim()?.takeIf { it.isNotBlank() }
             ?: return Specification { _, _, cb -> cb.conjunction() }
         val normalized = "%${raw.lowercase(Locale.getDefault())}%"
@@ -35,8 +35,8 @@ object EmailOutboxSpecifications {
         }
     }
 
-    fun fromQuery(query: EmailOutboxQuery): Specification<EmailOutbox> {
-        var spec = Specification<EmailOutbox> { _, _, cb -> cb.conjunction() }
+    fun fromQuery(query: EmailQuery): Specification<Email> {
+        var spec = Specification<Email> { _, _, cb -> cb.conjunction() }
         query.deliveryStatus?.let { spec = spec.and(deliveryStatus(it)) }
         query.emailType?.let { spec = spec.and(emailType(it)) }
         query.search?.let { spec = spec.and(search(it)) }

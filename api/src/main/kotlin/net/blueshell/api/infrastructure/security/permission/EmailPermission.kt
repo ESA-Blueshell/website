@@ -1,16 +1,16 @@
 package net.blueshell.api.infrastructure.security.permission
 
 import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.platform.integration.email.application.service.EmailOutboxService
-import net.blueshell.api.platform.integration.email.persistence.EmailOutbox
+import net.blueshell.api.platform.integration.email.application.service.EmailService
+import net.blueshell.api.platform.integration.email.persistence.Email
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class EmailOutboxPermission @Autowired constructor(service: EmailOutboxService) :
-    BasePermissionEvaluator<EmailOutbox, Long, EmailOutboxService>(service) {
+class EmailPermission @Autowired constructor(service: EmailService) :
+    BasePermissionEvaluator<Email, Long, EmailService>(service) {
 
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) return false

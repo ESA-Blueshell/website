@@ -64,7 +64,7 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
     // POST /management/emails/{id}/retry
     @Test fun `admin can retry email`() {
         val admin = createUserWithRole(Role.ADMIN)
-        val outbox = emailOutboxFactory.create(
+        val outbox = emailFactory.create(
             deliveryStatus = EmailDeliveryStatus.FAILED,
             jobExecutionId = null,
         )
@@ -75,20 +75,20 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
 
     @Test fun `board cannot retry email`() {
         val board = createUserWithRole(Role.BOARD)
-        val outbox = emailOutboxFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
+        val outbox = emailFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
         mvc.perform(post("/management/emails/${outbox.id}/retry").with(bearer(board)))
             .andExpect(status().isForbidden)
     }
 
     @Test fun `member cannot retry email`() {
         val member = createUserWithRole(Role.MEMBER)
-        val outbox = emailOutboxFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
+        val outbox = emailFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
         mvc.perform(post("/management/emails/${outbox.id}/retry").with(bearer(member)))
             .andExpect(status().isForbidden)
     }
 
     @Test fun `unauthenticated cannot retry email`() {
-        val outbox = emailOutboxFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
+        val outbox = emailFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
         mvc.perform(post("/management/emails/${outbox.id}/retry")).andExpect(status().isUnauthorized)
     }
 }

@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.email.job
 
 import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.platform.integration.email.service.EmailService
+import net.blueshell.api.platform.integration.email.service.EmailSenderService
 import net.blueshell.api.platform.integration.queue.AbstractMailJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import org.springframework.stereotype.Component
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 class RecoveryEmailJob(
     objectMapper: ObjectMapper,
-    emails: EmailService
+    emails: EmailSenderService
 ) : AbstractMailJobHandler<EmailJobs.RecoveryPayload>(
     objectMapper,
     EmailJobs.Recovery.payloadType,

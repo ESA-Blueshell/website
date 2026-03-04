@@ -1,13 +1,13 @@
 package net.blueshell.api.factory.email.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.platform.integration.email.persistence.EmailOutbox
+import net.blueshell.api.platform.integration.email.persistence.Email
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import org.springframework.stereotype.Component
 import java.time.Instant
 
 @Component
-class EmailOutboxFactory(
+class EmailFactory(
     private val persistence: FactoryPersistenceSupport,
 ) {
     fun build(
@@ -19,7 +19,7 @@ class EmailOutboxFactory(
         messageId: String? = "<test-msg-${System.nanoTime()}@test.blueshell.net>",
         sentAt: Instant? = Instant.now(),
         jobExecutionId: Long? = null,
-    ): EmailOutbox = EmailOutbox(
+    ): Email = Email(
         recipientEmail = recipientEmail,
         recipientName = recipientName,
         subject = subject,
@@ -40,7 +40,7 @@ class EmailOutboxFactory(
         messageId: String? = "<test-msg-${System.nanoTime()}@test.blueshell.net>",
         sentAt: Instant? = Instant.now(),
         jobExecutionId: Long? = null,
-    ): EmailOutbox = persistence.persist(
+    ): Email = persistence.persist(
         build(recipientEmail, recipientName, subject, emailType, deliveryStatus, messageId, sentAt, jobExecutionId)
     )
 }

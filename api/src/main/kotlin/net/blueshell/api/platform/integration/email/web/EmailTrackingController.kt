@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.email.web
 import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
-import net.blueshell.api.platform.integration.email.application.service.EmailOutboxService
+import net.blueshell.api.platform.integration.email.application.service.EmailService
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
@@ -37,17 +37,17 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/track/email")
 class EmailTrackingController(
-    private val emailOutboxService: EmailOutboxService,
+    private val emailService: EmailService,
 ) {
     @PermitAll
     @GetMapping("/open/{token}")
     fun trackOpen(@PathVariable token: String): ResponseEntity<ByteArray> {
         runCatching {
-            val outbox = emailOutboxService.findByTrackingToken(token)
+            val outbox = emailService.findByTrackingToken(token)
             if (outbox != null) {
                 when (outbox.deliveryStatus) {
                     EmailDeliveryStatus.SENT,
-                    EmailDeliveryStatus.DELIVERED -> emailOutboxService.markOpened(outbox)
+                    EmailDeliveryStatus.DELIVERED -> emailService.markOpened(outbox)
                     else -> { /* already opened, bounced, or failed — no state change */ }
                 }
                 log.debug("Tracking pixel fired for outbox id={} token={}", outbox.id, token)

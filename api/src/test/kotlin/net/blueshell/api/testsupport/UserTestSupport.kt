@@ -12,7 +12,7 @@ import net.blueshell.api.factory.event.persistence.EventFactory
 import net.blueshell.api.factory.file.persistence.FileFactory
 import net.blueshell.api.factory.job.persistence.JobExecutionFactory
 import net.blueshell.api.factory.sponsor.persistence.SponsorFactory
-import net.blueshell.api.factory.email.persistence.EmailOutboxFactory
+import net.blueshell.api.factory.email.persistence.EmailFactory
 import net.blueshell.api.factory.telemetry.persistence.TelemetryFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.domain.blog.persistence.Blog
@@ -124,7 +124,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
     protected lateinit var jobExecutionFactory: JobExecutionFactory
 
     @Autowired
-    protected lateinit var emailOutboxFactory: EmailOutboxFactory
+    protected lateinit var emailFactory: EmailFactory
 
     @Value("\${app.frontend-url}")
     protected lateinit var frontendUrl: String

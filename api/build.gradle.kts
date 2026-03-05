@@ -241,7 +241,7 @@ tasks.withType<Test>().configureEach {
 tasks.named<Test>("test") {
     description = "Runs API unit and integration tests excluding frontend system tests and live external-API tests."
     useJUnitPlatform {
-        excludeTags("system", "brevo-live")
+        excludeTags("system", "brevo-live", "listmonk-live")
     }
     finalizedBy(tasks.named("jacocoTestReport"))
 }
@@ -257,6 +257,20 @@ val brevoLiveTest by tasks.registering(Test::class) {
 
     useJUnitPlatform {
         includeTags("brevo-live")
+    }
+}
+
+val listmonkLiveTest by tasks.registering(Test::class) {
+    description =
+        "Runs live Listmonk API integration tests tagged with @Tag(\"listmonk-live\"). Requires a running Listmonk instance."
+    group = "verification"
+
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    shouldRunAfter(tasks.named("test"))
+
+    useJUnitPlatform {
+        includeTags("listmonk-live")
     }
 }
 

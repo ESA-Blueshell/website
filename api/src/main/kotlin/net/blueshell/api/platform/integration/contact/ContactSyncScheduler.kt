@@ -4,12 +4,11 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 /**
- * Schedules a daily full-sync of all application users to Listmonk.
+ * Schedules a daily full-sync of all application users to the external contact provider.
  *
  * Each user is enqueued as an individual [ContactJobs.SyncContact] job so that
  * syncs are tracked, retried on failure, and don't block the scheduler thread.
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component
  * The cron expression is configurable via `listmonk.contact.sync-cron` (default: 2 am daily).
  */
 @Component
-@Profile("!test")
 class ContactSyncScheduler(
     private val userService: UserService,
     private val jobs: TrackedJobDispatcher,

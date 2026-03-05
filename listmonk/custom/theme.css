@@ -1,0 +1,432 @@
+/*
+ * ESA Blueshell – Listmonk Theme
+ * ================================
+ * Synchronises the Listmonk admin and public-page UI with the main
+ * frontend design system.
+ *
+ * Design tokens
+ *   Primary          #3387FA   (blue)
+ *   Primary dark     #1a6fd4
+ *   Primary light    #549aff
+ *   Accent           #A8FF00   (lime – used in dark areas for outlines)
+ *   Accent dark      #7ec800
+ *   Error            #ff0022
+ *   Dark surface     #1E1E1E   (navbar / sidebar background)
+ *   Mid surface      #343434   (hover / elevated dark)
+ *   Border radius    10px      (sm: 5px)
+ *
+ * Typography
+ *   Display / CTA    "Fugaz One" (Google Fonts) – UPPERCASE, letter-spacing 0
+ *   Body / UI        "Barlow Semi Condensed" (Google Fonts) – 300/400/600
+ *
+ * Scope
+ *   admin UI   – Buefy (Bulma-based) SPA at /admin/*
+ *   public     – Go-rendered Bulma templates (subscription, unsubscribe, …)
+ */
+
+/* ── Google Fonts ──────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;600&family=Fugaz+One&display=swap');
+
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --bs-primary:       #3387FA;
+  --bs-primary-dark:  #1a6fd4;
+  --bs-primary-light: #549aff;
+  --bs-accent:        #A8FF00;
+  --bs-accent-dark:   #7ec800;
+  --bs-error:         #ff0022;
+  --bs-dark:          #1E1E1E;
+  --bs-surface:       #343434;
+  --bs-radius:        10px;
+  --bs-radius-sm:     5px;
+  --bs-transition:    all 0.15s ease;
+}
+
+/* ── Global typography ─────────────────────────────────────────────────────── */
+html, body,
+.content, p, li, td, th,
+.label, .help,
+.input, .textarea, .select, .select select,
+.navbar-item, .menu-list a,
+.dropdown-item, .tag, .button {
+  font-family: 'Barlow Semi Condensed', sans-serif !important;
+}
+
+h1, h2,
+.title,
+.panel-heading,
+.card-header-title,
+.modal-card-title {
+  font-family: 'Fugaz One', sans-serif !important;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+h3, h4, h5, h6, .subtitle {
+  font-family: 'Barlow Semi Condensed', sans-serif !important;
+  font-weight: 600;
+}
+
+/* ── Links ─────────────────────────────────────────────────────────────────── */
+a {
+  color: var(--bs-primary);
+}
+a:hover {
+  color: var(--bs-primary-light);
+}
+
+/* ── Top navbar (admin) ────────────────────────────────────────────────────── */
+.navbar,
+nav.navbar {
+  background-color: var(--bs-dark) !important;
+  border-bottom: 2px solid var(--bs-primary);
+}
+
+.navbar-brand .navbar-item,
+.navbar-brand .navbar-link {
+  font-family: 'Fugaz One', sans-serif !important;
+  color: #fff !important;
+  font-size: 1.1rem;
+}
+
+/* Listmonk SVG logo: keep the blue circle, make the "listmonk" text white.
+   Text glyphs are rendered as <path> elements; the circle is a <circle> element. */
+.navbar-brand svg path {
+  fill: #fff !important;
+}
+/* Fallback for <text> elements */
+.navbar-brand svg text {
+  fill: #fff !important;
+}
+
+.navbar-item,
+.navbar-link {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.navbar-item:hover,
+.navbar-link:hover,
+.navbar-item.is-active,
+.navbar-link.is-active {
+  background-color: var(--bs-surface) !important;
+  color: #fff !important;
+}
+
+.navbar-burger span {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* ── Sidebar / side menu (admin) ───────────────────────────────────────────── */
+/* Listmonk admin sidebar container */
+.side-nav,
+.sidebar,
+.sidebar-col,
+aside.menu,
+.col.sidebar-col {
+  background-color: var(--bs-dark) !important;
+}
+
+.menu-label {
+  font-family: 'Fugaz One', sans-serif !important;
+  text-transform: uppercase !important;
+  color: var(--bs-accent) !important;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem;
+}
+
+.menu-list a {
+  color: rgba(255, 255, 255, 0.80) !important;
+  border-radius: var(--bs-radius) !important;
+  border: 1px solid transparent !important;
+  transition: var(--bs-transition) !important;
+  padding: 0.6em 0.9em !important;
+}
+
+.menu-list a:hover,
+.menu-list a.is-active,
+.menu-list a[aria-current] {
+  background-color: var(--bs-surface) !important;
+  color: #fff !important;
+  border-color: var(--bs-accent) !important;
+}
+
+.menu-list ul {
+  border-left-color: var(--bs-surface) !important;
+}
+
+/* ── Search bar (input + icon/button addons) ───────────────────────────────── */
+/* Bulma renders adjacent controls flush; add a small gap before the search button */
+.field.has-addons .control + .control .button,
+.field.has-addons .control + .control input {
+  margin-left: 6px !important;
+}
+/* Also cover the icon-inside-input variant (.has-icons-right / .has-icons-left) */
+.control.has-icons-right .icon.is-right,
+.control.has-icons-left .icon.is-left {
+  padding: 0 0.5em !important;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.button {
+  font-family: 'Fugaz One', sans-serif !important;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  border-radius: var(--bs-radius) !important;
+  transition: var(--bs-transition) !important;
+}
+
+/* Default buttons get a primary border on hover */
+.button:not([class*="is-"]):hover,
+.button.is-white:hover,
+.button.is-light:hover {
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-primary) !important;
+}
+
+.button.is-primary {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+.button.is-primary:hover {
+  background-color: var(--bs-primary-dark) !important;
+  border-color: var(--bs-primary-dark) !important;
+}
+
+.button.is-link {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+.button.is-link:hover {
+  background-color: var(--bs-primary-dark) !important;
+}
+
+.button.is-danger {
+  background-color: var(--bs-error) !important;
+  border-color: var(--bs-error) !important;
+  color: #fff !important;
+}
+
+.button.is-success {
+  background-color: var(--bs-accent-dark) !important;
+  border-color: var(--bs-accent-dark) !important;
+  color: var(--bs-dark) !important;
+}
+
+/* ── Form elements ─────────────────────────────────────────────────────────── */
+.input,
+.textarea,
+.select select {
+  border-radius: var(--bs-radius) !important;
+  transition: border-color 0.15s !important;
+}
+
+.input:focus,
+.textarea:focus,
+.select select:focus {
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 0.125em rgba(51, 135, 250, 0.25) !important;
+}
+
+.input.is-danger,
+.textarea.is-danger {
+  border-color: var(--bs-error) !important;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.help.is-danger {
+  color: var(--bs-error) !important;
+}
+
+/* ── Tags / badges ─────────────────────────────────────────────────────────── */
+.tag {
+  border-radius: var(--bs-radius-sm) !important;
+}
+.tag.is-primary {
+  background-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+.tag.is-success {
+  background-color: var(--bs-accent) !important;
+  color: var(--bs-dark) !important;
+}
+.tag.is-danger {
+  background-color: var(--bs-error) !important;
+  color: #fff !important;
+}
+
+/* ── Panel ─────────────────────────────────────────────────────────────────── */
+.panel {
+  border-radius: var(--bs-radius) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.panel-heading {
+  background-color: var(--bs-primary) !important;
+  color: #fff !important;
+  border-radius: var(--bs-radius) var(--bs-radius) 0 0 !important;
+}
+.panel-block:last-child,
+.panel-tabs:last-child {
+  border-radius: 0 0 var(--bs-radius) var(--bs-radius) !important;
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.card {
+  border-radius: var(--bs-radius) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.card-header {
+  border-radius: var(--bs-radius) var(--bs-radius) 0 0 !important;
+  background-color: var(--bs-primary) !important;
+}
+.card-header-title {
+  color: #fff !important;
+}
+.card-footer {
+  border-radius: 0 0 var(--bs-radius) var(--bs-radius) !important;
+}
+
+/* ── Box ───────────────────────────────────────────────────────────────────── */
+.box {
+  border-radius: var(--bs-radius) !important;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────────── */
+.modal-card {
+  border-radius: var(--bs-radius) !important;
+}
+.modal-card-head {
+  background-color: var(--bs-primary) !important;
+  border-bottom: none;
+  border-radius: var(--bs-radius) var(--bs-radius) 0 0 !important;
+}
+.modal-card-title {
+  color: #fff !important;
+}
+.modal-card-foot {
+  background-color: #fafafa;
+  border-top: 1px solid #eee;
+  border-radius: 0 0 var(--bs-radius) var(--bs-radius) !important;
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────────── */
+.table thead th {
+  font-weight: 600;
+  border-bottom: 2px solid var(--bs-primary) !important;
+}
+.table tbody tr:hover td {
+  background-color: rgba(51, 135, 250, 0.05) !important;
+}
+.b-table .table-wrapper {
+  border-radius: var(--bs-radius) !important;
+  overflow: hidden;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────────── */
+.tabs li.is-active a {
+  border-bottom-color: var(--bs-primary) !important;
+  color: var(--bs-primary) !important;
+}
+.tabs a:hover {
+  border-bottom-color: var(--bs-primary) !important;
+  color: var(--bs-primary) !important;
+}
+
+/* ── Notifications ─────────────────────────────────────────────────────────── */
+.notification.is-primary {
+  background-color: rgba(51, 135, 250, 0.10) !important;
+  border-left: 4px solid var(--bs-primary);
+  color: var(--bs-primary-dark);
+}
+.notification.is-success {
+  background-color: rgba(168, 255, 0, 0.12) !important;
+  border-left: 4px solid var(--bs-accent-dark);
+  color: #4a5c00;
+}
+.notification.is-danger {
+  background-color: rgba(255, 0, 34, 0.08) !important;
+  border-left: 4px solid var(--bs-error);
+  color: #b00019;
+}
+
+/* ── Dropdown ──────────────────────────────────────────────────────────────── */
+.dropdown-content {
+  border-radius: var(--bs-radius) !important;
+}
+.dropdown-item:hover,
+.dropdown-item.is-active {
+  background-color: rgba(51, 135, 250, 0.08) !important;
+  color: var(--bs-primary) !important;
+}
+
+/* ── Progress bars ─────────────────────────────────────────────────────────── */
+.progress::-webkit-progress-value,
+.progress.is-primary::-webkit-progress-value {
+  background-color: var(--bs-primary) !important;
+}
+.progress::-moz-progress-bar,
+.progress.is-primary::-moz-progress-bar {
+  background-color: var(--bs-primary) !important;
+}
+
+/* ── Pagination ────────────────────────────────────────────────────────────── */
+.pagination-link.is-current {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+.pagination-link:hover,
+.pagination-previous:hover,
+.pagination-next:hover {
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-primary) !important;
+}
+
+/* ── Hero (public pages) ───────────────────────────────────────────────────── */
+.hero.is-primary {
+  background-color: var(--bs-primary) !important;
+}
+.hero.is-dark {
+  background-color: var(--bs-dark) !important;
+}
+
+/* ── Public subscription / unsubscribe / opt-in pages ─────────────────────── */
+/* Give the form box a top accent stripe */
+.columns.is-centered .box,
+.column.is-4-desktop .box,
+.column.is-5-desktop .box {
+  border-radius: var(--bs-radius) !important;
+  border-top: 4px solid var(--bs-primary);
+}
+
+/* ── Admin login page (server-side rendered first-setup form) ──────────────── */
+form[action="/admin/login"] .box,
+.login-view .box {
+  border-top: 4px solid var(--bs-primary) !important;
+  border-radius: var(--bs-radius) !important;
+}
+form[action="/admin/login"] h1,
+form[action="/admin/login"] h2,
+.login-view h1,
+.login-view h2 {
+  color: var(--bs-primary) !important;
+}
+
+/* ── Scrollbar (Webkit) ────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bs-primary);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bs-primary-dark);
+}

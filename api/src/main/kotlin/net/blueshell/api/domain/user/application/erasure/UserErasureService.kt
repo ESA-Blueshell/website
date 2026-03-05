@@ -52,7 +52,6 @@ class UserErasureService(
         val now = Instant.now()
         val restoreUntilAt = now.plus(restoreWindowDays, ChronoUnit.DAYS)
         val snapshot = DeletedUser.fromUser(user, now, restoreUntilAt)
-        val contactId = user.contactId
 
         val anonymized = anonymizedIdentity(user.id!!, now)
         user.username = anonymized.username
@@ -65,7 +64,6 @@ class UserErasureService(
         user.discord = null
         user.newsletter = false
         user.enabled = false
-        user.contactId = null
 
         user.replaceMemberProfile(null)
         user.replaceAddress(null)
@@ -74,7 +72,7 @@ class UserErasureService(
         deletedUsers.save(snapshot)
 
         trackedEvents.publish { actor ->
-            UserDeleted(userId = user.id!!, contactId = contactId, actor = actor)
+            UserDeleted(userId = user.id!!, actor = actor)
         }
     }
 
@@ -129,7 +127,6 @@ class UserErasureService(
         user.newsletter = snapshot.newsletter
         user.photoConsent = snapshot.photoConsent
         user.enabled = snapshot.enabled
-        user.contactId = null
 
         userRepository.saveAndFlush(user)
         deletedUsers.deleteById(snapshot.userId)

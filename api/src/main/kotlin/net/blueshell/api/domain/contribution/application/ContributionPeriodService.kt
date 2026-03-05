@@ -44,9 +44,9 @@ class ContributionPeriodService @Autowired constructor(
     }
 
     @Transactional
-    fun updateListId(periodId: Long, listId: Long) {
+    fun updateContactListId(periodId: Long, contactListId: Long) {
         val period = findById(periodId)
-        period.listId = listId
+        period.contactListId = contactListId
         update(period)
     }
 }

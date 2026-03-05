@@ -3,7 +3,6 @@ package net.blueshell.api.platform.integration.queue
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
-import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
@@ -144,22 +143,11 @@ class JobAutoDispatchIT : UserTestSupport() {
     @Test
     fun `delete contact job executes after auto-dispatch`() {
         val user = createUserWithRole(Role.MEMBER)
-        val contactId = mockContactAdapter.syncContact(
-            user.id!!,
-            ContactData(
-                email = user.email,
-                firstName = user.firstName,
-                lastName = user.lastName,
-                phoneNumber = user.phoneNumber,
-                newsletter = false,
-                isMember = true
-            )
-        ).toLong()
 
         enqueueInTransaction {
             jobs.enqueue(
                 ContactJobs.DeleteContact,
-                ContactJobs.DeleteContactPayload(user.id!!, contactId)
+                ContactJobs.DeleteContactPayload(user.id!!)
             )
         }
 

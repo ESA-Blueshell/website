@@ -4,8 +4,10 @@ import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
@@ -29,10 +31,16 @@ class SyncListMembershipJobIT : UserTestSupport() {
     private lateinit var mockContactAdapter: MockContactAdapter
 
     @Autowired
-    private lateinit var users: UserService
+    private lateinit var periods: ContributionPeriodService
 
     @Autowired
-    private lateinit var periods: ContributionPeriodService
+    private lateinit var contactListRepository: ContactListRepository
+
+    @Autowired
+    private lateinit var contactRepository: ContactRepository
+
+    @Autowired
+    private lateinit var contactListMembershipRepository: ContactListMembershipRepository
 
     @BeforeEach
     fun clearMocks() {
@@ -40,115 +48,115 @@ class SyncListMembershipJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `creates period list lazily when period has no listId`() {
+    fun `creates ContactList lazily when period has no contactListId`() {
         val user = createUserWithRole(Role.MEMBER)
         val period = createContributionPeriodFixture()
         createContribution(user, period)
 
-        assertThat(period.listId).isNull()
+        assertThat(period.contactListId).isNull()
 
-        val payload = objectMapper.writeValueAsString(
-            ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!)
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
 
-        syncListMembershipJob.handle(payload)
-
-        val lists = mockContactAdapter.getAllLists()
-        assertThat(lists)
-            .describedAs("List should be lazily created for period")
-            .hasSize(1)
+        assertThat(contactListRepository.findAll()).hasSize(1)
 
         val refreshedPeriod = periods.findById(period.id!!)
-        assertThat(refreshedPeriod.listId)
-            .describedAs("Period listId should be assigned after lazy creation")
+        assertThat(refreshedPeriod.contactListId)
+            .describedAs("Period contactListId should be assigned after lazy creation")
             .isNotNull()
     }
 
     @Test
-    fun `reuses existing period list`() {
+    fun `reuses existing ContactList`() {
         val user = createUserWithRole(Role.MEMBER)
         val period = createContributionPeriodFixture()
         createContribution(user, period)
 
-        // Pre-create list and assign to period
-        val existingListId = mockContactAdapter.createList("Existing List", "contributionPeriods")
-        transactionTemplate.executeWithoutResult {
-            val p = periods.findById(period.id!!)
-            p.listId = existingListId.toLong()
-            entityManager.merge(p)
-            entityManager.flush()
-        }
-
-        val payload = objectMapper.writeValueAsString(
-            ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!)
+        // Run once to create list
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
+        assertThat(contactListRepository.findAll()).hasSize(1)
 
-        syncListMembershipJob.handle(payload)
-
-        assertThat(mockContactAdapter.getAllLists())
-            .describedAs("Should reuse existing list, not create a second one")
+        // Run again — should reuse, not create a second list
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+        )
+        assertThat(contactListRepository.findAll())
+            .describedAs("Should reuse existing ContactList, not create a second one")
             .hasSize(1)
     }
 
     @Test
-    fun `syncs contact when user has no contactId`() {
+    fun `creates Contact and membership when user has contribution`() {
         val user = createUserWithRole(Role.MEMBER)
-        assertThat(user.contactId).isNull()
-
         val period = createContributionPeriodFixture()
         createContribution(user, period)
 
-        val payload = objectMapper.writeValueAsString(
-            ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!)
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
 
-        syncListMembershipJob.handle(payload)
+        val record = contactRepository.findByUserId(user.id!!)
+        assertThat(record).describedAs("Contact should be created for user").isNotNull()
 
-        val refreshedUser = users.findById(user.id!!)
-        assertThat(refreshedUser.contactId)
-            .describedAs("User contactId should be assigned after on-demand sync")
-            .isNotNull()
-
-        val lists = mockContactAdapter.getAllLists()
-        assertThat(lists.values.single().contactIds)
-            .describedAs("User should be added to the period list")
-            .hasSize(1)
+        val contactList = contactListRepository.findAll().single()
+        val membership = contactListMembershipRepository
+            .findByContactIdAndContactListId(record!!.id!!, contactList.id!!)
+        assertThat(membership).describedAs("Membership should be created").isNotNull()
     }
 
     @Test
-    fun `skips removal when user has no contactId and no contribution`() {
+    fun `removes membership when user has no contribution`() {
         val user = createUserWithRole(Role.MEMBER)
-        assertThat(user.contactId).isNull()
-
         val period = createContributionPeriodFixture()
-        // No contribution created — user should be removed from list, but has no contactId
+        createContribution(user, period)
 
-        // Pre-create list
-        val listId = mockContactAdapter.createList("Test List", "contributionPeriods")
+        // First: add to list
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+        )
+        val record = contactRepository.findByUserId(user.id!!)!!
+        val contactList = contactListRepository.findAll().single()
+        assertThat(
+            contactListMembershipRepository.findByContactIdAndContactListId(record.id!!, contactList.id!!)
+        ).isNotNull()
+
+        // Remove contribution then sync again
         transactionTemplate.executeWithoutResult {
-            val p = periods.findById(period.id!!)
-            p.listId = listId.toLong()
-            entityManager.merge(p)
-            entityManager.flush()
+            val contributions = entityManager.createQuery(
+                "FROM Contribution c WHERE c.id.userId = :userId AND c.id.contributionPeriodId = :periodId",
+                Contribution::class.java
+            ).setParameter("userId", user.id!!)
+                .setParameter("periodId", period.id!!)
+                .resultList
+            contributions.forEach { entityManager.remove(entityManager.merge(it)) }
         }
 
-        val payload = objectMapper.writeValueAsString(
-            ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!)
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
+
+        assertThat(
+            contactListMembershipRepository.findByContactIdAndContactListId(record.id!!, contactList.id!!)
+        ).describedAs("Membership should be soft-deleted after contribution removed").isNull()
+    }
+
+    @Test
+    fun `no-op remove when user has no Contact and no contribution`() {
+        val user = createUserWithRole(Role.MEMBER)
+        val period = createContributionPeriodFixture()
+        // No contribution created
 
         // Should not throw
-        syncListMembershipJob.handle(payload)
-
-        assertThat(mockContactAdapter.getAllLists().values.single().contactIds)
-            .describedAs("List should remain empty since user has no contactId")
-            .isEmpty()
-    }
-
-    private fun createContribution(user: User, period: ContributionPeriod): Contribution {
-        val contribution = Contribution(
-            user = user,
-            contributionPeriod = period
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
-        return persist(contribution)
+
+        assertThat(contactRepository.findByUserId(user.id!!)).isNull()
     }
+
+    private fun createContribution(user: User, period: ContributionPeriod): Contribution =
+        persist(Contribution(user = user, contributionPeriod = period))
 }

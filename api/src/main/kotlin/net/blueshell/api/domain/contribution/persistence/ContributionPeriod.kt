@@ -19,7 +19,7 @@ import java.time.LocalDate
         Index(name = "idx_contribution_periods_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_contribution_periods_start_date", columnList = "start_date"),
         Index(name = "idx_contribution_periods_end_date", columnList = "end_date"),
-        Index(name = "idx_contribution_periods_list_id", columnList = "list_id")
+        Index(name = "idx_contribution_periods_contact_list_id", columnList = "contact_list_id")
     ]
 )
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
@@ -40,8 +40,8 @@ class ContributionPeriod(
     @Column(name = "alumni_fee", nullable = false)
     var alumniFee: Double = 0.0,
 
-    @Column(name = "list_id")
-    var listId: Long? = null,
+    @Column(name = "contact_list_id")
+    var contactListId: Long? = null,
 ) : AuditedAutoIdEntity() {
     @OneToMany(mappedBy = "contributionPeriod", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _contributions: MutableSet<Contribution> = linkedSetOf()

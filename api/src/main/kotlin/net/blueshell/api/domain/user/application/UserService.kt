@@ -171,28 +171,6 @@ class UserService @Autowired constructor(
         update(user)
     }
 
-    @Transactional
-    fun updateContactId(userId: Long, contactId: Long) {
-        val user = findById(userId)
-        updateContactLink(user, contactId)
-    }
-
-    /**
-     * Persists contact linkage without publishing UserUpdated.
-     *
-     * Contact sync jobs update contactId as part of synchronization. Emitting UserUpdated here
-     * would re-enqueue contact sync jobs and can create scheduling loops.
-     */
-    @Transactional
-    fun updateContactLink(entity: User, contactId: Long?): User {
-        if (entity.contactId == contactId) {
-            return entity
-        }
-
-        entity.contactId = contactId
-        return super.update(entity)
-    }
-
     private fun isBoardUser(): Boolean {
         val current = currentUserProvider.currentUser() ?: return false
         return hasAuthority(current, Role.BOARD)

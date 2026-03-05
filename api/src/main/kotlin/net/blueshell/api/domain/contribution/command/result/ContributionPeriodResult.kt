@@ -14,7 +14,7 @@ data class ContributionPeriodResult(
     val halfYearFee: Double,
     val fullYearFee: Double,
     val alumniFee: Double,
-    val listId: Long?,
+    val contactListId: Long?,
     val version: Long,
     val createdAt: Instant,
     val updatedAt: Instant,

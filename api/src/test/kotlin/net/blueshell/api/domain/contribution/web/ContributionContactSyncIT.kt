@@ -54,14 +54,14 @@ class ContributionContactSyncIT : UserTestSupport() {
 
         val lists = mockContactAdapter.getAllLists()
         assertThat(lists).hasSize(1)
-
-        val list = lists.values.single()
-        assertThat(list.contactIds).hasSize(1)
+        val listId = lists.keys.single()
 
         val contacts = mockContactAdapter.getAllContacts()
+        assertThat(contacts).hasSize(1)
+        val contactId = contacts.keys.single()
         val contact = contacts.values.single()
         assertThat(contact.email).isEqualTo(member.email)
-        assertThat(list.contactIds).contains(contact.contactId)
+        assertThat(mockContactAdapter.isInList(contactId, listId)).isTrue()
     }
 
     @Test
@@ -82,8 +82,9 @@ class ContributionContactSyncIT : UserTestSupport() {
         awaitJobStatus(ContactJobs.SyncListMembership.type, JobExecutionStatus.SUCCESS)
 
         // Verify the user was added to the list
-        val listBefore = mockContactAdapter.getAllLists().values.single()
-        assertThat(listBefore.contactIds).hasSize(1)
+        val listId = mockContactAdapter.getAllLists().keys.single()
+        val contactId = mockContactAdapter.getAllContacts().keys.single()
+        assertThat(mockContactAdapter.isInList(contactId, listId)).isTrue()
 
         // Now mark as unpaid
         mvc.perform(
@@ -99,8 +100,7 @@ class ContributionContactSyncIT : UserTestSupport() {
         awaitJobSuccess(ContactJobs.SyncListMembership.type, expectedCount = 2)
 
         // Verify the user was removed from the list
-        val listAfter = mockContactAdapter.getAllLists().values.single()
-        assertThat(listAfter.contactIds).isEmpty()
+        assertThat(mockContactAdapter.isInList(contactId, listId)).isFalse()
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────

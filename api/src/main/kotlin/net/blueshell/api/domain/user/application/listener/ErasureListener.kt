@@ -15,12 +15,10 @@ class ErasureListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onDeleted(evt: UserDeleted) {
-        evt.contactId?.let {
-            jobs.enqueueFromActor(
-                ContactJobs.DeleteContact,
-                ContactJobs.DeleteContactPayload(userId = evt.userId, contactId = it),
-                evt
-            )
-        }
+        jobs.enqueueFromActor(
+            ContactJobs.DeleteContact,
+            ContactJobs.DeleteContactPayload(userId = evt.userId),
+            evt
+        )
     }
 }

@@ -13,8 +13,8 @@ class ErasureListenerTest : ServiceTestSupport() {
     private lateinit var listener: ErasureListener
 
     @Test
-    fun `dispatches DeleteContact job when UserDeleted has contactId`() {
-        val event = UserDeleted(userId = 1L, contactId = 42L)
+    fun `dispatches DeleteContact job when UserDeleted is published`() {
+        val event = UserDeleted(userId = 1L)
 
         listener.onDeleted(event)
 
@@ -24,19 +24,6 @@ class ErasureListenerTest : ServiceTestSupport() {
             .hasSize(1)
 
         val payload = jobs.first().payload
-        assertThat(payload)
-            .contains("\"userId\":1")
-            .contains("\"contactId\":42")
-    }
-
-    @Test
-    fun `does not dispatch when contactId is null`() {
-        val event = UserDeleted(userId = 1L, contactId = null)
-
-        listener.onDeleted(event)
-
-        assertThat(findJobsByType(ContactJobs.DeleteContact.type))
-            .describedAs("Should not schedule any DeleteContact job when contactId is null")
-            .isEmpty()
+        assertThat(payload).contains("\"userId\":1")
     }
 }

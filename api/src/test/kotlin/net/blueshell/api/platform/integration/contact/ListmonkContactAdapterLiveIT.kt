@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.contact
 
 import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
+import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Tag
@@ -33,15 +34,17 @@ import org.springframework.test.context.ActiveProfiles
 class ListmonkContactAdapterLiveIT {
 
     @Autowired
-    private lateinit var adapter: ContactSyncAdapter
+    private lateinit var contactAdapter: ContactSyncAdapter
+
+    @Autowired
+    private lateinit var listAdapter: ListSyncAdapter
 
     private val testEmail = "live-test-${System.currentTimeMillis()}@esa-blueshell.nl"
-    private val testUserId = 99999L
-    private var contactId: String? = null
+    private var contactId: Long? = null
 
     @AfterAll
     fun teardown() {
-        contactId?.let { runCatching { adapter.deleteContact(it) } }
+        contactId?.let { runCatching { contactAdapter.deleteContact(it) } }
     }
 
     private fun contactData(firstName: String = "LiveTest") = ContactData(
@@ -56,27 +59,26 @@ class ListmonkContactAdapterLiveIT {
     @Test
     @Order(1)
     fun `create contact succeeds`() {
-        contactId = adapter.syncContact(testUserId, contactData())
-        assertThat(contactId).isNotNull().isNotBlank()
+        contactId = contactAdapter.createContact(contactData())
+        assertThat(contactId).isGreaterThan(0)
     }
 
     @Test
     @Order(2)
     fun `update contact succeeds for existing contact`() {
         assumeContactExists()
-        val updatedId = adapter.syncContact(testUserId, contactData("Updated"))
-        assertThat(updatedId).isEqualTo(contactId)
+        contactAdapter.updateContact(contactId!!, contactData("Updated"))
     }
 
     @Test
     @Order(3)
     fun `create list and add then remove contact`() {
         assumeContactExists()
-        val listId = adapter.createList("live-test-${System.currentTimeMillis()}", "contributionPeriods")
-        assertThat(listId).isNotNull().isNotBlank()
+        val listId = listAdapter.createList("live-test-${System.currentTimeMillis()}", "contributionPeriods")
+        assertThat(listId).isGreaterThan(0)
 
-        adapter.addToList(listId, contactId!!)
-        adapter.removeFromList(listId, contactId!!)
+        listAdapter.addToList(contactId!!, listId)
+        listAdapter.removeFromList(contactId!!, listId)
         // Note: Listmonk lists are not deleted via this adapter; the test list remains in the account.
     }
 
@@ -84,7 +86,7 @@ class ListmonkContactAdapterLiveIT {
     @Order(4)
     fun `delete contact succeeds`() {
         assumeContactExists()
-        adapter.deleteContact(contactId!!)
+        contactAdapter.deleteContact(contactId!!)
         contactId = null // prevent teardown from attempting a second delete
     }
 

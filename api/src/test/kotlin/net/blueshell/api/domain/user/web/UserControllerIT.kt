@@ -279,8 +279,6 @@ class UserControllerIT : UserTestSupport() {
         fun `board can delete user`() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER)
-            target.contactId = 321L
-            persist(target)
             val targetId = checkNotNull(target.id)
 
             mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
@@ -298,7 +296,6 @@ class UserControllerIT : UserTestSupport() {
                 .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${target.id}")
-                    assertThat(it.payload).contains("\"contactId\":321")
                 }
         }
 
@@ -447,9 +444,7 @@ class UserControllerIT : UserTestSupport() {
         @Test
         fun `deleting an already deleted user is idempotent and keeps single snapshot`() {
             val board = createUserWithRole(Role.BOARD)
-            val target = createUserWithRole(Role.MEMBER).apply {
-                contactId = 991L
-            }
+            val target = createUserWithRole(Role.MEMBER)
             persist(target)
 
             mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))

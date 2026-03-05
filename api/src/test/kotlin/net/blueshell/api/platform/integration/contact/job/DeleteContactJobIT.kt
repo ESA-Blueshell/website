@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.job
 
-import net.blueshell.api.domain.user.application.contact.ContactData
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -26,6 +26,9 @@ class DeleteContactJobIT : UserTestSupport() {
     @Autowired
     private lateinit var mockContactAdapter: MockContactAdapter
 
+    @Autowired
+    private lateinit var contactRepository: ContactRepository
+
     @BeforeEach
     fun clearMocks() {
         mockContactAdapter.clear()
@@ -35,22 +38,14 @@ class DeleteContactJobIT : UserTestSupport() {
     fun `delete contact job removes contact from adapter`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        val contactId = mockContactAdapter.syncContact(
-            user.id!!,
-            ContactData(
-                email = user.email,
-                firstName = user.firstName,
-                lastName = user.lastName,
-                phoneNumber = user.phoneNumber,
-                newsletter = user.newsletter,
-                isMember = true
-            )
-        )
+        // First sync the contact to create Contact + adapter entry
+        val syncExecution = jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!))!!
+        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
         assertThat(mockContactAdapter.getAllContacts()).hasSize(1)
 
         val execution = jobs.enqueue(
             ContactJobs.DeleteContact,
-            ContactJobs.DeleteContactPayload(userId = user.id!!, contactId = contactId.toLong())
+            ContactJobs.DeleteContactPayload(userId = user.id!!)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -65,32 +60,24 @@ class DeleteContactJobIT : UserTestSupport() {
     fun `delete contact job also removes contact from all lists`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        val contactId = mockContactAdapter.syncContact(
-            user.id!!,
-            ContactData(
-                email = user.email,
-                firstName = user.firstName,
-                lastName = user.lastName,
-                phoneNumber = user.phoneNumber,
-                newsletter = user.newsletter,
-                isMember = true
-            )
-        )
+        // First sync to create Contact
+        val syncExecution = jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!))!!
+        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
 
+        val contactId = mockContactAdapter.getAllContacts().keys.single()
         val listId = mockContactAdapter.createList("Test List", "testFolder")
-        mockContactAdapter.addToList(listId, contactId)
-
-        assertThat(mockContactAdapter.getAllLists().values.single().contactIds).hasSize(1)
+        mockContactAdapter.addToList(contactId, listId)
+        assertThat(mockContactAdapter.isInList(contactId, listId)).isTrue()
 
         val execution = jobs.enqueue(
             ContactJobs.DeleteContact,
-            ContactJobs.DeleteContactPayload(userId = user.id!!, contactId = contactId.toLong())
+            ContactJobs.DeleteContactPayload(userId = user.id!!)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         assertThat(mockContactAdapter.getAllContacts()).isEmpty()
-        assertThat(mockContactAdapter.getAllLists().values.single().contactIds).isEmpty()
+        assertThat(mockContactAdapter.isInList(contactId, listId)).isFalse()
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.SUCCESS)

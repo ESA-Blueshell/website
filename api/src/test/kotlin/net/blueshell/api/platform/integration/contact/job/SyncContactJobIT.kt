@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.job
 
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -24,7 +24,7 @@ class SyncContactJobIT : UserTestSupport() {
     private lateinit var jobs: TrackedJobDispatcher
 
     @Autowired
-    private lateinit var users: UserService
+    private lateinit var contactRepository: ContactRepository
 
     @Autowired
     private lateinit var mockContactAdapter: MockContactAdapter
@@ -35,7 +35,7 @@ class SyncContactJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `sync contact assigns contact id without scheduling another sync job`() {
+    fun `sync contact creates contact record without scheduling another sync job`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
             ContactJobs.SyncContact,
@@ -46,11 +46,12 @@ class SyncContactJobIT : UserTestSupport() {
 
         val jobsAfterHandling = findJobsByType(ContactJobs.SyncContact.type)
         assertThat(jobsAfterHandling)
-            .describedAs("Contact-id linkage update should not re-enqueue contact.sync jobs")
+            .describedAs("Contact sync should not re-enqueue additional sync jobs")
             .hasSize(1)
 
-        val refreshedUser = users.findById(user.id!!)
-        assertThat(refreshedUser.contactId).isNotNull
+        assertThat(contactRepository.findByUserId(user.id!!))
+            .describedAs("Contact should be created after sync")
+            .isNotNull()
 
         val updatedExecution = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updatedExecution.status).isEqualTo(JobExecutionStatus.SUCCESS)

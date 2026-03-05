@@ -2,6 +2,10 @@ spring:
   application:
     db: blueshell-test
 
+  flyway:
+    clean-on-validation-error: true
+    clean-disabled: false
+
   main:
     banner-mode: off
     log-startup-info: false

@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.platform.integration.email.EmailTransportClient
+import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component

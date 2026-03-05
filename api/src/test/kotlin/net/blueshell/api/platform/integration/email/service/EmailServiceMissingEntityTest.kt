@@ -6,8 +6,10 @@ import net.blueshell.api.domain.contribution.application.ContributionReminderSer
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.email.EmailTransportClient
+import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
+import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
 import net.blueshell.api.platform.integration.email.application.service.EmailService
+import net.blueshell.api.platform.integration.email.application.service.EmailTemplateService
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThatThrownBy

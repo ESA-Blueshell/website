@@ -1,0 +1,23 @@
+package net.blueshell.api.platform.integration.email.application.job
+
+import tools.jackson.databind.ObjectMapper
+import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
+import net.blueshell.api.platform.integration.queue.AbstractMailJobHandler
+import net.blueshell.api.shared.job.EmailJobs
+import org.springframework.stereotype.Component
+
+@Component
+class RecoveryEmailJob(
+    objectMapper: ObjectMapper,
+    emails: EmailSenderService
+) : AbstractMailJobHandler<EmailJobs.RecoveryPayload>(
+    objectMapper,
+    EmailJobs.Recovery.payloadType,
+    emails
+) {
+    override val jobType: String = EmailJobs.Recovery.type
+
+    override fun handlePayload(payload: EmailJobs.RecoveryPayload) {
+        emails.sendUserResetEmail(payload.userId, payload.token, payload.resetType, currentExecutionId)
+    }
+}

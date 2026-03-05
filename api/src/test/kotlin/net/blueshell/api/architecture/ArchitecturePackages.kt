@@ -57,6 +57,21 @@ object ArchitecturePackages {
     /** Mock/test adapter implementations */
     const val PLATFORM_MOCK = "$ROOT.platform.integration.mock.."
 
+    /** Adapter sub-packages: ACL adapters, low-level clients, initializers */
+    const val PLATFORM_ADAPTER = "$ROOT.platform.integration..adapter.."
+
+    /** Application sub-packages: services, schedulers, query objects */
+    const val PLATFORM_APPLICATION = "$ROOT.platform.integration..application.."
+
+    /** Web DTO sub-packages */
+    const val PLATFORM_WEB_DTO = "$ROOT.platform.integration..web.dto.."
+
+    /** Job handler sub-packages under application */
+    const val APPLICATION_JOB = "$ROOT.platform.integration..application.job.."
+
+    /** Job queue infrastructure */
+    const val PLATFORM_QUEUE = "$ROOT.platform.integration.queue.."
+
     /**
      * ALL platform repositories — catches both standard (..persistence.repository..)
      * and non-standard (..job.repository..) paths. Used for access-control rules.

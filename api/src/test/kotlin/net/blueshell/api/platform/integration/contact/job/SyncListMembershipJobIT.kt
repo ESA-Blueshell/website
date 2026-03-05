@@ -8,6 +8,7 @@ import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
+import net.blueshell.api.platform.integration.contact.application.job.SyncListMembershipJob
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs

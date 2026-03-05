@@ -2,8 +2,7 @@ package net.blueshell.api.platform.integration.queue
 
 import io.micrometer.core.instrument.MeterRegistry
 import net.blueshell.api.platform.config.JobQueueProperties
-import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
-import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.scheduling.annotation.Scheduled
@@ -17,7 +16,7 @@ import java.time.temporal.ChronoUnit
  */
 @Component
 class StaleJobRecovery(
-    private val jobExecutionRepository: JobExecutionRepository,
+    private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,
     private val properties: JobQueueProperties,
     private val meterRegistry: MeterRegistry
@@ -29,24 +28,17 @@ class StaleJobRecovery(
         val threshold = Instant.now().minus(properties.staleThresholdMinutes, ChronoUnit.MINUTES)
         val pageable = PageRequest.of(0, properties.staleRecoveryBatchSize)
 
-        val staleRunning = jobExecutionRepository.findByStatusAndStartedAtBefore(
-            JobExecutionStatus.RUNNING, threshold, pageable
-        )
+        val staleRunning = jobExecutionService.findStaleRunning(threshold, pageable)
         for (execution in staleRunning) {
             logger.warn(
                 "Recovering stale RUNNING job execution {}. jobType={}, startedAt={}",
                 execution.id, execution.jobType, execution.startedAt
             )
-            execution.status = JobExecutionStatus.QUEUED
-            execution.startedAt = null
-            execution.queuedAt = Instant.now()
-            jobExecutionRepository.save(execution)
+            jobExecutionService.resetRunningToQueued(execution)
             jobExecutor.executeAsync(execution.id!!)
         }
 
-        val staleQueued = jobExecutionRepository.findByStatusAndQueuedAtBefore(
-            JobExecutionStatus.QUEUED, threshold, pageable
-        )
+        val staleQueued = jobExecutionService.findStaleQueued(threshold, pageable)
         for (execution in staleQueued) {
             logger.warn(
                 "Recovering stale QUEUED job execution {}. jobType={}, queuedAt={}",

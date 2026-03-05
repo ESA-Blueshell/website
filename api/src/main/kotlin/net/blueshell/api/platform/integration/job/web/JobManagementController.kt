@@ -3,10 +3,10 @@ package net.blueshell.api.platform.integration.job.web
 import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
-import net.blueshell.api.platform.integration.job.dto.JobExecutionDTO
-import net.blueshell.api.platform.integration.job.dto.JobStatsDTO
-import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
-import net.blueshell.api.platform.integration.job.service.JobExecutionService
+import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
+import net.blueshell.api.platform.integration.job.web.service.JobExecutionViewService
+import net.blueshell.api.platform.integration.job.web.dto.JobExecutionDTO
+import net.blueshell.api.platform.integration.job.web.dto.JobStatsDTO
 import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springdoc.core.annotations.ParameterObject
@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit
 @Tag(name = "Job Management", description = "API for managing job executions")
 class JobManagementController(
     private val jobExecutionService: JobExecutionService,
-    private val jobExecutionRepository: JobExecutionRepository,
     private val jobExecutor: JobExecutor,
     private val views: JobExecutionViewService,
     private val meterRegistry: MeterRegistry
@@ -63,8 +62,7 @@ class JobManagementController(
     @GetMapping("/stats")
     @PreAuthorize("hasAnyAuthority('BOARD', 'ADMIN')")
     fun getStats(): JobStatsDTO {
-        val countByStatus = JobExecutionStatus.entries
-            .associateWith { jobExecutionRepository.countByStatus(it) }
+        val countByStatus = jobExecutionService.countAllByStatus()
 
         val deadSinceStartup = meterRegistry.find("job.dead.count").counters()
             .sumOf { it.count() }

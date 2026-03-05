@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.email.service
 
+import net.blueshell.api.platform.integration.email.adapter.ListmonkBouncePollingService
 import net.blueshell.api.platform.integration.email.application.service.EmailService
 import net.blueshell.api.platform.integration.email.persistence.Email
 import net.blueshell.clients.listmonk.api.BouncesApi

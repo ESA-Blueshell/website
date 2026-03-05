@@ -3,37 +3,39 @@ package net.blueshell.api.platform.integration.contact.application
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
-import net.blueshell.api.domain.user.application.contact.ContactSystem
 import net.blueshell.api.domain.user.application.contact.toContactData
-import net.blueshell.api.platform.integration.contact.persistence.BrevoContact
 import net.blueshell.api.platform.integration.contact.persistence.Contact
-import net.blueshell.api.platform.integration.contact.persistence.ListmonkContact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Orchestrates contact synchronization across all registered [ContactSyncAdapter] implementations.
+ * Orchestrates contact synchronization by maintaining the local [Contact] snapshot
+ * and dispatching per-system sync jobs.
  *
  * Responsibilities:
- * - Delta check: skips sync if snapshot matches current ContactData
- * - Create vs update: calls createContact on first sync per system, updateContact on subsequent syncs
- * - Fault tolerance: one adapter failure does not prevent other adapters from running
- * - Snapshot update: persists what was actually sent, so failed adapters are retried next cycle
+ * - Delta check: skips dispatch if snapshot matches current ContactData
+ * - Snapshot update: persists what was sent, ensuring per-system jobs are not re-dispatched
+ *   if data hasn't changed
+ * - Per-system isolation: dispatches one [ContactJobs.SyncContactToSystem] job per active adapter,
+ *   so one slow or failing system does not block the other
  */
 @Service
 class ContactSyncService(
     private val contactSyncAdapters: List<ContactSyncAdapter>,
     private val contactRepository: ContactRepository,
     private val userService: UserService,
+    private val jobs: TrackedJobDispatcher,
 ) {
     /**
-     * Syncs the user's contact data to all registered external systems.
+     * Ensures the [Contact] DB record is current, then dispatches per-system sync jobs.
      *
-     * - First call: creates a [Contact] and calls [ContactSyncAdapter.createContact] per system.
+     * - First call: creates a [Contact] record and dispatches [ContactJobs.SyncContactToSystem] per adapter.
      * - Subsequent calls with unchanged data: no-op (delta check).
-     * - Subsequent calls with changed data: calls [ContactSyncAdapter.updateContact] per system.
+     * - Subsequent calls with changed data: updates snapshot and re-dispatches.
      */
     @Transactional
     fun syncContact(userId: Long) {
@@ -48,56 +50,33 @@ class ContactSyncService(
             return
         }
 
-        for (adapter in contactSyncAdapters) {
-            try {
-                when (adapter.system) {
-                    ContactSystem.LISTMONK -> {
-                        val existing = record.listmonkContact
-                        if (existing == null) {
-                            val externalId = adapter.createContact(data)
-                            record.listmonkContact = ListmonkContact(contact = record, externalId = externalId)
-                        } else {
-                            adapter.updateContact(existing.externalId, data)
-                        }
-                    }
-                    ContactSystem.BREVO -> {
-                        val existing = record.brevoContact
-                        if (existing == null) {
-                            val externalId = adapter.createContact(data)
-                            record.brevoContact = BrevoContact(contact = record, externalId = externalId)
-                        } else {
-                            adapter.updateContact(existing.externalId, data)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                log.error("Adapter {} failed to sync contact for user {}", adapter.system, userId, e)
-            }
-        }
-
         record.updateSnapshot(data)
         contactRepository.save(record)
+
+        contactSyncAdapters.forEach { adapter ->
+            jobs.enqueue(
+                ContactJobs.SyncContactToSystem,
+                ContactJobs.SyncContactToSystemPayload(userId, adapter.system)
+            )
+        }
     }
 
     /**
-     * Deletes the contact from all external systems and soft-deletes the [Contact].
+     * Captures system-specific external IDs, dispatches per-system delete jobs,
+     * then removes the [Contact] record.
+     *
+     * External IDs are read before deletion so the job payloads are self-contained.
      */
     @Transactional
     fun deleteContact(userId: Long) {
         val record = contactRepository.findByUserId(userId) ?: return
 
-        for (adapter in contactSyncAdapters) {
-            try {
-                val externalId = when (adapter.system) {
-                    ContactSystem.LISTMONK -> record.listmonkContact?.externalId
-                    ContactSystem.BREVO -> record.brevoContact?.externalId
-                }
-                if (externalId != null) {
-                    adapter.deleteContact(externalId)
-                }
-            } catch (e: Exception) {
-                log.error("Adapter {} failed to delete contact for user {}", adapter.system, userId, e)
-            }
+        contactSyncAdapters.forEach { adapter ->
+            val externalId = record.externalId(adapter.system) ?: return@forEach
+            jobs.enqueue(
+                ContactJobs.DeleteContactFromSystem,
+                ContactJobs.DeleteContactFromSystemPayload(externalId, adapter.system)
+            )
         }
 
         contactRepository.delete(record)

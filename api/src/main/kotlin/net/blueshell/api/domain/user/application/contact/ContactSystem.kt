@@ -1,3 +1,3 @@
 package net.blueshell.api.domain.user.application.contact
 
-enum class ContactSystem { LISTMONK, BREVO }
+typealias ContactSystem = net.blueshell.api.shared.enums.ContactSystem

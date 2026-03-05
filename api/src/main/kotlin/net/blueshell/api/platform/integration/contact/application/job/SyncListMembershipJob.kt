@@ -3,10 +3,12 @@ package net.blueshell.api.platform.integration.contact.application.job
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
+import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.contact.application.ContactSyncService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
@@ -14,9 +16,11 @@ import org.springframework.stereotype.Component
  * Unified job handler for managing contact list membership.
  *
  * Handles:
- * - Creating the contribution period list if it doesn't exist (lazy via [ContactListService])
- * - Ensuring the user has a Contact (lazy via [ContactSyncService])
- * - Adding/removing the contact from the list based on contribution existence
+ * - Lazy list creation via [ContactListService.findOrCreateList]
+ * - Ensuring the user's Contact record is current (via [ContactSyncService.syncContact])
+ * - Creating or removing the DB membership record
+ * - Dispatching per-system [ContactJobs.AddToList] or [ContactJobs.RemoveFromList] jobs
+ *   so each external system is updated independently with retry isolation
  */
 @Component
 class SyncListMembershipJob(
@@ -25,6 +29,8 @@ class SyncListMembershipJob(
     private val contactListService: ContactListService,
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
+    private val listSyncAdapters: List<ListSyncAdapter>,
+    private val jobs: TrackedJobDispatcher,
 ) : AbstractJsonJobHandler<ContactJobs.SyncListMembershipPayload>(
     objectMapper,
     ContactJobs.SyncListMembership.payloadType
@@ -46,13 +52,25 @@ class SyncListMembershipJob(
         val hasContribution = contributions.existsByUserIdAndPeriodId(payload.userId, payload.periodId)
 
         if (hasContribution) {
-            // Ensure the user has a Contact in all active systems before adding to list
+            // Ensure Contact DB record is current (creates it if missing); dispatches SyncContactToSystem jobs
             contactSyncService.syncContact(payload.userId)
-            contactListService.addContactToList(contactList.id!!, payload.userId)
-            log.debug("Added user {} to list {} (period {})", payload.userId, contactList.id, payload.periodId)
+            contactListService.createMembership(contactList.id!!, payload.userId)
+            listSyncAdapters.forEach { adapter ->
+                jobs.enqueue(
+                    ContactJobs.AddToList,
+                    ContactJobs.AddToListPayload(payload.userId, contactList.id!!, adapter.system)
+                )
+            }
+            log.debug("Queued add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         } else {
-            contactListService.removeContactFromList(contactList.id!!, payload.userId)
-            log.debug("Removed user {} from list {} (period {})", payload.userId, contactList.id, payload.periodId)
+            contactListService.deleteMembership(contactList.id!!, payload.userId)
+            listSyncAdapters.forEach { adapter ->
+                jobs.enqueue(
+                    ContactJobs.RemoveFromList,
+                    ContactJobs.RemoveFromListPayload(payload.userId, contactList.id!!, adapter.system)
+                )
+            }
+            log.debug("Queued remove-from-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         }
     }
 

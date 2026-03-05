@@ -16,7 +16,7 @@ import org.springframework.test.context.TestPropertySource
 
 /**
  * End-to-end tests verifying that creating and updating users correctly
- * syncs contact data to the external system via the SyncContact job.
+ * syncs contact data to the external system via the SyncContact → SyncContactToSystem job chain.
  */
 @SpringBootTest
 @TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
@@ -48,7 +48,8 @@ class UserContactSyncIT : UserTestSupport() {
             )
         }
 
-        awaitJobStatus(ContactJobs.SyncContact.type, JobExecutionStatus.SUCCESS)
+        awaitJobSuccess(ContactJobs.SyncContact.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
         val contacts = mockContactAdapter.getAllContacts()
         assertThat(contacts).hasSize(1)
@@ -63,14 +64,15 @@ class UserContactSyncIT : UserTestSupport() {
     fun `updating user syncs updated contact data`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        // First sync via auto-dispatch
+        // First sync
         enqueueInTransaction {
             jobs.enqueue(
                 ContactJobs.SyncContact,
                 ContactJobs.SyncContactPayload(member.id!!)
             )
         }
-        awaitJobStatus(ContactJobs.SyncContact.type, JobExecutionStatus.SUCCESS)
+        awaitJobSuccess(ContactJobs.SyncContact.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
         val contactBefore = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactBefore.firstName).isEqualTo("Test")
@@ -82,7 +84,7 @@ class UserContactSyncIT : UserTestSupport() {
             users.update(user)
         }
 
-        // Second sync via auto-dispatch
+        // Second sync
         enqueueInTransaction {
             jobs.enqueue(
                 ContactJobs.SyncContact,
@@ -91,6 +93,7 @@ class UserContactSyncIT : UserTestSupport() {
         }
 
         awaitJobSuccess(ContactJobs.SyncContact.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type, expectedCount = 2)
 
         val contactAfter = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactAfter.firstName).isEqualTo("UpdatedName")
@@ -104,33 +107,9 @@ class UserContactSyncIT : UserTestSupport() {
         }
     }
 
-    private fun awaitJobStatus(
-        jobType: String,
-        expected: JobExecutionStatus,
-        timeoutMs: Long = 5_000,
-        pollMs: Long = 100
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val executions = findJobsByType(jobType)
-            if (executions.any { it.status == expected }) return
-            Thread.sleep(pollMs)
-        }
-
-        val executions = findJobsByType(jobType)
-        assertThat(executions)
-            .describedAs("Expected at least one job execution for type $jobType")
-            .isNotEmpty
-
-        val statuses = executions.map { it.status }
-        assertThat(statuses)
-            .describedAs("Expected at least one $jobType job with status $expected")
-            .contains(expected)
-    }
-
     private fun awaitJobSuccess(
         jobType: String,
-        expectedCount: Int,
+        expectedCount: Int = 1,
         timeoutMs: Long = 5_000,
         pollMs: Long = 100
     ) {

@@ -35,51 +35,69 @@ class DeleteContactJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `delete contact job removes contact from adapter`() {
+    fun `delete contact job dispatches per-system delete and removes contact from DB`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        // First sync the contact to create Contact + adapter entry
-        val syncExecution = jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!))!!
-        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
+        // Sync the contact to create Contact DB record + external system entry
+        syncContactAndSystem(user.id!!)
         assertThat(mockContactAdapter.getAllContacts()).hasSize(1)
 
-        val execution = jobs.enqueue(
+        val deleteExecution = jobs.enqueue(
             ContactJobs.DeleteContact,
             ContactJobs.DeleteContactPayload(userId = user.id!!)
         )!!
 
-        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+        // Run DeleteContact → dispatches DeleteContactFromSystem + removes DB record
+        executor.execute(jobExecutions.findById(deleteExecution.id!!).orElseThrow())
+
+        // Run the dispatched DeleteContactFromSystem job
+        val systemExecution = jobExecutions.findAll()
+            .first { it.jobType == ContactJobs.DeleteContactFromSystem.type }
+        executor.execute(systemExecution)
 
         assertThat(mockContactAdapter.getAllContacts()).isEmpty()
+        assertThat(contactRepository.findByUserId(user.id!!)).isNull()
 
-        val updated = jobExecutions.findById(execution.id!!).orElseThrow()
+        val updated = jobExecutions.findById(deleteExecution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.SUCCESS)
     }
 
     @Test
-    fun `delete contact job also removes contact from all lists`() {
+    fun `delete contact job removes contact from all lists`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        // First sync to create Contact
-        val syncExecution = jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!))!!
-        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
+        // Sync to create Contact + external system entry
+        syncContactAndSystem(user.id!!)
 
         val contactId = mockContactAdapter.getAllContacts().keys.single()
         val listId = mockContactAdapter.createList("Test List", "testFolder")
         mockContactAdapter.addToList(contactId, listId)
         assertThat(mockContactAdapter.isInList(contactId, listId)).isTrue()
 
-        val execution = jobs.enqueue(
+        val deleteExecution = jobs.enqueue(
             ContactJobs.DeleteContact,
             ContactJobs.DeleteContactPayload(userId = user.id!!)
         )!!
 
-        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+        executor.execute(jobExecutions.findById(deleteExecution.id!!).orElseThrow())
+
+        val systemExecution = jobExecutions.findAll()
+            .first { it.jobType == ContactJobs.DeleteContactFromSystem.type }
+        executor.execute(systemExecution)
 
         assertThat(mockContactAdapter.getAllContacts()).isEmpty()
         assertThat(mockContactAdapter.isInList(contactId, listId)).isFalse()
+    }
 
-        val updated = jobExecutions.findById(execution.id!!).orElseThrow()
-        assertThat(updated.status).isEqualTo(JobExecutionStatus.SUCCESS)
+    // ── helpers ───────────────────────────────────────────────────────────────
+
+    /** Runs SyncContact then SyncContactToSystem synchronously. */
+    private fun syncContactAndSystem(userId: Long) {
+        val syncExecution = jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId))!!
+        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
+
+        val systemExecution = jobExecutions.findAll()
+            .first { it.jobType == ContactJobs.SyncContactToSystem.type }
+        executor.execute(systemExecution)
     }
 }

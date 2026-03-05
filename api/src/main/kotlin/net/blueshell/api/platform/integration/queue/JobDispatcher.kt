@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.queue
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.job.service.JobExecutionService
+import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.tracking.Actor

@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.contact
 
 import net.blueshell.api.platform.config.ListmonkProperties
+import net.blueshell.api.platform.integration.contact.adapter.ListmonkBounceSettingsInitializer
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

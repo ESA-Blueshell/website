@@ -5,6 +5,7 @@ import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.platform.integration.calendar.application.job.SyncEventToCalendarJob
 import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
 import net.blueshell.api.shared.job.CalendarEventRef
 import net.blueshell.api.shared.job.CalendarJobs

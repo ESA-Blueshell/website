@@ -1,5 +1,7 @@
 package net.blueshell.api.platform.integration.email
 
+import net.blueshell.api.platform.integration.email.adapter.ListmonkEmailClient
+
 import net.blueshell.clients.listmonk.api.TransactionalApi
 import net.blueshell.clients.listmonk.model.TransactionalMessage
 import net.blueshell.clients.listmonk.model.TransactionalMessageSubscriberMode

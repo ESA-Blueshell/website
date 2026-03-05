@@ -7,6 +7,7 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
 import net.blueshell.api.platform.integration.mock.MockListmonkEmailClient
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role

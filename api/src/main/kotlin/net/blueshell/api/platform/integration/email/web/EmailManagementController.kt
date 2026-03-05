@@ -3,10 +3,10 @@ package net.blueshell.api.platform.integration.email.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.platform.integration.email.application.query.EmailQuery
 import net.blueshell.api.platform.integration.email.application.service.EmailService
-import net.blueshell.api.platform.integration.email.dto.EmailDTO
-import net.blueshell.api.platform.integration.email.dto.EmailStatsDTO
+import net.blueshell.api.platform.integration.email.web.dto.EmailDTO
+import net.blueshell.api.platform.integration.email.web.dto.EmailStatsDTO
 import net.blueshell.api.platform.integration.email.persistence.Email
-import net.blueshell.api.platform.integration.job.service.JobExecutionService
+import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.enums.JobExecutionStatus

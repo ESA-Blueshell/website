@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.queue
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
-import net.blueshell.api.platform.integration.job.service.JobExecutionService
+import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy

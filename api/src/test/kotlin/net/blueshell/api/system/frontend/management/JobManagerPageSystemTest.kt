@@ -4,7 +4,7 @@ import com.microsoft.playwright.Page
 import net.blueshell.api.factory.job.persistence.JobExecutionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.job.repository.JobExecutionRepository
+import net.blueshell.api.platform.integration.job.persistence.repository.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase

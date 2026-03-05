@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.contact
 
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.contact.application.ContactSyncScheduler
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher

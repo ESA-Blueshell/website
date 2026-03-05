@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.email.service
 
+import net.blueshell.api.platform.integration.email.application.service.EmailTemplateService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

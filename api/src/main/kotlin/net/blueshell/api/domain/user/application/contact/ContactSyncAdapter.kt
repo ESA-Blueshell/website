@@ -27,19 +27,19 @@ interface ContactSyncAdapter {
     /**
      * Updates an existing contact in the external system.
      *
-     * @param systemContactId The system-specific contact ID (from a previously created contact)
+     * @param externalId The external contact ID (from a previously created contact)
      * @param data Updated contact data
      * @throws ContactServiceException if the operation fails
      */
-    fun updateContact(systemContactId: Long, data: ContactData)
+    fun updateContact(externalId: Long, data: ContactData)
 
     /**
-     * Deletes the contact identified by its system-specific ID.
+     * Deletes the contact identified by its external ID.
      *
-     * @param systemContactId The system-specific contact ID
+     * @param externalId The external contact ID
      * @throws ContactServiceException if the operation fails
      */
-    fun deleteContact(systemContactId: Long)
+    fun deleteContact(externalId: Long)
 }
 
 /**

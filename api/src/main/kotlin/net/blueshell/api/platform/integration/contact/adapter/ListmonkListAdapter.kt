@@ -51,38 +51,38 @@ class ListmonkListAdapter(
         }
     }
 
-    override fun addToList(systemContactId: Long, systemListId: Long) {
-        log.info("Adding Listmonk subscriber {} to list {}", systemContactId, systemListId)
+    override fun addToList(externalId: Long, externalListId: Long) {
+        log.info("Adding Listmonk subscriber {} to list {}", externalId, externalListId)
         try {
             val req = SubscriberQueryRequest()
-                .ids(listOf(systemContactId.toInt()))
+                .ids(listOf(externalId.toInt()))
                 .action(SubscriberQueryRequestAction.ADD)
-            subscribersApi.manageSubscriberListById(systemListId.toInt(), req)
+            subscribersApi.manageSubscriberListById(externalListId.toInt(), req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to add subscriber {} to list {}", systemContactId, systemListId, e)
+            log.error("Failed to add subscriber {} to list {}", externalId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)
         }
     }
 
-    override fun removeFromList(systemContactId: Long, systemListId: Long) {
-        log.info("Removing Listmonk subscriber {} from list {}", systemContactId, systemListId)
+    override fun removeFromList(externalId: Long, externalListId: Long) {
+        log.info("Removing Listmonk subscriber {} from list {}", externalId, externalListId)
         try {
             val req = SubscriberQueryRequest()
-                .ids(listOf(systemContactId.toInt()))
+                .ids(listOf(externalId.toInt()))
                 .action(SubscriberQueryRequestAction.REMOVE)
-            subscribersApi.manageSubscriberListById(systemListId.toInt(), req)
+            subscribersApi.manageSubscriberListById(externalListId.toInt(), req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to remove subscriber {} from list {}", systemContactId, systemListId, e)
+            log.error("Failed to remove subscriber {} from list {}", externalId, externalListId, e)
             throw ContactServiceException("Failed to remove contact from list", e)
         }
     }
 
-    override fun deleteList(systemListId: Long) {
-        log.info("Deleting Listmonk list id={}", systemListId)
+    override fun deleteList(externalListId: Long) {
+        log.info("Deleting Listmonk list id={}", externalListId)
         try {
-            listsApi.deleteListById(systemListId.toInt())
+            listsApi.deleteListById(externalListId.toInt())
         } catch (e: RestClientResponseException) {
-            log.error("Failed to delete Listmonk list id={}", systemListId, e)
+            log.error("Failed to delete Listmonk list id={}", externalListId, e)
             throw ContactServiceException("Failed to delete list", e)
         }
     }

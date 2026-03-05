@@ -52,9 +52,9 @@ class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
         return contactId
     }
 
-    override fun updateContact(systemContactId: Long, data: ContactData) {
-        val contact = contacts[systemContactId]
-            ?: throw ContactServiceException("Mock: Contact not found: $systemContactId")
+    override fun updateContact(externalId: Long, data: ContactData) {
+        val contact = contacts[externalId]
+            ?: throw ContactServiceException("Mock: Contact not found: $externalId")
         contact.apply {
             firstName = data.firstName
             lastName = data.lastName
@@ -64,14 +64,14 @@ class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
             attributes.clear()
             attributes.putAll(data.attributes)
         }
-        log.info("Mock: Updated contact id={}", systemContactId)
+        log.info("Mock: Updated contact id={}", externalId)
     }
 
-    override fun deleteContact(systemContactId: Long) {
-        val removed = contacts.remove(systemContactId)
-            ?: throw ContactServiceException("Mock: Contact not found: $systemContactId")
-        memberships.keys.removeIf { (contactId, _) -> contactId == systemContactId }
-        log.info("Mock: Deleted contact id={} ({})", systemContactId, removed.email)
+    override fun deleteContact(externalId: Long) {
+        val removed = contacts.remove(externalId)
+            ?: throw ContactServiceException("Mock: Contact not found: $externalId")
+        memberships.keys.removeIf { (contactId, _) -> contactId == externalId }
+        log.info("Mock: Deleted contact id={} ({})", externalId, removed.email)
     }
 
     // ── ListSyncAdapter ───────────────────────────────────────────────────────
@@ -83,25 +83,25 @@ class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
         return listId
     }
 
-    override fun addToList(systemContactId: Long, systemListId: Long) {
-        if (!lists.containsKey(systemListId)) throw ContactServiceException("Mock: List not found: $systemListId")
-        if (!contacts.containsKey(systemContactId)) throw ContactServiceException("Mock: Contact not found: $systemContactId")
-        memberships[systemContactId to systemListId] = Unit
-        log.info("Mock: Added contact {} to list {}", systemContactId, systemListId)
+    override fun addToList(externalId: Long, externalListId: Long) {
+        if (!lists.containsKey(externalListId)) throw ContactServiceException("Mock: List not found: $externalListId")
+        if (!contacts.containsKey(externalId)) throw ContactServiceException("Mock: Contact not found: $externalId")
+        memberships[externalId to externalListId] = Unit
+        log.info("Mock: Added contact {} to list {}", externalId, externalListId)
     }
 
-    override fun removeFromList(systemContactId: Long, systemListId: Long) {
-        if (memberships.remove(systemContactId to systemListId) == null) {
-            log.warn("Mock: Contact {} was not in list {}", systemContactId, systemListId)
+    override fun removeFromList(externalId: Long, externalListId: Long) {
+        if (memberships.remove(externalId to externalListId) == null) {
+            log.warn("Mock: Contact {} was not in list {}", externalId, externalListId)
         } else {
-            log.info("Mock: Removed contact {} from list {}", systemContactId, systemListId)
+            log.info("Mock: Removed contact {} from list {}", externalId, externalListId)
         }
     }
 
-    override fun deleteList(systemListId: Long) {
-        lists.remove(systemListId) ?: throw ContactServiceException("Mock: List not found: $systemListId")
-        memberships.keys.removeIf { (_, listId) -> listId == systemListId }
-        log.info("Mock: Deleted list id={}", systemListId)
+    override fun deleteList(externalListId: Long) {
+        lists.remove(externalListId) ?: throw ContactServiceException("Mock: List not found: $externalListId")
+        memberships.keys.removeIf { (_, listId) -> listId == externalListId }
+        log.info("Mock: Deleted list id={}", externalListId)
     }
 
     // ── Test helpers ──────────────────────────────────────────────────────────
@@ -109,8 +109,8 @@ class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
     fun getAllContacts(): Map<Long, MockContact> = contacts.toMap()
     fun getAllLists(): Map<Long, MockList> = lists.toMap()
     fun getMemberships(): Set<Pair<Long, Long>> = memberships.keys.toSet()
-    fun isInList(systemContactId: Long, systemListId: Long): Boolean =
-        memberships.containsKey(systemContactId to systemListId)
+    fun isInList(externalId: Long, externalListId: Long): Boolean =
+        memberships.containsKey(externalId to externalListId)
 
     fun clear() {
         contacts.clear()

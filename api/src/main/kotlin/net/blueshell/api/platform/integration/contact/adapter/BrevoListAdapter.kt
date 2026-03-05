@@ -66,40 +66,40 @@ class BrevoListAdapter(
         }
     }
 
-    override fun addToList(systemContactId: Long, systemListId: Long) {
-        log.info("Adding Brevo contact {} to list {}", systemContactId, systemListId)
+    override fun addToList(externalId: Long, externalListId: Long) {
+        log.info("Adding Brevo contact {} to list {}", externalId, externalListId)
         try {
             val req = AddContactToListRequest()
-            req.ids = mutableListOf(systemContactId)
+            req.ids = mutableListOf(externalId)
             req.emails = null
             req.extIds = null
-            contactsApi.addContactToList(systemListId, req)
+            contactsApi.addContactToList(externalListId, req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to add contact {} to Brevo list {}", systemContactId, systemListId, e)
+            log.error("Failed to add contact {} to Brevo list {}", externalId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)
         }
     }
 
-    override fun removeFromList(systemContactId: Long, systemListId: Long) {
-        log.info("Removing Brevo contact {} from list {}", systemContactId, systemListId)
+    override fun removeFromList(externalId: Long, externalListId: Long) {
+        log.info("Removing Brevo contact {} from list {}", externalId, externalListId)
         try {
             val req = RemoveContactFromListRequest()
-            req.ids = mutableListOf(systemContactId)
+            req.ids = mutableListOf(externalId)
             req.emails = null
             req.extIds = null
-            contactsApi.removeContactFromList(systemListId, req)
+            contactsApi.removeContactFromList(externalListId, req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to remove contact {} from Brevo list {}", systemContactId, systemListId, e)
+            log.error("Failed to remove contact {} from Brevo list {}", externalId, externalListId, e)
             throw ContactServiceException("Failed to remove contact from list", e)
         }
     }
 
-    override fun deleteList(systemListId: Long) {
-        log.info("Deleting Brevo list id={}", systemListId)
+    override fun deleteList(externalListId: Long) {
+        log.info("Deleting Brevo list id={}", externalListId)
         try {
-            contactsApi.deleteList(systemListId)
+            contactsApi.deleteList(externalListId)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to delete Brevo list id={}", systemListId, e)
+            log.error("Failed to delete Brevo list id={}", externalListId, e)
             throw ContactServiceException("Failed to delete list", e)
         }
     }

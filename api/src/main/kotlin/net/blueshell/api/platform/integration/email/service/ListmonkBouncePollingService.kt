@@ -1,7 +1,6 @@
 package net.blueshell.api.platform.integration.email.service
 
 import net.blueshell.api.platform.integration.email.application.service.EmailService
-import net.blueshell.api.platform.integration.email.application.service.EmailSuppressionService
 import net.blueshell.clients.listmonk.api.BouncesApi
 import net.blueshell.clients.listmonk.model.BounceRecord
 import net.blueshell.clients.listmonk.model.GetBouncesOrderByParameter
@@ -14,8 +13,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 /**
- * Periodically polls Listmonk's `GET /api/bounces` endpoint and feeds bounce data
- * into [EmailSuppressionService] and [EmailService].
+ * Periodically polls Listmonk's `GET /api/bounces` endpoint and updates outbox records.
  *
  * Since Listmonk returns no per-message IDs, bounces are matched to outbox records
  * by recipient email + sent-at time window.
@@ -25,7 +23,6 @@ import java.time.temporal.ChronoUnit
 class ListmonkBouncePollingService(
     private val bouncesApi: BouncesApi,
     private val emailService: EmailService,
-    private val suppressionService: EmailSuppressionService,
 ) {
     @Volatile
     private var lastPollTime: Instant = Instant.now().minus(1, ChronoUnit.HOURS)
@@ -67,14 +64,6 @@ class ListmonkBouncePollingService(
     private fun processBounce(bounce: BounceRecord) {
         val email = bounce.email ?: return
         val bounceType = bounce.type ?: "hard"
-
-        // Feed into suppression service
-        when (bounceType.lowercase()) {
-            "hard" -> suppressionService.suppressHardBounce(email)
-            "soft" -> suppressionService.recordSoftBounce(email)
-            "complaint" -> suppressionService.suppressComplaint(email)
-            else -> suppressionService.suppressHardBounce(email)
-        }
 
         // Match to an outbox record by email + time window (look back 24 hours)
         val since = Instant.now().minus(24, ChronoUnit.HOURS)

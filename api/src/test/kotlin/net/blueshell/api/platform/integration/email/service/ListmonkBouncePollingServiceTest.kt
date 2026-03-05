@@ -1,7 +1,6 @@
 package net.blueshell.api.platform.integration.email.service
 
 import net.blueshell.api.platform.integration.email.application.service.EmailService
-import net.blueshell.api.platform.integration.email.application.service.EmailSuppressionService
 import net.blueshell.api.platform.integration.email.persistence.Email
 import net.blueshell.clients.listmonk.api.BouncesApi
 import net.blueshell.clients.listmonk.model.BounceRecord
@@ -34,9 +33,8 @@ class ListmonkBouncePollingServiceTest {
 
     private val bouncesApi: BouncesApi = mock()
     private val emailService: EmailService = mock()
-    private val suppressionService: EmailSuppressionService = mock()
 
-    private val service = ListmonkBouncePollingService(bouncesApi, emailService, suppressionService)
+    private val service = ListmonkBouncePollingService(bouncesApi, emailService)
 
     private val recentEmail = "user@example.com"
 
@@ -69,39 +67,36 @@ class ListmonkBouncePollingServiceTest {
     }
 
     @Test
-    fun `hard bounce calls suppressHardBounce`() {
+    fun `hard bounce marks outbox entry as bounced when found`() {
+        val outboxEntry: Email = mock()
+        whenever(emailService.findRecentByRecipientEmail(eq(recentEmail), any())).thenReturn(outboxEntry)
         stubBounces(recentBounceRecord("hard"))
 
         service.pollBounces()
 
-        verify(suppressionService).suppressHardBounce(recentEmail)
+        verify(emailService).markBounced(eq(outboxEntry), any())
     }
 
     @Test
-    fun `soft bounce calls recordSoftBounce`() {
+    fun `soft bounce marks outbox entry as bounced when found`() {
+        val outboxEntry: Email = mock()
+        whenever(emailService.findRecentByRecipientEmail(eq(recentEmail), any())).thenReturn(outboxEntry)
         stubBounces(recentBounceRecord("soft"))
 
         service.pollBounces()
 
-        verify(suppressionService).recordSoftBounce(recentEmail)
+        verify(emailService).markBounced(eq(outboxEntry), any())
     }
 
     @Test
-    fun `complaint bounce calls suppressComplaint`() {
+    fun `complaint bounce marks outbox entry as bounced when found`() {
+        val outboxEntry: Email = mock()
+        whenever(emailService.findRecentByRecipientEmail(eq(recentEmail), any())).thenReturn(outboxEntry)
         stubBounces(recentBounceRecord("complaint"))
 
         service.pollBounces()
 
-        verify(suppressionService).suppressComplaint(recentEmail)
-    }
-
-    @Test
-    fun `unknown bounce type falls through to suppressHardBounce`() {
-        stubBounces(recentBounceRecord("unknown"))
-
-        service.pollBounces()
-
-        verify(suppressionService).suppressHardBounce(recentEmail)
+        verify(emailService).markBounced(eq(outboxEntry), any())
     }
 
     @Test
@@ -110,9 +105,7 @@ class ListmonkBouncePollingServiceTest {
 
         service.pollBounces()
 
-        verify(suppressionService, never()).suppressHardBounce(any())
-        verify(suppressionService, never()).recordSoftBounce(any())
-        verify(suppressionService, never()).suppressComplaint(any())
+        verify(emailService, never()).markBounced(any(), any())
     }
 
     @Test
@@ -144,6 +137,6 @@ class ListmonkBouncePollingServiceTest {
         // Should not throw
         service.pollBounces()
 
-        verify(suppressionService, never()).suppressHardBounce(any())
+        verify(emailService, never()).markBounced(any(), any())
     }
 }

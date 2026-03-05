@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.email
 /**
  * Abstraction over email transport.
  * Implemented by [ListmonkEmailClient] (via Listmonk transactional API) in dev/prod
- * and [MockListmonkEmailClient] in tests.
+ * and [net.blueshell.api.platform.integration.mock.MockListmonkEmailClient] in tests.
  */
 interface EmailTransportClient {
     /**

@@ -22,9 +22,9 @@ class Email(
     @Column(name = "subject", nullable = false) val subject: String = "",
     @Column(name = "email_type", nullable = false) val emailType: String = "",
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "delivery_status", nullable = false)
-    var deliveryStatus: EmailDeliveryStatus = EmailDeliveryStatus.PENDING,
+    @Enumerated(EnumType.STRING) @Column(
+        name = "delivery_status", nullable = false
+    ) var deliveryStatus: EmailDeliveryStatus = EmailDeliveryStatus.PENDING,
 
     @Column(name = "message_id") var messageId: String? = null,
     /** Opaque UUID used as the tracking pixel token — never exposed in responses. */
@@ -41,7 +41,7 @@ class Email(
     @Column(name = "job_execution_id") var jobExecutionId: Long? = null,
 
     @Column(name = "initiated_by_user_id") var initiatedByUserId: Long? = null,
-    @Enumerated(EnumType.STRING)
-    @Column(name = "initiated_by_type", nullable = false)
-    var initiatedByType: ActionActorType = ActionActorType.SYSTEM,
+    @Enumerated(EnumType.STRING) @Column(
+        name = "initiated_by_type", nullable = false
+    ) var initiatedByType: ActionActorType = ActionActorType.SYSTEM,
 ) : AuditedAutoIdEntity()

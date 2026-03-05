@@ -7,6 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Tag
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 
@@ -34,9 +35,11 @@ import org.springframework.test.context.ActiveProfiles
 class ListmonkContactAdapterLiveIT {
 
     @Autowired
+    @Qualifier("listmonkContactAdapter")
     private lateinit var contactAdapter: ContactSyncAdapter
 
     @Autowired
+    @Qualifier("listmonkListAdapter")
     private lateinit var listAdapter: ListSyncAdapter
 
     private val testEmail = "live-test-${System.currentTimeMillis()}@esa-blueshell.nl"

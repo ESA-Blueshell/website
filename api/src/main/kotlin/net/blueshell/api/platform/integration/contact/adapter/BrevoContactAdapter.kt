@@ -1,44 +1,64 @@
 package net.blueshell.api.platform.integration.contact.adapter
 
+import jakarta.validation.Valid
 import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactServiceException
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
+import net.blueshell.clients.brevo.ApiClient
+import net.blueshell.clients.brevo.api.ContactsApi
+import net.blueshell.clients.brevo.model.CreateContactRequest
+import net.blueshell.clients.brevo.model.CreateContactRequestAttributesValue
+import net.blueshell.clients.brevo.model.UpdateContactRequest
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
+import tools.jackson.databind.json.JsonMapper
 
 /**
  * Brevo Contact Anti-Corruption Layer (ADR-019)
  *
- * Implements [ContactSyncAdapter] and [ListSyncAdapter] against the Brevo Contact API.
- * Active in production profile only (test/dev use MockContactAdapter).
- *
- * All IDs are system-specific Longs. The orchestration services resolve domain IDs to these
- * system IDs before invoking adapter methods.
+ * Implements [ContactSyncAdapter] against the Brevo Contacts API.
+ * Active in production only (test/dev use MockContactAdapter).
  */
 @Service
 @Profile("!test & !dev")
 class BrevoContactAdapter(
-    private val brevoClient: BrevoContactClient
-) : ContactSyncAdapter, ListSyncAdapter {
+    restClientBuilder: RestClient.Builder,
+    jsonMapper: JsonMapper,
+    @param:Value($$"${brevo.apiKey}") apiKey: String,
+    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
+) : ContactSyncAdapter {
 
     override val system = ContactSystem.BREVO
 
-    // ── ContactSyncAdapter ────────────────────────────────────────────────────
+    private val contactsApi: ContactsApi = ContactsApi(
+        ApiClient(
+            restClientBuilder
+                .baseUrl(brevoBaseUrl)
+                .defaultHeader("api-key", apiKey)
+                .configureMessageConverters {
+                    it.addCustomConverter(JacksonJsonHttpMessageConverter(jsonMapper))
+                }
+                .build()
+        )
+    )
 
     override fun createContact(data: ContactData): Long {
         log.info("Creating Brevo contact: {}", data.email)
         return try {
-            val createdId = brevoClient.createContact(
-                email = data.email,
-                externalId = data.email,   // Brevo extId used for dedup
-                attributes = buildAttributes(data)
-            )
-            log.info("Created Brevo contact id={} for {}", createdId, data.email)
-            createdId
+            val req = CreateContactRequest()
+            req.email = data.email
+            req.extId = data.email   // Brevo extId used for dedup
+            @Suppress("UNCHECKED_CAST")
+            req.attributes = buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
+            val response = contactsApi.createContact(req)
+            log.info("Created Brevo contact id={} for {}", response.id, data.email)
+            response.id!!
         } catch (e: RestClientResponseException) {
             log.error("Failed to create Brevo contact for {}", data.email, e)
             throw ContactServiceException("Failed to create contact", e)
@@ -48,11 +68,11 @@ class BrevoContactAdapter(
     override fun updateContact(systemContactId: Long, data: ContactData) {
         log.info("Updating Brevo contact id={}: {}", systemContactId, data.email)
         try {
-            brevoClient.updateContact(
-                email = data.email,
-                externalId = data.email,
-                attributes = buildAttributes(data)
-            )
+            val req = UpdateContactRequest()
+            req.extId = data.email
+            @Suppress("UNCHECKED_CAST")
+            req.attributes = buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
+            contactsApi.updateContact(data.email, req, "email_id")
             log.info("Updated Brevo contact id={}", systemContactId)
         } catch (e: RestClientResponseException) {
             log.error("Failed to update Brevo contact id={}", systemContactId, e)
@@ -63,58 +83,10 @@ class BrevoContactAdapter(
     override fun deleteContact(systemContactId: Long) {
         log.info("Deleting Brevo contact id={}", systemContactId)
         try {
-            brevoClient.deleteContact(systemContactId)
+            contactsApi.deleteContact(systemContactId.toString(), "contact_id")
         } catch (e: RestClientResponseException) {
             log.error("Failed to delete Brevo contact id={}", systemContactId, e)
             throw ContactServiceException("Failed to delete contact", e)
-        }
-    }
-
-    // ── ListSyncAdapter ───────────────────────────────────────────────────────
-
-    override fun createList(name: String, folderName: String?): Long {
-        log.info("Creating Brevo list '{}' in folder '{}'", name, folderName)
-        return try {
-            val folderId = when (folderName) {
-                "contributionPeriods" -> brevoClient.getContributionPeriodsFolderId()
-                else -> throw ContactServiceException("Unknown Brevo folder: $folderName")
-            }
-            val listId = brevoClient.createList(name, folderId)
-            log.info("Created Brevo list '{}' id={}", name, listId)
-            listId
-        } catch (e: RestClientResponseException) {
-            log.error("Failed to create Brevo list '{}'", name, e)
-            throw ContactServiceException("Failed to create list", e)
-        }
-    }
-
-    override fun addToList(systemContactId: Long, systemListId: Long) {
-        log.info("Adding Brevo contact {} to list {}", systemContactId, systemListId)
-        try {
-            brevoClient.addContactsToList(systemListId, listOf(systemContactId))
-        } catch (e: RestClientResponseException) {
-            log.error("Failed to add contact {} to list {}", systemContactId, systemListId, e)
-            throw ContactServiceException("Failed to add contact to list", e)
-        }
-    }
-
-    override fun removeFromList(systemContactId: Long, systemListId: Long) {
-        log.info("Removing Brevo contact {} from list {}", systemContactId, systemListId)
-        try {
-            brevoClient.removeContactsFromList(systemListId, listOf(systemContactId))
-        } catch (e: RestClientResponseException) {
-            log.error("Failed to remove contact {} from list {}", systemContactId, systemListId, e)
-            throw ContactServiceException("Failed to remove contact from list", e)
-        }
-    }
-
-    override fun deleteList(systemListId: Long) {
-        log.info("Deleting Brevo list id={}", systemListId)
-        try {
-            brevoClient.deleteList(systemListId)
-        } catch (e: RestClientResponseException) {
-            log.error("Failed to delete Brevo list id={}", systemListId, e)
-            throw ContactServiceException("Failed to delete list", e)
         }
     }
 

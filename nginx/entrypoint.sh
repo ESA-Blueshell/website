@@ -61,11 +61,12 @@ if [ "$HTTPS_MODE" = false ]; then
 
   # Attempt to obtain certificate
   if certbot certonly --webroot -w /var/www/certbot \
-    -d "$DOMAIN" -d "www.$DOMAIN" \
+    -d "$DOMAIN" -d "www.$DOMAIN" -d "listmonk.$DOMAIN" \
     --email "$EMAIL" \
     --agree-tos \
     --non-interactive \
-    --no-eff-email; then
+    --no-eff-email \
+    --expand; then
 
     echo ""
     echo "✅ Certificate obtained successfully!"
@@ -104,11 +105,12 @@ while true; do
     echo "   Retrying certificate acquisition..."
 
     if certbot certonly --webroot -w /var/www/certbot \
-      -d "$DOMAIN" -d "www.$DOMAIN" \
+      -d "$DOMAIN" -d "www.$DOMAIN" -d "listmonk.$DOMAIN" \
       --email "$EMAIL" \
       --agree-tos \
       --non-interactive \
-      --no-eff-email; then
+      --no-eff-email \
+      --expand; then
 
       echo "   ✅ Certificate obtained!"
       echo "   🔄 Switching to HTTPS configuration..."

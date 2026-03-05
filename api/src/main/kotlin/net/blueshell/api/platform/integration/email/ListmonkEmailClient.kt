@@ -23,7 +23,7 @@ import java.util.UUID
 @Profile("!test")
 class ListmonkEmailClient(
     private val transactionalApi: TransactionalApi,
-    @Qualifier(ListmonkConfig.TEMPLATE_ID_BEAN) private val templateId: Int,
+    @field:Qualifier(ListmonkConfig.TEMPLATE_ID_BEAN) private val templateId: Int,
 ) : EmailTransportClient {
 
     override fun send(

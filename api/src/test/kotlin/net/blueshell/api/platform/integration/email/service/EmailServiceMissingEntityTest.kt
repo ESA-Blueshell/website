@@ -8,7 +8,6 @@ import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.email.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailService
-import net.blueshell.api.platform.integration.email.application.service.EmailSuppressionService
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -28,7 +27,6 @@ class EmailServiceMissingEntityTest {
     private val reminders = mockk<ContributionReminderService>()
     private val eventSignUps = mockk<EventSignUpService>()
     private val emailService = mockk<EmailService>(relaxed = true)
-    private val suppressionService = mockk<EmailSuppressionService>(relaxed = true)
 
     private val emailSenderService = EmailSenderService(
         templateService = templateService,
@@ -37,7 +35,6 @@ class EmailServiceMissingEntityTest {
         reminders = reminders,
         eventSignUps = eventSignUps,
         emailService = emailService,
-        suppressionService = suppressionService,
         frontendUrl = "http://localhost:3000",
         appUrl = "http://localhost:8080"
     )

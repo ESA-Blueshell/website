@@ -9,7 +9,7 @@ import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
-import net.blueshell.api.platform.integration.email.MockListmonkEmailClient
+import net.blueshell.api.platform.integration.mock.MockListmonkEmailClient
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll

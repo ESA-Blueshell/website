@@ -1,11 +1,12 @@
-package net.blueshell.api.platform.integration.email
+package net.blueshell.api.platform.integration.mock
 
+import net.blueshell.api.platform.integration.email.EmailTransportClient
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 /**
- * In-memory mock of [EmailTransportClient] for the test profile.
+ * In-memory mock of [net.blueshell.api.platform.integration.email.EmailTransportClient] for the test profile.
  *
  * Captures all sent emails in [sentEmails] for test assertions.
  * Supports [simulateSendFailure] / [stopSimulateSendFailure] for error-path tests.

@@ -65,27 +65,27 @@ class BrevoContactAdapter(
         }
     }
 
-    override fun updateContact(systemContactId: Long, data: ContactData) {
-        log.info("Updating Brevo contact id={}: {}", systemContactId, data.email)
+    override fun updateContact(externalId: Long, data: ContactData) {
+        log.info("Updating Brevo contact id={}: {}", externalId, data.email)
         try {
             val req = UpdateContactRequest()
             req.extId = data.email
             @Suppress("UNCHECKED_CAST")
             req.attributes = buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
             contactsApi.updateContact(data.email, req, "email_id")
-            log.info("Updated Brevo contact id={}", systemContactId)
+            log.info("Updated Brevo contact id={}", externalId)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to update Brevo contact id={}", systemContactId, e)
+            log.error("Failed to update Brevo contact id={}", externalId, e)
             throw ContactServiceException("Failed to update contact", e)
         }
     }
 
-    override fun deleteContact(systemContactId: Long) {
-        log.info("Deleting Brevo contact id={}", systemContactId)
+    override fun deleteContact(externalId: Long) {
+        log.info("Deleting Brevo contact id={}", externalId)
         try {
-            contactsApi.deleteContact(systemContactId.toString(), "contact_id")
+            contactsApi.deleteContact(externalId.toString(), "contact_id")
         } catch (e: RestClientResponseException) {
-            log.error("Failed to delete Brevo contact id={}", systemContactId, e)
+            log.error("Failed to delete Brevo contact id={}", externalId, e)
             throw ContactServiceException("Failed to delete contact", e)
         }
     }

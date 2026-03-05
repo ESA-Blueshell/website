@@ -79,20 +79,20 @@ class ContactListService(
         contactListMembershipRepository.save(ContactListMembership(contact = record, contactList = list))
 
         for (adapter in listSyncAdapters) {
-            val systemContactId = record.systemContactId(adapter.system)
-            val systemListId = list.systemListId(adapter.system)
+            val externalId = record.externalId(adapter.system)
+            val externalListId = list.externalListId(adapter.system)
 
-            if (systemContactId == null) {
+            if (externalId == null) {
                 log.warn("No {} contact ID for user {} — skipping addToList", adapter.system, userId)
                 continue
             }
-            if (systemListId == null) {
+            if (externalListId == null) {
                 log.warn("No {} list ID for list {} — skipping addToList", adapter.system, contactListId)
                 continue
             }
 
             try {
-                adapter.addToList(systemContactId, systemListId)
+                adapter.addToList(externalId, externalListId)
             } catch (e: Exception) {
                 log.error("Adapter {} failed to add user {} to list {}", adapter.system, userId, contactListId, e)
             }
@@ -123,20 +123,20 @@ class ContactListService(
         contactListMembershipRepository.delete(membership)
 
         for (adapter in listSyncAdapters) {
-            val systemContactId = record.systemContactId(adapter.system)
-            val systemListId = list.systemListId(adapter.system)
+            val externalId = record.externalId(adapter.system)
+            val externalListId = list.externalListId(adapter.system)
 
-            if (systemContactId == null) {
+            if (externalId == null) {
                 log.warn("No {} contact ID for user {} — skipping removeFromList", adapter.system, userId)
                 continue
             }
-            if (systemListId == null) {
+            if (externalListId == null) {
                 log.warn("No {} list ID for list {} — skipping removeFromList", adapter.system, contactListId)
                 continue
             }
 
             try {
-                adapter.removeFromList(systemContactId, systemListId)
+                adapter.removeFromList(externalId, externalListId)
             } catch (e: Exception) {
                 log.error("Adapter {} failed to remove user {} from list {}", adapter.system, userId, contactListId, e)
             }
@@ -151,13 +151,13 @@ class ContactListService(
         val list = findById(contactListId)
 
         for (adapter in listSyncAdapters) {
-            val systemListId = list.systemListId(adapter.system)
-            if (systemListId == null) {
+            val externalListId = list.externalListId(adapter.system)
+            if (externalListId == null) {
                 log.debug("No {} list ID for list {} — skipping deleteList", adapter.system, contactListId)
                 continue
             }
             try {
-                adapter.deleteList(systemListId)
+                adapter.deleteList(externalListId)
             } catch (e: Exception) {
                 log.error("Adapter {} failed to delete list {}", adapter.system, contactListId, e)
             }
@@ -177,14 +177,14 @@ class ContactListService(
 
 // ── private extension helpers ─────────────────────────────────────────────────
 
-private fun net.blueshell.api.platform.integration.contact.persistence.Contact.systemContactId(
+private fun net.blueshell.api.platform.integration.contact.persistence.Contact.externalId(
     system: ContactSystem
 ): Long? = when (system) {
     ContactSystem.LISTMONK -> listmonkContact?.externalId
     ContactSystem.BREVO -> brevoContact?.externalId
 }
 
-private fun ContactList.systemListId(system: ContactSystem): Long? = when (system) {
+private fun ContactList.externalListId(system: ContactSystem): Long? = when (system) {
     ContactSystem.LISTMONK -> listmonkList?.externalId
     ContactSystem.BREVO -> brevoList?.externalId
 }

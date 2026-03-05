@@ -44,24 +44,24 @@ class ListmonkContactAdapter(
         }
     }
 
-    override fun updateContact(systemContactId: Long, data: ContactData) {
-        log.info("Updating Listmonk subscriber id={}: {}", systemContactId, data.email)
+    override fun updateContact(externalId: Long, data: ContactData) {
+        log.info("Updating Listmonk subscriber id={}: {}", externalId, data.email)
         try {
             val update = buildUpdateSubscriber(data)
-            subscribersApi.updateSubscriberById(systemContactId.toInt(), update)
-            log.info("Updated Listmonk subscriber id={}", systemContactId)
+            subscribersApi.updateSubscriberById(externalId.toInt(), update)
+            log.info("Updated Listmonk subscriber id={}", externalId)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to update Listmonk subscriber id={}", systemContactId, e)
+            log.error("Failed to update Listmonk subscriber id={}", externalId, e)
             throw ContactServiceException("Failed to update contact", e)
         }
     }
 
-    override fun deleteContact(systemContactId: Long) {
-        log.info("Deleting Listmonk subscriber id={}", systemContactId)
+    override fun deleteContact(externalId: Long) {
+        log.info("Deleting Listmonk subscriber id={}", externalId)
         try {
-            subscribersApi.deleteSubscriberById(systemContactId.toInt())
+            subscribersApi.deleteSubscriberById(externalId.toInt())
         } catch (e: RestClientResponseException) {
-            log.error("Failed to delete Listmonk subscriber id={}", systemContactId, e)
+            log.error("Failed to delete Listmonk subscriber id={}", externalId, e)
             throw ContactServiceException("Failed to delete contact", e)
         }
     }

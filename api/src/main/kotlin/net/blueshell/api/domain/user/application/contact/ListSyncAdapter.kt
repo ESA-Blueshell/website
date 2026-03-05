@@ -25,26 +25,26 @@ interface ListSyncAdapter {
     /**
      * Adds a contact to a list. Both IDs are system-specific.
      *
-     * @param systemContactId The system-specific contact ID
-     * @param systemListId The system-specific list ID
+     * @param externalId The system-specific contact ID
+     * @param externalListId The system-specific list ID
      * @throws ContactServiceException if the operation fails
      */
-    fun addToList(systemContactId: Long, systemListId: Long)
+    fun addToList(externalId: Long, externalListId: Long)
 
     /**
      * Removes a contact from a list. Both IDs are system-specific.
      *
-     * @param systemContactId The system-specific contact ID
-     * @param systemListId The system-specific list ID
+     * @param externalId The system-specific contact ID
+     * @param externalListId The system-specific list ID
      * @throws ContactServiceException if the operation fails
      */
-    fun removeFromList(systemContactId: Long, systemListId: Long)
+    fun removeFromList(externalId: Long, externalListId: Long)
 
     /**
      * Deletes the list from the external system.
      *
-     * @param systemListId The system-specific list ID
+     * @param externalListId The system-specific list ID
      * @throws ContactServiceException if the operation fails
      */
-    fun deleteList(systemListId: Long)
+    fun deleteList(externalListId: Long)
 }

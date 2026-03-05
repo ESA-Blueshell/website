@@ -27,22 +27,7 @@ data class ListmonkProperties(
 
     data class BounceProperties(
         val pollIntervalMs: Long = 300_000L,
-        val mailbox: MailboxProperties = MailboxProperties(),
-    ) {
-        data class MailboxProperties(
-            /** Enable Listmonk bounce mailbox polling (IMAP). */
-            val enabled: Boolean = false,
-            val host: String = "",
-            val port: Int = 993,
-            val username: String = "",
-            val password: String = "",
-            val tlsEnabled: Boolean = true,
-            val tlsSkipVerify: Boolean = false,
-            val folder: String = "INBOX",
-            val returnPath: String = "",
-            val scanInterval: String = "10m",
-        )
-    }
+    )
 
     data class ContactProperties(
         /** Cron expression for the daily contact sync job. */

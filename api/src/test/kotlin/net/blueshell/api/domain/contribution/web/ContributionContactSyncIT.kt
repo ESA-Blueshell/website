@@ -18,11 +18,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
  * Integration tests verifying that marking contributions as paid/unpaid
- * correctly syncs the user's contact list membership in Brevo via the
- * [SyncListMembership][net.blueshell.api.platform.integration.contact.job.SyncListMembershipJob] job.
- *
- * Auto-dispatch is enabled so jobs execute after the transaction commits,
- * matching the production call path.
+ * correctly syncs the user's contact list membership via the async job chain:
+ * SyncListMembership → SyncContactToSystem + AddToList (or RemoveFromList)
  */
 @SpringBootTest
 @TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
@@ -50,7 +47,9 @@ class ContributionContactSyncIT : UserTestSupport() {
         )
             .andExpect(status().isCreated)
 
-        awaitJobStatus(ContactJobs.SyncListMembership.type, JobExecutionStatus.SUCCESS)
+        awaitJobSuccess(ContactJobs.SyncListMembership.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ContactJobs.AddToList.type)
 
         val lists = mockContactAdapter.getAllLists()
         assertThat(lists).hasSize(1)
@@ -79,9 +78,10 @@ class ContributionContactSyncIT : UserTestSupport() {
         )
             .andExpect(status().isCreated)
 
-        awaitJobStatus(ContactJobs.SyncListMembership.type, JobExecutionStatus.SUCCESS)
+        awaitJobSuccess(ContactJobs.SyncListMembership.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ContactJobs.AddToList.type)
 
-        // Verify the user was added to the list
         val listId = mockContactAdapter.getAllLists().keys.single()
         val contactId = mockContactAdapter.getAllContacts().keys.single()
         assertThat(mockContactAdapter.isInList(contactId, listId)).isTrue()
@@ -98,47 +98,16 @@ class ContributionContactSyncIT : UserTestSupport() {
             .andExpect(status().isNoContent)
 
         awaitJobSuccess(ContactJobs.SyncListMembership.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.RemoveFromList.type)
 
-        // Verify the user was removed from the list
         assertThat(mockContactAdapter.isInList(contactId, listId)).isFalse()
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    /**
-     * Polls until the first job of the given type reaches the expected status,
-     * or fails after timeout.
-     */
-    private fun awaitJobStatus(
-        jobType: String,
-        expected: JobExecutionStatus,
-        timeoutMs: Long = 5_000,
-        pollMs: Long = 100
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val executions = findJobsByType(jobType)
-            if (executions.any { it.status == expected }) return
-            Thread.sleep(pollMs)
-        }
-
-        val executions = findJobsByType(jobType)
-        assertThat(executions)
-            .describedAs("Expected at least one job execution for type $jobType")
-            .isNotEmpty
-
-        val statuses = executions.map { it.status }
-        assertThat(statuses)
-            .describedAs("Expected at least one $jobType job with status $expected")
-            .contains(expected)
-    }
-
-    /**
-     * Polls until [expectedCount] jobs of the given type have reached SUCCESS.
-     */
     private fun awaitJobSuccess(
         jobType: String,
-        expectedCount: Int,
+        expectedCount: Int = 1,
         timeoutMs: Long = 5_000,
         pollMs: Long = 100
     ) {

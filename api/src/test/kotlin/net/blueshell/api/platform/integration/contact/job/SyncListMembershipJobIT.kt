@@ -5,11 +5,12 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.contact.application.job.SyncListMembershipJob
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
-import net.blueshell.api.platform.integration.contact.application.job.SyncListMembershipJob
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
+import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.UserTestSupport
@@ -18,8 +19,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.TestPropertySource
 
 @SpringBootTest
+@TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
 class SyncListMembershipJobIT : UserTestSupport() {
 
     @Autowired
@@ -99,13 +102,35 @@ class SyncListMembershipJobIT : UserTestSupport() {
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
 
+        // Contact DB record is created synchronously by contactSyncService.syncContact()
         val record = contactRepository.findByUserId(user.id!!)
         assertThat(record).describedAs("Contact should be created for user").isNotNull()
 
+        // DB membership is created synchronously
         val contactList = contactListRepository.findAll().single()
         val membership = contactListMembershipRepository
             .findByContactIdAndContactListId(record!!.id!!, contactList.id!!)
         assertThat(membership).describedAs("Membership should be created").isNotNull()
+    }
+
+    @Test
+    fun `dispatches AddToList job when user has contribution`() {
+        val user = createUserWithRole(Role.MEMBER)
+        val period = createContributionPeriodFixture()
+        createContribution(user, period)
+
+        syncListMembershipJob.handle(
+            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+        )
+
+        // AddToList job should be dispatched (auto-dispatch enabled — wait for it to complete)
+        awaitJobSuccess(ContactJobs.AddToList.type)
+
+        val contactId = mockContactAdapter.getAllContacts().keys.single()
+        val externalListId = mockContactAdapter.getAllLists().keys.single()
+        assertThat(mockContactAdapter.isInList(contactId, externalListId))
+            .describedAs("Contact should be in external list after AddToList job")
+            .isTrue()
     }
 
     @Test
@@ -160,4 +185,24 @@ class SyncListMembershipJobIT : UserTestSupport() {
 
     private fun createContribution(user: User, period: ContributionPeriod): Contribution =
         persist(Contribution(user = user, contributionPeriod = period))
+
+    private fun awaitJobSuccess(
+        jobType: String,
+        expectedCount: Int = 1,
+        timeoutMs: Long = 5_000,
+        pollMs: Long = 100
+    ) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val successCount = findJobsByType(jobType).count { it.status == JobExecutionStatus.SUCCESS }
+            if (successCount >= expectedCount) return
+            Thread.sleep(pollMs)
+        }
+
+        val executions = findJobsByType(jobType)
+        val successCount = executions.count { it.status == JobExecutionStatus.SUCCESS }
+        assertThat(successCount)
+            .describedAs("Expected $expectedCount successful $jobType jobs, but found $successCount")
+            .isGreaterThanOrEqualTo(expectedCount)
+    }
 }

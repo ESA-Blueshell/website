@@ -1,5 +1,6 @@
 package net.blueshell.api.shared.job
 
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.ResetType
 
 object EmailJobs {
@@ -61,6 +62,26 @@ object ContactJobs {
         override val payloadType: Class<SyncListMembershipPayload> = SyncListMembershipPayload::class.java
     }
 
+    object SyncContactToSystem : JobDefinition<SyncContactToSystemPayload> {
+        override val type: String = "contact.sync-to-system"
+        override val payloadType: Class<SyncContactToSystemPayload> = SyncContactToSystemPayload::class.java
+    }
+
+    object DeleteContactFromSystem : JobDefinition<DeleteContactFromSystemPayload> {
+        override val type: String = "contact.delete-from-system"
+        override val payloadType: Class<DeleteContactFromSystemPayload> = DeleteContactFromSystemPayload::class.java
+    }
+
+    object AddToList : JobDefinition<AddToListPayload> {
+        override val type: String = "contact.add-to-list"
+        override val payloadType: Class<AddToListPayload> = AddToListPayload::class.java
+    }
+
+    object RemoveFromList : JobDefinition<RemoveFromListPayload> {
+        override val type: String = "contact.remove-from-list"
+        override val payloadType: Class<RemoveFromListPayload> = RemoveFromListPayload::class.java
+    }
+
     data class SyncContactPayload(
         val userId: Long
     )
@@ -72,6 +93,28 @@ object ContactJobs {
     data class SyncListMembershipPayload(
         val userId: Long,
         val periodId: Long
+    )
+
+    data class SyncContactToSystemPayload(
+        val userId: Long,
+        val system: ContactSystem
+    )
+
+    data class DeleteContactFromSystemPayload(
+        val externalId: Long,
+        val system: ContactSystem
+    )
+
+    data class AddToListPayload(
+        val userId: Long,
+        val contactListId: Long,
+        val system: ContactSystem
+    )
+
+    data class RemoveFromListPayload(
+        val userId: Long,
+        val contactListId: Long,
+        val system: ContactSystem
     )
 }
 

@@ -9,14 +9,16 @@ import net.blueshell.api.platform.integration.contact.persistence.BrevoContact
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.ListmonkContact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -36,11 +38,13 @@ class ContactSyncServiceTest {
     }
     private val contactRepository: ContactRepository = mock()
     private val userService: UserService = mock()
+    private val jobs: TrackedJobDispatcher = mock()
 
     private val service = ContactSyncService(
         contactSyncAdapters = listOf(listmonkAdapter, brevoAdapter),
         contactRepository = contactRepository,
         userService = userService,
+        jobs = jobs,
     )
 
     private val userId = 42L
@@ -67,54 +71,33 @@ class ContactSyncServiceTest {
     }
 
     @Test
-    fun `calls createContact on all adapters on first sync`() {
+    fun `dispatches SyncContactToSystem job per adapter on first sync`() {
         whenever(contactRepository.findByUserId(userId)).thenReturn(null)
-        whenever(listmonkAdapter.createContact(data)).thenReturn(10L)
-        whenever(brevoAdapter.createContact(data)).thenReturn(20L)
 
         service.syncContact(userId)
 
-        verify(listmonkAdapter).createContact(data)
-        verify(brevoAdapter).createContact(data)
-        verify(listmonkAdapter, never()).updateContact(any(), any())
-        verify(brevoAdapter, never()).updateContact(any(), any())
+        verify(jobs).enqueue(
+            eq(ContactJobs.SyncContactToSystem),
+            eq(ContactJobs.SyncContactToSystemPayload(userId, ContactSystem.LISTMONK))
+        )
+        verify(jobs).enqueue(
+            eq(ContactJobs.SyncContactToSystem),
+            eq(ContactJobs.SyncContactToSystemPayload(userId, ContactSystem.BREVO))
+        )
     }
 
     @Test
-    fun `stores returned externalId in system-specific child on first sync`() {
-        whenever(contactRepository.findByUserId(userId)).thenReturn(null)
-        whenever(listmonkAdapter.createContact(data)).thenReturn(10L)
-        whenever(brevoAdapter.createContact(data)).thenReturn(20L)
-
-        var saved: Contact? = null
-        whenever(contactRepository.save(any<Contact>())).thenAnswer {
-            saved = it.arguments[0] as Contact
-            saved
+    fun `dispatches SyncContactToSystem job per adapter on update`() {
+        val record = Contact(userId = userId).apply {
+            id = 1L
+            syncedEmail = "old@example.com"  // different → triggers sync
         }
-
-        service.syncContact(userId)
-
-        assertThat(saved!!.listmonkContact?.externalId).isEqualTo(10L)
-        assertThat(saved!!.brevoContact?.externalId).isEqualTo(20L)
-    }
-
-    @Test
-    fun `calls updateContact when record already has system-specific child`() {
-        val record = Contact(userId = userId)
-        record.id = 1L
-        record.listmonkContact = ListmonkContact(contact = record, externalId = 10L)
-        record.brevoContact = BrevoContact(contact = record, externalId = 20L)
-        // Change one field so delta check doesn't short-circuit
-        record.syncedEmail = "old@example.com"
-
         whenever(contactRepository.findByUserId(userId)).thenReturn(record)
 
         service.syncContact(userId)
 
-        verify(listmonkAdapter).updateContact(eq(10L), any())
-        verify(brevoAdapter).updateContact(eq(20L), any())
-        verify(listmonkAdapter, never()).createContact(any())
-        verify(brevoAdapter, never()).createContact(any())
+        // One dispatch per registered adapter (listmonk + brevo = 2)
+        verify(jobs, times(2)).enqueue(eq(ContactJobs.SyncContactToSystem), any<ContactJobs.SyncContactToSystemPayload>())
     }
 
     @Test
@@ -128,34 +111,17 @@ class ContactSyncServiceTest {
             syncedNewsletter = data.newsletter
             syncedIsMember = data.isMember
         }
-
         whenever(contactRepository.findByUserId(userId)).thenReturn(record)
 
         service.syncContact(userId)
 
-        verifyNoInteractions(listmonkAdapter)
-        verifyNoInteractions(brevoAdapter)
+        verifyNoInteractions(jobs)
         verify(contactRepository, never()).save(any())
-    }
-
-    @Test
-    fun `continues with remaining adapters when one adapter throws`() {
-        whenever(contactRepository.findByUserId(userId)).thenReturn(null)
-        doThrow(RuntimeException("Listmonk down"))
-            .whenever(listmonkAdapter).createContact(any())
-        whenever(brevoAdapter.createContact(data)).thenReturn(20L)
-
-        service.syncContact(userId)
-
-        // Brevo still called despite Listmonk failure
-        verify(brevoAdapter).createContact(data)
     }
 
     @Test
     fun `updates snapshot after sync`() {
         whenever(contactRepository.findByUserId(userId)).thenReturn(null)
-        whenever(listmonkAdapter.createContact(data)).thenReturn(10L)
-        whenever(brevoAdapter.createContact(data)).thenReturn(20L)
 
         var saved: Contact? = null
         whenever(contactRepository.save(any<Contact>())).thenAnswer {
@@ -173,7 +139,7 @@ class ContactSyncServiceTest {
     }
 
     @Test
-    fun `deleteContact calls all adapters with correct externalIds`() {
+    fun `deleteContact dispatches DeleteContactFromSystem job with correct externalId per adapter`() {
         val record = Contact(userId = userId).apply { id = 1L }
         record.listmonkContact = ListmonkContact(contact = record, externalId = 10L)
         record.brevoContact = BrevoContact(contact = record, externalId = 20L)
@@ -182,8 +148,14 @@ class ContactSyncServiceTest {
 
         service.deleteContact(userId)
 
-        verify(listmonkAdapter).deleteContact(10L)
-        verify(brevoAdapter).deleteContact(20L)
+        verify(jobs).enqueue(
+            eq(ContactJobs.DeleteContactFromSystem),
+            eq(ContactJobs.DeleteContactFromSystemPayload(10L, ContactSystem.LISTMONK))
+        )
+        verify(jobs).enqueue(
+            eq(ContactJobs.DeleteContactFromSystem),
+            eq(ContactJobs.DeleteContactFromSystemPayload(20L, ContactSystem.BREVO))
+        )
         verify(contactRepository).delete(record)
     }
 
@@ -193,8 +165,7 @@ class ContactSyncServiceTest {
 
         service.deleteContact(userId)
 
-        verifyNoInteractions(listmonkAdapter)
-        verifyNoInteractions(brevoAdapter)
+        verifyNoInteractions(jobs)
         verify(contactRepository, never()).delete(any<Contact>())
     }
 
@@ -208,7 +179,11 @@ class ContactSyncServiceTest {
 
         service.deleteContact(userId)
 
-        verify(listmonkAdapter).deleteContact(10L)
-        verify(brevoAdapter, never()).deleteContact(any())
+        verify(jobs).enqueue(
+            eq(ContactJobs.DeleteContactFromSystem),
+            eq(ContactJobs.DeleteContactFromSystemPayload(10L, ContactSystem.LISTMONK))
+        )
+        // Only one dispatch — no Brevo call because brevoContact is null
+        verify(jobs, times(1)).enqueue(eq(ContactJobs.DeleteContactFromSystem), any<ContactJobs.DeleteContactFromSystemPayload>())
     }
 }

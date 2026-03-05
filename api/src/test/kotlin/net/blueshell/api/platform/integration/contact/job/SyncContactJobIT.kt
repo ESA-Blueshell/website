@@ -35,37 +35,48 @@ class SyncContactJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `sync contact creates contact record without scheduling another sync job`() {
+    fun `sync contact creates contact DB record and dispatches per-system job`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
             ContactJobs.SyncContact,
             ContactJobs.SyncContactPayload(user.id!!)
         )!!
-        assertThat(findJobsByType(ContactJobs.SyncContact.type)).hasSize(1)
+
+        // Run SyncContact synchronously
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
-        val jobsAfterHandling = findJobsByType(ContactJobs.SyncContact.type)
-        assertThat(jobsAfterHandling)
-            .describedAs("Contact sync should not re-enqueue additional sync jobs")
-            .hasSize(1)
-
+        // Contact DB record created synchronously
         assertThat(contactRepository.findByUserId(user.id!!))
-            .describedAs("Contact should be created after sync")
+            .describedAs("Contact should be created in DB after sync")
             .isNotNull()
+
+        // SyncContactToSystem job dispatched (not another SyncContact job)
+        assertThat(findJobsByType(ContactJobs.SyncContact.type))
+            .describedAs("SyncContact should not re-enqueue itself")
+            .hasSize(1)
+        assertThat(findJobsByType(ContactJobs.SyncContactToSystem.type))
+            .describedAs("SyncContactToSystem should be dispatched per active adapter")
+            .isNotEmpty()
 
         val updatedExecution = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updatedExecution.status).isEqualTo(JobExecutionStatus.SUCCESS)
     }
 
     @Test
-    fun `sync contact sends correct contact data to adapter`() {
+    fun `sync contact sends correct contact data to adapter after running SyncContactToSystem`() {
         val user = createUserWithRole(Role.MEMBER)
-        val execution = jobs.enqueue(
+        val syncExecution = jobs.enqueue(
             ContactJobs.SyncContact,
             ContactJobs.SyncContactPayload(user.id!!)
         )!!
 
-        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+        // Run SyncContact → dispatches SyncContactToSystem
+        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
+
+        // Run the dispatched SyncContactToSystem job
+        val systemExecution = jobExecutions.findAll()
+            .first { it.jobType == ContactJobs.SyncContactToSystem.type }
+        executor.execute(systemExecution)
 
         val contacts = mockContactAdapter.getAllContacts()
         assertThat(contacts).hasSize(1)
@@ -82,12 +93,16 @@ class SyncContactJobIT : UserTestSupport() {
     @Test
     fun `sync contact for non-member sets isMember false`() {
         val user = createUserWithRole(Role.GUEST)
-        val execution = jobs.enqueue(
+        val syncExecution = jobs.enqueue(
             ContactJobs.SyncContact,
             ContactJobs.SyncContactPayload(user.id!!)
         )!!
 
-        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
+
+        val systemExecution = jobExecutions.findAll()
+            .first { it.jobType == ContactJobs.SyncContactToSystem.type }
+        executor.execute(systemExecution)
 
         val contact = mockContactAdapter.getAllContacts().values.single()
         assertThat(contact.isMember).isFalse()

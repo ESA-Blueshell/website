@@ -17,7 +17,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
  * End-to-end test verifying that deleting a user with an external contact
- * removes the contact from the external system via the DeleteContact job.
+ * removes the contact from the external system via the
+ * DeleteContact → DeleteContactFromSystem job chain.
  */
 @SpringBootTest
 @TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
@@ -46,7 +47,8 @@ class UserDeleteContactSyncIT : UserTestSupport() {
                 ContactJobs.SyncContactPayload(member.id!!)
             )
         }
-        awaitJobStatus(ContactJobs.SyncContact.type, JobExecutionStatus.SUCCESS)
+        awaitJobSuccess(ContactJobs.SyncContact.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should exist after sync")
@@ -59,8 +61,9 @@ class UserDeleteContactSyncIT : UserTestSupport() {
         )
             .andExpect(status().isNoContent)
 
-        // Await DeleteContact job via auto-dispatch
-        awaitJobStatus(ContactJobs.DeleteContact.type, JobExecutionStatus.SUCCESS)
+        // Await DeleteContact + DeleteContactFromSystem jobs via auto-dispatch
+        awaitJobSuccess(ContactJobs.DeleteContact.type)
+        awaitJobSuccess(ContactJobs.DeleteContactFromSystem.type)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should be removed after user deletion")
@@ -75,27 +78,26 @@ class UserDeleteContactSyncIT : UserTestSupport() {
         }
     }
 
-    private fun awaitJobStatus(
+    private fun awaitJobSuccess(
         jobType: String,
-        expected: JobExecutionStatus,
+        expectedCount: Int = 1,
         timeoutMs: Long = 5_000,
         pollMs: Long = 100
     ) {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
-            val executions = findJobsByType(jobType)
-            if (executions.any { it.status == expected }) return
+            val successCount = findJobsByType(jobType).count { it.status == JobExecutionStatus.SUCCESS }
+            if (successCount >= expectedCount) return
             Thread.sleep(pollMs)
         }
 
         val executions = findJobsByType(jobType)
-        assertThat(executions)
-            .describedAs("Expected at least one job execution for type $jobType")
-            .isNotEmpty
-
-        val statuses = executions.map { it.status }
-        assertThat(statuses)
-            .describedAs("Expected at least one $jobType job with status $expected")
-            .contains(expected)
+        val successCount = executions.count { it.status == JobExecutionStatus.SUCCESS }
+        assertThat(successCount)
+            .describedAs(
+                "Expected $expectedCount successful $jobType jobs, but found $successCount. " +
+                    "Statuses: ${executions.map { "${it.id}=${it.status}" }}"
+            )
+            .isGreaterThanOrEqualTo(expectedCount)
     }
 }

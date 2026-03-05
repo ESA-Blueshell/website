@@ -54,6 +54,15 @@ object ArchitecturePackages {
     const val JOB = "$ROOT.platform.integration..job.."
     const val ACL_ADAPTER = "$ROOT.platform.integration..*Adapter"
 
+    /** Mock/test adapter implementations */
+    const val PLATFORM_MOCK = "$ROOT.platform.integration.mock.."
+
+    /**
+     * ALL platform repositories — catches both standard (..persistence.repository..)
+     * and non-standard (..job.repository..) paths. Used for access-control rules.
+     */
+    const val PLATFORM_ANY_REPOSITORY = "$ROOT.platform.integration..repository.."
+
     // ===== Shared Kernel (ADR-020) =====
 
     /** Shared - Common utilities, enums, base classes */

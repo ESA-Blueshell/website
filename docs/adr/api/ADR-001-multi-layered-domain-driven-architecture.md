@@ -111,6 +111,12 @@ domain/{domain-name}/
 - Job scheduling and dispatching
 - Technical services (SMS, storage, etc.)
 
+**Note on Platform Sub-Layers:**
+Complex platform integration modules (`email/`, `contact/`, `job/`) mirror the domain layer
+structure with their own `application/`, `persistence/`, `web/`, and `job/` sub-packages.
+The same layer rules apply: controllers in `web/`, services in `application/`, repositories
+in `persistence/repository/`, specifications in `persistence/spec/`. See ADR-022 for details.
+
 ### Package Organization: Package-by-Feature
 
 Each domain is a self-contained module:

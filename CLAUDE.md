@@ -128,7 +128,7 @@ platform/
 └── integration/
     ├── email/              # Email templates and services
     ├── calendar/           # Google Calendar integration
-    └── jobs/               # Job dispatching (RabbitMQ)
+    └── jobs/               # Job dispatching (@Async + RetryTemplate)
 ```
 
 **📚 ADR References:**
@@ -207,7 +207,7 @@ class EmailService(private val brevoClient: BrevoClient) {
    - Examples: GoogleCalendarAdapter, BrevoEmailService, MolliePaymentClient
 
 4. **Is it Spring configuration?** → `platform/config/`
-   - Examples: SecurityConfig, JpaConfig, RabbitMqConfig
+   - Examples: SecurityConfig, JpaConfig, AsyncConfig
 
 **📚 See**: [ADR-022](docs/adr/api/ADR-022-platform-infrastructure-shared-organization.md) for detailed guidance and examples
 
@@ -889,7 +889,7 @@ Follow the git commit guidelines in CLAUDE.md:
 
 ### Backend
 - **Language**: Kotlin 2.3.10 with Java 24 toolchain
-- **Framework**: Spring Boot 4.0.3 (Web, Security, Data JPA, AMQP)
+- **Framework**: Spring Boot 4.0.3 (Web, Security, Data JPA)
 - **Database**: MariaDB 10.11.10 with Flyway migrations
 - **Security**: Spring Security with JWT (nimbus-jose-jwt, jjwt)
 - **Mapping**: Mappie 2.3.10 for object mapping
@@ -911,7 +911,7 @@ Follow the git commit guidelines in CLAUDE.md:
 ### Infrastructure
 - **Containerization**: Docker & Docker Compose
 - **Database**: MariaDB 10.11.10 (utf8mb4, Europe/Amsterdam timezone)
-- **Message Queue**: RabbitMQ (job dispatching)
+- **Job Dispatch**: @Async thread pool + RetryTemplate (see ADR-023)
 - **Reverse Proxy**: Nginx (SSL termination)
 
 ---

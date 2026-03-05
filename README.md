@@ -10,7 +10,7 @@ y aFull-stack web application following **Domain-Driven Design (DDD)** with clea
 - **Backend**: Spring Boot 4.0.3 REST API (Kotlin)
 - **Frontend**: Vue.js 3 Single Page Application (TypeScript)
 - **Database**: MariaDB 10.11.10
-- **Message Queue**: RabbitMQ (job dispatching)
+- **Job Dispatch**: @Async thread pool + RetryTemplate
 - **Infrastructure**: Docker, Nginx, Certbot (production SSL)
 
 **For detailed architecture patterns, layer structure, and design decisions, see:**
@@ -22,7 +22,7 @@ y aFull-stack web application following **Domain-Driven Design (DDD)** with clea
 ### Backend (API)
 
 - **Language**: Kotlin 2.3.10 with Java 24 toolchain
-- **Framework**: Spring Boot 4.0.3 (Web, Security, Data JPA, AMQP)
+- **Framework**: Spring Boot 4.0.3 (Web, Security, Data JPA)
 - **Database**: MariaDB 10.11.10 with Flyway migrations
 - **Security**: Spring Security with JWT authentication
 - **API Docs**: SpringDoc OpenAPI 3 (Swagger UI)
@@ -43,8 +43,6 @@ y aFull-stack web application following **Domain-Driven Design (DDD)** with clea
 - **Containerization**: Docker & Docker Compose
 - **Web Server**: Nginx with SSL/TLS (Let's Encrypt via Certbot)
 - **Database**: MariaDB 10.11.10 (utf8mb4, Europe/Amsterdam timezone)
-- **Message Queue**: RabbitMQ (job dispatching)
-
 ## 📋 Prerequisites
 
 ### Required
@@ -268,7 +266,7 @@ Run all API tests, API-owned frontend system tests, and generate merged coverage
 ```
 
 What this does:
-1. Starts `db`, `rabbitmq`, and an instrumented frontend (`VITE_COVERAGE=true`) with Docker Compose.
+1. Starts `db` and an instrumented frontend (`VITE_COVERAGE=true`) with Docker Compose.
 2. Runs API non-system tests and API system tests (`@Tag("system")`) from Gradle.
    The script forces `-Dsystem.frontend.url=http://frontend:3000` so API-driven system tests target the compose frontend service.
 3. Captures frontend coverage from Playwright browser sessions executed by API system tests.

@@ -268,6 +268,28 @@ jdbcTemplate.query("SELECT ... FROM users u JOIN memberships m ...")
 | **Contribution** | contributions, contribution_periods | users | UserUpdated, MembershipChanged |
 | **Blog** | blog_posts | users | UserUpdated |
 | **Sponsor** | sponsors | - | - |
+| **Platform: Email** | emails | users (via email address) | - |
+| **Platform: Contact** | contacts, contact_lists, contact_list_memberships | users | UserCreated, UserUpdated |
+| **Platform: Job** | job_executions | - | - |
+
+### Platform as Data Owner
+
+Platform integration modules that persist state own their tables the same way domain modules do.
+No domain should directly query platform repositories; access must go through the platform's
+application service layer:
+
+| Platform Module | Owns Tables | Access Via |
+|----------------|-------------|-----------|
+| `platform/integration/email/` | `emails` | `EmailService` |
+| `platform/integration/contact/` | `contacts`, `contact_lists`, `contact_list_memberships` | `ContactSyncService`, `ContactListService` |
+| `platform/integration/job/` | `job_executions` | `JobExecutionService` |
+
+**Anti-pattern**: A domain directly injecting `EmailRepository` or `JobExecutionRepository`.
+
+**Correct pattern**: Domains interact with platform modules via:
+1. Shared `EmailContent` DTO → platform `EmailService` delivers it
+2. Domain events → platform listeners enqueue jobs (`ContactJobs.SyncContact`, etc.)
+3. Platform services (`JobExecutionService`) for management endpoints
 
 ## Enforcement
 

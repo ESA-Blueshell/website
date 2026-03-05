@@ -87,10 +87,36 @@ We maintain an **explicit Context Map** documenting:
   └── embedded within Event context (owned by Event)
 
 ──────────────────────────────────────────────────────────────
-External Systems (Anti-Corruption Layers):
+Platform (Shared Service Bounded Context):
 
-[Auth] ──ACL──> [Google Calendar API]
-[Auth] ──ACL──> [Brevo Email API]
+[Platform: Email] ──Open Host Service──> [Auth, Event, Contribution]
+  │
+  ├── provides: EmailService (send transactional emails)
+  ├── consumes: EmailContent DTO from domains (via shared/)
+  ├── owns: emails table (outbox with delivery tracking)
+  └── integrates: Listmonk transactional API (ACL)
+
+[Platform: Contact] ──Open Host Service──> [User]
+  │
+  ├── provides: ContactSyncService, ContactListService
+  ├── subscribes: UserCreated, UserUpdated (via ContactSyncScheduler)
+  ├── owns: contacts, contact_lists, contact_list_memberships tables
+  └── integrates: Listmonk subscribers API (primary) + Brevo (production fallback)
+      Note: ListmonkContactAdapter active in dev+prod; BrevoContactAdapter production-only
+
+[Platform: Job] ──Infrastructure Service──> [*]
+  │
+  ├── provides: JobDispatcher (enqueue), JobExecutionService (query/retry)
+  ├── owns: job_executions table
+  └── executes: @Async thread pool + RetryTemplate (see ADR-023)
+
+──────────────────────────────────────────────────────────────
+External Systems (Anti-Corruption Layers via platform/integration/):
+
+[Platform: Email] ──ACL──> [Listmonk transactional API]
+[Platform: Contact] ──ACL──> [Listmonk subscribers/lists API] (primary)
+[Platform: Contact] ──ACL──> [Brevo Contacts API] (production fallback)
+[Platform: Calendar] ──ACL──> [Google Calendar API]
 [Contribution] ──ACL──> [Mollie Payment API]
 ```
 
@@ -235,20 +261,38 @@ External Systems (Anti-Corruption Layers):
 | Membership | UserService | User validation |
 | Event | UserService, CommitteeService | Organizer/member lookup |
 | Contribution | UserService | Contributor lookup |
+| Auth (via event listener) | Platform: EmailService | Send recovery/activation emails |
+| Event (via event listener) | Platform: EmailService | Send event signup confirmation emails |
+| Contribution (via event listener) | Platform: EmailService | Send contribution reminder emails |
+| User (via ContactSyncScheduler) | Platform: ContactSyncService | Sync user profile changes to Listmonk |
 
 ## Anti-Corruption Layers (External Systems)
 
+### Listmonk Transactional Email API
+- **Location**: `platform/integration/email/` (`ListmonkEmailClient`)
+- **Purpose**: Deliver transactional emails (registration, event signup, etc.)
+- **Translation**: `EmailContent` DTO → Listmonk transactional message format
+- **Protection**: Domain unaware of Listmonk template IDs, subscriber modes, headers
+- **Active profiles**: `!test` (dev + prod)
+
+### Listmonk Subscribers/Lists API
+- **Location**: `platform/integration/contact/` (`ListmonkContactAdapter`)
+- **Purpose**: Sync user contacts and list memberships to Listmonk
+- **Translation**: `ContactData` domain object → Listmonk subscriber/list format
+- **Active profiles**: `!test` (dev + prod; primary adapter)
+
+### Brevo Contacts API
+- **Location**: `platform/integration/contact/` (`BrevoContactAdapter`)
+- **Purpose**: Sync user contacts to Brevo (production fallback / coexistence)
+- **Translation**: `ContactData` domain object → Brevo contact attributes format
+- **Active profiles**: `!test & !dev` (production only; secondary adapter)
+
 ### Google Calendar API
-- **Location**: `platform/integration/calendar/`
-- **Purpose**: Event publishing to external calendar
+- **Location**: `platform/integration/calendar/` (`GoogleCalendarAdapter`)
+- **Purpose**: Publish approved events to external calendar
 - **Translation**: Event entity → Google Calendar Event format
 - **Protection**: Domain unaware of Google's API structure
-
-### Brevo Email API
-- **Location**: `platform/integration/email/`
-- **Purpose**: Marketing email campaigns
-- **Translation**: User/Event data → Brevo contact/campaign format
-- **Protection**: Domain unaware of Brevo's data model
+- **Active profiles**: `!test & !dev` (production only)
 
 ### Mollie Payment API
 - **Location**: `platform/integration/payment/` (if exists)

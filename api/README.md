@@ -93,7 +93,7 @@ api/src/main/kotlin/net/blueshell/api/
     │   ├── calendar/     # Google Calendar API
     │   ├── payment/      # Mollie payment processor
     │   └── ...
-    └── jobs/             # Job dispatching (RabbitMQ)
+    └── jobs/             # Job dispatching (@Async + RetryTemplate)
 ```
 
 ## Building & Deployment
@@ -142,8 +142,9 @@ The API integrates with several external services via anti-corruption layers in 
 
 - **Google Calendar API**: Event synchronization
 - **Mollie**: Payment processing
-- **Brevo**: Email campaigns and transactional email
-- **RabbitMQ**: Asynchronous job dispatch
+- **Brevo**: Email campaigns (contact sync fallback)
+- **Listmonk**: Transactional email delivery and contact/list management
+- **Job Dispatch**: @Async thread pool + RetryTemplate (no external broker)
 
 See [ADR-019: Anti-Corruption Layers](../docs/adr/api/ADR-019-anti-corruption-layers-for-external-integration.md) for integration patterns.
 

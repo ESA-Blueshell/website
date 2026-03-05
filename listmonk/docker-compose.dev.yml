@@ -1,0 +1,99 @@
+services:
+  listmonk:
+    image: listmonk/listmonk:v4.1.0
+    ports:
+      - "9000:9000"
+    depends_on:
+      listmonk-db:
+        condition: service_healthy
+    environment:
+      LISTMONK_app__address: "0.0.0.0:9000"
+      LISTMONK_db__host: listmonk-db
+      LISTMONK_db__port: 5432
+      LISTMONK_db__user: listmonk
+      LISTMONK_db__password: listmonk
+      LISTMONK_db__database: listmonk
+      LISTMONK_db__ssl_mode: disable
+      LISTMONK_ADMIN_API_USER: ${LISTMONK_ADMIN_API_USER:-api}
+    volumes:
+      - listmonk-secrets:/secrets
+    # Capture the API token printed to stderr during --install.
+    # Written to the shared volume so the api service can read it on startup.
+    command: >-
+      sh -c "
+        ./listmonk --install --idempotent --yes 2>/tmp/install.err;
+        cat /tmp/install.err >&2;
+        grep 'LISTMONK_ADMIN_API_TOKEN' /tmp/install.err | sed 's/^export //' > /secrets/api-token.env;
+        ./listmonk --upgrade --yes &&
+        exec ./listmonk
+      "
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  listmonk-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: listmonk
+      POSTGRES_PASSWORD: listmonk
+      POSTGRES_DB: listmonk
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U listmonk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - listmonk-data:/var/lib/postgresql/data
+    networks:
+      - global_network
+
+  listmonk-setup:
+    image: curlimages/curl:8.12.1
+    restart: "no"
+    depends_on:
+      listmonk:
+        condition: service_healthy
+    env_file:
+      - path: ../env/.listmonk.env
+        required: false
+    environment:
+      LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:-listmonk}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:-listmonk}
+      LISTMONK_ADMIN_EMAIL: ${LISTMONK_ADMIN_EMAIL:-admin@listmonk.local}
+    volumes:
+      - ./setup.sh:/setup.sh:ro
+    entrypoint: ["sh", "/setup.sh"]
+    networks:
+      - global_network
+
+  listmonk-theme:
+    image: python:3.12-alpine
+    restart: "no"
+    depends_on:
+      listmonk-setup:
+        condition: service_completed_successfully
+    environment:
+      LISTMONK_URL: "http://listmonk:9000"
+      LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:-listmonk}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:-listmonk}
+    volumes:
+      - ./apply-theme.py:/apply-theme.py:ro
+      - ./custom/theme.css:/theme.css:ro
+    command: ["python", "/apply-theme.py"]
+    networks:
+      - global_network
+
+networks:
+  global_network:
+    driver: bridge
+
+volumes:
+  listmonk-data:
+  listmonk-secrets:

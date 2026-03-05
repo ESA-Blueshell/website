@@ -1,0 +1,275 @@
+package net.blueshell.api.platform.integration.contact.application
+
+import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
+import net.blueshell.api.platform.integration.contact.persistence.BrevoContact
+import net.blueshell.api.platform.integration.contact.persistence.BrevoList
+import net.blueshell.api.platform.integration.contact.persistence.Contact
+import net.blueshell.api.platform.integration.contact.persistence.ContactList
+import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
+import net.blueshell.api.platform.integration.contact.persistence.ListmonkContact
+import net.blueshell.api.platform.integration.contact.persistence.ListmonkList
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import java.util.Optional
+
+/**
+ * Unit tests for [ContactListService].
+ *
+ * No Spring context — instantiate directly with mocks.
+ */
+class ContactListServiceTest {
+
+    private val listmonkAdapter: ListSyncAdapter = mock {
+        whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
+    }
+    private val brevoAdapter: ListSyncAdapter = mock {
+        whenever(mock.system).thenReturn(ContactSystem.BREVO)
+    }
+    private val contactListRepository: ContactListRepository = mock()
+    private val contactRepository: ContactRepository = mock()
+    private val membershipRepository: ContactListMembershipRepository = mock()
+
+    private val service = ContactListService(
+        listSyncAdapters = listOf(listmonkAdapter, brevoAdapter),
+        contactListRepository = contactListRepository,
+        contactRepository = contactRepository,
+        contactListMembershipRepository = membershipRepository,
+    )
+
+    private val userId = 1L
+    private val listId = 10L
+
+    @BeforeEach
+    fun setUp() {
+        whenever(contactListRepository.save(any<ContactList>())).thenAnswer { it.arguments[0] }
+        whenever(membershipRepository.save(any<ContactListMembership>())).thenAnswer { it.arguments[0] }
+    }
+
+    // ── findOrCreateList ──────────────────────────────────────────────────────
+
+    @Test
+    fun `returns existing list when found by name`() {
+        val existing = contactListWithId(listId, "Existing")
+        whenever(contactListRepository.findByName("Existing")).thenReturn(existing)
+
+        val result = service.findOrCreateList("Existing", null)
+
+        assertThat(result).isSameAs(existing)
+        verify(listmonkAdapter, never()).createList(any(), any())
+        verify(brevoAdapter, never()).createList(any(), any())
+    }
+
+    @Test
+    fun `creates list in all adapters when not found by name`() {
+        whenever(contactListRepository.findByName("New")).thenReturn(null)
+        whenever(listmonkAdapter.createList("New", "folder")).thenReturn(100L)
+        whenever(brevoAdapter.createList("New", "folder")).thenReturn(200L)
+
+        var saved: ContactList? = null
+        whenever(contactListRepository.save(any<ContactList>())).thenAnswer {
+            saved = it.arguments[0] as ContactList
+            saved
+        }
+
+        service.findOrCreateList("New", "folder")
+
+        verify(listmonkAdapter).createList("New", "folder")
+        verify(brevoAdapter).createList("New", "folder")
+        assertThat(saved!!.listmonkList?.externalId).isEqualTo(100L)
+        assertThat(saved!!.brevoList?.externalId).isEqualTo(200L)
+    }
+
+    @Test
+    fun `continues creating in other adapters when one throws`() {
+        whenever(contactListRepository.findByName("New")).thenReturn(null)
+        doThrow(RuntimeException("Listmonk down")).whenever(listmonkAdapter).createList(any(), any())
+        whenever(brevoAdapter.createList(any(), any())).thenReturn(200L)
+
+        service.findOrCreateList("New", null)
+
+        verify(brevoAdapter).createList("New", null)
+    }
+
+    // ── addContactToList ──────────────────────────────────────────────────────
+
+    @Test
+    fun `creates membership record when adding contact to list`() {
+        val contact = contactWithId(userId, listmonkId = 10L, brevoId = 20L)
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(contact.id!!, listId)).thenReturn(null)
+
+        service.addContactToList(listId, userId)
+
+        verify(membershipRepository).save(any<ContactListMembership>())
+    }
+
+    @Test
+    fun `calls all adapters with correct system IDs when adding contact to list`() {
+        val contact = contactWithId(userId, listmonkId = 10L, brevoId = 20L)
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(contact.id!!, listId)).thenReturn(null)
+
+        service.addContactToList(listId, userId)
+
+        verify(listmonkAdapter).addToList(10L, 100L)
+        verify(brevoAdapter).addToList(20L, 200L)
+    }
+
+    @Test
+    fun `skips adapter when contact has no system-specific child`() {
+        val contact = contactWithId(userId, listmonkId = 10L, brevoId = null)
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(contact.id!!, listId)).thenReturn(null)
+
+        service.addContactToList(listId, userId)
+
+        verify(listmonkAdapter).addToList(10L, 100L)
+        verify(brevoAdapter, never()).addToList(any(), any())
+    }
+
+    @Test
+    fun `is idempotent when membership already exists`() {
+        val contact = contactWithId(userId, listmonkId = 10L, brevoId = 20L)
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+        val existing = ContactListMembership(contact = contact, contactList = list)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(contact.id!!, listId)).thenReturn(existing)
+
+        service.addContactToList(listId, userId)
+
+        verify(membershipRepository, never()).save(any())
+        verify(listmonkAdapter, never()).addToList(any(), any())
+        verify(brevoAdapter, never()).addToList(any(), any())
+    }
+
+    @Test
+    fun `no-op when no Contact record for user`() {
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(null)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+
+        service.addContactToList(listId, userId)
+
+        verify(membershipRepository, never()).save(any())
+        verify(listmonkAdapter, never()).addToList(any(), any())
+    }
+
+    // ── removeContactFromList ─────────────────────────────────────────────────
+
+    @Test
+    fun `deletes membership record when removing contact from list`() {
+        val contact = contactWithId(userId, listmonkId = 10L, brevoId = 20L)
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+        val membership = ContactListMembership(contact = contact, contactList = list)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(contact.id!!, listId)).thenReturn(membership)
+
+        service.removeContactFromList(listId, userId)
+
+        verify(membershipRepository).delete(any<ContactListMembership>())
+    }
+
+    @Test
+    fun `calls all adapters when removing contact from list`() {
+        val contact = contactWithId(userId, listmonkId = 10L, brevoId = 20L)
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+        val membership = ContactListMembership(contact = contact, contactList = list)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(contact.id!!, listId)).thenReturn(membership)
+
+        service.removeContactFromList(listId, userId)
+
+        verify(listmonkAdapter).removeFromList(10L, 100L)
+        verify(brevoAdapter).removeFromList(20L, 200L)
+    }
+
+    @Test
+    fun `is no-op when no membership exists`() {
+        val contact = contactWithId(userId, listmonkId = 10L, brevoId = 20L)
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(contact.id!!, listId)).thenReturn(null)
+
+        service.removeContactFromList(listId, userId)
+
+        verify(membershipRepository, never()).delete(any<ContactListMembership>())
+        verify(listmonkAdapter, never()).removeFromList(any(), any())
+    }
+
+    // ── deleteList ────────────────────────────────────────────────────────────
+
+    @Test
+    fun `calls all adapters and deletes list`() {
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = 200L)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+
+        service.deleteList(listId)
+
+        verify(listmonkAdapter).deleteList(100L)
+        verify(brevoAdapter).deleteList(200L)
+        verify(contactListRepository).delete(list)
+    }
+
+    @Test
+    fun `skips adapter when list has no system-specific child`() {
+        val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = null)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+
+        service.deleteList(listId)
+
+        verify(listmonkAdapter).deleteList(100L)
+        verify(brevoAdapter, never()).deleteList(any())
+    }
+
+    // ── helpers ───────────────────────────────────────────────────────────────
+
+    private fun contactWithId(userId: Long, listmonkId: Long?, brevoId: Long?): Contact {
+        val c = Contact(userId = userId)
+        c.id = userId
+        listmonkId?.let { c.listmonkContact = ListmonkContact(contact = c, externalId = it) }
+        brevoId?.let { c.brevoContact = BrevoContact(contact = c, externalId = it) }
+        return c
+    }
+
+    private fun contactListWithId(
+        id: Long,
+        name: String,
+        listmonkId: Long? = null,
+        brevoId: Long? = null,
+    ): ContactList {
+        val l = ContactList(name = name)
+        l.id = id
+        listmonkId?.let { l.listmonkList = ListmonkList(list = l, externalId = it) }
+        brevoId?.let { l.brevoList = BrevoList(list = l, externalId = it) }
+        return l
+    }
+}

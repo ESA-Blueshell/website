@@ -27,7 +27,7 @@ data class CreateContributionPeriodCommand(
     @field:NotNull(message = "Alumni fee is required")
     @field:PositiveOrZero(message = "Alumni fee must be positive or zero")
     val alumniFee: Double?,
-    val listId: Long?
+    val contactListId: Long?
 ) : Command<ContributionPeriodResult>
 
 data class UpdateContributionPeriodCommand(
@@ -47,7 +47,7 @@ data class UpdateContributionPeriodCommand(
     @field:NotNull(message = "Alumni fee is required")
     @field:PositiveOrZero(message = "Alumni fee must be positive or zero")
     val alumniFee: Double?,
-    val listId: Long?,
+    val contactListId: Long?,
     @field:NotNull(message = "Version is required for optimistic locking")
     val version: Long
 ) : Command<ContributionPeriodResult>

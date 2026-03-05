@@ -21,5 +21,5 @@ data class CreateContributionPeriodRequest(
     @field:NotNull
     var alumniFee: Double? = null,
 
-    var listId: Long? = null
+    var contactListId: Long? = null
 )

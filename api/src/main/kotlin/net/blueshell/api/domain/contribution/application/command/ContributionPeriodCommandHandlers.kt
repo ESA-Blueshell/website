@@ -44,7 +44,7 @@ class CreateContributionPeriodHandler(
             halfYearFee = command.halfYearFee!!,
             fullYearFee = command.fullYearFee!!,
             alumniFee = command.alumniFee!!,
-            listId = command.listId,
+            contactListId = command.contactListId,
         )
         contributionPeriod = service.create(contributionPeriod)
         return contributionPeriod.toResult()
@@ -64,7 +64,7 @@ class UpdateContributionPeriodHandler(
         contributionPeriod.halfYearFee = command.halfYearFee!!
         contributionPeriod.fullYearFee = command.fullYearFee!!
         contributionPeriod.alumniFee = command.alumniFee!!
-        contributionPeriod.listId = command.listId
+        contributionPeriod.contactListId = command.contactListId
         contributionPeriod.version = command.version
         contributionPeriod = service.update(contributionPeriod)
         return contributionPeriod.toResult()

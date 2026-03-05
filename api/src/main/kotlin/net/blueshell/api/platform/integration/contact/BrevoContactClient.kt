@@ -150,6 +150,15 @@ class BrevoContactClient(
     }
 
     /**
+     * Delete a list from Brevo.
+     */
+    @Throws(RestClientResponseException::class)
+    fun deleteList(listId: Long) {
+        log.info("Deleting Brevo list {}", listId)
+        contactsApi.deleteList(listId)
+    }
+
+    /**
      * Get the folder ID for contribution periods.
      */
     fun getContributionPeriodsFolderId(): Long {

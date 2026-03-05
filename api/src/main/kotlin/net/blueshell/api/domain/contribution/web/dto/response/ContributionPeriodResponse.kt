@@ -12,7 +12,7 @@ data class ContributionPeriodResponse(
     var halfYearFee: Double,
     var fullYearFee: Double,
     var alumniFee: Double,
-    var listId: Long? = null,
+    var contactListId: Long? = null,
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant

@@ -1,7 +1,10 @@
 package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.domain.user.application.contact.ContactData
+import net.blueshell.api.domain.user.application.contact.ContactServiceException
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
+import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
@@ -12,133 +15,112 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * Mock Contact Adapter for testing and development.
  *
- * Provides in-memory contact management without external API dependencies.
+ * Provides in-memory contact and list management without external API dependencies.
  * Active in 'test' and 'dev' profiles.
+ *
+ * Implements both [ContactSyncAdapter] and [ListSyncAdapter].
+ * Reported system is [ContactSystem.LISTMONK] so tests exercise the Listmonk path.
  */
 @Service
 @Primary
 @Profile("test | dev")
-class MockContactAdapter : ContactSyncAdapter {
+class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
 
-    private val contacts = ConcurrentHashMap<String, MockContact>()
-    private val lists = ConcurrentHashMap<String, MockList>()
+    override val system = ContactSystem.LISTMONK
+
+    private val contacts = ConcurrentHashMap<Long, MockContact>()
+    private val lists = ConcurrentHashMap<Long, MockList>()
+    private val memberships = ConcurrentHashMap<Pair<Long, Long>, Unit>()  // (contactId, listId)
     private val contactIdSequence = AtomicLong(1000)
     private val listIdSequence = AtomicLong(2000)
 
-    override fun syncContact(userId: Long, contactId: String?, contactData: ContactData): String {
-        log.info("Mock: Syncing contact for user {}: {}", userId, contactData.email)
+    // ── ContactSyncAdapter ────────────────────────────────────────────────────
 
-        val existingContact = (if (contactId != null) contacts[contactId] else null)
-            ?: contacts.values.find { it.email == contactData.email }
-
-        return if (existingContact != null) {
-            // Update existing contact
-            existingContact.apply {
-                this.firstName = contactData.firstName
-                this.lastName = contactData.lastName
-                this.phoneNumber = contactData.phoneNumber
-                this.newsletter = contactData.newsletter
-                this.isMember = contactData.isMember
-                this.attributes.clear()
-                this.attributes.putAll(contactData.attributes)
-            }
-            log.info("Mock: Updated contact {} for user {}", existingContact.contactId, userId)
-            existingContact.contactId
-        } else {
-            // Create new contact
-            val contactId = contactIdSequence.getAndIncrement().toString()
-            val newContact = MockContact(
-                contactId = contactId,
-                email = contactData.email,
-                firstName = contactData.firstName,
-                lastName = contactData.lastName,
-                phoneNumber = contactData.phoneNumber,
-                newsletter = contactData.newsletter,
-                isMember = contactData.isMember,
-                attributes = contactData.attributes.toMutableMap()
-            )
-            contacts[contactId] = newContact
-            log.info("Mock: Created contact {} for user {}", contactId, userId)
-            contactId
-        }
-    }
-
-    override fun getContactId(userId: Long, email: String): String? {
-        log.debug("Mock: Getting contact ID for user {}: {}", userId, email)
-        val contact = contacts.values.find { it.email == email }
-        return contact?.contactId
-    }
-
-    override fun addToList(listId: String, contactId: String) {
-        log.info("Mock: Adding contact {} to list {}", contactId, listId)
-
-        val list = lists[listId] ?: throw IllegalArgumentException("List not found: $listId")
-        val contact = contacts[contactId] ?: throw IllegalArgumentException("Contact not found: $contactId")
-
-        list.contactIds.add(contactId)
-        log.info("Mock: Contact {} added to list {} (now {} contacts)", contactId, listId, list.contactIds.size)
-    }
-
-    override fun removeFromList(listId: String, contactId: String) {
-        log.info("Mock: Removing contact {} from list {}", contactId, listId)
-
-        val list = lists[listId] ?: throw IllegalArgumentException("List not found: $listId")
-
-        if (list.contactIds.remove(contactId)) {
-            log.info("Mock: Contact {} removed from list {} (now {} contacts)", contactId, listId, list.contactIds.size)
-        } else {
-            log.error("Mock: Contact {} is not in list {}", contactId, listId)
-            throw IllegalStateException("Contact $contactId is not in list $listId")
-        }
-    }
-
-    override fun deleteContact(contactId: String) {
-        log.info("Mock: Deleting contact {}", contactId)
-        val removed = contacts.remove(contactId)
-            ?: throw IllegalArgumentException("Contact not found: $contactId")
-
-        lists.values.forEach { list ->
-            list.contactIds.remove(contactId)
-        }
-        log.info("Mock: Deleted contact {} ({})", contactId, removed.email)
-    }
-
-    override fun createList(listName: String, folderName: String): String {
-        log.info("Mock: Creating list '{}' in folder '{}'", listName, folderName)
-
-        val listId = listIdSequence.getAndIncrement().toString()
-        val newList = MockList(
-            listId = listId,
-            listName = listName,
-            folderName = folderName
+    override fun createContact(data: ContactData): Long {
+        val contactId = contactIdSequence.getAndIncrement()
+        contacts[contactId] = MockContact(
+            contactId = contactId,
+            email = data.email,
+            firstName = data.firstName,
+            lastName = data.lastName,
+            phoneNumber = data.phoneNumber,
+            newsletter = data.newsletter,
+            isMember = data.isMember,
+            attributes = data.attributes.toMutableMap()
         )
-        lists[listId] = newList
+        log.info("Mock: Created contact id={} for {}", contactId, data.email)
+        return contactId
+    }
 
-        log.info("Mock: Created list {} with name '{}'", listId, listName)
+    override fun updateContact(systemContactId: Long, data: ContactData) {
+        val contact = contacts[systemContactId]
+            ?: throw ContactServiceException("Mock: Contact not found: $systemContactId")
+        contact.apply {
+            firstName = data.firstName
+            lastName = data.lastName
+            phoneNumber = data.phoneNumber
+            newsletter = data.newsletter
+            isMember = data.isMember
+            attributes.clear()
+            attributes.putAll(data.attributes)
+        }
+        log.info("Mock: Updated contact id={}", systemContactId)
+    }
+
+    override fun deleteContact(systemContactId: Long) {
+        val removed = contacts.remove(systemContactId)
+            ?: throw ContactServiceException("Mock: Contact not found: $systemContactId")
+        memberships.keys.removeIf { (contactId, _) -> contactId == systemContactId }
+        log.info("Mock: Deleted contact id={} ({})", systemContactId, removed.email)
+    }
+
+    // ── ListSyncAdapter ───────────────────────────────────────────────────────
+
+    override fun createList(name: String, folderName: String?): Long {
+        val listId = listIdSequence.getAndIncrement()
+        lists[listId] = MockList(listId = listId, listName = name, folderName = folderName)
+        log.info("Mock: Created list id={} name='{}'", listId, name)
         return listId
     }
 
-    /**
-     * Helper method to get all contacts (useful for testing/debugging)
-     */
-    fun getAllContacts(): Map<String, MockContact> = contacts.toMap()
+    override fun addToList(systemContactId: Long, systemListId: Long) {
+        if (!lists.containsKey(systemListId)) throw ContactServiceException("Mock: List not found: $systemListId")
+        if (!contacts.containsKey(systemContactId)) throw ContactServiceException("Mock: Contact not found: $systemContactId")
+        memberships[systemContactId to systemListId] = Unit
+        log.info("Mock: Added contact {} to list {}", systemContactId, systemListId)
+    }
 
-    /**
-     * Helper method to get all lists (useful for testing/debugging)
-     */
-    fun getAllLists(): Map<String, MockList> = lists.toMap()
+    override fun removeFromList(systemContactId: Long, systemListId: Long) {
+        if (memberships.remove(systemContactId to systemListId) == null) {
+            log.warn("Mock: Contact {} was not in list {}", systemContactId, systemListId)
+        } else {
+            log.info("Mock: Removed contact {} from list {}", systemContactId, systemListId)
+        }
+    }
 
-    /**
-     * Helper method to clear all data (useful for tests)
-     */
+    override fun deleteList(systemListId: Long) {
+        lists.remove(systemListId) ?: throw ContactServiceException("Mock: List not found: $systemListId")
+        memberships.keys.removeIf { (_, listId) -> listId == systemListId }
+        log.info("Mock: Deleted list id={}", systemListId)
+    }
+
+    // ── Test helpers ──────────────────────────────────────────────────────────
+
+    fun getAllContacts(): Map<Long, MockContact> = contacts.toMap()
+    fun getAllLists(): Map<Long, MockList> = lists.toMap()
+    fun getMemberships(): Set<Pair<Long, Long>> = memberships.keys.toSet()
+    fun isInList(systemContactId: Long, systemListId: Long): Boolean =
+        memberships.containsKey(systemContactId to systemListId)
+
     fun clear() {
         contacts.clear()
         lists.clear()
-        log.info("Mock: Cleared all contacts and lists")
+        memberships.clear()
+        log.info("Mock: Cleared all state")
     }
 
     data class MockContact(
-        val contactId: String,
+        val contactId: Long,
         val email: String,
         var firstName: String,
         var lastName: String,
@@ -149,10 +131,9 @@ class MockContactAdapter : ContactSyncAdapter {
     )
 
     data class MockList(
-        val listId: String,
+        val listId: Long,
         val listName: String,
-        val folderName: String,
-        val contactIds: MutableSet<String> = mutableSetOf()
+        val folderName: String?,
     )
 
     companion object {

@@ -3,6 +3,8 @@ package net.blueshell.api.platform.integration.contact
 import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactServiceException
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
+import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
 import net.blueshell.clients.listmonk.api.ListsApi
 import net.blueshell.clients.listmonk.api.SubscribersApi
 import net.blueshell.clients.listmonk.model.NewList as ListmonkNewList
@@ -13,7 +15,6 @@ import net.blueshell.clients.listmonk.model.SubscriberQueryRequest
 import net.blueshell.clients.listmonk.model.SubscriberQueryRequestAction
 import net.blueshell.clients.listmonk.model.UpdateSubscriber
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
@@ -21,149 +22,139 @@ import org.springframework.web.client.RestClientResponseException
 /**
  * Listmonk Contact Anti-Corruption Layer (ADR-019)
  *
- * Implements [ContactSyncAdapter] against the Listmonk subscriber API.
+ * Implements [ContactSyncAdapter] and [ListSyncAdapter] against the Listmonk subscriber/lists API.
  * Active in all non-test profiles (including dev where real Listmonk runs).
  *
- * Listmonk is used for both transactional email and contact/subscriber management.
- * Subscriber IDs are integers in Listmonk; they are returned as strings to satisfy
- * the [ContactSyncAdapter] contract, and stored as `Long` on the User entity.
+ * All IDs are system-specific Longs. The orchestration services resolve domain IDs to these
+ * system IDs before invoking adapter methods.
  */
 @Service
-@Primary
 @Profile("!test")
 class ListmonkContactAdapter(
     private val subscribersApi: SubscribersApi,
     private val listsApi: ListsApi,
-) : ContactSyncAdapter {
+) : ContactSyncAdapter, ListSyncAdapter {
 
-    override fun syncContact(userId: Long, contactData: ContactData): String {
-        log.info("Syncing contact for user {}: {}", userId, contactData.email)
+    override val system = ContactSystem.LISTMONK
 
+    // ── ContactSyncAdapter ────────────────────────────────────────────────────
+
+    override fun createContact(data: ContactData): Long {
+        log.info("Creating Listmonk subscriber: {}", data.email)
         return try {
-            val existing = findSubscriberByEmail(contactData.email)
-            if (existing != null) {
-                val update = buildUpdateSubscriber(contactData)
-                subscribersApi.updateSubscriberById(existing, update)
-                log.info("Updated Listmonk subscriber id={} for user {}", existing, userId)
-                existing.toString()
-            } else {
-                val newSub = buildNewSubscriber(contactData)
-                val created = subscribersApi.createSubscriber(newSub)?.data
-                    ?: throw ContactServiceException("Listmonk returned null when creating subscriber for user $userId")
-                val id = created.id ?: throw ContactServiceException("Listmonk subscriber has no id for user $userId")
-                log.info("Created Listmonk subscriber id={} for user {}", id, userId)
-                id.toString()
-            }
+            val newSub = buildNewSubscriber(data)
+            val created = subscribersApi.createSubscriber(newSub)?.data
+                ?: throw ContactServiceException("Listmonk returned null when creating subscriber for ${data.email}")
+            val id = created.id ?: throw ContactServiceException("Listmonk subscriber has no id for ${data.email}")
+            log.info("Created Listmonk subscriber id={} for {}", id, data.email)
+            id.toLong()
         } catch (e: RestClientResponseException) {
-            log.error("Failed to sync contact for user {} to Listmonk", userId, e)
-            throw ContactServiceException("Failed to sync contact", e)
+            log.error("Failed to create Listmonk subscriber for {}", data.email, e)
+            throw ContactServiceException("Failed to create contact", e)
         }
     }
 
-    override fun getContactId(userId: Long, email: String): String? {
-        log.debug("Getting Listmonk contact id for user {}: {}", userId, email)
-        return try {
-            findSubscriberByEmail(email)?.toString()
-        } catch (e: RestClientResponseException) {
-            log.error("Failed to get contact id for user {}", userId, e)
-            throw ContactServiceException("Failed to get contact id", e)
-        }
-    }
-
-    override fun addToList(listId: String, contactId: String) {
-        log.info("Adding Listmonk contact {} to list {}", contactId, listId)
+    override fun updateContact(systemContactId: Long, data: ContactData) {
+        log.info("Updating Listmonk subscriber id={}: {}", systemContactId, data.email)
         try {
-            val req = SubscriberQueryRequest()
-                .ids(listOf(contactId.toInt()))
-                .action(SubscriberQueryRequestAction.ADD)
-            subscribersApi.manageSubscriberListById(listId.toInt(), req)
+            val update = buildUpdateSubscriber(data)
+            subscribersApi.updateSubscriberById(systemContactId.toInt(), update)
+            log.info("Updated Listmonk subscriber id={}", systemContactId)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to add contact {} to list {}", contactId, listId, e)
-            throw ContactServiceException("Failed to add contact to list", e)
-        } catch (e: NumberFormatException) {
-            throw ContactServiceException("Invalid id format: listId=$listId, contactId=$contactId", e)
+            log.error("Failed to update Listmonk subscriber id={}", systemContactId, e)
+            throw ContactServiceException("Failed to update contact", e)
         }
     }
 
-    override fun removeFromList(listId: String, contactId: String) {
-        log.info("Removing Listmonk contact {} from list {}", contactId, listId)
+    override fun deleteContact(systemContactId: Long) {
+        log.info("Deleting Listmonk subscriber id={}", systemContactId)
         try {
-            val req = SubscriberQueryRequest()
-                .ids(listOf(contactId.toInt()))
-                .action(SubscriberQueryRequestAction.REMOVE)
-            subscribersApi.manageSubscriberListById(listId.toInt(), req)
+            subscribersApi.deleteSubscriberById(systemContactId.toInt())
         } catch (e: RestClientResponseException) {
-            log.error("Failed to remove contact {} from list {}", contactId, listId, e)
-            throw ContactServiceException("Failed to remove contact from list", e)
-        } catch (e: NumberFormatException) {
-            throw ContactServiceException("Invalid id format: listId=$listId, contactId=$contactId", e)
-        }
-    }
-
-    override fun deleteContact(contactId: String) {
-        log.info("Deleting Listmonk subscriber {}", contactId)
-        try {
-            subscribersApi.deleteSubscriberById(contactId.toInt())
-        } catch (e: RestClientResponseException) {
-            log.error("Failed to delete Listmonk subscriber {}", contactId, e)
+            log.error("Failed to delete Listmonk subscriber id={}", systemContactId, e)
             throw ContactServiceException("Failed to delete contact", e)
-        } catch (e: NumberFormatException) {
-            throw ContactServiceException("Invalid contactId format: $contactId", e)
         }
     }
 
-    override fun createList(listName: String, folderName: String): String {
-        log.info("Creating Listmonk list '{}'", listName)
+    // ── ListSyncAdapter ───────────────────────────────────────────────────────
+
+    override fun createList(name: String, folderName: String?): Long {
+        log.info("Creating Listmonk list '{}'", name)
         return try {
             val newList = ListmonkNewList()
-                .name(listName)
+                .name(name)
                 .type(NewListType.PRIVATE)
                 .optin(NewListOptin.SINGLE)
             val created = listsApi.createList(newList)?.data
-                ?: throw ContactServiceException("Listmonk returned null when creating list '$listName'")
-            val id = created.id ?: throw ContactServiceException("Listmonk list has no id for '$listName'")
-            log.info("Created Listmonk list '{}' id={}", listName, id)
-            id.toString()
+                ?: throw ContactServiceException("Listmonk returned null when creating list '$name'")
+            val id = created.id ?: throw ContactServiceException("Listmonk list has no id for '$name'")
+            log.info("Created Listmonk list '{}' id={}", name, id)
+            id.toLong()
         } catch (e: RestClientResponseException) {
-            log.error("Failed to create Listmonk list '{}'", listName, e)
+            log.error("Failed to create Listmonk list '{}'", name, e)
             throw ContactServiceException("Failed to create list", e)
         }
     }
 
-    // ---- helpers ----
-
-    private fun findSubscriberByEmail(email: String): Int? {
-        val escapedEmail = email.replace("'", "''")
-        val response = subscribersApi.getSubscribers(
-            1,                              // page
-            10,                             // perPage
-            "subscribers.email = '$escapedEmail'",  // query
-            null, null, null, null,
-        )
-        return response?.data?.results?.firstOrNull()?.id
+    override fun addToList(systemContactId: Long, systemListId: Long) {
+        log.info("Adding Listmonk subscriber {} to list {}", systemContactId, systemListId)
+        try {
+            val req = SubscriberQueryRequest()
+                .ids(listOf(systemContactId.toInt()))
+                .action(SubscriberQueryRequestAction.ADD)
+            subscribersApi.manageSubscriberListById(systemListId.toInt(), req)
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to add subscriber {} to list {}", systemContactId, systemListId, e)
+            throw ContactServiceException("Failed to add contact to list", e)
+        }
     }
 
-    private fun buildNewSubscriber(contactData: ContactData): NewSubscriber =
+    override fun removeFromList(systemContactId: Long, systemListId: Long) {
+        log.info("Removing Listmonk subscriber {} from list {}", systemContactId, systemListId)
+        try {
+            val req = SubscriberQueryRequest()
+                .ids(listOf(systemContactId.toInt()))
+                .action(SubscriberQueryRequestAction.REMOVE)
+            subscribersApi.manageSubscriberListById(systemListId.toInt(), req)
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to remove subscriber {} from list {}", systemContactId, systemListId, e)
+            throw ContactServiceException("Failed to remove contact from list", e)
+        }
+    }
+
+    override fun deleteList(systemListId: Long) {
+        log.info("Deleting Listmonk list id={}", systemListId)
+        try {
+            listsApi.deleteListById(systemListId.toInt())
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to delete Listmonk list id={}", systemListId, e)
+            throw ContactServiceException("Failed to delete list", e)
+        }
+    }
+
+    // ── helpers ───────────────────────────────────────────────────────────────
+
+    private fun buildNewSubscriber(data: ContactData): NewSubscriber =
         NewSubscriber()
-            .email(contactData.email)
-            .name("${contactData.firstName} ${contactData.lastName}".trim())
+            .email(data.email)
+            .name("${data.firstName} ${data.lastName}".trim())
             .status("enabled")
             .preconfirmSubscriptions(true)
-            .attribs(buildAttribs(contactData))
+            .attribs(buildAttribs(data))
 
-    private fun buildUpdateSubscriber(contactData: ContactData): UpdateSubscriber =
+    private fun buildUpdateSubscriber(data: ContactData): UpdateSubscriber =
         UpdateSubscriber()
-            .email(contactData.email)
-            .name("${contactData.firstName} ${contactData.lastName}".trim())
+            .email(data.email)
+            .name("${data.firstName} ${data.lastName}".trim())
             .status("enabled")
-            .attribs(buildAttribs(contactData))
+            .attribs(buildAttribs(data))
 
-    private fun buildAttribs(contactData: ContactData): Map<String, Any> =
+    private fun buildAttribs(data: ContactData): Map<String, Any> =
         buildMap {
-            put("newsletter", contactData.newsletter)
-            put("is_member", contactData.isMember)
-            contactData.phoneNumber?.let { put("phone", it) }
-            putAll(contactData.attributes)
+            put("newsletter", data.newsletter)
+            put("is_member", data.isMember)
+            data.phoneNumber?.let { put("phone", it) }
+            putAll(data.attributes)
         }
 
     companion object {

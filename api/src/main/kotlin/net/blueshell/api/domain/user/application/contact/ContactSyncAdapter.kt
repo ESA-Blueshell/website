@@ -6,71 +6,40 @@ import net.blueshell.api.shared.enums.Role
 /**
  * Domain interface for contact synchronization with external systems (ADR-019: Anti-Corruption Layer)
  *
- * This interface defines domain-friendly contact operations without exposing
- * external contact management system details (e.g., Brevo, Mailchimp, SendGrid).
+ * Adapters are responsible for a single external system. Multiple adapters may be active at the
+ * same time; the ContactSyncService orchestrates fanout across all registered implementations.
  *
- * Platform layer provides concrete implementations (BrevoContactAdapter).
+ * All IDs are system-specific Longs. The orchestration service resolves domain IDs to system IDs
+ * before calling adapter methods.
  */
 interface ContactSyncAdapter {
-    /**
-     * Synchronize a user's contact information with the external system.
-     * If the contact doesn't exist, it will be created.
-     * If the contact exists, it will be updated.
-     *
-     * @param userId The domain user ID (for tracking)
-     * @param contactId The Brevo contact ID
-     * @param contactData The contact data to sync
-     * @return External contact ID
-     * @throws ContactServiceException if the operation fails
-     */
-    fun syncContact(userId: Long, contactId: String?, contactData: ContactData): String
+    val system: ContactSystem
 
     /**
-     * Get and update the external contact ID for a user.
-     * Used to fetch the contact ID from external system if not yet stored.
+     * Creates a new contact in the external system.
      *
-     * @param userId The domain user ID
-     * @param email The user's email address (used for lookup)
-     * @return External contact ID (null if not found)
+     * @param data The contact data to create
+     * @return System-specific contact ID
      * @throws ContactServiceException if the operation fails
      */
-    fun getContactId(userId: Long, email: String): String?
+    fun createContact(data: ContactData): Long
 
     /**
-     * Add a contact to an external list.
+     * Updates an existing contact in the external system.
      *
-     * @param listId The external list ID
-     * @param contactId The external contact ID
+     * @param systemContactId The system-specific contact ID (from a previously created contact)
+     * @param data Updated contact data
      * @throws ContactServiceException if the operation fails
      */
-    fun addToList(listId: String, contactId: String)
+    fun updateContact(systemContactId: Long, data: ContactData)
 
     /**
-     * Remove a contact from an external list.
+     * Deletes the contact identified by its system-specific ID.
      *
-     * @param listId The external list ID
-     * @param contactId The external contact ID
+     * @param systemContactId The system-specific contact ID
      * @throws ContactServiceException if the operation fails
      */
-    fun removeFromList(listId: String, contactId: String)
-
-    /**
-     * Delete a contact from the external system.
-     *
-     * @param contactId The external contact ID
-     * @throws ContactServiceException if the operation fails
-     */
-    fun deleteContact(contactId: String)
-
-    /**
-     * Create a new contact list in the external system.
-     *
-     * @param listName The name for the list
-     * @param folderName The folder to create the list in
-     * @return External list ID
-     * @throws ContactServiceException if the operation fails
-     */
-    fun createList(listName: String, folderName: String): String
+    fun deleteContact(systemContactId: Long)
 }
 
 /**

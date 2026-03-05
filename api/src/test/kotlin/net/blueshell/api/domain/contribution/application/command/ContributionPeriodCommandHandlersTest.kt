@@ -84,7 +84,7 @@ class ContributionPeriodCommandHandlersTest {
                     halfYearFee = 10.0,
                     fullYearFee = 20.0,
                     alumniFee = 5.0,
-                    listId = 100L
+                    contactListId = 100L
                 )
             )
 
@@ -93,7 +93,7 @@ class ContributionPeriodCommandHandlersTest {
             assertThat(captured.firstValue.halfYearFee).isEqualTo(10.0)
             assertThat(captured.firstValue.fullYearFee).isEqualTo(20.0)
             assertThat(captured.firstValue.alumniFee).isEqualTo(5.0)
-            assertThat(captured.firstValue.listId).isEqualTo(100L)
+            assertThat(captured.firstValue.contactListId).isEqualTo(100L)
             assertThat(result.id).isEqualTo(7L)
         }
     }
@@ -119,7 +119,7 @@ class ContributionPeriodCommandHandlersTest {
                     halfYearFee = 11.0,
                     fullYearFee = 22.0,
                     alumniFee = 6.0,
-                    listId = 200L,
+                    contactListId = 200L,
                     version = 4L
                 )
             )
@@ -129,7 +129,7 @@ class ContributionPeriodCommandHandlersTest {
             assertThat(existing.halfYearFee).isEqualTo(11.0)
             assertThat(existing.fullYearFee).isEqualTo(22.0)
             assertThat(existing.alumniFee).isEqualTo(6.0)
-            assertThat(existing.listId).isEqualTo(200L)
+            assertThat(existing.contactListId).isEqualTo(200L)
             assertThat(existing.version).isEqualTo(4L)
             assertThat(result.id).isEqualTo(9L)
         }
@@ -154,7 +154,7 @@ class ContributionPeriodCommandHandlersTest {
         halfYearFee = 10.0,
         fullYearFee = 20.0,
         alumniFee = 5.0,
-        listId = 99L,
+        contactListId = 99L,
     ).apply {
         setField(this, "id", id)
         setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))

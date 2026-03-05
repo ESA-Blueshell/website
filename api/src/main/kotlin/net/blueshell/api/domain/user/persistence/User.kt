@@ -98,9 +98,6 @@ class User(
     @Column(name = "authority")
     var roles: MutableSet<Role> = mutableSetOf(Role.GUEST),
 
-    @Column(name = "contact_id")
-    var contactId: Long? = null,
-
     ) : AuditedAutoIdEntity() {
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")

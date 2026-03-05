@@ -66,8 +66,7 @@ object ContactJobs {
     )
 
     data class DeleteContactPayload(
-        val userId: Long,
-        val contactId: Long
+        val userId: Long
     )
 
     data class SyncListMembershipPayload(

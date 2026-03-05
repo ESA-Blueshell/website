@@ -21,7 +21,7 @@ data class UpdateContributionPeriodRequest(
     @field:NotNull
     var alumniFee: Double? = null,
 
-    var listId: Long? = null,
+    var contactListId: Long? = null,
 
     @field:NotNull
     var version: Long? = null

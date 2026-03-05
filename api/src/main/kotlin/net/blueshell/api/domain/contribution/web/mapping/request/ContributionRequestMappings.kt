@@ -24,7 +24,7 @@ fun CreateContributionPeriodRequest.asCommand(): CreateContributionPeriodCommand
         halfYearFee = this.halfYearFee!!,
         fullYearFee = this.fullYearFee!!,
         alumniFee = this.alumniFee!!,
-        listId = this.listId,
+        contactListId = this.contactListId,
     )
 
 fun UpdateContributionPeriodRequest.asCommand(id: Long): UpdateContributionPeriodCommand =
@@ -35,7 +35,7 @@ fun UpdateContributionPeriodRequest.asCommand(id: Long): UpdateContributionPerio
         halfYearFee = this.halfYearFee!!,
         fullYearFee = this.fullYearFee!!,
         alumniFee = this.alumniFee!!,
-        listId = this.listId,
+        contactListId = this.contactListId,
         version = this.version!!,
     )
 

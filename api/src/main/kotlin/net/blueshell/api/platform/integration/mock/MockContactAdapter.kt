@@ -1,9 +1,10 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.domain.user.application.contact.ContactData
-import net.blueshell.api.domain.user.application.contact.ContactServiceException
-import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
+import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.shared.enums.ContactSystem
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
@@ -17,13 +18,13 @@ import java.util.concurrent.atomic.AtomicLong
  * Provides in-memory contact and list management without external API dependencies.
  * Active in 'test' and 'dev' profiles.
  *
- * Implements [ContactSystemAdapter].
+ * Implements [ContactAdapter] and [ListAdapter].
  * Reported system is [ContactSystem.LISTMONK] so tests exercise the Listmonk path.
  */
 @Service
 @Primary
 @Profile("test | dev")
-class MockContactAdapter : ContactSystemAdapter {
+class MockContactAdapter : ContactAdapter, ListAdapter {
 
     override val system = ContactSystem.LISTMONK
 

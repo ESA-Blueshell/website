@@ -12,6 +12,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.CalendarEventRef
 import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
@@ -130,12 +131,12 @@ class JobAutoDispatchIT : UserTestSupport() {
 
         enqueueInTransaction {
             jobs.enqueue(
-                ContactJobs.SyncContact,
-                ContactJobs.SyncContactPayload(user.id!!)
+                ListmonkJobs.SyncContact,
+                ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
             )
         }
 
-        awaitJobStatus(ContactJobs.SyncContact.type, JobExecutionStatus.SUCCESS)
+        awaitJobStatus(ListmonkJobs.SyncContact.type, JobExecutionStatus.SUCCESS)
     }
 
     // ── Contact: Delete contact ──────────────────────────────────────────

@@ -13,6 +13,7 @@ import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -77,13 +78,11 @@ class SyncListMembershipJobIT : UserTestSupport() {
         val period = createContributionPeriodFixture()
         createContribution(user, period)
 
-        // Run once to create list
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
         assertThat(contactListRepository.findAll()).hasSize(1)
 
-        // Run again — should reuse, not create a second list
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
@@ -93,7 +92,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `creates Contact and membership when user has contribution`() {
+    fun `creates DB membership when user has contribution`() {
         val user = createUserWithRole(Role.MEMBER)
         val period = createContributionPeriodFixture()
         createContribution(user, period)
@@ -102,19 +101,24 @@ class SyncListMembershipJobIT : UserTestSupport() {
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
 
-        // Contact DB record is created synchronously by contactSyncService.syncContact()
+        // Wait for per-integration contact sync (needed before list membership sync)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+
+        val contactList = contactListRepository.findAll().single()
+
+        // Wait for per-integration list sync
+        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
+
         val record = contactRepository.findByUserId(user.id!!)
         assertThat(record).describedAs("Contact should be created for user").isNotNull()
 
-        // DB membership is created synchronously
-        val contactList = contactListRepository.findAll().single()
         val membership = contactListMembershipRepository
             .findByContactIdAndContactListId(record!!.id!!, contactList.id!!)
         assertThat(membership).describedAs("Membership should be created").isNotNull()
     }
 
     @Test
-    fun `dispatches AddToList job when user has contribution`() {
+    fun `adds contact to external list when user has contribution`() {
         val user = createUserWithRole(Role.MEMBER)
         val period = createContributionPeriodFixture()
         createContribution(user, period)
@@ -123,13 +127,14 @@ class SyncListMembershipJobIT : UserTestSupport() {
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
 
-        // AddToList job should be dispatched (auto-dispatch enabled — wait for it to complete)
-        awaitJobSuccess(ContactJobs.AddToList.type)
+        // Wait for contact sync + list sync to complete
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
 
         val contactId = mockContactAdapter.getAllContacts().keys.single()
         val externalListId = mockContactAdapter.getAllLists().keys.single()
         assertThat(mockContactAdapter.isInList(contactId, externalListId))
-            .describedAs("Contact should be in external list after AddToList job")
+            .describedAs("Contact should be in external list")
             .isTrue()
     }
 
@@ -143,6 +148,9 @@ class SyncListMembershipJobIT : UserTestSupport() {
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
+
         val record = contactRepository.findByUserId(user.id!!)!!
         val contactList = contactListRepository.findAll().single()
         assertThat(
@@ -163,6 +171,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
+        awaitJobSuccess(ListmonkJobs.SyncListMembership.type, expectedCount = 2)
 
         assertThat(
             contactListMembershipRepository.findByContactIdAndContactListId(record.id!!, contactList.id!!)
@@ -170,12 +179,11 @@ class SyncListMembershipJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `no-op remove when user has no Contact and no contribution`() {
+    fun `no-op when user has no Contact and no contribution`() {
         val user = createUserWithRole(Role.MEMBER)
         val period = createContributionPeriodFixture()
         // No contribution created
 
-        // Should not throw
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )

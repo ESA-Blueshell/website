@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class ErasureListener(
-    private val jobs: TrackedJobDispatcher
+    private val jobs: TrackedJobDispatcher,
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)

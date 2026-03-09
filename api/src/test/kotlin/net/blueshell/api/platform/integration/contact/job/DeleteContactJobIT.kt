@@ -6,6 +6,7 @@ import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -35,42 +36,47 @@ class DeleteContactJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `delete contact job dispatches per-system delete and removes contact from DB`() {
+    fun `delete contact job soft-deletes Contact record and removes from external system`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        // Sync the contact to create Contact DB record + external system entry
-        syncContactAndSystem(user.id!!)
+        // Create contact in DB and external system via sync job
+        syncContact(user.id!!)
         assertThat(mockContactAdapter.getAllContacts()).hasSize(1)
+        assertThat(contactRepository.findByUserId(user.id!!)).isNotNull()
 
+        // Run DeleteContact job
         val deleteExecution = jobs.enqueue(
             ContactJobs.DeleteContact,
             ContactJobs.DeleteContactPayload(userId = user.id!!)
         )!!
-
-        // Run DeleteContact → dispatches DeleteContactFromSystem + removes DB record
         executor.execute(jobExecutions.findById(deleteExecution.id!!).orElseThrow())
 
-        // Run the dispatched DeleteContactFromSystem job
-        val systemExecution = jobExecutions.findAll()
-            .first { it.jobType == ContactJobs.DeleteContactFromSystem.type }
-        executor.execute(systemExecution)
+        // Contact DB record is soft-deleted (invisible via normal findByUserId)
+        assertThat(contactRepository.findByUserId(user.id!!))
+            .describedAs("Contact should be soft-deleted and invisible via normal query")
+            .isNull()
 
-        assertThat(mockContactAdapter.getAllContacts()).isEmpty()
-        assertThat(contactRepository.findByUserId(user.id!!)).isNull()
+        // Run the dispatched per-integration sync job (delete path)
+        val syncExecution = jobExecutions.findAll()
+            .first { it.jobType == ListmonkJobs.SyncContact.type && it.id != null && it.id != deleteExecution.id }
+        executor.execute(syncExecution)
+
+        assertThat(mockContactAdapter.getAllContacts())
+            .describedAs("Contact should be removed from external system")
+            .isEmpty()
 
         val updated = jobExecutions.findById(deleteExecution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.SUCCESS)
     }
 
     @Test
-    fun `delete contact job removes contact from all lists`() {
+    fun `delete contact job removes contact from external lists`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        // Sync to create Contact + external system entry
-        syncContactAndSystem(user.id!!)
+        syncContact(user.id!!)
 
         val contactId = mockContactAdapter.getAllContacts().keys.single()
-        val listId = mockContactAdapter.createList("Test List", "testFolder")
+        val listId = mockContactAdapter.createList("Test List", null)
         mockContactAdapter.addToList(contactId, listId)
         assertThat(mockContactAdapter.isInList(contactId, listId)).isTrue()
 
@@ -78,26 +84,25 @@ class DeleteContactJobIT : UserTestSupport() {
             ContactJobs.DeleteContact,
             ContactJobs.DeleteContactPayload(userId = user.id!!)
         )!!
-
         executor.execute(jobExecutions.findById(deleteExecution.id!!).orElseThrow())
 
-        val systemExecution = jobExecutions.findAll()
-            .first { it.jobType == ContactJobs.DeleteContactFromSystem.type }
-        executor.execute(systemExecution)
+        val syncExecution = jobExecutions.findAll()
+            .first { it.jobType == ListmonkJobs.SyncContact.type && it.id != deleteExecution.id }
+        executor.execute(syncExecution)
 
         assertThat(mockContactAdapter.getAllContacts()).isEmpty()
+        // Contacts are removed from lists when deleteContact is called on MockContactAdapter
         assertThat(mockContactAdapter.isInList(contactId, listId)).isFalse()
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    /** Runs SyncContact then SyncContactToSystem synchronously. */
-    private fun syncContactAndSystem(userId: Long) {
-        val syncExecution = jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId))!!
+    /** Runs ListmonkContactSync (via mock) synchronously. */
+    private fun syncContact(userId: Long) {
+        val syncExecution = jobs.enqueue(
+            ListmonkJobs.SyncContact,
+            ListmonkJobs.ListmonkContactSyncPayload(userId)
+        )!!
         executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
-
-        val systemExecution = jobExecutions.findAll()
-            .first { it.jobType == ContactJobs.SyncContactToSystem.type }
-        executor.execute(systemExecution)
     }
 }

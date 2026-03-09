@@ -17,6 +17,7 @@ import net.blueshell.api.domain.user.persistence.spec.ProfileLifecycleSpecs
 import net.blueshell.api.factory.user.web.request.UserRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -73,7 +74,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.email").value(guestEmail))
 
             val persistedUser = userRepository.findByUsername(guestUsername).orElseThrow()
-            val jobs = findJobsByType(ContactJobs.SyncContact.type)
+            val jobs = findJobsByType(ListmonkJobs.SyncContact.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on user creation")
                 .hasSize(1)
@@ -154,7 +155,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.firstName").value("Updated"))
                 .andExpect(jsonPath("$.discord").value("updated#1234"))
 
-            val jobs = findJobsByType(ContactJobs.SyncContact.type)
+            val jobs = findJobsByType(ListmonkJobs.SyncContact.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on user update")
                 .hasSize(1)
@@ -768,7 +769,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
 
             assertThat(userRepository.findById(createdUser.id!!).orElseThrow().roles).contains(Role.MEMBER)
-            val jobs = findJobsByType(ContactJobs.SyncContact.type)
+            val jobs = findJobsByType(ListmonkJobs.SyncContact.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on role toggle")
                 .hasSize(1)

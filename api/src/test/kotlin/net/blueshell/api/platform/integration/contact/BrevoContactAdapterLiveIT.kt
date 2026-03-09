@@ -1,21 +1,21 @@
 package net.blueshell.api.platform.integration.contact
 
-import net.blueshell.api.domain.user.application.contact.ContactData
-import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.platform.integration.contact.adapter.brevo.BrevoContactAdapter
+import net.blueshell.api.platform.integration.contact.adapter.brevo.BrevoListAdapter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Tag
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 
 /**
- * Live integration tests for BrevoContactSystemAdapter against the real Brevo API.
+ * Live integration tests for BrevoContactAdapter and BrevoListAdapter against the real Brevo API.
  *
  * Uses the "brevo-live" profile, which:
  * - deactivates MockContactAdapter (profile = "test | dev")
- * - activates BrevoContactSystemAdapter  (profile = "!test & !dev")
+ * - activates BrevoContactAdapter  (profile = "!test & !dev")
  *
  * Brevo credentials are resolved by Spring from the environment (BREVO_API_KEY etc.)
  * exactly as in production. Run via Docker where the env file is loaded:
@@ -34,15 +34,17 @@ import org.springframework.test.context.ActiveProfiles
 class BrevoContactAdapterLiveIT {
 
     @Autowired
-    @Qualifier("brevoContactSystemAdapter")
-    private lateinit var adapter: ContactSystemAdapter
+    private lateinit var contactAdapter: BrevoContactAdapter
+
+    @Autowired
+    private lateinit var listAdapter: BrevoListAdapter
 
     private val testEmail = "live-test-${System.currentTimeMillis()}@esa-blueshell.nl"
     private var contactId: Long? = null
 
     @AfterAll
     fun teardown() {
-        contactId?.let { runCatching { adapter.deleteContact(it) } }
+        contactId?.let { runCatching { contactAdapter.deleteContact(it) } }
     }
 
     private fun contactData(firstName: String = "LiveTest") = ContactData(
@@ -57,7 +59,7 @@ class BrevoContactAdapterLiveIT {
     @Test
     @Order(1)
     fun `create contact succeeds`() {
-        contactId = adapter.createContact(contactData())
+        contactId = contactAdapter.createContact(contactData())
         assertThat(contactId).isGreaterThan(0)
     }
 
@@ -65,18 +67,18 @@ class BrevoContactAdapterLiveIT {
     @Order(2)
     fun `update contact succeeds for existing contact`() {
         assumeContactExists()
-        adapter.updateContact(contactId!!, contactData("Updated"))
+        contactAdapter.updateContact(contactId!!, contactData("Updated"))
     }
 
     @Test
     @Order(3)
     fun `create list and add then remove contact`() {
         assumeContactExists()
-        val listId = adapter.createList("live-test-${System.currentTimeMillis()}", "contributionPeriods")
+        val listId = listAdapter.createList("live-test-${System.currentTimeMillis()}", "contributionPeriods")
         assertThat(listId).isGreaterThan(0)
 
-        adapter.addToList(contactId!!, listId)
-        adapter.removeFromList(contactId!!, listId)
+        listAdapter.addToList(contactId!!, listId)
+        listAdapter.removeFromList(contactId!!, listId)
         // Note: Brevo lists are not deleted via this adapter; the test list remains in the account.
     }
 
@@ -84,7 +86,7 @@ class BrevoContactAdapterLiveIT {
     @Order(4)
     fun `delete contact succeeds`() {
         assumeContactExists()
-        adapter.deleteContact(contactId!!)
+        contactAdapter.deleteContact(contactId!!)
         contactId = null // prevent teardown from attempting a second delete
     }
 

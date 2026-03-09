@@ -4,6 +4,7 @@ import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -18,7 +19,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 /**
  * End-to-end test verifying that deleting a user with an external contact
  * removes the contact from the external system via the
- * DeleteContact → DeleteContactFromSystem job chain.
+ * DeleteContact → per-integration sync job chain.
  */
 @SpringBootTest
 @TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
@@ -40,30 +41,26 @@ class UserDeleteContactSyncIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val member = createUserWithRole(Role.MEMBER)
 
-        // Sync contact to assign contactId via auto-dispatch
+        // Sync contact first to assign external ID
         enqueueInTransaction {
-            jobs.enqueue(
-                ContactJobs.SyncContact,
-                ContactJobs.SyncContactPayload(member.id!!)
-            )
+            jobs.enqueue(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(member.id!!))
         }
-        awaitJobSuccess(ContactJobs.SyncContact.type)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should exist after sync")
             .isNotEmpty()
 
-        // Delete user via HTTP
+        // Delete user via HTTP (fires UserDeleted → ErasureListener → DeleteContact job)
         mvc.perform(
             delete("/users/{userId}", member.id)
                 .with(bearer(board))
         )
             .andExpect(status().isNoContent)
 
-        // Await DeleteContact + DeleteContactFromSystem jobs via auto-dispatch
+        // Await DeleteContact + per-integration sync (delete path)
         awaitJobSuccess(ContactJobs.DeleteContact.type)
-        awaitJobSuccess(ContactJobs.DeleteContactFromSystem.type)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type, expectedCount = 2)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should be removed after user deletion")

@@ -1,10 +1,11 @@
-package net.blueshell.api.platform.integration.contact.adapter
+package net.blueshell.api.platform.integration.contact.adapter.brevo
 
 import jakarta.validation.Valid
 import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactServiceException
-import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.clients.brevo.ApiClient
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.CreateContactRequest
@@ -20,33 +21,39 @@ import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 
 /**
- * Brevo Contact Anti-Corruption Layer (ADR-019)
+ * Brevo Anti-Corruption Layer (ADR-019)
  *
- * Implements [ContactSyncAdapter] against the Brevo Contacts API.
+ * Implements [ContactSystemAdapter] against the Brevo Contacts API.
  * Active in production only (test/dev use MockContactAdapter).
+ *
+ * [contributionPeriodsFolder] is the Brevo folder ID under which all contribution-period
+ * lists are created; the domain-level [folderName] hint is intentionally ignored because
+ * Brevo organises lists by numeric folder ID, not by name.
  */
 @Service
 @Profile("!test & !dev")
 class BrevoContactAdapter(
     restClientBuilder: RestClient.Builder,
     jsonMapper: JsonMapper,
-    @param:Value($$"${brevo.apiKey}") apiKey: String,
-    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
-) : ContactSyncAdapter {
+) : ContactAdapter {
+
+    @field:Value($$"${brevo.apiKey}")
+    lateinit var apiKey: String
+
+    @field:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}")
+    lateinit var brevoBaseUrl: String
 
     override val system = ContactSystem.BREVO
 
-    private val contactsApi: ContactsApi = ContactsApi(
-        ApiClient(
-            restClientBuilder
-                .baseUrl(brevoBaseUrl)
-                .defaultHeader("api-key", apiKey)
+    private val contactsApi: ContactsApi =
+        ContactsApi(
+            ApiClient(
+                restClientBuilder.baseUrl(brevoBaseUrl).defaultHeader("api-key", apiKey)
                 .configureMessageConverters {
                     it.addCustomConverter(JacksonJsonHttpMessageConverter(jsonMapper))
-                }
-                .build()
-        )
-    )
+                }.build()))
+
+    // ── Contact operations ─────────────────────────────────────────────────────
 
     override fun createContact(data: ContactData): Long {
         log.info("Creating Brevo contact: {}", data.email)
@@ -54,8 +61,8 @@ class BrevoContactAdapter(
             val req = CreateContactRequest()
             req.email = data.email
             req.extId = data.email   // Brevo extId used for dedup
-            @Suppress("UNCHECKED_CAST")
-            req.attributes = buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
+            @Suppress("UNCHECKED_CAST") req.attributes =
+                buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
             val response = contactsApi.createContact(req)
             log.info("Created Brevo contact id={} for {}", response.id, data.email)
             response.id!!
@@ -70,8 +77,8 @@ class BrevoContactAdapter(
         try {
             val req = UpdateContactRequest()
             req.extId = data.email
-            @Suppress("UNCHECKED_CAST")
-            req.attributes = buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
+            @Suppress("UNCHECKED_CAST") req.attributes =
+                buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
             contactsApi.updateContact(data.email, req, "email_id")
             log.info("Updated Brevo contact id={}", externalId)
         } catch (e: RestClientResponseException) {

@@ -1,10 +1,10 @@
 package net.blueshell.api.platform.integration.contact.application.job
 
-import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.platform.integration.contact.application.ContactSyncService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ContactJobs
 import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
 
 /**
  * Job handler for deleting a user's contact from all registered external systems.

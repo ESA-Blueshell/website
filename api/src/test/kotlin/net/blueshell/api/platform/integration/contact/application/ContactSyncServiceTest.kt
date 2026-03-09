@@ -2,12 +2,10 @@ package net.blueshell.api.platform.integration.contact.application
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.contact.ContactData
-import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.contact.persistence.BrevoContact
 import net.blueshell.api.platform.integration.contact.persistence.Contact
-import net.blueshell.api.platform.integration.contact.persistence.ListmonkContact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -30,10 +28,10 @@ import org.mockito.kotlin.whenever
  */
 class ContactSyncServiceTest {
 
-    private val listmonkAdapter: ContactSyncAdapter = mock {
+    private val listmonkAdapter: ContactSystemAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
     }
-    private val brevoAdapter: ContactSyncAdapter = mock {
+    private val brevoAdapter: ContactSystemAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.BREVO)
     }
     private val contactRepository: ContactRepository = mock()
@@ -141,8 +139,8 @@ class ContactSyncServiceTest {
     @Test
     fun `deleteContact dispatches DeleteContactFromSystem job with correct externalId per adapter`() {
         val record = Contact(userId = userId).apply { id = 1L }
-        record.listmonkContact = ListmonkContact(contact = record, externalId = 10L)
-        record.brevoContact = BrevoContact(contact = record, externalId = 20L)
+        record.setExternalId(ContactSystem.LISTMONK, 10L)
+        record.setExternalId(ContactSystem.BREVO, 20L)
 
         whenever(contactRepository.findByUserId(userId)).thenReturn(record)
 
@@ -172,8 +170,8 @@ class ContactSyncServiceTest {
     @Test
     fun `deleteContact skips adapter when system child is missing`() {
         val record = Contact(userId = userId).apply { id = 1L }
-        record.listmonkContact = ListmonkContact(contact = record, externalId = 10L)
-        // no brevoContact
+        record.setExternalId(ContactSystem.LISTMONK, 10L)
+        // no BREVO external ID
 
         whenever(contactRepository.findByUserId(userId)).thenReturn(record)
 
@@ -183,7 +181,7 @@ class ContactSyncServiceTest {
             eq(ContactJobs.DeleteContactFromSystem),
             eq(ContactJobs.DeleteContactFromSystemPayload(10L, ContactSystem.LISTMONK))
         )
-        // Only one dispatch — no Brevo call because brevoContact is null
+        // Only one dispatch — no Brevo call because BREVO externalId is null
         verify(jobs, times(1)).enqueue(eq(ContactJobs.DeleteContactFromSystem), any<ContactJobs.DeleteContactFromSystemPayload>())
     }
 }

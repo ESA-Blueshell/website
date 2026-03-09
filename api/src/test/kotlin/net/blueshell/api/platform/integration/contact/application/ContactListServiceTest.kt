@@ -1,14 +1,10 @@
 package net.blueshell.api.platform.integration.contact.application
 
 import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
-import net.blueshell.api.platform.integration.contact.persistence.BrevoContact
-import net.blueshell.api.platform.integration.contact.persistence.BrevoList
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
-import net.blueshell.api.platform.integration.contact.persistence.ListmonkContact
-import net.blueshell.api.platform.integration.contact.persistence.ListmonkList
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
@@ -30,10 +26,10 @@ import java.util.Optional
  */
 class ContactListServiceTest {
 
-    private val listmonkAdapter: ListSyncAdapter = mock {
+    private val listmonkAdapter: ContactSystemAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
     }
-    private val brevoAdapter: ListSyncAdapter = mock {
+    private val brevoAdapter: ContactSystemAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.BREVO)
     }
     private val contactListRepository: ContactListRepository = mock()
@@ -86,8 +82,8 @@ class ContactListServiceTest {
 
         verify(listmonkAdapter).createList("New", "folder")
         verify(brevoAdapter).createList("New", "folder")
-        assertThat(saved!!.listmonkList?.externalId).isEqualTo(100L)
-        assertThat(saved!!.brevoList?.externalId).isEqualTo(200L)
+        assertThat(saved!!.externalListId(ContactSystem.LISTMONK)).isEqualTo(100L)
+        assertThat(saved!!.externalListId(ContactSystem.BREVO)).isEqualTo(200L)
     }
 
     @Test
@@ -199,7 +195,7 @@ class ContactListServiceTest {
     }
 
     @Test
-    fun `skips adapter when list has no system-specific child`() {
+    fun `skips adapter when list has no system-specific external ID`() {
         val list = contactListWithId(listId, "List", listmonkId = 100L, brevoId = null)
         whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
 
@@ -214,8 +210,8 @@ class ContactListServiceTest {
     private fun contactWithId(userId: Long, listmonkId: Long? = null, brevoId: Long? = null): Contact {
         val c = Contact(userId = userId)
         c.id = userId
-        listmonkId?.let { c.listmonkContact = ListmonkContact(contact = c, externalId = it) }
-        brevoId?.let { c.brevoContact = BrevoContact(contact = c, externalId = it) }
+        listmonkId?.let { c.setExternalId(ContactSystem.LISTMONK, it) }
+        brevoId?.let { c.setExternalId(ContactSystem.BREVO, it) }
         return c
     }
 
@@ -227,8 +223,8 @@ class ContactListServiceTest {
     ): ContactList {
         val l = ContactList(name = name)
         l.id = id
-        listmonkId?.let { l.listmonkList = ListmonkList(list = l, externalId = it) }
-        brevoId?.let { l.brevoList = BrevoList(list = l, externalId = it) }
+        listmonkId?.let { l.setExternalListId(ContactSystem.LISTMONK, it) }
+        brevoId?.let { l.setExternalListId(ContactSystem.BREVO, it) }
         return l
     }
 }

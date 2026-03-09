@@ -1,16 +1,14 @@
 package net.blueshell.api.platform.integration.contact.application.job
 
-import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
-import net.blueshell.api.platform.integration.contact.application.externalId
-import net.blueshell.api.platform.integration.contact.application.externalListId
+import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.platform.integration.queue.ListJobHandler
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
 
 /**
  * Adds a contact to a list in a single external system.
@@ -22,24 +20,19 @@ import org.springframework.stereotype.Component
 @Component
 class AddToListJob(
     objectMapper: ObjectMapper,
-    adapters: List<ListSyncAdapter>,
+    adapters: List<ListAdapter>,
     private val contactRepository: ContactRepository,
     private val contactListRepository: ContactListRepository,
-) : AbstractJsonJobHandler<ContactJobs.AddToListPayload>(
+) : ListJobHandler<ContactJobs.AddToListPayload>(
     objectMapper,
-    ContactJobs.AddToList.payloadType
+    ContactJobs.AddToList.payloadType,
+    adapters,
 ) {
     override val jobType: String = ContactJobs.AddToList.type
 
-    private val bySystem = adapters.associateBy { it.system }
+    override fun systemFrom(payload: ContactJobs.AddToListPayload): ContactSystem = payload.system
 
-    override fun handlePayload(payload: ContactJobs.AddToListPayload) {
-        val adapter = bySystem[payload.system]
-        if (adapter == null) {
-            log.warn("No adapter registered for system {} — skipping addToList for user {}", payload.system, payload.userId)
-            return
-        }
-
+    override fun handleForSystem(payload: ContactJobs.AddToListPayload, adapter: ListAdapter) {
         val contact = contactRepository.findByUserId(payload.userId)
         val externalId = contact?.externalId(payload.system)
             ?: throw RetryableAddToListException(
@@ -53,10 +46,6 @@ class AddToListJob(
             )
 
         adapter.addToList(externalId, externalListId)
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(AddToListJob::class.java)
     }
 }
 

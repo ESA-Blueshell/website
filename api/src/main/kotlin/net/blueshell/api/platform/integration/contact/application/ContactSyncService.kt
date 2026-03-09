@@ -1,9 +1,7 @@
 package net.blueshell.api.platform.integration.contact.application
 
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.contact.ContactData
-import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
-import net.blueshell.api.domain.user.application.contact.toContactData
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.shared.job.ContactJobs
@@ -25,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class ContactSyncService(
-    private val contactSyncAdapters: List<ContactSyncAdapter>,
+    private val contactSyncAdapters: List<ContactAdapter>,
     private val contactRepository: ContactRepository,
     private val userService: UserService,
     private val jobs: TrackedJobDispatcher,

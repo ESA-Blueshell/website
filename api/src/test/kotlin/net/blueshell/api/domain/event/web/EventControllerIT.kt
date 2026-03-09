@@ -114,7 +114,7 @@ class EventControllerIT : UserTestSupport() {
     @Nested
     inner class SignUpLimitValidation {
         @Test
-        fun `rejects event with signUpDeadline in the past`() {
+        fun `accepts event with signUpDeadline in the past`() {
             val board = createUserWithRole(Role.BOARD)
             val committee = createCommitteeFixture()
 
@@ -131,7 +131,7 @@ class EventControllerIT : UserTestSupport() {
                         )
                     )
             )
-                .andExpect(status().isBadRequest)
+                .andExpect(status().isCreated)
         }
 
         @Test

@@ -512,7 +512,7 @@ defineExpose({validate, save})
               v-model="event.signUpDeadline"
               :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock-outline' }"
               :display="(v: string) => safeFormatISO(String(v ?? ''), 'HH:mm')"
-              :rules="`required|dateTimeAfter:${nowISO}|dateTimeNotAfter:@endTime`"
+              :rules="`required|dateTimeNotAfter:@endTime`"
               :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.signUpDeadline }))"
               label="Sign-up deadline time"
               name="signUpDeadlineTime"

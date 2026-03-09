@@ -31,7 +31,7 @@ data class CreateEventRequest(
     var startTime: Instant? = null,
 
     @field:NotNull
-    var endTime: Instant? = null,
+    override var endTime: Instant? = null,
 
     var memberPrice: Double? = null,
     var publicPrice: Double? = null,
@@ -45,7 +45,7 @@ data class CreateEventRequest(
     @field:NotNull
     var signUp: Boolean? = null,
 
-    var signUpDeadline: Instant? = null,
+    override var signUpDeadline: Instant? = null,
 
     @field:Min(1, message = "Sign-up limit must be at least 1")
     var signUpLimit: Int? = null,

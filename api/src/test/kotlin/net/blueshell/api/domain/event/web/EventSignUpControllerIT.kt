@@ -169,7 +169,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
                 )
-                    .andExpect(status().isUnprocessableEntity)
+                    .andExpect(status().isBadRequest)
             }
 
             @Test
@@ -209,7 +209,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
                 )
-                    .andExpect(status().isUnprocessableEntity)
+                    .andExpect(status().isBadRequest)
             }
 
             @Test

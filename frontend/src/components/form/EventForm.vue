@@ -5,7 +5,7 @@ import {defineRule, Form} from "vee-validate"
 import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
-import {apply} from "@/plugins/validation.ts"
+import {apply, type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox, VFileInput, VSelect} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
@@ -25,7 +25,7 @@ import {
 } from "@/services/api"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import {safeFormatISO, toISO} from "@/utils/datetime"
-import type {DisplayFn, HandleChange} from "@/types/VVField.types.ts"
+import type {HandleChange} from "@/types/VVField.types.ts"
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
@@ -86,7 +86,6 @@ const store = useStore()
 const isBoard = computed<boolean>(() => store.getters.isBoard)
 
 const committees = ref<CommitteeOption[]>([])
-const sameEndDate = ref(true)
 const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
@@ -108,10 +107,8 @@ defineRule("fileSize", (value: File | File[] | null) => {
   return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
 })
 
-const setEndDate = function (date: string) {
-  if (!sameEndDate.value) return
-  const time = DateTime.fromISO(event.value.endTime).toFormat("HH:mm")
-  event.value.endTime = toISO({time, date})
+const eventFieldMap: FieldMap = {
+  "banner.fileId": "banner",
 }
 
 watch(
@@ -126,6 +123,7 @@ watch(
       event.value.signUpDeadline = event.value.startTime
     }
   },
+  {immediate: true},
 )
 watch(enableSignUpForm, (on) => {
   if (on) event.value.signUp = true
@@ -215,8 +213,8 @@ const save = async () => {
                 version: event.value.banner?.version,
               } as EventBannerRequest
             }
-          } else if (!apply(formRef.value!, uploadResp)) {
-            handleSubmitError(formRef.value, uploadResp)
+          } else if (!apply(formRef.value!, uploadResp, eventFieldMap)) {
+            handleSubmitError(formRef.value, uploadResp, eventFieldMap)
             setSubmitResult(false)
             return
           }
@@ -277,7 +275,7 @@ const save = async () => {
       setSubmitResult(true)
     })
   } catch (e: unknown) {
-    handleSubmitError(formRef.value, e)
+    handleSubmitError(formRef.value, e, eventFieldMap)
     emit("submitted", false)
     setSubmitResult(false)
   }
@@ -358,14 +356,6 @@ defineExpose({validate, save})
       <v-row>
         <v-col>
           <VvField
-            v-model="sameEndDate"
-            :component="VCheckbox"
-            :component-props="{ label: 'Same start and end date' }"
-            name="sameEndDate"
-          />
-        </v-col>
-        <v-col>
-          <VvField
             v-model="event.membersOnly"
             :component="VCheckbox"
             :component-props="{ label: 'Members only' }"
@@ -388,49 +378,20 @@ defineExpose({validate, save})
         <v-col>
           <VvField
             v-model="event.startTime"
-            :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
-            :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
-            :update="(date: string, handle: HandleChange<string>) => {
-              handle(toISO({ date, dateTime: event.startTime }))
-              setEndDate(date)
-            }"
-            label="Start date"
-            name="startDate"
-            rules="required"
-          />
-        </v-col>
-        <v-col>
-          <VvField
-            v-model="event.startTime"
-            :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
-            :display="(v: DisplayFn<string>) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+            :component-props="{ type: 'datetime-local', 'prepend-icon': 'mdi-clock' }"
+            :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
             :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
-            :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.startTime }))"
+            :update="(v: string, handle: HandleChange<string>) => handle(toISO({ dateTime: v }))"
             label="Start time"
             name="startTime"
           />
         </v-col>
-      </v-row>
-
-      <v-row>
         <v-col>
           <VvField
             v-model="event.endTime"
-            :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar' }"
-            :disabled="sameEndDate"
-            :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
-            :update="(date: string, handle: HandleChange<string>) => handle(toISO({ date: String(date), dateTime: event.endTime }))"
-            label="End date"
-            name="endDate"
-            rules="required|dateTimeAfter:@startDate"
-          />
-        </v-col>
-        <v-col>
-          <VvField
-            v-model="event.endTime"
-            :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock' }"
-            :display="(v: string) => safeFormatISO(String(v ?? ''), 'HH:mm')"
-            :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.endTime }))"
+            :component-props="{ type: 'datetime-local', 'prepend-icon': 'mdi-clock' }"
+            :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
+            :update="(v: string, handle: HandleChange<string>) => handle(toISO({ dateTime: v }))"
             label="End time"
             name="endTime"
             rules="required|dateTimeAfter:@startTime"
@@ -499,34 +460,20 @@ defineExpose({validate, save})
           <v-col>
             <VvField
               v-model="event.signUpDeadline"
-              :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar-clock' }"
-              :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
-              :update="(date: string, handle: HandleChange<string>) => handle(toISO({ date, dateTime: event.signUpDeadline }))"
-              label="Sign-up deadline date"
-              name="signUpDeadlineDate"
-              rules="required"
-            />
-          </v-col>
-          <v-col>
-            <VvField
-              v-model="event.signUpDeadline"
-              :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock-outline' }"
-              :display="(v: string) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+              :component-props="{ type: 'datetime-local', 'prepend-icon': 'mdi-clock' }"
+              :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
               :rules="`required|dateTimeNotAfter:@endTime`"
-              :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.signUpDeadline }))"
-              label="Sign-up deadline time"
-              name="signUpDeadlineTime"
+              :update="(v: string, handle: HandleChange<string>) => handle(toISO({ dateTime: v }))"
+              label="Sign-up deadline"
+              name="signUpDeadline"
             />
           </v-col>
-        </v-row>
-
-        <v-row>
           <v-col>
             <VvField
               v-model="event.signUpLimit"
               :component-props="{ type: 'number', min: 1, clearable: true, 'prepend-icon': 'mdi-account-multiple' }"
               :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
-              label="Maximum sign-ups (leave blank for unlimited)"
+              label="Maximum sign-ups"
               name="signUpLimit"
               rules="minValue:1"
             />

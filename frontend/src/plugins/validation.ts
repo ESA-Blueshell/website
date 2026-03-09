@@ -261,17 +261,30 @@ export function parseApiValidation(err: unknown): ParsedValidation | null {
 }
 
 /**
- * Composable to apply backend validation to current VeeValidate <Form>.
- * Optionally pass:
- *  - objectName: only apply errors matching this DTO name
- *  - fieldMap:   map backend field -> local field (e.g., { last_name: "lastName" })
+ * Maps backend field paths to one or more frontend VeeValidate field names.
+ * e.g. { startTime: ["startDate", "startTime"], "banner.fileId": "banner" }
  */
-export function apply(formContext: FormContext, err: unknown) {
+export type FieldMap = Record<string, string | string[]>
+
+/**
+ * Applies backend validation errors to the current VeeValidate <Form>.
+ * Pass an optional fieldMap to translate backend property paths to frontend field names.
+ * One backend field can map to multiple frontend fields (useful for split date/time inputs).
+ */
+export function apply(formContext: FormContext, err: unknown, fieldMap?: FieldMap) {
   const parsed = parseApiValidation(err)
   if (!parsed) return false
 
   for (const [field, msgs] of Object.entries(parsed.fieldErrors)) {
-    formContext.setFieldError(field, msgs)
+    const mapped = fieldMap?.[field]
+    if (mapped != null) {
+      const targets = Array.isArray(mapped) ? mapped : [mapped]
+      for (const target of targets) {
+        formContext.setFieldError(target, msgs)
+      }
+    } else {
+      formContext.setFieldError(field, msgs)
+    }
   }
   return true
 }

@@ -1,7 +1,7 @@
 import {computed, ref} from "vue"
 import type {FormContext} from "vee-validate"
 import {useStore} from "vuex"
-import {apply} from "@/plugins/validation.ts"
+import {apply, type FieldMap} from "@/plugins/validation.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import type {CountryCode} from "libphonenumber-js/max"
 
@@ -29,8 +29,8 @@ export function useSaving() {
   return {isSaving, withSaving}
 }
 
-export function handleSubmitError(formRef: FormContext | undefined, err: unknown) {
-  if (!formRef || !apply(formRef, err)) {
+export function handleSubmitError(formRef: FormContext | undefined, err: unknown, fieldMap?: FieldMap) {
+  if (!formRef || !apply(formRef, err, fieldMap)) {
     $handleNetworkError(err)
   }
 }

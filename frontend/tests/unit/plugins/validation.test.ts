@@ -66,4 +66,69 @@ describe("validation plugin helpers", () => {
     expect(apply({setFieldError} as never, {foo: "bar"})).toBe(false)
     expect(setFieldError).not.toHaveBeenCalled()
   })
+
+  it("applies errors to a remapped field name when fieldMap provides a string target", () => {
+    const setFieldError = vi.fn()
+    apply(
+      {setFieldError} as never,
+      {
+        response: {
+          status: 400,
+          data: {status: 400, errors: [{field: "banner.fileId", message: "Required"}]},
+        },
+      },
+      {"banner.fileId": "banner"},
+    )
+
+    expect(setFieldError).toHaveBeenCalledOnce()
+    expect(setFieldError).toHaveBeenCalledWith("banner", ["Required"])
+  })
+
+  it("fans out to multiple frontend fields when fieldMap provides an array target", () => {
+    const setFieldError = vi.fn()
+    apply(
+      {setFieldError} as never,
+      {
+        response: {
+          status: 400,
+          data: {
+            status: 400,
+            errors: [{field: "startTime", message: "Must not be null"}],
+          },
+        },
+      },
+      {startTime: ["startDate", "startTime"]},
+    )
+
+    expect(setFieldError).toHaveBeenCalledTimes(2)
+    expect(setFieldError).toHaveBeenCalledWith("startDate", ["Must not be null"])
+    expect(setFieldError).toHaveBeenCalledWith("startTime", ["Must not be null"])
+  })
+
+  it("falls back to original field name for unmapped fields even when fieldMap is provided", () => {
+    const setFieldError = vi.fn()
+    apply(
+      {setFieldError} as never,
+      {
+        response: {
+          status: 400,
+          data: {
+            status: 400,
+            errors: [
+              {field: "title", message: "Required"},
+              {field: "startTime", message: "Must not be null"},
+            ],
+          },
+        },
+      },
+      {startTime: ["startDate", "startTime"]},
+    )
+
+    // title: no mapping → direct
+    expect(setFieldError).toHaveBeenCalledWith("title", ["Required"])
+    // startTime: mapped → two calls
+    expect(setFieldError).toHaveBeenCalledWith("startDate", ["Must not be null"])
+    expect(setFieldError).toHaveBeenCalledWith("startTime", ["Must not be null"])
+    expect(setFieldError).toHaveBeenCalledTimes(3)
+  })
 })

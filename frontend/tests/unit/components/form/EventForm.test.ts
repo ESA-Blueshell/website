@@ -80,6 +80,8 @@ describe("EventForm", () => {
     const wrapper = shallowMount(EventForm, {
       props: {
         modelValue: baseEvent({
+          signUp: true,
+          signUpDeadline: "2099-01-01T09:00:00",
           signUpForm: {
             questions: [{idx: 0, type: "OPEN", label: "Q"}],
           },
@@ -101,8 +103,6 @@ describe("EventForm", () => {
       description: "required",
       memberPrice: "minValue:0",
       publicPrice: "minValue:0",
-      startDate: "required",
-      endDate: "required|dateTimeAfter:@startDate",
       endTime: "required|dateTimeAfter:@startTime",
       committeeId: "required",
       banner: "fileSize",
@@ -126,8 +126,7 @@ describe("EventForm", () => {
     await settle()
     const rules = rulesByName(wrapper)
 
-    expect(rules.signUpDeadlineDate).toBeUndefined()
-    expect(rules.signUpDeadlineTime).toBeUndefined()
+    expect(rules.signUpDeadline).toBeUndefined()
     expect(rules.signUpLimit).toBeUndefined()
   })
 
@@ -149,9 +148,7 @@ describe("EventForm", () => {
     await settle()
     const rules = rulesByName(wrapper)
 
-    expect(rules.signUpDeadlineDate).toBe("required")
-    expect(String(rules.signUpDeadlineTime)).toContain("required|dateTimeAfter:")
-    expect(String(rules.signUpDeadlineTime)).toContain("dateTimeNotAfter:@endTime")
+    expect(rules.signUpDeadline).toBe("required|dateTimeNotAfter:@endTime")
     expect(rules.signUpLimit).toBe("minValue:1")
   })
 

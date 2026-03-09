@@ -148,8 +148,13 @@ private fun Event.applyEditableFields(command: UpdateEventCommand, committee: Co
     this.publicPrice = command.publicPrice
     this.membersOnly = command.membersOnly
     this.signUp = command.signUp
-    this.signUpDeadline = command.signUpDeadline
-    this.signUpLimit = command.signUpLimit
+    if (command.signUp == false) {
+        this.signUpDeadline = null
+        this.signUpLimit = null
+    } else {
+        this.signUpDeadline = command.signUpDeadline
+        this.signUpLimit = command.signUpLimit
+    }
 }
 
 private fun applySignUpFormUpdate(

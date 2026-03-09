@@ -4,6 +4,7 @@ import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -19,7 +20,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 /**
  * Integration tests verifying that marking contributions as paid/unpaid
  * correctly syncs the user's contact list membership via the async job chain:
- * SyncListMembership → SyncContactToSystem + AddToList (or RemoveFromList)
+ * SyncListMembership → ListmonkContactSync + ListmonkListSync
  */
 @SpringBootTest
 @TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
@@ -48,8 +49,8 @@ class ContributionContactSyncIT : UserTestSupport() {
             .andExpect(status().isCreated)
 
         awaitJobSuccess(ContactJobs.SyncListMembership.type)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
-        awaitJobSuccess(ContactJobs.AddToList.type)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
 
         val lists = mockContactAdapter.getAllLists()
         assertThat(lists).hasSize(1)
@@ -79,8 +80,8 @@ class ContributionContactSyncIT : UserTestSupport() {
             .andExpect(status().isCreated)
 
         awaitJobSuccess(ContactJobs.SyncListMembership.type)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
-        awaitJobSuccess(ContactJobs.AddToList.type)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
 
         val listId = mockContactAdapter.getAllLists().keys.single()
         val contactId = mockContactAdapter.getAllContacts().keys.single()
@@ -98,7 +99,7 @@ class ContributionContactSyncIT : UserTestSupport() {
             .andExpect(status().isNoContent)
 
         awaitJobSuccess(ContactJobs.SyncListMembership.type, expectedCount = 2)
-        awaitJobSuccess(ContactJobs.RemoveFromList.type)
+        awaitJobSuccess(ListmonkJobs.SyncListMembership.type, expectedCount = 2)
 
         assertThat(mockContactAdapter.isInList(contactId, listId)).isFalse()
     }

@@ -4,7 +4,7 @@ import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserUpdated
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -20,15 +20,16 @@ class UserEventListenerTest : ServiceTestSupport() {
     private lateinit var passwordEncoder: PasswordEncoder
 
     @Test
-    fun `dispatches SyncContact on UserCreated`() {
+    fun `dispatches per-integration contact sync on UserCreated`() {
         val user = createAndSaveUser("newuser", "newuser@example.com")
         val event = UserCreated(user.id!!)
 
         listener.onCreate(event)
 
-        val jobs = findJobsByType(ContactJobs.SyncContact.type)
+        // MockContactIntegrationJobProvider dispatches listmonk.contact.sync
+        val jobs = findJobsByType(ListmonkJobs.SyncContact.type)
         assertThat(jobs)
-            .describedAs("Should schedule one SyncContact job")
+            .describedAs("Should schedule one ListmonkContactSync job")
             .hasSize(1)
 
         assertThat(jobs.first().payload)
@@ -36,15 +37,15 @@ class UserEventListenerTest : ServiceTestSupport() {
     }
 
     @Test
-    fun `dispatches SyncContact on UserUpdated`() {
+    fun `dispatches per-integration contact sync on UserUpdated`() {
         val user = createAndSaveUser("existinguser", "existing@example.com")
         val event = UserUpdated(user.id!!)
 
         listener.onUpdate(event)
 
-        val jobs = findJobsByType(ContactJobs.SyncContact.type)
+        val jobs = findJobsByType(ListmonkJobs.SyncContact.type)
         assertThat(jobs)
-            .describedAs("Should schedule one SyncContact job")
+            .describedAs("Should schedule one ListmonkContactSync job")
             .hasSize(1)
 
         assertThat(jobs.first().payload)

@@ -3,9 +3,10 @@ package net.blueshell.api.platform.integration.contact.job
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.platform.integration.queue.JobExecutor
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -35,48 +36,36 @@ class SyncContactJobIT : UserTestSupport() {
     }
 
     @Test
-    fun `sync contact creates contact DB record and dispatches per-system job`() {
+    fun `sync contact creates contact DB record and external system entry`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
-            ContactJobs.SyncContact,
-            ContactJobs.SyncContactPayload(user.id!!)
+            ListmonkJobs.SyncContact,
+            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
         )!!
 
-        // Run SyncContact synchronously
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
-        // Contact DB record created synchronously
         assertThat(contactRepository.findByUserId(user.id!!))
             .describedAs("Contact should be created in DB after sync")
             .isNotNull()
 
-        // SyncContactToSystem job dispatched (not another SyncContact job)
-        assertThat(findJobsByType(ContactJobs.SyncContact.type))
-            .describedAs("SyncContact should not re-enqueue itself")
+        assertThat(mockContactAdapter.getAllContacts())
+            .describedAs("Contact should exist in external system")
             .hasSize(1)
-        assertThat(findJobsByType(ContactJobs.SyncContactToSystem.type))
-            .describedAs("SyncContactToSystem should be dispatched per active adapter")
-            .isNotEmpty()
 
         val updatedExecution = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updatedExecution.status).isEqualTo(JobExecutionStatus.SUCCESS)
     }
 
     @Test
-    fun `sync contact sends correct contact data to adapter after running SyncContactToSystem`() {
+    fun `sync contact sends correct contact data to external system`() {
         val user = createUserWithRole(Role.MEMBER)
-        val syncExecution = jobs.enqueue(
-            ContactJobs.SyncContact,
-            ContactJobs.SyncContactPayload(user.id!!)
+        val execution = jobs.enqueue(
+            ListmonkJobs.SyncContact,
+            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
         )!!
 
-        // Run SyncContact → dispatches SyncContactToSystem
-        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
-
-        // Run the dispatched SyncContactToSystem job
-        val systemExecution = jobExecutions.findAll()
-            .first { it.jobType == ContactJobs.SyncContactToSystem.type }
-        executor.execute(systemExecution)
+        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val contacts = mockContactAdapter.getAllContacts()
         assertThat(contacts).hasSize(1)
@@ -93,18 +82,30 @@ class SyncContactJobIT : UserTestSupport() {
     @Test
     fun `sync contact for non-member sets isMember false`() {
         val user = createUserWithRole(Role.GUEST)
-        val syncExecution = jobs.enqueue(
-            ContactJobs.SyncContact,
-            ContactJobs.SyncContactPayload(user.id!!)
+        val execution = jobs.enqueue(
+            ListmonkJobs.SyncContact,
+            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
         )!!
 
-        executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
-
-        val systemExecution = jobExecutions.findAll()
-            .first { it.jobType == ContactJobs.SyncContactToSystem.type }
-        executor.execute(systemExecution)
+        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val contact = mockContactAdapter.getAllContacts().values.single()
         assertThat(contact.isMember).isFalse()
+    }
+
+    @Test
+    fun `sync contact stores external ID in DB`() {
+        val user = createUserWithRole(Role.MEMBER)
+        val execution = jobs.enqueue(
+            ListmonkJobs.SyncContact,
+            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
+        )!!
+
+        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+
+        val record = contactRepository.findByUserId(user.id!!)!!
+        assertThat(record.externalId(ContactSystem.LISTMONK))
+            .describedAs("Listmonk external ID should be persisted")
+            .isNotNull()
     }
 }

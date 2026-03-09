@@ -4,7 +4,7 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -16,7 +16,7 @@ import org.springframework.test.context.TestPropertySource
 
 /**
  * End-to-end tests verifying that creating and updating users correctly
- * syncs contact data to the external system via the SyncContact → SyncContactToSystem job chain.
+ * syncs contact data to the external system via the per-integration sync job.
  */
 @SpringBootTest
 @TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
@@ -40,16 +40,14 @@ class UserContactSyncIT : UserTestSupport() {
     fun `creating user syncs contact data to external system`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        // Enqueue SyncContact (mimicking what UserEventListener does on UserCreated)
         enqueueInTransaction {
             jobs.enqueue(
-                ContactJobs.SyncContact,
-                ContactJobs.SyncContactPayload(member.id!!)
+                ListmonkJobs.SyncContact,
+                ListmonkJobs.ListmonkContactSyncPayload(member.id!!)
             )
         }
 
-        awaitJobSuccess(ContactJobs.SyncContact.type)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
 
         val contacts = mockContactAdapter.getAllContacts()
         assertThat(contacts).hasSize(1)
@@ -64,36 +62,25 @@ class UserContactSyncIT : UserTestSupport() {
     fun `updating user syncs updated contact data`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        // First sync
         enqueueInTransaction {
-            jobs.enqueue(
-                ContactJobs.SyncContact,
-                ContactJobs.SyncContactPayload(member.id!!)
-            )
+            jobs.enqueue(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(member.id!!))
         }
-        awaitJobSuccess(ContactJobs.SyncContact.type)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type)
 
         val contactBefore = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactBefore.firstName).isEqualTo("Test")
 
-        // Update user name
         transactionTemplate.executeWithoutResult {
             val user = users.findById(member.id!!)
             user.firstName = "UpdatedName"
             users.update(user)
         }
 
-        // Second sync
         enqueueInTransaction {
-            jobs.enqueue(
-                ContactJobs.SyncContact,
-                ContactJobs.SyncContactPayload(member.id!!)
-            )
+            jobs.enqueue(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(member.id!!))
         }
 
-        awaitJobSuccess(ContactJobs.SyncContact.type, expectedCount = 2)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type, expectedCount = 2)
+        awaitJobSuccess(ListmonkJobs.SyncContact.type, expectedCount = 2)
 
         val contactAfter = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactAfter.firstName).isEqualTo("UpdatedName")

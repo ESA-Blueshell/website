@@ -1,7 +1,36 @@
 package net.blueshell.api.shared.job
 
-import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.ResetType
+
+object BrevoJobs {
+    object SyncContact : JobDefinition<BrevoContactSyncPayload> {
+        override val type: String = "brevo.contact.sync"
+        override val payloadType: Class<BrevoContactSyncPayload> = BrevoContactSyncPayload::class.java
+    }
+
+    object SyncListMembership : JobDefinition<BrevoListSyncPayload> {
+        override val type: String = "brevo.list.sync"
+        override val payloadType: Class<BrevoListSyncPayload> = BrevoListSyncPayload::class.java
+    }
+
+    data class BrevoContactSyncPayload(val userId: Long)
+    data class BrevoListSyncPayload(val userId: Long, val contactListId: Long)
+}
+
+object ListmonkJobs {
+    object SyncContact : JobDefinition<ListmonkContactSyncPayload> {
+        override val type: String = "listmonk.contact.sync"
+        override val payloadType: Class<ListmonkContactSyncPayload> = ListmonkContactSyncPayload::class.java
+    }
+
+    object SyncListMembership : JobDefinition<ListmonkListSyncPayload> {
+        override val type: String = "listmonk.list.sync"
+        override val payloadType: Class<ListmonkListSyncPayload> = ListmonkListSyncPayload::class.java
+    }
+
+    data class ListmonkContactSyncPayload(val userId: Long)
+    data class ListmonkListSyncPayload(val userId: Long, val contactListId: Long)
+}
 
 object EmailJobs {
     object Recovery : JobDefinition<RecoveryPayload> {
@@ -47,9 +76,11 @@ object CalendarJobs {
 }
 
 object ContactJobs {
-    object SyncContact : JobDefinition<SyncContactPayload> {
-        override val type: String = "contact.sync"
-        override val payloadType: Class<SyncContactPayload> = SyncContactPayload::class.java
+    object SpawnContactSyncs : JobDefinition<SpawnContactSyncsPayload> {
+        override val type: String = "contact.spawn-syncs"
+        override val payloadType: Class<SpawnContactSyncsPayload> = SpawnContactSyncsPayload::class.java
+        // No dedup: always run, each invocation may cover a different set of users
+        override fun dedupKey(payload: SpawnContactSyncsPayload): String? = null
     }
 
     object DeleteContact : JobDefinition<DeleteContactPayload> {
@@ -62,29 +93,7 @@ object ContactJobs {
         override val payloadType: Class<SyncListMembershipPayload> = SyncListMembershipPayload::class.java
     }
 
-    object SyncContactToSystem : JobDefinition<SyncContactToSystemPayload> {
-        override val type: String = "contact.sync-to-system"
-        override val payloadType: Class<SyncContactToSystemPayload> = SyncContactToSystemPayload::class.java
-    }
-
-    object DeleteContactFromSystem : JobDefinition<DeleteContactFromSystemPayload> {
-        override val type: String = "contact.delete-from-system"
-        override val payloadType: Class<DeleteContactFromSystemPayload> = DeleteContactFromSystemPayload::class.java
-    }
-
-    object AddToList : JobDefinition<AddToListPayload> {
-        override val type: String = "contact.add-to-list"
-        override val payloadType: Class<AddToListPayload> = AddToListPayload::class.java
-    }
-
-    object RemoveFromList : JobDefinition<RemoveFromListPayload> {
-        override val type: String = "contact.remove-from-list"
-        override val payloadType: Class<RemoveFromListPayload> = RemoveFromListPayload::class.java
-    }
-
-    data class SyncContactPayload(
-        val userId: Long
-    )
+    data class SpawnContactSyncsPayload(val unused: Unit = Unit)
 
     data class DeleteContactPayload(
         val userId: Long
@@ -93,28 +102,6 @@ object ContactJobs {
     data class SyncListMembershipPayload(
         val userId: Long,
         val periodId: Long
-    )
-
-    data class SyncContactToSystemPayload(
-        val userId: Long,
-        val system: ContactSystem
-    )
-
-    data class DeleteContactFromSystemPayload(
-        val externalId: Long,
-        val system: ContactSystem
-    )
-
-    data class AddToListPayload(
-        val userId: Long,
-        val contactListId: Long,
-        val system: ContactSystem
-    )
-
-    data class RemoveFromListPayload(
-        val userId: Long,
-        val contactListId: Long,
-        val system: ContactSystem
     )
 }
 

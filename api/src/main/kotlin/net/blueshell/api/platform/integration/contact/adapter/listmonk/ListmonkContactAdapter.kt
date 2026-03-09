@@ -1,10 +1,9 @@
 package net.blueshell.api.platform.integration.contact.adapter.listmonk
 
-import net.blueshell.api.domain.user.application.contact.ContactData
-import net.blueshell.api.domain.user.application.contact.ContactServiceException
-import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.listmonk.api.SubscribersApi
 import net.blueshell.clients.listmonk.model.NewSubscriber
 import net.blueshell.clients.listmonk.model.UpdateSubscriber

@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.contact.application
 
-import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
 import net.blueshell.api.platform.integration.contact.persistence.Contact
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
@@ -26,10 +26,10 @@ import java.util.Optional
  */
 class ContactListServiceTest {
 
-    private val listmonkAdapter: ContactSystemAdapter = mock {
+    private val listmonkAdapter: ListAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
     }
-    private val brevoAdapter: ContactSystemAdapter = mock {
+    private val brevoAdapter: ListAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.BREVO)
     }
     private val contactListRepository: ContactListRepository = mock()
@@ -50,6 +50,11 @@ class ContactListServiceTest {
     fun setUp() {
         whenever(contactListRepository.save(any<ContactList>())).thenAnswer { it.arguments[0] }
         whenever(membershipRepository.save(any<ContactListMembership>())).thenAnswer { it.arguments[0] }
+        whenever(contactRepository.save(any<Contact>())).thenAnswer { invocation ->
+            val c = invocation.arguments[0] as Contact
+            if (c.id == null) c.id = userId
+            c
+        }
     }
 
     // ── findOrCreateList ──────────────────────────────────────────────────────
@@ -115,13 +120,17 @@ class ContactListServiceTest {
     }
 
     @Test
-    fun `returns false when no Contact record exists`() {
+    fun `creates new Contact and membership when no Contact record exists`() {
+        val list = contactListWithId(listId, "List")
         whenever(contactRepository.findByUserId(userId)).thenReturn(null)
+        whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
+        whenever(membershipRepository.findByContactIdAndContactListId(any(), any())).thenReturn(null)
 
         val result = service.createMembership(listId, userId)
 
-        assertThat(result).isFalse()
-        verify(membershipRepository, never()).save(any())
+        assertThat(result).isTrue()
+        verify(contactRepository).save(any<Contact>())
+        verify(membershipRepository).save(any<ContactListMembership>())
     }
 
     @Test

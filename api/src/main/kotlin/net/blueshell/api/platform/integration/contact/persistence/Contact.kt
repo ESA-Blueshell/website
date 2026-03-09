@@ -54,4 +54,24 @@ class Contact(
         if (existing != null) existing.externalId = id
         else _externalIds.add(ContactExternalId(contact = this, system = system, externalId = id))
     }
+
+    fun clearExternalId(system: ContactSystem) {
+        _externalIds.removeIf { it.system == system }
+    }
+
+    fun updateSnapshot(
+        email: String,
+        firstName: String,
+        lastName: String,
+        phoneNumber: String?,
+        newsletter: Boolean,
+        isMember: Boolean,
+    ) {
+        syncedEmail = email
+        syncedFirstName = firstName
+        syncedLastName = lastName
+        syncedPhoneNumber = phoneNumber
+        syncedNewsletter = newsletter
+        syncedIsMember = isMember
+    }
 }

@@ -1,7 +1,6 @@
 package net.blueshell.api.platform.integration.contact.adapter
 
-import net.blueshell.api.domain.user.application.contact.ContactData
-import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.shared.enums.ContactSystem
 
 /**
  * Unified domain interface for contact and list synchronization with external systems (ADR-019).

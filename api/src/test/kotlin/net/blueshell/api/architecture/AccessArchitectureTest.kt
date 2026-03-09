@@ -59,7 +59,9 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                     ArchitecturePackages.APPLICATION,
                     ArchitecturePackages.REPOSITORY,
                     ArchitecturePackages.DOMAIN_SERVICE,  // Domain services can access repositories
-                    ArchitecturePackages.PERSISTENCE
+                    ArchitecturePackages.PERSISTENCE,
+                    ArchitecturePackages.JOB,             // Per-integration job handlers read DB state
+                    ArchitecturePackages.PLATFORM_MOCK    // Mock job handlers in test/dev profile
                 )
                 .because("ADR-016: Repositories are inner layer; only application/domain services access them")
         }

@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.contact.application
 
-import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
@@ -26,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class ContactListService(
-    private val listSyncAdapters: List<ContactSystemAdapter>,
+    private val listSyncAdapters: List<ListAdapter>,
     private val contactListRepository: ContactListRepository,
     private val contactRepository: ContactRepository,
     private val contactListMembershipRepository: ContactListMembershipRepository,
@@ -66,10 +67,7 @@ class ContactListService(
     @Transactional
     fun createMembership(contactListId: Long, userId: Long): Boolean {
         val contact = contactRepository.findByUserId(userId)
-        if (contact == null) {
-            log.debug("No Contact for user {} — cannot create membership in list {}", userId, contactListId)
-            return false
-        }
+            ?: contactRepository.save(Contact(userId = userId))
 
         val existing = contactListMembershipRepository
             .findByContactIdAndContactListId(contact.id!!, contactListId)

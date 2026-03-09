@@ -5,7 +5,7 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.contact.application.ContactSyncService
 import net.blueshell.api.platform.integration.contact.application.job.SyncListMembershipJob
@@ -36,7 +36,7 @@ class SyncListMembershipJobTest {
     private val contactListService: ContactListService = mock()
     private val periods: ContributionPeriodService = mock()
     private val contributions: ContributionService = mock()
-    private val listmonkAdapter: ListSyncAdapter = mock {
+    private val listmonkAdapter: ContactSystemAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
     }
     private val jobs: TrackedJobDispatcher = mock()

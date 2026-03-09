@@ -1,12 +1,11 @@
 package net.blueshell.api.platform.integration.contact.application.job
 
 import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
-import net.blueshell.api.platform.integration.contact.application.externalId
-import net.blueshell.api.platform.integration.contact.application.externalListId
+import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.platform.integration.queue.PerSystemJobHandler
 import net.blueshell.api.shared.job.ContactJobs
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -20,24 +19,19 @@ import org.springframework.stereotype.Component
 @Component
 class RemoveFromListJob(
     objectMapper: ObjectMapper,
-    adapters: List<ListSyncAdapter>,
+    adapters: List<ContactSystemAdapter>,
     private val contactRepository: ContactRepository,
     private val contactListRepository: ContactListRepository,
-) : AbstractJsonJobHandler<ContactJobs.RemoveFromListPayload>(
+) : PerSystemJobHandler<ContactJobs.RemoveFromListPayload>(
     objectMapper,
-    ContactJobs.RemoveFromList.payloadType
+    ContactJobs.RemoveFromList.payloadType,
+    adapters,
 ) {
     override val jobType: String = ContactJobs.RemoveFromList.type
 
-    private val bySystem = adapters.associateBy { it.system }
+    override fun systemFrom(payload: ContactJobs.RemoveFromListPayload): ContactSystem = payload.system
 
-    override fun handlePayload(payload: ContactJobs.RemoveFromListPayload) {
-        val adapter = bySystem[payload.system]
-        if (adapter == null) {
-            log.warn("No adapter registered for system {} — skipping removeFromList for user {}", payload.system, payload.userId)
-            return
-        }
-
+    override fun handleForSystem(payload: ContactJobs.RemoveFromListPayload, adapter: ContactSystemAdapter) {
         val contact = contactRepository.findByUserId(payload.userId)
         val externalId = contact?.externalId(payload.system)
         if (externalId == null) {

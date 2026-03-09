@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.contact.persistence
 
 import jakarta.persistence.*
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -26,9 +27,15 @@ class ContactList(
     var folderName: String? = null,
 ) : AuditedAutoIdEntity() {
 
-    @OneToOne(mappedBy = "list", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var listmonkList: ListmonkList? = null
+    @OneToMany(mappedBy = "contactList", cascade = [CascadeType.ALL], orphanRemoval = true)
+    private val _externalIds: MutableList<ContactListExternalId> = mutableListOf()
 
-    @OneToOne(mappedBy = "list", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var brevoList: BrevoList? = null
+    fun externalListId(system: ContactSystem): Long? =
+        _externalIds.find { it.system == system }?.externalId
+
+    fun setExternalListId(system: ContactSystem, id: Long) {
+        val existing = _externalIds.find { it.system == system }
+        if (existing != null) existing.externalId = id
+        else _externalIds.add(ContactListExternalId(contactList = this, system = system, externalId = id))
+    }
 }

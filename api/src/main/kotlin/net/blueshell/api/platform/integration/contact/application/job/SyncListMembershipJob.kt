@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.contact.application.job
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.contact.application.ContactSyncService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
@@ -29,7 +29,7 @@ class SyncListMembershipJob(
     private val contactListService: ContactListService,
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
-    private val listSyncAdapters: List<ListSyncAdapter>,
+    private val listSyncAdapters: List<ContactSystemAdapter>,
     private val jobs: TrackedJobDispatcher,
 ) : AbstractJsonJobHandler<ContactJobs.SyncListMembershipPayload>(
     objectMapper,

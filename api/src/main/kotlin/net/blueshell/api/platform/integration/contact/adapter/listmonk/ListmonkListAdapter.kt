@@ -1,35 +1,31 @@
-package net.blueshell.api.platform.integration.contact.adapter
+package net.blueshell.api.platform.integration.contact.adapter.listmonk
 
+import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactServiceException
 import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
 import net.blueshell.clients.listmonk.api.ListsApi
 import net.blueshell.clients.listmonk.api.SubscribersApi
-import net.blueshell.clients.listmonk.model.NewList as ListmonkNewList
-import net.blueshell.clients.listmonk.model.NewListOptin
-import net.blueshell.clients.listmonk.model.NewListType
-import net.blueshell.clients.listmonk.model.SubscriberQueryRequest
-import net.blueshell.clients.listmonk.model.SubscriberQueryRequestAction
+import net.blueshell.clients.listmonk.model.*
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
+import net.blueshell.clients.listmonk.model.NewList as ListmonkNewList
 
 /**
- * Listmonk List Anti-Corruption Layer (ADR-019)
+ * Listmonk Anti-Corruption Layer (ADR-019)
  *
- * Implements [ListSyncAdapter] against the Listmonk lists/subscribers API.
+ * Implements [ContactSystemAdapter] against the Listmonk subscriber and lists APIs.
  * Active in all non-test profiles (including dev where real Listmonk runs).
- *
- * All IDs are system-specific Longs. The orchestration services resolve domain IDs to these
- * system IDs before invoking adapter methods.
  */
 @Service
 @Profile("!test")
 class ListmonkListAdapter(
     private val subscribersApi: SubscribersApi,
     private val listsApi: ListsApi,
-) : ListSyncAdapter {
+) : ListAdapter {
 
     override val system = ContactSystem.LISTMONK
 
@@ -51,28 +47,28 @@ class ListmonkListAdapter(
         }
     }
 
-    override fun addToList(externalId: Long, externalListId: Long) {
-        log.info("Adding Listmonk subscriber {} to list {}", externalId, externalListId)
+    override fun addToList(externalContactId: Long, externalListId: Long) {
+        log.info("Adding Listmonk subscriber {} to list {}", externalContactId, externalListId)
         try {
             val req = SubscriberQueryRequest()
-                .ids(listOf(externalId.toInt()))
+                .ids(listOf(externalContactId.toInt()))
                 .action(SubscriberQueryRequestAction.ADD)
             subscribersApi.manageSubscriberListById(externalListId.toInt(), req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to add subscriber {} to list {}", externalId, externalListId, e)
+            log.error("Failed to add subscriber {} to list {}", externalContactId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)
         }
     }
 
-    override fun removeFromList(externalId: Long, externalListId: Long) {
-        log.info("Removing Listmonk subscriber {} from list {}", externalId, externalListId)
+    override fun removeFromList(externalContactId: Long, externalListId: Long) {
+        log.info("Removing Listmonk subscriber {} from list {}", externalContactId, externalListId)
         try {
             val req = SubscriberQueryRequest()
-                .ids(listOf(externalId.toInt()))
+                .ids(listOf(externalContactId.toInt()))
                 .action(SubscriberQueryRequestAction.REMOVE)
             subscribersApi.manageSubscriberListById(externalListId.toInt(), req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to remove subscriber {} from list {}", externalId, externalListId, e)
+            log.error("Failed to remove subscriber {} from list {}", externalContactId, externalListId, e)
             throw ContactServiceException("Failed to remove contact from list", e)
         }
     }
@@ -86,6 +82,31 @@ class ListmonkListAdapter(
             throw ContactServiceException("Failed to delete list", e)
         }
     }
+
+    // ── private builders ──────────────────────────────────────────────────────
+
+    private fun buildNewSubscriber(data: ContactData): NewSubscriber =
+        NewSubscriber()
+            .email(data.email)
+            .name("${data.firstName} ${data.lastName}".trim())
+            .status("enabled")
+            .preconfirmSubscriptions(true)
+            .attribs(buildAttribs(data))
+
+    private fun buildUpdateSubscriber(data: ContactData): UpdateSubscriber =
+        UpdateSubscriber()
+            .email(data.email)
+            .name("${data.firstName} ${data.lastName}".trim())
+            .status("enabled")
+            .attribs(buildAttribs(data))
+
+    private fun buildAttribs(data: ContactData): Map<String, Any> =
+        buildMap {
+            put("newsletter", data.newsletter)
+            put("is_member", data.isMember)
+            data.phoneNumber?.let { put("phone", it) }
+            putAll(data.attributes)
+        }
 
     companion object {
         private val log = LoggerFactory.getLogger(ListmonkListAdapter::class.java)

@@ -1,8 +1,9 @@
-package net.blueshell.api.platform.integration.contact.adapter
+package net.blueshell.api.platform.integration.contact.adapter.brevo
 
-import net.blueshell.api.domain.user.application.contact.ContactServiceException
-import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
+import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.brevo.ApiClient
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
@@ -18,9 +19,9 @@ import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 
 /**
- * Brevo List Anti-Corruption Layer (ADR-019)
+ * Brevo Anti-Corruption Layer (ADR-019)
  *
- * Implements [ListSyncAdapter] against the Brevo Contacts API.
+ * Implements [ContactSystemAdapter] against the Brevo Contacts API.
  * Active in production only (test/dev use MockContactAdapter).
  *
  * [contributionPeriodsFolder] is the Brevo folder ID under which all contribution-period
@@ -32,10 +33,14 @@ import tools.jackson.databind.json.JsonMapper
 class BrevoListAdapter(
     restClientBuilder: RestClient.Builder,
     jsonMapper: JsonMapper,
-    @param:Value($$"${brevo.apiKey}") apiKey: String,
-    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") brevoBaseUrl: String,
     @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
-) : ListSyncAdapter {
+) : ListAdapter {
+    @field:Value($$"${brevo.apiKey}")
+    lateinit var apiKey: String
+
+    @field:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}")
+    lateinit var brevoBaseUrl: String
+
 
     override val system = ContactSystem.BREVO
 
@@ -66,30 +71,30 @@ class BrevoListAdapter(
         }
     }
 
-    override fun addToList(externalId: Long, externalListId: Long) {
-        log.info("Adding Brevo contact {} to list {}", externalId, externalListId)
+    override fun addToList(externalContactId: Long, externalListId: Long) {
+        log.info("Adding Brevo contact {} to list {}", externalContactId, externalListId)
         try {
             val req = AddContactToListRequest()
-            req.ids = mutableListOf(externalId)
+            req.ids = mutableListOf(externalContactId)
             req.emails = null
             req.extIds = null
             contactsApi.addContactToList(externalListId, req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to add contact {} to Brevo list {}", externalId, externalListId, e)
+            log.error("Failed to add contact {} to Brevo list {}", externalContactId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)
         }
     }
 
-    override fun removeFromList(externalId: Long, externalListId: Long) {
-        log.info("Removing Brevo contact {} from list {}", externalId, externalListId)
+    override fun removeFromList(externalContactId: Long, externalListId: Long) {
+        log.info("Removing Brevo contact {} from list {}", externalContactId, externalListId)
         try {
             val req = RemoveContactFromListRequest()
-            req.ids = mutableListOf(externalId)
+            req.ids = mutableListOf(externalContactId)
             req.emails = null
             req.extIds = null
             contactsApi.removeContactFromList(externalListId, req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to remove contact {} from Brevo list {}", externalId, externalListId, e)
+            log.error("Failed to remove contact {} from Brevo list {}", externalContactId, externalListId, e)
             throw ContactServiceException("Failed to remove contact from list", e)
         }
     }
@@ -102,6 +107,22 @@ class BrevoListAdapter(
             log.error("Failed to delete Brevo list id={}", externalListId, e)
             throw ContactServiceException("Failed to delete list", e)
         }
+    }
+
+    private fun buildAttributes(data: ContactData): Map<String, Any> {
+        val attrs = mutableMapOf<String, Any>(
+            "NEWSLETTER" to data.newsletter,
+            "IS_MEMBER" to data.isMember,
+            "FIRSTNAME" to data.firstName,
+            "LASTNAME" to data.lastName,
+            "SURNAME" to data.lastName
+        )
+        data.phoneNumber?.let { phone ->
+            attrs["SMS"] = phone
+            attrs["WHATSAPP"] = phone
+        }
+        attrs.putAll(data.attributes)
+        return attrs
     }
 
     companion object {

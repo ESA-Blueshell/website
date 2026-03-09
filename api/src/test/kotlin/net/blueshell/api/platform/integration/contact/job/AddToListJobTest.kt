@@ -2,12 +2,10 @@ package net.blueshell.api.platform.integration.contact.job
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.application.job.AddToListJob
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
-import net.blueshell.api.platform.integration.contact.persistence.ListmonkContact
-import net.blueshell.api.platform.integration.contact.persistence.ListmonkList
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.shared.job.ContactJobs
@@ -29,7 +27,7 @@ import java.util.Optional
 class AddToListJobTest {
 
     private val objectMapper = ObjectMapper()
-    private val listmonkAdapter: ListSyncAdapter = mock {
+    private val listmonkAdapter: ContactSystemAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
     }
     private val contactRepository: ContactRepository = mock()
@@ -60,7 +58,7 @@ class AddToListJobTest {
 
     @Test
     fun `throws retryable exception when contact has no externalId yet`() {
-        val contact = Contact(userId = userId).apply { id = 1L }  // no listmonkContact
+        val contact = Contact(userId = userId).apply { id = 1L }  // no external ID set
         whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
 
         assertThatThrownBy {
@@ -84,7 +82,7 @@ class AddToListJobTest {
     @Test
     fun `throws NonRetryableJobException when list has no externalId`() {
         val contact = contactWithExternalId(userId, 42L)
-        val list = ContactList(name = "List").apply { id = listId }  // no listmonkList
+        val list = ContactList(name = "List").apply { id = listId }  // no external ID set
 
         whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
         whenever(contactListRepository.findById(listId)).thenReturn(Optional.of(list))
@@ -108,13 +106,13 @@ class AddToListJobTest {
 
     private fun contactWithExternalId(userId: Long, externalId: Long): Contact {
         val c = Contact(userId = userId).apply { id = userId }
-        c.listmonkContact = ListmonkContact(contact = c, externalId = externalId)
+        c.setExternalId(ContactSystem.LISTMONK, externalId)
         return c
     }
 
     private fun listWithExternalId(listId: Long, externalListId: Long): ContactList {
         val l = ContactList(name = "List").apply { id = listId }
-        l.listmonkList = ListmonkList(list = l, externalId = externalListId)
+        l.setExternalListId(ContactSystem.LISTMONK, externalListId)
         return l
     }
 }

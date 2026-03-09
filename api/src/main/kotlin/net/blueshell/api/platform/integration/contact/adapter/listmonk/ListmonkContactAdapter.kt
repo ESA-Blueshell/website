@@ -1,9 +1,10 @@
-package net.blueshell.api.platform.integration.contact.adapter
+package net.blueshell.api.platform.integration.contact.adapter.listmonk
 
 import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactServiceException
-import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.clients.listmonk.api.SubscribersApi
 import net.blueshell.clients.listmonk.model.NewSubscriber
 import net.blueshell.clients.listmonk.model.UpdateSubscriber
@@ -13,19 +14,16 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 
 /**
- * Listmonk Contact Anti-Corruption Layer (ADR-019)
+ * Listmonk Anti-Corruption Layer (ADR-019)
  *
- * Implements [ContactSyncAdapter] against the Listmonk subscriber API.
+ * Implements [ContactSystemAdapter] against the Listmonk subscriber and lists APIs.
  * Active in all non-test profiles (including dev where real Listmonk runs).
- *
- * All IDs are system-specific Longs. The orchestration services resolve domain IDs to these
- * system IDs before invoking adapter methods.
  */
 @Service
 @Profile("!test")
 class ListmonkContactAdapter(
     private val subscribersApi: SubscribersApi,
-) : ContactSyncAdapter {
+) : ContactAdapter {
 
     override val system = ContactSystem.LISTMONK
 
@@ -65,6 +63,8 @@ class ListmonkContactAdapter(
             throw ContactServiceException("Failed to delete contact", e)
         }
     }
+
+    // ── private builders ──────────────────────────────────────────────────────
 
     private fun buildNewSubscriber(data: ContactData): NewSubscriber =
         NewSubscriber()

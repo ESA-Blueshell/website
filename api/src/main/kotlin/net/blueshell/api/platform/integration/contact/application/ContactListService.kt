@@ -1,11 +1,8 @@
 package net.blueshell.api.platform.integration.contact.application
 
-import net.blueshell.api.domain.user.application.contact.ContactSystem
-import net.blueshell.api.domain.user.application.contact.ListSyncAdapter
-import net.blueshell.api.platform.integration.contact.persistence.BrevoList
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
-import net.blueshell.api.platform.integration.contact.persistence.ListmonkList
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
@@ -29,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class ContactListService(
-    private val listSyncAdapters: List<ListSyncAdapter>,
+    private val listSyncAdapters: List<ContactSystemAdapter>,
     private val contactListRepository: ContactListRepository,
     private val contactRepository: ContactRepository,
     private val contactListMembershipRepository: ContactListMembershipRepository,
@@ -49,10 +46,7 @@ class ContactListService(
         for (adapter in listSyncAdapters) {
             try {
                 val externalId = adapter.createList(name, folderName)
-                when (adapter.system) {
-                    ContactSystem.LISTMONK -> list.listmonkList = ListmonkList(list = list, externalId = externalId)
-                    ContactSystem.BREVO -> list.brevoList = BrevoList(list = list, externalId = externalId)
-                }
+                list.setExternalListId(adapter.system, externalId)
             } catch (e: Exception) {
                 log.error("Adapter {} failed to create list '{}'", adapter.system, name, e)
             }

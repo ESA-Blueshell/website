@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.contact.job
 
 import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import net.blueshell.api.domain.user.application.contact.ContactSystem
+import net.blueshell.api.domain.user.application.contact.ContactSystemAdapter
 import net.blueshell.api.platform.integration.contact.application.job.DeleteContactFromSystemJob
 import net.blueshell.api.shared.job.ContactJobs
 import org.junit.jupiter.api.Test
@@ -20,7 +20,7 @@ import org.mockito.kotlin.whenever
 class DeleteContactFromSystemJobTest {
 
     private val objectMapper = ObjectMapper()
-    private val listmonkAdapter: ContactSyncAdapter = mock {
+    private val listmonkAdapter: ContactSystemAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
     }
 

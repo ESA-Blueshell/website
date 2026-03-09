@@ -235,6 +235,121 @@ class EventCreatePageSystemTest : FrontendSystemTestBase() {
         }
     }
 
+    @Test
+    fun `sign-up deadline and limit fields are hidden when sign-up is disabled`() {
+        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
+        val committee = committeeFactory.create(name = "SignUp Hidden Committee ${System.currentTimeMillis()}")
+        committeeFactory.createMember(committee, member)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            EventFormHelper.openCreatePage(page, frontendUrl)
+
+            // Sign-up disabled by default — deadline and limit inputs must not be in the DOM
+            assertThat(EventFormHelper.signUpDeadlineInput(page).count()).isEqualTo(0)
+            assertThat(EventFormHelper.signUpLimitInput(page).count()).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun `sign-up deadline and limit fields appear when sign-up is enabled`() {
+        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
+        val committee = committeeFactory.create(name = "SignUp Visible Committee ${System.currentTimeMillis()}")
+        committeeFactory.createMember(committee, member)
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            EventFormHelper.openCreatePage(page, frontendUrl)
+            EventFormHelper.enableSignUp(page)
+
+            EventFormHelper.signUpDeadlineInput(page).waitFor()
+            EventFormHelper.signUpLimitInput(page).waitFor()
+        }
+    }
+
+    @Test
+    fun `creating event with sign-up limit persists the limit`() {
+        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
+        val committee = committeeFactory.create(name = "Limit Committee ${System.currentTimeMillis()}")
+        committeeFactory.createMember(committee, member)
+        val eventTitle = "Limited Signup Event ${System.currentTimeMillis()}"
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            EventFormHelper.openCreatePage(page, frontendUrl)
+            EventFormHelper.fillRequiredFields(
+                page = page,
+                title = eventTitle,
+                location = "Campus",
+                description = "Event with signup limit"
+            )
+            EventFormHelper.selectCommittee(page, committee.name)
+            EventFormHelper.enableSignUp(page)
+            EventFormHelper.signUpDeadlineInput(page).waitFor()
+            EventFormHelper.setSignUpLimit(page, 42)
+
+            val response = page.waitForResponse(
+                Predicate { r ->
+                    r.request().method() == "POST" &&
+                        r.url().contains("/events") &&
+                        !r.url().contains("/events/banners")
+                }
+            ) {
+                EventFormHelper.submit(page)
+            }
+            assertThat(response.status()).isEqualTo(201)
+        }
+
+        val created = waitForEventByTitle(eventTitle)
+        assertThat(created.signUpLimit).isEqualTo(42)
+        assertThat(created.signUp).isTrue()
+    }
+
+    @Test
+    fun `clearing sign-up limit field sends no limit to the API`() {
+        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
+        val committee = committeeFactory.create(name = "No Limit Committee ${System.currentTimeMillis()}")
+        committeeFactory.createMember(committee, member)
+        val eventTitle = "Unlimited Signup Event ${System.currentTimeMillis()}"
+
+        withPage { page ->
+            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
+            assertThat(loginStatus).isEqualTo(200)
+
+            EventFormHelper.openCreatePage(page, frontendUrl)
+            EventFormHelper.fillRequiredFields(
+                page = page,
+                title = eventTitle,
+                location = "Campus",
+                description = "Event with no signup limit"
+            )
+            EventFormHelper.selectCommittee(page, committee.name)
+            EventFormHelper.enableSignUp(page)
+            // Leave the sign-up limit empty (do not set it)
+
+            val response = page.waitForResponse(
+                Predicate { r ->
+                    r.request().method() == "POST" &&
+                        r.url().contains("/events") &&
+                        !r.url().contains("/events/banners")
+                }
+            ) {
+                EventFormHelper.submit(page)
+            }
+            assertThat(response.status()).isEqualTo(201)
+        }
+
+        val created = waitForEventByTitle(eventTitle)
+        assertThat(created.signUp).isTrue()
+        assertThat(created.signUpLimit).isNull()
+    }
+
     private fun waitForEventByTitle(title: String): Event {
         lateinit var created: Event
         waitFor(

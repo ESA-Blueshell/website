@@ -12,6 +12,9 @@ object EventFormHelper {
     private const val COMMITTEE_FIELD_TEST_ID = "event-form-committee-field"
     private const val APPROVED_FIELD_TEST_ID = "event-form-approved-field"
     private const val BANNER_FIELD_TEST_ID = "event-form-banner-field"
+    private const val SIGNUP_FIELD_TEST_ID = "event-form-signup-field"
+    private const val SIGNUP_DEADLINE_FIELD_TEST_ID = "event-form-signup-deadline-field"
+    private const val SIGNUP_LIMIT_FIELD_TEST_ID = "event-form-signup-limit-field"
     private const val SUBMIT_BUTTON_TEST_ID = "event-form-submit-btn"
 
     fun openCreatePage(page: Page, frontendUrl: String) {
@@ -66,6 +69,29 @@ object EventFormHelper {
     fun uploadBanner(page: Page, filePath: String) {
         TestIdLocatorHelper.byTestId(page, BANNER_FIELD_TEST_ID).locator("input[type='file']").first()
             .setInputFiles(Paths.get(filePath))
+    }
+
+    fun enableSignUp(page: Page) {
+        val checkbox = TestIdLocatorHelper.byTestId(page, SIGNUP_FIELD_TEST_ID).locator("input[type='checkbox']").first()
+        checkbox.check()
+    }
+
+    fun disableSignUp(page: Page) {
+        val checkbox = TestIdLocatorHelper.byTestId(page, SIGNUP_FIELD_TEST_ID).locator("input[type='checkbox']").first()
+        checkbox.uncheck()
+    }
+
+    fun signUpDeadlineInput(page: Page): Locator {
+        return TestIdLocatorHelper.textInput(page, SIGNUP_DEADLINE_FIELD_TEST_ID)
+    }
+
+    fun signUpLimitInput(page: Page): Locator {
+        return TestIdLocatorHelper.textInput(page, SIGNUP_LIMIT_FIELD_TEST_ID)
+    }
+
+    fun setSignUpLimit(page: Page, limit: Int) {
+        val input = signUpLimitInput(page)
+        input.fill(limit.toString())
     }
 
     fun submit(page: Page) {

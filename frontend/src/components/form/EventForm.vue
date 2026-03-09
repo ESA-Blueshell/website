@@ -249,7 +249,7 @@ const save = async () => {
         membersOnly: event.value.membersOnly,
         signUp: event.value.signUp,
         signUpDeadline: event.value.signUp ? event.value.signUpDeadline : undefined,
-        signUpLimit: event.value.signUp && event.value.signUpLimit != null ? Number(event.value.signUpLimit) : undefined,
+        signUpLimit: event.value.signUp && event.value.signUpLimit ? Number(event.value.signUpLimit) : undefined,
         banner: event.value.banner
           ? {
             fileId: event.value.banner.fileId,
@@ -440,6 +440,7 @@ defineExpose({validate, save})
         <v-col>
           <VvField
             v-model="event.signUp"
+            test-id="event-form-signup-field"
             :component="VCheckbox"
             :component-props="{ label: 'Enable sign-up', 'hide-details': true }"
             name="signUp"
@@ -460,6 +461,7 @@ defineExpose({validate, save})
           <v-col>
             <VvField
               v-model="event.signUpDeadline"
+              test-id="event-form-signup-deadline-field"
               :component-props="{ type: 'datetime-local', 'prepend-icon': 'mdi-clock' }"
               :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
               :rules="`required|dateTimeNotAfter:@endTime`"
@@ -471,9 +473,10 @@ defineExpose({validate, save})
           <v-col>
             <VvField
               v-model="event.signUpLimit"
+              test-id="event-form-signup-limit-field"
               :component-props="{ type: 'number', min: 1, clearable: true, 'prepend-icon': 'mdi-account-multiple' }"
               :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
-              label="Maximum sign-ups"
+              label="Sign-up limit"
               name="signUpLimit"
               rules="minValue:1"
             />

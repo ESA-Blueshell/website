@@ -8,6 +8,7 @@ import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.shared.enums.QuestionType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.time.Instant
 import java.util.LinkedHashSet
 
 @Component
@@ -24,6 +25,18 @@ class ValidEventSignUpCommandValidator @Autowired constructor(
             events.findById(eventId)
         } catch (ignored: Exception) {
             return violation(ctx, "eventId", "Unknown event.")
+        }
+
+        event.signUpDeadline?.let { deadline ->
+            if (Instant.now().isAfter(deadline)) {
+                return violation(ctx, "eventId", "Sign-up deadline has passed.")
+            }
+        }
+
+        event.signUpLimit?.let { limit ->
+            if (event.signUpCount >= limit) {
+                return violation(ctx, "eventId", "This event has reached its sign-up limit.")
+            }
         }
 
         val form = event.signUpForm

@@ -75,6 +75,12 @@ class Event(
 
     @Column(name = "sign_up", nullable = false)
     var signUp: Boolean = false,
+
+    @Column(name = "sign_up_deadline")
+    var signUpDeadline: Instant? = null,
+
+    @Column(name = "sign_up_limit")
+    var signUpLimit: Int? = null,
 ) : AuditedAutoIdEntity() {
     val committeeId: Long
         get() = committee.id ?: 0

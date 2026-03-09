@@ -189,6 +189,24 @@ defineRule("dateTimeAfter", (value: string, [other]: string[], ctx) => {
   return dateTimeValue >= dateTimeTarget || `Must be after ${dateTimeTarget.toFormat("dd/MM/yyyy HH:mm")}`
 })
 
+defineRule("dateTimeNotAfter", (value: string, [other]: string[], ctx) => {
+  if (isEmpty(value)) return true
+  const dateTimeValue = DateTime.fromISO(value)
+
+  let dateTimeTarget: DateTime
+  if (!other?.startsWith("@")) {
+    dateTimeTarget = DateTime.fromISO(other!)
+  } else {
+    const otherField = other.slice(1)
+    const target = (ctx.form as GenericObject)?.[otherField]
+    dateTimeTarget = DateTime.fromISO(target)
+  }
+
+  if (!dateTimeValue.isValid) return "Enter a valid date"
+  if (!dateTimeTarget.isValid) return true
+  return dateTimeValue <= dateTimeTarget || `Must be before or on ${dateTimeTarget.toFormat("dd/MM/yyyy HH:mm")}`
+})
+
 // --- Global config ---
 configure({
   validateOnInput: true,

@@ -11,6 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
 
 @SpringBootTest
 class EventSignUpControllerIT : UserTestSupport() {
@@ -148,6 +149,89 @@ class EventSignUpControllerIT : UserTestSupport() {
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.eventId").value(event.id))
                 .andExpect(jsonPath("$.user.id").value(member.id))
+        }
+
+        @Nested
+        inner class SignupLimits {
+            @Test
+            fun `rejects signup after deadline`() {
+                val member = createUserWithRole(Role.MEMBER)
+                val event = createEventFixture(
+                    approved = true,
+                    membersOnly = false,
+                    signUp = true,
+                    signUpDeadline = Instant.now().minusSeconds(1)
+                )
+
+                mvc.perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+                )
+                    .andExpect(status().isUnprocessableEntity)
+            }
+
+            @Test
+            fun `accepts signup before deadline`() {
+                val member = createUserWithRole(Role.MEMBER)
+                val event = createEventFixture(
+                    approved = true,
+                    membersOnly = false,
+                    signUp = true,
+                    signUpDeadline = Instant.now().plusSeconds(3600)
+                )
+
+                mvc.perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+                )
+                    .andExpect(status().isCreated)
+            }
+
+            @Test
+            fun `rejects signup at capacity`() {
+                val member = createUserWithRole(Role.MEMBER)
+                val anotherMember = createUserWithRole(Role.MEMBER)
+                val event = createEventFixture(
+                    approved = true,
+                    membersOnly = false,
+                    signUp = true,
+                    signUpLimit = 1
+                )
+                createEventSignUpFixture(event = event, user = anotherMember)
+
+                mvc.perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+                )
+                    .andExpect(status().isUnprocessableEntity)
+            }
+
+            @Test
+            fun `accepts signup when under limit`() {
+                val member = createUserWithRole(Role.MEMBER)
+                val anotherMember = createUserWithRole(Role.MEMBER)
+                val event = createEventFixture(
+                    approved = true,
+                    membersOnly = false,
+                    signUp = true,
+                    signUpLimit = 2
+                )
+                createEventSignUpFixture(event = event, user = anotherMember)
+
+                mvc.perform(
+                    post("/events/{eventId}/signups", event.id)
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+                )
+                    .andExpect(status().isCreated)
+            }
         }
 
         @Test

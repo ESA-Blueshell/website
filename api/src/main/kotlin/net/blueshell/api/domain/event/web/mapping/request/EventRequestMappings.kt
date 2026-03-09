@@ -19,6 +19,8 @@ fun CreateEventRequest.asCommand(): CreateEventCommand =
         approved = this.approved!!,
         membersOnly = this.membersOnly!!,
         signUp = this.signUp!!,
+        signUpDeadline = this.signUpDeadline,
+        signUpLimit = this.signUpLimit,
         banner = this.banner?.asDomainData(),
         signUpForm = this.signUpForm?.asDomainData(),
     )
@@ -37,6 +39,8 @@ fun UpdateEventRequest.asCommand(id: Long): UpdateEventCommand =
         approved = this.approved!!,
         membersOnly = this.membersOnly!!,
         signUp = this.signUp!!,
+        signUpDeadline = this.signUpDeadline,
+        signUpLimit = this.signUpLimit,
         banner = this.banner?.asDomainData(),
         signUpForm = this.signUpForm?.asDomainData(),
         version = this.version!!,

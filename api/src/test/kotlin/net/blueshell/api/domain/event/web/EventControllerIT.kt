@@ -112,6 +112,118 @@ class EventControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class SignUpLimitValidation {
+        @Test
+        fun `rejects event with signUpDeadline in the past`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.createEventPayload(
+                            committee.id!!,
+                            startTime = "2099-06-01T19:00:00Z",
+                            endTime = "2099-06-01T21:00:00Z",
+                            signUpDeadline = "2020-01-01T00:00:00Z"
+                        )
+                    )
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `rejects event with signUpDeadline after endTime`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.createEventPayload(
+                            committee.id!!,
+                            startTime = "2099-06-01T19:00:00Z",
+                            endTime = "2099-06-01T21:00:00Z",
+                            signUpDeadline = "2099-06-02T00:00:00Z"
+                        )
+                    )
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `accepts event with valid signUpDeadline`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.createEventPayload(
+                            committee.id!!,
+                            startTime = "2099-06-01T19:00:00Z",
+                            endTime = "2099-06-01T21:00:00Z",
+                            signUpDeadline = "2099-06-01T18:00:00Z"
+                        )
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.signUpDeadline").value("2099-06-01T18:00:00Z"))
+        }
+
+        @Test
+        fun `rejects event with signUpLimit of 0`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 0))
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `accepts event with signUpLimit of 1`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 1))
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.signUpLimit").value(1))
+        }
+
+        @Test
+        fun `accepts event with no signUpDeadline and no signUpLimit`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!))
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.signUpDeadline").doesNotExist())
+                .andExpect(jsonPath("$.signUpLimit").doesNotExist())
+        }
+    }
+
+    @Nested
     inner class UpdateEvent {
         @Test
         fun `committee member updates own committee event`() {

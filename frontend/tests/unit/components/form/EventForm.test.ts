@@ -53,6 +53,8 @@ function baseEvent(overrides: Record<string, unknown> = {}) {
     approved: false,
     membersOnly: false,
     signUp: false,
+    signUpDeadline: undefined,
+    signUpLimit: undefined,
     committeeId: undefined,
     ...overrides,
   }
@@ -107,6 +109,50 @@ describe("EventForm", () => {
       signUpForm: "required",
     })
     expect(String(rules.startTime)).toContain("required|dateTimeAfter:")
+  })
+
+  it("signUpDeadline and signUpLimit fields absent when signUp is false", async () => {
+    const wrapper = shallowMount(EventForm, {
+      props: {
+        modelValue: baseEvent({signUp: false}),
+      },
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    await settle()
+    const rules = rulesByName(wrapper)
+
+    expect(rules.signUpDeadlineDate).toBeUndefined()
+    expect(rules.signUpDeadlineTime).toBeUndefined()
+    expect(rules.signUpLimit).toBeUndefined()
+  })
+
+  it("signUpDeadline and signUpLimit fields present when signUp is true", async () => {
+    const wrapper = shallowMount(EventForm, {
+      props: {
+        modelValue: baseEvent({
+          signUp: true,
+          signUpDeadline: "2099-01-01T09:00:00",
+        }),
+      },
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    await settle()
+    const rules = rulesByName(wrapper)
+
+    expect(rules.signUpDeadlineDate).toBe("required")
+    expect(String(rules.signUpDeadlineTime)).toContain("required|dateTimeAfter:")
+    expect(String(rules.signUpDeadlineTime)).toContain("dateTimeNotAfter:@endTime")
+    expect(rules.signUpLimit).toBe("minValue:1")
   })
 
   it("uses plain required start time rule for existing events", async () => {

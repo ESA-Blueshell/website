@@ -39,6 +39,8 @@ type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpFor
   banner?: EventBannerRequest;
   signUpForm?: SurveyRequest;
   signUpCount?: number;
+  signUpDeadline?: string;
+  signUpLimit?: number;
 }
 
 const event = defineModel<EventModel>({
@@ -54,6 +56,8 @@ const event = defineModel<EventModel>({
     approved: false,
     membersOnly: false,
     signUp: false,
+    signUpDeadline: undefined,
+    signUpLimit: undefined,
     banner: undefined,
     committeeId: undefined,
   }),
@@ -71,6 +75,8 @@ if (!event.value) {
     approved: false,
     membersOnly: false,
     signUp: false,
+    signUpDeadline: undefined,
+    signUpLimit: undefined,
     banner: undefined,
     committeeId: undefined,
   }
@@ -114,6 +120,10 @@ watch(
     if (!on) {
       event.value.signUpForm = undefined
       enableSignUpForm.value = false
+      event.value.signUpDeadline = undefined
+      event.value.signUpLimit = undefined
+    } else if (!event.value.signUpDeadline) {
+      event.value.signUpDeadline = event.value.startTime
     }
   },
 )
@@ -121,6 +131,15 @@ watch(enableSignUpForm, (on) => {
   if (on) event.value.signUp = true
   else event.value.signUpForm = undefined
 })
+watch(
+  () => event.value.startTime,
+  (newStartTime, oldStartTime) => {
+    if (!event.value.signUp) return
+    if (!event.value.signUpDeadline || event.value.signUpDeadline === oldStartTime) {
+      event.value.signUpDeadline = newStartTime
+    }
+  },
+)
 
 const bannerFile = ref<File | null>(null)
 const bannerDirty = ref(false)
@@ -219,7 +238,7 @@ const save = async () => {
         }
         : undefined
 
-      const bodyBase: CreateEventRequest = {
+      const bodyBase = {
         committeeId: event.value.committeeId!,
         title: event.value.title,
         description: event.value.description,
@@ -231,6 +250,8 @@ const save = async () => {
         approved: event.value.approved,
         membersOnly: event.value.membersOnly,
         signUp: event.value.signUp,
+        signUpDeadline: event.value.signUp ? event.value.signUpDeadline : undefined,
+        signUpLimit: event.value.signUp && event.value.signUpLimit != null ? Number(event.value.signUpLimit) : undefined,
         banner: event.value.banner
           ? {
             fileId: event.value.banner.fileId,
@@ -238,7 +259,7 @@ const save = async () => {
           }
           : undefined,
         signUpForm: surveyRequest,
-      }
+      } as CreateEventRequest
 
       const resp = event.value?.id
         ? await updateEvent({
@@ -472,6 +493,46 @@ defineExpose({validate, save})
           />
         </v-col>
       </v-row>
+
+      <template v-if="event.signUp">
+        <v-row>
+          <v-col>
+            <VvField
+              v-model="event.signUpDeadline"
+              :component-props="{ type: 'date', 'prepend-icon': 'mdi-calendar-clock' }"
+              :display="(v: string) => safeFormatISO(String(v ?? ''), 'yyyy-MM-dd')"
+              :update="(date: string, handle: HandleChange<string>) => handle(toISO({ date, dateTime: event.signUpDeadline }))"
+              label="Sign-up deadline date"
+              name="signUpDeadlineDate"
+              rules="required"
+            />
+          </v-col>
+          <v-col>
+            <VvField
+              v-model="event.signUpDeadline"
+              :component-props="{ type: 'time', 'prepend-icon': 'mdi-clock-outline' }"
+              :display="(v: string) => safeFormatISO(String(v ?? ''), 'HH:mm')"
+              :rules="`required|dateTimeAfter:${nowISO}|dateTimeNotAfter:@endTime`"
+              :update="(time: string, handle: HandleChange<string>) => handle(toISO({ time: String(time), dateTime: event.signUpDeadline }))"
+              label="Sign-up deadline time"
+              name="signUpDeadlineTime"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col>
+            <VvField
+              v-model="event.signUpLimit"
+              :component-props="{ type: 'number', min: 1, clearable: true, 'prepend-icon': 'mdi-account-multiple' }"
+              :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
+              label="Maximum sign-ups (leave blank for unlimited)"
+              name="signUpLimit"
+              rules="minValue:1"
+            />
+          </v-col>
+        </v-row>
+      </template>
 
       <v-row
         v-if="enableSignUpForm"

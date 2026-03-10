@@ -18,5 +18,5 @@ class ValidQuestionValidator : ConstraintValidator<ValidQuestion, QuestionCandid
     }
 
     private fun hasValidChoiceLabels(choiceLabels: List<String>?): Boolean =
-        !choiceLabels.isNullOrEmpty() && choiceLabels.none { it.isBlank() }
+        !choiceLabels.isNullOrEmpty() && choiceLabels.none { it.isBlank() || it.length > 100 }
 }

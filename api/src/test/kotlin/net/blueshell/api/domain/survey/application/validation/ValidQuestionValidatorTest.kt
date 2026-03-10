@@ -37,6 +37,20 @@ class ValidQuestionValidatorTest {
     }
 
     @Test
+    fun `rejects choice labels exceeding 100 characters`() {
+        val longLabel = "A".repeat(101)
+        assertThat(validator.isValid(question(QuestionType.RADIO, mutableListOf("Valid", longLabel)), context)).isFalse()
+        assertThat(validator.isValid(question(QuestionType.CHECKBOX, mutableListOf(longLabel)), context)).isFalse()
+    }
+
+    @Test
+    fun `accepts choice labels at exactly 100 characters`() {
+        val maxLabel = "A".repeat(100)
+        assertThat(validator.isValid(question(QuestionType.RADIO, mutableListOf(maxLabel, "B")), context)).isTrue()
+        assertThat(validator.isValid(question(QuestionType.CHECKBOX, mutableListOf(maxLabel)), context)).isTrue()
+    }
+
+    @Test
     fun `accepts null question`() {
         assertThat(validator.isValid(null, context)).isTrue()
     }

@@ -199,7 +199,7 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
             <v-table
               v-else
               class="rounded-lg radio-table"
-              density="comfortable"
+              density="compact"
             >
               <thead>
                 <tr>
@@ -209,9 +209,13 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
                   <th
                     v-for="(opt, idx) in (question.choiceLabels ?? [])"
                     :key="idx"
-                    class="text-center"
+                    class="text-center choice-col"
                   >
-                    {{ opt }}
+                    <v-tooltip :text="opt" location="bottom">
+                      <template #activator="{ props }">
+                        <span v-bind="props" class="choice-label">{{ opt }}</span>
+                      </template>
+                    </v-tooltip>
                   </th>
                 </tr>
               </thead>
@@ -275,8 +279,19 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
   }
 }
 
-.radio-table .check-cell {
-  width: 64px;
+.radio-table .check-cell,
+.radio-table .choice-col {
+  width: 96px;
+  max-width: 96px;
+  overflow: hidden;
+}
+
+.choice-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  cursor: default;
 }
 
 .sticky-col {

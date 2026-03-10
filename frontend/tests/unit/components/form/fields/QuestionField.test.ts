@@ -35,6 +35,6 @@ describe("QuestionField", () => {
     const rules = wrapper
       .findAllComponents({name: "Field"})
       .map((field) => String(field.props("rules")))
-    expect(rules).toContain("required|maxChars:30")
+    expect(rules).toContain("required|maxChars:100")
   })
 })

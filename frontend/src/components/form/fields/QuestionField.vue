@@ -112,7 +112,7 @@ function removeChoice(j: number) {
         v-slot="{ value, errors, handleChange, handleBlur }"
         :model-value="model.choiceLabels?.[j] ?? ''"
         :name="`survey.questions[${model.idx}].choiceLabels[${j}]`"
-        rules="required|maxChars:30"
+        rules="required|maxChars:100"
       >
         <v-text-field
           :error-messages="errors"

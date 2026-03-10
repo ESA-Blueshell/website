@@ -475,7 +475,7 @@ private class DatabaseSeedRunner(
         val survey = Survey()
         survey.addQuestion(
             Question(
-                idx = 1L,
+                idx = 0L,
                 survey = survey,
                 type = QuestionType.DESCRIPTION,
                 label = "Info",
@@ -484,7 +484,7 @@ private class DatabaseSeedRunner(
         )
         survey.addQuestion(
             Question(
-                idx = 2L,
+                idx = 1L,
                 survey = survey,
                 type = QuestionType.RADIO,
                 label = "Meal",
@@ -493,7 +493,7 @@ private class DatabaseSeedRunner(
         )
         survey.addQuestion(
             Question(
-                idx = 3L,
+                idx = 2L,
                 survey = survey,
                 type = QuestionType.CHECKBOX,
                 label = "Preferences",
@@ -502,7 +502,7 @@ private class DatabaseSeedRunner(
         )
         survey.addQuestion(
             Question(
-                idx = 4L,
+                idx = 3L,
                 survey = survey,
                 type = QuestionType.OPEN,
                 label = "Notes",

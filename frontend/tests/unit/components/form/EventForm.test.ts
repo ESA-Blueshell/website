@@ -36,8 +36,8 @@ vi.mock("@/services/api", () => ({
 
 const vvFieldStub = {
   name: "VvField",
-  props: ["name", "rules"],
-  template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' />",
+  props: ["name", "rules", "modelValue"],
+  template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' :data-model-value='String(modelValue ?? \"\")' />",
 }
 const formStub = {template: "<div><slot /></div>"}
 
@@ -65,6 +65,14 @@ function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
     wrapper
       .findAll(".vv-field-stub")
       .map((field) => [String(field.attributes("data-name")), String(field.attributes("data-rules") ?? "")]),
+  )
+}
+
+function modelValuesByName(wrapper: ReturnType<typeof shallowMount>) {
+  return Object.fromEntries(
+    wrapper
+      .findAll(".vv-field-stub")
+      .map((field) => [String(field.attributes("data-name")), field.attributes("data-model-value")]),
   )
 }
 
@@ -166,6 +174,84 @@ describe("EventForm", () => {
     })
     await settle()
     expect(rulesByName(wrapper).startTime).toBe("required")
+  })
+
+  it("signUpDeadline follows startTime when it equals the previous startTime", async () => {
+    const wrapper = shallowMount(EventForm, {
+      props: {
+        modelValue: baseEvent({
+          signUp: true,
+          startTime: "2099-01-01T10:00:00",
+          signUpDeadline: "2099-01-01T10:00:00",
+        }),
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+    await settle()
+
+    const startTimeField = wrapper.findAllComponents(vvFieldStub).find((c) => c.props("name") === "startTime")
+    await startTimeField?.vm.$emit("update:modelValue", "2099-06-01T10:00:00")
+    await settle()
+
+    expect(modelValuesByName(wrapper).signUpDeadline).toBe("2099-06-01T10:00:00")
+  })
+
+  it("signUpDeadline does not follow startTime when it has a custom value", async () => {
+    const wrapper = shallowMount(EventForm, {
+      props: {
+        modelValue: baseEvent({
+          signUp: true,
+          startTime: "2099-01-01T10:00:00",
+          signUpDeadline: "2099-01-01T08:00:00",
+        }),
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+    await settle()
+
+    const startTimeField = wrapper.findAllComponents(vvFieldStub).find((c) => c.props("name") === "startTime")
+    await startTimeField?.vm.$emit("update:modelValue", "2099-06-01T10:00:00")
+    await settle()
+
+    expect(modelValuesByName(wrapper).signUpDeadline).toBe("2099-01-01T08:00:00")
+  })
+
+  it("endTime date updates when startTime date changes", async () => {
+    const wrapper = shallowMount(EventForm, {
+      props: {
+        modelValue: baseEvent({
+          startTime: "2099-01-01T10:00:00",
+          endTime: "2099-01-01T12:00:00",
+        }),
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+    await settle()
+
+    const startTimeField = wrapper.findAllComponents(vvFieldStub).find((c) => c.props("name") === "startTime")
+    await startTimeField?.vm.$emit("update:modelValue", "2099-03-15T10:00:00")
+    await settle()
+
+    expect(modelValuesByName(wrapper).endTime).toBe("2099-03-15T12:00:00")
+  })
+
+  it("endTime date does not update when only startTime time changes", async () => {
+    const wrapper = shallowMount(EventForm, {
+      props: {
+        modelValue: baseEvent({
+          startTime: "2099-01-01T10:00:00",
+          endTime: "2099-01-01T12:00:00",
+        }),
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+    await settle()
+
+    const startTimeField = wrapper.findAllComponents(vvFieldStub).find((c) => c.props("name") === "startTime")
+    await startTimeField?.vm.$emit("update:modelValue", "2099-01-01T11:00:00")
+    await settle()
+
+    expect(modelValuesByName(wrapper).endTime).toBe("2099-01-01T12:00:00")
   })
 
   it("loads committees once via the role-appropriate query", async () => {

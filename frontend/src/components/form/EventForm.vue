@@ -27,8 +27,11 @@ import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/com
 import {safeFormatISO, toISO} from "@/utils/datetime"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
+const props = defineProps<{modelValue?: EventModel}>()
+
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
+  (e: "update:modelValue", val: EventModel): void
 }>()
 
 type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
@@ -43,33 +46,14 @@ type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpFor
   signUpLimit?: number;
 }
 
-const event = defineModel<EventModel>({
-  default: () => ({
+function defaultEvent(): EventModel {
+  return {
     id: undefined,
     title: "",
     location: "",
     description: "",
-    startTime: DateTime.now().plus({days: 1}).toISO(),
-    endTime: DateTime.now().plus({days: 1, hours: 3}).toISO(),
-    memberPrice: 0,
-    publicPrice: 0,
-    approved: false,
-    membersOnly: false,
-    signUp: false,
-    signUpDeadline: undefined,
-    signUpLimit: undefined,
-    banner: undefined,
-    committeeId: undefined,
-  }),
-})
-if (!event.value) {
-  event.value = {
-    id: undefined,
-    title: "",
-    location: "",
-    description: "",
-    startTime: DateTime.now().plus({days: 1}).toISO(),
-    endTime: DateTime.now().plus({days: 1, hours: 3}).toISO(),
+    startTime: DateTime.now().plus({days: 1}).toISO()!,
+    endTime: DateTime.now().plus({days: 1, hours: 3}).toISO()!,
     memberPrice: 0,
     publicPrice: 0,
     approved: false,
@@ -81,6 +65,10 @@ if (!event.value) {
     committeeId: undefined,
   }
 }
+
+// Use a local ref (always deeply reactive) so that property mutations trigger watchers
+// and template updates in both create mode and edit mode.
+const event = ref<EventModel>(props.modelValue ? {...props.modelValue} : defaultEvent())
 
 const store = useStore()
 const isBoard = computed<boolean>(() => store.getters.isBoard)
@@ -132,9 +120,15 @@ watch(enableSignUpForm, (on) => {
 watch(
   () => event.value.startTime,
   (newStartTime, oldStartTime) => {
-    if (!event.value.signUp) return
-    if (!event.value.signUpDeadline || event.value.signUpDeadline === oldStartTime) {
-      event.value.signUpDeadline = newStartTime
+    if (event.value.signUp) {
+      if (!event.value.signUpDeadline || event.value.signUpDeadline === oldStartTime) {
+        event.value.signUpDeadline = newStartTime
+      }
+    }
+    const oldDate = oldStartTime?.slice(0, 10)
+    const newDate = newStartTime?.slice(0, 10)
+    if (oldDate && newDate && oldDate !== newDate && event.value.endTime) {
+      event.value.endTime = newDate + event.value.endTime.slice(10)
     }
   },
 )
@@ -271,6 +265,7 @@ const save = async () => {
         : await createEvent({body: bodyBase, throwOnError: true})
 
       event.value = resp.data!
+      emit("update:modelValue", event.value)
       emit("submitted", true)
       setSubmitResult(true)
     })

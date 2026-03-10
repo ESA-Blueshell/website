@@ -239,7 +239,9 @@ export type CreateEventRequest = {
     membersOnly: boolean;
     publicPrice?: number;
     signUp: boolean;
+    signUpDeadline?: string;
     signUpForm?: SurveyRequest;
+    signUpLimit?: number;
     startTime: string;
     title: string;
 };
@@ -328,7 +330,9 @@ export type EventResponse = {
     publicPrice?: number;
     signUp: boolean;
     signUpCount: number;
+    signUpDeadline?: string;
     signUpForm?: SurveyResponse;
+    signUpLimit?: number;
     startTime: string;
     title: string;
     updatedAt: string;
@@ -653,7 +657,9 @@ export type UpdateEventRequest = {
     membersOnly: boolean;
     publicPrice?: number;
     signUp: boolean;
+    signUpDeadline?: string;
     signUpForm?: SurveyRequest;
+    signUpLimit?: number;
     startTime: string;
     title: string;
     version: number;

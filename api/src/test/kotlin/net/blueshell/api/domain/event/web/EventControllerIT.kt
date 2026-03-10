@@ -1,6 +1,8 @@
 package net.blueshell.api.domain.event.web
 
 import net.blueshell.api.factory.event.web.request.EventRequestFactory
+import net.blueshell.api.factory.event.web.request.EventSignUpRequestFactory
+import java.time.Instant
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
 import net.blueshell.api.domain.file.persistence.repository.FileRepository
@@ -20,6 +22,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class EventControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var eventRequestFactory: EventRequestFactory
+
+    @Autowired
+    private lateinit var eventSignUpRequestFactory: EventSignUpRequestFactory
 
     @Autowired
     private lateinit var fileRepository: FileRepository
@@ -108,6 +113,252 @@ class EventControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.banner.fileId").value(bannerId))
+        }
+    }
+
+    @Nested
+    inner class SignUpLimitValidation {
+        @Test
+        fun `accepts event with signUpDeadline in the past`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.createEventPayload(
+                            committee.id!!,
+                            startTime = "2099-06-01T19:00:00Z",
+                            endTime = "2099-06-01T21:00:00Z",
+                            signUpDeadline = "2020-01-01T00:00:00Z"
+                        )
+                    )
+            )
+                .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `rejects event with signUpDeadline after endTime`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.createEventPayload(
+                            committee.id!!,
+                            startTime = "2099-06-01T19:00:00Z",
+                            endTime = "2099-06-01T21:00:00Z",
+                            signUpDeadline = "2099-06-02T00:00:00Z"
+                        )
+                    )
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("signUpDeadline"))
+        }
+
+        @Test
+        fun `error field name is signUpLimit when limit is too low`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 0))
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("signUpLimit"))
+        }
+
+        @Test
+        fun `accepts event with valid signUpDeadline`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.createEventPayload(
+                            committee.id!!,
+                            startTime = "2099-06-01T19:00:00Z",
+                            endTime = "2099-06-01T21:00:00Z",
+                            signUpDeadline = "2099-06-01T18:00:00Z"
+                        )
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.signUpDeadline").value("2099-06-01T18:00:00Z"))
+        }
+
+        @Test
+        fun `rejects event with signUpLimit of 0`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 0))
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `accepts event with signUpLimit of 1`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 1))
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.signUpLimit").value(1))
+        }
+
+        @Test
+        fun `accepts event with no signUpDeadline and no signUpLimit`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!))
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.signUpDeadline").doesNotExist())
+                .andExpect(jsonPath("$.signUpLimit").doesNotExist())
+        }
+    }
+
+    @Nested
+    inner class ValidationErrorFields {
+        @Test
+        fun `missing title returns error on field title`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val payload = """{"committeeId":${committee.id},"title":"","description":"desc","location":"here",
+                |"startTime":"2099-06-01T19:00:00Z","endTime":"2099-06-01T21:00:00Z",
+                |"approved":true,"membersOnly":false,"signUp":false}""".trimMargin()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload)
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[?(@.field == 'title')]").exists())
+        }
+
+        @Test
+        fun `missing endTime returns error on field endTime`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val payload = """{"committeeId":${committee.id},"title":"T","description":"desc","location":"here",
+                |"startTime":"2099-06-01T19:00:00Z",
+                |"approved":true,"membersOnly":false,"signUp":false}""".trimMargin()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload)
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[?(@.field == 'endTime')]").exists())
+        }
+
+        @Test
+        fun `signUpDeadline after endTime returns error on field signUpDeadline`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.createEventPayload(
+                            committee.id!!,
+                            startTime = "2099-06-01T19:00:00Z",
+                            endTime = "2099-06-01T21:00:00Z",
+                            signUpDeadline = "2099-06-02T00:00:00Z"
+                        )
+                    )
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[?(@.field == 'signUpDeadline')]").exists())
+        }
+
+        @Test
+        fun `signUpLimit below 1 returns error on field signUpLimit`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 0))
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[?(@.field == 'signUpLimit')]").exists())
+        }
+
+        @Test
+        fun `signup deadline passed returns error on field eventId`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(
+                approved = true,
+                membersOnly = false,
+                signUp = true,
+                signUpDeadline = java.time.Instant.now().minusSeconds(1)
+            )
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[?(@.field == 'eventId')]").exists())
+        }
+
+        @Test
+        fun `signup at capacity returns error on field eventId`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val other = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(
+                approved = true,
+                membersOnly = false,
+                signUp = true,
+                signUpLimit = 1
+            )
+            createEventSignUpFixture(event = event, user = other)
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[?(@.field == 'eventId')]").exists())
         }
     }
 

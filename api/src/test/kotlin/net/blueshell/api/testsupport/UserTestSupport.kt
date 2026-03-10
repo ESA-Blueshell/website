@@ -206,9 +206,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
         approved: Boolean = true,
         membersOnly: Boolean = false,
         signUp: Boolean = true,
-        title: String = "Event ${System.currentTimeMillis()}"
+        title: String = "Event ${System.currentTimeMillis()}",
+        signUpDeadline: Instant? = null,
+        signUpLimit: Int? = null
     ): Event {
-        return eventFactory.create(committee, approved, membersOnly, signUp, title)
+        return eventFactory.create(committee, approved, membersOnly, signUp, title, signUpDeadline, signUpLimit)
     }
 
     protected fun createAddressFixture(

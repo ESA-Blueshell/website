@@ -10,11 +10,17 @@ class EventRequestFactory {
         title: String = "Integration Event ${System.currentTimeMillis()}",
         approved: Boolean = true,
         bannerFileId: Long? = null,
-        signUpFormJson: String? = null
+        signUpFormJson: String? = null,
+        signUpDeadline: String? = null,
+        signUpLimit: Int? = null,
+        startTime: String = "2026-03-01T19:00:00Z",
+        endTime: String = "2026-03-01T21:00:00Z"
     ): String {
         val bannerPart = if (bannerFileId == null) "" else ""","banner":{"fileId":$bannerFileId}"""
         val signUpFormPart = signUpFormJson?.let { ""","signUpForm":$it""" } ?: ""
-        return """{"committeeId":$committeeId,"title":"$title","description":"Event description","location":"Campus","startTime":"2026-03-01T19:00:00Z","endTime":"2026-03-01T21:00:00Z","approved":$approved,"membersOnly":false,"signUp":true$bannerPart$signUpFormPart}"""
+        val deadlinePart = signUpDeadline?.let { ""","signUpDeadline":"$it"""" } ?: ""
+        val limitPart = signUpLimit?.let { ""","signUpLimit":$it""" } ?: ""
+        return """{"committeeId":$committeeId,"title":"$title","description":"Event description","location":"Campus","startTime":"$startTime","endTime":"$endTime","approved":$approved,"membersOnly":false,"signUp":true$bannerPart$signUpFormPart$deadlinePart$limitPart}"""
     }
 
     fun updateEventPayload(
@@ -23,11 +29,17 @@ class EventRequestFactory {
         title: String = "Updated Event ${System.currentTimeMillis()}",
         approved: Boolean = false,
         bannerFileId: Long? = null,
-        signUpFormJson: String? = null
+        signUpFormJson: String? = null,
+        signUpDeadline: String? = null,
+        signUpLimit: Int? = null,
+        startTime: String = "2026-03-01T19:00:00Z",
+        endTime: String = "2026-03-01T21:00:00Z"
     ): String {
         val bannerPart = if (bannerFileId == null) "" else ""","banner":{"fileId":$bannerFileId}"""
         val signUpFormPart = signUpFormJson?.let { ""","signUpForm":$it""" } ?: ""
-        return """{"committeeId":$committeeId,"title":"$title","description":"Updated description","location":"Updated Campus","startTime":"2026-03-01T19:00:00Z","endTime":"2026-03-01T21:00:00Z","approved":$approved,"membersOnly":false,"signUp":true$bannerPart$signUpFormPart,"version":$version}"""
+        val deadlinePart = signUpDeadline?.let { ""","signUpDeadline":"$it"""" } ?: ""
+        val limitPart = signUpLimit?.let { ""","signUpLimit":$it""" } ?: ""
+        return """{"committeeId":$committeeId,"title":"$title","description":"Updated description","location":"Updated Campus","startTime":"$startTime","endTime":"$endTime","approved":$approved,"membersOnly":false,"signUp":true$bannerPart$signUpFormPart$deadlinePart$limitPart,"version":$version}"""
     }
 
     fun questionJson(idx: Long, type: String, label: String): String =

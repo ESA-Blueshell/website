@@ -10,8 +10,15 @@ import org.springframework.test.context.TestExecutionListener
 import javax.sql.DataSource
 
 /**
- * Test listener that truncates all test-schema tables between tests (excluding Flyway history).
- * Hard guards against accidental non-test schema truncation.
+ * Test listener that deletes all rows from every test-schema table between tests (excluding Flyway
+ * history). Hard-guards against accidental non-test schema truncation.
+ *
+ * Uses DELETE (not TRUNCATE) inside an explicit transaction so that MariaDB/InnoDB only needs a
+ * shared metadata lock + row-level write locks, rather than the exclusive table-level metadata lock
+ * that TRUNCATE requires. Under CI's limited CPU resources the exclusive-MDL wait can exceed
+ * innodb_lock_wait_timeout when the preceding test's transaction teardown is delayed, causing
+ * spurious failures. DELETE integrates cleanly with InnoDB's lock-ordering protocol and benefits
+ * from deadlock detection.
  */
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class TestCleanUpListener : TestExecutionListener {
@@ -53,12 +60,21 @@ class TestCleanUpListener : TestExecutionListener {
                 return@withConnection
             }
 
-            conn.createStatement().use { st ->
-                st.execute("SET FOREIGN_KEY_CHECKS = 0")
-                for (table in tables) {
-                    st.execute("TRUNCATE TABLE `$TEST_SCHEMA`.`$table`")
+            conn.autoCommit = false
+            try {
+                conn.createStatement().use { st ->
+                    st.execute("SET FOREIGN_KEY_CHECKS = 0")
+                    for (table in tables) {
+                        st.execute("DELETE FROM `$TEST_SCHEMA`.`$table`")
+                    }
+                    st.execute("SET FOREIGN_KEY_CHECKS = 1")
                 }
-                st.execute("SET FOREIGN_KEY_CHECKS = 1")
+                conn.commit()
+            } catch (e: Exception) {
+                runCatching { conn.rollback() }
+                throw e
+            } finally {
+                conn.autoCommit = true
             }
         }
     }

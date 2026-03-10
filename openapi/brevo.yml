@@ -16982,6 +16982,8 @@ paths:
               - draft
               - inProcess
               - inReview
+              - cancelling
+              - cancelled
             type: string
         - description: Filter on type of the statistics required. Example **globalStats** value will only fetch globalStats info of the campaign in returned response.This option only returns data for events occurred in the last 6 months.For older campaigns, it’s advisable to use the **Get Campaign Report** endpoint.
           in: query
@@ -17156,6 +17158,7 @@ paths:
                           id: 26
                           name: Newsletter
                         shareLink: http://example.com/fhsgccc.html?t=9865448900
+                        attachmentFile: http://img.mailinblue.com/{clientID-campaignID}/attachments/{fileName}
                         statistics:
                           campaignStats:
                             - clickers: 2665
@@ -17224,6 +17227,9 @@ paths:
                         status: draft
                         subject: Week 1 - Newsletter
                         tag: Newsletter
+                        tags:
+                          - Newsletter
+                          - Weekly
                         testSent: false
                         toField: '{FNAME} {LNAME}'
                         type: Classic
@@ -17607,6 +17613,14 @@ paths:
               - statsByDevice
               - statsByBrowser
             type: string
+        - description: Use this flag to exclude htmlContent from the response body. If set to **true**, htmlContent field will be returned as empty string in the response body
+          in: query
+          name: excludeHtmlContent
+          schema:
+            enum:
+              - true
+              - false
+            type: boolean
       responses:
         '200':
           content:
@@ -17636,6 +17650,7 @@ paths:
                       email: newsletter@mycompany.com
                       id: 26
                       name: Newsletter
+                    attachmentFile: http://img.mailinblue.com/{clientID-campaignID}/attachments/{fileName}
                     shareLink: http://dhh.brevo.com/fhsgccc.html?t=9865448900
                     statistics:
                       campaignStats:
@@ -17727,6 +17742,9 @@ paths:
                     status: draft
                     subject: Week 1 - Newsletter
                     tag: Newsletter
+                    tags:
+                      - Newsletter
+                      - Weekly
                     testSent: false
                     toField: '{FNAME} {LNAME}'
                     type: classic
@@ -26026,6 +26044,10 @@ components:
     getExtendedCampaignOverview:
       allOf:
         - properties:
+            attachmentFile:
+              description: Url of the attachment file. Only available if the campaign has an attachment.
+              example: http://mydomain.com/campaign/attachment/file.pdf
+              type: string
             abTesting:
               description: Status of A/B Test for the campaign. abTesting = false means it is disabled, & abTesting = true means it is enabled.
               example: true
@@ -26064,6 +26086,9 @@ components:
                 - queued
                 - suspended
                 - in_process
+                - in_review
+                - cancelling
+                - cancelled
               example: sent
               type: string
             subject:
@@ -26172,6 +26197,14 @@ components:
               description: Tag of the campaign
               example: Newsletter
               type: string
+            tags:
+              description: List of tags of the campaign
+              example:
+                - tag1
+                - tag2
+              items:
+                type: string
+              type: array
             testSent:
               description: Retrieved the status of test email sending. (true=Test email has been sent  false=Test email has not been sent)
               example: true
@@ -26448,7 +26481,7 @@ components:
       type: object
     updateCampaignStatus:
       description: Status of the campaign
-      example: draft
+      example: sent
       properties:
         status:
           description: |
@@ -26461,6 +26494,7 @@ components:
             - queued
             - replicate
             - replicateTemplate
+            - cancel
             - draft
           type: string
       type: object

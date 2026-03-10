@@ -43,6 +43,9 @@ data class EventResponse(
     @field:NotNull
     var signUp: Boolean,
 
+    var signUpDeadline: Instant? = null,
+    var signUpLimit: Int? = null,
+
     var banner: EventBannerResponse? = null,
 
     @field:NotNull

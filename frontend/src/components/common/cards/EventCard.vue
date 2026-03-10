@@ -63,6 +63,51 @@ const actionsDisabled = computed(
   () => !event.value.approved || (event.value.membersOnly && !isMember.value) || isPastEvent.value,
 )
 
+const deadlinePassed = computed<boolean>(() => {
+  if (!event.value.signUpDeadline) return false
+  return DateTime.fromISO(event.value.signUpDeadline) < DateTime.now()
+})
+
+const atCapacity = computed<boolean>(() => {
+  const limit = event.value.signUpLimit
+  if (limit == null) return false
+  return (event.value.signUpCount ?? 0) >= limit
+})
+
+const signUpBlockedReason = computed<string | null>(() => {
+  if (isSignedUp.value) return null
+  if (deadlinePassed.value) return "Sign-up deadline has passed"
+  if (atCapacity.value) return "This event is full"
+  return null
+})
+
+const signUpDisabled = computed<boolean>(
+  () => actionsDisabled.value || signUpBlockedReason.value !== null,
+)
+
+const signUpTooltip = computed<string>(() => {
+  if (signUpBlockedReason.value) return signUpBlockedReason.value
+  if (signUp.value?.id) return expanded.value ? "Cancel editing sign-up" : "Edit sign-up"
+  return expanded.value ? "Cancel signing up" : "Sign up"
+})
+
+const signUpCountLabel = computed<string>(() => {
+  const count = event.value.signUpCount ?? 0
+  const limit = event.value.signUpLimit
+  return limit != null ? `${count}/${limit}` : `${count}`
+})
+
+const signUpDeadlineLabel = computed<string | null>(() => {
+  if (!event.value.signUpDeadline) return null
+  return DateTime.fromISO(event.value.signUpDeadline).toLocaleString({
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+})
+
 async function confirmDeleteEvent() {
   if (!event.value?.id) return
   deletingEvent.value = true
@@ -283,6 +328,12 @@ const signUpIcon = computed(() =>
                 >
                   Members only
                 </span>
+                <span
+                  v-if="event.signUp && signUpDeadlineLabel"
+                  :class="['sign-up-deadline', { 'text-error': deadlinePassed, 'text-medium-emphasis': !deadlinePassed }]"
+                >
+                  {{ deadlinePassed ? 'Sign-ups closed:' : 'Sign-ups close:' }} {{ signUpDeadlineLabel }}
+                </span>
               </v-card-subtitle>
             </v-card-item>
 
@@ -402,11 +453,7 @@ const signUpIcon = computed(() =>
 
             <v-tooltip
               v-if="event.signUp"
-              :text="
-                signUp?.id
-                  ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
-                  : (expanded ? 'Cancel signing up' : 'Sign up')
-              "
+              :text="signUpTooltip"
               location="left"
             >
               <template #activator="{ props: p }">
@@ -414,27 +461,21 @@ const signUpIcon = computed(() =>
                   class="action-btn-wrap"
                   v-bind="p"
                 >
-                  <v-badge
-                    :content="event.signUpCount"
-                    color="primary"
-                    floating
-                    offset-x="15"
-                    offset-y="15"
-                  >
-                    <v-btn
-                      :aria-label="
-                        isSignedUp
-                          ? (expanded ? 'Cancel editing sign-up' : 'Edit sign-up')
-                          : (expanded ? 'Cancel signing up' : 'Sign up')
-                      "
-                      :data-testid="`event-signup-toggle-btn-${event.id}`"
-                      :disabled="actionsDisabled"
-                      :icon="signUpIcon"
-                      :loading="submitting"
-                      variant="plain"
-                      @click="toggleExpanded()"
-                    />
-                  </v-badge>
+                  <v-btn
+                    :aria-label="signUpTooltip"
+                    :data-testid="`event-signup-toggle-btn-${event.id}`"
+                    :disabled="signUpDisabled"
+                    :icon="signUpIcon"
+                    :loading="submitting"
+                    variant="plain"
+                    @click="toggleExpanded()"
+                  />
+                  <v-chip
+                    :color="atCapacity ? 'error' : 'primary'"
+                    class="signup-count-label"
+                    size="small"
+                    variant="flat"
+                  >{{ signUpCountLabel }}</v-chip>
                 </span>
               </template>
             </v-tooltip>
@@ -547,5 +588,25 @@ const signUpIcon = computed(() =>
   justify-content: center;
 
   opacity: var(--v-medium-emphasis-opacity);
+}
+
+.action-btn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.signup-count-label {
+  margin-top: -12px;
+  font-family: Roboto, sans-serif;
+  font-size: 0.75rem !important;
+  font-weight: 500;
+  height: 18px !important;
+}
+
+.sign-up-deadline {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 2px;
 }
 </style>

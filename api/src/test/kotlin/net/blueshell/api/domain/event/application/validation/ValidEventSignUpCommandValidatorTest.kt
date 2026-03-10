@@ -97,19 +97,118 @@ class ValidEventSignUpCommandValidatorTest {
         assertThat(validator.isValid(candidate, context)).isFalse()
     }
 
-    private fun eventWithQuestions(vararg questions: Question): Event {
+    // --- Deadline and capacity tests ---
+
+    @Test
+    fun `accepts signup when no deadline set`() {
+        whenever(events.findById(10)).thenReturn(eventWithQuestions())
+
+        val candidate = TestCandidate(EventSignUpData(eventId = 10, answers = emptyList()))
+
+        assertThat(validator.isValid(candidate, mock())).isTrue()
+    }
+
+    @Test
+    fun `accepts signup when before deadline`() {
+        whenever(events.findById(11)).thenReturn(
+            eventWithQuestions(signUpDeadline = Instant.now().plusSeconds(3600))
+        )
+
+        val candidate = TestCandidate(EventSignUpData(eventId = 11, answers = emptyList()))
+
+        assertThat(validator.isValid(candidate, mock())).isTrue()
+    }
+
+    @Test
+    fun `rejects signup when deadline has passed`() {
+        whenever(events.findById(12)).thenReturn(
+            eventWithQuestions(signUpDeadline = Instant.now().minusSeconds(1))
+        )
+
+        val candidate = TestCandidate(EventSignUpData(eventId = 12, answers = emptyList()))
+
+        val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
+        assertThat(validator.isValid(candidate, context)).isFalse()
+    }
+
+    @Test
+    fun `accepts signup when no limit set`() {
+        whenever(events.findById(13)).thenReturn(eventWithQuestions())
+
+        val candidate = TestCandidate(EventSignUpData(eventId = 13, answers = emptyList()))
+
+        assertThat(validator.isValid(candidate, mock())).isTrue()
+    }
+
+    @Test
+    fun `accepts signup when under capacity`() {
+        whenever(events.findById(14)).thenReturn(
+            eventWithQuestions(signUpLimit = 5)
+        )
+
+        val candidate = TestCandidate(EventSignUpData(eventId = 14, answers = emptyList()))
+
+        assertThat(validator.isValid(candidate, mock())).isTrue()
+    }
+
+    @Test
+    fun `rejects signup when at capacity`() {
+        whenever(events.findById(15)).thenReturn(
+            eventWithQuestions(signUpLimit = 0, currentSignUpCount = 0)
+        )
+
+        val candidate = TestCandidate(EventSignUpData(eventId = 15, answers = emptyList()))
+
+        val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
+        assertThat(validator.isValid(candidate, context)).isFalse()
+    }
+
+    @Test
+    fun `rejects when both deadline passed and at capacity`() {
+        whenever(events.findById(16)).thenReturn(
+            eventWithQuestions(
+                signUpDeadline = Instant.now().minusSeconds(1),
+                signUpLimit = 0,
+                currentSignUpCount = 0
+            )
+        )
+
+        val candidate = TestCandidate(EventSignUpData(eventId = 16, answers = emptyList()))
+
+        val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
+        assertThat(validator.isValid(candidate, context)).isFalse()
+    }
+
+    private fun eventWithQuestions(
+        vararg questions: Question,
+        signUpDeadline: Instant? = null,
+        signUpLimit: Int? = null,
+        currentSignUpCount: Long = 0
+    ): Event {
         val form = Survey()
         questions.forEach(form::addQuestion)
 
-        return Event(
+        val event = Event(
             committee = Committee(name = "Committee", description = "Description"),
             title = "Event",
             startTime = Instant.now(),
             endTime = Instant.now().plusSeconds(3600),
             signUp = true,
+            signUpDeadline = signUpDeadline,
+            signUpLimit = signUpLimit,
         ).apply {
             signUpForm = form
         }
+
+        if (currentSignUpCount > 0) {
+            val countField = generateSequence(event.javaClass as Class<*>?) { it.superclass }
+                .mapNotNull { runCatching { it.getDeclaredField("signUpCount") }.getOrNull() }
+                .first()
+            countField.isAccessible = true
+            countField.set(event, currentSignUpCount)
+        }
+
+        return event
     }
 
     private fun question(id: Long, type: QuestionType): Question {

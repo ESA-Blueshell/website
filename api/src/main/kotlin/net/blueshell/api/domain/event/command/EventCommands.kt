@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.event.command
 
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -44,6 +45,11 @@ data class CreateEventCommand(
     @field:NotNull(message = "Sign up status is required")
     var signUp: Boolean,
 
+    val signUpDeadline: Instant? = null,
+
+    @field:Min(1, message = "Sign-up limit must be at least 1")
+    val signUpLimit: Int? = null,
+
     @field:Valid
     val banner: EventBannerData?,
 
@@ -85,6 +91,11 @@ data class UpdateEventCommand(
 
     @field:NotNull(message = "Sign up status is required")
     var signUp: Boolean,
+
+    val signUpDeadline: Instant? = null,
+
+    @field:Min(1, message = "Sign-up limit must be at least 1")
+    val signUpLimit: Int? = null,
 
     @field:Valid
     val banner: EventBannerData?,

@@ -41,6 +41,8 @@ class CreateEventHandler(
             approved = isBoard && command.approved,
             membersOnly = command.membersOnly,
             signUp = command.signUp,
+            signUpDeadline = command.signUpDeadline,
+            signUpLimit = command.signUpLimit,
         )
         event.replaceBanner(command.banner?.toEntity(event, fileService))
         event.replaceSignUpForm(command.signUpForm?.let(surveyFactory::createFromData))
@@ -146,6 +148,13 @@ private fun Event.applyEditableFields(command: UpdateEventCommand, committee: Co
     this.publicPrice = command.publicPrice
     this.membersOnly = command.membersOnly
     this.signUp = command.signUp
+    if (command.signUp == false) {
+        this.signUpDeadline = null
+        this.signUpLimit = null
+    } else {
+        this.signUpDeadline = command.signUpDeadline
+        this.signUpLimit = command.signUpLimit
+    }
 }
 
 private fun applySignUpFormUpdate(

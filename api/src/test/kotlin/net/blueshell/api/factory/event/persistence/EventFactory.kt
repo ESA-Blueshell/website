@@ -20,7 +20,9 @@ class EventFactory(
         approved: Boolean = true,
         membersOnly: Boolean = false,
         signUp: Boolean = true,
-        title: String = "Event ${System.currentTimeMillis()}"
+        title: String = "Event ${System.currentTimeMillis()}",
+        signUpDeadline: Instant? = null,
+        signUpLimit: Int? = null
     ): Event {
         return Event(
             committee = committee,
@@ -32,6 +34,8 @@ class EventFactory(
             approved = approved,
             membersOnly = membersOnly,
             signUp = signUp,
+            signUpDeadline = signUpDeadline,
+            signUpLimit = signUpLimit,
         )
     }
 
@@ -40,9 +44,11 @@ class EventFactory(
         approved: Boolean = true,
         membersOnly: Boolean = false,
         signUp: Boolean = true,
-        title: String = "Event ${System.currentTimeMillis()}"
+        title: String = "Event ${System.currentTimeMillis()}",
+        signUpDeadline: Instant? = null,
+        signUpLimit: Int? = null
     ): Event {
-        return persistence.persist(build(committee, approved, membersOnly, signUp, title))
+        return persistence.persist(build(committee, approved, membersOnly, signUp, title, signUpDeadline, signUpLimit))
     }
 
     fun buildBanner(

@@ -155,7 +155,7 @@ class JobExecutionService(
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null
-        execution.attempts += 1
+        execution.attempts = 0
         return super.update(execution)
     }
 }

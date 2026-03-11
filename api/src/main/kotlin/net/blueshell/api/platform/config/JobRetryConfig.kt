@@ -19,13 +19,7 @@ class JobRetryConfig(
 
         val retryPolicy = SimpleRetryPolicy(
             properties.maxRetries + 1,
-            mapOf(
-                NonRetryableJobException::class.java to false,
-                IllegalArgumentException::class.java to false,
-                NullPointerException::class.java to false,
-                ClassCastException::class.java to false,
-                Exception::class.java to true
-            ),
+            NonRetryableJobException.NON_RETRYABLE_EXCEPTIONS.associateWith { false } + mapOf(Exception::class.java to true),
             true
         )
         retryTemplate.setRetryPolicy(retryPolicy)

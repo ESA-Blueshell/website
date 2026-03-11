@@ -1,5 +1,7 @@
-package net.blueshell.api.shared.command
+package net.blueshell.api.platform.integration.queue
 
+import net.blueshell.api.shared.command.Command
+import net.blueshell.api.shared.command.CommandBus
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.task.TaskExecutor
@@ -18,7 +20,14 @@ import java.util.concurrent.CompletableFuture
  * - Security context is propagated to the worker thread.
  * - When called inside a transaction, submission is deferred to afterCommit so
  *   the worker always observes committed state.
+ *
+ * @deprecated Prefer [TrackedJobDispatcher] for reliable async work (persistence + retry).
+ * Use this only for truly volatile fire-and-forget work where no retry or audit trail is needed.
  */
+@Deprecated(
+    "Prefer TrackedJobDispatcher for reliable async work (persistence + retry). " +
+    "Use this only for truly volatile fire-and-forget work where no retry or audit trail is needed."
+)
 @Component
 class AsyncCommandDispatcher(
     private val commandBus: CommandBus,

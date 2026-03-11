@@ -1,5 +1,7 @@
-package net.blueshell.api.shared.command
+package net.blueshell.api.platform.integration.queue
 
+import net.blueshell.api.shared.command.Command
+import net.blueshell.api.shared.command.CommandBus
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -16,6 +18,7 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
+@Suppress("DEPRECATION")
 class AsyncCommandDispatcherTest {
 
     private val commandBus: CommandBus = mock()

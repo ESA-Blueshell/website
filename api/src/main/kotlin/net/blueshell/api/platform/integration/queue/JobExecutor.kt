@@ -19,7 +19,7 @@ class JobExecutor(
 ) {
     private val logger = LoggerFactory.getLogger(JobExecutor::class.java)
 
-    @Async("taskExecutor")
+    @Async("externalApiExecutor")
     fun executeAsync(executionId: Long) {
         val execution = jobExecutionService.findByIdOrNull(executionId)
         if (execution == null) {
@@ -77,9 +77,6 @@ class JobExecutor(
     }
 
     private fun isNonRetryable(ex: Exception): Boolean {
-        return ex is NonRetryableJobException ||
-            ex is IllegalArgumentException ||
-            ex is NullPointerException ||
-            ex is ClassCastException
+        return NonRetryableJobException.NON_RETRYABLE_EXCEPTIONS.any { it.isInstance(ex) }
     }
 }

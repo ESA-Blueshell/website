@@ -51,17 +51,14 @@ class SyncListMembershipJob(
         if (hasContribution) {
             contactListService.createMembership(contactList.id!!, payload.userId)
             providers.forEach { provider ->
-                val (contactDef, contactPayload) = provider.contactSyncJob(payload.userId)
-                jobs.enqueue(contactDef.type, contactPayload)
-                val (listDef, listPayload) = provider.listSyncJob(payload.userId, contactList.id!!)
-                jobs.enqueue(listDef.type, listPayload)
+                provider.contactSyncJob(payload.userId).enqueueOn(jobs)
+                provider.listSyncJob(payload.userId, contactList.id!!).enqueueOn(jobs)
             }
             log.debug("Queued contact + add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         } else {
             contactListService.deleteMembership(contactList.id!!, payload.userId)
             providers.forEach { provider ->
-                val (listDef, listPayload) = provider.listSyncJob(payload.userId, contactList.id!!)
-                jobs.enqueue(listDef.type, listPayload)
+                provider.listSyncJob(payload.userId, contactList.id!!).enqueueOn(jobs)
             }
             log.debug("Queued remove-from-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         }

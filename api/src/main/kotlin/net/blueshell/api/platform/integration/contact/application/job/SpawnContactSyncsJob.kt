@@ -35,8 +35,7 @@ class SpawnContactSyncsJob(
         users.forEach { user ->
             providers.forEach { provider ->
                 runCatching {
-                    val (def, p) = provider.contactSyncJob(user.id!!)
-                    jobs.enqueue(def.type, p)
+                    provider.contactSyncJob(user.id!!).enqueueOn(jobs)
                 }.onFailure { e ->
                     log.error("Failed to enqueue contact sync for user {} via {}: {}", user.id, provider.system, e.message)
                 }

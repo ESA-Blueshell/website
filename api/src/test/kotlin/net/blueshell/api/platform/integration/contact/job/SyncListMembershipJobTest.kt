@@ -10,13 +10,13 @@ import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.ContactIntegrationJobProvider
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.EnqueueableJob
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -38,14 +38,17 @@ class SyncListMembershipJobTest {
     private val contributions: ContributionService = mock()
     private val jobs: TrackedJobDispatcher = mock()
 
-    private val contactSyncPayload = ListmonkJobs.ListmonkContactSyncPayload(userId = 1L)
-    private val contactSyncDef: JobDefinition<*> = ListmonkJobs.SyncContact
-    private val listSyncPayload = ListmonkJobs.ListmonkListSyncPayload(userId = 1L, contactListId = 10L)
-    private val listSyncDef: JobDefinition<*> = ListmonkJobs.SyncListMembership
     private val provider: ContactIntegrationJobProvider = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
-        whenever(mock.contactSyncJob(any())).thenReturn(Pair(contactSyncDef, contactSyncPayload))
-        whenever(mock.listSyncJob(any(), any())).thenReturn(Pair(listSyncDef, listSyncPayload))
+        whenever(mock.contactSyncJob(any())).thenAnswer { invocation ->
+            val userId = invocation.getArgument<Long>(0)
+            EnqueueableJob(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(userId))
+        }
+        whenever(mock.listSyncJob(any(), any())).thenAnswer { invocation ->
+            val userId = invocation.getArgument<Long>(0)
+            val listId = invocation.getArgument<Long>(1)
+            EnqueueableJob(ListmonkJobs.SyncListMembership, ListmonkJobs.ListmonkListSyncPayload(userId, listId))
+        }
     }
 
     private val job = SyncListMembershipJob(
@@ -86,7 +89,7 @@ class SyncListMembershipJobTest {
         verify(provider).contactSyncJob(userId)
         verify(provider).listSyncJob(userId, listId)
         // 2 enqueue calls: contact sync + list sync
-        verify(jobs, times(2)).enqueue(any<String>(), any(), anyOrNull())
+        verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())
     }
 
     @Test
@@ -98,7 +101,7 @@ class SyncListMembershipJobTest {
         verify(provider, never()).contactSyncJob(any())
         verify(provider).listSyncJob(userId, listId)
         // 1 enqueue call: list sync only
-        verify(jobs, times(1)).enqueue(any<String>(), any(), anyOrNull())
+        verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
     }
 
     @Test

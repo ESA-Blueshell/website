@@ -23,8 +23,7 @@ class UserEventListener(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onCreate(evt: UserCreated) {
         providers.forEach { provider ->
-            val (def, payload) = provider.contactSyncJob(evt.userId)
-            jobs.enqueue(def.type, payload)
+            provider.contactSyncJob(evt.userId).enqueueOn(jobs)
         }
     }
 
@@ -33,8 +32,7 @@ class UserEventListener(
     fun onUpdate(evt: UserUpdated) {
         val u = users.findById(evt.userId)
         providers.forEach { provider ->
-            val (def, payload) = provider.contactSyncJob(evt.userId)
-            jobs.enqueue(def.type, payload)
+            provider.contactSyncJob(evt.userId).enqueueOn(jobs)
         }
         if (!u.hasRole(Role.MEMBER)) {
             u.committeeMembers.forEach { committeeMembers.delete(it) }

@@ -10,7 +10,7 @@ import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.BrevoJobs
 import net.blueshell.api.shared.job.ContactIntegrationJobProvider
-import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.EnqueueableJob
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -80,11 +80,11 @@ class BrevoContactSyncJob(
         }
     }
 
-    override fun contactSyncJob(userId: Long): Pair<JobDefinition<*>, Any> =
-        Pair(BrevoJobs.SyncContact, BrevoJobs.BrevoContactSyncPayload(userId))
+    override fun contactSyncJob(userId: Long): EnqueueableJob<BrevoJobs.BrevoContactSyncPayload> =
+        EnqueueableJob(BrevoJobs.SyncContact, BrevoJobs.BrevoContactSyncPayload(userId))
 
-    override fun listSyncJob(userId: Long, contactListId: Long): Pair<JobDefinition<*>, Any> =
-        Pair(BrevoJobs.SyncListMembership, BrevoJobs.BrevoListSyncPayload(userId, contactListId))
+    override fun listSyncJob(userId: Long, contactListId: Long): EnqueueableJob<BrevoJobs.BrevoListSyncPayload> =
+        EnqueueableJob(BrevoJobs.SyncListMembership, BrevoJobs.BrevoListSyncPayload(userId, contactListId))
 
     companion object {
         private val log = LoggerFactory.getLogger(BrevoContactSyncJob::class.java)

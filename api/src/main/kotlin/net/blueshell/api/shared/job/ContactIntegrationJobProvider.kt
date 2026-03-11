@@ -12,9 +12,9 @@ import net.blueshell.api.shared.enums.ContactSystem
 interface ContactIntegrationJobProvider {
     val system: ContactSystem
 
-    /** Returns the job definition and payload for syncing a single user's contact record. */
-    fun contactSyncJob(userId: Long): Pair<JobDefinition<*>, Any>
+    /** Returns an [EnqueueableJob] for syncing a single user's contact record. */
+    fun contactSyncJob(userId: Long): EnqueueableJob<*>
 
-    /** Returns the job definition and payload for syncing a user's list membership. */
-    fun listSyncJob(userId: Long, contactListId: Long): Pair<JobDefinition<*>, Any>
+    /** Returns an [EnqueueableJob] for syncing a user's list membership. */
+    fun listSyncJob(userId: Long, contactListId: Long): EnqueueableJob<*>
 }

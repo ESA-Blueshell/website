@@ -42,8 +42,7 @@ class DeleteContactJob(
         // Dispatch per-integration sync jobs; each will read deletedAt and delete from external system
         providers.forEach { provider ->
             runCatching {
-                val (def, p) = provider.contactSyncJob(userId)
-                jobs.enqueue(def.type, p)
+                provider.contactSyncJob(userId).enqueueOn(jobs)
             }.onFailure { e ->
                 log.error("Failed to enqueue delete sync for user {} via {}: {}", userId, provider.system, e.message)
             }

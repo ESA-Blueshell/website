@@ -9,7 +9,7 @@ import net.blueshell.api.platform.integration.contact.persistence.repository.Con
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.ContactIntegrationJobProvider
-import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.EnqueueableJob
 import net.blueshell.api.shared.job.ListmonkJobs
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
@@ -80,11 +80,11 @@ class ListmonkContactSyncJob(
         }
     }
 
-    override fun contactSyncJob(userId: Long): Pair<JobDefinition<*>, Any> =
-        Pair(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(userId))
+    override fun contactSyncJob(userId: Long): EnqueueableJob<ListmonkJobs.ListmonkContactSyncPayload> =
+        EnqueueableJob(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(userId))
 
-    override fun listSyncJob(userId: Long, contactListId: Long): Pair<JobDefinition<*>, Any> =
-        Pair(ListmonkJobs.SyncListMembership, ListmonkJobs.ListmonkListSyncPayload(userId, contactListId))
+    override fun listSyncJob(userId: Long, contactListId: Long): EnqueueableJob<ListmonkJobs.ListmonkListSyncPayload> =
+        EnqueueableJob(ListmonkJobs.SyncListMembership, ListmonkJobs.ListmonkListSyncPayload(userId, contactListId))
 
     companion object {
         private val log = LoggerFactory.getLogger(ListmonkContactSyncJob::class.java)

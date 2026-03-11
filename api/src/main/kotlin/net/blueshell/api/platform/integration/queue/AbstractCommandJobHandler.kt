@@ -51,6 +51,7 @@ abstract class AbstractCommandJobHandler<C : Command<R>, R>(
             logger.info("Command {} completed [executionId={}]", commandName, execId)
             onSuccess(command, result)
         } catch (ex: ConstraintViolationException) {
+            // Also classified non-retryable in NON_RETRYABLE_EXCEPTIONS — belt-and-suspenders
             val violations = ex.constraintViolations.joinToString("; ") {
                 "${it.propertyPath}: ${it.message}"
             }

@@ -18,6 +18,7 @@ class TrackedJobDispatcher(
         return queue.enqueue(job, payload, actor.actor)
     }
 
+    @Deprecated("Prefer the typed enqueue(JobDefinition, payload) overload.")
     fun enqueue(
         jobType: String,
         payload: Any? = null,

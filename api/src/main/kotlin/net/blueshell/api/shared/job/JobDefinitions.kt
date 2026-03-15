@@ -2,35 +2,6 @@ package net.blueshell.api.shared.job
 
 import net.blueshell.api.shared.enums.ResetType
 
-object BrevoJobs {
-    object SyncContact : JobDefinition<BrevoContactSyncPayload> {
-        override val type: String = "brevo.contact.sync"
-        override val payloadType: Class<BrevoContactSyncPayload> = BrevoContactSyncPayload::class.java
-    }
-
-    object SyncListMembership : JobDefinition<BrevoListSyncPayload> {
-        override val type: String = "brevo.list.sync"
-        override val payloadType: Class<BrevoListSyncPayload> = BrevoListSyncPayload::class.java
-    }
-
-    data class BrevoContactSyncPayload(val userId: Long)
-    data class BrevoListSyncPayload(val userId: Long, val contactListId: Long)
-}
-
-object ListmonkJobs {
-    object SyncContact : JobDefinition<ListmonkContactSyncPayload> {
-        override val type: String = "listmonk.contact.sync"
-        override val payloadType: Class<ListmonkContactSyncPayload> = ListmonkContactSyncPayload::class.java
-    }
-
-    object SyncListMembership : JobDefinition<ListmonkListSyncPayload> {
-        override val type: String = "listmonk.list.sync"
-        override val payloadType: Class<ListmonkListSyncPayload> = ListmonkListSyncPayload::class.java
-    }
-
-    data class ListmonkContactSyncPayload(val userId: Long)
-    data class ListmonkListSyncPayload(val userId: Long, val contactListId: Long)
-}
 
 object EmailJobs {
     object Recovery : JobDefinition<RecoveryPayload> {
@@ -83,6 +54,12 @@ object ContactJobs {
         override fun dedupKey(payload: SpawnContactSyncsPayload): String? = null
     }
 
+    object SpawnListMembershipSyncs : JobDefinition<SpawnListMembershipSyncsPayload> {
+        override val type: String = "contact.spawn-list-syncs"
+        override val payloadType: Class<SpawnListMembershipSyncsPayload> = SpawnListMembershipSyncsPayload::class.java
+        override fun dedupKey(payload: SpawnListMembershipSyncsPayload): String? = null
+    }
+
     object DeleteContact : JobDefinition<DeleteContactPayload> {
         override val type: String = "contact.delete"
         override val payloadType: Class<DeleteContactPayload> = DeleteContactPayload::class.java
@@ -93,7 +70,18 @@ object ContactJobs {
         override val payloadType: Class<SyncListMembershipPayload> = SyncListMembershipPayload::class.java
     }
 
+    object SyncContactForSystem : CommandJobDefinition<SyncContactCommand> {
+        override val type: String = "contact.sync-for-system"
+        override val payloadType: Class<SyncContactCommand> = SyncContactCommand::class.java
+    }
+
+    object SyncListMembershipForSystem : CommandJobDefinition<SyncListMembershipCommand> {
+        override val type: String = "contact.list-sync-for-system"
+        override val payloadType: Class<SyncListMembershipCommand> = SyncListMembershipCommand::class.java
+    }
+
     data class SpawnContactSyncsPayload(val unused: Unit = Unit)
+    data class SpawnListMembershipSyncsPayload(val unused: Unit = Unit)
 
     data class DeleteContactPayload(
         val userId: Long

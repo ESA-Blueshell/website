@@ -3,10 +3,11 @@ package net.blueshell.api.platform.integration.contact.job
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.platform.integration.queue.JobExecutor
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.ListmonkJobs
+import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -58,7 +59,7 @@ class DeleteContactJobIT : UserTestSupport() {
 
         // Run the dispatched per-integration sync job (delete path)
         val syncExecution = jobExecutions.findAll()
-            .first { it.jobType == ListmonkJobs.SyncContact.type && it.id != null && it.id != deleteExecution.id }
+            .first { it.jobType == ContactJobs.SyncContactForSystem.type && it.id != null && it.id != deleteExecution.id }
         executor.execute(syncExecution)
 
         assertThat(mockContactAdapter.getAllContacts())
@@ -87,7 +88,7 @@ class DeleteContactJobIT : UserTestSupport() {
         executor.execute(jobExecutions.findById(deleteExecution.id!!).orElseThrow())
 
         val syncExecution = jobExecutions.findAll()
-            .first { it.jobType == ListmonkJobs.SyncContact.type && it.id != deleteExecution.id }
+            .first { it.jobType == ContactJobs.SyncContactForSystem.type && it.id != deleteExecution.id }
         executor.execute(syncExecution)
 
         assertThat(mockContactAdapter.getAllContacts()).isEmpty()
@@ -97,11 +98,11 @@ class DeleteContactJobIT : UserTestSupport() {
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    /** Runs ListmonkContactSync (via mock) synchronously. */
+    /** Runs SyncContactForSystem (via mock) synchronously. */
     private fun syncContact(userId: Long) {
         val syncExecution = jobs.enqueue(
-            ListmonkJobs.SyncContact,
-            ListmonkJobs.ListmonkContactSyncPayload(userId)
+            ContactJobs.SyncContactForSystem,
+            SyncContactCommand(userId, ContactSystem.LISTMONK)
         )!!
         executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
     }

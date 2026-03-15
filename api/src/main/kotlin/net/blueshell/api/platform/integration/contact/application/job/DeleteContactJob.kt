@@ -1,10 +1,11 @@
 package net.blueshell.api.platform.integration.contact.application.job
 
 import tools.jackson.databind.ObjectMapper
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.ContactIntegrationJobProvider
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Component
 class DeleteContactJob(
     objectMapper: ObjectMapper,
     private val contactRepository: ContactRepository,
-    private val providers: List<ContactIntegrationJobProvider>,
+    private val contactAdapters: List<ContactAdapter>,
     private val jobs: TrackedJobDispatcher,
 ) : AbstractJsonJobHandler<ContactJobs.DeleteContactPayload>(objectMapper, ContactJobs.DeleteContact.payloadType) {
     override val jobType: String = ContactJobs.DeleteContact.type
@@ -39,12 +40,12 @@ class DeleteContactJob(
             log.debug("No Contact record for user {} — nothing to soft-delete", userId)
         }
 
-        // Dispatch per-integration sync jobs; each will read deletedAt and delete from external system
-        providers.forEach { provider ->
+        // Dispatch per-system sync jobs; each will read deletedAt and delete from external system
+        contactAdapters.forEach { adapter ->
             runCatching {
-                provider.contactSyncJob(userId).enqueueOn(jobs)
+                jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(userId, adapter.system))
             }.onFailure { e ->
-                log.error("Failed to enqueue delete sync for user {} via {}: {}", userId, provider.system, e.message)
+                log.error("Failed to enqueue delete sync for user {} via {}: {}", userId, adapter.system, e.message)
             }
         }
     }

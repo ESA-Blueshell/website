@@ -4,7 +4,7 @@ import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserUpdated
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ListmonkJobs
+import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -27,9 +27,9 @@ class UserEventListenerTest : ServiceTestSupport() {
         listener.onCreate(event)
 
         // MockContactIntegrationJobProvider dispatches listmonk.contact.sync
-        val jobs = findJobsByType(ListmonkJobs.SyncContact.type)
+        val jobs = findJobsByType(ContactJobs.SyncContactForSystem.type)
         assertThat(jobs)
-            .describedAs("Should schedule one ListmonkContactSync job")
+            .describedAs("Should schedule one SyncContactForSystem job")
             .hasSize(1)
 
         assertThat(jobs.first().payload)
@@ -43,9 +43,9 @@ class UserEventListenerTest : ServiceTestSupport() {
 
         listener.onUpdate(event)
 
-        val jobs = findJobsByType(ListmonkJobs.SyncContact.type)
+        val jobs = findJobsByType(ContactJobs.SyncContactForSystem.type)
         assertThat(jobs)
-            .describedAs("Should schedule one ListmonkContactSync job")
+            .describedAs("Should schedule one SyncContactForSystem job")
             .hasSize(1)
 
         assertThat(jobs.first().payload)

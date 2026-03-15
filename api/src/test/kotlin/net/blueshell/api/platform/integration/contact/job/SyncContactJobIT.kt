@@ -6,7 +6,8 @@ import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ListmonkJobs
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -39,8 +40,8 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact creates contact DB record and external system entry`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
-            ListmonkJobs.SyncContact,
-            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
+            ContactJobs.SyncContactForSystem,
+            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -61,8 +62,8 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact sends correct contact data to external system`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
-            ListmonkJobs.SyncContact,
-            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
+            ContactJobs.SyncContactForSystem,
+            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -83,8 +84,8 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact for non-member sets isMember false`() {
         val user = createUserWithRole(Role.GUEST)
         val execution = jobs.enqueue(
-            ListmonkJobs.SyncContact,
-            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
+            ContactJobs.SyncContactForSystem,
+            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -97,8 +98,8 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact stores external ID in DB`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
-            ListmonkJobs.SyncContact,
-            ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
+            ContactJobs.SyncContactForSystem,
+            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())

@@ -27,7 +27,7 @@ class UserEventListenerTest : ServiceTestSupport() {
         listener.onCreate(event)
 
         // MockContactIntegrationJobProvider dispatches listmonk.contact.sync
-        val jobs = findJobsByType(ContactJobs.SyncContactForSystem.type)
+        val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
         assertThat(jobs)
             .describedAs("Should schedule one SyncContactForSystem job")
             .hasSize(1)
@@ -43,7 +43,7 @@ class UserEventListenerTest : ServiceTestSupport() {
 
         listener.onUpdate(event)
 
-        val jobs = findJobsByType(ContactJobs.SyncContactForSystem.type)
+        val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
         assertThat(jobs)
             .describedAs("Should schedule one SyncContactForSystem job")
             .hasSize(1)

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 /**
  * Triggers daily full-syncs of all contacts and list memberships to external providers.
  *
- * Enqueues [ContactJobs.SpawnContactSyncs] and [ContactJobs.SpawnListMembershipSyncs] jobs
+ * Enqueues [ContactJobs.DispatchContactSyncs] and [ContactJobs.DispatchListMembershipSyncs] jobs
  * which perform the tracked, retryable iteration. The list sync runs 30 minutes after the
  * contact sync so contacts are likely already created when list membership is processed.
  */
@@ -20,13 +20,13 @@ class ContactSyncScheduler(
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")
-        jobs.enqueue(ContactJobs.SpawnContactSyncs, ContactJobs.SpawnContactSyncsPayload())
+        jobs.enqueue(ContactJobs.DispatchContactSyncs, ContactJobs.DispatchContactSyncsPayload())
     }
 
     @Scheduled(cron = "\${contact.list-sync-cron:0 30 2 * * *}")
     fun syncAllListMemberships() {
         log.info("Scheduling list membership sync spawn job")
-        jobs.enqueue(ContactJobs.SpawnListMembershipSyncs, ContactJobs.SpawnListMembershipSyncsPayload())
+        jobs.enqueue(ContactJobs.DispatchListMembershipSyncs, ContactJobs.DispatchListMembershipSyncsPayload())
     }
 
     companion object {

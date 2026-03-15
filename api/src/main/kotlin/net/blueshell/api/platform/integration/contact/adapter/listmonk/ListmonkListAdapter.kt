@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.contact.adapter.listmonk
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactData
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.listmonk.api.ListsApi
 import net.blueshell.clients.listmonk.api.SubscribersApi
@@ -24,7 +24,7 @@ import net.blueshell.clients.listmonk.model.NewList as ListmonkNewList
 class ListmonkListAdapter(
     private val subscribersApi: SubscribersApi,
     private val listsApi: ListsApi,
-) : ListAdapter {
+) : ContactListAdapter {
 
     override val system = ContactSystem.LISTMONK
 

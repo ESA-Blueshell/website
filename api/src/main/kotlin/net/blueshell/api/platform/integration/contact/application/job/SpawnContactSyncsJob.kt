@@ -14,29 +14,29 @@ import org.springframework.stereotype.Component
  * Iterates all users and enqueues per-integration contact sync jobs for each.
  *
  * Replaces the inline loop in [ContactSyncScheduler]: the scheduler now simply
- * enqueues one [ContactJobs.SpawnContactSyncs] job, and this handler performs the
+ * enqueues one [ContactJobs.DispatchContactSyncs] job, and this handler performs the
  * tracked, retryable iteration so that individual failures are visible in the job log.
  */
 @Component
-class SpawnContactSyncsJob(
+class DispatchContactSyncsJob(
     objectMapper: ObjectMapper,
     private val userService: UserService,
     private val contactAdapters: List<ContactAdapter>,
     private val jobs: TrackedJobDispatcher,
-) : AbstractJsonJobHandler<ContactJobs.SpawnContactSyncsPayload>(
+) : AbstractJsonJobHandler<ContactJobs.DispatchContactSyncsPayload>(
     objectMapper,
-    ContactJobs.SpawnContactSyncs.payloadType,
+    ContactJobs.DispatchContactSyncs.payloadType,
 ) {
-    override val jobType: String = ContactJobs.SpawnContactSyncs.type
+    override val jobType: String = ContactJobs.DispatchContactSyncs.type
 
-    override fun handlePayload(payload: ContactJobs.SpawnContactSyncsPayload) {
+    override fun handlePayload(payload: ContactJobs.DispatchContactSyncsPayload) {
         val users = userService.findAll()
         log.info("Spawning contact sync jobs for {} users × {} systems", users.size, contactAdapters.size)
 
         users.forEach { user ->
             contactAdapters.forEach { adapter ->
                 runCatching {
-                    jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(user.id!!, adapter.system))
+                    jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(user.id!!, adapter.system))
                 }.onFailure { e ->
                     log.error("Failed to enqueue contact sync for user {} via {}: {}", user.id, adapter.system, e.message)
                 }
@@ -45,6 +45,6 @@ class SpawnContactSyncsJob(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SpawnContactSyncsJob::class.java)
+        private val log = LoggerFactory.getLogger(DispatchContactSyncsJob::class.java)
     }
 }

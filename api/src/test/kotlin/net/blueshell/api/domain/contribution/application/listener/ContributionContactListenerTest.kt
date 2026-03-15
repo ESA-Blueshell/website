@@ -19,7 +19,7 @@ class ContributionContactListenerTest : ServiceTestSupport() {
 
         listener.onContributionChange(event)
 
-        val jobs = findJobsByType(ContactJobs.SyncListMembership.type)
+        val jobs = findJobsByType(ContactJobs.ProcessListMembership.type)
         assertThat(jobs)
             .describedAs("Should schedule one SyncListMembership job")
             .hasSize(1)
@@ -42,7 +42,7 @@ class ContributionContactListenerTest : ServiceTestSupport() {
             listener.onContributionChange(event)
         }
 
-        val jobs = findJobsByType(ContactJobs.SyncListMembership.type)
+        val jobs = findJobsByType(ContactJobs.ProcessListMembership.type)
         assertThat(jobs)
             .describedAs("Should schedule one job per change type")
             .hasSize(ContributionChange.entries.size)

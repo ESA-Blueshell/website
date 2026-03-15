@@ -59,7 +59,7 @@ class DeleteContactJobIT : UserTestSupport() {
 
         // Run the dispatched per-integration sync job (delete path)
         val syncExecution = jobExecutions.findAll()
-            .first { it.jobType == ContactJobs.SyncContactForSystem.type && it.id != null && it.id != deleteExecution.id }
+            .first { it.jobType == ContactJobs.SyncContactToSystem.type && it.id != null && it.id != deleteExecution.id }
         executor.execute(syncExecution)
 
         assertThat(mockContactAdapter.getAllContacts())
@@ -88,7 +88,7 @@ class DeleteContactJobIT : UserTestSupport() {
         executor.execute(jobExecutions.findById(deleteExecution.id!!).orElseThrow())
 
         val syncExecution = jobExecutions.findAll()
-            .first { it.jobType == ContactJobs.SyncContactForSystem.type && it.id != deleteExecution.id }
+            .first { it.jobType == ContactJobs.SyncContactToSystem.type && it.id != deleteExecution.id }
         executor.execute(syncExecution)
 
         assertThat(mockContactAdapter.getAllContacts()).isEmpty()
@@ -101,7 +101,7 @@ class DeleteContactJobIT : UserTestSupport() {
     /** Runs SyncContactForSystem (via mock) synchronously. */
     private fun syncContact(userId: Long) {
         val syncExecution = jobs.enqueue(
-            ContactJobs.SyncContactForSystem,
+            ContactJobs.SyncContactToSystem,
             SyncContactCommand(userId, ContactSystem.LISTMONK)
         )!!
         executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())

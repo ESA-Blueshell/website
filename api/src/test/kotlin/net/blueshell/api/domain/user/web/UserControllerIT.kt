@@ -73,7 +73,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.email").value(guestEmail))
 
             val persistedUser = userRepository.findByUsername(guestUsername).orElseThrow()
-            val jobs = findJobsByType(ContactJobs.SyncContactForSystem.type)
+            val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on user creation")
                 .hasSize(1)
@@ -154,7 +154,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.firstName").value("Updated"))
                 .andExpect(jsonPath("$.discord").value("updated#1234"))
 
-            val jobs = findJobsByType(ContactJobs.SyncContactForSystem.type)
+            val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on user update")
                 .hasSize(1)
@@ -768,7 +768,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
 
             assertThat(userRepository.findById(createdUser.id!!).orElseThrow().roles).contains(Role.MEMBER)
-            val jobs = findJobsByType(ContactJobs.SyncContactForSystem.type)
+            val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
             assertThat(jobs)
                 .describedAs("Should schedule contact sync job on role toggle")
                 .hasSize(1)

@@ -7,7 +7,7 @@ import net.blueshell.api.shared.enums.ContactSystem
  * Command to sync a single user's contact record to one external system.
  *
  * Serves as both the command object (dispatched via CommandBus) and the job payload
- * (serialized to JSON when enqueued, deserialized back by [ContactJobs.SyncContactForSystem]).
+ * (serialized to JSON when enqueued, deserialized back by [ContactJobs.SyncContactToSystem]).
  *
  * The command handler selects the correct [ContactAdapter] by [system] at runtime,
  * so adding a new integration requires no new command or handler.
@@ -20,7 +20,7 @@ data class SyncContactCommand(
 /**
  * Command to sync a user's list membership to one external system.
  *
- * Serves as both the command object and job payload for [ContactJobs.SyncListMembershipForSystem].
+ * Serves as both the command object and job payload for [ContactJobs.SyncListMembershipToSystem].
  * Adds or removes the user from the external list depending on whether an active
  * ContactListMembership record exists in the database.
  */

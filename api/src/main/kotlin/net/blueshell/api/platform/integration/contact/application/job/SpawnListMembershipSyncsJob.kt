@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.application.job
 
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ContactJobs
@@ -12,7 +12,7 @@ import tools.jackson.databind.ObjectMapper
 
 /**
  * Iterates all active [ContactListMembership] records and enqueues a
- * [ContactJobs.SyncListMembershipForSystem] job per membership × registered list adapter.
+ * [ContactJobs.SyncListMembershipToSystem] job per membership × registered list adapter.
  *
  * Parallel to [SpawnContactSyncsJob] for contacts: triggered daily to ensure all
  * list memberships are in sync across all external systems.
@@ -20,18 +20,18 @@ import tools.jackson.databind.ObjectMapper
  * Individual failures are logged and skipped so one bad record cannot block the rest.
  */
 @Component
-class SpawnListMembershipSyncsJob(
+class DispatchListMembershipSyncsJob(
     objectMapper: ObjectMapper,
     private val contactListMembershipRepository: ContactListMembershipRepository,
-    private val listAdapters: List<ListAdapter>,
+    private val listAdapters: List<ContactListAdapter>,
     private val jobs: TrackedJobDispatcher,
-) : AbstractJsonJobHandler<ContactJobs.SpawnListMembershipSyncsPayload>(
+) : AbstractJsonJobHandler<ContactJobs.DispatchListMembershipSyncsPayload>(
     objectMapper,
-    ContactJobs.SpawnListMembershipSyncs.payloadType,
+    ContactJobs.DispatchListMembershipSyncs.payloadType,
 ) {
-    override val jobType: String = ContactJobs.SpawnListMembershipSyncs.type
+    override val jobType: String = ContactJobs.DispatchListMembershipSyncs.type
 
-    override fun handlePayload(payload: ContactJobs.SpawnListMembershipSyncsPayload) {
+    override fun handlePayload(payload: ContactJobs.DispatchListMembershipSyncsPayload) {
         val memberships = contactListMembershipRepository.findAll()
         log.info(
             "Spawning list membership syncs for {} memberships × {} systems",
@@ -42,7 +42,7 @@ class SpawnListMembershipSyncsJob(
             listAdapters.forEach { adapter ->
                 runCatching {
                     jobs.enqueue(
-                        ContactJobs.SyncListMembershipForSystem,
+                        ContactJobs.SyncListMembershipToSystem,
                         SyncListMembershipCommand(
                             userId = membership.contact.userId,
                             contactListId = membership.contactList.id!!,
@@ -60,6 +60,6 @@ class SpawnListMembershipSyncsJob(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SpawnListMembershipSyncsJob::class.java)
+        private val log = LoggerFactory.getLogger(DispatchListMembershipSyncsJob::class.java)
     }
 }

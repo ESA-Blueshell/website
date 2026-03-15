@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.application
 
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class ContactListService(
-    private val listSyncAdapters: List<ListAdapter>,
+    private val listSyncAdapters: List<ContactListAdapter>,
     private val contactListRepository: ContactListRepository,
     private val contactRepository: ContactRepository,
     private val contactListMembershipRepository: ContactListMembershipRepository,

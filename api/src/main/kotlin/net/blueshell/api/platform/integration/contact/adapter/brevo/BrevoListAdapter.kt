@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.contact.adapter.brevo
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.brevo.ApiClient
 import net.blueshell.clients.brevo.api.ContactsApi
@@ -33,7 +33,7 @@ class BrevoListAdapter(
     restClientBuilder: RestClient.Builder,
     jsonMapper: JsonMapper,
     @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
-) : ListAdapter {
+) : ContactListAdapter {
     @field:Value($$"${brevo.apiKey}")
     lateinit var apiKey: String
 

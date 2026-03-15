@@ -1,6 +1,5 @@
 package net.blueshell.api.platform.integration.contact.adapter.brevo
 
-import net.blueshell.api.platform.integration.contact.adapter.ContactData
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
 import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
@@ -107,22 +106,6 @@ class BrevoListAdapter(
             log.error("Failed to delete Brevo list id={}", externalListId, e)
             throw ContactServiceException("Failed to delete list", e)
         }
-    }
-
-    private fun buildAttributes(data: ContactData): Map<String, Any> {
-        val attrs = mutableMapOf<String, Any>(
-            "NEWSLETTER" to data.newsletter,
-            "IS_MEMBER" to data.isMember,
-            "FIRSTNAME" to data.firstName,
-            "LASTNAME" to data.lastName,
-            "SURNAME" to data.lastName
-        )
-        data.phoneNumber?.let { phone ->
-            attrs["SMS"] = phone
-            attrs["WHATSAPP"] = phone
-        }
-        attrs.putAll(data.attributes)
-        return attrs
     }
 
     companion object {

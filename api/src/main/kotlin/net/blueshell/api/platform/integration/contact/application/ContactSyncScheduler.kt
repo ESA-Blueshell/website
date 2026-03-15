@@ -7,10 +7,11 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 /**
- * Triggers a daily full-sync of all application users to external contact providers.
+ * Triggers daily full-syncs of all contacts and list memberships to external providers.
  *
- * Enqueues a single [ContactJobs.SpawnContactSyncs] job which performs the tracked,
- * retryable iteration over all users and integrations.
+ * Enqueues [ContactJobs.SpawnContactSyncs] and [ContactJobs.SpawnListMembershipSyncs] jobs
+ * which perform the tracked, retryable iteration. The list sync runs 30 minutes after the
+ * contact sync so contacts are likely already created when list membership is processed.
  */
 @Component
 class ContactSyncScheduler(
@@ -20,6 +21,12 @@ class ContactSyncScheduler(
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")
         jobs.enqueue(ContactJobs.SpawnContactSyncs, ContactJobs.SpawnContactSyncsPayload())
+    }
+
+    @Scheduled(cron = "\${contact.list-sync-cron:0 30 2 * * *}")
+    fun syncAllListMemberships() {
+        log.info("Scheduling list membership sync spawn job")
+        jobs.enqueue(ContactJobs.SpawnListMembershipSyncs, ContactJobs.SpawnListMembershipSyncsPayload())
     }
 
     companion object {

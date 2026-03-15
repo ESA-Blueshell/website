@@ -3,13 +3,11 @@ package net.blueshell.api.platform.integration.contact.job
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.application.job.SpawnContactSyncsJob
 import net.blueshell.api.shared.enums.ContactSystem
-import net.blueshell.api.shared.job.ContactIntegrationJobProvider
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.EnqueueableJob
 import net.blueshell.api.shared.job.JobDefinition
-import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -30,14 +28,8 @@ class SpawnContactSyncsJobTest {
     private val userService: UserService = mock()
     private val jobs: TrackedJobDispatcher = mock()
 
-    private fun providerFor(system: ContactSystem): ContactIntegrationJobProvider {
-        return mock {
-            whenever(mock.system).thenReturn(system)
-            whenever(mock.contactSyncJob(any())).thenAnswer { invocation ->
-                val userId = invocation.getArgument<Long>(0)
-                EnqueueableJob(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(userId))
-            }
-        }
+    private fun adapterFor(system: ContactSystem): ContactAdapter = mock<ContactAdapter>().also {
+        whenever(it.system).thenReturn(system)
     }
 
     private fun userWithId(id: Long): User = mock<User>().also {
@@ -45,24 +37,24 @@ class SpawnContactSyncsJobTest {
     }
 
     @Test
-    fun `enqueues one contactSyncJob per user per provider`() {
-        val provider1 = providerFor(ContactSystem.LISTMONK)
-        val provider2 = providerFor(ContactSystem.BREVO)
-        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(provider1, provider2), jobs)
+    fun `enqueues one SyncContactForSystem job per user per adapter`() {
+        val adapter1 = adapterFor(ContactSystem.LISTMONK)
+        val adapter2 = adapterFor(ContactSystem.BREVO)
+        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(adapter1, adapter2), jobs)
 
         val users = listOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users.toMutableList())
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.SpawnContactSyncsPayload()))
 
-        // 2 users × 2 providers = 4 enqueue calls
+        // 2 users × 2 adapters = 4 enqueue calls
         verify(jobs, times(4)).enqueue(any<JobDefinition<Any>>(), any())
     }
 
     @Test
     fun `does nothing when no users exist`() {
-        val provider = providerFor(ContactSystem.LISTMONK)
-        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(provider), jobs)
+        val adapter = adapterFor(ContactSystem.LISTMONK)
+        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
 
         whenever(userService.findAll()).thenReturn(mutableListOf())
 
@@ -72,21 +64,20 @@ class SpawnContactSyncsJobTest {
     }
 
     @Test
-    fun `continues when provider throws for one user`() {
-        val provider = mock<ContactIntegrationJobProvider>()
-        whenever(provider.system).thenReturn(ContactSystem.LISTMONK)
-        whenever(provider.contactSyncJob(1L)).thenThrow(RuntimeException("provider failure"))
-        whenever(provider.contactSyncJob(2L)).thenReturn(
-            EnqueueableJob(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(2L))
-        )
-        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(provider), jobs)
+    fun `continues when enqueue throws for one user`() {
+        val adapter = adapterFor(ContactSystem.LISTMONK)
+        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
 
         val users = listOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users.toMutableList())
+        // First enqueue throws, second succeeds
+        whenever(jobs.enqueue(any<JobDefinition<Any>>(), any()))
+            .thenThrow(RuntimeException("enqueue failure"))
+            .thenReturn(null)
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.SpawnContactSyncsPayload()))
 
-        // Only user 2 was successfully enqueued
-        verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
+        // 2 attempts were made despite the first failure
+        verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())
     }
 }

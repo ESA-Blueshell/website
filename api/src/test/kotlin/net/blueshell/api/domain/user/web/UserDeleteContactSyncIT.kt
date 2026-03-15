@@ -1,10 +1,11 @@
 package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.ListmonkJobs
+import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -43,9 +44,9 @@ class UserDeleteContactSyncIT : UserTestSupport() {
 
         // Sync contact first to assign external ID
         enqueueInTransaction {
-            jobs.enqueue(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(member.id!!))
+            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
         }
-        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should exist after sync")
@@ -60,7 +61,7 @@ class UserDeleteContactSyncIT : UserTestSupport() {
 
         // Await DeleteContact + per-integration sync (delete path)
         awaitJobSuccess(ContactJobs.DeleteContact.type)
-        awaitJobSuccess(ListmonkJobs.SyncContact.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type, expectedCount = 2)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should be removed after user deletion")

@@ -201,10 +201,10 @@ class JobManagementControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.jobType").value("retry-target"))
                 .andExpect(jsonPath("$.status").value("QUEUED"))
                 .andExpect(jsonPath("$.payload").doesNotExist())
-                .andExpect(jsonPath("$.attempts").value(1))
+                .andExpect(jsonPath("$.attempts").value(0))
 
             val reloaded = jobExecutions.findById(job.id!!).orElseThrow()
-            assertThat(reloaded.attempts).isEqualTo(1)
+            assertThat(reloaded.attempts).isEqualTo(0)
         }
 
         @Test

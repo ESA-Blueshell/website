@@ -4,15 +4,14 @@ import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.contact.application.job.SyncListMembershipJob
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.shared.enums.ContactSystem
-import net.blueshell.api.shared.job.ContactIntegrationJobProvider
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.EnqueueableJob
 import net.blueshell.api.shared.job.JobDefinition
-import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -28,7 +27,7 @@ import java.time.LocalDate
  * Unit tests for [SyncListMembershipJob].
  *
  * No Spring context — instantiate directly with mocks.
- * Verifies that the job dispatches per-provider contact and list sync jobs.
+ * Verifies that the job dispatches per-adapter contact and list sync jobs.
  */
 class SyncListMembershipJobTest {
 
@@ -38,17 +37,11 @@ class SyncListMembershipJobTest {
     private val contributions: ContributionService = mock()
     private val jobs: TrackedJobDispatcher = mock()
 
-    private val provider: ContactIntegrationJobProvider = mock {
-        whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
-        whenever(mock.contactSyncJob(any())).thenAnswer { invocation ->
-            val userId = invocation.getArgument<Long>(0)
-            EnqueueableJob(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(userId))
-        }
-        whenever(mock.listSyncJob(any(), any())).thenAnswer { invocation ->
-            val userId = invocation.getArgument<Long>(0)
-            val listId = invocation.getArgument<Long>(1)
-            EnqueueableJob(ListmonkJobs.SyncListMembership, ListmonkJobs.ListmonkListSyncPayload(userId, listId))
-        }
+    private val contactAdapter: ContactAdapter = mock<ContactAdapter>().also {
+        whenever(it.system).thenReturn(ContactSystem.LISTMONK)
+    }
+    private val listAdapter: ListAdapter = mock<ListAdapter>().also {
+        whenever(it.system).thenReturn(ContactSystem.LISTMONK)
     }
 
     private val job = SyncListMembershipJob(
@@ -56,7 +49,8 @@ class SyncListMembershipJobTest {
         contactListService = contactListService,
         periods = periods,
         contributions = contributions,
-        providers = listOf(provider),
+        contactAdapters = listOf(contactAdapter),
+        listAdapters = listOf(listAdapter),
         jobs = jobs,
     )
 
@@ -80,27 +74,23 @@ class SyncListMembershipJobTest {
     }
 
     @Test
-    fun `dispatches contact and list sync jobs per provider when user has contribution`() {
+    fun `dispatches contact and list sync jobs when user has contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(true)
         whenever(contactListService.createMembership(listId, userId)).thenReturn(true)
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(userId, periodId)))
 
-        verify(provider).contactSyncJob(userId)
-        verify(provider).listSyncJob(userId, listId)
-        // 2 enqueue calls: contact sync + list sync
+        // 2 enqueue calls: 1 contact sync (SyncContactForSystem) + 1 list sync (SyncListMembershipForSystem)
         verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())
     }
 
     @Test
-    fun `dispatches only list sync job per provider when user has no contribution`() {
+    fun `dispatches only list sync job when user has no contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(false)
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(userId, periodId)))
 
-        verify(provider, never()).contactSyncJob(any())
-        verify(provider).listSyncJob(userId, listId)
-        // 1 enqueue call: list sync only
+        // 1 enqueue call: list sync only (no contact sync when removing)
         verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
     }
 

@@ -13,7 +13,6 @@ import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -102,12 +101,12 @@ class SyncListMembershipJobIT : UserTestSupport() {
         )
 
         // Wait for per-integration contact sync (needed before list membership sync)
-        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
 
         val contactList = contactListRepository.findAll().single()
 
         // Wait for per-integration list sync
-        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
 
         val record = contactRepository.findByUserId(user.id!!)
         assertThat(record).describedAs("Contact should be created for user").isNotNull()
@@ -128,8 +127,8 @@ class SyncListMembershipJobIT : UserTestSupport() {
         )
 
         // Wait for contact sync + list sync to complete
-        awaitJobSuccess(ListmonkJobs.SyncContact.type)
-        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
 
         val contactId = mockContactAdapter.getAllContacts().keys.single()
         val externalListId = mockContactAdapter.getAllLists().keys.single()
@@ -148,8 +147,8 @@ class SyncListMembershipJobIT : UserTestSupport() {
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
-        awaitJobSuccess(ListmonkJobs.SyncContact.type)
-        awaitJobSuccess(ListmonkJobs.SyncListMembership.type)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
 
         val record = contactRepository.findByUserId(user.id!!)!!
         val contactList = contactListRepository.findAll().single()
@@ -171,7 +170,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
         )
-        awaitJobSuccess(ListmonkJobs.SyncListMembership.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type, expectedCount = 2)
 
         assertThat(
             contactListMembershipRepository.findByContactIdAndContactListId(record.id!!, contactList.id!!)

@@ -10,10 +10,11 @@ import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.CalendarEventRef
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.ListmonkJobs
 import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -131,12 +132,12 @@ class JobAutoDispatchIT : UserTestSupport() {
 
         enqueueInTransaction {
             jobs.enqueue(
-                ListmonkJobs.SyncContact,
-                ListmonkJobs.ListmonkContactSyncPayload(user.id!!)
+                ContactJobs.SyncContactForSystem,
+                SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
             )
         }
 
-        awaitJobStatus(ListmonkJobs.SyncContact.type, JobExecutionStatus.SUCCESS)
+        awaitJobStatus(ContactJobs.SyncContactForSystem.type, JobExecutionStatus.SUCCESS)
     }
 
     // ── Contact: Delete contact ──────────────────────────────────────────

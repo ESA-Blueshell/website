@@ -2,9 +2,11 @@ package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ListmonkJobs
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -42,12 +44,12 @@ class UserContactSyncIT : UserTestSupport() {
 
         enqueueInTransaction {
             jobs.enqueue(
-                ListmonkJobs.SyncContact,
-                ListmonkJobs.ListmonkContactSyncPayload(member.id!!)
+                ContactJobs.SyncContactForSystem,
+                SyncContactCommand(member.id!!, ContactSystem.LISTMONK)
             )
         }
 
-        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
 
         val contacts = mockContactAdapter.getAllContacts()
         assertThat(contacts).hasSize(1)
@@ -63,9 +65,9 @@ class UserContactSyncIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         enqueueInTransaction {
-            jobs.enqueue(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(member.id!!))
+            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
         }
-        awaitJobSuccess(ListmonkJobs.SyncContact.type)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
 
         val contactBefore = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactBefore.firstName).isEqualTo("Test")
@@ -77,10 +79,10 @@ class UserContactSyncIT : UserTestSupport() {
         }
 
         enqueueInTransaction {
-            jobs.enqueue(ListmonkJobs.SyncContact, ListmonkJobs.ListmonkContactSyncPayload(member.id!!))
+            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
         }
 
-        awaitJobSuccess(ListmonkJobs.SyncContact.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncContactForSystem.type, expectedCount = 2)
 
         val contactAfter = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactAfter.firstName).isEqualTo("UpdatedName")

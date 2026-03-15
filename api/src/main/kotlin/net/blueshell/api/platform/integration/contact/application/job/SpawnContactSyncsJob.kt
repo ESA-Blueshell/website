@@ -2,9 +2,10 @@ package net.blueshell.api.platform.integration.contact.application.job
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.ContactIntegrationJobProvider
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Component
 class SpawnContactSyncsJob(
     objectMapper: ObjectMapper,
     private val userService: UserService,
-    private val providers: List<ContactIntegrationJobProvider>,
+    private val contactAdapters: List<ContactAdapter>,
     private val jobs: TrackedJobDispatcher,
 ) : AbstractJsonJobHandler<ContactJobs.SpawnContactSyncsPayload>(
     objectMapper,
@@ -30,14 +31,14 @@ class SpawnContactSyncsJob(
 
     override fun handlePayload(payload: ContactJobs.SpawnContactSyncsPayload) {
         val users = userService.findAll()
-        log.info("Spawning contact sync jobs for {} users × {} integrations", users.size, providers.size)
+        log.info("Spawning contact sync jobs for {} users × {} systems", users.size, contactAdapters.size)
 
         users.forEach { user ->
-            providers.forEach { provider ->
+            contactAdapters.forEach { adapter ->
                 runCatching {
-                    provider.contactSyncJob(user.id!!).enqueueOn(jobs)
+                    jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(user.id!!, adapter.system))
                 }.onFailure { e ->
-                    log.error("Failed to enqueue contact sync for user {} via {}: {}", user.id, provider.system, e.message)
+                    log.error("Failed to enqueue contact sync for user {} via {}: {}", user.id, adapter.system, e.message)
                 }
             }
         }

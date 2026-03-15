@@ -2,6 +2,7 @@ include:
   - services/api/docker-compose.dev.yml
   - services/frontend/docker-compose.dev.yml
   - services/listmonk/docker-compose.dev.yml
+  - services/nginx/docker-compose.dev.yml
 
 networks:
   global_network:

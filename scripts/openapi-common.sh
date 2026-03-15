@@ -31,12 +31,12 @@ download_external_specs() {
 
 regen_brevo_client() {
   echo "Regenerating Brevo Java client..."
-  services/api/gradlew :clients:brevo:generate
+  services/api/gradlew --no-daemon --build-cache -p services/api :clients:brevo:generate
 }
 
 regen_listmonk_client() {
   echo "Regenerating Listmonk Java client..."
-  services/api/gradlew :clients:listmonk:generate
+  services/api/gradlew --no-daemon --build-cache -p services/api :clients:listmonk:generate
 }
 
 # Normalizes services/api/openapi/blueshell.{raw.}json and discord.raw.json in-place.

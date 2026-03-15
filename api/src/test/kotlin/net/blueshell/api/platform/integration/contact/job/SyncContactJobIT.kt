@@ -40,7 +40,7 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact creates contact DB record and external system entry`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
-            ContactJobs.SyncContactForSystem,
+            ContactJobs.SyncContactToSystem,
             SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 
@@ -62,7 +62,7 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact sends correct contact data to external system`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
-            ContactJobs.SyncContactForSystem,
+            ContactJobs.SyncContactToSystem,
             SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 
@@ -84,7 +84,7 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact for non-member sets isMember false`() {
         val user = createUserWithRole(Role.GUEST)
         val execution = jobs.enqueue(
-            ContactJobs.SyncContactForSystem,
+            ContactJobs.SyncContactToSystem,
             SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 
@@ -98,7 +98,7 @@ class SyncContactJobIT : UserTestSupport() {
     fun `sync contact stores external ID in DB`() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
-            ContactJobs.SyncContactForSystem,
+            ContactJobs.SyncContactToSystem,
             SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
         )!!
 

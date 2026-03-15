@@ -19,22 +19,22 @@ class ContactSyncSchedulerTest {
     private val scheduler = ContactSyncScheduler(jobs)
 
     @Test
-    fun `enqueues a single SpawnContactSyncs job`() {
+    fun `enqueues a single DispatchContactSyncs job`() {
         scheduler.syncAllContacts()
 
         verify(jobs).enqueue(
-            eq(ContactJobs.SpawnContactSyncs),
-            eq(ContactJobs.SpawnContactSyncsPayload())
+            eq(ContactJobs.DispatchContactSyncs),
+            eq(ContactJobs.DispatchContactSyncsPayload())
         )
     }
 
     @Test
-    fun `enqueues a single SpawnListMembershipSyncs job`() {
+    fun `enqueues a single DispatchListMembershipSyncs job`() {
         scheduler.syncAllListMemberships()
 
         verify(jobs).enqueue(
-            eq(ContactJobs.SpawnListMembershipSyncs),
-            eq(ContactJobs.SpawnListMembershipSyncsPayload())
+            eq(ContactJobs.DispatchListMembershipSyncs),
+            eq(ContactJobs.DispatchListMembershipSyncsPayload())
         )
     }
 }

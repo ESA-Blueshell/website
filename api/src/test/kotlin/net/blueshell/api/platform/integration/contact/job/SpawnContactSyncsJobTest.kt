@@ -4,7 +4,7 @@ import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
-import net.blueshell.api.platform.integration.contact.application.job.SpawnContactSyncsJob
+import net.blueshell.api.platform.integration.contact.application.job.DispatchContactSyncsJob
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobDefinition
@@ -18,11 +18,11 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 /**
- * Unit tests for [SpawnContactSyncsJob].
+ * Unit tests for [DispatchContactSyncsJob].
  *
  * No Spring context — instantiate directly with mocks.
  */
-class SpawnContactSyncsJobTest {
+class DispatchContactSyncsJobTest {
 
     private val objectMapper = ObjectMapper()
     private val userService: UserService = mock()
@@ -40,12 +40,12 @@ class SpawnContactSyncsJobTest {
     fun `enqueues one SyncContactForSystem job per user per adapter`() {
         val adapter1 = adapterFor(ContactSystem.LISTMONK)
         val adapter2 = adapterFor(ContactSystem.BREVO)
-        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(adapter1, adapter2), jobs)
+        val job = DispatchContactSyncsJob(objectMapper, userService, listOf(adapter1, adapter2), jobs)
 
         val users = listOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users.toMutableList())
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SpawnContactSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchContactSyncsPayload()))
 
         // 2 users × 2 adapters = 4 enqueue calls
         verify(jobs, times(4)).enqueue(any<JobDefinition<Any>>(), any())
@@ -54,11 +54,11 @@ class SpawnContactSyncsJobTest {
     @Test
     fun `does nothing when no users exist`() {
         val adapter = adapterFor(ContactSystem.LISTMONK)
-        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
+        val job = DispatchContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
 
         whenever(userService.findAll()).thenReturn(mutableListOf())
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SpawnContactSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchContactSyncsPayload()))
 
         verifyNoInteractions(jobs)
     }
@@ -66,7 +66,7 @@ class SpawnContactSyncsJobTest {
     @Test
     fun `continues when enqueue throws for one user`() {
         val adapter = adapterFor(ContactSystem.LISTMONK)
-        val job = SpawnContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
+        val job = DispatchContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
 
         val users = listOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users.toMutableList())
@@ -75,7 +75,7 @@ class SpawnContactSyncsJobTest {
             .thenThrow(RuntimeException("enqueue failure"))
             .thenReturn(null)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SpawnContactSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchContactSyncsPayload()))
 
         // 2 attempts were made despite the first failure
         verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())

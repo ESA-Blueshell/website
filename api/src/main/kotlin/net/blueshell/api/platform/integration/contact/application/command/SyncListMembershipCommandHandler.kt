@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.application.command
 
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
  * Handles [SyncListMembershipCommand]: adds or removes a user from a contact list
  * in one external system.
  *
- * Selects the correct [ListAdapter] by [SyncListMembershipCommand.system] at runtime.
+ * Selects the correct [ContactListAdapter] by [SyncListMembershipCommand.system] at runtime.
  *
  * Logic:
  * - Active [ContactListMembership] exists in DB → add to external list
@@ -24,7 +24,7 @@ import kotlin.reflect.KClass
  */
 @Component
 class SyncListMembershipCommandHandler(
-    private val listAdapters: List<ListAdapter>,
+    private val listAdapters: List<ContactListAdapter>,
     private val contactRepository: ContactRepository,
     private val contactListRepository: ContactListRepository,
     private val contactListMembershipRepository: ContactListMembershipRepository,
@@ -34,7 +34,7 @@ class SyncListMembershipCommandHandler(
 
     override fun handle(command: SyncListMembershipCommand) {
         val adapter = listAdapters.find { it.system == command.system }
-            ?: throw NonRetryableJobException("No ListAdapter registered for system ${command.system}")
+            ?: throw NonRetryableJobException("No ContactListAdapter registered for system ${command.system}")
 
         val contact = contactRepository.findByUserId(command.userId)
         val externalContactId = contact?.externalId(command.system)

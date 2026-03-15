@@ -5,7 +5,7 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.contact.application.job.SyncListMembershipJob
+import net.blueshell.api.platform.integration.contact.application.job.ProcessListMembershipJob
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
@@ -26,7 +26,7 @@ import org.springframework.test.context.TestPropertySource
 class SyncListMembershipJobIT : UserTestSupport() {
 
     @Autowired
-    private lateinit var syncListMembershipJob: SyncListMembershipJob
+    private lateinit var syncListMembershipJob: ProcessListMembershipJob
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
@@ -60,7 +60,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
         assertThat(period.contactListId).isNull()
 
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
 
         assertThat(contactListRepository.findAll()).hasSize(1)
@@ -78,12 +78,12 @@ class SyncListMembershipJobIT : UserTestSupport() {
         createContribution(user, period)
 
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
         assertThat(contactListRepository.findAll()).hasSize(1)
 
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
         assertThat(contactListRepository.findAll())
             .describedAs("Should reuse existing ContactList, not create a second one")
@@ -97,16 +97,16 @@ class SyncListMembershipJobIT : UserTestSupport() {
         createContribution(user, period)
 
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
 
         // Wait for per-integration contact sync (needed before list membership sync)
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
         val contactList = contactListRepository.findAll().single()
 
         // Wait for per-integration list sync
-        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val record = contactRepository.findByUserId(user.id!!)
         assertThat(record).describedAs("Contact should be created for user").isNotNull()
@@ -123,12 +123,12 @@ class SyncListMembershipJobIT : UserTestSupport() {
         createContribution(user, period)
 
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
 
         // Wait for contact sync + list sync to complete
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
-        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val contactId = mockContactAdapter.getAllContacts().keys.single()
         val externalListId = mockContactAdapter.getAllLists().keys.single()
@@ -145,10 +145,10 @@ class SyncListMembershipJobIT : UserTestSupport() {
 
         // First: add to list
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
-        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val record = contactRepository.findByUserId(user.id!!)!!
         val contactList = contactListRepository.findAll().single()
@@ -168,9 +168,9 @@ class SyncListMembershipJobIT : UserTestSupport() {
         }
 
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
-        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type, expectedCount = 2)
 
         assertThat(
             contactListMembershipRepository.findByContactIdAndContactListId(record.id!!, contactList.id!!)
@@ -184,7 +184,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
         // No contribution created
 
         syncListMembershipJob.handle(
-            objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!))
+            objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
 
         assertThat(contactRepository.findByUserId(user.id!!)).isNull()

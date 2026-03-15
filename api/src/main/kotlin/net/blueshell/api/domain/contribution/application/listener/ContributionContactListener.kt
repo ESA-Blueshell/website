@@ -16,8 +16,8 @@ class ContributionContactListener(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onContributionChange(evt: ContributionChanged) {
         jobs.enqueueFromActor(
-            ContactJobs.SyncListMembership,
-            ContactJobs.SyncListMembershipPayload(evt.userId, evt.periodId),
+            ContactJobs.ProcessListMembership,
+            ContactJobs.ProcessListMembershipPayload(evt.userId, evt.periodId),
             evt
         )
     }

@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.application.command
 
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
@@ -27,7 +27,7 @@ import java.util.Optional
  */
 class SyncListMembershipCommandHandlerTest {
 
-    private val listAdapter: ListAdapter = mock()
+    private val listAdapter: ContactListAdapter = mock()
     private val contactRepository: ContactRepository = mock()
     private val contactListRepository: ContactListRepository = mock()
     private val contactListMembershipRepository: ContactListMembershipRepository = mock()

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
 /**
- * Job handler for [ContactJobs.SyncContactForSystem].
+ * Job handler for [ContactJobs.SyncContactToSystem].
  *
  * Thin wrapper: deserializes the [SyncContactCommand] payload from JSON,
  * then dispatches it through the [CommandBus] to [SyncContactCommandHandler].
@@ -17,7 +17,7 @@ import tools.jackson.databind.ObjectMapper
  * In test/dev, [MockContactAdapter] (system=LISTMONK) is the only registered ContactAdapter.
  */
 @Component
-class SyncContactForSystemJob(
+class SyncContactToSystemJob(
     objectMapper: ObjectMapper,
     commandBus: CommandBus,
 ) : AbstractCommandJobHandler<SyncContactCommand, Unit>(
@@ -25,5 +25,5 @@ class SyncContactForSystemJob(
     SyncContactCommand::class.java,
     commandBus,
 ) {
-    override val jobType: String = ContactJobs.SyncContactForSystem.type
+    override val jobType: String = ContactJobs.SyncContactToSystem.type
 }

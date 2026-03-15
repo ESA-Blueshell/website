@@ -25,7 +25,7 @@ class UserEventListener(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onCreate(evt: UserCreated) {
         contactAdapters.forEach { adapter ->
-            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(evt.userId, adapter.system))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(evt.userId, adapter.system))
         }
     }
 
@@ -34,7 +34,7 @@ class UserEventListener(
     fun onUpdate(evt: UserUpdated) {
         val u = users.findById(evt.userId)
         contactAdapters.forEach { adapter ->
-            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(evt.userId, adapter.system))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(evt.userId, adapter.system))
         }
         if (!u.hasRole(Role.MEMBER)) {
             u.committeeMembers.forEach { committeeMembers.delete(it) }

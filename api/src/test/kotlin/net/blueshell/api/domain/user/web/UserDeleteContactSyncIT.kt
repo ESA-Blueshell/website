@@ -44,9 +44,9 @@ class UserDeleteContactSyncIT : UserTestSupport() {
 
         // Sync contact first to assign external ID
         enqueueInTransaction {
-            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
         }
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should exist after sync")
@@ -61,7 +61,7 @@ class UserDeleteContactSyncIT : UserTestSupport() {
 
         // Await DeleteContact + per-integration sync (delete path)
         awaitJobSuccess(ContactJobs.DeleteContact.type)
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type, expectedCount = 2)
 
         assertThat(mockContactAdapter.getAllContacts())
             .describedAs("Contact should be removed after user deletion")

@@ -134,7 +134,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Compile API main and test sources
-        run: services/api/gradlew --no-daemon --build-cache compileKotlin compileTestKotlin
+        run: ./gradlew --no-daemon --build-cache compileKotlin compileTestKotlin
         working-directory: services/api
 
       - name: Save Gradle cache
@@ -293,8 +293,8 @@ jobs:
         if: matrix.id == 'system'
         run: |
           yarn --cwd services/frontend coverage:system:report \
-            --raw-dir ../services/api/build/coverage/frontend-system/raw \
-            --out-dir ../services/api/build/coverage/frontend-system
+            --raw-dir services/api/build/coverage/frontend-system/raw \
+            --out-dir services/api/build/coverage/frontend-system
 
       - name: Stop frontend process
         if: always() && matrix.id == 'system'

@@ -1,5 +1,5 @@
 export default {
-  input: '../openapi/blueshell.json',
+  input: '../api/openapi.yaml',
   output: {
     path: 'src/services/api/blueshell',
   },

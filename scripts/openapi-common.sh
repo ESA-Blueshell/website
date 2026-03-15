@@ -5,7 +5,8 @@
 DISCORD_OPENAPI_URL="${DISCORD_OPENAPI_URL:-https://raw.githubusercontent.com/discord/discord-api-spec/refs/heads/main/specs/openapi.json}"
 BREVO_OPENAPI_URL="${BREVO_OPENAPI_URL:-https://api.brevo.com/v3/swagger_definition_v3.yml}"
 
-OPENAPI_DIR="${OPENAPI_DIR:-services/api/openapi}"
+SHARED_OPENAPI_DIR="${SHARED_OPENAPI_DIR:-services/shared/openapi}"
+API_OPENAPI_SPEC="${API_OPENAPI_SPEC:-services/api/openapi.yaml}"
 
 check_common_prerequisites() {
   for cmd in curl jq; do
@@ -15,18 +16,18 @@ check_common_prerequisites() {
     fi
   done
 
-  if [ ! -d "$OPENAPI_DIR" ]; then
-    echo "$OPENAPI_DIR directory not found in current directory" >&2
+  if [ ! -d "$SHARED_OPENAPI_DIR" ]; then
+    echo "$SHARED_OPENAPI_DIR directory not found in current directory" >&2
     exit 1
   fi
 }
 
 download_external_specs() {
   echo "Downloading Discord OpenAPI spec..."
-  curl -fsSL "$DISCORD_OPENAPI_URL" -o "$OPENAPI_DIR/discord.raw.json"
+  curl -fsSL "$DISCORD_OPENAPI_URL" -o "$SHARED_OPENAPI_DIR/discord.raw.json"
 
   echo "Downloading Brevo OpenAPI spec..."
-  curl -fsSL "$BREVO_OPENAPI_URL" -o "$OPENAPI_DIR/brevo.yml"
+  curl -fsSL "$BREVO_OPENAPI_URL" -o "$SHARED_OPENAPI_DIR/brevo.yml"
 }
 
 regen_brevo_client() {
@@ -39,24 +40,24 @@ regen_listmonk_client() {
   services/api/gradlew --no-daemon --build-cache -p services/api :clients:listmonk:generate
 }
 
-# Normalizes services/api/openapi/blueshell.{raw.}json and discord.raw.json in-place.
-# Expects the caller to have written blueshell.raw.json (or blueshell.json) before calling.
-normalize_json_specs() {
-  echo "Normalizing OpenAPI JSON files..."
+# Normalizes the API spec and discord.raw.json in-place.
+# Expects the caller to have written the API spec (or raw JSON) and discord.raw.json before calling.
+normalize_specs() {
+  echo "Normalizing OpenAPI spec files..."
   local tmp
   tmp="$(mktemp)"
 
-  if [ -f "$OPENAPI_DIR/blueshell.raw.json" ]; then
-    jq -S -c . "$OPENAPI_DIR/blueshell.raw.json" > "$tmp" && mv "$tmp" "$OPENAPI_DIR/blueshell.json"
-    rm -f "$OPENAPI_DIR/blueshell.raw.json"
-  elif [ -f "$OPENAPI_DIR/blueshell.json" ]; then
-    jq -S -c . "$OPENAPI_DIR/blueshell.json" > "$tmp" && mv "$tmp" "$OPENAPI_DIR/blueshell.json"
+  if [ -f "${API_OPENAPI_SPEC%.yaml}.raw.json" ]; then
+    jq -S -c . "${API_OPENAPI_SPEC%.yaml}.raw.json" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
+    rm -f "${API_OPENAPI_SPEC%.yaml}.raw.json"
+  elif [ -f "$API_OPENAPI_SPEC" ]; then
+    jq -S -c . "$API_OPENAPI_SPEC" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
   else
-    echo "$OPENAPI_DIR/blueshell.json (or .raw.json) not found" >&2
+    echo "$API_OPENAPI_SPEC (or .raw.json) not found" >&2
     rm -f "$tmp"
     exit 1
   fi
 
-  jq -S -c . "$OPENAPI_DIR/discord.raw.json" > "$tmp" && mv "$tmp" "$OPENAPI_DIR/discord.json"
-  rm -f "$OPENAPI_DIR/discord.raw.json"
+  jq -S -c . "$SHARED_OPENAPI_DIR/discord.raw.json" > "$tmp" && mv "$tmp" "$SHARED_OPENAPI_DIR/discord.json"
+  rm -f "$SHARED_OPENAPI_DIR/discord.raw.json"
 }

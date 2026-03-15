@@ -53,7 +53,7 @@ API_PID="$!"
 echo "Waiting for API OpenAPI endpoint: $API_SPEC_URL"
 spec_ready=false
 for ((i = 1; i <= API_STARTUP_RETRIES; i++)); do
-  if curl -fsS "$API_SPEC_URL" -o "$OPENAPI_DIR/blueshell.raw.json"; then
+  if curl -fsS "$API_SPEC_URL" -o "${API_OPENAPI_SPEC%.yaml}.raw.json"; then
     spec_ready=true
     break
   fi
@@ -78,7 +78,8 @@ fi
 
 download_external_specs
 regen_brevo_client
-normalize_json_specs
+regen_listmonk_client
+normalize_specs
 
 # ---- Generate frontend TypeScript clients ----
 

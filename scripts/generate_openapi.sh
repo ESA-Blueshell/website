@@ -30,14 +30,14 @@ fi
 
 echo "Fetching Blueshell OpenAPI spec from API container..."
 docker compose -f docker-compose.dev.yml exec api sh -c \
-  "curl -fsSS http://localhost:8080/v3/api-docs -o /app/openapi/blueshell.raw.json"
+  "curl -fsSS http://localhost:8080/v3/api-docs -o /app/openapi.raw.json"
 
 # ---- Shared steps ----
 
 download_external_specs
 regen_brevo_client
 regen_listmonk_client
-normalize_json_specs
+normalize_specs
 
 # ---- Generate frontend TypeScript clients ----
 

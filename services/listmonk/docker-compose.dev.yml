@@ -61,7 +61,7 @@ services:
       listmonk:
         condition: service_healthy
     env_file:
-      - path: ../env/.listmonk.env
+      - path: .listmonk.env
         required: false
     environment:
       LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:-listmonk}

@@ -5,6 +5,8 @@
 DISCORD_OPENAPI_URL="${DISCORD_OPENAPI_URL:-https://raw.githubusercontent.com/discord/discord-api-spec/refs/heads/main/specs/openapi.json}"
 BREVO_OPENAPI_URL="${BREVO_OPENAPI_URL:-https://api.brevo.com/v3/swagger_definition_v3.yml}"
 
+OPENAPI_DIR="${OPENAPI_DIR:-services/api/openapi}"
+
 check_common_prerequisites() {
   for cmd in curl jq; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -13,48 +15,48 @@ check_common_prerequisites() {
     fi
   done
 
-  if [ ! -d "openapi" ]; then
-    echo "openapi directory not found in current directory" >&2
+  if [ ! -d "$OPENAPI_DIR" ]; then
+    echo "$OPENAPI_DIR directory not found in current directory" >&2
     exit 1
   fi
 }
 
 download_external_specs() {
   echo "Downloading Discord OpenAPI spec..."
-  curl -fsSL "$DISCORD_OPENAPI_URL" -o openapi/discord.raw.json
+  curl -fsSL "$DISCORD_OPENAPI_URL" -o "$OPENAPI_DIR/discord.raw.json"
 
   echo "Downloading Brevo OpenAPI spec..."
-  curl -fsSL "$BREVO_OPENAPI_URL" -o openapi/brevo.yml
+  curl -fsSL "$BREVO_OPENAPI_URL" -o "$OPENAPI_DIR/brevo.yml"
 }
 
 regen_brevo_client() {
   echo "Regenerating Brevo Java client..."
-  ./gradlew :api:brevo-client:generate
+  services/api/gradlew :brevo-client:generate
 }
 
 regen_listmonk_client() {
   echo "Regenerating Listmonk Java client..."
-  ./gradlew :api:listmonk-client:generate
+  services/api/gradlew :listmonk-client:generate
 }
 
-# Normalizes openapi/blueshell.{raw.}json and openapi/discord.raw.json in-place.
+# Normalizes services/api/openapi/blueshell.{raw.}json and discord.raw.json in-place.
 # Expects the caller to have written blueshell.raw.json (or blueshell.json) before calling.
 normalize_json_specs() {
   echo "Normalizing OpenAPI JSON files..."
   local tmp
   tmp="$(mktemp)"
 
-  if [ -f "openapi/blueshell.raw.json" ]; then
-    jq -S -c . openapi/blueshell.raw.json > "$tmp" && mv "$tmp" openapi/blueshell.json
-    rm -f openapi/blueshell.raw.json
-  elif [ -f "openapi/blueshell.json" ]; then
-    jq -S -c . openapi/blueshell.json > "$tmp" && mv "$tmp" openapi/blueshell.json
+  if [ -f "$OPENAPI_DIR/blueshell.raw.json" ]; then
+    jq -S -c . "$OPENAPI_DIR/blueshell.raw.json" > "$tmp" && mv "$tmp" "$OPENAPI_DIR/blueshell.json"
+    rm -f "$OPENAPI_DIR/blueshell.raw.json"
+  elif [ -f "$OPENAPI_DIR/blueshell.json" ]; then
+    jq -S -c . "$OPENAPI_DIR/blueshell.json" > "$tmp" && mv "$tmp" "$OPENAPI_DIR/blueshell.json"
   else
-    echo "openapi/blueshell.json (or .raw.json) not found" >&2
+    echo "$OPENAPI_DIR/blueshell.json (or .raw.json) not found" >&2
     rm -f "$tmp"
     exit 1
   fi
 
-  jq -S -c . openapi/discord.raw.json > "$tmp" && mv "$tmp" openapi/discord.json
-  rm -f openapi/discord.raw.json
+  jq -S -c . "$OPENAPI_DIR/discord.raw.json" > "$tmp" && mv "$tmp" "$OPENAPI_DIR/discord.json"
+  rm -f "$OPENAPI_DIR/discord.raw.json"
 }

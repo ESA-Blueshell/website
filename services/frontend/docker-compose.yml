@@ -1,0 +1,24 @@
+services:
+  frontend:
+    image: ghcr.io/esa-blueshell/frontend:latest
+    pull_policy: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - frontback
+    environment:
+      - TZ=Europe/Amsterdam
+      - VITE_APP_URL=https://esa-blueshell.nl/api
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/healthz" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  frontback:

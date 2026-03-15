@@ -1,0 +1,56 @@
+services:
+  db:
+    image: mariadb:10.11.10
+    container_name: db
+    networks:
+      - database
+    volumes:
+      - db_data:/var/lib/mysql
+      - "./0_init.sql:/docker-entrypoint-initdb.d/0_init.sql"
+      - "./1_dump.sql:/docker-entrypoint-initdb.d/1_dump.sql"
+    env_file:
+      - .db.env
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  api:
+    image: ghcr.io/esa-blueshell/api:latest
+    pull_policy: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .api.env
+    environment:
+      - TZ=Europe/Amsterdam
+      - APP_URL=https://esa-blueshell.nl/api
+      - FRONTEND_URL=https://esa-blueshell.nl
+    volumes:
+      - "../../storage:/home/storage"
+      - "listmonk-secrets:/run/secrets/listmonk:ro"
+    depends_on:
+      db:
+        condition: service_healthy
+      listmonk-setup:
+        condition: service_completed_successfully
+    networks:
+      - frontback
+      - database
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+networks:
+  frontback:
+  database:
+
+volumes:
+  db_data:

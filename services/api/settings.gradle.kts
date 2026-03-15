@@ -1,8 +1,7 @@
-rootProject.name = "website"
+rootProject.name = "api"
 
-include("api")
-include("api:brevo-client")
-include("api:listmonk-client")
+include("brevo-client")
+include("listmonk-client")
 
 // Allow Gradle to auto-provision JDKs for toolchains via Foojay.
 plugins {

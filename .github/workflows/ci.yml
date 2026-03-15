@@ -3,21 +3,15 @@ name: CI
 on:
   push:
     paths:
-      - 'api/**'
-      - 'frontend/**'
-      - 'openapi/**'
+      - 'services/api/**'
+      - 'services/frontend/**'
+      - 'services/nginx/**'
       - 'env/**'
       - 'scripts/**'
       - '.github/actions/**'
       - '.github/workflows/**'
       - 'docker-compose.yml'
       - 'docker-compose.dev.yml'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradle/**'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'nginx/**'
   workflow_dispatch:
 
 concurrency:
@@ -93,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: services/frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -140,7 +134,8 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Compile API main and test sources
-        run: ./gradlew --no-daemon --build-cache :api:compileKotlin :api:compileTestKotlin
+        run: services/api/gradlew --no-daemon --build-cache compileKotlin compileTestKotlin
+        working-directory: services/api
 
       - name: Save Gradle cache
         if: always()
@@ -216,7 +211,7 @@ jobs:
 
       - name: Prepare test database schema
         run: |
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < env/0_init.sql
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
@@ -262,7 +257,7 @@ jobs:
         run: |
           set -euo pipefail
           VITE_COVERAGE=true VITE_APP_URL="$APP_URL" \
-            yarn --cwd frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
+            yarn --cwd services/frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
           echo $! > frontend-dev.pid
 
       - name: Wait for frontend readiness
@@ -282,22 +277,24 @@ jobs:
 
       - name: Run API Gradle tests
         if: matrix.id == 'api'
-        run: ./gradlew --no-daemon --build-cache :api:test :api:jacocoTestReport
+        run: ./gradlew --no-daemon --build-cache test jacocoTestReport
+        working-directory: services/api
 
       - name: Run system tests and JaCoCo system report
         if: matrix.id == 'system'
         run: |
-          ./gradlew --no-daemon --build-cache :api:systemTest :api:jacocoSystemTestReport \
+          ./gradlew --no-daemon --build-cache systemTest jacocoSystemTestReport \
             -Dsystem.frontend.url="$FRONTEND_URL" \
             -Dfrontend.coverage.enabled=true \
             -Dfrontend.coverage.required=true
+        working-directory: services/api
 
       - name: Convert frontend raw coverage to LCOV
         if: matrix.id == 'system'
         run: |
-          yarn --cwd frontend coverage:system:report \
-            --raw-dir ../api/build/coverage/frontend-system/raw \
-            --out-dir ../api/build/coverage/frontend-system
+          yarn --cwd services/frontend coverage:system:report \
+            --raw-dir ../services/api/build/coverage/frontend-system/raw \
+            --out-dir ../services/api/build/coverage/frontend-system
 
       - name: Stop frontend process
         if: always() && matrix.id == 'system'
@@ -312,9 +309,9 @@ jobs:
         with:
           name: api-test-coverage
           path: |
-            api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-            api/build/reports/jacoco/jacocoTestReport/html
-            api/build/reports/tests/test
+            services/api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+            services/api/build/reports/jacoco/jacocoTestReport/html
+            services/api/build/reports/tests/test
           if-no-files-found: warn
 
       - name: Upload API system coverage artifacts
@@ -323,11 +320,11 @@ jobs:
         with:
           name: api-system-coverage
           path: |
-            api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml
-            api/build/reports/jacoco/jacocoSystemTestReport/html
-            api/build/coverage/frontend-system/coverage-final.json
-            api/build/coverage/frontend-system/lcov.info
-            api/build/coverage/frontend-system/html
+            services/api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml
+            services/api/build/reports/jacoco/jacocoSystemTestReport/html
+            services/api/build/coverage/frontend-system/coverage-final.json
+            services/api/build/coverage/frontend-system/lcov.info
+            services/api/build/coverage/frontend-system/html
             frontend-dev.log
           if-no-files-found: warn
 
@@ -337,7 +334,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: services/frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -357,11 +354,11 @@ jobs:
         with:
           name: frontend-unit-coverage
           path: |
-            frontend/coverage/unit/coverage-final.json
-            frontend/coverage/unit/coverage-summary.json
-            frontend/coverage/unit/lcov.info
-            frontend/coverage/unit/lcov-report
-            frontend/coverage/unit/index.html
+            services/frontend/coverage/unit/coverage-final.json
+            services/frontend/coverage/unit/coverage-summary.json
+            services/frontend/coverage/unit/lcov.info
+            services/frontend/coverage/unit/lcov-report
+            services/frontend/coverage/unit/index.html
           if-no-files-found: error
 
   fe-e2e:
@@ -370,7 +367,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: services/frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -393,10 +390,10 @@ jobs:
         with:
           name: frontend-e2e-coverage
           path: |
-            frontend/coverage/e2e/coverage-final.json
-            frontend/coverage/e2e/coverage-summary.json
-            frontend/coverage/e2e/lcov.info
-            frontend/coverage/e2e/html
+            services/frontend/coverage/e2e/coverage-final.json
+            services/frontend/coverage/e2e/coverage-summary.json
+            services/frontend/coverage/e2e/lcov.info
+            services/frontend/coverage/e2e/html
           if-no-files-found: error
 
   coverage:
@@ -511,7 +508,7 @@ jobs:
 
       - name: Prepare test database schema
         run: |
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < env/0_init.sql
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
@@ -557,7 +554,7 @@ jobs:
           ./scripts/generate-openapi-local.sh
 
       - name: Assert OpenAPI spec and client are in sync
-        run: git diff --exit-code -- openapi frontend/src/services/api
+        run: git diff --exit-code -- services/api/openapi services/frontend/src/services/api
 
       - name: Upload OpenAPI generation logs
         if: failure()
@@ -593,8 +590,8 @@ jobs:
       - name: Build API image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: api/Dockerfile
+          context: services/api
+          file: services/api/Dockerfile
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -636,8 +633,8 @@ jobs:
       - name: Push API image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: api/Dockerfile
+          context: services/api
+          file: services/api/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -670,8 +667,8 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@v6
         with:
-          context: frontend
-          file: frontend/Dockerfile
+          context: services/frontend
+          file: services/frontend/Dockerfile
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -713,8 +710,8 @@ jobs:
       - name: Push frontend image
         uses: docker/build-push-action@v6
         with:
-          context: frontend
-          file: frontend/Dockerfile
+          context: services/frontend
+          file: services/frontend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

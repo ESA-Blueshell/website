@@ -7,14 +7,24 @@ plugins {
     id("org.springframework.boot") version "4.0.3"
     jacoco
 
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    kotlin("plugin.jpa")
-    kotlin("plugin.allopen")
-    kotlin("plugin.noarg")
-    kotlin("kapt")
+    val kotlinVersion = "2.3.10"
+    kotlin("jvm") version kotlinVersion
+    kotlin("plugin.spring") version kotlinVersion
+    kotlin("plugin.jpa") version kotlinVersion
+    kotlin("plugin.allopen") version kotlinVersion
+    kotlin("plugin.noarg") version kotlinVersion
+    kotlin("kapt") version kotlinVersion
 
     java
+}
+
+allprojects {
+    group = "net.blueshell"
+    version = "1.0.0"
+
+    repositories {
+        mavenCentral()
+    }
 }
 
 group = "net.blueshell"
@@ -59,10 +69,6 @@ configurations.configureEach {
 
 configurations.configureEach {
     exclude(group = "org.yaml", module = "snakeyaml")
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencyLocking {
@@ -122,8 +128,8 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.0")
     implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
-    implementation(project(":api:brevo-client"))
-    implementation(project(":api:listmonk-client"))
+    implementation(project(":brevo-client"))
+    implementation(project(":listmonk-client"))
 
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
 

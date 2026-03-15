@@ -1,0 +1,24 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - frontback
+    depends_on:
+      frontend:
+        condition: service_healthy
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+
+networks:
+  frontback:
+
+volumes:
+  letsencrypt:
+  certbot-www:

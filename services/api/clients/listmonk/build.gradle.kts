@@ -36,7 +36,7 @@ dependencies {
 }
 
 // ---- OpenAPI generation locations ----
-val openApiSpec = rootProject.layout.projectDirectory.file("openapi/listmonk.yaml")
+val openApiSpec = rootProject.layout.projectDirectory.file("../listmonk/openapi.yaml")
 val generatedRoot = layout.buildDirectory.dir("generated/openapi/listmonk")
 val generatedJavaSrc = generatedRoot.map { it.dir("src/main/java") }
 

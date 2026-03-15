@@ -36,7 +36,7 @@ dependencies {
 }
 
 // ---- OpenAPI generation locations ----
-val openApiSpec = rootProject.layout.projectDirectory.file("openapi/brevo.yml")
+val openApiSpec = rootProject.layout.projectDirectory.file("../shared/openapi/brevo.yml")
 val generatedRoot = layout.buildDirectory.dir("generated/openapi/brevo")
 val generatedJavaSrc = generatedRoot.map { it.dir("src/main/java") }
 

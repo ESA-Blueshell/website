@@ -11,7 +11,8 @@ services:
       - "3000:3000"
     volumes:
       - .:/usr/app
-      - ../api/openapi:/usr/openapi
+      - ../api/openapi.yaml:/usr/api/openapi.yaml:ro
+      - ../shared/openapi:/usr/shared/openapi:ro
       - /usr/app/.yarn
     networks:
       - global_network
@@ -30,4 +31,4 @@ services:
 
 networks:
   global_network:
-    driver: bridge
+    external: true

@@ -191,7 +191,7 @@ docker compose -f docker-compose.dev.yml up --build -d
 The application uses OpenAPI for API documentation and TypeScript client generation:
 
 ```shell script
-./generate_openapi.sh
+./scripts/generate_openapi.sh
 ```
 
 This script:
@@ -318,7 +318,7 @@ website/
 │   └── discord.json      # Discord API spec
 ├── docker-compose.yml    # Production compose
 ├── docker-compose.dev.yml # Development compose
-└── generate_openapi.sh   # API client generator
+└── scripts/              # Project scripts (OpenAPI gen, coverage, SSL setup, etc.)
 ```
 
 ## 🔒 Security Features

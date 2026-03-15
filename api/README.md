@@ -102,7 +102,7 @@ api/src/main/kotlin/net/blueshell/api/
 
 ```bash
 # From project root
-./generate_openapi.sh
+./scripts/generate_openapi.sh
 ```
 
 This:
@@ -231,7 +231,7 @@ These are referenced in signup flows and user consent workflows.
 1. Follow the architecture patterns in CLAUDE.md
 2. Reference ADRs when making design decisions
 3. Run tests and architecture checks before committing
-4. Update OpenAPI spec when API changes (`./generate_openapi.sh`)
+4. Update OpenAPI spec when API changes (`./scripts/generate_openapi.sh`)
 5. Keep changes within bounded contexts
 
 See [CLAUDE.md](../CLAUDE.md) for detailed development guidelines.

@@ -43,7 +43,7 @@ class DeleteContactJob(
         // Dispatch per-system sync jobs; each will read deletedAt and delete from external system
         contactAdapters.forEach { adapter ->
             runCatching {
-                jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(userId, adapter.system))
+                jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(userId, adapter.system))
             }.onFailure { e ->
                 log.error("Failed to enqueue delete sync for user {} via {}: {}", userId, adapter.system, e.message)
             }

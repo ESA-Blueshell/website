@@ -5,9 +5,9 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
-import net.blueshell.api.platform.integration.contact.application.job.SyncListMembershipJob
+import net.blueshell.api.platform.integration.contact.application.job.ProcessListMembershipJob
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.ContactJobs
@@ -24,12 +24,12 @@ import org.mockito.kotlin.whenever
 import java.time.LocalDate
 
 /**
- * Unit tests for [SyncListMembershipJob].
+ * Unit tests for [ProcessListMembershipJob].
  *
  * No Spring context — instantiate directly with mocks.
  * Verifies that the job dispatches per-adapter contact and list sync jobs.
  */
-class SyncListMembershipJobTest {
+class ProcessListMembershipJobTest {
 
     private val objectMapper = ObjectMapper()
     private val contactListService: ContactListService = mock()
@@ -40,11 +40,11 @@ class SyncListMembershipJobTest {
     private val contactAdapter: ContactAdapter = mock<ContactAdapter>().also {
         whenever(it.system).thenReturn(ContactSystem.LISTMONK)
     }
-    private val listAdapter: ListAdapter = mock<ListAdapter>().also {
+    private val listAdapter: ContactListAdapter = mock<ContactListAdapter>().also {
         whenever(it.system).thenReturn(ContactSystem.LISTMONK)
     }
 
-    private val job = SyncListMembershipJob(
+    private val job = ProcessListMembershipJob(
         objectMapper = objectMapper,
         contactListService = contactListService,
         periods = periods,
@@ -78,7 +78,7 @@ class SyncListMembershipJobTest {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(true)
         whenever(contactListService.createMembership(listId, userId)).thenReturn(true)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(userId, periodId)))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
         // 2 enqueue calls: 1 contact sync (SyncContactForSystem) + 1 list sync (SyncListMembershipForSystem)
         verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())
@@ -88,7 +88,7 @@ class SyncListMembershipJobTest {
     fun `dispatches only list sync job when user has no contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(false)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(userId, periodId)))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
         // 1 enqueue call: list sync only (no contact sync when removing)
         verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
@@ -99,7 +99,7 @@ class SyncListMembershipJobTest {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(true)
         whenever(contactListService.createMembership(listId, userId)).thenReturn(true)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(userId, periodId)))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
         verify(contactListService).createMembership(listId, userId)
     }
@@ -108,7 +108,7 @@ class SyncListMembershipJobTest {
     fun `deletes membership when user has no contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(false)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(userId, periodId)))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
         verify(contactListService).deleteMembership(listId, userId)
     }
@@ -117,7 +117,7 @@ class SyncListMembershipJobTest {
     fun `does not create membership when user has no contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(false)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncListMembershipPayload(userId, periodId)))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
         verify(contactListService, never()).createMembership(any(), any())
     }

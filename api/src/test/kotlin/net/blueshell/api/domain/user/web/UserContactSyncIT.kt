@@ -44,12 +44,12 @@ class UserContactSyncIT : UserTestSupport() {
 
         enqueueInTransaction {
             jobs.enqueue(
-                ContactJobs.SyncContactForSystem,
+                ContactJobs.SyncContactToSystem,
                 SyncContactCommand(member.id!!, ContactSystem.LISTMONK)
             )
         }
 
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
         val contacts = mockContactAdapter.getAllContacts()
         assertThat(contacts).hasSize(1)
@@ -65,9 +65,9 @@ class UserContactSyncIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         enqueueInTransaction {
-            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
         }
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
         val contactBefore = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactBefore.firstName).isEqualTo("Test")
@@ -79,10 +79,10 @@ class UserContactSyncIT : UserTestSupport() {
         }
 
         enqueueInTransaction {
-            jobs.enqueue(ContactJobs.SyncContactForSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
         }
 
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type, expectedCount = 2)
 
         val contactAfter = mockContactAdapter.getAllContacts().values.single()
         assertThat(contactAfter.firstName).isEqualTo("UpdatedName")

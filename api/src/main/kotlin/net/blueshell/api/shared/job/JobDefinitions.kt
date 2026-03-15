@@ -47,17 +47,17 @@ object CalendarJobs {
 }
 
 object ContactJobs {
-    object SpawnContactSyncs : JobDefinition<SpawnContactSyncsPayload> {
-        override val type: String = "contact.spawn-syncs"
-        override val payloadType: Class<SpawnContactSyncsPayload> = SpawnContactSyncsPayload::class.java
+    object DispatchContactSyncs : JobDefinition<DispatchContactSyncsPayload> {
+        override val type: String = "contact.dispatch-syncs"
+        override val payloadType: Class<DispatchContactSyncsPayload> = DispatchContactSyncsPayload::class.java
         // No dedup: always run, each invocation may cover a different set of users
-        override fun dedupKey(payload: SpawnContactSyncsPayload): String? = null
+        override fun dedupKey(payload: DispatchContactSyncsPayload): String? = null
     }
 
-    object SpawnListMembershipSyncs : JobDefinition<SpawnListMembershipSyncsPayload> {
-        override val type: String = "contact.spawn-list-syncs"
-        override val payloadType: Class<SpawnListMembershipSyncsPayload> = SpawnListMembershipSyncsPayload::class.java
-        override fun dedupKey(payload: SpawnListMembershipSyncsPayload): String? = null
+    object DispatchListMembershipSyncs : JobDefinition<DispatchListMembershipSyncsPayload> {
+        override val type: String = "contact.dispatch-list-syncs"
+        override val payloadType: Class<DispatchListMembershipSyncsPayload> = DispatchListMembershipSyncsPayload::class.java
+        override fun dedupKey(payload: DispatchListMembershipSyncsPayload): String? = null
     }
 
     object DeleteContact : JobDefinition<DeleteContactPayload> {
@@ -65,29 +65,29 @@ object ContactJobs {
         override val payloadType: Class<DeleteContactPayload> = DeleteContactPayload::class.java
     }
 
-    object SyncListMembership : JobDefinition<SyncListMembershipPayload> {
-        override val type: String = "contact.sync-list-membership"
-        override val payloadType: Class<SyncListMembershipPayload> = SyncListMembershipPayload::class.java
+    object ProcessListMembership : JobDefinition<ProcessListMembershipPayload> {
+        override val type: String = "contact.process-list-membership"
+        override val payloadType: Class<ProcessListMembershipPayload> = ProcessListMembershipPayload::class.java
     }
 
-    object SyncContactForSystem : CommandJobDefinition<SyncContactCommand> {
-        override val type: String = "contact.sync-for-system"
+    object SyncContactToSystem : CommandJobDefinition<SyncContactCommand> {
+        override val type: String = "contact.sync-to-system"
         override val payloadType: Class<SyncContactCommand> = SyncContactCommand::class.java
     }
 
-    object SyncListMembershipForSystem : CommandJobDefinition<SyncListMembershipCommand> {
-        override val type: String = "contact.list-sync-for-system"
+    object SyncListMembershipToSystem : CommandJobDefinition<SyncListMembershipCommand> {
+        override val type: String = "contact.sync-list-to-system"
         override val payloadType: Class<SyncListMembershipCommand> = SyncListMembershipCommand::class.java
     }
 
-    data class SpawnContactSyncsPayload(val unused: Unit = Unit)
-    data class SpawnListMembershipSyncsPayload(val unused: Unit = Unit)
+    data class DispatchContactSyncsPayload(val unused: Unit = Unit)
+    data class DispatchListMembershipSyncsPayload(val unused: Unit = Unit)
 
     data class DeleteContactPayload(
         val userId: Long
     )
 
-    data class SyncListMembershipPayload(
+    data class ProcessListMembershipPayload(
         val userId: Long,
         val periodId: Long
     )

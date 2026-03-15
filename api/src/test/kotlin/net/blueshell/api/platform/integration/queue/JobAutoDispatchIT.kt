@@ -132,12 +132,12 @@ class JobAutoDispatchIT : UserTestSupport() {
 
         enqueueInTransaction {
             jobs.enqueue(
-                ContactJobs.SyncContactForSystem,
+                ContactJobs.SyncContactToSystem,
                 SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
             )
         }
 
-        awaitJobStatus(ContactJobs.SyncContactForSystem.type, JobExecutionStatus.SUCCESS)
+        awaitJobStatus(ContactJobs.SyncContactToSystem.type, JobExecutionStatus.SUCCESS)
     }
 
     // ── Contact: Delete contact ──────────────────────────────────────────
@@ -166,12 +166,12 @@ class JobAutoDispatchIT : UserTestSupport() {
 
         enqueueInTransaction {
             jobs.enqueue(
-                ContactJobs.SyncListMembership,
-                ContactJobs.SyncListMembershipPayload(user.id!!, period.id!!)
+                ContactJobs.ProcessListMembership,
+                ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!)
             )
         }
 
-        awaitJobStatus(ContactJobs.SyncListMembership.type, JobExecutionStatus.SUCCESS)
+        awaitJobStatus(ContactJobs.ProcessListMembership.type, JobExecutionStatus.SUCCESS)
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────

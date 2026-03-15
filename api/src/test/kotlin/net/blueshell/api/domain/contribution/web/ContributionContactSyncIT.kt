@@ -47,9 +47,9 @@ class ContributionContactSyncIT : UserTestSupport() {
         )
             .andExpect(status().isCreated)
 
-        awaitJobSuccess(ContactJobs.SyncListMembership.type)
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
-        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
+        awaitJobSuccess(ContactJobs.ProcessListMembership.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val lists = mockContactAdapter.getAllLists()
         assertThat(lists).hasSize(1)
@@ -78,9 +78,9 @@ class ContributionContactSyncIT : UserTestSupport() {
         )
             .andExpect(status().isCreated)
 
-        awaitJobSuccess(ContactJobs.SyncListMembership.type)
-        awaitJobSuccess(ContactJobs.SyncContactForSystem.type)
-        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type)
+        awaitJobSuccess(ContactJobs.ProcessListMembership.type)
+        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val listId = mockContactAdapter.getAllLists().keys.single()
         val contactId = mockContactAdapter.getAllContacts().keys.single()
@@ -97,8 +97,8 @@ class ContributionContactSyncIT : UserTestSupport() {
         )
             .andExpect(status().isNoContent)
 
-        awaitJobSuccess(ContactJobs.SyncListMembership.type, expectedCount = 2)
-        awaitJobSuccess(ContactJobs.SyncListMembershipForSystem.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.ProcessListMembership.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type, expectedCount = 2)
 
         assertThat(mockContactAdapter.isInList(contactId, listId)).isFalse()
     }

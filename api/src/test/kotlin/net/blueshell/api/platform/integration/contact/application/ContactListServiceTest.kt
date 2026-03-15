@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.contact.application
 
-import net.blueshell.api.platform.integration.contact.adapter.ListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
@@ -26,10 +26,10 @@ import java.util.Optional
  */
 class ContactListServiceTest {
 
-    private val listmonkAdapter: ListAdapter = mock {
+    private val listmonkAdapter: ContactListAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.LISTMONK)
     }
-    private val brevoAdapter: ListAdapter = mock {
+    private val brevoAdapter: ContactListAdapter = mock {
         whenever(mock.system).thenReturn(ContactSystem.BREVO)
     }
     private val contactListRepository: ContactListRepository = mock()

@@ -13,7 +13,7 @@ import net.blueshell.api.shared.enums.ContactSystem
  * All IDs are system-specific Longs. The orchestration service resolves domain IDs to system IDs
  * before calling adapter methods.
  */
-interface ListAdapter {
+interface ContactListAdapter {
     val system: ContactSystem
 
     fun createList(name: String, folderName: String?): Long

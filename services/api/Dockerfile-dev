@@ -10,23 +10,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Where Playwright stores browsers
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-COPY gradlew gradlew
-COPY gradle gradle
-COPY settings.gradle.kts build.gradle.kts ./
-COPY api api
-COPY openapi openapi
+COPY . .
 
 RUN chmod +x gradlew
 
 # Build app
 RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew --no-daemon :api:assemble -x test
+    ./gradlew --no-daemon assemble -x test
 
 # Install Playwright OS deps + Chromium during build
 RUN --mount=type=cache,target=/root/.gradle \
     --mount=type=cache,target=/ms-playwright \
-    ./gradlew --no-daemon :api:installChromium -x test
+    ./gradlew --no-daemon installChromium -x test
 
 EXPOSE ${PORT} 5005
 
-CMD ["sh", "-c", "./gradlew --no-daemon :api:bootRun -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"]
+CMD ["sh", "-c", "./gradlew --no-daemon bootRun -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"]

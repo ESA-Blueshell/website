@@ -39,3 +39,5 @@ src/main/resources/hibernate.cfg.xml
 Dockerfile*
 *-deployment.yaml
 *-service.yaml
+/.api.env
+/.db.env

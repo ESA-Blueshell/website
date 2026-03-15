@@ -4,6 +4,3 @@ include:
   - services/listmonk/docker-compose.dev.yml
   - services/nginx/docker-compose.dev.yml
 
-networks:
-  global_network:
-    driver: bridge

@@ -64,7 +64,7 @@ services:
 
 networks:
   global_network:
-    external: true
+    driver: bridge
 
 volumes:
   data:

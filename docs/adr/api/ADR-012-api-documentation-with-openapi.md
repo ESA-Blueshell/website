@@ -57,7 +57,7 @@ data class JwtRequest(
 
 **Frontend TypeScript Client:**
 ```bash
-./generate_openapi.sh
+./scripts/generate_openapi.sh
 ```
 
 This generates:

@@ -16,13 +16,24 @@ If no inputs are provided, reports are auto-discovered from known local/CI paths
 
 Options:
   --jacoco <file-or-list>        JaCoCo XML file path or semicolon-separated list. Repeatable.
+  --jacoco-test <file>           Alias for --jacoco (backward-compat).
+  --jacoco-system <file>         Alias for --jacoco (backward-compat).
+  --jacoco-combined <file>       Alias for --jacoco (backward-compat).
   --frontend-json <file-or-list> Frontend coverage-final.json path or semicolon-separated list. Repeatable.
+  --frontend-system-json <file>  Alias for --frontend-json (backward-compat).
+  --frontend-test-json <file>    Alias for --frontend-json (backward-compat).
   --out <dir>                    Output directory (default: coverage/merged)
   -h, --help                     Show help
 
 Environment overrides:
   JACOCO_REPORTS                 Semicolon-separated JaCoCo XML paths.
+  JACOCO_TEST_XML                Alias for a single JaCoCo unit/integration XML (backward-compat).
+  JACOCO_SYSTEM_XML              Alias for a single JaCoCo system XML (backward-compat).
+  JACOCO_COMBINED_XML            Alias for a single JaCoCo combined XML (backward-compat).
   FRONTEND_COVERAGE_JSON_LIST    Semicolon-separated frontend coverage JSON paths.
+  FRONTEND_COVERAGE_JSON         Alias for a single frontend JSON path (backward-compat).
+  FRONTEND_SYSTEM_COVERAGE_JSON  Alias for a single frontend system JSON path (backward-compat).
+  FRONTEND_TEST_COVERAGE_JSON    Alias for a single frontend unit-test JSON path (backward-compat).
   MERGED_COVERAGE_OUT            Output directory override.
 USAGE
 }
@@ -199,8 +210,26 @@ join_with_semicolon() {
 if [[ -n "${JACOCO_REPORTS:-}" ]]; then
   append_split_values append_unique_jacoco "${JACOCO_REPORTS}"
 fi
+if [[ -n "${JACOCO_TEST_XML:-}" ]]; then
+  append_unique_jacoco "${JACOCO_TEST_XML}"
+fi
+if [[ -n "${JACOCO_SYSTEM_XML:-}" ]]; then
+  append_unique_jacoco "${JACOCO_SYSTEM_XML}"
+fi
+if [[ -n "${JACOCO_COMBINED_XML:-}" ]]; then
+  append_unique_jacoco "${JACOCO_COMBINED_XML}"
+fi
 if [[ -n "${FRONTEND_COVERAGE_JSON_LIST:-}" ]]; then
   append_split_values append_unique_frontend "${FRONTEND_COVERAGE_JSON_LIST}"
+fi
+if [[ -n "${FRONTEND_COVERAGE_JSON:-}" ]]; then
+  append_unique_frontend "${FRONTEND_COVERAGE_JSON}"
+fi
+if [[ -n "${FRONTEND_SYSTEM_COVERAGE_JSON:-}" ]]; then
+  append_unique_frontend "${FRONTEND_SYSTEM_COVERAGE_JSON}"
+fi
+if [[ -n "${FRONTEND_TEST_COVERAGE_JSON:-}" ]]; then
+  append_unique_frontend "${FRONTEND_TEST_COVERAGE_JSON}"
 fi
 
 while [[ $# -gt 0 ]]; do
@@ -209,8 +238,16 @@ while [[ $# -gt 0 ]]; do
       append_split_values append_unique_jacoco "${2:-}"
       shift 2
       ;;
+    --jacoco-test|--jacoco-system|--jacoco-combined)
+      append_unique_jacoco "${2:-}"
+      shift 2
+      ;;
     --frontend-json|--frontend-jsons)
       append_split_values append_unique_frontend "${2:-}"
+      shift 2
+      ;;
+    --frontend-system-json|--frontend-test-json)
+      append_unique_frontend "${2:-}"
       shift 2
       ;;
     --out)

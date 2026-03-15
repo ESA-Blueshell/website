@@ -12,8 +12,6 @@ on:
       - '.github/workflows/**'
       - 'docker-compose.yml'
       - 'docker-compose.dev.yml'
-      - 'generate_openapi.sh'
-      - 'merge-coverage.sh'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle/**'
@@ -443,8 +441,8 @@ jobs:
       - name: Merge all discovered coverage reports
         run: |
           set -euo pipefail
-          chmod +x ./merge-coverage.sh
-          ./merge-coverage.sh --out "coverage/merged"
+          chmod +x ./scripts/merge-coverage.sh
+          ./scripts/merge-coverage.sh --out "coverage/merged"
 
       - name: Upload merged coverage artifact
         uses: actions/upload-artifact@v4

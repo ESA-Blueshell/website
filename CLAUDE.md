@@ -29,7 +29,7 @@ docker compose -f docker-compose.dev.yml run api ./gradlew :api:test --tests "ne
 ./gradlew :api:build
 
 # Generate OpenAPI spec and TypeScript client
-./generate_openapi.sh
+./scripts/generate_openapi.sh
 ```
 
 ### Frontend
@@ -826,7 +826,7 @@ data class CreateUserCommand(
 2. **API Contract Changes:**
    ```bash
    # Regenerate OpenAPI spec and TypeScript client
-   ./generate_openapi.sh
+   ./scripts/generate_openapi.sh
 
    # Frontend will now have updated API client
    ```
@@ -937,7 +937,7 @@ ALTER TABLE users ADD COLUMN roles JSON NOT NULL DEFAULT '[]';
 - **Swagger UI (dev)**: https://localhost/api/swagger-ui
 - **Swagger UI (prod)**: https://esa-blueshell.nl/api/swagger-ui
 - **OpenAPI Spec**: `/api/v3/api-docs`
-- **Client Generation**: Run `./generate_openapi.sh` after API changes
+- **Client Generation**: Run `./scripts/generate_openapi.sh` after API changes
 
 ---
 

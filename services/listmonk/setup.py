@@ -5,8 +5,9 @@ Idempotent Listmonk first-time setup.
 Performs in order:
   1. Admin account setup via the first-time setup wizard (if not yet configured)
   2. API user — creates a type=api user and writes its token to the secrets volume
-  3. Theme   — injects custom CSS from $THEME_CSS_PATH into app.custom_css
-  4. Bounce  — enables bounce processing and optionally configures an IMAP mailbox
+  3. SMTP    — configures an outbound SMTP server (skipped if LISTMONK_SMTP_HOST unset)
+  4. Theme   — injects custom CSS from $THEME_CSS_PATH into app.custom_css
+  5. Bounce  — enables bounce processing and optionally configures an IMAP mailbox
 
 All steps are idempotent and safe to re-run.
 
@@ -28,6 +29,16 @@ LISTMONK_ADMIN_PASSWORD    Admin password (must match LISTMONK_ADMIN_PASSWORD in
 LISTMONK_ADMIN_EMAIL       Admin e-mail for first-time setup wizard (default: admin@listmonk.local)
 LISTMONK_ADMIN_API_USER    API username to create (default: api)
 LISTMONK_API_TOKEN_FILE    Where to write the API token (default: /secrets/api-token.env)
+
+Optional (SMTP outbound)
+LISTMONK_SMTP_HOST              SMTP host — step skipped if empty
+LISTMONK_SMTP_PORT              default: 25
+LISTMONK_SMTP_AUTH_PROTOCOL     none | plain | login | cram-md5 (default: none)
+LISTMONK_SMTP_USERNAME          default: empty
+LISTMONK_SMTP_PASSWORD          default: empty
+LISTMONK_SMTP_HELLO_HOSTNAME    EHLO hostname (default: empty — Listmonk uses its own)
+LISTMONK_SMTP_TLS_TYPE          none | starttls | tls (default: none)
+LISTMONK_SMTP_TLS_SKIP_VERIFY   default: false
 
 Optional (bounce mailbox)
 LISTMONK_BOUNCE_MAILBOX_ENABLED         true to configure IMAP (default: false)
@@ -245,41 +256,7 @@ def ensure_api_user() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Step 3: Theme
-# ---------------------------------------------------------------------------
-
-def apply_theme() -> None:
-    if not os.path.exists(THEME_CSS_PATH):
-        print(f"No theme CSS found at {THEME_CSS_PATH} — skipping theme.")
-        return
-
-    with open(THEME_CSS_PATH) as f:
-        css = f.read()
-
-    print("Fetching Listmonk settings to apply theme…")
-    try:
-        response = api_get("/api/settings")
-    except urllib.error.HTTPError as exc:
-        print(f"WARNING: Failed to fetch settings for theme: HTTP {exc.code} — {exc.reason}", file=sys.stderr)
-        return
-
-    settings = response.get("data", response)
-    # Listmonk v4.1.0 returns flat dotted keys (e.g. "appearance.admin.custom_css")
-    settings["appearance.admin.custom_css"] = css
-    settings["appearance.public.custom_css"] = css
-
-    try:
-        api_put("/api/settings", settings)
-    except urllib.error.HTTPError as exc:
-        body = exc.read().decode(errors="replace")
-        print(f"WARNING: Failed to apply theme: HTTP {exc.code} — {body}", file=sys.stderr)
-        return
-
-    print("Theme applied.")
-
-
-# ---------------------------------------------------------------------------
-# Step 4: SMTP configuration
+# Step 3: SMTP configuration
 # ---------------------------------------------------------------------------
 
 def configure_smtp() -> None:
@@ -327,6 +304,40 @@ def configure_smtp() -> None:
         return
 
     print(f"SMTP configured: {SMTP_HOST}:{smtp_entry['port']}")
+
+
+# ---------------------------------------------------------------------------
+# Step 4: Theme
+# ---------------------------------------------------------------------------
+
+def apply_theme() -> None:
+    if not os.path.exists(THEME_CSS_PATH):
+        print(f"No theme CSS found at {THEME_CSS_PATH} — skipping theme.")
+        return
+
+    with open(THEME_CSS_PATH) as f:
+        css = f.read()
+
+    print("Fetching Listmonk settings to apply theme…")
+    try:
+        response = api_get("/api/settings")
+    except urllib.error.HTTPError as exc:
+        print(f"WARNING: Failed to fetch settings for theme: HTTP {exc.code} — {exc.reason}", file=sys.stderr)
+        return
+
+    settings = response.get("data", response)
+    # Listmonk v4.1.0 returns flat dotted keys (e.g. "appearance.admin.custom_css")
+    settings["appearance.admin.custom_css"] = css
+    settings["appearance.public.custom_css"] = css
+
+    try:
+        api_put("/api/settings", settings)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode(errors="replace")
+        print(f"WARNING: Failed to apply theme: HTTP {exc.code} — {body}", file=sys.stderr)
+        return
+
+    print("Theme applied.")
 
 
 # ---------------------------------------------------------------------------

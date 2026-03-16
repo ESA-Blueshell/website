@@ -1,0 +1,5 @@
+# Ignore everything DMS generates at runtime (SSL certs, DKIM keys, etc.)
+*
+# Keep version-controlled files
+!.gitignore
+!postfix-accounts.cf

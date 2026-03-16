@@ -8,40 +8,41 @@
     >
       <v-card class="pa-6">
         <Form
+          ref="formRef"
           v-slot="{ meta }"
           as="form"
           data-testid="reset-password-form"
           @submit="onSubmit"
         >
           <v-row>
-            <VvField
-              v-model="form.password"
-              :component-props="{
-                type: showPass ? 'text' : 'password',
-                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
-                autocomplete: 'new-password',
-                label: 'New Password',
-                'data-testid': 'reset-password-new-password-field',
-                'onClick:append-inner': () => (showPass = !showPass)
-              }"
-              name="password"
-              rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
-            />
+            <v-col cols="12">
+              <VvField
+                v-model="form.password"
+                :component-props="{
+                  autocomplete: 'new-password',
+                  label: 'New Password',
+                  'data-testid': 'reset-password-new-password-field',
+                  ...passwordFieldProps
+                }"
+                name="password"
+                rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+              />
+            </v-col>
           </v-row>
           <v-row>
-            <VvField
-              v-model="passwordAgain"
-              :component-props="{
-                type: showPass ? 'text' : 'password',
-                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
-                autocomplete: 'new-password',
-                label: 'Repeat New Password',
-                'data-testid': 'reset-password-repeat-password-field',
-                'onClick:append-inner': () => (showPass = !showPass)
-              }"
-              name="passwordAgain"
-              rules="required|match:@password"
-            />
+            <v-col cols="12">
+              <VvField
+                v-model="passwordAgain"
+                :component-props="{
+                  autocomplete: 'new-password',
+                  label: 'Repeat New Password',
+                  'data-testid': 'reset-password-repeat-password-field',
+                  ...passwordFieldProps
+                }"
+                name="passwordAgain"
+                rules="required|match:@password"
+              />
+            </v-col>
           </v-row>
 
           <v-row
@@ -94,19 +95,20 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Form, useForm} from "vee-validate"
+import {Form} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {type PasswordResetRequest, setPassword} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {apply} from "@/plugins/validation.ts"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
+import {useVeeForm, usePasswordToggle} from "@/composables/formUtils"
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
 const succeeded = ref(false)
-const showPass = ref(false)
 const errorMessage = ref<string | null>(null)
 
 const passwordAgain = ref<string>("")
@@ -117,7 +119,8 @@ const form = ref<PasswordResetRequest>({
   token: "",
 })
 
-const {handleSubmit} = useForm()
+const {formRef} = useVeeForm()
+const {passwordFieldProps} = usePasswordToggle()
 
 onMounted(() => {
   const resolvedToken = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
@@ -130,7 +133,7 @@ onMounted(() => {
   }
 })
 
-const onSubmit = handleSubmit(async () => {
+async function onSubmit() {
   loading.value = true
   errorMessage.value = null
 
@@ -139,12 +142,14 @@ const onSubmit = handleSubmit(async () => {
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
   } catch (e: unknown) {
-    $handleNetworkError(e)
-    errorMessage.value = "We couldn't reset your password. The link may be invalid or expired."
+    if (!formRef.value || !apply(formRef.value, e)) {
+      $handleNetworkError(e)
+      errorMessage.value = "We couldn't reset your password. The link may be invalid or expired."
+    }
   } finally {
     loading.value = false
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>

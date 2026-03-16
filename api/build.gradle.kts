@@ -1,11 +1,11 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.tasks.bundling.BootJar
 import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     id("org.springframework.boot") version "4.0.3"
+    id("org.graalvm.buildtools.native") version "0.10.6"
     jacoco
 
     kotlin("jvm")
@@ -154,10 +154,6 @@ springBoot {
     mainClass.set("net.blueshell.api.ApiApplicationKt")
 }
 
-tasks.named<BootJar>("bootJar") {
-    dependsOn("processAot")
-    classpath(sourceSets["aot"].output)
-}
 
 noArg {
     annotation("jakarta.persistence.Entity")

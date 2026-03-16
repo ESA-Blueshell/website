@@ -4,6 +4,7 @@ import com.microsoft.playwright.Page
 import net.blueshell.api.domain.user.persistence.repository.MemberRepository
 import net.blueshell.api.factory.contribution.persistence.ContributionFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
+import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
@@ -29,6 +30,9 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
 
     @Autowired
     private lateinit var memberRepository: MemberRepository
+
+    @Autowired
+    private lateinit var contactRepository: ContactRepository
 
     @Test
     fun `member visibility follows membership period when switching periods`() {
@@ -169,9 +173,10 @@ class MemberManagerPageSystemTest : FrontendSystemTestBase() {
             }
 
             waitFor(
-                onTimeoutMessage = { "Expected board-created user '$username' version to be updated by async contact sync" }
+                onTimeoutMessage = { "Expected board-created user '$username' contact to be created by async contact sync" }
             ) {
-                (userRepository.findByUsername(username).orElse(null)?.version ?: 0L) > 0L
+                val userId = userRepository.findByUsername(username).orElse(null)?.id
+                userId != null && contactRepository.findByUserId(userId) != null
             }
 
             MemberManagerHelper.open(page, frontendUrl)

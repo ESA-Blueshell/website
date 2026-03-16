@@ -1,8 +1,5 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import "flag-icons/css/flag-icons.min.css"
-import "v-phone-input/styles"
-import {VPhoneInput} from "v-phone-input"
 import {
   createUser,
   findMemberProfileByUserId,
@@ -360,12 +357,11 @@ defineExpose({validate, save})
           <VvField
             v-model="user.phoneNumber"
             test-id="user-form-phone-number-field"
-            :component="VPhoneInput"
+            component="VPhoneInput"
             :component-props="{
               defaultCountry: 'NL',
-              countryIconMode: 'svg',
               mode: 'international',
-              placeholder: 'Phone Number'
+              placeholder: 'Phone Number',
             }"
             :rules="`required|phoneMobile:${country}`"
             label="Phone Number*"

@@ -21,8 +21,8 @@ services:
     image: ghcr.io/esa-blueshell/api:latest
     pull_policy: always
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: api/Dockerfile
     restart: unless-stopped
     env_file:
       - .api.env
@@ -30,6 +30,8 @@ services:
       - TZ=Europe/Amsterdam
       - APP_URL=https://esa-blueshell.nl/api
       - FRONTEND_URL=https://esa-blueshell.nl
+      - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:-listmonk}
+      - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:-listmonk}
     volumes:
       - "../../storage:/home/storage"
       - "listmonk-secrets:/run/secrets/listmonk:ro"

@@ -10,16 +10,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Where Playwright stores browsers
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-COPY . .
+COPY api/ .
+COPY shared/openapi/ /shared/openapi/
+COPY listmonk/openapi.yaml /listmonk/openapi.yaml
 
 RUN chmod +x gradlew
 
-# Build app
-RUN --mount=type=cache,target=/root/.gradle \
+# Download Gradle distribution into the image layer so it is available at
+# runtime even when the gradle-cache volume starts empty (e.g. after down -v).
+RUN ./gradlew --no-daemon --version
+
+# Build app (only dependency caches go into the BuildKit cache mount)
+RUN --mount=type=cache,target=/root/.gradle/caches \
     ./gradlew --no-daemon assemble -x test
 
 # Install Playwright OS deps + Chromium during build
-RUN --mount=type=cache,target=/root/.gradle \
+RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=cache,target=/ms-playwright \
     ./gradlew --no-daemon installChromium -x test
 

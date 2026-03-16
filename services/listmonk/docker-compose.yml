@@ -13,16 +13,13 @@ services:
       LISTMONK_db__password: ${LISTMONK_DB_PASSWORD:?LISTMONK_DB_PASSWORD required}
       LISTMONK_db__database: listmonk
       LISTMONK_db__ssl_mode: disable
-      LISTMONK_ADMIN_API_USER: ${LISTMONK_ADMIN_API_USER:-api}
-    volumes:
-      - listmonk-secrets:/secrets
-    # Capture the API token printed to stderr during --install.
-    # Written to the shared volume so the api service can read it on startup.
+      # LISTMONK_ADMIN_USER/PASSWORD are read by the binary during --install to create the initial admin.
+      # They must match LISTMONK_ADMIN_USERNAME/PASSWORD used by listmonk-setup and the api service.
+      LISTMONK_ADMIN_USER: ${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME required}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD required}
     command: >-
       sh -c "
-        ./listmonk --install --idempotent --yes 2>/tmp/install.err;
-        cat /tmp/install.err >&2;
-        grep 'LISTMONK_ADMIN_API_TOKEN' /tmp/install.err | sed 's/^export //' > /secrets/api-token.env;
+        ./listmonk --install --idempotent --yes &&
         ./listmonk --upgrade --yes &&
         exec ./listmonk
       "
@@ -54,32 +51,18 @@ services:
       - database
 
   listmonk-setup:
-    image: curlimages/curl:8.12.1
+    image: python:3.12-alpine
     restart: "no"
     depends_on:
       listmonk:
         condition: service_healthy
     environment:
-      LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME required}
-      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD required}
-      LISTMONK_ADMIN_EMAIL: ${LISTMONK_ADMIN_EMAIL:?LISTMONK_ADMIN_EMAIL required}
-    volumes:
-      - ./setup.sh:/setup.sh:ro
-    entrypoint: ["sh", "/setup.sh"]
-    networks:
-      - frontback
-      - database
-
-  listmonk-theme:
-    image: python:3.12-alpine
-    restart: "no"
-    depends_on:
-      listmonk-setup:
-        condition: service_completed_successfully
-    environment:
       LISTMONK_URL: "http://listmonk:9000"
       LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME required}
       LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD required}
+      LISTMONK_ADMIN_EMAIL: ${LISTMONK_ADMIN_EMAIL:?LISTMONK_ADMIN_EMAIL required}
+      LISTMONK_ADMIN_API_USER: ${LISTMONK_ADMIN_API_USER:-api}
+      LISTMONK_API_TOKEN_FILE: /secrets/api-token.env
       LISTMONK_BOUNCE_MAILBOX_ENABLED: ${LISTMONK_BOUNCE_MAILBOX_ENABLED:-false}
       LISTMONK_BOUNCE_MAILBOX_HOST: ${LISTMONK_BOUNCE_MAILBOX_HOST:-}
       LISTMONK_BOUNCE_MAILBOX_PORT: ${LISTMONK_BOUNCE_MAILBOX_PORT:-993}
@@ -91,10 +74,10 @@ services:
       LISTMONK_BOUNCE_MAILBOX_RETURN_PATH: ${LISTMONK_BOUNCE_MAILBOX_RETURN_PATH:-}
       LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL: ${LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL:-10m}
     volumes:
-      - ./apply-theme.py:/apply-theme.py:ro
+      - ./setup.py:/setup.py:ro
       - ./custom/theme.css:/theme.css:ro
-      - ./configure-bounce.py:/configure-bounce.py:ro
-    command: ["sh", "-c", "python /apply-theme.py && python /configure-bounce.py"]
+      - listmonk-secrets:/secrets
+    command: ["python", "/setup.py"]
     networks:
       - frontback
 

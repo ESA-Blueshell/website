@@ -1,0 +1,9 @@
+# Exclude everything not needed for the API Docker build.
+# Heavy / irrelevant service directories:
+.git
+frontend/
+nginx/
+mailserver/
+# Keep only listmonk/openapi.yaml (needed by the listmonk client generator)
+listmonk/*
+!listmonk/openapi.yaml

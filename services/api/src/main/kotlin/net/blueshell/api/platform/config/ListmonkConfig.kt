@@ -9,7 +9,6 @@ import net.blueshell.clients.listmonk.ApiClient
 import net.blueshell.clients.listmonk.model.NewTemplate
 import net.blueshell.clients.listmonk.model.NewTemplateType
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -26,20 +25,18 @@ class ListmonkConfig {
     @Bean
     @Profile("!test")
     fun listmonkApiClient(props: ListmonkProperties): ApiClient {
-        val client = ApiClient()
-        client.basePath = props.api.baseUrl
-
-        val apiCredentials = readApiTokenFile(props)
-        if (apiCredentials != null) {
-            val (apiUser, token) = apiCredentials
-            client.setUsername(apiUser)
-            client.setPassword(token)
+        val (username, password) = readApiTokenFile(props)?.also { (apiUser, _) ->
             log.info("Listmonk: using API token auth (user={})", apiUser)
-        } else {
-            client.setUsername(props.api.username)
-            client.setPassword(props.api.password)
+        } ?: run {
             log.info("Listmonk: using basic auth (user={})", props.api.username)
+            props.api.username to props.api.password
         }
+        val encoded = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
+        val restClient = ApiClient.buildRestClientBuilder()
+            .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic $encoded")
+            .build()
+        val client = ApiClient(restClient)
+        client.basePath = props.api.baseUrl
         return client
     }
 
@@ -116,6 +113,7 @@ class ListmonkConfig {
             val req = NewTemplate()
                 .name(TEMPLATE_NAME)
                 .type(NewTemplateType.TX)
+                .subject("{{ .Tx.Subject }}")  // forwarded from each transactional send request
                 .body(TEMPLATE_BODY)
             templatesApi.createTemplate(req)?.data
         } catch (e: Exception) {

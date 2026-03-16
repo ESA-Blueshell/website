@@ -9,8 +9,10 @@ services:
     networks:
       - global_network
     depends_on:
-      - api
-      - frontend
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     volumes:
       - dev-ssl:/etc/nginx/ssl
     profiles:

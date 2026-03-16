@@ -24,7 +24,7 @@ WORKDIR /app
 COPY --from=build --chown=app:app /app/api/build/libs/*.jar /app/app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod \
-    JAVA_OPTS="-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=20.0"
+    JAVA_OPTS="-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=20.0 -Dspring.aot.enabled=true"
 
 EXPOSE 8080
 USER app

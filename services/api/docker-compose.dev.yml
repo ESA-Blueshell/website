@@ -26,12 +26,12 @@ services:
     image: api:dev
     pull_policy: never
     build:
-      context: .
-      dockerfile: Dockerfile-dev
+      context: ..
+      dockerfile: api/Dockerfile-dev
     volumes:
       - .:/app
       - ../../storage:/home/storage
-      - gradle-cache:/root/.gradle
+      - gradle-cache:/root/.gradle/caches
       - playwright-browsers:/ms-playwright
       - playwright-browsers:/root/.cache/ms-playwright
       - listmonk-secrets:/run/secrets/listmonk:ro
@@ -52,6 +52,8 @@ services:
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
       - LISTMONK_FROM_ADDRESS=no-reply@localhost
       - LISTMONK_REPLY_TO_ADDRESS=dev@localhost
+      - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:-listmonk}
+      - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:-listmonk}
     depends_on:
       db:
         condition: service_healthy

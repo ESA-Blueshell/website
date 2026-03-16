@@ -4,7 +4,9 @@ FROM eclipse-temurin:24-jdk-alpine AS build
 
 WORKDIR /app
 
-COPY . .
+COPY api/ .
+COPY shared/openapi/ /shared/openapi/
+COPY listmonk/openapi.yaml /listmonk/openapi.yaml
 
 RUN chmod +x gradlew
 

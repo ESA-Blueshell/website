@@ -6,8 +6,6 @@ import UserForm from "@/components/form/UserForm.vue"
 const {
   mockStore,
   mockFindMemberProfileByUserId,
-  MockVPhoneInput,
-  MockVPhoneCountryFlagSvg,
 } = vi.hoisted(() => ({
   mockStore: {
     getters: {
@@ -16,8 +14,6 @@ const {
     },
   },
   mockFindMemberProfileByUserId: vi.fn(),
-  MockVPhoneInput: {name: "VPhoneInput", template: "<v-phone-input-stub />"},
-  MockVPhoneCountryFlagSvg: {name: "VPhoneCountryFlagSvg"},
 }))
 
 vi.mock("vuex", async (importOriginal) => {
@@ -29,10 +25,7 @@ vi.mock("vuex", async (importOriginal) => {
 })
 vi.mock("flag-icons/css/flag-icons.min.css", () => ({}))
 vi.mock("v-phone-input/styles", () => ({}))
-vi.mock("v-phone-input", () => ({
-  VPhoneInput: MockVPhoneInput,
-  VPhoneCountryFlagSvg: MockVPhoneCountryFlagSvg,
-}))
+vi.mock("v-phone-input", () => ({}))
 
 vi.mock("@/services/api", () => ({
   createUser: vi.fn(),
@@ -340,7 +333,7 @@ describe("UserForm", () => {
     expect(rules.studentNumber).toBeUndefined()
   })
 
-  it("passes VPhoneCountryFlagSvg as countryDisplayComponent to the phone field", () => {
+  it("uses the globally registered VPhoneInput component for the phone field", () => {
     shallowMount(UserForm, {
       props: {
         modelValue: baseModel(),
@@ -355,8 +348,6 @@ describe("UserForm", () => {
     })
     const phoneField = capturedProps.find((p) => p.name === "phoneNumber")
     expect(phoneField).toBeDefined()
-    expect(phoneField!.component).toBe(MockVPhoneInput)
-    const componentProps = phoneField!.componentProps as Record<string, unknown>
-    expect(componentProps.countryDisplayComponent).toBe(MockVPhoneCountryFlagSvg)
+    expect(phoneField!.component).toBe("VPhoneInput")
   })
 })

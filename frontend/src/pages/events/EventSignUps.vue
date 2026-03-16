@@ -211,9 +211,15 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
                     :key="idx"
                     class="text-center choice-col"
                   >
-                    <v-tooltip :text="opt" location="bottom">
+                    <v-tooltip
+                      :text="opt"
+                      location="bottom"
+                    >
                       <template #activator="{ props }">
-                        <span v-bind="props" class="choice-label">{{ opt }}</span>
+                        <span
+                          v-bind="props"
+                          class="choice-label"
+                        >{{ opt }}</span>
                       </template>
                     </v-tooltip>
                   </th>

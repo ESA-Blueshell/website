@@ -11,10 +11,8 @@ import {createVPhoneInput, selectPhoneCountryInput, VPhoneCountryFlagSvg} from "
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/styles"
 
-const vPhoneInput = createVPhoneInput({
-  ...selectPhoneCountryInput,
-  countryDisplayComponent: VPhoneCountryFlagSvg,
-})
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const vPhoneInput = createVPhoneInput({...(selectPhoneCountryInput as any), countryDisplayComponent: VPhoneCountryFlagSvg})
 
 const app = createApp(App)
 app.use(store)

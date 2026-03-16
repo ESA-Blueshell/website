@@ -20,15 +20,7 @@ vi.mock("vuex", async (importOriginal) => {
 vi.mock("flag-icons/css/flag-icons.min.css", () => ({}))
 vi.mock("v-phone-input/styles", () => ({}))
 
-const {MockVPhoneCountryFlagSvg, MockVPhoneInput} = vi.hoisted(() => ({
-  MockVPhoneCountryFlagSvg: {name: "VPhoneCountryFlagSvg"},
-  MockVPhoneInput: {name: "VPhoneInput", template: "<v-phone-input-stub />"},
-}))
-
-vi.mock("v-phone-input", () => ({
-  VPhoneInput: MockVPhoneInput,
-  VPhoneCountryFlagSvg: MockVPhoneCountryFlagSvg,
-}))
+vi.mock("v-phone-input", () => ({}))
 
 const capturedProps: Record<string, unknown>[] = []
 const vvFieldStub = {
@@ -72,7 +64,7 @@ describe("GuestForm", () => {
     })
   })
 
-  it("passes VPhoneCountryFlagSvg as countryDisplayComponent to the phone field", () => {
+  it("uses the globally registered VPhoneInput component for the phone field", () => {
     shallowMount(GuestForm, {
       global: {
         stubs: {
@@ -83,9 +75,7 @@ describe("GuestForm", () => {
     })
     const phoneField = capturedProps.find((p) => p.name === "phoneNumber")
     expect(phoneField).toBeDefined()
-    expect(phoneField!.component).toBe(MockVPhoneInput)
-    const componentProps = phoneField!.componentProps as Record<string, unknown>
-    expect(componentProps.countryDisplayComponent).toBe(MockVPhoneCountryFlagSvg)
+    expect(phoneField!.component).toBe("VPhoneInput")
   })
 
   it("hides guest form fields for logged-in users", () => {

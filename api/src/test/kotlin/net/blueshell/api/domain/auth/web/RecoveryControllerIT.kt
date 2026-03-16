@@ -9,6 +9,8 @@ import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -16,6 +18,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Duration
+import java.util.stream.Stream
 
 @SpringBootTest
 class RecoveryControllerIT : UserTestSupport() {
@@ -87,6 +90,25 @@ class RecoveryControllerIT : UserTestSupport() {
             assertThat(result.response.contentAsString)
                 .doesNotContain("\"rejectedValue\"")
                 .doesNotContain(weakPassword)
+        }
+
+        @ParameterizedTest(name = "invalid password: {0}")
+        @MethodSource("net.blueshell.api.domain.auth.web.RecoveryControllerIT#invalidPasswords")
+        fun `validates various invalid passwords`(invalidPassword: String) {
+            val user = createUserWithRole(Role.MEMBER)
+            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
+
+            val result = mvc.perform(
+                post("/recovery/password")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(authRequestFactory.passwordResetPayload(token, invalidPassword))
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("password"))
+                .andExpect(jsonPath("$.errors[0].message").isNotEmpty)
+                .andReturn()
+
+            assertThat(result.response.contentAsString).doesNotContain(invalidPassword)
         }
     }
 
@@ -188,5 +210,17 @@ class RecoveryControllerIT : UserTestSupport() {
                     assertThat(it.payload).contains("\"resetType\":\"MEMBER_ACTIVATION\"")
                 }
         }
+    }
+
+    companion object {
+        @JvmStatic
+        fun invalidPasswords(): Stream<String> = Stream.of(
+            "Ab1!",                          // too short (4 chars)
+            "ABCDEF1!",                      // no lowercase
+            "abcdef1!",                      // no uppercase
+            "Abcdef!!",                      // no digit
+            "Abcdef12",                      // no special char
+            "Abcdef1!" + "x".repeat(93),     // too long (101 chars)
+        )
     }
 }

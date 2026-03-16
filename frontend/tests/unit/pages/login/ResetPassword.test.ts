@@ -29,14 +29,18 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
-vi.mock("vee-validate", () => ({
-  Form: {
-    template: "<form @submit.prevent><slot :meta='{ valid: true }' /></form>",
-  },
-  useForm: () => ({
-    handleSubmit: (cb: () => Promise<void>) => cb,
-  }),
-}))
+vi.mock("vee-validate", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vee-validate")>()
+  return {
+    ...actual,
+    Form: {
+      template: "<form @submit.prevent><slot :meta='{ valid: true }' /></form>",
+    },
+    useForm: () => ({
+      handleSubmit: (cb: () => Promise<void>) => cb,
+    }),
+  }
+})
 
 vi.mock("@/services/api", () => ({
   setPassword: mockSetPassword,

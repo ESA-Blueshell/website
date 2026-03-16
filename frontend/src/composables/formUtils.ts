@@ -56,7 +56,7 @@ export function usePasswordToggle(defaultVisible = false) {
   const passwordFieldProps = computed(() => ({
     type: isPasswordVisible.value ? "text" : "password",
     "append-inner-icon": isPasswordVisible.value ? "mdi-eye" : "mdi-eye-off",
-    "click:append-inner": () => {
+    "onClick:append-inner": () => {
       isPasswordVisible.value = !isPasswordVisible.value
     },
   }))

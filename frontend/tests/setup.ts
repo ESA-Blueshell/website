@@ -1,6 +1,13 @@
 import {afterEach, beforeEach, vi} from "vitest"
 import {config} from "@vue/test-utils"
 
+config.global.config = {
+  warnHandler: (msg: string) => {
+    if (msg.startsWith("Failed to resolve component:")) return
+    console.warn("[Vue warn]:", msg)
+  },
+}
+
 config.global.stubs = {
   RouterLink: {
     template: "<a><slot /></a>",

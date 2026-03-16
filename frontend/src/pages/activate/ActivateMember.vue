@@ -15,43 +15,45 @@
           @submit="onSubmit"
         >
           <v-row>
-            <VvField
-              v-model="form.username"
-              :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
-              name="username"
-              rules="required|alphaNum"
-            />
+            <v-col cols="12">
+              <VvField
+                v-model="form.username"
+                :component-props="{ label: 'Username', autocomplete: 'username', 'data-testid': 'activate-member-username-field' }"
+                name="username"
+                rules="required|alphaNum"
+              />
+            </v-col>
           </v-row>
           <v-row>
-            <VvField
-              v-model="form.password"
-              :component-props="{
-                type: showPass ? 'text' : 'password',
-                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
-                label: 'Password',
-                autocomplete: 'new-password',
-                'data-testid': 'activate-member-password-field',
-                'onClick:append-inner': () => (showPass.value = !showPass.value)
-              }"
-              name="password"
-              rules="required|minChars:8|hasLower|hasUpper|hasNumber|hasSpecial"
-            />
+            <v-col cols="12">
+              <VvField
+                v-model="form.password"
+                :component-props="{
+                  label: 'Password',
+                  autocomplete: 'new-password',
+                  'data-testid': 'activate-member-password-field',
+                  ...passwordFieldProps
+                }"
+                name="password"
+                rules="required|minChars:8|maxChars:100|hasLower|hasUpper|hasNumber|hasSpecial"
+              />
+            </v-col>
           </v-row>
 
           <v-row>
-            <VvField
-              v-model="passwordAgain"
-              :component-props="{
-                type: showPass ? 'text' : 'password',
-                'append-inner-icon': showPass ? 'mdi-eye' : 'mdi-eye-off',
-                label: 'Repeat Password',
-                autocomplete: 'new-password',
-                'data-testid': 'activate-member-repeat-password-field',
-                'onClick:append-inner': () => (showPass.value = !showPass.value)
-              }"
-              name="passwordAgain"
-              rules="required|match:@password"
-            />
+            <v-col cols="12">
+              <VvField
+                v-model="passwordAgain"
+                :component-props="{
+                  label: 'Repeat Password',
+                  autocomplete: 'new-password',
+                  'data-testid': 'activate-member-repeat-password-field',
+                  ...passwordFieldProps
+                }"
+                name="passwordAgain"
+                rules="required|match:@password"
+              />
+            </v-col>
           </v-row>
 
           <v-row
@@ -97,20 +99,20 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import {Form, type FormContext, useForm} from "vee-validate"
+import {Form} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {memberActivate, type MemberActivationRequest} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {apply} from "@/plugins/validation.ts"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
+import {useVeeForm, usePasswordToggle} from "@/composables/formUtils"
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
 const succeeded = ref(false)
-const showPass = ref(false)
 const errorMessage = ref<string | null>(null)
 
 const form = ref<MemberActivationRequest>({
@@ -122,9 +124,8 @@ const form = ref<MemberActivationRequest>({
 const passwordAgain = ref("")
 const RECOVERY_TOKEN_STORAGE_KEY = "recovery:member-activation:token"
 
-const formRef = ref<FormContext>()
-
-const {handleSubmit, validate} = useForm()
+const {formRef} = useVeeForm()
+const {passwordFieldProps} = usePasswordToggle()
 
 onMounted(() => {
   form.value.token = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
@@ -139,9 +140,7 @@ function redirectToLogin(ms = 2000) {
   window.setTimeout(() => router.push({name: "login"}), ms)
 }
 
-const onSubmit = handleSubmit(async () => {
-  if (!await validate()) return
-
+async function onSubmit() {
   loading.value = true
   errorMessage.value = null
 
@@ -153,12 +152,12 @@ const onSubmit = handleSubmit(async () => {
   } catch (e: unknown) {
     if (!formRef.value || !apply(formRef.value, e)) {
       $handleNetworkError(e)
-      errorMessage.value = "We couldn’t activate your membership. The link may be invalid or expired."
+      errorMessage.value = "We couldn't activate your membership. The link may be invalid or expired."
     }
   } finally {
     loading.value = false
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>

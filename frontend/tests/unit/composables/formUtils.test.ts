@@ -93,7 +93,7 @@ describe("formUtils composables", () => {
   it("toggles password field props", () => {
     const {isPasswordVisible, passwordFieldProps} = usePasswordToggle(false)
     expect(passwordFieldProps.value.type).toBe("password")
-    passwordFieldProps.value["click:append-inner"]()
+    passwordFieldProps.value["onClick:append-inner"]()
     expect(isPasswordVisible.value).toBe(true)
     expect(passwordFieldProps.value.type).toBe("text")
   })

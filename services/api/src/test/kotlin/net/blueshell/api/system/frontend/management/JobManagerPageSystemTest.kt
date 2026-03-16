@@ -86,16 +86,16 @@ class JobManagerPageSystemTest : FrontendSystemTestBase() {
             assertThat(retryResponse.status()).isEqualTo(200)
 
             waitFor(
-                onTimeoutMessage = { "Expected failed job $failedId retry to increment attempts and refresh queuedAt" }
+                onTimeoutMessage = { "Expected failed job $failedId retry to become DEAD with refreshed queuedAt" }
             ) {
                 val updated = jobExecutionRepository.findById(failedId).orElseThrow()
-                updated.attempts == 3 &&
+                updated.status == JobExecutionStatus.DEAD &&
                     updated.queuedAt != null &&
                     updated.queuedAt!!.isAfter(initialQueuedAt)
             }
 
             val updated = jobExecutionRepository.findById(failedId).orElseThrow()
-            assertThat(updated.attempts).isEqualTo(3)
+            assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)
             assertThat(updated.queuedAt).isNotNull()
             assertThat(updated.queuedAt).isAfter(initialQueuedAt)
         }

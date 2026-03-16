@@ -35,6 +35,8 @@ services:
       - playwright-browsers:/ms-playwright
       - playwright-browsers:/root/.cache/ms-playwright
       - listmonk-secrets:/run/secrets/listmonk:ro
+      - ../shared/openapi:/shared/openapi:ro
+      - ../listmonk/openapi.yaml:/listmonk/openapi.yaml:ro
     ports:
       - "8080:8080"
       - "5005:5005"

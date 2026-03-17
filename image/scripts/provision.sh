@@ -391,6 +391,18 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 CRON
 chmod 0644 /etc/cron.d/db-backup
 
+# ── Logrotate: db-backup log ─────────────────────────────────────────────────
+cat > /etc/logrotate.d/db-backup <<'LOGROTATE'
+/var/log/db-backup.log {
+    weekly
+    rotate 8
+    compress
+    missingok
+    notifempty
+    create 664 root backup
+}
+LOGROTATE
+
 # ── Cleanup ──────────────────────────────────────────────────────────────────
 apt-get autoremove -y
 apt-get clean

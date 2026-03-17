@@ -45,20 +45,7 @@ files/
 
 files
 data
-/env/.app.env
-/env/.db.env
-/env/.api.env
-/env/.rabbitmq.env
-/env/.bot.env
-/env/.brevo.env
-/env/.google.env
-/env/.mollie.env
 /storage/
-/env/.listmonk.env
-/env/.listmonk.env.prod
-/env/.api.env.prod
-/env/.db.env.prod
-/env/1_dump.sql
 private
 **/.yarn
 .playwright

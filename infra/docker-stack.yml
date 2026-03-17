@@ -15,6 +15,8 @@
 #
 # Variables exported by infra/deploy.sh:
 #   DOCKER_SOCKET                — rootless Docker socket path
+#   INFRA_DOMAIN                 — base domain (default: esa-blueshell.nl)
+#   ACME_EMAIL                   — Let's Encrypt contact email (passed as Traefik CLI flag)
 #   GRAFANA_ADMIN_PASSWORD       — Grafana admin password
 #   GRAFANA_DISCORD_WEBHOOK_URL  — Discord webhook for alert notifications
 #   GRAFANA_SMTP_HOST            — SMTP host for email alerts (optional)
@@ -71,6 +73,10 @@ services:
         mode:      host
       # metrics (:8082) and ping (:8083) are not published — only reachable
       # within the monitoring overlay network by Prometheus and Uptime Kuma.
+    command:
+      # Pass ACME email via CLI flag so it can be set per-deployment without
+      # modifying the static config file mounted into the container.
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
     volumes:
       - /src/website/infra/traefik.yml:/traefik.yml:ro
       - letsencrypt:/letsencrypt
@@ -112,7 +118,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD:     ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD required}
       GF_SECURITY_ADMIN_USER:         admin
-      GF_SERVER_ROOT_URL:             https://grafana.esa-blueshell.nl
+      GF_SERVER_ROOT_URL:             https://grafana.${INFRA_DOMAIN}
       GF_USERS_ALLOW_SIGN_UP:         "false"
       GF_ALERTING_ENABLED:            "false"   # use unified alerting
       GF_UNIFIED_ALERTING_ENABLED:    "true"
@@ -123,7 +129,7 @@ services:
       GF_SMTP_HOST:                   ${GRAFANA_SMTP_HOST:-localhost:587}
       GF_SMTP_USER:                   ${GRAFANA_SMTP_USER:-}
       GF_SMTP_PASSWORD:               ${GRAFANA_SMTP_PASSWORD:-}
-      GF_SMTP_FROM_ADDRESS:           ${GRAFANA_SMTP_FROM:-grafana@esa-blueshell.nl}
+      GF_SMTP_FROM_ADDRESS:           ${GRAFANA_SMTP_FROM:-grafana@${INFRA_DOMAIN}}
       GF_INSTALL_PLUGINS:             ""
     volumes:
       - grafana-data:/var/lib/grafana
@@ -140,7 +146,7 @@ services:
           memory: 256M
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.infra-grafana.rule=Host(`grafana.esa-blueshell.nl`)"
+        - "traefik.http.routers.infra-grafana.rule=Host(`grafana.${INFRA_DOMAIN}`)"
         - "traefik.http.routers.infra-grafana.entrypoints=websecure"
         - "traefik.http.routers.infra-grafana.tls.certresolver=letsencrypt"
         - "traefik.http.services.infra-grafana.loadbalancer.server.port=3000"
@@ -193,7 +199,7 @@ services:
           memory: 256M
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.infra-uptime.rule=Host(`status.esa-blueshell.nl`)"
+        - "traefik.http.routers.infra-uptime.rule=Host(`status.${INFRA_DOMAIN}`)"
         - "traefik.http.routers.infra-uptime.entrypoints=websecure"
         - "traefik.http.routers.infra-uptime.tls.certresolver=letsencrypt"
         - "traefik.http.services.infra-uptime.loadbalancer.server.port=3001"

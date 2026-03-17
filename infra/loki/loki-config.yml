@@ -42,8 +42,5 @@ compactor:
   retention_delete_delay: 2h
   delete_request_store: filesystem
 
-ruler:
-  alertmanager_url: http://localhost:9093
-
 analytics:
   reporting_enabled: false

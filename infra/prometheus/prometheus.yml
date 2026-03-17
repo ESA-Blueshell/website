@@ -36,6 +36,16 @@ scrape_configs:
         labels:
           service: traefik
 
+  # ── Spring Boot API (staging) ───────────────────────────────────────────────
+  # Uncomment if the staging stack (website-staging) is running.
+  # - job_name: blueshell-api-staging
+  #   metrics_path: /actuator/prometheus
+  #   static_configs:
+  #     - targets: ['website-staging_api:8080']
+  #       labels:
+  #         service: api
+  #         stack:   website-staging
+
   # ── Prometheus self-scrape ───────────────────────────────────────────────────
   - job_name: prometheus
     static_configs:

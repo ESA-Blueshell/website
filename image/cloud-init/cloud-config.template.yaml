@@ -83,8 +83,8 @@ final_message: |
      - /src/website/services/listmonk/.listmonk.env  (Listmonk admin + DB password)
      - /src/website/services/mailserver/mailserver.env  (if using mailserver)
      - /src/website/services/api/1_dump.sql   (optional initial DB seed)
-  2) Start the website:
-     sudo website up
+  2) Start the website (as the website user):
+     su -l website -c "website up"
   3) Verify backup after 03:00 or run now:
      sudo /usr/local/bin/db-backup && ls -l /src/backups/db
   ========================================

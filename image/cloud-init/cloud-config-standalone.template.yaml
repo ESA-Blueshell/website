@@ -119,8 +119,8 @@ final_message: |
   - blueshell requires password for sudo
 
   Operators:
-  - Admin user:   blueshell (SSH keys, sudo with password)
-  - Website user: website   (no sudo, rootless docker)
+  - Admin user:   blueshell  (SSH keys, sudo with password)
+  - Website user: website    (no sudo, rootless Docker)
 
   Tooling:
   - Website user logged into ghcr.io
@@ -128,19 +128,19 @@ final_message: |
   - Full backups (MariaDB + Listmonk PG + env + storage + mailserver) at 3 AM daily
 
   NEXT STEPS:
-  1) Add secrets in their service directories:
-     - /src/website/services/api/.db.env      (MariaDB credentials)
-     - /src/website/services/api/.api.env     (application secrets)
-     - /src/website/services/listmonk/.listmonk.env  (Listmonk admin + DB password)
-     - /src/website/services/mailserver/mailserver.env  (if using mailserver)
-     - /src/website/services/api/1_dump.sql   (optional initial DB seed)
+  1) Place env files as the website user (ssh -p 2222 -i ~/.ssh/blueshell-website website@<IP>):
+     - /src/website/services/api/.db.env
+     - /src/website/services/api/.api.env
+     - /src/website/services/listmonk/.listmonk.env
 
-  2) Or restore from backup:
-     Run image/ops/restore.sh from your local machine.
+  2) Deploy (as website user):
+     website up
 
-  3) Start the website:
-     sudo website up
+  3) SSL certificates are obtained automatically by Traefik on first request
+     (DNS must point to the server first — see deployment/README.md)
 
-  4) Verify backup after 03:00 or run now:
+  4) Verify backup after 03:00 or run now (as root or blueshell via sudo):
      sudo /usr/local/bin/db-backup && ls -l /src/backups/db
+
+  Full deployment docs: /src/website/deployment/README.md
   ========================================

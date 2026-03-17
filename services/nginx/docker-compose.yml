@@ -1,5 +1,7 @@
 services:
   nginx:
+    image: ghcr.io/esa-blueshell/nginx:${IMAGE_TAG:-latest}
+    pull_policy: always
     build:
       context: .
       dockerfile: Dockerfile

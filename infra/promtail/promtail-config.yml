@@ -1,0 +1,64 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+
+  # ── Docker container logs (via socket-proxy) ───────────────────────────────
+  # Reads JSON logs from all containers via the Docker API.
+  # socket-proxy is on the same socket-proxy overlay network as Promtail.
+  - job_name: docker
+
+    docker_sd_configs:
+      - host: tcp://socket-proxy:2375
+        refresh_interval: 15s
+        filters:
+          - name:   status
+            values: [running]
+
+    relabel_configs:
+      # Drop containers that have opted out of log collection
+      - source_labels: [__meta_docker_container_label_promtail_collect]
+        regex:         "false"
+        action:        drop
+
+      # Stack name (e.g. "website", "website-staging", "infra")
+      - source_labels: [__meta_docker_container_label_com_docker_stack_namespace]
+        target_label:  stack
+
+      # Service name within the stack (e.g. "api", "frontend", "traefik")
+      - source_labels: [__meta_docker_container_label_com_docker_swarm_service_name]
+        regex:         '(?:[^_]+_)?(.*)'   # strip the stack prefix
+        target_label:  service
+
+      # Full service name for cross-referencing Prometheus targets
+      - source_labels: [__meta_docker_container_label_com_docker_swarm_service_name]
+        target_label:  swarm_service
+
+      # Container name
+      - source_labels: [__meta_docker_container_name]
+        regex:         '/(.*)'
+        target_label:  container
+
+      # Keep the job label as "docker"
+      - target_label: job
+        replacement:  docker
+
+    pipeline_stages:
+      # Parse Docker JSON log envelope
+      - json:
+          expressions:
+            output:  log
+            stream:  stream
+            time:    time
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - output:
+          source: output

@@ -6,6 +6,3 @@ include:
 networks:
   frontback:
   database:
-  traefik-public:
-    external: true
-    name: traefik-public

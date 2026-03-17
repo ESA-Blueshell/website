@@ -79,3 +79,6 @@ services/**/*.env
 /image/cloud-init/cloud-config-standalone.yaml
 /image/packer/output/
 /backup/
+
+# infra secrets
+/infra/.infra.env

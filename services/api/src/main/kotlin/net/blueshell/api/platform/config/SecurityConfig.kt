@@ -136,7 +136,10 @@ class SecurityConfig(
                         "/committees/**",
                         "/contributionPeriods/current",
                         "/health",
-                        "/track/email/**"
+                        "/track/email/**",
+                        "/actuator/health",
+                        "/actuator/health/**",
+                        "/actuator/prometheus"
                     ).permitAll()
 
                 if (openApiPublicEnabled) {

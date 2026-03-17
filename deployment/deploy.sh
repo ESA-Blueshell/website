@@ -1,34 +1,32 @@
 #!/usr/bin/env bash
 # =============================================================================
-# deploy.sh — deploy the application with Docker Compose.
+# deploy.sh — deploy the website application as a Docker Swarm stack.
 #
 # Usage (run as the website user or via `website up` / `website pull`):
-#   bash deployment/deploy.sh [project-name]
+#   bash deployment/deploy.sh [stack-name]
 #
 # Environment variables (all optional, with defaults):
-#   IMAGE_TAG     Docker image tag to deploy  (default: latest)
-#                 Use "staging" or "dev" for non-production environments.
-#   PROJECT_NAME  Docker Compose project name (auto-derived from IMAGE_TAG if unset)
+#   IMAGE_TAG    Docker image tag to deploy  (default: latest)
+#               Use "staging" or "dev" for non-production environments.
+#   STACK_NAME   Swarm stack name (auto-derived from IMAGE_TAG if unset)
 #
-# Tag → project / domain mapping:
+# Tag → stack / domain mapping:
 #   latest  → website          / esa-blueshell.nl
 #   staging → website-staging  / staging.esa-blueshell.nl
 #   dev     → website-dev      / dev.esa-blueshell.nl
 #
 # The script:
-#   1. Resolves IMAGE_TAG, PROJECT_NAME, and APP_DOMAIN.
+#   1. Resolves IMAGE_TAG, STACK_NAME, and APP_DOMAIN.
 #   2. Loads credentials from the matching service env files.
-#   3. Ensures the Traefik infra project is running.
-#   4. Exports IMAGE_TAG, APP_DOMAIN, COMPOSE_PROJECT_NAME so Compose
-#      substitutes them in service files (image tags, labels, env vars).
-#   5. Runs docker compose up -d (pulls images, recreates changed containers).
+#   3. Ensures required overlay networks exist.
+#   4. Deploys (or updates) the Swarm stack from deployment/docker-stack.yml.
 #
 # Env file sources:
 #   services/api/.db.env               MariaDB credentials
 #   services/api/.api.env              Application secrets
 #   services/listmonk/.listmonk.env    Listmonk config
 #
-#   For staging/development, the same files are used by default.
+#   For staging/dev, the same files are used by default.
 #   Place environment-specific overrides alongside the defaults if needed:
 #     services/api/.staging.db.env  etc.
 # =============================================================================
@@ -37,17 +35,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# ── Resolve IMAGE_TAG, PROJECT_NAME, and APP_DOMAIN ──────────────────────────
+# ── Resolve IMAGE_TAG, STACK_NAME, and APP_DOMAIN ────────────────────────────
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 if [[ -n "${1:-}" ]]; then
-  PROJECT_NAME="$1"
+  STACK_NAME="$1"
 else
   case "${IMAGE_TAG}" in
-    latest)  PROJECT_NAME="website" ;;
-    staging) PROJECT_NAME="website-staging" ;;
-    dev)     PROJECT_NAME="website-dev" ;;
-    *)       PROJECT_NAME="website-${IMAGE_TAG}" ;;
+    latest)  STACK_NAME="website" ;;
+    staging) STACK_NAME="website-staging" ;;
+    dev)     STACK_NAME="website-dev" ;;
+    *)       STACK_NAME="website-${IMAGE_TAG}" ;;
   esac
 fi
 
@@ -58,10 +56,9 @@ case "${IMAGE_TAG}" in
   *)       APP_DOMAIN="${IMAGE_TAG}.esa-blueshell.nl" ;;
 esac
 
-COMPOSE_FILE="${REPO_ROOT}/docker-compose.yml"
-INFRA_COMPOSE="${REPO_ROOT}/infra/docker-compose.yml"
+STACK_FILE="${REPO_ROOT}/deployment/docker-stack.yml"
 
-echo "==> Deploying environment: IMAGE_TAG=${IMAGE_TAG}  PROJECT=${PROJECT_NAME}  DOMAIN=${APP_DOMAIN}"
+echo "==> Deploying environment: IMAGE_TAG=${IMAGE_TAG}  STACK=${STACK_NAME}  DOMAIN=${APP_DOMAIN}"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -79,6 +76,15 @@ load_env() {
   fi
 }
 
+# Ensure an overlay network exists (idempotent).
+ensure_network() {
+  local name="$1"
+  if ! docker network inspect "${name}" >/dev/null 2>&1; then
+    echo "  creating overlay network: ${name}"
+    docker network create --driver overlay --attachable "${name}"
+  fi
+}
+
 # ── Load environment ──────────────────────────────────────────────────────────
 echo "==> Loading env files..."
 load_env "${REPO_ROOT}/services/api/.db.env"
@@ -92,31 +98,28 @@ load_env "${REPO_ROOT}/services/listmonk/.listmonk.env"
   load_env "${REPO_ROOT}/services/listmonk/.${IMAGE_TAG}.listmonk.env" 2>/dev/null || true
 }
 
-# Export variables consumed by Docker Compose label/image/env interpolation
+# Export variables consumed by the stack file's variable substitution
 export IMAGE_TAG
+export STACK_NAME
 export APP_DOMAIN
-export COMPOSE_PROJECT_NAME="${PROJECT_NAME}"
-# Rootless Docker socket path (falls back to the standard path for root Docker)
-export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
 
-# ── Ensure Traefik (infra) is running ─────────────────────────────────────────
-echo "==> Ensuring Traefik (infra) is up..."
-docker compose \
-  -f "${INFRA_COMPOSE}" \
-  --project-name infra \
-  up -d
+# ── Ensure shared overlay networks exist ─────────────────────────────────────
+echo "==> Ensuring overlay networks..."
+ensure_network traefik-public
+ensure_network monitoring
 
-# ── Deploy application project ────────────────────────────────────────────────
-echo "==> Deploying project '${PROJECT_NAME}' (IMAGE_TAG=${IMAGE_TAG}, DOMAIN=${APP_DOMAIN})..."
-docker compose \
-  -f "${COMPOSE_FILE}" \
-  --project-name "${PROJECT_NAME}" \
-  up -d --pull always --remove-orphans
+# ── Deploy Swarm stack ────────────────────────────────────────────────────────
+echo "==> Deploying Swarm stack '${STACK_NAME}' (IMAGE_TAG=${IMAGE_TAG}, DOMAIN=${APP_DOMAIN})..."
+docker stack deploy \
+  --with-registry-auth \
+  --prune \
+  -c "${STACK_FILE}" \
+  "${STACK_NAME}"
 
 echo ""
-echo "Project '${PROJECT_NAME}' deployed  (IMAGE_TAG=${IMAGE_TAG}, DOMAIN=${APP_DOMAIN})."
+echo "Stack '${STACK_NAME}' deployed  (IMAGE_TAG=${IMAGE_TAG}, DOMAIN=${APP_DOMAIN})."
 echo ""
 echo "Useful commands:"
-echo "  docker compose --project-name ${PROJECT_NAME} ps              — service overview"
-echo "  docker compose --project-name ${PROJECT_NAME} logs -f api     — API logs"
-echo "  docker compose --project-name ${PROJECT_NAME} logs -f nginx   — Nginx logs"
+echo "  docker stack services ${STACK_NAME}                — service overview"
+echo "  docker service logs -f ${STACK_NAME}_api           — API logs"
+echo "  docker service logs -f ${STACK_NAME}_frontend      — frontend logs"

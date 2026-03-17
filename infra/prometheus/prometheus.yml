@@ -1,0 +1,33 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  scrape_timeout:      10s
+  external_labels:
+    server: blueshell-prod
+
+scrape_configs:
+
+  # ── Spring Boot API ─────────────────────────────────────────────────────────
+  # Scraped via the monitoring overlay network (not exposed externally).
+  # Provides JVM, HikariCP, Logback, and custom job/email metrics.
+  - job_name: blueshell-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['website_api:8080']
+        labels:
+          service: api
+          stack:   website
+
+  # ── Traefik ─────────────────────────────────────────────────────────────────
+  # HTTP request rate, latency histograms, status codes per router/service.
+  # Internal metrics endpoint :8082 — not routed through Traefik itself.
+  - job_name: traefik
+    static_configs:
+      - targets: ['traefik:8082']
+        labels:
+          service: traefik
+
+  # ── Prometheus self-scrape ───────────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

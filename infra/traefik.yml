@@ -1,5 +1,5 @@
 # Traefik static configuration — mounted read-only into the Traefik container.
-# Dynamic config (routing rules, TLS) comes from Docker container labels.
+# Dynamic config (routing rules, TLS) comes from Swarm service labels.
 
 api:
   dashboard: false   # set to true and add a dashboard router label to enable
@@ -15,6 +15,10 @@ entryPoints:
           permanent: true
   websecure:
     address: ":443"
+  # Internal metrics endpoint — scraped by Prometheus on monitoring network.
+  # Not exposed to the internet (no Traefik router routes to it).
+  metrics:
+    address: ":8082"
 
 certificatesResolvers:
   letsencrypt:
@@ -25,12 +29,19 @@ certificatesResolvers:
         entryPoint: web
 
 providers:
-  docker:
+  swarm:
     # Connect to socket-proxy, not the raw Docker socket.
-    # socket-proxy only exposes CONTAINERS/NETWORKS/EVENTS (read-only).
+    # socket-proxy exposes CONTAINERS/NETWORKS/EVENTS/SERVICES/TASKS (read-only).
     endpoint: "tcp://socket-proxy:2375"
     exposedByDefault: false
     network: traefik-public
+
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true
 
 log:
   level: INFO

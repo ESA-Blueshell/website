@@ -12,7 +12,7 @@
 #
 # NOTE: Listmonk PostgreSQL data is NOT automatically restored.
 #   After 'website up', restore manually via:
-#     docker compose exec listmonk-db psql -U listmonk listmonk < dump.sql
+#     docker exec -i $(docker ps -q -f name=website_listmonk-db) psql -U listmonk listmonk < dump.sql
 #
 # Usage:
 #   ./restore.sh [remote_host]
@@ -31,7 +31,7 @@ if [[ -f "${ENV_FILE}" ]]; then
 fi
 
 REMOTE_USER="blueshell"
-REMOTE_HOST="${1:-${REMOTE_HOST:-136.144.191.63}}"
+REMOTE_HOST="${1:-${REMOTE_HOST:?Set REMOTE_HOST in image/.env or pass as first argument}}"
 SSH_PORT=2222
 SSH_KEY="${HOME}/.ssh/blueshell-admin"
 
@@ -130,4 +130,4 @@ echo "Restore complete from: ${LATEST_DUMP}"
 echo ""
 echo "NOTE: Listmonk PostgreSQL data must be restored manually if needed."
 echo "  Gunzip a listmonk-backup-*.sql.gz from backup/db/ and pipe to:"
-echo "    docker compose exec -T listmonk-db psql -U listmonk listmonk < dump.sql"
+echo "    docker exec -i \$(docker ps -q -f name=website_listmonk-db) psql -U listmonk listmonk < dump.sql"

@@ -27,7 +27,7 @@ if [[ -f "${ENV_FILE}" ]]; then
 fi
 
 REMOTE_USER="blueshell"
-REMOTE_HOST="${1:-${REMOTE_HOST:-136.144.191.63}}"
+REMOTE_HOST="${1:-${REMOTE_HOST:?Set REMOTE_HOST in image/.env or pass as first argument}}"
 SSH_PORT=2222
 SSH_KEY="${HOME}/.ssh/blueshell-admin"
 

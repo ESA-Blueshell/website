@@ -14,6 +14,8 @@
 #   GRAFANA_DISCORD_WEBHOOK_URL  Discord webhook URL for alert notifications
 #
 # Optional:
+#   INFRA_DOMAIN          Base domain for infra services (default: esa-blueshell.nl)
+#   ACME_EMAIL            Email for Let's Encrypt ACME (default: board@blueshell.utwente.nl)
 #   GRAFANA_SMTP_HOST     SMTP host:port  (e.g. smtp.example.com:587)
 #   GRAFANA_SMTP_USER     SMTP username
 #   GRAFANA_SMTP_PASSWORD SMTP password
@@ -60,6 +62,8 @@ export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
 # Validate required vars
 : "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD required — set in infra/.infra.env}"
 
+export INFRA_DOMAIN="${INFRA_DOMAIN:-esa-blueshell.nl}"
+export ACME_EMAIL="${ACME_EMAIL:-board@blueshell.utwente.nl}"
 export GRAFANA_ADMIN_PASSWORD
 export GRAFANA_DISCORD_WEBHOOK_URL="${GRAFANA_DISCORD_WEBHOOK_URL:-}"
 export GRAFANA_SMTP_ENABLED="${GRAFANA_SMTP_ENABLED:-false}"

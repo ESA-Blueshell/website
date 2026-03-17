@@ -1,13 +1,13 @@
 # Deployment
 
 This folder contains everything needed to deploy the ESA Blueshell website to
-a production server using **Docker Compose** with **Traefik** as the edge proxy.
+a production server using **Docker Swarm** with **Traefik** as the edge proxy.
 
 ## Contents
 
 | File | Purpose |
 |------|---------|
-| `deploy.sh` | Deploy script — sources env files, ensures Traefik is up, runs `docker compose up` |
+| `deploy.sh` | Deploy script — sources env files, ensures Traefik is up, deploys the Swarm stack |
 | `../infra/` | Traefik edge proxy — deployed once, shared across all environments |
 
 ---
@@ -47,8 +47,8 @@ flowchart TD
     T -->|"listmonk.staging.esa-blueshell.nl"| SL
 ```
 
-Each environment is an independent Compose project with its own containers and
-volumes. Traefik routes traffic to the correct project based on the hostname.
+Each environment is an independent Swarm stack with its own containers and
+volumes. Traefik routes traffic to the correct stack based on the hostname.
 
 ---
 
@@ -262,12 +262,11 @@ No manual certbot step needed.
 Run all commands as the `website` user:
 
 ```bash
-website status          # show Compose service status
+website status          # show Swarm service status
 website logs api        # tail API logs
-website logs nginx      # tail Nginx logs (Traefik)
 website pull            # git pull + redeploy (same as CI deploy step)
-website up              # (re-)deploy the project
-website down            # stop all services
+website up              # (re-)deploy the stack
+website down            # remove the Swarm stack
 website shell           # open shell in /src/website
 ```
 
@@ -276,18 +275,18 @@ Backup (root only — run via cron or `sudo website backup` as blueshell):
 sudo website backup     # run DB + storage backup now
 ```
 
-### View container status
+### View service status
 
 ```bash
-docker compose --project-name website ps
-docker compose --project-name website logs api
+docker stack services website
+docker service logs -f website_api
 ```
 
-### Traefik (infra project)
+### Traefik (infra stack)
 
 ```bash
-docker compose --project-name infra ps
-docker compose --project-name infra logs traefik
+docker stack services infra
+docker service logs -f infra_traefik
 ```
 
 ### Redeploy after image push
@@ -345,23 +344,23 @@ flowchart TD
 
 **Service keeps restarting:**
 ```bash
-docker compose --project-name website ps
-docker compose --project-name website logs <name>
+docker stack services website
+docker service logs -f website_<name>
 ```
 
 **api won't start (db not ready):**
 The api service has a healthcheck with up to 20 retries. Check DB logs:
 ```bash
-docker compose --project-name website logs db
+docker service logs -f website_db
 ```
 
 **Listmonk setup fails:**
 ```bash
-docker compose --project-name website logs listmonk-setup
+docker service logs -f website_listmonk-setup
 ```
 
 **Certificate not issued / HTTPS not working:**
 - Verify DNS resolves to the server: `dig esa-blueshell.nl`
 - Traefik obtains certs lazily on first request — make an HTTP request to trigger it
-- Check Traefik logs: `docker compose --project-name infra logs traefik`
+- Check Traefik logs: `docker service logs -f infra_traefik`
 - Inspect acme.json: `docker run --rm -v traefik_letsencrypt:/d alpine cat /d/acme.json`

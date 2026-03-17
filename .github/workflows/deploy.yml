@@ -1,0 +1,181 @@
+# =============================================================================
+# deploy.yml — manually deploy any branch to development, staging, or production.
+#
+# Trigger: Actions → "Manual Deploy" → Run workflow → choose branch + environment.
+#
+# What it does:
+#   1. Builds the API and frontend Docker images from the selected branch.
+#   2. Pushes them to GHCR with an environment-specific tag:
+#        development → :dev
+#        staging     → :staging
+#        production  → :latest
+#   3. SSHes to the target environment's server and runs 'website up <env>'.
+#
+# GitHub Environments required (Settings → Environments):
+#   development  — secrets: SSH_KEY, IP_ADDRESS, PORT, DEPLOY_USER
+#   staging      — secrets: SSH_KEY, IP_ADDRESS, PORT, DEPLOY_USER
+#   production   — secrets: SSH_KEY, IP_ADDRESS, PORT, DEPLOY_USER
+#
+# Each environment can point to the same server (different Compose projects) or
+# separate servers. The projects run simultaneously on one server:
+#   production   → Compose project 'website'          (IMAGE_TAG=latest)
+#   staging      → Compose project 'website-staging'  (IMAGE_TAG=staging)
+#   development  → Compose project 'website-dev'       (IMAGE_TAG=dev)
+# =============================================================================
+
+name: Manual Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        default: staging
+        options:
+          - development
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false  # never cancel an in-flight deploy
+
+env:
+  REGISTRY: ghcr.io
+  OWNER:    ${{ github.repository_owner }}
+
+jobs:
+  # ── Resolve environment → image tag ────────────────────────────────────────
+  resolve:
+    name: Resolve image tag
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Map environment to image tag
+        id: tag
+        run: |
+          case "${{ inputs.environment }}" in
+            production)  echo "tag=latest"  >> "$GITHUB_OUTPUT" ;;
+            staging)     echo "tag=staging" >> "$GITHUB_OUTPUT" ;;
+            development) echo "tag=dev"     >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  # ── Build & push API ────────────────────────────────────────────────────────
+  build-push-api:
+    name: Build & Push API (${{ needs.resolve.outputs.image_tag }})
+    needs: resolve
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context:    services/api
+          file:       services/api/Dockerfile
+          push:       true
+          tags:       ${{ env.REGISTRY }}/${{ env.OWNER }}/api:${{ needs.resolve.outputs.image_tag }}
+          labels:     |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+          cache-from: type=gha,scope=api-${{ needs.resolve.outputs.image_tag }}
+          cache-to:   type=gha,mode=max,scope=api-${{ needs.resolve.outputs.image_tag }}
+
+  # ── Build & push frontend ───────────────────────────────────────────────────
+  build-push-frontend:
+    name: Build & Push frontend (${{ needs.resolve.outputs.image_tag }})
+    needs: resolve
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context:    services/frontend
+          file:       services/frontend/Dockerfile
+          push:       true
+          tags:       ${{ env.REGISTRY }}/${{ env.OWNER }}/frontend:${{ needs.resolve.outputs.image_tag }}
+          labels:     |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+          cache-from: type=gha,scope=frontend-${{ needs.resolve.outputs.image_tag }}
+          cache-to:   type=gha,mode=max,scope=frontend-${{ needs.resolve.outputs.image_tag }}
+
+  # ── Deploy to target environment ────────────────────────────────────────────
+  deploy:
+    name: Deploy → ${{ inputs.environment }}
+    needs: [ resolve, build-push-api, build-push-frontend ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ inputs.environment }}
+      url:  ${{ vars.DEPLOY_URL }}
+    permissions:
+      contents:     read
+      deployments:  write
+    steps:
+      - name: Configure SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Add deployment host to known hosts
+        run: |
+          install -m 700 -d ~/.ssh
+          ssh-keyscan -T 20 -p "${{ secrets.PORT }}" -H "${{ secrets.IP_ADDRESS }}" \
+            >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy stack on server
+        run: |
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=yes \
+              -p "${{ secrets.PORT }}" \
+              "${{ secrets.DEPLOY_USER }}@${{ secrets.IP_ADDRESS }}" \
+              "bash -lc 'website up ${{ inputs.environment }}'"
+
+      - name: Deployment summary
+        run: |
+          echo "### Deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Environment** | \`${{ inputs.environment }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Image tag** | \`${{ needs.resolve.outputs.image_tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Project** | \`website-${{ inputs.environment == 'production' && '' || inputs.environment }}\` |" >> "$GITHUB_STEP_SUMMARY"

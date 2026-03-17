@@ -1,0 +1,35 @@
+# Traefik — shared edge proxy for all environments.
+#
+# Deploy once with:
+#   docker compose --project-name infra up -d
+#
+# This project creates the `traefik-public` network with a fixed name.
+# The website/website-staging/website-dev Compose projects reference it as
+# external so Traefik can reach their containers.
+#
+# For rootless Docker (production) set:
+#   DOCKER_SOCKET=/run/user/<uid>/docker.sock  (done automatically by deploy.sh)
+
+services:
+  traefik:
+    image: traefik:v3.3
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./traefik.yml:/traefik.yml:ro
+      - letsencrypt:/letsencrypt
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    # Fixed name so all Compose projects can reference it as external.
+    name: traefik-public
+
+volumes:
+  letsencrypt:
+    # Fixed name so the volume survives `docker compose down` + `up` cycles.
+    name: traefik_letsencrypt

@@ -5,6 +5,12 @@ services:
     depends_on:
       listmonk-db:
         condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-listmonk.rule=Host(`listmonk.${APP_DOMAIN:-esa-blueshell.nl}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-listmonk.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-listmonk.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-website}-listmonk.loadbalancer.server.port=9000"
     environment:
       LISTMONK_app__address: "0.0.0.0:9000"
       LISTMONK_db__host: listmonk-db
@@ -26,6 +32,7 @@ services:
     networks:
       - frontback
       - database
+      - traefik-public
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
       interval: 30s
@@ -93,6 +100,7 @@ services:
 networks:
   frontback:
   database:
+  traefik-public:
 
 volumes:
   listmonk-data:

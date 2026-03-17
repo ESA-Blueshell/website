@@ -1,9 +1,11 @@
 include:
   - services/api/docker-compose.yml
   - services/frontend/docker-compose.yml
-  - services/nginx/docker-compose.yml
   - services/listmonk/docker-compose.yml
 
 networks:
   frontback:
   database:
+  traefik-public:
+    external: true
+    name: traefik-public

@@ -251,54 +251,103 @@ chown root:backup /usr/local/bin/db-backup
 # ── Website management CLI ───────────────────────────────────────────────────
 cat > /usr/local/bin/website <<'CLI'
 #!/usr/bin/env bash
+# =============================================================================
+# website — manage Docker Compose projects for all environments.
+#
+# Designed to run AS the 'website' user, which has DOCKER_HOST set in its
+# shell profile pointing at the rootless Docker socket.
+#
+# Admin users (blueshell) run website commands via:
+#   su -l website -c "website up [env]"
+#
+# The 'backup' subcommand must be run as root (or via sudo by blueshell);
+# it is also invoked automatically by the daily cron job.
+# =============================================================================
 set -euo pipefail
+REPO="/src/website"
+
+# Resolve environment name → IMAGE_TAG + PROJECT_NAME
+_env_map() {
+  case "${1:-production}" in
+    prod|production)  echo "latest website" ;;
+    stg|staging)      echo "staging website-staging" ;;
+    dev|development)  echo "dev website-dev" ;;
+    *) echo "ERROR: unknown environment '${1}' (use: production, staging, development)" >&2; exit 1 ;;
+  esac
+}
+
 usage() { cat <<EOF
-website - manage the website stack as website (rootless)
+website — manage Docker Compose projects for all environments
 
 Usage:
-  website status            Show compose services and their status
-  website up                Bring the stack up (detached)
-  website down              Stop the stack
-  website logs [service]    Tail logs (all or specific service)
-  website backup            Run DB backup now
-  website pull              git fetch/reset/pull + compose pull + recreate
-  website shell             Open a shell as website user in repo dir
-  website help              Show this help
+  website status  [env]            Show Compose service status
+  website up      [env]            Deploy (or redeploy) the project
+  website down    [env]            Stop and remove the project
+  website logs    [env] <service>  Tail service logs
+  website pull                     git pull + redeploy production  (used by CI)
+  website backup                   Run DB + storage backup (root only)
+  website shell                    Open a bash shell in ${REPO}
+  website services [env]           Alias for status
+  website help                     Show this help
+
+Environment (default: production):
+  production  →  IMAGE_TAG=latest   PROJECT=website   DOMAIN=esa-blueshell.nl
+  staging     →  IMAGE_TAG=staging  PROJECT=website-staging
+  development →  IMAGE_TAG=dev      PROJECT=website-dev
+
+Examples (run as website user or via: su -l website -c "website up"):
+  website up                     # redeploy production
+  website up staging             # redeploy staging
+  website logs staging api       # tail staging API logs
+  website down development       # stop the dev project
 EOF
 }
-as_website() {
-    local sock="/run/user/$(id -u website)/docker.sock"
-    if [[ "$(id -un)" == "website" ]]; then
-      DOCKER_HOST="unix://${sock}" \
-      XDG_RUNTIME_DIR="/run/user/$(id -u)" \
-      bash -lc "$*"
-    else
-      sudo -u website -H env \
-      DOCKER_HOST="unix://${sock}" \
-      XDG_RUNTIME_DIR="/run/user/$(id -u website)" \
-      bash -lc "$*"
-    fi
-}
+
 cmd="${1:-help}"
+shift || true
+
 case "${cmd}" in
-  status) as_website "cd /src/website && docker compose -f 'docker-compose.yml' ps" ;;
-  up)     as_website "cd /src/website && docker compose -f 'docker-compose.yml' up -d" ;;
-  down)   as_website "cd /src/website && docker compose -f 'docker-compose.yml' down" ;;
-  logs)   shift || true; svc="${1:-}"; if [[ -n "${svc}" ]]; then
-            as_website "cd /src/website && docker compose -f 'docker-compose.yml' logs -f --tail=200 '${svc}'"
-          else
-            as_website "cd /src/website && docker compose -f 'docker-compose.yml' logs -f --tail=200"
-          fi ;;
-  backup) /usr/local/bin/db-backup ;;
+  status|services)
+    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
+    docker compose --project-name "${_proj}" ps ;;
+
+  up)
+    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
+    cd "${REPO}"
+    IMAGE_TAG="${_tag}" bash deployment/deploy.sh "${_proj}" ;;
+
+  down)
+    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
+    docker compose --project-name "${_proj}" down ;;
+
+  logs)
+    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
+    shift || true
+    svc="${1:-}"
+    if [[ -z "${svc}" ]]; then
+      echo "Usage: website logs [env] <service>" >&2
+      echo "Services: api, frontend, db, listmonk, listmonk-db, listmonk-setup" >&2
+      exit 1
+    fi
+    docker compose --project-name "${_proj}" logs -f --tail=200 "${svc}" ;;
+
+  backup)
+    # Requires root — invoked by cron or: sudo website backup
+    /usr/local/bin/db-backup ;;
+
   pull)
-    as_website "cd /src/website && git fetch --prune || true"
-    as_website "cd /src/website && git reset --hard origin/main || true"
-    as_website "cd /src/website && git pull --ff-only || true"
-    as_website "cd /src/website && docker compose -f 'docker-compose.yml' pull"
-    as_website "cd /src/website && docker compose -f 'docker-compose.yml' up -d --remove-orphans"
-    ;;
-  shell)  as_website "cd /src/website && exec bash" ;;
-  help|*) usage ;;
+    # Production-only: git pull from main then redeploy
+    cd "${REPO}"
+    git fetch --prune || true
+    git reset --hard origin/main || true
+    git pull --ff-only || true
+    IMAGE_TAG='latest' bash deployment/deploy.sh 'website' ;;
+
+  shell)
+    cd "${REPO}" && exec bash ;;
+
+  help|*)
+    usage ;;
 esac
 CLI
 chmod 0755 /usr/local/bin/website

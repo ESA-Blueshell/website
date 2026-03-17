@@ -1,0 +1,33 @@
+# Traefik static configuration — mounted read-only into the Traefik container.
+# Dynamic config (routing rules, TLS) comes from Docker container labels.
+
+api:
+  dashboard: false   # set to true and add a dashboard router label to enable
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: board@blueshell.utwente.nl
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: traefik-public
+
+log:
+  level: INFO

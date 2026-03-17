@@ -11,9 +11,13 @@ services:
     networks:
       - frontback
       - traefik-public
+    expose:
+      - "3000"
     environment:
       - TZ=Europe/Amsterdam
       - VITE_APP_URL=https://${APP_DOMAIN:-esa-blueshell.nl}/api
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-frontend.rule=Host(`${APP_DOMAIN:-esa-blueshell.nl}`)"

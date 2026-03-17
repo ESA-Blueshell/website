@@ -69,6 +69,10 @@ backups
 .idea
 *dump.sql*
 
+# service env files (*.env and .*.env anywhere under services/)
+services/**/.*.env
+services/**/*.env
+
 # image build secrets and generated output
 /image/.env
 /image/cloud-init/cloud-config.yaml

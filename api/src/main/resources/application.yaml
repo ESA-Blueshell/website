@@ -11,11 +11,11 @@ spring:
     db: blueshell
 
   datasource:
-    host: ${MYSQL_HOST}
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
+    host: ${MYSQL_HOST:localhost}
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT}/${spring.application.db}
+    url: jdbc:mariadb://${spring.datasource.host}:${MYSQL_PORT:3306}/${spring.application.db}
     hikari:
       minimum-idle: 10
       maximum-pool-size: 20
@@ -61,10 +61,10 @@ spring:
     cache: false
 
   mail:
-    host: ${SMTP_HOST}
+    host: ${SMTP_HOST:localhost}
     port: ${SMTP_PORT:465}
-    username: ${SMTP_USERNAME}
-    password: ${SMTP_PASSWORD}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -87,11 +87,11 @@ springdoc:
   default-produces-media-type: application/json
 
 app:
-  url: ${APP_URL}
+  url: ${APP_URL:http://localhost:8080}
   security:
     require-https: false
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh}
     expiration: 86400000
     issuer: ${JWT_ISSUER:blueshell-api}
     audience: ${JWT_AUDIENCE:blueshell-web}
@@ -103,24 +103,24 @@ app:
     stale-threshold-minutes: ${JOB_STALE_THRESHOLD_MINUTES:30}
 
 frontend:
-  url: ${FRONTEND_URL}
+  url: ${FRONTEND_URL:http://localhost:3000}
 
 storage:
-  location: ${STORAGE_LOCATION}
+  location: ${STORAGE_LOCATION:./storage}
 
 brevo:
-  apiKey: ${BREVO_API_KEY}
+  apiKey: ${BREVO_API_KEY:}
   baseUrl: ${BREVO_BASE_URL:https://api.brevo.com/v3}
   folders:
-    contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID}
+    contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID:0}
 
 google:
   calendar:
-    id: ${GOOGLE_CALENDAR_ID}
-    clientId: ${GOOGLE_CALENDAR_CLIENT_ID}
-    clientEmail: ${GOOGLE_CALENDAR_CLIENT_EMAIL}
-    privateKeyPkcs8: ${GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8}
-    privateKeyId: ${GOOGLE_CALENDAR_PRIVATE_KEY_ID}
+    id: ${GOOGLE_CALENDAR_ID:}
+    clientId: ${GOOGLE_CALENDAR_CLIENT_ID:}
+    clientEmail: ${GOOGLE_CALENDAR_CLIENT_EMAIL:}
+    privateKeyPkcs8: ${GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8:}
+    privateKeyId: ${GOOGLE_CALENDAR_PRIVATE_KEY_ID:}
 
 server:
   error:

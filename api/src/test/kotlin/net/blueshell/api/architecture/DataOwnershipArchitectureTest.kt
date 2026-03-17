@@ -1,9 +1,14 @@
 package net.blueshell.api.architecture
 
 import com.tngtech.archunit.core.domain.JavaClasses
+import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.junit.AnalyzeClasses
 import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
+import net.blueshell.api.architecture.support.DoNotIncludeAotGenerated
+import net.blueshell.api.architecture.support.DoNotIncludeFactory
+import net.blueshell.api.architecture.support.DoNotIncludeTestSources
+import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
 
 /**
  * ArchUnit tests enforcing ADR-018: Data Ownership in Modular Monolith
@@ -13,7 +18,16 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
  * - Each domain owns its persistence layer
  * - No direct repository imports across domain boundaries
  */
-@AnalyzeClasses(packages = ["net.blueshell.api"])
+@AnalyzeClasses(
+    packages = ["net.blueshell.api"],
+    importOptions = [
+        ImportOption.DoNotIncludeTests::class,
+        DoNotIncludeTestSources::class,
+        DoNotIncludeTestSupport::class,
+        DoNotIncludeFactory::class,
+        DoNotIncludeAotGenerated::class,
+    ]
+)
 class DataOwnershipArchitectureTest {
 
     /**

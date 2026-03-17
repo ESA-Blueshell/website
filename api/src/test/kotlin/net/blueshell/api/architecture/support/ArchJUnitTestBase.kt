@@ -22,7 +22,8 @@ abstract class ArchJUnitTestBase(
         ImportOption.DoNotIncludeTests(),
         DoNotIncludeTestSources(),
         DoNotIncludeTestSupport(),
-        DoNotIncludeFactory()
+        DoNotIncludeFactory(),
+        DoNotIncludeAotGenerated()
     )
 ) {
     private val packagesToScan = packages.toList()

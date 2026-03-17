@@ -5,6 +5,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     id("org.springframework.boot") version "4.0.3"
+    id("org.graalvm.buildtools.native") version "0.10.6"
     jacoco
 
     kotlin("jvm")
@@ -152,6 +153,7 @@ dependencies {
 springBoot {
     mainClass.set("net.blueshell.api.ApiApplicationKt")
 }
+
 
 noArg {
     annotation("jakarta.persistence.Entity")

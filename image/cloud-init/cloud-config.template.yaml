@@ -74,15 +74,17 @@ final_message: |
   Tooling:
   - Website user logged into ghcr.io
   - Repository at /src/website
-  - Full backups (DB + env + storage) scheduled daily at 3 AM
+  - Full backups (MariaDB + Listmonk PG + env + storage + mailserver) scheduled daily at 3 AM
 
   NEXT STEPS:
-  1) Add secrets in /src/website/env:
-     - .db.env (DB credentials)
-     - .api.env (application secrets)
-     - 1_dump.sql (optional initial DB)
+  1) Add secrets in their service directories:
+     - /src/website/services/api/.db.env      (MariaDB credentials)
+     - /src/website/services/api/.api.env     (application secrets)
+     - /src/website/services/listmonk/.listmonk.env  (Listmonk admin + DB password)
+     - /src/website/services/mailserver/mailserver.env  (if using mailserver)
+     - /src/website/services/api/1_dump.sql   (optional initial DB seed)
   2) Start the website:
      sudo website up
   3) Verify backup after 03:00 or run now:
-     sudo /usr/local/bin/db-backup && ls -l /src/backups
+     sudo /usr/local/bin/db-backup && ls -l /src/backups/db
   ========================================

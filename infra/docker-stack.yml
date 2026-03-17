@@ -69,6 +69,8 @@ services:
       - target:    443
         published: 443
         mode:      host
+      # metrics (:8082) and ping (:8083) are not published — only reachable
+      # within the monitoring overlay network by Prometheus and Uptime Kuma.
     volumes:
       - /src/website/infra/traefik.yml:/traefik.yml:ro
       - letsencrypt:/letsencrypt

@@ -27,6 +27,15 @@ scrape_configs:
         labels:
           service: traefik
 
+  # ── Traefik ping (liveness) ─────────────────────────────────────────────────
+  # Blackbox-style check: scrape /ping and alert if it stops returning 200.
+  - job_name: traefik-ping
+    metrics_path: /ping
+    static_configs:
+      - targets: ['traefik:8083']
+        labels:
+          service: traefik
+
   # ── Prometheus self-scrape ───────────────────────────────────────────────────
   - job_name: prometheus
     static_configs:

@@ -7,6 +7,25 @@ groups:
     interval: 1m
 
     rules:
+      # ── Traefik availability ───────────────────────────────────────────────
+      - uid:    traefik-down
+        title:  Traefik Down
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: up{job="traefik-ping"} == 0
+              instant: true
+        noDataState:  Alerting
+        execErrState: Alerting
+        for:  1m
+        annotations:
+          summary:     "Traefik is not responding to /ping"
+          description: "The edge proxy has been unreachable for 1 minute — all traffic is affected."
+        labels:
+          severity: critical
+
       # ── API availability ────────────────────────────────────────────────────
       - uid:    api-down
         title:  API Down

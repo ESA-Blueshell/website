@@ -1,0 +1,9 @@
+app:
+  security:
+    require-https: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

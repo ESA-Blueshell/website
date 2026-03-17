@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM eclipse-temurin:24-jdk-alpine AS build
+FROM eclipse-temurin:21-jdk-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN chmod +x gradlew
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew --no-daemon bootJar -x test
 
-FROM eclipse-temurin:24-jre-alpine AS runtime
+FROM eclipse-temurin:21-jre-alpine AS runtime
 
 RUN addgroup -S app && adduser -S -G app app
 

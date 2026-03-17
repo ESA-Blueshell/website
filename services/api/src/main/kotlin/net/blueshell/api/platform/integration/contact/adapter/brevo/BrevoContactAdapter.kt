@@ -36,7 +36,7 @@ class BrevoContactAdapter(
     jsonMapper: JsonMapper,
 ) : ContactAdapter {
 
-    @field:Value($$"${brevo.apiKey}")
+    @field:Value($$"${brevo.apiKey:}")
     lateinit var apiKey: String
 
     @field:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}")

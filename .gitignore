@@ -68,3 +68,9 @@ backups
 *.md
 .idea
 *dump.sql*
+
+# image build secrets and generated output
+/image/.env
+/image/cloud-init/cloud-config.yaml
+/image/output/
+/backup/

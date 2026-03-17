@@ -3,7 +3,11 @@ set -euo pipefail
 
 # render.sh
 # Usage:
-#   ./render.sh '<BLUESHELL_PASSWORD>' '<ROOT_PASSWORD>' '<WEBSITE_PASSWORD>' '<GHCR_USERNAME>' '<GHCR_TOKEN>'
+#   ./render.sh ['<BLUESHELL_PASSWORD>' '<ROOT_PASSWORD>' '<WEBSITE_PASSWORD>' '<GHCR_USERNAME>' '<GHCR_TOKEN>']
+#
+# All arguments are optional if the corresponding environment variables are set
+# (e.g. by sourcing ../. env):
+#   BLUESHELL_PASSWORD, ROOT_PASSWORD, WEBSITE_PASSWORD, GHCR_USERNAME, GHCR_TOKEN
 #
 # - Generates (or reuses) two SSH keypairs in ~/.ssh:
 #     ~/.ssh/blueshell-website   (for the website user)
@@ -18,24 +22,37 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_FILE="${SCRIPT_DIR}/cloud-config.template.yaml"
 OUTPUT_FILE="${SCRIPT_DIR}/cloud-config.yaml"
 
-if [[ $# -lt 5 ]]; then
+# Source .env from the image root if present
+ENV_FILE="${SCRIPT_DIR}/../.env"
+if [[ -f "${ENV_FILE}" ]]; then
+  # shellcheck source=/dev/null
+  set -a; source "${ENV_FILE}"; set +a
+fi
+
+# Positional args override env vars
+BLUESHELL_PASSWORD="${1:-${BLUESHELL_PASSWORD:-}}"
+ROOT_PASSWORD="${2:-${ROOT_PASSWORD:-}}"
+WEBSITE_PASSWORD="${3:-${WEBSITE_PASSWORD:-}}"
+GHCR_USER="${4:-${GHCR_USERNAME:-}}"
+GHCR_TOKEN="${5:-${GHCR_TOKEN:-}}"
+shift 5 2>/dev/null || true
+
+if [[ -z "${BLUESHELL_PASSWORD}" || -z "${ROOT_PASSWORD}" || -z "${WEBSITE_PASSWORD}" \
+   || -z "${GHCR_USER}" || -z "${GHCR_TOKEN}" ]]; then
   cat >&2 <<'EOF'
-Usage:
+Error: missing required values. Provide them as arguments or via environment variables
+(set in image/.env or exported in the shell):
+
   render.sh '<BLUESHELL_PASSWORD>' '<ROOT_PASSWORD>' '<WEBSITE_PASSWORD>' '<GHCR_USERNAME>' '<GHCR_TOKEN>'
 
+  or set: BLUESHELL_PASSWORD, ROOT_PASSWORD, WEBSITE_PASSWORD, GHCR_USERNAME, GHCR_TOKEN
+
 Notes:
-  - All three passwords are required (for console/portal login only; SSH remains keys-only).
-  - GHCR_USERNAME and GHCR_TOKEN are required; only the website user will be logged in during runcmd.
+  - All three passwords are for console/portal login only; SSH remains keys-only.
+  - GHCR_TOKEN must be a GitHub PAT (classic) with read:packages scope.
 EOF
   exit 1
 fi
-
-BLUESHELL_PASSWORD="$1"
-ROOT_PASSWORD="$2"
-WEBSITE_PASSWORD="$3"
-GHCR_USER="$4"
-GHCR_TOKEN="$5"
-shift 5 || true
 
 if [[ ! -f "$TEMPLATE_FILE" ]]; then
   echo "Template not found: $TEMPLATE_FILE" >&2

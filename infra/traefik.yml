@@ -19,6 +19,13 @@ entryPoints:
   # Not exposed to the internet (no Traefik router routes to it).
   metrics:
     address: ":8082"
+  # Internal ping/health endpoint — used by Uptime Kuma for internal checks.
+  # Not exposed to the internet.
+  ping:
+    address: ":8083"
+
+ping:
+  entryPoint: ping
 
 certificatesResolvers:
   letsencrypt:
@@ -43,5 +50,30 @@ metrics:
     addServicesLabels: true
     addRoutersLabels: true
 
+# ── Main log (Traefik daemon events) ──────────────────────────────────────────
+# JSON format so Promtail can extract level/msg as labels without regex.
 log:
-  level: INFO
+  level:  INFO
+  format: json
+
+# ── Access log (one entry per HTTP request) ───────────────────────────────────
+# JSON format → Promtail ships to Loki → searchable per-request history.
+#
+# Useful queries in Loki:
+#   {service="traefik"} | json | DownstreamStatus >= 400
+#   {service="traefik"} | json | RouterName =~ ".*-api" | Duration > 1000000000
+#   {service="traefik"} | json | ClientHost = "1.2.3.4"
+accessLog:
+  format: json
+  fields:
+    defaultMode: keep
+    names:
+      # Drop fields that add noise without diagnostic value
+      StartUTC:        drop   # redundant with log timestamp
+      RequestCount:    keep   # retry attempt number — useful for spotting flapping backends
+    headers:
+      defaultMode: drop       # drop all headers by default (avoid logging secrets)
+      names:
+        User-Agent:    keep
+        Referer:       keep
+        X-Forwarded-For: keep

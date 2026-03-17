@@ -102,13 +102,12 @@ fi
 PROFILE
 
 # ── Rootless docker socket override ─────────────────────────────────────────
-mkdir -p /home/website/.config/systemd/user/docker.socket.d
-cat > /home/website/.config/systemd/user/docker.socket.d/override.conf <<'UNIT'
+mkdir -p /src/website/.config/systemd/user/docker.socket.d
+cat > /src/website/.config/systemd/user/docker.socket.d/override.conf <<'UNIT'
 [Socket]
 SocketMode=0660
 UNIT
-# Can't chown to website yet since it may not have a home dir at /home/website
-# Cloud-init handles final ownership
+chown -R website:website /src/website/.config
 
 # ── Backup script (backs up DB, env, and storage mirror) ─────────────────────
 cat > /usr/local/bin/db-backup <<'BACKUP'

@@ -1,0 +1,146 @@
+#cloud-config
+# =============================================================================
+# Standalone cloud-init for Contabo stock Debian 12.
+# No pre-baked Packer image required — provision.sh is embedded (base64) and
+# runs on first boot.  Instance-specific items (keys, passwords, GHCR) are
+# rendered by render.sh --standalone into cloud-config-standalone.yaml.
+#
+# Boot sequence:
+#   init   → groups, users, chpasswd  (users + SSH keys created)
+#   config → package_update/upgrade, packages, write_files  (provision.sh dropped to disk)
+#   final  → runcmd  (provision.sh runs, then GHCR login + git clone + rootless docker)
+#
+# First-boot time: ~8–12 minutes.
+# =============================================================================
+ssh_pwauth: false
+package_update: true
+package_upgrade: true
+
+# ── Create groups BEFORE users so blueshell can join them ───────────────────
+groups:
+  - website
+  - backup
+
+# ── Pre-install base packages (Docker is installed by provision.sh via its
+#    own APT repo — it cannot be in this list since the source isn't added yet)
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - openssh-client
+  - openssh-server
+  - cron
+  - mariadb-client
+  - whois
+  - rsync
+  - dbus-user-session
+  - uidmap
+  - slirp4netns
+  - fuse-overlayfs
+  - ufw
+  - sudo
+
+# ── Users ────────────────────────────────────────────────────────────────────
+users:
+  - name: blueshell
+    lock_passwd: false
+    shell: /bin/bash
+    sudo: ALL=(ALL) ALL
+    groups: sudo, docker, website, backup
+    ssh_authorized_keys:
+      - "__ADMIN_SSH_PUB__"
+
+  - name: website
+    lock_passwd: false
+    shell: /bin/bash
+    sudo: ""
+    home: /src/website
+    primary_group: website
+    groups: website
+    ssh_authorized_keys:
+      - "__WEBSITE_SSH_PUB__"
+
+# ── Passwords (console / cloud-portal login only; SSH is keys-only) ──────────
+chpasswd:
+  expire: false
+  users:
+    - { name: blueshell, password: '__BLUESHELL_PASSWORD__', type: 'text' }
+    - { name: root,      password: '__ROOT_PASSWORD__',      type: 'text' }
+    - { name: website,   password: '__WEBSITE_PASSWORD__',   type: 'text' }
+
+# ── Drop provision.sh to disk (base64-encoded to avoid YAML quoting issues) ──
+write_files:
+  - path: /usr/local/bin/provision.sh
+    permissions: '0750'
+    owner: root:root
+    encoding: b64
+    content: __PROVISION_SH_B64__
+
+# ── Runtime commands ─────────────────────────────────────────────────────────
+runcmd:
+  # 1) System provisioning: installs Docker, hardens SSH, configures UFW,
+  #    sets up backup scripts, CLI tool, and cron job.
+  - /usr/local/bin/provision.sh
+
+  # 2) Ensure website is NOT in the docker group (uses rootless only)
+  - gpasswd -d website docker || true
+
+  # 3) Clone repo (skip if already present — e.g. after a restore)
+  - |
+    if [ ! -d /src/website/.git ]; then
+      git clone https://github.com/ESA-Blueshell/website.git /src/website
+    fi
+  - chown -R website:website /src/website
+  - chmod -R 770 /src/website
+
+  # 4) Install & start rootless Docker engine for the website user
+  - su -l website -c "dockerd-rootless-setuptool.sh install || true"
+  - loginctl enable-linger website
+  - su -l website -c "systemctl --user daemon-reload"
+  - su -l website -c "systemctl --user enable --now docker"
+  - su -l website -c "systemctl --user restart docker.socket"
+
+  # 5) Log in to GHCR so the website user can pull private images
+  - su -s /bin/bash - website -c "printf '%s\n' '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
+
+  # 6) Restart services that provision.sh reconfigured
+  - systemctl restart cron
+  - systemctl restart ssh
+
+final_message: |
+  ========================================
+  Cloud-init setup complete!
+
+  Security:
+  - SSH on port 2222, keys-only authentication
+  - Website user runs Docker in ROOTLESS mode
+  - Backups owned by root:backup (2770 perms); website user cannot read/delete
+  - blueshell requires password for sudo
+
+  Operators:
+  - Admin user:   blueshell (SSH keys, sudo with password)
+  - Website user: website   (no sudo, rootless docker)
+
+  Tooling:
+  - Website user logged into ghcr.io
+  - Repository cloned to /src/website
+  - Full backups (MariaDB + Listmonk PG + env + storage + mailserver) at 3 AM daily
+
+  NEXT STEPS:
+  1) Add secrets in their service directories:
+     - /src/website/services/api/.db.env      (MariaDB credentials)
+     - /src/website/services/api/.api.env     (application secrets)
+     - /src/website/services/listmonk/.listmonk.env  (Listmonk admin + DB password)
+     - /src/website/services/mailserver/mailserver.env  (if using mailserver)
+     - /src/website/services/api/1_dump.sql   (optional initial DB seed)
+
+  2) Or restore from backup:
+     Run image/ops/restore.sh from your local machine.
+
+  3) Start the website:
+     sudo website up
+
+  4) Verify backup after 03:00 or run now:
+     sudo /usr/local/bin/db-backup && ls -l /src/backups/db
+  ========================================

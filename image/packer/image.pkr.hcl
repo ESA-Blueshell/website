@@ -51,7 +51,7 @@ build {
   sources = ["source.qemu.website"]
 
   provisioner "shell" {
-    script = "./scripts/provision.sh"
+    script = "../scripts/provision.sh"
   }
 
   # Clean cloud-init state so it re-runs on first real boot at Contabo

@@ -72,5 +72,6 @@ backups
 # image build secrets and generated output
 /image/.env
 /image/cloud-init/cloud-config.yaml
-/image/output/
+/image/cloud-init/cloud-config-standalone.yaml
+/image/packer/output/
 /backup/

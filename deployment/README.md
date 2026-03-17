@@ -14,22 +14,33 @@ a production server using **Docker Compose** with **Traefik** as the edge proxy.
 
 ## Architecture
 
-```
-Internet
-    │
-   80/443
-    │
- ┌──▼───────────────────────────────────────┐
- │  Traefik  (project: infra)               │  TLS termination + HTTP→HTTPS redirect
- │  reads Docker labels via socket          │  Let's Encrypt ACME (HTTP-01)
- └──┬───────────────────────────────────────┘
-    │  traefik-public network
-    ├─────────────────────────────────────────────────────────────────┐
-    │ project: website (production)           │ project: website-staging│
-    │   esa-blueshell.nl → frontend           │   staging.esa-blueshell.nl → frontend
-    │   esa-blueshell.nl/api → api            │   staging.esa-blueshell.nl/api → api
-    │   listmonk.esa-blueshell.nl → listmonk  │   listmonk.staging.esa-blueshell.nl
-    └─────────────────────────────────────────┘─────────────────────────
+```mermaid
+flowchart TD
+    I(["Internet (80/443)"])
+
+    subgraph infra["project: infra"]
+        T["Traefik\nTLS · HTTP→HTTPS · ACME (Let's Encrypt)"]
+    end
+
+    subgraph production["project: website"]
+        PF["frontend"]
+        PA["api"]
+        PL["listmonk"]
+    end
+
+    subgraph staging["project: website-staging"]
+        SF["frontend"]
+        SA["api"]
+        SL["listmonk"]
+    end
+
+    I --> T
+    T -->|"esa-blueshell.nl"| PF
+    T -->|"esa-blueshell.nl/api"| PA
+    T -->|"listmonk.esa-blueshell.nl"| PL
+    T -->|"staging.esa-blueshell.nl"| SF
+    T -->|"staging.esa-blueshell.nl/api"| SA
+    T -->|"listmonk.staging.esa-blueshell.nl"| SL
 ```
 
 Each environment is an independent Compose project with its own containers and
@@ -286,37 +297,30 @@ website pull
 
 ## Stack Topology
 
-```
-Internet
-    │
-   80/443
-    │
- ┌──▼───────────────────────────┐
- │  traefik  (infra project)    │  TLS, HTTP→HTTPS, ACME, routing
- └──┬───────────────────────────┘
-    │  traefik-public network
-    │
- ┌──▼──────────────────────────────────────────┐
- │  website / website-staging / website-dev    │
- │                                             │
- │  ┌──────────┐   ┌───────────┐               │
- │  │ frontend │   │    api    │  frontback     │
- │  └──────────┘   └──┬────────┘               │
- │                    │  database              │
- │            ┌───────┴───────────────┐        │
- │            │                       │        │
- │        ┌───▼────┐         ┌────────▼──────┐ │
- │        │   db   │         │  listmonk-db  │ │
- │        └────────┘         └───────────────┘ │
- │                                ▲            │
- │                           ┌────┴──────────┐ │
- │                           │   listmonk    │ │
- │                           └───────────────┘ │
- │                                ▲ secrets    │
- │                           ┌────┴──────────┐ │
- │                           │listmonk-setup │ │
- │                           └───────────────┘ │
- └─────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    T["Traefik\n(infra project)"]
+
+    subgraph project["website / website-staging / website-dev"]
+        FE["frontend"]
+        API["api"]
+        DB[("db\nMariaDB")]
+        LDB[("listmonk-db\nPostgreSQL")]
+        LMK["listmonk"]
+        LMS[/"listmonk-setup\none-shot"/]
+        SEC[("listmonk-secrets\nvolume")]
+    end
+
+    T -->|"traefik-public"| FE
+    T -->|"traefik-public"| API
+    T -->|"traefik-public"| LMK
+    FE -->|"frontback"| API
+    API -->|"database"| DB
+    API -->|"reads token"| SEC
+    API -.->|"depends_on completed"| LMS
+    LMS -->|"writes token"| SEC
+    LMS -->|"frontback"| LMK
+    LMK -->|"database"| LDB
 ```
 
 **Volumes** (prefixed with project name, e.g. `website_`):

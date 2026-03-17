@@ -18,7 +18,7 @@ The provisioning flow has two paths — pick the one that fits your situation:
 
 ```
 image/
-├── .env.example              Configuration template (copy to .env)
+├── .example.env              Configuration template (copy to .env)
 ├── cloud-init/
 │   ├── cloud-config.template.yaml            Packer flow template
 │   ├── cloud-config-standalone.template.yaml Contabo cloud-init-only template
@@ -42,8 +42,8 @@ image/
 
 ```bash
 cd image
-cp .env.example .env
-# Edit .env with your values — see .env.example for documentation
+cp .example.env .env
+# Edit .env with your values — see .example.env for documentation
 ```
 
 Required variables:

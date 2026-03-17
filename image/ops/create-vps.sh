@@ -7,7 +7,7 @@
 #   2. SSH keypairs exist  (run image/cloud-init/render.sh --standalone first)
 #   3. blueshell-admin.pub uploaded to Contabo and its ID set in CONTABO_SSH_KEY_ID
 #      (see helper step printed by this script if the key is not yet uploaded)
-#   4. Credentials in image/.env  (see .env.example)
+#   4. Credentials in image/.env  (see .example.env)
 #
 # Usage:
 #   ./create-vps.sh

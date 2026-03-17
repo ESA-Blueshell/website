@@ -107,8 +107,8 @@ The dev compose files include sensible defaults. For production-like secrets,
 copy the examples:
 
 ```bash
-cp services/api/.db.env.example  services/api/.db.env    # if present
-cp services/listmonk/.listmonk.env.example  services/listmonk/.listmonk.env
+cp services/api/.db.example.env       services/api/.db.env
+cp services/listmonk/.listmonk.example.env  services/listmonk/.listmonk.env
 ```
 
 ### Run tests

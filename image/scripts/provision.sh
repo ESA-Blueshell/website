@@ -142,23 +142,26 @@ WEBSITE_UID="$(id -u website)"
 ROOTLESS_SOCK="/run/user/${WEBSITE_UID}/docker.sock"
 export XDG_RUNTIME_DIR="/run/user/${WEBSITE_UID}"
 
-rcompose() {
-  sudo -u website -H env XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" DOCKER_HOST="unix://${ROOTLESS_SOCK}" bash -lc "docker compose -f 'docker-compose.yml' $*"
+# Run a docker command via the website user's rootless socket (runs as root, accesses rootless)
+rdocker() {
+  sudo -u website -H env \
+    XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" \
+    DOCKER_HOST="unix://${ROOTLESS_SOCK}" \
+    docker "$@"
+}
+
+# Find the first running container whose name matches a pattern
+find_container() {
+  rdocker ps --filter "name=${1}" --format "{{.ID}}" | head -1
 }
 
 # Ensure the user service is up (in case of reboot race)
 sudo -u website -H bash -lc 'systemctl --user start docker' || true
 sleep 1
 
-if ! rcompose ps db >/dev/null 2>&1; then
-  echo "Bringing up compose stack to access db service..."
-  rcompose up -d
-fi
-
-DB_CIDS="$(rcompose ps -q db || true)"
-DB_CID_COUNT="$(printf '%s\n' "$DB_CIDS" | sed '/^$/d' | wc -l | tr -d ' ')"
-if [[ "$DB_CID_COUNT" -lt 1 ]]; then
-  echo "Error: db container not found."
+DB_CID="$(find_container "website_db")"
+if [[ -z "${DB_CID}" ]]; then
+  echo "Error: website_db container not found in Swarm stack." >&2
   exit 1
 fi
 
@@ -167,9 +170,9 @@ mkdir -p /src/backups/db
 
 # 1a) MariaDB dump
 MARIADB_OUT="/src/backups/db/db-backup-${TIMESTAMP}.sql.gz"
-rcompose exec -T db mysqldump \
-  --single-transaction --quick --routines --events \
-  --databases "${DB_NAME}" -u"${DB_USER}" -p"${DB_PASS}" \
+rdocker exec -i "${DB_CID}" \
+  mysqldump --single-transaction --quick --routines --events \
+    --databases "${DB_NAME}" -u"${DB_USER}" -p"${DB_PASS}" \
   | gzip -c > "${MARIADB_OUT}"
 
 if [[ ! -s "${MARIADB_OUT}" ]]; then
@@ -181,11 +184,11 @@ chown root:backup "${MARIADB_OUT}"
 
 # 1b) Listmonk PostgreSQL dump (best-effort)
 LISTMONK_OUT="(skipped)"
-LISTMONK_DB_CIDS="$(rcompose ps -q listmonk-db 2>/dev/null || true)"
-LISTMONK_DB_COUNT="$(printf '%s\n' "$LISTMONK_DB_CIDS" | sed '/^$/d' | wc -l | tr -d ' ')"
-if [[ "$LISTMONK_DB_COUNT" -ge 1 ]]; then
+LISTMONK_DB_CID="$(find_container "website_listmonk-db" 2>/dev/null || true)"
+if [[ -n "${LISTMONK_DB_CID}" ]]; then
   LISTMONK_OUT="/src/backups/db/listmonk-backup-${TIMESTAMP}.sql.gz"
-  rcompose exec -T listmonk-db pg_dump -U listmonk listmonk \
+  rdocker exec -i "${LISTMONK_DB_CID}" \
+    pg_dump -U listmonk listmonk \
     | gzip -c > "${LISTMONK_OUT}"
   if [[ -s "${LISTMONK_OUT}" ]]; then
     chmod 640 "${LISTMONK_OUT}"
@@ -196,7 +199,7 @@ if [[ "$LISTMONK_DB_COUNT" -ge 1 ]]; then
     LISTMONK_OUT="(empty)"
   fi
 else
-  echo "Warning: listmonk-db not running; skipping Listmonk backup." >&2
+  echo "Warning: website_listmonk-db not running; skipping Listmonk backup." >&2
 fi
 
 # 2) Environment files snapshot (mirrors each service's secrets)
@@ -252,7 +255,7 @@ chown root:backup /usr/local/bin/db-backup
 cat > /usr/local/bin/website <<'CLI'
 #!/usr/bin/env bash
 # =============================================================================
-# website — manage Docker Compose projects for all environments.
+# website — manage Docker Swarm stacks for all environments.
 #
 # Designed to run AS the 'website' user, which has DOCKER_HOST set in its
 # shell profile pointing at the rootless Docker socket.
@@ -266,7 +269,7 @@ cat > /usr/local/bin/website <<'CLI'
 set -euo pipefail
 REPO="/src/website"
 
-# Resolve environment name → IMAGE_TAG + PROJECT_NAME
+# Resolve environment name → IMAGE_TAG + STACK_NAME
 _env_map() {
   case "${1:-production}" in
     prod|production)  echo "latest website" ;;
@@ -277,29 +280,37 @@ _env_map() {
 }
 
 usage() { cat <<EOF
-website — manage Docker Compose projects for all environments
+website — manage Docker Swarm stacks for all environments
 
 Usage:
-  website status  [env]            Show Compose service status
-  website up      [env]            Deploy (or redeploy) the project
-  website down    [env]            Stop and remove the project
+  website status  [env]            Show Swarm service status
+  website up      [env]            Deploy (or update) the stack
+  website down    [env]            Remove the stack
   website logs    [env] <service>  Tail service logs
   website pull                     git pull + redeploy production  (used by CI)
   website backup                   Run DB + storage backup (root only)
   website shell                    Open a bash shell in ${REPO}
   website services [env]           Alias for status
+
+  website infra up                 Deploy (or update) the infra stack
+  website infra down               Remove the infra stack
+  website infra logs <service>     Tail infra service logs
+  website infra status             Show infra Swarm service status
+
   website help                     Show this help
 
 Environment (default: production):
-  production  →  IMAGE_TAG=latest   PROJECT=website   DOMAIN=esa-blueshell.nl
-  staging     →  IMAGE_TAG=staging  PROJECT=website-staging
-  development →  IMAGE_TAG=dev      PROJECT=website-dev
+  production  →  IMAGE_TAG=latest   STACK=website            DOMAIN=esa-blueshell.nl
+  staging     →  IMAGE_TAG=staging  STACK=website-staging    DOMAIN=staging.esa-blueshell.nl
+  development →  IMAGE_TAG=dev      STACK=website-dev        DOMAIN=dev.esa-blueshell.nl
 
 Examples (run as website user or via: su -l website -c "website up"):
   website up                     # redeploy production
   website up staging             # redeploy staging
   website logs staging api       # tail staging API logs
-  website down development       # stop the dev project
+  website down development       # remove the dev stack
+  website infra up               # deploy/update Traefik + monitoring
+  website infra logs grafana     # tail Grafana logs
 EOF
 }
 
@@ -308,20 +319,20 @@ shift || true
 
 case "${cmd}" in
   status|services)
-    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
-    docker compose --project-name "${_proj}" ps ;;
+    read -r _tag _stack <<< "$(_env_map "${1:-production}")"
+    docker stack services "${_stack}" ;;
 
   up)
-    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
+    read -r _tag _stack <<< "$(_env_map "${1:-production}")"
     cd "${REPO}"
-    IMAGE_TAG="${_tag}" bash deployment/deploy.sh "${_proj}" ;;
+    IMAGE_TAG="${_tag}" bash deployment/deploy.sh "${_stack}" ;;
 
   down)
-    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
-    docker compose --project-name "${_proj}" down ;;
+    read -r _tag _stack <<< "$(_env_map "${1:-production}")"
+    docker stack rm "${_stack}" ;;
 
   logs)
-    read -r _tag _proj <<< "$(_env_map "${1:-production}")"
+    read -r _tag _stack <<< "$(_env_map "${1:-production}")"
     shift || true
     svc="${1:-}"
     if [[ -z "${svc}" ]]; then
@@ -329,7 +340,26 @@ case "${cmd}" in
       echo "Services: api, frontend, db, listmonk, listmonk-db, listmonk-setup" >&2
       exit 1
     fi
-    docker compose --project-name "${_proj}" logs -f --tail=200 "${svc}" ;;
+    docker service logs -f --tail=200 "${_stack}_${svc}" ;;
+
+  infra)
+    subcmd="${1:-status}"
+    shift || true
+    case "${subcmd}" in
+      up)
+        cd "${REPO}"
+        bash infra/deploy.sh ;;
+      down)
+        docker stack rm infra ;;
+      status)
+        docker stack services infra ;;
+      logs)
+        svc="${1:-traefik}"
+        docker service logs -f --tail=200 "infra_${svc}" ;;
+      *)
+        echo "Usage: website infra <up|down|status|logs [service]>" >&2
+        exit 1 ;;
+    esac ;;
 
   backup)
     # Requires root — invoked by cron or: sudo website backup

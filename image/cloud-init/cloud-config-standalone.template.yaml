@@ -101,6 +101,11 @@ runcmd:
   - su -l website -c "systemctl --user enable --now docker"
   - su -l website -c "systemctl --user restart docker.socket"
 
+  # 4b) Initialise Docker Swarm (single-node manager) and create shared overlay networks
+  - su -l website -c "docker swarm init --advertise-addr 127.0.0.1"
+  - su -l website -c "docker network create --driver overlay --attachable traefik-public"
+  - su -l website -c "docker network create --driver overlay --attachable monitoring"
+
   # 5) Log in to GHCR so the website user can pull private images
   - su -s /bin/bash - website -c "printf '%s\n' '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
 
@@ -114,32 +119,40 @@ final_message: |
 
   Security:
   - SSH on port 2222, keys-only authentication
-  - Website user runs Docker in ROOTLESS mode
+  - Website user runs Docker in ROOTLESS mode (no sudo needed)
+  - Docker Swarm initialised (single-node manager)
+  - Shared overlay networks created: traefik-public, monitoring
   - Backups owned by root:backup (2770 perms); website user cannot read/delete
   - blueshell requires password for sudo
 
   Operators:
   - Admin user:   blueshell  (SSH keys, sudo with password)
-  - Website user: website    (no sudo, rootless Docker)
+  - Website user: website    (no sudo, rootless Docker + Swarm)
 
   Tooling:
   - Website user logged into ghcr.io
   - Repository cloned to /src/website
-  - Full backups (MariaDB + Listmonk PG + env + storage + mailserver) at 3 AM daily
+  - Full backups (MariaDB + Listmonk PG + env + storage) at 3 AM daily
 
   NEXT STEPS:
   1) Place env files as the website user (ssh -p 2222 -i ~/.ssh/blueshell-website website@<IP>):
      - /src/website/services/api/.db.env
      - /src/website/services/api/.api.env
      - /src/website/services/listmonk/.listmonk.env
+     - /src/website/infra/.infra.env  (GRAFANA_ADMIN_PASSWORD, GRAFANA_DISCORD_WEBHOOK_URL)
 
-  2) Deploy (as website user):
+  2) Deploy infrastructure (Traefik + monitoring):
+     website infra up
+
+  3) Deploy application:
      website up
 
-  3) SSL certificates are obtained automatically by Traefik on first request
+  4) SSL certificates are obtained automatically by Traefik on first request
      (DNS must point to the server first — see deployment/README.md)
 
-  4) Verify backup after 03:00 or run now (as root or blueshell via sudo):
+  5) Configure Uptime Kuma monitors at https://status.esa-blueshell.nl
+
+  6) Verify backup after 03:00 or run now (as root or blueshell via sudo):
      sudo /usr/local/bin/db-backup && ls -l /src/backups/db
 
   Full deployment docs: /src/website/deployment/README.md

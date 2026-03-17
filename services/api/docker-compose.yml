@@ -9,8 +9,6 @@ services:
       - "./1_dump.sql:/docker-entrypoint-initdb.d/1_dump.sql"
     env_file:
       - .db.env
-    security_opt:
-      - no-new-privileges:true
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -29,8 +27,8 @@ services:
       - .api.env
     environment:
       - TZ=Europe/Amsterdam
-      - APP_URL=https://${APP_DOMAIN:-esa-blueshell.nl}/api
-      - FRONTEND_URL=https://${APP_DOMAIN:-esa-blueshell.nl}
+      - APP_URL=http://localhost:8080
+      - FRONTEND_URL=http://localhost:3000
       # Listmonk credentials — must be set; no defaults to avoid silent misconfiguration
       - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME must be set in .listmonk.env}
       - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD must be set in .listmonk.env}
@@ -45,19 +43,6 @@ services:
     networks:
       - frontback
       - database
-      - traefik-public
-    expose:
-      - "8080"
-    security_opt:
-      - no-new-privileges:true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-api.rule=Host(`${APP_DOMAIN:-esa-blueshell.nl}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-api.entrypoints=websecure"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-api.middlewares=${COMPOSE_PROJECT_NAME:-website}-api-strip"
-      - "traefik.http.middlewares.${COMPOSE_PROJECT_NAME:-website}-api-strip.stripprefix.prefixes=/api"
-      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-website}-api.loadbalancer.server.port=8080"
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
       interval: 30s
@@ -68,7 +53,6 @@ services:
 networks:
   frontback:
   database:
-  traefik-public:
 
 volumes:
   db_data:

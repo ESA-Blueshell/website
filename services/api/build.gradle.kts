@@ -146,6 +146,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.14.9")
 
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     implementation("com.google.apis:google-api-services-groupssettings:v1-rev20220614-2.0.0")
 

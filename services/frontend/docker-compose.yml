@@ -10,27 +10,9 @@ services:
         condition: service_healthy
     networks:
       - frontback
-      - traefik-public
-    expose:
-      - "3000"
     environment:
       - TZ=Europe/Amsterdam
-      - VITE_APP_URL=https://${APP_DOMAIN:-esa-blueshell.nl}/api
-    security_opt:
-      - no-new-privileges:true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-frontend.rule=Host(`${APP_DOMAIN:-esa-blueshell.nl}`)"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-frontend.entrypoints=websecure"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-website}-frontend.loadbalancer.server.port=3000"
-    healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/healthz" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+      - VITE_APP_URL=http://localhost:8080
 
 networks:
   frontback:
-  traefik-public:

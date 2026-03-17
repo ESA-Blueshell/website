@@ -16,11 +16,11 @@
 #   staging      — secrets: SSH_KEY, IP_ADDRESS, PORT, DEPLOY_USER
 #   production   — secrets: SSH_KEY, IP_ADDRESS, PORT, DEPLOY_USER
 #
-# Each environment can point to the same server (different Compose projects) or
-# separate servers. The projects run simultaneously on one server:
-#   production   → Compose project 'website'          (IMAGE_TAG=latest)
-#   staging      → Compose project 'website-staging'  (IMAGE_TAG=staging)
-#   development  → Compose project 'website-dev'       (IMAGE_TAG=dev)
+# Each environment can point to the same server (different Swarm stacks) or
+# separate servers. The stacks run simultaneously on one server:
+#   production   → Swarm stack 'website'          (IMAGE_TAG=latest)
+#   staging      → Swarm stack 'website-staging'  (IMAGE_TAG=staging)
+#   development  → Swarm stack 'website-dev'       (IMAGE_TAG=dev)
 # =============================================================================
 
 name: Manual Deploy

@@ -42,7 +42,7 @@ allOpen {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(24))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -136,7 +136,7 @@ dependencies {
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
-    implementation("com.github.javafaker:javafaker:1.0.2")
+    testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:mariadb:1.21.4")
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
@@ -169,7 +169,7 @@ noArg {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(24)
+    options.release.set(21)
     options.compilerArgs.add("-parameters")
 }
 

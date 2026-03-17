@@ -121,8 +121,10 @@ services:
         - "traefik.http.routers.${STACK_NAME:-website}-api.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api`)"
         - "traefik.http.routers.${STACK_NAME:-website}-api.entrypoints=websecure"
         - "traefik.http.routers.${STACK_NAME:-website}-api.tls.certresolver=letsencrypt"
-        - "traefik.http.routers.${STACK_NAME:-website}-api.middlewares=${STACK_NAME:-website}-api-strip"
+        - "traefik.http.routers.${STACK_NAME:-website}-api.middlewares=${STACK_NAME:-website}-api-strip,${STACK_NAME:-website}-api-ratelimit"
         - "traefik.http.middlewares.${STACK_NAME:-website}-api-strip.stripprefix.prefixes=/api"
+        - "traefik.http.middlewares.${STACK_NAME:-website}-api-ratelimit.ratelimit.average=100"
+        - "traefik.http.middlewares.${STACK_NAME:-website}-api-ratelimit.ratelimit.burst=50"
         - "traefik.http.services.${STACK_NAME:-website}-api.loadbalancer.server.port=8080"
 
   # ── Vue.js Frontend ────────────────────────────────────────────────────────

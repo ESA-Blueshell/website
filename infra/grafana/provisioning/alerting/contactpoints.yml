@@ -21,7 +21,7 @@ contactPoints:
       - uid:  email-board
         type: email
         settings:
-          addresses: sitecie@blueshell.utwente.nl
+          addresses: "${GF_ALERT_EMAIL:-sitecie@blueshell.utwente.nl}"
           singleEmail: false
 
 policies:

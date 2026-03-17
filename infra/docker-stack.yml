@@ -124,6 +124,8 @@ services:
       GF_UNIFIED_ALERTING_ENABLED:    "true"
       # Discord contact point (alert notifications)
       GF_DISCORD_WEBHOOK_URL:         ${GRAFANA_DISCORD_WEBHOOK_URL:-}
+      # Email contact point recipient
+      GF_ALERT_EMAIL:                 ${GRAFANA_ALERT_EMAIL:-sitecie@blueshell.utwente.nl}
       # Optional SMTP for email alerts (set GRAFANA_SMTP_HOST to enable)
       GF_SMTP_ENABLED:                ${GRAFANA_SMTP_ENABLED:-false}
       GF_SMTP_HOST:                   ${GRAFANA_SMTP_HOST:-localhost:587}

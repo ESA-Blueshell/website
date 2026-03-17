@@ -26,6 +26,9 @@ certificatesResolvers:
 
 providers:
   docker:
+    # Connect to socket-proxy, not the raw Docker socket.
+    # socket-proxy only exposes CONTAINERS/NETWORKS/EVENTS (read-only).
+    endpoint: "tcp://socket-proxy:2375"
     exposedByDefault: false
     network: traefik-public
 

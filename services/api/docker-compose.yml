@@ -9,6 +9,8 @@ services:
       - "./1_dump.sql:/docker-entrypoint-initdb.d/1_dump.sql"
     env_file:
       - .db.env
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -29,8 +31,9 @@ services:
       - TZ=Europe/Amsterdam
       - APP_URL=https://${APP_DOMAIN:-esa-blueshell.nl}/api
       - FRONTEND_URL=https://${APP_DOMAIN:-esa-blueshell.nl}
-      - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:-listmonk}
-      - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:-listmonk}
+      # Listmonk credentials — must be set; no defaults to avoid silent misconfiguration
+      - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME must be set in .listmonk.env}
+      - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD must be set in .listmonk.env}
     volumes:
       - "../../storage:/home/storage"
       - "listmonk-secrets:/run/secrets/listmonk:ro"
@@ -43,6 +46,10 @@ services:
       - frontback
       - database
       - traefik-public
+    expose:
+      - "8080"
+    security_opt:
+      - no-new-privileges:true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-website}-api.rule=Host(`${APP_DOMAIN:-esa-blueshell.nl}`) && PathPrefix(`/api`)"

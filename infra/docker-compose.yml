@@ -3,31 +3,64 @@
 # Deploy once with:
 #   docker compose --project-name infra up -d
 #
-# This project creates the `traefik-public` network with a fixed name.
-# The website/website-staging/website-dev Compose projects reference it as
-# external so Traefik can reach their containers.
-#
-# For rootless Docker (production) set:
-#   DOCKER_SOCKET=/run/user/<uid>/docker.sock  (done automatically by deploy.sh)
+# Security architecture:
+#   - The Docker socket is NEVER mounted into Traefik directly.
+#   - socket-proxy (tecnativa/docker-socket-proxy) mounts the socket and
+#     exposes only the three read-only API endpoints Traefik needs:
+#       CONTAINERS — read container labels / IPs
+#       NETWORKS   — resolve container addresses
+#       EVENTS     — watch for container start/stop to update routing
+#   - The socket-proxy network is marked internal (no internet route).
+#   - A compromised Traefik process cannot exec into containers, pull
+#     images, or destroy volumes.
 
 services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    restart: always
+    volumes:
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+      NETWORKS: 1
+      EVENTS: 1
+      # Everything else defaults to 0 (denied):
+      # AUTH, BUILD, COMMIT, CONFIGS, DISTRIBUTION, EXEC,
+      # IMAGES, INFO, NODES, PING, POST, PLUGINS, SECRETS,
+      # SERVICES, SESSION, SWARM, SYSTEM, TASKS, VOLUMES
+    networks:
+      - socket-proxy
+    security_opt:
+      - no-new-privileges:true
+
   traefik:
     image: traefik:v3.3
     restart: always
+    depends_on:
+      - socket-proxy
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./traefik.yml:/traefik.yml:ro
       - letsencrypt:/letsencrypt
-      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      # No Docker socket mount — Traefik talks to socket-proxy over TCP
+    environment:
+      # Traefik reads this via the Docker provider endpoint in traefik.yml
+      DOCKER_HOST: tcp://socket-proxy:2375
     networks:
       - traefik-public
+      - socket-proxy
+    security_opt:
+      - no-new-privileges:true
 
 networks:
   traefik-public:
     # Fixed name so all Compose projects can reference it as external.
     name: traefik-public
+  socket-proxy:
+    # Internal only — Traefik talks to socket-proxy; nothing else needs this.
+    internal: true
 
 volumes:
   letsencrypt:

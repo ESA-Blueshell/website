@@ -20,6 +20,10 @@ flowchart TD
 
     subgraph infra["project: infra"]
         T["Traefik\nTLS · HTTP→HTTPS · ACME (Let's Encrypt)"]
+        SP["socket-proxy\n(read-only: containers/networks/events)"]
+        DS[("Docker socket")]
+        T -- "tcp:2375\n(internal network)" --> SP
+        SP -- "ro" --> DS
     end
 
     subgraph production["project: website"]
@@ -299,7 +303,11 @@ website pull
 
 ```mermaid
 flowchart TD
-    T["Traefik\n(infra project)"]
+    subgraph infra["project: infra"]
+        T["Traefik"]
+        SP["socket-proxy\nCONTAINERS · NETWORKS · EVENTS only"]
+        T -- "tcp (internal)" --> SP
+    end
 
     subgraph project["website / website-staging / website-dev"]
         FE["frontend"]

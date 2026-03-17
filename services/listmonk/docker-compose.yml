@@ -33,6 +33,10 @@ services:
       - frontback
       - database
       - traefik-public
+    expose:
+      - "9000"
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
       interval: 30s
@@ -56,6 +60,8 @@ services:
       - listmonk-data:/var/lib/postgresql/data
     networks:
       - database
+    security_opt:
+      - no-new-privileges:true
 
   listmonk-setup:
     image: python:3.12-alpine
@@ -96,6 +102,8 @@ services:
     command: ["python", "/setup.py"]
     networks:
       - frontback
+    security_opt:
+      - no-new-privileges:true
 
 networks:
   frontback:

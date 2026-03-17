@@ -1,0 +1,88 @@
+#cloud-config
+# =============================================================================
+# Runtime-only cloud-init for the pre-baked Packer image.
+# Packages, users, SSH hardening, UFW, and scripts are already in the image.
+# This only configures instance-specific items: keys, passwords, secrets.
+# =============================================================================
+ssh_pwauth: false
+
+users:
+  - name: blueshell
+    lock_passwd: false
+    shell: /bin/bash
+    sudo: ALL=(ALL) ALL
+    groups: sudo, docker, website, backup
+    ssh_authorized_keys:
+      - "__ADMIN_SSH_PUB__"
+
+  - name: website
+    lock_passwd: false
+    shell: /bin/bash
+    sudo: ""
+    home: /src/website
+    primary_group: website
+    groups: website
+    ssh_authorized_keys:
+      - "__WEBSITE_SSH_PUB__"
+
+chpasswd:
+  expire: false
+  users:
+    - { name: blueshell, password: '__BLUESHELL_PASSWORD__', type: 'text' }
+    - { name: ubuntu,    password: '__ROOT_PASSWORD__',      type: 'text' }
+    - { name: website,   password: '__WEBSITE_PASSWORD__',   type: 'text' }
+
+runcmd:
+  # Ensure website is NOT in the docker group
+  - gpasswd -d website docker || true
+
+  # Clone repo (skip if already present from a restore)
+  - |
+    if [ ! -d /src/website/.git ]; then
+      git clone https://github.com/ESA-Blueshell/website.git /src/website
+    fi
+  - chown -R website:website /src/website
+  - chmod -R 770 /src/website
+
+  # Install & start rootless engine for the website user
+  - su -l website -c "dockerd-rootless-setuptool.sh install || true"
+  - loginctl enable-linger website
+  - su -l website -c "systemctl --user daemon-reload"
+  - su -l website -c "systemctl --user enable --now docker"
+  - su -l website -c "systemctl --user restart docker.socket"
+
+  # GHCR login for pulling private images
+  - su -s /bin/bash - website -c "printf '%s\n' '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
+
+  # Services
+  - systemctl restart cron
+  - systemctl restart ssh
+
+final_message: |
+  ========================================
+  Cloud-init setup complete!
+
+  Security:
+  - Website user runs Docker in ROOTLESS mode
+  - Backups as root:backup with 2770 perms; website cannot read/delete
+  - blueshell requires password for sudo
+
+  Operators:
+  - Admin user: blueshell (SSH keys only, sudo with password)
+  - Website user: website (no sudo)
+
+  Tooling:
+  - Website user logged into ghcr.io
+  - Repository at /src/website
+  - Full backups (DB + env + storage) scheduled daily at 3 AM
+
+  NEXT STEPS:
+  1) Add secrets in /src/website/env:
+     - .db.env (DB credentials)
+     - .api.env (application secrets)
+     - 1_dump.sql (optional initial DB)
+  2) Start the website:
+     sudo website up
+  3) Verify backup after 03:00 or run now:
+     sudo /usr/local/bin/db-backup && ls -l /src/backups
+  ========================================

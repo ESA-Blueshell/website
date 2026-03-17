@@ -3,9 +3,6 @@ import {computed} from "vue"
 import {useStore} from "vuex"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
-import "flag-icons/css/flag-icons.min.css"
-import "v-phone-input/styles"
-import {VPhoneInput} from "v-phone-input"
 import type {CreateGuestRequest, GuestResponse} from "@/services/api"
 import {useCountry, useVeeForm} from "@/composables/formUtils"
 
@@ -88,12 +85,11 @@ defineExpose({validate})
       >
         <VvField
           v-model="guest.phoneNumber"
-          :component="VPhoneInput"
+          component="VPhoneInput"
           :component-props="{
             defaultCountry: 'NL',
-            countryIconMode: 'svg',
             mode: 'international',
-            placeholder: 'Phone Number'
+            placeholder: 'Phone Number',
           }"
           :rules="`required|phoneMobile:${country}`"
           label="Phone Number*"

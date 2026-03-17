@@ -358,6 +358,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       return fulfillJson(route, retried)
     }
+    if (method === "POST" && path === "/users") {
+      return fulfillJson(route, {id: 999, username: "new-user", email: "new@example.com", discord: "", phoneNumber: "", newsletter: true, consentPrivacy: true, photoConsent: false, roles: ["USER"], enabled: false, version: 0})
+    }
     if (method === "PUT" && path.endsWith("/approve")) {
       return fulfillJson(route, {...baseEvents[0], approved: true})
     }

@@ -19,16 +19,16 @@ vi.mock("vuex", async (importOriginal) => {
 })
 vi.mock("flag-icons/css/flag-icons.min.css", () => ({}))
 vi.mock("v-phone-input/styles", () => ({}))
-vi.mock("v-phone-input", () => ({
-  VPhoneInput: {
-    name: "VPhoneInput",
-    template: "<v-phone-input-stub />",
-  },
-}))
 
+vi.mock("v-phone-input", () => ({}))
+
+const capturedProps: Record<string, unknown>[] = []
 const vvFieldStub = {
   name: "VvField",
-  props: ["name", "rules"],
+  props: ["name", "rules", "component", "componentProps"],
+  setup(props: Record<string, unknown>) {
+    capturedProps.push({...props})
+  },
   template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' />",
 }
 const formStub = {template: "<div><slot /></div>"}
@@ -44,6 +44,7 @@ function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
 describe("GuestForm", () => {
   beforeEach(() => {
     mockStore.getters.isLoggedIn = false
+    capturedProps.length = 0
   })
 
   it("declares all guest validation rules", () => {
@@ -61,6 +62,20 @@ describe("GuestForm", () => {
       email: "required|email|noStudentEmail",
       phoneNumber: "required|phoneMobile:NL",
     })
+  })
+
+  it("uses the globally registered VPhoneInput component for the phone field", () => {
+    shallowMount(GuestForm, {
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+        },
+      },
+    })
+    const phoneField = capturedProps.find((p) => p.name === "phoneNumber")
+    expect(phoneField).toBeDefined()
+    expect(phoneField!.component).toBe("VPhoneInput")
   })
 
   it("hides guest form fields for logged-in users", () => {

@@ -7,12 +7,19 @@ import {loadFonts} from "@/plugins/webfontloader.ts"
 import "@/plugins/validation.ts"
 import store from "@/plugins/store"
 import {setupAuthSync} from "@/plugins/authSync"
+import {createVPhoneInput, selectPhoneCountryInput, VPhoneCountryFlagSvg} from "v-phone-input"
+import "flag-icons/css/flag-icons.min.css"
+import "v-phone-input/styles"
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const vPhoneInput = createVPhoneInput({...(selectPhoneCountryInput as any), countryDisplayComponent: VPhoneCountryFlagSvg})
 
 const app = createApp(App)
 app.use(store)
 app.use(router)
 app.use(VueSignaturePad)
 app.use(vuetify)
+app.use(vPhoneInput)
 loadFonts()
 app.mount("#app")
 setupAuthSync(store)

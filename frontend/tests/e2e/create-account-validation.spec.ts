@@ -5,6 +5,9 @@ import type {Page} from "@playwright/test"
 const inputByTestId = (page: Page, testId: string) =>
   page.getByTestId(testId).locator("input").first()
 
+const phoneInputByTestId = (page: Page, testId: string) =>
+  page.getByTestId(testId).getByRole("textbox")
+
 const loadCreateAccountForm = async (page: Page) => {
   const formState = page.getByTestId("create-account-form-state")
   const userForm = page.getByTestId("create-account-user-form")
@@ -34,7 +37,7 @@ test.describe("create account validation", () => {
     await inputByTestId(page, "user-form-username-field").fill(`invalid-user-${suffix}`)
     await inputByTestId(page, "user-form-discord-field").fill(`frontend${suffix}`)
     await inputByTestId(page, "user-form-email-field").fill("not-an-email")
-    await inputByTestId(page, "user-form-phone-number-field").fill(`+3164444${suffix}`)
+    await phoneInputByTestId(page, "user-form-phone-number-field").fill(`+3164444${suffix}`)
     await inputByTestId(page, "user-form-password-field").fill("Password123")
     await inputByTestId(page, "user-form-password-repeat-field").fill("Password123")
 
@@ -61,7 +64,7 @@ test.describe("create account validation", () => {
     await inputByTestId(page, "user-form-username-field").fill(`privacy${suffix}`)
     await inputByTestId(page, "user-form-discord-field").fill(`privacy${suffix}`)
     await inputByTestId(page, "user-form-email-field").fill(`privacy${suffix}@example.com`)
-    await inputByTestId(page, "user-form-phone-number-field").fill(`+3161234${phoneSuffix}`)
+    await phoneInputByTestId(page, "user-form-phone-number-field").fill(`+3161234${phoneSuffix}`)
     await inputByTestId(page, "user-form-password-field").fill("Password123!")
     await inputByTestId(page, "user-form-password-repeat-field").fill("Password123!")
 

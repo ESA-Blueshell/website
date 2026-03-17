@@ -52,7 +52,7 @@ const RAW_RUNTIME_STATE =
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.48.0"],\
           ["countries-list", "npm:3.2.2"],\
-          ["dompurify", "npm:3.3.1"],\
+          ["dompurify", "npm:3.3.3"],\
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.0.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.8.0"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.5.3"],\
@@ -1688,15 +1688,6 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
-    ["@trysound/sax", [\
-      ["npm:0.2.0", {\
-        "packageLocation": "./.yarn/cache/@trysound-sax-npm-0.2.0-9f763d0295-4490730854.zip/node_modules/@trysound/sax/",\
-        "packageDependencies": [\
-          ["@trysound/sax", "npm:0.2.0"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
     ["@types/babel__generator", [\
       ["npm:7.6.8", {\
         "packageLocation": "./.yarn/cache/@types-babel__generator-npm-7.6.8-61be1197d9-f0ba105e7d.zip/node_modules/@types/babel__generator/",\
@@ -3119,7 +3110,7 @@ const RAW_RUNTIME_STATE =
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.48.0"],\
           ["countries-list", "npm:3.2.2"],\
-          ["dompurify", "npm:3.3.1"],\
+          ["dompurify", "npm:3.3.3"],\
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.0.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.8.0"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.5.3"],\
@@ -3319,7 +3310,7 @@ const RAW_RUNTIME_STATE =
           ["minipass-pipeline", "npm:1.2.4"],\
           ["p-map", "npm:7.0.3"],\
           ["ssri", "npm:12.0.0"],\
-          ["tar", "npm:7.5.9"],\
+          ["tar", "npm:7.5.11"],\
           ["unique-filename", "npm:4.0.0"]\
         ],\
         "linkType": "HARD"\
@@ -3991,11 +3982,11 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["dompurify", [\
-      ["npm:3.3.1", {\
-        "packageLocation": "./.yarn/cache/dompurify-npm-3.3.1-5bbe58c5ff-fa0a8c55a4.zip/node_modules/dompurify/",\
+      ["npm:3.3.3", {\
+        "packageLocation": "./.yarn/cache/dompurify-npm-3.3.3-6b51c69448-097c14a21a.zip/node_modules/dompurify/",\
         "packageDependencies": [\
           ["@types/trusted-types", "npm:2.0.7"],\
-          ["dompurify", "npm:3.3.1"]\
+          ["dompurify", "npm:3.3.3"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -5660,7 +5651,7 @@ const RAW_RUNTIME_STATE =
           ["saxes", "npm:6.0.0"],\
           ["symbol-tree", "npm:3.2.4"],\
           ["tough-cookie", "npm:6.0.0"],\
-          ["undici", "npm:7.22.0"],\
+          ["undici", "npm:7.24.4"],\
           ["w3c-xmlserializer", "npm:5.0.0"],\
           ["webidl-conversions", "npm:8.0.1"],\
           ["whatwg-mimetype", "npm:5.0.0"],\
@@ -6273,7 +6264,7 @@ const RAW_RUNTIME_STATE =
           ["nopt", "npm:8.1.0"],\
           ["proc-log", "npm:5.0.0"],\
           ["semver", "npm:7.7.2"],\
-          ["tar", "npm:7.5.9"],\
+          ["tar", "npm:7.5.11"],\
           ["tinyglobby", "npm:0.2.15"],\
           ["which", "npm:5.0.0"]\
         ],\
@@ -6970,6 +6961,15 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
+    ["sax", [\
+      ["npm:1.6.0", {\
+        "packageLocation": "./.yarn/cache/sax-npm-1.6.0-39dc3ef158-e5593f4a91.zip/node_modules/sax/",\
+        "packageDependencies": [\
+          ["sax", "npm:1.6.0"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
     ["saxes", [\
       ["npm:6.0.0", {\
         "packageLocation": "./.yarn/cache/saxes-npm-6.0.0-31558949f5-3847b839f0.zip/node_modules/saxes/",\
@@ -7309,17 +7309,17 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["svgo", [\
-      ["npm:3.3.2", {\
-        "packageLocation": "./.yarn/cache/svgo-npm-3.3.2-69e1d32944-a6badbd3d1.zip/node_modules/svgo/",\
+      ["npm:3.3.3", {\
+        "packageLocation": "./.yarn/cache/svgo-npm-3.3.3-f4851edd74-06568c6b04.zip/node_modules/svgo/",\
         "packageDependencies": [\
-          ["@trysound/sax", "npm:0.2.0"],\
           ["commander", "npm:7.2.0"],\
           ["css-select", "npm:5.2.2"],\
           ["css-tree", "npm:2.3.1"],\
           ["css-what", "npm:6.2.2"],\
           ["csso", "npm:5.0.5"],\
           ["picocolors", "npm:1.1.1"],\
-          ["svgo", "npm:3.3.2"]\
+          ["sax", "npm:1.6.0"],\
+          ["svgo", "npm:3.3.3"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -7334,14 +7334,14 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["tar", [\
-      ["npm:7.5.9", {\
-        "packageLocation": "./.yarn/cache/tar-npm-7.5.9-dd42dd386e-e870beb1b2.zip/node_modules/tar/",\
+      ["npm:7.5.11", {\
+        "packageLocation": "./.yarn/cache/tar-npm-7.5.11-c176cc1bb0-b6bb420550.zip/node_modules/tar/",\
         "packageDependencies": [\
           ["@isaacs/fs-minipass", "npm:4.0.1"],\
           ["chownr", "npm:3.0.0"],\
           ["minipass", "npm:7.1.2"],\
           ["minizlib", "npm:3.1.0"],\
-          ["tar", "npm:7.5.9"],\
+          ["tar", "npm:7.5.11"],\
           ["yallist", "npm:5.0.0"]\
         ],\
         "linkType": "HARD"\
@@ -7590,10 +7590,10 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["undici", [\
-      ["npm:7.22.0", {\
-        "packageLocation": "./.yarn/cache/undici-npm-7.22.0-87832cba3b-09777c06f3.zip/node_modules/undici/",\
+      ["npm:7.24.4", {\
+        "packageLocation": "./.yarn/cache/undici-npm-7.24.4-57a8184447-cb302e81fa.zip/node_modules/undici/",\
         "packageDependencies": [\
-          ["undici", "npm:7.22.0"]\
+          ["undici", "npm:7.24.4"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -7997,7 +7997,7 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/__virtual__/vite-svg-loader-virtual-2fdc4d355b/0/cache/vite-svg-loader-npm-5.1.0-9aa2ae1712-39f218db63.zip/node_modules/vite-svg-loader/",\
         "packageDependencies": [\
           ["@types/vue", null],\
-          ["svgo", "npm:3.3.2"],\
+          ["svgo", "npm:3.3.3"],\
           ["vite-svg-loader", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:5.1.0"],\
           ["vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:3.5.28"]\
         ],\

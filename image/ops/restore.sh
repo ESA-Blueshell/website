@@ -23,8 +23,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Source .env from the image root if present
+ENV_FILE="${SCRIPT_DIR}/../.env"
+if [[ -f "${ENV_FILE}" ]]; then
+  # shellcheck source=/dev/null
+  set -a; source "${ENV_FILE}"; set +a
+fi
+
 REMOTE_USER="blueshell"
-REMOTE_HOST="${1:-136.144.191.63}"
+REMOTE_HOST="${1:-${REMOTE_HOST:-136.144.191.63}}"
 SSH_PORT=2222
 SSH_KEY="${HOME}/.ssh/blueshell-admin"
 

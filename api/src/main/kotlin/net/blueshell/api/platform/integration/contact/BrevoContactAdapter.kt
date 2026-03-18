@@ -36,14 +36,13 @@ class BrevoContactAdapter(
 
     override fun syncContact(userId: Long, contactId: String?, contactData: ContactData): String {
         log.info("Syncing contact for user {}: {}", userId, contactData.email)
+        // Check if contact exists in Brevo
+        val contactId = contactId ?: brevoClient.getContactIdByEmail(contactData.email)
+
+        val attributes = buildAttributes(contactData)
+        val externalId = userId.toString()
 
         return try {
-            // Check if contact exists in Brevo
-            val contactId = contactId ?: brevoClient.getContactIdByEmail(contactData.email)
-
-            val attributes = buildAttributes(contactData)
-            val externalId = userId.toString()
-
             if (contactId != null) {
                 // Contact exists - update it
                 brevoClient.updateContact(
@@ -64,7 +63,12 @@ class BrevoContactAdapter(
             }
         } catch (e: RestClientResponseException) {
             log.error("Failed to sync contact for user {} to Brevo", userId, e)
-            throw ContactServiceException("Failed to sync contact", e)
+
+
+            throw ContactServiceException(
+                "Failed to sync contact(id=${contactId}) \nemail=${contactData.email} \nexternalId=${userId} \nattributes=${attributes}\n",
+                e
+            )
         }
     }
 

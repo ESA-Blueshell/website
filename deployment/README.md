@@ -107,7 +107,7 @@ website status staging
 # Tail logs
 website logs api              # production API logs
 website logs staging api
-website logs development nginx
+website logs development api
 
 # Stop an environment
 website down staging

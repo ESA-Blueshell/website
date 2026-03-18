@@ -3,5 +3,4 @@ include:
   - services/frontend/docker-compose.dev.yml
   - services/listmonk/docker-compose.dev.yml
   - services/mailserver/docker-compose.dev.yaml
-  - services/nginx/docker-compose.dev.yml
 

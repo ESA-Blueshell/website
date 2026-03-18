@@ -104,10 +104,7 @@ brevo:
 google:
   calendar:
     id: ${GOOGLE_CALENDAR_ID:}
-    clientId: ${GOOGLE_CALENDAR_CLIENT_ID:}
-    clientEmail: ${GOOGLE_CALENDAR_CLIENT_EMAIL:}
-    privateKeyPkcs8: ${GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8:}
-    privateKeyId: ${GOOGLE_CALENDAR_PRIVATE_KEY_ID:}
+    serviceAccountJson: ${GOOGLE_CALENDAR_SA_JSON:}
 
 server:
   error:

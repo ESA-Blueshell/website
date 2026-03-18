@@ -4,7 +4,6 @@ import net.blueshell.api.domain.user.application.contact.ContactData
 import net.blueshell.api.domain.user.application.contact.ContactSyncAdapter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
@@ -56,7 +55,7 @@ class BrevoContactAdapterLiveIT {
     @Test
     @Order(1)
     fun `create contact succeeds - verifies listIds is serialised as array`() {
-        contactId = adapter.syncContact(testUserId, contactData())
+        contactId = adapter.syncContact(testUserId, contactId, contactData())
         assertThat(contactId).isNotNull().isNotBlank()
     }
 
@@ -64,7 +63,7 @@ class BrevoContactAdapterLiveIT {
     @Order(2)
     fun `update contact succeeds for existing contact`() {
         assumeContactExists()
-        val updatedId = adapter.syncContact(testUserId, contactData("Updated"))
+        val updatedId = adapter.syncContact(testUserId, contactId, contactData("Updated"))
         assertThat(updatedId).isEqualTo(contactId)
     }
 

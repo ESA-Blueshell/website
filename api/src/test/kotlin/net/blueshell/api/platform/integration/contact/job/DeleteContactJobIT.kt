@@ -37,6 +37,7 @@ class DeleteContactJobIT : UserTestSupport() {
 
         val contactId = mockContactAdapter.syncContact(
             user.id!!,
+            null,
             ContactData(
                 email = user.email,
                 firstName = user.firstName,
@@ -67,6 +68,7 @@ class DeleteContactJobIT : UserTestSupport() {
 
         val contactId = mockContactAdapter.syncContact(
             user.id!!,
+            null,
             ContactData(
                 email = user.email,
                 firstName = user.firstName,

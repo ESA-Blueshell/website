@@ -57,7 +57,7 @@ class SyncListMembershipJob(
             // Ensure user has a contactId (sync contact if null)
             val contactId = if (user.contactId == null) {
                 val contactData = user.toContactData()
-                val syncedContactId = contactAdapter.syncContact(user.id!!, contactData)
+                val syncedContactId = contactAdapter.syncContact(user.id!!, null, contactData)
                 users.updateContactLink(user, syncedContactId.toLong())
                 syncedContactId
             } else {

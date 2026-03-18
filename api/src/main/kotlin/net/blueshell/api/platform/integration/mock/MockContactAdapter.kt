@@ -25,10 +25,11 @@ class MockContactAdapter : ContactSyncAdapter {
     private val contactIdSequence = AtomicLong(1000)
     private val listIdSequence = AtomicLong(2000)
 
-    override fun syncContact(userId: Long, contactData: ContactData): String {
+    override fun syncContact(userId: Long, contactId: String?, contactData: ContactData): String {
         log.info("Mock: Syncing contact for user {}: {}", userId, contactData.email)
 
-        val existingContact = contacts.values.find { it.email == contactData.email }
+        val existingContact = (if (contactId != null) contacts[contactId] else null)
+            ?: contacts.values.find { it.email == contactData.email }
 
         return if (existingContact != null) {
             // Update existing contact

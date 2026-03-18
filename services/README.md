@@ -247,7 +247,7 @@ Or use `restore.sh` if migrating from an existing server.
 website up
 ```
 
-This calls `deployment/deploy.sh`, which:
+This calls `services/deploy.sh`, which:
 1. Loads env files
 2. Ensures Traefik (infra) is running
 3. Deploys the production project

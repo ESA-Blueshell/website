@@ -263,6 +263,32 @@ services:
         limits:
           memory: 128M
 
+  # ── Credential rotator ─────────────────────────────────────────────────────
+  # Runs on the schedule defined in schedule.yml (inside the image).
+  # Also used as a one-shot container by the rotate-credentials CI workflow.
+  # Must run on a manager node to access the Docker socket.
+  rotator:
+    image: ghcr.io/esa-blueshell/rotator:${IMAGE_TAG:-latest}
+    environment:
+      INFISICAL_TOKEN:      ${INFISICAL_TOKEN}
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID}
+      LISTMONK_URL:         "http://listmonk:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - frontback
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 128M
+
 networks:
   frontback:
     driver: overlay

@@ -15,6 +15,10 @@ entryPoints:
           permanent: true
   websecure:
     address: ":443"
+    http:
+      tls: {}
+      middlewares:
+        - secureHeaders@file
   # Internal metrics endpoint — scraped by Prometheus on monitoring network.
   # Not exposed to the internet (no Traefik router routes to it).
   metrics:
@@ -37,6 +41,9 @@ certificatesResolvers:
         entryPoint: web
 
 providers:
+  file:
+    directory: /etc/traefik/conf.d
+    watch: true
   swarm:
     # Connect to socket-proxy, not the raw Docker socket.
     # socket-proxy exposes CONTAINERS/NETWORKS/EVENTS/SERVICES/TASKS (read-only).

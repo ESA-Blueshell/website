@@ -79,6 +79,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
     volumes:
       - /src/website/infra/traefik.yml:/traefik.yml:ro
+      - /src/website/infra/traefik/conf.d:/etc/traefik/conf.d:ro
       - letsencrypt:/letsencrypt
       # No Docker socket — Traefik talks to socket-proxy over TCP
     networks:

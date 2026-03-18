@@ -114,10 +114,12 @@ services:
         - "traefik.http.routers.${STACK_NAME:-website}-api.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api`)"
         - "traefik.http.routers.${STACK_NAME:-website}-api.entrypoints=websecure"
         - "traefik.http.routers.${STACK_NAME:-website}-api.tls.certresolver=letsencrypt"
-        - "traefik.http.routers.${STACK_NAME:-website}-api.middlewares=${STACK_NAME:-website}-api-strip,${STACK_NAME:-website}-api-ratelimit,compress@file"
+        - "traefik.http.routers.${STACK_NAME:-website}-api.middlewares=${STACK_NAME:-website}-api-strip,${STACK_NAME:-website}-api-ratelimit,${STACK_NAME:-website}-tracking-ratelimit,compress@file"
         - "traefik.http.middlewares.${STACK_NAME:-website}-api-strip.stripprefix.prefixes=/api"
         - "traefik.http.middlewares.${STACK_NAME:-website}-api-ratelimit.ratelimit.average=100"
         - "traefik.http.middlewares.${STACK_NAME:-website}-api-ratelimit.ratelimit.burst=50"
+        - "traefik.http.middlewares.${STACK_NAME:-website}-tracking-ratelimit.ratelimit.average=30"
+        - "traefik.http.middlewares.${STACK_NAME:-website}-tracking-ratelimit.ratelimit.burst=10"
         - "traefik.http.services.${STACK_NAME:-website}-api.loadbalancer.server.port=8080"
 
   # ── Vue.js Frontend ────────────────────────────────────────────────────────
@@ -269,6 +271,8 @@ networks:
     driver: overlay
   database:
     driver: overlay
+    driver_opts:
+      encrypted: "true"
   traefik-public:
     external: true
   monitoring:

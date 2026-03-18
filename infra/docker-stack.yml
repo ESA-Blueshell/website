@@ -207,6 +207,64 @@ services:
         - "traefik.http.routers.infra-uptime.tls.certresolver=letsencrypt"
         - "traefik.http.services.infra-uptime.loadbalancer.server.port=3001"
 
+  # ── Infisical PostgreSQL ────────────────────────────────────────────────────
+  infisical-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: infisical
+      POSTGRES_PASSWORD: ${INFISICAL_DB_PASSWORD:?required}
+      POSTGRES_DB: infisical
+    volumes:
+      - infisical-db-data:/var/lib/postgresql/data
+    networks:
+      - infisical
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Infisical Redis ─────────────────────────────────────────────────────────
+  infisical-redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${INFISICAL_REDIS_PASSWORD:?required}
+    volumes:
+      - infisical-redis-data:/data
+    networks:
+      - infisical
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 128M
+
+  # ── Infisical secrets vault ─────────────────────────────────────────────────
+  infisical:
+    image: infisical/infisical:latest-postgres
+    environment:
+      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:?required}
+      AUTH_SECRET: ${INFISICAL_AUTH_SECRET:?required}
+      SITE_URL: https://vault.${INFRA_DOMAIN:-esa-blueshell.nl}
+      DB_CONNECTION_URI: postgresql://infisical:${INFISICAL_DB_PASSWORD}@infisical-db:5432/infisical
+      REDIS_URL: redis://:${INFISICAL_REDIS_PASSWORD}@infisical-redis:6379
+    networks:
+      - infisical
+      - traefik-public
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 512M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.infra-infisical.rule=Host(`vault.${INFRA_DOMAIN:-esa-blueshell.nl}`)"
+        - "traefik.http.routers.infra-infisical.entrypoints=websecure"
+        - "traefik.http.routers.infra-infisical.tls.certresolver=letsencrypt"
+        - "traefik.http.services.infra-infisical.loadbalancer.server.port=8080"
+
 networks:
   traefik-public:
     external: true
@@ -215,6 +273,11 @@ networks:
   socket-proxy:
     driver: overlay
     internal: true   # no internet access; only infra services communicate here
+  infisical:
+    driver: overlay
+    driver_opts:
+      encrypted: "true"
+    internal: true   # vault traffic stays inside the infra stack
 
 volumes:
   letsencrypt:
@@ -224,3 +287,5 @@ volumes:
   grafana-data:
   loki-data:
   uptime-kuma-data:
+  infisical-db-data:
+  infisical-redis-data:

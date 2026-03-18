@@ -52,9 +52,17 @@ ensure_network() {
   fi
 }
 
-# ── Load infra env ────────────────────────────────────────────────────────────
-echo "==> Loading infra env..."
-load_env "${INFRA_ENV}"
+# ── Fetch secrets from Infisical ─────────────────────────────────────────────
+echo "==> Fetching infra secrets from Infisical..."
+
+# Load the minimal server bootstrap env (contains only INFISICAL_TOKEN + INFISICAL_PROJECT_ID)
+load_env "${REPO_ROOT}/.server.env"
+
+eval "$(infisical export \
+  --token="${INFISICAL_TOKEN:?INFISICAL_TOKEN required — set in .server.env}" \
+  --projectId="${INFISICAL_PROJECT_ID:?INFISICAL_PROJECT_ID required — set in .server.env}" \
+  --env="prod" \
+  --format=dotenv-export)"
 
 # Rootless Docker socket
 export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"

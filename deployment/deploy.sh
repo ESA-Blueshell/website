@@ -85,18 +85,18 @@ ensure_network() {
   fi
 }
 
-# ── Load environment ──────────────────────────────────────────────────────────
-echo "==> Loading env files..."
-load_env "${REPO_ROOT}/services/api/.db.env"
-load_env "${REPO_ROOT}/services/api/.api.env"
-load_env "${REPO_ROOT}/services/listmonk/.listmonk.env"
+# ── Fetch secrets from Infisical ─────────────────────────────────────────────
+INFISICAL_ENV="$([ "${IMAGE_TAG}" = "latest" ] && echo "prod" || echo "${IMAGE_TAG}")"
+echo "==> Fetching secrets from Infisical (env: ${INFISICAL_ENV})..."
 
-# Optional per-environment overrides (e.g. .staging.db.env):
-[[ "${IMAGE_TAG}" != "latest" ]] && {
-  load_env "${REPO_ROOT}/services/api/.${IMAGE_TAG}.db.env"            2>/dev/null || true
-  load_env "${REPO_ROOT}/services/api/.${IMAGE_TAG}.api.env"           2>/dev/null || true
-  load_env "${REPO_ROOT}/services/listmonk/.${IMAGE_TAG}.listmonk.env" 2>/dev/null || true
-}
+# Load the minimal server bootstrap env (contains only INFISICAL_TOKEN + INFISICAL_PROJECT_ID)
+load_env "${REPO_ROOT}/.server.env"
+
+eval "$(infisical export \
+  --token="${INFISICAL_TOKEN:?INFISICAL_TOKEN required — set in .server.env}" \
+  --projectId="${INFISICAL_PROJECT_ID:?INFISICAL_PROJECT_ID required — set in .server.env}" \
+  --env="${INFISICAL_ENV}" \
+  --format=dotenv-export)"
 
 # Export variables consumed by the stack file's variable substitution
 export IMAGE_TAG

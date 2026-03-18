@@ -2,6 +2,11 @@ app:
   security:
     require-https: true
 
+security:
+  openapi:
+    public:
+      enabled: false
+
 springdoc:
   api-docs:
     enabled: false

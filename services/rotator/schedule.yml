@@ -1,0 +1,19 @@
+# Credential rotation schedule.
+# cron expressions are in UTC. Stacks map to Infisical environments:
+#   website → prod | website-staging → staging | website-dev → dev
+rotations:
+  - name: jwt
+    cron: "0 23 * * 0"      # Sunday 23:00 UTC
+    stacks: [website, website-staging, website-dev]
+
+  - name: database
+    cron: "0 23 * * 0"
+    stacks: [website, website-staging, website-dev]
+
+  - name: listmonk
+    cron: "0 23 * * 0"
+    stacks: [website, website-staging, website-dev]
+
+  - name: google-calendar
+    cron: "0 23 1 * *"      # 1st of each month
+    stacks: [website]

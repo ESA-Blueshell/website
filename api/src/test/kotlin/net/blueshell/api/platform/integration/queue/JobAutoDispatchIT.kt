@@ -146,6 +146,7 @@ class JobAutoDispatchIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val contactId = mockContactAdapter.syncContact(
             user.id!!,
+            null,
             ContactData(
                 email = user.email,
                 firstName = user.firstName,

@@ -87,6 +87,7 @@ class BrevoContactClient(
      */
     @Throws(RestClientResponseException::class)
     fun updateContact(
+        contactId: String,
         email: String,
         externalId: String,
         attributes: Map<String, Any>
@@ -96,7 +97,7 @@ class BrevoContactClient(
         updateContact.extId = externalId
         @Suppress("UNCHECKED_CAST")
         updateContact.attributes = attributes as @Valid Map<String?, CreateContactRequestAttributesValue?>?
-        contactsApi.updateContact(email, updateContact, "email_id")
+        contactsApi.updateContact(contactId, updateContact, "contact_id")
     }
 
     /**

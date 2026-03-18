@@ -34,24 +34,25 @@ class BrevoContactAdapter(
     private val brevoClient: BrevoContactClient
 ) : ContactSyncAdapter {
 
-    override fun syncContact(userId: Long, contactData: ContactData): String {
+    override fun syncContact(userId: Long, contactId: String?, contactData: ContactData): String {
         log.info("Syncing contact for user {}: {}", userId, contactData.email)
 
         return try {
             // Check if contact exists in Brevo
-            val existingContactId = brevoClient.getContactIdByEmail(contactData.email)
+            val contactId = contactId ?: brevoClient.getContactIdByEmail(contactData.email)
 
             val attributes = buildAttributes(contactData)
             val externalId = userId.toString()
 
-            if (existingContactId != null) {
+            if (contactId != null) {
                 // Contact exists - update it
                 brevoClient.updateContact(
+                    contactId = contactId.toString(),
                     email = contactData.email,
                     externalId = externalId,
                     attributes = attributes
                 )
-                existingContactId.toString()
+                contactId.toString()
             } else {
                 // Contact doesn't exist - create it
                 val createdId = brevoClient.createContact(

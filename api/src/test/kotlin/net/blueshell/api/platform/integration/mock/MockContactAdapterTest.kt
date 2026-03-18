@@ -17,7 +17,7 @@ class MockContactAdapterTest {
 
     @Test
     fun `syncContact creates contact when email is new`() {
-        val contactId = adapter.syncContact(1L, contactData(email = "new@example.com"))
+        val contactId = adapter.syncContact(1L, null,contactData(email = "new@example.com"))
 
         assertThat(contactId).isNotBlank()
         assertThat(adapter.getAllContacts()).hasSize(1)
@@ -30,9 +30,10 @@ class MockContactAdapterTest {
 
     @Test
     fun `syncContact updates existing contact when email already exists`() {
-        val originalId = adapter.syncContact(2L, contactData(email = "same@example.com", firstName = "Old", isMember = false))
+        val originalId = adapter.syncContact(2L, null, contactData(email = "same@example.com", firstName = "Old", isMember = false))
         val updatedId = adapter.syncContact(
             2L,
+            null,
             contactData(
                 email = "same@example.com",
                 firstName = "Updated",
@@ -58,7 +59,7 @@ class MockContactAdapterTest {
 
     @Test
     fun `getContactId returns id for known email and null for unknown email`() {
-        val createdId = adapter.syncContact(3L, contactData(email = "known@example.com"))
+        val createdId = adapter.syncContact(3L, null, contactData(email = "known@example.com"))
 
         assertThat(adapter.getContactId(3L, "known@example.com")).isEqualTo(createdId)
         assertThat(adapter.getContactId(3L, "unknown@example.com")).isNull()
@@ -78,7 +79,7 @@ class MockContactAdapterTest {
 
     @Test
     fun `addToList adds existing contact to existing list`() {
-        val contactId = adapter.syncContact(4L, contactData(email = "list@example.com"))
+        val contactId = adapter.syncContact(4L, null, contactData(email = "list@example.com"))
         val listId = adapter.createList("Members", "Main")
 
         adapter.addToList(listId, contactId)
@@ -88,7 +89,7 @@ class MockContactAdapterTest {
 
     @Test
     fun `addToList throws when list does not exist`() {
-        val contactId = adapter.syncContact(5L, contactData(email = "missing-list@example.com"))
+        val contactId = adapter.syncContact(5L, null, contactData(email = "missing-list@example.com"))
 
         assertThatThrownBy { adapter.addToList("missing-list", contactId) }
             .isInstanceOf(IllegalArgumentException::class.java)
@@ -106,7 +107,7 @@ class MockContactAdapterTest {
 
     @Test
     fun `removeFromList removes existing relation and keeps list`() {
-        val contactId = adapter.syncContact(6L, contactData(email = "remove@example.com"))
+        val contactId = adapter.syncContact(6L, null, contactData(email = "remove@example.com"))
         val listId = adapter.createList("Participants", "Main")
         adapter.addToList(listId, contactId)
         assertThat(adapter.getAllLists()[listId]!!.contactIds).contains(contactId)
@@ -118,7 +119,7 @@ class MockContactAdapterTest {
 
     @Test
     fun `removeFromList throws when contact is not in the list`() {
-        val contactId = adapter.syncContact(7L, contactData(email = "other@example.com"))
+        val contactId = adapter.syncContact(7L, null, contactData(email = "other@example.com"))
         val listId = adapter.createList("NotJoined", "Main")
 
         assertThatThrownBy { adapter.removeFromList(listId, contactId) }
@@ -135,7 +136,7 @@ class MockContactAdapterTest {
 
     @Test
     fun `clear removes all contacts and lists`() {
-        adapter.syncContact(8L, contactData(email = "a@example.com"))
+        adapter.syncContact(8L, null, contactData(email = "a@example.com"))
         adapter.createList("ListA", "FolderA")
         assertThat(adapter.getAllContacts()).isNotEmpty
         assertThat(adapter.getAllLists()).isNotEmpty

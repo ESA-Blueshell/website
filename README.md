@@ -18,7 +18,7 @@ Domain-Driven Design (DDD) with a clean layered architecture:
 | **Frontend** | Vue.js 3, TypeScript, Vuetify 3, Vite |
 | **Database** | MariaDB 10.11 (application), PostgreSQL 17 (Listmonk) |
 | **Email** | Listmonk v4 (transactional + marketing) |
-| **Reverse proxy** | Nginx with Let's Encrypt (Certbot) |
+| **Reverse proxy** | Traefik v3 (Let's Encrypt via ACME) |
 | **Containerization** | Docker Swarm (single-node, rootless) |
 | **CI/CD** | GitHub Actions → GHCR → `website pull` on server |
 
@@ -43,12 +43,6 @@ website/
 │   │   ├── Dockerfile
 │   │   ├── docker-compose.yml
 │   │   └── docker-compose.dev.yml
-│   ├── nginx/               Reverse proxy + SSL
-│   │   ├── nginx.conf           HTTP-only (initial cert acquisition)
-│   │   ├── nginx-ssl.conf       Full HTTPS + redirect
-│   │   ├── entrypoint.sh        Picks config based on cert presence
-│   │   ├── Dockerfile
-│   │   └── README.md
 │   ├── listmonk/            Email & contact management (Listmonk + PostgreSQL)
 │   │   ├── setup.py         Idempotent first-run setup
 │   │   ├── docker-compose.yml
@@ -81,7 +75,7 @@ website/
 ### Prerequisites
 
 - Docker + Docker Compose v2 (for dev environment)
-- Java 24 (optional — for running API outside Docker)
+- Java 21 (optional — for running API outside Docker)
 - Node.js + Yarn Berry (optional — for running frontend outside Docker)
 
 ### Start the dev environment
@@ -94,9 +88,9 @@ This starts:
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| API | https://localhost/api | Hot-reload via Gradle |
-| Frontend | https://localhost | Hot-reload via Vite |
-| Swagger UI | https://localhost/api/swagger-ui | |
+| API | http://localhost:8080 | Hot-reload via Gradle |
+| Frontend | http://localhost:3000 | Hot-reload via Vite |
+| Swagger UI | http://localhost:8080/swagger-ui | Disabled by default — set `SPRINGDOC_API_DOCS_ENABLED=true` |
 | MariaDB | localhost:3307 | |
 | Listmonk | http://localhost:9000 | Email management UI |
 | Mailserver | localhost:587 (SMTP) | Bounce testing |
@@ -168,7 +162,7 @@ sudo website pull
 
 Every push to `main`:
 1. Runs tests (API unit, system, frontend unit, e2e, coverage check)
-2. Builds and pushes Docker images to GHCR (`api`, `frontend`, `nginx`)
+2. Builds and pushes Docker images to GHCR (`api`, `frontend`)
 3. SSHes to the production server and runs `website pull`
 
 `website pull` = `git pull` + `bash deployment/deploy.sh` (Docker Swarm stack deploy).
@@ -179,7 +173,6 @@ Every push to `main`:
 
 | Service | Image | Internal port | Description |
 |---------|-------|---------------|-------------|
-| `nginx` | `ghcr.io/esa-blueshell/nginx` | 80, 443 | Reverse proxy + SSL |
 | `api` | `ghcr.io/esa-blueshell/api` | 8080 | Spring Boot REST API |
 | `frontend` | `ghcr.io/esa-blueshell/frontend` | 3000 | Vue.js SPA |
 | `db` | `mariadb:10.11` | 3306 | Application database |
@@ -193,7 +186,7 @@ Every push to `main`:
 
 - JWT authentication (Spring Security)
 - SQL injection prevention (JPA/Hibernate parameterized queries)
-- XSS protection (Vue.js template escaping + CSP headers via Nginx)
+- XSS protection (Vue.js template escaping + CSP headers via Traefik)
 - CORS restricted to `esa-blueshell.nl`
 - TLS 1.2+ with Let's Encrypt certificates (auto-renewed)
 - SSH on port 2222, keys-only, no password auth
@@ -204,8 +197,8 @@ Every push to `main`:
 
 ## API Documentation
 
-- **Development:** https://localhost/api/swagger-ui
-- **Production:** https://esa-blueshell.nl/api/swagger-ui
+- **Development:** http://localhost:8080/swagger-ui (set `SPRINGDOC_API_DOCS_ENABLED=true`)
+- **Production:** disabled (OpenAPI docs are off in the prod profile)
 - **OpenAPI spec:** `/api/v3/api-docs`
 
 ---

@@ -92,11 +92,11 @@ class BrevoContactClient(
         externalId: String,
         attributes: Map<String, Any>
     ) {
-        log.info("Updating Brevo contact for email: {}", email)
         val updateContact = UpdateContactRequest()
         updateContact.extId = externalId
         @Suppress("UNCHECKED_CAST")
         updateContact.attributes = attributes as @Valid Map<String?, CreateContactRequestAttributesValue?>?
+        log.info("Updating Brevo contact for email: {}\nWith payload: {}", email, updateContact.toString())
         contactsApi.updateContact(contactId, updateContact, "contact_id")
     }
 

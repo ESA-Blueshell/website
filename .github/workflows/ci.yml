@@ -34,7 +34,7 @@ env:
   MYSQL_DATABASE: blueshell-test
   MYSQL_PORT: '3306'
   MYSQL_USER: blueshell
-  MYSQL_PASSWORD: ${{ secrets.CI_MYSQL_PASSWORD }}
+  MYSQL_PASSWORD: ci-blueshell
   MYSQL_HOST: 127.0.0.1
 
   RABBITMQ_HOST: 127.0.0.1
@@ -45,18 +45,12 @@ env:
   APP_URL: http://127.0.0.1:8080
   FRONTEND_URL: http://127.0.0.1:3000
 
-  JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+  JWT_SECRET: ci-jwt-secret-not-used-in-production-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
   STORAGE_LOCATION: ./storage
 
   BREVO_API_KEY: something
   BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
-
-  GOOGLE_CALENDAR_ID: something
-  GOOGLE_CALENDAR_CLIENT_ID: something
-  GOOGLE_CALENDAR_CLIENT_EMAIL: something
-  GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8: ${{ secrets.CI_GOOGLE_PRIVATE_KEY }}
-  GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
 
   GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 

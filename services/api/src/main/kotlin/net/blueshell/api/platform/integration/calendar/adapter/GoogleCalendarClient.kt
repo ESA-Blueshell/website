@@ -9,7 +9,6 @@ import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.calendar.model.EventDateTime
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.GoogleCredentials
-import com.google.auth.oauth2.ServiceAccountCredentials
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -18,6 +17,7 @@ import com.vladsch.flexmark.util.data.MutableDataSet
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -32,21 +32,13 @@ import java.time.ZoneId
  * domain concepts and this client's Google-specific operations.
  */
 @Component
+@Profile("!test & !dev")
 class GoogleCalendarClient {
     @Value($$"${google.calendar.id}")
     private lateinit var calendarId: String
 
-    @Value($$"${google.calendar.clientId}")
-    private lateinit var clientId: String
-
-    @Value($$"${google.calendar.clientEmail}")
-    private lateinit var clientEmail: String
-
-    @Value($$"${google.calendar.privateKeyPkcs8}")
-    private lateinit var privateKeyPkcs8: String
-
-    @Value($$"${google.calendar.privateKeyId}")
-    private lateinit var privateKeyId: String
+    @Value($$"${google.calendar.serviceAccountJson}")
+    private lateinit var serviceAccountJson: String
 
     private lateinit var service: Calendar
     private lateinit var htmlRenderer: HtmlRenderer
@@ -57,8 +49,9 @@ class GoogleCalendarClient {
         try {
             val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
 
-            val credentials: GoogleCredentials = ServiceAccountCredentials
-                .fromPkcs8(clientId, clientEmail, privateKeyPkcs8, privateKeyId, SCOPES)
+            val credentials: GoogleCredentials = GoogleCredentials
+                .fromStream(serviceAccountJson.byteInputStream())
+                .createScoped(SCOPES)
 
             service = Calendar.Builder(
                 httpTransport,

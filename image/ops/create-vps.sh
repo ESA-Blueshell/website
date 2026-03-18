@@ -5,7 +5,7 @@
 # Prerequisites:
 #   1. cntb CLI installed  (https://github.com/contabo/cntb)
 #   2. SSH keypairs exist  (run image/cloud-init/render.sh --standalone first)
-#   3. blueshell-admin.pub uploaded to Contabo and its ID set in CONTABO_SSH_KEY_ID
+#   3. Admin SSH public key (blueshell-admin.pub) uploaded to Contabo and its ID set in CONTABO_SSH_KEY_ID
 #      (see helper step printed by this script if the key is not yet uploaded)
 #   4. Credentials in image/.env  (see .example.env)
 #
@@ -101,7 +101,7 @@ echo ""
 echo "VPS creation requested. Check the Contabo portal for the assigned IP address."
 echo ""
 echo "Cloud-init will run on first boot (~8–12 min). Once complete:"
-echo "  ssh -p 2222 -i ${ADMIN_KEY} blueshell@<IP>"
+echo "  ssh -p 2222 -i ${ADMIN_KEY} admin@<IP>"
 echo ""
 echo "Then SSH in as the website user and deploy:"
 echo "  ssh -p 2222 -i ~/.ssh/blueshell-website website@<IP>"

@@ -26,7 +26,7 @@ if [[ -f "${ENV_FILE}" ]]; then
   set -a; source "${ENV_FILE}"; set +a
 fi
 
-REMOTE_USER="blueshell"
+REMOTE_USER="admin"
 REMOTE_HOST="${1:-${REMOTE_HOST:?Set REMOTE_HOST in image/.env or pass as first argument}}"
 SSH_PORT=2222
 SSH_KEY="${HOME}/.ssh/blueshell-admin"
@@ -42,7 +42,7 @@ echo "==> Backing up from ${REMOTE_USER}@${REMOTE_HOST}:${SSH_PORT}"
 echo "--> Running remote backup..."
 ${SSH_CMD} "sudo /usr/local/bin/db-backup" || true
 
-# 2) Ensure storage files are group-readable (blueshell is in the website group)
+# 2) Ensure storage files are group-readable (admin is in the website group)
 ${SSH_CMD} "sudo chmod -R g+rX /src/website/storage" || true
 
 # 3) Fetch DB dumps (MariaDB + Listmonk)

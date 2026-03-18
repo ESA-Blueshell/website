@@ -1,6 +1,0 @@
-#cloud-config
-users:
-  - name: root
-    lock_passwd: false
-    plain_text_passwd: "packer"
-ssh_pwauth: true

@@ -52,17 +52,31 @@ ensure_network() {
   fi
 }
 
-# ── Fetch secrets from Infisical ─────────────────────────────────────────────
-echo "==> Fetching infra secrets from Infisical..."
+# ── Load secrets ──────────────────────────────────────────────────────────────
+echo "==> Loading secrets..."
 
-# Load the minimal server bootstrap env (contains only INFISICAL_TOKEN + INFISICAL_PROJECT_ID)
-load_env "${REPO_ROOT}/.server.env"
+# Always load local env file first (works on first boot, before Infisical)
+load_env "${INFRA_ENV}"
 
-eval "$(infisical export \
-  --token="${INFISICAL_TOKEN:?INFISICAL_TOKEN required — set in .server.env}" \
-  --projectId="${INFISICAL_PROJECT_ID:?INFISICAL_PROJECT_ID required — set in .server.env}" \
-  --env="prod" \
-  --format=dotenv-export)"
+# Overlay from Infisical if configured and reachable
+if [[ -f "${REPO_ROOT}/.server.env" ]]; then
+  load_env "${REPO_ROOT}/.server.env"
+  if [[ -n "${INFISICAL_TOKEN:-}" && -n "${INFISICAL_PROJECT_ID:-}" ]]; then
+    INFISICAL_DOMAIN="${INFISICAL_API_URL:-http://localhost:8080}"
+    if infisical export \
+         --token="${INFISICAL_TOKEN}" \
+         --projectId="${INFISICAL_PROJECT_ID}" \
+         --domain="${INFISICAL_DOMAIN}" \
+         --env="prod" \
+         --format=dotenv-export > /tmp/.infisical-export 2>/dev/null; then
+      echo "  loaded: Infisical (prod)"
+      eval "$(cat /tmp/.infisical-export)"
+      rm -f /tmp/.infisical-export
+    else
+      echo "  WARNING: Infisical unreachable — using local env files only" >&2
+    fi
+  fi
+fi
 
 # Rootless Docker socket
 export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"

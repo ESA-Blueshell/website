@@ -36,13 +36,6 @@ build/
 /data
 files/
 
-**/Dockerfile*
-!docker/**/Dockerfile*
-
-**/*-deployment.yaml
-**/*-service.yaml
-!kubernetes/**/*.yaml
-
 files
 data
 /storage/
@@ -64,6 +57,7 @@ services/**/*.env
 /image/.env
 /image/cloud-init/cloud-config.yaml
 /image/cloud-init/cloud-config-standalone.yaml
+/image/cloud-init/rendered/
 /image/packer/output/
 /backup/
 

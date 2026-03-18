@@ -243,6 +243,10 @@ services:
   # ── Infisical secrets vault ─────────────────────────────────────────────────
   infisical:
     image: infisical/infisical:latest-postgres
+    ports:
+      - target: 8080
+        published: 8080
+        mode: host    # binds on host; UFW blocks external (only 2222/80/443 open)
     environment:
       ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:?required}
       AUTH_SECRET: ${INFISICAL_AUTH_SECRET:?required}

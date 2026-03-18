@@ -30,7 +30,7 @@ if [[ -f "${ENV_FILE}" ]]; then
   set -a; source "${ENV_FILE}"; set +a
 fi
 
-REMOTE_USER="blueshell"
+REMOTE_USER="admin"
 REMOTE_HOST="${1:-${REMOTE_HOST:?Set REMOTE_HOST in image/.env or pass as first argument}}"
 SSH_PORT=2222
 SSH_KEY="${HOME}/.ssh/blueshell-admin"

@@ -3,7 +3,7 @@
 # deploy.sh — deploy the website application as a Docker Swarm stack.
 #
 # Usage (run as the website user or via `website up` / `website pull`):
-#   bash deployment/deploy.sh [stack-name]
+#   bash services/deploy.sh [stack-name]
 #
 # Environment variables (all optional, with defaults):
 #   IMAGE_TAG    Docker image tag to deploy  (default: latest)
@@ -56,7 +56,7 @@ case "${IMAGE_TAG}" in
   *)       APP_DOMAIN="${IMAGE_TAG}.esa-blueshell.nl" ;;
 esac
 
-STACK_FILE="${REPO_ROOT}/deployment/docker-stack.yml"
+STACK_FILE="${SCRIPT_DIR}/docker-stack.yml"
 
 echo "==> Deploying environment: IMAGE_TAG=${IMAGE_TAG}  STACK=${STACK_NAME}  DOMAIN=${APP_DOMAIN}"
 

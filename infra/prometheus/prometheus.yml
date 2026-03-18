@@ -13,7 +13,7 @@ scrape_configs:
   - job_name: blueshell-api
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ['website_api:8080']
+      - targets: ['website_api:8081']
         labels:
           service: api
           stack:   website

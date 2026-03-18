@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import httpx
 
@@ -47,3 +48,16 @@ class InfisicalClient:
 
     def __exit__(self, *_: object) -> None:
         self.close()
+
+
+def try_infisical_set(
+    infisical: Optional[InfisicalClient], name: str, value: str, env: str
+) -> None:
+    """Update a secret in Infisical if the client is available, log warning otherwise."""
+    if infisical is None:
+        log.info("Infisical not configured — skipping remote update for %s", name)
+        return
+    try:
+        infisical.set(name, value, env)
+    except Exception:
+        log.warning("Failed to update %s in Infisical — local env file updated", name, exc_info=True)

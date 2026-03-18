@@ -48,11 +48,10 @@ website/
 │   │   ├── docker-compose.yml
 │   │   ├── docker-compose.dev.yml
 │   │   └── .listmonk.env    Listmonk credentials (not committed)
-│   └── mailserver/          docker-mailserver (development only)
-│       └── docker-compose.dev.yaml
-├── deployment/              Docker Swarm stack & deployment scripts
-│   ├── docker-stack.yml     Swarm stack definition (all services, flat)
-│   ├── deploy.sh            Deploy script (sources env files + stack deploy)
+│   ├── mailserver/          docker-mailserver (development only)
+│   │   └── docker-compose.dev.yaml
+│   ├── docker-stack.yml     Swarm stack definition (all services)
+│   ├── deploy.sh            Deploy script (fetches secrets, deploys stack)
 │   └── README.md            Full deployment guide
 ├── image/                   VPS provisioning (Contabo cloud-init + ops)
 │   ├── scripts/provision.sh System setup baked into the image
@@ -155,7 +154,7 @@ sudo website up
 sudo website pull
 ```
 
-**Full docs:** [deployment/README.md](deployment/README.md)
+**Full docs:** [services/README.md](services/README.md)
 **VPS provisioning:** [image/README.md](image/README.md)
 
 ### CI/CD flow
@@ -165,7 +164,7 @@ Every push to `main`:
 2. Builds and pushes Docker images to GHCR (`api`, `frontend`)
 3. SSHes to the production server and runs `website pull`
 
-`website pull` = `git pull` + `bash deployment/deploy.sh` (Docker Swarm stack deploy).
+`website pull` = `git pull` + `bash services/deploy.sh` (Docker Swarm stack deploy).
 
 ---
 

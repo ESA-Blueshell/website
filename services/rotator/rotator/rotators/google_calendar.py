@@ -1,14 +1,17 @@
 import base64
 import json
 import logging
+import os
 import time
+from typing import Optional
 
 import httpx
 import jwt as pyjwt
 
 from rotator import docker_ops
 from rotator.config import Config
-from rotator.infisical import InfisicalClient
+from rotator.env_files import update_env_file
+from rotator.infisical import InfisicalClient, try_infisical_set
 from rotator.rotators.base import Rotator
 
 log = logging.getLogger(__name__)
@@ -18,21 +21,38 @@ _IAM_BASE = "https://iam.googleapis.com/v1"
 
 
 class GoogleCalendarRotator(Rotator):
-    def rotate(self, env: str, stack: str, infisical: InfisicalClient, config: Config) -> None:
+    def rotate(self, env: str, stack: str, infisical: Optional[InfisicalClient], config: Config) -> None:
         log.info("[google-calendar] rotating service account key for stack=%s", stack)
 
-        sa_json_str = infisical.get("GOOGLE_CALENDAR_SA_JSON", env)
+        api_env = os.path.join(config.repo_root, "services/api/.api.env")
+        sa_json_str = self._get_sa_json(env, infisical, api_env)
         sa = json.loads(sa_json_str)
 
         access_token = self._get_access_token(sa)
         old_key_id = sa["private_key_id"]
         new_sa_json = self._create_key(access_token, sa["project_id"], sa["client_email"])
 
-        infisical.set("GOOGLE_CALENDAR_SA_JSON", new_sa_json, env)
-        docker_ops.force_update(f"{stack}_api")
+        update_env_file(api_env, "GOOGLE_CALENDAR_SA_JSON", new_sa_json)
+        try_infisical_set(infisical, "GOOGLE_CALENDAR_SA_JSON", new_sa_json, env)
+        docker_ops.stack_deploy(config.repo_root, stack)
 
         self._delete_key(access_token, sa["project_id"], sa["client_email"], old_key_id)
         log.info("[google-calendar] key rotated, old key %s deleted", old_key_id)
+
+    @staticmethod
+    def _get_sa_json(env: str, infisical: Optional[InfisicalClient], api_env: str) -> str:
+        """Get SA JSON from Infisical or fall back to local env file."""
+        if infisical is not None:
+            try:
+                return infisical.get("GOOGLE_CALENDAR_SA_JSON", env)
+            except Exception:
+                log.warning("Could not fetch GOOGLE_CALENDAR_SA_JSON from Infisical, trying local env")
+        if os.path.isfile(api_env):
+            with open(api_env) as f:
+                for line in f:
+                    if line.startswith("GOOGLE_CALENDAR_SA_JSON="):
+                        return line.split("=", 1)[1].strip()
+        raise RuntimeError("GOOGLE_CALENDAR_SA_JSON not found in Infisical or local env file")
 
     def _get_access_token(self, sa: dict) -> str:
         now = int(time.time())

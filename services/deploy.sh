@@ -19,7 +19,7 @@
 #   1. Resolves IMAGE_TAG, STACK_NAME, and APP_DOMAIN.
 #   2. Loads credentials from the matching service env files.
 #   3. Ensures required overlay networks exist.
-#   4. Deploys (or updates) the Swarm stack from deployment/docker-stack.yml.
+#   4. Deploys (or updates) the Swarm stack from services/docker-stack.yml.
 #
 # Env file sources:
 #   services/api/.db.env               MariaDB credentials
@@ -85,18 +85,34 @@ ensure_network() {
   fi
 }
 
-# ── Fetch secrets from Infisical ─────────────────────────────────────────────
+# ── Load secrets ──────────────────────────────────────────────────────────────
 INFISICAL_ENV="$([ "${IMAGE_TAG}" = "latest" ] && echo "prod" || echo "${IMAGE_TAG}")"
-echo "==> Fetching secrets from Infisical (env: ${INFISICAL_ENV})..."
+echo "==> Loading secrets..."
 
-# Load the minimal server bootstrap env (contains only INFISICAL_TOKEN + INFISICAL_PROJECT_ID)
-load_env "${REPO_ROOT}/.server.env"
+# Always load local env files first (works on first boot, before Infisical)
+load_env "${REPO_ROOT}/services/api/.db.env"
+load_env "${REPO_ROOT}/services/api/.api.env"
+load_env "${REPO_ROOT}/services/listmonk/.listmonk.env"
 
-eval "$(infisical export \
-  --token="${INFISICAL_TOKEN:?INFISICAL_TOKEN required — set in .server.env}" \
-  --projectId="${INFISICAL_PROJECT_ID:?INFISICAL_PROJECT_ID required — set in .server.env}" \
-  --env="${INFISICAL_ENV}" \
-  --format=dotenv-export)"
+# Overlay from Infisical if configured and reachable
+if [[ -f "${REPO_ROOT}/.server.env" ]]; then
+  load_env "${REPO_ROOT}/.server.env"
+  if [[ -n "${INFISICAL_TOKEN:-}" && -n "${INFISICAL_PROJECT_ID:-}" ]]; then
+    INFISICAL_DOMAIN="${INFISICAL_API_URL:-http://localhost:8080}"
+    if infisical export \
+         --token="${INFISICAL_TOKEN}" \
+         --projectId="${INFISICAL_PROJECT_ID}" \
+         --domain="${INFISICAL_DOMAIN}" \
+         --env="${INFISICAL_ENV}" \
+         --format=dotenv-export > /tmp/.infisical-export 2>/dev/null; then
+      echo "  loaded: Infisical (${INFISICAL_ENV})"
+      eval "$(cat /tmp/.infisical-export)"
+      rm -f /tmp/.infisical-export
+    else
+      echo "  WARNING: Infisical unreachable — using local env files only" >&2
+    fi
+  fi
+fi
 
 # Export variables consumed by the stack file's variable substitution
 export IMAGE_TAG

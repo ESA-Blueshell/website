@@ -1,32 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# render.sh — render cloud-init config template(s) with real values.
+# render.sh — render the cloud-init config template with real values.
 #
 # Usage:
-#   ./render.sh [--standalone|--all] ['<BLU_PW>' '<ROOT_PW>' '<WEB_PW>' '<GHCR_USER>' '<GHCR_TOKEN>']
+#   ./render.sh
 #
-# Flags (first argument, optional):
-#   (none)       Render cloud-config.yaml (Packer flow)
-#   --standalone Render cloud-config-standalone.yaml (Contabo cloud-init-only flow)
-#   --all        Render both
-#
-# All value arguments are optional if the corresponding env vars are set
-# (sourced from image/.env or exported in the shell):
-#   BLUESHELL_PASSWORD, ROOT_PASSWORD, WEBSITE_PASSWORD, GHCR_USERNAME, GHCR_TOKEN
+# Reads all values from image/.env (or exported env vars).
 #
 # Generates (or reuses) two ed25519 SSH keypairs in ~/.ssh:
 #   ~/.ssh/blueshell-website  — for the website application user
-#   ~/.ssh/blueshell-admin    — for the blueshell admin user
+#   ~/.ssh/blueshell-admin    — for the admin user
 #
-# The GHCR_TOKEN should be a GitHub PAT (classic) with only read:packages scope.
+# Auto-generates random secrets for any blank "auto-generated" variable.
+#
+# Output:
+#   cloud-init/cloud-config-standalone.yaml
+#   cloud-init/rendered/.db.env
+#   cloud-init/rendered/.api.env
+#   cloud-init/rendered/.listmonk.env
+#   cloud-init/rendered/.infra.env
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# ── Mode selection ────────────────────────────────────────────────────────────
-MODE="packer"
-if [[ "${1:-}" == "--standalone" ]]; then MODE="standalone"; shift; fi
-if [[ "${1:-}" == "--all" ]];        then MODE="all";        shift; fi
 
 # ── Source .env from image root if present ───────────────────────────────────
 ENV_FILE="${SCRIPT_DIR}/../.env"
@@ -35,30 +30,77 @@ if [[ -f "${ENV_FILE}" ]]; then
   set -a; source "${ENV_FILE}"; set +a
 fi
 
-# ── Values: positional args override env vars ────────────────────────────────
-BLUESHELL_PASSWORD="${1:-${BLUESHELL_PASSWORD:-}}"
-ROOT_PASSWORD="${2:-${ROOT_PASSWORD:-}}"
-WEBSITE_PASSWORD="${3:-${WEBSITE_PASSWORD:-}}"
-GHCR_USER="${4:-${GHCR_USERNAME:-}}"
-GHCR_TOKEN="${5:-${GHCR_TOKEN:-}}"
-shift 5 2>/dev/null || true
+# ── Validate required values ─────────────────────────────────────────────────
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+ROOT_PASSWORD="${ROOT_PASSWORD:-}"
+WEBSITE_PASSWORD="${WEBSITE_PASSWORD:-}"
+GHCR_USER="${GHCR_USERNAME:-}"
+GHCR_TOKEN="${GHCR_TOKEN:-}"
 
-if [[ -z "${BLUESHELL_PASSWORD}" || -z "${ROOT_PASSWORD}" || -z "${WEBSITE_PASSWORD}" \
+if [[ -z "${ADMIN_PASSWORD}" || -z "${ROOT_PASSWORD}" || -z "${WEBSITE_PASSWORD}" \
    || -z "${GHCR_USER}" || -z "${GHCR_TOKEN}" ]]; then
   cat >&2 <<'EOF'
-Error: missing required values. Provide them as positional arguments or via env vars
-(set in image/.env or exported in the shell):
+Error: missing required values. Set them in image/.env (or export to the shell):
 
-  render.sh [--standalone|--all] '<BLUESHELL_PW>' '<ROOT_PW>' '<WEBSITE_PW>' '<GHCR_USER>' '<GHCR_TOKEN>'
-
-  or set: BLUESHELL_PASSWORD, ROOT_PASSWORD, WEBSITE_PASSWORD, GHCR_USERNAME, GHCR_TOKEN
-
-Notes:
-  - All three passwords are for console/portal login only; SSH remains keys-only.
-  - GHCR_TOKEN must be a GitHub PAT (classic) with read:packages scope.
+  ADMIN_PASSWORD       sudo admin user password (console/portal login only)
+  ROOT_PASSWORD        root account password (emergency portal access)
+  WEBSITE_PASSWORD     application service account password
+  GHCR_USERNAME        GitHub username
+  GHCR_TOKEN           GitHub PAT (classic) with read:packages scope
 EOF
   exit 1
 fi
+
+# ── Auto-generate secrets if blank ───────────────────────────────────────────
+auto_secret() {
+  local var="$1" length="${2:-32}"
+  if [[ -z "${!var:-}" ]]; then
+    eval "export ${var}=$(openssl rand -base64 "${length}" | tr -d '\n')"
+    echo "  auto-generated: ${var}"
+  fi
+}
+
+auto_hex() {
+  local var="$1" bytes="${2:-16}"
+  if [[ -z "${!var:-}" ]]; then
+    eval "export ${var}=$(openssl rand -hex "${bytes}")"
+    echo "  auto-generated: ${var}"
+  fi
+}
+
+echo "==> Generating secrets..."
+auto_secret MYSQL_ROOT_PASSWORD
+auto_secret MYSQL_PASSWORD
+auto_secret JWT_SECRET 48
+auto_secret LISTMONK_DB_PASSWORD
+auto_secret LISTMONK_ADMIN_PASSWORD
+auto_secret GRAFANA_ADMIN_PASSWORD
+auto_secret INFISICAL_DB_PASSWORD
+auto_secret INFISICAL_REDIS_PASSWORD
+auto_secret INFISICAL_AUTH_SECRET 48
+auto_secret INFISICAL_ADMIN_PASSWORD
+auto_hex    INFISICAL_ENCRYPTION_KEY 16  # 16 bytes = 32 hex chars
+
+# ── Apply defaults for optional vars ─────────────────────────────────────────
+export MYSQL_DATABASE="${MYSQL_DATABASE:-blueshell}"
+export MYSQL_USER="${MYSQL_USER:-blueshell}"
+export SMTP_HOST="${SMTP_HOST:-}"
+export SMTP_PORT="${SMTP_PORT:-587}"
+export SMTP_USERNAME="${SMTP_USERNAME:-}"
+export SMTP_PASSWORD="${SMTP_PASSWORD:-}"
+export SMTP_USE_SSL="${SMTP_USE_SSL:-false}"
+export SMTP_USE_TLS="${SMTP_USE_TLS:-true}"
+export BREVO_API_KEY="${BREVO_API_KEY:-}"
+export GOOGLE_CALENDAR_ID="${GOOGLE_CALENDAR_ID:-}"
+export GOOGLE_CALENDAR_SA_JSON="${GOOGLE_CALENDAR_SA_JSON:-}"
+export LISTMONK_ADMIN_USERNAME="${LISTMONK_ADMIN_USERNAME:-admin}"
+export LISTMONK_ADMIN_EMAIL="${LISTMONK_ADMIN_EMAIL:-}"
+export LISTMONK_SMTP_HOST="${LISTMONK_SMTP_HOST:-}"
+export LISTMONK_SMTP_PORT="${LISTMONK_SMTP_PORT:-587}"
+export LISTMONK_SMTP_USERNAME="${LISTMONK_SMTP_USERNAME:-}"
+export LISTMONK_SMTP_PASSWORD="${LISTMONK_SMTP_PASSWORD:-}"
+export GRAFANA_DISCORD_WEBHOOK_URL="${GRAFANA_DISCORD_WEBHOOK_URL:-}"
+export INFISICAL_ADMIN_EMAIL="${INFISICAL_ADMIN_EMAIL:-}"
 
 # ── SSH keypairs ──────────────────────────────────────────────────────────────
 SSH_DIR="${HOME}/.ssh"
@@ -87,6 +129,52 @@ ensure_key "${ADMIN_KEY}"   "admin@$(hostname -f 2>/dev/null || hostname)"
 WEBSITE_PUB="$(tr -d '\n' < "${WEBSITE_KEY}.pub")"
 ADMIN_PUB="$(tr -d '\n' < "${ADMIN_KEY}.pub")"
 
+# ── Render env files ─────────────────────────────────────────────────────────
+RENDERED_DIR="${SCRIPT_DIR}/rendered"
+mkdir -p "${RENDERED_DIR}"
+
+cat > "${RENDERED_DIR}/.db.env" <<DBEOF
+MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+MYSQL_DATABASE=${MYSQL_DATABASE}
+MYSQL_USER=${MYSQL_USER}
+MYSQL_PASSWORD=${MYSQL_PASSWORD}
+DBEOF
+
+cat > "${RENDERED_DIR}/.api.env" <<APIEOF
+JWT_SECRET=${JWT_SECRET}
+SMTP_HOST=${SMTP_HOST}
+SMTP_PORT=${SMTP_PORT}
+SMTP_USERNAME=${SMTP_USERNAME}
+SMTP_PASSWORD=${SMTP_PASSWORD}
+SMTP_USE_SSL=${SMTP_USE_SSL}
+SMTP_USE_TLS=${SMTP_USE_TLS}
+BREVO_API_KEY=${BREVO_API_KEY}
+GOOGLE_CALENDAR_ID=${GOOGLE_CALENDAR_ID}
+GOOGLE_CALENDAR_SA_JSON=${GOOGLE_CALENDAR_SA_JSON}
+APIEOF
+
+cat > "${RENDERED_DIR}/.listmonk.env" <<LMEOF
+LISTMONK_DB_PASSWORD=${LISTMONK_DB_PASSWORD}
+LISTMONK_ADMIN_USERNAME=${LISTMONK_ADMIN_USERNAME}
+LISTMONK_ADMIN_PASSWORD=${LISTMONK_ADMIN_PASSWORD}
+LISTMONK_ADMIN_EMAIL=${LISTMONK_ADMIN_EMAIL}
+LISTMONK_SMTP_HOST=${LISTMONK_SMTP_HOST}
+LISTMONK_SMTP_PORT=${LISTMONK_SMTP_PORT}
+LISTMONK_SMTP_USERNAME=${LISTMONK_SMTP_USERNAME}
+LISTMONK_SMTP_PASSWORD=${LISTMONK_SMTP_PASSWORD}
+LMEOF
+
+cat > "${RENDERED_DIR}/.infra.env" <<INFRAEOF
+GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+GRAFANA_DISCORD_WEBHOOK_URL=${GRAFANA_DISCORD_WEBHOOK_URL}
+INFISICAL_DB_PASSWORD=${INFISICAL_DB_PASSWORD}
+INFISICAL_REDIS_PASSWORD=${INFISICAL_REDIS_PASSWORD}
+INFISICAL_ENCRYPTION_KEY=${INFISICAL_ENCRYPTION_KEY}
+INFISICAL_AUTH_SECRET=${INFISICAL_AUTH_SECRET}
+INFRAEOF
+
+echo "Rendered env files in ${RENDERED_DIR}/"
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 # Escape values for use in sed s|...|...|g expressions (/, &, \)
@@ -94,82 +182,85 @@ _escape_sed() {
   printf '%s' "$1" | sed -e 's/[\/&\\]/\\&/g'
 }
 
-SAFE_BLUESHELL="$(_escape_sed "${BLUESHELL_PASSWORD}")"
+SAFE_ADMIN="$(_escape_sed "${ADMIN_PASSWORD}")"
 SAFE_ROOT="$(_escape_sed "${ROOT_PASSWORD}")"
 SAFE_WEBSITE="$(_escape_sed "${WEBSITE_PASSWORD}")"
 SAFE_GHCR_TOKEN="$(_escape_sed "${GHCR_TOKEN}")"
 SAFE_GHCR_USER="$(_escape_sed "${GHCR_USER}")"
 SAFE_WEBSITE_PUB="$(_escape_sed "${WEBSITE_PUB}")"
 SAFE_ADMIN_PUB="$(_escape_sed "${ADMIN_PUB}")"
+SAFE_INFISICAL_ADMIN_EMAIL="$(_escape_sed "${INFISICAL_ADMIN_EMAIL}")"
+SAFE_INFISICAL_ADMIN_PASSWORD="$(_escape_sed "${INFISICAL_ADMIN_PASSWORD}")"
 
 # Render human-readable placeholders (passwords, SSH keys, GHCR) via sed
 _render_common() {
   local src="$1"
   local dst="$2"
   sed \
-    -e "s|__BLUESHELL_PASSWORD__|${SAFE_BLUESHELL}|g" \
+    -e "s|__ADMIN_PASSWORD__|${SAFE_ADMIN}|g" \
     -e "s|__ROOT_PASSWORD__|${SAFE_ROOT}|g" \
     -e "s|__WEBSITE_PASSWORD__|${SAFE_WEBSITE}|g" \
     -e "s|__GHCR_TOKEN__|${SAFE_GHCR_TOKEN}|g" \
     -e "s|__GHCR_USERNAME__|${SAFE_GHCR_USER}|g" \
     -e "s|__WEBSITE_SSH_PUB__|${SAFE_WEBSITE_PUB}|g" \
     -e "s|__ADMIN_SSH_PUB__|${SAFE_ADMIN_PUB}|g" \
+    -e "s|__INFISICAL_ADMIN_EMAIL__|${SAFE_INFISICAL_ADMIN_EMAIL}|g" \
+    -e "s|__INFISICAL_ADMIN_PASSWORD__|${SAFE_INFISICAL_ADMIN_PASSWORD}|g" \
     "${src}" > "${dst}"
 }
 
-# Substitute __PROVISION_SH_B64__ using awk (base64 contains / and = which
+# Substitute a __PLACEHOLDER__ using awk (base64 contains / and = which
 # confuse sed even with escaping; awk gsub handles them cleanly)
-_inject_provision_sh() {
+_inject_b64_file() {
   local file="$1"
-  local provision_src="${SCRIPT_DIR}/../scripts/provision.sh"
-  if [[ ! -f "${provision_src}" ]]; then
-    echo "Error: provision.sh not found at ${provision_src}" >&2
+  local placeholder="$2"
+  local source_file="$3"
+
+  if [[ ! -f "${source_file}" ]]; then
+    echo "Error: ${source_file} not found" >&2
     exit 1
   fi
   local b64_tmp
   b64_tmp="$(mktemp)"
-  trap 'rm -f "${b64_tmp}"' RETURN
-  base64 < "${provision_src}" | tr -d '\n' > "${b64_tmp}"
+  base64 < "${source_file}" | tr -d '\n' > "${b64_tmp}"
 
   local stage_tmp
   stage_tmp="$(mktemp)"
-  trap 'rm -f "${stage_tmp}"' RETURN
   cp "${file}" "${stage_tmp}"
 
-  awk 'NR==FNR{b64=$0; next} {gsub(/__PROVISION_SH_B64__/, b64); print}' \
+  awk -v placeholder="${placeholder}" 'NR==FNR{b64=$0; next} {gsub(placeholder, b64); print}' \
     "${b64_tmp}" "${stage_tmp}" > "${file}"
+
+  rm -f "${b64_tmp}" "${stage_tmp}"
 }
 
-# ── Render Packer template ────────────────────────────────────────────────────
-render_packer() {
-  local tmpl="${SCRIPT_DIR}/cloud-config.template.yaml"
-  local out="${SCRIPT_DIR}/cloud-config.yaml"
-  if [[ ! -f "${tmpl}" ]]; then
-    echo "Template not found: ${tmpl}" >&2; exit 1
-  fi
-  _render_common "${tmpl}" "${out}"
-  echo "Wrote ${out}"
-}
+# ── Render ────────────────────────────────────────────────────────────────────
+TMPL="${SCRIPT_DIR}/cloud-config-standalone.template.yaml"
+OUT="${SCRIPT_DIR}/cloud-config-standalone.yaml"
 
-# ── Render standalone template (Contabo cloud-init-only) ─────────────────────
-render_standalone() {
-  local tmpl="${SCRIPT_DIR}/cloud-config-standalone.template.yaml"
-  local out="${SCRIPT_DIR}/cloud-config-standalone.yaml"
-  if [[ ! -f "${tmpl}" ]]; then
-    echo "Template not found: ${tmpl}" >&2; exit 1
-  fi
-  _render_common "${tmpl}" "${out}"
-  _inject_provision_sh "${out}"
-  echo "Wrote ${out}"
-}
+if [[ ! -f "${TMPL}" ]]; then
+  echo "Error: template not found: ${TMPL}" >&2
+  exit 1
+fi
 
-# ── Execute ───────────────────────────────────────────────────────────────────
-case "${MODE}" in
-  packer)     render_packer ;;
-  standalone) render_standalone ;;
-  all)        render_packer; render_standalone ;;
-esac
+_render_common "${TMPL}" "${OUT}"
 
+# Inject base64-encoded files into the cloud-config
+_inject_b64_file "${OUT}" "__PROVISION_SH_B64__" "${SCRIPT_DIR}/../scripts/provision.sh"
+_inject_b64_file "${OUT}" "__DB_ENV_B64__"       "${RENDERED_DIR}/.db.env"
+_inject_b64_file "${OUT}" "__API_ENV_B64__"      "${RENDERED_DIR}/.api.env"
+_inject_b64_file "${OUT}" "__LISTMONK_ENV_B64__" "${RENDERED_DIR}/.listmonk.env"
+_inject_b64_file "${OUT}" "__INFRA_ENV_B64__"    "${RENDERED_DIR}/.infra.env"
+
+echo ""
+echo "Wrote ${OUT}"
+echo ""
 echo "Keys:"
 echo "  ${WEBSITE_KEY} (.pub)  -> injected for website"
-echo "  ${ADMIN_KEY} (.pub)    -> injected for blueshell (admin)"
+echo "  ${ADMIN_KEY} (.pub)    -> injected for admin"
+echo ""
+echo "Env files (also embedded in cloud-config):"
+echo "  ${RENDERED_DIR}/.db.env"
+echo "  ${RENDERED_DIR}/.api.env"
+echo "  ${RENDERED_DIR}/.listmonk.env"
+echo "  ${RENDERED_DIR}/.infra.env"

@@ -8,19 +8,18 @@ class Config:
     infisical_project_id: str
     infisical_base_url: str
     listmonk_url: str
+    repo_root: str
+
+    @property
+    def infisical_configured(self) -> bool:
+        return bool(self.infisical_token and self.infisical_project_id)
 
 
 def load() -> Config:
     return Config(
-        infisical_token=_require("INFISICAL_TOKEN"),
-        infisical_project_id=_require("INFISICAL_PROJECT_ID"),
-        infisical_base_url=os.getenv("INFISICAL_BASE_URL", "https://app.infisical.com"),
+        infisical_token=os.getenv("INFISICAL_TOKEN", ""),
+        infisical_project_id=os.getenv("INFISICAL_PROJECT_ID", ""),
+        infisical_base_url=os.getenv("INFISICAL_BASE_URL", "https://vault.esa-blueshell.nl"),
         listmonk_url=os.getenv("LISTMONK_URL", "http://listmonk:9000"),
+        repo_root=os.getenv("REPO_ROOT", "/src/website"),
     )
-
-
-def _require(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise RuntimeError(f"Required environment variable {name!r} is not set")
-    return value

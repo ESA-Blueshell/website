@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Packer provisioner: bake everything that is NOT instance-specific into the
-# image.  Instance-specific config (keys, secrets, GHCR login) is handled by
-# cloud-init at first boot on Contabo.
+# System provisioning script — run by cloud-init on first boot.
+# Installs Docker, hardens SSH, configures UFW, sets up users, backup scripts,
+# and the website CLI.  Instance-specific config (keys, secrets, GHCR login)
+# is injected by cloud-init before this script runs.
 # =============================================================================
 set -euxo pipefail
 
@@ -31,13 +32,17 @@ apt-get install -y \
   docker-ce-rootless-extras \
   ufw sudo cloud-init
 
+# ── Infisical CLI ──────────────────────────────────────────────────────────
+curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash
+apt-get update && apt-get install -y infisical
+
 # ── Groups ───────────────────────────────────────────────────────────────────
 groupadd -f website
 groupadd -f backup
 
 # ── Users ────────────────────────────────────────────────────────────────────
-# blueshell: admin, sudo WITH password required
-useradd -m -s /bin/bash -G sudo,docker,website,backup blueshell || true
+# admin: sudo WITH password required
+useradd -m -s /bin/bash -G sudo,docker,website,backup admin || true
 
 # website: application user, no sudo, rootless docker
 useradd -m -s /bin/bash -d /src/website -g website website || true
@@ -260,10 +265,10 @@ cat > /usr/local/bin/website <<'CLI'
 # Designed to run AS the 'website' user, which has DOCKER_HOST set in its
 # shell profile pointing at the rootless Docker socket.
 #
-# Admin users (blueshell) run website commands via:
+# Admin users (admin) run website commands via:
 #   su -l website -c "website up [env]"
 #
-# The 'backup' subcommand must be run as root (or via sudo by blueshell);
+# The 'backup' subcommand must be run as root (or via sudo by admin);
 # it is also invoked automatically by the daily cron job.
 # =============================================================================
 set -euo pipefail
@@ -325,7 +330,7 @@ case "${cmd}" in
   up)
     read -r _tag _stack <<< "$(_env_map "${1:-production}")"
     cd "${REPO}"
-    IMAGE_TAG="${_tag}" bash deployment/deploy.sh "${_stack}" ;;
+    IMAGE_TAG="${_tag}" bash services/deploy.sh "${_stack}" ;;
 
   down)
     read -r _tag _stack <<< "$(_env_map "${1:-production}")"
@@ -371,7 +376,7 @@ case "${cmd}" in
     git fetch --prune || true
     git reset --hard origin/main || true
     git pull --ff-only || true
-    IMAGE_TAG='latest' bash deployment/deploy.sh 'website' ;;
+    IMAGE_TAG='latest' bash services/deploy.sh 'website' ;;
 
   shell)
     cd "${REPO}" && exec bash ;;
@@ -402,6 +407,31 @@ cat > /etc/logrotate.d/db-backup <<'LOGROTATE'
     create 664 root backup
 }
 LOGROTATE
+
+# ── Auto-deploy on boot (safety net) ───────────────────────────────────────
+# Docker Swarm stacks survive reboots natively (rootless Docker auto-starts
+# via loginctl enable-linger). This systemd oneshot verifies stacks are
+# running after boot and redeploys if needed.
+WEBSITE_UID="$(id -u website)"
+cat > /etc/systemd/system/website-deploy.service <<UNIT
+[Unit]
+Description=Ensure website Swarm stacks are deployed
+After=network-online.target user@${WEBSITE_UID}.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=website
+ExecStartPre=/bin/bash -lc 'until docker info >/dev/null 2>&1; do sleep 2; done'
+ExecStart=/bin/bash -lc 'cd /src/website && website infra up && website up'
+RemainAfterExit=yes
+Environment=HOME=/src/website
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable website-deploy.service
 
 # ── Cleanup ──────────────────────────────────────────────────────────────────
 apt-get autoremove -y

@@ -1,9 +1,9 @@
 # =============================================================================
 # docker-stack.yml — Website application stack for Docker Swarm.
 #
-# Deployed by deployment/deploy.sh via:
+# Deployed by services/deploy.sh via:
 #   docker stack deploy --with-registry-auth --prune \
-#     -c deployment/docker-stack.yml <stack-name>
+#     -c services/docker-stack.yml <stack-name>
 #
 # Variables exported by deploy.sh before deploy:
 #   IMAGE_TAG    — Docker image tag (latest | staging | dev)
@@ -270,11 +270,19 @@ services:
   rotator:
     image: ghcr.io/esa-blueshell/rotator:${IMAGE_TAG:-latest}
     environment:
-      INFISICAL_TOKEN:      ${INFISICAL_TOKEN}
-      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID}
+      INFISICAL_TOKEN:      ${INFISICAL_TOKEN:-}
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID:-}
+      INFISICAL_BASE_URL:   "https://vault.${INFRA_DOMAIN:-esa-blueshell.nl}"
       LISTMONK_URL:         "http://listmonk:9000"
+      REPO_ROOT:            /src/website
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /src/website/services/api:/src/website/services/api
+      - /src/website/services/listmonk:/src/website/services/listmonk
+      - /src/website/infra:/src/website/infra:ro
+      - /src/website/services/deploy.sh:/src/website/services/deploy.sh:ro
+      - /src/website/services/docker-stack.yml:/src/website/services/docker-stack.yml:ro
+      - /src/website/.server.env:/src/website/.server.env:ro
     networks:
       - frontback
     deploy:

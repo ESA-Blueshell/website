@@ -50,3 +50,19 @@ def remove_volume(volume_name: str) -> None:
         log.debug("Volume %s not found, skipping removal", volume_name)
     else:
         raise RuntimeError(f"Failed to remove volume {volume_name}: {result.stderr.strip()}")
+
+
+def stack_deploy(repo_root: str, stack: str) -> None:
+    """Run the deploy script to redeploy a stack with updated env vars."""
+    deploy_script = f"{repo_root}/services/deploy.sh"
+    log.info("Redeploying stack %s via %s", stack, deploy_script)
+    result = subprocess.run(
+        ["bash", deploy_script, stack],
+        capture_output=True, text=True,
+        cwd=repo_root,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"Stack deploy failed for {stack}\nstdout: {result.stdout[-500:]}\nstderr: {result.stderr[-500:]}"
+        )
+    log.info("Stack %s redeployed successfully", stack)

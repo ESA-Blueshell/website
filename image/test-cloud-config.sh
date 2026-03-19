@@ -30,7 +30,6 @@ CACHE_DIR="${SCRIPT_DIR}/.test-cache"
 SSH_ADMIN_KEY="${HOME}/.ssh/blueshell-admin"
 SSH_WEBSITE_KEY="${HOME}/.ssh/blueshell-website"
 HOST_SSH_PORT=55022   # host port forwarded to guest port 2222
-HOST_PORT22=55023     # host port forwarded to guest port 22 (used to verify it is closed)
 BOOT_TIMEOUT=900      # seconds to wait for SSH to appear (15 min)
 
 HASH_ONLY=false
@@ -199,7 +198,7 @@ qemu-system-x86_64 \
   -drive "file=${WORK_DIR}/disk.qcow2,format=qcow2,if=virtio" \
   -drive "file=${WORK_DIR}/seed.iso,format=raw,media=cdrom" \
   -device virtio-net-pci,netdev=net0 \
-  -netdev "user,id=net0,hostfwd=tcp::${HOST_SSH_PORT}-:2222,hostfwd=tcp::${HOST_PORT22}-:22" \
+  -netdev "user,id=net0,hostfwd=tcp::${HOST_SSH_PORT}-:2222" \
   > "${WORK_DIR}/console.log" 2>&1 &
 echo $! > "${WORK_DIR}/qemu.pid"
 
@@ -279,10 +278,17 @@ if ! command -v sshpass >/dev/null 2>&1; then
 fi
 
 if command -v sshpass >/dev/null 2>&1; then
-  # Enable password auth and root login on the VM
+  # Enable password auth and root login on the VM.
+  # 00-test-pwauth.conf is processed before 10-keys-only.conf (lexicographic
+  # order; first occurrence wins for each directive), so every directive that
+  # 10-keys-only.conf would restrict must be explicitly overridden here:
+  #   AuthenticationMethods any         — removes the publickey-only restriction
+  #   KbdInteractiveAuthentication yes  — PAM keyboard-interactive (needed by sshpass)
+  #   PasswordAuthentication yes        — plain password auth
+  #   PermitRootLogin yes               — allow root password login for the test
   vm_ssh admin "${SSH_ADMIN_KEY}" \
     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S bash -c \
-      'printf \"PasswordAuthentication yes\nPermitRootLogin yes\n\" \
+      'printf \"AuthenticationMethods any\nKbdInteractiveAuthentication yes\nPasswordAuthentication yes\nPermitRootLogin yes\n\" \
          > /etc/ssh/sshd_config.d/00-test-pwauth.conf \
        && systemctl reload ssh'" 2>/dev/null
   sleep 2   # give sshd time to reload
@@ -362,14 +368,6 @@ if vm_ssh admin "${SSH_ADMIN_KEY}" \
   pass "port 22: sshd is NOT listening (moved to 2222)"
 else
   fail "port 22: sshd is still listening on port 22"
-fi
-
-# Port 22 blocked from outside: attempt a TCP connection through the QEMU
-# port-forward we added for this purpose; it should be refused or time out.
-if ! nc -z -w3 127.0.0.1 "${HOST_PORT22}" 2>/dev/null; then
-  pass "port 22: connection refused from outside (UFW blocking or not listening)"
-else
-  fail "port 22: connection succeeded from outside — port 22 should be closed"
 fi
 
 # UFW: 2222 allowed

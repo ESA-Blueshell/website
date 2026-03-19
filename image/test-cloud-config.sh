@@ -69,8 +69,9 @@ verify_hash() {
   local name="$1" password="$2"
   local stored_hash salt rehashed
 
-  # Extract hash from line: { name: <user>, password: '$6$salt$hash', type: 'hash' }
-  stored_hash=$(grep "name: ${name}" "${CLOUD_CONFIG}" | sed "s/.*password: '//;s/'.*//")
+  # Extract hash from chpasswd line: { name: <user>, password: '$6$salt$hash', type: 'hash' }
+  # Require 'password:' on the same line to avoid matching the users: block entry.
+  stored_hash=$(grep "name: ${name}.*password:" "${CLOUD_CONFIG}" | sed "s/.*password: '//;s/'.*//")
 
   if [[ -z "${stored_hash}" ]]; then
     fail "${name}: hash not found in cloud-config"

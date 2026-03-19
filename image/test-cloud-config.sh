@@ -30,6 +30,7 @@ CACHE_DIR="${SCRIPT_DIR}/.test-cache"
 SSH_ADMIN_KEY="${HOME}/.ssh/blueshell-admin"
 SSH_WEBSITE_KEY="${HOME}/.ssh/blueshell-website"
 HOST_SSH_PORT=55022   # host port forwarded to guest port 2222
+HOST_PORT22=55023     # host port forwarded to guest port 22 (used to verify it is closed)
 BOOT_TIMEOUT=900      # seconds to wait for SSH to appear (15 min)
 
 HASH_ONLY=false
@@ -198,7 +199,7 @@ qemu-system-x86_64 \
   -drive "file=${WORK_DIR}/disk.qcow2,format=qcow2,if=virtio" \
   -drive "file=${WORK_DIR}/seed.iso,format=raw,media=cdrom" \
   -device virtio-net-pci,netdev=net0 \
-  -netdev "user,id=net0,hostfwd=tcp::${HOST_SSH_PORT}-:2222" \
+  -netdev "user,id=net0,hostfwd=tcp::${HOST_SSH_PORT}-:2222,hostfwd=tcp::${HOST_PORT22}-:22" \
   > "${WORK_DIR}/console.log" 2>&1 &
 echo $! > "${WORK_DIR}/qemu.pid"
 
@@ -328,17 +329,63 @@ fi
 echo ""
 echo "==> Security checks..."
 echo ""
+
+# sshd_config: password auth disabled
 if vm_ssh admin "${SSH_ADMIN_KEY}" \
      'grep -Eriq "^PasswordAuthentication[[:space:]]+no" /etc/ssh/sshd_config /etc/ssh/sshd_config.d/ 2>/dev/null'; then
   pass "sshd_config: PasswordAuthentication no"
 else
   fail "sshd_config: PasswordAuthentication is not explicitly set to 'no'"
 fi
+
+# sshd_config: port directive
 if vm_ssh admin "${SSH_ADMIN_KEY}" \
      'grep -Eriq "^Port[[:space:]]+2222" /etc/ssh/sshd_config /etc/ssh/sshd_config.d/ 2>/dev/null'; then
-  pass "sshd_config: SSH port set to 2222"
+  pass "sshd_config: Port 2222"
 else
-  fail "sshd_config: SSH port is not 2222"
+  fail "sshd_config: Port is not set to 2222"
+fi
+
+# Port 2222 open: already proven by the successful SSH connection above, but
+# also verify sshd is actually listening on 2222 (not 22) inside the VM.
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     'ss -tlnp | grep -q ":2222"'; then
+  pass "port 2222: sshd is listening"
+else
+  fail "port 2222: sshd is NOT listening on 2222"
+fi
+
+# Port 22 closed: sshd must not be listening on 22 inside the VM.
+# Anchor to :22 followed by a space or end-of-field to avoid matching :2222.
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     '! ss -tlnp | grep -Eq ":22(\s|$)"'; then
+  pass "port 22: sshd is NOT listening (moved to 2222)"
+else
+  fail "port 22: sshd is still listening on port 22"
+fi
+
+# Port 22 blocked from outside: attempt a TCP connection through the QEMU
+# port-forward we added for this purpose; it should be refused or time out.
+if ! nc -z -w3 127.0.0.1 "${HOST_PORT22}" 2>/dev/null; then
+  pass "port 22: connection refused from outside (UFW blocking or not listening)"
+else
+  fail "port 22: connection succeeded from outside — port 22 should be closed"
+fi
+
+# UFW: 2222 allowed
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S ufw status 2>/dev/null | grep -q '2222/tcp'"; then
+  pass "UFW: port 2222/tcp allowed"
+else
+  fail "UFW: port 2222/tcp not found in ufw status"
+fi
+
+# UFW: 22 not allowed (grep anchored to ^22 so it does not match 2222)
+if ! vm_ssh admin "${SSH_ADMIN_KEY}" \
+     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S ufw status 2>/dev/null | grep -Eq '^22[^2]'"; then
+  pass "UFW: port 22/tcp not allowed"
+else
+  fail "UFW: port 22/tcp is explicitly allowed — it should not be"
 fi
 
 echo ""

@@ -7,7 +7,7 @@ set -euo pipefail
 #   the rendered cloud-config and verify it matches — confirms that render.sh
 #   produced the correct SHA-512 crypt hashes for all three accounts.
 #
-#   Phase 2 (skipped with --hash-only): boots a temporary Debian 12 VM via QEMU
+#   Phase 2 (skipped with --hash-only): boots a temporary Debian 13 VM via QEMU
 #   using the rendered cloud-config as user-data, waits for cloud-init to finish
 #   (provision.sh moves SSH to port 2222), then tests:
 #     - admin  : SSH key login  +  password accepted by sudo
@@ -152,13 +152,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Download Debian 12 generic cloud image (cached across runs)
-DEBIAN_IMAGE="${CACHE_DIR}/debian-12-generic-amd64.qcow2"
+# Download Debian 13 generic cloud image (cached across runs)
+DEBIAN_IMAGE="${CACHE_DIR}/debian-13-generic-amd64.qcow2"
 if [[ ! -f "${DEBIAN_IMAGE}" ]]; then
-  info "Downloading Debian 12 cloud image (~300 MB)..."
+  info "Downloading Debian 13 cloud image (~300 MB)..."
   curl -L --progress-bar \
     -o "${DEBIAN_IMAGE}.tmp" \
-    "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+    "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
   mv "${DEBIAN_IMAGE}.tmp" "${DEBIAN_IMAGE}"
   info "Saved to ${DEBIAN_IMAGE}"
 fi

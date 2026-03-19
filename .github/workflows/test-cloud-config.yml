@@ -49,7 +49,7 @@ jobs:
         run: cd image && ./test-cloud-config.sh --hash-only
 
 # ── Job 2: full VM test ───────────────────────────────────────────────────────
-# Slow (~20 min). Boots a Debian 12 VM via QEMU/KVM with the rendered
+# Slow (~20 min). Boots a Debian 13 VM via QEMU/KVM with the rendered
 # cloud-config as user-data, waits for cloud-init to finish (provision.sh
 # moves SSH to port 2222), then tests SSH key login and sudo password auth.
 # Only runs on manual workflow_dispatch when full_test is checked.
@@ -84,11 +84,11 @@ jobs:
 
       # Cache the ~300 MB Debian cloud image between runs.
       # Bust the cache by updating the key date when a new Debian release matters.
-      - name: Cache Debian 12 cloud image
+      - name: Cache Debian 13 cloud image
         uses: actions/cache@v4
         with:
-          path: image/.test-cache/debian-12-generic-amd64.qcow2
-          key: debian-12-generic-amd64-bookworm-2025
+          path: image/.test-cache/debian-13-generic-amd64.qcow2
+          key: debian-13-generic-amd64-trixie-2025
 
       - name: Render cloud-config
         run: cd image && ./cloud-init/render.sh

@@ -163,7 +163,7 @@ rendered files contain secrets — do not commit them.
 ./ops/create-vps.sh
 ```
 
-This calls `cntb create instance` with `--imageId debian-12` and passes the
+This calls `cntb create instance` with `--imageId debian-13` and passes the
 rendered cloud-init config as user-data. The VPS is provisioned from scratch
 with no pre-baked image required.
 
@@ -367,7 +367,7 @@ deployment. It has two phases:
 | Phase | Flag | Duration | What it checks |
 |---|---|---|---|
 | **Hash check** | (default or `--hash-only`) | ~5 s | Re-derives each SHA-512 crypt hash from the plaintext password + embedded salt; fails on mismatch |
-| **VM test** | (default, skip with `--hash-only`) | ~15 min | Boots a Debian 12 VM via QEMU, waits for cloud-init to finish, then tests SSH key login and sudo password for admin + website |
+| **VM test** | (default, skip with `--hash-only`) | ~15 min | Boots a Debian 13 VM via QEMU, waits for cloud-init to finish, then tests SSH key login and sudo password for admin + website |
 
 ### Running locally
 

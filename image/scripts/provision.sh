@@ -16,7 +16,7 @@ curl -fsSL https://download.docker.com/linux/debian/gpg \
 chmod 644 /etc/apt/keyrings/docker.gpg
 
 cat > /etc/apt/sources.list.d/docker.list <<'REPO'
-deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable
+deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian trixie stable
 REPO
 
 # ── Packages ─────────────────────────────────────────────────────────────────

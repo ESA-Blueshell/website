@@ -1,0 +1,107 @@
+name: Test cloud-config
+
+on:
+  push:
+    paths:
+      - 'image/cloud-init/**'
+      - 'image/scripts/provision.sh'
+      - 'image/.example.env'
+  pull_request:
+    paths:
+      - 'image/cloud-init/**'
+      - 'image/scripts/provision.sh'
+      - 'image/.example.env'
+  workflow_dispatch:
+    inputs:
+      full_test:
+        description: >
+          Boot a Debian VM and test SSH on port 2222 (~20 min).
+          Runs in addition to the hash check.
+        type: boolean
+        default: false
+
+concurrency:
+  group: cloud-config-test-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Job 1: verify password hashes ────────────────────────────────────────────
+# Fast (~1 min). Re-derives each SHA-512 hash from the plaintext password using
+# the salt stored in the rendered config; fails if any hash doesn't match.
+# Runs on every push/PR to image/cloud-init/** and on every manual dispatch.
+jobs:
+  hash-check:
+    name: Verify password hashes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Test-only passwords — these are never used for a real server.
+      # Override by setting TEST_ADMIN_PASSWORD / TEST_ROOT_PASSWORD /
+      # TEST_WEBSITE_PASSWORD as repository secrets.
+      ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
+      ROOT_PASSWORD:    ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
+      WEBSITE_PASSWORD: ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
+      GHCR_USERNAME:    ${{ github.actor }}
+      GHCR_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render cloud-config
+        run: cd image && ./cloud-init/render.sh
+
+      - name: Verify password hashes
+        run: cd image && ./test-cloud-config.sh --hash-only
+
+# ── Job 2: full VM test ───────────────────────────────────────────────────────
+# Slow (~20 min). Boots a Debian 12 VM via QEMU/KVM with the rendered
+# cloud-config as user-data, waits for cloud-init to finish (provision.sh
+# moves SSH to port 2222), then tests SSH key login and sudo password auth.
+# Only runs on manual workflow_dispatch when full_test is checked.
+  vm-test:
+    name: Full VM test (SSH port 2222)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    if: github.event_name == 'workflow_dispatch' && inputs.full_test
+    env:
+      ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
+      ROOT_PASSWORD:    ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
+      WEBSITE_PASSWORD: ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
+      GHCR_USERNAME:    ${{ github.actor }}
+      GHCR_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # GitHub Actions runners have /dev/kvm but it needs a udev rule to be
+      # group-accessible before QEMU can use it without sudo.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install QEMU and cloud-image tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y qemu-system-x86 qemu-utils cloud-image-utils
+
+      # Cache the ~300 MB Debian cloud image between runs.
+      # Bust the cache by updating the key date when a new Debian release matters.
+      - name: Cache Debian 12 cloud image
+        uses: actions/cache@v4
+        with:
+          path: image/.test-cache/debian-12-generic-amd64.qcow2
+          key: debian-12-generic-amd64-bookworm-2025
+
+      - name: Render cloud-config
+        run: cd image && ./cloud-init/render.sh
+
+      - name: Run full VM test
+        run: cd image && ./test-cloud-config.sh
+
+      - name: Upload console log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-console-log
+          path: image/.test-cache/run-*/console.log
+          if-no-files-found: ignore

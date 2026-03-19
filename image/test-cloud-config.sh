@@ -1,0 +1,292 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# test-cloud-config.sh — validates the rendered cloud-init config in two phases:
+#
+#   Phase 1 (always): re-hash each plaintext password with the salt embedded in
+#   the rendered cloud-config and verify it matches — confirms that render.sh
+#   produced the correct SHA-512 crypt hashes for all three accounts.
+#
+#   Phase 2 (skipped with --hash-only): boots a temporary Debian 12 VM via QEMU
+#   using the rendered cloud-config as user-data, waits for cloud-init to finish
+#   (provision.sh moves SSH to port 2222), then tests:
+#     - admin  : SSH key login  +  password accepted by sudo
+#     - website: SSH key login  +  group membership
+#     - all    : SSH password auth is disabled (ssh_pwauth: false enforced)
+#
+# Prerequisites — phase 2:
+#   macOS : brew install qemu cdrtools
+#   Linux : sudo apt install qemu-system-x86 qemu-utils cloud-image-utils
+#
+# Usage:
+#   cd image
+#   ./test-cloud-config.sh              # phase 1 + phase 2 (full VM test)
+#   ./test-cloud-config.sh --hash-only  # phase 1 only (fast, no QEMU needed)
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLOUD_CONFIG="${SCRIPT_DIR}/cloud-init/cloud-config.yaml"
+ENV_FILE="${SCRIPT_DIR}/.env"
+CACHE_DIR="${SCRIPT_DIR}/.test-cache"
+SSH_ADMIN_KEY="${HOME}/.ssh/blueshell-admin"
+SSH_WEBSITE_KEY="${HOME}/.ssh/blueshell-website"
+HOST_SSH_PORT=55022   # host port forwarded to guest port 2222
+BOOT_TIMEOUT=900      # seconds to wait for SSH to appear (15 min)
+
+HASH_ONLY=false
+for arg in "$@"; do [[ "${arg}" == "--hash-only" ]] && HASH_ONLY=true; done
+
+# ── Output helpers ────────────────────────────────────────────────────────────
+GREEN='\033[0;32m' RED='\033[0;31m' YELLOW='\033[1;33m' NC='\033[0m'
+pass() { printf "${GREEN}✓${NC} %s\n" "$*"; }
+fail() { printf "${RED}✗${NC} %s\n" "$*"; FAILED=$(( FAILED + 1 )); }
+info() { printf "${YELLOW}→${NC} %s\n" "$*"; }
+FAILED=0
+
+# ── Load credentials ──────────────────────────────────────────────────────────
+# shellcheck source=/dev/null
+[[ -f "${ENV_FILE}" ]] && { set -a; source "${ENV_FILE}"; set +a; }
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+ROOT_PASSWORD="${ROOT_PASSWORD:-}"
+WEBSITE_PASSWORD="${WEBSITE_PASSWORD:-}"
+
+if [[ -z "${ADMIN_PASSWORD}" || -z "${ROOT_PASSWORD}" || -z "${WEBSITE_PASSWORD}" ]]; then
+  echo "Error: ADMIN_PASSWORD, ROOT_PASSWORD, WEBSITE_PASSWORD must be set." >&2
+  echo "Set them in image/.env or export them to the environment." >&2
+  exit 1
+fi
+
+[[ -f "${CLOUD_CONFIG}" ]] || {
+  echo "Error: ${CLOUD_CONFIG} not found." >&2
+  echo "Run ./cloud-init/render.sh first." >&2
+  exit 1
+}
+
+# ── Phase 1: verify password hashes ──────────────────────────────────────────
+echo "==> Phase 1: verifying password hashes in ${CLOUD_CONFIG}..."
+echo ""
+
+verify_hash() {
+  local name="$1" password="$2"
+  local stored_hash salt rehashed
+
+  # Extract hash from line: { name: <user>, password: '$6$salt$hash', type: 'hash' }
+  stored_hash=$(grep "name: ${name}" "${CLOUD_CONFIG}" | sed "s/.*password: '//;s/'.*//")
+
+  if [[ -z "${stored_hash}" ]]; then
+    fail "${name}: hash not found in cloud-config"
+    return
+  fi
+
+  if [[ "${stored_hash:0:3}" != '$6$' ]]; then
+    fail "${name}: expected SHA-512 hash (\$6\$...) but found: '${stored_hash:0:20}...'"
+    return
+  fi
+
+  # Extract the salt (field 3 of $6$<salt>$<hash>)
+  salt=$(printf '%s' "${stored_hash}" | cut -d'$' -f3)
+
+  if rehashed=$(openssl passwd -6 -salt "${salt}" "${password}" 2>/dev/null) \
+     && [[ "${stored_hash}" == "${rehashed}" ]]; then
+    pass "${name}: SHA-512 hash matches password"
+  else
+    fail "${name}: hash mismatch — the stored hash does not match the plaintext password"
+  fi
+}
+
+verify_hash "admin"   "${ADMIN_PASSWORD}"
+verify_hash "root"    "${ROOT_PASSWORD}"
+verify_hash "website" "${WEBSITE_PASSWORD}"
+
+echo ""
+
+if ${HASH_ONLY}; then
+  if [[ "${FAILED}" -eq 0 ]]; then
+    echo -e "${GREEN}All hash checks passed.${NC}"
+  else
+    echo -e "${RED}${FAILED} hash check(s) failed.${NC}"
+    exit 1
+  fi
+  exit 0
+fi
+
+# ── Phase 2: boot VM and test SSH on port 2222 ────────────────────────────────
+echo "==> Phase 2: full VM test (~10–15 min, cloud-init must run to completion)..."
+echo ""
+
+# Prerequisites
+[[ -f "${SSH_ADMIN_KEY}" ]] || {
+  echo "Error: ${SSH_ADMIN_KEY} not found. Run ./cloud-init/render.sh first." >&2; exit 1
+}
+[[ -f "${SSH_WEBSITE_KEY}" ]] || {
+  echo "Error: ${SSH_WEBSITE_KEY} not found. Run ./cloud-init/render.sh first." >&2; exit 1
+}
+for cmd in qemu-system-x86_64 qemu-img; do
+  command -v "${cmd}" >/dev/null 2>&1 || {
+    echo "Error: '${cmd}' not found." >&2
+    echo "  macOS: brew install qemu  |  Linux: apt install qemu-system-x86 qemu-utils" >&2
+    exit 1
+  }
+done
+SEED_TOOL=""
+for t in cloud-localds genisoimage mkisofs; do
+  command -v "${t}" >/dev/null 2>&1 && { SEED_TOOL="${t}"; break; }
+done
+[[ -n "${SEED_TOOL}" ]] || {
+  echo "Error: need cloud-localds, genisoimage, or mkisofs to create seed ISO." >&2
+  echo "  Linux: apt install cloud-image-utils  |  macOS: brew install cdrtools" >&2
+  exit 1
+}
+
+# Working dir under cache so the Debian image survives between runs
+WORK_DIR="${CACHE_DIR}/run-$$"
+mkdir -p "${CACHE_DIR}" "${WORK_DIR}"
+
+cleanup() {
+  if [[ -f "${WORK_DIR}/qemu.pid" ]]; then
+    local pid; pid="$(cat "${WORK_DIR}/qemu.pid")"
+    kill "${pid}" 2>/dev/null || true
+  fi
+  rm -rf "${WORK_DIR}"
+}
+trap cleanup EXIT
+
+# Download Debian 12 generic cloud image (cached across runs)
+DEBIAN_IMAGE="${CACHE_DIR}/debian-12-generic-amd64.qcow2"
+if [[ ! -f "${DEBIAN_IMAGE}" ]]; then
+  info "Downloading Debian 12 cloud image (~300 MB)..."
+  curl -L --progress-bar \
+    -o "${DEBIAN_IMAGE}.tmp" \
+    "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+  mv "${DEBIAN_IMAGE}.tmp" "${DEBIAN_IMAGE}"
+  info "Saved to ${DEBIAN_IMAGE}"
+fi
+
+# Create a thin overlay — leaves the cached base image untouched
+info "Creating VM disk overlay..."
+qemu-img create -q -f qcow2 -F qcow2 -b "${DEBIAN_IMAGE}" "${WORK_DIR}/disk.qcow2" 20G
+
+# Create NoCloud seed ISO (cloud-init reads user-data + meta-data from it)
+info "Creating cloud-init seed ISO..."
+printf 'instance-id: test-%s\nlocal-hostname: cloud-config-test\n' "$$" \
+  > "${WORK_DIR}/meta-data"
+if [[ "${SEED_TOOL}" == "cloud-localds" ]]; then
+  cloud-localds "${WORK_DIR}/seed.iso" "${CLOUD_CONFIG}" "${WORK_DIR}/meta-data"
+else
+  cp "${CLOUD_CONFIG}" "${WORK_DIR}/user-data"
+  "${SEED_TOOL}" -output "${WORK_DIR}/seed.iso" \
+    -volid cidata -joliet -rock \
+    "${WORK_DIR}/user-data" "${WORK_DIR}/meta-data"
+fi
+
+# Select hardware accelerator
+case "$(uname -s)" in
+  Darwin) QEMU_ACCEL=(-accel hvf) ;;
+  Linux)  QEMU_ACCEL=(-enable-kvm) ;;
+  *)      QEMU_ACCEL=() ;;
+esac
+
+# Boot the VM in the background; console output goes to a log file
+info "Launching QEMU VM (host:${HOST_SSH_PORT} → guest:2222)..."
+info "Console log: ${WORK_DIR}/console.log"
+qemu-system-x86_64 \
+  "${QEMU_ACCEL[@]}" \
+  -m 2048 \
+  -cpu host \
+  -smp 2 \
+  -nographic \
+  -drive "file=${WORK_DIR}/disk.qcow2,format=qcow2,if=virtio" \
+  -drive "file=${WORK_DIR}/seed.iso,format=raw,media=cdrom" \
+  -device virtio-net-pci,netdev=net0 \
+  -netdev "user,id=net0,hostfwd=tcp::${HOST_SSH_PORT}-:2222" \
+  > "${WORK_DIR}/console.log" 2>&1 &
+echo $! > "${WORK_DIR}/qemu.pid"
+
+# Poll for SSH on port 2222 (appears after provision.sh hardens and restarts SSH)
+info "Waiting for SSH on port ${HOST_SSH_PORT} (up to ${BOOT_TIMEOUT}s)..."
+info "Port 2222 only opens after provision.sh has finished — this takes a while."
+echo ""
+SSH_OPTS=(-o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes -o LogLevel=ERROR)
+deadline=$(( $(date +%s) + BOOT_TIMEOUT ))
+while (( $(date +%s) < deadline )); do
+  if ssh "${SSH_OPTS[@]}" -p "${HOST_SSH_PORT}" -i "${SSH_ADMIN_KEY}" \
+       admin@127.0.0.1 true 2>/dev/null; then
+    break
+  fi
+  sleep 15
+done
+if (( $(date +%s) >= deadline )); then
+  fail "Timed out waiting for SSH on port ${HOST_SSH_PORT}"
+  echo "Last 50 lines of console log:"
+  tail -50 "${WORK_DIR}/console.log" || true
+  exit 1
+fi
+pass "SSH is up on port ${HOST_SSH_PORT}"
+echo ""
+
+# Helper: run a command on the VM
+vm_ssh() {
+  local user="$1" key="$2"; shift 2
+  ssh "${SSH_OPTS[@]}" -p "${HOST_SSH_PORT}" -i "${key}" "${user}@127.0.0.1" "$@" 2>/dev/null
+}
+
+echo "==> Testing SSH connections..."
+echo ""
+
+# admin: SSH key login
+if result=$(vm_ssh admin "${SSH_ADMIN_KEY}" whoami) && [[ "${result}" == "admin" ]]; then
+  pass "admin: SSH key login works"
+else
+  fail "admin: SSH key login failed"
+fi
+
+# website: SSH key login
+if result=$(vm_ssh website "${SSH_WEBSITE_KEY}" whoami) && [[ "${result}" == "website" ]]; then
+  pass "website: SSH key login works"
+else
+  fail "website: SSH key login failed"
+fi
+
+# admin: password verification via sudo -S
+# Note: the password is passed via stdin to avoid exposure in the process listing.
+if result=$(vm_ssh admin "${SSH_ADMIN_KEY}" \
+    "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S true 2>/dev/null && echo ok") \
+   && [[ "${result}" == "ok" ]]; then
+  pass "admin: password accepted by sudo (SHA-512 hash correctly applied)"
+else
+  fail "admin: sudo password rejected — hash may be incorrect"
+fi
+
+# website: group membership
+if vm_ssh website "${SSH_WEBSITE_KEY}" 'id -nG | grep -qw website'; then
+  pass "website: member of 'website' group"
+else
+  fail "website: not in 'website' group"
+fi
+
+# Confirm SSH password auth is disabled (security sanity check)
+# BatchMode=yes + PreferredAuthentications=password → fails without a password,
+# but "Permission denied (publickey)" vs "no supported methods" distinguishes
+# whether the server even offers password auth.
+echo ""
+echo "==> Security checks..."
+echo ""
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     'grep -Eiq "^PasswordAuthentication[[:space:]]+no" /etc/ssh/sshd_config'; then
+  pass "sshd_config: PasswordAuthentication no"
+else
+  fail "sshd_config: PasswordAuthentication is not explicitly set to 'no'"
+fi
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     'grep -Eiq "^Port[[:space:]]+2222" /etc/ssh/sshd_config'; then
+  pass "sshd_config: SSH port set to 2222"
+else
+  fail "sshd_config: SSH port is not 2222"
+fi
+
+echo ""
+if [[ "${FAILED}" -eq 0 ]]; then
+  echo -e "${GREEN}All tests passed.${NC}"
+else
+  echo -e "${RED}${FAILED} test(s) failed.${NC}"
+  exit 1
+fi

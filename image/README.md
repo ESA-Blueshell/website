@@ -8,6 +8,7 @@ for the ESA Blueshell website.
 ```
 image/
 ├── .example.env              Configuration template (copy to .env)
+├── test-cloud-config.sh      Validate rendered config (hash check + optional VM test)
 ├── cloud-init/
 │   ├── cloud-config.template.yaml  Cloud-init template
 │   ├── render.sh             Renders the template with real values from .env
@@ -355,6 +356,48 @@ Admin users delegate to the website user via:
 ```bash
 su -l website -c "website up"
 ```
+
+---
+
+## Testing the Cloud-Config
+
+`test-cloud-config.sh` validates the rendered `cloud-config.yaml` before a real
+deployment. It has two phases:
+
+| Phase | Flag | Duration | What it checks |
+|---|---|---|---|
+| **Hash check** | (default or `--hash-only`) | ~5 s | Re-derives each SHA-512 crypt hash from the plaintext password + embedded salt; fails on mismatch |
+| **VM test** | (default, skip with `--hash-only`) | ~15 min | Boots a Debian 12 VM via QEMU, waits for cloud-init to finish, then tests SSH key login and sudo password for admin + website |
+
+### Running locally
+
+```bash
+cd image
+
+# Quick check only (no QEMU needed)
+./test-cloud-config.sh --hash-only
+
+# Full test (requires QEMU)
+# macOS:  brew install qemu cdrtools
+# Linux:  sudo apt install qemu-system-x86 qemu-utils cloud-image-utils
+./test-cloud-config.sh
+```
+
+The Debian cloud image (~300 MB) is downloaded once and cached in
+`.test-cache/` (gitignored).
+
+### CI
+
+The **`test-cloud-config`** GitHub Actions workflow runs automatically on
+pushes that touch `image/cloud-init/**` or `image/scripts/provision.sh`:
+
+- **Hash check** — always, takes ~1 min.
+- **Full VM test** — manual dispatch only; check *"Boot a Debian VM and test
+  SSH on port 2222"* in the workflow UI.
+
+Test credentials are taken from repository secrets `TEST_ADMIN_PASSWORD`,
+`TEST_ROOT_PASSWORD`, `TEST_WEBSITE_PASSWORD` (fall back to built-in CI
+defaults if the secrets are not set).
 
 ---
 

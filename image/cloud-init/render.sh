@@ -15,7 +15,7 @@ set -euo pipefail
 # Auto-generates random secrets for any blank "auto-generated" variable.
 #
 # Output:
-#   cloud-init/cloud-config-standalone.yaml
+#   cloud-init/cloud-config.yaml
 #   cloud-init/rendered/.db.env
 #   cloud-init/rendered/.api.env
 #   cloud-init/rendered/.listmonk.env
@@ -66,6 +66,25 @@ auto_hex() {
     eval "export ${var}=$(openssl rand -hex "${bytes}")"
     echo "  auto-generated: ${var}"
   fi
+}
+
+# Hash a password with SHA-512 crypt (for cloud-init chpasswd type: hash).
+# Tries openssl passwd -6 (OpenSSL 3.x / Homebrew on macOS, default on Linux),
+# then falls back to Python's crypt module (Python < 3.13).
+hash_password() {
+  local password="$1"
+  local hashed
+  if hashed="$(openssl passwd -6 "${password}" 2>/dev/null)" && [[ -n "${hashed}" ]]; then
+    printf '%s' "${hashed}"
+    return
+  fi
+  if hashed="$(python3 -c "import crypt,sys; print(crypt.crypt(sys.argv[1], crypt.mksalt(crypt.METHOD_SHA512)))" "${password}" 2>/dev/null)" && [[ -n "${hashed}" ]]; then
+    printf '%s' "${hashed}"
+    return
+  fi
+  echo "Error: cannot generate SHA-512 password hash." >&2
+  echo "Install OpenSSL 3.x (brew install openssl@3) or use Python < 3.13." >&2
+  exit 1
 }
 
 echo "==> Generating secrets..."
@@ -129,6 +148,12 @@ ensure_key "${ADMIN_KEY}"   "admin@$(hostname -f 2>/dev/null || hostname)"
 WEBSITE_PUB="$(tr -d '\n' < "${WEBSITE_KEY}.pub")"
 ADMIN_PUB="$(tr -d '\n' < "${ADMIN_KEY}.pub")"
 
+# ── Hash passwords (SHA-512 crypt) ────────────────────────────────────────────
+echo "==> Hashing passwords..."
+HASHED_ADMIN="$(hash_password "${ADMIN_PASSWORD}")"
+HASHED_ROOT="$(hash_password "${ROOT_PASSWORD}")"
+HASHED_WEBSITE="$(hash_password "${WEBSITE_PASSWORD}")"
+
 # ── Render env files ─────────────────────────────────────────────────────────
 RENDERED_DIR="${SCRIPT_DIR}/rendered"
 mkdir -p "${RENDERED_DIR}"
@@ -182,9 +207,6 @@ _escape_sed() {
   printf '%s' "$1" | sed -e 's/[\/&\\]/\\&/g'
 }
 
-SAFE_ADMIN="$(_escape_sed "${ADMIN_PASSWORD}")"
-SAFE_ROOT="$(_escape_sed "${ROOT_PASSWORD}")"
-SAFE_WEBSITE="$(_escape_sed "${WEBSITE_PASSWORD}")"
 SAFE_GHCR_TOKEN="$(_escape_sed "${GHCR_TOKEN}")"
 SAFE_GHCR_USER="$(_escape_sed "${GHCR_USER}")"
 SAFE_WEBSITE_PUB="$(_escape_sed "${WEBSITE_PUB}")"
@@ -192,21 +214,39 @@ SAFE_ADMIN_PUB="$(_escape_sed "${ADMIN_PUB}")"
 SAFE_INFISICAL_ADMIN_EMAIL="$(_escape_sed "${INFISICAL_ADMIN_EMAIL}")"
 SAFE_INFISICAL_ADMIN_PASSWORD="$(_escape_sed "${INFISICAL_ADMIN_PASSWORD}")"
 
-# Render human-readable placeholders (passwords, SSH keys, GHCR) via sed
+# Render human-readable placeholders (passwords, SSH keys, GHCR).
+# Passwords are substituted via awk because SHA-512 crypt hashes contain '$'
+# which bash would expand as shell variables inside double-quoted sed expressions.
 _render_common() {
   local src="$1"
   local dst="$2"
+  local tmp
+  tmp="$(mktemp)"
+
+  # Phase 1: passwords via awk (safe against '$' in SHA-512 crypt hashes;
+  # SHA-512 uses alphabet ./0-9A-Za-z so no '&' to worry about in gsub)
+  awk \
+    -v admin_pw="${HASHED_ADMIN}" \
+    -v root_pw="${HASHED_ROOT}" \
+    -v website_pw="${HASHED_WEBSITE}" \
+    '{
+      gsub(/__ADMIN_PASSWORD__/, admin_pw)
+      gsub(/__ROOT_PASSWORD__/, root_pw)
+      gsub(/__WEBSITE_PASSWORD__/, website_pw)
+      print
+    }' "${src}" > "${tmp}"
+
+  # Phase 2: remaining values via sed (SSH keys, GHCR, Infisical — no '$')
   sed \
-    -e "s|__ADMIN_PASSWORD__|${SAFE_ADMIN}|g" \
-    -e "s|__ROOT_PASSWORD__|${SAFE_ROOT}|g" \
-    -e "s|__WEBSITE_PASSWORD__|${SAFE_WEBSITE}|g" \
     -e "s|__GHCR_TOKEN__|${SAFE_GHCR_TOKEN}|g" \
     -e "s|__GHCR_USERNAME__|${SAFE_GHCR_USER}|g" \
     -e "s|__WEBSITE_SSH_PUB__|${SAFE_WEBSITE_PUB}|g" \
     -e "s|__ADMIN_SSH_PUB__|${SAFE_ADMIN_PUB}|g" \
     -e "s|__INFISICAL_ADMIN_EMAIL__|${SAFE_INFISICAL_ADMIN_EMAIL}|g" \
     -e "s|__INFISICAL_ADMIN_PASSWORD__|${SAFE_INFISICAL_ADMIN_PASSWORD}|g" \
-    "${src}" > "${dst}"
+    "${tmp}" > "${dst}"
+
+  rm -f "${tmp}"
 }
 
 # Substitute a __PLACEHOLDER__ using awk (base64 contains / and = which
@@ -235,8 +275,8 @@ _inject_b64_file() {
 }
 
 # ── Render ────────────────────────────────────────────────────────────────────
-TMPL="${SCRIPT_DIR}/cloud-config-standalone.template.yaml"
-OUT="${SCRIPT_DIR}/cloud-config-standalone.yaml"
+TMPL="${SCRIPT_DIR}/cloud-config.template.yaml"
+OUT="${SCRIPT_DIR}/cloud-config.yaml"
 
 if [[ ! -f "${TMPL}" ]]; then
   echo "Error: template not found: ${TMPL}" >&2
@@ -253,7 +293,7 @@ _inject_b64_file "${OUT}" "__LISTMONK_ENV_B64__" "${RENDERED_DIR}/.listmonk.env"
 _inject_b64_file "${OUT}" "__INFRA_ENV_B64__"    "${RENDERED_DIR}/.infra.env"
 
 echo ""
-echo "Wrote ${OUT}"
+echo "==> Wrote ${OUT}"
 echo ""
 echo "Keys:"
 echo "  ${WEBSITE_KEY} (.pub)  -> injected for website"

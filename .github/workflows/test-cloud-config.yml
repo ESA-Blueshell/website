@@ -57,7 +57,8 @@ jobs:
     name: Full VM test (SSH port 2222)
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    if: github.event_name == 'workflow_dispatch' && inputs.full_test
+    needs: hash-check
+#    if: github.event_name == 'workflow_dispatch' && inputs.full_test
     env:
       ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
       ROOT_PASSWORD:    ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}

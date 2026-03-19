@@ -1,6 +1,6 @@
 #cloud-config
 # =============================================================================
-# Standalone cloud-init for Contabo stock Debian 12.
+# Standalone cloud-init for Contabo stock Debian 13.
 # No pre-baked Packer image required — provision.sh is embedded (base64) and
 # runs on first boot.  Instance-specific items (keys, passwords, GHCR) are
 # rendered by render.sh into cloud-config.yaml.

@@ -58,6 +58,7 @@ services/**/*.env
 /image/cloud-init/cloud-config.yaml
 /image/cloud-init/cloud-config-standalone.yaml
 /image/cloud-init/rendered/
+/image/.test-cache/
 /image/packer/output/
 /backup/
 

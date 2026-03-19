@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'image/**'
+      - '.github/workflows/test-cloud-config.yml'
   pull_request:
     paths:
       - 'image/**'

@@ -272,13 +272,13 @@ echo ""
 echo "==> Security checks..."
 echo ""
 if vm_ssh admin "${SSH_ADMIN_KEY}" \
-     'grep -Eiq "^PasswordAuthentication[[:space:]]+no" /etc/ssh/sshd_config'; then
+     'grep -Eriq "^PasswordAuthentication[[:space:]]+no" /etc/ssh/sshd_config /etc/ssh/sshd_config.d/ 2>/dev/null'; then
   pass "sshd_config: PasswordAuthentication no"
 else
   fail "sshd_config: PasswordAuthentication is not explicitly set to 'no'"
 fi
 if vm_ssh admin "${SSH_ADMIN_KEY}" \
-     'grep -Eiq "^Port[[:space:]]+2222" /etc/ssh/sshd_config'; then
+     'grep -Eriq "^Port[[:space:]]+2222" /etc/ssh/sshd_config /etc/ssh/sshd_config.d/ 2>/dev/null'; then
   pass "sshd_config: SSH port set to 2222"
 else
   fail "sshd_config: SSH port is not 2222"

@@ -49,7 +49,7 @@ useradd -m -s /bin/bash -d /src/website -g website website || true
 
 # ── SSH hardening ────────────────────────────────────────────────────────────
 cat > /etc/ssh/sshd_config.d/10-keys-only.conf <<'SSH'
- PasswordAuthentication no
+PasswordAuthentication no
 KbdInteractiveAuthentication no
 ChallengeResponseAuthentication no
 PubkeyAuthentication yes

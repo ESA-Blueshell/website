@@ -51,7 +51,7 @@ WEBSITE_PASSWORD="${WEBSITE_PASSWORD:-}"
 
 if [[ -z "${ADMIN_PASSWORD}" || -z "${ROOT_PASSWORD}" || -z "${WEBSITE_PASSWORD}" ]]; then
   echo "Error: ADMIN_PASSWORD, ROOT_PASSWORD, WEBSITE_PASSWORD must be set." >&2
-  echo "Set them in image/.env or export them to the environment." >&2
+  echo "Set them in vps/.env or export them to the environment." >&2
   exit 1
 fi
 

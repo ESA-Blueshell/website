@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage:
 #   ./render.sh
 #
-# Reads all values from image/.env (or exported env vars).
+# Reads all values from vps/.env (or exported env vars).
 #
 # Generates (or reuses) two ed25519 SSH keypairs in ~/.ssh:
 #   ~/.ssh/blueshell-website  — for the website application user
@@ -40,7 +40,7 @@ GHCR_TOKEN="${GHCR_TOKEN:-}"
 if [[ -z "${ADMIN_PASSWORD}" || -z "${ROOT_PASSWORD}" || -z "${WEBSITE_PASSWORD}" \
    || -z "${GHCR_USER}" || -z "${GHCR_TOKEN}" ]]; then
   cat >&2 <<'EOF'
-Error: missing required values. Set them in image/.env (or export to the shell):
+Error: missing required values. Set them in vps/.env (or export to the shell):
 
   ADMIN_PASSWORD       sudo admin user password (console/portal login only)
   ROOT_PASSWORD        root account password (emergency portal access)

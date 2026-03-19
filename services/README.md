@@ -124,7 +124,7 @@ su -l website -c "website logs api"
 
 ## Prerequisites
 
-- A provisioned server (see [image/README.md](../image/README.md))
+- A provisioned server (see [vps/README.md](../vps/README.md))
 - DNS records pointing to the server:
   - `esa-blueshell.nl` → server IP
   - `staging.esa-blueshell.nl` → server IP
@@ -208,7 +208,7 @@ LISTMONK_BOUNCE_MAILBOX_PASSWORD=
 
 Copy these to the server with:
 ```bash
-./image/ops/restore.sh   # pushes a full backup incl. env files
+./vps/ops/restore.sh   # pushes a full backup incl. env files
 ```
 or manually via `scp`/`ssh`.
 
@@ -218,7 +218,7 @@ or manually via `scp`/`ssh`.
 
 ### 1. Provision a VPS
 
-See [image/README.md](../image/README.md) for full instructions. After first boot
+See [vps/README.md](../vps/README.md) for full instructions. After first boot
 the server will have:
 - Docker (rootless) running as `website`
 - Repo cloned to `/src/website`

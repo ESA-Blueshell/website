@@ -6,7 +6,7 @@ for the ESA Blueshell website.
 ## Directory Structure
 
 ```
-image/
+vps/
 ├── .example.env              Configuration template (copy to .env)
 ├── test-cloud-config.sh      Validate rendered config (hash check + optional VM test)
 ├── cloud-init/
@@ -389,7 +389,7 @@ The Debian cloud image (~300 MB) is downloaded once and cached in
 ### CI
 
 The **`test-cloud-config`** GitHub Actions workflow runs automatically on
-pushes that touch `image/cloud-init/**` or `image/scripts/provision.sh`:
+pushes that touch `vps/cloud-init/**` or `vps/scripts/provision.sh`:
 
 - **Hash check** — always, takes ~1 min.
 - **Full VM test** — manual dispatch only; check *"Boot a Debian VM and test

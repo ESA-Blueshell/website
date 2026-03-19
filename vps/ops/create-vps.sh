@@ -4,15 +4,15 @@
 #
 # Prerequisites:
 #   1. cntb CLI installed  (https://github.com/contabo/cntb)
-#   2. SSH keypairs exist  (run image/cloud-init/render.sh first)
+#   2. SSH keypairs exist  (run vps/cloud-init/render.sh first)
 #   3. Admin SSH public key (blueshell-admin.pub) uploaded to Contabo and its ID set in CONTABO_SSH_KEY_ID
 #      (see helper step printed by this script if the key is not yet uploaded)
-#   4. Credentials in image/.env  (see .example.env)
+#   4. Credentials in vps/.env  (see .example.env)
 #
 # Usage:
 #   ./create-vps.sh
 #
-# All configuration is read from image/.env.
+# All configuration is read from vps/.env.
 # =============================================================================
 set -euo pipefail
 
@@ -28,13 +28,13 @@ if [[ -f "${ENV_FILE}" ]]; then
 fi
 
 # ── Validate required variables ───────────────────────────────────────────────
-: "${CLIENT_ID:?Set CLIENT_ID in image/.env (Contabo OAuth2 client ID)}"
-: "${CLIENT_SECRET:?Set CLIENT_SECRET in image/.env (Contabo OAuth2 client secret)}"
-: "${CONTABO_API_USER:?Set CONTABO_API_USER in image/.env (Contabo login email)}"
-: "${CONTABO_API_PASSWORD:?Set CONTABO_API_PASSWORD in image/.env (Contabo login password)}"
-: "${CONTABO_PRODUCT_ID:?Set CONTABO_PRODUCT_ID in image/.env (e.g. V22 — run: cntb get products)}"
-: "${CONTABO_REGION:?Set CONTABO_REGION in image/.env (EUROPE | US_CENTRAL | US_EAST | US_WEST | ASIA | AUSTRALIA)}"
-: "${CONTABO_SSH_KEY_ID:?Set CONTABO_SSH_KEY_ID in image/.env (run: cntb get secrets --type ssh)}"
+: "${CLIENT_ID:?Set CLIENT_ID in vps/.env (Contabo OAuth2 client ID)}"
+: "${CLIENT_SECRET:?Set CLIENT_SECRET in vps/.env (Contabo OAuth2 client secret)}"
+: "${CONTABO_API_USER:?Set CONTABO_API_USER in vps/.env (Contabo login email)}"
+: "${CONTABO_API_PASSWORD:?Set CONTABO_API_PASSWORD in vps/.env (Contabo login password)}"
+: "${CONTABO_PRODUCT_ID:?Set CONTABO_PRODUCT_ID in vps/.env (e.g. V22 — run: cntb get products)}"
+: "${CONTABO_REGION:?Set CONTABO_REGION in vps/.env (EUROPE | US_CENTRAL | US_EAST | US_WEST | ASIA | AUSTRALIA)}"
+: "${CONTABO_SSH_KEY_ID:?Set CONTABO_SSH_KEY_ID in vps/.env (run: cntb get secrets --type ssh)}"
 
 # ── Check cloud-config is rendered ───────────────────────────────────────────
 if [[ ! -f "${CLOUD_CONFIG}" ]]; then
@@ -57,7 +57,7 @@ if [[ "${CONTABO_SSH_KEY_ID}" == "12345" || "${CONTABO_SSH_KEY_ID}" == "0" ]]; t
   echo "    --value \"\$(cat ${ADMIN_KEY}.pub)\" \\"
   echo "    --type ssh"
   echo ""
-  echo "Then set the returned ID as CONTABO_SSH_KEY_ID in image/.env and re-run."
+  echo "Then set the returned ID as CONTABO_SSH_KEY_ID in vps/.env and re-run."
   exit 1
 fi
 

@@ -3,14 +3,10 @@ name: Test cloud-config
 on:
   push:
     paths:
-      - 'image/cloud-init/**'
-      - 'image/scripts/provision.sh'
-      - 'image/.example.env'
+      - 'image/**'
   pull_request:
     paths:
-      - 'image/cloud-init/**'
-      - 'image/scripts/provision.sh'
-      - 'image/.example.env'
+      - 'image/**'
   workflow_dispatch:
     inputs:
       full_test:

@@ -54,12 +54,12 @@ services/**/.*.env
 services/**/*.env
 
 # image build secrets and generated output
-/image/.env
-/image/cloud-init/cloud-config.yaml
-/image/cloud-init/cloud-config-standalone.yaml
-/image/cloud-init/rendered/
-/image/.test-cache/
-/image/packer/output/
+/vps/.env
+/vps/cloud-init/cloud-config.yaml
+/vps/cloud-init/cloud-config-standalone.yaml
+/vps/cloud-init/rendered/
+/vps/.test-cache/
+/vps/packer/output/
 /backup/
 
 # infra secrets

@@ -53,7 +53,7 @@ website/
 │   ├── docker-stack.yml     Swarm stack definition (all services)
 │   ├── deploy.sh            Deploy script (fetches secrets, deploys stack)
 │   └── README.md            Full deployment guide
-├── image/                   VPS provisioning (Contabo cloud-init + ops)
+├── vps/                   VPS provisioning (Contabo cloud-init + ops)
 │   ├── scripts/provision.sh System setup baked into the image
 │   ├── cloud-init/          Cloud-init templates + render script
 │   ├── ops/                 backup.sh, restore.sh, create-vps.sh
@@ -155,7 +155,7 @@ sudo website pull
 ```
 
 **Full docs:** [services/README.md](services/README.md)
-**VPS provisioning:** [image/README.md](image/README.md)
+**VPS provisioning:** [vps/README.md](vps/README.md)
 
 ### CI/CD flow
 

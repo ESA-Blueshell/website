@@ -3,11 +3,11 @@ name: Test cloud-config
 on:
   push:
     paths:
-      - 'image/**'
+      - 'vps/**'
       - '.github/workflows/test-cloud-config.yml'
   pull_request:
     paths:
-      - 'image/**'
+      - 'vps/**'
   workflow_dispatch:
     inputs:
       full_test:
@@ -24,7 +24,7 @@ concurrency:
 # ── Job 1: verify password hashes ────────────────────────────────────────────
 # Fast (~1 min). Re-derives each SHA-512 hash from the plaintext password using
 # the salt stored in the rendered config; fails if any hash doesn't match.
-# Runs on every push/PR to image/cloud-init/** and on every manual dispatch.
+# Runs on every push/PR to vps/cloud-init/** and on every manual dispatch.
 jobs:
   hash-check:
     name: Verify password hashes
@@ -43,10 +43,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Render cloud-config
-        run: cd image && ./cloud-init/render.sh
+        run: cd vps && ./cloud-init/render.sh
 
       - name: Verify password hashes
-        run: cd image && ./test-cloud-config.sh --hash-only
+        run: cd vps && ./test-cloud-config.sh --hash-only
 
 # ── Job 2: full VM test ───────────────────────────────────────────────────────
 # Slow (~20 min). Boots a Debian 13 VM via QEMU/KVM with the rendered
@@ -87,19 +87,19 @@ jobs:
       - name: Cache Debian 13 cloud image
         uses: actions/cache@v4
         with:
-          path: image/.test-cache/debian-13-generic-amd64.qcow2
+          path: vps/.test-cache/debian-13-generic-amd64.qcow2
           key: debian-13-generic-amd64-trixie-2025
 
       - name: Render cloud-config
-        run: cd image && ./cloud-init/render.sh
+        run: cd vps && ./cloud-init/render.sh
 
       - name: Run full VM test
-        run: cd image && ./test-cloud-config.sh
+        run: cd vps && ./test-cloud-config.sh
 
       - name: Upload console log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: qemu-console-log
-          path: image/.test-cache/run-*/console.log
+          path: vps/.test-cache/run-*/console.log
           if-no-files-found: ignore

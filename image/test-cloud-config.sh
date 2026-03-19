@@ -230,7 +230,7 @@ vm_ssh() {
   ssh "${SSH_OPTS[@]}" -p "${HOST_SSH_PORT}" -i "${key}" "${user}@127.0.0.1" "$@" 2>/dev/null
 }
 
-echo "==> Testing SSH connections..."
+echo "==> Testing SSH key login..."
 echo ""
 
 # admin: SSH key login
@@ -247,16 +247,6 @@ else
   fail "website: SSH key login failed"
 fi
 
-# admin: password verification via sudo -S
-# Note: the password is passed via stdin to avoid exposure in the process listing.
-if result=$(vm_ssh admin "${SSH_ADMIN_KEY}" \
-    "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S true 2>/dev/null && echo ok") \
-   && [[ "${result}" == "ok" ]]; then
-  pass "admin: password accepted by sudo (SHA-512 hash correctly applied)"
-else
-  fail "admin: sudo password rejected — hash may be incorrect"
-fi
-
 # website: group membership
 if vm_ssh website "${SSH_WEBSITE_KEY}" 'id -nG | grep -qw website'; then
   pass "website: member of 'website' group"
@@ -264,10 +254,77 @@ else
   fail "website: not in 'website' group"
 fi
 
-# Confirm SSH password auth is disabled (security sanity check)
-# BatchMode=yes + PreferredAuthentications=password → fails without a password,
-# but "Permission denied (publickey)" vs "no supported methods" distinguishes
-# whether the server even offers password auth.
+# ── Password login tests ──────────────────────────────────────────────────────
+# Open a temporary window where password auth + root login are enabled on the
+# VM's sshd, use sshpass to actually log in with each plaintext password, then
+# restore the hardened config.
+#
+# The test drop-in is named 00-test-pwauth.conf so it is processed before
+# 10-keys-only.conf; sshd uses the first occurrence of each directive, so the
+# test values win for the duration of the window.
+echo ""
+echo "==> Testing password login (temporary password-auth window)..."
+echo ""
+
+if ! command -v sshpass >/dev/null 2>&1; then
+  info "Installing sshpass on test runner..."
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get install -y -q sshpass >/dev/null 2>&1
+  elif command -v brew >/dev/null 2>&1; then
+    brew install hudochenkov/sshpass/sshpass >/dev/null 2>&1
+  else
+    fail "sshpass not available and could not be installed — skipping password login tests"
+  fi
+fi
+
+if command -v sshpass >/dev/null 2>&1; then
+  # Enable password auth and root login on the VM
+  vm_ssh admin "${SSH_ADMIN_KEY}" \
+    "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S bash -c \
+      'printf \"PasswordAuthentication yes\nPermitRootLogin yes\n\" \
+         > /etc/ssh/sshd_config.d/00-test-pwauth.conf \
+       && systemctl reload ssh'" 2>/dev/null
+  sleep 2   # give sshd time to reload
+
+  SPASS_OPTS=(-o StrictHostKeyChecking=no -o ConnectTimeout=5
+              -o PasswordAuthentication=yes -o PubkeyAuthentication=no
+              -o LogLevel=ERROR)
+
+  # admin password login
+  if result=$(sshpass -p "${ADMIN_PASSWORD}" \
+                ssh "${SPASS_OPTS[@]}" -p "${HOST_SSH_PORT}" admin@127.0.0.1 whoami 2>/dev/null) \
+     && [[ "${result}" == "admin" ]]; then
+    pass "admin: SSH login with password works"
+  else
+    fail "admin: SSH login with password failed"
+  fi
+
+  # website password login
+  if result=$(sshpass -p "${WEBSITE_PASSWORD}" \
+                ssh "${SPASS_OPTS[@]}" -p "${HOST_SSH_PORT}" website@127.0.0.1 whoami 2>/dev/null) \
+     && [[ "${result}" == "website" ]]; then
+    pass "website: SSH login with password works"
+  else
+    fail "website: SSH login with password failed"
+  fi
+
+  # root password login (requires PermitRootLogin yes set above)
+  if result=$(sshpass -p "${ROOT_PASSWORD}" \
+                ssh "${SPASS_OPTS[@]}" -p "${HOST_SSH_PORT}" root@127.0.0.1 whoami 2>/dev/null) \
+     && [[ "${result}" == "root" ]]; then
+    pass "root: SSH login with password works"
+  else
+    fail "root: SSH login with password failed"
+  fi
+
+  # Restore hardened SSH config
+  vm_ssh admin "${SSH_ADMIN_KEY}" \
+    "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S bash -c \
+      'rm /etc/ssh/sshd_config.d/00-test-pwauth.conf && systemctl reload ssh'" 2>/dev/null
+  sleep 1
+fi
+
+# ── Security checks ───────────────────────────────────────────────────────────
 echo ""
 echo "==> Security checks..."
 echo ""

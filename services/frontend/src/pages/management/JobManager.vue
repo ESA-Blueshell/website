@@ -247,9 +247,7 @@ watch(page, () => {
 const loadStats = async () => {
   try {
     const response = await getStats()
-    if (response.status === 200) {
-      stats.value = response.data ?? null
-    }
+    stats.value = response.data ?? null
   } catch {
     // Stats panel is supplementary; silently ignore errors
   }

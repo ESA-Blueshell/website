@@ -47,7 +47,7 @@ env:
   APP_URL: http://127.0.0.1:8080
   FRONTEND_URL: http://127.0.0.1:3000
 
-  JWT_SECRET: ci-jwt-secret-not-used-in-production-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  JWT_SECRET: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh
 
   STORAGE_LOCATION: ./storage
 

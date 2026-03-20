@@ -60,8 +60,9 @@ class BrevoContactAdapter(
             val req = CreateContactRequest()
             req.email = data.email
             req.extId = data.email   // Brevo extId used for dedup
-            @Suppress("UNCHECKED_CAST") req.attributes =
-                buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
+            @Suppress("UNCHECKED_CAST")
+            val createAttrs = buildAttributes(data) as Map<String?, CreateContactRequestAttributesValue?>?
+            req.attributes = createAttrs
             val response = contactsApi.createContact(req)
             log.info("Created Brevo contact id={} for {}", response.id, data.email)
             response.id!!
@@ -76,8 +77,9 @@ class BrevoContactAdapter(
         try {
             val req = UpdateContactRequest()
             req.extId = data.email
-            @Suppress("UNCHECKED_CAST") req.attributes =
-                buildAttributes(data) as @Valid Map<String?, CreateContactRequestAttributesValue?>?
+            @Suppress("UNCHECKED_CAST")
+            val updateAttrs = buildAttributes(data) as Map<String?, CreateContactRequestAttributesValue?>?
+            req.attributes = updateAttrs
             contactsApi.updateContact(data.email, req, "email_id")
             log.info("Updated Brevo contact id={}", externalId)
         } catch (e: RestClientResponseException) {

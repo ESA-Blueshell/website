@@ -70,30 +70,30 @@ class BrevoListAdapter(
         }
     }
 
-    override fun addToList(externalContactId: Long, externalListId: Long) {
-        log.info("Adding Brevo contact {} to list {}", externalContactId, externalListId)
+    override fun addToList(externalUserId: Long, externalListId: Long) {
+        log.info("Adding Brevo contact {} to list {}", externalUserId, externalListId)
         try {
             val req = AddContactToListRequest()
-            req.ids = mutableListOf(externalContactId)
+            req.ids = mutableListOf(externalUserId)
             req.emails = null
             req.extIds = null
             contactsApi.addContactToList(externalListId, req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to add contact {} to Brevo list {}", externalContactId, externalListId, e)
+            log.error("Failed to add contact {} to Brevo list {}", externalUserId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)
         }
     }
 
-    override fun removeFromList(externalContactId: Long, externalListId: Long) {
-        log.info("Removing Brevo contact {} from list {}", externalContactId, externalListId)
+    override fun removeFromList(externalUserId: Long, externalListId: Long) {
+        log.info("Removing Brevo contact {} from list {}", externalUserId, externalListId)
         try {
             val req = RemoveContactFromListRequest()
-            req.ids = mutableListOf(externalContactId)
+            req.ids = mutableListOf(externalUserId)
             req.emails = null
             req.extIds = null
             contactsApi.removeContactFromList(externalListId, req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to remove contact {} from Brevo list {}", externalContactId, externalListId, e)
+            log.error("Failed to remove contact {} from Brevo list {}", externalUserId, externalListId, e)
             throw ContactServiceException("Failed to remove contact from list", e)
         }
     }

@@ -33,7 +33,7 @@ class AsyncCommandDispatcher(
     private val commandBus: CommandBus,
     @field:Qualifier("taskExecutor") private val taskExecutor: TaskExecutor
 ) {
-    private val logger = LoggerFactory.getLogger(AsyncCommandDispatcher::class.java)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     fun <R, C : Command<R>> dispatch(command: C): CompletableFuture<R> {
         val callerContext: SecurityContext = SecurityContextHolder.getContext()

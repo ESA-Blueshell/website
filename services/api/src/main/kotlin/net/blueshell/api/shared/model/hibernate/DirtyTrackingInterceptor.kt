@@ -3,7 +3,6 @@ package net.blueshell.api.shared.model.hibernate
 import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel
 import net.blueshell.api.shared.model.DirtyAwareModel
-import org.hibernate.CallbackException
 import org.hibernate.Interceptor
 import org.hibernate.type.Type
 import java.util.*
@@ -18,7 +17,6 @@ import java.util.concurrent.ConcurrentHashMap
  * Runs only for entities that extend DirtyAwareModel AND are annotated with @DirtyModel.
  */
 class DirtyTrackingInterceptor : Interceptor {
-    @Throws(CallbackException::class)
     override fun onFlushDirty(
         entity: Any,
         id: Any,

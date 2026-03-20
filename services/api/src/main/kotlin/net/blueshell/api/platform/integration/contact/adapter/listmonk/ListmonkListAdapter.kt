@@ -46,28 +46,28 @@ class ListmonkListAdapter(
         }
     }
 
-    override fun addToList(externalContactId: Long, externalListId: Long) {
-        log.info("Adding Listmonk subscriber {} to list {}", externalContactId, externalListId)
+    override fun addToList(externalUserId: Long, externalListId: Long) {
+        log.info("Adding Listmonk subscriber {} to list {}", externalUserId, externalListId)
         try {
             val req = SubscriberQueryRequest()
-                .ids(listOf(externalContactId.toInt()))
+                .ids(listOf(externalUserId.toInt()))
                 .action(SubscriberQueryRequestAction.ADD)
             subscribersApi.manageSubscriberListById(externalListId.toInt(), req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to add subscriber {} to list {}", externalContactId, externalListId, e)
+            log.error("Failed to add subscriber {} to list {}", externalUserId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)
         }
     }
 
-    override fun removeFromList(externalContactId: Long, externalListId: Long) {
-        log.info("Removing Listmonk subscriber {} from list {}", externalContactId, externalListId)
+    override fun removeFromList(externalUserId: Long, externalListId: Long) {
+        log.info("Removing Listmonk subscriber {} from list {}", externalUserId, externalListId)
         try {
             val req = SubscriberQueryRequest()
-                .ids(listOf(externalContactId.toInt()))
+                .ids(listOf(externalUserId.toInt()))
                 .action(SubscriberQueryRequestAction.REMOVE)
             subscribersApi.manageSubscriberListById(externalListId.toInt(), req)
         } catch (e: RestClientResponseException) {
-            log.error("Failed to remove subscriber {} from list {}", externalContactId, externalListId, e)
+            log.error("Failed to remove subscriber {} from list {}", externalUserId, externalListId, e)
             throw ContactServiceException("Failed to remove contact from list", e)
         }
     }

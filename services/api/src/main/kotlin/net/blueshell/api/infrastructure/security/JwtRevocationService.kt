@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class JwtRevocationService(
-    @param:Value($$"${app.jwt.revoked-jtis:}") revokedJtis: String
+    @Value($$"${app.jwt.revoked-jtis:}") revokedJtis: String
 ) {
     private val revoked = ConcurrentHashMap.newKeySet<String>()
 

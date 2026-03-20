@@ -83,18 +83,18 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
         return listId
     }
 
-    override fun addToList(externalId: Long, externalListId: Long) {
+    override fun addToList(externalUserId: Long, externalListId: Long) {
         if (!lists.containsKey(externalListId)) throw ContactServiceException("Mock: List not found: $externalListId")
-        if (!contacts.containsKey(externalId)) throw ContactServiceException("Mock: Contact not found: $externalId")
-        memberships[externalId to externalListId] = Unit
-        log.info("Mock: Added contact {} to list {}", externalId, externalListId)
+        if (!contacts.containsKey(externalUserId)) throw ContactServiceException("Mock: Contact not found: $externalUserId")
+        memberships[externalUserId to externalListId] = Unit
+        log.info("Mock: Added contact {} to list {}", externalUserId, externalListId)
     }
 
-    override fun removeFromList(externalId: Long, externalListId: Long) {
-        if (memberships.remove(externalId to externalListId) == null) {
-            log.warn("Mock: Contact {} was not in list {}", externalId, externalListId)
+    override fun removeFromList(externalUserId: Long, externalListId: Long) {
+        if (memberships.remove(externalUserId to externalListId) == null) {
+            log.warn("Mock: Contact {} was not in list {}", externalUserId, externalListId)
         } else {
-            log.info("Mock: Removed contact {} from list {}", externalId, externalListId)
+            log.info("Mock: Removed contact {} from list {}", externalUserId, externalListId)
         }
     }
 

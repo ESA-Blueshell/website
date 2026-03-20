@@ -39,17 +39,17 @@ abstract class AbstractCommandJobHandler<C : Command<R>, R>(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    override fun handlePayload(command: C) {
-        val commandName = command::class.simpleName ?: "UnknownCommand"
+    override fun handlePayload(payload: C) {
+        val commandName = payload::class.simpleName ?: "UnknownCommand"
         val execId = currentExecutionId?.toString() ?: "none"
 
         MDC.put("commandType", commandName)
         MDC.put("jobExecutionId", execId)
         try {
             logger.debug("Dispatching {} [executionId={}]", commandName, execId)
-            val result = commandBus.dispatch(command)
+            val result = commandBus.dispatch(payload)
             logger.info("Command {} completed [executionId={}]", commandName, execId)
-            onSuccess(command, result)
+            onSuccess(payload, result)
         } catch (ex: ConstraintViolationException) {
             // Also classified non-retryable in NON_RETRYABLE_EXCEPTIONS — belt-and-suspenders
             val violations = ex.constraintViolations.joinToString("; ") {
@@ -67,7 +67,7 @@ abstract class AbstractCommandJobHandler<C : Command<R>, R>(
                 "Command {} failed [executionId={}]: {}",
                 commandName, execId, ex.message, ex
             )
-            onFailure(command, ex)
+            onFailure(payload, ex)
             throw ex
         } finally {
             MDC.remove("commandType")

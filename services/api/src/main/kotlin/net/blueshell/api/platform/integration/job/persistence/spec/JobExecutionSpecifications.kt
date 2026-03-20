@@ -128,11 +128,7 @@ object JobExecutionSpecifications {
     private fun initiatedByUserMatches(normalized: String): Specification<JobExecution> {
         val pattern = "%$normalized%"
         return Specification { root, query, cb ->
-            if (query == null) {
-                return@Specification cb.disjunction()
-            }
-
-            val subquery = query.subquery(Long::class.java)
+            val subquery = query!!.subquery(Long::class.java)
             val user = subquery.from(User::class.java)
             val firstName = user.get<String>("firstName")
             val prefix = cb.coalesce(user.get<String>("prefix"), "")

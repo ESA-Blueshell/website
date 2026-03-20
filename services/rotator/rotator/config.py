@@ -19,7 +19,7 @@ def load() -> Config:
     return Config(
         infisical_token=os.getenv("INFISICAL_TOKEN", ""),
         infisical_project_id=os.getenv("INFISICAL_PROJECT_ID", ""),
-        infisical_base_url=os.getenv("INFISICAL_BASE_URL", "https://vault.esa-blueshell.nl"),
+        infisical_base_url=os.getenv("INFISICAL_BASE_URL", "https://vault.v2.esa-blueshell.nl"),
         listmonk_url=os.getenv("LISTMONK_URL", "http://listmonk:9000"),
         repo_root=os.getenv("REPO_ROOT", "/src/website"),
     )

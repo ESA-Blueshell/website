@@ -176,7 +176,7 @@ const saveContributionPeriod = async () => {
         halfYearFee: periodForm.halfYearFee,
         fullYearFee: periodForm.fullYearFee,
         alumniFee: periodForm.alumniFee,
-        listId: periodForm.listId,
+        contactListId: periodForm.contactListId,
         version: periodForm.version ?? 0,
       }
       const resp = await updateContributionPeriod({
@@ -193,7 +193,7 @@ const saveContributionPeriod = async () => {
         halfYearFee: periodForm.halfYearFee,
         fullYearFee: periodForm.fullYearFee,
         alumniFee: periodForm.alumniFee,
-        listId: periodForm.listId,
+        contactListId: periodForm.contactListId,
       }
       const resp = await createContributionPeriod({body: payload, throwOnError: true})
       emit("changed", resp.data!)

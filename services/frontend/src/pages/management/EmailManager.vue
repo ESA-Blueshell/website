@@ -2,18 +2,18 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {getStats1, list1, retry1, type EmailOutbox, type EmailOutboxStats} from "@/services/api"
+import {getStats1, list1, retry1, type Email, type EmailStats} from "@/services/api"
 
 defineOptions({name: "EmailManagerPage"})
 
-type EmailDeliveryStatus = NonNullable<EmailOutbox["deliveryStatus"]>
+type EmailDeliveryStatus = NonNullable<Email["deliveryStatus"]>
 
 const PAGE_SIZE = 50
 
-const emails = ref<EmailOutbox[]>([])
+const emails = ref<Email[]>([])
 const loading = ref(false)
 const retrying = ref<number | null>(null)
-const stats = ref<EmailOutboxStats | null>(null)
+const stats = ref<EmailStats | null>(null)
 const selectedStatus = ref<EmailDeliveryStatus | "all">("all")
 const searchQuery = ref<string>("")
 const expandedRows = ref<number[]>([])
@@ -75,12 +75,12 @@ const pageRangeLabel = computed<string>(() => {
   return `${start}-${end} of ${totalElements.value}`
 })
 
-const isExpanded = (email: EmailOutbox): boolean => {
+const isExpanded = (email: Email): boolean => {
   if (email.id == null) return false
   return expandedRows.value.includes(email.id)
 }
 
-const toggleExpanded = (email: EmailOutbox) => {
+const toggleExpanded = (email: Email) => {
   if (email.id == null) return
   if (isExpanded(email)) {
     expandedRows.value = expandedRows.value.filter((id) => id !== email.id)
@@ -124,7 +124,7 @@ const rowStatusClass = (status?: EmailDeliveryStatus): string => {
   return ""
 }
 
-const canRetry = (email: EmailOutbox): boolean => {
+const canRetry = (email: Email): boolean => {
   return email.deliveryStatus === "FAILED" && email.jobExecutionId != null
 }
 
@@ -191,7 +191,7 @@ const refresh = async () => {
   }
 }
 
-const retryEmail = async (email: EmailOutbox) => {
+const retryEmail = async (email: Email) => {
   if (email.id == null) return
   retrying.value = email.id
   try {

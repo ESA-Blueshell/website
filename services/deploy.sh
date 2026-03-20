@@ -10,10 +10,10 @@
 #               Use "staging" or "dev" for non-production environments.
 #   STACK_NAME   Swarm stack name (auto-derived from IMAGE_TAG if unset)
 #
-# Tag → stack / domain mapping:
-#   latest  → website          / esa-blueshell.nl
-#   staging → website-staging  / staging.esa-blueshell.nl
-#   dev     → website-dev      / dev.esa-blueshell.nl
+# Tag → stack / domain mapping (BASE_DOMAIN defaults to v2.esa-blueshell.nl):
+#   latest  → website          / <BASE_DOMAIN>
+#   staging → website-staging  / staging.<BASE_DOMAIN>
+#   dev     → website-dev      / dev.<BASE_DOMAIN>
 #
 # The script:
 #   1. Resolves IMAGE_TAG, STACK_NAME, and APP_DOMAIN.
@@ -35,7 +35,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# ── Resolve IMAGE_TAG, STACK_NAME, and APP_DOMAIN ────────────────────────────
+# ── Resolve IMAGE_TAG, STACK_NAME, BASE_DOMAIN, and APP_DOMAIN ───────────────
+BASE_DOMAIN="${BASE_DOMAIN:-v2.esa-blueshell.nl}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 if [[ -n "${1:-}" ]]; then
@@ -50,10 +51,10 @@ else
 fi
 
 case "${IMAGE_TAG}" in
-  latest)  APP_DOMAIN="esa-blueshell.nl" ;;
-  staging) APP_DOMAIN="staging.esa-blueshell.nl" ;;
-  dev)     APP_DOMAIN="dev.esa-blueshell.nl" ;;
-  *)       APP_DOMAIN="${IMAGE_TAG}.esa-blueshell.nl" ;;
+  latest)  APP_DOMAIN="${BASE_DOMAIN}" ;;
+  staging) APP_DOMAIN="staging.${BASE_DOMAIN}" ;;
+  dev)     APP_DOMAIN="dev.${BASE_DOMAIN}" ;;
+  *)       APP_DOMAIN="${IMAGE_TAG}.${BASE_DOMAIN}" ;;
 esac
 
 STACK_FILE="${SCRIPT_DIR}/docker-stack.yml"
@@ -115,6 +116,7 @@ if [[ -f "${REPO_ROOT}/.server.env" ]]; then
 fi
 
 # Export variables consumed by the stack file's variable substitution
+export BASE_DOMAIN
 export IMAGE_TAG
 export STACK_NAME
 export APP_DOMAIN

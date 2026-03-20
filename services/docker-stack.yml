@@ -8,7 +8,7 @@
 # Variables exported by deploy.sh before deploy:
 #   IMAGE_TAG    — Docker image tag (latest | staging | dev)
 #   STACK_NAME   — Swarm stack name (website | website-staging | website-dev)
-#   APP_DOMAIN   — Routing hostname (esa-blueshell.nl | staging.esa-blueshell.nl | dev.esa-blueshell.nl)
+#   APP_DOMAIN   — Routing hostname (v2.esa-blueshell.nl | staging.v2.esa-blueshell.nl | dev.v2.esa-blueshell.nl)
 #   All DB, API, Listmonk credentials (sourced from services/**/.*.env)
 #
 # Networks:
@@ -272,7 +272,7 @@ services:
     environment:
       INFISICAL_TOKEN:      ${INFISICAL_TOKEN:-}
       INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID:-}
-      INFISICAL_BASE_URL:   "https://vault.${INFRA_DOMAIN:-esa-blueshell.nl}"
+      INFISICAL_BASE_URL:   "https://vault.${BASE_DOMAIN:-v2.esa-blueshell.nl}"
       LISTMONK_URL:         "http://listmonk:9000"
       REPO_ROOT:            /src/website
     volumes:

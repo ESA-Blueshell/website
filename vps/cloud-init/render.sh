@@ -100,6 +100,12 @@ auto_secret INFISICAL_AUTH_SECRET 48
 auto_secret INFISICAL_ADMIN_PASSWORD
 auto_hex    INFISICAL_ENCRYPTION_KEY 16  # 16 bytes = 32 hex chars
 
+# ── Domain ───────────────────────────────────────────────────────────────────
+# BASE_DOMAIN is the single source of truth. INFRA_DOMAIN is written into
+# .infra.env so the infra stack picks it up on first boot without extra config.
+export BASE_DOMAIN="${BASE_DOMAIN:-v2.esa-blueshell.nl}"
+export INFRA_DOMAIN="${INFRA_DOMAIN:-${BASE_DOMAIN}}"
+
 # ── Apply defaults for optional vars ─────────────────────────────────────────
 export MYSQL_DATABASE="${MYSQL_DATABASE:-blueshell}"
 export MYSQL_USER="${MYSQL_USER:-blueshell}"
@@ -190,6 +196,7 @@ LISTMONK_SMTP_PASSWORD=${LISTMONK_SMTP_PASSWORD}
 LMEOF
 
 cat > "${RENDERED_DIR}/.infra.env" <<INFRAEOF
+INFRA_DOMAIN=${INFRA_DOMAIN}
 GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
 GRAFANA_DISCORD_WEBHOOK_URL=${GRAFANA_DISCORD_WEBHOOK_URL}
 INFISICAL_DB_PASSWORD=${INFISICAL_DB_PASSWORD}

@@ -305,9 +305,9 @@ Usage:
   website help                     Show this help
 
 Environment (default: production):
-  production  →  IMAGE_TAG=latest   STACK=website            DOMAIN=esa-blueshell.nl
-  staging     →  IMAGE_TAG=staging  STACK=website-staging    DOMAIN=staging.esa-blueshell.nl
-  development →  IMAGE_TAG=dev      STACK=website-dev        DOMAIN=dev.esa-blueshell.nl
+  production  →  IMAGE_TAG=latest   STACK=website            DOMAIN=v2.esa-blueshell.nl
+  staging     →  IMAGE_TAG=staging  STACK=website-staging    DOMAIN=staging.v2.esa-blueshell.nl
+  development →  IMAGE_TAG=dev      STACK=website-dev        DOMAIN=dev.v2.esa-blueshell.nl
 
 Examples (run as website user or via: su -l website -c "website up"):
   website up                     # redeploy production

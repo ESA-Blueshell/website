@@ -116,7 +116,7 @@ server:
 security:
   cors:
     allowed-origins:
-      - https://esa-blueshell.nl
+      - ${FRONTEND_URL:https://v2.esa-blueshell.nl}
   auth-cookie:
     name: BSH_AUTH
     path: /
@@ -139,7 +139,7 @@ listmonk:
     api-user: ${LISTMONK_ADMIN_API_USER:api}
     token-file: ${LISTMONK_API_TOKEN_FILE:/run/secrets/listmonk/api-token.env}
   from:
-    address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.esa-blueshell.nl}
+    address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.v2.esa-blueshell.nl}
   reply-to: ${LISTMONK_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
   template-id: ${LISTMONK_TEMPLATE_ID:0}  # 0 = auto-detect/create on startup
   bounce:

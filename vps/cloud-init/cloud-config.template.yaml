@@ -177,7 +177,7 @@ final_message: |
   2) SSL certificates are obtained automatically by Traefik on first request
      (DNS must point to the server first — see services/README.md)
 
-  3) Configure Uptime Kuma monitors at https://status.esa-blueshell.nl
+  3) Configure Uptime Kuma monitors at https://status.v2.esa-blueshell.nl
 
   4) Verify backup after 03:00 or run now (as root or admin via sudo):
      sudo /usr/local/bin/db-backup && ls -l /src/backups/db

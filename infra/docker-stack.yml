@@ -15,7 +15,7 @@
 #
 # Variables exported by infra/deploy.sh:
 #   DOCKER_SOCKET                — rootless Docker socket path
-#   INFRA_DOMAIN                 — base domain (default: esa-blueshell.nl)
+#   INFRA_DOMAIN                 — base domain (default: v2.esa-blueshell.nl)
 #   ACME_EMAIL                   — Let's Encrypt contact email (passed as Traefik CLI flag)
 #   GRAFANA_ADMIN_PASSWORD       — Grafana admin password
 #   GRAFANA_DISCORD_WEBHOOK_URL  — Discord webhook for alert notifications
@@ -250,7 +250,7 @@ services:
     environment:
       ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:?required}
       AUTH_SECRET: ${INFISICAL_AUTH_SECRET:?required}
-      SITE_URL: https://vault.${INFRA_DOMAIN:-esa-blueshell.nl}
+      SITE_URL: https://vault.${INFRA_DOMAIN:-v2.esa-blueshell.nl}
       DB_CONNECTION_URI: postgresql://infisical:${INFISICAL_DB_PASSWORD}@infisical-db:5432/infisical
       REDIS_URL: redis://:${INFISICAL_REDIS_PASSWORD}@infisical-redis:6379
     networks:
@@ -264,7 +264,7 @@ services:
           memory: 512M
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.infra-infisical.rule=Host(`vault.${INFRA_DOMAIN:-esa-blueshell.nl}`)"
+        - "traefik.http.routers.infra-infisical.rule=Host(`vault.${INFRA_DOMAIN:-v2.esa-blueshell.nl}`)"
         - "traefik.http.routers.infra-infisical.entrypoints=websecure"
         - "traefik.http.routers.infra-infisical.tls.certresolver=letsencrypt"
         - "traefik.http.services.infra-infisical.loadbalancer.server.port=8080"

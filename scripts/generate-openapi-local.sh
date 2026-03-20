@@ -83,6 +83,9 @@ normalize_specs
 
 # ---- Generate frontend TypeScript clients ----
 
+echo "Installing frontend dependencies..."
+yarn --cwd services/frontend install
+
 echo "Generating frontend TypeScript clients..."
 yarn --cwd services/frontend gen:all
 yarn --cwd services/frontend lint:gen || true

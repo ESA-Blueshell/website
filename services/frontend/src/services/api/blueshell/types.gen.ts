@@ -151,12 +151,12 @@ export type CommitteeResponse = unknown;
 
 export type ContributionPeriodResponse = {
     alumniFee: number;
+    contactListId?: number;
     createdAt: string;
     endDate: string;
     fullYearFee: number;
     halfYearFee: number;
     id: number;
-    listId?: number;
     startDate: string;
     updatedAt: string;
     version: number;
@@ -211,10 +211,10 @@ export type CreateCommitteeRequest = {
 
 export type CreateContributionPeriodRequest = {
     alumniFee: number;
+    contactListId?: number;
     endDate: string;
     fullYearFee: number;
     halfYearFee: number;
-    listId?: number;
     startDate: string;
 };
 
@@ -303,7 +303,7 @@ export type CsrfToken = {
     token?: string;
 };
 
-export type EmailOutbox = {
+export type Email = {
     attempts?: number;
     createdAt?: string;
     deliveredAt?: string;
@@ -322,7 +322,7 @@ export type EmailOutbox = {
     updatedAt?: string;
 };
 
-export type EmailOutboxStats = {
+export type EmailStats = {
     bouncedCount: number;
     deliveredCount: number;
     failedCount: number;
@@ -545,8 +545,8 @@ export type PageMetadata = {
     totalPages?: number;
 };
 
-export type PagedModelEmailOutbox = {
-    content?: Array<EmailOutbox>;
+export type PagedModelEmail = {
+    content?: Array<Email>;
     page?: PageMetadata;
 };
 
@@ -685,10 +685,10 @@ export type UpdateCommitteeRequest = {
 
 export type UpdateContributionPeriodRequest = {
     alumniFee: number;
+    contactListId?: number;
     endDate: string;
     fullYearFee: number;
     halfYearFee: number;
-    listId?: number;
     startDate: string;
     version: number;
 };
@@ -3127,7 +3127,7 @@ export type List1Responses = {
     /**
      * OK
      */
-    200: PagedModelEmailOutbox;
+    200: PagedModelEmail;
 };
 
 export type List1Response = List1Responses[keyof List1Responses];
@@ -3168,7 +3168,7 @@ export type GetStats1Responses = {
     /**
      * OK
      */
-    200: EmailOutboxStats;
+    200: EmailStats;
 };
 
 export type GetStats1Response = GetStats1Responses[keyof GetStats1Responses];
@@ -3211,7 +3211,7 @@ export type Retry1Responses = {
     /**
      * OK
      */
-    200: EmailOutbox;
+    200: Email;
 };
 
 export type Retry1Response = Retry1Responses[keyof Retry1Responses];

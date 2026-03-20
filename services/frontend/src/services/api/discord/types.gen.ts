@@ -1337,6 +1337,61 @@ export type SoundboardCreateRequest = {
     volume?: number | null;
 };
 
+export type SortingOrder = 'asc' | 'desc';
+
+export type SortingMode = 'relevance' | 'timestamp';
+
+export type SearchableEmbedType = 'image' | 'video' | 'gif' | 'sound' | 'article';
+
+export type SearchMessageResponse = {
+    activity?: MessageActivityResponse;
+    application?: BasicApplicationResponse;
+    application_id?: SnowflakeType;
+    attachments: Array<MessageAttachmentResponse>;
+    author: UserResponse;
+    call?: MessageCallResponse;
+    channel_id: SnowflakeType;
+    components: Array<ActionRowComponentResponse | ContainerComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
+    content: string;
+    edited_timestamp: string | null;
+    embeds: Array<MessageEmbedResponse>;
+    flags: number;
+    hit: boolean;
+    id: SnowflakeType;
+    interaction?: MessageInteractionResponse;
+    interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
+    mention_channels?: Array<null | MessageMentionChannelResponse>;
+    mention_everyone: boolean;
+    mention_roles: Array<SnowflakeType>;
+    mentions: Array<UserResponse>;
+    message_reference?: MessageReferenceResponse;
+    message_snapshots?: Array<MessageSnapshotResponse>;
+    nonce?: number | string | null;
+    pinned: boolean;
+    poll?: PollResponse;
+    position?: number;
+    purchase_notification?: PurchaseNotificationResponse;
+    reactions?: Array<MessageReactionResponse>;
+    referenced_message?: null | BasicMessageResponse;
+    resolved?: ResolvedObjectsResponse;
+    role_subscription_data?: MessageRoleSubscriptionDataResponse;
+    shared_client_theme?: null | CustomClientThemeResponse;
+    sticker_items?: Array<MessageStickerItemResponse>;
+    stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
+    thread?: ThreadResponse;
+    timestamp: string;
+    tts: boolean;
+    type: MessageType;
+    webhook_id?: SnowflakeType;
+};
+
+export type SearchIndexNotReadyResponse = {
+    code: number;
+    documents_indexed: number;
+    message: string;
+    retry_after: number;
+};
+
 export type ScheduledEventResponse = {
     channel_id: null | SnowflakeType;
     creator?: UserResponse;
@@ -1739,6 +1794,8 @@ export type IconEmojiResponse = {
     [key: string]: unknown;
 };
 
+export type HasOption = 'link' | 'embed' | 'file' | 'image' | 'video' | 'sound' | 'sticker' | 'poll' | 'snapshot' | '-link' | '-embed' | '-file' | '-image' | '-video' | '-sound' | '-sticker' | '-poll' | '-snapshot';
+
 export type GuildWithCountsResponse = {
     afk_channel_id: null | SnowflakeType;
     afk_timeout: AfkTimeouts;
@@ -1888,6 +1945,15 @@ export type GuildSubscriptionIntegrationResponse = {
     id: SnowflakeType;
     name: string | null;
     type: 'guild_subscription';
+};
+
+export type GuildSearchResponse = {
+    documents_indexed?: number | null;
+    doing_deep_historical_index: boolean;
+    members?: Array<ThreadMemberResponse> | null;
+    messages: Array<Array<SearchMessageResponse>>;
+    threads?: Array<ThreadResponse> | null;
+    total_results: number;
 };
 
 export type GuildResponse = {
@@ -2555,6 +2621,8 @@ export type BanUserFromGuildRequest = {
     delete_message_days?: number | null;
     delete_message_seconds?: number | null;
 };
+
+export type AuthorType = 'user' | 'bot' | 'webhook' | '-user' | '-bot' | '-webhook';
 
 export type GetGuildTemplateData = {
     body?: never;
@@ -3683,6 +3751,66 @@ export type AddGuildMemberRoleResponses = {
 };
 
 export type AddGuildMemberRoleResponse = AddGuildMemberRoleResponses[keyof AddGuildMemberRoleResponses];
+
+export type GuildSearchData = {
+    body?: never;
+    path: {
+        guild_id: SnowflakeType;
+    };
+    query?: {
+        sort_by?: SortingMode;
+        sort_order?: SortingOrder;
+        content?: string;
+        slop?: number;
+        author_id?: Array<SnowflakeType>;
+        author_type?: Array<AuthorType>;
+        mentions?: Array<SnowflakeType>;
+        mentions_role_id?: Array<SnowflakeType>;
+        replied_to_user_id?: Array<SnowflakeType>;
+        replied_to_message_id?: Array<SnowflakeType>;
+        mention_everyone?: boolean;
+        min_id?: SnowflakeType;
+        max_id?: SnowflakeType;
+        limit?: number;
+        offset?: number;
+        has?: Array<HasOption>;
+        link_hostname?: Array<string>;
+        embed_provider?: Array<string>;
+        embed_type?: Array<SearchableEmbedType>;
+        attachment_extension?: Array<string>;
+        attachment_filename?: Array<string>;
+        pinned?: boolean;
+        include_nsfw?: boolean;
+        channel_id?: Array<SnowflakeType>;
+    };
+    url: '/guilds/{guild_id}/messages/search';
+};
+
+export type GuildSearchErrors = {
+    /**
+     * Client ratelimited response
+     */
+    429: RatelimitedResponse;
+    /**
+     * Client error response
+     */
+    '4XX': ErrorResponse;
+};
+
+export type GuildSearchError = GuildSearchErrors[keyof GuildSearchErrors];
+
+export type GuildSearchResponses = {
+    /**
+     * 200 response for guild_search
+     */
+    200: GuildSearchResponse;
+    /**
+     * 202 response for guild_search
+     */
+    202: SearchIndexNotReadyResponse;
+};
+
+export type GuildSearchResponse2 = GuildSearchResponses[keyof GuildSearchResponses];
 
 export type GetGuildNewMemberWelcomeData = {
     body?: never;

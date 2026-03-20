@@ -11363,6 +11363,11 @@ paths:
           application/json:
             schema:
               properties:
+                brand:
+                  description: Brand of the product
+                  example: Adidas
+                  type: string
+                  maxLength: 128
                 categories:
                   description: Category ID-s of the product
                   items:
@@ -11372,6 +11377,11 @@ paths:
                   description: UTC date-time (YYYY-MM-DDTHH:mm:ss.SSSZ) of the product deleted from the shop's database
                   example: '2017-05-12T12:30:00Z'
                   type: string
+                description:
+                  description: Description of the product
+                  example: Shoes for sports
+                  type: string
+                  maxLength: 3000
                 id:
                   description: Product ID for which you requested the details
                   example: P11
@@ -11391,7 +11401,7 @@ paths:
                     oneOf:
                       - type: string
                       - type: integer
-                  description: Meta data of product such as description, vendor, producer, stock level. The size of cumulative metaInfo shall not exceed **1000 KB**. Maximum length of metaInfo object can be 20.
+                  description: Meta data of product such as description, vendor, producer, stock level. The total characters of cumulative metaInfo shall not exceed **20000 characters**.
                   example:
                     brand: addidas
                     description: Shoes for sports
@@ -11469,6 +11479,11 @@ paths:
                   description: array of products objects
                   items:
                     properties:
+                      brand:
+                        description: Brand of the product
+                        example: Adidas
+                        type: string
+                        maxLength: 128
                       categories:
                         description: Category ID-s of the product
                         items:
@@ -11478,6 +11493,11 @@ paths:
                         description: UTC date-time (YYYY-MM-DDTHH:mm:ss.SSSZ) of the product deleted from the shop's database
                         example: '2017-05-12T12:30:00Z'
                         type: string
+                      description:
+                        description: Description of the product
+                        example: Shoes for sports
+                        type: string
+                        maxLength: 3000
                       id:
                         description: Product ID for which you requested the details
                         example: P11
@@ -11497,7 +11517,7 @@ paths:
                           oneOf:
                             - type: string
                             - type: integer
-                        description: Meta data of product such as description, vendor, producer, stock level. The size of cumulative metaInfo shall not exceed **1000 KB**. Maximum length of metaInfo object can be 20.
+                        description: Meta data of product such as description, vendor, producer, stock level. The total characters of cumulative metaInfo shall not exceed **20000 characters**.
                         example:
                           brand: addidas
                           description: Shoes for sports
@@ -11670,6 +11690,101 @@ paths:
       tags:
         - Ecommerce
   /events:
+    get:
+      description: Retrieve a list of events filtered by various criteria.
+      operationId: getEvents
+      parameters:
+        - description: Filter by contact ID (repeatable)
+          explode: true
+          in: query
+          name: contact_id
+          required: false
+          schema:
+            items:
+              format: int64
+              type: integer
+            type: array
+          style: form
+        - description: Filter by event name (repeatable)
+          explode: true
+          in: query
+          name: event_name
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - description: Filter by object type (repeatable)
+          explode: true
+          in: query
+          name: object_type
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - description: Mandatory if endDate is used. Start of date range (YYYY-MM-DD or RFC3339). Defaults to 6 months ago when omitted alongside endDate. Must be ≤ endDate.
+          in: query
+          name: startDate
+          required: false
+          schema:
+            type: string
+        - description: Mandatory if startDate is used. End of date range (YYYY-MM-DD or RFC3339). Must be ≥ startDate.
+          in: query
+          name: endDate
+          required: false
+          schema:
+            type: string
+        - description: Max events to return. Default 100, min 1, max 10000.
+          in: query
+          name: limit
+          required: false
+          schema:
+            default: 100
+            maximum: 10000
+            minimum: 1
+            type: integer
+        - description: Events to skip for pagination. Default 0, min 0.
+          in: query
+          name: offset
+          required: false
+          schema:
+            default: 0
+            minimum: 0
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getEventsList'
+              example:
+                count: 2
+                events:
+                  - contact_id: 211
+                    event_date: '2024-02-06T20:59:23.383Z'
+                    event_name: order_created
+                    event_filter_id: abc123
+                    source: api
+                    object_type: subscription
+                    event_properties:
+                      duration: 142
+                      video_title: Brevo — The most approachable CRM suite
+                    contact_properties:
+                      AGE: 32
+                      GENDER: FEMALE
+          description: List of events and total count for pagination
+        '400':
+          $ref: '#/components/responses/errorModel'
+        '401':
+          $ref: '#/components/responses/errorModel'
+        '500':
+          $ref: '#/components/responses/errorModel'
+      summary: Get events
+      tags:
+        - Event
     post:
       description: Create an event to track a contact's interaction.
       operationId: createEvent
@@ -11879,9 +11994,8 @@ paths:
                 type: object
         required: true
       responses:
-        '204':
-          content: {}
-          description: Events posted successfully
+        '202':
+          $ref: '#/components/responses/batchEventsAccepted'
         '207':
           $ref: '#/components/responses/batchEventsPartialSuccess'
         '400':
@@ -12191,6 +12305,11 @@ paths:
           schema:
             format: uuid
             type: string
+        - description: Include balances tied to internal definitions.
+          in: query
+          name: includeInternal
+          schema:
+            type: boolean
       responses:
         '200':
           content:
@@ -12407,7 +12526,14 @@ paths:
                   description: Maximum debit allowed per operation.
                   type: number
                 meta:
+                  additionalProperties: true
                   description: Additional metadata for the balance definition.
+                  example:
+                    isInternal: true
+                  properties:
+                    isInternal:
+                      description: Indicates whether the balance definition is internal.
+                      type: boolean
                   type: object
                 minAmount:
                   description: Minimum allowable balance amount.
@@ -12689,6 +12815,12 @@ paths:
                 meta:
                   additionalProperties: true
                   description: Optional metadata for the balance definition.
+                  example:
+                    isInternal: true
+                  properties:
+                    isInternal:
+                      description: Indicates whether the balance definition is internal.
+                      type: boolean
                   type: object
                 minAmount:
                   description: Minimum allowable balance amount.
@@ -13130,6 +13262,11 @@ paths:
           schema:
             format: uuid
             type: string
+        - description: Include balances tied to internal definitions.
+          in: query
+          name: includeInternal
+          schema:
+            type: boolean
       responses:
         '200':
           content:
@@ -13340,6 +13477,11 @@ paths:
           schema:
             format: uuid
             type: string
+        - description: Include balances tied to internal definitions.
+          in: query
+          name: includeInternal
+          schema:
+            type: boolean
       responses:
         '200':
           content:
@@ -13508,7 +13650,7 @@ paths:
           schema:
             default: 20
             type: integer
-        - description: Skip a number of records
+        - description: Page number to retrieve
           in: query
           name: offset
           schema:
@@ -13552,6 +13694,25 @@ paths:
             items:
               type: string
             type: array
+        - description: 'Transaction status filter. Allowed values: draft, completed, rejected, cancelled, expired'
+          in: query
+          name: status
+          schema:
+            enum:
+              - draft
+              - completed
+              - rejected
+              - cancelled
+              - expired
+            type: string
+        - description: 'Transaction type filter. Allowed values: credit, debit'
+          in: query
+          name: transactionType
+          schema:
+            enum:
+              - credit
+              - debit
+            type: string
       responses:
         '200':
           content:
@@ -14287,6 +14448,12 @@ paths:
           required: false
           schema:
             type: string
+        - description: Include balances tied to internal definitions.
+          in: query
+          name: includeInternal
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           content:
@@ -16345,6 +16512,16 @@ paths:
                 name:
                   description: Name of the tier group
                   type: string
+                meta:
+                  additionalProperties: true
+                  description: Additional metadata for the tier group.
+                  example:
+                    isInternal: true
+                  properties:
+                    isInternal:
+                      description: Indicates whether the tier group is internal.
+                      type: boolean
+                  type: object
                 tierOrder:
                   description: Order of the tiers in the group in ascending order
                   items:
@@ -16575,6 +16752,16 @@ paths:
                 name:
                   description: Name of the tier group
                   type: string
+                meta:
+                  additionalProperties: true
+                  description: Additional metadata for the tier group.
+                  example:
+                    isInternal: true
+                  properties:
+                    isInternal:
+                      description: Indicates whether the tier group is internal.
+                      type: boolean
+                  type: object
                 tierOrder:
                   description: Order of the tiers in the group in ascending order
                   example: []
@@ -25471,6 +25658,11 @@ components:
       type: object
     getProductDetails:
       properties:
+        brand:
+          description: Brand of the product
+          example: Adidas
+          type: string
+          maxLength: 128
         categories:
           description: Category ID-s of the product
           items:
@@ -25480,6 +25672,11 @@ components:
           description: Creation UTC date-time of the product (YYYY-MM-DDTHH:mm:ss.SSSZ)
           example: '2017-05-12T12:30:00Z'
           type: string
+        description:
+          description: Description of the product
+          example: Shoes for sports
+          type: string
+          maxLength: 3000
         id:
           description: Product ID for which you requested the details
           example: P11
@@ -25549,6 +25746,66 @@ components:
         - modifiedAt
         - s3ThumbAnalytics
         - s3ThumbEditor
+      type: object
+    getEventsList:
+      description: Response containing a list of events and the total count for pagination
+      properties:
+        events:
+          description: List of matching events ordered by event_date descending
+          items:
+            properties:
+              contact_id:
+                description: Contact ID associated with the event
+                format: int64
+                type: integer
+              event_date:
+                description: Date and time of the event
+                format: date-time
+                type: string
+              event_name:
+                description: Name of the event
+                type: string
+              event_filter_id:
+                description: Filter ID of the event
+                type: string
+              source:
+                description: Source of the event
+                type: string
+              object_type:
+                description: Object type associated with the event
+                type: string
+              event_properties:
+                additionalProperties: true
+                description: Event-level custom properties
+                type: object
+              contact_properties:
+                additionalProperties: true
+                description: Contact-level properties at time of event
+                type: object
+            type: object
+          type: array
+        count:
+          description: Total count of events matching the filters (use for pagination)
+          format: int64
+          type: integer
+      required:
+        - count
+      type: object
+    batchAcceptedResponse:
+      description: Response returned when all events in the batch are accepted for async processing
+      properties:
+        message:
+          description: Confirmation message indicating the batch was accepted
+          type: string
+          example: Batch accepted. Valid events have been added to the processing queue.
+        count:
+          description: Number of events queued for processing
+          format: int32
+          type: integer
+          example: 7
+      required:
+        - message
+        - count
       type: object
     batchEventsResponse:
       description: Response returned when a batch of events is processed
@@ -27190,6 +27447,15 @@ components:
               - processId
             type: object
       description: process id created
+    batchEventsAccepted:
+      description: Batch accepted - all events have been added to the processing queue
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/batchAcceptedResponse'
+          example:
+            message: Batch accepted. Valid events have been added to the processing queue.
+            count: 7
     batchEventsPartialSuccess:
       description: Partial success - some events were accepted and some failed
       content:
@@ -27197,7 +27463,7 @@ components:
           schema:
             $ref: '#/components/schemas/batchEventsResponse'
           example:
-            status: partialSuccess
+            status: partiallyQueued
             total_events: 7
             successful_events: 6
             failed_events: 1

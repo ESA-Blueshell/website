@@ -65,4 +65,12 @@ export default [
             'vue/one-component-per-file': 'off',
         },
     },
+    {
+        files: ['vite.config.mjs'],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
+    },
 ]

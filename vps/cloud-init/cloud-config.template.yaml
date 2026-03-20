@@ -133,7 +133,7 @@ runcmd:
   - su -l website -c "docker network create --driver overlay --attachable monitoring"
 
   # 5) Log in to GHCR so the website user can pull private images
-  - su -s /bin/bash - website -c "printf '%s\n' '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
+  - su -s /bin/bash - website -c "printf '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
 
   # 6) Restart services that provision.sh reconfigured
   - systemctl restart cron

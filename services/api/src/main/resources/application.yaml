@@ -78,7 +78,7 @@ app:
   security:
     require-https: false
   jwt:
-    secret: ${JWT_SECRET:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh}
+    secret: ${JWT_SECRET:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh}
     expiration: 86400000
     issuer: ${JWT_ISSUER:blueshell-api}
     audience: ${JWT_AUDIENCE:blueshell-web}

@@ -3,14 +3,13 @@ import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import store from "@/plugins/store"
 import {JobExecutionCategory, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
+import store from "@/plugins/store"
 
 defineOptions({name: "JobManagerPage"})
 
-const PAGE_SIZE = 50
-
 const router = useRouter()
+const PAGE_SIZE = 50
 
 type JobRelatedEntity = {
   type?: string

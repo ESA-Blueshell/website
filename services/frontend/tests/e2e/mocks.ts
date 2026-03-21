@@ -221,6 +221,19 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return Number.isFinite(id) ? id : null
   }
 
+  const parseCookieLogin = (cookieHeader: string): {userId: number; roles: string[]} | null => {
+    try {
+      const match = cookieHeader.match(/(?:^|;\s*)login=([^;]+)/)
+      if (!match) return null
+      const data = JSON.parse(decodeURIComponent(match[1]))
+      const userId = Number(data?.userId)
+      const roles = Array.isArray(data?.roles) ? (data.roles as string[]) : null
+      return Number.isFinite(userId) && roles ? {userId, roles} : null
+    } catch {
+      return null
+    }
+  }
+
   const handleApiRoute = async (route: Route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -228,6 +241,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     const path = url.pathname.startsWith("/api/")
       ? url.pathname.slice(4)
       : url.pathname
+
+    const cookieLogin = parseCookieLogin(request.headers()["cookie"] ?? "")
 
     if (method === "GET" && path === "/users") {
       return fulfillJson(route, {content: baseUsers})
@@ -238,10 +253,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /^\/users\/\d+$/.test(path)) {
       const id = Number(path.split("/").at(-1))
       const user = baseUsers.find((candidate) => Number(candidate.id) === id)
+      // Reflect the logged-in user's actual roles so App.vue doesn't overwrite the store with stale mock data
+      const roles = (cookieLogin?.userId === id ? cookieLogin.roles : null) ?? (user?.roles as string[] | undefined) ?? ["MEMBER"]
       if (user != null) {
-        return fulfillJson(route, user)
+        return fulfillJson(route, {...user, roles})
       }
-      return fulfillJson(route, {id, roles: ["MEMBER"]})
+      return fulfillJson(route, {id, roles})
     }
     if (method === "DELETE" && /^\/users\/\d+$/.test(path)) {
       const id = parseUserId(path, /^\/users\/(\d+)$/)

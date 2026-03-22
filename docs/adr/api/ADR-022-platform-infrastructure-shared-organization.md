@@ -112,50 +112,98 @@ infrastructure/
 - Isolates domains from external API changes
 - Spring configuration (`@Configuration`, `@Bean`)
 
+**Every integration follows a canonical 4-sub-package structure:**
+
+```
+integration/{system}/
+├── adapter/                   # ACL adapters, low-level HTTP clients, initializers
+│   ├── {System}Adapter.kt     # Production ACL adapter (@Profile("!test"))
+│   ├── {System}Client.kt      # Low-level API client (HTTP, SDK)
+│   └── {System}Initializer.kt # Startup configuration (e.g. bounce settings)
+├── application/               # Business orchestration (services, schedulers, job handlers)
+│   ├── service/               # e.g. EmailSenderService, ContactSyncService
+│   ├── query/                 # Query objects for this module
+│   ├── job/                   # Job handlers for async work
+│   │   └── {Operation}Job.kt  # Extends AbstractJsonJobHandler
+│   └── {System}Scheduler.kt   # Cron-triggered orchestration
+├── web/                       # REST controllers and DTOs (same rules as domain web/)
+│   ├── {System}ManagementController.kt
+│   └── dto/                   # *DTO classes for this module's endpoints
+└── persistence/               # Entities and repositories (if the module owns tables)
+    ├── {Entity}.kt
+    ├── repository/            # Spring Data repositories
+    └── spec/                  # JPA Specifications
+```
+
+Simple integrations (e.g. `calendar/`) may omit sub-packages that don't apply
+(no web, no persistence), but must still use `adapter/` and `application/job/` for
+their adapter and job handler files.
+
+**Mock adapters** live in a shared sub-package, easily excludable by ArchUnit and profiles:
+```
+integration/mock/
+├── MockContactAdapter.kt      # @Primary @Profile("test | dev")
+├── MockCalendarAdapter.kt     # @Primary @Profile("test | dev")
+└── MockListmonkEmailClient.kt # @Primary @Profile("test")
+```
+
 **Contents:**
 ```
 platform/
 ├── config/                        # Spring configuration
-│   ├── SecurityConfig.kt          # Security filter chain, CORS
-│   ├── JpaConfig.kt               # JPA/Hibernate configuration
-│   ├── RabbitMqConfig.kt          # Message queue configuration
-│   └── WebConfig.kt               # Web MVC configuration
+│   ├── SecurityConfig.kt
+│   ├── JpaConfig.kt
+│   ├── AsyncConfig.kt
+│   └── WebConfig.kt
 ├── advice/                        # Global exception handling
 │   └── GlobalExceptionHandler.kt
 └── integration/                   # External system adapters (ACL)
-    ├── email/                     # Email delivery (Brevo)
-    │   ├── service/
-    │   │   ├── EmailService.kt    # Sends EmailContent via Brevo
-    │   │   └── EmailTemplateService.kt
-    │   └── job/
-    │       └── RecoveryEmailJob.kt
+    ├── email/                     # Email delivery (Listmonk)
+    │   ├── adapter/               # ListmonkEmailClient, EmailTransportClient, ListmonkBouncePollingService
+    │   ├── application/service/   # EmailSenderService, EmailTemplateService
+    │   ├── application/job/       # RecoveryEmailJob, EventSignupEmailJob, ContributionReminderEmailJob
+    │   ├── persistence/           # Email entity, EmailRepository, EmailSpecifications
+    │   └── web/                   # EmailManagementController, EmailTrackingController
+    │       └── dto/               # EmailDTO, EmailStatsDTO
     ├── calendar/                  # Google Calendar sync
-    │   ├── service/
-    │   │   └── GoogleCalendarAdapter.kt
-    │   └── job/
-    │       ├── AddEventToCalendarJob.kt
-    │       └── SyncEventToCalendarJob.kt
-    ├── contact/                   # Contact management (Brevo)
-    │   ├── service/
-    │   │   └── BrevoContactAdapter.kt
-    │   └── job/
-    │       └── SyncContactJob.kt
-    ├── payment/                   # Payment processing (Mollie)
-    │   └── service/
-    │       └── MolliePaymentAdapter.kt
-    └── queue/                     # Job queue implementation
-        ├── JobDispatcher.kt       # Dispatches jobs to RabbitMQ
-        ├── JobConsumer.kt         # Consumes jobs from RabbitMQ
-        └── JobHandler.kt          # Job execution infrastructure
+    │   ├── adapter/               # GoogleCalendarAdapter, GoogleCalendarClient
+    │   └── application/job/       # SyncEventToCalendarJob
+    ├── contact/                   # Contact sync (Listmonk + Brevo)
+    │   ├── adapter/               # ListmonkContactAdapter, BrevoContactAdapter, BrevoContactClient
+    │   ├── application/           # ContactSyncService, ContactListService, ContactSyncScheduler
+    │   ├── application/job/       # SyncContactJob, DeleteContactJob, SyncListMembershipJob
+    │   └── persistence/           # Contact entity, ContactRepository, etc.
+    ├── job/                       # Job execution management
+    │   ├── application/service/   # JobExecutionService
+    │   ├── application/query/     # JobExecutionQuery
+    │   ├── persistence/           # JobExecution entity, JobExecutionSpecifications
+    │   ├── persistence/repository/ # JobExecutionRepository
+    │   └── web/                   # JobManagementController
+    │       ├── service/           # JobExecutionViewService (builds DTOs — web concern)
+    │       └── dto/               # JobExecutionDTO, JobStatsDTO
+    ├── mock/                      # Test/dev mock adapters
+    │   ├── MockContactAdapter.kt  # @Primary @Profile("test | dev")
+    │   ├── MockCalendarAdapter.kt # @Primary @Profile("test | dev")
+    │   └── MockListmonkEmailClient.kt  # @Primary @Profile("test")
+    └── queue/                     # Job execution infrastructure
+        ├── AbstractJsonJobHandler.kt
+        ├── AbstractMailJobHandler.kt
+        ├── JobDispatcher.kt       # Enqueue: DB write + async dispatch
+        └── JobExecutor.kt         # @Async execution + RetryTemplate
 ```
 
+**Profile conventions for integration adapters:**
+- Production adapters (`@Profile("!test")` or `@Profile("!test & !dev")`): prevent test environment pollution
+- Mock adapters (`@Primary @Profile("test | dev")` or `@Profile("test")`): override production beans in safe environments
+
 **Examples:**
-- ✅ `EmailService` - delivers `EmailContent` via Brevo API
-- ✅ `GoogleCalendarAdapter` - syncs events to Google Calendar
-- ✅ `SecurityConfig` - configures Spring Security filter chain
-- ✅ `JobDispatcher` - implements job queue with RabbitMQ
-- ❌ Job definitions (`CalendarJobs`) - belong in shared (contracts)
-- ❌ Permission evaluators - belong in infrastructure (Spring Security)
+- ✅ `ListmonkEmailClient` — delivers `EmailContent` via Listmonk transactional API, `@Profile("!test")`
+- ✅ `GoogleCalendarAdapter` — syncs events to Google Calendar, `@Profile("!test & !dev")`
+- ✅ `MockContactAdapter` — in-memory contact management for tests, `@Primary @Profile("test | dev")`
+- ✅ `SecurityConfig` — configures Spring Security filter chain
+- ✅ `JobDispatcher` — enqueues jobs (DB write + @Async dispatch, see ADR-023)
+- ❌ Job definitions (`CalendarJobs`) — belong in shared (contracts)
+- ❌ Permission evaluators — belong in infrastructure (Spring Security)
 
 ---
 
@@ -212,16 +260,19 @@ Use this flowchart to determine the correct layer:
 | Component | Question | Location | Rationale |
 |-----------|----------|----------|-----------|
 | `EmailContent` DTO | Used by domains + platform? | `shared/email/` | Contract (ACL) |
-| `EmailService` (send) | External API? | `platform/integration/email/` | Brevo adapter |
+| `EmailService` (send) | External API? | `platform/integration/email/application/service/` | Listmonk adapter |
 | `PasswordResetEmail` builder | Domain logic? | `domain/auth/application/email/` | Auth domain concern |
 | `UserPermission` | Spring Security? | `infrastructure/security/permission/` | PermissionEvaluator |
 | `JwtTokenGenerator` | Spring Security? | `infrastructure/security/` | JWT infrastructure |
 | `CalendarJobs` definitions | Contract? | `shared/job/` | Job payload contracts |
-| `AddEventToCalendarJob` handler | External API? | `platform/integration/calendar/` | Google Calendar adapter |
-| `GoogleCalendarAdapter` | External API? | `platform/integration/calendar/` | Anti-Corruption Layer |
+| `SyncEventToCalendarJob` handler | External API? | `platform/integration/calendar/application/job/` | Google Calendar adapter |
+| `GoogleCalendarAdapter` | External API? | `platform/integration/calendar/adapter/` | Anti-Corruption Layer |
 | `SecurityConfig` | Spring config? | `platform/config/` | Spring configuration |
 | `UserActivationEmail` builder | Domain logic? | `domain/auth/application/email/` | Auth domain concern |
-| `RecoveryEmailJob` handler | External API? | `platform/integration/email/` | Email delivery job |
+| `RecoveryEmailJob` handler | External API? | `platform/integration/email/application/job/` | Email delivery job |
+| `EmailRepository` | Owns state (email outbox)? | `platform/integration/email/persistence/repository/` | Structured integration |
+| `JobManagementController` | Exposes endpoints? | `platform/integration/job/web/` | Structured integration web layer |
+| `MockContactAdapter` | Test/dev mock? | `platform/integration/mock/` | Mock adapter (never production) |
 
 ---
 
@@ -358,13 +409,31 @@ fun `permission evaluators in infrastructure layer`(): Unit =
     }
 ```
 
+### Tests 4–10: Integration Module Consistency (PlatformConsistencyArchitectureTest)
+
+These tests enforce the canonical 4-sub-package structure within every integration module.
+
+| Group | Rule | Package constant |
+|-------|------|-----------------|
+| E1 | `*Adapter` classes (outside mock) must reside in `..adapter..` | `PLATFORM_ADAPTER` |
+| E2 | `*Client` classes (outside mock) must reside in `..adapter..` | `PLATFORM_ADAPTER` |
+| F1 | `@Service` beans (outside adapter/mock/queue) must reside in `..application..` | `PLATFORM_APPLICATION` |
+| G1 | `*DTO` classes must reside in `..web.dto..` | `PLATFORM_WEB_DTO` |
+| H1 | Spring bean `*Scheduler` classes must reside in `..application..` | `PLATFORM_APPLICATION` |
+| I1 | Concrete `*Job` classes must reside in `..application.job..` | `APPLICATION_JOB` |
+| J1 | `queue/` classes must not access platform repositories directly | `PLATFORM_ANY_REPOSITORY` |
+
 ---
 
 ## Guidelines
 
 ### DO:
 - ✅ Place job definitions (contracts) in `shared/job/`
-- ✅ Place job handlers (implementations) in `platform/integration/{system}/job/`
+- ✅ Place job handlers (implementations) in `platform/integration/{system}/application/job/`
+- ✅ Place ACL adapters and HTTP clients in `platform/integration/{system}/adapter/`
+- ✅ Place `@Service` beans in `platform/integration/{system}/application/`
+- ✅ Place schedulers in `platform/integration/{system}/application/`
+- ✅ Place DTOs in `platform/integration/{system}/web/dto/`
 - ✅ Place permission evaluators in `infrastructure/security/permission/`
 - ✅ Place email builders in domain `application/email/`
 - ✅ Place email delivery in `platform/integration/email/`
@@ -379,6 +448,8 @@ fun `permission evaluators in infrastructure layer`(): Unit =
 - ❌ Extend platform classes from domains (use composition)
 - ❌ Place permission evaluators in web layer
 - ❌ Place Spring `@Configuration` in infrastructure (use platform/config)
+- ❌ Place `*Adapter` or `*Client` classes at the module root (use `adapter/` sub-package)
+- ❌ Access repositories directly from `queue/` classes (use the service layer)
 
 ---
 

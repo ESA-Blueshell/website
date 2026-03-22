@@ -31,7 +31,7 @@ We adopt **Spring's event-driven architecture** with domain events for cross-dom
 
 **Integration Events**
 - For external system integration
-- May be published to message queues
+- May trigger async job dispatch
 - Include all data needed by external systems
 - Located in shared infrastructure or domain application layer
 
@@ -438,6 +438,62 @@ class RecoveryEventListener(
 }
 ```
 
+### Event → Job Pattern
+
+A common pattern is for a domain event listener to **enqueue an async job** rather than execute
+side effects synchronously. Use this when the side effect involves external I/O, may be slow,
+or should be retried independently on failure.
+
+```
+Domain Service
+    ↓ publishes (AfterCommitEventPublisher)
+Domain Event (e.g., UserCreated)
+    ↓ @EventListener
+Event Listener
+    ↓ JobDispatcher.enqueue(...)
+Job Queue (async)
+    ↓ AbstractJsonJobHandler.handle()
+Job Handler (e.g., SyncContactJob)
+    ↓ delegates to
+Platform Service (e.g., ContactSyncService)
+```
+
+**Example — contact sync on user creation:**
+```kotlin
+// domain/user/application/listener/ContactSyncEventListener.kt
+@Component
+class ContactSyncEventListener(private val jobDispatcher: JobDispatcher) {
+
+    @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun onUserCreated(event: UserCreated) {
+        jobDispatcher.enqueue(
+            ContactJobs.SyncContact,
+            ContactJobs.SyncContactPayload(userId = event.userId)
+        )
+    }
+}
+
+// platform/integration/contact/job/SyncContactJob.kt
+@Component
+class SyncContactJob(
+    objectMapper: ObjectMapper,
+    private val contactSyncService: ContactSyncService,
+) : AbstractJsonJobHandler<ContactJobs.SyncContactPayload>(objectMapper, ContactJobs.SyncContact.payloadType) {
+    override val jobType = ContactJobs.SyncContact.type
+
+    override fun handlePayload(payload: ContactJobs.SyncContactPayload) {
+        contactSyncService.syncContact(payload.userId)
+    }
+}
+```
+
+**Key distinctions:**
+- The **event listener** only enqueues (fast, non-blocking); it does not call external APIs
+- The **job handler** does the actual external I/O and is retried independently if it fails
+- Job payload contains only IDs (not full entities), consistent with the event data rule
+- `AbstractJsonJobHandler.handle()` is `@Transactional`; job handlers must not re-annotate `handlePayload`
+
 **4. Audit Logging:**
 ```kotlin
 @Component
@@ -460,7 +516,7 @@ class AuditEventListener(private val auditService: AuditService) {
 
 ### Transactional Outbox Pattern
 
-For distributed event publishing (e.g., to RabbitMQ, Kafka), consider the **Transactional Outbox pattern** ([microservices.io][4]):
+For distributed event publishing (e.g., to an external message broker), consider the **Transactional Outbox pattern** ([microservices.io][4]):
 
 ```kotlin
 // Write event to outbox table in same transaction

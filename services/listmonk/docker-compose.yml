@@ -1,0 +1,99 @@
+services:
+  listmonk:
+    image: listmonk/listmonk:v4.1.0
+    restart: unless-stopped
+    depends_on:
+      listmonk-db:
+        condition: service_healthy
+    environment:
+      LISTMONK_app__address: "0.0.0.0:9000"
+      LISTMONK_db__host: listmonk-db
+      LISTMONK_db__port: 5432
+      LISTMONK_db__user: listmonk
+      LISTMONK_db__password: ${LISTMONK_DB_PASSWORD:?LISTMONK_DB_PASSWORD required}
+      LISTMONK_db__database: listmonk
+      LISTMONK_db__ssl_mode: disable
+      # LISTMONK_ADMIN_USER/PASSWORD are read by the binary during --install to create the initial admin.
+      # They must match LISTMONK_ADMIN_USERNAME/PASSWORD used by listmonk-setup and the api service.
+      LISTMONK_ADMIN_USER: ${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME required}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD required}
+    command: >-
+      sh -c "
+        ./listmonk --install --idempotent --yes &&
+        ./listmonk --upgrade --yes &&
+        exec ./listmonk
+      "
+    networks:
+      - frontback
+      - database
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  listmonk-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: listmonk
+      POSTGRES_PASSWORD: ${LISTMONK_DB_PASSWORD:?LISTMONK_DB_PASSWORD required}
+      POSTGRES_DB: listmonk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U listmonk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - listmonk-data:/var/lib/postgresql/data
+    networks:
+      - database
+
+  listmonk-setup:
+    image: python:3.12-alpine
+    restart: "no"
+    depends_on:
+      listmonk:
+        condition: service_healthy
+    environment:
+      LISTMONK_URL: "http://listmonk:9000"
+      LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME required}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD required}
+      LISTMONK_ADMIN_EMAIL: ${LISTMONK_ADMIN_EMAIL:?LISTMONK_ADMIN_EMAIL required}
+      LISTMONK_ADMIN_API_USER: ${LISTMONK_ADMIN_API_USER:-api}
+      LISTMONK_API_TOKEN_FILE: /secrets/api-token.env
+      # SMTP — set LISTMONK_SMTP_HOST to enable outbound mail configuration
+      LISTMONK_SMTP_HOST: ${LISTMONK_SMTP_HOST:-}
+      LISTMONK_SMTP_PORT: ${LISTMONK_SMTP_PORT:-587}
+      LISTMONK_SMTP_AUTH_PROTOCOL: ${LISTMONK_SMTP_AUTH_PROTOCOL:-plain}
+      LISTMONK_SMTP_USERNAME: ${LISTMONK_SMTP_USERNAME:-}
+      LISTMONK_SMTP_PASSWORD: ${LISTMONK_SMTP_PASSWORD:-}
+      LISTMONK_SMTP_HELLO_HOSTNAME: ${LISTMONK_SMTP_HELLO_HOSTNAME:-}
+      LISTMONK_SMTP_TLS_TYPE: ${LISTMONK_SMTP_TLS_TYPE:-starttls}
+      LISTMONK_SMTP_TLS_SKIP_VERIFY: ${LISTMONK_SMTP_TLS_SKIP_VERIFY:-false}
+      LISTMONK_BOUNCE_MAILBOX_ENABLED: ${LISTMONK_BOUNCE_MAILBOX_ENABLED:-false}
+      LISTMONK_BOUNCE_MAILBOX_HOST: ${LISTMONK_BOUNCE_MAILBOX_HOST:-}
+      LISTMONK_BOUNCE_MAILBOX_PORT: ${LISTMONK_BOUNCE_MAILBOX_PORT:-993}
+      LISTMONK_BOUNCE_MAILBOX_USERNAME: ${LISTMONK_BOUNCE_MAILBOX_USERNAME:-}
+      LISTMONK_BOUNCE_MAILBOX_PASSWORD: ${LISTMONK_BOUNCE_MAILBOX_PASSWORD:-}
+      LISTMONK_BOUNCE_MAILBOX_TLS_ENABLED: ${LISTMONK_BOUNCE_MAILBOX_TLS_ENABLED:-true}
+      LISTMONK_BOUNCE_MAILBOX_TLS_SKIP_VERIFY: ${LISTMONK_BOUNCE_MAILBOX_TLS_SKIP_VERIFY:-false}
+      LISTMONK_BOUNCE_MAILBOX_FOLDER: ${LISTMONK_BOUNCE_MAILBOX_FOLDER:-INBOX}
+      LISTMONK_BOUNCE_MAILBOX_RETURN_PATH: ${LISTMONK_BOUNCE_MAILBOX_RETURN_PATH:-}
+      LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL: ${LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL:-10m}
+    volumes:
+      - ./setup.py:/setup.py:ro
+      - ./custom/theme.css:/theme.css:ro
+      - listmonk-secrets:/secrets
+    command: ["python", "/setup.py"]
+    networks:
+      - frontback
+
+networks:
+  frontback:
+  database:
+
+volumes:
+  listmonk-data:
+  listmonk-secrets:

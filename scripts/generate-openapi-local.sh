@@ -46,14 +46,14 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "Starting API via Gradle (:api:bootRun)..."
-./gradlew --no-daemon --build-cache :api:bootRun > "$API_LOG_FILE" 2>&1 &
+echo "Starting API via Gradle (bootRun)..."
+services/api/gradlew --no-daemon --build-cache -p services/api bootRun > "$API_LOG_FILE" 2>&1 &
 API_PID="$!"
 
 echo "Waiting for API OpenAPI endpoint: $API_SPEC_URL"
 spec_ready=false
 for ((i = 1; i <= API_STARTUP_RETRIES; i++)); do
-  if curl -fsS "$API_SPEC_URL" -o openapi/blueshell.raw.json; then
+  if curl -fsS "$API_SPEC_URL" -o "${API_OPENAPI_SPEC%.yaml}.raw.json"; then
     spec_ready=true
     break
   fi
@@ -78,12 +78,16 @@ fi
 
 download_external_specs
 regen_brevo_client
-normalize_json_specs
+regen_listmonk_client
+normalize_specs
 
 # ---- Generate frontend TypeScript clients ----
 
+echo "Installing frontend dependencies..."
+yarn --cwd services/frontend install
+
 echo "Generating frontend TypeScript clients..."
-yarn --cwd frontend gen:all
-yarn --cwd frontend lint:gen || true
+yarn --cwd services/frontend gen:all
+yarn --cwd services/frontend lint:gen || true
 
 echo "OpenAPI spec and frontend clients generated successfully."

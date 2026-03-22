@@ -36,27 +36,9 @@ build/
 /data
 files/
 
-**/Dockerfile*
-!docker/**/Dockerfile*
-
-**/*-deployment.yaml
-**/*-service.yaml
-!kubernetes/**/*.yaml
-
 files
 data
-/env/.app.env
-/env/.db.env
-/env/.api.env
-/env/.rabbitmq.env
-/env/.bot.env
-/env/.brevo.env
-/env/.google.env
-/env/.mollie.env
 /storage/
-/env/.api.env.prod
-/env/.db.env.prod
-/env/1_dump.sql
 private
 **/.yarn
 .playwright
@@ -66,3 +48,19 @@ backups
 *.md
 .idea
 *dump.sql*
+
+# service env files (*.env and .*.env anywhere under services/)
+services/**/.*.env
+services/**/*.env
+
+# image build secrets and generated output
+/vps/.env
+/vps/cloud-init/cloud-config.yaml
+/vps/cloud-init/cloud-config-standalone.yaml
+/vps/cloud-init/rendered/
+/vps/.test-cache/
+/vps/packer/output/
+/backup/
+
+# infra secrets
+/infra/.infra.env

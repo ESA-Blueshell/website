@@ -1,0 +1,173 @@
+apiVersion: 1
+
+groups:
+  - orgId:    1
+    name:     Blueshell Alerts
+    folder:   Blueshell
+    interval: 1m
+
+    rules:
+      # ── Traefik availability ───────────────────────────────────────────────
+      - uid:    traefik-down
+        title:  Traefik Down
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: up{job="traefik-ping"} == 0
+              instant: true
+        noDataState:  Alerting
+        execErrState: Alerting
+        for:  1m
+        annotations:
+          summary:     "Traefik is not responding to /ping"
+          description: "The edge proxy has been unreachable for 1 minute — all traffic is affected."
+        labels:
+          severity: critical
+
+      # ── API availability ────────────────────────────────────────────────────
+      - uid:    api-down
+        title:  API Down
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: up{job="blueshell-api"} == 0
+              instant: true
+        noDataState:  Alerting
+        execErrState: Alerting
+        for:  2m
+        annotations:
+          summary:     "API is unreachable by Prometheus"
+          description: "The blueshell API has been down for more than 2 minutes."
+        labels:
+          severity: critical
+
+      # ── High 5xx error rate ─────────────────────────────────────────────────
+      - uid:    high-error-rate
+        title:  High HTTP Error Rate
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                sum(rate(traefik_router_requests_total{code=~"5.."}[5m]))
+                /
+                sum(rate(traefik_router_requests_total[5m])) > 0.05
+              instant: true
+        noDataState:  OK
+        execErrState: Alerting
+        for:  5m
+        annotations:
+          summary:     "HTTP 5xx error rate > 5%"
+          description: "More than 5% of requests are returning 5xx status codes."
+        labels:
+          severity: warning
+
+      # ── High request latency ────────────────────────────────────────────────
+      - uid:    high-latency
+        title:  High Request Latency
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                histogram_quantile(0.95,
+                  sum(rate(traefik_router_request_duration_seconds_bucket[5m])) by (le)
+                ) > 2
+              instant: true
+        noDataState:  OK
+        execErrState: Alerting
+        for:  5m
+        annotations:
+          summary:     "p95 request latency > 2s"
+          description: "95th percentile request latency has exceeded 2 seconds."
+        labels:
+          severity: warning
+
+      # ── JVM heap usage ──────────────────────────────────────────────────────
+      - uid:    jvm-heap-high
+        title:  JVM Heap Usage High
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                jvm_memory_used_bytes{area="heap"}
+                /
+                jvm_memory_max_bytes{area="heap"} > 0.85
+              instant: true
+        noDataState:  OK
+        execErrState: Alerting
+        for:  10m
+        annotations:
+          summary:     "JVM heap usage > 85%"
+          description: "API JVM heap usage has been above 85% for 10 minutes — consider restarting or investigating memory leaks."
+        labels:
+          severity: warning
+
+      # ── Dead jobs ───────────────────────────────────────────────────────────
+      - uid:    dead-jobs
+        title:  Dead Jobs Detected
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: increase(job_dead_count_total[1h]) > 0
+              instant: true
+        noDataState:  OK
+        execErrState: Alerting
+        for:  0m
+        annotations:
+          summary:     "One or more jobs have moved to DEAD state"
+          description: "A background job has failed all retry attempts and requires manual intervention."
+        labels:
+          severity: critical
+
+      # ── HikariCP pool exhaustion ────────────────────────────────────────────
+      - uid:    hikari-exhaustion
+        title:  HikariCP Pool Near Exhaustion
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                hikaricp_connections_active
+                /
+                hikaricp_connections_max > 0.8
+              instant: true
+        noDataState:  OK
+        execErrState: Alerting
+        for:  5m
+        annotations:
+          summary:     "HikariCP connection pool > 80% utilized"
+          description: "Database connection pool is nearly exhausted. Queries may start timing out."
+        labels:
+          severity: warning
+
+      # ── TLS certificate expiry ──────────────────────────────────────────────
+      - uid:    tls-cert-expiry
+        title:  TLS Certificate Expiring Soon
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            model:
+              expr: >
+                (traefik_tls_certs_not_after - time()) / 86400 < 7
+              instant: true
+        noDataState:  OK
+        execErrState: Alerting
+        for:  1h
+        annotations:
+          summary:     "TLS certificate expires in less than 7 days"
+          description: "A TLS certificate managed by Traefik is about to expire. Check ACME renewal."
+        labels:
+          severity: warning

@@ -1,0 +1,43 @@
+/target/
+.gradle/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### Hibernate cdf ###
+.cfg.xml
+.xml
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+/build/
+/tokens/
+
+.cfg.xml
+
+/uploads
+
+credentials.json
+.vscode/settings.json
+src/main/resources/hibernate.cfg.xml
+Dockerfile*
+*-deployment.yaml
+*-service.yaml
+/.api.env
+/.db.env

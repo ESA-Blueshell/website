@@ -1,0 +1,18 @@
+services:
+  frontend:
+    image: ghcr.io/esa-blueshell/frontend:${IMAGE_TAG:-latest}
+    pull_policy: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - frontback
+    environment:
+      - TZ=Europe/Amsterdam
+      - VITE_APP_URL=http://localhost:8080
+
+networks:
+  frontback:

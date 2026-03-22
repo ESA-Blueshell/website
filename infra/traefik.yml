@@ -1,0 +1,87 @@
+# Traefik static configuration — mounted read-only into the Traefik container.
+# Dynamic config (routing rules, TLS) comes from Swarm service labels.
+
+api:
+  dashboard: false   # set to true and add a dashboard router label to enable
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+    http:
+      tls: {}
+      middlewares:
+        - secureHeaders@file
+  # Internal metrics endpoint — scraped by Prometheus on monitoring network.
+  # Not exposed to the internet (no Traefik router routes to it).
+  metrics:
+    address: ":8082"
+  # Internal ping/health endpoint — used by Uptime Kuma for internal checks.
+  # Not exposed to the internet.
+  ping:
+    address: ":8083"
+
+ping:
+  entryPoint: ping
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      # email is passed via CLI flag --certificatesresolvers.letsencrypt.acme.email
+      # in infra/docker-stack.yml so it can be set via ACME_EMAIL env var.
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+providers:
+  file:
+    directory: /etc/traefik/conf.d
+    watch: true
+  swarm:
+    # Connect to socket-proxy, not the raw Docker socket.
+    # socket-proxy exposes CONTAINERS/NETWORKS/EVENTS/SERVICES/TASKS (read-only).
+    endpoint: "tcp://socket-proxy:2375"
+    exposedByDefault: false
+    network: traefik-public
+
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true
+
+# ── Main log (Traefik daemon events) ──────────────────────────────────────────
+# JSON format so Promtail can extract level/msg as labels without regex.
+log:
+  level:  INFO
+  format: json
+
+# ── Access log (one entry per HTTP request) ───────────────────────────────────
+# JSON format → Promtail ships to Loki → searchable per-request history.
+#
+# Useful queries in Loki:
+#   {service="traefik"} | json | DownstreamStatus >= 400
+#   {service="traefik"} | json | RouterName =~ ".*-api" | Duration > 1000000000
+#   {service="traefik"} | json | ClientHost = "1.2.3.4"
+accessLog:
+  format: json
+  fields:
+    defaultMode: keep
+    names:
+      # Drop fields that add noise without diagnostic value
+      StartUTC:        drop   # redundant with log timestamp
+      RequestCount:    keep   # retry attempt number — useful for spotting flapping backends
+    headers:
+      defaultMode: drop       # drop all headers by default (avoid logging secrets)
+      names:
+        User-Agent:    keep
+        Referer:       keep
+        X-Forwarded-For: keep

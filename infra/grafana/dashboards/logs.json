@@ -1,0 +1,118 @@
+{
+  "title": "Logs",
+  "uid": "blueshell-logs",
+  "tags": ["logs", "loki"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "stack",
+        "type": "query",
+        "datasource": { "uid": "loki" },
+        "query": "label_values(stack)",
+        "label": "Stack",
+        "current": { "text": "All", "value": "$__all" },
+        "includeAll": true,
+        "multi": false,
+        "refresh": 2
+      },
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": { "uid": "loki" },
+        "query": "label_values({stack=~\"$stack\"}, service)",
+        "label": "Service",
+        "current": { "text": "All", "value": "$__all" },
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Log Volume by Service",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "uid": "loki" },
+          "expr": "sum by (service) (rate({stack=~\"$stack\", service=~\"$service\"}[1m]))",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "logs/s" } }
+    },
+    {
+      "id": 2,
+      "title": "Error Log Volume",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "uid": "loki" },
+          "expr": "sum by (service) (rate({stack=~\"$stack\", service=~\"$service\"} |= \"ERROR\" [1m]))",
+          "legendFormat": "{{service}} errors"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "logs/s", "color": { "fixedColor": "red", "mode": "fixed" } } }
+    },
+    {
+      "id": 3,
+      "title": "Warning Log Volume",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "uid": "loki" },
+          "expr": "sum by (service) (rate({stack=~\"$stack\", service=~\"$service\"} |= \"WARN\" [1m]))",
+          "legendFormat": "{{service}} warnings"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "logs/s", "color": { "fixedColor": "yellow", "mode": "fixed" } } }
+    },
+    {
+      "id": 4,
+      "title": "All Logs",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 20 },
+      "targets": [
+        {
+          "datasource": { "uid": "loki" },
+          "expr": "{stack=~\"$stack\", service=~\"$service\"}",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      }
+    },
+    {
+      "id": 5,
+      "title": "API Errors",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 32, "w": 24, "h": 12 },
+      "targets": [
+        {
+          "datasource": { "uid": "loki" },
+          "expr": "{stack=~\"$stack\", service=\"api\"} |= \"ERROR\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "sortOrder": "Descending"
+      }
+    }
+  ]
+}

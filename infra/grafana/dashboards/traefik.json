@@ -1,0 +1,89 @@
+{
+  "title": "Traefik",
+  "uid": "traefik",
+  "tags": ["traefik", "infrastructure"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Request Rate",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(rate(traefik_router_requests_total[5m]))", "legendFormat": "req/s" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 2,
+      "title": "5xx Rate",
+      "type": "stat",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum(rate(traefik_router_requests_total{code=~\"5..\"}[5m]))", "legendFormat": "5xx/s" }],
+      "fieldConfig": { "defaults": { "unit": "reqps", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.1, "color": "red" }] } } }
+    },
+    {
+      "id": 3,
+      "title": "p50 Latency",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.50, sum by (le) (rate(traefik_router_request_duration_seconds_bucket[5m])))", "legendFormat": "p50" }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 4,
+      "title": "p95 Latency",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum by (le) (rate(traefik_router_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" }],
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.5, "color": "yellow" }, { "value": 2, "color": "red" }] } } }
+    },
+    {
+      "id": 5,
+      "title": "TLS Cert Expiry (days)",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "min((traefik_tls_certs_not_after - time()) / 86400)", "legendFormat": "days" }],
+      "fieldConfig": { "defaults": { "unit": "d", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 7, "color": "yellow" }, { "value": 30, "color": "green" }] } } }
+    },
+    {
+      "id": 6,
+      "title": "Request Rate by Router",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum by (router) (rate(traefik_router_requests_total[1m]))", "legendFormat": "{{router}}" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 7,
+      "title": "Response Duration Heatmap (p50/p95/p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.50, sum by (le) (rate(traefik_router_request_duration_seconds_bucket[5m])))", "legendFormat": "p50" },
+        { "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum by (le) (rate(traefik_router_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
+        { "datasource": { "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum by (le) (rate(traefik_router_request_duration_seconds_bucket[5m])))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 8,
+      "title": "Status Code Distribution",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [{ "datasource": { "uid": "prometheus" }, "expr": "sum by (code) (rate(traefik_router_requests_total[1m]))", "legendFormat": "{{code}}" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 9,
+      "title": "Open Connections",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        { "datasource": { "uid": "prometheus" }, "expr": "traefik_entrypoint_open_connections", "legendFormat": "{{entryPoint}} ({{protocol}})" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    }
+  ]
+}

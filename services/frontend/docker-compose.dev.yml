@@ -1,0 +1,35 @@
+services:
+  frontend:
+    image: frontend:dev
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    expose:
+      - 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/app
+      - ../api/openapi.yaml:/usr/api/openapi.yaml:ro
+      - ../shared/openapi:/usr/shared/openapi:ro
+      - /usr/app/.yarn
+    networks:
+      - global_network
+    environment:
+      - TZ=Europe/Amsterdam
+      - VITE_APP_URL=http://localhost:8080
+      - VITE_COVERAGE=true
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  global_network:
+    driver: bridge

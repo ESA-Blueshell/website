@@ -3,23 +3,18 @@ name: CI
 on:
   push:
     paths:
-      - 'api/**'
-      - 'frontend/**'
-      - 'openapi/**'
+      - 'services/api/**'
+      - 'services/frontend/**'
+      - 'services/rotator/**'
+      - 'infra/**'
+      - 'services/deploy.sh'
+      - 'services/docker-stack.yml'
       - 'env/**'
       - 'scripts/**'
       - '.github/actions/**'
       - '.github/workflows/**'
       - 'docker-compose.yml'
       - 'docker-compose.dev.yml'
-      - 'generate_openapi.sh'
-      - 'merge-coverage.sh'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradle/**'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'nginx/**'
   workflow_dispatch:
 
 concurrency:
@@ -27,11 +22,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY: ghcr.io
-  OWNER: ${{ github.repository_owner }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
   COVERAGE_MIN_LINE_RATE: "0.80"
 
-  JAVA_VERSION: '24'
+  JAVA_VERSION: '21'
   NODE_VERSION: '24'
   YARN_VERSION: '4.10.3'
 
@@ -39,7 +34,7 @@ env:
   MYSQL_DATABASE: blueshell-test
   MYSQL_PORT: '3306'
   MYSQL_USER: blueshell
-  MYSQL_PASSWORD: blueshell
+  MYSQL_PASSWORD: ci-blueshell
   MYSQL_HOST: 127.0.0.1
 
   RABBITMQ_HOST: 127.0.0.1
@@ -50,39 +45,12 @@ env:
   APP_URL: http://127.0.0.1:8080
   FRONTEND_URL: http://127.0.0.1:3000
 
-  JWT_SECRET: YourBase64Encoded64ByteKeyHerejlasjdlfkjasdfjlakw4jpoiasdvpocimu4019mcfawb09hmf8j123890cqwepjc
-
-  SMTP_HOST: mail.blueshell.utwente.nl
-  SMTP_PORT: '465'
-  SMTP_USERNAME: your_smtp_username
-  SMTP_PASSWORD: your_smtp_password
+  JWT_SECRET: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh
 
   STORAGE_LOCATION: ./storage
 
   BREVO_API_KEY: something
   BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
-
-  GOOGLE_CALENDAR_ID: something
-  GOOGLE_CALENDAR_CLIENT_ID: something
-  GOOGLE_CALENDAR_CLIENT_EMAIL: something
-  GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8: |
-    -----BEGIN PRIVATE KEY-----
-    MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAJNOI74ADXzV2H63
-    s/wyuR7hW61c0ORfHSBSSIgmdglGqtSb8ERzet79zodXvmeZu2Cl6phtEIsXZ0uF
-    dfNBmIFjI2i3LT9+7zb+n5OcwKgwSxyKCeL6sB4aOQ/gljH2mpsTFkk6UdoKZ0NH
-    4Kkmbq2qsMr1P0y1j3X0uXg+uGNhAgMBAAECgYAePOMPZJlgL9GSKYmT0qG3mhEk
-    pDHpPzEOanWjJSoDu3Lj0+LdWks1rSoRFEzsnV0eeNCQW4sS0koM8aeFuMhiLc8Q
-    KP7UecthtjLxzjqQPDwj5z90pkSg9GPKkoKC9h83Ioj6KqhvE3vN2NfGrWX/Gcmr
-    BvVnw+btaoFgxzjncQJBAOtwr4+8qTHVxDApKteymCljlli4hS3KQGOrPiQUtszl
-    HpckKJfFJeuvB8kLxPEdhKSegu1BCd7WCPbWPfiYL3UCQQCgKy3Dkx29PcP+O36m
-    aS9G2rvivUh0ceD3fIqeUuhcCa+Gd4JH4g3/HUpOj8lV8HacI+MM4B/DF46lbLoy
-    JrK9AkB3hY86kvX5vKGKKXv8YEfqywmqJJJHeqNRdb9oJbPfNHlhFRQeaBEmIob7
-    QyRJm0iZIXcp5piSLWoDlSOErg15AkARLlCMaB2KjTOW897UDvhpS1FYMyGwi/6r
-    zYo5DX+rT8aqT+uDtnX15bhw0O+x7kdq3FagrPH7RW2hxRX8BzapAkB8TTIWgCgu
-    YOYLy5TUv9YKShgfe50C6j1HyZajzJBV1PdS7298SB2n2dvbUGWvUohXXMCXVRdS
-    wRRHv41dPOIL
-    -----END PRIVATE KEY-----
-  GOOGLE_CALENDAR_PRIVATE_KEY_ID: something
 
   GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 
@@ -95,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: services/frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -142,7 +110,8 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Compile API main and test sources
-        run: ./gradlew --no-daemon --build-cache :api:compileKotlin :api:compileTestKotlin
+        run: ./gradlew --no-daemon --build-cache compileKotlin compileTestKotlin
+        working-directory: services/api
 
       - name: Save Gradle cache
         if: always()
@@ -218,7 +187,7 @@ jobs:
 
       - name: Prepare test database schema
         run: |
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < env/0_init.sql
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
@@ -264,7 +233,7 @@ jobs:
         run: |
           set -euo pipefail
           VITE_COVERAGE=true VITE_APP_URL="$APP_URL" \
-            yarn --cwd frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
+            yarn --cwd services/frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
           echo $! > frontend-dev.pid
 
       - name: Wait for frontend readiness
@@ -284,22 +253,22 @@ jobs:
 
       - name: Run API Gradle tests
         if: matrix.id == 'api'
-        run: ./gradlew --no-daemon --build-cache :api:test :api:jacocoTestReport
+        run: ./gradlew --no-daemon --build-cache test jacocoTestReport
+        working-directory: services/api
 
       - name: Run system tests and JaCoCo system report
         if: matrix.id == 'system'
         run: |
-          ./gradlew --no-daemon --build-cache :api:systemTest :api:jacocoSystemTestReport \
+          ./gradlew --no-daemon --no-build-cache systemTest jacocoSystemTestReport \
             -Dsystem.frontend.url="$FRONTEND_URL" \
             -Dfrontend.coverage.enabled=true \
             -Dfrontend.coverage.required=true
+        working-directory: services/api
 
       - name: Convert frontend raw coverage to LCOV
         if: matrix.id == 'system'
         run: |
-          yarn --cwd frontend coverage:system:report \
-            --raw-dir ../api/build/coverage/frontend-system/raw \
-            --out-dir ../api/build/coverage/frontend-system
+          yarn --cwd services/frontend coverage:system:report
 
       - name: Stop frontend process
         if: always() && matrix.id == 'system'
@@ -314,9 +283,9 @@ jobs:
         with:
           name: api-test-coverage
           path: |
-            api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-            api/build/reports/jacoco/jacocoTestReport/html
-            api/build/reports/tests/test
+            services/api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+            services/api/build/reports/jacoco/jacocoTestReport/html
+            services/api/build/reports/tests/test
           if-no-files-found: warn
 
       - name: Upload API system coverage artifacts
@@ -325,11 +294,11 @@ jobs:
         with:
           name: api-system-coverage
           path: |
-            api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml
-            api/build/reports/jacoco/jacocoSystemTestReport/html
-            api/build/coverage/frontend-system/coverage-final.json
-            api/build/coverage/frontend-system/lcov.info
-            api/build/coverage/frontend-system/html
+            services/api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml
+            services/api/build/reports/jacoco/jacocoSystemTestReport/html
+            services/api/build/coverage/frontend-system/coverage-final.json
+            services/api/build/coverage/frontend-system/lcov.info
+            services/api/build/coverage/frontend-system/html
             frontend-dev.log
           if-no-files-found: warn
 
@@ -339,7 +308,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: services/frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -359,11 +328,11 @@ jobs:
         with:
           name: frontend-unit-coverage
           path: |
-            frontend/coverage/unit/coverage-final.json
-            frontend/coverage/unit/coverage-summary.json
-            frontend/coverage/unit/lcov.info
-            frontend/coverage/unit/lcov-report
-            frontend/coverage/unit/index.html
+            services/frontend/coverage/unit/coverage-final.json
+            services/frontend/coverage/unit/coverage-summary.json
+            services/frontend/coverage/unit/lcov.info
+            services/frontend/coverage/unit/lcov-report
+            services/frontend/coverage/unit/index.html
           if-no-files-found: error
 
   fe-e2e:
@@ -372,7 +341,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: services/frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -395,10 +364,10 @@ jobs:
         with:
           name: frontend-e2e-coverage
           path: |
-            frontend/coverage/e2e/coverage-final.json
-            frontend/coverage/e2e/coverage-summary.json
-            frontend/coverage/e2e/lcov.info
-            frontend/coverage/e2e/html
+            services/frontend/coverage/e2e/coverage-final.json
+            services/frontend/coverage/e2e/coverage-summary.json
+            services/frontend/coverage/e2e/lcov.info
+            services/frontend/coverage/e2e/html
           if-no-files-found: error
 
   coverage:
@@ -443,8 +412,8 @@ jobs:
       - name: Merge all discovered coverage reports
         run: |
           set -euo pipefail
-          chmod +x ./merge-coverage.sh
-          ./merge-coverage.sh --out "coverage/merged"
+          chmod +x ./scripts/merge-coverage.sh
+          ./scripts/merge-coverage.sh --out "coverage/merged"
 
       - name: Upload merged coverage artifact
         uses: actions/upload-artifact@v4
@@ -513,7 +482,7 @@ jobs:
 
       - name: Prepare test database schema
         run: |
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < env/0_init.sql
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
@@ -559,7 +528,7 @@ jobs:
           ./scripts/generate-openapi-local.sh
 
       - name: Assert OpenAPI spec and client are in sync
-        run: git diff --exit-code -- openapi frontend/src/services/api
+        run: git diff --exit-code -- services/api/openapi.yaml services/shared/openapi services/frontend/src/services/api
 
       - name: Upload OpenAPI generation logs
         if: failure()
@@ -569,188 +538,3 @@ jobs:
           path: openapi-api.log
           if-no-files-found: ignore
 
-  api-build:
-    name: Build API Docker image
-    needs: [ coverage, openapi-sync ]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Prepare Docker image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/api
-          tags: |
-            type=ref,event=branch
-            type=sha,format=short
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build API image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: api/Dockerfile
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  api-push:
-    name: Push API Docker image
-    if: github.ref == 'refs/heads/main'
-    needs: [ api-build ]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Prepare Docker image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/api
-          tags: |
-            type=ref,event=branch
-            type=sha,format=short
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Push API image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: api/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  fe-build:
-    name: Build frontend Docker image
-    needs: [ coverage, openapi-sync ]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Prepare Docker image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/frontend
-          tags: |
-            type=ref,event=branch
-            type=sha,format=short
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: frontend
-          file: frontend/Dockerfile
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  fe-push:
-    name: Push frontend Docker image
-    if: github.ref == 'refs/heads/main'
-    needs: [ fe-build ]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Prepare Docker image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/frontend
-          tags: |
-            type=ref,event=branch
-            type=sha,format=short
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Push frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: frontend
-          file: frontend/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy:
-    name: Deploy to production
-    if: github.ref == 'refs/heads/main'
-    needs: [ api-push, fe-push ]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment:
-      name: production
-      url: https://esa-blueshell.nl
-    permissions:
-      contents: read
-      deployments: write
-    steps:
-      - name: Configure SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      - name: Add deployment host to known hosts
-        run: |
-          install -m 700 -d ~/.ssh
-          ssh-keyscan -T 20 -p "${{ secrets.PORT }}" -H "${{ secrets.IP_ADDRESS }}" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: Run remote deploy command
-        shell: bash
-        run: |
-          set -euo pipefail
-          ssh -o StrictHostKeyChecking=yes -p "${{ secrets.PORT }}" \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.IP_ADDRESS }}" \
-            "bash -lc 'website pull'"

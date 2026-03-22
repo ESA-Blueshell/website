@@ -1,0 +1,106 @@
+services:
+  listmonk:
+    image: listmonk/listmonk:v4.1.0
+    ports:
+      - "9000:9000"
+    depends_on:
+      listmonk-db:
+        condition: service_healthy
+    environment:
+      LISTMONK_app__address: "0.0.0.0:9000"
+      LISTMONK_db__host: listmonk-db
+      LISTMONK_db__port: 5432
+      LISTMONK_db__user: listmonk
+      LISTMONK_db__password: listmonk
+      LISTMONK_db__database: listmonk
+      LISTMONK_db__ssl_mode: disable
+      # LISTMONK_ADMIN_USER/PASSWORD are read by the binary during --install to create the initial admin.
+      # They must match LISTMONK_ADMIN_USERNAME/PASSWORD used by listmonk-setup and the api service.
+      LISTMONK_ADMIN_USER: ${LISTMONK_ADMIN_USERNAME:-listmonk}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:-listmonk}
+    command: >-
+      sh -c "
+        ./listmonk --install --idempotent --yes &&
+        ./listmonk --upgrade --yes &&
+        exec ./listmonk
+      "
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  listmonk-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: listmonk
+      POSTGRES_PASSWORD: listmonk
+      POSTGRES_DB: listmonk
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U listmonk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - listmonk-data:/var/lib/postgresql/data
+    networks:
+      - global_network
+
+  listmonk-setup:
+    image: python:3.12-alpine
+    restart: "no"
+    depends_on:
+      listmonk:
+        condition: service_healthy
+      mailserver:
+        condition: service_healthy
+    env_file:
+      - path: .listmonk.env
+        required: false
+    environment:
+      LISTMONK_URL: "http://listmonk:9000"
+      LISTMONK_ADMIN_USERNAME: ${LISTMONK_ADMIN_USERNAME:-listmonk}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:-listmonk}
+      LISTMONK_ADMIN_EMAIL: ${LISTMONK_ADMIN_EMAIL:-admin@listmonk.local}
+      LISTMONK_ADMIN_API_USER: ${LISTMONK_ADMIN_API_USER:-api}
+      LISTMONK_API_TOKEN_FILE: /secrets/api-token.env
+      # SMTP — defaults to the dev mailserver (port 25, no auth, no TLS)
+      LISTMONK_SMTP_HOST: ${LISTMONK_SMTP_HOST:-mailserver}
+      LISTMONK_SMTP_PORT: ${LISTMONK_SMTP_PORT:-25}
+      LISTMONK_SMTP_AUTH_PROTOCOL: ${LISTMONK_SMTP_AUTH_PROTOCOL:-none}
+      LISTMONK_SMTP_USERNAME: ${LISTMONK_SMTP_USERNAME:-}
+      LISTMONK_SMTP_PASSWORD: ${LISTMONK_SMTP_PASSWORD:-}
+      LISTMONK_SMTP_HELLO_HOSTNAME: ${LISTMONK_SMTP_HELLO_HOSTNAME:-mail.dev.local}
+      LISTMONK_SMTP_TLS_TYPE: ${LISTMONK_SMTP_TLS_TYPE:-none}
+      LISTMONK_SMTP_TLS_SKIP_VERIFY: ${LISTMONK_SMTP_TLS_SKIP_VERIFY:-false}
+      # Bounce IMAP — defaults to the dev mailserver bounce@dev.local account
+      LISTMONK_BOUNCE_MAILBOX_ENABLED: ${LISTMONK_BOUNCE_MAILBOX_ENABLED:-true}
+      LISTMONK_BOUNCE_MAILBOX_HOST: ${LISTMONK_BOUNCE_MAILBOX_HOST:-mailserver}
+      LISTMONK_BOUNCE_MAILBOX_PORT: ${LISTMONK_BOUNCE_MAILBOX_PORT:-993}
+      LISTMONK_BOUNCE_MAILBOX_USERNAME: ${LISTMONK_BOUNCE_MAILBOX_USERNAME:-bounce@dev.local}
+      LISTMONK_BOUNCE_MAILBOX_PASSWORD: ${LISTMONK_BOUNCE_MAILBOX_PASSWORD:-bounce}
+      LISTMONK_BOUNCE_MAILBOX_TLS_ENABLED: ${LISTMONK_BOUNCE_MAILBOX_TLS_ENABLED:-true}
+      LISTMONK_BOUNCE_MAILBOX_TLS_SKIP_VERIFY: ${LISTMONK_BOUNCE_MAILBOX_TLS_SKIP_VERIFY:-true}
+      LISTMONK_BOUNCE_MAILBOX_FOLDER: ${LISTMONK_BOUNCE_MAILBOX_FOLDER:-INBOX}
+      LISTMONK_BOUNCE_MAILBOX_RETURN_PATH: ${LISTMONK_BOUNCE_MAILBOX_RETURN_PATH:-bounce@dev.local}
+      LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL: ${LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL:-10m}
+    volumes:
+      - ./setup.py:/setup.py:ro
+      - ./custom/theme.css:/theme.css:ro
+      - listmonk-secrets:/secrets
+    command: ["python", "/setup.py"]
+    networks:
+      - global_network
+
+networks:
+  global_network:
+    driver: bridge
+
+volumes:
+  listmonk-data:
+  listmonk-secrets:

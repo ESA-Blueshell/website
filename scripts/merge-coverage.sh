@@ -165,7 +165,7 @@ maybe_convert_frontend_raw_coverage() {
   fi
 
   echo "Converting frontend raw coverage from '$raw_dir'..."
-  yarn --cwd frontend coverage:system:report \
+  yarn --cwd services/frontend coverage:system:report \
     --raw-dir "../${raw_dir}" \
     --out-dir "../${out_dir}"
 
@@ -307,7 +307,7 @@ ABS_FRONTEND_JSON_REPORTS_JOINED="$(join_with_semicolon "${ABS_FRONTEND_JSON_REP
 
 ABS_OUTPUT_DIR="$(to_abs_path "$OUTPUT_DIR")"
 
-yarn --cwd frontend node ./scripts/merge-system-coverage.mjs \
+yarn --cwd services/frontend node ./scripts/merge-system-coverage.mjs \
   --jacoco "$ABS_JACOCO_REPORTS_JOINED" \
   --frontend-json "$ABS_FRONTEND_JSON_REPORTS_JOINED" \
   --out "$ABS_OUTPUT_DIR"

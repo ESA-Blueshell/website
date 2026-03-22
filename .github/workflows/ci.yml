@@ -259,7 +259,7 @@ jobs:
       - name: Run system tests and JaCoCo system report
         if: matrix.id == 'system'
         run: |
-          ./gradlew --no-daemon systemTest jacocoSystemTestReport \
+          ./gradlew --no-daemon --no-build-cache systemTest jacocoSystemTestReport \
             -Dsystem.frontend.url="$FRONTEND_URL" \
             -Dfrontend.coverage.enabled=true \
             -Dfrontend.coverage.required=true
@@ -268,9 +268,7 @@ jobs:
       - name: Convert frontend raw coverage to LCOV
         if: matrix.id == 'system'
         run: |
-          yarn --cwd services/frontend coverage:system:report \
-            --raw-dir services/api/build/coverage/frontend-system/raw \
-            --out-dir services/api/build/coverage/frontend-system
+          yarn --cwd services/frontend coverage:system:report
 
       - name: Stop frontend process
         if: always() && matrix.id == 'system'

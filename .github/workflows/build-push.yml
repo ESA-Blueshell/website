@@ -24,7 +24,7 @@ jobs:
       matrix:
         include:
           - service: api
-            context: services/api
+            context: services
             file: services/api/Dockerfile
           - service: frontend
             context: services/frontend

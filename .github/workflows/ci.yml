@@ -259,7 +259,7 @@ jobs:
       - name: Run system tests and JaCoCo system report
         if: matrix.id == 'system'
         run: |
-          ./gradlew --no-daemon --build-cache systemTest jacocoSystemTestReport \
+          ./gradlew --no-daemon systemTest jacocoSystemTestReport \
             -Dsystem.frontend.url="$FRONTEND_URL" \
             -Dfrontend.coverage.enabled=true \
             -Dfrontend.coverage.required=true

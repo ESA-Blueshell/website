@@ -94,8 +94,9 @@ jobs:
       - name: Re-tag sha-${{ needs.resolve.outputs.sha_short }} → ${{ needs.resolve.outputs.image_tag }}
         run: |
           set -euo pipefail
-          SOURCE="${REGISTRY}/${OWNER}/${SERVICE}:sha-${SHA_SHORT}"
-          TARGET="${REGISTRY}/${OWNER}/${SERVICE}:${IMAGE_TAG}"
+          OWNER_LC="${OWNER,,}"
+          SOURCE="${REGISTRY}/${OWNER_LC}/${SERVICE}:sha-${SHA_SHORT}"
+          TARGET="${REGISTRY}/${OWNER_LC}/${SERVICE}:${IMAGE_TAG}"
           echo "Re-tagging ${SOURCE} → ${TARGET}"
           docker buildx imagetools create --tag "${TARGET}" "${SOURCE}"
         env:

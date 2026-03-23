@@ -16,8 +16,8 @@ from pathlib import Path
 import pytest
 
 from lib.credentials import Credentials
+from tests.helpers.lxd import LxdVm
 from tests.helpers.ssh import ssh_key_login, ssh_password_login
-from tests.helpers.vm import Vm
 
 
 pytestmark = pytest.mark.vm
@@ -27,11 +27,11 @@ pytestmark = pytest.mark.vm
 
 
 class TestCloudInitCompletion:
-    def test_no_stage_errors(self, vm: Vm) -> None:
+    def test_no_stage_errors(self, vm: LxdVm) -> None:
         errors = vm.get_cloud_init_errors()
         assert errors == [], f"cloud-init stage errors: {errors}"
 
-    def test_schema_valid(self, vm: Vm, rendered_config: Path) -> None:
+    def test_schema_valid(self, vm: LxdVm, rendered_config: Path) -> None:
         remote_path = "/tmp/cloud-config-validate.yaml"
         vm.push_file(rendered_config, remote_path)
         result = vm.exec(["cloud-init", "schema", "--config-file", remote_path], check=False)
@@ -51,17 +51,17 @@ class TestCloudInitCompletion:
 
 
 class TestSSHKeyLogin:
-    def test_admin_key_login(self, vm: Vm, credentials: Credentials) -> None:
+    def test_admin_key_login(self, vm: LxdVm, credentials: Credentials) -> None:
         ip = vm.get_ip()
         result = ssh_key_login(ip, vm.ssh_port, "admin", str(credentials.admin_key), "whoami")
         assert result == "admin"
 
-    def test_website_key_login(self, vm: Vm, credentials: Credentials) -> None:
+    def test_website_key_login(self, vm: LxdVm, credentials: Credentials) -> None:
         ip = vm.get_ip()
         result = ssh_key_login(ip, vm.ssh_port, "website", str(credentials.website_key), "whoami")
         assert result == "website"
 
-    def test_website_in_website_group(self, vm: Vm) -> None:
+    def test_website_in_website_group(self, vm: LxdVm) -> None:
         result = vm.exec(["id", "-nG", "website"])
         groups = result.stdout.strip().split()
         assert "website" in groups
@@ -78,7 +78,7 @@ class TestSSHPasswordLogin:
     """
 
     @pytest.fixture(autouse=True, scope="class")
-    def _enable_password_auth(self, vm: Vm) -> None:
+    def _enable_password_auth(self, vm: LxdVm) -> None:
         """Enable password auth for the duration of this test class."""
         dropin = (
             "AuthenticationMethods any\n"
@@ -96,17 +96,17 @@ class TestSSHPasswordLogin:
         vm.exec(["systemctl", "reload", "ssh"])
         time.sleep(1)
 
-    def test_admin_password_login(self, vm: Vm, credentials: Credentials) -> None:
+    def test_admin_password_login(self, vm: LxdVm, credentials: Credentials) -> None:
         ip = vm.get_ip()
         result = ssh_password_login(ip, vm.ssh_port, "admin", credentials.admin_password, "whoami")
         assert result == "admin"
 
-    def test_website_password_login(self, vm: Vm, credentials: Credentials) -> None:
+    def test_website_password_login(self, vm: LxdVm, credentials: Credentials) -> None:
         ip = vm.get_ip()
         result = ssh_password_login(ip, vm.ssh_port, "website", credentials.website_password, "whoami")
         assert result == "website"
 
-    def test_root_password_login(self, vm: Vm, credentials: Credentials) -> None:
+    def test_root_password_login(self, vm: LxdVm, credentials: Credentials) -> None:
         ip = vm.get_ip()
         result = ssh_password_login(ip, vm.ssh_port, "root", credentials.root_password, "whoami")
         assert result == "root"
@@ -116,7 +116,7 @@ class TestSSHPasswordLogin:
 
 
 class TestSecurity:
-    def test_password_auth_disabled(self, vm: Vm) -> None:
+    def test_password_auth_disabled(self, vm: LxdVm) -> None:
         result = vm.exec(
             ["grep", "-Eriq", "^PasswordAuthentication\\s+no",
              "/etc/ssh/sshd_config", "/etc/ssh/sshd_config.d/"],
@@ -124,7 +124,7 @@ class TestSecurity:
         )
         assert result.returncode == 0, "PasswordAuthentication is not set to 'no'"
 
-    def test_sshd_port_2222(self, vm: Vm) -> None:
+    def test_sshd_port_2222(self, vm: LxdVm) -> None:
         result = vm.exec(
             ["grep", "-Eriq", "^Port\\s+2222",
              "/etc/ssh/sshd_config", "/etc/ssh/sshd_config.d/"],
@@ -132,29 +132,29 @@ class TestSecurity:
         )
         assert result.returncode == 0, "Port is not set to 2222"
 
-    def test_listening_on_2222(self, vm: Vm) -> None:
+    def test_listening_on_2222(self, vm: LxdVm) -> None:
         result = vm.exec(["ss", "-tlnp"])
         assert ":2222" in result.stdout, "sshd is not listening on port 2222"
 
-    def test_not_listening_on_22(self, vm: Vm) -> None:
+    def test_not_listening_on_22(self, vm: LxdVm) -> None:
         result = vm.exec(["ss", "-tlnp"])
         for line in result.stdout.splitlines():
             # Match :22 but not :2222
             if ":22 " in line or ":22\t" in line or line.rstrip().endswith(":22"):
                 pytest.fail("sshd is still listening on port 22")
 
-    def test_ufw_active(self, vm: Vm) -> None:
+    def test_ufw_active(self, vm: LxdVm) -> None:
         result = vm.exec(["ufw", "status"])
         assert "Status: active" in result.stdout, "UFW is not active"
 
-    def test_ufw_allows_2222(self, vm: Vm) -> None:
+    def test_ufw_allows_2222(self, vm: LxdVm) -> None:
         result = vm.exec(["ufw", "status"])
         lines = result.stdout.splitlines()
         assert any(line.startswith("2222") for line in lines), (
             "Port 2222 not found in ufw status"
         )
 
-    def test_ufw_blocks_22(self, vm: Vm) -> None:
+    def test_ufw_blocks_22(self, vm: LxdVm) -> None:
         result = vm.exec(["ufw", "status"])
         lines = result.stdout.splitlines()
         # Check no line starts with "22" that isn't "2222"
@@ -167,19 +167,19 @@ class TestSecurity:
 
 
 class TestProvisioning:
-    def test_docker_running(self, vm: Vm) -> None:
+    def test_docker_running(self, vm: LxdVm) -> None:
         result = vm.exec(["docker", "info"], check=False)
         assert result.returncode == 0, "Docker daemon is not running"
 
-    def test_admin_in_docker_group(self, vm: Vm) -> None:
+    def test_admin_in_docker_group(self, vm: LxdVm) -> None:
         result = vm.exec(["id", "-nG", "admin"])
         assert "docker" in result.stdout.strip().split()
 
-    def test_website_in_docker_group(self, vm: Vm) -> None:
+    def test_website_in_docker_group(self, vm: LxdVm) -> None:
         result = vm.exec(["id", "-nG", "website"])
         assert "docker" in result.stdout.strip().split()
 
-    def test_git_repo_cloned(self, vm: Vm) -> None:
+    def test_git_repo_cloned(self, vm: LxdVm) -> None:
         result = vm.exec(["test", "-d", "/src/website/.git"], check=False)
         assert result.returncode == 0, "/src/website/.git not found — clone failed"
 
@@ -193,10 +193,10 @@ class TestProvisioning:
             "/src/backups/mailserver/config",
         ],
     )
-    def test_backup_directory_exists(self, vm: Vm, dir_path: str) -> None:
+    def test_backup_directory_exists(self, vm: LxdVm, dir_path: str) -> None:
         result = vm.exec(["test", "-d", dir_path], check=False)
         assert result.returncode == 0, f"Directory {dir_path} does not exist"
 
-    def test_website_deploy_service_enabled(self, vm: Vm) -> None:
+    def test_website_deploy_service_enabled(self, vm: LxdVm) -> None:
         result = vm.exec(["systemctl", "is-enabled", "website-deploy.service"])
         assert result.stdout.strip() == "enabled"

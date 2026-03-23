@@ -1,20 +1,30 @@
 #cloud-config
 
-# Users — cloud-init handles ONLY user creation + SSH keys.
-# Groups, docker membership, and all other setup is in provision.sh / runcmd.
+# ── Groups (processed before users) ──────────────────────────────────────────
+groups:
+  - website
+  - backup
+
+# ── Users ────────────────────────────────────────────────────────────────────
+# Cloud-init handles user creation, SSH keys, and non-Docker group memberships.
+# Docker group membership is added in runcmd (Docker package creates the group
+# during package_install, which runs after user creation).
 users:
   - default
   - name: admin
     shell: /bin/bash
     sudo: ALL=(ALL) ALL
+    groups: sudo, website, backup
     ssh_authorized_keys:
       - "__ADMIN_SSH_PUB__"
   - name: website
     shell: /bin/bash
+    home: /src/website
+    primary_group: website
     ssh_authorized_keys:
       - "__WEBSITE_SSH_PUB__"
 
-# Console passwords (SSH is keys-only via provision.sh sshd hardening).
+# Console passwords (SSH is keys-only via sshd config below).
 # list: format with $6$ hashes — compatible with all cloud-init versions.
 chpasswd:
   expire: false
@@ -23,9 +33,18 @@ chpasswd:
     root:__ROOT_PASSWORD__
     website:__WEBSITE_PASSWORD__
 
+# ── APT sources ──────────────────────────────────────────────────────────────
+apt:
+  sources:
+    docker.list:
+      source: "deb [arch=amd64 signed-by=$KEY_FILE] https://download.docker.com/linux/debian trixie stable"
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+      keyserver: https://download.docker.com/linux/debian/gpg
+
 package_update: true
 package_upgrade: true
 
+# ── Packages (single source of truth — includes Docker) ─────────────────────
 packages:
   - ca-certificates
   - curl
@@ -36,16 +55,43 @@ packages:
   - rsync
   - ufw
   - sudo
+  - openssh-client
+  - openssh-server
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
 
+# ── Files ────────────────────────────────────────────────────────────────────
+# Scripts and config files are placed on disk before runcmd executes.
 write_files:
+  # System provisioning script (imperative: UFW, Infisical, directories, Docker enable)
   - path: /usr/local/bin/provision.sh
     permissions: '0750'
     encoding: b64
     content: __PROVISION_SH_B64__
+
+  # Backup script
+  - path: /usr/local/bin/db-backup
+    permissions: '0750'
+    owner: root:backup
+    encoding: b64
+    content: __DB_BACKUP_SH_B64__
+
+  # Website management CLI
+  - path: /usr/local/bin/website
+    permissions: '0755'
+    encoding: b64
+    content: __WEBSITE_CLI_SH_B64__
+
+  # GitHub deploy key
   - path: /etc/deploy-keys/github-deploy-key
     permissions: '0600'
     encoding: b64
     content: __GITHUB_DEPLOY_KEY_B64__
+
+  # Application env files
   - path: /src/website/services/api/.db.env
     permissions: '0640'
     encoding: b64
@@ -63,12 +109,70 @@ write_files:
     encoding: b64
     content: __INFRA_ENV_B64__
 
+  # SSH hardening — keys-only, port 2222
+  - path: /etc/ssh/sshd_config.d/10-keys-only.conf
+    permissions: '0644'
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      ChallengeResponseAuthentication no
+      PubkeyAuthentication yes
+      AuthenticationMethods publickey
+      PermitRootLogin prohibit-password
+
+  - path: /etc/ssh/sshd_config.d/port-2222.conf
+    permissions: '0644'
+    content: |
+      Port 2222
+
+  # Cron: daily backup at 3 AM
+  - path: /etc/cron.d/db-backup
+    permissions: '0644'
+    content: |
+      SHELL=/bin/bash
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      # Full backup (DB + env + storage mirror) daily at 3 AM
+      0 3 * * * root /usr/local/bin/db-backup >> /var/log/db-backup.log 2>&1
+
+  # Logrotate: db-backup log
+  - path: /etc/logrotate.d/db-backup
+    permissions: '0644'
+    content: |
+      /var/log/db-backup.log {
+          weekly
+          rotate 8
+          compress
+          missingok
+          notifempty
+          create 664 root backup
+      }
+
+  # Auto-deploy on boot (safety net for Swarm stacks after reboot)
+  - path: /etc/systemd/system/website-deploy.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Ensure website Swarm stacks are deployed
+      After=network-online.target docker.service
+      Wants=network-online.target docker.service
+
+      [Service]
+      Type=oneshot
+      User=website
+      ExecStartPre=/bin/bash -lc 'until docker info >/dev/null 2>&1; do sleep 2; done'
+      ExecStart=/bin/bash -lc 'cd /src/website && website infra up && website up'
+      RemainAfterExit=yes
+      Environment=HOME=/src/website
+
+      [Install]
+      WantedBy=multi-user.target
+
 runcmd:
-  # System provisioning — installs Docker, hardens SSH (port 2222, keys-only),
-  # configures UFW, creates groups/users, sets up backup scripts and CLI.
+  # System provisioning — installs Infisical CLI, configures UFW,
+  # enables Docker, creates directories, enables systemd services.
   - /usr/local/bin/provision.sh
 
-  # Add users to docker group (created by provision.sh Docker install).
+  # Add users to docker group (created by Docker package install above).
   - usermod -aG docker admin
   - usermod -aG docker website
 
@@ -115,7 +219,7 @@ runcmd:
   # GHCR login for pulling private images.
   - su -s /bin/bash - website -c "printf '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
 
-  # Restart services reconfigured by provision.sh.
+  # Restart services reconfigured by write_files / provision.sh.
   - systemctl restart cron
   - systemctl restart ssh
 

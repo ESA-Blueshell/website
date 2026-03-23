@@ -306,6 +306,8 @@ _render_common "${TMPL}" "${OUT}"
 
 # Inject base64-encoded files into the cloud-config
 _inject_b64_file "${OUT}" "__PROVISION_SH_B64__"       "${SCRIPT_DIR}/../scripts/provision.sh"
+_inject_b64_file "${OUT}" "__DB_BACKUP_SH_B64__"       "${SCRIPT_DIR}/../scripts/db-backup.sh"
+_inject_b64_file "${OUT}" "__WEBSITE_CLI_SH_B64__"     "${SCRIPT_DIR}/../scripts/website-cli.sh"
 _inject_b64_file "${OUT}" "__DB_ENV_B64__"             "${RENDERED_DIR}/.db.env"
 _inject_b64_file "${OUT}" "__API_ENV_B64__"            "${RENDERED_DIR}/.api.env"
 _inject_b64_file "${OUT}" "__LISTMONK_ENV_B64__"       "${RENDERED_DIR}/.listmonk.env"

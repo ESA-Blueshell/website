@@ -369,12 +369,20 @@ else
   fail "port 22: sshd is still listening on port 22"
 fi
 
-# UFW: 2222 allowed
+# UFW: active
 if vm_ssh admin "${SSH_ADMIN_KEY}" \
-     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S ufw status 2>/dev/null | grep -q '2222/tcp'"; then
-  pass "UFW: port 2222/tcp allowed"
+     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S ufw status 2>/dev/null | grep -qi 'status: active'"; then
+  pass "UFW: active"
 else
-  fail "UFW: port 2222/tcp not found in ufw status"
+  fail "UFW: not active"
+fi
+
+# UFW: 2222 allowed (output format varies: '2222/tcp' or '2222' depending on Debian version)
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S ufw status 2>/dev/null | grep -Eq '^2222'"; then
+  pass "UFW: port 2222 allowed"
+else
+  fail "UFW: port 2222 not found in ufw status"
 fi
 
 # UFW: 22 not allowed (grep anchored to ^22 so it does not match 2222)

@@ -173,6 +173,16 @@ class QemuVm:
             return subprocess.run(ssh_cmd, check=check, capture_output=True, text=True)
         return subprocess.run(ssh_cmd, check=check, text=True)
 
+    def push_file(self, local_path: Path, remote_path: str) -> None:
+        """Push a local file into the VM via scp."""
+        ssh_opts = ["-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=5",
+                    "-o", "BatchMode=yes", "-o", "LogLevel=ERROR"]
+        subprocess.run(
+            ["scp", *ssh_opts, "-P", str(HOST_SSH_PORT), "-i", str(self.ssh_admin_key),
+             str(local_path), f"admin@127.0.0.1:{remote_path}"],
+            check=True,
+        )
+
     def wait_for_cloud_init(self, timeout: int = 1200) -> None:
         """Wait for cloud-init to complete by polling for result.json."""
         print(f"Waiting for cloud-init to complete (up to {timeout}s)...")

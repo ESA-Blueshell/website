@@ -11,6 +11,7 @@ The -s flag enables live log streaming during VM boot.
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import pytest
 
@@ -29,6 +30,21 @@ class TestCloudInitCompletion:
     def test_no_stage_errors(self, vm: Vm) -> None:
         errors = vm.get_cloud_init_errors()
         assert errors == [], f"cloud-init stage errors: {errors}"
+
+    def test_schema_valid(self, vm: Vm, rendered_config: Path) -> None:
+        remote_path = "/tmp/cloud-config-validate.yaml"
+        vm.push_file(rendered_config, remote_path)
+        result = vm.exec(["cloud-init", "schema", "--config-file", remote_path], check=False)
+        combined = result.stdout + result.stderr
+        assert result.returncode == 0, (
+            f"cloud-init schema validation failed (exit {result.returncode}):\n{combined}"
+        )
+        assert "WARNING" not in combined, (
+            f"cloud-init schema validation produced warnings:\n{combined}"
+        )
+        assert "failed schema validation" not in combined, (
+            f"cloud-init schema validation failed:\n{combined}"
+        )
 
 
 # ── SSH key login ────────────────────────────────────────────────────────────

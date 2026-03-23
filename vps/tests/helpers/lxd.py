@@ -86,6 +86,10 @@ class LxdVm:
             return subprocess.run(full_cmd, check=check, capture_output=True, text=True)
         return subprocess.run(full_cmd, check=check, text=True)
 
+    def push_file(self, local_path: Path, remote_path: str) -> None:
+        """Push a local file into the VM via lxc file push."""
+        self._lxc("file", "push", str(local_path), f"{self._instance}{remote_path}")
+
     def wait_for_agent(self, timeout: int = 180) -> None:
         """Wait for the LXD agent inside the VM to become ready."""
         print(f"Waiting for LXD agent (up to {timeout}s)...")

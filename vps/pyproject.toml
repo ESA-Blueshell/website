@@ -1,0 +1,14 @@
+[project]
+name = "vps-tests"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pytest>=8.0",
+    "pytest-timeout>=2.0",
+    "pyyaml>=6.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "vm: tests that require a running LXD VM (slow, ~10 min)",
+]

@@ -70,3 +70,28 @@ class TestHashVerification:
         assert _verify_hash(credentials.website_password, stored_hash), (
             "website: SHA-512 hash does not match plaintext password"
         )
+
+    def test_rendered_env_files_do_not_contain_comment_placeholder_values(
+        self, rendered_config: Path
+    ) -> None:
+        rendered_dir = rendered_config.parent / "rendered"
+        env_files = [
+            rendered_dir / ".db.env",
+            rendered_dir / ".api.env",
+            rendered_dir / ".listmonk.env",
+            rendered_dir / ".infra.env",
+        ]
+
+        placeholder_lines: list[str] = []
+        for env_file in env_files:
+            for line in env_file.read_text().splitlines():
+                if "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                if value.startswith("#"):
+                    placeholder_lines.append(f"{env_file.name}:{key}={value}")
+
+        assert placeholder_lines == [], (
+            "Rendered env files contain comment placeholder values that break shell sourcing:\n"
+            + "\n".join(placeholder_lines)
+        )

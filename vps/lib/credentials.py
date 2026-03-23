@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -72,7 +73,14 @@ def load_dotenv(path: Path) -> dict[str, str]:
         if "=" not in line:
             continue
         key, _, value = line.partition("=")
-        env[key.strip()] = value.strip()
+        value = value.strip()
+        if not value or value.startswith("#"):
+            env[key.strip()] = ""
+            continue
+        if value[0] in {"'", '"'} and len(value) >= 2 and value[-1] == value[0]:
+            env[key.strip()] = value[1:-1]
+            continue
+        env[key.strip()] = re.sub(r"\s+#.*$", "", value).rstrip()
     return env
 
 

@@ -138,18 +138,6 @@ class LxdVm:
         """Push a local file into the VM via lxc file push."""
         self._lxc("file", "push", str(local_path), f"{self._instance}{remote_path}")
 
-    def wait_for_agent(self, timeout: int = 180) -> None:
-        """Wait for the LXD agent inside the VM to become ready."""
-        print(f"Waiting for LXD agent (up to {timeout}s)...")
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            result = self.exec(["true"], check=False)
-            if result.returncode == 0:
-                print("LXD agent is ready.")
-                return
-            time.sleep(3)
-        raise TimeoutError(f"LXD agent not ready after {timeout}s")
-
     def wait_for_cloud_init(self, timeout: int = 1200) -> None:
         """Wait for cloud-init to complete by polling for result.json."""
         print(f"Waiting for cloud-init to complete (up to {timeout}s)...")

@@ -32,6 +32,7 @@ class TestCloudInitCompletion:
         assert errors == [], f"cloud-init stage errors: {errors}"
 
     def test_schema_valid(self, vm: LxdVm, rendered_config: Path) -> None:
+        """cloud-init schema --config-file must exit 0 with no warnings."""
         remote_path = "/tmp/cloud-config-validate.yaml"
         vm.push_file(rendered_config, remote_path)
         result = vm.exec(["cloud-init", "schema", "--config-file", remote_path], check=False)
@@ -39,11 +40,28 @@ class TestCloudInitCompletion:
         assert result.returncode == 0, (
             f"cloud-init schema validation failed (exit {result.returncode}):\n{combined}"
         )
-        assert "WARNING" not in combined, (
-            f"cloud-init schema validation produced warnings:\n{combined}"
+        warning_lines = [
+            line for line in combined.splitlines()
+            if "warning" in line.lower() or "failed schema validation" in line.lower()
+        ]
+        assert warning_lines == [], (
+            "cloud-init schema produced warnings:\n" + "\n".join(warning_lines)
         )
-        assert "failed schema validation" not in combined, (
-            f"cloud-init schema validation failed:\n{combined}"
+
+    def test_no_schema_warnings_in_boot_log(self, vm: LxdVm) -> None:
+        """cloud-init.log must not contain schema validation warnings from boot."""
+        result = vm.exec(["cat", "/var/log/cloud-init.log"], check=False)
+        if result.returncode != 0:
+            pytest.skip("cloud-init.log not readable")
+        schema_warning_lines = [
+            line for line in result.stdout.splitlines()
+            if "schema" in line.lower() and (
+                "warning" in line.lower() or "failed" in line.lower()
+            )
+        ]
+        assert schema_warning_lines == [], (
+            "cloud-init.log contains schema warnings from boot:\n"
+            + "\n".join(schema_warning_lines)
         )
 
 

@@ -47,14 +47,39 @@ jobs:
       - name: Verify password hashes
         run: cd vps && uv run pytest tests/test_hash_verification.py -v
 
-# ── Job 2: full VM test ───────────────────────────────────────────────────────
+# ── Job 2: schema validation ──────────────────────────────────────────────────
+# Fast (~1 min). Renders the cloud-config and validates it against the
+# cloud-init JSON schema using the system cloud-init binary.
+  schema-check:
+    name: Validate cloud-config schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
+      ROOT_PASSWORD:    ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
+      WEBSITE_PASSWORD: ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
+      GHCR_USERNAME:    ${{ github.actor }}
+      GHCR_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install test dependencies
+        run: cd vps && uv sync
+
+      - name: Validate cloud-config schema
+        run: cd vps && uv run pytest tests/test_schema.py -v
+
+# ── Job 3: full VM test ───────────────────────────────────────────────────────
 # Boots a Debian 13 VM via LXD with the rendered cloud-config, waits for
 # cloud-init to finish, then tests SSH, security, and provisioning.
   vm-test:
     name: Full VM test (LXD)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: hash-check
+    needs: [hash-check, schema-check]
 #    if: github.event_name == 'workflow_dispatch' && inputs.full_test
     env:
       ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}

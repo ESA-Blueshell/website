@@ -11,4 +11,5 @@ dependencies = [
 [tool.pytest.ini_options]
 markers = [
     "vm: tests that require a running LXD VM (slow, ~10 min)",
+    "schema: pre-flight schema checks that run without a VM (fast)",
 ]

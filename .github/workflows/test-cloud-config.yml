@@ -90,6 +90,21 @@ jobs:
           path: vps/.test-cache/debian-13-generic-amd64.qcow2
           key: debian-13-generic-amd64-trixie-2025
 
+      # Install the real deploy key so render.sh reuses it instead of generating
+      # a new one. The private key is stored as DEPLOY_KEY_PRIVATE; the public
+      # key must be registered as a read-only Deploy Key on the repository.
+      - name: Install GitHub deploy key
+        env:
+          DEPLOY_KEY_PRIVATE: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${DEPLOY_KEY_PRIVATE}" \
+            > ~/.ssh/blueshell-website-github-deploy-key
+          chmod 600 ~/.ssh/blueshell-website-github-deploy-key
+          ssh-keygen -y -f ~/.ssh/blueshell-website-github-deploy-key \
+            > ~/.ssh/blueshell-website-github-deploy-key.pub
+
       - name: Render cloud-config
         run: cd vps && ./cloud-init/render.sh
 

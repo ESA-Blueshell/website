@@ -59,6 +59,7 @@ services/**/*.env
 /vps/cloud-init/cloud-config-standalone.yaml
 /vps/cloud-init/rendered/
 /vps/.test-cache/
+/vps/vm-logs/
 /vps/packer/output/
 /backup/
 

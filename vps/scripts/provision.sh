@@ -30,7 +30,7 @@ ufw default allow outgoing
 ufw allow 2222/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
-yes | ufw enable || true
+ufw --force enable
 
 # ── Ensure rootful Docker daemon is enabled and running ──────────────────────
 systemctl enable --now docker.service

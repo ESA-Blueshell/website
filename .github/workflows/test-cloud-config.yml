@@ -96,10 +96,10 @@ jobs:
       - name: Run full VM test
         run: cd vps && ./test-cloud-config.sh
 
-      - name: Upload console log on failure
-        if: failure()
+      - name: Upload VM logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qemu-console-log
-          path: vps/.test-cache/run-*/console.log
+          name: vm-logs
+          path: vps/vm-logs/
           if-no-files-found: ignore

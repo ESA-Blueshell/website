@@ -27,6 +27,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLOUD_CONFIG="${SCRIPT_DIR}/cloud-init/cloud-config.yaml"
 ENV_FILE="${SCRIPT_DIR}/.env"
 CACHE_DIR="${SCRIPT_DIR}/.test-cache"
+LOG_DIR="${SCRIPT_DIR}/vm-logs"   # persists after cleanup — uploaded as CI artifact
 SSH_ADMIN_KEY="${HOME}/.ssh/blueshell-admin"
 SSH_WEBSITE_KEY="${HOME}/.ssh/blueshell-website"
 HOST_SSH_PORT=55022   # host port forwarded to guest port 2222
@@ -141,7 +142,37 @@ done
 WORK_DIR="${CACHE_DIR}/run-$$"
 mkdir -p "${CACHE_DIR}" "${WORK_DIR}"
 
+# Collect cloud-init and system logs from the VM into LOG_DIR (best-effort).
+# Called both at end of tests and in cleanup trap so logs survive failures.
+collect_vm_logs() {
+  mkdir -p "${LOG_DIR}"
+
+  # Copy QEMU console log (in WORK_DIR — must happen before it's deleted)
+  [[ -f "${WORK_DIR}/console.log" ]] && cp "${WORK_DIR}/console.log" "${LOG_DIR}/console.log" || true
+
+  # Pull logs from the VM via SSH; silently skip files that don't exist yet
+  local vm_logs=(
+    "/var/log/cloud-init.log"          # detailed cloud-init execution trace
+    "/var/log/cloud-init-output.log"   # stdout/stderr of every runcmd command
+    "/run/cloud-init/result.json"      # final pass/fail status
+  )
+  for remote_path in "${vm_logs[@]}"; do
+    local filename; filename="$(basename "${remote_path}")"
+    ssh "${SSH_OPTS[@]}" -p "${HOST_SSH_PORT}" -i "${SSH_ADMIN_KEY}" \
+      admin@127.0.0.1 \
+      "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S cat '${remote_path}' 2>/dev/null" \
+      > "${LOG_DIR}/${filename}" 2>/dev/null || true
+    # Remove empty files so the artifact listing isn't cluttered
+    [[ -s "${LOG_DIR}/${filename}" ]] || rm -f "${LOG_DIR}/${filename}"
+  done
+}
+
+_collected=false
 cleanup() {
+  if [[ "${_collected}" == false ]] && [[ -f "${WORK_DIR}/qemu.pid" ]]; then
+    collect_vm_logs || true
+    _collected=true
+  fi
   if [[ -f "${WORK_DIR}/qemu.pid" ]]; then
     local pid; pid="$(cat "${WORK_DIR}/qemu.pid")"
     kill "${pid}" 2>/dev/null || true
@@ -228,6 +259,18 @@ vm_ssh() {
   local user="$1" key="$2"; shift 2
   ssh "${SSH_OPTS[@]}" -p "${HOST_SSH_PORT}" -i "${key}" "${user}@127.0.0.1" "$@" 2>/dev/null
 }
+
+# Wait for cloud-init to finish all runcmd steps before running assertions.
+# SSH appears after provision.sh completes (first runcmd), but Docker stack
+# deployment and other steps may still be running.
+info "Waiting for cloud-init to finish all runcmd steps..."
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S cloud-init status --wait 2>/dev/null"; then
+  pass "cloud-init: completed successfully"
+else
+  fail "cloud-init: exited with error — check vm-logs/cloud-init-output.log"
+fi
+echo ""
 
 echo "==> Testing SSH key login..."
 echo ""
@@ -394,6 +437,12 @@ else
 fi
 
 echo ""
+echo "==> Collecting VM logs..."
+collect_vm_logs || true
+_collected=true
+info "Logs saved to ${LOG_DIR}/"
+echo ""
+
 if [[ "${FAILED}" -eq 0 ]]; then
   echo -e "${GREEN}All tests passed.${NC}"
 else

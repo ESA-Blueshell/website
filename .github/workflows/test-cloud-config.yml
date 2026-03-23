@@ -38,15 +38,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install test dependencies
-        run: pip install -r vps/tests/requirements.txt
+        run: cd vps && uv sync
 
       - name: Verify password hashes
-        run: cd vps && python -m pytest tests/test_hash_verification.py -v
+        run: cd vps && uv run pytest tests/test_hash_verification.py -v
 
 # ── Job 2: full VM test ───────────────────────────────────────────────────────
 # Boots a Debian 13 VM via LXD with the rendered cloud-config, waits for
@@ -73,13 +72,12 @@ jobs:
           sudo lxd init --auto
           sudo usermod -aG lxd $USER
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install test dependencies
         run: |
-          pip install -r vps/tests/requirements.txt
+          cd vps && uv sync
           sudo apt-get update -q
           sudo apt-get install -y -q sshpass
 
@@ -96,7 +94,7 @@ jobs:
             > ~/.ssh/blueshell-website-github-deploy-key.pub
 
       - name: Run full VM test
-        run: cd vps && sg lxd -c 'python -m pytest tests/test_cloud_init.py -v -s --timeout=1800'
+        run: cd vps && sg lxd -c 'uv run pytest tests/test_cloud_init.py -v -s --timeout=1800'
 
       - name: Upload VM logs
         if: always()

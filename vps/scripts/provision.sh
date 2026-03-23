@@ -28,8 +28,6 @@ apt-get install -y \
   mariadb-client whois rsync \
   docker-ce docker-ce-cli containerd.io \
   docker-buildx-plugin docker-compose-plugin \
-  dbus-user-session uidmap slirp4netns fuse-overlayfs \
-  docker-ce-rootless-extras \
   ufw sudo cloud-init
 
 # ── Infisical CLI ──────────────────────────────────────────────────────────
@@ -44,8 +42,8 @@ groupadd -f backup
 # admin: sudo WITH password required
 useradd -m -s /bin/bash -G sudo,docker,website,backup admin || true
 
-# website: application user, no sudo, rootless docker
-useradd -m -s /bin/bash -d /src/website -g website website || true
+# website: application user, no sudo, Docker access via group membership
+useradd -m -s /bin/bash -d /src/website -g website -G docker website || true
 
 # ── SSH hardening ────────────────────────────────────────────────────────────
 cat > /etc/ssh/sshd_config.d/10-keys-only.conf <<'SSH'
@@ -69,13 +67,8 @@ ufw allow 80/tcp
 ufw allow 443/tcp
 yes | ufw enable || true
 
-# ── Sysctl: allow unprivileged ports from 80 (for rootless docker) ───────────
-cat > /etc/sysctl.d/50-unprivileged-ports.conf <<'SYSCTL'
-net.ipv4.ip_unprivileged_port_start=80
-SYSCTL
-
-# ── Disable rootful Docker (we use rootless) ─────────────────────────────────
-systemctl disable --now docker.service docker.socket || true
+# ── Ensure rootful Docker daemon is enabled and running ──────────────────────
+systemctl enable --now docker.service
 
 # ── Directory structure ──────────────────────────────────────────────────────
 mkdir -p /src/website
@@ -94,25 +87,9 @@ touch /var/log/db-backup.log
 chown root:backup /var/log/db-backup.log
 chmod 664 /var/log/db-backup.log
 
-# ── Website user profile (rootless docker socket) ────────────────────────────
-cat > /src/website/.profile <<'PROFILE'
-export DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
-PROFILE
+# ── Website user profile ──────────────────────────────────────────────────────
+touch /src/website/.profile
 chown website:website /src/website/.profile
-
-cat > /etc/profile.d/website-docker.sh <<'PROFILE'
-if [ "$(id -un)" = "website" ]; then
-  export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
-fi
-PROFILE
-
-# ── Rootless docker socket override ─────────────────────────────────────────
-mkdir -p /src/website/.config/systemd/user/docker.socket.d
-cat > /src/website/.config/systemd/user/docker.socket.d/override.conf <<'UNIT'
-[Socket]
-SocketMode=0660
-UNIT
-chown -R website:website /src/website/.config
 
 # ── Backup script (backs up DB, env, and storage mirror) ─────────────────────
 cat > /usr/local/bin/db-backup <<'BACKUP'
@@ -143,26 +120,10 @@ if [[ -z "$DB_NAME" || -z "$DB_USER" || -z "$DB_PASS" ]]; then
   exit 1
 fi
 
-WEBSITE_UID="$(id -u website)"
-ROOTLESS_SOCK="/run/user/${WEBSITE_UID}/docker.sock"
-export XDG_RUNTIME_DIR="/run/user/${WEBSITE_UID}"
-
-# Run a docker command via the website user's rootless socket (runs as root, accesses rootless)
-rdocker() {
-  sudo -u website -H env \
-    XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" \
-    DOCKER_HOST="unix://${ROOTLESS_SOCK}" \
-    docker "$@"
-}
-
 # Find the first running container whose name matches a pattern
 find_container() {
-  rdocker ps --filter "name=${1}" --format "{{.ID}}" | head -1
+  docker ps --filter "name=${1}" --format "{{.ID}}" | head -1
 }
-
-# Ensure the user service is up (in case of reboot race)
-sudo -u website -H bash -lc 'systemctl --user start docker' || true
-sleep 1
 
 DB_CID="$(find_container "website_db")"
 if [[ -z "${DB_CID}" ]]; then
@@ -175,7 +136,7 @@ mkdir -p /src/backups/db
 
 # 1a) MariaDB dump
 MARIADB_OUT="/src/backups/db/db-backup-${TIMESTAMP}.sql.gz"
-rdocker exec -i "${DB_CID}" \
+docker exec -i "${DB_CID}" \
   mysqldump --single-transaction --quick --routines --events \
     --databases "${DB_NAME}" -u"${DB_USER}" -p"${DB_PASS}" \
   | gzip -c > "${MARIADB_OUT}"
@@ -192,7 +153,7 @@ LISTMONK_OUT="(skipped)"
 LISTMONK_DB_CID="$(find_container "website_listmonk-db" 2>/dev/null || true)"
 if [[ -n "${LISTMONK_DB_CID}" ]]; then
   LISTMONK_OUT="/src/backups/db/listmonk-backup-${TIMESTAMP}.sql.gz"
-  rdocker exec -i "${LISTMONK_DB_CID}" \
+  docker exec -i "${LISTMONK_DB_CID}" \
     pg_dump -U listmonk listmonk \
     | gzip -c > "${LISTMONK_OUT}"
   if [[ -s "${LISTMONK_OUT}" ]]; then
@@ -262,8 +223,7 @@ cat > /usr/local/bin/website <<'CLI'
 # =============================================================================
 # website — manage Docker Swarm stacks for all environments.
 #
-# Designed to run AS the 'website' user, which has DOCKER_HOST set in its
-# shell profile pointing at the rootless Docker socket.
+# Designed to run AS the 'website' user (member of the docker group).
 #
 # Admin users (admin) run website commands via:
 #   su -l website -c "website up [env]"
@@ -372,6 +332,7 @@ case "${cmd}" in
 
   pull)
     # Production-only: git pull from main then redeploy
+    # SSH config at ~/.ssh/config routes github.com through the deploy key
     cd "${REPO}"
     git fetch --prune || true
     git reset --hard origin/main || true
@@ -409,15 +370,13 @@ cat > /etc/logrotate.d/db-backup <<'LOGROTATE'
 LOGROTATE
 
 # ── Auto-deploy on boot (safety net) ───────────────────────────────────────
-# Docker Swarm stacks survive reboots natively (rootless Docker auto-starts
-# via loginctl enable-linger). This systemd oneshot verifies stacks are
-# running after boot and redeploys if needed.
-WEBSITE_UID="$(id -u website)"
-cat > /etc/systemd/system/website-deploy.service <<UNIT
+# Docker Swarm stacks survive reboots natively. This systemd oneshot verifies
+# stacks are running after boot and redeploys if needed.
+cat > /etc/systemd/system/website-deploy.service <<'UNIT'
 [Unit]
 Description=Ensure website Swarm stacks are deployed
-After=network-online.target user@${WEBSITE_UID}.service
-Wants=network-online.target
+After=network-online.target docker.service
+Wants=network-online.target docker.service
 
 [Service]
 Type=oneshot

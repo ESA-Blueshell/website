@@ -56,7 +56,35 @@ ensure_network() {
 echo "==> Loading secrets..."
 
 # Always load local env file first (works on first boot, before Infisical)
+touch "${INFRA_ENV}"
 load_env "${INFRA_ENV}"
+
+# ── Auto-generate missing infra secrets ───────────────────────────────────────
+# Called on first deploy when .infra.env has blank values.
+# Generated values are persisted back to .infra.env so they survive redeploys.
+_gen_secret() {
+  local var="$1" method="${2:-base64}" val
+  val="${!var:-}"
+  if [[ -z "${val}" ]]; then
+    case "${method}" in
+      hex)  val="$(openssl rand -hex 16)" ;;
+      *)    val="$(openssl rand -base64 32 | tr -d '\n')" ;;
+    esac
+    export "${var}=${val}"
+    if grep -q "^${var}=" "${INFRA_ENV}" 2>/dev/null; then
+      sed -i "s|^${var}=.*|${var}=${val}|" "${INFRA_ENV}"
+    else
+      echo "${var}=${val}" >> "${INFRA_ENV}"
+    fi
+    echo "  auto-generated: ${var}"
+  fi
+}
+
+_gen_secret GRAFANA_ADMIN_PASSWORD
+_gen_secret INFISICAL_DB_PASSWORD
+_gen_secret INFISICAL_REDIS_PASSWORD
+_gen_secret INFISICAL_AUTH_SECRET
+_gen_secret INFISICAL_ENCRYPTION_KEY hex
 
 # Overlay from Infisical if configured and reachable
 if [[ -f "${REPO_ROOT}/.server.env" ]]; then
@@ -78,8 +106,8 @@ if [[ -f "${REPO_ROOT}/.server.env" ]]; then
   fi
 fi
 
-# Rootless Docker socket
-export DOCKER_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
+# Docker socket — defaults to rootful daemon; override via DOCKER_SOCKET env var if needed
+export DOCKER_SOCKET="${DOCKER_SOCKET:-/var/run/docker.sock}"
 
 # Validate required vars
 : "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD required — set in infra/.infra.env}"

@@ -147,12 +147,22 @@ ensure_key() {
 
 WEBSITE_KEY="${SSH_DIR}/blueshell-website"
 ADMIN_KEY="${SSH_DIR}/blueshell-admin"
+GITHUB_DEPLOY_KEY="${SSH_DIR}/blueshell-website-github-deploy-key"
 
-ensure_key "${WEBSITE_KEY}" "website@$(hostname -f 2>/dev/null || hostname)"
-ensure_key "${ADMIN_KEY}"   "admin@$(hostname -f 2>/dev/null || hostname)"
+ensure_key "${WEBSITE_KEY}"       "website@$(hostname -f 2>/dev/null || hostname)"
+ensure_key "${ADMIN_KEY}"         "admin@$(hostname -f 2>/dev/null || hostname)"
+ensure_key "${GITHUB_DEPLOY_KEY}" "github-deploy@esa-blueshell"
 
 WEBSITE_PUB="$(tr -d '\n' < "${WEBSITE_KEY}.pub")"
 ADMIN_PUB="$(tr -d '\n' < "${ADMIN_KEY}.pub")"
+GITHUB_DEPLOY_PUB="$(tr -d '\n' < "${GITHUB_DEPLOY_KEY}.pub")"
+
+echo ""
+echo "  GitHub deploy key (add as read-only Deploy Key to the repository):"
+echo "  Repository: Settings → Deploy keys → Add deploy key → Allow read access"
+echo "  Key:"
+echo "  ${GITHUB_DEPLOY_PUB}"
+echo ""
 
 # ── Hash passwords (SHA-512 crypt) ────────────────────────────────────────────
 echo "==> Hashing passwords..."
@@ -220,6 +230,7 @@ SAFE_WEBSITE_PUB="$(_escape_sed "${WEBSITE_PUB}")"
 SAFE_ADMIN_PUB="$(_escape_sed "${ADMIN_PUB}")"
 SAFE_INFISICAL_ADMIN_EMAIL="$(_escape_sed "${INFISICAL_ADMIN_EMAIL}")"
 SAFE_INFISICAL_ADMIN_PASSWORD="$(_escape_sed "${INFISICAL_ADMIN_PASSWORD}")"
+SAFE_GITHUB_DEPLOY_PUB="$(_escape_sed "${GITHUB_DEPLOY_PUB}")"
 
 # Render human-readable placeholders (passwords, SSH keys, GHCR).
 # Passwords are substituted via awk because SHA-512 crypt hashes contain '$'
@@ -251,6 +262,7 @@ _render_common() {
     -e "s|__ADMIN_SSH_PUB__|${SAFE_ADMIN_PUB}|g" \
     -e "s|__INFISICAL_ADMIN_EMAIL__|${SAFE_INFISICAL_ADMIN_EMAIL}|g" \
     -e "s|__INFISICAL_ADMIN_PASSWORD__|${SAFE_INFISICAL_ADMIN_PASSWORD}|g" \
+    -e "s|__GITHUB_DEPLOY_PUB__|${SAFE_GITHUB_DEPLOY_PUB}|g" \
     "${tmp}" > "${dst}"
 
   rm -f "${tmp}"
@@ -293,18 +305,20 @@ fi
 _render_common "${TMPL}" "${OUT}"
 
 # Inject base64-encoded files into the cloud-config
-_inject_b64_file "${OUT}" "__PROVISION_SH_B64__" "${SCRIPT_DIR}/../scripts/provision.sh"
-_inject_b64_file "${OUT}" "__DB_ENV_B64__"       "${RENDERED_DIR}/.db.env"
-_inject_b64_file "${OUT}" "__API_ENV_B64__"      "${RENDERED_DIR}/.api.env"
-_inject_b64_file "${OUT}" "__LISTMONK_ENV_B64__" "${RENDERED_DIR}/.listmonk.env"
-_inject_b64_file "${OUT}" "__INFRA_ENV_B64__"    "${RENDERED_DIR}/.infra.env"
+_inject_b64_file "${OUT}" "__PROVISION_SH_B64__"       "${SCRIPT_DIR}/../scripts/provision.sh"
+_inject_b64_file "${OUT}" "__DB_ENV_B64__"             "${RENDERED_DIR}/.db.env"
+_inject_b64_file "${OUT}" "__API_ENV_B64__"            "${RENDERED_DIR}/.api.env"
+_inject_b64_file "${OUT}" "__LISTMONK_ENV_B64__"       "${RENDERED_DIR}/.listmonk.env"
+_inject_b64_file "${OUT}" "__INFRA_ENV_B64__"          "${RENDERED_DIR}/.infra.env"
+_inject_b64_file "${OUT}" "__GITHUB_DEPLOY_KEY_B64__"  "${GITHUB_DEPLOY_KEY}"
 
 echo ""
 echo "==> Wrote ${OUT}"
 echo ""
 echo "Keys:"
-echo "  ${WEBSITE_KEY} (.pub)  -> injected for website"
-echo "  ${ADMIN_KEY} (.pub)    -> injected for admin"
+echo "  ${WEBSITE_KEY} (.pub)        -> injected for website user SSH login"
+echo "  ${ADMIN_KEY} (.pub)          -> injected for admin user SSH login"
+echo "  ${GITHUB_DEPLOY_KEY} (.pub)  -> injected as GitHub deploy key (read-only repo access)"
 echo ""
 echo "Env files (also embedded in cloud-config):"
 echo "  ${RENDERED_DIR}/.db.env"

@@ -53,9 +53,17 @@ class TestCloudConfigSchema:
             text=True,
         )
         combined = result.stdout + result.stderr
+        # These two warnings are runner infrastructure artefacts, not schema issues:
+        # - cloud-init can't read its own pickle state when run as non-root
+        # - schema check without prior cloud-init run has no datasource state
+        _BENIGN = (
+            "failed loading pickle",       # non-root permission denied on obj.pkl
+            "datasource not detected",     # no cloud-init state on runner
+        )
         warning_lines = [
             line for line in combined.splitlines()
-            if "warning" in line.lower() or "failed schema validation" in line.lower()
+            if ("warning" in line.lower() or "failed schema validation" in line.lower())
+            and not any(b in line for b in _BENIGN)
         ]
         assert warning_lines == [], (
             "cloud-init schema produced warnings:\n" + "\n".join(warning_lines)

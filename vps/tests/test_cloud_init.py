@@ -1,6 +1,6 @@
-"""Phase 2: Full VM tests — validates cloud-init provisioning via LXD.
+"""Phase 2: Full container tests — validates cloud-init provisioning via LXD.
 
-Requires a running LXD VM (provided by the ``vm`` session fixture).
+Requires a running LXD container (provided by the ``vm`` session fixture).
 Most checks use ``lxc exec`` (runs as root, no SSH needed).
 SSH is only used when testing SSH functionality itself.
 

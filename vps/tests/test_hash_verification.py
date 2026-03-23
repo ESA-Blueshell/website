@@ -16,11 +16,12 @@ from lib.credentials import Credentials
 
 
 def _extract_hash(config_path: Path, username: str) -> str:
-    """Extract hashed_passwd for a user from the rendered cloud-config."""
+    """Extract the password hash for a user from the rendered cloud-config."""
     config = yaml.safe_load(config_path.read_text())
     for user in config["chpasswd"]["users"]:
         if user["name"] == username:
-            return user["hashed_passwd"]
+            # type: hash format uses 'password' for the hash value
+            return user.get("hashed_passwd") or user["password"]
     raise ValueError(f"User '{username}' not found in chpasswd.users")
 
 

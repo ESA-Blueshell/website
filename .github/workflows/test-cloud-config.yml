@@ -5,9 +5,6 @@ on:
     paths:
       - 'vps/**'
       - '.github/workflows/test-cloud-config.yml'
-  pull_request:
-    paths:
-      - 'vps/**'
   workflow_dispatch:
     inputs:
       full_test:
@@ -97,6 +94,26 @@ jobs:
           sudo lxd init --auto
           sudo usermod -aG lxd $USER
 
+      - name: Set up apt proxy for LXD containers
+        run: |
+          # The GitHub Actions runner blocks outbound traffic from the LXD bridge,
+          # but the runner host itself has full internet access.
+          # apt-cacher-ng listens on the bridge gateway IP so the container can
+          # proxy all apt/HTTP/HTTPS traffic through the host.
+          sudo apt-get install -y -q apt-cacher-ng
+          # Allow HTTPS CONNECT pass-through (used by apt for https:// sources
+          # and by curl when https_proxy is set)
+          echo 'PassThroughPattern: .*' | sudo tee -a /etc/apt-cacher-ng/acng.conf
+          sudo systemctl restart apt-cacher-ng
+          # Export the bridge gateway IP so the test helper can merge proxy
+          # setup into the instance cloud-init bootcmd before first start.
+          BRIDGE_IP=$(ip -4 addr show lxdbr0 | awk '/inet /{print $2}' | cut -d/ -f1)
+          echo "LXD_APT_PROXY=http://${BRIDGE_IP}:3142" >> "$GITHUB_ENV"
+          # Optional: if the runner provides a host-backed LXD network, export
+          # it as LXD_NETWORK and the test helper will attach eth0 to it before
+          # first start instead of relying on the default profile network.
+          # echo "LXD_NETWORK=<network-name>" >> "$GITHUB_ENV"
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
@@ -118,7 +135,7 @@ jobs:
           ssh-keygen -y -f ~/.ssh/blueshell-website-github-deploy-key \
             > ~/.ssh/blueshell-website-github-deploy-key.pub
 
-      - name: Run full VM test
+      - name: Run full container test
         run: cd vps && sg lxd -c 'uv run pytest tests/test_cloud_init.py -v -s --timeout=1800'
 
       - name: Upload VM logs

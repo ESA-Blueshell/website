@@ -3,7 +3,7 @@
 # ── Groups (processed before users) ──────────────────────────────────────────
 groups:
   - website
-  - backup
+  - docker
 
 # ── Users ────────────────────────────────────────────────────────────────────
 # Cloud-init handles user creation, SSH keys, and non-Docker group memberships.
@@ -14,36 +14,53 @@ users:
   - name: admin
     shell: /bin/bash
     sudo: ALL=(ALL) ALL
-    groups: sudo, website, backup
+    groups: sudo, website, backup, docker
     ssh_authorized_keys:
       - "__ADMIN_SSH_PUB__"
   - name: website
     shell: /bin/bash
-    home: /src/website
+    homedir: /src/website
     primary_group: website
+    groups: website, docker
     ssh_authorized_keys:
       - "__WEBSITE_SSH_PUB__"
 
 # Console passwords (SSH is keys-only via sshd config below).
-# hashed_passwd: field — the correct cloud-init 22.3+ API for pre-hashed passwords.
-# Avoids both the deprecated list: format and the invalid type: hash schema warning.
+# type: hash signals that the password field contains a pre-hashed SHA-512 value.
 chpasswd:
   expire: false
   users:
     - name: admin
-      hashed_passwd: __ADMIN_PASSWORD__
+      type: hash
+      password: __ADMIN_PASSWORD__
     - name: root
-      hashed_passwd: __ROOT_PASSWORD__
+      type: hash
+      password: __ROOT_PASSWORD__
     - name: website
-      hashed_passwd: __WEBSITE_PASSWORD__
+      type: hash
+      password: __WEBSITE_PASSWORD__
 
-# ── APT sources ──────────────────────────────────────────────────────────────
-apt:
-  sources:
-    docker.list:
-      source: "deb [arch=amd64 signed-by=$KEY_FILE] https://download.docker.com/linux/debian trixie stable"
-      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-      keyserver: https://download.docker.com/linux/debian/gpg
+# ── Network/Apt bootstrap ────────────────────────────────────────────────────
+# LXD/cloud CI runners can expose IPv4 connectivity before IPv6 is usable, and
+# some runners block plain HTTP mirror access. Normalize Debian APT sources to
+# HTTPS and make APT prefer IPv4 with retries before package_update runs.
+bootcmd:
+  - |
+    cat >/etc/apt/apt.conf.d/99-cloud-init-networking <<'EOF'
+    Acquire::ForceIPv4 "true";
+    Acquire::Retries "5";
+    Acquire::http::Timeout "30";
+    Acquire::https::Timeout "30";
+    EOF
+  - |
+    set -eu
+    for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+      [ -e "${source}" ] || continue
+      sed -i \
+        -e 's|http://deb.debian.org|https://deb.debian.org|g' \
+        -e 's|http://security.debian.org|https://security.debian.org|g' \
+        "${source}"
+    done
 
 package_update: true
 package_upgrade: true
@@ -61,11 +78,6 @@ packages:
   - sudo
   - openssh-client
   - openssh-server
-  - docker-ce
-  - docker-ce-cli
-  - containerd.io
-  - docker-buildx-plugin
-  - docker-compose-plugin
 
 # ── Files ────────────────────────────────────────────────────────────────────
 # Scripts and config files are placed on disk before runcmd executes.
@@ -112,6 +124,16 @@ write_files:
     permissions: '0640'
     encoding: b64
     content: __INFRA_ENV_B64__
+
+  # Docker apt source — deb822 format (recommended for Debian 13+)
+  - path: /etc/apt/sources.list.d/docker.sources
+    permissions: '0644'
+    content: |
+      Types: deb
+      URIs: https://download.docker.com/linux/debian
+      Suites: trixie
+      Components: stable
+      Signed-By: /etc/apt/keyrings/docker.asc
 
   # SSH hardening — keys-only, port 2222
   - path: /etc/ssh/sshd_config.d/10-keys-only.conf
@@ -172,6 +194,15 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
+  # Install Docker GPG key and packages.
+  # The source file (docker.sources, deb822 format) is placed by write_files above.
+  # Key must be fetched before apt-get install; packages run after.
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - apt-get update -q
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
   # System provisioning — installs Infisical CLI, configures UFW,
   # enables Docker, creates directories, enables systemd services.
   - /usr/local/bin/provision.sh

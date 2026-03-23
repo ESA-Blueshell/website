@@ -30,7 +30,7 @@ def rendered_config(credentials: Credentials) -> Path:
 
 @pytest.fixture(scope="session")
 def vm(rendered_config: Path, credentials: Credentials) -> Generator[LxdVm, None, None]:
-    """Launch an LXD VM with cloud-init, wait for completion, then clean up.
+    """Launch an LXD container with cloud-init, wait for completion, then clean up.
 
     Session-scoped: the VM boots once and all tests run against it.
     """

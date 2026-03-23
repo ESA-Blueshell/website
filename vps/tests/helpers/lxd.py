@@ -1,8 +1,9 @@
-"""LXD VM management for cloud-init testing."""
+"""LXD container management for cloud-init testing."""
 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import threading
@@ -38,7 +39,7 @@ class LxdVm:
 
     @property
     def ssh_port(self) -> int:
-        """SSH port — 2222 inside the LXD VM, accessible directly via VM IP."""
+        """SSH port — 2222 inside the container, accessible directly via container IP."""
         return 2222
 
     @property
@@ -53,24 +54,71 @@ class LxdVm:
         cmd = ["lxc", *args]
         return subprocess.run(cmd, check=check, capture_output=True, text=True, **kwargs)
 
-    def launch(self) -> None:
-        """Launch the VM with cloud-init user-data."""
+    def _build_cloud_config(self) -> str:
+        """Return cloud-init user-data with any CI-specific bootstrapping merged in."""
         cloud_config = self.cloud_config_path.read_text()
+        apt_proxy = os.environ.get("LXD_APT_PROXY")
+        if not apt_proxy:
+            return cloud_config
+
+        # Keep proxy setup in the instance user-data so it cannot be dropped by
+        # vendor-data merge behavior when the main cloud-config also defines bootcmd.
+        proxy_bootcmd = "\n".join([
+            "  - mkdir -p /etc/apt/apt.conf.d",
+            f"  - echo 'Acquire::http::Proxy \"{apt_proxy}\";' > /etc/apt/apt.conf.d/95proxy.conf",
+            f"  - echo 'Acquire::https::Proxy \"{apt_proxy}\";' >> /etc/apt/apt.conf.d/95proxy.conf",
+            "  - mkdir -p /etc/systemd/system/cloud-final.service.d",
+            (
+                "  - printf '[Service]\\n"
+                f"Environment=\"http_proxy={apt_proxy}\"\\n"
+                f"Environment=\"https_proxy={apt_proxy}\"\\n"
+                f"Environment=\"HTTP_PROXY={apt_proxy}\"\\n"
+                f"Environment=\"HTTPS_PROXY={apt_proxy}\"\\n' "
+                "> /etc/systemd/system/cloud-final.service.d/proxy.conf"
+            ),
+            "  - systemctl daemon-reload",
+        ])
+
+        bootcmd_marker = "bootcmd:\n"
+        if bootcmd_marker in cloud_config:
+            return cloud_config.replace(bootcmd_marker, f"{bootcmd_marker}{proxy_bootcmd}\n", 1)
+
+        header = "#cloud-config\n"
+        if cloud_config.startswith(header):
+            return f"{header}\nbootcmd:\n{proxy_bootcmd}\n{cloud_config[len(header):].lstrip()}"
+
+        raise ValueError("Rendered cloud-config must start with #cloud-config")
+
+    def launch(self) -> None:
+        """Launch the container with cloud-init user-data."""
+        cloud_config = self._build_cloud_config()
 
         # Delete any leftover instance from a previous run
         self._lxc("delete", "--force", self._instance, check=False)
 
-        print(f"Launching LXD VM '{self.name}' ({self.image}, {self.cpus} CPUs, {self.memory})...")
-        self._lxc(
-            "launch",
+        init_args = [
+            "init",
             self.image,
             self._instance,
-            "--vm",
             "-c", f"limits.cpu={self.cpus}",
             "-c", f"limits.memory={self.memory}",
             "-c", f"user.user-data={cloud_config}",
-        )
-        print(f"VM '{self.name}' launched.")
+        ]
+
+        print(f"Launching LXD container '{self.name}' ({self.image}, {self.cpus} CPUs, {self.memory})...")
+        self._lxc(*init_args)
+
+        network = os.environ.get("LXD_NETWORK")
+        if network:
+            # Override the default profile NIC before the first start so CI can
+            # attach the instance to a runner-provided host-backed LXD network.
+            self._lxc(
+                "config", "device", "override", self._instance, "eth0",
+                f"network={network}",
+            )
+
+        self._lxc("start", self._instance)
+        print(f"Container '{self.name}' launched.")
 
     def exec(
         self,

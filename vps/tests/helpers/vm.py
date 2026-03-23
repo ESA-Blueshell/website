@@ -1,4 +1,4 @@
-"""VM backend — LXD only (Linux/CI)."""
+"""VM backend — LXD containers (Linux/CI)."""
 
 from __future__ import annotations
 

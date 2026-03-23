@@ -60,8 +60,11 @@ services/**/*.env
 /vps/cloud-init/rendered/
 /vps/.test-cache/
 /vps/vm-logs/
+__pycache__/
+*.pyc
 /vps/packer/output/
 /backup/
 
 # infra secrets
 /infra/.infra.env
+/vps/.venv/

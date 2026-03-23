@@ -12,7 +12,7 @@ on:
     inputs:
       full_test:
         description: >
-          Boot a Debian VM and test SSH on port 2222 (~20 min).
+          Boot a Debian VM via LXD and test the full cloud-init provisioning (~10 min).
           Runs in addition to the hash check.
         type: boolean
         default: false
@@ -22,18 +22,14 @@ concurrency:
   cancel-in-progress: true
 
 # ── Job 1: verify password hashes ────────────────────────────────────────────
-# Fast (~1 min). Re-derives each SHA-512 hash from the plaintext password using
-# the salt stored in the rendered config; fails if any hash doesn't match.
-# Runs on every push/PR to vps/cloud-init/** and on every manual dispatch.
+# Fast (~1 min). Renders the cloud-config, then verifies SHA-512 hashes
+# match the plaintext passwords using pytest.
 jobs:
   hash-check:
     name: Verify password hashes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      # Test-only passwords — these are never used for a real server.
-      # Override by setting TEST_ADMIN_PASSWORD / TEST_ROOT_PASSWORD /
-      # TEST_WEBSITE_PASSWORD as repository secrets.
       ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
       ROOT_PASSWORD:    ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
       WEBSITE_PASSWORD: ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
@@ -42,21 +38,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Render cloud-config
-        run: cd vps && ./cloud-init/render.sh
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: pip install -r vps/tests/requirements.txt
 
       - name: Verify password hashes
-        run: cd vps && ./test-cloud-config.sh --hash-only
+        run: cd vps && python -m pytest tests/test_hash_verification.py -v
 
 # ── Job 2: full VM test ───────────────────────────────────────────────────────
-# Slow (~20 min). Boots a Debian 13 VM via QEMU/KVM with the rendered
-# cloud-config as user-data, waits for cloud-init to finish (provision.sh
-# moves SSH to port 2222), then tests SSH key login and sudo password auth.
-# Only runs on manual workflow_dispatch when full_test is checked.
+# Boots a Debian 13 VM via LXD with the rendered cloud-config, waits for
+# cloud-init to finish, then tests SSH, security, and provisioning.
   vm-test:
-    name: Full VM test (SSH port 2222)
+    name: Full VM test (LXD)
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 25
     needs: hash-check
 #    if: github.event_name == 'workflow_dispatch' && inputs.full_test
     env:
@@ -69,31 +67,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # GitHub Actions runners have /dev/kvm but it needs a udev rule to be
-      # group-accessible before QEMU can use it without sudo.
-      - name: Enable KVM
+      - name: Set up LXD
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
+          sudo snap install lxd --channel=latest/stable
+          sudo lxd init --auto
+          sudo usermod -aG lxd $USER
 
-      - name: Install QEMU and cloud-image tools
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y qemu-system-x86 qemu-utils cloud-image-utils
-
-      # Cache the ~300 MB Debian cloud image between runs.
-      # Bust the cache by updating the key date when a new Debian release matters.
-      - name: Cache Debian 13 cloud image
-        uses: actions/cache@v4
+      - uses: actions/setup-python@v5
         with:
-          path: vps/.test-cache/debian-13-generic-amd64.qcow2
-          key: debian-13-generic-amd64-trixie-2025
+          python-version: '3.12'
 
-      # Install the real deploy key so render.sh reuses it instead of generating
-      # a new one. The private key is stored as DEPLOY_KEY_PRIVATE; the public
-      # key must be registered as a read-only Deploy Key on the repository.
+      - name: Install test dependencies
+        run: |
+          pip install -r vps/tests/requirements.txt
+          sudo apt-get update -q
+          sudo apt-get install -y -q sshpass
+
       - name: Install GitHub deploy key
         env:
           DEPLOY_KEY_PRIVATE: ${{ secrets.SSH_DEPLOY_KEY }}
@@ -106,11 +95,8 @@ jobs:
           ssh-keygen -y -f ~/.ssh/blueshell-website-github-deploy-key \
             > ~/.ssh/blueshell-website-github-deploy-key.pub
 
-      - name: Render cloud-config
-        run: cd vps && ./cloud-init/render.sh
-
       - name: Run full VM test
-        run: cd vps && ./test-cloud-config.sh
+        run: cd vps && sg lxd -c 'python -m pytest tests/test_cloud_init.py -v -s --timeout=1800'
 
       - name: Upload VM logs
         if: always()

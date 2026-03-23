@@ -18,6 +18,10 @@ concurrency:
   group: cloud-config-test-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read
+
 # ── Job 1: verify password hashes ────────────────────────────────────────────
 # Fast (~1 min). Renders the cloud-config, then verifies SHA-512 hashes
 # match the plaintext passwords using pytest.

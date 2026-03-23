@@ -40,6 +40,35 @@ if ! install_infisical; then
   apt-get update || true
 fi
 
+configure_docker_proxy() {
+  local vars=(http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY)
+  local has_proxy=0
+  local var value
+
+  for var in "${vars[@]}"; do
+    value="${!var:-}"
+    if [[ -n "${value}" ]]; then
+      has_proxy=1
+      break
+    fi
+  done
+
+  if [[ "${has_proxy}" -eq 0 ]]; then
+    return
+  fi
+
+  install -d -m 0755 /etc/systemd/system/docker.service.d
+  {
+    echo "[Service]"
+    for var in "${vars[@]}"; do
+      value="${!var:-}"
+      if [[ -n "${value}" ]]; then
+        printf 'Environment="%s=%s"\n' "${var}" "${value}"
+      fi
+    done
+  } > /etc/systemd/system/docker.service.d/proxy.conf
+}
+
 # ── UFW firewall ─────────────────────────────────────────────────────────────
 ufw default deny incoming
 ufw default allow outgoing
@@ -49,12 +78,14 @@ ufw allow 443/tcp
 ufw --force enable
 
 # ── Ensure rootful Docker daemon is enabled and running ──────────────────────
+configure_docker_proxy
+systemctl daemon-reload
 systemctl enable --now docker.service
 
 # ── Directory structure ──────────────────────────────────────────────────────
 mkdir -p /src/website
 chown website:website /src/website
-chmod 770 /src/website
+chmod 750 /src/website
 
 mkdir -p /src/backups/db
 mkdir -p /src/backups/env
@@ -73,7 +104,6 @@ touch /src/website/.profile
 chown website:website /src/website/.profile
 
 # ── Enable systemd services (units placed by cloud-init write_files) ────────
-systemctl daemon-reload
 systemctl enable website-deploy.service
 
 # ── Cleanup ──────────────────────────────────────────────────────────────────

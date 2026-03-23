@@ -311,26 +311,33 @@ runcmd:
     if [ ! -d /src/website/.git ]; then
       clone_target=/tmp/website-repo
       rm -rf "${clone_target}"
-      if ! su -l website -c "GIT_SSH_COMMAND='ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new' git clone --branch __GIT_BRANCH__ git@github.com:ESA-Blueshell/website.git ${clone_target}"; then
-        su -l website -c "GIT_TERMINAL_PROMPT=0 git clone --branch __GIT_BRANCH__ https://x-access-token:__GHCR_TOKEN__@github.com/ESA-Blueshell/website.git ${clone_target}"
+      if [ -n "${https_proxy:-}${HTTPS_PROXY:-}" ]; then
+        if ! su -m -s /bin/bash website -c "HOME=/src/website GIT_TERMINAL_PROMPT=0 git clone --branch __GIT_BRANCH__ https://__GHCR_USERNAME__:__GHCR_TOKEN__@github.com/ESA-Blueshell/website.git ${clone_target}"; then
+          su -m -s /bin/bash website -c "HOME=/src/website GIT_SSH_COMMAND='ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new' git clone --branch __GIT_BRANCH__ git@github.com:ESA-Blueshell/website.git ${clone_target}"
+        fi
+      elif ! su -m -s /bin/bash website -c "HOME=/src/website GIT_SSH_COMMAND='ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new' git clone --branch __GIT_BRANCH__ git@github.com:ESA-Blueshell/website.git ${clone_target}"; then
+        su -m -s /bin/bash website -c "HOME=/src/website GIT_TERMINAL_PROMPT=0 git clone --branch __GIT_BRANCH__ https://__GHCR_USERNAME__:__GHCR_TOKEN__@github.com/ESA-Blueshell/website.git ${clone_target}"
       fi
       cp -a "${clone_target}/." /src/website/
       rm -rf "${clone_target}"
     fi
   - chown -R website:website /src/website
-  - chmod -R 770 /src/website
+  - chmod 750 /src/website
   - find /src/website -name '*.env' -exec chmod 640 {} +
+  - install -d -m 0700 -o website -g website /src/website/.ssh
+  - test ! -f /src/website/.ssh/authorized_keys || chmod 600 /src/website/.ssh/authorized_keys
+  - test ! -f /src/website/.ssh/config || chmod 600 /src/website/.ssh/config
+  - test ! -f /src/website/.ssh/github-deploy-key || chmod 600 /src/website/.ssh/github-deploy-key
 
   # GHCR login for pulling private images.
-  - su -s /bin/bash - website -c "printf '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
+  - su -m -s /bin/bash website -c "export HOME=/src/website; printf '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
 
   # Restart services reconfigured by write_files / provision.sh.
   - systemctl restart cron
   - systemctl restart ssh
 
   # Deploy stacks.
-  - su -l website -c "website infra up"
-  - su -l website -c "bash /src/website/scripts/infisical-bootstrap.sh || echo 'Infisical bootstrap skipped — run manually later if needed.'"
-  - su -l website -c "website up"
+  - su -m -s /bin/bash website -c "HOME=/src/website website infra up"
+  - su -m -s /bin/bash website -c "HOME=/src/website bash /src/website/scripts/infisical-bootstrap.sh || echo 'Infisical bootstrap skipped — run manually later if needed.'"
 
-final_message: "Cloud-init complete. SSH on port 2222 (keys-only). Stacks deployed."
+final_message: "Cloud-init complete. SSH on port 2222 (keys-only). Infra deployed."

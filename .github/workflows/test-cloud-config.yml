@@ -18,7 +18,7 @@ on:
         default: false
 
 concurrency:
-  group: cloud-config-test-${{ github.ref }}
+  group: cloud-config-test-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 # ── Job 1: verify password hashes ────────────────────────────────────────────

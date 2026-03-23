@@ -283,7 +283,8 @@ runcmd:
       cp /etc/deploy-keys/github-deploy-key "${home}/.ssh/github-deploy-key"
       cat > "${home}/.ssh/config" <<SSHEOF
     Host github.com
-      HostName github.com
+      HostName ssh.github.com
+      Port 443
       User git
       IdentityFile ${home}/.ssh/github-deploy-key
       IdentitiesOnly yes
@@ -310,9 +311,10 @@ runcmd:
     set -eu
     if [ ! -d /src/website/.git ]; then
       clone_target=/tmp/website-repo
+      git_proxy="${https_proxy:-${HTTPS_PROXY:-}}"
       rm -rf "${clone_target}"
-      if [ -n "${https_proxy:-}${HTTPS_PROXY:-}" ]; then
-        if ! su -m -s /bin/bash website -c "HOME=/src/website GIT_TERMINAL_PROMPT=0 git clone --branch __GIT_BRANCH__ https://__GHCR_USERNAME__:__GHCR_TOKEN__@github.com/ESA-Blueshell/website.git ${clone_target}"; then
+      if [ -n "${git_proxy}" ]; then
+        if ! su -m -s /bin/bash website -c "HOME=/src/website GIT_TERMINAL_PROMPT=0 git -c http.proxy=${git_proxy} -c https.proxy=${git_proxy} clone --branch __GIT_BRANCH__ https://__GHCR_USERNAME__:__GHCR_TOKEN__@github.com/ESA-Blueshell/website.git ${clone_target}"; then
           su -m -s /bin/bash website -c "HOME=/src/website GIT_SSH_COMMAND='ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new' git clone --branch __GIT_BRANCH__ git@github.com:ESA-Blueshell/website.git ${clone_target}"
         fi
       elif ! su -m -s /bin/bash website -c "HOME=/src/website GIT_SSH_COMMAND='ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new' git clone --branch __GIT_BRANCH__ git@github.com:ESA-Blueshell/website.git ${clone_target}"; then

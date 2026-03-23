@@ -201,6 +201,15 @@ class TestProvisioning:
         result = vm.exec(["test", "-d", "/src/website/.git"], check=False)
         assert result.returncode == 0, "/src/website/.git not found — clone failed"
 
+    def test_website_deploy_key_installed(self, vm: LxdVm) -> None:
+        result = vm.exec(["stat", "-c", "%U:%G %a", "/src/website/.ssh/github-deploy-key"])
+        assert result.stdout.strip() == "website:website 600"
+
+    def test_website_ssh_config_uses_github_443(self, vm: LxdVm) -> None:
+        result = vm.exec(["cat", "/src/website/.ssh/config"])
+        assert "HostName ssh.github.com" in result.stdout
+        assert "Port 443" in result.stdout
+
     @pytest.mark.parametrize(
         "dir_path",
         [

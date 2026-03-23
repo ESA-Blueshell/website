@@ -21,8 +21,24 @@ set -euxo pipefail
 export DEBIAN_FRONTEND=noninteractive
 
 # ── Infisical CLI (piped setup script — cannot be done via cloud-init apt:) ──
-curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash
-apt-get update && apt-get install -y infisical
+cleanup_infisical_repo() {
+  find /etc/apt/sources.list.d -maxdepth 1 -type f \
+    \( -iname '*infisical*' -o -iname '*cloudsmith*' \) -delete || true
+  find /etc/apt/keyrings /usr/share/keyrings -maxdepth 1 -type f \
+    \( -iname '*infisical*' -o -iname '*cloudsmith*' \) -delete 2>/dev/null || true
+}
+
+install_infisical() {
+  curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash
+  apt-get update
+  apt-get install -y infisical
+}
+
+if ! install_infisical; then
+  echo "WARNING: Infisical CLI install failed; continuing without it." >&2
+  cleanup_infisical_repo
+  apt-get update || true
+fi
 
 # ── UFW firewall ─────────────────────────────────────────────────────────────
 ufw default deny incoming

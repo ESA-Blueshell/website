@@ -221,12 +221,37 @@ class LxdVm:
             raise RuntimeError(f"Instance '{self.name}' not found")
 
         network = instances[0].get("state", {}).get("network", {})
+
+        def global_ipv4s(iface: dict) -> list[str]:
+            return [
+                addr["address"]
+                for addr in iface.get("addresses", [])
+                if addr.get("family") == "inet" and addr.get("scope") == "global"
+            ]
+
+        preferred_names = ("eth0", "enp0s3", "ens3", "ens5")
+        for iface_name in preferred_names:
+            iface = network.get(iface_name)
+            if not iface:
+                continue
+            addresses = global_ipv4s(iface)
+            if addresses:
+                return addresses[0]
+
+        skipped_prefixes = ("docker", "br-", "veth", "virbr", "lo")
+        for iface_name, iface in network.items():
+            if iface_name.startswith(skipped_prefixes):
+                continue
+            addresses = global_ipv4s(iface)
+            if addresses:
+                return addresses[0]
+
         for iface_name, iface in network.items():
             if iface_name == "lo":
                 continue
-            for addr in iface.get("addresses", []):
-                if addr.get("family") == "inet" and addr.get("scope") == "global":
-                    return addr["address"]
+            addresses = global_ipv4s(iface)
+            if addresses:
+                return addresses[0]
         raise RuntimeError(f"No IPv4 address found for '{self.name}'")
 
     def collect_logs(self, dest: Path) -> None:

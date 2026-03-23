@@ -199,7 +199,18 @@ class TestProvisioning:
 
     def test_git_repo_cloned(self, vm: LxdVm) -> None:
         result = vm.exec(["test", "-d", "/src/website/.git"], check=False)
-        assert result.returncode == 0, "/src/website/.git not found — clone failed"
+        if result.returncode != 0:
+            website_state = vm.exec(
+                ["bash", "-lc", "ls -la /src/website /src/website/.ssh 2>/dev/null || true"],
+            )
+            log_tail = vm.exec(
+                ["bash", "-lc", "tail -n 40 /var/log/cloud-init-output.log 2>/dev/null || true"],
+            )
+            pytest.fail(
+                "/src/website/.git not found — clone failed\n"
+                f"/src/website state:\n{website_state.stdout}\n"
+                f"cloud-init-output.log tail:\n{log_tail.stdout}"
+            )
 
     def test_website_deploy_key_installed(self, vm: LxdVm) -> None:
         result = vm.exec(["stat", "-c", "%U:%G %a", "/src/website/.ssh/github-deploy-key"])
@@ -209,6 +220,10 @@ class TestProvisioning:
         result = vm.exec(["cat", "/src/website/.ssh/config"])
         assert "HostName ssh.github.com" in result.stdout
         assert "Port 443" in result.stdout
+
+    def test_git_origin_uses_deploy_key_ssh_url(self, vm: LxdVm) -> None:
+        result = vm.exec(["git", "-C", "/src/website", "remote", "get-url", "origin"])
+        assert result.stdout.strip() == "git@github.com:ESA-Blueshell/website.git"
 
     @pytest.mark.parametrize(
         "dir_path",
@@ -227,3 +242,13 @@ class TestProvisioning:
     def test_website_deploy_service_enabled(self, vm: LxdVm) -> None:
         result = vm.exec(["systemctl", "is-enabled", "website-deploy.service"])
         assert result.stdout.strip() == "enabled"
+
+    def test_website_deploy_service_only_deploys_infra(self, vm: LxdVm) -> None:
+        result = vm.exec(["systemctl", "cat", "website-deploy.service"])
+        exec_start_lines = [
+            line.strip()
+            for line in result.stdout.splitlines()
+            if line.strip().startswith("ExecStart=")
+        ]
+        assert any("website infra up" in line for line in exec_start_lines)
+        assert all("&& website up" not in line for line in exec_start_lines)

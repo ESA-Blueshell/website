@@ -63,15 +63,27 @@ fi
 }
 
 # ── Phase 1: verify password hashes ──────────────────────────────────────────
-echo "==> Phase 1: verifying password hashes in ${CLOUD_CONFIG}..."
+echo "==> Phase 1: verifying password hashes (chpasswd hashed_passwd) in ${CLOUD_CONFIG}..."
 echo ""
 
 verify_hash() {
   local name="$1" password="$2"
   local stored_hash salt rehashed
 
-  # Extract hash from chpasswd list format: "    <user>:$6$salt$hash"
-  stored_hash=$(grep -E "^[[:space:]]+${name}:\\$" "${CLOUD_CONFIG}" | sed "s/^[[:space:]]*${name}://")
+  # Extract hash from chpasswd users format:
+  #   chpasswd:
+  #     users:
+  #       - name: <user>
+  #         hashed_passwd: $6$salt$hash
+  stored_hash=$(awk "
+    /^chpasswd:/{in_chpasswd=1}
+    in_chpasswd && /- name:[[:space:]]+${name}[[:space:]]*\$/{found=1; next}
+    in_chpasswd && found && /hashed_passwd:/{
+      sub(/.*hashed_passwd:[[:space:]]*/, \"\"); print; exit
+    }
+    in_chpasswd && found && /- name:/{exit}
+    /^[a-z]/ && !/^chpasswd:/{in_chpasswd=0; found=0}
+  " "${CLOUD_CONFIG}")
 
   if [[ -z "${stored_hash}" ]]; then
     fail "${name}: hash not found in cloud-config"
@@ -168,7 +180,12 @@ collect_vm_logs() {
 }
 
 _collected=false
+TAIL_PID=""
 cleanup() {
+  # Kill the log-streaming SSH process if still running
+  if [[ -n "${TAIL_PID}" ]]; then
+    kill "${TAIL_PID}" 2>/dev/null || true
+  fi
   if [[ "${_collected}" == false ]] && [[ -f "${WORK_DIR}/qemu.pid" ]]; then
     collect_vm_logs || true
     _collected=true
@@ -260,15 +277,58 @@ vm_ssh() {
   ssh "${SSH_OPTS[@]}" -p "${HOST_SSH_PORT}" -i "${key}" "${user}@127.0.0.1" "$@" 2>/dev/null
 }
 
-# Wait for cloud-init to finish all runcmd steps before running assertions.
-# SSH appears after provision.sh completes (first runcmd), but Docker stack
-# deployment and other steps may still be running.
-info "Waiting for cloud-init to finish all runcmd steps..."
-if vm_ssh admin "${SSH_ADMIN_KEY}" \
-     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S cloud-init status --wait 2>/dev/null"; then
-  pass "cloud-init: completed successfully"
+# ── Stream cloud-init output live ────────────────────────────────────────────
+# Uses SSH -tt to force a pseudo-terminal, which gives line-buffered output.
+# Without -tt, SSH block-buffers stdout and CI environments see nothing until
+# the buffer fills (~4 KB). With the PTY, each line appears immediately.
+info "Streaming cloud-init output log (live)..."
+echo ""
+TAIL_PID=""
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o LogLevel=ERROR \
+  -tt -p "${HOST_SSH_PORT}" -i "${SSH_ADMIN_KEY}" \
+  admin@127.0.0.1 \
+  "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S tail -n +1 -f /var/log/cloud-init-output.log 2>/dev/null" 2>/dev/null &
+TAIL_PID=$!
+
+# ── Wait for cloud-init to complete ──────────────────────────────────────────
+# cloud-init writes /run/cloud-init/result.json ONLY after ALL stages finish
+# (including modules:final / runcmd). Poll for this file every 15 seconds.
+WAIT_TIMEOUT=1200   # 20 min; provisioning includes docker pull + stack deploy
+deadline=$(( $(date +%s) + WAIT_TIMEOUT ))
+while (( $(date +%s) < deadline )); do
+  if vm_ssh admin "${SSH_ADMIN_KEY}" \
+    "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S test -f /run/cloud-init/result.json" 2>/dev/null; then
+    break
+  fi
+  sleep 15
+done
+
+# Stop the log stream
+if [[ -n "${TAIL_PID}" ]]; then
+  kill "${TAIL_PID}" 2>/dev/null; wait "${TAIL_PID}" 2>/dev/null || true
+fi
+echo ""
+
+if (( $(date +%s) >= deadline )); then
+  fail "Timed out (${WAIT_TIMEOUT}s) waiting for cloud-init to complete"
+  collect_vm_logs || true
+  exit 1
+fi
+
+# Check result.json for actual stage errors
+ci_errors=$(vm_ssh admin "${SSH_ADMIN_KEY}" \
+  "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S python3 -c \
+    'import json,sys; \
+     errs = json.load(open(\"/run/cloud-init/result.json\")).get(\"v1\",{}).get(\"errors\",[]); \
+     sys.exit(0) if not errs else print(chr(10).join(errs))' 2>/dev/null" || echo "")
+
+if [[ -z "${ci_errors}" ]]; then
+  pass "cloud-init: completed — no stage errors in result.json"
 else
-  fail "cloud-init: exited with error — check vm-logs/cloud-init-output.log"
+  fail "cloud-init: stage errors recorded in result.json:"
+  while IFS= read -r line; do
+    [[ -n "${line}" ]] && info "  ${line}"
+  done <<< "${ci_errors}"
 fi
 echo ""
 
@@ -434,6 +494,55 @@ if ! vm_ssh admin "${SSH_ADMIN_KEY}" \
   pass "UFW: port 22/tcp not allowed"
 else
   fail "UFW: port 22/tcp is explicitly allowed — it should not be"
+fi
+
+echo ""
+echo "==> Provisioning checks..."
+echo ""
+
+# Docker is running
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S docker info >/dev/null 2>&1"; then
+  pass "Docker: daemon is running"
+else
+  fail "Docker: daemon is not running"
+fi
+
+# Docker group memberships
+for user in admin website; do
+  if vm_ssh admin "${SSH_ADMIN_KEY}" \
+       "id -nG ${user} | grep -qw docker"; then
+    pass "${user}: member of 'docker' group"
+  else
+    fail "${user}: not in 'docker' group"
+  fi
+done
+
+# Git repo was cloned
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     "test -d /src/website/.git"; then
+  pass "git: repository cloned to /src/website"
+else
+  fail "git: /src/website/.git not found — clone failed (check vm-logs/cloud-init-output.log)"
+fi
+
+# Directory structure
+for dir in /src/backups/db /src/backups/env /src/backups/storage \
+           /src/backups/mailserver/mail-data /src/backups/mailserver/config; do
+  if vm_ssh admin "${SSH_ADMIN_KEY}" \
+       "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S test -d '${dir}'"; then
+    pass "directory: ${dir} exists"
+  else
+    fail "directory: ${dir} missing"
+  fi
+done
+
+# website-deploy.service is enabled
+if vm_ssh admin "${SSH_ADMIN_KEY}" \
+     "printf '%s\n' '${ADMIN_PASSWORD}' | sudo -S systemctl is-enabled website-deploy.service 2>/dev/null | grep -q '^enabled'"; then
+  pass "systemd: website-deploy.service is enabled"
+else
+  fail "systemd: website-deploy.service is not enabled"
 fi
 
 echo ""

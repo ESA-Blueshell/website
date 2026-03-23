@@ -24,7 +24,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 INFISICAL_URL="http://localhost:8080"
-MAX_WAIT=300  # seconds to wait for Infisical to be healthy
+MAX_WAIT=60  # seconds to wait for Infisical to be healthy
 
 # ── Wait for Infisical to be healthy ─────────────────────────────────────────
 echo "==> Waiting for Infisical to be healthy at ${INFISICAL_URL}..."

@@ -126,6 +126,7 @@ export LISTMONK_SMTP_USERNAME="${LISTMONK_SMTP_USERNAME:-}"
 export LISTMONK_SMTP_PASSWORD="${LISTMONK_SMTP_PASSWORD:-}"
 export GRAFANA_DISCORD_WEBHOOK_URL="${GRAFANA_DISCORD_WEBHOOK_URL:-}"
 export INFISICAL_ADMIN_EMAIL="${INFISICAL_ADMIN_EMAIL:-}"
+export GIT_BRANCH="${GIT_BRANCH:-main}"
 
 # ── SSH keypairs ──────────────────────────────────────────────────────────────
 SSH_DIR="${HOME}/.ssh"
@@ -231,6 +232,7 @@ SAFE_ADMIN_PUB="$(_escape_sed "${ADMIN_PUB}")"
 SAFE_INFISICAL_ADMIN_EMAIL="$(_escape_sed "${INFISICAL_ADMIN_EMAIL}")"
 SAFE_INFISICAL_ADMIN_PASSWORD="$(_escape_sed "${INFISICAL_ADMIN_PASSWORD}")"
 SAFE_GITHUB_DEPLOY_PUB="$(_escape_sed "${GITHUB_DEPLOY_PUB}")"
+SAFE_GIT_BRANCH="$(_escape_sed "${GIT_BRANCH}")"
 
 # Render human-readable placeholders (passwords, SSH keys, GHCR).
 # Passwords are substituted via awk because SHA-512 crypt hashes contain '$'
@@ -263,6 +265,7 @@ _render_common() {
     -e "s|__INFISICAL_ADMIN_EMAIL__|${SAFE_INFISICAL_ADMIN_EMAIL}|g" \
     -e "s|__INFISICAL_ADMIN_PASSWORD__|${SAFE_INFISICAL_ADMIN_PASSWORD}|g" \
     -e "s|__GITHUB_DEPLOY_PUB__|${SAFE_GITHUB_DEPLOY_PUB}|g" \
+    -e "s|__GIT_BRANCH__|${SAFE_GIT_BRANCH}|g" \
     "${tmp}" > "${dst}"
 
   rm -f "${tmp}"

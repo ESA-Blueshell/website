@@ -65,6 +65,7 @@ jobs:
       WEBSITE_PASSWORD: ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
       GHCR_USERNAME:    ${{ github.actor }}
       GHCR_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
+      GIT_BRANCH:       ${{ github.head_ref || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
 

@@ -25,13 +25,17 @@ users:
       - "__WEBSITE_SSH_PUB__"
 
 # Console passwords (SSH is keys-only via sshd config below).
-# list: format with $6$ hashes — compatible with all cloud-init versions.
+# hashed_passwd: field — the correct cloud-init 22.3+ API for pre-hashed passwords.
+# Avoids both the deprecated list: format and the invalid type: hash schema warning.
 chpasswd:
   expire: false
-  list: |
-    admin:__ADMIN_PASSWORD__
-    root:__ROOT_PASSWORD__
-    website:__WEBSITE_PASSWORD__
+  users:
+    - name: admin
+      hashed_passwd: __ADMIN_PASSWORD__
+    - name: root
+      hashed_passwd: __ROOT_PASSWORD__
+    - name: website
+      hashed_passwd: __WEBSITE_PASSWORD__
 
 # ── APT sources ──────────────────────────────────────────────────────────────
 apt:
@@ -205,10 +209,10 @@ runcmd:
   - docker network create --driver overlay --attachable traefik-public || true
   - docker network create --driver overlay --attachable monitoring || true
 
-  # Clone repository via deploy key.
+  # Clone repository via deploy key (branch set at render time).
   - |
     if [ ! -d /src/website/.git ]; then
-      su -l website -c "git clone git@github.com:ESA-Blueshell/website.git /tmp/website-repo"
+      su -l website -c "git clone --branch __GIT_BRANCH__ git@github.com:ESA-Blueshell/website.git /tmp/website-repo"
       cp -a /tmp/website-repo/. /src/website/
       rm -rf /tmp/website-repo
     fi

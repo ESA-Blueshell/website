@@ -222,7 +222,12 @@ class TestProvisioning:
         assert "Port 443" in result.stdout
 
     def test_git_origin_uses_deploy_key_ssh_url(self, vm: LxdVm) -> None:
-        result = vm.exec(["git", "-C", "/src/website", "remote", "get-url", "origin"])
+        # Run with safe.directory override: lxc exec defaults to root, but /src/website
+        # is owned by the website user. Git 2.35+ refuses to run on foreign-owned dirs.
+        result = vm.exec([
+            "git", "-c", "safe.directory=/src/website",
+            "-C", "/src/website", "remote", "get-url", "origin",
+        ])
         assert result.stdout.strip() == "git@github.com:ESA-Blueshell/website.git"
 
     @pytest.mark.parametrize(

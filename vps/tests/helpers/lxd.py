@@ -77,6 +77,25 @@ class LxdVm:
             # /etc/curlrc is the system-wide curl config — covers curl calls in provision.sh
             # (e.g. Infisical CLI download from dl.cloudsmith.io).
             f"  - printf 'proxy = {apt_proxy}\\n' >> /etc/curlrc",
+            # /etc/environment is read by PAM (pam_env) for all `su` sessions.
+            # This covers Docker CLI (docker login) and other tools that use env vars
+            # but have no equivalent of /etc/gitconfig or /etc/curlrc.
+            f"  - echo 'http_proxy={apt_proxy}' >> /etc/environment",
+            f"  - echo 'https_proxy={apt_proxy}' >> /etc/environment",
+            f"  - echo 'HTTP_PROXY={apt_proxy}' >> /etc/environment",
+            f"  - echo 'HTTPS_PROXY={apt_proxy}' >> /etc/environment",
+            # Pre-create the Docker daemon proxy drop-in so Docker uses the proxy
+            # for image pulls even if provision.sh's configure_docker_proxy() doesn't
+            # run (which requires env vars to be present in provision.sh's shell).
+            "  - mkdir -p /etc/systemd/system/docker.service.d",
+            (
+                "  - printf '[Service]\\n"
+                f"Environment=\"http_proxy={apt_proxy}\"\\n"
+                f"Environment=\"https_proxy={apt_proxy}\"\\n"
+                f"Environment=\"HTTP_PROXY={apt_proxy}\"\\n"
+                f"Environment=\"HTTPS_PROXY={apt_proxy}\"\\n' "
+                "> /etc/systemd/system/docker.service.d/proxy.conf"
+            ),
             # Configure SSH to tunnel github.com through the HTTP proxy via CONNECT so the
             # SSH fallback in the clone script can also reach ssh.github.com:443.
             # nc (netcat-openbsd) is pre-installed in Debian 13 cloud images.

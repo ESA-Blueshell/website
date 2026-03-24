@@ -31,11 +31,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
-      ROOT_PASSWORD:    ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
-      WEBSITE_PASSWORD: ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
-      GHCR_USERNAME:    ${{ github.actor }}
-      GHCR_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
+      ADMIN_PASSWORD:        ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
+      ROOT_PASSWORD:         ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
+      WEBSITE_PASSWORD:      ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
+      GHCR_USERNAME:         ${{ github.actor }}
+      GHCR_TOKEN:            ${{ secrets.GITHUB_TOKEN }}
+      # Dummy account name so test_infra_env_contains_transip_credentials can verify
+      # that the value flows through to .infra.env. No real key needed for hash checks.
+      TRANSIP_ACCOUNT_NAME:  ci-dummy
     steps:
       - uses: actions/checkout@v4
 
@@ -56,11 +59,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
-      ROOT_PASSWORD:    ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
-      WEBSITE_PASSWORD: ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
-      GHCR_USERNAME:    ${{ github.actor }}
-      GHCR_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
+      ADMIN_PASSWORD:        ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}
+      ROOT_PASSWORD:         ${{ secrets.TEST_ROOT_PASSWORD    || 'CItest-Root-1234!'    }}
+      WEBSITE_PASSWORD:      ${{ secrets.TEST_WEBSITE_PASSWORD || 'CItest-Website-1234!' }}
+      GHCR_USERNAME:         ${{ github.actor }}
+      GHCR_TOKEN:            ${{ secrets.GITHUB_TOKEN }}
+      TRANSIP_ACCOUNT_NAME:  ci-dummy
     steps:
       - uses: actions/checkout@v4
 

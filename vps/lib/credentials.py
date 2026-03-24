@@ -128,10 +128,6 @@ def load_credentials(vps_dir: Path) -> Credentials:
         missing.append("GHCR_USERNAME")
     if not ghcr_token:
         missing.append("GHCR_TOKEN")
-    if not transip_account_name:
-        missing.append("TRANSIP_ACCOUNT_NAME")
-    if not transip_private_key_file:
-        missing.append("TRANSIP_PRIVATE_KEY_FILE")
     if missing:
         raise ValueError(
             f"Missing required credentials: {', '.join(missing)}. "

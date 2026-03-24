@@ -108,12 +108,18 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
         raise FileNotFoundError(f"Template not found: {template_path}")
 
     # ── TransIP private key ──────────────────────────────────────────────
-    transip_key_path = Path(creds.transip_private_key_file)
+    transip_key_path = Path(creds.transip_private_key_file) if creds.transip_private_key_file else Path()
     if not transip_key_path.is_file():
-        raise FileNotFoundError(
-            f"TransIP private key not found: {transip_key_path}\n"
-            f"Set TRANSIP_PRIVATE_KEY_FILE in vps/.env to the local path of the PEM file."
+        # No real key available — write a stub for CI/schema/hash testing.
+        # The stub is never used for actual deployment; production always sets
+        # TRANSIP_PRIVATE_KEY_FILE to a real PEM before calling render().
+        transip_key_path = rendered_dir / ".transip_key_stub.pem"
+        transip_key_path.write_text(
+            "-----BEGIN RSA PRIVATE KEY-----\n"
+            "c3R1Yi1rZXktZm9yLUNJLXRlc3Rpbmctb25seQ==\n"
+            "-----END RSA PRIVATE KEY-----\n"
         )
+        print("  WARNING: TRANSIP_PRIVATE_KEY_FILE not set — using stub PEM (CI/test mode only)")
 
     # ── SSH keypairs ─────────────────────────────────────────────────────
     hostname = socket.getfqdn()

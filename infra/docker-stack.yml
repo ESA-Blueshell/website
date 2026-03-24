@@ -87,6 +87,7 @@ services:
       # Then set these in your deploy environment:
       TRANSIP_ACCOUNT_NAME:     ${TRANSIP_ACCOUNT_NAME:?TRANSIP_ACCOUNT_NAME required}
       TRANSIP_PRIVATE_KEY_PATH: /run/secrets/transip_key
+      DOCKER_API_VERSION: "1.41"
     volumes:
       - /src/website/infra/traefik.yml:/traefik.yml:ro
       - /src/website/infra/traefik/conf.d:/etc/traefik/conf.d:ro

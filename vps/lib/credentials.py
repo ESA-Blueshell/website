@@ -48,6 +48,8 @@ class Credentials:
     listmonk_smtp_port: str = "587"
     listmonk_smtp_username: str = ""
     listmonk_smtp_password: str = ""
+    transip_account_name: str = ""
+    transip_private_key_file: str = ""  # local path to TransIP API private key PEM
     grafana_admin_password: str = ""
     grafana_discord_webhook_url: str = ""
     infisical_db_password: str = ""
@@ -112,6 +114,9 @@ def load_credentials(vps_dir: Path) -> Credentials:
     ghcr_username = _get(env, "GHCR_USERNAME")
     ghcr_token = _get(env, "GHCR_TOKEN")
 
+    transip_account_name = _get(env, "TRANSIP_ACCOUNT_NAME")
+    transip_private_key_file = _get(env, "TRANSIP_PRIVATE_KEY_FILE")
+
     missing = []
     if not admin_password:
         missing.append("ADMIN_PASSWORD")
@@ -123,6 +128,10 @@ def load_credentials(vps_dir: Path) -> Credentials:
         missing.append("GHCR_USERNAME")
     if not ghcr_token:
         missing.append("GHCR_TOKEN")
+    if not transip_account_name:
+        missing.append("TRANSIP_ACCOUNT_NAME")
+    if not transip_private_key_file:
+        missing.append("TRANSIP_PRIVATE_KEY_FILE")
     if missing:
         raise ValueError(
             f"Missing required credentials: {', '.join(missing)}. "
@@ -160,6 +169,8 @@ def load_credentials(vps_dir: Path) -> Credentials:
         listmonk_smtp_port=_get(env, "LISTMONK_SMTP_PORT", "587"),
         listmonk_smtp_username=_get(env, "LISTMONK_SMTP_USERNAME"),
         listmonk_smtp_password=_get(env, "LISTMONK_SMTP_PASSWORD"),
+        transip_account_name=transip_account_name,
+        transip_private_key_file=transip_private_key_file,
         grafana_admin_password=_get(env, "GRAFANA_ADMIN_PASSWORD") or auto_secret(),
         grafana_discord_webhook_url=_get(env, "GRAFANA_DISCORD_WEBHOOK_URL"),
         infisical_db_password=_get(env, "INFISICAL_DB_PASSWORD") or auto_secret(),

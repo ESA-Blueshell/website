@@ -71,6 +71,17 @@ class TestHashVerification:
             "website: SHA-512 hash does not match plaintext password"
         )
 
+    def test_infra_env_contains_transip_credentials(
+        self, rendered_config: Path, credentials: Credentials
+    ) -> None:
+        infra_env = (rendered_config.parent / "rendered" / ".infra.env").read_text()
+        assert f"TRANSIP_ACCOUNT_NAME={credentials.transip_account_name}" in infra_env, (
+            "TRANSIP_ACCOUNT_NAME missing or incorrect in rendered .infra.env"
+        )
+        assert "TRANSIP_PRIVATE_KEY_FILE=/etc/traefik/transip_key.pem" in infra_env, (
+            "TRANSIP_PRIVATE_KEY_FILE missing or incorrect in rendered .infra.env"
+        )
+
     def test_rendered_env_files_do_not_contain_comment_placeholder_values(
         self, rendered_config: Path
     ) -> None:

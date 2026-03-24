@@ -108,6 +108,13 @@ write_files:
     encoding: b64
     content: __GITHUB_DEPLOY_KEY_B64__
 
+  # TransIP API private key for Traefik DNS-01 ACME challenge
+  - path: /etc/traefik/transip_key.pem
+    permissions: '0600'
+    owner: root:root
+    encoding: b64
+    content: __TRANSIP_KEY_B64__
+
   # Application env files
   - path: /src/website/services/api/.db.env
     permissions: '0640'

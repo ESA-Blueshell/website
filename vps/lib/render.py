@@ -107,6 +107,14 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
     if not template_path.is_file():
         raise FileNotFoundError(f"Template not found: {template_path}")
 
+    # ── TransIP private key ──────────────────────────────────────────────
+    transip_key_path = Path(creds.transip_private_key_file)
+    if not transip_key_path.is_file():
+        raise FileNotFoundError(
+            f"TransIP private key not found: {transip_key_path}\n"
+            f"Set TRANSIP_PRIVATE_KEY_FILE in vps/.env to the local path of the PEM file."
+        )
+
     # ── SSH keypairs ─────────────────────────────────────────────────────
     hostname = socket.getfqdn()
     ensure_ssh_key(creds.website_key, f"website@{hostname}")
@@ -165,6 +173,8 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
     write_env_file(
         rendered_dir / ".infra.env",
         f"INFRA_DOMAIN={creds.infra_domain}\n"
+        f"TRANSIP_ACCOUNT_NAME={creds.transip_account_name}\n"
+        f"TRANSIP_PRIVATE_KEY_FILE=/etc/traefik/transip_key.pem\n"
         f"GRAFANA_ADMIN_PASSWORD={creds.grafana_admin_password}\n"
         f"GRAFANA_DISCORD_WEBHOOK_URL={creds.grafana_discord_webhook_url}\n"
         f"INFISICAL_DB_PASSWORD={creds.infisical_db_password}\n"
@@ -203,6 +213,7 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
         "__LISTMONK_ENV_B64__": rendered_dir / ".listmonk.env",
         "__INFRA_ENV_B64__": rendered_dir / ".infra.env",
         "__GITHUB_DEPLOY_KEY_B64__": creds.github_deploy_key,
+        "__TRANSIP_KEY_B64__": transip_key_path,
     }
     for placeholder, source_file in b64_files.items():
         if not source_file.is_file():

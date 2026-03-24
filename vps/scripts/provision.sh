@@ -29,8 +29,10 @@ cleanup_infisical_repo() {
 }
 
 install_infisical() {
-  curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | bash
-  apt-get update
+  local setup_sh
+  setup_sh=$(curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh') \
+    || { echo "Failed to download Infisical setup script (curl error $?)" >&2; return 1; }
+  echo "${setup_sh}" | bash || return 1
   apt-get install -y infisical
 }
 

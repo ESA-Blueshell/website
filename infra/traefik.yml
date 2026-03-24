@@ -34,11 +34,12 @@ ping:
 certificatesResolvers:
   letsencrypt:
     acme:
-      # email is passed via CLI flag --certificatesresolvers.letsencrypt.acme.email
-      # in infra/docker-stack.yml so it can be set via ACME_EMAIL env var.
       storage: /letsencrypt/acme.json
-      httpChallenge:
-        entryPoint: web
+      dnsChallenge:
+        provider: transip
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
 
 providers:
   file:

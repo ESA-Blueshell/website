@@ -14,6 +14,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: up{job="traefik-ping"} == 0
               instant: true
@@ -33,6 +36,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: up{job="blueshell-api"} == 0
               instant: true
@@ -52,6 +58,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: >
                 sum(rate(traefik_router_requests_total{code=~"5.."}[5m]))
@@ -74,6 +83,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: >
                 histogram_quantile(0.95,
@@ -96,6 +108,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: >
                 jvm_memory_used_bytes{area="heap"}
@@ -118,6 +133,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: increase(job_dead_count_total[1h]) > 0
               instant: true
@@ -137,6 +155,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: >
                 hikaricp_connections_active
@@ -159,6 +180,9 @@ groups:
         data:
           - refId: A
             datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               expr: >
                 (traefik_tls_certs_not_after - time()) / 86400 < 7

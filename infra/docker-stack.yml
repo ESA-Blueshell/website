@@ -17,6 +17,8 @@
 #   DOCKER_SOCKET                — rootless Docker socket path
 #   INFRA_DOMAIN                 — base domain (default: v2.esa-blueshell.nl)
 #   ACME_EMAIL                   — Let's Encrypt contact email (passed as Traefik CLI flag)
+#   TRANSIP_ACCOUNT_NAME         — TransIP login name for DNS-01 ACME challenge
+#   TRANSIP_PRIVATE_KEY_FILE     — host path to TransIP API private key (PEM)
 #   GRAFANA_ADMIN_PASSWORD       — Grafana admin password
 #   GRAFANA_DISCORD_WEBHOOK_URL  — Discord webhook for alert notifications
 #   GRAFANA_SMTP_HOST            — SMTP host for email alerts (optional)
@@ -78,10 +80,19 @@ services:
       # Pass ACME email via CLI flag so it can be set per-deployment without
       # modifying the static config file mounted into the container.
       - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+    environment:
+      # TransIP DNS-01 challenge credentials (required for wildcard TLS certs).
+      # Generate an API key pair in the TransIP control panel:
+      #   https://www.transip.nl/cp/account/api/
+      # Then set these in your deploy environment:
+      TRANSIP_ACCOUNT_NAME:     ${TRANSIP_ACCOUNT_NAME:?TRANSIP_ACCOUNT_NAME required}
+      TRANSIP_PRIVATE_KEY_PATH: /run/secrets/transip_key
     volumes:
       - /src/website/infra/traefik.yml:/traefik.yml:ro
       - /src/website/infra/traefik/conf.d:/etc/traefik/conf.d:ro
       - letsencrypt:/letsencrypt
+      # TransIP API private key — mounted read-only from host path set via env var.
+      - ${TRANSIP_PRIVATE_KEY_FILE:?TRANSIP_PRIVATE_KEY_FILE required}:/run/secrets/transip_key:ro
       # No Docker socket — Traefik talks to socket-proxy over TCP
     networks:
       - traefik-public
@@ -133,7 +144,7 @@ services:
       GF_SMTP_HOST:                   ${GRAFANA_SMTP_HOST:-localhost:587}
       GF_SMTP_USER:                   ${GRAFANA_SMTP_USER:-}
       GF_SMTP_PASSWORD:               ${GRAFANA_SMTP_PASSWORD:-}
-      GF_SMTP_FROM_ADDRESS:           ${GRAFANA_SMTP_FROM:-grafana@${INFRA_DOMAIN}}
+      GF_SMTP_FROM_ADDRESS:           ${GRAFANA_SMTP_FROM}
       GF_INSTALL_PLUGINS:             ""
     volumes:
       - grafana-data:/var/lib/grafana

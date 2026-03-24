@@ -11,11 +11,13 @@
 #
 # Required environment variables (set in /src/website/infra/.infra.env):
 #   GRAFANA_ADMIN_PASSWORD       Grafana admin account password
-#   GRAFANA_DISCORD_WEBHOOK_URL  Discord webhook URL for alert notifications
+#   TRANSIP_ACCOUNT_NAME         TransIP login name (for DNS-01 ACME wildcard certs)
+#   TRANSIP_PRIVATE_KEY_FILE     Host path to TransIP API private key PEM file
 #
 # Optional:
 #   INFRA_DOMAIN          Base domain for infra services (default: v2.esa-blueshell.nl)
 #   ACME_EMAIL            Email for Let's Encrypt ACME (default: board@blueshell.utwente.nl)
+#   GRAFANA_DISCORD_WEBHOOK_URL  Discord webhook URL for alert notifications
 #   GRAFANA_SMTP_HOST     SMTP host:port  (e.g. smtp.example.com:587)
 #   GRAFANA_SMTP_USER     SMTP username
 #   GRAFANA_SMTP_PASSWORD SMTP password
@@ -111,9 +113,18 @@ export DOCKER_SOCKET="${DOCKER_SOCKET:-/var/run/docker.sock}"
 
 # Validate required vars
 : "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD required — set in infra/.infra.env}"
+: "${TRANSIP_ACCOUNT_NAME:?TRANSIP_ACCOUNT_NAME required — set in infra/.infra.env}"
+: "${TRANSIP_PRIVATE_KEY_FILE:?TRANSIP_PRIVATE_KEY_FILE required — set in infra/.infra.env}"
+
+if [[ ! -f "${TRANSIP_PRIVATE_KEY_FILE}" ]]; then
+  echo "ERROR: TRANSIP_PRIVATE_KEY_FILE=${TRANSIP_PRIVATE_KEY_FILE} does not exist" >&2
+  exit 1
+fi
 
 export INFRA_DOMAIN="${INFRA_DOMAIN:-v2.esa-blueshell.nl}"
 export ACME_EMAIL="${ACME_EMAIL:-board@blueshell.utwente.nl}"
+export TRANSIP_ACCOUNT_NAME
+export TRANSIP_PRIVATE_KEY_FILE
 export GRAFANA_ADMIN_PASSWORD
 export GRAFANA_DISCORD_WEBHOOK_URL="${GRAFANA_DISCORD_WEBHOOK_URL:-}"
 export GRAFANA_SMTP_ENABLED="${GRAFANA_SMTP_ENABLED:-false}"

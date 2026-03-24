@@ -70,10 +70,13 @@ class LxdVm:
             "  - mkdir -p /etc/apt/apt.conf.d",
             f"  - echo 'Acquire::http::Proxy \"{apt_proxy}\";' > /etc/apt/apt.conf.d/95proxy.conf",
             f"  - echo 'Acquire::https::Proxy \"{apt_proxy}\";' >> /etc/apt/apt.conf.d/95proxy.conf",
-            # Write proxy to /etc/gitconfig so git uses it regardless of env-var propagation.
-            # cloud-init may not pass systemd Environment= vars down to runcmd subprocesses.
-            # Use printf directly — git is not yet installed during bootcmd.
+            # Write proxy to system config files so tools use it regardless of env-var
+            # propagation. cloud-init may not pass systemd Environment= vars down to runcmd
+            # subprocesses. Use printf directly — tools may not be installed yet in bootcmd.
             f"  - printf '[http]\\n\\tproxy = {apt_proxy}\\n' > /etc/gitconfig",
+            # /etc/curlrc is the system-wide curl config — covers curl calls in provision.sh
+            # (e.g. Infisical CLI download from dl.cloudsmith.io).
+            f"  - printf 'proxy = {apt_proxy}\\n' >> /etc/curlrc",
             # Configure SSH to tunnel github.com through the HTTP proxy via CONNECT so the
             # SSH fallback in the clone script can also reach ssh.github.com:443.
             # nc (netcat-openbsd) is pre-installed in Debian 13 cloud images.

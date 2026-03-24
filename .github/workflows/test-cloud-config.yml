@@ -77,14 +77,58 @@ jobs:
       - name: Validate cloud-config schema
         run: cd vps && uv run pytest tests/test_schema.py -v
 
-# ── Job 3: full VM test ───────────────────────────────────────────────────────
+# ── Job 3: deploy key smoke test ─────────────────────────────────────────────
+# Fast (~30s). Verifies SSH_DEPLOY_KEY is valid and can authenticate to GitHub
+# over SSH. Catches key format issues or expired/revoked keys before the slow
+# VM test spends 10+ minutes only to fail on a git clone.
+  deploy-key-check:
+    name: Verify deploy key can authenticate to GitHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Install deploy key
+        env:
+          DEPLOY_KEY_PRIVATE: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s' "${DEPLOY_KEY_PRIVATE}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Validate the key is parseable and extract the public key
+          ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub
+          echo "Public key fingerprint:"
+          ssh-keygen -lf ~/.ssh/deploy_key.pub
+
+      - name: Test SSH authentication to GitHub
+        run: |
+          # Add GitHub's host keys so StrictHostKeyChecking doesn't block us
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
+          # ssh -T exits with code 1 on success ("Hi <user>! You've authenticated...")
+          # and code 255 on auth failure — check the message instead
+          output=$(ssh -T -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            git@github.com 2>&1 || true)
+          echo "${output}"
+          if echo "${output}" | grep -q "successfully authenticated\|Hi "; then
+            echo "Deploy key authentication: OK"
+          else
+            echo "Deploy key authentication: FAILED"
+            exit 1
+          fi
+
+      - name: Clone repository using deploy key
+        run: |
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            git clone --depth=1 git@github.com:ESA-Blueshell/website.git /tmp/website-clone
+          echo "Clone successful. HEAD: $(git -C /tmp/website-clone rev-parse HEAD)"
+
+# ── Job 4: full VM test ───────────────────────────────────────────────────────
 # Boots a Debian 13 VM via LXD with the rendered cloud-config, waits for
 # cloud-init to finish, then tests SSH, security, and provisioning.
   vm-test:
     name: Full VM test (LXD)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: [hash-check, schema-check]
+    needs: [hash-check, schema-check, deploy-key-check]
 #    if: github.event_name == 'workflow_dispatch' && inputs.full_test
     env:
       ADMIN_PASSWORD:   ${{ secrets.TEST_ADMIN_PASSWORD   || 'CItest-Admin-1234!'   }}

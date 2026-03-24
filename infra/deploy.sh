@@ -120,7 +120,7 @@ export GRAFANA_SMTP_ENABLED="${GRAFANA_SMTP_ENABLED:-false}"
 export GRAFANA_SMTP_HOST="${GRAFANA_SMTP_HOST:-}"
 export GRAFANA_SMTP_USER="${GRAFANA_SMTP_USER:-}"
 export GRAFANA_SMTP_PASSWORD="${GRAFANA_SMTP_PASSWORD:-}"
-export GRAFANA_SMTP_FROM="${GRAFANA_SMTP_FROM:-}"
+export GRAFANA_SMTP_FROM="${GRAFANA_SMTP_FROM:-grafana@${INFRA_DOMAIN}}"
 
 # ── Ensure overlay networks ───────────────────────────────────────────────────
 echo "==> Ensuring overlay networks..."

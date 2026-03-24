@@ -42,15 +42,16 @@ services:
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
     environment:
       CONTAINERS: 1
+      INFO:       1
       NETWORKS:   1
       EVENTS:     1
       # Swarm service discovery (required for Traefik swarm provider)
       SERVICES:   1
+      SWARM:      1
       TASKS:      1
       # Everything else defaults to 0 (denied):
       # AUTH, BUILD, COMMIT, CONFIGS, DISTRIBUTION, EXEC, IMAGES,
-      # INFO, NODES, PING, POST, PLUGINS, SECRETS, SESSION, SWARM,
-      # SYSTEM, VOLUMES
+      # NODES, PING, POST, PLUGINS, SECRETS, SESSION, SYSTEM, VOLUMES
     networks:
       - socket-proxy
     deploy:

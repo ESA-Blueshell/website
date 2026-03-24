@@ -63,10 +63,27 @@ class LxdVm:
 
         # Keep proxy setup in the instance user-data so it cannot be dropped by
         # vendor-data merge behavior when the main cloud-config also defines bootcmd.
+        #
+        # Strip the scheme (http://) to get host:port for SSH ProxyCommand (nc -X connect).
+        proxy_hostport = apt_proxy.split("://", 1)[-1].rstrip("/")
         proxy_bootcmd = "\n".join([
             "  - mkdir -p /etc/apt/apt.conf.d",
             f"  - echo 'Acquire::http::Proxy \"{apt_proxy}\";' > /etc/apt/apt.conf.d/95proxy.conf",
             f"  - echo 'Acquire::https::Proxy \"{apt_proxy}\";' >> /etc/apt/apt.conf.d/95proxy.conf",
+            # Write proxy to /etc/gitconfig so git uses it regardless of env-var propagation.
+            # cloud-init may not pass systemd Environment= vars down to runcmd subprocesses.
+            f"  - git config --system http.proxy '{apt_proxy}'",
+            # Configure SSH to tunnel github.com through the HTTP proxy via CONNECT so the
+            # SSH fallback in the clone script can also reach ssh.github.com:443.
+            # nc (netcat-openbsd) is pre-installed in Debian 13 cloud images.
+            # %%h/%%p: printf interprets %% as literal %, producing %h/%p in the output.
+            (
+                "  - printf 'Host github.com\\n"
+                "  HostName ssh.github.com\\n"
+                "  Port 443\\n"
+                f"  ProxyCommand nc -X connect -x {proxy_hostport} %%h %%p\\n'"
+                " >> /etc/ssh/ssh_config"
+            ),
             "  - mkdir -p /etc/systemd/system/cloud-final.service.d",
             (
                 "  - printf '[Service]\\n"

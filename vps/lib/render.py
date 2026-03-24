@@ -113,6 +113,7 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
         # No real key available — write a stub for CI/schema/hash testing.
         # The stub is never used for actual deployment; production always sets
         # TRANSIP_PRIVATE_KEY_FILE to a real PEM before calling render().
+        rendered_dir.mkdir(parents=True, exist_ok=True)
         transip_key_path = rendered_dir / ".transip_key_stub.pem"
         transip_key_path.write_text(
             "-----BEGIN RSA PRIVATE KEY-----\n"

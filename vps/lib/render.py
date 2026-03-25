@@ -87,6 +87,14 @@ def b64_encode_file(path: Path) -> str:
     return base64.b64encode(path.read_bytes()).decode("ascii")
 
 
+def b64_encode_template(path: Path, substitutions: dict[str, str]) -> str:
+    """Read a file as text, apply placeholder substitutions, then base64-encode."""
+    content = path.read_text()
+    for placeholder, value in substitutions.items():
+        content = content.replace(placeholder, value)
+    return base64.b64encode(content.encode()).decode("ascii")
+
+
 def write_env_file(path: Path, content: str) -> None:
     """Write an env file."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -102,7 +110,8 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
     template_path = cloud_init_dir / "cloud-config.template.yaml"
     output_path = cloud_init_dir / "cloud-config.yaml"
     rendered_dir = cloud_init_dir / "rendered"
-    scripts_dir = vps_dir / "scripts"
+    setup_scripts_dir = cloud_init_dir / "scripts"   # one-time setup scripts
+    util_scripts_dir = vps_dir / "scripts" / "server"  # persistent utilities
 
     if not template_path.is_file():
         raise FileNotFoundError(f"Template not found: {template_path}")
@@ -210,11 +219,19 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
     content = content.replace("__GITHUB_DEPLOY_PUB__", github_deploy_pub)
     content = content.replace("__GIT_BRANCH__", creds.git_branch)
 
-    # Base64-encoded files
+    # Base64-encoded files (verbatim — no placeholder substitution)
     b64_files = {
-        "__PROVISION_SH_B64__": scripts_dir / "provision.sh",
-        "__DB_BACKUP_SH_B64__": scripts_dir / "db-backup.sh",
-        "__WEBSITE_CLI_SH_B64__": scripts_dir / "website-cli.sh",
+        # One-time setup scripts (cloud-init/scripts/)
+        "__SETUP_INFISICAL_SH_B64__": setup_scripts_dir / "setup-infisical.sh",
+        "__SETUP_FIREWALL_SH_B64__": setup_scripts_dir / "setup-firewall.sh",
+        "__SETUP_DOCKER_SH_B64__": setup_scripts_dir / "setup-docker.sh",
+        "__SETUP_DIRECTORIES_SH_B64__": setup_scripts_dir / "setup-directories.sh",
+        "__SETUP_DEPLOY_KEYS_SH_B64__": setup_scripts_dir / "setup-deploy-keys.sh",
+        "__SETUP_SWARM_SH_B64__": setup_scripts_dir / "setup-swarm.sh",
+        # Persistent utilities (scripts/server/)
+        "__DB_BACKUP_SH_B64__": util_scripts_dir / "db-backup.sh",
+        "__WEBSITE_CLI_SH_B64__": util_scripts_dir / "website-cli.sh",
+        # Env files + keys
         "__DB_ENV_B64__": rendered_dir / ".db.env",
         "__API_ENV_B64__": rendered_dir / ".api.env",
         "__LISTMONK_ENV_B64__": rendered_dir / ".listmonk.env",
@@ -226,6 +243,21 @@ def render(creds: Credentials, vps_dir: Path | None = None) -> Path:
         if not source_file.is_file():
             raise FileNotFoundError(f"{source_file} not found (needed for {placeholder})")
         content = content.replace(placeholder, b64_encode_file(source_file))
+
+    # Base64-encoded templates (scripts containing __PLACEHOLDER__ tokens)
+    script_subs = {
+        "__GHCR_TOKEN__": creds.ghcr_token,
+        "__GHCR_USERNAME__": creds.ghcr_username,
+        "__GIT_BRANCH__": creds.git_branch,
+    }
+    b64_templates = {
+        "__SETUP_REPO_SH_B64__": setup_scripts_dir / "setup-repo.sh",
+        "__SETUP_GHCR_SH_B64__": setup_scripts_dir / "setup-ghcr.sh",
+    }
+    for placeholder, source_file in b64_templates.items():
+        if not source_file.is_file():
+            raise FileNotFoundError(f"{source_file} not found (needed for {placeholder})")
+        content = content.replace(placeholder, b64_encode_template(source_file, script_subs))
 
     output_path.write_text(content)
 

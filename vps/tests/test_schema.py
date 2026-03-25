@@ -87,3 +87,61 @@ class TestCloudConfigSchema:
         assert placeholders == [], (
             f"Unsubstituted placeholders found in rendered config: {placeholders}"
         )
+
+
+class TestScriptEmbedding:
+    """Verify all scripts are embedded in the cloud-config."""
+
+    VPS_DIR = Path(__file__).resolve().parent.parent
+    SETUP_DIR = VPS_DIR / "cloud-init" / "scripts"
+    UTIL_DIR = VPS_DIR / "scripts" / "server"
+
+    # Map from source filename to deployed path (when they differ)
+    _DEPLOY_NAME_MAP = {
+        "website-cli.sh": "website",
+        "db-backup.sh": "db-backup",
+    }
+
+    def test_all_scripts_are_embedded(self, rendered_config: Path) -> None:
+        """Every .sh in cloud-init/scripts/ and scripts/server/ must have a write_files entry."""
+        import yaml
+
+        config = yaml.safe_load(rendered_config.read_text())
+        embedded_paths = {entry["path"] for entry in config.get("write_files", [])}
+
+        all_scripts = sorted(self.SETUP_DIR.glob("*.sh")) + sorted(self.UTIL_DIR.glob("*.sh"))
+        assert all_scripts, "No .sh files found"
+
+        missing = []
+        for script in all_scripts:
+            deploy_name = self._DEPLOY_NAME_MAP.get(script.name, script.name)
+            expected = f"/usr/local/bin/{deploy_name}"
+            if expected not in embedded_paths:
+                missing.append(f"{script.name} -> {expected}")
+
+        assert missing == [], (
+            "Scripts not found in write_files:\n" + "\n".join(missing)
+        )
+
+    def test_runcmd_calls_all_setup_scripts(self, rendered_config: Path) -> None:
+        """Each setup script should be called directly from runcmd."""
+        import yaml
+
+        config = yaml.safe_load(rendered_config.read_text())
+        runcmd = config.get("runcmd", [])
+        runcmd_text = "\n".join(str(cmd) for cmd in runcmd)
+
+        expected_calls = [
+            "/usr/local/bin/setup-infisical.sh",
+            "/usr/local/bin/setup-firewall.sh",
+            "/usr/local/bin/setup-docker.sh",
+            "/usr/local/bin/setup-directories.sh",
+            "/usr/local/bin/setup-deploy-keys.sh",
+            "/usr/local/bin/setup-swarm.sh",
+            "/usr/local/bin/setup-repo.sh",
+            "/usr/local/bin/setup-ghcr.sh",
+        ]
+        missing = [call for call in expected_calls if call not in runcmd_text]
+        assert missing == [], (
+            "Setup scripts not called from runcmd:\n" + "\n".join(missing)
+        )

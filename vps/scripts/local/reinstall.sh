@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
-# reinstall-vps.sh — reinstall an existing Contabo VPS with a fresh image +
-#                    cloud-init user-data.
+# reinstall.sh — reinstall an existing Contabo VPS with a fresh image +
+#                cloud-init user-data.
 #
 # Prerequisites:
 #   1. cntb CLI installed  (https://github.com/contabo/cntb)
@@ -9,21 +9,24 @@
 #   3. Credentials + instance ID in vps/.env  (see .example.env)
 #
 # Usage:
-#   ./reinstall-vps.sh
+#   ./reinstall.sh
 #
 # All configuration is read from vps/.env.
 # =============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLOUD_CONFIG="${SCRIPT_DIR}/../cloud-init/cloud-config.yaml"
+VPS_DIR="${SCRIPT_DIR}/../.."
+CLOUD_CONFIG="${VPS_DIR}/cloud-init/cloud-config.yaml"
 ADMIN_KEY="${HOME}/.ssh/blueshell-admin"
 
 # ── Source .env ───────────────────────────────────────────────────────────────
-ENV_FILE="${SCRIPT_DIR}/../.env"
+ENV_FILE="${VPS_DIR}/.env"
 if [[ -f "${ENV_FILE}" ]]; then
-  # shellcheck source=/dev/null
-  set -a; source "${ENV_FILE}"; set +a
+  set -a
+  # shellcheck disable=SC1090
+  source "${ENV_FILE}"
+  set +a
 fi
 
 # ── Validate required variables ───────────────────────────────────────────────

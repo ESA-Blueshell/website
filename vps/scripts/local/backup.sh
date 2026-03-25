@@ -18,12 +18,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VPS_DIR="${SCRIPT_DIR}/../.."
 
-# Source .env from the image root if present
-ENV_FILE="${SCRIPT_DIR}/../.env"
+# Source .env from the vps root if present
+ENV_FILE="${VPS_DIR}/.env"
 if [[ -f "${ENV_FILE}" ]]; then
-  # shellcheck source=/dev/null
-  set -a; source "${ENV_FILE}"; set +a
+  set -a
+  # shellcheck disable=SC1090
+  source "${ENV_FILE}"
+  set +a
 fi
 
 REMOTE_USER="admin"
@@ -31,7 +34,7 @@ REMOTE_HOST="${1:-${REMOTE_HOST:?Set REMOTE_HOST in vps/.env or pass as first ar
 SSH_PORT=2222
 SSH_KEY="${HOME}/.ssh/blueshell-admin"
 
-LOCAL_BACKUP_DIR="${SCRIPT_DIR}/../../backup"
+LOCAL_BACKUP_DIR="${VPS_DIR}/../../backup"
 
 SSH_OPTS="-p ${SSH_PORT} -i ${SSH_KEY} -o StrictHostKeyChecking=accept-new"
 SSH_CMD="ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST}"

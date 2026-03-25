@@ -22,12 +22,23 @@ permissions:
   contents: read
   packages: read
 
-# ── Job 1: verify password hashes ────────────────────────────────────────────
-# Fast (~1 min). Renders the cloud-config, then verifies SHA-512 hashes
-# match the plaintext passwords using pytest.
+# ── Job 0: shellcheck lint ──────────────────────────────────────────────────
+# Fast (~30s). Static analysis of all shell scripts.
 jobs:
+  lint:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: find vps/scripts vps/cloud-init/scripts -name '*.sh' -print0 | xargs -0 shellcheck --severity=warning
+
+# ── Job 1: verify password hashes + script tests ──────────────────────────
+# Fast (~1 min). Renders the cloud-config, then verifies SHA-512 hashes,
+# schema, embedding, and server script behavior using pytest.
   hash-check:
-    name: Verify password hashes
+    name: Verify password hashes and scripts
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -48,8 +59,8 @@ jobs:
       - name: Install test dependencies
         run: cd vps && uv sync
 
-      - name: Verify password hashes
-        run: cd vps && uv run pytest tests/test_hash_verification.py -v
+      - name: Verify password hashes, schema, and server scripts
+        run: cd vps && uv run pytest tests/test_hash_verification.py tests/test_schema.py tests/test_server_scripts.py -v
 
 # ── Job 2: schema validation ──────────────────────────────────────────────────
 # Fast (~1 min). Renders the cloud-config and validates it against the

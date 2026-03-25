@@ -83,20 +83,54 @@ packages:
 # ── Files ────────────────────────────────────────────────────────────────────
 # Scripts and config files are placed on disk before runcmd executes.
 write_files:
-  # System provisioning script (imperative: UFW, Infisical, directories, Docker enable)
-  - path: /usr/local/bin/provision.sh
+  # ── One-time setup scripts (called individually from runcmd) ──────────────
+  - path: /usr/local/bin/setup-infisical.sh
     permissions: '0750'
     encoding: b64
-    content: __PROVISION_SH_B64__
+    content: __SETUP_INFISICAL_SH_B64__
 
-  # Backup script
+  - path: /usr/local/bin/setup-firewall.sh
+    permissions: '0750'
+    encoding: b64
+    content: __SETUP_FIREWALL_SH_B64__
+
+  - path: /usr/local/bin/setup-docker.sh
+    permissions: '0750'
+    encoding: b64
+    content: __SETUP_DOCKER_SH_B64__
+
+  - path: /usr/local/bin/setup-directories.sh
+    permissions: '0750'
+    encoding: b64
+    content: __SETUP_DIRECTORIES_SH_B64__
+
+  - path: /usr/local/bin/setup-deploy-keys.sh
+    permissions: '0750'
+    encoding: b64
+    content: __SETUP_DEPLOY_KEYS_SH_B64__
+
+  - path: /usr/local/bin/setup-swarm.sh
+    permissions: '0750'
+    encoding: b64
+    content: __SETUP_SWARM_SH_B64__
+
+  - path: /usr/local/bin/setup-repo.sh
+    permissions: '0750'
+    encoding: b64
+    content: __SETUP_REPO_SH_B64__
+
+  - path: /usr/local/bin/setup-ghcr.sh
+    permissions: '0750'
+    encoding: b64
+    content: __SETUP_GHCR_SH_B64__
+
+  # ── Persistent utilities (stay installed at /usr/local/bin/) ────────────
   - path: /usr/local/bin/db-backup
     permissions: '0750'
     owner: root:backup
     encoding: b64
     content: __DB_BACKUP_SH_B64__
 
-  # Website management CLI
   - path: /usr/local/bin/website
     permissions: '0755'
     encoding: b64
@@ -269,87 +303,48 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
-  # Install Docker packages after the repo has already been configured by write_files.
+  # ── Install Docker ──────────────────────────────────────────────────────────
   - apt-get update -q
   - DEBIAN_FRONTEND=noninteractive apt-get install -y -q docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-  # System provisioning — installs Infisical CLI, configures UFW,
-  # enables Docker, creates directories, enables systemd services.
-  - /usr/local/bin/provision.sh
+  # ── System setup (each script is independently testable) ────────────────────
+  - /usr/local/bin/setup-infisical.sh
+  - /usr/local/bin/setup-firewall.sh
+  - /usr/local/bin/setup-docker.sh
+  - /usr/local/bin/setup-directories.sh
 
-  # Add users to docker group (created by Docker package install above).
+  # ── Users + groups ─────────────────────────────────────────────────────────
   - usermod -aG docker admin
   - usermod -aG docker website
 
-  # Distribute GitHub deploy key to both users for git access.
-  - |
-    set -eu
-    for user in website admin; do
-      home="$(getent passwd "${user}" | cut -d: -f6)"
-      install -d -m 0700 -o "${user}" -g "${user}" "${home}/.ssh"
-      cp /etc/deploy-keys/github-deploy-key "${home}/.ssh/github-deploy-key"
-      cat > "${home}/.ssh/config" <<SSHEOF
-    Host github.com
-      HostName ssh.github.com
-      Port 443
-      User git
-      IdentityFile ${home}/.ssh/github-deploy-key
-      IdentitiesOnly yes
-      StrictHostKeyChecking accept-new
-    SSHEOF
-      chown -R "${user}:${user}" "${home}/.ssh"
-      chmod 700 "${home}/.ssh"
-      find "${home}/.ssh" -type f -exec chmod 600 {} +
-    done
+  # ── Deploy keys + SSH config ───────────────────────────────────────────────
+  - /usr/local/bin/setup-deploy-keys.sh
 
-  # Fix env file ownership (written as root by write_files).
+  # ── Fix env file ownership (written as root by write_files) ────────────────
   - chown website:website /src/website/services/api/.db.env
   - chown website:website /src/website/services/api/.api.env
   - chown website:website /src/website/services/listmonk/.listmonk.env
   - chown website:website /src/website/infra/.infra.env
 
-  # Docker Swarm.
-  - docker swarm init --advertise-addr 127.0.0.1
-  - docker network create --driver overlay --attachable traefik-public || true
-  - docker network create --driver overlay --attachable monitoring || true
+  # ── Docker Swarm + overlay networks ────────────────────────────────────────
+  - /usr/local/bin/setup-swarm.sh
 
-  # Bootstrap the repo over HTTPS when needed, then restore the SSH remote so
-  # ongoing git operations keep using the deploy key.
-  - |
-    set -eu
-    if [ ! -d /src/website/.git ]; then
-      clone_target=/tmp/website-repo
-      origin_ssh='git@github.com:ESA-Blueshell/website.git'
-      origin_https='https://x-access-token:__GHCR_TOKEN__@github.com/ESA-Blueshell/website.git'
-      git_proxy="${https_proxy:-${HTTPS_PROXY:-}}"
-      rm -rf "${clone_target}"
-      if [ -n "${git_proxy}" ]; then
-        if ! su -m -s /bin/bash website -c "HOME=/src/website GIT_TERMINAL_PROMPT=0 git -c http.proxy='${git_proxy}' -c https.proxy='${git_proxy}' clone --branch '__GIT_BRANCH__' '${origin_https}' '${clone_target}'"; then
-          su -m -s /bin/bash website -c "HOME=/src/website GIT_SSH_COMMAND='ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new' git clone --branch '__GIT_BRANCH__' '${origin_ssh}' '${clone_target}'"
-        fi
-      elif ! su -m -s /bin/bash website -c "HOME=/src/website GIT_TERMINAL_PROMPT=0 git clone --branch '__GIT_BRANCH__' '${origin_https}' '${clone_target}'"; then
-        su -m -s /bin/bash website -c "HOME=/src/website GIT_SSH_COMMAND='ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new' git clone --branch '__GIT_BRANCH__' '${origin_ssh}' '${clone_target}'"
-      fi
-      su -m -s /bin/bash website -c "HOME=/src/website git -C '${clone_target}' remote set-url origin '${origin_ssh}'"
-      cp -a "${clone_target}/." /src/website/
-      rm -rf "${clone_target}"
-    fi
-  - chown -R website:website /src/website
-  - chmod 750 /src/website
-  - find /src/website -name '*.env' -exec chmod 640 {} +
-  - install -d -m 0700 -o website -g website /src/website/.ssh
-  - test ! -f /src/website/.ssh/authorized_keys || chmod 600 /src/website/.ssh/authorized_keys
-  - test ! -f /src/website/.ssh/config || chmod 600 /src/website/.ssh/config
-  - test ! -f /src/website/.ssh/github-deploy-key || chmod 600 /src/website/.ssh/github-deploy-key
+  # ── Clone repository (HTTPS-first, SSH fallback) ──────────────────────────
+  - /usr/local/bin/setup-repo.sh
 
-  # GHCR login for pulling private images.
-  - su -m -s /bin/bash website -c "export HOME=/src/website; printf '__GHCR_TOKEN__' | docker login ghcr.io -u '__GHCR_USERNAME__' --password-stdin"
+  # ── GHCR login for pulling private images ──────────────────────────────────
+  - /usr/local/bin/setup-ghcr.sh
 
-  # Restart services reconfigured by write_files / provision.sh.
+  # ── Enable systemd services + restart reconfigured daemons ─────────────────
+  - systemctl enable website-deploy.service
   - systemctl restart cron
   - systemctl restart ssh
 
-  # Deploy stacks.
+  # ── APT cleanup ────────────────────────────────────────────────────────────
+  - apt-get autoremove -y
+  - apt-get clean
+
+  # ── Deploy stacks ──────────────────────────────────────────────────────────
   - su -m -s /bin/bash website -c "HOME=/src/website website infra up"
   - su -m -s /bin/bash website -c "HOME=/src/website bash /src/website/scripts/infisical-bootstrap.sh || echo 'Infisical bootstrap skipped — run manually later if needed.'"
 

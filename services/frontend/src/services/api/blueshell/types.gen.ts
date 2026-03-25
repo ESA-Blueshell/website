@@ -3075,6 +3075,45 @@ export type HealthCheckResponses = {
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
 
+export type ForwardAuthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/infra/forward-auth';
+};
+
+export type ForwardAuthErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ForwardAuthError = ForwardAuthErrors[keyof ForwardAuthErrors];
+
+export type ForwardAuthResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type List1Data = {
     body?: never;
     path?: never;

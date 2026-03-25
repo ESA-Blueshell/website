@@ -47,17 +47,22 @@ normalize_specs() {
   local tmp
   tmp="$(mktemp)"
 
+  # Use 'cat > file' instead of 'mv' to preserve the file inode.
+  # Docker bind mounts for single files track the inode, so 'mv' (which
+  # replaces the inode) would silently break any container mount pointing
+  # at the target path.
+
   if [ -f "${API_OPENAPI_SPEC%.yaml}.raw.json" ]; then
-    jq -S -c . "${API_OPENAPI_SPEC%.yaml}.raw.json" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
+    jq -S -c . "${API_OPENAPI_SPEC%.yaml}.raw.json" > "$tmp" && cat "$tmp" > "$API_OPENAPI_SPEC"
     rm -f "${API_OPENAPI_SPEC%.yaml}.raw.json"
   elif [ -f "$API_OPENAPI_SPEC" ]; then
-    jq -S -c . "$API_OPENAPI_SPEC" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
+    jq -S -c . "$API_OPENAPI_SPEC" > "$tmp" && cat "$tmp" > "$API_OPENAPI_SPEC"
   else
     echo "$API_OPENAPI_SPEC (or .raw.json) not found" >&2
     rm -f "$tmp"
     exit 1
   fi
 
-  jq -S -c . "$SHARED_OPENAPI_DIR/discord.raw.json" > "$tmp" && mv "$tmp" "$SHARED_OPENAPI_DIR/discord.json"
-  rm -f "$SHARED_OPENAPI_DIR/discord.raw.json"
+  jq -S -c . "$SHARED_OPENAPI_DIR/discord.raw.json" > "$tmp" && cat "$tmp" > "$SHARED_OPENAPI_DIR/discord.json"
+  rm -f "$SHARED_OPENAPI_DIR/discord.raw.json" "$tmp"
 }

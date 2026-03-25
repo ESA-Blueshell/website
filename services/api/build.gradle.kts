@@ -365,6 +365,7 @@ val jacocoCombinedReport by tasks.registering(JacocoReport::class) {
 
 tasks.withType<BootRun>().configureEach {
     jvmArgs("-Dspring.devtools.restart.enabled=true")
+    outputs.upToDateWhen { false }
 }
 
 val classDependencyOutputDir = layout.buildDirectory.dir("reports/class-dependencies")

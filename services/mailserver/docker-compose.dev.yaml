@@ -2,12 +2,12 @@ services:
   mailserver:
     image: ghcr.io/docker-mailserver/docker-mailserver:latest
     # mail.dev.local → DMS accepts mail for the dev.local domain
-    hostname: mail.dev.local
+    hostname: mail
     env_file:
       - mailserver.env
       - mailserver.dev.env
     ports:
-      - "25:25"    # SMTP relay (unauthenticated, allowed by PERMIT_DOCKER)
+      - "2525:25"  # SMTP relay (unauthenticated, allowed by PERMIT_DOCKER)
       - "587:587"  # SMTP submission (STARTTLS)
       - "143:143"  # IMAP (STARTTLS)
       - "993:993"  # IMAPS (implicit TLS) — used by Listmonk bounce poller

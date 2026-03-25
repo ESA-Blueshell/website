@@ -35,8 +35,17 @@ docker compose -f docker-compose.dev.yml exec api sh -c \
 # ---- Shared steps ----
 
 download_external_specs
-regen_brevo_client
-regen_listmonk_client
+
+# Run Gradle client generation inside the API container to avoid lock
+# conflicts with the running bootRun process (both share .gradle via volume).
+echo "Regenerating Brevo Java client (inside container)..."
+docker compose -f docker-compose.dev.yml exec api \
+  ./gradlew --no-daemon --build-cache :clients:brevo:generate
+
+echo "Regenerating Listmonk Java client (inside container)..."
+docker compose -f docker-compose.dev.yml exec api \
+  ./gradlew --no-daemon --build-cache :clients:listmonk:generate
+
 normalize_specs
 
 # ---- Generate frontend TypeScript clients ----

@@ -6,6 +6,8 @@ security:
   openapi:
     public:
       enabled: false
+  auth-cookie:
+    domain: ${AUTH_COOKIE_DOMAIN:}
 
 springdoc:
   api-docs:

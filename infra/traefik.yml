@@ -2,7 +2,8 @@
 # Dynamic config (routing rules, TLS) comes from Swarm service labels.
 
 api:
-  dashboard: false   # set to true and add a dashboard router label to enable
+  dashboard: true
+  insecure: false   # dashboard is served via a router with ForwardAuth, not the insecure endpoint
 
 entryPoints:
   web:

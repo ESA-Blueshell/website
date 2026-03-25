@@ -16,6 +16,8 @@ class AuthTokenCookieService(
     private val cookiePath: String,
     @param:Value($$"${security.auth-cookie.same-site:None}")
     private val sameSite: String,
+    @param:Value($$"${security.auth-cookie.domain:}")
+    private val cookieDomain: String,
     @param:Value($$"${app.security.require-https:true}")
     private val requireHttps: Boolean
 ) {
@@ -35,6 +37,7 @@ class AuthTokenCookieService(
             .path(cookiePath)
             .sameSite(effectiveSameSite)
             .maxAge(Duration.ofSeconds(maxAgeSeconds))
+            .apply { if (cookieDomain.isNotBlank()) domain(cookieDomain) }
             .build()
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }
@@ -46,6 +49,7 @@ class AuthTokenCookieService(
             .path(cookiePath)
             .sameSite(effectiveSameSite)
             .maxAge(Duration.ZERO)
+            .apply { if (cookieDomain.isNotBlank()) domain(cookieDomain) }
             .build()
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }

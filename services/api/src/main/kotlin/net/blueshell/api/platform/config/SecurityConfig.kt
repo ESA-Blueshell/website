@@ -123,6 +123,7 @@ class SecurityConfig(
                 auth.requestMatchers(
                         HttpMethod.GET,
                         "/csrf",
+                        "/infra/forward-auth",
                         "/events/**",
                         "/events/signups/byAccessToken",
                         "/blogs",

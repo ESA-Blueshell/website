@@ -225,6 +225,12 @@
             >
               Manage emails
             </v-list-item>
+            <v-list-item
+              v-if="isAdmin"
+              to="/management/infra"
+            >
+              Infrastructure
+            </v-list-item>
           </v-list>
         </v-menu>
         <v-menu

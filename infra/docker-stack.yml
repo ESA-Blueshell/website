@@ -104,6 +104,22 @@ services:
           - node.role == manager
       restart_policy:
         condition: on-failure
+      labels:
+        # ── Traefik dashboard ───────────────────────────────────────────────
+        # Exposed at https://traefik.${INFRA_DOMAIN}, protected by ForwardAuth.
+        - "traefik.enable=true"
+        - "traefik.http.routers.infra-traefik.rule=Host(`traefik.${INFRA_DOMAIN}`)"
+        - "traefik.http.routers.infra-traefik.entrypoints=websecure"
+        - "traefik.http.routers.infra-traefik.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.infra-traefik.service=api@internal"
+        - "traefik.http.routers.infra-traefik.middlewares=infra-auth@swarm"
+        # ── infra-auth ForwardAuth middleware ───────────────────────────────
+        # Calls the Spring Boot API to verify the BSH_AUTH cookie before
+        # allowing access to any infra service. Passes the authenticated
+        # username downstream as X-Webauth-User (used by Grafana Auth Proxy).
+        - "traefik.http.middlewares.infra-auth.forwardAuth.address=https://api.${INFRA_DOMAIN}/infra/forward-auth"
+        - "traefik.http.middlewares.infra-auth.forwardAuth.trustForwardHeader=true"
+        - "traefik.http.middlewares.infra-auth.forwardAuth.authResponseHeaders=X-Webauth-User"
 
   # ── Prometheus ─────────────────────────────────────────────────────────────
   prometheus:
@@ -136,6 +152,19 @@ services:
       GF_USERS_ALLOW_SIGN_UP:         "false"
       GF_ALERTING_ENABLED:            "false"   # use unified alerting
       GF_UNIFIED_ALERTING_ENABLED:    "true"
+      # Dark theme matching BSH colour scheme
+      GF_USERS_DEFAULT_THEME:         dark
+      # Auth Proxy — Traefik ForwardAuth passes X-Webauth-User after validating
+      # the BSH_AUTH cookie. Grafana auto-signs-in the user without a login form.
+      GF_AUTH_PROXY_ENABLED:              "true"
+      GF_AUTH_PROXY_HEADER_NAME:          X-Webauth-User
+      GF_AUTH_PROXY_HEADER_PROPERTY:      username
+      GF_AUTH_PROXY_AUTO_SIGN_UP:         "true"
+      GF_AUTH_PROXY_ENABLE_LOGIN_TOKEN:   "false"
+      # Default role for auto-provisioned SSO users (admin account is unaffected)
+      GF_USERS_AUTO_ASSIGN_ORG_ROLE:      Editor
+      # Keep the login form as a break-glass path for the local admin account
+      GF_AUTH_DISABLE_LOGIN_FORM:         "false"
       # Discord contact point (alert notifications)
       GF_DISCORD_WEBHOOK_URL:         ${GRAFANA_DISCORD_WEBHOOK_URL:-}
       # Email contact point recipient
@@ -165,6 +194,7 @@ services:
         - "traefik.http.routers.infra-grafana.rule=Host(`grafana.${INFRA_DOMAIN}`)"
         - "traefik.http.routers.infra-grafana.entrypoints=websecure"
         - "traefik.http.routers.infra-grafana.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.infra-grafana.middlewares=infra-auth@swarm"
         - "traefik.http.services.infra-grafana.loadbalancer.server.port=3000"
 
   # ── Loki ───────────────────────────────────────────────────────────────────
@@ -280,6 +310,7 @@ services:
         - "traefik.http.routers.infra-infisical.rule=Host(`vault.${INFRA_DOMAIN:-v2.esa-blueshell.nl}`)"
         - "traefik.http.routers.infra-infisical.entrypoints=websecure"
         - "traefik.http.routers.infra-infisical.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.infra-infisical.middlewares=infra-auth@swarm"
         - "traefik.http.services.infra-infisical.loadbalancer.server.port=8080"
 
 networks:

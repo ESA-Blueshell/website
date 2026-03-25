@@ -244,6 +244,12 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresAdmin: true},
   },
   {
+    path: "/management/infra",
+    name: "infraPortal",
+    component: () => import("@/pages/management/InfraPortal.vue"),
+    meta: {requiresAuth: true, requiresAdmin: true},
+  },
+  {
     path: "/blogs",
     name: "BlogList",
     component: () => import("@/pages/blogs/BlogsView.vue"),

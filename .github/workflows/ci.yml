@@ -15,6 +15,7 @@ on:
       - 'gradlew'
       - 'gradlew.bat'
       - 'scripts/**'
+      - 'platform/**'
       - '.github/actions/**'
       - '.github/workflows/**'
       - 'docker-compose.dev.yml'
@@ -62,6 +63,24 @@ permissions:
   contents: read
 
 jobs:
+  nix-flake-check:
+    name: NixOS flake check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix with flake support
+        uses: DeterminateSystems/nix-installer-action@v16
+
+      - name: Cache /nix/store for faster re-runs
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Validate platform flake
+        run: |
+          nix flake check ./platform --no-build --show-trace
+
   fe-static:
     name: Frontend typecheck and lint
     runs-on: ubuntu-latest

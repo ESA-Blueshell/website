@@ -1,0 +1,4 @@
+# Local-only — compose from per-operator pubkeys before deploy.
+deploy.pub
+*.pub
+!README.md

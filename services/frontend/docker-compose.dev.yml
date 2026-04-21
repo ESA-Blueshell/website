@@ -12,7 +12,10 @@ services:
     volumes:
       - .:/usr/app
       - ../api/openapi.yaml:/usr/api/openapi.yaml:ro
-      - ../shared/openapi:/usr/shared/openapi:ro
+      # Mount at /libs/openapi-specs so the repo-relative path
+      # `../../libs/openapi-specs/<spec>` (from /usr/app) resolves correctly
+      # when the openapi-ts generators run inside the container.
+      - ../../libs/openapi-specs:/libs/openapi-specs:ro
       - /usr/app/.yarn
     networks:
       - global_network

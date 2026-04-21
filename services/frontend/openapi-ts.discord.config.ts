@@ -1,5 +1,5 @@
 export default {
-  input: "../shared/openapi/discord.json",
+  input: "../../libs/openapi-specs/discord.json",
   output: {
     path: "src/services/api/discord",
   },

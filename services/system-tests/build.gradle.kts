@@ -62,6 +62,10 @@ dependencies {
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
 
+    // JUnit 6 does not automatically put the platform launcher on the
+    // runtime classpath; Gradle 9's test-engine selection needs it.
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     mockitoAgent("org.mockito:mockito-core:5.21.0")
 }
 

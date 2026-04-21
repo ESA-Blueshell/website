@@ -50,7 +50,7 @@ spec:
           {{- with secret "secret/data/platform/edge" }}
           CF_DNS_API_TOKEN={{ index .Data.data "cloudflare.dns_api_token" }}
           {{- end }}
-          STALWART_HOSTNAME=mail.v2.esa-blueshell.nl
+          STALWART_HOSTNAME=stalwart.v2.esa-blueshell.nl
           STALWART_DOMAIN=v2.esa-blueshell.nl
     spec:
       serviceAccountName: stalwart
@@ -69,7 +69,7 @@ spec:
               cp /config/config.toml /opt/stalwart/etc/config.toml
               exec /usr/local/bin/entrypoint.sh /usr/local/bin/stalwart
           # Mail protocols are raw TCP and cannot traverse Cloudflare's HTTP
-          # proxy. mail.v2.esa-blueshell.nl is a non-proxied A record pointing
+          # proxy. stalwart.v2.esa-blueshell.nl is a non-proxied A record pointing
           # directly at the VPS IP. Each mail port binds on the host via
           # hostPort so the pod answers directly without MetalLB.
           ports:

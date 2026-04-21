@@ -3,6 +3,7 @@ package net.blueshell.api.platform.oidc
 import net.blueshell.api.shared.enums.Role
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException
@@ -17,7 +18,7 @@ class OidcTokenCustomizer(private val userLoader: OidcUserLoader) {
     @Bean
     fun tokenCustomizer(): OAuth2TokenCustomizer<JwtEncodingContext> {
         return OAuth2TokenCustomizer { context ->
-            val principal = context.getPrincipal<Any>()?.name ?: return@OAuth2TokenCustomizer
+            val principal = context.getPrincipal<Authentication>().name ?: return@OAuth2TokenCustomizer
             val user = userLoader.load(principal) ?: return@OAuth2TokenCustomizer
 
             val clientId = context.registeredClient.clientId
@@ -39,7 +40,7 @@ class OidcTokenCustomizer(private val userLoader: OidcUserLoader) {
     }
 
     private fun Set<Role>.toGroups(): List<String> = buildList {
-        if (any { it.matchesRole(Role.ADMIN) }) add("k8s-admin")
-        if (any { it.matchesRole(Role.MEMBER) }) add("member")
+        if (this@toGroups.any { it.matchesRole(Role.ADMIN) }) add("k8s-admin")
+        if (this@toGroups.any { it.matchesRole(Role.MEMBER) }) add("member")
     }
 }

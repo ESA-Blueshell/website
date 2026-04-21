@@ -1,5 +1,6 @@
 package net.blueshell.common.vault
 
+import org.springframework.security.oauth2.jose.jws.JwsAlgorithm
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtEncoder
@@ -36,7 +37,8 @@ class VaultTransitJwtEncoder(
 
         val kid = "$keyName:v${latest.keyVersion}"
 
-        val headerJson = buildHeaderJson(kid, headers?.algorithm ?: SignatureAlgorithm.RS256)
+        val alg: JwsAlgorithm = headers?.algorithm ?: SignatureAlgorithm.RS256
+        val headerJson = buildHeaderJson(kid, alg)
         val claimsJson = buildClaimsJson(claims.claims)
 
         val headerEncoded = base64url.encodeToString(headerJson.toByteArray(Charsets.UTF_8))
@@ -64,9 +66,8 @@ class VaultTransitJwtEncoder(
         return Jwt(tokenValue, issuedAt, expiresAt, mapOf("alg" to "RS256", "kid" to kid), claimsMap)
     }
 
-    private fun buildHeaderJson(kid: String, alg: SignatureAlgorithm): String {
-        val algValue = alg.name
-        return """{"alg":"$algValue","typ":"JWT","kid":"$kid"}"""
+    private fun buildHeaderJson(kid: String, alg: JwsAlgorithm): String {
+        return """{"alg":"${alg.name}","typ":"JWT","kid":"$kid"}"""
     }
 
     private fun buildClaimsJson(claims: Map<String, Any?>): String {

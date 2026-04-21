@@ -11,4 +11,6 @@ version = "0.0.1-SNAPSHOT"
 dependencies {
     // Keep this list small — downstream services should be free to pick
     // their own web/security stacks. Only add things every consumer needs.
+    compileOnly("org.springframework.security:spring-security-oauth2-jose")
+    compileOnly("org.springframework.boot:spring-boot-starter-web")
 }

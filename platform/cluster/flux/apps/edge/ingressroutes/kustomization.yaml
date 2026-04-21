@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - api.yaml
+  - auth.yaml
   - frontend.yaml
   - listmonk.yaml
   - headlamp.yaml

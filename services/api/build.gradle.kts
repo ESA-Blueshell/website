@@ -71,7 +71,9 @@ dependencyLocking {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-authorization-server")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation(project(":libs:kotlin-common"))
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation(kotlin("stdlib"))

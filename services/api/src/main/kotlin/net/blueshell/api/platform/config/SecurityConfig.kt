@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.http.HttpMethod
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler
@@ -88,6 +89,7 @@ class SecurityConfig(
     }
 
     @Bean
+    @Order(3)
     fun authChain(
         http: HttpSecurity,
         csrfTokenRepository: CookieCsrfTokenRepository
@@ -110,50 +112,51 @@ class SecurityConfig(
             http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)
         }
         http.authorizeHttpRequests { auth ->
+            auth.requestMatchers(
+                HttpMethod.POST,
+                "/auth",
+                "/auth/logout",
+                "/recovery/**",
+                "/users",
+                "/users/guest",
+                "/events/*/signups"
+            ).permitAll()
+            auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
+            auth.requestMatchers(
+                HttpMethod.GET,
+                "/csrf",
+                "/events/**",
+                "/events/signups/byAccessToken",
+                "/blogs",
+                "/blogs/*",
+                "/boards",
+                "/boards/*",
+                "/telemetry/*",
+                "/committeeMembers/committees",
+                "/contributionPeriods",
+                "/download/**",
+                "/committees/**",
+                "/contributionPeriods/current",
+                "/health",
+                "/oauth2/forward-auth",
+                "/track/email/**",
+                "/actuator/health",
+                "/actuator/health/**",
+                "/actuator/prometheus",
+            ).permitAll()
+
+            if (openApiPublicEnabled) {
                 auth.requestMatchers(
-                    HttpMethod.POST,
-                    "/auth",
-                    "/auth/logout",
-                    "/recovery/**",
-                    "/users",
-                    "/users/guest",
-                    "/events/*/signups"
+                    HttpMethod.GET,
+                    "/v3/api-docs**/**",
+                    "/swagger-ui**/**"
                 ).permitAll()
-                auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
-                auth.requestMatchers(
-                        HttpMethod.GET,
-                        "/csrf",
-                        "/events/**",
-                        "/events/signups/byAccessToken",
-                        "/blogs",
-                        "/blogs/*",
-                        "/boards",
-                        "/boards/*",
-                        "/telemetry/*",
-                        "/committeeMembers/committees",
-                        "/contributionPeriods",
-                        "/download/**",
-                        "/committees/**",
-                        "/contributionPeriods/current",
-                        "/health",
-                        "/track/email/**",
-                        "/actuator/health",
-                        "/actuator/health/**",
-                        "/actuator/prometheus"
-                    ).permitAll()
-
-                if (openApiPublicEnabled) {
-                    auth.requestMatchers(
-                        HttpMethod.GET,
-                        "/v3/api-docs**/**",
-                        "/swagger-ui**/**"
-                    ).permitAll()
-                }
-
-                auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
-                auth.requestMatchers("/error").permitAll()
-                auth.anyRequest().authenticated()
             }
+
+            auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
+            auth.requestMatchers("/error").permitAll()
+            auth.anyRequest().authenticated()
+        }
             .exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }
         return http.build()
     }

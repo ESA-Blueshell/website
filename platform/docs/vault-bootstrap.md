@@ -111,8 +111,12 @@ vault kv put secret/api \
   mollie-api-key=<key> \
   google-calendar-sa-json=<base64-json> \
   facebook-app-secret=<secret> \
-  x-api-secret=<secret>
+  x-api-secret=<secret> \
+  vault-oidc-client-secret=<random-secret>
 ```
+
+`vault-oidc-client-secret` is the shared secret the Vault OIDC auth method uses
+when calling back to the api. Generate with `openssl rand -hex 32`.
 
 ## 5. Confirm VSO sync
 

@@ -193,3 +193,14 @@ management:
         http.server.requests: true
       percentiles:
         http.server.requests: 0.5, 0.95, 0.99
+
+auth:
+  issuer: ${AUTH_ISSUER:https://auth.v2.esa-blueshell.nl}
+  transit:
+    enabled: ${AUTH_TRANSIT_ENABLED:false}
+    vault-addr: ${VAULT_ADDR:http://vault.data-system.svc.cluster.local:8200}
+    vault-token: ${VAULT_TOKEN:}
+    key-name: ${AUTH_TRANSIT_KEY_NAME:api-jwt}
+  clients:
+    vault:
+      secret: ${VAULT_OIDC_CLIENT_SECRET:changeme}

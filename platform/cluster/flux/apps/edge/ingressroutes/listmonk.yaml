@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: listmonk
+  namespace: edge-system
+  annotations:
+    external-dns.alpha.kubernetes.io/target: v2.esa-blueshell.nl
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
+    kubernetes.io/ingress.class: traefik-public
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`mail-admin.v2.esa-blueshell.nl`)
+      middlewares:
+        - name: forward-auth
+          namespace: edge-system
+      services:
+        - name: listmonk
+          namespace: default
+          port: 9000
+  tls: {}

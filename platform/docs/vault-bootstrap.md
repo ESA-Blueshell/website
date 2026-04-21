@@ -96,8 +96,11 @@ vault kv put secret/listmonk \
 
 ```bash
 vault kv put secret/platform/mail \
+  admin-user=admin \
   admin-password=<stalwart-admin-password> \
-  dkim-private-key=<base64-encoded-rsa-2048-pem>
+  dkim-private-key=<base64-encoded-rsa-2048-pem> \
+  bounce-mailbox-user=bounce@v2.esa-blueshell.nl \
+  bounce-mailbox-password=<bounce-mailbox-password>
 ```
 
 ### API third-party secrets

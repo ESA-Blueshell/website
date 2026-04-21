@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: headlamp
+  namespace: edge-system
+  annotations:
+    external-dns.alpha.kubernetes.io/target: v2.esa-blueshell.nl
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
+    kubernetes.io/ingress.class: traefik-public
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`kube.v2.esa-blueshell.nl`)
+      middlewares:
+        - name: forward-auth
+          namespace: edge-system
+      services:
+        - name: headlamp
+          namespace: utility-system
+          port: 80
+  tls: {}

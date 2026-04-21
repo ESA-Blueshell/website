@@ -59,7 +59,12 @@ configurations.configureEach {
 
 dependencyLocking {
     lockAllConfigurations()
-    lockMode.set(LockMode.STRICT)
+    // DEFAULT (not STRICT) so Gradle does not fail on configurations that
+    // are declared lockable but have no state persisted yet (e.g. jacocoAgent,
+    // installChromium classpath). Regenerate locks with
+    // `./gradlew :services:api:<task> --write-locks` when adding new tasks
+    // that pull fresh configurations.
+    lockMode.set(LockMode.DEFAULT)
 }
 
 dependencies {

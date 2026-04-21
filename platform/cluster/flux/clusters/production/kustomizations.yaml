@@ -1,0 +1,52 @@
+---
+# Layered Kustomizations so Helm-owned CRDs install before any CR that
+# depends on them. apps-core installs charts (cert-manager, Traefik,
+# external-dns, VSO) and waits for the HelmReleases to report Ready.
+# Every other domain dependsOn apps-core. The data / mail / stateless
+# domains are added in their own PRs; their Kustomization entries are
+# declared here upfront so the dependency graph does not shift when
+# they land.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-core
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./platform/cluster/flux/apps/core
+  prune: true
+  wait: true
+  timeout: 15m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-edge
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./platform/cluster/flux/apps/edge
+  prune: true
+  dependsOn:
+    - name: apps-core
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-utility-system
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./platform/cluster/flux/apps/utility-system
+  prune: true
+  dependsOn:
+    - name: apps-core
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

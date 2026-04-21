@@ -1,0 +1,23 @@
+# Maps the OIDC-issued `k8s-admin` group to cluster-admin. The k3s API
+# server is configured with --oidc-groups-prefix=oidc:, so a token with
+# groups=["k8s-admin"] authenticates as a member of the Group
+# `oidc:k8s-admin`. Anyone the website api places into that group
+# (board members / administrators) gets full cluster management via
+# Headlamp.
+#
+# The host-level forward-auth in front of kube.v2.esa-blueshell.nl is
+# the outer gate (blocks unauthenticated traffic before it ever reaches
+# the API server). This binding is the inner gate (decides what the
+# token can do once the API server sees it).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-oidc-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: oidc:k8s-admin

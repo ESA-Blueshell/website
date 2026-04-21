@@ -81,6 +81,33 @@ jobs:
         run: |
           nix flake check ./platform --no-build --show-trace
 
+  flux-kustomize-check:
+    name: Flux kustomize build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install kubectl + kustomize
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.34.0
+
+      - name: Render every flux overlay to catch schema / ordering bugs
+        run: |
+          set -euo pipefail
+          for overlay in \
+            platform/cluster/flux/clusters/production \
+            platform/cluster/flux/apps/core \
+            platform/cluster/flux/apps/edge \
+            platform/cluster/flux/apps/utility-system
+          do
+            echo "::group::kustomize build $overlay"
+            kubectl kustomize "$overlay" > /dev/null
+            echo "::endgroup::"
+          done
+
   fe-static:
     name: Frontend typecheck and lint
     runs-on: ubuntu-latest

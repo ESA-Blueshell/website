@@ -1,0 +1,38 @@
+; Zone file for esa-blueshell.nl
+; Import into Cloudflare via Dashboard → DNS → Records → Import
+; Source: migrated from TransIP DNS (2026-04-21)
+;
+; Notes on proxy status (set after import in Cloudflare UI):
+;   - Proxy ON  (orange cloud): @, www
+;   - Proxy OFF (grey cloud, "DNS only"):
+;       * MX target (esa-blueshell.nl itself cannot be proxied for mail)
+;       * minecraft  (game traffic — Cloudflare proxy is HTTP/S only)
+;       * ftp        (non-HTTP protocol)
+;       * v2, *.v2   (different backend IP; proxy only if it serves HTTP(S))
+;
+; Apex / website ----------------------------------------------------------
+; No wildcard at the apex — only the explicit hostnames below resolve.
+@           1   IN  A       136.144.191.63
+@           1   IN  AAAA    2a01:7c8:aacb:1e5::101:55
+@           1   IN  MX  10  esa-blueshell.nl.
+
+; www ---------------------------------------------------------------------
+www         1   IN  CNAME   esa-blueshell.nl.
+
+; ftp ---------------------------------------------------------------------
+ftp         1   IN  CNAME   esa-blueshell.nl.
+
+; Minecraft server --------------------------------------------------------
+minecraft   1   IN  A       162.33.20.159
+
+; v2 backend (different host than apex) -----------------------------------
+v2          1   IN  A       157.173.115.164
+v2          1   IN  AAAA    2a02:c207:2316:2642::1
+
+; Wildcard for *.v2.esa-blueshell.nl → v2 backend -------------------------
+; ACME DNS-01 for the *.v2 wildcard cert uses a TXT record at
+; _acme-challenge.v2.esa-blueshell.nl, written dynamically by the ACME
+; client via the Cloudflare API (token needs Zone:DNS:Edit on this zone).
+; No conflict with these A/AAAA records — TXT lives at a different label.
+*.v2        1   IN  A       157.173.115.164
+*.v2        1   IN  AAAA    2a02:c207:2316:2642::1

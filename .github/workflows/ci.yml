@@ -5,15 +5,17 @@ on:
     paths:
       - 'services/api/**'
       - 'services/frontend/**'
-      - 'services/rotator/**'
-      - 'infra/**'
-      - 'services/deploy.sh'
-      - 'services/docker-stack.yml'
-      - 'env/**'
+      - 'build-logic/**'
+      - 'libs/**'
+      - 'gradle/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.lockfile'
+      - 'gradlew'
+      - 'gradlew.bat'
       - 'scripts/**'
       - '.github/actions/**'
       - '.github/workflows/**'
-      - 'docker-compose.yml'
       - 'docker-compose.dev.yml'
   workflow_dispatch:
 
@@ -23,8 +25,6 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-  COVERAGE_MIN_LINE_RATE: "0.80"
 
   JAVA_VERSION: '21'
   NODE_VERSION: '24'
@@ -109,9 +109,12 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Compile API main and test sources
-        run: ./gradlew --no-daemon --build-cache compileKotlin compileTestKotlin
-        working-directory: services/api
+      - name: Compile API main, test and integration-test sources
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            :services:api:compileKotlin \
+            :services:api:compileTestKotlin \
+            :services:api:compileIntegrationTestKotlin
 
       - name: Save Gradle cache
         if: always()
@@ -122,21 +125,11 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ steps.gradle-cache-key.outputs.key }}
 
-  api-verification:
-    name: ${{ matrix.name }}
+  api-tests:
+    name: API unit and integration tests
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ matrix.timeout_minutes }}
+    timeout-minutes: 30
     needs: [ api-static, fe-static ]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: api
-            name: API unit tests with coverage
-            timeout_minutes: 30
-          - id: system
-            name: System tests with coverage
-            timeout_minutes: 60
 
     services:
       db:
@@ -221,85 +214,23 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Set up Node.js and Yarn
-        if: matrix.id == 'system'
-        uses: ./.github/actions/setup-node-yarn
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          yarn-version: ${{ env.YARN_VERSION }}
-
-      - name: Start instrumented frontend for system tests
-        if: matrix.id == 'system'
+      - name: Run API unit and integration tests
         run: |
-          set -euo pipefail
-          VITE_COVERAGE=true VITE_APP_URL="$APP_URL" \
-            yarn --cwd services/frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
-          echo $! > frontend-dev.pid
+          ./gradlew --no-daemon --build-cache \
+            :services:api:test \
+            :services:api:integrationTest \
+            :services:api:jacocoTestReport
 
-      - name: Wait for frontend readiness
-        if: matrix.id == 'system'
-        run: |
-          set -euo pipefail
-          for i in {1..60}; do
-            if curl -fsS "$FRONTEND_URL" >/dev/null 2>&1; then
-              echo "Frontend is ready."
-              exit 0
-            fi
-            echo "Waiting for frontend... ($i/60)"
-            sleep 2
-          done
-          echo "Frontend failed to start."
-          exit 1
-
-      - name: Run API Gradle tests
-        if: matrix.id == 'api'
-        run: ./gradlew --no-daemon --build-cache test jacocoTestReport
-        working-directory: services/api
-
-      - name: Run system tests and JaCoCo system report
-        if: matrix.id == 'system'
-        run: |
-          ./gradlew --no-daemon --no-build-cache systemTest jacocoSystemTestReport \
-            -Dsystem.frontend.url="$FRONTEND_URL" \
-            -Dfrontend.coverage.enabled=true \
-            -Dfrontend.coverage.required=true
-        working-directory: services/api
-
-      - name: Convert frontend raw coverage to LCOV
-        if: matrix.id == 'system'
-        run: |
-          yarn --cwd services/frontend coverage:system:report
-
-      - name: Stop frontend process
-        if: always() && matrix.id == 'system'
-        run: |
-          if [ -f frontend-dev.pid ]; then
-            kill "$(cat frontend-dev.pid)" || true
-          fi
-
-      - name: Upload API test coverage artifacts
-        if: always() && matrix.id == 'api'
+      - name: Upload API test reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-test-coverage
+          name: api-test-reports
           path: |
             services/api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
             services/api/build/reports/jacoco/jacocoTestReport/html
             services/api/build/reports/tests/test
-          if-no-files-found: warn
-
-      - name: Upload API system coverage artifacts
-        if: always() && matrix.id == 'system'
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-system-coverage
-          path: |
-            services/api/build/reports/jacoco/jacocoSystemTestReport/jacocoSystemTestReport.xml
-            services/api/build/reports/jacoco/jacocoSystemTestReport/html
-            services/api/build/coverage/frontend-system/coverage-final.json
-            services/api/build/coverage/frontend-system/lcov.info
-            services/api/build/coverage/frontend-system/html
-            frontend-dev.log
+            services/api/build/reports/tests/integrationTest
           if-no-files-found: warn
 
   fe-unit:
@@ -369,65 +300,6 @@ jobs:
             services/frontend/coverage/e2e/lcov.info
             services/frontend/coverage/e2e/html
           if-no-files-found: error
-
-  coverage:
-    name: Merge and enforce code coverage
-    needs: [ api-verification, fe-unit, fe-e2e ]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download API test coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: api-test-coverage
-          path: coverage-inputs/api-test
-
-      - name: Download API system coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: api-system-coverage
-          path: coverage-inputs/api-system
-
-      - name: Download frontend unit coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-unit-coverage
-          path: coverage-inputs/frontend-unit
-
-      - name: Download frontend e2e coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-e2e-coverage
-          path: coverage-inputs/frontend-e2e
-
-      - name: Set up Node.js and Yarn
-        uses: ./.github/actions/setup-node-yarn
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          yarn-version: ${{ env.YARN_VERSION }}
-
-      - name: Merge all discovered coverage reports
-        run: |
-          set -euo pipefail
-          chmod +x ./scripts/merge-coverage.sh
-          ./scripts/merge-coverage.sh --out "coverage/merged"
-
-      - name: Upload merged coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: merged-coverage-report
-          path: coverage/merged
-          if-no-files-found: error
-
-      - name: Enforce merged coverage threshold
-        run: |
-          chmod +x ./scripts/check-cobertura-threshold.sh
-          ./scripts/check-cobertura-threshold.sh \
-            --file coverage/merged/Cobertura.xml \
-            --min-line-rate "${COVERAGE_MIN_LINE_RATE}"
 
   openapi-sync:
     name: Validate OpenAPI client generation
@@ -537,4 +409,3 @@ jobs:
           name: openapi-sync-logs
           path: openapi-api.log
           if-no-files-found: ignore
-

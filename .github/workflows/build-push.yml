@@ -23,8 +23,10 @@ jobs:
     strategy:
       matrix:
         include:
+          # The api image now builds from the whole repo — build-logic/ and
+          # libs/ need to be in the context so Gradle can resolve them.
           - service: api
-            context: services
+            context: .
             file: services/api/Dockerfile
           - service: frontend
             context: services/frontend

@@ -1,7 +1,8 @@
 package net.blueshell.api.platform.oidc
 
+import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.exception.UserNotFoundException
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,12 +15,15 @@ data class OidcUserData(
 )
 
 @Component
-class OidcUserLoader(private val userRepository: UserRepository) {
+class OidcUserLoader(private val userService: UserService) {
 
     @Transactional(readOnly = true)
     fun load(username: String): OidcUserData? {
-        val user = userRepository.findByUsername(username).orElse(null) ?: return null
-        // Access roles within the transaction to initialize the lazy collection.
+        val user = try {
+            userService.findByUsername(username)
+        } catch (_: UserNotFoundException) {
+            return null
+        }
         val roles = user.roles.toSet()
         return OidcUserData(
             username = user.username,

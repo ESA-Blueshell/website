@@ -1,64 +1,47 @@
 # Stalwart dev configuration.
 #
-# Production Stalwart config lives under platform/cluster/flux/apps/mail/stalwart/
-# (lands in PR7). This dev config mirrors the prod shape but with TLS off and
-# plaintext auth so Listmonk can deliver and poll bounces without certificates.
+# Production config lives under platform/cluster/flux/apps/mail/stalwart/
+# (lands with the platform tree). This dev config mirrors the prod shape
+# (flat dotted keys) with TLS off so Listmonk can deliver and poll bounces
+# without certificates.
 
-[server]
-hostname = "mail.dev.local"
+server.hostname = "mail.dev.local"
 
-[server.listener."smtp"]
-bind = ["0.0.0.0:25"]
-protocol = "smtp"
-tls.implicit = false
+server.listener.smtp.bind = "[::]:25"
+server.listener.smtp.protocol = "smtp"
 
-[server.listener."submission"]
-bind = ["0.0.0.0:587"]
-protocol = "smtp"
-tls.implicit = false
+server.listener.submission.bind = "[::]:587"
+server.listener.submission.protocol = "smtp"
 
-[server.listener."submissions"]
-bind = ["0.0.0.0:465"]
-protocol = "smtp"
-tls.implicit = false
+server.listener.submissions.bind = "[::]:465"
+server.listener.submissions.protocol = "smtp"
 
-[server.listener."imap"]
-bind = ["0.0.0.0:143"]
-protocol = "imap"
-tls.implicit = false
+server.listener.imap.bind = "[::]:143"
+server.listener.imap.protocol = "imap"
 
-[server.listener."imaps"]
-bind = ["0.0.0.0:993"]
-protocol = "imap"
-tls.implicit = false
+server.listener.imaps.bind = "[::]:993"
+server.listener.imaps.protocol = "imap"
 
-[server.listener."http"]
-bind = ["0.0.0.0:8080"]
-protocol = "http"
-tls.implicit = false
+server.listener.http.bind = "[::]:8080"
+server.listener.http.protocol = "http"
 
-[storage]
-data = "rocksdb"
-blob = "rocksdb"
-fts = "rocksdb"
-lookup = "rocksdb"
-directory = "internal"
+storage.data = "rocksdb"
+storage.fts = "rocksdb"
+storage.blob = "rocksdb"
+storage.lookup = "rocksdb"
+storage.directory = "internal"
 
-[store."rocksdb"]
-type = "rocksdb"
-path = "/opt/stalwart/data"
+store.rocksdb.type = "rocksdb"
+store.rocksdb.path = "/opt/stalwart/data"
+store.rocksdb.compression = "lz4"
 
-[directory."internal"]
-type = "internal"
-store = "rocksdb"
+directory.internal.type = "internal"
+directory.internal.store = "rocksdb"
 
-[authentication]
-fallback-admin.user = "%{env:STALWART_FALLBACK_ADMIN_USER}%"
-fallback-admin.secret = "%{env:STALWART_FALLBACK_ADMIN_SECRET}%"
+authentication.fallback-admin.user = "%{env:STALWART_FALLBACK_ADMIN_USER}%"
+authentication.fallback-admin.secret = "%{env:STALWART_FALLBACK_ADMIN_SECRET}%"
 
-[session.rcpt]
-relay = true
-
-[session.auth]
-mechanisms = ["plain", "login"]
-directory = "internal"
+tracer.log.type = "stdout"
+tracer.log.level = "info"
+tracer.log.ansi = false
+tracer.log.enable = true

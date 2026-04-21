@@ -75,6 +75,13 @@ tasks.withType<Test>().configureEach {
         includeTags("system")
     }
     systemProperty("spring.profiles.active", "test")
+    // Propagate -Dsystem.frontend.url=… from the gradle invocation to the
+    // test JVM. Without this the forked test picks up the default from
+    // application.properties (http://frontend:3000) which is the dev-compose
+    // hostname, not valid in CI where the frontend is served on localhost.
+    System.getProperty("system.frontend.url")
+        ?.takeIf { it.isNotBlank() }
+        ?.let { systemProperty("system.frontend.url", it) }
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
     }

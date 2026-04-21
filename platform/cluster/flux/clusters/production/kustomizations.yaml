@@ -2,10 +2,10 @@
 # Layered Kustomizations so Helm-owned CRDs install before any CR that
 # depends on them. apps-core installs charts (cert-manager, Traefik,
 # external-dns, VSO) and waits for the HelmReleases to report Ready.
-# Every other domain dependsOn apps-core. The data / mail / stateless
-# domains are added in their own PRs; their Kustomization entries are
-# declared here upfront so the dependency graph does not shift when
-# they land.
+# apps-data depends on apps-core (Vault HelmRelease needs the VSO CRDs
+# present first). apps-vso-secrets depends on both so the VaultStaticSecret
+# CRs are only applied after Vault is running and the VSO default auth
+# method is wired up.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -17,6 +17,39 @@ spec:
   prune: true
   wait: true
   timeout: 15m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-data
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./platform/cluster/flux/apps/data
+  prune: true
+  wait: true
+  timeout: 15m
+  dependsOn:
+    - name: apps-core
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-vso-secrets
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./platform/cluster/flux/apps/vso-secrets
+  prune: true
+  dependsOn:
+    - name: apps-core
+    - name: apps-data
   sourceRef:
     kind: GitRepository
     name: flux-system

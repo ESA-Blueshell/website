@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mariadb
+  namespace: data-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: mariadb
+      version: "18.x"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: data-system
+  values:
+    auth:
+      database: blueshell
+      # Root password and api user password are seeded into Vault at
+      # secret/platform/mariadb by the operator before first apply, then
+      # synced here by VSO (see apps/vso-secrets/mariadb-credentials.yaml).
+      existingSecret: mariadb-credentials
+    primary:
+      persistence:
+        enabled: true
+        size: 10Gi
+    secondary:
+      replicaCount: 0

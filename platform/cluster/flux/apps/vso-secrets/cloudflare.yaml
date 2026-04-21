@@ -1,0 +1,52 @@
+# cert-manager reads cloudflare-api-token.api-token to satisfy DNS-01
+# challenges for *.v2.esa-blueshell.nl. external-dns reads the same secret
+# shape to manage A/AAAA records. VSO syncs both from the same Vault path.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-secrets-operator
+  namespace: cert-manager
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: cloudflare-api-token
+  namespace: cert-manager
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/edge
+  destination:
+    name: cloudflare-api-token
+    create: true
+    transformation:
+      templates:
+        api-token:
+          text: '{{- get .Secrets "cloudflare.dns_api_token" -}}'
+  refreshAfter: 1h
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-secrets-operator
+  namespace: external-dns
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: cloudflare-api-token
+  namespace: external-dns
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/edge
+  destination:
+    name: cloudflare-api-token
+    create: true
+    transformation:
+      templates:
+        api-token:
+          text: '{{- get .Secrets "cloudflare.dns_api_token" -}}'
+  refreshAfter: 1h

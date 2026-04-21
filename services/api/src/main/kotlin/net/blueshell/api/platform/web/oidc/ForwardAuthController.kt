@@ -1,5 +1,7 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.platform.web.oidc
 
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.annotation.security.PermitAll
 import net.blueshell.api.shared.security.UserPrincipal
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -13,10 +15,12 @@ import org.springframework.web.bind.annotation.RestController
  * (handled by the existing JwtAuthFilter + JwtAuthenticationEntryPoint before this controller).
  */
 @RestController
+@Tag(name = "Forward Auth")
 @RequestMapping("/oauth2/forward-auth")
 class ForwardAuthController {
 
     @GetMapping
+    @PermitAll
     fun forwardAuth(@AuthenticationPrincipal principal: UserPrincipal?): ResponseEntity<Void> {
         if (principal == null) {
             return ResponseEntity.status(401).build()

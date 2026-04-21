@@ -127,6 +127,7 @@ class SecurityConfig(
                 "/csrf",
                 "/events/**",
                 "/events/signups/byAccessToken",
+                "/api/me/services",
                 "/blogs",
                 "/blogs/*",
                 "/boards",

@@ -1,5 +1,7 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.platform.web.oidc
 
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.annotation.security.PermitAll
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
 import org.springframework.http.ResponseEntity
@@ -25,10 +27,12 @@ private val ALL_SERVICES = listOf(
 )
 
 @RestController
+@Tag(name = "My Services")
 @RequestMapping("/api/me/services")
 class MyServicesController {
 
     @GetMapping
+    @PermitAll
     fun myServices(@AuthenticationPrincipal principal: UserPrincipal?): ResponseEntity<List<ServiceEntry>> {
         if (principal == null) {
             return ResponseEntity.ok(listOf(

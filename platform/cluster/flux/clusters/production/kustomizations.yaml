@@ -83,3 +83,37 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-mail
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./platform/cluster/flux/apps/mail
+  prune: true
+  dependsOn:
+    - name: apps-core
+    - name: apps-vso-secrets
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-stateless
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./platform/cluster/flux/apps/stateless
+  prune: true
+  dependsOn:
+    - name: apps-core
+    - name: apps-data
+    - name: apps-vso-secrets
+    - name: apps-edge
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

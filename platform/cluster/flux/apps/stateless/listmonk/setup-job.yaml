@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: listmonk-setup
+  namespace: default
+  # force-replace so any edit to setup.py (content-hash change on the
+  # ConfigMap) triggers a re-run of the idempotent setup script.
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: listmonk-setup
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: python:3.12-alpine
+          command:
+            - python
+            - /scripts/setup.py
+          env:
+            - name: LISTMONK_URL
+              value: http://listmonk.default.svc.cluster.local:9000
+            - name: LISTMONK_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: listmonk-secrets
+                  key: admin-user
+            - name: LISTMONK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: listmonk-secrets
+                  key: admin-password
+            - name: LISTMONK_SMTP_HOST
+              value: stalwart.mail-system.svc.cluster.local
+            - name: LISTMONK_SMTP_PORT
+              value: '587'
+            - name: LISTMONK_SMTP_AUTH_PROTOCOL
+              value: login
+            - name: LISTMONK_SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: bounce-mailbox-user
+                  optional: true
+            - name: LISTMONK_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: bounce-mailbox-password
+                  optional: true
+            - name: LISTMONK_SMTP_HELLO_HOSTNAME
+              value: mail.v2.esa-blueshell.nl
+            - name: LISTMONK_SMTP_TLS_TYPE
+              value: STARTTLS
+            - name: LISTMONK_BOUNCE_MAILBOX_ENABLED
+              value: 'true'
+            - name: LISTMONK_BOUNCE_MAILBOX_HOST
+              value: stalwart.mail-system.svc.cluster.local
+            - name: LISTMONK_BOUNCE_MAILBOX_PORT
+              value: '993'
+            - name: LISTMONK_BOUNCE_MAILBOX_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: bounce-mailbox-user
+                  optional: true
+            - name: LISTMONK_BOUNCE_MAILBOX_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: bounce-mailbox-password
+                  optional: true
+            - name: LISTMONK_BOUNCE_MAILBOX_TLS_ENABLED
+              value: 'true'
+            - name: LISTMONK_BOUNCE_MAILBOX_FOLDER
+              value: INBOX
+            - name: LISTMONK_BOUNCE_MAILBOX_RETURN_PATH
+              value: bounce@v2.esa-blueshell.nl
+          volumeMounts:
+            - name: setup-script
+              mountPath: /scripts
+      volumes:
+        - name: setup-script
+          configMap:
+            name: listmonk-setup-script

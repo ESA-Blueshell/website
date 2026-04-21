@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - setup-job.yaml
+
+# Generate the setup ConfigMap from the Python script. Content-hash drift
+# (any edit to setup.py) flips the Job's spec and triggers force-replace,
+# re-running the idempotent setup against the live Listmonk instance.
+configMapGenerator:
+  - name: listmonk-setup-script
+    namespace: default
+    files:
+      - setup.py

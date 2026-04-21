@@ -6,3 +6,4 @@ resources:
   - cluster-issuer-cloudflare.yaml
   - traefik-default-tls.yaml
   - traefik-forward-auth-middleware.yaml
+  - ingressroutes

@@ -1,3 +1,19 @@
 frontend
 .git
 env
+
+# Developer artifacts that must never ship into image layers — otherwise
+# host paths baked into Gradle's build/ and .gradle/ state trip up
+# composite build registration inside the container.
+**/.gradle
+**/build
+**/.kotlin
+**/node_modules
+**/.yarn/cache
+**/.yarn/install-state.gz
+**/target
+
+# IDE / OS scratch
+**/.idea
+**/.DS_Store
+**/*.iml

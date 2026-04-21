@@ -5,7 +5,7 @@
 DISCORD_OPENAPI_URL="${DISCORD_OPENAPI_URL:-https://raw.githubusercontent.com/discord/discord-api-spec/refs/heads/main/specs/openapi.json}"
 BREVO_OPENAPI_URL="${BREVO_OPENAPI_URL:-https://api.brevo.com/v3/swagger_definition_v3.yml}"
 
-SHARED_OPENAPI_DIR="${SHARED_OPENAPI_DIR:-services/shared/openapi}"
+SHARED_OPENAPI_DIR="${SHARED_OPENAPI_DIR:-libs/openapi-specs}"
 API_OPENAPI_SPEC="${API_OPENAPI_SPEC:-services/api/openapi.yaml}"
 
 check_common_prerequisites() {
@@ -32,12 +32,12 @@ download_external_specs() {
 
 regen_brevo_client() {
   echo "Regenerating Brevo Java client..."
-  services/api/gradlew --no-daemon --build-cache -p services/api :clients:brevo:generate
+  ./gradlew --no-daemon --build-cache :services:api:clients:brevo:generate
 }
 
 regen_listmonk_client() {
   echo "Regenerating Listmonk Java client..."
-  services/api/gradlew --no-daemon --build-cache -p services/api :clients:listmonk:generate
+  ./gradlew --no-daemon --build-cache :services:api:clients:listmonk:generate
 }
 
 # Normalizes the API spec and discord.raw.json in-place.

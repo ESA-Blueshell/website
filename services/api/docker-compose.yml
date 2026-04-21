@@ -20,8 +20,11 @@ services:
     image: ghcr.io/esa-blueshell/api:${IMAGE_TAG:-latest}
     pull_policy: always
     build:
-      context: ..
-      dockerfile: api/Dockerfile
+      context: ../..
+      dockerfile: services/api/Dockerfile
+      # API image is a multi-stage build that compiles every module in the
+      # monorepo that :services:api depends on, so the whole repo is the
+      # context. .dockerignore keeps frontend/node_modules etc. out.
     restart: unless-stopped
     env_file:
       - .api.env

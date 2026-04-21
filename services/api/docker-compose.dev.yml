@@ -26,17 +26,16 @@ services:
     image: api:dev
     pull_policy: never
     build:
-      context: ..
-      dockerfile: api/Dockerfile-dev
+      context: ../..
+      dockerfile: services/api/Dockerfile-dev
     volumes:
-      - .:/app
+      # Mount the whole repo into /src so hot-reload sees api + build-logic + libs edits.
+      - ../..:/src
       - ../../storage:/home/storage
       - gradle-cache:/root/.gradle/caches
       - playwright-browsers:/ms-playwright
       - playwright-browsers:/root/.cache/ms-playwright
       - listmonk-secrets:/run/secrets/listmonk:ro
-      - ../shared/openapi:/shared/openapi:ro
-      - ../listmonk/openapi.yaml:/listmonk/openapi.yaml:ro
     ports:
       - "8080:8080"
       - "5005:5005"

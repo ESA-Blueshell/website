@@ -1,0 +1,65 @@
+services:
+  stalwart:
+    image: stalwartlabs/stalwart:v0.15.5
+    hostname: mail.dev.local
+    environment:
+      STALWART_FALLBACK_ADMIN_USER: ${STALWART_ADMIN_USER:-admin}
+      STALWART_FALLBACK_ADMIN_SECRET: ${STALWART_ADMIN_SECRET:-admin}
+    ports:
+      # Submission + admin UI. IMAP/POP/SMTP(25) stay on the internal network
+      # so dev laptops don't collide with a host-level MTA.
+      - "1025:25"
+      - "1143:143"
+      - "1465:465"
+      - "1587:587"
+      - "1993:993"
+      - "8085:8080"
+    volumes:
+      - stalwart-data:/opt/stalwart/data
+      - ./config.dev.toml:/opt/stalwart/etc/config.toml:ro
+    networks:
+      - global_network
+    healthcheck:
+      # Stalwart image has no curl/wget. Use a TCP probe on SMTP :25 —
+      # if the listener is up, the server has loaded its config.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/25"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  stalwart-init:
+    image: curlimages/curl:8.11.1
+    depends_on:
+      stalwart:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      STALWART_ADMIN_USER: ${STALWART_ADMIN_USER:-admin}
+      STALWART_ADMIN_SECRET: ${STALWART_ADMIN_SECRET:-admin}
+    networks:
+      - global_network
+    entrypoint: ["sh", "-eu", "-c"]
+    command:
+      - |
+        # Seed the dev bounce@dev.local mailbox that Listmonk polls for bounces.
+        # Idempotent — 409 on re-run is expected and ignored.
+        for _ in $$(seq 1 30); do
+          if curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
+               http://stalwart:8080/api/principal >/dev/null 2>&1; then
+            break
+          fi
+          sleep 2
+        done
+        curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
+          -H 'Content-Type: application/json' \
+          -X POST http://stalwart:8080/api/principal \
+          -d '{"type":"individual","name":"bounce@dev.local","secrets":["bounce"],"emails":["bounce@dev.local"],"description":"Dev bounce inbox"}' \
+          || echo "bounce@dev.local already exists or seeding skipped"
+
+networks:
+  global_network:
+    driver: bridge
+
+volumes:
+  stalwart-data:

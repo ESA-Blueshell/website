@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The root Flux Kustomization (defined in flux-system/gotk-sync.yaml)
+# applies this overlay. It intentionally only brings in the Flux
+# controllers and the ordered list of Kustomization CRs in
+# kustomizations.yaml; each of those CRs owns its own app subtree with
+# dependsOn edges so Helm-owned CRDs install before CRs that use them.
+resources:
+  - flux-system
+  - kustomizations.yaml

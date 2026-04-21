@@ -1,0 +1,37 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: external-dns
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: external-dns
+  values:
+    provider:
+      name: cloudflare
+    sources:
+      - service
+      - traefik-proxy
+    env:
+      # Injected by VSO from secret/data/platform/edge (see the VSO
+      # secrets PR). Keeping the reference as a plain secretKeyRef means
+      # external-dns stays out of the Vault agent injection story.
+      - name: CF_API_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: cloudflare-api-token
+            key: api-token
+    extraArgs:
+      # Only touch DNS records for ingresses marked for the public
+      # Traefik. LAN-only / internal services never get published.
+      - --annotation-filter=kubernetes.io/ingress.class=traefik-public
+      # Single zone. Records for the apex continue to be managed
+      # statically from infra/dns/esa-blueshell.nl.zone until cutover.
+      - --domain-filter=v2.esa-blueshell.nl
+      - --txt-owner-id=blueshell-website-production

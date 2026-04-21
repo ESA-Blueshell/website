@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: headlamp
+  namespace: utility-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: headlamp
+      sourceRef:
+        kind: HelmRepository
+        name: headlamp
+        namespace: utility-system
+  values:
+    replicaCount: 1
+    config:
+      baseURL: ''
+      # OIDC front-door. Users hit kube.v2.esa-blueshell.nl, the website
+      # api issues an id-token, and Headlamp passes that token to the
+      # k3s API server. k3s is configured to trust the
+      # https://auth.v2.esa-blueshell.nl issuer
+      # (platform/nix/modules/roles/single-node.nix); the user's RBAC
+      # is decided by the `groups` claim via oidc-admin-binding.yaml.
+      #
+      # Public client with PKCE — no client secret, nothing to rotate
+      # or leak. Until the api OIDC issuer lands, Headlamp's login
+      # flow will fail; the deployment otherwise reconciles fine.
+      oidc:
+        clientID: headlamp
+        issuerURL: https://auth.v2.esa-blueshell.nl
+        scopes: openid profile email groups
+        callbackURL: https://kube.v2.esa-blueshell.nl/oidc-callback
+        usePKCE: true
+    service:
+      type: ClusterIP
+      port: 80
+    persistentVolumeClaim:
+      enabled: false
+    # With OIDC, each authenticated user's ID token is what the API
+    # server authorises against (via the oidc:k8s-admin
+    # ClusterRoleBinding). The pod's own ServiceAccount is effectively
+    # unused for API calls, so drop the chart-managed ClusterRoleBinding
+    # to keep the SA without any cluster-wide grants.
+    clusterRoleBinding:
+      create: false

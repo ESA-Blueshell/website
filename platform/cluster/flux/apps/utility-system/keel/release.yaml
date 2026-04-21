@@ -1,0 +1,61 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: keel
+  namespace: utility-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: keel
+      sourceRef:
+        kind: HelmRepository
+        name: keel
+        namespace: utility-system
+  values:
+    # Keel polls registries for new image tags and triggers rolling
+    # restarts on Deployments that opt in via `keel.sh/*` annotations.
+    # We only want the polling path: no webhook server, no Slack /
+    # Hipchat / Mattermost integrations, no Helm provider, no approvals
+    # UI. Keel itself is in-cluster and has no public ingress.
+    replicaCount: 1
+    service:
+      enabled: false
+    webhookRelay:
+      enabled: false
+    polling:
+      enabled: true
+    helmProvider:
+      enabled: false
+    aws:
+      enabled: false
+    gcr:
+      enabled: false
+    azure:
+      enabled: false
+    googleApplicationCredentials: ''
+    dockerRegistry:
+      enabled: false
+    basicauth:
+      enabled: false
+    rbac:
+      enabled: true
+    serviceAccount:
+      create: true
+    persistence:
+      enabled: false
+    notifications:
+      enabled: false
+    slack:
+      enabled: false
+    hipchat:
+      enabled: false
+    mattermost:
+      enabled: false
+    debug: false
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 128Mi

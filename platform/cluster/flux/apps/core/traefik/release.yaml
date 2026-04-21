@@ -1,0 +1,45 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: ingress-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: traefik
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: ingress-system
+  values:
+    ingressClass:
+      enabled: true
+      isDefaultClass: true
+      name: traefik-public
+    ingressRoute:
+      dashboard:
+        enabled: false
+    providers:
+      kubernetesCRD:
+        allowCrossNamespace: true
+        enabled: true
+        ingressClass: traefik-public
+      kubernetesIngress:
+        enabled: true
+        ingressClass: traefik-public
+        publishedService:
+          enabled: true
+    # No MetalLB / LoadBalancer assignment on this single-node cluster.
+    # Cloudflare points *.v2.esa-blueshell.nl straight at the node's
+    # public IP via the static zone file; Traefik binds hostPort 80/443
+    # directly on the node. Service type stays ClusterIP.
+    service:
+      type: ClusterIP
+      annotations:
+        external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
+    ports:
+      web:
+        hostPort: 80
+      websecure:
+        hostPort: 443

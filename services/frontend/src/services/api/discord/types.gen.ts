@@ -267,8 +267,8 @@ export type UserSelectComponentResponse = {
     default_values?: Array<UserSelectDefaultValueResponse>;
     disabled?: boolean;
     id: number;
-    max_values: number | null;
-    min_values: number | null;
+    max_values: number;
+    min_values: number;
     placeholder?: string;
     type: 5;
 };
@@ -283,6 +283,7 @@ export type UserGuildOnboardingResponse = {
     default_channel_ids: Array<SnowflakeType>;
     enabled: boolean;
     guild_id: SnowflakeType;
+    mode: GuildOnboardingMode;
     prompts: Array<OnboardingPromptResponse>;
 };
 
@@ -312,6 +313,8 @@ export type OnboardingPromptResponse = {
     title: string;
     type: OnboardingPromptType;
 };
+
+export type GuildOnboardingMode = 0 | 1;
 
 export type UserCommunicationDisabledActionResponse = {
     metadata: UserCommunicationDisabledActionMetadataResponse;
@@ -482,7 +485,7 @@ export type ThreadResponse = {
     name: string;
     owner_id: SnowflakeType;
     parent_id?: null | SnowflakeType;
-    permissions?: string | null;
+    permissions?: string;
     rate_limit_per_user?: number;
     rtc_region?: string | null;
     thread_metadata: ThreadMetadataResponse;
@@ -531,8 +534,8 @@ export type ThreadSearchTagSetting = 'match_all' | 'match_some';
 export type ThreadSortOrder = 0 | 1;
 
 export type DefaultReactionEmojiResponse = {
-    emoji_id?: null | SnowflakeType;
-    emoji_name?: string | null;
+    emoji_id: null | SnowflakeType;
+    emoji_name: string | null;
 };
 
 export type ForumLayout = 0 | 1 | 2;
@@ -549,7 +552,7 @@ export type GuildChannelResponse = {
     available_tags?: Array<ForumTagResponse>;
     bitrate?: number;
     default_auto_archive_duration?: ThreadAutoArchiveDuration;
-    default_forum_layout?: null | ForumLayout;
+    default_forum_layout?: ForumLayout;
     default_reaction_emoji?: null | DefaultReactionEmojiResponse;
     default_sort_order?: null | ThreadSortOrder;
     default_tag_setting?: null | ThreadSearchTagSetting;
@@ -565,7 +568,7 @@ export type GuildChannelResponse = {
     nsfw?: boolean;
     parent_id?: null | SnowflakeType;
     permission_overwrites?: Array<ChannelPermissionOverwriteResponse>;
-    permissions?: string | null;
+    permissions?: string;
     position: number;
     rate_limit_per_user?: number;
     rtc_region?: string | null;
@@ -606,20 +609,20 @@ export type BasicMessageResponse = {
     id: SnowflakeType;
     interaction?: MessageInteractionResponse;
     interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
-    mention_channels?: Array<null | MessageMentionChannelResponse>;
+    mention_channels?: Array<MessageMentionChannelResponse>;
     mention_everyone: boolean;
     mention_roles: Array<SnowflakeType>;
     mentions: Array<UserResponse>;
     message_reference?: MessageReferenceResponse;
     message_snapshots?: Array<MessageSnapshotResponse>;
-    nonce?: number | string | null;
+    nonce?: number | string;
     pinned: boolean;
     poll?: PollResponse;
     position?: number;
     purchase_notification?: PurchaseNotificationResponse;
     resolved?: ResolvedObjectsResponse;
     role_subscription_data?: MessageRoleSubscriptionDataResponse;
-    shared_client_theme?: null | CustomClientThemeResponse;
+    shared_client_theme?: CustomClientThemeResponse;
     sticker_items?: Array<MessageStickerItemResponse>;
     stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
     thread?: ThreadResponse;
@@ -785,8 +788,10 @@ export type MessageEmbedAuthorResponse = {
 export type MessageEmbedResponse = {
     author?: MessageEmbedAuthorResponse;
     color?: number;
+    components?: Array<ContainerComponentResponse>;
     description?: string;
     fields?: Array<MessageEmbedFieldResponse>;
+    flags?: number | null;
     footer?: MessageEmbedFooterResponse;
     image?: MessageEmbedImageResponse;
     provider?: MessageEmbedProviderResponse;
@@ -879,14 +884,6 @@ export type FileComponentResponse = {
     type: 13;
 };
 
-export type ContainerComponentResponse = {
-    accent_color: number | null;
-    components: Array<ActionRowComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
-    id: number;
-    spoiler: boolean;
-    type: 17;
-};
-
 export type TextInputStyleTypes = 1 | 2;
 
 export type TextInputComponentResponse = {
@@ -914,8 +911,8 @@ export type StringSelectComponentResponse = {
     custom_id: string;
     disabled?: boolean;
     id: number;
-    max_values: number | null;
-    min_values: number | null;
+    max_values: number;
+    min_values: number;
     options: Array<StringSelectOptionResponse>;
     placeholder?: string;
     type: 3;
@@ -926,8 +923,8 @@ export type RoleSelectComponentResponse = {
     default_values?: Array<RoleSelectDefaultValueResponse>;
     disabled?: boolean;
     id: number;
-    max_values: number | null;
-    min_values: number | null;
+    max_values: number;
+    min_values: number;
     placeholder?: string;
     type: 6;
 };
@@ -942,8 +939,8 @@ export type MentionableSelectComponentResponse = {
     default_values?: Array<RoleSelectDefaultValueResponse | UserSelectDefaultValueResponse>;
     disabled?: boolean;
     id: number;
-    max_values: number | null;
-    min_values: number | null;
+    max_values: number;
+    min_values: number;
     placeholder?: string;
     type: 7;
 };
@@ -959,8 +956,8 @@ export type ChannelSelectComponentResponse = {
     default_values?: Array<ChannelSelectDefaultValueResponse>;
     disabled?: boolean;
     id: number;
-    max_values: number | null;
-    min_values: number | null;
+    max_values: number;
+    min_values: number;
     placeholder?: string;
     type: 8;
 };
@@ -969,6 +966,24 @@ export type ActionRowComponentResponse = {
     components: Array<ButtonComponentResponse | ChannelSelectComponentResponse | MentionableSelectComponentResponse | RoleSelectComponentResponse | StringSelectComponentResponse | TextInputComponentResponse | UserSelectComponentResponse>;
     id: number;
     type: 1;
+};
+
+export type ContainerComponentResponse = {
+    accent_color: number | null;
+    components: Array<ActionRowComponentResponse | FileComponentResponse | MediaGalleryComponentResponse | SectionComponentResponse | SeparatorComponentResponse | TextDisplayComponentResponse>;
+    id: number;
+    spoiler: boolean;
+    type: 17;
+};
+
+export type ClipSpeakingEventResponse = {
+    speaking_flags: number;
+    user_id: SnowflakeType;
+};
+
+export type ClipEventTimelineEntryResponse = {
+    speaking?: ClipSpeakingEventResponse;
+    timestamp_ms: number;
 };
 
 /**
@@ -1006,7 +1021,7 @@ export type ApplicationResponse = {
     name: string;
     primary_sku_id?: SnowflakeType;
     privacy_policy_url?: string;
-    rpc_origins?: Array<string | null>;
+    rpc_origins?: Array<string>;
     slug?: string;
     tags?: Array<string>;
     terms_of_service_url?: string;
@@ -1017,14 +1032,18 @@ export type ApplicationResponse = {
 export type MessageAttachmentResponse = {
     application?: ApplicationResponse;
     clip_created_at?: string;
+    clip_events_timeline?: Array<ClipEventTimelineEntryResponse>;
     clip_participants?: Array<UserResponse>;
     content_type?: string;
     description?: string;
     duration_secs?: number;
     ephemeral?: boolean;
     filename: string;
+    flags?: number;
     height?: number;
     id: SnowflakeType;
+    placeholder?: string;
+    placeholder_version?: number;
     proxy_url: string;
     size: number;
     title?: string | null;
@@ -1118,8 +1137,11 @@ export type BasicApplicationResponse = {
     type: null | ApplicationTypes;
 };
 
+export type ActivityActionTypes = 1 | 2 | 3 | 5 | 6;
+
 export type MessageActivityResponse = {
-    [key: string]: unknown;
+    party_id?: string;
+    type: ActivityActionTypes;
 };
 
 export type MessageReactionCountDetailsResponse = {
@@ -1152,13 +1174,13 @@ export type MessageResponse = {
     id: SnowflakeType;
     interaction?: MessageInteractionResponse;
     interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
-    mention_channels?: Array<null | MessageMentionChannelResponse>;
+    mention_channels?: Array<MessageMentionChannelResponse>;
     mention_everyone: boolean;
     mention_roles: Array<SnowflakeType>;
     mentions: Array<UserResponse>;
     message_reference?: MessageReferenceResponse;
     message_snapshots?: Array<MessageSnapshotResponse>;
-    nonce?: number | string | null;
+    nonce?: number | string;
     pinned: boolean;
     poll?: PollResponse;
     position?: number;
@@ -1167,7 +1189,7 @@ export type MessageResponse = {
     referenced_message?: null | BasicMessageResponse;
     resolved?: ResolvedObjectsResponse;
     role_subscription_data?: MessageRoleSubscriptionDataResponse;
-    shared_client_theme?: null | CustomClientThemeResponse;
+    shared_client_theme?: CustomClientThemeResponse;
     sticker_items?: Array<MessageStickerItemResponse>;
     stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
     thread?: ThreadResponse;
@@ -1183,8 +1205,6 @@ export type UpdateGuildOnboardingRequest = {
     mode?: null | GuildOnboardingMode;
     prompts?: Array<UpdateOnboardingPromptRequest> | null;
 };
-
-export type GuildOnboardingMode = 0 | 1;
 
 export type ChannelPermissionOverwriteRequest = {
     allow?: number | null;
@@ -1360,13 +1380,13 @@ export type SearchMessageResponse = {
     id: SnowflakeType;
     interaction?: MessageInteractionResponse;
     interaction_metadata?: ApplicationCommandInteractionMetadataResponse | MessageComponentInteractionMetadataResponse | ModalSubmitInteractionMetadataResponse;
-    mention_channels?: Array<null | MessageMentionChannelResponse>;
+    mention_channels?: Array<MessageMentionChannelResponse>;
     mention_everyone: boolean;
     mention_roles: Array<SnowflakeType>;
     mentions: Array<UserResponse>;
     message_reference?: MessageReferenceResponse;
     message_snapshots?: Array<MessageSnapshotResponse>;
-    nonce?: number | string | null;
+    nonce?: number | string;
     pinned: boolean;
     poll?: PollResponse;
     position?: number;
@@ -1375,7 +1395,7 @@ export type SearchMessageResponse = {
     referenced_message?: null | BasicMessageResponse;
     resolved?: ResolvedObjectsResponse;
     role_subscription_data?: MessageRoleSubscriptionDataResponse;
-    shared_client_theme?: null | CustomClientThemeResponse;
+    shared_client_theme?: CustomClientThemeResponse;
     sticker_items?: Array<MessageStickerItemResponse>;
     stickers?: Array<GuildStickerResponse | StandardStickerResponse>;
     thread?: ThreadResponse;
@@ -1758,7 +1778,7 @@ export type InviteApplicationResponse = {
     name: string;
     primary_sku_id?: SnowflakeType;
     privacy_policy_url?: string;
-    rpc_origins?: Array<string | null>;
+    rpc_origins?: Array<string>;
     slug?: string;
     tags?: Array<string>;
     terms_of_service_url?: string;
@@ -1812,6 +1832,7 @@ export type GuildWithCountsResponse = {
     home_header: string | null;
     icon: string | null;
     id: SnowflakeType;
+    incidents_data: null | GuildIncidentsDataResponse;
     max_members: number;
     max_presences: number | null;
     max_stage_video_channel_users: number;
@@ -1842,6 +1863,11 @@ export type GuildWithCountsResponse = {
 };
 
 export type GuildMfaLevel = 0 | 1;
+
+export type GuildIncidentsDataResponse = {
+    dms_disabled_until: string | null;
+    invites_disabled_until: string | null;
+};
 
 export type GuildExplicitContentFilterTypes = 0 | 1 | 2;
 
@@ -1915,7 +1941,7 @@ export type GuildTemplateChannelResponse = {
     name: string | null;
     nsfw: boolean;
     parent_id: null | SnowflakeType;
-    permission_overwrites: Array<null | ChannelPermissionOverwriteResponse>;
+    permission_overwrites: Array<ChannelPermissionOverwriteResponse>;
     position: number | null;
     rate_limit_per_user: number;
     template: string;
@@ -1970,6 +1996,7 @@ export type GuildResponse = {
     home_header: string | null;
     icon: string | null;
     id: SnowflakeType;
+    incidents_data: null | GuildIncidentsDataResponse;
     max_members: number;
     max_presences: number | null;
     max_stage_video_channel_users: number;
@@ -2046,6 +2073,7 @@ export type GuildOnboardingResponse = {
     default_channel_ids: Array<SnowflakeType>;
     enabled: boolean;
     guild_id: SnowflakeType;
+    mode: GuildOnboardingMode;
     prompts: Array<OnboardingPromptResponse>;
 };
 
@@ -2090,8 +2118,8 @@ export type GuildIncomingWebhookResponse = {
 export type GuildHomeSettingsResponse = {
     enabled: boolean;
     guild_id: SnowflakeType;
-    new_member_actions: Array<null | NewMemberActionResponse>;
-    resource_channels: Array<null | ResourceChannelResponse>;
+    new_member_actions: Array<NewMemberActionResponse>;
+    resource_channels: Array<ResourceChannelResponse>;
     welcome_message?: WelcomeMessageResponse;
 };
 

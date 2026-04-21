@@ -7,6 +7,7 @@ plugins {
     id("spring-conventions")
     id("testing-conventions")
     id("org.graalvm.buildtools.native") version "0.10.6"
+    `java-test-fixtures`
 
     val kotlinVersion = "2.3.10"
     kotlin("plugin.jpa") version kotlinVersion
@@ -129,14 +130,47 @@ dependencies {
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
-    testImplementation("com.microsoft.playwright:playwright:1.58.0")
     testImplementation("io.mockk:mockk:1.14.9")
+
+    // Shared test-fixture consumers expose main starter deps so factories
+    // and support classes compile against Spring / JPA / Jackson / Security.
+    testFixturesApi("org.springframework.boot:spring-boot-starter-test") {
+        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
+    }
+    testFixturesApi("org.springframework.security:spring-security-test")
+    testFixturesApi("org.springframework.boot:spring-boot-starter-data-jpa")
+    testFixturesApi("org.springframework.boot:spring-boot-starter-web")
+    testFixturesApi("org.springframework.boot:spring-boot-starter-flyway")
+    testFixturesApi("org.flywaydb:flyway-mysql:12.0.2")
+    testFixturesApi("com.github.javafaker:javafaker:1.0.2")
+    testFixturesCompileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
 
     mockitoAgent("org.mockito:mockito-core:5.21.0")
 }
 
 springBoot {
     mainClass.set("net.blueshell.api.ApiApplicationKt")
+}
+
+// java-test-fixtures consumers need a plain jar with no classifier. Spring
+// Boot disables the default `jar` task in favour of `bootJar`; re-enable
+// both with distinct classifiers so consumers get the plain jar and
+// `bootJar` remains the runnable artifact.
+tasks.named<Jar>("jar") {
+    enabled = true
+    archiveClassifier.set("")
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveClassifier.set("boot")
+}
+
+// Spring Boot registers `bootArchives` as a consumable configuration with
+// the same attributes as the default `archives`, which collides with
+// java-test-fixtures' artifact publishing. Mark bootArchives as
+// non-consumable — it is only used internally for `bootJar`.
+configurations.named("bootArchives") {
+    isCanBeConsumed = false
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -180,26 +214,6 @@ val listmonkLiveTest by tasks.registering(Test::class) {
     classpath = sourceSets["test"].runtimeClasspath
     shouldRunAfter(tasks.test)
     useJUnitPlatform { includeTags("listmonk-live") }
-}
-
-// Playwright install helpers — needed by the system tests (moved to
-// :services:system-tests in the next step; the tasks stay here until the
-// tests do).
-tasks.register<JavaExec>("installPlaywrightDeps") {
-    group = "playwright"
-    description = "Installs Playwright OS dependencies"
-    classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("com.microsoft.playwright.CLI")
-    args("install-deps")
-}
-
-tasks.register<JavaExec>("installChromium") {
-    group = "playwright"
-    description = "Installs Chromium (Playwright)"
-    dependsOn("installPlaywrightDeps")
-    classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("com.microsoft.playwright.CLI")
-    args("install", "chromium")
 }
 
 tasks.withType<BootRun>().configureEach {

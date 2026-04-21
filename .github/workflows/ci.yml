@@ -5,6 +5,7 @@ on:
     paths:
       - 'services/api/**'
       - 'services/frontend/**'
+      - 'services/system-tests/**'
       - 'build-logic/**'
       - 'libs/**'
       - 'gradle/**'
@@ -113,8 +114,10 @@ jobs:
         run: |
           ./gradlew --no-daemon --build-cache \
             :services:api:compileKotlin \
+            :services:api:compileTestFixturesKotlin \
             :services:api:compileTestKotlin \
-            :services:api:compileIntegrationTestKotlin
+            :services:api:compileIntegrationTestKotlin \
+            :services:system-tests:compileTestKotlin
 
       - name: Save Gradle cache
         if: always()
@@ -219,7 +222,8 @@ jobs:
           ./gradlew --no-daemon --build-cache \
             :services:api:test \
             :services:api:integrationTest \
-            :services:api:jacocoTestReport
+            :services:api:jacocoTestReport \
+            :services:api:jacocoIntegrationTestReport
 
       - name: Upload API test reports
         if: always()
@@ -229,8 +233,149 @@ jobs:
           path: |
             services/api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
             services/api/build/reports/jacoco/jacocoTestReport/html
+            services/api/build/reports/jacoco/jacocoIntegrationTestReport/jacocoIntegrationTestReport.xml
+            services/api/build/reports/jacoco/jacocoIntegrationTestReport/html
             services/api/build/reports/tests/test
             services/api/build/reports/tests/integrationTest
+          if-no-files-found: warn
+
+  system-tests:
+    name: System tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [ api-static, fe-static ]
+
+    services:
+      db:
+        image: mariadb:10.11.10
+        ports: [ "3306:3306" ]
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_PORT: ${{ env.MYSQL_PORT }}
+          MYSQL_USER: ${{ env.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        ports: [ "5672:5672" ]
+        env:
+          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
+          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Wait for database service
+        run: |
+          sudo apt-get update && sudo apt-get install -y default-mysql-client
+          for i in {1..30}; do
+            if mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+              echo "Database is ready!"
+              exit 0
+            fi
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+          echo "Database did not become ready in time."
+          exit 1
+
+      - name: Prepare test database schema
+        run: |
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
+
+      - name: Wait for RabbitMQ service
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            if (echo > /dev/tcp/$RABBITMQ_HOST/$RABBITMQ_PORT) >/dev/null 2>&1; then
+              echo "RabbitMQ is ready!"
+              exit 0
+            fi
+            echo "Waiting for RabbitMQ... ($i/30)"
+            sleep 2
+          done
+          echo "RabbitMQ did not become ready in time."
+          exit 1
+
+      - name: Set up Java Development Kit
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Restore Gradle cache from API build
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ needs.api-static.outputs.gradle-cache-key }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Install Playwright browser for system tests
+        run: ./gradlew --no-daemon :services:system-tests:installChromium
+
+      - name: Start instrumented frontend for system tests
+        run: |
+          set -euo pipefail
+          VITE_COVERAGE=true VITE_APP_URL="$APP_URL" \
+            yarn --cwd services/frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
+          echo $! > frontend-dev.pid
+
+      - name: Wait for frontend readiness
+        run: |
+          set -euo pipefail
+          for i in {1..60}; do
+            if curl -fsS "$FRONTEND_URL" >/dev/null 2>&1; then
+              echo "Frontend is ready."
+              exit 0
+            fi
+            echo "Waiting for frontend... ($i/60)"
+            sleep 2
+          done
+          echo "Frontend failed to start."
+          exit 1
+
+      - name: Run system tests (no coverage enforcement)
+        run: |
+          ./gradlew --no-daemon :services:system-tests:test \
+            -Dsystem.frontend.url="$FRONTEND_URL"
+
+      - name: Stop frontend process
+        if: always()
+        run: |
+          if [ -f frontend-dev.pid ]; then
+            kill "$(cat frontend-dev.pid)" || true
+          fi
+
+      - name: Upload system-test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-test-reports
+          path: |
+            services/system-tests/build/reports/tests/test
+            frontend-dev.log
           if-no-files-found: warn
 
   fe-unit:

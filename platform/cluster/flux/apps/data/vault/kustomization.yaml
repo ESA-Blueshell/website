@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - source.yaml
+  - release.yaml
+  - bootstrap-auth-job.yaml
+
+# Generate the bootstrap-auth ConfigMap from the extracted shell script.
+# Kustomize appends a content hash to the generated name (e.g.
+# vault-bootstrap-auth-abc123), and built-in name references rewrite
+# bootstrap-auth-job.yaml's volumes.configMap.name to match. Any edit to
+# bootstrap-auth.sh produces a new hash, which flips the Job's spec and
+# triggers Flux's force-replace (kustomize.toolkit.fluxcd.io/force:
+# enabled on the Job) so the bootstrap Job re-runs automatically instead
+# of quietly holding stale Vault role/policy state forever.
+configMapGenerator:
+  - name: vault-bootstrap-auth
+    namespace: data-system
+    files:
+      - bootstrap.sh=bootstrap-auth.sh

@@ -1,0 +1,29 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: listmonk-db
+  namespace: data-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: postgresql
+      version: "16.x"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: data-system
+  values:
+    auth:
+      database: listmonk
+      username: listmonk
+      # Credentials seeded into Vault at secret/listmonk by the operator,
+      # then synced here by VSO (see apps/vso-secrets/listmonk-secrets.yaml).
+      existingSecret: listmonk-db-credentials
+      secretKeys:
+        adminPasswordKey: postgres-password
+        userPasswordKey: password
+    primary:
+      persistence:
+        enabled: true
+        size: 5Gi

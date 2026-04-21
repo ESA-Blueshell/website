@@ -64,3 +64,8 @@ services/**/*.env
 
 # infra secrets
 /infra/.infra.env
+
+# platform/ is the GitOps tree and must always be fully tracked;
+# negate the broad patterns above that would otherwise eat it.
+!platform/
+!platform/**

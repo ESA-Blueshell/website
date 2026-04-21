@@ -30,7 +30,7 @@
 
   networking = {
     hostName = "blueshell-fra-1";
-    domain = "blueshell.nl";
+    domain = "v2.esa-blueshell.nl";
     # Contabo does not run DHCP — the cidata ISO ships static config that
     # Debian picks up on first boot. Replace the placeholder v4/v6 values
     # with the real ones from the cidata file once the VPS is provisioned.

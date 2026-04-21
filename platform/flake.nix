@@ -49,7 +49,7 @@
         # before running `deploy-rs activate`. nixos-anywhere takes the IP
         # as a CLI argument so it does not need this value during initial
         # bootstrap.
-        hostname = "blueshell-fra-1.blueshell.nl";
+        hostname = "v2.esa-blueshell.nl";
         profiles.system = {
           sshUser = "deploy";
           user = "root";

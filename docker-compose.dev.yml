@@ -1,6 +1,5 @@
 include:
   - services/api/docker-compose.dev.yml
   - services/frontend/docker-compose.dev.yml
+  - services/stalwart/docker-compose.dev.yml
   - services/listmonk/docker-compose.dev.yml
-  - services/mailserver/docker-compose.dev.yaml
-

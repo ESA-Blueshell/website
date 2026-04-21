@@ -3,69 +3,34 @@
 Full-stack web application for ESA Blueshell — a student association platform
 for managing members, events, payments, and communications.
 
-Built with **Spring Boot 4 (Kotlin)** backend and **Vue.js 3 (TypeScript)** frontend,
-deployed as a **Docker Swarm stack** on a Contabo VPS.
+Built with **Spring Boot 4 (Kotlin)** backend and **Vue.js 3 (TypeScript)** frontend.
+
+> **Platform migration in progress.** The repository is moving from a Docker Swarm
+> deployment on a Contabo VPS to a single-node **NixOS + k3s + FluxCD + Kustomize + Helm**
+> stack, mirroring the `personal-stack-2` backbone. Swarm-era assets (`infra/`, `vps/`,
+> `docker-stack.yml`, `deploy.sh`, `rotator`, `mailserver`) have been removed in this
+> branch. The new `platform/` tree will land in follow-up PRs.
 
 ---
 
-## Architecture
+## Architecture (target)
 
-Domain-Driven Design (DDD) with a clean layered architecture:
+Domain-Driven Design with a clean layered architecture:
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend API** | Spring Boot 4.0 (Kotlin), Spring Security, Spring Data JPA |
+| **Backend API** | Spring Boot 4 (Kotlin), Spring Security, Spring Data JPA |
 | **Frontend** | Vue.js 3, TypeScript, Vuetify 3, Vite |
 | **Database** | MariaDB 10.11 (application), PostgreSQL 17 (Listmonk) |
-| **Email** | Listmonk v4 (transactional + marketing) |
-| **Reverse proxy** | Traefik v3 (Let's Encrypt via ACME) |
-| **Containerization** | Docker Swarm (single-node, rootless) |
-| **CI/CD** | GitHub Actions → GHCR → `website pull` on server |
+| **Email (marketing)** | Listmonk v4 |
+| **Email (MTA)** | Stalwart (replaces docker-mailserver) |
+| **Secrets** | HashiCorp Vault + Vault Secrets Operator |
+| **Auth / OIDC** | API issues tokens (Spring Authorization Server) for Headlamp, Vault |
+| **Reverse proxy** | Traefik v3 in k3s (Let's Encrypt DNS-01 via Cloudflare) |
+| **Orchestration** | k3s (single node) + FluxCD GitOps |
+| **OS** | NixOS on Contabo VPS |
 
 **Architecture decisions:** [docs/adr/ADR-INDEX.md](docs/adr/ADR-INDEX.md)
-
----
-
-## Repository Layout
-
-```
-website/
-├── services/
-│   ├── api/                 Spring Boot backend
-│   │   ├── src/             Kotlin source
-│   │   ├── Dockerfile       Production image
-│   │   ├── docker-compose.yml       Production compose fragment
-│   │   ├── docker-compose.dev.yml   Development compose fragment
-│   │   ├── .db.env          MariaDB credentials (not committed)
-│   │   └── .api.env         Application secrets (not committed)
-│   ├── frontend/            Vue.js 3 frontend
-│   │   ├── src/             TypeScript/Vue source
-│   │   ├── Dockerfile
-│   │   ├── docker-compose.yml
-│   │   └── docker-compose.dev.yml
-│   ├── listmonk/            Email & contact management (Listmonk + PostgreSQL)
-│   │   ├── setup.py         Idempotent first-run setup
-│   │   ├── docker-compose.yml
-│   │   ├── docker-compose.dev.yml
-│   │   └── .listmonk.env    Listmonk credentials (not committed)
-│   ├── mailserver/          docker-mailserver (development only)
-│   │   └── docker-compose.dev.yaml
-│   ├── docker-stack.yml     Swarm stack definition (all services)
-│   ├── deploy.sh            Deploy script (fetches secrets, deploys stack)
-│   └── README.md            Full deployment guide
-├── vps/                   VPS provisioning (Contabo cloud-init + ops)
-│   ├── scripts/provision.sh System setup baked into the image
-│   ├── cloud-init/          Cloud-init templates + render script
-│   ├── ops/                 backup.sh, restore.sh, create-vps.sh
-│   ├── packer/              Optional QEMU pre-baked image
-│   └── README.md            Provisioning guide
-├── docs/
-│   ├── adr/                 Architecture Decision Records
-│   └── policies/            Privacy & Cookie policies (EN/NL)
-├── scripts/                 Developer scripts (OpenAPI gen, coverage, etc.)
-├── docker-compose.yml       Production compose (uses include:)
-└── docker-compose.dev.yml   Development compose
-```
 
 ---
 
@@ -73,7 +38,7 @@ website/
 
 ### Prerequisites
 
-- Docker + Docker Compose v2 (for dev environment)
+- Docker + Docker Compose v2
 - Java 21 (optional — for running API outside Docker)
 - Node.js + Yarn Berry (optional — for running frontend outside Docker)
 
@@ -89,10 +54,10 @@ This starts:
 |---------|-----|-------|
 | API | http://localhost:8080 | Hot-reload via Gradle |
 | Frontend | http://localhost:3000 | Hot-reload via Vite |
-| Swagger UI | http://localhost:8080/swagger-ui | Disabled by default — set `SPRINGDOC_API_DOCS_ENABLED=true` |
+| Swagger UI | http://localhost:8080/swagger-ui | Set `SPRINGDOC_API_DOCS_ENABLED=true` |
 | MariaDB | localhost:3307 | |
 | Listmonk | http://localhost:9000 | Email management UI |
-| Mailserver | localhost:587 (SMTP) | Bounce testing |
+| Stalwart | http://localhost:8085 | Dev MTA admin UI (SMTP :1025, IMAP :1143, admin `admin`/`admin`) |
 
 ### Environment files
 
@@ -107,64 +72,31 @@ cp services/listmonk/.listmonk.example.env  services/listmonk/.listmonk.env
 ### Run tests
 
 ```bash
-# All tests (API unit + system + frontend unit + e2e + coverage)
+# API unit + integration tests (will be split in PR3)
 docker compose -f docker-compose.dev.yml run --rm api ./gradlew test
-
-# Full test suite with merged coverage report
-./scripts/test-all-compose-coverage.sh
 ```
 
 ### Generate OpenAPI TypeScript client
-
-Run after changing API endpoints:
 
 ```bash
 ./scripts/generate_openapi.sh
 ```
 
-The generated client lands in `services/frontend/src/services/api/blueshell/`.
-
 ### Remote debugging
 
-The dev API container exposes a JDWP debug port at `localhost:5005`.
-Configure IntelliJ: **Remote JVM Debug → host: localhost, port: 5005**.
+The dev API container exposes JDWP on `localhost:5005`.
+IntelliJ: **Remote JVM Debug → host: localhost, port: 5005**.
 
 ---
 
 ## Production Deployment
 
-Production runs as a Docker Swarm stack on a Contabo VPS.
+The previous Docker Swarm deployment is being replaced. See
+[`platform/docs/runbook.md`](platform/docs/runbook.md) for the current state of the migration.
 
-### Quick reference
-
-```bash
-# Provision a new VPS
-cd image && ./cloud-init/render.sh --standalone && ./ops/create-vps.sh
-
-# Pull a backup from the server
-cd image && ./ops/backup.sh
-
-# Push a backup (e.g. when migrating)
-cd image && ./ops/restore.sh
-
-# On the server — deploy / redeploy
-sudo website up
-
-# On the server — update to latest images (also triggered by CI)
-sudo website pull
-```
-
-**Full docs:** [services/README.md](services/README.md)
-**VPS provisioning:** [vps/README.md](vps/README.md)
-
-### CI/CD flow
-
-Every push to `main`:
-1. Runs tests (API unit, system, frontend unit, e2e, coverage check)
-2. Builds and pushes Docker images to GHCR (`api`, `frontend`)
-3. SSHes to the production server and runs `website pull`
-
-`website pull` = `git pull` + `bash services/deploy.sh` (Docker Swarm stack deploy).
+The `build-push.yml` workflow still publishes `api` and `frontend` images to GHCR
+(`ghcr.io/esa-blueshell/*`). The `deploy.yml` workflow keeps deploying to the old
+Swarm VPS until the k3s cutover lands.
 
 ---
 
@@ -184,20 +116,17 @@ Every push to `main`:
 ## Security
 
 - JWT authentication (Spring Security)
-- SQL injection prevention (JPA/Hibernate parameterized queries)
-- XSS protection (Vue.js template escaping + CSP headers via Traefik)
-- CORS restricted to `esa-blueshell.nl`
+- SQL injection prevention (JPA parameterized queries)
+- XSS protection (Vue template escaping + CSP headers)
+- CORS restricted to blueshell domains
 - TLS 1.2+ with Let's Encrypt certificates (auto-renewed)
-- SSH on port 2222, keys-only, no password auth
-- Rootless Docker on the VPS (no root daemon)
-- Secrets stored in per-service `.env` files (not committed to git)
 
 ---
 
 ## API Documentation
 
 - **Development:** http://localhost:8080/swagger-ui (set `SPRINGDOC_API_DOCS_ENABLED=true`)
-- **Production:** disabled (OpenAPI docs are off in the prod profile)
+- **Production:** disabled (OpenAPI docs off in the prod profile)
 - **OpenAPI spec:** `/api/v3/api-docs`
 
 ---

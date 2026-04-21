@@ -1,0 +1,64 @@
+# Stalwart dev configuration.
+#
+# Production Stalwart config lives under platform/cluster/flux/apps/mail/stalwart/
+# (lands in PR7). This dev config mirrors the prod shape but with TLS off and
+# plaintext auth so Listmonk can deliver and poll bounces without certificates.
+
+[server]
+hostname = "mail.dev.local"
+
+[server.listener."smtp"]
+bind = ["0.0.0.0:25"]
+protocol = "smtp"
+tls.implicit = false
+
+[server.listener."submission"]
+bind = ["0.0.0.0:587"]
+protocol = "smtp"
+tls.implicit = false
+
+[server.listener."submissions"]
+bind = ["0.0.0.0:465"]
+protocol = "smtp"
+tls.implicit = false
+
+[server.listener."imap"]
+bind = ["0.0.0.0:143"]
+protocol = "imap"
+tls.implicit = false
+
+[server.listener."imaps"]
+bind = ["0.0.0.0:993"]
+protocol = "imap"
+tls.implicit = false
+
+[server.listener."http"]
+bind = ["0.0.0.0:8080"]
+protocol = "http"
+tls.implicit = false
+
+[storage]
+data = "rocksdb"
+blob = "rocksdb"
+fts = "rocksdb"
+lookup = "rocksdb"
+directory = "internal"
+
+[store."rocksdb"]
+type = "rocksdb"
+path = "/opt/stalwart/data"
+
+[directory."internal"]
+type = "internal"
+store = "rocksdb"
+
+[authentication]
+fallback-admin.user = "%{env:STALWART_FALLBACK_ADMIN_USER}%"
+fallback-admin.secret = "%{env:STALWART_FALLBACK_ADMIN_SECRET}%"
+
+[session.rcpt]
+relay = true
+
+[session.auth]
+mechanisms = ["plain", "login"]
+directory = "internal"

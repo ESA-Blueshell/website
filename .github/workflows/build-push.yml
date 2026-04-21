@@ -29,9 +29,6 @@ jobs:
           - service: frontend
             context: services/frontend
             file: services/frontend/Dockerfile
-          - service: rotator
-            context: services/rotator
-            file: services/rotator/Dockerfile
 
     steps:
       - name: Checkout repository

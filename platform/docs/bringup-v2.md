@@ -55,13 +55,11 @@ and is reachable as `admin` on port 2222. Skip directly to step 3.
 
 ## 2. (Already done) Nix host config has the real addresses
 
-The flake carries the real IPv4 (`157.173.115.164`, `/24`, gateway
-`157.173.115.1`) in `platform/nix/hosts/frankfurt-contabo-1/default.nix`.
-The IPv6 address is still `REPLACE_WITH_VPS_IPV6` — **update it to the
-value shown in the Contabo panel before running step 3**, otherwise
-NixOS will come up with no v6 address and mail deliverability will
-degrade (several major providers only accept SMTP over IPv6 from hosts
-with rDNS on both families). Open a quick PR, merge, then proceed.
+The flake at `platform/nix/hosts/frankfurt-contabo-1/default.nix`
+carries the full production addressing baked in: IPv4
+`157.173.115.164/24` gateway `157.173.115.1`, IPv6
+`2a02:c207:2316:2642::1/64` gateway `fe80::1` (link-local). No further
+nix edits are needed before install.
 
 ```bash
 nix flake check ./platform --no-build      # sanity

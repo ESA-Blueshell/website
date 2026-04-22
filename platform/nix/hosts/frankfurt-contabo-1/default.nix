@@ -45,7 +45,7 @@
       ];
       ipv6.addresses = [
         {
-          address = "REPLACE_WITH_VPS_IPV6";
+          address = "2a02:c207:2316:2642::1";
           prefixLength = 64;
         }
       ];

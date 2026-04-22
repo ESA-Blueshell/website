@@ -9,9 +9,13 @@ spec:
     spec:
       chart: postgresql
       version: "16.x"
+      # Bitnami moved postgresql to an OCI-only registry; the legacy
+      # HTTP index at charts.bitnami.com advertises an `oci://` URL that
+      # the HTTP-typed `bitnami` HelmRepository can't follow. Use the
+      # OCI-typed source declared in bitnami-oci-source.yaml.
       sourceRef:
         kind: HelmRepository
-        name: bitnami
+        name: bitnami-oci
         namespace: data-system
   values:
     auth:

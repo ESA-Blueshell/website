@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - bitnami-source.yaml
+  - bitnami-oci-source.yaml
   - vault
   - mariadb
   - listmonk-db

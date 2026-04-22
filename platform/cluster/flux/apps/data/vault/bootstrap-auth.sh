@@ -11,9 +11,19 @@ if ! vault auth list -format=json | grep -q '"kubernetes/"'; then
   vault auth enable kubernetes
 fi
 
+# Deliberately do NOT pass token_reviewer_jwt. If set, Vault uses that
+# literal JWT to call TokenReview, and projected service account tokens
+# expire after 1 h by default — the first time the role is exercised
+# past that window, every incoming auth login returns
+# "Code: 403. * permission denied" with no obvious diagnostic. When
+# token_reviewer_jwt is unset, Vault uses its own pod's SA token
+# (kubelet auto-rotates it), so the config never goes stale.
+#
+# The Vault SA has system:auth-delegator via the vault-server-binding
+# ClusterRoleBinding created by the Vault Helm chart, so it's already
+# authorised to call TokenReview.
 vault write auth/kubernetes/config \
   kubernetes_host="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}" \
-  token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
   kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 
 # kv-v2 at `secret/` is Vault's conventional default. Services read

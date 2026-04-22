@@ -13,7 +13,25 @@ spec:
         kind: HelmRepository
         name: bitnami
         namespace: data-system
+  # Bitnami moved all free-tier container images from docker.io/bitnami
+  # to docker.io/bitnamilegacy in August 2025 (paid subscription now
+  # required for the original namespace). The chart still pins the old
+  # `bitnami/mariadb:...` reference, so without overriding image.repository
+  # the StatefulSet pod hits ImagePullBackOff. The tag itself still
+  # exists under bitnamilegacy.
+  #
+  # retries: -1 — never park Stalled on a transient install race
+  # (first boot sometimes hits a client rate limiter from helm-controller
+  # and the default maxRetries=1 gives up too early).
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    remediation:
+      retries: -1
   values:
+    image:
+      repository: bitnamilegacy/mariadb
     auth:
       database: blueshell
       # Root password and api user password are seeded into Vault at

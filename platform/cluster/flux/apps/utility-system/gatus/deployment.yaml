@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gatus-data
+  namespace: utility-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gatus
+  namespace: utility-system
+spec:
+  replicas: 1
+  # sqlite file sits on the PVC; only one writer at a time.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gatus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gatus
+    spec:
+      containers:
+        - name: gatus
+          image: twinproduction/gatus:v5.35.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GATUS_CONFIG_PATH
+              value: /config
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 192Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gatus-data
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: gatus-config
+              - configMap:
+                  name: gatus-endpoints
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gatus
+  namespace: utility-system
+spec:
+  selector:
+    app.kubernetes.io/name: gatus
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

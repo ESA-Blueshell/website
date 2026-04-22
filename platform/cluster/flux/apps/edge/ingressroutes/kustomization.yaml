@@ -8,3 +8,4 @@ resources:
   - listmonk.yaml
   - headlamp.yaml
   - stalwart-admin.yaml
+  - status.yaml

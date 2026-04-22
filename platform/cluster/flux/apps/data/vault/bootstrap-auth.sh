@@ -115,6 +115,10 @@ path "secret/data/platform/mail" {
 path "secret/data/platform/ghcr" {
   capabilities = ["read"]
 }
+
+path "secret/data/platform/mariadb" {
+  capabilities = ["read"]
+}
 EOF
 
 vault policy write api /tmp/api.hcl

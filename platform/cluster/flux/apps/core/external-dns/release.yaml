@@ -12,6 +12,20 @@ spec:
         kind: HelmRepository
         name: external-dns
         namespace: external-dns
+  # The Deployment references secret `cloudflare-api-token` which is
+  # materialised by VSO from Vault. During cluster bootstrap that
+  # Secret doesn't exist yet (Vault isn't installed until apps-data,
+  # and apps-data depends on apps-core). If the initial Helm install
+  # runs before an operator pre-seeds the Secret, the Deployment never
+  # becomes Ready and Flux's default single-retry stalls the
+  # HelmRelease permanently. Infinite retries let it self-heal once
+  # the Secret lands, no manual `flux reconcile --force` needed.
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    remediation:
+      retries: -1
   values:
     provider:
       name: cloudflare

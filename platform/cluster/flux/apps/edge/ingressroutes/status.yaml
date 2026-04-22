@@ -4,7 +4,8 @@ metadata:
   name: status
   namespace: edge-system
   annotations:
-    external-dns.alpha.kubernetes.io/target: v2.esa-blueshell.nl
+    # One label deep — CF Universal SSL covers it, proxy stays on.
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
     kubernetes.io/ingress.class: traefik-public
 spec:
@@ -15,7 +16,7 @@ spec:
     # point is that an outside observer (including logged-out users)
     # can see whether the stack is up.
     - kind: Rule
-      match: Host(`status.v2.esa-blueshell.nl`)
+      match: Host(`status.esa-blueshell.nl`)
       services:
         - name: gatus
           namespace: utility-system

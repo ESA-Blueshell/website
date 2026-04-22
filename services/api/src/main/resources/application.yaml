@@ -195,7 +195,7 @@ management:
         http.server.requests: 0.5, 0.95, 0.99
 
 auth:
-  issuer: ${AUTH_ISSUER:https://auth.v2.esa-blueshell.nl}
+  issuer: ${AUTH_ISSUER:https://auth.esa-blueshell.nl}
   transit:
     enabled: ${AUTH_TRANSIT_ENABLED:false}
     vault-addr: ${VAULT_ADDR:http://vault.data-system.svc.cluster.local:8200}

@@ -45,7 +45,12 @@ spec:
       # Only touch DNS records for ingresses marked for the public
       # Traefik. LAN-only / internal services never get published.
       - --annotation-filter=kubernetes.io/ingress.class=traefik-public
-      # Single zone. Records for the apex continue to be managed
-      # statically from infra/dns/esa-blueshell.nl.zone until cutover.
-      - --domain-filter=v2.esa-blueshell.nl
+      # Zone-wide. We manage one-label admin hosts directly under
+      # `esa-blueshell.nl` (auth, kube, mail-admin, status, vault)
+      # rather than two-label hosts under `*.v2.esa-blueshell.nl`,
+      # because Cloudflare's free Universal SSL edge cert only covers
+      # one label deep (`*.esa-blueshell.nl`). Policy stays upsert-only
+      # (external-dns default) so apex records managed outside the
+      # cluster — old-VPS apex A/AAAA, MX/SPF/DKIM — are never touched.
+      - --domain-filter=esa-blueshell.nl
       - --txt-owner-id=blueshell-website-production

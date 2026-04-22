@@ -4,15 +4,36 @@ metadata:
   name: api
   namespace: edge-system
   annotations:
-    external-dns.alpha.kubernetes.io/target: v2.esa-blueshell.nl
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
+    # No DNS record of our own — the frontend IngressRoute already
+    # publishes `v2.esa-blueshell.nl`. We just piggy-back on that
+    # host with path-based rules that win over frontend's catch-all
+    # because they're more specific.
     kubernetes.io/ingress.class: traefik-public
 spec:
   entryPoints:
     - websecure
+  # Frontend-same-origin path routing. `App.vue:resolveApiBaseUrl()`
+  # falls back to `${location.origin}/api` when VITE_APP_URL is unset,
+  # and no dedicated api.v2.esa-blueshell.nl subdomain exists any more
+  # (two-label hosts fall outside Cloudflare's free Universal SSL edge
+  # cert `*.esa-blueshell.nl`). Every api/OIDC call therefore lands on
+  # `v2.esa-blueshell.nl` and must be peeled off before Traefik falls
+  # through to the frontend SPA. Covered:
+  #   - /api/*                                  REST API
+  #   - /oauth2/*                               Spring Auth Server
+  #   - /userinfo                               OIDC userinfo
+  #   - /.well-known/openid-configuration       OIDC discovery
+  #   - /.well-known/oauth-authorization-server OAuth metadata
   routes:
     - kind: Rule
-      match: Host(`api.v2.esa-blueshell.nl`)
+      match: >-
+        Host(`v2.esa-blueshell.nl`) && (
+          PathPrefix(`/api`) ||
+          PathPrefix(`/oauth2`) ||
+          PathPrefix(`/userinfo`) ||
+          Path(`/.well-known/openid-configuration`) ||
+          Path(`/.well-known/oauth-authorization-server`)
+        )
       services:
         - name: api
           namespace: default

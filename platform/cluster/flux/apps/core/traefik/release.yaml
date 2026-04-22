@@ -31,9 +31,10 @@ spec:
         publishedService:
           enabled: true
     # No MetalLB / LoadBalancer assignment on this single-node cluster.
-    # Cloudflare points *.v2.esa-blueshell.nl straight at the node's
-    # public IP via the static zone file; Traefik binds hostPort 80/443
-    # directly on the node. Service type stays ClusterIP.
+    # Cloudflare points v2.esa-blueshell.nl and the one-label admin
+    # hosts (auth/kube/mail-admin/status.esa-blueshell.nl) straight at
+    # the node's public IP via external-dns; Traefik binds hostPort
+    # 80/443 directly on the node. Service type stays ClusterIP.
     service:
       type: ClusterIP
       annotations:

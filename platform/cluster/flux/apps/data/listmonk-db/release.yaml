@@ -30,6 +30,15 @@ spec:
     remediation:
       retries: -1
   values:
+    # Bitnami moved all free-tier container images from docker.io/bitnami
+    # to docker.io/bitnamilegacy in August 2025 (paid subscription now
+    # required for the original namespace). The chart still pins the
+    # `bitnami/postgresql:<version>` reference, so without overriding
+    # image.repository the StatefulSet pod hits an image pull 404.
+    # The tags themselves still exist under `bitnamilegacy/postgresql`.
+    # Same fix as the mariadb HelmRelease in this Kustomization.
+    image:
+      repository: bitnamilegacy/postgresql
     auth:
       database: listmonk
       username: listmonk

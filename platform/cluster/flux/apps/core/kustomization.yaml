@@ -7,6 +7,5 @@ kind: Kustomization
 resources:
   - cert-manager
   - external-dns
-  - headlamp
   - traefik
   - vso

@@ -1,4 +1,4 @@
-# Bringing up the v2 stack on a fresh VPS
+# Bringing up the v2 stack on the Frankfurt Contabo VPS
 
 Runs once, to stand up the new NixOS + k3s + Flux stack at
 `*.v2.esa-blueshell.nl`. The old Swarm VPS at the apex keeps serving
@@ -8,6 +8,17 @@ The separate apex cutover (`esa-blueshell.nl` → new VPS, strip the
 `v2.` prefix) happens in a later PR, only after the v2 stack has been
 observed running in production traffic.
 
+## Target VPS
+
+- **Contabo VPS 20** — 6 vCPU / 12 GB RAM / 400 GB NVMe SSD
+- **Public IPv4:** `157.173.115.164` (permanent — baked into the flake)
+- **Hostname (nix + k8s):** `frankfurt-contabo-1`
+- **DNS:** `v2.esa-blueshell.nl` + wildcard `*.v2.esa-blueshell.nl`
+- **Pre-install SSH:** `admin@157.173.115.164:2222`
+  with key `~/.ssh/blueshell-admin`
+- **Post-install SSH:** `deploy@157.173.115.164:2222`
+  (key-only; see the `deploy.pub` bundle step below)
+
 ## 0. Workstation pre-flight
 
 ```bash
@@ -16,91 +27,96 @@ kubectl version --client
 flux --version
 gh auth status                     # repo:read on ESA-Blueshell/website
 
-# One-time: add your SSH key to the deploy bundle the flake bakes in.
-cat ~/.ssh/id_ed25519.pub >> platform/nix/authorized-keys/deploy.pub
-# Add other operators' keys the same way. deploy.pub is gitignored.
+# Confirm the pre-install SSH path before doing anything else.
+ssh -i ~/.ssh/blueshell-admin -p 2222 admin@157.173.115.164 'uname -a && sudo -n true && echo sudo-ok'
 ```
 
-## 1. Provision the Contabo VPS
+The last command must print `sudo-ok`. nixos-anywhere elevates via
+passwordless sudo; if that fails, either enable passwordless sudo for
+`admin` on the Contabo base image, or ssh in and edit `/etc/sudoers.d/`
+accordingly before running step 3.
 
-Order a VPS (minimum VPS M: 4 vCPU / 8 GB / 200 GB NVMe; VPS L is
-comfortable). Pick the **Debian 12** cloud-init image — the easiest
-base for `nixos-anywhere` to kexec into.
+### Compose the post-install deploy key bundle
 
-Record:
-
-- `NEW_V4` — public IPv4
-- `NEW_V6` — public IPv6
-- `NEW_GW4` — IPv4 gateway (Contabo panel → Networking)
-
-Verify SSH:
+`platform/nix/authorized-keys/deploy.pub` is read by the flake at
+evaluation time and baked into `users.users.deploy.openssh.authorizedKeys.keys`.
+The file is gitignored; each operator manages it locally.
 
 ```bash
-ssh -o StrictHostKeyChecking=accept-new root@$NEW_V4   # password auth
+# Simplest path: reuse the admin key as the post-install deploy key.
+cat ~/.ssh/blueshell-admin.pub > platform/nix/authorized-keys/deploy.pub
+# (append additional operators' public keys to this file, one per line)
 ```
 
-## 2. Bake the VPS addresses into the host module
+## 1. VPS is already provisioned
+
+Not applicable — the Contabo VPS 20 at `157.173.115.164` already exists
+and is reachable as `admin` on port 2222. Skip directly to step 3.
+
+## 2. (Already done) Nix host config has the real addresses
+
+The flake carries the real IPv4 (`157.173.115.164`, `/24`, gateway
+`157.173.115.1`) in `platform/nix/hosts/frankfurt-contabo-1/default.nix`.
+The IPv6 address is still `REPLACE_WITH_VPS_IPV6` — **update it to the
+value shown in the Contabo panel before running step 3**, otherwise
+NixOS will come up with no v6 address and mail deliverability will
+degrade (several major providers only accept SMTP over IPv6 from hosts
+with rDNS on both families). Open a quick PR, merge, then proceed.
 
 ```bash
-$EDITOR platform/nix/hosts/blueshell-fra-1/default.nix
-```
-
-Replace the three `REPLACE_WITH_VPS_*` placeholders with
-`NEW_V4`/`NEW_V6`/`NEW_GW4`, commit, push:
-
-```bash
-nix flake check ./platform --no-build
-git checkout -b platform/blueshell-fra-1-ips
-git commit -am "platform(nix): blueshell-fra-1 production addresses"
-git push -u origin platform/blueshell-fra-1-ips
-gh pr create --assignee ExtraToast --label enhancement --title "..."
-# merge before step 3 so the flake on main has the real IPs.
+nix flake check ./platform --no-build      # sanity
 ```
 
 ## 3. Run nixos-anywhere
 
-From the repo root (the flake is at `./platform/flake.nix`):
+nixos-anywhere kexecs into a NixOS installer over SSH, then runs disko
+and copies the fully-built system closure. From the repo root:
 
 ```bash
 nix run github:nix-community/nixos-anywhere -- \
-  --flake ./platform#blueshell-fra-1 \
-  --target-host root@$NEW_V4
+  --flake ./platform#frankfurt-contabo-1 \
+  --target-host admin@157.173.115.164 \
+  --ssh-port 2222 \
+  --ssh-option IdentityFile=~/.ssh/blueshell-admin
 ```
 
 What happens:
 
-1. A kexec image uploads and kexecs the Debian box into a NixOS
-   installer.
-2. `disko` repartitions with the BIOS/GRUB GPT + `bios_grub` layout
+1. The admin account + sudo uploads a kexec image and kexecs the box
+   into a NixOS installer over the same SSH session.
+2. `disko` repartitions `/dev/sda` with the GPT + `bios_grub` layout
    (Contabo KVM is BIOS-only).
-3. The flake's `nixosConfigurations.blueshell-fra-1` is built and
-   installed.
-4. Reboot. 8–15 min total, most of it rebuild over the uplink.
+3. The flake's `nixosConfigurations.frankfurt-contabo-1` is built and
+   installed, then the box reboots.
+4. Total time 8–15 min, most of it closure transfer over the uplink.
 
 After reboot:
 
 ```bash
-ssh -p 2222 deploy@$NEW_V4           # key-only, no password
-systemctl status k3s                 # active (running) within ~1 min
-kubectl get nodes                    # Ready within 30–60 s
+ssh -i ~/.ssh/blueshell-admin -p 2222 deploy@157.173.115.164 -- \
+  'systemctl is-active k3s && kubectl get nodes'
 ```
 
-If k3s is not up: `journalctl -u k3s --since="5 min ago"`. The
+Expected: `active` then `frankfurt-contabo-1 Ready control-plane 60s v1.xx.x`.
+
+If k3s isn't up, check `journalctl -u k3s --since="5 min ago"`. The
 single-node role disables Traefik and ServiceLB so the base cluster is
 quiet until Flux lands.
 
 ## 4. Pull kubeconfig onto the workstation
 
 ```bash
-scp -P 2222 deploy@$NEW_V4:/etc/rancher/k3s/k3s.yaml /tmp/k3s.yaml
-# Rewrite the server URL from 127.0.0.1 to the public IP.
-sed -i '' "s|127.0.0.1|$NEW_V4|" /tmp/k3s.yaml
+scp -P 2222 -i ~/.ssh/blueshell-admin \
+  deploy@157.173.115.164:/etc/rancher/k3s/k3s.yaml /tmp/k3s.yaml
+
+# k3s writes the server URL as 127.0.0.1; rewrite to the public IP.
+sed -i.bak "s|127.0.0.1|157.173.115.164|" /tmp/k3s.yaml && rm /tmp/k3s.yaml.bak
+
 export KUBECONFIG=/tmp/k3s.yaml
 kubectl get nodes                    # confirm from workstation
 ```
 
-Once you're happy, merge `/tmp/k3s.yaml` into `~/.kube/config` under a
-named context (`blueshell-fra-1`).
+Merge into `~/.kube/config` under a named context once you're happy.
 
 ## 5. Bootstrap Flux
 
@@ -121,8 +137,8 @@ Expected reconciliation order:
 1. `flux-system` — Ready (seconds).
 2. `apps-core` — Ready (2–5 min: cert-manager, external-dns, Traefik,
    VSO install).
-3. `apps-data` — **stalls**, waiting for Vault unseal (step 6). This
-   is expected; proceed in parallel.
+3. `apps-data` — **stalls**, waiting for Vault unseal (step 6).
+   Expected; proceed in parallel.
 4. `apps-edge` — Ready once Vault is unsealed and VSO has materialised
    the Cloudflare API token Secret for cert-manager + external-dns.
 5. `apps-vso-secrets` — Ready once Vault is seeded (step 6).
@@ -211,12 +227,13 @@ the target pod → restore.
 
 Cloudflare zone `esa-blueshell.nl`:
 
-- `v2.esa-blueshell.nl` A/AAAA → `NEW_V4` / `NEW_V6`, proxied (orange).
-- `*.v2.esa-blueshell.nl` — external-dns materialises A/CNAME records
-  for every IngressRoute automatically. Leave Cloudflare's API token
-  in `secret/platform/edge` and external-dns does the rest.
-- `stalwart.v2.esa-blueshell.nl` A → `NEW_V4`, **DNS only** (grey
-  cloud). Cloudflare cannot proxy SMTP/IMAP, only HTTP(S).
+- `v2.esa-blueshell.nl` A → `157.173.115.164`, proxied (orange cloud).
+  AAAA → VPS IPv6, proxied.
+- `*.v2.esa-blueshell.nl` — external-dns auto-materialises these from
+  every IngressRoute once Flux is reconciling. Leave Cloudflare's API
+  token in `secret/platform/edge` and external-dns does the rest.
+- `stalwart.v2.esa-blueshell.nl` A → `157.173.115.164`, **DNS only**
+  (grey cloud). Cloudflare cannot proxy SMTP/IMAP, only HTTP(S).
 - Leave `esa-blueshell.nl` apex and `www.esa-blueshell.nl` pointed at
   the old VPS.
 
@@ -263,10 +280,12 @@ Swarm VPS keeps serving `esa-blueshell.nl`; users see no change.
   ```bash
   nix flake update ./platform
   git commit -am "platform(nix): bump inputs"
-  nix run nixpkgs#deploy-rs -- ./platform#blueshell-fra-1
+  nix run nixpkgs#deploy-rs -- ./platform#frankfurt-contabo-1
   ```
-  `deploy-rs` auto-rolls back if the post-activation SSH health check
-  fails.
+  The flake's `deploy.nodes.frankfurt-contabo-1.hostname` is
+  hard-pinned to `157.173.115.164`, so a DNS flip during PR 10 doesn't
+  send deploy-rs at the wrong box. `deploy-rs` auto-rolls back if the
+  post-activation SSH health check fails.
 - **Apps** (anything under `platform/cluster/flux/`): Flux reconciles
   `main` every minute. Keel polls GHCR every 2 min and rolls api +
   frontend when their `:latest` digest changes. No manual step.

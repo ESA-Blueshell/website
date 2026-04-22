@@ -29,17 +29,17 @@
   };
 
   networking = {
-    hostName = "blueshell-fra-1";
+    hostName = "frankfurt-contabo-1";
     domain = "v2.esa-blueshell.nl";
     # Contabo does not run DHCP — the cidata ISO ships static config that
-    # Debian picks up on first boot. Replace the placeholder v4/v6 values
-    # with the real ones from the cidata file once the VPS is provisioned.
+    # Debian picks up on first boot. We bake the static values directly
+    # here; the public IP is permanent for the lifetime of this VPS.
     useDHCP = lib.mkForce false;
     interfaces.ens18 = {
       useDHCP = false;
       ipv4.addresses = [
         {
-          address = "REPLACE_WITH_VPS_IPV4";
+          address = "157.173.115.164";
           prefixLength = 24;
         }
       ];
@@ -51,9 +51,11 @@
       ];
     };
     defaultGateway = {
-      address = "REPLACE_WITH_VPS_GATEWAY_V4";
+      address = "157.173.115.1";
       interface = "ens18";
     };
+    # Contabo's standard IPv6 default gateway is the link-local fe80::1
+    # (same as the sister personal-stack Frankfurt host).
     defaultGateway6 = {
       address = "fe80::1";
       interface = "ens18";

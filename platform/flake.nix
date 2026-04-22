@@ -38,23 +38,23 @@
     in
     {
       nixosConfigurations = {
-        blueshell-fra-1 = mkHost {
+        frankfurt-contabo-1 = mkHost {
           system = "x86_64-linux";
-          hostModule = ./nix/hosts/blueshell-fra-1/default.nix;
+          hostModule = ./nix/hosts/frankfurt-contabo-1/default.nix;
         };
       };
 
-      deploy.nodes.blueshell-fra-1 = {
-        # Placeholder — replace with the provisioned Contabo VPS public IP
-        # before running `deploy-rs activate`. nixos-anywhere takes the IP
-        # as a CLI argument so it does not need this value during initial
-        # bootstrap.
-        hostname = "v2.esa-blueshell.nl";
+      deploy.nodes.frankfurt-contabo-1 = {
+        # Contabo VPS 20 public IPv4. The address is permanent for the
+        # lifetime of this VPS; using the IP directly avoids any chance
+        # of a DNS flip (e.g. during the PR 10 apex cutover) pointing
+        # deploy-rs at a stale box.
+        hostname = "157.173.115.164";
         profiles.system = {
           sshUser = "deploy";
           user = "root";
           sshOpts = [ "-p" "2222" ];
-          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.blueshell-fra-1;
+          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.frankfurt-contabo-1;
         };
       };
 

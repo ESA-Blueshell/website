@@ -12,6 +12,30 @@ spec:
         kind: HelmRepository
         name: hashicorp
         namespace: vso-system
+  # The chart ships a default VaultConnection CR pointing at
+  # vault.data-system.svc.cluster.local. VSO itself runs the controller
+  # that reports Ready on that CR, but it can only report Ready once
+  # Vault is reachable — which doesn't happen until apps-data installs
+  # Vault, which in turn depends on apps-core (this Kustomization) being
+  # Ready. Classic bootstrap deadlock.
+  #
+  # disableWait tells Flux not to block HelmRelease readiness on the
+  # health of the rendered resources (the VaultConnection). The VSO
+  # Deployment itself is what matters; it reconciles the VaultConnection
+  # asynchronously once Vault exists. Once that happens the connection
+  # goes Ready on its own — we just don't gate apps-core's Ready on it.
+  #
+  # remediation.retries -1 tells helm-controller to retry indefinitely
+  # instead of giving up after one attempt and parking the HelmRelease
+  # in Stalled=RetriesExceeded.
+  install:
+    disableWait: true
+    remediation:
+      retries: -1
+  upgrade:
+    disableWait: true
+    remediation:
+      retries: -1
   values:
     # Vault itself lives in the data-system namespace and is deployed in
     # the VSO / Vault PR that follows. The default connection is set

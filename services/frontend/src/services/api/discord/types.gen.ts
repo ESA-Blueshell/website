@@ -976,16 +976,6 @@ export type ContainerComponentResponse = {
     type: 17;
 };
 
-export type ClipSpeakingEventResponse = {
-    speaking_flags: number;
-    user_id: SnowflakeType;
-};
-
-export type ClipEventTimelineEntryResponse = {
-    speaking?: ClipSpeakingEventResponse;
-    timestamp_ms: number;
-};
-
 /**
  * GUILD_ROLE_SUBSCRIPTIONS
  */
@@ -1032,7 +1022,6 @@ export type ApplicationResponse = {
 export type MessageAttachmentResponse = {
     application?: ApplicationResponse;
     clip_created_at?: string;
-    clip_events_timeline?: Array<ClipEventTimelineEntryResponse>;
     clip_participants?: Array<UserResponse>;
     content_type?: string;
     description?: string;

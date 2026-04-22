@@ -1,0 +1,15 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: bitnami-oci
+  namespace: data-system
+spec:
+  # Bitnami migrated several charts (postgresql, redis, …) from their
+  # HTTP index at charts.bitnami.com to an OCI-only registry at
+  # registry-1.docker.io/bitnamicharts. The existing `bitnami`
+  # HelmRepository here is HTTP-typed and can't follow the `oci://`
+  # URLs those charts now advertise, so we declare a second OCI-typed
+  # source and route migrated charts through this one.
+  type: oci
+  interval: 1h
+  url: oci://registry-1.docker.io/bitnamicharts

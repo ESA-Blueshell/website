@@ -42,6 +42,13 @@ flux --version
 gh auth status
 ```
 
+Nix flakes + `nix-command` must be enabled. One-time setup if not
+already active (every `nix run` / `nix flake` step below assumes it):
+
+```bash
+mkdir -p ~/.config/nix && echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+```
+
 Confirm the pre-install SSH path works and has passwordless sudo
 (required for `nixos-anywhere` to elevate during kexec):
 
@@ -79,8 +86,12 @@ nix --extra-experimental-features 'nix-command flakes' flake check ./platform --
 Kexecs the Debian box into a NixOS installer, runs disko, copies the
 closure, reboots into NixOS (8–15 min total over the uplink):
 
+Flake URL is single-quoted because zsh's `extendedglob` treats `#` as
+a wildcard; bash tolerates both forms, the quotes just make the
+command shell-portable:
+
 ```bash
-nix run github:nix-community/nixos-anywhere -- --flake ./platform#frankfurt-contabo-1 --target-host admin@157.173.115.164 --ssh-port 2222 --ssh-option IdentityFile=~/.ssh/bs-deploy --ssh-option IdentitiesOnly=yes
+nix run github:nix-community/nixos-anywhere -- --flake './platform#frankfurt-contabo-1' --target-host admin@157.173.115.164 --ssh-port 2222 --ssh-option IdentityFile=~/.ssh/bs-deploy --ssh-option IdentitiesOnly=yes
 ```
 
 After reboot, the `admin` account is gone; log in as `deploy`:
@@ -325,7 +336,7 @@ Once all five hold, open PR 10 (apex cutover).
   git commit -am 'platform(nix): bump inputs' && git push
   ```
   ```bash
-  nix run nixpkgs#deploy-rs -- ./platform#frankfurt-contabo-1
+  nix run 'nixpkgs#deploy-rs' -- './platform#frankfurt-contabo-1'
   ```
 
   The flake's `deploy.nodes.frankfurt-contabo-1.hostname` is pinned to

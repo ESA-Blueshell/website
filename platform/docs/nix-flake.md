@@ -36,7 +36,7 @@ runbook: `bringup-v2.md`.
 3. From a workstation with Nix installed:
    ```
    nix run github:nix-community/nixos-anywhere -- \
-     --flake ./platform#frankfurt-contabo-1 \
+     --flake './platform#frankfurt-contabo-1' \
      --target-host admin@157.173.115.164 \
      --ssh-port 2222 \
      --ssh-option IdentityFile=~/.ssh/bs-deploy \
@@ -48,7 +48,7 @@ runbook: `bringup-v2.md`.
 ## Ongoing updates
 
 ```
-nix run nixpkgs#deploy-rs -- ./platform#frankfurt-contabo-1
+nix run 'nixpkgs#deploy-rs' -- './platform#frankfurt-contabo-1'
 ```
 
 `deploy-rs` uses the SSH keys in `platform/nix/authorized-keys/deploy.pub`

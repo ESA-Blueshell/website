@@ -12,7 +12,7 @@ metadata:
   name: apps-core
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 2m0s
   path: ./platform/cluster/flux/apps/core
   prune: true
   wait: true
@@ -27,7 +27,7 @@ metadata:
   name: apps-data
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 2m0s
   path: ./platform/cluster/flux/apps/data
   prune: true
   wait: true
@@ -44,7 +44,7 @@ metadata:
   name: apps-vso-secrets
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 2m0s
   path: ./platform/cluster/flux/apps/vso-secrets
   prune: true
   dependsOn:
@@ -60,7 +60,7 @@ metadata:
   name: apps-edge
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 2m0s
   path: ./platform/cluster/flux/apps/edge
   prune: true
   dependsOn:
@@ -75,7 +75,7 @@ metadata:
   name: apps-utility-system
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 2m0s
   path: ./platform/cluster/flux/apps/utility-system
   prune: true
   dependsOn:
@@ -90,7 +90,7 @@ metadata:
   name: apps-mail
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 2m0s
   path: ./platform/cluster/flux/apps/mail
   prune: true
   dependsOn:
@@ -106,7 +106,7 @@ metadata:
   name: apps-stateless
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 2m0s
   path: ./platform/cluster/flux/apps/stateless
   prune: true
   dependsOn:

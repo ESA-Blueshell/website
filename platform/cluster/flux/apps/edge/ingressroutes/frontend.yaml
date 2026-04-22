@@ -13,8 +13,15 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # `www.v2.esa-blueshell.nl` is intentionally NOT served. Cloudflare
+    # already holds an operator-managed CNAME at that name, and
+    # external-dns cannot CREATE an A/AAAA record next to a CNAME — the
+    # whole reconcile batch 400s with error 81054, which in turn blocks
+    # every other subdomain from being created in the same run. The
+    # `www.` alias can come back (or get routed via a CF page-rule
+    # redirect) at PR 10 apex cutover.
     - kind: Rule
-      match: Host(`v2.esa-blueshell.nl`) || Host(`www.v2.esa-blueshell.nl`)
+      match: Host(`v2.esa-blueshell.nl`)
       services:
         - name: frontend
           namespace: default

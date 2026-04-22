@@ -4,7 +4,9 @@ metadata:
   name: auth
   namespace: edge-system
   annotations:
-    external-dns.alpha.kubernetes.io/target: v2.esa-blueshell.nl
+    # One label deep — `*.esa-blueshell.nl` (CF Universal SSL + our
+    # Let's Encrypt wildcard) both cover it, so CF proxy stays on.
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
     kubernetes.io/ingress.class: traefik-public
 spec:
@@ -12,7 +14,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`auth.v2.esa-blueshell.nl`)
+      match: Host(`auth.esa-blueshell.nl`)
       services:
         - name: api
           namespace: default

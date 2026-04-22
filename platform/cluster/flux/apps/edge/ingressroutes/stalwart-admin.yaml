@@ -4,7 +4,9 @@ metadata:
   name: stalwart-admin
   namespace: edge-system
   annotations:
-    external-dns.alpha.kubernetes.io/target: v2.esa-blueshell.nl
+    # One label deep — shares the same DNS record as listmonk
+    # (mail-admin.esa-blueshell.nl). External-dns dedupes.
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
     kubernetes.io/ingress.class: traefik-public
 spec:
@@ -12,7 +14,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`mail-admin.v2.esa-blueshell.nl`) && PathPrefix(`/webadmin`)
+      match: Host(`mail-admin.esa-blueshell.nl`) && PathPrefix(`/webadmin`)
       middlewares:
         - name: forward-auth
           namespace: edge-system

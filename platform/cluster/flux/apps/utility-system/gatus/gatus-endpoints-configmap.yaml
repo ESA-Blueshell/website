@@ -17,7 +17,11 @@ data:
       - "[CERTIFICATE_EXPIRATION] > 168h"
     - name: "api"
       group: "public"
-      url: "https://api.v2.esa-blueshell.nl/health"
+      # Api is served same-origin under /api on the main-site apex —
+      # there is no api.v2.esa-blueshell.nl subdomain. Cloudflare
+      # Universal SSL covers v2.esa-blueshell.nl, so the cert expiration
+      # seen here belongs to CF's edge cert, not our origin cert.
+      url: "https://v2.esa-blueshell.nl/api/health"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
@@ -25,11 +29,11 @@ data:
       - "[CERTIFICATE_EXPIRATION] > 168h"
     - name: "oidc-discovery"
       group: "public"
-      url: "https://auth.v2.esa-blueshell.nl/.well-known/openid-configuration"
+      url: "https://auth.esa-blueshell.nl/.well-known/openid-configuration"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
-      - "[BODY].issuer == https://auth.v2.esa-blueshell.nl"
+      - "[BODY].issuer == https://auth.esa-blueshell.nl"
       - "[RESPONSE_TIME] < 2000"
     # Forward-auth is expected to reject unauthenticated requests with 401.
     # A 401 from these endpoints means Traefik + the api's forward-auth
@@ -37,28 +41,28 @@ data:
     # the outside.
     - name: "headlamp"
       group: "admin (forward-auth)"
-      url: "https://kube.v2.esa-blueshell.nl/"
+      url: "https://kube.esa-blueshell.nl/"
       interval: "60s"
       conditions:
       - "[STATUS] == 401"
       - "[RESPONSE_TIME] < 2000"
     - name: "listmonk-admin"
       group: "admin (forward-auth)"
-      url: "https://mail-admin.v2.esa-blueshell.nl/"
+      url: "https://mail-admin.esa-blueshell.nl/"
       interval: "60s"
       conditions:
       - "[STATUS] == 401"
       - "[RESPONSE_TIME] < 2000"
     - name: "stalwart-admin"
       group: "admin (forward-auth)"
-      url: "https://mail-admin.v2.esa-blueshell.nl/webadmin"
+      url: "https://mail-admin.esa-blueshell.nl/webadmin"
       interval: "60s"
       conditions:
       - "[STATUS] == 401"
       - "[RESPONSE_TIME] < 2000"
     - name: "vault"
       group: "admin (forward-auth)"
-      url: "https://vault.v2.esa-blueshell.nl/v1/sys/health?standbyok=true"
+      url: "https://vault.esa-blueshell.nl/v1/sys/health?standbyok=true"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"

@@ -100,7 +100,7 @@ spec:
             - name: MYSQL_PORT
               value: '3306'
             - name: APP_URL
-              value: https://api.v2.esa-blueshell.nl
+              value: https://v2.esa-blueshell.nl/api
             - name: FRONTEND_URL
               value: https://v2.esa-blueshell.nl
             - name: STORAGE_LOCATION

@@ -4,7 +4,8 @@ metadata:
   name: headlamp
   namespace: edge-system
   annotations:
-    external-dns.alpha.kubernetes.io/target: v2.esa-blueshell.nl
+    # One label deep — CF Universal SSL covers it, proxy stays on.
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
     kubernetes.io/ingress.class: traefik-public
 spec:
@@ -12,7 +13,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`kube.v2.esa-blueshell.nl`)
+      match: Host(`kube.esa-blueshell.nl`)
       middlewares:
         - name: forward-auth
           namespace: edge-system

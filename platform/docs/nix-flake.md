@@ -11,7 +11,7 @@ platform/
 │   │   ├── README.md                         how to compose deploy.pub
 │   │   └── .gitignore                        deploy.pub is local-only
 │   ├── hosts/
-│   │   └── blueshell-fra-1/
+│   │   └── frankfurt-contabo-1/
 │   │       ├── default.nix                   hostname, networking, boot loader
 │   │       └── disko.nix                     GPT + bios_grub disk layout
 │   └── modules/
@@ -22,23 +22,33 @@ platform/
 
 ## First-time provisioning
 
-1. Provision a Contabo VPS with Debian (cloud-init image), note the public IPv4,
-   IPv6 and v4 gateway from the cidata.
-2. Edit `platform/nix/hosts/blueshell-fra-1/default.nix` and replace the three
-   `REPLACE_WITH_VPS_*` placeholders.
-3. Compose `platform/nix/authorized-keys/deploy.pub` from every operator's
-   public key.
-4. From a workstation with Nix installed:
+The target Contabo VPS 20 is already provisioned at `157.173.115.164`
+(full dual-stack networking baked into the flake) and reachable as
+`admin@157.173.115.164:2222` with passwordless sudo. End-to-end
+runbook: `bringup-v2.md`.
+
+1. Use `ssh-copy-id` to add `~/.ssh/bs-deploy.pub` to the admin
+   account's authorized_keys, using `~/.ssh/blueshell-admin` for the
+   initial authentication.
+2. Ensure `platform/nix/authorized-keys/deploy.pub` contains the
+   public key(s) you want the post-install `deploy` user to accept
+   (see that directory's README). Both files are tracked in git.
+3. From a workstation with Nix installed:
    ```
    nix run github:nix-community/nixos-anywhere -- \
-     --flake ./platform#blueshell-fra-1 root@<public-ip>
+     --flake ./platform#frankfurt-contabo-1 \
+     --target-host admin@157.173.115.164 \
+     --ssh-port 2222 \
+     --ssh-option IdentityFile=~/.ssh/bs-deploy \
+     --ssh-option IdentitiesOnly=yes
    ```
-5. Reboot. SSH reaches the VPS at `deploy@<public-ip>:2222`.
+4. Reboot. SSH reaches the VPS at `deploy@157.173.115.164:2222` with
+   whichever keys are in `deploy.pub`.
 
 ## Ongoing updates
 
 ```
-nix run nixpkgs#deploy-rs -- ./platform#blueshell-fra-1
+nix run nixpkgs#deploy-rs -- ./platform#frankfurt-contabo-1
 ```
 
 `deploy-rs` uses the SSH keys in `platform/nix/authorized-keys/deploy.pub`

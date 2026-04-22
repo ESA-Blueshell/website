@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus-endpoints
+  namespace: utility-system
+data:
+  endpoints.yaml: |
+    ---
+    endpoints:
+    - name: "frontend"
+      group: "public"
+      url: "https://v2.esa-blueshell.nl/"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 2000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    - name: "api"
+      group: "public"
+      url: "https://api.v2.esa-blueshell.nl/health"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 2000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    - name: "oidc-discovery"
+      group: "public"
+      url: "https://auth.v2.esa-blueshell.nl/.well-known/openid-configuration"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[BODY].issuer == https://auth.v2.esa-blueshell.nl"
+      - "[RESPONSE_TIME] < 2000"
+    # Forward-auth is expected to reject unauthenticated requests with 401.
+    # A 401 from these endpoints means Traefik + the api's forward-auth
+    # controller are both responding — the only outcome we care about from
+    # the outside.
+    - name: "headlamp"
+      group: "admin (forward-auth)"
+      url: "https://kube.v2.esa-blueshell.nl/"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 401"
+      - "[RESPONSE_TIME] < 2000"
+    - name: "listmonk-admin"
+      group: "admin (forward-auth)"
+      url: "https://mail-admin.v2.esa-blueshell.nl/"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 401"
+      - "[RESPONSE_TIME] < 2000"
+    - name: "stalwart-admin"
+      group: "admin (forward-auth)"
+      url: "https://mail-admin.v2.esa-blueshell.nl/webadmin"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 401"
+      - "[RESPONSE_TIME] < 2000"
+    - name: "vault"
+      group: "admin (forward-auth)"
+      url: "https://vault.v2.esa-blueshell.nl/v1/sys/health?standbyok=true"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 2000"
+    # Mail ports bypass Traefik via hostPort. TCP connect is all we can
+    # assert from outside without authenticating.
+    - name: "stalwart-smtp-25"
+      group: "mail"
+      url: "tcp://stalwart.v2.esa-blueshell.nl:25"
+      interval: "120s"
+      conditions:
+      - "[CONNECTED] == true"
+    - name: "stalwart-submissions-465"
+      group: "mail"
+      url: "tcp://stalwart.v2.esa-blueshell.nl:465"
+      interval: "120s"
+      conditions:
+      - "[CONNECTED] == true"
+    - name: "stalwart-submission-587"
+      group: "mail"
+      url: "tcp://stalwart.v2.esa-blueshell.nl:587"
+      interval: "120s"
+      conditions:
+      - "[CONNECTED] == true"
+    - name: "stalwart-imaps-993"
+      group: "mail"
+      url: "tcp://stalwart.v2.esa-blueshell.nl:993"
+      interval: "120s"
+      conditions:
+      - "[CONNECTED] == true"
+    # Internal cluster-local checks give faster signal when the public
+    # path fails (differentiates app vs. edge).
+    - name: "api (cluster-local)"
+      group: "internal"
+      url: "http://api.default.svc.cluster.local:8080/health"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+    - name: "mariadb"
+      group: "internal"
+      url: "tcp://mariadb.data-system.svc.cluster.local:3306"
+      interval: "60s"
+      conditions:
+      - "[CONNECTED] == true"
+    - name: "listmonk-db"
+      group: "internal"
+      url: "tcp://listmonk-db.data-system.svc.cluster.local:5432"
+      interval: "60s"
+      conditions:
+      - "[CONNECTED] == true"
+    - name: "vault (cluster-local)"
+      group: "internal"
+      url: "http://vault.data-system.svc.cluster.local:8200/v1/sys/health?standbyok=true"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"

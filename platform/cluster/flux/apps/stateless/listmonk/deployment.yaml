@@ -40,7 +40,9 @@ spec:
             - name: LISTMONK_app__address
               value: '0.0.0.0:9000'
             - name: LISTMONK_db__host
-              value: listmonk-db.data-system.svc.cluster.local
+              # Bitnami postgresql chart exposes the primary as
+              # <release-name>-postgresql, not the bare release name.
+              value: listmonk-db-postgresql.data-system.svc.cluster.local
             - name: LISTMONK_db__port
               value: '5432'
             - name: LISTMONK_db__user

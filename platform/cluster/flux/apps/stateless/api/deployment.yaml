@@ -69,6 +69,11 @@ spec:
           {{- end }}
     spec:
       serviceAccountName: api
+      # ghcr.io/esa-blueshell/api is a private package; the pull secret
+      # is materialised by VSO from Vault (secret/platform/ghcr) — see
+      # platform/cluster/flux/apps/vso-secrets/ghcr.yaml.
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       containers:
         - name: api
           image: ghcr.io/esa-blueshell/api:latest

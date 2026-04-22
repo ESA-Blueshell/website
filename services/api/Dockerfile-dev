@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
 
 RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=cache,target=/ms-playwright \
-    ./gradlew --no-daemon :services:api:installChromium -x test
+    ./gradlew --no-daemon :services:system-tests:installChromium -x test
 
 WORKDIR /src/services/api
 

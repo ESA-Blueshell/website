@@ -254,6 +254,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/blogs/BlogView.vue"),
   },
   {
+    path: "/myapps",
+    name: "myApps",
+    component: () => import("@/pages/MyApps.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/pages/NotFound.vue"),

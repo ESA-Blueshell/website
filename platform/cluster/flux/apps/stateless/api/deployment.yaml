@@ -80,6 +80,7 @@ spec:
               set -a
               . /vault/secrets/api.env
               . /vault/secrets/db.env
+              export VAULT_TOKEN=$(cat /vault/secrets/token)
               set +a
               exec java \
                 -XX:+UseZGC \
@@ -140,6 +141,17 @@ spec:
                   name: stalwart-secrets
                   key: bounce-mailbox-password
                   optional: true
+            - name: AUTH_TRANSIT_ENABLED
+              value: 'true'
+            - name: VAULT_ADDR
+              value: http://vault.data-system.svc.cluster.local:8200
+            - name: AUTH_TRANSIT_KEY_NAME
+              value: api-jwt
+            - name: VAULT_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: vault-oidc-client-secret
           ports:
             - containerPort: 8080
               name: http

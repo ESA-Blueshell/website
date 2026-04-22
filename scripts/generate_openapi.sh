@@ -29,8 +29,8 @@ fi
 # ---- Fetch Blueshell spec from running API container ----
 
 echo "Fetching Blueshell OpenAPI spec from API container..."
-docker compose -f docker-compose.dev.yml exec api sh -c \
-  "curl -fsSS http://localhost:8080/v3/api-docs -o /app/openapi.raw.json"
+docker compose -f docker-compose.dev.yml exec -T api sh -c \
+  "curl -fsSS http://localhost:8080/v3/api-docs" > "${API_OPENAPI_SPEC%.yaml}.raw.json"
 
 # ---- Shared steps ----
 

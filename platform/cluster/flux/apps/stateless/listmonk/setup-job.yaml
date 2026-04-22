@@ -53,7 +53,7 @@ spec:
                   key: bounce-mailbox-password
                   optional: true
             - name: LISTMONK_SMTP_HELLO_HOSTNAME
-              value: mail.v2.esa-blueshell.nl
+              value: stalwart.v2.esa-blueshell.nl
             - name: LISTMONK_SMTP_TLS_TYPE
               value: STARTTLS
             - name: LISTMONK_BOUNCE_MAILBOX_ENABLED

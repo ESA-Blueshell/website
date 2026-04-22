@@ -620,6 +620,14 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
+export type ServiceEntry = {
+    description: string;
+    iconUrl: string;
+    id: string;
+    name: string;
+    url: string;
+};
+
 export type SponsorResponse = {
     createdAt: string;
     description: string;
@@ -1010,6 +1018,47 @@ export type UpdateAddressResponses = {
 };
 
 export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressResponses];
+
+export type MyServicesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/me/services';
+};
+
+export type MyServicesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MyServicesError = MyServicesErrors[keyof MyServicesErrors];
+
+export type MyServicesResponses = {
+    /**
+     * OK
+     */
+    200: Array<ServiceEntry>;
+};
+
+export type MyServicesResponse = MyServicesResponses[keyof MyServicesResponses];
 
 export type AuthenticateData = {
     body: JwtRequest;
@@ -3570,6 +3619,45 @@ export type UpdateMembershipResponses = {
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+
+export type ForwardAuthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oauth2/forward-auth';
+};
+
+export type ForwardAuthErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ForwardAuthError = ForwardAuthErrors[keyof ForwardAuthErrors];
+
+export type ForwardAuthResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
 
 export type MemberActivateData = {
     body: MemberActivationRequest;

@@ -7,3 +7,4 @@ resources:
   - api-secrets.yaml
   - listmonk-secrets.yaml
   - stalwart-secrets.yaml
+  - ghcr.yaml

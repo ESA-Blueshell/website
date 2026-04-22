@@ -1,0 +1,39 @@
+# ghcr-pull-secret: dockerconfigjson Secret that the api and frontend
+# Deployments reference via `imagePullSecrets`. The source of truth is
+# Vault at `secret/platform/ghcr` with two fields:
+#
+#   username  GitHub username that owns the PAT
+#   token     GitHub PAT with read:packages scope on ESA-Blueshell/*
+#
+# VSO reads those two fields and, via the `.dockerconfigjson`
+# transformation template below, emits a Kubernetes Secret of type
+# `kubernetes.io/dockerconfigjson` in the `default` namespace. The
+# Secret is idempotently re-rendered on every VSO refresh, so rotating
+# the PAT only requires a `vault kv put secret/platform/ghcr …` —
+# pods pick up the new token automatically on their next pull.
+#
+# ghcr.io/esa-blueshell/{api,frontend} are private GHCR packages, so
+# anonymous pulls return 401 from the registry and the Deployments
+# hit ImagePullBackOff on first rollout. This Secret plus the two
+# imagePullSecrets references in the Deployments closes that gap.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: ghcr-pull-secret
+  namespace: default
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/ghcr
+  destination:
+    name: ghcr-pull-secret
+    create: true
+    type: kubernetes.io/dockerconfigjson
+    transformation:
+      templates:
+        .dockerconfigjson:
+          text: |
+            {{- $auth := printf "%s:%s" (get .Secrets "username") (get .Secrets "token") | b64enc -}}
+            {"auths":{"ghcr.io":{"username":"{{ get .Secrets "username" }}","password":"{{ get .Secrets "token" }}","auth":"{{ $auth }}"}}}
+  refreshAfter: 1h

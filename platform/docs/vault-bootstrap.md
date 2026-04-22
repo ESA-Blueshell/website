@@ -118,6 +118,25 @@ vault kv put secret/api \
 `vault-oidc-client-secret` is the shared secret the Vault OIDC auth method uses
 when calling back to the api. Generate with `openssl rand -hex 32`.
 
+### GHCR pull credential (api + frontend Deployments)
+
+`ghcr.io/esa-blueshell/{api,frontend}` are private packages. VSO
+materialises `default/ghcr-pull-secret` (type
+`kubernetes.io/dockerconfigjson`) from this Vault path; both
+Deployments reference it via `imagePullSecrets`.
+
+```bash
+vault kv put secret/platform/ghcr \
+  username=<github-username> \
+  token=<github-pat-with-read:packages>
+```
+
+The PAT needs **only** `read:packages` scope (fine-grained PAT: repo
+access to `ESA-Blueshell`, permission `Packages: read-only`). Rotate by
+re-running the same `kv put` with a new token — VSO re-renders the
+dockerconfigjson within one refresh cycle (1 h) and pods pick up the
+new auth on their next pull.
+
 ## 5. Confirm VSO sync
 
 After seeding, force a VSO reconcile and verify secrets appear:

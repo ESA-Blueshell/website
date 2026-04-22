@@ -22,28 +22,28 @@ platform/
 
 ## First-time provisioning
 
-The target Contabo VPS 20 is already provisioned at `157.173.115.164`,
-reachable as `admin@157.173.115.164:2222` with key `~/.ssh/blueshell-admin`
-(passwordless sudo required for nixos-anywhere to elevate). The flake
-carries the IPv4 + gateway; the IPv6 address must be filled in before
-install. End-to-end runbook: `bringup-v2.md`.
+The target Contabo VPS 20 is already provisioned at `157.173.115.164`
+(full dual-stack networking baked into the flake) and reachable as
+`admin@157.173.115.164:2222` with passwordless sudo. End-to-end
+runbook: `bringup-v2.md`.
 
-1. Fill in the IPv6 in
-   `platform/nix/hosts/frankfurt-contabo-1/default.nix`
-   (replace `REPLACE_WITH_VPS_IPV6`).
-2. Compose `platform/nix/authorized-keys/deploy.pub` from every
-   operator's public key (one per line; the flake bakes it into the
-   post-install `deploy` account).
+1. Use `ssh-copy-id` to add `~/.ssh/bs-deploy.pub` to the admin
+   account's authorized_keys, using `~/.ssh/blueshell-admin` for the
+   initial authentication.
+2. Ensure `platform/nix/authorized-keys/deploy.pub` contains the
+   public key(s) you want the post-install `deploy` user to accept
+   (see that directory's README). Both files are tracked in git.
 3. From a workstation with Nix installed:
    ```
    nix run github:nix-community/nixos-anywhere -- \
      --flake ./platform#frankfurt-contabo-1 \
      --target-host admin@157.173.115.164 \
      --ssh-port 2222 \
-     --ssh-option IdentityFile=~/.ssh/blueshell-admin
+     --ssh-option IdentityFile=~/.ssh/bs-deploy \
+     --ssh-option IdentitiesOnly=yes
    ```
 4. Reboot. SSH reaches the VPS at `deploy@157.173.115.164:2222` with
-   whichever key is in `deploy.pub`.
+   whichever keys are in `deploy.pub`.
 
 ## Ongoing updates
 

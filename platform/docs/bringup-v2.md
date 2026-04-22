@@ -14,10 +14,15 @@ observed running in production traffic.
 - **Public IPv4:** `157.173.115.164` (permanent — baked into the flake)
 - **Hostname (nix + k8s):** `frankfurt-contabo-1`
 - **DNS:** `v2.esa-blueshell.nl` + wildcard `*.v2.esa-blueshell.nl`
-- **Pre-install SSH:** `admin@157.173.115.164:2222`
-  with key `~/.ssh/blueshell-admin`
-- **Post-install SSH:** `deploy@157.173.115.164:2222`
-  (key-only; see the `deploy.pub` bundle step below)
+
+## SSH keys
+
+Two distinct keys, two distinct roles:
+
+| Role | Pubkey | Privkey on workstation | Accepted by |
+|---|---|---|---|
+| **Transport** — drives `nixos-anywhere` over the admin account on the pre-install Debian box | `~/.ssh/blueshell-admin.pub` and (after ssh-copy-id) `~/.ssh/bs-deploy.pub` | `~/.ssh/blueshell-admin` initially, `~/.ssh/bs-deploy` afterwards | `admin@157.173.115.164:2222` |
+| **Post-install login** — baked into the NixOS image via the flake | `platform/nix/authorized-keys/deploy.pub` (tracked in git) | `~/.ssh/bs-deploy` | `deploy@157.173.115.164:2222` |
 
 ## 0. Workstation pre-flight
 
@@ -27,25 +32,44 @@ kubectl version --client
 flux --version
 gh auth status                     # repo:read on ESA-Blueshell/website
 
-# Confirm the pre-install SSH path before doing anything else.
-ssh -i ~/.ssh/blueshell-admin -p 2222 admin@157.173.115.164 'uname -a && sudo -n true && echo sudo-ok'
+# Confirm the pre-install SSH path works with the existing admin key.
+ssh -i ~/.ssh/blueshell-admin -p 2222 admin@157.173.115.164 'sudo -n true && echo sudo-ok'
 ```
 
 The last command must print `sudo-ok`. nixos-anywhere elevates via
-passwordless sudo; if that fails, either enable passwordless sudo for
-`admin` on the Contabo base image, or ssh in and edit `/etc/sudoers.d/`
-accordingly before running step 3.
+passwordless sudo; if it fails, enable passwordless sudo for `admin`
+on the Debian base image before running step 3.
 
-### Compose the post-install deploy key bundle
+### Install bs-deploy as an accepted key on the admin account
 
-`platform/nix/authorized-keys/deploy.pub` is read by the flake at
-evaluation time and baked into `users.users.deploy.openssh.authorizedKeys.keys`.
-The file is gitignored; each operator manages it locally.
+Going forward we want to use the `bs-deploy` key for everything —
+including the nixos-anywhere transport. `ssh-copy-id` appends it to
+`admin`'s `~/.ssh/authorized_keys` using the old admin key to
+authenticate the initial connection:
 
 ```bash
-# Simplest path: reuse the admin key as the post-install deploy key.
-cat ~/.ssh/blueshell-admin.pub > platform/nix/authorized-keys/deploy.pub
-# (append additional operators' public keys to this file, one per line)
+ssh-copy-id -i ~/.ssh/bs-deploy.pub \
+  -o IdentityFile=~/.ssh/blueshell-admin \
+  -o IdentitiesOnly=yes \
+  -p 2222 \
+  admin@157.173.115.164
+
+# Verify bs-deploy now works end-to-end.
+ssh -i ~/.ssh/bs-deploy -o IdentitiesOnly=yes -p 2222 admin@157.173.115.164 'whoami'
+```
+
+### Verify the deploy.pub bundle is in git
+
+`platform/nix/authorized-keys/deploy.pub` is tracked in the repo (see
+that directory's README for why). If you're rotating the operator set,
+regenerate and commit:
+
+```bash
+cat platform/nix/authorized-keys/bs-deploy.pub \
+  > platform/nix/authorized-keys/deploy.pub
+git diff --stat platform/nix/authorized-keys/
+git commit -am "authorized-keys: rotate operator set"
+git push       # must be on main before nixos-anywhere runs
 ```
 
 ## 1. VPS is already provisioned
@@ -75,7 +99,8 @@ nix run github:nix-community/nixos-anywhere -- \
   --flake ./platform#frankfurt-contabo-1 \
   --target-host admin@157.173.115.164 \
   --ssh-port 2222 \
-  --ssh-option IdentityFile=~/.ssh/blueshell-admin
+  --ssh-option IdentityFile=~/.ssh/bs-deploy \
+  --ssh-option IdentitiesOnly=yes
 ```
 
 What happens:
@@ -91,7 +116,7 @@ What happens:
 After reboot:
 
 ```bash
-ssh -i ~/.ssh/blueshell-admin -p 2222 deploy@157.173.115.164 -- \
+ssh -i ~/.ssh/bs-deploy -o IdentitiesOnly=yes -p 2222 deploy@157.173.115.164 -- \
   'systemctl is-active k3s && kubectl get nodes'
 ```
 
@@ -104,7 +129,7 @@ quiet until Flux lands.
 ## 4. Pull kubeconfig onto the workstation
 
 ```bash
-scp -P 2222 -i ~/.ssh/blueshell-admin \
+scp -P 2222 -i ~/.ssh/bs-deploy -o IdentitiesOnly=yes \
   deploy@157.173.115.164:/etc/rancher/k3s/k3s.yaml /tmp/k3s.yaml
 
 # k3s writes the server URL as 127.0.0.1; rewrite to the public IP.

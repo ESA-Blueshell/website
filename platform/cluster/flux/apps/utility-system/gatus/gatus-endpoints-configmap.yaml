@@ -106,7 +106,7 @@ data:
       - "[CONNECTED] == true"
     - name: "listmonk-db"
       group: "internal"
-      url: "tcp://listmonk-db.data-system.svc.cluster.local:5432"
+      url: "tcp://listmonk-db-postgresql.data-system.svc.cluster.local:5432"
       interval: "60s"
       conditions:
       - "[CONNECTED] == true"

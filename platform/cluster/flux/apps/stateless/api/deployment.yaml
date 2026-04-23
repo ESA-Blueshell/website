@@ -68,12 +68,6 @@ spec:
           DISCORD_BOT_TOKEN={{ index .Data.data "discord-bot-token" }}
           DISCORD_GUILD_ID={{ index .Data.data "discord-guild-id" }}
           {{- end }}
-        vault.hashicorp.com/agent-inject-secret-db.env: database/creds/api
-        vault.hashicorp.com/agent-inject-template-db.env: |
-          {{- with secret "database/creds/api" -}}
-          MYSQL_USER={{ .Data.username }}
-          MYSQL_PASSWORD={{ .Data.password }}
-          {{- end }}
     spec:
       serviceAccountName: api
       # ghcr.io/esa-blueshell/api is a private package; the pull secret
@@ -89,10 +83,9 @@ spec:
             - /bin/sh
             - -ec
             - |
+              export SPRING_CLOUD_VAULT_TOKEN="$(cat /vault/secrets/token)"
               set -a
               . /vault/secrets/api.env
-              . /vault/secrets/db.env
-              export VAULT_TOKEN=$(cat /vault/secrets/token)
               set +a
               exec java \
                 -XX:+UseZGC \
@@ -102,6 +95,12 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            - name: SPRING_CONFIG_IMPORT
+              value: vault://
+            - name: VAULT_ENABLED
+              value: 'true'
+            - name: VAULT_DB_ENABLED
+              value: 'true'
             - name: MYSQL_HOST
               value: mariadb.data-system.svc.cluster.local
             - name: MYSQL_PORT

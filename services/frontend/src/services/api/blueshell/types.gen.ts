@@ -1019,6 +1019,47 @@ export type UpdateAddressResponses = {
 
 export type UpdateAddressResponse = UpdateAddressResponses[keyof UpdateAddressResponses];
 
+export type HealthCheck1Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/health';
+};
+
+export type HealthCheck1Errors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type HealthCheck1Error = HealthCheck1Errors[keyof HealthCheck1Errors];
+
+export type HealthCheck1Responses = {
+    /**
+     * OK
+     */
+    200: boolean;
+};
+
+export type HealthCheck1Response = HealthCheck1Responses[keyof HealthCheck1Responses];
+
 export type MyServicesData = {
     body?: never;
     path?: never;

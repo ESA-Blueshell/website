@@ -57,9 +57,6 @@ fun main(args: Array<String>) {
         .properties(
             "spring.main.banner-mode=off",
             "spring.main.log-startup-info=false",
-            "spring.rabbitmq.dynamic=false",
-            "spring.rabbitmq.listener.simple.auto-startup=false",
-            "spring.rabbitmq.listener.direct.auto-startup=false",
         )
         .run()
 

@@ -48,10 +48,14 @@ spec:
           BREVO_FOLDER_CONTRIBUTION_PERIODS_ID={{ index .Data.data "brevo-folder-contribution-periods-id" }}
           MOLLIE_API_KEY={{ index .Data.data "mollie-api-key" }}
           GOOGLE_CALENDAR_ID={{ index .Data.data "google-calendar-id" }}
-          GOOGLE_CALENDAR_CLIENT_ID={{ index .Data.data "google-calendar-client-id" }}
-          GOOGLE_CALENDAR_CLIENT_EMAIL={{ index .Data.data "google-calendar-client-email" }}
-          GOOGLE_CALENDAR_PRIVATE_KEY_PKCS8={{ index .Data.data "google-calendar-private-key-pkcs8" }}
-          GOOGLE_CALENDAR_PRIVATE_KEY_ID={{ index .Data.data "google-calendar-private-key-id" }}
+          # application.yaml binds ${GOOGLE_CALENDAR_SA_JSON} directly
+          # into google.calendar.serviceAccountJson. Single-quote the
+          # value so the shell tolerates the braces, double quotes and
+          # backslash-n escapes that appear in a Google service-account
+          # JSON. Google-generated JSON doesn't contain single quotes;
+          # if a future rotation does, base64-encode it in Vault and
+          # decode in the start script.
+          GOOGLE_CALENDAR_SA_JSON='{{ index .Data.data "google-calendar-sa-json" }}'
           FACEBOOK_PAGE_ID={{ index .Data.data "facebook-page-id" }}
           FACEBOOK_ACCESS_TOKEN={{ index .Data.data "facebook-access-token" }}
           X_API_KEY={{ index .Data.data "x-api-key" }}

@@ -53,7 +53,7 @@ API_PID="$!"
 echo "Waiting for API OpenAPI endpoint: $API_SPEC_URL"
 spec_ready=false
 for ((i = 1; i <= API_STARTUP_RETRIES; i++)); do
-  if curl -fsS "$API_SPEC_URL" -o "${API_OPENAPI_SPEC%.yaml}.raw.json"; then
+  if curl -fsS "$API_SPEC_URL" -o "${API_OPENAPI_SPEC%.json}.raw.json"; then
     spec_ready=true
     break
   fi

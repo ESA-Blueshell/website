@@ -11,7 +11,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/usr/app
-      - ../api/openapi.yaml:/usr/api/openapi.yaml:ro
+      - ../api/openapi.json:/usr/api/openapi.json:ro
       # Mount at /libs/openapi-specs so the repo-relative path
       # `../../libs/openapi-specs/<spec>` (from /usr/app) resolves correctly
       # when the openapi-ts generators run inside the container.

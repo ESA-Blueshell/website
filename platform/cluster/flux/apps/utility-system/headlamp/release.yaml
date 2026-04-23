@@ -16,7 +16,7 @@ spec:
     replicaCount: 1
     config:
       baseURL: ''
-      # OIDC front-door. Users hit kube.esa-blueshell.nl, the website
+      # OIDC front-door. Users hit headlamp.esa-blueshell.nl, the website
       # api issues an id-token, and Headlamp passes that token to the
       # k3s API server. k3s is configured to trust the
       # https://auth.esa-blueshell.nl issuer
@@ -30,7 +30,7 @@ spec:
         clientID: headlamp
         issuerURL: https://auth.esa-blueshell.nl
         scopes: openid profile email groups
-        callbackURL: https://kube.esa-blueshell.nl/oidc-callback
+        callbackURL: https://headlamp.esa-blueshell.nl/oidc-callback
         usePKCE: true
     service:
       type: ClusterIP

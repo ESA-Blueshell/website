@@ -25,7 +25,7 @@ class RegisteredClients {
             .clientId("headlamp")
             .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .redirectUri("https://kube.esa-blueshell.nl/oidc-callback")
+            .redirectUri("https://headlamp.esa-blueshell.nl/oidc-callback")
             .scope(OidcScopes.OPENID)
             .scope(OidcScopes.PROFILE)
             .scope(OidcScopes.EMAIL)

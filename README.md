@@ -7,9 +7,8 @@ Built with **Spring Boot 4 (Kotlin)** backend and **Vue.js 3 (TypeScript)** fron
 
 > **Platform migration in progress.** The repository is moving from a Docker Swarm
 > deployment on a Contabo VPS to a single-node **NixOS + k3s + FluxCD + Kustomize + Helm**
-> stack. Swarm-era assets (`infra/`, `vps/`,
-> `docker-stack.yml`, `deploy.sh`, `rotator`, `mailserver`) have been removed in this
-> branch. The new `platform/` tree will land in follow-up PRs.
+> stack. The Swarm-era stack has been removed from this branch. The new `platform/`
+> tree will land in follow-up PRs.
 
 ---
 

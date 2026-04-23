@@ -92,9 +92,12 @@ EOF
 
 # VSO reads here to mint k8s Secrets in the namespaces of apps that need
 # them — platform/edge (Cloudflare DNS-01 token for cert-manager and
-# external-dns), platform/api (api secrets), platform/listmonk (listmonk
-# admin + SMTP), platform/mail (stalwart admin + DKIM),
+# external-dns), api (third-party integration keys — Brevo, Mollie,
+# Google Calendar, Facebook, X, Discord, plus jwt-secret and the Vault
+# OIDC client secret), listmonk (postgres + admin + SMTP passwords),
+# platform/mail (stalwart admin, bounce mailbox, DKIM),
 # platform/ghcr (GitHub PAT for pulling private ghcr.io images).
+# See platform/docs/vault-bootstrap.md §4 for the full key list.
 cat <<'EOF' >/tmp/vso.hcl
 path "secret/data/platform/edge" {
   capabilities = ["read"]

@@ -6,18 +6,25 @@ metadata:
 data:
   endpoints.yaml: |
     ---
-    # Public-edge probes: Gatus exercises the full ingress path a real
-    # browser / client takes (Cloudflare → Traefik → forward-auth →
-    # service). This is the contract we want to alarm on — if any
-    # piece of the edge breaks the site is down even if the app is
-    # healthy. Cluster-local probes were tried (see PR #145) and
-    # reverted because they hid edge regressions.
+    # Probe placement rule:
     #
-    # TCP mail probes and postgres-for-listmonk stay cluster-local —
-    # nothing sensible to probe publicly without authenticating.
+    # - A service only has value from outside the cluster if its
+    #   public URL is how it's *meant* to be reached from the internet.
+    #   Those get probed externally so the status page reflects what
+    #   a real user sees.
+    #
+    # - Admin hosts (Headlamp, Listmonk, Stalwart, Vault) sit behind
+    #   `forward-auth` and always 401 to anonymous callers. An external
+    #   probe can only ever assert "Traefik and the forward-auth
+    #   handler are up", which says nothing about whether the backing
+    #   app is healthy. Probe them internally on their Service DNS
+    #   instead — that reaches the pod directly, bypassing the edge.
+    #
+    # - OIDC discovery is a cross-service detail, not something the
+    #   open internet needs. Keep it internal.
     endpoints:
-    # ---------- Public edge (browser-equivalent) ----------
-    - name: "main-site"
+    # ---------- Public (browser-equivalent) ----------
+    - name: "Blueshell Frontend"
       group: "public"
       url: "https://v2.esa-blueshell.nl/"
       interval: "60s"
@@ -25,72 +32,73 @@ data:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 2000"
       - "[CERTIFICATE_EXPIRATION] > 168h"
-    - name: "api"
+    - name: "Blueshell API"
       group: "public"
-      # Served at same-origin `/api/health` via the apex PathPrefix(/api)
-      # rule on `apps/edge/ingressroutes/api.yaml`. The handler is
-      # `MainController.healthCheck` which registers both `/health`
-      # (for k8s probes) and `/api/health` (for this probe).
+      # Same-origin /api/health routes via the apex PathPrefix(/api)
+      # rule in apps/edge/ingressroutes/api.yaml. Handler:
+      # `MainController.healthCheck` (registers /health + /api/health).
       url: "https://v2.esa-blueshell.nl/api/health"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 2000"
       - "[CERTIFICATE_EXPIRATION] > 168h"
-    - name: "oidc-discovery"
-      group: "public"
-      url: "https://auth.esa-blueshell.nl/.well-known/openid-configuration"
+
+    # ---------- Internal application checks ----------
+    # OIDC discovery is consumed by Vault + Headlamp across the
+    # cluster, not by browsers. Probe it internally against the api
+    # Service; the `issuer` field in the payload still points at the
+    # public URL via `AUTH_ISSUER`.
+    - name: "Blueshell OIDC Discovery"
+      group: "internal"
+      url: "http://api.default.svc.cluster.local:8080/.well-known/openid-configuration"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
       - "[BODY].issuer == https://auth.esa-blueshell.nl"
-      - "[RESPONSE_TIME] < 2000"
+      - "[RESPONSE_TIME] < 500"
 
-    # ---------- Admin hosts (forward-auth) ----------
-    # These sit behind the forward-auth middleware and reject
-    # unauthenticated requests with 401. A 401 here means both
-    # Traefik and the api's forward-auth handler are responding —
-    # the only signal we can assert from outside without logging in.
-    - name: "headlamp"
-      group: "admin (forward-auth)"
-      url: "https://kube.esa-blueshell.nl/"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 401"
-      - "[RESPONSE_TIME] < 2000"
-    - name: "listmonk-admin"
-      group: "admin (forward-auth)"
-      url: "https://mail-admin.esa-blueshell.nl/"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 401"
-      - "[RESPONSE_TIME] < 2000"
-    - name: "stalwart-admin"
-      group: "admin (forward-auth)"
-      url: "https://mail-admin.esa-blueshell.nl/webadmin"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 401"
-      - "[RESPONSE_TIME] < 2000"
-    - name: "vault"
-      group: "admin (forward-auth)"
-      url: "https://vault.esa-blueshell.nl/v1/sys/health?standbyok=true"
+    # ---------- Admin services (forward-auth) ----------
+    # All four sit behind the `forward-auth` Middleware at the edge —
+    # an external probe only ever sees 401. Probe them internally so
+    # we actually see whether the backing pod is serving.
+    - name: "Headlamp Dashboard"
+      group: "admin"
+      url: "http://headlamp.utility-system.svc.cluster.local/"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 2000"
+      - "[RESPONSE_TIME] < 500"
+    - name: "Listmonk Admin"
+      group: "admin"
+      url: "http://listmonk.default.svc.cluster.local:9000/health"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+    - name: "Stalwart Admin"
+      group: "admin"
+      url: "http://stalwart.mail-system.svc.cluster.local:8080/"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+    - name: "Vault Admin"
+      group: "admin"
+      url: "http://vault.data-system.svc.cluster.local:8200/v1/sys/health?standbyok=true"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
 
-    # ---------- Data plane (in-cluster, unavoidable) ----------
-    # Nothing to probe publicly here without authenticating; Gatus
-    # runs inside the cluster so it can TCP-dial these services
-    # directly.
-    - name: "mariadb"
+    # ---------- Data plane ----------
+    - name: "MariaDB"
       group: "data"
       url: "tcp://mariadb.data-system.svc.cluster.local:3306"
       interval: "60s"
       conditions:
       - "[CONNECTED] == true"
-    - name: "listmonk-db"
+    - name: "Postgres"
       group: "data"
       url: "tcp://listmonk-db-postgresql.data-system.svc.cluster.local:5432"
       interval: "60s"
@@ -98,30 +106,33 @@ data:
       - "[CONNECTED] == true"
 
     # ---------- Mail ports ----------
-    # Public delivery hits the node's hostPort. A successful TCP
-    # connect from inside the cluster means stalwart is listening;
-    # a real SMTP handshake on the public IP would require an
-    # off-cluster probe which we don't have.
-    - name: "stalwart-smtp-25"
+    # TCP connect from inside the cluster proves stalwart is listening
+    # on each port; a real end-to-end SMTP/IMAP handshake from outside
+    # would need an off-cluster probe we don't have.
+    - name: "Stalwart SMTP"
       group: "mail"
       url: "tcp://stalwart.mail-system.svc.cluster.local:25"
       interval: "120s"
       conditions:
       - "[CONNECTED] == true"
-    - name: "stalwart-submissions-465"
+    - name: "Stalwart STARTTLS"
       group: "mail"
-      url: "tcp://stalwart.mail-system.svc.cluster.local:465"
-      interval: "120s"
-      conditions:
-      - "[CONNECTED] == true"
-    - name: "stalwart-submission-587"
-      group: "mail"
+      # RFC 6409 submission port — clients upgrade with STARTTLS after
+      # connecting in cleartext.
       url: "tcp://stalwart.mail-system.svc.cluster.local:587"
       interval: "120s"
       conditions:
       - "[CONNECTED] == true"
-    - name: "stalwart-imaps-993"
+    - name: "Stalwart SMTPS"
       group: "mail"
+      # Implicit-TLS submission.
+      url: "tcp://stalwart.mail-system.svc.cluster.local:465"
+      interval: "120s"
+      conditions:
+      - "[CONNECTED] == true"
+    - name: "Stalwart IMAP"
+      group: "mail"
+      # IMAP-over-TLS (993). Plain IMAP on 143 is not exposed.
       url: "tcp://stalwart.mail-system.svc.cluster.local:993"
       interval: "120s"
       conditions:

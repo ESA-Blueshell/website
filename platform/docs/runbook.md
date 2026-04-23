@@ -1,7 +1,7 @@
 # Platform runbook
 
 The `platform/` tree replaces the legacy `infra/` + `vps/` stack with
-**NixOS + k3s + FluxCD + Kustomize + Helm**, modeled on `personal-stack-2`.
+**NixOS + k3s + FluxCD + Kustomize + Helm**.
 
 Status: **scaffolding in progress**. This PR removes the legacy assets; the
 Flux manifests, Nix flake, and cutover runbook land in follow-up PRs:

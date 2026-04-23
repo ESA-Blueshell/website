@@ -13,7 +13,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`kube.esa-blueshell.nl`)
+      match: Host(`headlamp.esa-blueshell.nl`)
       middlewares:
         - name: forward-auth
           namespace: edge-system

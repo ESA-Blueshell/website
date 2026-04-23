@@ -4,8 +4,7 @@ metadata:
   name: stalwart-admin
   namespace: edge-system
   annotations:
-    # One label deep — shares the same DNS record as listmonk
-    # (mail-admin.esa-blueshell.nl). External-dns dedupes.
+    # One label deep — CF Universal SSL covers it, proxy stays on.
     external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
     kubernetes.io/ingress.class: traefik-public
@@ -13,8 +12,13 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Stalwart's HTTP admin/webadmin UI is served at the root of
+    # port 8080. Previously we shared `mail-admin.esa-blueshell.nl`
+    # with Listmonk and routed only `/webadmin` here; giving Stalwart
+    # its own host removes the path-prefix coupling and lets users
+    # land on its default UI without remembering the suffix.
     - kind: Rule
-      match: Host(`mail-admin.esa-blueshell.nl`) && PathPrefix(`/webadmin`)
+      match: Host(`stalwart.esa-blueshell.nl`)
       middlewares:
         - name: forward-auth
           namespace: edge-system

@@ -9,3 +9,4 @@ resources:
   - headlamp.yaml
   - stalwart-admin.yaml
   - status.yaml
+  - vault.yaml

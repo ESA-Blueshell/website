@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: listmonk
+  name: vault
   namespace: edge-system
   annotations:
     # One label deep — CF Universal SSL covers it, proxy stays on.
@@ -12,13 +12,18 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Vault is forward-auth-gated just like the other admin hosts.
+    # The OIDC callback URL registered in
+    # `api/platform/oidc/RegisteredClients.kt` is
+    # `https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback`,
+    # which matches the Host rule here.
     - kind: Rule
-      match: Host(`listmonk.esa-blueshell.nl`)
+      match: Host(`vault.esa-blueshell.nl`)
       middlewares:
         - name: forward-auth
           namespace: edge-system
       services:
-        - name: listmonk
-          namespace: default
-          port: 9000
+        - name: vault
+          namespace: data-system
+          port: 8200
   tls: {}

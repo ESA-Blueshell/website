@@ -19,9 +19,9 @@ data class ServiceEntry(
 )
 
 private val ALL_SERVICES = listOf(
-    ServiceEntry("listmonk", "Listmonk", "https://mail-admin.esa-blueshell.nl", "/icons/listmonk.svg", "Newsletter & mailing"),
-    ServiceEntry("stalwart", "Mail admin", "https://mail-admin.esa-blueshell.nl/webadmin", "/icons/stalwart.svg", "Mail server admin"),
-    ServiceEntry("headlamp", "Headlamp", "https://kube.esa-blueshell.nl", "/icons/headlamp.svg", "Kubernetes dashboard"),
+    ServiceEntry("listmonk", "Listmonk", "https://listmonk.esa-blueshell.nl", "/icons/listmonk.svg", "Newsletter & mailing"),
+    ServiceEntry("stalwart", "Mail admin", "https://stalwart.esa-blueshell.nl", "/icons/stalwart.svg", "Mail server admin"),
+    ServiceEntry("headlamp", "Headlamp", "https://headlamp.esa-blueshell.nl", "/icons/headlamp.svg", "Kubernetes dashboard"),
     ServiceEntry("vault", "Vault", "https://vault.esa-blueshell.nl", "/icons/vault.svg", "Secrets management"),
     ServiceEntry("status", "Status", "https://status.esa-blueshell.nl", "/icons/gatus.svg", "Service status page"),
 )

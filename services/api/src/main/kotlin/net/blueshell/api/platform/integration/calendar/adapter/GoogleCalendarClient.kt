@@ -40,12 +40,34 @@ class GoogleCalendarClient {
     @Value($$"${google.calendar.serviceAccountJson}")
     private lateinit var serviceAccountJson: String
 
-    private lateinit var service: Calendar
+    private var service: Calendar? = null
     private lateinit var htmlRenderer: HtmlRenderer
     private lateinit var htmlParser: Parser
 
     @PostConstruct
     fun init() {
+        // Markdown → HTML renderer is cheap and has no external deps;
+        // set it up regardless so the no-credentials branch below can
+        // still fail operations with clear errors rather than NPE.
+        val options = MutableDataSet()
+        options.set(
+            Parser.EXTENSIONS, listOf(TablesExtension.create(), StrikethroughExtension.create())
+        )
+        htmlParser = Parser.builder(options).build()
+        htmlRenderer = HtmlRenderer.builder(options).build()
+
+        // Running the prod profile without Google Calendar creds must
+        // not block api startup — other features (OIDC, API endpoints,
+        // the frontend) should work. Operations that *actually* need
+        // the client will throw below instead.
+        if (serviceAccountJson.isBlank()) {
+            log.warn(
+                "google.calendar.serviceAccountJson is blank; calendar sync is disabled. " +
+                "Seed secret/api.google-calendar-sa-json in Vault to enable it."
+            )
+            return
+        }
+
         try {
             val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
 
@@ -60,13 +82,6 @@ class GoogleCalendarClient {
             ).setApplicationName(APPLICATION_NAME)
                 .build()
 
-            val options = MutableDataSet()
-            options.set(
-                Parser.EXTENSIONS, listOf(TablesExtension.create(), StrikethroughExtension.create())
-            )
-            htmlParser = Parser.builder(options).build()
-            htmlRenderer = HtmlRenderer.builder(options).build()
-
             log.info("Initialized Google Calendar client for calendarId={}", calendarId)
         } catch (e: GeneralSecurityException) {
             log.error("Failed to initialize GoogleCalendarService", e)
@@ -76,6 +91,11 @@ class GoogleCalendarClient {
             throw IllegalStateException("GoogleCalendarService initialization failed", e)
         }
     }
+
+    private fun requireService(): Calendar = service ?: throw IllegalStateException(
+        "Google Calendar client is not configured — seed google-calendar-sa-json in Vault " +
+        "and restart the api pod before invoking calendar operations."
+    )
 
     /**
      * Add an event to Google Calendar.
@@ -91,7 +111,7 @@ class GoogleCalendarClient {
     ): GoogleCalendarEventResult {
         val googleEvent = toGoogleEvent(title, location, description, startTime, endTime)
         try {
-            val result = service.events()
+            val result = requireService().events()
                 .insert(calendarId, googleEvent)
                 .execute()
             log.info("Added event to Google Calendar: {}", result.htmlLink)
@@ -119,7 +139,7 @@ class GoogleCalendarClient {
     ) {
         val googleEvent = toGoogleEvent(title, location, description, startTime, endTime)
         try {
-            service.events()
+            requireService().events()
                 .update(calendarId, googleEventId, googleEvent)
                 .execute()
             log.info("Updated Google Calendar event: {}", googleEventId)
@@ -135,7 +155,7 @@ class GoogleCalendarClient {
     @Throws(IOException::class)
     fun removeEvent(googleEventId: String) {
         try {
-            service.events().delete(calendarId, googleEventId).execute()
+            requireService().events().delete(calendarId, googleEventId).execute()
             log.info("Removed event from Google Calendar: {}", googleEventId)
         } catch (e: GoogleJsonResponseException) {
             log.error("Google Calendar API returned HTTP code {} during removal", e.statusCode, e)

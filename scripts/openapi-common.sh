@@ -6,7 +6,12 @@ DISCORD_OPENAPI_URL="${DISCORD_OPENAPI_URL:-https://raw.githubusercontent.com/di
 BREVO_OPENAPI_URL="${BREVO_OPENAPI_URL:-https://api.brevo.com/v3/swagger_definition_v3.yml}"
 
 SHARED_OPENAPI_DIR="${SHARED_OPENAPI_DIR:-libs/openapi-specs}"
-API_OPENAPI_SPEC="${API_OPENAPI_SPEC:-services/api/openapi.yaml}"
+# The spec is minified JSON produced by `jq -c` below. We keep the
+# extension as `.json` so downstream tools that pick their parser by
+# extension (notably @hey-api/openapi-ts, which otherwise parses
+# `.yaml` as YAML and errors on single-line flow-style documents)
+# read it correctly.
+API_OPENAPI_SPEC="${API_OPENAPI_SPEC:-services/api/openapi.json}"
 
 check_common_prerequisites() {
   for cmd in curl jq; do
@@ -47,9 +52,9 @@ normalize_specs() {
   local tmp
   tmp="$(mktemp)"
 
-  if [ -f "${API_OPENAPI_SPEC%.yaml}.raw.json" ]; then
-    jq -S -c . "${API_OPENAPI_SPEC%.yaml}.raw.json" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
-    rm -f "${API_OPENAPI_SPEC%.yaml}.raw.json"
+  if [ -f "${API_OPENAPI_SPEC%.json}.raw.json" ]; then
+    jq -S -c . "${API_OPENAPI_SPEC%.json}.raw.json" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
+    rm -f "${API_OPENAPI_SPEC%.json}.raw.json"
   elif [ -f "$API_OPENAPI_SPEC" ]; then
     jq -S -c . "$API_OPENAPI_SPEC" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
   else

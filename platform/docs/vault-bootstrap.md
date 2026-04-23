@@ -8,20 +8,24 @@ secrets remain unsynced until you complete the sequence.
 
 ```bash
 kubectl exec -n data-system vault-0 -- vault operator init \
-  -key-shares=1 -key-threshold=1 \
+  -key-shares=5 -key-threshold=3 \
   -format=json > /tmp/vault-init.json
 
-# Store both values somewhere safe (password manager).
-UNSEAL_KEY=$(jq -r '.unseal_keys_b64[0]' /tmp/vault-init.json)
-ROOT_TOKEN=$(jq -r '.root_token'          /tmp/vault-init.json)
+# Store ALL values OFFLINE (password manager, split across operators).
+# Never commit /tmp/vault-init.json; shred it after the keys are saved.
+ROOT_TOKEN=$(jq -r '.root_token' /tmp/vault-init.json)
 
-kubectl exec -n data-system vault-0 -- vault operator unseal "$UNSEAL_KEY"
+for i in 0 1 2; do
+  kubectl exec -n data-system vault-0 -- vault operator unseal \
+    "$(jq -r ".unseal_keys_b64[$i]" /tmp/vault-init.json)"
+done
 ```
 
-Single-replica Raft, so one unseal is enough. You must unseal again after
-every Vault pod restart (e.g. node reboot). Automate with
+Single-replica Raft, so the three unseal operations complete on the one
+pod. You must unseal again after every Vault pod restart (e.g. node
+reboot) — three of the five shares are required each time. Automate with
 [vault-unseal](https://github.com/lrstanley/vault-unseal) or store the
-unseal key in a cloud KMS later.
+unseal keys in a cloud KMS later.
 
 ## 2. Seed the bootstrap token
 
@@ -105,18 +109,51 @@ vault kv put secret/platform/mail \
 
 ### API third-party secrets
 
+The api Vault Agent template renders these into `/vault/secrets/api.env`
+at pod start (`platform/cluster/flux/apps/stateless/api/deployment.yaml`).
+Every key must exist; the template silently substitutes empty strings
+when a KV key is missing, which boots the pod with a broken integration.
+
 ```bash
 vault kv put secret/api \
-  brevo-api-key=<key> \
-  mollie-api-key=<key> \
-  google-calendar-sa-json=<base64-json> \
-  facebook-app-secret=<secret> \
-  x-api-secret=<secret> \
-  vault-oidc-client-secret=<random-secret>
+  jwt-secret=$(openssl rand -hex 32) \
+  brevo-api-key=<brevo-api-key> \
+  brevo-folder-contribution-periods-id=<brevo-folder-id> \
+  mollie-api-key=<mollie-api-key> \
+  google-calendar-id=<calendar-id> \
+  google-calendar-sa-json=<base64-encoded-sa-json> \
+  facebook-page-id=<facebook-page-id> \
+  facebook-access-token=<long-lived-page-token> \
+  x-api-key=<x-consumer-key> \
+  x-api-secret=<x-consumer-secret> \
+  x-access-token=<x-access-token> \
+  x-access-secret=<x-access-token-secret> \
+  discord-bot-token=<discord-bot-token> \
+  discord-guild-id=<discord-guild-id> \
+  vault-oidc-client-secret=$(openssl rand -hex 32)
 ```
 
-`vault-oidc-client-secret` is the shared secret the Vault OIDC auth method uses
-when calling back to the api. Generate with `openssl rand -hex 32`.
+Notes:
+
+- `jwt-secret` is the HMAC key the api uses to sign its own JWTs. Must be
+  at least 256 bits of entropy; `openssl rand -hex 32` is the baseline.
+- `vault-oidc-client-secret` is the shared secret the Vault OIDC auth
+  method uses when calling back to the api. It reaches the api via VSO
+  (`api-secrets` Kubernetes Secret) rather than the Vault Agent template,
+  so it must be seeded here even though it is not in the agent template.
+- `google-calendar-sa-json` is the full JSON contents of a Google service
+  account key, base64-encoded, without wrapping newlines.
+
+### Transit signing key (OIDC issuer)
+
+The api's OIDC issuer signs JWTs with a Vault-managed RSA key. The
+bootstrap Job grants the `api` policy `sign` on this key but does not
+create it (idempotency is cheaper than a pre-check).
+
+```bash
+vault write -f transit/keys/api-jwt type=rsa-2048
+vault write transit/keys/api-jwt/config deletion_allowed=false
+```
 
 ### GHCR pull credential (api + frontend Deployments)
 

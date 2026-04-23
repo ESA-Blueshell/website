@@ -148,66 +148,14 @@ kubectl -n data-system port-forward svc/vault 8200:8200 &
 export VAULT_ADDR=http://127.0.0.1:8200
 ```
 
-First time only — init Vault and **save the 5 unseal keys + root
-token OFFLINE** somewhere safe:
+Follow [`vault-bootstrap.md`](vault-bootstrap.md) end-to-end from §1
+(init + unseal, 5-of-3 Shamir) through §6 (revoke root token). That
+runbook is the canonical source for every `vault kv put` command and
+for the Transit signing key the OIDC issuer needs — keeping the detail
+in one place prevents the two docs from drifting.
 
-```bash
-vault operator init -key-shares=5 -key-threshold=3
-```
-
-Unseal (need 3 of 5; replace `<keyN>` with the actual key strings from
-the init output):
-
-```bash
-vault operator unseal <key1>
-```
-```bash
-vault operator unseal <key2>
-```
-```bash
-vault operator unseal <key3>
-```
-```bash
-vault login <root-token>
-```
-
-Watch the bootstrap Job enable auth / transit / database engines and
-seed policies:
-
-```bash
-kubectl -n data-system logs -l app.kubernetes.io/name=vault-bootstrap-auth -f
-```
-
-Seed static secrets (one `vault kv put` per path; replace the
-angle-bracketed placeholders):
-
-```bash
-vault kv put secret/platform/edge cloudflare.dns_api_token=<token>
-```
-```bash
-vault kv put secret/platform/mariadb root-password=<pass> user=blueshell password=<user-pass>
-```
-```bash
-vault kv put secret/platform/mail admin-user=admin admin-password=<pass> dkim-private-key=<base64-pem> bounce-mailbox-user=bounce@v2.esa-blueshell.nl bounce-mailbox-password=<pass>
-```
-```bash
-vault kv put secret/listmonk db-admin-password=<pass> db-password=<pass> admin-user=listmonk-admin admin-password=<pass> smtp-password=<pass>
-```
-```bash
-vault kv put secret/api brevo-api-key=<key> mollie-api-key=<key> google-calendar-sa-json=<base64> facebook-app-secret=<secret> x-api-secret=<secret> vault-oidc-client-secret=$(openssl rand -hex 32)
-```
-
-Create the Transit signing key the OIDC issuer uses (PR 8):
-
-```bash
-vault write -f transit/keys/api-jwt type=rsa-2048
-```
-```bash
-vault write transit/keys/api-jwt/config deletion_allowed=false
-```
-
-Confirm VSO materialised every VaultStaticSecret as a Kubernetes
-Secret:
+Once the bootstrap sequence has completed, confirm VSO materialised
+every VaultStaticSecret as a Kubernetes Secret:
 
 ```bash
 kubectl get vaultstaticsecret -A

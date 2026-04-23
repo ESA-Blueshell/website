@@ -24,8 +24,10 @@ spec:
     # Gatus probes it internally to confirm Traefik is alive without
     # going through the dashboard IngressRoute (which sits behind
     # forward-auth and would only ever 302 an anonymous prober).
-    ping:
-      enabled: true
+    # Chart 39.x removed the top-level `ping:` key — enable via the
+    # static-config CLI flag instead.
+    additionalArguments:
+      - "--ping=true"
     providers:
       kubernetesCRD:
         allowCrossNamespace: true

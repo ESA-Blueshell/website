@@ -14,12 +14,9 @@ spec:
   routes:
     # /api here is Traefik's own admin API, not ours — it lives on a
     # different host so there's no collision with v2.../api.
+    # Single line: Traefik's rule parser rejects embedded newlines.
     - kind: Rule
-      match: >-
-        Host(`traefik.esa-blueshell.nl`) && (
-          PathPrefix(`/dashboard`) ||
-          PathPrefix(`/api`)
-        )
+      match: Host(`traefik.esa-blueshell.nl`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
       services:
         - name: api@internal
           kind: TraefikService

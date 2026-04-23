@@ -108,7 +108,7 @@ spec:
             - name: FRONTEND_URL
               value: https://v2.esa-blueshell.nl
             - name: STORAGE_LOCATION
-              value: /home/storage
+              value: /srv/storage
             - name: LISTMONK_API_BASE_URL
               value: http://listmonk.default.svc.cluster.local:9000/api
             - name: LISTMONK_FROM_ADDRESS
@@ -189,10 +189,28 @@ spec:
               memory: 2Gi
           volumeMounts:
             - name: storage
-              mountPath: /home/storage
+              mountPath: /srv/storage
+      # The api image runs as an Alpine `-S` system user with a
+      # dynamic uid, so we can't fsGroup our way onto the hostPath
+      # mount. Loosen the mount root to 0777 at pod start instead;
+      # traversal from outside is still gated by /srv/blueshell
+      # (0755 root:root, owned by systemd-tmpfiles on the node).
+      initContainers:
+        - name: storage-perms
+          image: busybox:1.37-musl
+          command:
+            - sh
+            - -c
+            - chmod 0777 /srv/storage
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: storage
+              mountPath: /srv/storage
       volumes:
         - name: storage
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: api-storage
 ---
 apiVersion: v1
 kind: Service

@@ -21,3 +21,24 @@ The v2 stack runs side-by-side with the old Swarm on apex. No big-bang
 cutover — when v2 has carried real traffic for long enough, the apex
 moves in its own PR. The full PR-9 bring-up runbook lives at
 `platform/docs/bringup-v2.md`.
+
+## User uploads — migrating /home/storage from the old Swarm VPS
+
+The api now persists uploads to `/srv/blueshell/storage` on the
+new node, backed by a static hostPath PV
+(`platform/cluster/flux/apps/stateless/api/pvc.yaml`). The old Swarm
+VPS kept the same data under `/home/storage`. Once the new api pod
+is Ready on the PV, rsync the files across:
+
+```bash
+rsync -av --progress \
+  root@<old-vps>:/home/storage/ \
+  root@frankfurt-contabo-1:/srv/blueshell/storage/
+```
+
+Run this **after** the api rollout on the new PV (so subdirectory
+structure and perms already exist) and **before** DNS cutover in
+PR 10. After rsync, verify a known upload loads via the frontend:
+the subdirectory layout (`profile-pictures/`, `event-banners/`,
+`board-documents/`, …) is owned by `FileType.directory` in code,
+so filenames should round-trip unchanged.

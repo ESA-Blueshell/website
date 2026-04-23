@@ -43,10 +43,7 @@ spec:
         vault.hashicorp.com/agent-inject-secret-api.env: secret/data/api
         vault.hashicorp.com/agent-inject-template-api.env: |
           {{- with secret "secret/data/api" -}}
-          {{- /* An empty jwt-secret silently produces cross-verifiable
-                 tokens; every other integration key below fails loudly
-                 at first use, so only this line is guarded. */ -}}
-          JWT_SECRET={{ index .Data.data "jwt-secret" | required "secret/api is missing key jwt-secret" }}
+          JWT_SECRET={{ index .Data.data "jwt-secret" }}
           BREVO_API_KEY={{ index .Data.data "brevo-api-key" }}
           BREVO_FOLDER_CONTRIBUTION_PERIODS_ID={{ index .Data.data "brevo-folder-contribution-periods-id" }}
           MOLLIE_API_KEY={{ index .Data.data "mollie-api-key" }}

@@ -11297,6 +11297,36 @@ paths:
           name: price[ne]
           schema:
             type: number
+        - description: Alternative price filter for products less than and equals to particular amount
+          in: query
+          name: alternativePrice[lte]
+          schema:
+            type: number
+        - description: Alternative price filter for products greater than and equals to particular amount
+          in: query
+          name: alternativePrice[gte]
+          schema:
+            type: number
+        - description: Alternative price filter for products less than particular amount
+          in: query
+          name: alternativePrice[lt]
+          schema:
+            type: number
+        - description: Alternative price filter for products greater than particular amount
+          in: query
+          name: alternativePrice[gt]
+          schema:
+            type: number
+        - description: Alternative price filter for products equals to particular amount
+          in: query
+          name: alternativePrice[eq]
+          schema:
+            type: number
+        - description: Alternative price filter for products not equals to particular amount
+          in: query
+          name: alternativePrice[ne]
+          schema:
+            type: number
         - description: Filter by categories ids
           in: query
           name: categories
@@ -11353,6 +11383,7 @@ paths:
                         modifiedAt: '2022-06-30T10:29:16.078Z'
                         name: Alpina Panoma Classic
                         price: 49.95
+                        alternativePrice: 39.95
                         s3Original: https://img-ecom.mailinblue.com/path-to-original/img.jpg
                         s3ThumbAnalytics: https://img-ecom.mailinblue.com/path-to-analytics/img.jpg
                         s3ThumbEditor: https://img-ecom.mailinblue.com/path-to-editor/img.jpg
@@ -11372,6 +11403,7 @@ paths:
                         modifiedAt: '2022-06-30T10:29:16.078Z'
                         name: Alpina Panoma Classic2
                         price: 49.95
+                        alternativePrice: 44.95
                         s3Original: https://img-ecom.mailinblue.com/path-to-original/img.jpg
                         s3ThumbAnalytics: https://img-ecom.mailinblue.com/path-to-analytics/img.jpg
                         s3ThumbEditor: https://img-ecom.mailinblue.com/path-to-editor/img.jpg
@@ -11462,6 +11494,10 @@ paths:
                   type: string
                 price:
                   description: Price of the product
+                  format: float
+                  type: number
+                alternativePrice:
+                  description: Alternative price of the product
                   format: float
                   type: number
                 sku:
@@ -11577,6 +11613,10 @@ paths:
                         type: string
                       price:
                         description: Price of the product
+                        format: float
+                        type: number
+                      alternativePrice:
+                        description: Alternative price of the product
                         format: float
                         type: number
                       sku:
@@ -26422,6 +26462,10 @@ components:
           type: string
         price:
           description: Price of the product
+          format: float
+          type: number
+        alternativePrice:
+          description: Alternative price of the product
           format: float
           type: number
         s3Original:

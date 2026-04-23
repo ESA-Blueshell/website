@@ -25,9 +25,9 @@ in
   };
 
   # Write /etc/resolv.conf statically from NixOS and disable openresolv
-  # entirely, same rationale as personal-stack: keep kubelet's resolv.conf
-  # under three entries so DNSConfigForming doesn't fire. Three upstreams:
-  # Cloudflare primary + secondary for speed, Quad9 for operator diversity.
+  # entirely: keep kubelet's resolv.conf under three entries so
+  # DNSConfigForming doesn't fire. Three upstreams: Cloudflare primary
+  # + secondary for speed, Quad9 for operator diversity.
   networking.resolvconf.enable = false;
   environment.etc."resolv.conf" = {
     mode = "0644";

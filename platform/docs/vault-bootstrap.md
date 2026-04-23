@@ -155,6 +155,30 @@ vault write -f transit/keys/api-jwt type=rsa-2048
 vault write transit/keys/api-jwt/config deletion_allowed=false
 ```
 
+### Vault OIDC auth method (logging into Vault via the api)
+
+`vault login -method=oidc` redirects the operator through the
+website api as the IdP. Configure the auth method to point at the
+same-origin issuer:
+
+```bash
+vault auth enable oidc 2>/dev/null || true
+vault write auth/oidc/config \
+  oidc_discovery_url="https://v2.esa-blueshell.nl/api" \
+  oidc_client_id="vault" \
+  oidc_client_secret="$(vault kv get -field=vault-oidc-client-secret secret/api)" \
+  default_role="admin"
+vault write auth/oidc/role/admin \
+  bound_audiences="vault" \
+  allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
+  user_claim="sub" \
+  policies="default"
+```
+
+The redirect URI must match the one registered in
+`RegisteredClients.kt:47`. The client secret was seeded above with
+`openssl rand -hex 32` under `vault-oidc-client-secret`.
+
 ### GHCR pull credential (api + frontend Deployments)
 
 `ghcr.io/esa-blueshell/{api,frontend}` are private packages. VSO

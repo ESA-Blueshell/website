@@ -19,7 +19,7 @@ spec:
       # OIDC front-door. Users hit headlamp.esa-blueshell.nl, the website
       # api issues an id-token, and Headlamp passes that token to the
       # k3s API server. k3s is configured to trust the
-      # https://auth.esa-blueshell.nl issuer
+      # https://v2.esa-blueshell.nl/api issuer
       # (platform/nix/modules/roles/single-node.nix); the user's RBAC
       # is decided by the `groups` claim via oidc-admin-binding.yaml.
       #
@@ -28,7 +28,7 @@ spec:
       # flow will fail; the deployment otherwise reconciles fine.
       oidc:
         clientID: headlamp
-        issuerURL: https://auth.esa-blueshell.nl
+        issuerURL: https://v2.esa-blueshell.nl/api
         scopes: openid profile email groups
         callbackURL: https://headlamp.esa-blueshell.nl/oidc-callback
         usePKCE: true

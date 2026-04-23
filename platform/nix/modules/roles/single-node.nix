@@ -22,7 +22,7 @@
       # The oidc: prefix keeps these identities disjoint from the
       # built-in system:* groups so a human-issued token is never
       # implicitly bound to a system role.
-      "--kube-apiserver-arg=oidc-issuer-url=https://auth.esa-blueshell.nl"
+      "--kube-apiserver-arg=oidc-issuer-url=https://v2.esa-blueshell.nl/api"
       "--kube-apiserver-arg=oidc-client-id=headlamp"
       "--kube-apiserver-arg=oidc-username-claim=preferred_username"
       "--kube-apiserver-arg=oidc-username-prefix=oidc:"

@@ -61,6 +61,19 @@ in
     vim
   ];
 
+  # Durable home for api user uploads. The api Deployment mounts
+  # /srv/blueshell/storage via a static hostPath PV (see
+  # platform/cluster/flux/apps/stateless/api/pvc.yaml); kubelet would
+  # auto-create the path with DirectoryOrCreate, but seeding it here
+  # keeps ownership + perms in NixOS's hands across reboots. An
+  # initContainer in the api pod loosens the inner mount to 0777 at
+  # pod start so the pod's dynamic Alpine uid can write.
+  systemd.tmpfiles.rules = [
+    "d /srv                   0755 root root -"
+    "d /srv/blueshell         0755 root root -"
+    "d /srv/blueshell/storage 0755 root root -"
+  ];
+
   # A missing deploy.pub is caught loudly at install/deploy time by the
   # bash guards in platform/scripts. Surface it here as a warning too,
   # but do not fail the build — otherwise `nix flake check` blows up on

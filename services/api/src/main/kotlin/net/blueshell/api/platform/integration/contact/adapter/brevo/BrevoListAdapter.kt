@@ -33,13 +33,14 @@ class BrevoListAdapter(
     restClientBuilder: RestClient.Builder,
     jsonMapper: JsonMapper,
     @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
+    // `contactsApi` below is a class-level property initializer that
+    // runs during the constructor, *before* Spring's field injection.
+    // Using `@field:Value lateinit var` for these values would crash
+    // the pod with `UninitializedPropertyAccessException` at startup
+    // (same shape as the fix applied to BrevoContactAdapter).
+    @param:Value($$"${brevo.apiKey:}") private val apiKey: String,
+    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
 ) : ContactListAdapter {
-    @field:Value($$"${brevo.apiKey}")
-    lateinit var apiKey: String
-
-    @field:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}")
-    lateinit var brevoBaseUrl: String
-
 
     override val system = ContactSystem.BREVO
 

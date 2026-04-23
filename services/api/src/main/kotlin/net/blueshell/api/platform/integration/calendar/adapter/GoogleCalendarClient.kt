@@ -68,6 +68,12 @@ class GoogleCalendarClient {
             return
         }
 
+        // Any init failure below — invalid JSON, bad key material,
+        // TLS trust issues — must degrade calendar sync to a no-op
+        // rather than crashloop the whole api. Operator sees the
+        // warning, other features keep working. `requireService()`
+        // throws with a clear message if something actually tries to
+        // invoke a calendar operation in this state.
         try {
             val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
 
@@ -84,11 +90,13 @@ class GoogleCalendarClient {
 
             log.info("Initialized Google Calendar client for calendarId={}", calendarId)
         } catch (e: GeneralSecurityException) {
-            log.error("Failed to initialize GoogleCalendarService", e)
-            throw IllegalStateException("GoogleCalendarService initialization failed", e)
+            log.warn("Google Calendar client init failed (security); calendar sync disabled: {}", e.message)
         } catch (e: IOException) {
-            log.error("Failed to initialize GoogleCalendarService", e)
-            throw IllegalStateException("GoogleCalendarService initialization failed", e)
+            // MalformedJsonException extends IOException — a
+            // placeholder or half-seeded SA JSON lands here.
+            log.warn("Google Calendar client init failed (invalid JSON / I/O); calendar sync disabled: {}", e.message)
+        } catch (e: RuntimeException) {
+            log.warn("Google Calendar client init failed; calendar sync disabled: {}", e.message)
         }
     }
 

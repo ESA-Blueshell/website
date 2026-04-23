@@ -1,0 +1,29 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: edge-system
+  annotations:
+    # One label deep — fits CF Universal SSL + our wildcard cert.
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
+    kubernetes.io/ingress.class: traefik-public
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # /api here is Traefik's own admin API, not ours — it lives on a
+    # different host so there's no collision with v2.../api.
+    - kind: Rule
+      match: >-
+        Host(`traefik.esa-blueshell.nl`) && (
+          PathPrefix(`/dashboard`) ||
+          PathPrefix(`/api`)
+        )
+      services:
+        - name: api@internal
+          kind: TraefikService
+      middlewares:
+        - name: forward-auth
+          namespace: edge-system
+  tls: {}

@@ -23,6 +23,7 @@ private val ALL_SERVICES = listOf(
     ServiceEntry("stalwart", "Mail admin", "https://stalwart.esa-blueshell.nl", "/icons/stalwart.svg", "Mail server admin"),
     ServiceEntry("headlamp", "Headlamp", "https://headlamp.esa-blueshell.nl", "/icons/headlamp.svg", "Kubernetes dashboard"),
     ServiceEntry("vault", "Vault", "https://vault.esa-blueshell.nl", "/icons/vault.svg", "Secrets management"),
+    ServiceEntry("traefik", "Traefik", "https://traefik.esa-blueshell.nl/dashboard/", "/icons/traefik.svg", "Edge router dashboard"),
     ServiceEntry("status", "Status", "https://status.esa-blueshell.nl", "/icons/gatus.svg", "Service status page"),
 )
 
@@ -44,7 +45,7 @@ class MyServicesController {
 
         val visible = ALL_SERVICES.filter { service ->
             when (service.id) {
-                "headlamp", "vault" -> isAdmin
+                "headlamp", "vault", "traefik" -> isAdmin
                 "listmonk", "stalwart" -> isAdmin
                 else -> true
             }

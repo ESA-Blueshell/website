@@ -55,7 +55,7 @@ data:
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
-      - "[BODY].issuer == https://auth.esa-blueshell.nl"
+      - "[BODY].issuer == https://v2.esa-blueshell.nl/api"
       - "[RESPONSE_TIME] < 500"
 
     # ---------- Admin services (forward-auth) ----------
@@ -86,6 +86,17 @@ data:
     - name: "Vault Admin"
       group: "admin"
       url: "http://vault.data-system.svc.cluster.local:8200/v1/sys/health?standbyok=true"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+    - name: "Traefik Dashboard"
+      group: "admin"
+      # /ping is the chart's healthcheck endpoint on the `traefik`
+      # entrypoint (port 9000). Enabled in the Traefik HelmRelease;
+      # the dashboard IngressRoute itself sits behind forward-auth
+      # so probing it externally would only ever yield a 302.
+      url: "http://traefik.ingress-system.svc.cluster.local:9000/ping"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"

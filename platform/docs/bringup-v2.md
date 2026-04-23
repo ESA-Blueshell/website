@@ -177,8 +177,8 @@ propagation).
 kubectl -n edge-system get ingressroute
 ```
 
-Expect: `api`, `auth`, `frontend`, `headlamp`, `listmonk`,
-`stalwart-admin`, `status`.
+Expect: `api`, `frontend`, `headlamp`, `listmonk`, `stalwart-admin`,
+`status`, `traefik-dashboard`, `vault`.
 
 ## 8. Migrate data from the old VPS
 
@@ -229,10 +229,10 @@ Cloudflare zone `esa-blueshell.nl`:
 curl -I https://v2.esa-blueshell.nl
 ```
 ```bash
-curl https://api.v2.esa-blueshell.nl/health
+curl https://v2.esa-blueshell.nl/api/health
 ```
 ```bash
-curl https://auth.v2.esa-blueshell.nl/.well-known/openid-configuration | jq .issuer
+curl https://v2.esa-blueshell.nl/api/.well-known/openid-configuration | jq .issuer
 ```
 ```bash
 curl https://status.v2.esa-blueshell.nl/

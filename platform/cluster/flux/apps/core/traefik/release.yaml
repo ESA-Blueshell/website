@@ -19,7 +19,13 @@ spec:
       name: traefik-public
     ingressRoute:
       dashboard:
-        enabled: false
+        enabled: true
+    # Healthcheck endpoint on the `traefik` entrypoint (port 9000).
+    # Gatus probes it internally to confirm Traefik is alive without
+    # going through the dashboard IngressRoute (which sits behind
+    # forward-auth and would only ever 302 an anonymous prober).
+    ping:
+      enabled: true
     providers:
       kubernetesCRD:
         allowCrossNamespace: true
@@ -44,3 +50,10 @@ spec:
         hostPort: 80
       websecure:
         hostPort: 443
+      traefik:
+        # ClusterIP-only — exposes port 9000 on the K8s Service so
+        # Gatus can hit /ping from inside the cluster. The dashboard
+        # itself is reachable from outside via the traefik-dashboard
+        # IngressRoute (forward-auth gated), not this port.
+        expose:
+          default: true

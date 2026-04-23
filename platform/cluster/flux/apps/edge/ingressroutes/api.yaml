@@ -1,4 +1,14 @@
 apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-api-prefix
+  namespace: edge-system
+spec:
+  stripPrefix:
+    prefixes:
+      - /api
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: api
@@ -6,34 +16,42 @@ metadata:
   annotations:
     # No DNS record of our own — the frontend IngressRoute already
     # publishes `v2.esa-blueshell.nl`. We just piggy-back on that
-    # host with path-based rules that win over frontend's catch-all
-    # because they're more specific.
+    # host with path-based rules that win over frontend's catch-all.
     kubernetes.io/ingress.class: traefik-public
 spec:
   entryPoints:
     - websecure
-  # Frontend-same-origin path routing. `App.vue:resolveApiBaseUrl()`
-  # falls back to `${location.origin}/api` when VITE_APP_URL is unset,
-  # and no dedicated api.v2.esa-blueshell.nl subdomain exists any more
-  # (two-label hosts fall outside Cloudflare's free Universal SSL edge
-  # cert `*.esa-blueshell.nl`). Every api/OIDC call therefore lands on
-  # `v2.esa-blueshell.nl` and must be peeled off before Traefik falls
-  # through to the frontend SPA. Covered:
-  #   - /api/*                                  REST API
-  #   - /oauth2/*                               Spring Auth Server
-  #   - /userinfo                               OIDC userinfo
-  #   - /.well-known/openid-configuration       OIDC discovery
-  #   - /.well-known/oauth-authorization-server OAuth metadata
+  # Same-origin OIDC. Spring Authorization Server's `issuer` setting
+  # advertises every endpoint nested under /api (so jwks_uri etc. are
+  # https://v2.esa-blueshell.nl/api/oauth2/jwks), but Spring still
+  # serves them at root paths internally — we strip /api before the
+  # backend sees the request.
+  #
+  # Two routes on this host:
+  #   - OIDC paths under /api/* with StripPrefix(/api), priority 100
+  #   - Plain REST /api/* without strip,                priority 50
+  # frontend.yaml's `Host(v2)` catch-all keeps default priority and
+  # naturally falls below both.
   routes:
     - kind: Rule
+      priority: 100
       match: >-
         Host(`v2.esa-blueshell.nl`) && (
-          PathPrefix(`/api`) ||
-          PathPrefix(`/oauth2`) ||
-          PathPrefix(`/userinfo`) ||
-          Path(`/.well-known/openid-configuration`) ||
-          Path(`/.well-known/oauth-authorization-server`)
+          PathPrefix(`/api/oauth2`) ||
+          PathPrefix(`/api/userinfo`) ||
+          Path(`/api/.well-known/openid-configuration`) ||
+          Path(`/api/.well-known/oauth-authorization-server`)
         )
+      middlewares:
+        - name: strip-api-prefix
+          namespace: edge-system
+      services:
+        - name: api
+          namespace: default
+          port: 8080
+    - kind: Rule
+      priority: 50
+      match: Host(`v2.esa-blueshell.nl`) && PathPrefix(`/api`)
       services:
         - name: api
           namespace: default

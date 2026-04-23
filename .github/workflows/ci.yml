@@ -42,11 +42,6 @@ env:
   MYSQL_PASSWORD: ci-blueshell
   MYSQL_HOST: 127.0.0.1
 
-  RABBITMQ_HOST: 127.0.0.1
-  RABBITMQ_PORT: '5672'
-  RABBITMQ_USERNAME: guest
-  RABBITMQ_PASSWORD: guest
-
   APP_URL: http://127.0.0.1:8080
   FRONTEND_URL: http://127.0.0.1:3000
 
@@ -199,18 +194,6 @@ jobs:
           --health-timeout=5s
           --health-retries=10
           --health-start-period=30s
-      rabbitmq:
-        image: rabbitmq:3.13-management
-        ports: [ "5672:5672" ]
-        env:
-          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
-          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
-        options: >-
-          --health-cmd="rabbitmq-diagnostics -q ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
 
     steps:
       - name: Checkout repository
@@ -235,20 +218,6 @@ jobs:
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
-
-      - name: Wait for RabbitMQ service
-        run: |
-          set -euo pipefail
-          for i in {1..30}; do
-            if (echo > /dev/tcp/$RABBITMQ_HOST/$RABBITMQ_PORT) >/dev/null 2>&1; then
-              echo "RabbitMQ is ready!"
-              exit 0
-            fi
-            echo "Waiting for RabbitMQ... ($i/30)"
-            sleep 2
-          done
-          echo "RabbitMQ did not become ready in time."
-          exit 1
 
       - name: Set up Java Development Kit
         uses: actions/setup-java@v4
@@ -310,18 +279,6 @@ jobs:
           --health-timeout=5s
           --health-retries=10
           --health-start-period=30s
-      rabbitmq:
-        image: rabbitmq:3.13-management
-        ports: [ "5672:5672" ]
-        env:
-          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
-          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
-        options: >-
-          --health-cmd="rabbitmq-diagnostics -q ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
 
     steps:
       - name: Checkout repository
@@ -344,20 +301,6 @@ jobs:
       - name: Prepare test database schema
         run: |
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
-
-      - name: Wait for RabbitMQ service
-        run: |
-          set -euo pipefail
-          for i in {1..30}; do
-            if (echo > /dev/tcp/$RABBITMQ_HOST/$RABBITMQ_PORT) >/dev/null 2>&1; then
-              echo "RabbitMQ is ready!"
-              exit 0
-            fi
-            echo "Waiting for RabbitMQ... ($i/30)"
-            sleep 2
-          done
-          echo "RabbitMQ did not become ready in time."
-          exit 1
 
       - name: Set up Java Development Kit
         uses: actions/setup-java@v4
@@ -516,18 +459,6 @@ jobs:
           --health-timeout=5s
           --health-retries=10
           --health-start-period=30s
-      rabbitmq:
-        image: rabbitmq:3.13-management
-        ports: [ "5672:5672" ]
-        env:
-          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
-          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
-        options: >-
-          --health-cmd="rabbitmq-diagnostics -q ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -551,20 +482,6 @@ jobs:
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
-
-      - name: Wait for RabbitMQ service
-        run: |
-          set -euo pipefail
-          for i in {1..30}; do
-            if (echo > /dev/tcp/$RABBITMQ_HOST/$RABBITMQ_PORT) >/dev/null 2>&1; then
-              echo "RabbitMQ is ready!"
-              exit 0
-            fi
-            echo "Waiting for RabbitMQ... ($i/30)"
-            sleep 2
-          done
-          echo "RabbitMQ did not become ready in time."
-          exit 1
 
       - name: Set up Java Development Kit
         uses: actions/setup-java@v4

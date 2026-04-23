@@ -34,13 +34,16 @@ import tools.jackson.databind.json.JsonMapper
 class BrevoContactAdapter(
     restClientBuilder: RestClient.Builder,
     jsonMapper: JsonMapper,
+    // `contactsApi` below is a class-level property initializer that
+    // runs during the constructor, *before* Spring's field injection.
+    // Using `@field:Value lateinit var` for these values crashed the
+    // pod with `UninitializedPropertyAccessException` at startup
+    // because the initializer read `brevoBaseUrl` before it had been
+    // set. `@param:Value` resolves at constructor-argument time and
+    // is in scope for the initializer below.
+    @param:Value($$"${brevo.apiKey:}") private val apiKey: String,
+    @param:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") private val brevoBaseUrl: String,
 ) : ContactAdapter {
-
-    @field:Value($$"${brevo.apiKey:}")
-    lateinit var apiKey: String
-
-    @field:Value($$"${brevo.baseUrl:https://api.brevo.com/v3}")
-    lateinit var brevoBaseUrl: String
 
     override val system = ContactSystem.BREVO
 

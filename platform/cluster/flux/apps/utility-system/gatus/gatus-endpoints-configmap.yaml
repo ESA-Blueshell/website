@@ -6,16 +6,15 @@ metadata:
 data:
   endpoints.yaml: |
     ---
-    # Gatus runs inside the cluster (utility-system/gatus), so every
-    # probe except the public frontend is a cluster-local lookup via
-    # `*.svc.cluster.local`. That strips the edge (Cloudflare + Traefik
-    # + forward-auth) out of the signal and leaves us with app-level
-    # health, which is what the status page should be reporting.
+    # Public-edge probes: Gatus exercises the full ingress path a real
+    # browser / client takes (Cloudflare → Traefik → forward-auth →
+    # service). This is the contract we want to alarm on — if any
+    # piece of the edge breaks the site is down even if the app is
+    # healthy. Cluster-local probes were tried (see PR #145) and
+    # reverted because they hid edge regressions.
     #
-    # The one exception is the main UI: the whole point of the public
-    # status page is to tell an outside observer whether the site is
-    # reachable, so we keep a synthetic browser-equivalent probe
-    # against `https://v2.esa-blueshell.nl/`.
+    # TCP mail probes and postgres-for-listmonk stay cluster-local —
+    # nothing sensible to probe publicly without authenticating.
     endpoints:
     # ---------- Public edge (browser-equivalent) ----------
     - name: "main-site"
@@ -26,63 +25,65 @@ data:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 2000"
       - "[CERTIFICATE_EXPIRATION] > 168h"
-
-    # ---------- Application health (in-cluster) ----------
     - name: "api"
-      group: "app"
-      url: "http://api.default.svc.cluster.local:8080/health"
+      group: "public"
+      # Served at same-origin `/api/health` via the apex PathPrefix(/api)
+      # rule on `apps/edge/ingressroutes/api.yaml`. The handler is
+      # `MainController.healthCheck` which registers both `/health`
+      # (for k8s probes) and `/api/health` (for this probe).
+      url: "https://v2.esa-blueshell.nl/api/health"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 500"
+      - "[RESPONSE_TIME] < 2000"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
     - name: "oidc-discovery"
-      group: "app"
-      # api serves the OIDC discovery doc on the same Service — the
-      # issuer field inside the payload is still the public URL
-      # (`https://auth.esa-blueshell.nl`) from AuthorizationServerConfig.
-      url: "http://api.default.svc.cluster.local:8080/.well-known/openid-configuration"
+      group: "public"
+      url: "https://auth.esa-blueshell.nl/.well-known/openid-configuration"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
       - "[BODY].issuer == https://auth.esa-blueshell.nl"
-      - "[RESPONSE_TIME] < 500"
-    - name: "frontend"
-      group: "app"
-      url: "http://frontend.default.svc.cluster.local:3000/healthz"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 500"
-    - name: "listmonk"
-      group: "app"
-      url: "http://listmonk.default.svc.cluster.local:9000/health"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 500"
-    - name: "headlamp"
-      group: "app"
-      url: "http://headlamp.utility-system.svc.cluster.local/"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 500"
-    - name: "stalwart-admin"
-      group: "app"
-      url: "http://stalwart.mail-system.svc.cluster.local:8080/"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 500"
+      - "[RESPONSE_TIME] < 2000"
 
-    # ---------- Data plane (in-cluster) ----------
+    # ---------- Admin hosts (forward-auth) ----------
+    # These sit behind the forward-auth middleware and reject
+    # unauthenticated requests with 401. A 401 here means both
+    # Traefik and the api's forward-auth handler are responding —
+    # the only signal we can assert from outside without logging in.
+    - name: "headlamp"
+      group: "admin (forward-auth)"
+      url: "https://kube.esa-blueshell.nl/"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 401"
+      - "[RESPONSE_TIME] < 2000"
+    - name: "listmonk-admin"
+      group: "admin (forward-auth)"
+      url: "https://mail-admin.esa-blueshell.nl/"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 401"
+      - "[RESPONSE_TIME] < 2000"
+    - name: "stalwart-admin"
+      group: "admin (forward-auth)"
+      url: "https://mail-admin.esa-blueshell.nl/webadmin"
+      interval: "60s"
+      conditions:
+      - "[STATUS] == 401"
+      - "[RESPONSE_TIME] < 2000"
     - name: "vault"
-      group: "data"
-      url: "http://vault.data-system.svc.cluster.local:8200/v1/sys/health?standbyok=true"
+      group: "admin (forward-auth)"
+      url: "https://vault.esa-blueshell.nl/v1/sys/health?standbyok=true"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 500"
+      - "[RESPONSE_TIME] < 2000"
+
+    # ---------- Data plane (in-cluster, unavoidable) ----------
+    # Nothing to probe publicly here without authenticating; Gatus
+    # runs inside the cluster so it can TCP-dial these services
+    # directly.
     - name: "mariadb"
       group: "data"
       url: "tcp://mariadb.data-system.svc.cluster.local:3306"
@@ -96,12 +97,11 @@ data:
       conditions:
       - "[CONNECTED] == true"
 
-    # ---------- Mail ports (in-cluster) ----------
-    # Public delivery hits the node's hostPort; the in-cluster Service
-    # exposes the same ports. A successful TCP connect from here means
-    # the stalwart pod is listening — it does not validate that the
-    # external hostPort is reachable from the internet, which would
-    # require a separate off-cluster probe.
+    # ---------- Mail ports ----------
+    # Public delivery hits the node's hostPort. A successful TCP
+    # connect from inside the cluster means stalwart is listening;
+    # a real SMTP handshake on the public IP would require an
+    # off-cluster probe which we don't have.
     - name: "stalwart-smtp-25"
       group: "mail"
       url: "tcp://stalwart.mail-system.svc.cluster.local:25"

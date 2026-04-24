@@ -194,6 +194,7 @@ sync_api_secret() {
     vso.secrets.hashicorp.com/force-refresh="$(date +%s)" --overwrite >/dev/null
 
   echo "Waiting for api-secrets.$verify_field to update (up to 60s)..."
+  local synced=0
   for i in $(seq 1 12); do
     current_value="$(
       kubectl -n default get secret api-secrets \
@@ -202,10 +203,22 @@ sync_api_secret() {
     )"
     if [[ "$current_value" == "$expected_value" ]]; then
       echo "  VSO synced (attempt $i)."
+      synced=1
       break
     fi
     sleep 5
   done
+
+  # Don't roll the api pod on a stale Secret — rolling forward with old
+  # values is the failure mode that dragged out the last cutover by
+  # hours. If VSO didn't confirm, exit loud; the operator can fix VSO
+  # (usually vault-auth permissions) and re-run with --sync-api.
+  if [[ "$synced" -ne 1 ]]; then
+    echo "  VSO did not confirm fresh value within 60s. Not restarting the" >&2
+    echo "  api pod — doing so now would roll it onto a stale Secret." >&2
+    echo "  Check: kubectl -n default describe vaultstaticsecret api-secrets" >&2
+    exit 1
+  fi
 
   echo "Deleting api pod so it reads the refreshed /vault/secrets/api.env..."
   kubectl -n default delete pod -l app.kubernetes.io/name=api --wait=false >/dev/null

@@ -34,6 +34,23 @@ spec:
                 secretKeyRef:
                   name: listmonk-secrets
                   key: admin-password
+            # admin-email and api-user live in secret/listmonk so they can
+            # drift alongside admin-user/password. Both are optional: the
+            # script falls back to sensible defaults (admin@listmonk.local,
+            # "api") when the keys are missing, which keeps a partially
+            # seeded Vault from blocking the Job.
+            - name: LISTMONK_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: listmonk-secrets
+                  key: admin-email
+                  optional: true
+            - name: LISTMONK_ADMIN_API_USER
+              valueFrom:
+                secretKeyRef:
+                  name: listmonk-secrets
+                  key: api-user
+                  optional: true
             - name: LISTMONK_SMTP_HOST
               value: stalwart.mail-system.svc.cluster.local
             - name: LISTMONK_SMTP_PORT

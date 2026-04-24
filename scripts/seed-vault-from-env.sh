@@ -365,6 +365,11 @@ append_field secret/platform/mariadb user "$mariadb_user"
 append_field secret/platform/mariadb password "$mariadb_password"
 append_field secret/platform/mariadb admin-user "$mariadb_admin_user"
 append_field secret/platform/mariadb admin-password "$mariadb_admin_password"
+# DELETE AFTER PR 11: `legacy-user`/`legacy-password` capture the old
+# Swarm-era app login purely for operator reference during the apex
+# cutover. The v2 stack does not read these fields, and once the old
+# VPS is decommissioned they're noise in `vault kv get`. Drop both the
+# lines below and any seeded values when cleaning up the retired env.
 append_field secret/platform/mariadb legacy-user "$(first_value DATABASE_USERNAME 2>/dev/null || true)"
 append_field secret/platform/mariadb legacy-password "$(first_value DATABASE_PASSWORD 2>/dev/null || true)"
 

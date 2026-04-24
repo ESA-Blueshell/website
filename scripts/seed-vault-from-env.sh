@@ -183,9 +183,9 @@ write_path() {
 }
 
 sync_api_secret() {
-  local verify_field="$1"
-  local expected_value="$2"
-  local current_value
+  local args=("$@")
+  local pair field expected_value current_value
+  local pending_fields=()
 
   export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/blueshell.yaml}"
 
@@ -193,19 +193,28 @@ sync_api_secret() {
   kubectl -n default annotate vaultstaticsecret api-secrets \
     vso.secrets.hashicorp.com/force-refresh="$(date +%s)" --overwrite >/dev/null
 
-  echo "Waiting for api-secrets.$verify_field to update (up to 60s)..."
+  echo "Waiting for api-secrets to refresh all written fields (up to 60s)..."
   local synced=0
   for i in $(seq 1 12); do
-    current_value="$(
-      kubectl -n default get secret api-secrets \
-        -o jsonpath="{.data.$verify_field}" 2>/dev/null \
-        | base64 -d 2>/dev/null || true
-    )"
-    if [[ "$current_value" == "$expected_value" ]]; then
-      echo "  VSO synced (attempt $i)."
+    pending_fields=()
+    for pair in "${args[@]}"; do
+      field="${pair%%=*}"
+      expected_value="${pair#*=}"
+      current_value="$(
+        kubectl -n default get secret api-secrets \
+          -o jsonpath="{.data.$field}" 2>/dev/null \
+          | base64 -d 2>/dev/null || true
+      )"
+      if [[ "$current_value" != "$expected_value" ]]; then
+        pending_fields+=("$field")
+      fi
+    done
+    if (( ${#pending_fields[@]} == 0 )); then
+      echo "  VSO synced all fields (attempt $i)."
       synced=1
       break
     fi
+    echo "  Still waiting on: ${pending_fields[*]}"
     sleep 5
   done
 
@@ -214,7 +223,8 @@ sync_api_secret() {
   # hours. If VSO didn't confirm, exit loud; the operator can fix VSO
   # (usually vault-auth permissions) and re-run with --sync-api.
   if [[ "$synced" -ne 1 ]]; then
-    echo "  VSO did not confirm fresh value within 60s. Not restarting the" >&2
+    echo "  VSO did not confirm fresh values for: ${pending_fields[*]}" >&2
+    echo "  within 60s. Not restarting the" >&2
     echo "  api pod — doing so now would roll it onto a stale Secret." >&2
     echo "  Check: kubectl -n default describe vaultstaticsecret api-secrets" >&2
     exit 1
@@ -415,8 +425,6 @@ if [[ "$SYNC_API" -eq 1 ]]; then
     echo
     echo "Skipping --sync-api because no secret/api fields were written."
   else
-    api_verify_field="${API_FIELDS[0]}"
-    api_expected_value="${API_ARGS[0]#*=}"
-    sync_api_secret "$api_verify_field" "$api_expected_value"
+    sync_api_secret "${API_ARGS[@]}"
   fi
 fi

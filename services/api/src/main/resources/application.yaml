@@ -20,7 +20,6 @@ spring:
       database:
         enabled: ${VAULT_DB_ENABLED:false}
         role: api
-        backend: database
 
   application:
     name: BlueshellAPI

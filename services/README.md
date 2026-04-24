@@ -193,6 +193,9 @@ LISTMONK_ADMIN_PASSWORD=<strong-password>
 LISTMONK_ADMIN_EMAIL=admin@esa-blueshell.nl
 LISTMONK_ADMIN_API_USER=api
 
+# k8s persists the generated API token in Secret/listmonk-api-token.
+# local compose writes the same token to /run/secrets/listmonk/api-token.env.
+
 # SMTP outbound (leave LISTMONK_SMTP_HOST blank to skip)
 LISTMONK_SMTP_HOST=
 LISTMONK_SMTP_PORT=587

@@ -244,6 +244,10 @@ kubectl get secret -n default      stalwart-secrets
 kubectl get secret -n mail-system  stalwart-secrets
 ```
 
+`listmonk-api-token` is not a Vault/VSO Secret. The `listmonk-setup` Job
+creates it after first-time setup and the api pod mounts it at
+`/run/secrets/listmonk/api-token.env`.
+
 ## 6. Rotate the root token
 
 The `vault-bootstrap-token` secret holds the root token. Revoke the root

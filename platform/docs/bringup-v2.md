@@ -164,6 +164,9 @@ kubectl get vaultstaticsecret -A
 kubectl get secret -A | grep -E 'api-secrets|listmonk-secrets|stalwart-secrets|cloudflare'
 ```
 
+Later, once `listmonk-setup` has run successfully, also expect
+`default/listmonk-api-token`.
+
 ## 7. Wait for the wildcard cert + IngressRoutes
 
 ```bash

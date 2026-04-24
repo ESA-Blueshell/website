@@ -77,8 +77,11 @@ scripts/seed-vault-from-env.sh \
 ```
 
 Preview is the default. Re-run with `--apply` once the mapping looks
-correct. `seed-google-sa.sh` still exists as the narrow wrapper for the
-legacy split Google service-account vars.
+correct. Add `--sync-api` when you want the script to force VSO to pull
+the refreshed `secret/api` values and roll the api pod immediately. The
+script reconstructs `google-calendar-sa-json` automatically from either
+the current single JSON env var or the legacy split `GOOGLE_CALENDAR_*`
+fields.
 
 ### Cloudflare DNS token (cert-manager + external-dns)
 
@@ -169,8 +172,8 @@ Notes:
   so it must be seeded here even though it is not in the agent template.
 - `google-calendar-sa-json` is the full JSON contents of a Google service
   account key as raw JSON on one line, not base64. If your legacy env
-  still has split `GOOGLE_CALENDAR_*` fields, run `./seed-google-sa.sh`
-  instead of hand-crafting the JSON.
+  still has split `GOOGLE_CALENDAR_*` fields, the seeding script
+  reconstructs the JSON for you; there is no separate Google-only script.
 
 ### Transit signing key (OIDC issuer)
 

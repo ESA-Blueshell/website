@@ -10,7 +10,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/seed-vault-from-env.sh [--apply] [env-file ...]
+  scripts/seed-vault-from-env.sh [--apply] [--sync-api] [env-file ...]
 
 Examples:
   scripts/seed-vault-from-env.sh \
@@ -21,8 +21,12 @@ Examples:
 
   scripts/seed-vault-from-env.sh --apply services/api/.db.env services/api/.api.env
 
+  scripts/seed-vault-from-env.sh --apply --sync-api ../legacy/.env
+
 If no env files are given, the current shell environment is used.
 Without --apply the script prints the Vault paths/fields it would write.
+`--sync-api` forces VSO to refresh `default/api-secrets` and restarts
+the api pod after `secret/api` changes land in Vault.
 EOF
 }
 
@@ -120,7 +124,6 @@ append_field() {
 
 write_path() {
   local path="$1"
-  local args_name
   local args
   local fields
   args=()
@@ -179,6 +182,36 @@ write_path() {
   fi
 }
 
+sync_api_secret() {
+  local verify_field="$1"
+  local expected_value="$2"
+  local current_value
+
+  export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/blueshell.yaml}"
+
+  echo "Forcing VSO refresh on vaultstaticsecret/api-secrets..."
+  kubectl -n default annotate vaultstaticsecret api-secrets \
+    vso.secrets.hashicorp.com/force-refresh="$(date +%s)" --overwrite >/dev/null
+
+  echo "Waiting for api-secrets.$verify_field to update (up to 60s)..."
+  for i in $(seq 1 12); do
+    current_value="$(
+      kubectl -n default get secret api-secrets \
+        -o jsonpath="{.data.$verify_field}" 2>/dev/null \
+        | base64 -d 2>/dev/null || true
+    )"
+    if [[ "$current_value" == "$expected_value" ]]; then
+      echo "  VSO synced (attempt $i)."
+      break
+    fi
+    sleep 5
+  done
+
+  echo "Deleting api pod so it reads the refreshed /vault/secrets/api.env..."
+  kubectl -n default delete pod -l app.kubernetes.io/name=api --wait=false >/dev/null
+  echo "Watch rollout: kubectl -n default get pod -l app.kubernetes.io/name=api -w"
+}
+
 build_google_sa_json() {
   local direct pk project
 
@@ -226,12 +259,16 @@ build_google_sa_json() {
 }
 
 APPLY=0
+SYNC_API=0
 FILES=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --apply)
       APPLY=1
+      ;;
+    --sync-api)
+      SYNC_API=1
       ;;
     -h|--help)
       usage
@@ -244,9 +281,19 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+if [[ "$SYNC_API" -eq 1 && "$APPLY" -ne 1 ]]; then
+  echo "--sync-api requires --apply" >&2
+  exit 1
+fi
+
 for cmd in jq vault awk; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
 done
+if [[ "$SYNC_API" -eq 1 ]]; then
+  for cmd in kubectl base64; do
+    command -v "$cmd" >/dev/null 2>&1 || { echo "missing command: $cmd" >&2; exit 1; }
+  done
+fi
 
 for file in "${FILES[@]}"; do
   [[ -f "$file" ]] || { echo "env file not found: $file" >&2; exit 1; }
@@ -344,3 +391,14 @@ write_path secret/listmonk
 write_path secret/platform/mail
 write_path secret/platform/edge
 write_path secret/platform/ghcr
+
+if [[ "$SYNC_API" -eq 1 ]]; then
+  if (( ${#API_ARGS[@]} == 0 )); then
+    echo
+    echo "Skipping --sync-api because no secret/api fields were written."
+  else
+    api_verify_field="${API_FIELDS[0]}"
+    api_expected_value="${API_ARGS[0]#*=}"
+    sync_api_secret "$api_verify_field" "$api_expected_value"
+  fi
+fi

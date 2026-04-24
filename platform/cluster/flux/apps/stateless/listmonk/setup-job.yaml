@@ -10,12 +10,18 @@ metadata:
   name: listmonk-setup
   namespace: default
 rules:
+  # Scope each rule to the one resource the Job actually touches. Naming
+  # the target lets RBAC block anything outside the script's happy path
+  # — a future bug or rogue edit can't pivot to deleting arbitrary pods
+  # or reading unrelated Secrets.
   - apiGroups: [""]
     resources: ["secrets"]
+    resourceNames: ["listmonk-api-token"]
     verbs: ["get", "create", "patch"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["list", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["api"]
+    verbs: ["patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

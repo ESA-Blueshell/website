@@ -62,6 +62,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -74,7 +75,7 @@ API_USER = os.environ.get("LISTMONK_ADMIN_API_USER", "api")
 API_TOKEN_FILE = os.environ.get("LISTMONK_API_TOKEN_FILE", "/secrets/api-token.env")
 API_TOKEN_SECRET_NAME = os.environ.get("LISTMONK_API_TOKEN_SECRET_NAME", "listmonk-api-token")
 API_TOKEN_SECRET_KEY = os.environ.get("LISTMONK_API_TOKEN_SECRET_KEY", "api-token.env")
-API_POD_LABEL_SELECTOR = os.environ.get("LISTMONK_API_POD_LABEL_SELECTOR", "app.kubernetes.io/name=api")
+API_DEPLOYMENT_NAME = os.environ.get("LISTMONK_API_DEPLOYMENT_NAME", "api")
 THEME_CSS_PATH = os.environ.get("THEME_CSS_PATH", "/theme.css")
 SMTP_HOST = os.environ.get("LISTMONK_SMTP_HOST", "")
 K8S_HOST = os.environ.get("KUBERNETES_SERVICE_HOST", "")
@@ -279,26 +280,38 @@ def _sync_k8s_api_token_secret(token_file_contents: str) -> bool | None:
     return True
 
 
-def _restart_api_pods() -> None:
+def _rollout_restart_api() -> None:
+    """Bump the api Deployment's restart annotation so pods reload the token Secret.
+
+    Matches `kubectl rollout restart`: a single patch on one named Deployment
+    is a much smaller RBAC surface than list+delete on arbitrary pods, and
+    the rolling-update strategy stays in charge of graceful restart order.
+    """
     if not _in_cluster():
         return
 
     namespace = urllib.parse.quote(_k8s_namespace(), safe="")
-    selector = urllib.parse.quote(API_POD_LABEL_SELECTOR, safe="")
-    pods = _k8s_request("GET", f"/api/v1/namespaces/{namespace}/pods?labelSelector={selector}").get("items", [])
-    if not pods:
-        print("No api pods found to restart after token update.")
-        return
-
-    for pod in pods:
-        name = pod["metadata"]["name"]
-        path = f"/api/v1/namespaces/{namespace}/pods/{urllib.parse.quote(name, safe='')}"
-        try:
-            _k8s_request("DELETE", path)
-        except urllib.error.HTTPError as exc:
-            if exc.code != 404:
-                raise
-    print("Deleted api pod(s) so they re-read /run/secrets/listmonk/api-token.env.")
+    name = urllib.parse.quote(API_DEPLOYMENT_NAME, safe="")
+    path = f"/apis/apps/v1/namespaces/{namespace}/deployments/{name}"
+    patch = {
+        "spec": {
+            "template": {
+                "metadata": {
+                    "annotations": {
+                        "kubectl.kubernetes.io/restartedAt": datetime.now(timezone.utc).isoformat(),
+                    }
+                }
+            }
+        }
+    }
+    try:
+        _k8s_request("PATCH", path, patch, content_type="application/strategic-merge-patch+json")
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            print(f"Deployment '{API_DEPLOYMENT_NAME}' not found; skipping rollout.", file=sys.stderr)
+            return
+        raise
+    print(f"Triggered rolling restart of deployment '{API_DEPLOYMENT_NAME}'.")
 
 
 def _read_persisted_api_token() -> str | None:
@@ -424,7 +437,7 @@ def ensure_api_user() -> None:
     wrote_local = _write_api_token_file(token_file_contents)
     secret_changed = _sync_k8s_api_token_secret(token_file_contents)
     if secret_changed:
-        _restart_api_pods()
+        _rollout_restart_api()
     if not wrote_local and secret_changed is None:
         print(
             "WARNING: API token was generated but could not be persisted locally and no in-cluster Secret is available.",

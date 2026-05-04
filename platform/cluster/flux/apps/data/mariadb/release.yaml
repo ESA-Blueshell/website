@@ -46,7 +46,7 @@ spec:
       username: blueshell
       # Root password and api user password are seeded into Vault at
       # secret/platform/mariadb by the operator before first apply, then
-      # synced here by VSO (see apps/vso-secrets/mariadb-credentials.yaml).
+      # synced here by VSO (see apps/data/mariadb/credentials-vss.yaml).
       existingSecret: mariadb-credentials
     primary:
       persistence:

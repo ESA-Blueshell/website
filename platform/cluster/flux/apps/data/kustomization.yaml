@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - vso-sa.yaml
   - bitnami-source.yaml
   - bitnami-oci-source.yaml
   - vault

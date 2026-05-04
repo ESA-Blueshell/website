@@ -18,7 +18,7 @@ spec:
         name: bitnami-oci
         namespace: data-system
   # The StatefulSet references existingSecret `listmonk-db-credentials`
-  # which is materialised by VSO from Vault (apps/vso-secrets/listmonk-secrets.yaml).
+  # which is materialised by VSO from Vault (apps/data/listmonk-db/credentials-vss.yaml).
   # During bootstrap that Secret doesn't exist yet and the pod stays in
   # ContainerCreating until it appears. retries: -1 makes Flux retry
   # the Helm install until the Secret shows up, rather than parking
@@ -43,7 +43,7 @@ spec:
       database: listmonk
       username: listmonk
       # Credentials seeded into Vault at secret/listmonk by the operator,
-      # then synced here by VSO (see apps/vso-secrets/listmonk-secrets.yaml).
+      # then synced here by VSO (see apps/data/listmonk-db/credentials-vss.yaml).
       existingSecret: listmonk-db-credentials
       secretKeys:
         adminPasswordKey: postgres-password

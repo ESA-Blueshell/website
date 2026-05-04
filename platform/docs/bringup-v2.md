@@ -139,7 +139,13 @@ step 6 in parallel) → `apps-edge` / `apps-vso-secrets` /
 
 ## 6. Unseal Vault and seed secrets
 
-Port-forward and point the CLI at it:
+Before unsealing, gather every external token and dotenv file the seed
+flow needs — see the **Day-0 checklist** at the top of
+[`vault-bootstrap.md` §4](vault-bootstrap.md#4-seed-static-secrets).
+Doing this on the workstation first is much faster than discovering a
+missing `cloudflare.dns_api_token` mid-bootstrap.
+
+Port-forward and point the CLI at Vault:
 
 ```bash
 kubectl -n data-system port-forward svc/vault 8200:8200 &

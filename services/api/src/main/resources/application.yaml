@@ -6,6 +6,21 @@ spring:
   main:
     web-application-type: servlet
 
+  cloud:
+    vault:
+      enabled: ${VAULT_ENABLED:false}
+      uri: ${VAULT_ADDR:http://vault.data-system.svc.cluster.local:8200}
+      authentication: ${VAULT_AUTHENTICATION:TOKEN}
+      config:
+        lifecycle:
+          enabled: true
+          min-renewal: 10s
+          expiry-threshold: 60s
+          lease-endpoints: Leases
+      database:
+        enabled: ${VAULT_DB_ENABLED:false}
+        role: api
+
   application:
     name: BlueshellAPI
     db: blueshell
@@ -198,8 +213,6 @@ auth:
   issuer: ${AUTH_ISSUER:https://v2.esa-blueshell.nl/api}
   transit:
     enabled: ${AUTH_TRANSIT_ENABLED:false}
-    vault-addr: ${VAULT_ADDR:http://vault.data-system.svc.cluster.local:8200}
-    vault-token: ${VAULT_TOKEN:}
     key-name: ${AUTH_TRANSIT_KEY_NAME:api-jwt}
   clients:
     vault:

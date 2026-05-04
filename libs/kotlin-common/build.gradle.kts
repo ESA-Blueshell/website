@@ -10,4 +10,5 @@ dependencies {
     compileOnly(platform("org.springframework.boot:spring-boot-dependencies:4.0.3"))
     compileOnly("org.springframework.security:spring-security-oauth2-jose")
     compileOnly("org.springframework.boot:spring-boot-starter-web")
+    compileOnly("org.springframework.vault:spring-vault-core:4.0.1")
 }

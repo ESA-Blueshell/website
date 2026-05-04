@@ -160,18 +160,20 @@ vault write auth/kubernetes/role/vso \
 # The api reads DB creds from Vault via `database/creds/api`. The
 # engine itself is configured lazily because the mariadb chart does not
 # expose an admin password via a Kubernetes Secret VSO can mint — an
-# operator seeds it via `secret/platform/mariadb.{user,password}` the
-# first time, then this block picks it up. The block short-circuits
-# until that secret exists so a fresh Vault install does not block the
-# bootstrap Job on an unsatisfiable precondition.
+# operator seeds it via `secret/platform/mariadb`. Prefer the explicit
+# `admin-user` / `admin-password` fields; fall back to the legacy
+# `user` / `password` pair so an already-seeded cluster keeps working.
+# The block short-circuits until the secret exists so a fresh Vault
+# install does not block the bootstrap Job on an unsatisfiable
+# precondition.
 
 if ! vault secrets list -format=json | grep -q '"database/"'; then
   vault secrets enable database
 fi
 
 if vault kv get secret/platform/mariadb >/dev/null 2>&1; then
-  DB_ADMIN_USER=$(vault kv get -field=user secret/platform/mariadb)
-  DB_ADMIN_PASS=$(vault kv get -field=password secret/platform/mariadb)
+  DB_ADMIN_USER=$(vault kv get -field=admin-user secret/platform/mariadb 2>/dev/null || vault kv get -field=user secret/platform/mariadb)
+  DB_ADMIN_PASS=$(vault kv get -field=admin-password secret/platform/mariadb 2>/dev/null || vault kv get -field=password secret/platform/mariadb)
 
   vault write database/config/mariadb \
     plugin_name=mysql-database-plugin \
@@ -190,5 +192,5 @@ if vault kv get secret/platform/mariadb >/dev/null 2>&1; then
   unset DB_ADMIN_USER DB_ADMIN_PASS
 else
   echo "secret/platform/mariadb not seeded yet — skipping database/config/mariadb."
-  echo "Seed with: vault kv put secret/platform/mariadb user=<admin> password=<secret>"
+  echo "Seed with: vault kv put secret/platform/mariadb root-password=<secret> user=<app-user> password=<app-secret> admin-user=<db-admin> admin-password=<db-admin-secret>"
 fi

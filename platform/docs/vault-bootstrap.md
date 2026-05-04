@@ -64,6 +64,25 @@ These paths must exist in Vault before the corresponding VSO
 will eventually succeed once the paths are present; there is no need to
 unseal+re-bootstrap after seeding.
 
+If you already have dotenv files from the old VPS and/or the current
+repo-local examples, the repo can translate them into the Vault paths
+below:
+
+```bash
+scripts/seed-vault-from-env.sh \
+  ../blueshell-website-old/.env \
+  services/api/.db.env \
+  services/api/.api.env \
+  services/listmonk/.listmonk.env
+```
+
+Preview is the default. Re-run with `--apply` once the mapping looks
+correct. Add `--sync-api` when you want the script to force VSO to pull
+the refreshed `secret/api` values and roll the api pod immediately. The
+script reconstructs `google-calendar-sa-json` automatically from either
+the current single JSON env var or the legacy split `GOOGLE_CALENDAR_*`
+fields.
+
 ### Cloudflare DNS token (cert-manager + external-dns)
 
 ```bash
@@ -77,13 +96,20 @@ vault kv put secret/platform/edge \
 vault kv put secret/platform/mariadb \
   root-password=<strong-password> \
   user=blueshell \
-  password=<app-password>
+  password=<app-password> \
+  admin-user=root \
+  admin-password=<root-or-separate-admin-password>
 ```
 
-The bootstrap Job's MariaDB dynamic-secrets block reads `user` and
-`password` from this path to configure the `database/` secrets engine.
+The bootstrap Job's MariaDB dynamic-secrets block reads
+`admin-user` / `admin-password` when present and falls back to the
+legacy `user` / `password` pair otherwise. `user` / `password` are the
+app credentials the Helm chart keeps stable; `admin-*` is the privileged
+login Vault uses to mint short-lived `database/creds/api` users.
 It is safe to run the Job before seeding — the block short-circuits and
-prints a reminder.
+prints a reminder. If you want to preserve the old Swarm-era database
+login for operator reference, store it separately as
+`legacy-user` / `legacy-password`; the v2 restore flow does not need it.
 
 ### Listmonk
 
@@ -93,6 +119,8 @@ vault kv put secret/listmonk \
   db-password=<listmonk-user-password> \
   admin-user=listmonk-admin \
   admin-password=<listmonk-ui-password> \
+  admin-email=admin@esa-blueshell.nl \
+  api-user=api \
   smtp-password=<smtp-password>
 ```
 
@@ -116,12 +144,12 @@ when a KV key is missing, which boots the pod with a broken integration.
 
 ```bash
 vault kv put secret/api \
-  jwt-secret=$(openssl rand -hex 32) \
+  jwt-secret=$(openssl rand -base64 64) \
   brevo-api-key=<brevo-api-key> \
   brevo-folder-contribution-periods-id=<brevo-folder-id> \
   mollie-api-key=<mollie-api-key> \
   google-calendar-id=<calendar-id> \
-  google-calendar-sa-json=<base64-encoded-sa-json> \
+  google-calendar-sa-json=<raw-single-line-service-account-json> \
   facebook-page-id=<facebook-page-id> \
   facebook-access-token=<long-lived-page-token> \
   x-api-key=<x-consumer-key> \
@@ -136,13 +164,16 @@ vault kv put secret/api \
 Notes:
 
 - `jwt-secret` is the HMAC key the api uses to sign its own JWTs. Must be
-  at least 256 bits of entropy; `openssl rand -hex 32` is the baseline.
+  Base64 and decode to at least 64 bytes because the service signs with
+  HS512. `openssl rand -base64 64` satisfies that guard.
 - `vault-oidc-client-secret` is the shared secret the Vault OIDC auth
   method uses when calling back to the api. It reaches the api via VSO
   (`api-secrets` Kubernetes Secret) rather than the Vault Agent template,
   so it must be seeded here even though it is not in the agent template.
 - `google-calendar-sa-json` is the full JSON contents of a Google service
-  account key, base64-encoded, without wrapping newlines.
+  account key as raw JSON on one line, not base64. If your legacy env
+  still has split `GOOGLE_CALENDAR_*` fields, the seeding script
+  reconstructs the JSON for you; there is no separate Google-only script.
 
 ### Transit signing key (OIDC issuer)
 
@@ -209,8 +240,13 @@ kubectl get secret -n data-system  mariadb-credentials
 kubectl get secret -n data-system  listmonk-db-credentials
 kubectl get secret -n default      api-secrets
 kubectl get secret -n default      listmonk-secrets
+kubectl get secret -n default      stalwart-secrets
 kubectl get secret -n mail-system  stalwart-secrets
 ```
+
+`listmonk-api-token` is not a Vault/VSO Secret. The `listmonk-setup` Job
+creates it after first-time setup and the api pod mounts it at
+`/run/secrets/listmonk/api-token.env`.
 
 ## 6. Rotate the root token
 

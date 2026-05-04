@@ -164,6 +164,9 @@ kubectl get vaultstaticsecret -A
 kubectl get secret -A | grep -E 'api-secrets|listmonk-secrets|stalwart-secrets|cloudflare'
 ```
 
+Later, once `listmonk-setup` has run successfully, also expect
+`default/listmonk-api-token`.
+
 ## 7. Wait for the wildcard cert + IngressRoutes
 
 ```bash
@@ -186,13 +189,20 @@ Capture the new MariaDB root password once so the pipe is a clean
 one-liner:
 
 ```bash
-export MARIADB_ROOT=$(kubectl -n data-system get secret mariadb-secrets -o jsonpath='{.data.root-password}' | base64 -d)
+export MARIADB_ROOT=$(kubectl -n data-system get secret mariadb-credentials -o jsonpath='{.data.mariadb-root-password}' | base64 -d)
 ```
 
-MariaDB:
+MariaDB. Pick one source: direct from the old VPS or an already-copied
+dump file on your workstation. The old Swarm usernames/passwords are
+not needed by the new stack once the dump lands in the new `blueshell`
+database.
 
 ```bash
 ssh old-vps 'mysqldump --single-transaction --routines --triggers blueshell' | kubectl -n data-system exec -i mariadb-0 -- mysql -uroot -p"$MARIADB_ROOT" blueshell
+```
+
+```bash
+cat /path/to/blueshell.sql | kubectl -n data-system exec -i mariadb-0 -- mysql -uroot -p"$MARIADB_ROOT" blueshell
 ```
 
 Listmonk Postgres:
@@ -205,6 +215,10 @@ User-uploaded storage:
 
 ```bash
 ssh old-vps 'tar -C /src/website -cf - storage' | kubectl -n default exec -i "$(kubectl -n default get pod -l app.kubernetes.io/name=api -o name | head -1)" -- tar -C /home -xf -
+```
+
+```bash
+tar -C /path/to/storage-parent -cf - storage | kubectl -n default exec -i "$(kubectl -n default get pod -l app.kubernetes.io/name=api -o name | head -1)" -- tar -C /home -xf -
 ```
 
 If the direct pipes are flaky over the uplink, relay via a scratch

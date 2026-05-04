@@ -1,3 +1,42 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: listmonk-setup
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: listmonk-setup
+  namespace: default
+rules:
+  # Scope each rule to the one resource the Job actually touches. Naming
+  # the target lets RBAC block anything outside the script's happy path
+  # — a future bug or rogue edit can't pivot to deleting arbitrary pods
+  # or reading unrelated Secrets.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["listmonk-api-token"]
+    verbs: ["get", "create", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["api"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: listmonk-setup
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: listmonk-setup
+subjects:
+  - kind: ServiceAccount
+    name: listmonk-setup
+    namespace: default
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -15,6 +54,7 @@ spec:
         app.kubernetes.io/name: listmonk-setup
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: listmonk-setup
       containers:
         - name: setup
           image: python:3.12-alpine
@@ -34,6 +74,28 @@ spec:
                 secretKeyRef:
                   name: listmonk-secrets
                   key: admin-password
+            # admin-email and api-user live in secret/listmonk so they can
+            # drift alongside admin-user/password. Both are optional: the
+            # script falls back to sensible defaults (admin@listmonk.local,
+            # "api") when the keys are missing, which keeps a partially
+            # seeded Vault from blocking the Job.
+            - name: LISTMONK_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: listmonk-secrets
+                  key: admin-email
+                  optional: true
+            - name: LISTMONK_ADMIN_API_USER
+              valueFrom:
+                secretKeyRef:
+                  name: listmonk-secrets
+                  key: api-user
+                  optional: true
+            # The setup job persists the generated type=api password into a
+            # normal Kubernetes Secret because VSO owns listmonk-secrets and
+            # would overwrite any runtime-written keys on the next refresh.
+            - name: LISTMONK_API_TOKEN_SECRET_NAME
+              value: listmonk-api-token
             - name: LISTMONK_SMTP_HOST
               value: stalwart.mail-system.svc.cluster.local
             - name: LISTMONK_SMTP_PORT

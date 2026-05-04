@@ -65,12 +65,6 @@ spec:
           DISCORD_BOT_TOKEN={{ index .Data.data "discord-bot-token" }}
           DISCORD_GUILD_ID={{ index .Data.data "discord-guild-id" }}
           {{- end }}
-        vault.hashicorp.com/agent-inject-secret-db.env: database/creds/api
-        vault.hashicorp.com/agent-inject-template-db.env: |
-          {{- with secret "database/creds/api" -}}
-          MYSQL_USER={{ .Data.username }}
-          MYSQL_PASSWORD={{ .Data.password }}
-          {{- end }}
     spec:
       serviceAccountName: api
       # ghcr.io/esa-blueshell/api is a private package; the pull secret
@@ -86,10 +80,9 @@ spec:
             - /bin/sh
             - -ec
             - |
+              export SPRING_CLOUD_VAULT_TOKEN="$(cat /vault/secrets/token)"
               set -a
               . /vault/secrets/api.env
-              . /vault/secrets/db.env
-              export VAULT_TOKEN=$(cat /vault/secrets/token)
               set +a
               exec java \
                 -XX:+UseZGC \
@@ -99,6 +92,12 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            - name: SPRING_CONFIG_IMPORT
+              value: vault://
+            - name: VAULT_ENABLED
+              value: 'true'
+            - name: VAULT_DB_ENABLED
+              value: 'true'
             - name: MYSQL_HOST
               value: mariadb.data-system.svc.cluster.local
             - name: MYSQL_PORT
@@ -127,7 +126,11 @@ spec:
               value: INBOX
             - name: LISTMONK_BOUNCE_MAILBOX_RETURN_PATH
               value: bounce@v2.esa-blueshell.nl
-            # Listmonk admin credentials synced from Vault via VSO
+            # Listmonk admin credentials synced from Vault via VSO remain the
+            # bootstrap fallback. Once listmonk-setup creates the runtime
+            # listmonk-api-token Secret, the api reads
+            # /run/secrets/listmonk/api-token.env and authenticates as the
+            # dedicated LISTMONK_ADMIN_API_USER instead.
             - name: LISTMONK_API_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -138,6 +141,12 @@ spec:
                 secretKeyRef:
                   name: listmonk-secrets
                   key: admin-password
+            - name: LISTMONK_ADMIN_API_USER
+              valueFrom:
+                secretKeyRef:
+                  name: listmonk-secrets
+                  key: api-user
+                  optional: true
             - name: LISTMONK_BOUNCE_MAILBOX_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -190,6 +199,9 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /srv/storage
+            - name: listmonk-api-token
+              mountPath: /run/secrets/listmonk
+              readOnly: true
       # The api image runs as an Alpine `-S` system user with a
       # dynamic uid, so we can't fsGroup our way onto the hostPath
       # mount. Loosen the mount root to 0777 at pod start instead;
@@ -211,6 +223,10 @@ spec:
         - name: storage
           persistentVolumeClaim:
             claimName: api-storage
+        - name: listmonk-api-token
+          secret:
+            secretName: listmonk-api-token
+            optional: true
 ---
 apiVersion: v1
 kind: Service

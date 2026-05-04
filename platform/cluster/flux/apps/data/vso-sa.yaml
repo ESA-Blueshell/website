@@ -1,0 +1,11 @@
+# VSO authenticates each VaultStaticSecret using the
+# `vault-secrets-operator` ServiceAccount in the SAME namespace as the CR
+# (the SA name comes from the VSO chart's defaultAuthMethod). The CRs
+# under apps/data/mariadb and apps/data/listmonk-db both target
+# data-system, so the SA lives here at the apps-data root rather than
+# being duplicated next to each chart's release.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-secrets-operator
+  namespace: data-system

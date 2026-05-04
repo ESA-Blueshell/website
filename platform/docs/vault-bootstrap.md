@@ -64,6 +64,16 @@ These paths must exist in Vault before the corresponding VSO
 will eventually succeed once the paths are present; there is no need to
 unseal+re-bootstrap after seeding.
 
+The MariaDB and Listmonk-Postgres `existingSecret` references look like
+a chicken-and-egg — the Bitnami charts won't start until their k8s
+Secrets exist, but the Secrets only appear after VSO syncs from Vault.
+The repo solves this by placing the two chart-blocking VaultStaticSecret
+CRs (`mariadb-credentials`, `listmonk-db-credentials`) inside `apps-data`
+itself, so they apply alongside the HelmReleases. As soon as Vault is
+unsealed and the bootstrap Job has wired up the kubernetes auth role
+for VSO, both Secrets materialise in-place and the charts upgrade on
+their own. No manual `kubectl create secret` pre-seed is needed.
+
 If you already have dotenv files from the old VPS and/or the current
 repo-local examples, the repo can translate them into the Vault paths
 below:

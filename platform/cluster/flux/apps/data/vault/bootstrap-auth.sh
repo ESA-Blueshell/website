@@ -194,3 +194,40 @@ else
   echo "secret/platform/mariadb not seeded yet — skipping database/config/mariadb."
   echo "Seed with: vault kv put secret/platform/mariadb root-password=<secret> user=<app-user> password=<app-secret> admin-user=<db-admin> admin-password=<db-admin-secret>"
 fi
+
+# --- OIDC auth method (vault login -method=oidc) ------------------------
+#
+# `vault login -method=oidc` redirects the operator through the website
+# api as the IdP. The api's RegisteredClients registers the `vault`
+# client with the redirect URI below; the shared secret lives at
+# secret/api:vault-oidc-client-secret (seeded by
+# scripts/seed-vault-from-env.sh — see vault-bootstrap.md §4). The block
+# short-circuits when the field is missing so a fresh Vault install does
+# not block the Job on an unsatisfiable precondition; re-running the
+# Kustomization after seeding (or letting Flux reconcile on its 2 min
+# loop) picks it up on the next pass.
+
+if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
+  if ! vault auth list -format=json | grep -q '"oidc/"'; then
+    vault auth enable oidc
+  fi
+
+  OIDC_CLIENT_SECRET=$(vault kv get -field=vault-oidc-client-secret secret/api)
+
+  vault write auth/oidc/config \
+    oidc_discovery_url="https://v2.esa-blueshell.nl/api" \
+    oidc_client_id="vault" \
+    oidc_client_secret="${OIDC_CLIENT_SECRET}" \
+    default_role="admin"
+
+  vault write auth/oidc/role/admin \
+    bound_audiences="vault" \
+    allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
+    user_claim="sub" \
+    policies="default"
+
+  unset OIDC_CLIENT_SECRET
+else
+  echo "secret/api:vault-oidc-client-secret not seeded yet — skipping OIDC auth method."
+  echo "Seed with: scripts/seed-vault-from-env.sh --apply <env-files...> (then re-run this Job via flux reconcile kustomization apps-data)."
+fi

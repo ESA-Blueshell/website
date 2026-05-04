@@ -6966,11 +6966,24 @@ paths:
                         enumeration:
                           - label: Men
                             value: 1
+                            valueStr: '1'
                           - label: Women
                             value: 2
+                            valueStr: '2'
                           - label: Kid
                             value: 3
+                            valueStr: '3'
                         name: GENDER
+                        type: text
+                      - category: category
+                        enumeration:
+                          - label: English
+                            value: 0
+                            valueStr: en
+                          - label: French
+                            value: 0
+                            valueStr: fr
+                        name: LANGUAGE
                         type: text
                       - category: normal
                         name: BDO
@@ -7011,13 +7024,18 @@ paths:
                                 example: Women
                                 type: string
                               value:
-                                description: ID of Value of the "category" type attribute
+                                description: Numeric ID of the "category" type attribute value. Set to 0 when the raw value cannot be converted to an integer (for example non-numeric values such as "en" or "fr"). Refer to `valueStr` for the original string representation.
                                 example: 1
                                 format: int64
                                 type: integer
+                              valueStr:
+                                description: String representation of the "category" type attribute value. Always contains the original value as stored. Use this field when the attribute value is non-numeric (e.g. "en", "fr") or when you need the exact string form alongside the numeric `value`.
+                                example: '1'
+                                type: string
                             required:
                               - label
                               - value
+                              - valueStr
                             type: object
                           type: array
                         multiCategoryOptions:
@@ -11262,6 +11280,12 @@ paths:
             items:
               type: string
             type: array
+        - description: 'Search products simultaneously across SKU, name, and ID fields. Results are returned in the following priority order: **exact SKU match** > **SKU prefix match** > **name match** > **ID match**. For example, `?search=123` on products with `{sku: "123"}` and `{sku: "123456"}` returns the exact SKU match first.'
+          in: query
+          name: search
+          required: false
+          schema:
+            type: string
         - description: Filter by product name, minimum 3 characters should be present for search.
           in: query
           name: name
@@ -11431,7 +11455,7 @@ paths:
         '400':
           $ref: '#/components/responses/errorModel'
       summary: Return all your products
-      description: Retrieve a paginated list of all ecommerce products stored in your Brevo account. Results are sorted by creation date in descending order by default, and can be filtered by product IDs, name (minimum 3 characters), price range, category IDs, modification date, creation date, or deletion status. Pagination defaults to 50 products per page (maximum 1000), and the response includes a `count` field with the total number of matching products.
+      description: Retrieve a paginated list of all ecommerce products stored in your Brevo account. Results are sorted by creation date in descending order by default, and can be filtered by product IDs, name (minimum 3 characters), price range, category IDs, modification date, creation date, or deletion status. Use the `search` parameter to query across SKU, name, and ID simultaneously — results are prioritized as exact SKU match > SKU prefix match > name match > ID match. Pagination defaults to 50 products per page (maximum 1000), and the response includes a `count` field with the total number of matching products.
       tags:
         - Ecommerce
     post:

@@ -3,6 +3,15 @@
 # back to main; reconciliation only pulls from here. If the repo moves
 # or the branch changes, update the url/branch fields and
 # `kubectl apply -k platform/cluster/flux/clusters/production/flux-system/`.
+#
+# Auth: SSH deploy key (read-only). The flux-system Secret holds three
+# keys consumed by source-controller:
+#   - identity      (PEM private key)
+#   - identity.pub  (matching public key registered as a deploy key on
+#                    https://github.com/ESA-Blueshell/website/settings/keys)
+#   - known_hosts   (`ssh-keyscan github.com`)
+# Switched away from an HTTPS PAT so the cluster credential is scoped
+# to this single repo, read-only, and not tied to an operator account.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
@@ -14,7 +23,7 @@ spec:
     branch: main
   secretRef:
     name: flux-system
-  url: https://github.com/ESA-Blueshell/website
+  url: ssh://git@github.com/ESA-Blueshell/website
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization

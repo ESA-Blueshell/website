@@ -156,9 +156,10 @@ export VAULT_ADDR=http://127.0.0.1:8200
 
 Follow [`vault-bootstrap.md`](vault-bootstrap.md) end-to-end from §1
 (init + unseal, 5-of-3 Shamir) through §6 (revoke root token). That
-runbook is the canonical source for every `vault kv put` command and
-for the Transit signing key the OIDC issuer needs — keeping the detail
-in one place prevents the two docs from drifting.
+runbook is the canonical source for every `vault kv put` command;
+the bootstrap Job handles the Transit signing key, kubernetes auth
+roles, MariaDB dynamic-secrets engine, and OIDC auth method on its own
+once `secret/api` and `secret/platform/mariadb` are seeded.
 
 Once the bootstrap sequence has completed, confirm VSO materialised
 every VaultStaticSecret as a Kubernetes Secret:

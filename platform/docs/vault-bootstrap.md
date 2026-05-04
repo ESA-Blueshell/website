@@ -226,40 +226,33 @@ Notes:
   still has split `GOOGLE_CALENDAR_*` fields, the seeding script
   reconstructs the JSON for you; there is no separate Google-only script.
 
-### Transit signing key (OIDC issuer)
+### Transit signing key + Vault OIDC auth method (handled by the bootstrap Job)
 
-The api's OIDC issuer signs JWTs with a Vault-managed RSA key. The
-bootstrap Job grants the `api` policy `sign` on this key but does not
-create it (idempotency is cheaper than a pre-check).
+The bootstrap Job (`apps-data/vault/bootstrap-auth.sh`) already creates
+`transit/keys/api-jwt` (RSA-2048, used by the api's OIDC issuer to sign
+JWTs) and configures the `oidc` auth method that backs
+`vault login -method=oidc` — the operator does not run any `vault write`
+commands for either.
 
-```bash
-vault write -f transit/keys/api-jwt type=rsa-2048
-vault write transit/keys/api-jwt/config deletion_allowed=false
-```
-
-### Vault OIDC auth method (logging into Vault via the api)
-
-`vault login -method=oidc` redirects the operator through the
-website api as the IdP. Configure the auth method to point at the
-same-origin issuer:
+The OIDC step short-circuits when `secret/api:vault-oidc-client-secret`
+is missing, so on a fresh cluster the Job runs once before the seed
+script and again after it. After running `seed-vault-from-env.sh
+--apply`, trigger the Job to re-run:
 
 ```bash
-vault auth enable oidc 2>/dev/null || true
-vault write auth/oidc/config \
-  oidc_discovery_url="https://v2.esa-blueshell.nl/api" \
-  oidc_client_id="vault" \
-  oidc_client_secret="$(vault kv get -field=vault-oidc-client-secret secret/api)" \
-  default_role="admin"
-vault write auth/oidc/role/admin \
-  bound_audiences="vault" \
-  allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
-  user_claim="sub" \
-  policies="default"
+flux reconcile kustomization apps-data
 ```
 
-The redirect URI must match the one registered in
-`RegisteredClients.kt:47`. The client secret was seeded above with
-`openssl rand -hex 32` under `vault-oidc-client-secret`.
+If you ever need to inspect or override the OIDC config manually:
+
+```bash
+vault read auth/oidc/config
+vault read auth/oidc/role/admin
+```
+
+The redirect URI baked into the role is
+`https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback`; it
+must match the `vault` client registered in `RegisteredClients.kt`.
 
 ### GHCR pull credential (api + frontend Deployments)
 

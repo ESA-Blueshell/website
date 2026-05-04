@@ -59,6 +59,47 @@ The Job is idempotent — you can re-run it safely after editing
 
 ## 4. Seed static secrets
 
+### Day-0 checklist (have these in hand before unsealing Vault)
+
+Each item below maps to one or more keys in §4.x — gather them once, in
+one local working directory, before starting the seed flow. Missing any
+of them blocks at least one downstream Secret.
+
+- **Old-VPS `.env` files** (operator-controlled, never committed). The
+  repo's `scripts/seed-vault-from-env.sh` reads dotenv-style files;
+  typical inventory:
+  - `services/api/.api.env` — `JWT_SECRET` (Base64, ≥64 bytes), Brevo,
+    Mollie, Google Calendar SA, Facebook, X, Discord tokens.
+  - `services/api/.db.env` — `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`,
+    `MYSQL_PASSWORD`.
+  - `services/listmonk/.listmonk.env` — `LISTMONK_DB_PASSWORD`,
+    `LISTMONK_ADMIN_*`, optional `LISTMONK_SMTP_*` and bounce IMAP.
+- **Cloudflare DNS API token** with `Zone:DNS:Edit` scope on
+  `esa-blueshell.nl` (cert-manager DNS-01 + external-dns).
+- **GHCR pull credential**: GitHub username + a fine-grained PAT scoped
+  to `read:packages` on `ESA-Blueshell` (private api/frontend images).
+- **Stalwart admin user/password** + base64-encoded RSA-2048 DKIM
+  private key + bounce mailbox `bounce@v2.esa-blueshell.nl` credentials.
+- **One-shot generated values** (only if missing from the legacy env):
+  - `JWT_SECRET` — `openssl rand -base64 64`.
+  - `vault-oidc-client-secret` — `openssl rand -hex 32`.
+
+Sanity-check the env files locally with a dry run *before* unsealing:
+
+```bash
+scripts/seed-vault-from-env.sh \
+  /path/to/old/.api.env \
+  /path/to/old/.db.env \
+  /path/to/old/.listmonk.env \
+  /path/to/extra-tokens.env
+```
+
+The dry run prints every Vault path/field it would write. If a path
+shows up empty or with fewer fields than §4.x lists below, top up the
+env files and re-run the dry run.
+
+### Seed Vault
+
 These paths must exist in Vault before the corresponding VSO
 `VaultStaticSecret` CRs can sync. The VSO CRs loop on a 1h refresh and
 will eventually succeed once the paths are present; there is no need to

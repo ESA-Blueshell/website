@@ -307,3 +307,65 @@ You can regenerate a new root token at any time from the unseal key:
 ```bash
 vault operator generate-root -init
 ```
+
+## 7. Rotating credentials
+
+Every Vault path consumed by an app is rendered into the running pod
+either by VSO (k8s Secret) or the Vault Agent injector
+(`/vault/secrets/*.env`). Both modes are pre-populate-only — neither
+auto-rolls a pod when the source changes — so the rotation pattern is
+always: *update Vault, then restart the consumer.*
+
+### MariaDB password (api + Bitnami chart)
+
+The api reads `MYSQL_USER` / `MYSQL_PASSWORD` from `secret/api`
+(rendered into `/vault/secrets/api.env` by the Vault Agent template in
+`apps/stateless/api/deployment.yaml`). The Bitnami MariaDB chart reads
+the same value from `secret/platform/mariadb` via VSO. Keep the two
+fields in lockstep:
+
+```bash
+NEW=<new-password>
+vault kv patch secret/api               mysql-password="$NEW"
+vault kv patch secret/platform/mariadb  password="$NEW"
+
+ROOT=$(vault kv get -field=root-password secret/platform/mariadb)
+kubectl -n data-system exec mariadb-0 -- \
+  mysql -uroot -p"$ROOT" -e \
+  "ALTER USER 'blueshell'@'%' IDENTIFIED BY '$NEW'; FLUSH PRIVILEGES;"
+
+kubectl -n default rollout restart deployment/api
+```
+
+The `mariadb-credentials` k8s Secret picks up the new value on VSO's
+next refresh (within 1 h, or trigger immediately with the
+`vso.secrets.hashicorp.com/force-refresh` annotation).
+
+### Other Vault paths
+
+Same shape, narrower blast radius:
+
+| Path | Consumers | Restart |
+|---|---|---|
+| `secret/api` | api Deployment | `kubectl -n default rollout restart deployment/api` |
+| `secret/listmonk` | listmonk Deployment, listmonk-db chart | `kubectl -n default rollout restart deployment/listmonk` (+ `data-system listmonk-db-postgresql-0` after VSO refresh) |
+| `secret/platform/mail` | stalwart Deployment | `kubectl -n mail-system rollout restart deployment/stalwart` |
+| `secret/platform/edge` | cert-manager + external-dns | restarts not usually needed; VSO refreshes the Secret in place |
+| `secret/platform/ghcr` | api + frontend `imagePullSecrets` | next image pull picks up the new auth |
+
+For the api's third-party tokens (Brevo, Mollie, etc.),
+`scripts/seed-vault-from-env.sh --apply --sync-api` does the
+`vault kv patch` + VSO force-refresh + api pod delete in one step.
+
+### Future: Spring Cloud Vault dynamic MariaDB creds
+
+`bootstrap-auth.sh` already configures the MariaDB dynamic-secrets
+engine (`database/config/mariadb`) and role
+(`database/roles/api`, 72h default / 168h max). Once
+`spring.cloud.vault.database.enabled=true` correctly rebinds
+`spring.datasource.{username,password}` (currently broken in our
+Spring Cloud Vault version), drop `mysql-user` / `mysql-password`
+from the Vault Agent template and re-set
+`VAULT_DB_ENABLED=true` on the api Deployment. Vault then mints a
+short-lived MariaDB user per pod and rotates it without operator
+involvement.

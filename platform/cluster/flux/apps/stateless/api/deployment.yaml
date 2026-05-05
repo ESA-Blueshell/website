@@ -41,29 +41,42 @@ spec:
         vault.hashicorp.com/agent-pre-populate-only: 'true'
         vault.hashicorp.com/role: api
         vault.hashicorp.com/agent-inject-secret-api.env: secret/data/api
+        # Every value is single-quoted and `| default ""` so a missing
+        # KV field renders as `KEY=''` instead of the literal
+        # `<no value>` consul-template default — `<` / `>` are shell
+        # redirection and would crash `. /vault/secrets/api.env` with
+        # `syntax error: unexpected newline`. Single quotes also tame
+        # any `=`, `{`, `}`, `"`, `\n` etc. that legit values carry
+        # (Brevo keys, Google service-account JSON). Google-generated
+        # JSON doesn't contain raw single quotes; if a future rotation
+        # does, base64-encode that one field in Vault and decode in
+        # the start script.
+        #
+        # MYSQL_USER / MYSQL_PASSWORD live in `secret/api` as
+        # `mysql-user` / `mysql-password` (mirrored by
+        # scripts/seed-vault-from-env.sh from the same MYSQL_USER /
+        # MYSQL_PASSWORD env vars that feed `secret/platform/mariadb`).
+        # Future work: re-enable Spring Cloud Vault dynamic creds
+        # (`spring.cloud.vault.database.enabled=true`) once that
+        # integration is fixed and drop these two fields again.
         vault.hashicorp.com/agent-inject-template-api.env: |
           {{- with secret "secret/data/api" -}}
-          JWT_SECRET={{ index .Data.data "jwt-secret" }}
-          BREVO_API_KEY={{ index .Data.data "brevo-api-key" }}
-          BREVO_FOLDER_CONTRIBUTION_PERIODS_ID={{ index .Data.data "brevo-folder-contribution-periods-id" }}
-          MOLLIE_API_KEY={{ index .Data.data "mollie-api-key" }}
-          GOOGLE_CALENDAR_ID={{ index .Data.data "google-calendar-id" }}
-          # application.yaml binds ${GOOGLE_CALENDAR_SA_JSON} directly
-          # into google.calendar.serviceAccountJson. Single-quote the
-          # value so the shell tolerates the braces, double quotes and
-          # backslash-n escapes that appear in a Google service-account
-          # JSON. Google-generated JSON doesn't contain single quotes;
-          # if a future rotation does, base64-encode it in Vault and
-          # decode in the start script.
-          GOOGLE_CALENDAR_SA_JSON='{{ index .Data.data "google-calendar-sa-json" }}'
-          FACEBOOK_PAGE_ID={{ index .Data.data "facebook-page-id" }}
-          FACEBOOK_ACCESS_TOKEN={{ index .Data.data "facebook-access-token" }}
-          X_API_KEY={{ index .Data.data "x-api-key" }}
-          X_API_SECRET={{ index .Data.data "x-api-secret" }}
-          X_ACCESS_TOKEN={{ index .Data.data "x-access-token" }}
-          X_ACCESS_SECRET={{ index .Data.data "x-access-secret" }}
-          DISCORD_BOT_TOKEN={{ index .Data.data "discord-bot-token" }}
-          DISCORD_GUILD_ID={{ index .Data.data "discord-guild-id" }}
+          JWT_SECRET='{{ index .Data.data "jwt-secret" | default "" }}'
+          BREVO_API_KEY='{{ index .Data.data "brevo-api-key" | default "" }}'
+          BREVO_FOLDER_CONTRIBUTION_PERIODS_ID='{{ index .Data.data "brevo-folder-contribution-periods-id" | default "" }}'
+          MOLLIE_API_KEY='{{ index .Data.data "mollie-api-key" | default "" }}'
+          GOOGLE_CALENDAR_ID='{{ index .Data.data "google-calendar-id" | default "" }}'
+          GOOGLE_CALENDAR_SA_JSON='{{ index .Data.data "google-calendar-sa-json" | default "" }}'
+          FACEBOOK_PAGE_ID='{{ index .Data.data "facebook-page-id" | default "" }}'
+          FACEBOOK_ACCESS_TOKEN='{{ index .Data.data "facebook-access-token" | default "" }}'
+          X_API_KEY='{{ index .Data.data "x-api-key" | default "" }}'
+          X_API_SECRET='{{ index .Data.data "x-api-secret" | default "" }}'
+          X_ACCESS_TOKEN='{{ index .Data.data "x-access-token" | default "" }}'
+          X_ACCESS_SECRET='{{ index .Data.data "x-access-secret" | default "" }}'
+          DISCORD_BOT_TOKEN='{{ index .Data.data "discord-bot-token" | default "" }}'
+          DISCORD_GUILD_ID='{{ index .Data.data "discord-guild-id" | default "" }}'
+          MYSQL_USER='{{ index .Data.data "mysql-user" | default "" }}'
+          MYSQL_PASSWORD='{{ index .Data.data "mysql-password" | default "" }}'
           {{- end }}
     spec:
       serviceAccountName: api
@@ -96,8 +109,18 @@ spec:
               value: vault://
             - name: VAULT_ENABLED
               value: 'true'
-            - name: VAULT_DB_ENABLED
-              value: 'true'
+            # VAULT_DB_ENABLED intentionally omitted (defaults to false
+            # via application.yaml). Spring Cloud Vault dynamic MariaDB
+            # creds (`database/creds/api`) are wired up by
+            # bootstrap-auth.sh and the Vault role works end-to-end,
+            # but `spring.cloud.vault.database.enabled=true` does not
+            # actually rebind `spring.datasource.{username,password}`
+            # in the version we ship — the api falls back to the
+            # `${MYSQL_USER:root}` placeholder default and connects
+            # with no password. Static creds via the Vault Agent
+            # template (MYSQL_USER / MYSQL_PASSWORD fields above) are
+            # the path used today; flip this back on once the dynamic-
+            # creds integration is debugged.
             - name: MYSQL_HOST
               value: mariadb.data-system.svc.cluster.local
             - name: MYSQL_PORT

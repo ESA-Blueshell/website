@@ -362,6 +362,14 @@ append_field secret/api vault-oidc-client-secret "$(first_value VAULT_OIDC_CLIEN
 mariadb_root_password="$(first_value MYSQL_ROOT_PASSWORD MARIADB_ROOT_PASSWORD 2>/dev/null || true)"
 mariadb_user="$(first_value MYSQL_USER MARIADB_USER 2>/dev/null || true)"
 mariadb_password="$(first_value MYSQL_PASSWORD MARIADB_PASSWORD 2>/dev/null || true)"
+
+# Mirror the app DB user + password into secret/api so the Vault Agent
+# template in apps/stateless/api/deployment.yaml can render them
+# alongside the rest of the api config (no separate Vault path, no
+# policy expansion). Drop these once Spring Cloud Vault dynamic
+# creds (`spring.cloud.vault.database.enabled=true`) are working.
+append_field secret/api mysql-user     "$mariadb_user"
+append_field secret/api mysql-password "$mariadb_password"
 mariadb_admin_user="$(first_value MARIADB_ADMIN_USER MYSQL_ADMIN_USER 2>/dev/null || true)"
 mariadb_admin_password="$(first_value MARIADB_ADMIN_PASSWORD MYSQL_ADMIN_PASSWORD 2>/dev/null || true)"
 

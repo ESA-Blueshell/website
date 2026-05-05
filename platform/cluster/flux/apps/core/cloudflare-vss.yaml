@@ -1,6 +1,19 @@
 # cert-manager reads cloudflare-api-token.api-token to satisfy DNS-01
 # challenges for *.v2.esa-blueshell.nl. external-dns reads the same secret
-# shape to manage A/AAAA records. VSO syncs both from the same Vault path.
+# shape to manage A/AAAA records. VSO syncs both from the same Vault path
+# (`secret/platform/edge:cloudflare.dns_api_token`).
+#
+# The CRs live in apps-core (alongside the cert-manager + external-dns
+# HelmReleases that consume them) rather than in apps-vso-secrets,
+# because the cert-manager / external-dns Deployments wedge in
+# CreateContainerConfigError until this Secret exists, which would
+# block apps-core Ready and (transitively) every downstream
+# Kustomization. Same self-bootstrapping pattern PR #161 applied to
+# the MariaDB / listmonk-db credentials. apps-core's VSO HelmRelease
+# disables wait, so the Deployment is Ready before VSO starts
+# materialising — VSO retries on its own backoff once Vault is
+# unsealed and the bootstrap Job has wired up the kubernetes auth
+# role for VSO.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

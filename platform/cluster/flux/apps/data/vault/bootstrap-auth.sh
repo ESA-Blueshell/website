@@ -53,6 +53,29 @@ path "secret/data/api/*" {
   capabilities = ["read"]
 }
 
+# Spring Cloud Vault's KV backend probes secret/<spring.application.name>
+# (= "BlueshellAPI"), secret/<...>/<active-profile>, secret/application,
+# and secret/application/<active-profile> on every startup. None of those
+# paths are seeded — but a 403 on the lookup is fatal to the boot
+# sequence (the Vault property source aborts), while a 404 is a benign
+# INFO log. Granting read here turns the deny-by-default into a 404.
+# These four paths are intentionally never written.
+path "secret/data/application" {
+  capabilities = ["read"]
+}
+
+path "secret/data/application/*" {
+  capabilities = ["read"]
+}
+
+path "secret/data/BlueshellAPI" {
+  capabilities = ["read"]
+}
+
+path "secret/data/BlueshellAPI/*" {
+  capabilities = ["read"]
+}
+
 path "database/creds/api" {
   capabilities = ["read"]
 }

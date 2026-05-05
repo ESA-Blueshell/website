@@ -14,10 +14,22 @@ rules:
   # the target lets RBAC block anything outside the script's happy path
   # — a future bug or rogue edit can't pivot to deleting arbitrary pods
   # or reading unrelated Secrets.
+  #
+  # `create` and `resourceNames` are not compatible: Kubernetes RBAC
+  # only sees the resource name on requests that put it in the URL
+  # (get / update / patch / delete). On `create`, the name is in the
+  # request body — the RBAC check happens before the body is parsed,
+  # so `resourceNames` matches nothing and the rule denies. Split into
+  # an unscoped `create` rule (Secrets in this namespace only — the
+  # script only ever creates `listmonk-api-token`) plus the narrow
+  # name-scoped `get` / `patch` rule.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
   - apiGroups: [""]
     resources: ["secrets"]
     resourceNames: ["listmonk-api-token"]
-    verbs: ["get", "create", "patch"]
+    verbs: ["get", "patch"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
     resourceNames: ["api"]

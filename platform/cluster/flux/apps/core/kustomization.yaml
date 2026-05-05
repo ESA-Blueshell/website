@@ -9,3 +9,4 @@ resources:
   - external-dns
   - traefik
   - vso
+  - cloudflare-vss.yaml

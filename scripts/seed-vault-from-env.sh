@@ -318,10 +318,12 @@ if [[ "$SYNC_API" -eq 1 ]]; then
   done
 fi
 
-for file in "${FILES[@]}"; do
-  [[ -f "$file" ]] || { echo "env file not found: $file" >&2; exit 1; }
-  load_env_file "$file"
-done
+if (( ${#FILES[@]} > 0 )); then
+  for file in "${FILES[@]}"; do
+    [[ -f "$file" ]] || { echo "env file not found: $file" >&2; exit 1; }
+    load_env_file "$file"
+  done
+fi
 
 API_ARGS=()
 API_FIELDS=()

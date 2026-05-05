@@ -69,3 +69,5 @@ services/**/*.env
 # negate the broad patterns above that would otherwise eat it.
 !platform/
 !platform/**
+# GHCR pull-PAT used during v2 bring-up
+.ghcr_token

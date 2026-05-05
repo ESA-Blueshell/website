@@ -3,17 +3,17 @@
 # shape to manage A/AAAA records. VSO syncs both from the same Vault path
 # (`secret/platform/edge:cloudflare.dns_api_token`).
 #
-# The CRs live in apps-core (alongside the cert-manager + external-dns
-# HelmReleases that consume them) rather than in apps-vso-secrets,
-# because the cert-manager / external-dns Deployments wedge in
-# CreateContainerConfigError until this Secret exists, which would
-# block apps-core Ready and (transitively) every downstream
-# Kustomization. Same self-bootstrapping pattern PR #161 applied to
-# the MariaDB / listmonk-db credentials. apps-core's VSO HelmRelease
-# disables wait, so the Deployment is Ready before VSO starts
-# materialising — VSO retries on its own backoff once Vault is
-# unsealed and the bootstrap Job has wired up the kubernetes auth
-# role for VSO.
+# These VSS lived briefly in apps-core (PR #167) so cert-manager /
+# external-dns could find their Secret without a manual operator
+# pre-seed. That created a hard ordering bug: kustomize-controller
+# atomically dry-runs every resource in a Kustomization, and the
+# VaultStaticSecret CRD is installed by the VSO HelmRelease in the
+# same Kustomization — so the dry-run on this VSS aborts the entire
+# apps-core apply before VSO ever installs its CRDs. Keep the VSS in
+# apps-vso-secrets (CRDs already established by the time apps-core is
+# Ready) and rely on disableWait + retries on the consumers
+# (apps/core/external-dns/release.yaml) so apps-core itself doesn't
+# block waiting for the cloudflare Secret.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

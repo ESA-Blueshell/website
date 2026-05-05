@@ -1,0 +1,184 @@
+name: OpenAPI external specs check
+
+# CI's openapi-sync job only validates the Blueshell spec — Discord and
+# Brevo drift too frequently upstream to gate every PR on. This workflow
+# runs the full regen on main weekly (and on demand), flags any external
+# spec drift by opening a tracking issue, and otherwise stays silent.
+# Refresh the specs locally with `./scripts/generate-openapi-local.sh`
+# (no flag) and open a PR.
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC. Adjust if you want a different cadence.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+  JAVA_VERSION: '21'
+  NODE_VERSION: '22'
+  YARN_VERSION: '4.10.3'
+
+  MYSQL_ROOT_PASSWORD: blueshell
+  MYSQL_DATABASE: blueshell-test
+  MYSQL_PORT: '3306'
+  MYSQL_USER: blueshell
+  MYSQL_PASSWORD: ci-blueshell
+  MYSQL_HOST: 127.0.0.1
+
+  APP_URL: http://127.0.0.1:8080
+  FRONTEND_URL: http://127.0.0.1:3000
+
+  JWT_SECRET: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh
+  STORAGE_LOCATION: ./storage
+  BREVO_API_KEY: something
+  BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
+
+  GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  external-spec-drift:
+    name: Detect Discord/Brevo spec drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      db:
+        image: mariadb:10.11.10
+        ports: [ "3306:3306" ]
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_PORT: ${{ env.MYSQL_PORT }}
+          MYSQL_USER: ${{ env.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Wait for database service
+        run: |
+          sudo apt-get update && sudo apt-get install -y default-mysql-client
+          for i in {1..30}; do
+            if mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
+              echo "Database is ready!"
+              exit 0
+            fi
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+          echo "Database did not become ready in time."
+          exit 1
+
+      - name: Prepare test database schema
+        run: |
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
+
+      - name: Set up Java Development Kit
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Run full OpenAPI regen (Blueshell + Discord + Brevo + Listmonk)
+        run: |
+          chmod +x ./scripts/generate-openapi-local.sh
+          ./scripts/generate-openapi-local.sh
+
+      - name: Detect external-spec drift
+        id: drift
+        run: |
+          # Only flag drift in files we don't own — the Blueshell paths
+          # are validated on every PR by `openapi-sync` in ci.yml.
+          if git diff --quiet -- \
+              libs/openapi-specs \
+              services/frontend/src/services/api/discord \
+              services/frontend/src/services/api/discord.runtime.ts; then
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            echo "No external spec drift detected."
+          else
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            {
+              echo 'External OpenAPI specs drifted from upstream. Diff (paths only):'
+              echo
+              git diff --stat -- \
+                libs/openapi-specs \
+                services/frontend/src/services/api/discord \
+                services/frontend/src/services/api/discord.runtime.ts
+            } | tee drift-summary.txt
+          fi
+
+      - name: Open tracking issue on drift
+        if: steps.drift.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          summary="$(cat drift-summary.txt)"
+          # Only one open tracking issue at a time — re-use the existing
+          # one if any (avoid spamming on every weekly run).
+          # Idempotently ensure the marker label exists.
+          gh label create openapi-external-spec-drift \
+            --color FBCA04 \
+            --description "Upstream OpenAPI spec drift detected by scheduled workflow" \
+            2>/dev/null || true
+
+          existing="$(gh issue list \
+            --label openapi-external-spec-drift \
+            --state open \
+            --limit 1 \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          body=$(cat <<EOF
+          The scheduled \`openapi-external-specs\` workflow detected drift in upstream Discord/Brevo OpenAPI specs.
+
+          **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          \`\`\`
+          ${summary}
+          \`\`\`
+
+          **To resolve:** run \`./scripts/generate-openapi-local.sh\` locally (no flag), commit the regenerated files (\`libs/openapi-specs\`, \`services/frontend/src/services/api/discord\`, generated Java clients), and open a PR.
+          EOF
+          )
+
+          if [ -n "$existing" ]; then
+            echo "Updating existing tracking issue #$existing"
+            gh issue comment "$existing" --body "$body"
+          else
+            echo "Opening new tracking issue"
+            gh issue create \
+              --title "OpenAPI external spec drift detected" \
+              --label openapi-external-spec-drift \
+              --label dependencies \
+              --assignee ExtraToast \
+              --body "$body"
+          fi
+
+      - name: Upload generation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-external-specs-log
+          path: openapi-api.log
+          if-no-files-found: ignore

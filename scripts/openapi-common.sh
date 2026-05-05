@@ -45,10 +45,10 @@ regen_listmonk_client() {
   ./gradlew --no-daemon --build-cache :services:api:clients:listmonk:generate
 }
 
-# Normalizes the API spec and discord.raw.json in-place.
-# Expects the caller to have written the API spec (or raw JSON) and discord.raw.json before calling.
-normalize_specs() {
-  echo "Normalizing OpenAPI spec files..."
+# Normalizes the Blueshell API spec in-place. Caller must have written
+# either the normalized spec or its `.raw.json` upstream.
+normalize_api_spec() {
+  echo "Normalizing Blueshell OpenAPI spec..."
   local tmp
   tmp="$(mktemp)"
 
@@ -62,7 +62,21 @@ normalize_specs() {
     rm -f "$tmp"
     exit 1
   fi
+}
+
+# Normalizes the Discord spec in-place. Caller must have downloaded
+# discord.raw.json upstream (download_external_specs).
+normalize_discord_spec() {
+  echo "Normalizing Discord OpenAPI spec..."
+  local tmp
+  tmp="$(mktemp)"
 
   jq -S -c . "$SHARED_OPENAPI_DIR/discord.raw.json" > "$tmp" && mv "$tmp" "$SHARED_OPENAPI_DIR/discord.json"
   rm -f "$SHARED_OPENAPI_DIR/discord.raw.json"
+}
+
+# Convenience: normalize both Blueshell + Discord specs.
+normalize_specs() {
+  normalize_api_spec
+  normalize_discord_spec
 }

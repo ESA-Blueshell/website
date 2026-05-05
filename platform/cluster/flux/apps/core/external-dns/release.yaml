@@ -20,10 +20,19 @@ spec:
   # becomes Ready and Flux's default single-retry stalls the
   # HelmRelease permanently. Infinite retries let it self-heal once
   # the Secret lands, no manual `flux reconcile --force` needed.
+  #
+  # disableWait so this HelmRelease reports Ready as soon as Helm
+  # finishes the chart install — without it, Helm's own
+  # `--wait` blocks for the full timeout while the pod is in
+  # CreateContainerConfigError, which keeps apps-core stuck Pending
+  # and (transitively) every downstream Kustomization. The pod
+  # crashloops on its own; once VSO syncs the Secret it recovers.
   install:
+    disableWait: true
     remediation:
       retries: -1
   upgrade:
+    disableWait: true
     remediation:
       retries: -1
   values:

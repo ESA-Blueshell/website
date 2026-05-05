@@ -1,11 +1,10 @@
 package net.blueshell.api.platform.integration.email.adapter
 
-import net.blueshell.api.platform.config.ListmonkConfig
 import net.blueshell.clients.listmonk.api.TransactionalApi
 import net.blueshell.clients.listmonk.model.TransactionalMessage
 import net.blueshell.clients.listmonk.model.TransactionalMessageSubscriberMode
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -17,13 +16,18 @@ import java.util.UUID
  * Listmonk returns only `{"data": true}` with no message ID, so a UUID is
  * generated locally and used as the messageId for outbox tracking.
  *
+ * The transactional template referenced by [templateId] is provisioned
+ * out-of-band (Listmonk admin UI or `platform/cluster/flux/apps/stateless/listmonk/setup.py`);
+ * the api never creates or mutates it. The operator sets `LISTMONK_TEMPLATE_ID`
+ * to the id of the existing "Blueshell Transactional" template.
+ *
  * Active in both dev and prod (all non-test profiles).
  */
 @Component
 @Profile("!test")
 class ListmonkEmailClient(
     private val transactionalApi: TransactionalApi,
-    @field:Qualifier(ListmonkConfig.TEMPLATE_ID_BEAN) private val templateId: Int,
+    @param:Value("\${listmonk.template-id}") private val templateId: Int,
 ) : EmailTransportClient {
 
     override fun send(

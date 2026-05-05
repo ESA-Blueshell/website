@@ -7,7 +7,6 @@ data class ListmonkProperties(
     val api: ApiProperties = ApiProperties(),
     val from: FromProperties = FromProperties(),
     val replyTo: String = "sitecie@blueshell.utwente.nl",
-    val templateId: Int = 0,  // 0 = auto-detect/create on startup
     val bounce: BounceProperties = BounceProperties(),
     val contact: ContactProperties = ContactProperties(),
 ) {

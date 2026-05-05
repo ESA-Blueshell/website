@@ -20,12 +20,13 @@ spec:
     ingressRoute:
       dashboard:
         enabled: true
-    # Healthcheck endpoint on the `traefik` entrypoint (port 9000).
-    # Gatus probes it internally to confirm Traefik is alive without
-    # going through the dashboard IngressRoute (which sits behind
-    # forward-auth and would only ever 302 an anonymous prober).
-    # Chart 39.x removed the top-level `ping:` key — enable via the
-    # static-config CLI flag instead.
+    # Healthcheck endpoint on the `traefik` entrypoint (exposed as
+    # K8s Service port 8080 in chart 39.x — dashboard, API, and ping
+    # all share that one port). Gatus probes /ping internally to
+    # confirm Traefik is alive without going through the dashboard
+    # IngressRoute (which sits behind forward-auth and would only
+    # ever 302 an anonymous prober). Chart 39.x removed the top-level
+    # `ping:` key — enable via the static-config CLI flag instead.
     additionalArguments:
       - "--ping=true"
     providers:
@@ -53,9 +54,10 @@ spec:
       websecure:
         hostPort: 443
       traefik:
-        # ClusterIP-only — exposes port 9000 on the K8s Service so
-        # Gatus can hit /ping from inside the cluster. The dashboard
-        # itself is reachable from outside via the traefik-dashboard
-        # IngressRoute (forward-auth gated), not this port.
+        # ClusterIP-only — exposes the `traefik` entrypoint on the K8s
+        # Service (port 8080 in chart 39.x) so Gatus can hit /ping from
+        # inside the cluster. The dashboard itself is reachable from
+        # outside via the traefik-dashboard IngressRoute (forward-auth
+        # gated), not this port.
         expose:
           default: true

@@ -29,7 +29,7 @@ private val ALL_SERVICES = listOf(
 
 @RestController
 @Tag(name = "My Services")
-@RequestMapping("/api/me/services")
+@RequestMapping("/me/services")
 class MyServicesController {
 
     @GetMapping

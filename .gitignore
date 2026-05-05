@@ -71,3 +71,4 @@ services/**/*.env
 !platform/**
 # GHCR pull-PAT used during v2 bring-up
 .ghcr_token
+.cf_token

@@ -41,8 +41,9 @@ spec:
         vault.hashicorp.com/agent-pre-populate-only: 'true'
         vault.hashicorp.com/role: api
         vault.hashicorp.com/agent-inject-secret-api.env: secret/data/api
-        # Every value is single-quoted and `| default ""` so a missing
-        # KV field renders as `KEY=''` instead of the literal
+        # Every value is single-quoted and wrapped in
+        # `{{ with (index .Data.data "...") }}{{ . }}{{ end }}` so a
+        # missing KV field renders as `KEY=''` instead of the literal
         # `<no value>` consul-template default — `<` / `>` are shell
         # redirection and would crash `. /vault/secrets/api.env` with
         # `syntax error: unexpected newline`. Single quotes also tame
@@ -51,6 +52,12 @@ spec:
         # JSON doesn't contain raw single quotes; if a future rotation
         # does, base64-encode that one field in Vault and decode in
         # the start script.
+        #
+        # `with` over `| default ""` because Vault Agent's bundled
+        # consul-template strips the Sprig `default` function for
+        # security — `template: function "default" not defined` is the
+        # error otherwise. `with` is a built-in Go-template action,
+        # always available.
         #
         # MYSQL_USER / MYSQL_PASSWORD live in `secret/api` as
         # `mysql-user` / `mysql-password` (mirrored by
@@ -61,22 +68,22 @@ spec:
         # integration is fixed and drop these two fields again.
         vault.hashicorp.com/agent-inject-template-api.env: |
           {{- with secret "secret/data/api" -}}
-          JWT_SECRET='{{ index .Data.data "jwt-secret" | default "" }}'
-          BREVO_API_KEY='{{ index .Data.data "brevo-api-key" | default "" }}'
-          BREVO_FOLDER_CONTRIBUTION_PERIODS_ID='{{ index .Data.data "brevo-folder-contribution-periods-id" | default "" }}'
-          MOLLIE_API_KEY='{{ index .Data.data "mollie-api-key" | default "" }}'
-          GOOGLE_CALENDAR_ID='{{ index .Data.data "google-calendar-id" | default "" }}'
-          GOOGLE_CALENDAR_SA_JSON='{{ index .Data.data "google-calendar-sa-json" | default "" }}'
-          FACEBOOK_PAGE_ID='{{ index .Data.data "facebook-page-id" | default "" }}'
-          FACEBOOK_ACCESS_TOKEN='{{ index .Data.data "facebook-access-token" | default "" }}'
-          X_API_KEY='{{ index .Data.data "x-api-key" | default "" }}'
-          X_API_SECRET='{{ index .Data.data "x-api-secret" | default "" }}'
-          X_ACCESS_TOKEN='{{ index .Data.data "x-access-token" | default "" }}'
-          X_ACCESS_SECRET='{{ index .Data.data "x-access-secret" | default "" }}'
-          DISCORD_BOT_TOKEN='{{ index .Data.data "discord-bot-token" | default "" }}'
-          DISCORD_GUILD_ID='{{ index .Data.data "discord-guild-id" | default "" }}'
-          MYSQL_USER='{{ index .Data.data "mysql-user" | default "" }}'
-          MYSQL_PASSWORD='{{ index .Data.data "mysql-password" | default "" }}'
+          JWT_SECRET='{{ with (index .Data.data "jwt-secret") }}{{ . }}{{ end }}'
+          BREVO_API_KEY='{{ with (index .Data.data "brevo-api-key") }}{{ . }}{{ end }}'
+          BREVO_FOLDER_CONTRIBUTION_PERIODS_ID='{{ with (index .Data.data "brevo-folder-contribution-periods-id") }}{{ . }}{{ end }}'
+          MOLLIE_API_KEY='{{ with (index .Data.data "mollie-api-key") }}{{ . }}{{ end }}'
+          GOOGLE_CALENDAR_ID='{{ with (index .Data.data "google-calendar-id") }}{{ . }}{{ end }}'
+          GOOGLE_CALENDAR_SA_JSON='{{ with (index .Data.data "google-calendar-sa-json") }}{{ . }}{{ end }}'
+          FACEBOOK_PAGE_ID='{{ with (index .Data.data "facebook-page-id") }}{{ . }}{{ end }}'
+          FACEBOOK_ACCESS_TOKEN='{{ with (index .Data.data "facebook-access-token") }}{{ . }}{{ end }}'
+          X_API_KEY='{{ with (index .Data.data "x-api-key") }}{{ . }}{{ end }}'
+          X_API_SECRET='{{ with (index .Data.data "x-api-secret") }}{{ . }}{{ end }}'
+          X_ACCESS_TOKEN='{{ with (index .Data.data "x-access-token") }}{{ . }}{{ end }}'
+          X_ACCESS_SECRET='{{ with (index .Data.data "x-access-secret") }}{{ . }}{{ end }}'
+          DISCORD_BOT_TOKEN='{{ with (index .Data.data "discord-bot-token") }}{{ . }}{{ end }}'
+          DISCORD_GUILD_ID='{{ with (index .Data.data "discord-guild-id") }}{{ . }}{{ end }}'
+          MYSQL_USER='{{ with (index .Data.data "mysql-user") }}{{ . }}{{ end }}'
+          MYSQL_PASSWORD='{{ with (index .Data.data "mysql-password") }}{{ . }}{{ end }}'
           {{- end }}
     spec:
       serviceAccountName: api

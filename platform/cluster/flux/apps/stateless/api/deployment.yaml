@@ -116,21 +116,6 @@ spec:
               value: vault://
             - name: VAULT_ENABLED
               value: 'true'
-            # SecurityConfig.kt adds Spring's HttpsRedirectFilter when
-            # `app.security.require-https` is true (the default). The
-            # filter throws 500 on the management port (8081, actuator)
-            # and on any HTTP request whose port has no corresponding
-            # HTTPS mapping — including the kubelet's in-cluster
-            # readiness probe on the api Service port. The pod never
-            # reports Ready, the Service has no endpoints, traffic
-            # never reaches the api.
-            #
-            # Edge HTTPS enforcement lives on Traefik (IngressRoute
-            # `http -> https` redirect) plus HSTS at the IngressRoute
-            # level, so the api itself doesn't need to enforce HTTPS
-            # again on every internal request.
-            - name: APP_SECURITY_REQUIRE_HTTPS
-              value: 'false'
             # VAULT_DB_ENABLED intentionally omitted (defaults to false
             # via application.yaml). Spring Cloud Vault dynamic MariaDB
             # creds (`database/creds/api`) are wired up by
@@ -218,20 +203,28 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+          # All probes are tcpSocket rather than httpGet because
+          # SecurityConfig.kt registers Spring's HttpsRedirectFilter in
+          # production (`app.security.require-https=true`, enforced by
+          # ProductionSecurityHardeningGuard which fails startup if you
+          # set it to false outside dev/test). The filter throws HTTP
+          # 500 on any in-cluster HTTP request whose port has no
+          # corresponding HTTPS port mapping — the kubelet probe is
+          # exactly that. tcpSocket avoids the filter entirely; the
+          # probe just checks Tomcat is bound to 8080. Edge HTTP
+          # behaviour is unaffected (Traefik terminates TLS and
+          # forwards X-Forwarded-Proto).
           startupProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: http
             periodSeconds: 5
             failureThreshold: 60
           readinessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: http
             timeoutSeconds: 5
           livenessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: http
             timeoutSeconds: 5
           resources:

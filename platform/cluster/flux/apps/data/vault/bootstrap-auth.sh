@@ -214,17 +214,28 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
 
   OIDC_CLIENT_SECRET=$(vault kv get -field=vault-oidc-client-secret secret/api)
 
-  vault write auth/oidc/config \
-    oidc_discovery_url="https://v2.esa-blueshell.nl/api" \
-    oidc_client_id="vault" \
-    oidc_client_secret="${OIDC_CLIENT_SECRET}" \
-    default_role="admin"
-
-  vault write auth/oidc/role/admin \
-    bound_audiences="vault" \
-    allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
-    user_claim="sub" \
-    policies="default"
+  # Vault validates `oidc_discovery_url` at write time by fetching the
+  # issuer's discovery document. On a fresh cluster the api Deployment
+  # only comes up *after* apps-data is Ready (apps-stateless depends on
+  # apps-data), so the URL is unreachable during the very first run of
+  # this Job. Tolerate that failure so the Job exits 0; the next
+  # reconcile (after apps-stateless lands) re-runs this script
+  # idempotently and the write succeeds.
+  if vault write auth/oidc/config \
+      oidc_discovery_url="https://v2.esa-blueshell.nl/api" \
+      oidc_client_id="vault" \
+      oidc_client_secret="${OIDC_CLIENT_SECRET}" \
+      default_role="admin"; then
+    vault write auth/oidc/role/admin \
+      bound_audiences="vault" \
+      allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
+      user_claim="sub" \
+      policies="default"
+  else
+    echo "auth/oidc/config write failed (api OIDC discovery URL likely not"
+    echo "reachable yet — fresh cluster, apps-stateless not Ready). Skipping"
+    echo "OIDC role write; the next reconcile re-runs this Job idempotently."
+  fi
 
   unset OIDC_CLIENT_SECRET
 else

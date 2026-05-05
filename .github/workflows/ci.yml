@@ -505,13 +505,23 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           yarn-version: ${{ env.YARN_VERSION }}
 
-      - name: Generate OpenAPI spec and frontend clients
+      - name: Generate Blueshell OpenAPI spec and frontend client
         run: |
           chmod +x ./scripts/generate-openapi-local.sh
-          ./scripts/generate-openapi-local.sh
+          # External specs (Discord, Brevo) drift too frequently upstream
+          # to gate every PR on. The scheduled workflow
+          # `openapi-external-specs.yml` validates them on a weekly
+          # cadence on main and surfaces drift for a human-driven
+          # update PR.
+          ./scripts/generate-openapi-local.sh --blueshell-only
 
-      - name: Assert OpenAPI spec and client are in sync
-        run: git diff --exit-code -- services/api/openapi.json libs/openapi-specs services/frontend/src/services/api
+      - name: Assert Blueshell spec and client are in sync
+        run: |
+          git diff --exit-code -- \
+            services/api/openapi.json \
+            services/frontend/src/services/api/blueshell \
+            services/frontend/src/services/api/blueshell.runtime.ts \
+            services/frontend/src/services/api/index.ts
 
       - name: Upload OpenAPI generation logs
         if: failure()

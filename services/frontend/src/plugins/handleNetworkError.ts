@@ -1,6 +1,5 @@
 import router from "./router"
 import store from "@/plugins/store"
-import type {RouteLocationRaw} from "vue-router"
 import type {AxiosError} from "axios"
 
 
@@ -30,22 +29,19 @@ export function $handleNetworkError(err: unknown): void {
       case 400:
         errorMessage = "Uhhhh, looks like a bad request (error 400)... Not sure how this happened. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
         break
-      case 401:
-        errorMessage = "Woah there, looks like you're not logged in (anymore). Just log in and try again."
-        store.commit("logout")
-        if (!currentRoute.fullPath.startsWith("/login")) {
-          const redirect: RouteLocationRaw = {
-            path: "/login",
-            query: {
-              redirect: currentRoute.query.redirect || currentRoute.fullPath,
-            },
-          }
-          router.push(redirect)
-        }
+      case 401: {
+        // Don't auto-logout or auto-redirect on a 401: the user might
+        // genuinely still be signed in (the Vault OIDC popup chain hit
+        // this path repeatedly, blowing away live sessions). Surface a
+        // snackbar with a Login link instead and let the user decide.
+        const redirectTarget = (currentRoute.query.redirect as string)
+          || currentRoute.fullPath
+        const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}`
+        errorMessage = `Woah there, looks like you're not logged in (anymore). <a href="${loginHref}" class="text-decoration-none">Login</a>`
         break
+      }
       case 403:
         errorMessage = "Woah there, you don't have enough authority to access this. Go to jail and DO NOT PASS GO, DO NOT COLLECT $200."
-        router.push({path: "/account"})
         break
       case 404:
         errorMessage = "Uhhhhhhh 404 moment. This resource doesn't exist anymore. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a> if you think this is an error."

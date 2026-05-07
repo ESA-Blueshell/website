@@ -4,8 +4,21 @@ import com.microsoft.playwright.Page
 
 object ContributionManagerHelper {
     fun open(page: Page, frontendUrl: String) {
-        page.navigate("$frontendUrl/contributions/manage")
-        page.waitForURL("**/contributions/manage**")
+        // Bind the navigation to the GET /contributionPeriods response that
+        // ContributionPeriodList fires onMounted. waitForResponse defaults to
+        // 30 s, which absorbs Vite's first-time on-demand compile of the
+        // lazy-loaded ContributionManager route on a cold CI runner — the
+        // condition the previous polling waitFor() couldn't survive.
+        page.waitForResponse(
+            { resp ->
+                resp.url().contains("/contributionPeriods") &&
+                    !resp.url().contains("/contributions") &&
+                    resp.request().method() == "GET"
+            }
+        ) {
+            page.navigate("$frontendUrl/contributions/manage")
+            page.waitForURL("**/contributions/manage**")
+        }
     }
 
     fun selectPeriodById(page: Page, periodId: Long) {

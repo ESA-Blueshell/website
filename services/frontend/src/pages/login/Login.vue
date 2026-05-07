@@ -131,8 +131,25 @@ const login = async () => {
       const loginData = response.data as LoginResponse
       store.commit("setLogin", loginData)
 
-      // Go to redirect page or home page
-      await router.push(route.query.redirect?.toString() || "/")
+      // Go to redirect page or home page. If the redirect target lives
+      // outside the SPA (the api at /api/*, Spring Authorization Server
+      // at /oauth2/* or /.well-known/*, or any absolute http(s) URL),
+      // do a full browser navigation — Vue Router's `push` only handles
+      // SPA routes and would silently land on `/` for everything else.
+      // This is the path Vault's OIDC flow takes: the popup arrives here
+      // with `?redirect=/api/oauth2/authorize?…`, after login we have
+      // to bounce the browser back to that authorize URL so Spring can
+      // emit the code and Vault's callback fires.
+      const redirect = route.query.redirect?.toString() || "/"
+      const isOffSpa = /^https?:\/\//i.test(redirect)
+        || redirect.startsWith("/api/")
+        || redirect.startsWith("/oauth2/")
+        || redirect.startsWith("/.well-known/")
+      if (isOffSpa) {
+        globalThis.location.assign(redirect)
+      } else {
+        await router.push(redirect)
+      }
     } else if (response?.status === 401) {
       store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
     } else {

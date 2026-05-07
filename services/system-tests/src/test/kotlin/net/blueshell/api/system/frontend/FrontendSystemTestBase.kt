@@ -173,7 +173,13 @@ abstract class FrontendSystemTestBase {
     }
 
     protected fun waitFor(
-        timeoutMs: Long = 6_000,
+        // 12 s default — GitHub Actions runners under load have been
+        // observed to take >6 s to render contribution / event lists
+        // after a fresh login. The previous 6 s default produced
+        // intermittent failures on those tests; doubling the budget
+        // costs nothing on the happy path (the loop exits as soon as
+        // `condition()` is true) and removes the flake.
+        timeoutMs: Long = 12_000,
         intervalMs: Long = 200,
         onTimeoutMessage: () -> String = { "Expected condition to become true" },
         condition: () -> Boolean

@@ -154,14 +154,23 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Compile API main, test and integration-test sources
+      - name: Compile sources and warm Gradle cache for downstream jobs
+        # `resolveAllDependencies` (defined in kotlin-conventions) eagerly
+        # resolves every resolvable configuration on the listed projects so
+        # the Gradle cache this job persists contains the `jacocoAgent` /
+        # `jacocoAnt` artifacts that downstream Test tasks would otherwise
+        # be the first to fetch. Keeps `api-tests` and the system-test
+        # shards off `repo.maven.apache.org` entirely, side-stepping the
+        # Cloudflare-rate-limit 403 that has flaked the run before.
         run: |
           ./gradlew --no-daemon --build-cache \
             :services:api:compileKotlin \
             :services:api:compileTestFixturesKotlin \
             :services:api:compileTestKotlin \
             :services:api:compileIntegrationTestKotlin \
-            :services:system-tests:compileTestKotlin
+            :services:system-tests:compileTestKotlin \
+            :services:api:resolveAllDependencies \
+            :services:system-tests:resolveAllDependencies
 
       - name: Save Gradle cache
         if: always()
@@ -236,24 +245,12 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Run API unit and integration tests
-        # Retry the Gradle invocation on failure: api-tests is the first job
-        # in the run that configures a Test task, which resolves the
-        # `jacocoAgent` configuration. A transient Cloudflare 403 from
-        # repo.maven.apache.org on that resolve has previously sunk the
-        # whole run. One retry after 30 s clears the rate-limit window.
         run: |
-          set -uo pipefail
-          attempts=3
-          for i in $(seq 1 $attempts); do
-            ./gradlew --no-daemon --build-cache \
-              :services:api:test \
-              :services:api:integrationTest \
-              :services:api:jacocoTestReport \
-              :services:api:jacocoIntegrationTestReport && exit 0
-            echo "::warning::Gradle invocation attempt $i/$attempts failed."
-            if [ "$i" -lt "$attempts" ]; then sleep 30; fi
-          done
-          exit 1
+          ./gradlew --no-daemon --build-cache \
+            :services:api:test \
+            :services:api:integrationTest \
+            :services:api:jacocoTestReport \
+            :services:api:jacocoIntegrationTestReport
 
       - name: Upload API test reports
         if: always()

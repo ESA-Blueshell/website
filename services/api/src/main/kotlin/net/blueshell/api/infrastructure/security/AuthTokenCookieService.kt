@@ -16,12 +16,22 @@ class AuthTokenCookieService(
     private val cookiePath: String,
     @param:Value($$"${security.auth-cookie.same-site:None}")
     private val sameSite: String,
+    // Empty default → no `Domain` attribute → host-only cookie (the
+    // browser only sends it back to the exact host that set it). Set
+    // explicitly in production to e.g. `.esa-blueshell.nl` so the cookie
+    // is sent to every subdomain (vault, headlamp, traefik, listmonk,
+    // stalwart) — Traefik's forwardAuth needs the cookie to authenticate
+    // the request. Local dev uses an empty domain so the cookie still
+    // works against `localhost` / `127.0.0.1`.
+    @param:Value($$"${security.auth-cookie.domain:}")
+    private val cookieDomain: String,
     @param:Value($$"${app.security.require-https:true}")
     private val requireHttps: Boolean
 ) {
     private val effectiveSameSite: String = resolveSameSite(sameSite)
     private val effectiveSecure: Boolean =
         requireHttps || effectiveSameSite.equals("None", ignoreCase = true)
+    private val effectiveDomain: String? = cookieDomain.trim().takeIf { it.isNotEmpty() }
 
     fun writeAuthCookie(
         response: HttpServletResponse,
@@ -35,6 +45,7 @@ class AuthTokenCookieService(
             .path(cookiePath)
             .sameSite(effectiveSameSite)
             .maxAge(Duration.ofSeconds(maxAgeSeconds))
+            .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
             .build()
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }
@@ -46,6 +57,7 @@ class AuthTokenCookieService(
             .path(cookiePath)
             .sameSite(effectiveSameSite)
             .maxAge(Duration.ZERO)
+            .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
             .build()
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }

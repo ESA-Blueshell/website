@@ -136,6 +136,12 @@ security:
     name: BSH_AUTH
     path: /
     same-site: None
+    # Empty default → host-only cookie (works against localhost in dev).
+    # Production (apps/stateless/api/deployment.yaml) sets
+    # AUTH_COOKIE_DOMAIN=.esa-blueshell.nl so the cookie travels to every
+    # subdomain — Traefik forwardAuth on vault/headlamp/listmonk/stalwart/
+    # traefik subdomains needs the cookie to authenticate the request.
+    domain: ${AUTH_COOKIE_DOMAIN:}
   openapi:
     public:
       enabled: false

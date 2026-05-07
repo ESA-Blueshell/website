@@ -12,8 +12,10 @@ import java.time.Instant
 data class EventResponse(
     var id: Long,
 
-    @field:NotNull
-    var committeeId: Long,
+    // Nullable when the owning Committee has been soft-deleted; the event row
+    // is kept (signups, bookkeeping, etc.) but the link is severed. Live events
+    // always carry a committee.
+    var committeeId: Long?,
 
     @field:NotBlank(message = "Event title cannot be empty.")
     @field:Size(max = 255, message = "Event title cannot exceed 255 characters.")

@@ -39,9 +39,13 @@ import java.time.Instant
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class Event(
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "committee_id", nullable = false)
-    var committee: Committee,
+    // Nullable: a soft-deleted Committee leaves its events orphaned with
+    // committee_id = NULL (see V55__null-committee-id-for-deleted-committees.sql).
+    // Live committees keep the FK populated; the DB column has no NOT NULL
+    // constraint by design.
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "committee_id", nullable = true)
+    var committee: Committee?,
 
     @Column(name = "title", nullable = false)
     var title: String,
@@ -82,8 +86,8 @@ class Event(
     @Column(name = "sign_up_limit")
     var signUpLimit: Int? = null,
 ) : AuditedAutoIdEntity() {
-    val committeeId: Long
-        get() = committee.id ?: 0
+    val committeeId: Long?
+        get() = committee?.id
 
     @OneToOne(mappedBy = "event", cascade = [CascadeType.ALL], orphanRemoval = true)
     var banner: EventBanner? = null

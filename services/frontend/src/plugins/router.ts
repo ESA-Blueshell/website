@@ -260,6 +260,15 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true},
   },
   {
+    // Landing page when Traefik forwardAuth refuses an authenticated user
+    // because their role isn't high enough for the requested admin host
+    // (vault, headlamp, listmonk, stalwart, traefik). The api redirects
+    // here with `?service=<host>` so the page can name what was blocked.
+    path: "/unauthorized",
+    name: "unauthorized",
+    component: () => import("@/pages/Unauthorized.vue"),
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/pages/NotFound.vue"),

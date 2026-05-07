@@ -348,7 +348,7 @@ export type EventBannerResponse = {
 export type EventResponse = {
     approved: boolean;
     banner?: EventBannerResponse;
-    committeeId: number;
+    committeeId?: number;
     createdAt: string;
     description: string;
     endTime: string;

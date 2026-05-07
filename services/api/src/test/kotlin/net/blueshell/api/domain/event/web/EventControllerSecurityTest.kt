@@ -180,7 +180,7 @@ class EventControllerSecurityTest : UserTestSupport() {
                 put("/events/{id}", eventId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateEventPayload(event.committee.id!!, event.version, "Hacked Event"))
+                    .content(updateEventPayload(event.committee!!.id!!, event.version, "Hacked Event"))
             )
                 .andExpect(status().isForbidden)
         }
@@ -193,7 +193,7 @@ class EventControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}", eventId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateEventPayload(event.committee.id!!, event.version, "Unauthorized Update"))
+                    .content(updateEventPayload(event.committee!!.id!!, event.version, "Unauthorized Update"))
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -209,7 +209,7 @@ class EventControllerSecurityTest : UserTestSupport() {
                 put("/events/{id}", eventId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateEventPayload(event.committee.id!!, event.version, bannerFileId = file.id!!))
+                    .content(updateEventPayload(event.committee!!.id!!, event.version, bannerFileId = file.id!!))
             )
                 .andExpect(status().isOk)
         }

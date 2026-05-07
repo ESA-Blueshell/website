@@ -33,9 +33,12 @@ class EventPermission @Autowired constructor(service: EventService) :
         val principal = SecurityUtils.principalFrom(authentication)
         val isActive = event.endTime.isAfter(Instant.now())
         return when (permission) {
-            "read" -> isBoard || event.approved || event.committee.hasMember(principal?.id)
-            "write" -> isBoard || event.committee.hasMember(principal?.id)
-            "delete" -> isBoard || event.committee.hasMember(principal?.id)
+            // event.committee is null on orphaned events whose owning committee
+            // was soft-deleted (V55). Treat that as "no committee membership
+            // grants access" — only board+ can read/write/delete those.
+            "read" -> isBoard || event.approved || (event.committee?.hasMember(principal?.id) == true)
+            "write" -> isBoard || (event.committee?.hasMember(principal?.id) == true)
+            "delete" -> isBoard || (event.committee?.hasMember(principal?.id) == true)
             "approve" -> isBoard
             "signUp" -> isBoard || (isActive && event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
             else -> false

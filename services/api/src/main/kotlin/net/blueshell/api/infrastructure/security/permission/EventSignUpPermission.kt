@@ -34,7 +34,7 @@ class EventSignUpPermission @Autowired constructor(service: EventSignUpService, 
         val isActiveEvent = event.endTime.isAfter(Instant.now())
 
         return when (permission) {
-            "read" -> isBoard || signUp.userId == user?.id || signUp.event.committee.hasMember(user?.id)
+            "read" -> isBoard || signUp.userId == user?.id || (signUp.event.committee?.hasMember(user?.id) == true)
             "write" -> isBoard || (isOwner && isActiveEvent)
             "delete" -> isBoard || (isOwner && isActiveEvent)
             else -> false

@@ -40,15 +40,16 @@ class MyServicesController {
                 ALL_SERVICES.first { it.id == "status" }
             ))
         }
-        val isAdmin = principal.roles.any { it.matchesRole(Role.ADMIN) }
-        val isMember = principal.roles.any { it.matchesRole(Role.MEMBER) }
-
+        // Mirror ForwardAuthController.HOST_ROLE — same five admin hosts,
+        // same role gates. The catalog the user sees here matches what
+        // they can actually reach via Traefik forwardAuth.
         val visible = ALL_SERVICES.filter { service ->
-            when (service.id) {
-                "headlamp", "vault", "traefik" -> isAdmin
-                "listmonk", "stalwart" -> isAdmin
-                else -> true
+            val required = when (service.id) {
+                "headlamp", "vault", "traefik" -> Role.ADMIN
+                "listmonk", "stalwart"         -> Role.BOARD
+                else                           -> null
             }
+            required == null || principal.hasAuthority(required)
         }
         return ResponseEntity.ok(visible)
     }

@@ -236,12 +236,24 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Run API unit and integration tests
+        # Retry the Gradle invocation on failure: api-tests is the first job
+        # in the run that configures a Test task, which resolves the
+        # `jacocoAgent` configuration. A transient Cloudflare 403 from
+        # repo.maven.apache.org on that resolve has previously sunk the
+        # whole run. One retry after 30 s clears the rate-limit window.
         run: |
-          ./gradlew --no-daemon --build-cache \
-            :services:api:test \
-            :services:api:integrationTest \
-            :services:api:jacocoTestReport \
-            :services:api:jacocoIntegrationTestReport
+          set -uo pipefail
+          attempts=3
+          for i in $(seq 1 $attempts); do
+            ./gradlew --no-daemon --build-cache \
+              :services:api:test \
+              :services:api:integrationTest \
+              :services:api:jacocoTestReport \
+              :services:api:jacocoIntegrationTestReport && exit 0
+            echo "::warning::Gradle invocation attempt $i/$attempts failed."
+            if [ "$i" -lt "$attempts" ]; then sleep 30; fi
+          done
+          exit 1
 
       - name: Upload API test reports
         if: always()

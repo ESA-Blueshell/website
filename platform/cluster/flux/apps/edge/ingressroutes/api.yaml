@@ -21,17 +21,21 @@ metadata:
 spec:
   entryPoints:
     - websecure
-  # Same-origin OIDC. Spring Authorization Server's `issuer` setting
-  # advertises every endpoint nested under /api (so jwks_uri etc. are
-  # https://v2.esa-blueshell.nl/api/oauth2/jwks), but Spring still
-  # serves them at root paths internally — we strip /api before the
-  # backend sees the request.
+  # Same-origin /api/*. Spring Authorization Server's `issuer` setting
+  # advertises every endpoint nested under /api (jwks_uri etc. are
+  # https://v2.esa-blueshell.nl/api/oauth2/jwks), but every controller
+  # in the api is mapped at root paths — `/health`, `/events`,
+  # `/me/services`, `/oauth2/...`. We strip the `/api` prefix uniformly
+  # before forwarding so REST paths reach their controllers AND the
+  # SecurityFilterChain matchers (which permit `/health`, `/events/**`,
+  # `/csrf`, `/contributionPeriods/current`, ...) actually fire.
   #
   # Two routes on this host:
-  #   - OIDC paths under /api/* with StripPrefix(/api), priority 100
-  #   - Plain REST /api/* without strip,                priority 50
-  # frontend.yaml's `Host(v2)` catch-all keeps default priority and
-  # naturally falls below both.
+  #   - OIDC paths under /api/* — priority 100, kept distinct in case
+  #     a future change wants a different middleware on this subset.
+  #   - Plain REST /api/*       — priority 50, catch-all under /api.
+  # Both apply `strip-api-prefix`. frontend.yaml's `Host(v2)` catch-all
+  # keeps default priority and naturally falls below both.
   routes:
     - kind: Rule
       priority: 100
@@ -49,6 +53,9 @@ spec:
     - kind: Rule
       priority: 50
       match: Host(`v2.esa-blueshell.nl`) && PathPrefix(`/api`)
+      middlewares:
+        - name: strip-api-prefix
+          namespace: edge-system
       services:
         - name: api
           namespace: default

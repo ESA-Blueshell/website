@@ -93,10 +93,14 @@ data:
     - name: "Traefik Dashboard"
       group: "admin"
       # /ping is the chart's healthcheck endpoint on the `traefik`
-      # entrypoint (port 9000). Enabled in the Traefik HelmRelease;
-      # the dashboard IngressRoute itself sits behind forward-auth
-      # so probing it externally would only ever yield a 302.
-      url: "http://traefik.ingress-system.svc.cluster.local:9000/ping"
+      # entrypoint, exposed on the K8s Service as port 8080 in
+      # chart 39.x (the chart no longer exposes a separate :9000
+      # named port — the dashboard, API, and ping share the same
+      # `traefik` named port). Enabled with `--ping=true` in the
+      # Traefik HelmRelease. The dashboard IngressRoute itself sits
+      # behind forward-auth so probing it externally would only ever
+      # yield a 302.
+      url: "http://traefik.ingress-system.svc.cluster.local:8080/ping"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"

@@ -98,14 +98,23 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/partners/MarketingMaatwerk.vue"),
   },
   {
+    // `meta.bare = true` (here and on /unauthorized below) tells App.vue
+    // to drop the v-app-bar / v-navigation-drawer / footer-banner so the
+    // login form is the only thing on screen. Mainly so Vault's OIDC
+    // popup at https://v2.esa-blueshell.nl/api/oauth2/authorize?... ->
+    // /login?redirect=... isn't visually wrapped in the full website
+    // chrome; same goes for forgot-password / account-create which are
+    // linked from the login form.
     path: "/login",
     name: "login",
     component: () => import("@/pages/login/Login.vue"),
+    meta: {bare: true},
   },
   {
     path: "/login/forgor",
     name: "forgotPassword",
     component: () => import("@/pages/login/ForgotPassword.vue"),
+    meta: {bare: true},
   },
   {
     path: "/account",
@@ -117,6 +126,7 @@ const routes: RouteRecordRaw[] = [
     path: "/account/create",
     name: "accountCreation",
     component: () => import("@/pages/login/CreateAccount.vue"),
+    meta: {bare: true},
   },
   {
     path: "/account/reset-password",
@@ -264,9 +274,12 @@ const routes: RouteRecordRaw[] = [
     // because their role isn't high enough for the requested admin host
     // (vault, headlamp, listmonk, stalwart, traefik). The api redirects
     // here with `?service=<host>` so the page can name what was blocked.
+    // `meta.bare` because this page is reached from a popup / new tab
+    // that has no business showing the full site chrome.
     path: "/unauthorized",
     name: "unauthorized",
     component: () => import("@/pages/Unauthorized.vue"),
+    meta: {bare: true},
   },
   {
     path: "/:pathMatch(.*)*",

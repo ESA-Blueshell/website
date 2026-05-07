@@ -1,6 +1,14 @@
 <template>
   <v-app>
-    <v-app-bar theme="dark">
+    <!-- `route.meta.bare` (set on /login, /unauthorized, etc. — see
+         router.ts) drops the full site chrome. Useful when this SPA
+         is loaded into a small popup window — Vault's OIDC flow being
+         the canonical case — where the top bar / drawer / footer are
+         purely visual noise around the login form. -->
+    <v-app-bar
+      v-if="!route.meta.bare"
+      theme="dark"
+    >
       <v-btn
         v-if="display.mdAndDown.value"
         class="ml-2"
@@ -260,6 +268,7 @@
     </v-app-bar>
 
     <v-navigation-drawer
+      v-if="!route.meta.bare"
       v-model="drawer"
       temporary
     >
@@ -415,7 +424,7 @@
 
     <router-view />
 
-    <footer-banner />
+    <footer-banner v-if="!route.meta.bare" />
 
 
     <v-snackbar

@@ -77,9 +77,11 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
                 LoginDomainHelper.clickActivateMemberSubmit(page)
             }
             assertThat(response.status()).isGreaterThanOrEqualTo(400)
-            assertThat(
-                page.locator("[data-testid='activate-member-error-alert']").count()
-            ).isGreaterThan(0)
+            // Vue's catch block runs after waitForResponse returns and
+            // sets `errorMessage` — Playwright's `.waitFor()` polls for
+            // the locator, removing the race that produced
+            // "expected 0 to be greater than 0" intermittently.
+            page.locator("[data-testid='activate-member-error-alert']").first().waitFor()
         }
 
         assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isFalse()

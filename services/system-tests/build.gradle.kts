@@ -1,3 +1,4 @@
+import java.io.File
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -89,6 +90,46 @@ tasks.withType<Test>().configureEach {
         events(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED)
         exceptionFormat = TestExceptionFormat.FULL
         showStackTraces = true
+    }
+
+    // Sharding via env vars `SHARD_TOTAL` / `SHARD_INDEX` (1-based).
+    // CI runs N parallel matrix jobs — each scans the test classes
+    // directory deterministically (sorted by FQCN), partitions by
+    // `index = absoluteHash(fqcn) % SHARD_TOTAL`, and only includes
+    // its own slice via Gradle's `--tests` filter (`includeTestsMatching`).
+    // Locally, leaving the env vars unset runs every test in one JVM
+    // exactly as before. The hash partition is stable across runs so
+    // a class always lands on the same shard — useful for triage.
+    val shardTotal = System.getenv("SHARD_TOTAL")?.toIntOrNull()?.takeIf { it > 1 }
+    val shardIndex = System.getenv("SHARD_INDEX")?.toIntOrNull()
+    if (shardTotal != null && shardIndex != null && shardIndex in 1..shardTotal) {
+        doFirst {
+            val classes = testClassesDirs.asFileTree
+                .matching { include("**/*Test.class", "**/*SystemTest.class", "**/*IT.class") }
+                .files
+                .map { f ->
+                    // class file path → FQCN: strip the classes-dirs root and
+                    // .class suffix, swap separators for dots.
+                    val root = testClassesDirs.firstOrNull { f.startsWith(it) } ?: return@map null
+                    f.relativeTo(root).path.removeSuffix(".class").replace(File.separatorChar, '.')
+                }
+                .filterNotNull()
+                .filter { !it.contains('$') } // skip anonymous / nested $-classes
+                .sorted()
+            val mine = classes.filter { Math.floorMod(it.hashCode(), shardTotal) == shardIndex - 1 }
+            logger.lifecycle("Shard $shardIndex/$shardTotal — ${mine.size}/${classes.size} test classes")
+            filter {
+                isFailOnNoMatchingTests = false
+                if (mine.isEmpty()) {
+                    // No classes assigned — exclude everything by including a
+                    // pattern that can't match. Without this, an empty include
+                    // list would match everything.
+                    includeTestsMatching("__no_match__shard_${shardIndex}__")
+                } else {
+                    mine.forEach { includeTestsMatching(it) }
+                }
+            }
+        }
     }
 }
 

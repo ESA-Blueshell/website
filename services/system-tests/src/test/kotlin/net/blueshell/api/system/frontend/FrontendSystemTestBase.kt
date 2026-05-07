@@ -173,16 +173,7 @@ abstract class FrontendSystemTestBase {
     }
 
     protected fun waitFor(
-        // 12 s default — verified locally that every shard-1 test
-        // (including ContributionManagerPageSystemTest, the one that
-        // tripped the previous 6 s default) passes 13/13 against a
-        // freshly-started Spring Boot context + Vite dev server. The
-        // CI failure was timing only: GitHub-Actions runners under
-        // load + cold JIT meant the first few HTTP requests after
-        // boot fell off the 6 s budget. Doubling the budget costs
-        // nothing on the happy path — the loop returns as soon as
-        // `condition()` is true.
-        timeoutMs: Long = 12_000,
+        timeoutMs: Long = 6_000,
         intervalMs: Long = 200,
         onTimeoutMessage: () -> String = { "Expected condition to become true" },
         condition: () -> Boolean

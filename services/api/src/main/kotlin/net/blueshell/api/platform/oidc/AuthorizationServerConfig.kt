@@ -6,14 +6,12 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService
-import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
 import net.blueshell.api.infrastructure.security.JwtAuthFilter
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
@@ -101,19 +99,26 @@ class AuthorizationServerConfig {
             .build()
     }
 
+    // In-memory rather than JDBC: JdbcOAuth2AuthorizationService roundtrips
+    // OAuth2Authorization (incl. the principal Authentication) through Jackson
+    // to/from `oauth2_authorization.attributes` LONGTEXT. Our `UserPrincipal`
+    // (a Kotlin data class implementing UserDetails) isn't registered in
+    // SecurityJackson2Modules' allowlist, so the row written at /oauth2/authorize
+    // can't be deserialised back at /oauth2/token — Spring SAS treats the auth
+    // code as not-found and emits `invalid_grant` (which Vault's UI surfaces
+    // as "callback did not supply all required parameters", and Headlamp as
+    // "oauth2: invalid_grant"). The api Deployment is replicas=1 and auth
+    // codes are short-lived (~5 min), so an in-process store has no
+    // operational downside today; if we ever scale out, the right fix is to
+    // configure JdbcOAuth2AuthorizationService with a custom ObjectMapper that
+    // knows how to serialise UserPrincipal.
     @Bean
-    fun authorizationService(
-        jdbcTemplate: JdbcTemplate,
-        registeredClientRepository: RegisteredClientRepository,
-    ): OAuth2AuthorizationService {
-        return JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository)
+    fun authorizationService(): OAuth2AuthorizationService {
+        return InMemoryOAuth2AuthorizationService()
     }
 
     @Bean
-    fun authorizationConsentService(
-        jdbcTemplate: JdbcTemplate,
-        registeredClientRepository: RegisteredClientRepository,
-    ): OAuth2AuthorizationConsentService {
-        return JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository)
+    fun authorizationConsentService(): OAuth2AuthorizationConsentService {
+        return InMemoryOAuth2AuthorizationConsentService()
     }
 }

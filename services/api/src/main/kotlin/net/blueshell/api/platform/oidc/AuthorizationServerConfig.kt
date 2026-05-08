@@ -2,26 +2,35 @@ package net.blueshell.api.platform.oidc
 
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import net.blueshell.api.infrastructure.security.JwtAuthFilter
+import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
+import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService
-import net.blueshell.api.infrastructure.security.JwtAuthFilter
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.filter.OncePerRequestFilter
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+
+private val ADMIN_ONLY_CLIENTS = setOf("headlamp", "vault")
 
 @Configuration
 class AuthorizationServerConfig {
@@ -51,6 +60,14 @@ class AuthorizationServerConfig {
             // is missing or invalid, it's a no-op and the entry point
             // below kicks in.
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
+            // Gate non-admin users out of admin-only clients (vault,
+            // headlamp) at /oauth2/authorize. Doing this here rather
+            // than from the OAuth2TokenCustomizer means Spring SAS sees
+            // a clean 403 *before* an authorization code is issued —
+            // throwing from the customizer at /oauth2/token bubbles up
+            // as `invalid_grant`, which Vault's UI surfaces as
+            // "callback did not supply all of the required parameters".
+            .addFilterAfter(downstreamClientAuthorizationFilter(), JwtAuthFilter::class.java)
             .exceptionHandling {
                 it.authenticationEntryPoint(loginRedirectEntryPoint())
             }
@@ -58,6 +75,39 @@ class AuthorizationServerConfig {
 
         return http.build()
     }
+
+    private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
+        object : OncePerRequestFilter() {
+            override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+                request.requestURI != "/oauth2/authorize"
+
+            override fun doFilterInternal(
+                request: HttpServletRequest,
+                response: HttpServletResponse,
+                filterChain: FilterChain,
+            ) {
+                val clientId = request.getParameter("client_id")
+                if (clientId == null || clientId !in ADMIN_ONLY_CLIENTS) {
+                    filterChain.doFilter(request, response)
+                    return
+                }
+                val auth = SecurityContextHolder.getContext().authentication
+                if (auth == null || auth is AnonymousAuthenticationToken || !auth.isAuthenticated) {
+                    // Unauthenticated — let the entry point redirect to /login.
+                    filterChain.doFilter(request, response)
+                    return
+                }
+                val isAdmin = auth.authorities.any { it.authority == Role.ADMIN.reprString }
+                if (!isAdmin) {
+                    response.sendError(
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "Admin access required for $clientId",
+                    )
+                    return
+                }
+                filterChain.doFilter(request, response)
+            }
+        }
 
     /**
      * Sends anonymous callers to the SPA's /login page with the original

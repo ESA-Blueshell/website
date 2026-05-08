@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 data class OidcUserData(
+    val userId: Long,
     val username: String,
     val email: String,
     val firstName: String,
@@ -24,8 +25,10 @@ class OidcUserLoader(private val userService: UserService) {
         } catch (_: UserNotFoundException) {
             return null
         }
+        val id = user.id ?: return null
         val roles = user.roles.toSet()
         return OidcUserData(
+            userId = id,
             username = user.username,
             email = user.email,
             firstName = user.firstName,

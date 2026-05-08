@@ -121,6 +121,32 @@ EOF
 # platform/mail (stalwart admin, bounce mailbox, DKIM),
 # platform/ghcr (GitHub PAT for pulling private ghcr.io images).
 # See platform/docs/vault-bootstrap.md §4 for the full key list.
+cat <<'EOF' >/tmp/admin.hcl
+# Broad operator policy attached to OIDC-issued tokens for users with
+# ROLE_ADMIN. Mirrors the access an interactive Vault administrator
+# needs through the UI: read/write on every KV-v2 secret, manage auth
+# methods + policies + transit keys, list mounts, lookup own token,
+# inspect dynamic-secret roles. Excludes raw-storage and sys/seal so
+# accidental destruction stays gated on the unseal flow.
+path "secret/*"        { capabilities = ["create", "read", "update", "delete", "list"] }
+path "secret/data/*"   { capabilities = ["create", "read", "update", "delete", "list"] }
+path "secret/metadata/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+path "transit/*"       { capabilities = ["create", "read", "update", "delete", "list"] }
+path "database/*"      { capabilities = ["create", "read", "update", "delete", "list"] }
+path "auth/*"          { capabilities = ["create", "read", "update", "delete", "list", "sudo"] }
+path "sys/auth"        { capabilities = ["read", "list"] }
+path "sys/auth/*"      { capabilities = ["create", "read", "update", "delete", "list", "sudo"] }
+path "sys/policies/acl"   { capabilities = ["list"] }
+path "sys/policies/acl/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+path "sys/mounts"      { capabilities = ["read", "list"] }
+path "sys/mounts/*"    { capabilities = ["create", "read", "update", "delete", "list", "sudo"] }
+path "sys/health"      { capabilities = ["read"] }
+path "sys/capabilities-self" { capabilities = ["update"] }
+path "auth/token/lookup-self"  { capabilities = ["read"] }
+path "auth/token/renew-self"   { capabilities = ["update"] }
+path "auth/token/revoke-self"  { capabilities = ["update"] }
+EOF
+
 cat <<'EOF' >/tmp/vso.hcl
 path "secret/data/platform/edge" {
   capabilities = ["read"]
@@ -151,6 +177,7 @@ vault policy write api /tmp/api.hcl
 vault policy write listmonk /tmp/listmonk.hcl
 vault policy write stalwart /tmp/stalwart.hcl
 vault policy write vso /tmp/vso.hcl
+vault policy write admin /tmp/admin.hcl
 
 # --- Kubernetes auth roles ---------------------------------------------
 
@@ -249,11 +276,24 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
       oidc_client_id="vault" \
       oidc_client_secret="${OIDC_CLIENT_SECRET}" \
       default_role="admin"; then
+    # `groups_claim` + `oidc_scopes` + `bound_claims` mirror the working
+    # `personal-stack-2` setup. The api's OidcTokenCustomizer emits a
+    # `groups` claim under the `groups` scope and a `roles` claim
+    # populated from Role.name (e.g. "ADMIN"). `bound_claims` here is
+    # belt-and-braces — the api already 403s non-admins at
+    # /oauth2/authorize via downstreamClientAuthorizationFilter — but
+    # also stops a regression on that filter from leaking access. We
+    # bind on Role.reprString rather than "ROLE_ADMIN" because that is
+    # what UserPrincipal.getAuthorities surfaces and what the customizer
+    # emits into the `roles` claim.
     vault write auth/oidc/role/admin \
       bound_audiences="vault" \
       allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
       user_claim="sub" \
-      policies="default"
+      groups_claim="groups" \
+      oidc_scopes="openid,profile,email,groups" \
+      bound_claims='{"roles":["ADMIN"]}' \
+      token_policies="admin"
   else
     echo "auth/oidc/config write failed (api OIDC discovery URL likely not"
     echo "reachable yet — fresh cluster, apps-stateless not Ready). Skipping"

@@ -44,6 +44,7 @@ class RegisteredClients {
             .clientSecret("{noop}$vaultClientSecret")
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .redirectUri("https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback")
             .scope(OidcScopes.OPENID)
             .scope(OidcScopes.PROFILE)

@@ -33,7 +33,7 @@ import type Team from "@/types/Team.ts"
 import {$require} from "@/plugins/require.js"
 import {ref} from "vue"
 
-// IMPORTANT: This component is deprecated, it must not be reachable, untill Trackmania is played again in
+// IMPORTANT: This component is deprecated, it must not be reachable, until Trackmania is played again in
 // The dutch esports scene
 
 const teams = ref<Team[]>([
@@ -41,8 +41,8 @@ const teams = ref<Team[]>([
     name: "[ESABS]",
     bg: $require("@/assets/trackmaniabg.jpg"),
     players: [
-      {name: "Jarno", ign: "Poepboer"},
-      {name: "Tim", ign: "Swordie"},
+      {name: "", ign: "Poepboer"},
+      {name: "", ign: "Swordie"},
     ],
   },
 ])

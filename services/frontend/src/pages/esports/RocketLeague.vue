@@ -37,21 +37,21 @@ const teams = ref<Team[]>([
     name: "BS Squirtles",
     bg: $require("@/assets/rocketleagueesports.jpg"),
     players: [
-      {name: "Thomas Dekker", ign: "ItIsIThomas"},
-      {name: "Joy Verheijen", ign: "bluegy"},
-      {name: "Huub Hammink", ign: "boscvruchten thee"},
+      {name: "", ign: "ItIsIThomas"},
+      {name: "", ign: "bluegy"},
+      {name: "", ign: "boscvruchten thee"},
     ],
     substitutes: [
-      {name: "René Hammink", ign: "Mr. Pancake^-^"},
+      {name: "", ign: "Mr. Pancake^-^"},
     ],
   },
   {
     name: "BS Turtles",
     bg: $require("@/assets/rocketleagueesports2.jpg"),
     players: [
-      {name: "Robert Pantilie", ign: "robertP19"},
-      {name: "Finn Prinsenberg", ign: "Diagonize"},
-      {name: "Julian van den Nieuwenhuizen", ign: "Bak en Braad"},
+      {name: "", ign: "robertP19"},
+      {name: "", ign: "Diagonize"},
+      {name: "", ign: "Bak en Braad"},
     ],
   },
 ])

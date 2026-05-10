@@ -1,12 +1,8 @@
 # Bringing up the v2 stack on the Frankfurt Contabo VPS
 
-Runs once, to stand up the new NixOS + k3s + Flux stack at
-`*.v2.esa-blueshell.nl`. The old Swarm VPS at the apex keeps serving
-users throughout — there is no cutover moment here.
-
-The separate apex cutover (`esa-blueshell.nl` → new VPS, strip the
-`v2.` prefix) happens in a later PR, only after the v2 stack has been
-observed running in production traffic.
+Stands up the NixOS + k3s + Flux stack at `*.v2.esa-blueshell.nl` on
+a fresh Contabo VPS. Use this when provisioning a replacement node or
+a recovery box.
 
 ## Target VPS
 
@@ -241,8 +237,8 @@ Cloudflare zone `esa-blueshell.nl`:
   from every IngressRoute; no manual action needed.
 - `stalwart.v2.esa-blueshell.nl` A → `157.173.115.164`, **grey cloud**
   (Cloudflare cannot proxy SMTP/IMAP).
-- Leave `esa-blueshell.nl` apex and `www.esa-blueshell.nl` pointed at
-  the old VPS. The apex cutover is PR 10.
+- `esa-blueshell.nl` apex + `www.esa-blueshell.nl`: A records also
+  pointing at `157.173.115.164`, **orange cloud**.
 
 ## 10. Verify
 
@@ -266,8 +262,7 @@ vault login -method=oidc
 ```
 
 All Gatus monitors green on `https://status.v2.esa-blueshell.nl` is
-the headline check — it exercises every endpoint the apex cutover
-will eventually depend on.
+the headline check.
 
 ## 11. Retire the old admin key
 
@@ -281,7 +276,7 @@ mv ~/.ssh/blueshell-admin ~/.ssh/blueshell-admin.retired
 mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
 ```
 
-## Exit criteria for PR 9
+## Exit criteria
 
 - Gatus monitors green for ≥72 h straight.
 - No pod restarts on api / frontend / listmonk / stalwart / vault in
@@ -291,8 +286,6 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
   the user at `cluster-admin`.
 - `:services:system-tests:test` passes against
   `https://v2.esa-blueshell.nl`.
-
-Once all five hold, open PR 10 (apex cutover).
 
 ## Ongoing updates
 
@@ -309,10 +302,9 @@ Once all five hold, open PR 10 (apex cutover).
   ```
 
   The flake's `deploy.nodes.frankfurt-contabo-1.hostname` is pinned to
-  the permanent IPv4 (`157.173.115.164`), so a DNS flip during the
-  apex cutover (PR 10) doesn't send deploy-rs at a stale box.
-  `deploy-rs` auto-rolls back if the post-activation SSH health check
-  fails.
+  the permanent IPv4 (`157.173.115.164`), so a DNS change doesn't send
+  deploy-rs at a stale box. `deploy-rs` auto-rolls back if the
+  post-activation SSH health check fails.
 
 - **Apps** (anything under `platform/cluster/flux/`): Flux reconciles
   `main` every minute. Keel polls GHCR every 2 min and rolls api +

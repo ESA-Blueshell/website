@@ -246,16 +246,8 @@ else
 fi
 
 # --- OIDC auth method (vault login -method=oidc) ------------------------
-#
-# `vault login -method=oidc` redirects the operator through the website
-# api as the IdP. The api's RegisteredClients registers the `vault`
-# client with the redirect URI below; the shared secret lives at
-# secret/api:vault-oidc-client-secret (seeded by
-# scripts/seed-vault-from-env.sh — see vault-bootstrap.md §4). The block
-# short-circuits when the field is missing so a fresh Vault install does
-# not block the Job on an unsatisfiable precondition; re-running the
-# Kustomization after seeding (or letting Flux reconcile on its 2 min
-# loop) picks it up on the next pass.
+# Short-circuit when the client secret is unseeded so a fresh Vault
+# install doesn't fail the Job on an unsatisfiable precondition.
 
 if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
   if ! vault auth list -format=json | grep -q '"oidc/"'; then
@@ -264,28 +256,16 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
 
   OIDC_CLIENT_SECRET=$(vault kv get -field=vault-oidc-client-secret secret/api)
 
-  # Vault validates `oidc_discovery_url` at write time by fetching the
-  # issuer's discovery document. On a fresh cluster the api Deployment
-  # only comes up *after* apps-data is Ready (apps-stateless depends on
-  # apps-data), so the URL is unreachable during the very first run of
-  # this Job. Tolerate that failure so the Job exits 0; the next
-  # reconcile (after apps-stateless lands) re-runs this script
-  # idempotently and the write succeeds.
+  # `oidc_discovery_url` is validated at write time. Tolerate failure
+  # for the first run on a cold cluster (api not yet Ready); the next
+  # reconcile re-runs this Job idempotently.
   if vault write auth/oidc/config \
       oidc_discovery_url="https://v2.esa-blueshell.nl/api" \
       oidc_client_id="vault" \
       oidc_client_secret="${OIDC_CLIENT_SECRET}" \
       default_role="admin"; then
-    # `groups_claim` + `oidc_scopes` + `bound_claims` mirror the working
-    # `personal-stack-2` setup. The api's OidcTokenCustomizer emits a
-    # `groups` claim under the `groups` scope and a `roles` claim
-    # populated from Role.name (e.g. "ADMIN"). `bound_claims` here is
-    # belt-and-braces — the api already 403s non-admins at
-    # /oauth2/authorize via downstreamClientAuthorizationFilter — but
-    # also stops a regression on that filter from leaking access. We
-    # bind on Role.reprString rather than "ROLE_ADMIN" because that is
-    # what UserPrincipal.getAuthorities surfaces and what the customizer
-    # emits into the `roles` claim.
+    # `bound_claims` is defence-in-depth: the api already 403s non-admins
+    # at /oauth2/authorize. `roles` is emitted as Role.name ("ADMIN").
     vault write auth/oidc/role/admin \
       bound_audiences="vault" \
       allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \

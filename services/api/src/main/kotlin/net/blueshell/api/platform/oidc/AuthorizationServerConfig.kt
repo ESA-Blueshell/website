@@ -52,20 +52,10 @@ class AuthorizationServerConfig {
             .securityMatcher(authServerConfigurer.endpointsMatcher)
             .with(authServerConfigurer) {}
             .authorizeHttpRequests { it.anyRequest().authenticated() }
-            // The default SecurityConfig's filter chain doesn't apply on
-            // this matcher — without re-adding JwtAuthFilter here, a
-            // logged-in user's BSH_AUTH cookie isn't read on the
-            // /oauth2/* endpoints and Spring Authorization Server treats
-            // them as anonymous. The filter is idempotent: if the cookie
-            // is missing or invalid, it's a no-op and the entry point
-            // below kicks in.
+            // Re-apply on this matcher so BSH_AUTH cookies are read on /oauth2/* endpoints.
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
-            // Gate non-admin users out of admin-only clients (vault,
-            // headlamp) at /oauth2/authorize. Doing this here rather
-            // than from the OAuth2TokenCustomizer means Spring SAS sees
-            // a clean 403 *before* an authorization code is issued —
-            // throwing from the customizer at /oauth2/token bubbles up
-            // as `invalid_grant`, which Vault's UI surfaces as
+            // Admin gate must run at /oauth2/authorize, not at token issuance:
+            // throwing from the OAuth2TokenCustomizer surfaces in Vault as
             // "callback did not supply all of the required parameters".
             .addFilterAfter(downstreamClientAuthorizationFilter(), JwtAuthFilter::class.java)
             .exceptionHandling {
@@ -109,18 +99,8 @@ class AuthorizationServerConfig {
             }
         }
 
-    /**
-     * Sends anonymous callers to the SPA's /login page with the original
-     * api URL preserved as a `redirect` query param. After the user
-     * signs in, the SPA's Login.vue does a real browser navigation to
-     * that redirect URL (Login.vue's `isOffSpa` check matches `/api/`),
-     * which re-hits this filter chain — now authenticated — and the
-     * OIDC flow resumes.
-     *
-     * The api receives `/oauth2/authorize` (Traefik strips `/api`
-     * before forwarding); we prepend `/api` back so the redirect lands
-     * at the public URL.
-     */
+    // Traefik strips `/api` before forwarding, so re-add it so the redirect
+    // lands at the public URL and the SPA's off-SPA navigation re-enters this chain.
     private fun loginRedirectEntryPoint(): AuthenticationEntryPoint =
         AuthenticationEntryPoint { request, response, _ ->
             val publicPath = "/api${request.requestURI}"
@@ -149,19 +129,10 @@ class AuthorizationServerConfig {
             .build()
     }
 
-    // In-memory rather than JDBC: JdbcOAuth2AuthorizationService roundtrips
-    // OAuth2Authorization (incl. the principal Authentication) through Jackson
-    // to/from `oauth2_authorization.attributes` LONGTEXT. Our `UserPrincipal`
-    // (a Kotlin data class implementing UserDetails) isn't registered in
-    // SecurityJackson2Modules' allowlist, so the row written at /oauth2/authorize
-    // can't be deserialised back at /oauth2/token — Spring SAS treats the auth
-    // code as not-found and emits `invalid_grant` (which Vault's UI surfaces
-    // as "callback did not supply all required parameters", and Headlamp as
-    // "oauth2: invalid_grant"). The api Deployment is replicas=1 and auth
-    // codes are short-lived (~5 min), so an in-process store has no
-    // operational downside today; if we ever scale out, the right fix is to
-    // configure JdbcOAuth2AuthorizationService with a custom ObjectMapper that
-    // knows how to serialise UserPrincipal.
+    // In-memory rather than JDBC: UserPrincipal isn't in the Jackson allowlist
+    // SecurityJackson2Modules ships, so JdbcOAuth2AuthorizationService can't
+    // round-trip the principal. Replicas=1 means in-memory is fine; revisit
+    // if/when we scale out.
     @Bean
     fun authorizationService(): OAuth2AuthorizationService {
         return InMemoryOAuth2AuthorizationService()

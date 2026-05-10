@@ -5,14 +5,9 @@ for managing members, events, payments, and communications.
 
 Built with **Spring Boot 4 (Kotlin)** backend and **Vue.js 3 (TypeScript)** frontend.
 
-> **Platform migration in progress.** The repository is moving from a Docker Swarm
-> deployment on a Contabo VPS to a single-node **NixOS + k3s + FluxCD + Kustomize + Helm**
-> stack. The Swarm-era stack has been removed from this branch. The new `platform/`
-> tree will land in follow-up PRs.
-
 ---
 
-## Architecture (target)
+## Architecture
 
 Domain-Driven Design with a clean layered architecture:
 
@@ -22,7 +17,7 @@ Domain-Driven Design with a clean layered architecture:
 | **Frontend** | Vue.js 3, TypeScript, Vuetify 3, Vite |
 | **Database** | MariaDB 10.11 (application), PostgreSQL 17 (Listmonk) |
 | **Email (marketing)** | Listmonk v4 |
-| **Email (MTA)** | Stalwart (replaces docker-mailserver) |
+| **Email (MTA)** | Stalwart |
 | **Secrets** | HashiCorp Vault + Vault Secrets Operator |
 | **Auth / OIDC** | API issues tokens (Spring Authorization Server) for Headlamp, Vault |
 | **Reverse proxy** | Traefik v3 in k3s (Let's Encrypt DNS-01 via Cloudflare) |
@@ -33,13 +28,13 @@ Domain-Driven Design with a clean layered architecture:
 
 ---
 
-## Development Setup
+## Development setup
 
 ### Prerequisites
 
 - Docker + Docker Compose v2
-- Java 21 (optional — for running API outside Docker)
-- Node.js + Yarn Berry (optional — for running frontend outside Docker)
+- Java 21 (optional — for running the API outside Docker)
+- Node.js + Yarn Berry (optional — for running the frontend outside Docker)
 
 ### Start the dev environment
 
@@ -64,15 +59,15 @@ The dev compose files include sensible defaults. For production-like secrets,
 copy the examples:
 
 ```bash
-cp services/api/.db.example.env       services/api/.db.env
+cp services/api/.db.example.env             services/api/.db.env
 cp services/listmonk/.listmonk.example.env  services/listmonk/.listmonk.env
 ```
 
 ### Run tests
 
 ```bash
-# API unit + integration tests (will be split in PR3)
-docker compose -f docker-compose.dev.yml run --rm api ./gradlew test
+./gradlew :services:api:test
+./gradlew :services:api:integrationTest
 ```
 
 ### Generate OpenAPI TypeScript client
@@ -88,18 +83,20 @@ IntelliJ: **Remote JVM Debug → host: localhost, port: 5005**.
 
 ---
 
-## Production Deployment
+## Production deployment
 
-The previous Docker Swarm deployment is being replaced. See
-[`platform/docs/runbook.md`](platform/docs/runbook.md) for the current state of the migration.
+Production runs on a single-node NixOS + k3s + FluxCD stack. Flux reconciles
+manifests from `platform/cluster/flux/` against `main`; Keel polls
+`ghcr.io/esa-blueshell/*` for new `:latest` tags and rolls the matching
+Deployments. There is no CI deploy step — pushing to `main` is the deploy.
 
-The `build-push.yml` workflow still publishes `api` and `frontend` images to GHCR
-(`ghcr.io/esa-blueshell/*`). The `deploy.yml` workflow keeps deploying to the old
-Swarm VPS until the k3s cutover lands.
+Runbook: [`platform/docs/runbook.md`](platform/docs/runbook.md).
+
+`build-push.yml` publishes `api` and `frontend` images to GHCR.
 
 ---
 
-## Services at a Glance
+## Services at a glance
 
 | Service | Image | Internal port | Description |
 |---------|-------|---------------|-------------|
@@ -108,7 +105,6 @@ Swarm VPS until the k3s cutover lands.
 | `db` | `mariadb:10.11` | 3306 | Application database |
 | `listmonk` | `listmonk/listmonk:v4.1.0` | 9000 | Email + contact management |
 | `listmonk-db` | `postgres:17-alpine` | 5432 | Listmonk database |
-| `listmonk-setup` | `python:3.12-alpine` | — | One-time Listmonk setup job |
 
 ---
 
@@ -122,7 +118,7 @@ Swarm VPS until the k3s cutover lands.
 
 ---
 
-## API Documentation
+## API documentation
 
 - **Development:** http://localhost:8080/swagger-ui (set `SPRINGDOC_API_DOCS_ENABLED=true`)
 - **Production:** disabled (OpenAPI docs off in the prod profile)
@@ -134,7 +130,7 @@ Swarm VPS until the k3s cutover lands.
 
 1. Create a feature branch from `main`
 2. Make changes with hot reload in the dev environment
-3. Run tests: `docker compose -f docker-compose.dev.yml run --rm api ./gradlew test`
+3. Run tests: `./gradlew :services:api:test`
 4. If API endpoints changed: `./scripts/generate_openapi.sh`
 5. Open a pull request
 

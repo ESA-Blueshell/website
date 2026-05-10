@@ -39,8 +39,8 @@ const teams = ref<Team[]>([
     name: "",
     bg: $require("@/assets/geoguessr1.jpg"),
     players: [
-      {name: "Job de Ruijter", ign: "Job 404"},
-      {name: "Chris Wong", ign: "FetaBass"},
+      {name: "", ign: "Job 404"},
+      {name: "", ign: "FetaBass"},
     ],
   },
 ])

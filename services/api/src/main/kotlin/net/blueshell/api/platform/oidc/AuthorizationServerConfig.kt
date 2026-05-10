@@ -54,9 +54,12 @@ class AuthorizationServerConfig {
             .authorizeHttpRequests { it.anyRequest().authenticated() }
             // Re-apply on this matcher so BSH_AUTH cookies are read on /oauth2/* endpoints.
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
-            // Admin gate must run at /oauth2/authorize, not at token issuance:
-            // throwing from the OAuth2TokenCustomizer surfaces in Vault as
-            // "callback did not supply all of the required parameters".
+            // Spring SAS 7 turns "anonymous principal at /oauth2/authorize"
+            // into a 302 to redirect_uri with ?error=invalid_request — the
+            // AuthenticationEntryPoint never fires. Pre-empt that with our
+            // own /login redirect so the SAS 1.x UX (off-SPA re-entry)
+            // still works.
+            .addFilterAfter(anonymousAuthorizeLoginRedirect(), JwtAuthFilter::class.java)
             .addFilterAfter(downstreamClientAuthorizationFilter(), JwtAuthFilter::class.java)
             .exceptionHandling {
                 it.authenticationEntryPoint(loginRedirectEntryPoint())
@@ -65,6 +68,29 @@ class AuthorizationServerConfig {
 
         return http.build()
     }
+
+    private fun anonymousAuthorizeLoginRedirect(): OncePerRequestFilter =
+        object : OncePerRequestFilter() {
+            override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+                request.requestURI != "/oauth2/authorize"
+
+            override fun doFilterInternal(
+                request: HttpServletRequest,
+                response: HttpServletResponse,
+                filterChain: FilterChain,
+            ) {
+                val auth = SecurityContextHolder.getContext().authentication
+                if (auth != null && auth !is AnonymousAuthenticationToken && auth.isAuthenticated) {
+                    filterChain.doFilter(request, response)
+                    return
+                }
+                val publicPath = "/api${request.requestURI}"
+                val query = request.queryString
+                val originalUrl = if (!query.isNullOrEmpty()) "$publicPath?$query" else publicPath
+                val encoded = URLEncoder.encode(originalUrl, StandardCharsets.UTF_8)
+                response.sendRedirect("/login?redirect=$encoded")
+            }
+        }
 
     private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
         object : OncePerRequestFilter() {

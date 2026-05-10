@@ -1,14 +1,20 @@
 services:
   db:
     image: mariadb:10.11.10
-    networks:
-      - database
+    container_name: db
+    ports:
+      - "3307:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - data:/var/lib/mysql
       - "./0_init.sql:/docker-entrypoint-initdb.d/0_init.sql"
       - "./1_dump.sql:/docker-entrypoint-initdb.d/1_dump.sql"
+    networks:
+      - global_network
+    restart: unless-stopped
     env_file:
       - .db.env
+    environment:
+      - TZ=Europe/Amsterdam
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -17,45 +23,53 @@ services:
       start_period: 30s
 
   api:
-    image: ghcr.io/esa-blueshell/api:${IMAGE_TAG:-latest}
-    pull_policy: always
+    image: api:dev
+    pull_policy: never
     build:
       context: ../..
-      dockerfile: services/api/Dockerfile
-      # API image is a multi-stage build that compiles every module in the
-      # monorepo that :services:api depends on, so the whole repo is the
-      # context. .dockerignore keeps frontend/node_modules etc. out.
-    restart: unless-stopped
+      dockerfile: services/api/Dockerfile-dev
+    volumes:
+      # Mount the whole repo into /src so hot-reload sees api + build-logic + libs edits.
+      - ../..:/src
+      - ../../storage:/home/storage
+      - gradle-cache:/root/.gradle/caches
+      - playwright-browsers:/ms-playwright
+      - playwright-browsers:/root/.cache/ms-playwright
+      - listmonk-secrets:/run/secrets/listmonk:ro
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    networks:
+      - global_network
     env_file:
       - .api.env
     environment:
       - TZ=Europe/Amsterdam
+      - SPRING_PROFILES_ACTIVE=dev
       - APP_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
-      # Listmonk credentials — must be set; no defaults to avoid silent misconfiguration
-      - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:?LISTMONK_ADMIN_USERNAME must be set in .listmonk.env}
-      - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:?LISTMONK_ADMIN_PASSWORD must be set in .listmonk.env}
-    volumes:
-      - "../../storage:/home/storage"
-      - "listmonk-secrets:/run/secrets/listmonk:ro"
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+      - LISTMONK_FROM_ADDRESS=no-reply@localhost
+      - LISTMONK_REPLY_TO_ADDRESS=dev@localhost
+      - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:-listmonk}
+      - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:-listmonk}
     depends_on:
       db:
         condition: service_healthy
       listmonk-setup:
         condition: service_completed_successfully
-    networks:
-      - frontback
-      - database
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: [ "CMD", "curl", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 20
       start_period: 30s
 
 networks:
-  frontback:
-  database:
+  global_network:
+    driver: bridge
 
 volumes:
-  db_data:
+  data:
+  gradle-cache:
+  playwright-browsers:

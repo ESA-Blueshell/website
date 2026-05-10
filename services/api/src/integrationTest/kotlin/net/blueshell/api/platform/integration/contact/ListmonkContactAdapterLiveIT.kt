@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles
  * Listmonk credentials are resolved by Spring from the environment (LISTMONK_* vars)
  * exactly as in production. Run via Docker where the env file is loaded:
  *
- *   docker compose -f docker-compose.dev.yml run api \
+ *   docker compose run api \
  *     ./gradlew :api:test --tests "*.ListmonkContactAdapterLiveIT"
  *
  * Tests are ordered: each builds on the state left by the previous one.

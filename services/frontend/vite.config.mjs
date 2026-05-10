@@ -8,7 +8,14 @@ import istanbul from 'vite-plugin-istanbul'
 
 export default defineConfig({
     build: {
-        target: "esnext"
+        target: "esnext",
+        rollupOptions: {
+            output: {
+                entryFileNames: 'assets/[hash].js',
+                chunkFileNames: 'assets/[hash].js',
+                assetFileNames: 'assets/[hash][extname]',
+            },
+        },
     },
     css: {
         preprocessorOptions: {

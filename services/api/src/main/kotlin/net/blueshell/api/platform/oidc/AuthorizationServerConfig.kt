@@ -25,7 +25,7 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.context.SecurityContextHolderFilter
 import org.springframework.web.filter.OncePerRequestFilter
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -52,14 +52,12 @@ class AuthorizationServerConfig {
             .securityMatcher(authServerConfigurer.endpointsMatcher)
             .with(authServerConfigurer) {}
             .authorizeHttpRequests { it.anyRequest().authenticated() }
-            // Re-apply on this matcher so BSH_AUTH cookies are read on /oauth2/* endpoints.
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
-            // Spring SAS 7 turns "anonymous principal at /oauth2/authorize"
-            // into a 302 to redirect_uri with ?error=invalid_request — the
-            // AuthenticationEntryPoint never fires. Pre-empt that with our
-            // own /login redirect so the SAS 1.x UX (off-SPA re-entry)
-            // still works.
-            .addFilterAfter(anonymousAuthorizeLoginRedirect(), JwtAuthFilter::class.java)
+            // Must run before Spring SAS's OAuth2AuthorizationCodeRequestValidatingFilter
+            // (positioned before AbstractPreAuthenticatedProcessingFilter), otherwise the
+            // validating filter snapshots SecurityContext while it's still anonymous and
+            // the endpoint filter later issues `?error=invalid_request&error_description=
+            // OAuth 2.0 Parameter: principal` to the client's redirect_uri.
+            .addFilterAfter(jwtAuthFilter, SecurityContextHolderFilter::class.java)
             .addFilterAfter(downstreamClientAuthorizationFilter(), JwtAuthFilter::class.java)
             .exceptionHandling {
                 it.authenticationEntryPoint(loginRedirectEntryPoint())
@@ -68,29 +66,6 @@ class AuthorizationServerConfig {
 
         return http.build()
     }
-
-    private fun anonymousAuthorizeLoginRedirect(): OncePerRequestFilter =
-        object : OncePerRequestFilter() {
-            override fun shouldNotFilter(request: HttpServletRequest): Boolean =
-                request.requestURI != "/oauth2/authorize"
-
-            override fun doFilterInternal(
-                request: HttpServletRequest,
-                response: HttpServletResponse,
-                filterChain: FilterChain,
-            ) {
-                val auth = SecurityContextHolder.getContext().authentication
-                if (auth != null && auth !is AnonymousAuthenticationToken && auth.isAuthenticated) {
-                    filterChain.doFilter(request, response)
-                    return
-                }
-                val publicPath = "/api${request.requestURI}"
-                val query = request.queryString
-                val originalUrl = if (!query.isNullOrEmpty()) "$publicPath?$query" else publicPath
-                val encoded = URLEncoder.encode(originalUrl, StandardCharsets.UTF_8)
-                response.sendRedirect("/login?redirect=$encoded")
-            }
-        }
 
     private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
         object : OncePerRequestFilter() {

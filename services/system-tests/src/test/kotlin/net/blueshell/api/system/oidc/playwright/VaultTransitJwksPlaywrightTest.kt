@@ -105,5 +105,13 @@ class VaultTransitJwksPlaywrightTest {
         assertThat(first["kty"]?.asString()).isEqualTo("RSA")
         assertThat(first["n"]?.asString()).isNotBlank()
         assertThat(first["e"]?.asString()).isNotBlank()
+        // kid/alg/use must be present and match what VaultTransitJwtEncoder
+        // stamps into the JWT header — go-oidc-v3 (Vault) filters JWKS keys
+        // by kid and refuses to verify when there's no match.
+        assertThat(first["kid"]?.asString())
+            .withFailMessage("JWKS key must carry kid='api-jwt:v<N>' so Vault's go-oidc verifier picks it up")
+            .startsWith("api-jwt:v")
+        assertThat(first["alg"]?.asString()).isEqualTo("RS256")
+        assertThat(first["use"]?.asString()).isEqualTo("sig")
     }
 }

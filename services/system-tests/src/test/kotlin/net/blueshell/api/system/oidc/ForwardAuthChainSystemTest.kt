@@ -68,7 +68,7 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
         val response = get(
             "/oauth2/forward-auth",
-            bearer = bearerToken(member.username),
+            sessionToken = sessionTokenFor(member.username),
             headers = mapOf("X-Forwarded-Host" to host, "X-Forwarded-Uri" to "/"),
         )
 
@@ -84,7 +84,7 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
         val response = get(
             "/oauth2/forward-auth",
-            bearer = bearerToken(admin.username),
+            sessionToken = sessionTokenFor(admin.username),
             headers = mapOf("X-Forwarded-Host" to host),
         )
 
@@ -102,7 +102,7 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
         val response = get(
             "/oauth2/forward-auth",
-            bearer = bearerToken(board.username),
+            sessionToken = sessionTokenFor(board.username),
             headers = mapOf("X-Forwarded-Host" to host),
         )
 
@@ -117,7 +117,7 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
         val response = get(
             "/oauth2/forward-auth",
-            bearer = bearerToken(board.username),
+            sessionToken = sessionTokenFor(board.username),
             headers = mapOf("X-Forwarded-Host" to host),
         )
 
@@ -132,7 +132,7 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
         val response = get(
             "/oauth2/forward-auth",
-            bearer = bearerToken(board.username),
+            sessionToken = sessionTokenFor(board.username),
             headers = mapOf("X-Forwarded-Host" to "rogue.example.com"),
         )
 

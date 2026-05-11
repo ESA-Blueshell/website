@@ -70,7 +70,7 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
         val response = get(
             authorizeUrl("headlamp", pkce, redirect),
-            bearer = bearerToken(member.username),
+            sessionToken = sessionTokenFor(member.username),
         )
 
         assertThat(response.statusCode()).isEqualTo(403)
@@ -83,7 +83,7 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
         val response = get(
             authorizeUrl("vault", pkce = null, redirect = redirect),
-            bearer = bearerToken(member.username),
+            sessionToken = sessionTokenFor(member.username),
         )
 
         assertThat(response.statusCode()).isEqualTo(403)
@@ -97,7 +97,7 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
         val response = get(
             authorizeUrl("headlamp", pkce, redirect),
-            bearer = bearerToken(admin.username),
+            sessionToken = sessionTokenFor(admin.username),
         )
 
         assertThat(response.statusCode()).isEqualTo(302)
@@ -114,7 +114,7 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
         val response = get(
             authorizeUrl("vault", pkce = null, redirect = redirect),
-            bearer = bearerToken(admin.username),
+            sessionToken = sessionTokenFor(admin.username),
         )
 
         assertThat(response.statusCode()).isEqualTo(302)

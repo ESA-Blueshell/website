@@ -119,7 +119,8 @@ class OidcAuthorizePlaywrightTest {
             val response = api.get(
                 "$baseUrl/oauth2/authorize?$params",
                 RequestOptions.create()
-                    .setHeader("Authorization", "Bearer $token")
+                    .setHeader("Cookie", "BSH_AUTH=$token")
+                    .setHeader("Accept", "text/html")
                     .setMaxRedirects(0),
             )
             assertThat(response.status()).isEqualTo(302)

@@ -31,7 +31,7 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
         // 1. Authorize -> 302 with ?code=
         val authorizeResp = get(
             buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
-            bearer = bearerToken(admin.username),
+            sessionToken = sessionTokenFor(admin.username),
         )
         assertThat(authorizeResp.statusCode()).isEqualTo(302)
         val location = authorizeResp.headers().firstValue("Location").orElse("")
@@ -88,7 +88,7 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
 
         val authorizeResp = get(
             buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
-            bearer = bearerToken(admin.username),
+            sessionToken = sessionTokenFor(admin.username),
         )
         val code = OidcTestHelper.queryParam(
             authorizeResp.headers().firstValue("Location").orElse(""),

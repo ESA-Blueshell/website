@@ -6,6 +6,7 @@ import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
 import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestExecutionListeners
@@ -37,6 +38,9 @@ abstract class OidcSystemTestBase {
     @Autowired
     protected lateinit var tokenGenerator: JwtTokenGenerator
 
+    @Value($$"\${security.auth-cookie.name:BSH_AUTH}")
+    protected lateinit var authCookieName: String
+
     protected val baseUrl: String = "http://localhost:8080"
 
     /**
@@ -51,12 +55,20 @@ abstract class OidcSystemTestBase {
             .connectTimeout(Duration.ofSeconds(5))
             .build()
 
-    protected fun bearerToken(username: String): String =
+    protected fun sessionTokenFor(username: String): String =
         tokenGenerator.generateToken(username)
 
+    /**
+     * GET against the running app. Matches the browser-driven OIDC flow:
+     * session JWT carried as the BSH_AUTH cookie (not Authorization: Bearer
+     * — `.oidc()` brings in a resource-server BearerTokenAuthenticationFilter
+     * that would reject our HS256 session JWT), Accept: text/html so the
+     * SAS chain dispatches AuthenticationExceptions to our loginRedirect
+     * entry point rather than the resource-server's 401 default.
+     */
     protected fun get(
         path: String,
-        bearer: String? = null,
+        sessionToken: String? = null,
         headers: Map<String, String> = emptyMap(),
         client: HttpClient = newClient(),
     ): HttpResponse<String> {
@@ -64,7 +76,8 @@ abstract class OidcSystemTestBase {
             .uri(URI.create(if (path.startsWith("http")) path else baseUrl + path))
             .GET()
             .timeout(Duration.ofSeconds(10))
-        bearer?.let { builder.header("Authorization", "Bearer $it") }
+            .header("Accept", "text/html")
+        sessionToken?.let { builder.header("Cookie", "$authCookieName=$it") }
         headers.forEach { (k, v) -> builder.header(k, v) }
         return client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
     }

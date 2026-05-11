@@ -37,8 +37,10 @@ class VaultTransitJwkSourceTest {
     fun `initial refresh failure serves empty set then recovers on schedule`() {
         val (pem, modulus) = generateRsaPem()
         val client: VaultTransitClient = mock()
+        // NoClassDefFoundError (Error subclass) — the failure mode when
+        // bcpkix is absent is exactly this, so the catch must cover Error too.
         whenever(client.readPublicKeys(eq(keyName)))
-            .thenThrow(RuntimeException("vault down"))
+            .thenThrow(NoClassDefFoundError("simulating missing bcpkix"))
             .thenReturn(listOf(VaultPublicKey(1, pem)))
 
         val source = VaultTransitJwkSource(client, keyName).also { it.init() }

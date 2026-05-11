@@ -150,3 +150,30 @@ tasks.register<JavaExec>("installChromium") {
     mainClass.set("com.microsoft.playwright.CLI")
     args("install", "chromium")
 }
+
+// Drives `/oauth2/jwks` against a real api wired to Vault Transit. Requires
+// the compose stack to be up via the oidc-e2e profile (see
+// docker-compose.oidc-e2e.yml). Excluded from `:check`.
+val vaultOidcLiveTest by tasks.registering(Test::class) {
+    description =
+        "Runs the Vault-Transit JWKS regression test against a live api on :8080. " +
+            "Bring up docker-compose.oidc-e2e.yml first."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    shouldRunAfter(tasks.test)
+    useJUnitPlatform {
+        // Override the project-wide includeTags("system") set in
+        // tasks.withType<Test>().configureEach — we only want vault-oidc-live.
+        includeTags.clear()
+        includeTags("vault-oidc-live")
+    }
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
+    }
+    testLogging {
+        events(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED)
+        exceptionFormat = TestExceptionFormat.FULL
+        showStackTraces = true
+    }
+}

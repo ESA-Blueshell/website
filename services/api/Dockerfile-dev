@@ -2,7 +2,7 @@
 #
 # Build context: repo root (see services/api/docker-compose.dev.yml).
 
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:21-jdk-noble
 
 WORKDIR /src
 

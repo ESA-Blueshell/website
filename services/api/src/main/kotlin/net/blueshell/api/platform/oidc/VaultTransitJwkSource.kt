@@ -28,7 +28,7 @@ class VaultTransitJwkSource(
     fun init() {
         try {
             refresh()
-        } catch (ex: Exception) {
+        } catch (ex: Throwable) {
             log.error("Initial JWKS fetch from Vault failed; serving empty set until next refresh", ex)
         }
     }
@@ -37,7 +37,7 @@ class VaultTransitJwkSource(
     fun scheduledRefresh() {
         try {
             refresh()
-        } catch (ex: Exception) {
+        } catch (ex: Throwable) {
             log.warn("JWKS refresh from Vault failed; keeping previously cached set", ex)
         }
     }

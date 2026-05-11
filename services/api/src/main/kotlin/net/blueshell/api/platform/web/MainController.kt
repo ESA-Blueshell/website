@@ -8,13 +8,14 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @Tag(name = "Health")
 class MainController {
-    // `/health` is the single source of truth. The public Gatus probe at
+    // `/health` is the external-facing endpoint: the public Gatus probe at
     // `https://v2.esa-blueshell.nl/api/health` arrives here as `/health`
-    // because Traefik's apex `PathPrefix(/api)` rule now strips the
-    // `/api` prefix uniformly (see apps/edge/ingressroutes/api.yaml).
-    // The pod-level k8s probes hit port 8080 directly via tcpSocket
-    // (no path), so changing this controller's path no longer needs
-    // a lockstep manifest update.
+    // because Traefik's apex `PathPrefix(/api)` rule strips the `/api`
+    // prefix uniformly (see apps/edge/ingressroutes/api.yaml).
+    // Pod-level k8s probes use Spring Boot's
+    // /actuator/health/{liveness,readiness} on the management port (8081)
+    // instead, so they reflect real AvailabilityState rather than a
+    // hardcoded `true`.
     @GetMapping("/health")
     @PermitAll
     fun healthCheck(): Boolean {

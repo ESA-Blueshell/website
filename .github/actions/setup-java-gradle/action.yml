@@ -1,0 +1,23 @@
+name: Setup Java And Gradle
+description: Configure Temurin Java and Gradle caching for CI jobs.
+
+inputs:
+  java-version:
+    description: Java version to install.
+    required: false
+    default: '21'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        # Default is read-only off the default branch — that breaks the
+        # api-static → openapi-sync / api-tests / system-tests warm-cache
+        # handoff because api-static can't write the cache. Force writes
+        # so feature branches share build-cache like main does.
+        cache-read-only: false

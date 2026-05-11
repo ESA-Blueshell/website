@@ -1,7 +1,12 @@
-name: CI
+name: Validate
 
+# Runs on every push to a non-main branch. Main itself only triggers
+# deploy.yml (image build + push). pull_request isn't a trigger here
+# because every PR commit is also a push, so listening to both produces
+# duplicate runs.
 on:
   push:
+    branches-ignore: [main]
     paths:
       - 'services/api/**'
       - 'services/frontend/**'
@@ -23,7 +28,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -129,40 +134,18 @@ jobs:
   api-static:
     name: API compile checks
     runs-on: ubuntu-latest
-    outputs:
-      gradle-cache-key: ${{ steps.gradle-cache-key.outputs.key }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java Development Kit
-        uses: actions/setup-java@v4
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
         with:
-          distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Compute Gradle cache key
-        id: gradle-cache-key
-        run: echo "key=gradle-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
-
-      - name: Restore Gradle cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ steps.gradle-cache-key.outputs.key }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
-
       - name: Compile sources and warm Gradle cache for downstream jobs
-        # `resolveAllDependencies` (defined in kotlin-conventions) eagerly
-        # resolves every resolvable configuration on the listed projects so
-        # the Gradle cache this job persists contains the `jacocoAgent` /
-        # `jacocoAnt` artifacts that downstream Test tasks would otherwise
-        # be the first to fetch. Keeps `api-tests` and the system-test
-        # shards off `repo.maven.apache.org` entirely, side-stepping the
-        # Cloudflare-rate-limit 403 that has flaked the run before.
+        # resolveAllDependencies (in kotlin-conventions) eagerly fetches every
+        # resolvable config so downstream Test tasks don't race Maven Central.
         run: |
           ./gradlew --no-daemon --build-cache \
             :services:api:compileKotlin \
@@ -172,15 +155,6 @@ jobs:
             :services:system-tests:compileTestKotlin \
             :services:api:resolveAllDependencies \
             :services:system-tests:resolveAllDependencies
-
-      - name: Save Gradle cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ steps.gradle-cache-key.outputs.key }}
 
   api-tests:
     name: API unit and integration tests
@@ -229,21 +203,10 @@ jobs:
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
-      - name: Set up Java Development Kit
-        uses: actions/setup-java@v4
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
         with:
-          distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Restore Gradle cache from API build
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ needs.api-static.outputs.gradle-cache-key }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
 
       - name: Run API unit and integration tests
         run: |
@@ -323,10 +286,9 @@ jobs:
         run: |
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
 
-      - name: Set up Java Development Kit
-        uses: actions/setup-java@v4
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
         with:
-          distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Set up Node.js and Yarn
@@ -334,16 +296,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           yarn-version: ${{ env.YARN_VERSION }}
-
-      - name: Restore Gradle cache from API build
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ needs.api-static.outputs.gradle-cache-key }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
 
       - name: Install Playwright browser for system tests
         run: ./gradlew --no-daemon :services:system-tests:installChromium
@@ -508,21 +460,10 @@ jobs:
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
-      - name: Set up Java Development Kit
-        uses: actions/setup-java@v4
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
         with:
-          distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Restore Gradle cache from API build
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ needs.api-static.outputs.gradle-cache-key }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
 
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn

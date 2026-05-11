@@ -29,7 +29,12 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Dedupe push + pull_request for the same branch. github.head_ref is
+  # set on pull_request events; github.ref_name is the branch name on
+  # push events. Both resolve to the same value for the same branch, so
+  # the two events land in one group and cancel-in-progress kills the
+  # slower-to-start one.
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 env:

@@ -47,6 +47,21 @@ object OidcTestHelper {
     fun parseJson(body: String): JsonNode = mapper.readTree(body)
 
     /**
+     * Iterate the elements of an array-valued JsonNode and project each
+     * to a string. Jackson 3.1's `JsonNode.map` is Optional-style
+     * (applies to the whole node) and shadows Kotlin's `Iterable.map`.
+     */
+    fun stringValues(node: JsonNode?): List<String> =
+        node?.iterator()?.asSequence()?.map { it.asString() }?.toList().orEmpty()
+
+    /**
+     * Iterate the elements of an array-valued JsonNode and project via
+     * a custom mapper. Same shadowing caveat as `stringValues`.
+     */
+    fun <R> mapElements(node: JsonNode?, transform: (JsonNode) -> R): List<R> =
+        node?.iterator()?.asSequence()?.map(transform)?.toList().orEmpty()
+
+    /**
      * Form-urlencode a parameter map (for /oauth2/token POSTs).
      */
     fun formEncode(params: Map<String, String>): String =

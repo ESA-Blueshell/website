@@ -39,7 +39,8 @@ class JwksDiscoverySystemTest : OidcSystemTestBase() {
         assertThat(keys.isArray).isTrue()
         assertThat(keys.size()).isGreaterThanOrEqualTo(1)
 
-        val signing = keys.firstOrNull { it["use"]?.asString() == "sig" } ?: keys[0]
+        val keyList = OidcTestHelper.mapElements(keys) { it }
+        val signing = keyList.firstOrNull { it["use"]?.asString() == "sig" } ?: keyList[0]
         assertThat(signing["kty"]?.asString()).isEqualTo("RSA")
         assertThat(signing["n"]?.asString()).isNotBlank()
         assertThat(signing["e"]?.asString()).isNotBlank()
@@ -58,7 +59,7 @@ class JwksDiscoverySystemTest : OidcSystemTestBase() {
         assertThat(direct["keys"]).isNotNull
         // Same kid set — proves the discovery doc isn't pointing at a stale or
         // separately-generated key source.
-        val directKids = direct["keys"].map { it["kid"].asString() }.toSet()
+        val directKids = OidcTestHelper.mapElements(direct["keys"]) { it["kid"].asString() }.toSet()
         assertThat(directKids).isNotEmpty
         // We don't fetch the advertised URL (it's a public production hostname
         // from the issuer config); just sanity-check the path matches.

@@ -45,7 +45,9 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
         assertThat(response.statusCode()).isEqualTo(302)
         val location = response.headers().firstValue("Location").orElse("")
-        assertThat(location).startsWith("/login?redirect=")
+        // Tomcat resolves the relative path to absolute, so match on the
+        // `/login?redirect=` segment instead of asserting it starts the URL.
+        assertThat(location).contains("/login?redirect=")
         assertThat(location).contains(urlEncode("/oauth2/authorize"))
         assertThat(location).contains(urlEncode("client_id=headlamp"))
     }
@@ -58,7 +60,7 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
         assertThat(response.statusCode()).isEqualTo(302)
         val location = response.headers().firstValue("Location").orElse("")
-        assertThat(location).startsWith("/login?redirect=")
+        assertThat(location).contains("/login?redirect=")
         assertThat(location).contains(urlEncode("client_id=vault"))
     }
 

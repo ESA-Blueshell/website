@@ -56,21 +56,17 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
         // 3. ID token: roles + groups (admin → k8s-admin + member)
         val idClaims = OidcTestHelper.decodePayload(tokenJson["id_token"].asString())
         assertThat(idClaims["sub"].asString()).isEqualTo(admin.id!!.toString())
-        val groups = idClaims["groups"].map { it.asString() }
-        assertThat(groups).contains("k8s-admin", "member")
-        val idRoles = idClaims["roles"].map { it.asString() }
-        assertThat(idRoles).contains(Role.ADMIN.name)
+        assertThat(OidcTestHelper.stringValues(idClaims["groups"])).contains("k8s-admin", "member")
+        assertThat(OidcTestHelper.stringValues(idClaims["roles"])).contains(Role.ADMIN.name)
 
         // 4. Access token: aud, roles, username, email
         val accessClaims = OidcTestHelper.decodePayload(tokenJson["access_token"].asString())
         assertThat(accessClaims["sub"].asString()).isEqualTo(admin.id!!.toString())
-        val aud = accessClaims["aud"].map { it.asString() }
-        assertThat(aud).contains("headlamp")
+        assertThat(OidcTestHelper.stringValues(accessClaims["aud"])).contains("headlamp")
         assertThat(accessClaims["username"].asString()).isEqualTo(admin.username)
         assertThat(accessClaims["preferred_username"].asString()).isEqualTo(admin.username)
         assertThat(accessClaims["email"].asString()).isEqualTo(admin.email)
-        val accessRoles = accessClaims["roles"].map { it.asString() }
-        assertThat(accessRoles).contains(Role.ADMIN.name)
+        assertThat(OidcTestHelper.stringValues(accessClaims["roles"])).contains(Role.ADMIN.name)
     }
 
     @Test
@@ -100,7 +96,7 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
         val idClaims = OidcTestHelper.decodePayload(
             OidcTestHelper.parseJson(tokenResp.body())["id_token"].asString()
         )
-        assertThat(idClaims["groups"].map { it.asString() }).contains("member")
+        assertThat(OidcTestHelper.stringValues(idClaims["groups"])).contains("member")
     }
 
     private fun buildAuthorizeUrl(clientId: String, challenge: String, redirect: String): String {

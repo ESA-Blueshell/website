@@ -20,7 +20,7 @@ class VaultTransitJwkSourceTest {
     private val selector = JWKSelector(JWKMatcher.Builder().build())
 
     @Test
-    fun `initial refresh succeeds and get returns the cached key`() {
+    fun `initial refresh succeeds and get returns the cached key with kid alg use`() {
         val (pem, modulus) = generateRsaPem()
         val client: VaultTransitClient = mock()
         whenever(client.readPublicKeys(eq(keyName)))
@@ -30,7 +30,13 @@ class VaultTransitJwkSourceTest {
 
         val keys = source.get(selector, null)
         assertThat(keys).hasSize(1)
-        assertThat((keys.single() as RSAKey).modulus.decodeToBigInteger()).isEqualTo(modulus)
+        val rsa = keys.single() as RSAKey
+        assertThat(rsa.modulus.decodeToBigInteger()).isEqualTo(modulus)
+        // Must match the kid VaultTransitJwtEncoder writes into the JWT header;
+        // go-oidc-v3 (Vault) filters JWKS keys by kid and would skip otherwise.
+        assertThat(rsa.keyID).isEqualTo("$keyName:v1")
+        assertThat(rsa.algorithm?.name).isEqualTo("RS256")
+        assertThat(rsa.keyUse?.identifier()).isEqualTo("sig")
     }
 
     @Test

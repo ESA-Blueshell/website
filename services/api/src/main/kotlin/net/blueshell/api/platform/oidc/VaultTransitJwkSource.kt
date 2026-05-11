@@ -1,7 +1,9 @@
 package net.blueshell.api.platform.oidc
 
+import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.JWKSelector
 import com.nimbusds.jose.jwk.JWKSet
+import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
@@ -47,7 +49,17 @@ class VaultTransitJwkSource(
 
     private fun refresh() {
         val publicKeys = client.readPublicKeys(keyName)
-        val jwks = publicKeys.map { RSAKey.parseFromPEMEncodedObjects(it.publicKeyPem) as RSAKey }
+        // kid/alg/use MUST be set on the published JWK: go-oidc-v3 (Vault's verifier)
+        // skips any JWKS key whose `kid` doesn't match the JWT header's `kid`, and
+        // VaultTransitJwtEncoder writes kid="$keyName:v$version" into the header.
+        val jwks = publicKeys.map { vk ->
+            val parsed = RSAKey.parseFromPEMEncodedObjects(vk.publicKeyPem) as RSAKey
+            RSAKey.Builder(parsed)
+                .keyID("$keyName:v${vk.keyVersion}")
+                .algorithm(JWSAlgorithm.RS256)
+                .keyUse(KeyUse.SIGNATURE)
+                .build()
+        }
         if (jwks.isEmpty()) error("Vault returned no public keys for transit key '$keyName'")
         current.set(JWKSet(jwks))
     }

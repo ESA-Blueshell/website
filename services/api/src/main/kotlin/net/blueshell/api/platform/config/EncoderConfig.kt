@@ -12,10 +12,7 @@ class EncoderConfig {
     @Bean
     fun passwordEncoder(): PasswordEncoder =
         (PasswordEncoderFactories.createDelegatingPasswordEncoder() as DelegatingPasswordEncoder).apply {
-            // User passwords are stored as raw BCrypt hashes without an "{id}" prefix,
-            // while OAuth client secrets registered with Spring Authorization Server
-            // use prefixes like "{noop}<vault-secret>" — DelegatingPasswordEncoder
-            // needs both to interoperate.
+            // Fallback so existing prefix-less BCrypt user-password hashes keep matching.
             setDefaultPasswordEncoderForMatches(BCryptPasswordEncoder())
         }
 }

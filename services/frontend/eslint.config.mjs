@@ -66,7 +66,7 @@ export default [
         },
     },
     {
-        files: ['vite.config.mjs'],
+        files: ['vite.config.mjs', 'playwright.config.ts'],
         languageOptions: {
             globals: {
                 ...globals.node,

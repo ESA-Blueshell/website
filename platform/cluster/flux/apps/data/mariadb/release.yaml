@@ -33,8 +33,8 @@ spec:
     image:
       repository: bitnamilegacy/mariadb
       # Pin MariaDB 10.11 LTS to match the old VPS and the rest of the
-      # codebase (docker-compose.yml, CI workflows, services/api/docker-
-      # compose.dev.yml — all pinned to mariadb:10.11.10). Bitnami chart
+      # codebase (services/api/docker-compose.yml + CI workflows — all
+      # pinned to mariadb:10.11.10). Bitnami chart
       # 18.x defaults to MariaDB 11.x, which tightened a number of DDL
       # rules (e.g. refusing `MODIFY COLUMN` on a column referenced by a
       # foreign key — ERROR 1832) that our Flyway V28 migration

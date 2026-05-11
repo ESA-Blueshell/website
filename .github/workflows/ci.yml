@@ -18,7 +18,8 @@ on:
       - 'platform/**'
       - '.github/actions/**'
       - '.github/workflows/**'
-      - 'docker-compose.dev.yml'
+      - 'docker-compose.yml'
+      - 'services/*/docker-compose.yml'
   workflow_dispatch:
 
 concurrency:

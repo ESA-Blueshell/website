@@ -9,6 +9,7 @@ import net.blueshell.api.domain.user.application.exception.UserNotFoundException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
+import org.springframework.security.web.context.SecurityContextRepository
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
@@ -18,7 +19,8 @@ class JwtAuthFilter(
     private val jwtTokenUtil: JwtTokenUtil,
     private val jwtRevocationService: JwtRevocationService,
     private val userService: UserService,
-    private val authTokenCookieService: AuthTokenCookieService
+    private val authTokenCookieService: AuthTokenCookieService,
+    private val securityContextRepository: SecurityContextRepository,
 ) :
     OncePerRequestFilter() {
     @Throws(ServletException::class, IOException::class)
@@ -58,7 +60,12 @@ class JwtAuthFilter(
                 principal, null, principal.authorities
             )
             auth.details = WebAuthenticationDetailsSource().buildDetails(request)
-            SecurityContextHolder.getContext().authentication = auth
+            // saveContext is required under requireExplicitSave=true so
+            // deferred resolvers (e.g. SAS authorize) see the principal.
+            val context = SecurityContextHolder.createEmptyContext()
+            context.authentication = auth
+            SecurityContextHolder.setContext(context)
+            securityContextRepository.saveContext(context, request, response)
         }
 
         filterChain.doFilter(request, response)

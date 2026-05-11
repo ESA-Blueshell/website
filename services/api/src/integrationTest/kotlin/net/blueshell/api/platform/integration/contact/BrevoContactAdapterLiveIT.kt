@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles
  * Brevo credentials are resolved by Spring from the environment (BREVO_API_KEY etc.)
  * exactly as in production. Run via Docker where the env file is loaded:
  *
- *   docker compose -f docker-compose.dev.yml run api \
+ *   docker compose run api \
  *     ./gradlew :api:test --tests "*.BrevoContactAdapterLiveIT"
  *
  * Tests are ordered: each builds on the state left by the previous one.

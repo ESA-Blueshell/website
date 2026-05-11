@@ -39,7 +39,7 @@ Domain-Driven Design with a clean layered architecture:
 ### Start the dev environment
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d
+docker compose up -d
 ```
 
 This starts:
@@ -55,7 +55,7 @@ This starts:
 
 ### Environment files
 
-The dev compose files include sensible defaults. For production-like secrets,
+The compose files include sensible defaults. For production-like secrets,
 copy the examples:
 
 ```bash

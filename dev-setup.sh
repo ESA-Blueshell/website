@@ -12,7 +12,7 @@
 #      (required by docker-mailserver with SSL_TYPE=self-signed)
 #
 # After running this script:
-#   docker compose -f docker-compose.dev.yml up
+#   docker compose up
 # =============================================================================
 set -euo pipefail
 
@@ -79,7 +79,7 @@ fi
 # ── services/listmonk/.listmonk.env ───────────────────────────────────────────
 LISTMONK_ENV="${SCRIPT_DIR}/services/listmonk/.listmonk.env"
 if [[ ! -f "${LISTMONK_ENV}" ]]; then
-  # Credentials match the hardcoded values in services/listmonk/docker-compose.dev.yml
+  # Credentials match the hardcoded values in services/listmonk/docker-compose.yml
   # so Listmonk and the API agree without extra config.
   cat > "${LISTMONK_ENV}" <<'EOF'
 LISTMONK_DB_PASSWORD=listmonk
@@ -175,5 +175,5 @@ fi
 echo ""
 echo "==> Done. Start the dev environment with:"
 echo ""
-echo "    docker compose -f docker-compose.dev.yml up"
+echo "    docker compose up"
 echo ""

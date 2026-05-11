@@ -21,15 +21,15 @@ if ! docker compose version >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ ! -f "docker-compose.dev.yml" ]; then
-  echo "docker-compose.dev.yml not found in current directory" >&2
+if [ ! -f "docker-compose.yml" ]; then
+  echo "docker-compose.yml not found in current directory" >&2
   exit 1
 fi
 
 # ---- Fetch Blueshell spec from running API container ----
 
 echo "Fetching Blueshell OpenAPI spec from API container..."
-docker compose -f docker-compose.dev.yml exec -T api sh -c \
+docker compose exec -T api sh -c \
   "curl -fsSS http://localhost:8080/v3/api-docs" > "${API_OPENAPI_SPEC%.yaml}.raw.json"
 
 # ---- Shared steps ----
@@ -46,8 +46,8 @@ echo "Generating frontend TypeScript clients..."
 # but forces a recreate when mounts or env have drifted (e.g. after
 # the openapi.yaml → openapi.json rename). Without this, `exec` runs
 # against a stale container that still has the old bind-mounts.
-docker compose -f docker-compose.dev.yml up -d frontend
-docker compose -f docker-compose.dev.yml exec frontend sh -c \
+docker compose up -d frontend
+docker compose exec frontend sh -c \
   "cd /usr/app && yarn gen:all && (yarn lint:gen || true)"
 
 echo "OpenAPI spec and frontend clients generated successfully."

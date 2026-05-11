@@ -7,7 +7,7 @@ export default defineConfig({
     timeout: 15_000,
   },
   fullyParallel: true,
-  workers: process.env.CI ? 2 : undefined,
+  workers: process.env.CI ? 4 : undefined,
   retries: 0,
   reporter: "list",
   use: {

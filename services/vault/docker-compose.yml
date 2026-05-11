@@ -1,0 +1,40 @@
+services:
+  vault:
+    image: hashicorp/vault:1.18
+    profiles: [oidc-e2e]
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: http://127.0.0.1:8200
+    ports:
+      - "8200:8200"
+    networks:
+      - global_network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1:8200/v1/sys/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  vault-init:
+    image: hashicorp/vault:1.18
+    profiles: [oidc-e2e]
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root
+    networks:
+      - global_network
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        # Transit engine + api-jwt RSA key (OIDC needs RSA, default is ed25519).
+        vault secrets enable -path=transit transit || true
+        vault write -f transit/keys/api-jwt type=rsa-2048
+        vault read transit/keys/api-jwt

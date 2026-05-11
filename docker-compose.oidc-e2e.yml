@@ -1,0 +1,20 @@
+# Override that activates the oidc-e2e profile (Vault + transit-signing api).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.oidc-e2e.yml \
+#     --profile oidc-e2e up -d
+#   curl http://localhost:8080/oauth2/jwks
+
+services:
+  api:
+    depends_on: !reset
+      db:
+        condition: service_healthy
+      vault-init:
+        condition: service_completed_successfully
+    environment:
+      - AUTH_TRANSIT_ENABLED=true
+      - VAULT_ENABLED=true
+      - VAULT_ADDR=http://vault:8200
+      - SPRING_CLOUD_VAULT_TOKEN=root
+      - AUTH_ISSUER=http://localhost:8080

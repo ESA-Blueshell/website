@@ -47,12 +47,18 @@ object OidcTestHelper {
     fun parseJson(body: String): JsonNode = mapper.readTree(body)
 
     /**
-     * Iterate the elements of an array-valued JsonNode and project each
-     * to a string. Jackson 3.1's `JsonNode.map` is Optional-style
-     * (applies to the whole node) and shadows Kotlin's `Iterable.map`.
+     * Project a JsonNode that may hold either a single string or an
+     * array of strings. JWT `aud` is one such claim: single-audience
+     * tokens serialize as a string, multi-audience as an array.
+     * Jackson 3.1's `JsonNode.map` is Optional-style (applies to the
+     * whole node) and shadows Kotlin's `Iterable.map`, hence the
+     * explicit iterator dance.
      */
-    fun stringValues(node: JsonNode?): List<String> =
-        node?.iterator()?.asSequence()?.map { it.asString() }?.toList().orEmpty()
+    fun stringValues(node: JsonNode?): List<String> = when {
+        node == null || node.isMissingNode || node.isNull -> emptyList()
+        node.isArray -> node.iterator().asSequence().map { it.asString() }.toList()
+        else -> listOf(node.asString())
+    }
 
     /**
      * Iterate the elements of an array-valued JsonNode and project via

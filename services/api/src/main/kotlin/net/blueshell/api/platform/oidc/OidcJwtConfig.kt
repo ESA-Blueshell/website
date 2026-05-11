@@ -44,13 +44,7 @@ class OidcJwtConfig {
         vaultClient: VaultTransitClient,
         @Value("\${auth.transit.key-name:api-jwt}") keyName: String,
     ): JWKSource<SecurityContext> {
-        return JWKSource { selector, _ ->
-            val publicKeys = vaultClient.readPublicKeys(keyName)
-            val jwks = publicKeys.map { vk ->
-                RSAKey.parseFromPEMEncodedObjects(vk.publicKeyPem) as RSAKey
-            }
-            selector.select(JWKSet(jwks))
-        }
+        return VaultTransitJwkSource(vaultClient, keyName)
     }
 
     @Bean

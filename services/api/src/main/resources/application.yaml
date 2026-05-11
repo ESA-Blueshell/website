@@ -213,6 +213,7 @@ auth:
   transit:
     enabled: ${AUTH_TRANSIT_ENABLED:false}
     key-name: ${AUTH_TRANSIT_KEY_NAME:api-jwt}
+    jwks-refresh-ms: ${AUTH_TRANSIT_JWKS_REFRESH_MS:300000}
   clients:
     vault:
       secret: ${VAULT_OIDC_CLIENT_SECRET:changeme}

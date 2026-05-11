@@ -15,3 +15,9 @@ runs:
         distribution: temurin
         java-version: ${{ inputs.java-version }}
     - uses: gradle/actions/setup-gradle@v6
+      with:
+        # Default is read-only off the default branch — that breaks the
+        # api-static → openapi-sync / api-tests / system-tests warm-cache
+        # handoff because api-static can't write the cache. Force writes
+        # so feature branches share build-cache like main does.
+        cache-read-only: false

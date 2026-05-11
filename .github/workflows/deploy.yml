@@ -42,7 +42,6 @@ jobs:
           base: ${{ github.event.before }}
           filters: |
             workflow:
-              - '.github/workflows/build-push.yml'
               - '.github/workflows/deploy.yml'
             api:
               - 'services/api/**'

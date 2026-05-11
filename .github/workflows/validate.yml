@@ -1,11 +1,10 @@
 name: Validate
 
-# Runs the full validation suite on every PR to main and on every push
-# to a non-main branch. Main itself only triggers deploy.yml (image
-# build + push); PRs are the gate that proves a change is mergeable.
+# Runs on every push to a non-main branch. Main itself only triggers
+# deploy.yml (image build + push). pull_request isn't a trigger here
+# because every PR commit is also a push, so listening to both produces
+# duplicate runs.
 on:
-  pull_request:
-    branches: [main]
   push:
     branches-ignore: [main]
     paths:
@@ -29,12 +28,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # Dedupe push + pull_request for the same branch. github.head_ref is
-  # set on pull_request events; github.ref_name is the branch name on
-  # push events. Both resolve to the same value for the same branch, so
-  # the two events land in one group and cancel-in-progress kills the
-  # slower-to-start one.
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:

@@ -210,30 +210,52 @@ spec:
           ports:
             - containerPort: 8080
               name: http
-          # All probes are tcpSocket rather than httpGet because
-          # SecurityConfig.kt registers Spring's HttpsRedirectFilter in
-          # production (`app.security.require-https=true`, enforced by
-          # ProductionSecurityHardeningGuard which fails startup if you
-          # set it to false outside dev/test). The filter throws HTTP
-          # 500 on any in-cluster HTTP request whose port has no
-          # corresponding HTTPS port mapping — the kubelet probe is
-          # exactly that. tcpSocket avoids the filter entirely; the
-          # probe just checks Tomcat is bound to 8080. Edge HTTP
-          # behaviour is unaffected (Traefik terminates TLS and
-          # forwards X-Forwarded-Proto).
+            # Spring Boot actuator runs on a separate management port
+            # (management.server.port=8081 in application.yaml). Probes
+            # target this port so they bypass the main filter chain's
+            # HTTPS redirect entirely; SecurityConfig.actuatorChain
+            # additionally permits unauthenticated access to /actuator/**.
+            - containerPort: 8081
+              name: management
+          # Real HTTP health probes against Spring Boot's
+          # /actuator/health/{liveness,readiness} group endpoints.
+          # Tomcat binding alone (the old tcpSocket probe) said nothing
+          # about whether Flyway, Hibernate, Vault and the OAuth2
+          # Authorization Server had finished initializing — the api
+          # was being marked Ready while in-flight requests still hit
+          # half-initialized beans. The actuator probes are wired to
+          # Spring's AvailabilityState, which only flips to
+          # ACCEPTING_TRAFFIC after the ApplicationStartedEvent fires
+          # and all HealthIndicators (db, diskSpace, ping, …) report UP.
+          #
+          # startupProbe is generous on purpose: cold boot with Flyway
+          # migrations, Hibernate metadata scan, and Vault Agent
+          # sidecar handshake can take several minutes on first deploy
+          # of a new image, and we'd rather Kubernetes wait than
+          # crashloop a healthy-but-slow pod. failureThreshold * period
+          # = 5s * 180 = 15 minutes before the kubelet gives up.
+          # Once startup optimisation work lands, this can be tightened.
           startupProbe:
-            tcpSocket:
-              port: http
+            httpGet:
+              path: /actuator/health/readiness
+              port: management
             periodSeconds: 5
-            failureThreshold: 60
+            failureThreshold: 180
+            timeoutSeconds: 3
           readinessProbe:
-            tcpSocket:
-              port: http
+            httpGet:
+              path: /actuator/health/readiness
+              port: management
+            periodSeconds: 10
             timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
-            tcpSocket:
-              port: http
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+            periodSeconds: 20
             timeoutSeconds: 5
+            failureThreshold: 6
           resources:
             requests:
               cpu: 500m

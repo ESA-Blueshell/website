@@ -7,6 +7,7 @@ import net.blueshell.api.infrastructure.security.permission.CompositePermissionE
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -86,6 +87,21 @@ class SecurityConfig(
             cookie.secure(true)
         }
         return tokenRepository
+    }
+
+    // Dedicated chain for Spring Boot actuator endpoints. Lives at @Order(0)
+    // so it runs before the @Order(3) authChain that calls redirectToHttps —
+    // kubelet probes speak plain HTTP, and a 302 to https from a permitAll
+    // path would still fail the probe. CSRF disabled (probes have no token)
+    // and anyRequest().permitAll() so in-cluster scrapers (kubelet,
+    // Prometheus, Gatus) can reach health/prometheus without a JWT.
+    @Bean
+    @Order(0)
+    fun actuatorChain(http: HttpSecurity): SecurityFilterChain {
+        http.securityMatcher(EndpointRequest.toAnyEndpoint())
+            .csrf { it.disable() }
+            .authorizeHttpRequests { it.anyRequest().permitAll() }
+        return http.build()
     }
 
     @Bean

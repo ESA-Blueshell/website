@@ -67,11 +67,27 @@ class ForwardAuthController(
             Role.ADMIN
         }
 
+        // SPAs (Stalwart webadmin, Headlamp, …) fetch their own /api/* via XHR.
+        // A 302 to v2.esa-blueshell.nl/login auto-follows cross-origin and the
+        // browser blocks it with CORS, surfacing as a generic network error in
+        // the SPA. 401 lets the SPA show a proper "session expired" state.
+        val wantsHtml = request.getHeader(HttpHeaders.ACCEPT).orEmpty().contains("text/html")
+
         if (principal == null) {
-            return redirect("$frontendBaseUrl/login?redirect=${urlEncode(originalUrl)}")
+            return if (wantsHtml) {
+                redirect("$frontendBaseUrl/login?redirect=${urlEncode(originalUrl)}")
+            } else {
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .header(HttpHeaders.WWW_AUTHENTICATE, """Bearer realm="$frontendBaseUrl/login"""")
+                    .build()
+            }
         }
         if (!principal.hasAuthority(required)) {
-            return redirect("$frontendBaseUrl/unauthorized?service=${urlEncode(forwardedHost)}")
+            return if (wantsHtml) {
+                redirect("$frontendBaseUrl/unauthorized?service=${urlEncode(forwardedHost)}")
+            } else {
+                ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+            }
         }
         return ResponseEntity.ok()
             .header("X-User-Id", principal.id.toString())

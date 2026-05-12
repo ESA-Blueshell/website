@@ -535,7 +535,7 @@ object TestHelper {
      * committee. `role` is optional (matches the entity's nullable
      * column).
      */
-    fun addCommitteeMember(committeeId: Long, username: String, role: String? = null) {
+    fun addCommitteeMember(committeeId: Long, username: String, role: String? = "Member") {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
             conn.prepareStatement(

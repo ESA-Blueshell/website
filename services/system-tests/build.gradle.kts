@@ -80,13 +80,16 @@ tasks.withType<Test>().configureEach {
         includeTags("system")
     }
     systemProperty("spring.profiles.active", "test")
-    // Propagate -Dsystem.frontend.url=… from the gradle invocation to the
-    // test JVM. Without this the forked test picks up the default from
-    // application.properties (http://frontend:3000) which is the dev-compose
-    // hostname, not valid in CI where the frontend is served on localhost.
-    System.getProperty("system.frontend.url")
-        ?.takeIf { it.isNotBlank() }
-        ?.let { systemProperty("system.frontend.url", it) }
+    // Propagate every `-Dsystem.*` and `-Dtest.*` flag from the gradle
+    // invocation into the forked test JVM. Without this the JVM falls
+    // back to its built-in defaults — the frontend reads as the
+    // dev-compose hostname instead of the CI loopback, and `TestHelper`'s
+    // JDBC URL points at the `blueshell` schema rather than `blueshell-test`.
+    gradle.startParameter.systemPropertiesArgs.forEach { (key, value) ->
+        if (key.startsWith("test.") || key.startsWith("system.")) {
+            systemProperty(key, value)
+        }
+    }
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
     }

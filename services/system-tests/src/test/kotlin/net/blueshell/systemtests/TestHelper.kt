@@ -41,10 +41,13 @@ object TestHelper {
     fun givenApi(): RequestSpecification = given().relaxedHTTPSValidation()
 
     /**
-     * Fetch an XSRF-TOKEN cookie + matching `X-XSRF-TOKEN` header from
-     * `GET /csrf`. State-changing requests against the api need both
-     * (Spring Security's `CookieCsrfTokenRepository.withHttpOnlyFalse`
-     * issues a cookie that the api also expects echoed in the header).
+     * Build a request that carries a fresh CSRF round-trip. The api
+     * uses Spring Security's BREACH-protected token: the
+     * `Set-Cookie XSRF-TOKEN=` value is XOR-encoded per request, and
+     * `GET /csrf` returns the raw token in its JSON body. State-
+     * changing requests have to send the cookie value verbatim and the
+     * body token as `X-XSRF-TOKEN`; the frontend follows the same
+     * shape in `services/frontend/src/services/api/blueshell.runtime.ts`.
      */
     fun givenCsrfApi(): RequestSpecification {
         val csrfResponse = retryOnConnectionFailure {
@@ -53,11 +56,13 @@ object TestHelper {
         require(csrfResponse.statusCode == 200) {
             "GET /csrf returned ${csrfResponse.statusCode}: ${csrfResponse.asString()}"
         }
-        val token = csrfResponse.cookie("XSRF-TOKEN")
+        val cookieValue = csrfResponse.cookie("XSRF-TOKEN")
             ?: error("no XSRF-TOKEN cookie in /csrf response")
+        val bodyToken = csrfResponse.jsonPath().getString("token")
+            ?: error("no token field in /csrf response body")
         return givenApi()
-            .cookie("XSRF-TOKEN", token)
-            .header("X-XSRF-TOKEN", token)
+            .cookie("XSRF-TOKEN", cookieValue)
+            .header("X-XSRF-TOKEN", bodyToken)
     }
 
     /**

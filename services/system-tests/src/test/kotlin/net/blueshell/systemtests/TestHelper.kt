@@ -181,6 +181,36 @@ object TestHelper {
     }
 
     /**
+     * Run the api's user-erasure flow against `username`. A plain
+     * JDBC soft-delete is not enough: `UserErasureService.deleteUser`
+     * also anonymises identifying columns, sets `enabled = false`,
+     * drops the member-profile / address links, and writes a
+     * `DeletedUser` snapshot the address manager / recovery manager
+     * panels read from. The simplest reproduction is to register a
+     * fresh admin, log them in, and post `DELETE /users/{id}` against
+     * the target — the api then runs the same service it would for a
+     * real admin click.
+     */
+    fun eraseUser(username: String) {
+        val target = findUser(username) ?: error("No active user with username=$username")
+        val admin = registerActivateAndPromote(
+            role = "ADMIN",
+            username = "eraser_${UUID.randomUUID().toString().take(8)}",
+        )
+        val cookies = login(admin)
+        val response = retryOnConnectionFailure {
+            givenCsrfApi()
+                .baseUri(apiBaseUrl)
+                .cookie(TestEnvironment.authCookieName, cookies.auth)
+                .`when`()
+                .delete("/users/${target.id}")
+        }
+        require(response.statusCode == 204) {
+            "DELETE /users/${target.id} returned ${response.statusCode}: ${response.asString()}"
+        }
+    }
+
+    /**
      * Toggle `users.enabled`. Used to mint a deliberately-disabled
      * account for tests that exercise the login-blocked path, and
      * internally to activate freshly-registered users.

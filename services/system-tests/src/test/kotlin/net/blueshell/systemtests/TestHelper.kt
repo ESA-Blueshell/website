@@ -181,22 +181,32 @@ object TestHelper {
     }
 
     /**
-     * Soft-delete a user. Sets `deleted_at = NOW()` and bumps `version`,
-     * matching the `@SQLDelete` annotation on `User`. Used by tests
-     * that previously called `UserErasureService.deleteUser(...)` to
-     * remove a user without hard-deleting them.
+     * Run the api's user-erasure flow against `username`. A plain
+     * JDBC soft-delete is not enough: `UserErasureService.deleteUser`
+     * also anonymises identifying columns, sets `enabled = false`,
+     * drops the member-profile / address links, and writes a
+     * `DeletedUser` snapshot the address manager / recovery manager
+     * panels read from. The simplest reproduction is to register a
+     * fresh admin, log them in, and post `DELETE /users/{id}` against
+     * the target — the api then runs the same service it would for a
+     * real admin click.
      */
-    fun softDeleteUser(username: String) {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "UPDATE users SET deleted_at = NOW(), version = version + 1 " +
-                    "WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setString(1, username)
-                require(stmt.executeUpdate() == 1) {
-                    "Failed to soft-delete username=$username"
-                }
-            }
+    fun eraseUser(username: String) {
+        val target = findUser(username) ?: error("No active user with username=$username")
+        val admin = registerActivateAndPromote(
+            role = "ADMIN",
+            username = "eraser_${UUID.randomUUID().toString().take(8)}",
+        )
+        val cookies = login(admin)
+        val response = retryOnConnectionFailure {
+            givenCsrfApi()
+                .baseUri(apiBaseUrl)
+                .cookie(TestEnvironment.authCookieName, cookies.auth)
+                .`when`()
+                .delete("/users/${target.id}")
+        }
+        require(response.statusCode == 204) {
+            "DELETE /users/${target.id} returned ${response.statusCode}: ${response.asString()}"
         }
     }
 

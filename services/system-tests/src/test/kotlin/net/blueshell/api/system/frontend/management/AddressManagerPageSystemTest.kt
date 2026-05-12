@@ -122,7 +122,7 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
         val guest = TestHelper.registerActivateAndPromote("GUEST")
         val guestId = TestHelper.findUser(guest.username)!!.id
 
-        TestHelper.softDeleteUser(guest.username)
+        TestHelper.eraseUser(guest.username)
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
         assertThat(loginStatus).isEqualTo(200)

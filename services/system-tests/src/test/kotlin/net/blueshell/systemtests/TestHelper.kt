@@ -506,6 +506,113 @@ object TestHelper {
         }
 
     /**
+     * Insert a `committees` row. Returns the new committee id.
+     */
+    fun createCommittee(
+        name: String = "Committee ${UUID.randomUUID().toString().take(8)}",
+        description: String = "Test committee",
+    ): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO committees (name, description) VALUES (?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setString(1, name)
+                stmt.setString(2, description)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT committees produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
+     * Insert a `committee_members` row linking the given user to a
+     * committee. `role` is optional (matches the entity's nullable
+     * column).
+     */
+    fun addCommitteeMember(committeeId: Long, username: String, role: String? = null) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "INSERT INTO committee_members (committee_id, user_id, role) VALUES (?, ?, ?)",
+            ).use { stmt ->
+                stmt.setLong(1, committeeId)
+                stmt.setLong(2, userId)
+                stmt.setString(3, role)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
+    /**
+     * Insert an `events` row. Returns the new event id.
+     */
+    fun createEvent(
+        committeeId: Long?,
+        title: String,
+        startTime: java.time.Instant = java.time.Instant.now().plusSeconds(7 * 24 * 3600),
+        endTime: java.time.Instant = startTime.plusSeconds(3600),
+        description: String? = "Event description",
+        location: String? = "Campus",
+        approved: Boolean = false,
+        signUp: Boolean = false,
+        membersOnly: Boolean = false,
+    ): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO events (committee_id, title, description, location, start_time, end_time, " +
+                    "approved, members_only, sign_up) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                if (committeeId != null) stmt.setLong(1, committeeId) else stmt.setNull(1, java.sql.Types.BIGINT)
+                stmt.setString(2, title)
+                stmt.setString(3, description)
+                stmt.setString(4, location)
+                stmt.setTimestamp(5, java.sql.Timestamp.from(startTime))
+                stmt.setTimestamp(6, java.sql.Timestamp.from(endTime))
+                stmt.setBoolean(7, approved)
+                stmt.setBoolean(8, membersOnly)
+                stmt.setBoolean(9, signUp)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT events produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
+     * Read an `events` row by id. Returns null when the event was
+     * soft-deleted or never existed.
+     */
+    fun findEvent(eventId: Long): EventRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id, title, description, location, approved, sign_up, members_only " +
+                    "FROM events WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, eventId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    EventRow(
+                        id = rs.getLong("id"),
+                        title = rs.getString("title"),
+                        description = rs.getString("description"),
+                        location = rs.getString("location"),
+                        approved = rs.getBoolean("approved"),
+                        signUp = rs.getBoolean("sign_up"),
+                        membersOnly = rs.getBoolean("members_only"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
      * Attach a `member_profiles` row to a user via `POST /memberProfiles`.
      * Logs the user in to satisfy the controller's `hasPermission(userId,
      * 'User', 'write')` guard. Defaults cover the columns the api marks
@@ -610,6 +717,16 @@ object TestHelper {
         val queuedAt: java.time.Instant?,
         val startedAt: java.time.Instant?,
         val finishedAt: java.time.Instant?,
+    )
+
+    data class EventRow(
+        val id: Long,
+        val title: String,
+        val description: String?,
+        val location: String?,
+        val approved: Boolean,
+        val signUp: Boolean,
+        val membersOnly: Boolean,
     )
 
     data class AddressRow(

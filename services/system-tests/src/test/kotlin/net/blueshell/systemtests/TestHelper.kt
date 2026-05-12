@@ -41,6 +41,26 @@ object TestHelper {
     fun givenApi(): RequestSpecification = given().relaxedHTTPSValidation()
 
     /**
+     * Fetch an XSRF-TOKEN cookie + matching `X-XSRF-TOKEN` header from
+     * `GET /csrf`. State-changing requests against the api need both
+     * (Spring Security's `CookieCsrfTokenRepository.withHttpOnlyFalse`
+     * issues a cookie that the api also expects echoed in the header).
+     */
+    fun givenCsrfApi(): RequestSpecification {
+        val csrfResponse = retryOnConnectionFailure {
+            givenApi().baseUri(apiBaseUrl).`when`().get("/csrf")
+        }
+        require(csrfResponse.statusCode == 200) {
+            "GET /csrf returned ${csrfResponse.statusCode}: ${csrfResponse.asString()}"
+        }
+        val token = csrfResponse.cookie("XSRF-TOKEN")
+            ?: error("no XSRF-TOKEN cookie in /csrf response")
+        return givenApi()
+            .cookie("XSRF-TOKEN", token)
+            .header("X-XSRF-TOKEN", token)
+    }
+
+    /**
      * Standard password for created test users. Passes the api's
      * complexity rule (lower + upper + digit + one of `@$!%*?&`).
      */
@@ -78,7 +98,7 @@ object TestHelper {
         email: String = "$username@systemtest.example.com",
     ): RegisteredUser {
         retryOnConnectionFailure {
-            givenApi()
+            givenCsrfApi()
                 .baseUri(apiBaseUrl)
                 .contentType(ContentType.JSON)
                 .body(
@@ -239,7 +259,7 @@ object TestHelper {
      */
     fun login(user: RegisteredUser): LoginCookies {
         val response = retryOnConnectionFailure {
-            givenApi()
+            givenCsrfApi()
                 .baseUri(apiBaseUrl)
                 .contentType(ContentType.JSON)
                 .body("""{"username":"${user.username}","password":"${user.password}"}""")

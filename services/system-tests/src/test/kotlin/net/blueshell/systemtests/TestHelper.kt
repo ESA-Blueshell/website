@@ -234,6 +234,77 @@ object TestHelper {
     }
 
     /**
+     * Read the address row currently linked to `username`, if any. Used
+     * by tests that previously inspected `User.address?.field` after a
+     * Playwright-driven form submit.
+     */
+    fun findAddress(username: String): AddressRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT a.id, a.country, a.city, a.street, a.house_number, a.zip_code " +
+                    "FROM addresses a " +
+                    "JOIN users u ON u.address_id = a.id " +
+                    "WHERE u.username = ? AND u.$ACTIVE_ROW_PREDICATE " +
+                    "AND a.$ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setString(1, username)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    AddressRow(
+                        id = rs.getLong("id"),
+                        country = rs.getString("country"),
+                        city = rs.getString("city"),
+                        street = rs.getString("street"),
+                        houseNumber = rs.getString("house_number"),
+                        zipCode = rs.getString("zip_code"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
+     * Insert an `addresses` row for `username` and point the user's
+     * `address_id` column at it. Pre-seeds the address that a follow-up
+     * test edits through the UI. Returns the new address id.
+     */
+    fun attachAddress(
+        user: RegisteredUser,
+        country: String = "NL",
+        city: String,
+        street: String,
+        houseNumber: String,
+        zipCode: String,
+    ): Long {
+        val cookies = login(user)
+        val userId = findUser(user.username)!!.id
+        val response = retryOnConnectionFailure {
+            givenCsrfApi()
+                .baseUri(apiBaseUrl)
+                .cookie(TestEnvironment.authCookieName, cookies.auth)
+                .contentType(ContentType.JSON)
+                .body(
+                    """
+                    {
+                      "userId": $userId,
+                      "country": "$country",
+                      "city": "$city",
+                      "street": "$street",
+                      "houseNumber": "$houseNumber",
+                      "zipCode": "$zipCode"
+                    }
+                    """.trimIndent(),
+                ).`when`()
+                .post("/addresses")
+        }
+        require(response.statusCode == 201) {
+            "POST /addresses returned ${response.statusCode}: ${response.asString()}"
+        }
+        return response.jsonPath().getLong("id")
+    }
+
+    /**
      * Read a user back from the DB. Returns null when the user doesn't
      * exist (or is soft-deleted). Used by tests that previously polled
      * `userRepository.findByUsername(...)` to verify async writes.
@@ -306,6 +377,15 @@ object TestHelper {
         val username: String,
         val email: String,
         val enabled: Boolean,
+    )
+
+    data class AddressRow(
+        val id: Long,
+        val country: String?,
+        val city: String?,
+        val street: String?,
+        val houseNumber: String?,
+        val zipCode: String?,
     )
 
     data class LoginCookies(

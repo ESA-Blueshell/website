@@ -45,9 +45,12 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
                 LoginDomainHelper.clickActivateMemberSubmit(page)
             }
             assertThat(response.status()).isEqualTo(200)
-            assertThat(
-                page.locator("[data-testid='activate-member-success-alert']").count()
-            ).isGreaterThan(0)
+            // The success alert mounts in Vue's `.then` block, which
+            // runs after `waitForResponse` returns. Poll with
+            // `.first().waitFor()` rather than asserting `.count()`
+            // straight away, otherwise a fast network + slow render
+            // intermittently lands on `count == 0`.
+            page.locator("[data-testid='activate-member-success-alert']").first().waitFor()
         }
 
         waitFor(
@@ -105,9 +108,10 @@ class ActivationPageSystemTest : FrontendSystemTestBase() {
             }
             assertThat(response.status()).isEqualTo(200)
             assertThat(response.text()).contains("/membership/signUp?step=2")
-            assertThat(
-                page.locator("[data-testid='activate-user-success-state']").count()
-            ).isGreaterThan(0)
+            // Same render race as the member-activation success path —
+            // wait for the success-state locator rather than asserting
+            // `.count()` straight after `waitForResponse` returns.
+            page.locator("[data-testid='activate-user-success-state']").first().waitFor()
         }
 
         waitFor(

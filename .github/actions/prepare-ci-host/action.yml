@@ -1,0 +1,28 @@
+name: Prepare CI Host
+description: Download CI-built Docker images from artifacts and load them onto the runner.
+
+inputs:
+  artifact-pattern:
+    description: Artifact pattern to download.
+    required: false
+    default: image-*
+  artifact-path:
+    description: Directory where image artifacts are downloaded.
+    required: false
+    default: /tmp/images
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ inputs.artifact-pattern }}
+        path: ${{ inputs.artifact-path }}
+    - shell: bash
+      run: |
+        set -euo pipefail
+        for tar in "${{ inputs.artifact-path }}"/image-*/*.tar; do
+          echo "Loading $tar"
+          docker load -i "$tar"
+        done
+        docker images

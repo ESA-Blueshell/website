@@ -1,0 +1,53 @@
+# CI override for the system-tests stack.
+#
+# Layers on top of docker-compose.yml so the api and frontend services
+# run from the CI-built `:ci` images (production Dockerfiles, not the
+# hot-reload Dockerfile-dev variants). The `pull_policy: never` + `image:`
+# combo forces compose to use the image that .github/actions/prepare-ci-host
+# loaded onto the runner.
+#
+# Used by .github/scripts/start-system-test-stack.sh:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up --wait
+
+services:
+  # ── Use CI-built images (override dev build directive) ───────────
+  api:
+    image: blueshell-website/api:ci
+    pull_policy: never
+    build: !reset null
+    # Drop the dev source-mount + Playwright cache mounts; the prod
+    # image is self-contained.
+    volumes: !reset []
+    environment:
+      - TZ=Europe/Amsterdam
+      - SPRING_PROFILES_ACTIVE=prod
+      - APP_URL=http://localhost:8080
+      - FRONTEND_URL=http://localhost:3000
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=blueshell
+      - MYSQL_USER=blueshell
+      - MYSQL_PASSWORD=ci-blueshell
+      - JWT_SECRET=YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh
+      - STORAGE_LOCATION=/tmp/storage
+      - BREVO_API_KEY=ci-stub
+      - BREVO_FOLDER_CONTRIBUTION_PERIODS_ID=1234
+    env_file: !reset []
+
+  frontend:
+    image: blueshell-website/frontend:ci
+    pull_policy: never
+    build: !reset null
+    volumes: !reset []
+    environment:
+      - TZ=Europe/Amsterdam
+
+  # ── CI-specific MariaDB credentials ───────────────────────────────
+  db:
+    env_file: !reset []
+    environment:
+      - MYSQL_ROOT_PASSWORD=ci-blueshell-root
+      - MYSQL_DATABASE=blueshell
+      - MYSQL_USER=blueshell
+      - MYSQL_PASSWORD=ci-blueshell
+      - TZ=Europe/Amsterdam

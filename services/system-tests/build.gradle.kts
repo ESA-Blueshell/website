@@ -63,6 +63,10 @@ dependencies {
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
 
+    // IMAP access for StalwartMailClient — used by tests that need to
+    // assert what the api delivered to the mail server.
+    testImplementation("org.eclipse.angus:jakarta.mail:2.0.3")
+
     // JUnit 6 does not automatically put the platform launcher on the
     // runtime classpath; Gradle 9's test-engine selection needs it.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

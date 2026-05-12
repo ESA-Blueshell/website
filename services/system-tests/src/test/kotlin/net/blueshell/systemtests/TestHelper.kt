@@ -4,22 +4,30 @@ import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import io.restassured.specification.RequestSpecification
 import java.net.ConnectException
+import java.sql.Connection
 import java.sql.DriverManager
 import java.util.UUID
 
 /**
- * Shared HTTP + JDBC helper for system tests. Models the same shape as
- * personal-stack-2's TestHelper: the public api drives behaviour over
- * HTTP (register, login, etc.), and JDBC fills the gaps where the api
- * doesn't expose an admin path (granting roles, looking up tokens).
+ * HTTP + JDBC helper for system tests. The api drives behaviour over
+ * HTTP (`POST /users`, `POST /auth`); JDBC fills the gaps where the
+ * public surface won't help — flipping a fresh user from disabled to
+ * enabled (no admin endpoint exposes it) and assigning roles in the
+ * `authorities` join table (only mutable via the privileged
+ * `ToggleUserRole` endpoint, which requires an existing admin caller
+ * — a chicken-and-egg the tests cut by talking to the DB directly).
  *
- * This is the migration target for the in-process @Autowired
- * UserRepository / UserFactory / JwtTokenGenerator usages that the
- * existing FrontendSystemTestBase / OidcSystemTestBase still carry.
+ * Activation tokens are intentionally not retrieved from the DB: the
+ * api only persists a hashed verifier (see `recovery_tokens`), so the
+ * plaintext token in the email cannot be reconstructed from SQL.
+ * Tests that exercise the activation flow itself read the email via
+ * `StalwartMailClient`; every other test bypasses by setting
+ * `enabled = true`.
  */
 object TestHelper {
     private const val API_RETRY_ATTEMPTS = 3
     private const val API_RETRY_DELAY_MS = 2_000L
+    private const val ACTIVE_ROW_PREDICATE = "deleted_at = '9999-12-31 23:59:59'"
 
     val apiBaseUrl: String get() = TestEnvironment.apiUrl
 
@@ -31,6 +39,12 @@ object TestHelper {
         get() = System.getProperty("test.db.password", "ci-blueshell")
 
     fun givenApi(): RequestSpecification = given().relaxedHTTPSValidation()
+
+    /**
+     * Standard password for created test users. Passes the api's
+     * complexity rule (lower + upper + digit + one of `@$!%*?&`).
+     */
+    const val DEFAULT_PASSWORD: String = "Password123!"
 
     private fun <T> retryOnConnectionFailure(action: () -> T): T {
         var lastException: Exception? = null
@@ -52,13 +66,15 @@ object TestHelper {
     }
 
     /**
-     * Register a new user via the public POST /users endpoint and activate
-     * their account by reading the activation token straight from the db.
-     * Mirrors personal-stack-2's `registerAndConfirm` step-for-step.
+     * Register a new user via `POST /users`. The account lands
+     * disabled — the api flips `enabled = false` on every fresh
+     * registration. Callers that want a login-ready account should
+     * chain `setEnabled(user.username, true)` or use
+     * `registerAndActivate`.
      */
-    fun registerAndActivate(
+    fun register(
         username: String = "sys_${UUID.randomUUID().toString().take(8)}",
-        password: String = "Test1234!",
+        password: String = DEFAULT_PASSWORD,
         email: String = "$username@systemtest.example.com",
     ): RegisteredUser {
         retryOnConnectionFailure {
@@ -66,60 +82,160 @@ object TestHelper {
                 .baseUri(apiBaseUrl)
                 .contentType(ContentType.JSON)
                 .body(
-                    """{"username":"$username","email":"$email","firstName":"Test","surname":"User","password":"$password"}""",
+                    """
+                    {
+                      "username": "$username",
+                      "email": "$email",
+                      "initials": "TU",
+                      "firstName": "Test",
+                      "lastName": "User",
+                      "discord": "$username#0001",
+                      "phoneNumber": "06${System.currentTimeMillis().toString().takeLast(8)}",
+                      "newsletter": false,
+                      "password": "$password"
+                    }
+                    """.trimIndent(),
                 ).`when`()
                 .post("/users")
                 .then()
                 .statusCode(201)
         }
 
-        val token = activationTokenFromDb(username)
-
-        retryOnConnectionFailure {
-            givenApi()
-                .baseUri(apiBaseUrl)
-                .contentType(ContentType.JSON)
-                .body("""{"token":"$token","password":"$password"}""")
-                .`when`()
-                .post("/user/activate")
-                .then()
-                .statusCode(200)
-        }
-
         return RegisteredUser(username, email, password)
     }
 
     /**
-     * Hits the JDBC layer to elevate a user's role. The api's PUT
-     * /users/{id}/roles requires an admin caller, so the first admin
-     * has to be minted directly — matches the makeUserAdmin pattern
-     * in personal-stack-2.
+     * Convenience: register + flip `enabled = true`. Standard setup
+     * for any test that wants a user it can immediately log in as.
      */
-    fun grantRole(username: String, role: String) {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement("UPDATE user SET role = ? WHERE username = ?").use { stmt ->
-                stmt.setString(1, role)
-                stmt.setString(2, username)
-                require(stmt.executeUpdate() == 1) { "Failed to set role=$role on username=$username" }
-            }
-        }
-    }
-
-    fun registerActivateAndPromote(
-        role: String,
-        username: String = "${role.lowercase()}_${UUID.randomUUID().toString().take(8)}",
-        password: String = "Test1234!",
+    fun registerAndActivate(
+        username: String = "sys_${UUID.randomUUID().toString().take(8)}",
+        password: String = DEFAULT_PASSWORD,
+        email: String = "$username@systemtest.example.com",
     ): RegisteredUser {
-        val user = registerAndActivate(username = username, password = password)
-        grantRole(user.username, role)
+        val user = register(username, password, email)
+        setEnabled(user.username, true)
         return user
     }
 
     /**
-     * Hits POST /auth and returns the Set-Cookie payload(s) so callers can
-     * forward them into a Playwright BrowserContext or a follow-up HTTP
-     * request. The api's session model uses a "login" cookie alongside
-     * CSRF tokens — both are returned verbatim.
+     * Register, activate, and replace the user's roles with exactly
+     * the requested one (every other row in `authorities` for the
+     * user is removed first).
+     */
+    fun registerActivateAndPromote(
+        role: String,
+        username: String = "${role.lowercase()}_${UUID.randomUUID().toString().take(8)}",
+        password: String = DEFAULT_PASSWORD,
+    ): RegisteredUser {
+        val user = registerAndActivate(username = username, password = password)
+        replaceRoles(user.username, setOf(role))
+        return user
+    }
+
+    /**
+     * Toggle `users.enabled`. Used to mint a deliberately-disabled
+     * account for tests that exercise the login-blocked path, and
+     * internally to activate freshly-registered users.
+     */
+    fun setEnabled(username: String, enabled: Boolean) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "UPDATE users SET enabled = ? WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setBoolean(1, enabled)
+                stmt.setString(2, username)
+                require(stmt.executeUpdate() == 1) {
+                    "Failed to set enabled=$enabled on username=$username"
+                }
+            }
+        }
+    }
+
+    /**
+     * Replace every row in `authorities` for the given user. New users
+     * start with `GUEST` only; tests that want exactly `MEMBER` (or
+     * any other single role) should call this rather than appending.
+     */
+    fun replaceRoles(username: String, roles: Set<String>) {
+        require(roles.isNotEmpty()) { "Refusing to leave $username with no roles" }
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.autoCommit = false
+            try {
+                val userId = userIdOrThrow(conn, username)
+                conn.prepareStatement("DELETE FROM authorities WHERE user_id = ?").use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.executeUpdate()
+                }
+                conn.prepareStatement(
+                    "INSERT INTO authorities (user_id, authority) VALUES (?, ?)",
+                ).use { stmt ->
+                    for (role in roles) {
+                        stmt.setLong(1, userId)
+                        stmt.setString(2, role)
+                        stmt.addBatch()
+                    }
+                    stmt.executeBatch()
+                }
+                conn.commit()
+            } catch (e: Exception) {
+                conn.rollback()
+                throw e
+            } finally {
+                conn.autoCommit = true
+            }
+        }
+    }
+
+    /**
+     * Append a single role without disturbing existing ones. Use when
+     * the test wants role inheritance to compose (e.g. a `MEMBER` who
+     * is also `BOARD`).
+     */
+    fun grantRole(username: String, role: String) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "INSERT IGNORE INTO authorities (user_id, authority) VALUES (?, ?)",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.setString(2, role)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
+    /**
+     * Read a user back from the DB. Returns null when the user doesn't
+     * exist (or is soft-deleted). Used by tests that previously polled
+     * `userRepository.findByUsername(...)` to verify async writes.
+     */
+    fun findUser(username: String): RegisteredUserRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id, username, email, enabled FROM users " +
+                    "WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setString(1, username)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    RegisteredUserRow(
+                        id = rs.getLong("id"),
+                        username = rs.getString("username"),
+                        email = rs.getString("email"),
+                        enabled = rs.getBoolean("enabled"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
+     * Hits `POST /auth` and returns the auth cookie (default name
+     * `BSH_AUTH`, overridable via `-Dtest.auth-cookie.name=...`) so
+     * callers can forward it into a Playwright `BrowserContext` or
+     * onto a follow-up `HttpClient` request.
      */
     fun login(user: RegisteredUser): LoginCookies {
         val response = retryOnConnectionFailure {
@@ -134,27 +250,22 @@ object TestHelper {
             "Login for ${user.username} failed: ${response.statusCode} ${response.asString()}"
         }
         return LoginCookies(
-            login = response.cookie("login") ?: error("no login cookie in /auth response"),
+            auth = response.cookie(TestEnvironment.authCookieName)
+                ?: error("no ${TestEnvironment.authCookieName} cookie in /auth response"),
             csrf = response.cookie("XSRF-TOKEN"),
         )
     }
 
-    private fun activationTokenFromDb(username: String): String =
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                """
-                SELECT t.token FROM activation_token t
-                JOIN user u ON u.id = t.user_id
-                WHERE u.username = ?
-                ORDER BY t.created_at DESC LIMIT 1
-                """.trimIndent(),
-            ).use { stmt ->
-                stmt.setString(1, username)
-                val rs = stmt.executeQuery()
-                require(rs.next()) { "No activation token found for $username" }
-                rs.getString("token")
-            }
+    private fun userIdOrThrow(conn: Connection, username: String): Long {
+        conn.prepareStatement(
+            "SELECT id FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+        ).use { stmt ->
+            stmt.setString(1, username)
+            val rs = stmt.executeQuery()
+            require(rs.next()) { "No active user with username=$username" }
+            return rs.getLong("id")
         }
+    }
 
     data class RegisteredUser(
         val username: String,
@@ -162,8 +273,15 @@ object TestHelper {
         val password: String,
     )
 
+    data class RegisteredUserRow(
+        val id: Long,
+        val username: String,
+        val email: String,
+        val enabled: Boolean,
+    )
+
     data class LoginCookies(
-        val login: String,
+        val auth: String,
         val csrf: String?,
     )
 }

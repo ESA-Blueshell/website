@@ -2,59 +2,57 @@ package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
-import net.blueshell.api.factory.user.persistence.UserFactory
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.system.frontend.FrontendSystemTestBase
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.systemtests.PlaywrightTestBase
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 
+/**
+ * Worked example of a test driven entirely through HTTP + Playwright
+ * with no in-process Spring beans. Uses `TestHelper` to mint a user
+ * against the real `/users` endpoint and the `authorities` table, then
+ * exercises the frontend login flow.
+ */
 @Tag("system")
-class LoginPageSystemTest : FrontendSystemTestBase() {
-    @Autowired
-    private lateinit var userFactory: UserFactory
-
-    private val loginPassword = "Password123!"
+class LoginPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `disabled account shows login error`() {
-        withPage { page ->
-            val user = createLoginUser(enabled = false)
-            val status = AuthHelper.submitLogin(page, frontendUrl, user.username, loginPassword)
-            assertThat(status).isEqualTo(401)
-            assertLoginError(page)
-        }
+        val user = TestHelper.register()
+        TestHelper.replaceRoles(user.username, setOf("MEMBER"))
+        // No setEnabled(true) — disabled is the post-register default
+        // and the point of this test.
+
+        val status = AuthHelper.submitLogin(page, frontendUrl, user.username, user.password)
+        assertThat(status).isEqualTo(401)
+        assertLoginError(page)
     }
 
     @Test
     fun `wrong password shows login error`() {
-        withPage { page ->
-            val user = createLoginUser(enabled = true)
-            val status = AuthHelper.submitLogin(page, frontendUrl, user.username, "${loginPassword}x")
-            assertThat(status).isEqualTo(401)
-            assertLoginError(page)
-        }
+        val user = TestHelper.registerActivateAndPromote("MEMBER")
+
+        val status = AuthHelper.submitLogin(page, frontendUrl, user.username, "${user.password}x")
+        assertThat(status).isEqualTo(401)
+        assertLoginError(page)
     }
 
     @Test
     fun `enabled account logs in with correct password`() {
-        withPage { page ->
-            val user = createLoginUser(enabled = true)
-            val status = AuthHelper.submitLogin(page, frontendUrl, user.username, loginPassword)
-            assertThat(status).isEqualTo(200)
-        }
+        val user = TestHelper.registerActivateAndPromote("MEMBER")
+
+        val status = AuthHelper.submitLogin(page, frontendUrl, user.username, user.password)
+        assertThat(status).isEqualTo(200)
     }
 
     private fun assertLoginError(page: Page) {
         assertPw(
             page.getByText(
                 "Incorrect login credentials. Please double check your username and password.",
-                Page.GetByTextOptions().setExact(true)
-            )
+                Page.GetByTextOptions().setExact(true),
+            ),
         ).isVisible()
     }
-
-    private fun createLoginUser(enabled: Boolean) = userFactory.createUserWithRole(Role.MEMBER, enabled)
 }

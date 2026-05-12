@@ -181,6 +181,26 @@ object TestHelper {
     }
 
     /**
+     * Soft-delete a user. Sets `deleted_at = NOW()` and bumps `version`,
+     * matching the `@SQLDelete` annotation on `User`. Used by tests
+     * that previously called `UserErasureService.deleteUser(...)` to
+     * remove a user without hard-deleting them.
+     */
+    fun softDeleteUser(username: String) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "UPDATE users SET deleted_at = NOW(), version = version + 1 " +
+                    "WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setString(1, username)
+                require(stmt.executeUpdate() == 1) {
+                    "Failed to soft-delete username=$username"
+                }
+            }
+        }
+    }
+
+    /**
      * Toggle `users.enabled`. Used to mint a deliberately-disabled
      * account for tests that exercise the login-blocked path, and
      * internally to activate freshly-registered users.

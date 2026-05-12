@@ -101,6 +101,8 @@ object TestHelper {
         username: String = "sys_${UUID.randomUUID().toString().take(8)}",
         password: String = DEFAULT_PASSWORD,
         email: String = "$username@systemtest.example.com",
+        discord: String = "$username#0001",
+        phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
     ): RegisteredUser {
         val response = retryOnConnectionFailure {
             givenCsrfApi()
@@ -114,8 +116,8 @@ object TestHelper {
                       "initials": "TU",
                       "firstName": "Test",
                       "lastName": "User",
-                      "discord": "$username#0001",
-                      "phoneNumber": "06${System.currentTimeMillis().toString().takeLast(8)}",
+                      "discord": "$discord",
+                      "phoneNumber": "$phoneNumber",
                       "newsletter": false,
                       "consentPrivacy": true,
                       "photoConsent": false,
@@ -129,7 +131,13 @@ object TestHelper {
             "POST /users returned ${response.statusCode}: ${response.asString()}"
         }
 
-        return RegisteredUser(username, email, password)
+        return RegisteredUser(
+            username = username,
+            email = email,
+            password = password,
+            discord = discord,
+            phoneNumber = phoneNumber,
+        )
     }
 
     /**
@@ -140,8 +148,10 @@ object TestHelper {
         username: String = "sys_${UUID.randomUUID().toString().take(8)}",
         password: String = DEFAULT_PASSWORD,
         email: String = "$username@systemtest.example.com",
+        discord: String = "$username#0001",
+        phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
     ): RegisteredUser {
-        val user = register(username, password, email)
+        val user = register(username, password, email, discord, phoneNumber)
         setEnabled(user.username, true)
         return user
     }
@@ -155,8 +165,17 @@ object TestHelper {
         role: String,
         username: String = "${role.lowercase()}_${UUID.randomUUID().toString().take(8)}",
         password: String = DEFAULT_PASSWORD,
+        email: String = "$username@systemtest.example.com",
+        discord: String = "$username#0001",
+        phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
     ): RegisteredUser {
-        val user = registerAndActivate(username = username, password = password)
+        val user = registerAndActivate(
+            username = username,
+            password = password,
+            email = email,
+            discord = discord,
+            phoneNumber = phoneNumber,
+        )
         replaceRoles(user.username, setOf(role))
         return user
     }
@@ -451,6 +470,8 @@ object TestHelper {
         val username: String,
         val email: String,
         val password: String,
+        val discord: String,
+        val phoneNumber: String,
     )
 
     data class RegisteredUserRow(

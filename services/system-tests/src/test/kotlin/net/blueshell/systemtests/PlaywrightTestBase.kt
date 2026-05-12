@@ -90,16 +90,15 @@ abstract class PlaywrightTestBase {
 
     companion object {
         /**
-         * Default per-action timeout. 5 s used to be enough when every
-         * test had the whole api context to itself, but with the
-         * sharded matrix running the in-process Spring Boot context
-         * alongside async background jobs (contact sync, email send,
-         * job dispatch) a fresh page render that calls `/users/{id}`
-         * can comfortably overshoot 5 s. 15 s leaves room for that
-         * without masking real regressions — Playwright still polls
-         * the locator continuously, so a fast page returns
-         * immediately.
+         * Default per-action timeout. With the in-process Spring Boot
+         * context running alongside the sharded matrix and
+         * `app.jobs.auto-dispatch=true` flushing `SyncContactCommand`
+         * / `EmailSenderService` between tests, a freshly-loaded
+         * `/account` page that needs `/users/{id}` to resolve before
+         * its form wrapper mounts can overshoot 15 s on a busy
+         * shard. Matches Playwright's own default; locator polling
+         * still returns immediately on fast pages.
          */
-        const val DEFAULT_TIMEOUT_MS: Double = 15_000.0
+        const val DEFAULT_TIMEOUT_MS: Double = 30_000.0
     }
 }

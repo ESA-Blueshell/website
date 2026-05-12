@@ -59,7 +59,7 @@ dependencies {
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
     testImplementation("io.mockk:mockk:1.14.9")
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
-    testImplementation("com.microsoft.playwright:playwright:1.58.0")
+    testImplementation("com.microsoft.playwright:playwright:1.59.0")
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
 
@@ -131,24 +131,6 @@ tasks.withType<Test>().configureEach {
             }
         }
     }
-}
-
-// Playwright install helpers — required by CI before `test` runs.
-tasks.register<JavaExec>("installPlaywrightDeps") {
-    group = "playwright"
-    description = "Installs Playwright OS dependencies"
-    classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("com.microsoft.playwright.CLI")
-    args("install-deps")
-}
-
-tasks.register<JavaExec>("installChromium") {
-    group = "playwright"
-    description = "Installs Chromium (Playwright)"
-    dependsOn("installPlaywrightDeps")
-    classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("com.microsoft.playwright.CLI")
-    args("install", "chromium")
 }
 
 // Drives `/oauth2/jwks` against a real api wired to Vault Transit. Requires

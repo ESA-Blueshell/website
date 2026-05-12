@@ -126,6 +126,49 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
             .isEqualTo("$FRONTEND_BASE/unauthorized?service=$host")
     }
 
+    @ParameterizedTest(name = "anonymous XHR → 401 (host={0})")
+    @MethodSource("allGatedHosts")
+    fun anonymous_xhr_returns_401_not_302(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
+        // Stalwart/Headlamp/etc. SPAs fetch /api/* with Accept: application/json
+        // (no text/html). A 302 to v2.esa-blueshell.nl/login auto-follows and
+        // browser CORS-blocks it → SPA shows a generic network error. 401 lets
+        // the SPA recognise an expired session.
+        val response = java.net.http.HttpClient.newHttpClient().send(
+            java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
+                .GET()
+                .header("Accept", "application/json")
+                .header("X-Forwarded-Host", host)
+                .header("X-Forwarded-Uri", "/api/principal")
+                .header("X-Forwarded-Proto", "https")
+                .build(),
+            java.net.http.HttpResponse.BodyHandlers.discarding(),
+        )
+
+        assertThat(response.statusCode()).isEqualTo(401)
+        assertThat(response.headers().firstValue("WWW-Authenticate").orElse(""))
+            .startsWith("Bearer realm=")
+    }
+
+    @ParameterizedTest(name = "member XHR on board-gated → 403 (host={0})")
+    @MethodSource("boardGatedHosts")
+    fun member_xhr_on_board_host_returns_403(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
+        val member = userFactory.createUserWithRole(Role.MEMBER)
+
+        val response = java.net.http.HttpClient.newHttpClient().send(
+            java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
+                .GET()
+                .header("Accept", "application/json")
+                .header("Cookie", "$authCookieName=${sessionTokenFor(member.username)}")
+                .header("X-Forwarded-Host", host)
+                .build(),
+            java.net.http.HttpResponse.BodyHandlers.discarding(),
+        )
+
+        assertThat(response.statusCode()).isEqualTo(403)
+    }
+
     @Test
     fun `unknown host falls back to ADMIN-required and rejects board`() {
         val board = userFactory.createUserWithRole(Role.BOARD)

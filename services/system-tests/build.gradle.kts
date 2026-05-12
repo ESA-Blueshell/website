@@ -63,6 +63,10 @@ dependencies {
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
 
+    // IMAP access for StalwartMailClient — used by tests that need to
+    // assert what the api delivered to the mail server.
+    testImplementation("org.eclipse.angus:jakarta.mail:2.0.3")
+
     // JUnit 6 does not automatically put the platform launcher on the
     // runtime classpath; Gradle 9's test-engine selection needs it.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -76,13 +80,16 @@ tasks.withType<Test>().configureEach {
         includeTags("system")
     }
     systemProperty("spring.profiles.active", "test")
-    // Propagate -Dsystem.frontend.url=… from the gradle invocation to the
-    // test JVM. Without this the forked test picks up the default from
-    // application.properties (http://frontend:3000) which is the dev-compose
-    // hostname, not valid in CI where the frontend is served on localhost.
-    System.getProperty("system.frontend.url")
-        ?.takeIf { it.isNotBlank() }
-        ?.let { systemProperty("system.frontend.url", it) }
+    // Propagate every `-Dsystem.*` and `-Dtest.*` flag from the gradle
+    // invocation into the forked test JVM. Without this the JVM falls
+    // back to its built-in defaults — the frontend reads as the
+    // dev-compose hostname instead of the CI loopback, and `TestHelper`'s
+    // JDBC URL points at the `blueshell` schema rather than `blueshell-test`.
+    gradle.startParameter.systemPropertiesArgs.forEach { (key, value) ->
+        if (key.startsWith("test.") || key.startsWith("system.")) {
+            systemProperty(key, value)
+        }
+    }
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
     }

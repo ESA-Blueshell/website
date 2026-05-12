@@ -1,245 +1,217 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import net.blueshell.api.factory.job.persistence.JobExecutionFactory
-import net.blueshell.api.factory.user.persistence.UserFactory
-import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.job.persistence.repository.JobExecutionRepository
-import net.blueshell.api.shared.enums.JobExecutionStatus
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.ApiApplication
+import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.systemtests.PlaywrightTestBase
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestExecutionListeners
 import java.net.URI
 import java.net.URLDecoder
 import java.time.Instant
 import java.util.function.Predicate
 
 @Tag("system")
-class JobManagerPageSystemTest : FrontendSystemTestBase() {
-
-    @Autowired
-    private lateinit var userFactory: UserFactory
-
-    @Autowired
-    private lateinit var jobExecutionFactory: JobExecutionFactory
-
-    @Autowired
-    private lateinit var jobExecutionRepository: JobExecutionRepository
+@ActiveProfiles("test")
+@TestExecutionListeners(
+    listeners = [TestCleanUpListener::class],
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
+)
+@SpringBootTest(
+    classes = [ApiApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
+)
+class JobManagerPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `admin can list and retry failed job execution`() {
-        val admin = userFactory.createUserWithRole(Role.ADMIN, enabled = true)
-        val failed = createJobExecution(
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
+        // Wipe auto-dispatched contact-sync / activation-email rows
+        // from the admin registration so the seeded rows are the only
+        // ones the manager page sees.
+        TestHelper.clearJobExecutions()
+        val failedId = TestHelper.createJobExecution(
             jobType = "sync-contact-${System.currentTimeMillis()}",
-            status = JobExecutionStatus.FAILED,
+            status = "FAILED",
             attempts = 2,
             errorType = "RuntimeException",
-            errorReason = "Transient failure"
+            errorReason = "Transient failure",
         )
-        createJobExecution(
+        TestHelper.createJobExecution(
             jobType = "calendar-sync-${System.currentTimeMillis()}",
-            status = JobExecutionStatus.SUCCESS,
-            attempts = 1
+            status = "SUCCESS",
+            attempts = 1,
         )
-
-        val failedId = checkNotNull(failed.id) { "Expected failed execution id" }
-        val initialQueuedAt = checkNotNull(failed.queuedAt) { "Expected failed execution queuedAt to be set" }
-
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-
-            val listResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs")
-                }
-            ) {
-                page.navigate("$frontendUrl/management/jobs")
-            }
-            assertThat(listResponse.status()).isEqualTo(200)
-
-            waitFor(
-                onTimeoutMessage = { "Expected failed job type ${failed.jobType} to appear in job manager table" }
-            ) {
-                page.locator("[data-testid='job-row-$failedId']").count() > 0
-            }
-
-            page.locator("[data-testid='job-row-$failedId']").first().click()
-
-            assertThat(
-                page.locator("[data-testid='job-error-reason-$failedId']").innerText()
-            ).contains("Transient failure")
-
-            val retryResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "POST" &&
-                        response.url().contains("/management/jobs/$failedId/retry")
-                }
-            ) {
-                page.locator("[data-testid='job-retry-btn-$failedId']").first().click()
-            }
-            assertThat(retryResponse.status()).isEqualTo(200)
-
-            waitFor(
-                onTimeoutMessage = { "Expected failed job $failedId retry to become DEAD with refreshed queuedAt" }
-            ) {
-                val updated = jobExecutionRepository.findById(failedId).orElseThrow()
-                updated.status == JobExecutionStatus.DEAD &&
-                    updated.queuedAt != null &&
-                    updated.queuedAt!!.isAfter(initialQueuedAt)
-            }
-
-            val updated = jobExecutionRepository.findById(failedId).orElseThrow()
-            assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)
-            assertThat(updated.queuedAt).isNotNull()
-            assertThat(updated.queuedAt).isAfter(initialQueuedAt)
+        val initialQueuedAt = checkNotNull(TestHelper.findJobExecution(failedId)?.queuedAt) {
+            "Expected failed execution queuedAt to be set"
         }
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        val listResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "GET" &&
+                    response.url().contains("/management/jobs")
+            },
+        ) {
+            page.navigate("$frontendUrl/management/jobs")
+        }
+        assertThat(listResponse.status()).isEqualTo(200)
+
+        page.locator("[data-testid='job-row-$failedId']").first().waitFor()
+        page.locator("[data-testid='job-row-$failedId']").first().click()
+
+        assertThat(
+            page.locator("[data-testid='job-error-reason-$failedId']").innerText(),
+        ).contains("Transient failure")
+
+        val retryResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "POST" &&
+                    response.url().contains("/management/jobs/$failedId/retry")
+            },
+        ) {
+            page.locator("[data-testid='job-retry-btn-$failedId']").first().click()
+        }
+        assertThat(retryResponse.status()).isEqualTo(200)
+
+        waitForJob(failedId) { row ->
+            row.status == "DEAD" &&
+                row.queuedAt != null &&
+                row.queuedAt.isAfter(initialQueuedAt)
+        }
+
+        val updated = TestHelper.findJobExecution(failedId)!!
+        assertThat(updated.status).isEqualTo("DEAD")
+        assertThat(updated.queuedAt).isNotNull()
+        assertThat(updated.queuedAt).isAfter(initialQueuedAt)
     }
 
     @Test
     fun `job manager applies frontend filters to backend jobs query`() {
-        val admin = userFactory.createUserWithRole(Role.ADMIN, enabled = true)
-        val calendarFailed = createJobExecution(
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
+        TestHelper.clearJobExecutions()
+        val calendarFailedId = TestHelper.createJobExecution(
             jobType = "calendar.sync-${System.currentTimeMillis()}",
-            status = JobExecutionStatus.FAILED,
+            status = "FAILED",
             attempts = 1,
             errorType = "RuntimeException",
-            errorReason = "Transient failure in sync"
+            errorReason = "Transient failure in sync",
         )
-        val contactQueued = createJobExecution(
+        val contactQueuedId = TestHelper.createJobExecution(
             jobType = "contact.sync-${System.currentTimeMillis()}",
-            status = JobExecutionStatus.QUEUED,
-            attempts = 2
+            status = "QUEUED",
+            attempts = 2,
+            startedAt = null,
+            finishedAt = null,
         )
-        val emailSuccess = createJobExecution(
+        val emailSuccessId = TestHelper.createJobExecution(
             jobType = "email.recovery-${System.currentTimeMillis()}",
-            status = JobExecutionStatus.SUCCESS,
-            attempts = 1
+            status = "SUCCESS",
+            attempts = 1,
         )
-        val calendarFailedId = checkNotNull(calendarFailed.id) { "Expected calendar failed execution id" }
-        val contactQueuedId = checkNotNull(contactQueued.id) { "Expected contact queued execution id" }
-        val emailSuccessId = checkNotNull(emailSuccess.id) { "Expected email success execution id" }
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            val initialListResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs")
-                }
-            ) {
-                page.navigate("$frontendUrl/management/jobs")
-            }
-            assertThat(initialListResponse.status()).isEqualTo(200)
-            waitFor(
-                onTimeoutMessage = {
-                    "Expected created job rows to be visible before applying filters"
-                }
-            ) {
-                hasJobRow(page, calendarFailedId) &&
-                    hasJobRow(page, contactQueuedId) &&
-                    hasJobRow(page, emailSuccessId)
-            }
-
-            val categoryResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs") &&
-                        response.url().contains("category=calendar")
-                }
-            ) {
-                selectCategoryFilter(page, "calendar")
-            }
-            assertThat(categoryResponse.status()).isEqualTo(200)
-            val categoryParams = queryParams(categoryResponse.url())
-            assertThat(categoryParams["category"]).contains("calendar")
-            waitFor(
-                onTimeoutMessage = {
-                    "Expected only calendar rows to remain after category filter"
-                }
-            ) {
-                hasJobRow(page, calendarFailedId) &&
-                    !hasJobRow(page, contactQueuedId) &&
-                    !hasJobRow(page, emailSuccessId)
-            }
-
-            val statusResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs") &&
-                        response.url().contains("status=FAILED")
-                }
-            ) {
-                selectStatusFilter(page, "failed")
-            }
-            assertThat(statusResponse.status()).isEqualTo(200)
-            val statusParams = queryParams(statusResponse.url())
-            assertThat(statusParams["category"]).contains("calendar")
-            assertThat(statusParams["status"]).contains("FAILED")
-            waitFor(
-                onTimeoutMessage = {
-                    "Expected only failed calendar row to remain after status filter"
-                }
-            ) {
-                hasJobRow(page, calendarFailedId) &&
-                    !hasJobRow(page, contactQueuedId) &&
-                    !hasJobRow(page, emailSuccessId)
-            }
-
-            val searchResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs") &&
-                        response.url().contains("search=")
-                }
-            ) {
-                page.locator("[data-testid='job-filter-search'] input").first().fill("Transient failure")
-            }
-            assertThat(searchResponse.status()).isEqualTo(200)
-            val searchParams = queryParams(searchResponse.url())
-            assertThat(searchParams["category"]).contains("calendar")
-            assertThat(searchParams["status"]).contains("FAILED")
-            assertThat(searchParams["search"]).contains("Transient failure")
-            waitFor(
-                onTimeoutMessage = {
-                    "Expected search filter to keep matching failed calendar row only"
-                }
-            ) {
-                hasJobRow(page, calendarFailedId) &&
-                    !hasJobRow(page, contactQueuedId) &&
-                    !hasJobRow(page, emailSuccessId)
-            }
+        val initialListResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "GET" &&
+                    response.url().contains("/management/jobs")
+            },
+        ) {
+            page.navigate("$frontendUrl/management/jobs")
         }
+        assertThat(initialListResponse.status()).isEqualTo(200)
+        waitForRows(page, calendarFailedId, contactQueuedId, emailSuccessId)
+
+        val categoryResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "GET" &&
+                    response.url().contains("/management/jobs") &&
+                    response.url().contains("category=calendar")
+            },
+        ) {
+            selectCategoryFilter(page, "calendar")
+        }
+        assertThat(categoryResponse.status()).isEqualTo(200)
+        val categoryParams = queryParams(categoryResponse.url())
+        assertThat(categoryParams["category"]).contains("calendar")
+        waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
+
+        val statusResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "GET" &&
+                    response.url().contains("/management/jobs") &&
+                    response.url().contains("status=FAILED")
+            },
+        ) {
+            selectStatusFilter(page, "failed")
+        }
+        assertThat(statusResponse.status()).isEqualTo(200)
+        val statusParams = queryParams(statusResponse.url())
+        assertThat(statusParams["category"]).contains("calendar")
+        assertThat(statusParams["status"]).contains("FAILED")
+        waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
+
+        val searchResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "GET" &&
+                    response.url().contains("/management/jobs") &&
+                    response.url().contains("search=")
+            },
+        ) {
+            page.locator("[data-testid='job-filter-search'] input").first().fill("Transient failure")
+        }
+        assertThat(searchResponse.status()).isEqualTo(200)
+        val searchParams = queryParams(searchResponse.url())
+        assertThat(searchParams["category"]).contains("calendar")
+        assertThat(searchParams["status"]).contains("FAILED")
+        assertThat(searchParams["search"]).contains("Transient failure")
+        waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
     }
 
-    private fun createJobExecution(
-        jobType: String,
-        status: JobExecutionStatus,
-        attempts: Int,
-        errorType: String? = null,
-        errorReason: String? = null
-    ): JobExecution {
-        val execution = jobExecutionFactory.create(jobType = jobType)
-        execution.status = status
-        execution.attempts = attempts
-        execution.queuedAt = Instant.now().minusSeconds(600)
-        execution.startedAt = if (status != JobExecutionStatus.QUEUED) Instant.now().minusSeconds(300) else null
-        execution.finishedAt = if (status == JobExecutionStatus.SUCCESS || status == JobExecutionStatus.FAILED) {
-            Instant.now().minusSeconds(120)
-        } else {
-            null
+    private fun waitForJob(id: Long, predicate: (TestHelper.JobExecutionRow) -> Boolean) {
+        val deadline = System.currentTimeMillis() + 30_000
+        while (System.currentTimeMillis() < deadline) {
+            val row = TestHelper.findJobExecution(id)
+            if (row != null && predicate(row)) return
+            Thread.sleep(200)
         }
-        execution.errorType = errorType
-        execution.errorReason = errorReason
-        execution.errorMessage = if (errorType != null && errorReason != null) "$errorType: $errorReason" else null
-        return jobExecutionRepository.saveAndFlush(execution)
+        throw AssertionError(
+            "Expected job execution $id to satisfy predicate within 30s; last row=${TestHelper.findJobExecution(id)}",
+        )
+    }
+
+    private fun waitForRows(page: Page, vararg ids: Long) {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            if (ids.all { hasJobRow(page, it) }) return
+            Thread.sleep(200)
+        }
+        throw AssertionError("Expected rows ${ids.toList()} to be visible within 10s")
+    }
+
+    private fun waitForOnlyCalendar(page: Page, calendarId: Long, contactId: Long, emailId: Long) {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            if (hasJobRow(page, calendarId) &&
+                !hasJobRow(page, contactId) &&
+                !hasJobRow(page, emailId)
+            ) {
+                return
+            }
+            Thread.sleep(200)
+        }
+        throw AssertionError("Expected calendar row $calendarId only after filter; others should be hidden")
     }
 
     private fun selectCategoryFilter(page: Page, category: String) {
@@ -268,9 +240,5 @@ class JobManagerPageSystemTest : FrontendSystemTestBase() {
 
     private fun hasJobRow(page: Page, id: Long): Boolean {
         return page.locator("[data-testid='job-row-$id']").count() > 0
-    }
-
-    private companion object {
-        const val DEFAULT_PASSWORD = "Password123!"
     }
 }

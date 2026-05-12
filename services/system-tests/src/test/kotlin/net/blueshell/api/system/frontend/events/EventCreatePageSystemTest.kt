@@ -2,309 +2,285 @@ package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
-import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.event.persistence.repository.EventRepository
-import net.blueshell.api.factory.committee.persistence.CommitteeFactory
-import net.blueshell.api.factory.event.persistence.EventFactory
-import net.blueshell.api.factory.user.persistence.UserFactory
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.ApiApplication
+import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
+import net.blueshell.systemtests.PlaywrightTestBase
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import java.time.Instant
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestExecutionListeners
 import java.util.function.Predicate
 
 @Tag("system")
-class EventCreatePageSystemTest : FrontendSystemTestBase() {
-
-    @Autowired
-    private lateinit var userFactory: UserFactory
-
-    @Autowired
-    private lateinit var committeeFactory: CommitteeFactory
-
-    @Autowired
-    private lateinit var eventFactory: EventFactory
-
-    @Autowired
-    private lateinit var eventRepository: EventRepository
+@ActiveProfiles("test")
+@TestExecutionListeners(
+    listeners = [TestCleanUpListener::class],
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
+)
+@SpringBootTest(
+    classes = [ApiApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
+)
+class EventCreatePageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `committee member can only select own committees on event create`() {
-        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
-        val ownCommittee = committeeFactory.create(name = "Own Committee ${System.currentTimeMillis()}")
-        val otherCommittee = committeeFactory.create(name = "Other Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(ownCommittee, member)
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val ownName = "Own Committee ${System.currentTimeMillis()}"
+        val otherName = "Other Committee ${System.currentTimeMillis()}"
+        val ownId = TestHelper.createCommittee(name = ownName)
+        TestHelper.createCommittee(name = otherName)
+        TestHelper.addCommitteeMember(ownId, member.username)
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
-            EventFormHelper.openCommitteeSelect(page)
+        EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.openCommitteeSelect(page)
 
-            assertThat(
-                page.getByText(ownCommittee.name, Page.GetByTextOptions().setExact(true)).count()
-            ).isGreaterThan(0)
-
-            assertThat(
-                page.getByText(otherCommittee.name, Page.GetByTextOptions().setExact(true)).count()
-            ).isEqualTo(0)
-        }
+        assertThat(page.getByText(ownName, Page.GetByTextOptions().setExact(true)).count()).isGreaterThan(0)
+        assertThat(page.getByText(otherName, Page.GetByTextOptions().setExact(true)).count()).isEqualTo(0)
     }
 
     @Test
     fun `committee member created events stay unapproved`() {
-        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
-        val committee = committeeFactory.create(name = "Member Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(committee, member)
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val committeeName = "Member Committee ${System.currentTimeMillis()}"
+        val committeeId = TestHelper.createCommittee(name = committeeName)
+        TestHelper.addCommitteeMember(committeeId, member.username)
         val eventTitle = "Committee Event ${System.currentTimeMillis()}"
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
-            EventFormHelper.fillRequiredFields(
-                page = page,
-                title = eventTitle,
-                location = "Campus",
-                description = "Committee created event"
-            )
-            EventFormHelper.selectCommittee(page, committee.name)
+        EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.fillRequiredFields(
+            page = page,
+            title = eventTitle,
+            location = "Campus",
+            description = "Committee created event",
+        )
+        EventFormHelper.selectCommittee(page, committeeName)
 
-            val response = page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events") &&
-                        !r.url().contains("/events/banners")
-                }
-            ) {
-                EventFormHelper.submit(page)
-            }
-            assertThat(response.status()).isEqualTo(201)
+        val response = page.waitForResponse(
+            Predicate { r ->
+                r.request().method() == "POST" &&
+                    r.url().contains("/events") &&
+                    !r.url().contains("/events/banners")
+            },
+        ) {
+            EventFormHelper.submit(page)
         }
+        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.approved).isFalse()
-        assertThat(created.committeeId).isEqualTo(committee.id)
+        assertThat(created.committeeId).isEqualTo(committeeId)
     }
 
     @Test
     fun `board can create approved event for any committee`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val committeeA = committeeFactory.create(name = "A Committee ${System.currentTimeMillis()}")
-        val committeeB = committeeFactory.create(name = "B Committee ${System.currentTimeMillis()}")
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val nameA = "A Committee ${System.currentTimeMillis()}"
+        val nameB = "B Committee ${System.currentTimeMillis()}"
+        val committeeAId = TestHelper.createCommittee(name = nameA)
+        val committeeBId = TestHelper.createCommittee(name = nameB)
         val eventTitle = "Board Created Event ${System.currentTimeMillis()}"
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
-            EventFormHelper.fillRequiredFields(
-                page = page,
-                title = eventTitle,
-                location = "Meeting Room",
-                description = "Board created event"
-            )
-            EventFormHelper.selectCommittee(page, committeeB.name)
-            EventFormHelper.setApproved(page, approved = true)
+        EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.fillRequiredFields(
+            page = page,
+            title = eventTitle,
+            location = "Meeting Room",
+            description = "Board created event",
+        )
+        EventFormHelper.selectCommittee(page, nameB)
+        EventFormHelper.setApproved(page, approved = true)
 
-            val response = page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events") &&
-                        !r.url().contains("/events/banners")
-                }
-            ) {
-                EventFormHelper.submit(page)
-            }
-            assertThat(response.status()).isEqualTo(201)
+        val response = page.waitForResponse(
+            Predicate { r ->
+                r.request().method() == "POST" &&
+                    r.url().contains("/events") &&
+                    !r.url().contains("/events/banners")
+            },
+        ) {
+            EventFormHelper.submit(page)
         }
+        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.approved).isTrue()
-        assertThat(created.committeeId).isEqualTo(committeeB.id)
-        assertThat(created.committeeId).isNotEqualTo(committeeA.id)
+        assertThat(created.committeeId).isEqualTo(committeeBId)
+        assertThat(created.committeeId).isNotEqualTo(committeeAId)
     }
 
     @Test
     fun `events page fetches banner for newly created event`() {
-        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
-        val committee = committeeFactory.create(name = "Banner Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(committee, member)
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val committeeName = "Banner Committee ${System.currentTimeMillis()}"
+        val committeeId = TestHelper.createCommittee(name = committeeName)
+        TestHelper.addCommitteeMember(committeeId, member.username)
         val eventTitle = "Banner Event ${System.currentTimeMillis()}"
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
-            EventFormHelper.fillRequiredFields(
-                page = page,
-                title = eventTitle,
-                location = "Campus",
-                description = "Event with banner upload"
-            )
-            EventFormHelper.selectCommittee(page, committee.name)
-            EventFormHelper.uploadBanner(page, EVENT_BANNER_PATH)
+        EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.fillRequiredFields(
+            page = page,
+            title = eventTitle,
+            location = "Campus",
+            description = "Event with banner upload",
+        )
+        EventFormHelper.selectCommittee(page, committeeName)
+        EventFormHelper.uploadBanner(page, EVENT_BANNER_PATH)
 
-            val createResponse = page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events") &&
-                        !r.url().contains("/events/banners")
-                }
-            ) {
-                EventFormHelper.submit(page)
-            }
-            assertThat(createResponse.status()).isEqualTo(201)
+        val createResponse = page.waitForResponse(
+            Predicate { r ->
+                r.request().method() == "POST" &&
+                    r.url().contains("/events") &&
+                    !r.url().contains("/events/banners")
+            },
+        ) {
+            EventFormHelper.submit(page)
         }
+        assertThat(createResponse.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
-        val eventId = checkNotNull(created.id) { "Expected created event id for title '$eventTitle'" }
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        // Fresh context to observe the events-page banner fetch
+        // without cache / cookie interference.
+        val freshContext = context.browser().newContext()
+        try {
+            val freshPage = freshContext.newPage()
+            val freshLoginStatus = AuthHelper.submitLogin(freshPage, frontendUrl, member.username, member.password)
+            assertThat(freshLoginStatus).isEqualTo(200)
 
-            val bannerResponse = page.waitForResponse(
+            val bannerResponse = freshPage.waitForResponse(
                 Predicate { r ->
                     r.request().method() == "GET" &&
-                        r.url().contains("/events/$eventId/banners")
-                }
+                        r.url().contains("/events/${created.id}/banners")
+                },
             ) {
-                page.navigate("$frontendUrl/events")
+                freshPage.navigate("$frontendUrl/events")
             }
             assertThat(bannerResponse.status()).isEqualTo(200)
+        } finally {
+            freshContext.close()
         }
     }
 
     @Test
     fun `board can approve event from events page`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val committee = committeeFactory.create(name = "Approve Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(committee, board)
-        val event = eventFactory.create(
-            committee = committee,
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val committeeName = "Approve Committee ${System.currentTimeMillis()}"
+        val committeeId = TestHelper.createCommittee(name = committeeName)
+        TestHelper.addCommitteeMember(committeeId, board.username)
+        val eventTitle = "Approve From Events Page ${System.currentTimeMillis()}"
+        val eventId = TestHelper.createEvent(
+            committeeId = committeeId,
+            title = eventTitle,
             approved = false,
-            signUp = false,
-            title = "Approve From Events Page ${System.currentTimeMillis()}"
         )
-        event.startTime = Instant.now().plusSeconds(7 * 24 * 3600)
-        event.endTime = Instant.now().plusSeconds(7 * 24 * 3600 + 3600)
-        eventRepository.saveAndFlush(event)
-        val eventId = checkNotNull(event.id) { "Expected event id" }
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            page.navigate("$frontendUrl/events")
-            waitFor(
-                timeoutMs = 12_000,
-                onTimeoutMessage = { "Expected event '${event.title}' to be visible on events page for board user" }
-            ) {
-                page.getByText(event.title, Page.GetByTextOptions().setExact(false)).count() > 0
-            }
+        page.navigate("$frontendUrl/events")
+        page.getByText(eventTitle, Page.GetByTextOptions().setExact(false)).first().waitFor()
 
-            val response = page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "PUT" &&
-                        r.url().contains("/events/$eventId/approve") &&
-                        r.url().contains("approved=true")
-                }
-            ) {
-                page.getByRole(
-                    AriaRole.BUTTON,
-                    Page.GetByRoleOptions().setName("Awaiting approval").setExact(false)
-                ).first().click()
-            }
-            assertThat(response.status()).isEqualTo(200)
-        }
-
-        waitFor(
-            onTimeoutMessage = { "Expected event $eventId to be approved by board action" }
+        val response = page.waitForResponse(
+            Predicate { r ->
+                r.request().method() == "PUT" &&
+                    r.url().contains("/events/$eventId/approve") &&
+                    r.url().contains("approved=true")
+            },
         ) {
-            eventRepository.findById(eventId).orElseThrow().approved
+            page.getByRole(
+                AriaRole.BUTTON,
+                Page.GetByRoleOptions().setName("Awaiting approval").setExact(false),
+            ).first().click()
         }
+        assertThat(response.status()).isEqualTo(200)
+
+        waitForEventState(eventId) { it.approved }
     }
 
     @Test
     fun `sign-up deadline and limit fields are hidden when sign-up is disabled`() {
-        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
-        val committee = committeeFactory.create(name = "SignUp Hidden Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(committee, member)
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val committeeName = "SignUp Hidden Committee ${System.currentTimeMillis()}"
+        val committeeId = TestHelper.createCommittee(name = committeeName)
+        TestHelper.addCommitteeMember(committeeId, member.username)
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.openCreatePage(page, frontendUrl)
 
-            // Sign-up disabled by default — deadline and limit inputs must not be in the DOM
-            assertThat(EventFormHelper.signUpDeadlineInput(page).count()).isEqualTo(0)
-            assertThat(EventFormHelper.signUpLimitInput(page).count()).isEqualTo(0)
-        }
+        assertThat(EventFormHelper.signUpDeadlineInput(page).count()).isEqualTo(0)
+        assertThat(EventFormHelper.signUpLimitInput(page).count()).isEqualTo(0)
     }
 
     @Test
     fun `sign-up deadline and limit fields appear when sign-up is enabled`() {
-        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
-        val committee = committeeFactory.create(name = "SignUp Visible Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(committee, member)
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val committeeName = "SignUp Visible Committee ${System.currentTimeMillis()}"
+        val committeeId = TestHelper.createCommittee(name = committeeName)
+        TestHelper.addCommitteeMember(committeeId, member.username)
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
-            EventFormHelper.enableSignUp(page)
+        EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.enableSignUp(page)
 
-            EventFormHelper.signUpDeadlineInput(page).waitFor()
-            EventFormHelper.signUpLimitInput(page).waitFor()
-        }
+        EventFormHelper.signUpDeadlineInput(page).waitFor()
+        EventFormHelper.signUpLimitInput(page).waitFor()
     }
 
     @Test
     fun `creating event with sign-up limit persists the limit`() {
-        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
-        val committee = committeeFactory.create(name = "Limit Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(committee, member)
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val committeeName = "Limit Committee ${System.currentTimeMillis()}"
+        val committeeId = TestHelper.createCommittee(name = committeeName)
+        TestHelper.addCommitteeMember(committeeId, member.username)
         val eventTitle = "Limited Signup Event ${System.currentTimeMillis()}"
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
-            EventFormHelper.fillRequiredFields(
-                page = page,
-                title = eventTitle,
-                location = "Campus",
-                description = "Event with signup limit"
-            )
-            EventFormHelper.selectCommittee(page, committee.name)
-            EventFormHelper.enableSignUp(page)
-            EventFormHelper.signUpDeadlineInput(page).waitFor()
-            EventFormHelper.setSignUpLimit(page, 42)
+        EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.fillRequiredFields(
+            page = page,
+            title = eventTitle,
+            location = "Campus",
+            description = "Event with signup limit",
+        )
+        EventFormHelper.selectCommittee(page, committeeName)
+        EventFormHelper.enableSignUp(page)
+        EventFormHelper.signUpDeadlineInput(page).waitFor()
+        EventFormHelper.setSignUpLimit(page, 42)
 
-            val response = page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events") &&
-                        !r.url().contains("/events/banners")
-                }
-            ) {
-                EventFormHelper.submit(page)
-            }
-            assertThat(response.status()).isEqualTo(201)
+        val response = page.waitForResponse(
+            Predicate { r ->
+                r.request().method() == "POST" &&
+                    r.url().contains("/events") &&
+                    !r.url().contains("/events/banners")
+            },
+        ) {
+            EventFormHelper.submit(page)
         }
+        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.signUpLimit).isEqualTo(42)
@@ -313,61 +289,62 @@ class EventCreatePageSystemTest : FrontendSystemTestBase() {
 
     @Test
     fun `clearing sign-up limit field sends no limit to the API`() {
-        val member = userFactory.createUserWithRole(Role.COMMITTEE, enabled = true)
-        val committee = committeeFactory.create(name = "No Limit Committee ${System.currentTimeMillis()}")
-        committeeFactory.createMember(committee, member)
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val committeeName = "No Limit Committee ${System.currentTimeMillis()}"
+        val committeeId = TestHelper.createCommittee(name = committeeName)
+        TestHelper.addCommitteeMember(committeeId, member.username)
         val eventTitle = "Unlimited Signup Event ${System.currentTimeMillis()}"
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            EventFormHelper.openCreatePage(page, frontendUrl)
-            EventFormHelper.fillRequiredFields(
-                page = page,
-                title = eventTitle,
-                location = "Campus",
-                description = "Event with no signup limit"
-            )
-            EventFormHelper.selectCommittee(page, committee.name)
-            EventFormHelper.enableSignUp(page)
-            // Leave the sign-up limit empty (do not set it)
+        EventFormHelper.openCreatePage(page, frontendUrl)
+        EventFormHelper.fillRequiredFields(
+            page = page,
+            title = eventTitle,
+            location = "Campus",
+            description = "Event with no signup limit",
+        )
+        EventFormHelper.selectCommittee(page, committeeName)
+        EventFormHelper.enableSignUp(page)
 
-            val response = page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events") &&
-                        !r.url().contains("/events/banners")
-                }
-            ) {
-                EventFormHelper.submit(page)
-            }
-            assertThat(response.status()).isEqualTo(201)
+        val response = page.waitForResponse(
+            Predicate { r ->
+                r.request().method() == "POST" &&
+                    r.url().contains("/events") &&
+                    !r.url().contains("/events/banners")
+            },
+        ) {
+            EventFormHelper.submit(page)
         }
+        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.signUp).isTrue()
         assertThat(created.signUpLimit).isNull()
     }
 
-    private fun waitForEventByTitle(title: String): Event {
-        lateinit var created: Event
-        waitFor(
-            onTimeoutMessage = { "Expected persisted event with title '$title'" }
-        ) {
-            val found = eventRepository.findAll().firstOrNull { it.title == title }
-            if (found != null) {
-                created = found
-                true
-            } else {
-                false
-            }
+    private fun waitForEventByTitle(title: String): TestHelper.EventRow {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            val row = TestHelper.findEventByTitle(title)
+            if (row != null) return row
+            Thread.sleep(200)
         }
-        return created
+        throw AssertionError("Expected event with title '$title' within 10s")
+    }
+
+    private fun waitForEventState(eventId: Long, predicate: (TestHelper.EventRow) -> Boolean) {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            val row = TestHelper.findEvent(eventId)
+            if (row != null && predicate(row)) return
+            Thread.sleep(200)
+        }
+        throw AssertionError("Expected event $eventId to satisfy predicate within 10s")
     }
 
     private companion object {
-        const val DEFAULT_PASSWORD = "Password123!"
         const val EVENT_BANNER_PATH = "../frontend/public/favicon.png"
     }
 }

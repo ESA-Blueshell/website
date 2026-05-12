@@ -29,16 +29,21 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val token = resolveToken(request) ?: run {
-            filterChain.doFilter(request, response)
-            return
-        }
+        // Try every candidate credential in order until one validates.
+        // The previous code short-circuited on `Authorization: Bearer ...`,
+        // which let an opaque third-party token (Stalwart webadmin's own
+        // OAuth, in particular) override a valid BSH_AUTH cookie and leave
+        // the request anonymous. Authorization still wins when both are
+        // valid — only an *invalid* Authorization yields to the cookie.
+        val validation = resolveTokenCandidates(request)
+            .asSequence()
+            .map { jwtTokenUtil.parseAndValidate(it) }
+            .firstOrNull { it.isValid }
+            ?: run {
+                filterChain.doFilter(request, response)
+                return
+            }
 
-        val validation = jwtTokenUtil.parseAndValidate(token)
-        if (!validation.isValid) {
-            filterChain.doFilter(request, response)
-            return
-        }
         if (jwtRevocationService.isRevoked(validation.jti)) {
             filterChain.doFilter(request, response)
             return
@@ -71,11 +76,12 @@ class JwtAuthFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun resolveToken(request: HttpServletRequest): String? {
-        val header = request.getHeader("Authorization")
-        if (!header.isNullOrBlank() && header.startsWith("Bearer ")) {
-            return header.substring(7).trim().takeIf { it.isNotBlank() }
+    private fun resolveTokenCandidates(request: HttpServletRequest): List<String> =
+        buildList {
+            request.getHeader("Authorization")
+                ?.takeIf { it.startsWith("Bearer ") }
+                ?.substring(7)?.trim()?.takeIf { it.isNotBlank() }
+                ?.let { add(it) }
+            authTokenCookieService.resolveToken(request)?.let { add(it) }
         }
-        return authTokenCookieService.resolveToken(request)
-    }
 }

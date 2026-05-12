@@ -42,6 +42,11 @@ class AccountPageSystemTest : PlaywrightTestBase() {
 
         page.navigate("$frontendUrl/account")
         page.waitForURL("**/account")
+        // The form wrapper mounts after the page's `/users/{id}` fetch
+        // resolves; without waiting for it explicitly, `fill` can race
+        // the still-loading VeeValidate setup that briefly leaves the
+        // inputs non-editable.
+        page.locator("[data-testid='account-user-form']").first().waitFor()
 
         page.getByLabel("Discord*", Page.GetByLabelOptions().setExact(true)).fill(updatedDiscord)
         page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(updatedPhone)

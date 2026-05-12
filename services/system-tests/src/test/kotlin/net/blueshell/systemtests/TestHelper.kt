@@ -102,7 +102,7 @@ object TestHelper {
         password: String = DEFAULT_PASSWORD,
         email: String = "$username@systemtest.example.com",
     ): RegisteredUser {
-        retryOnConnectionFailure {
+        val response = retryOnConnectionFailure {
             givenCsrfApi()
                 .baseUri(apiBaseUrl)
                 .contentType(ContentType.JSON)
@@ -117,13 +117,16 @@ object TestHelper {
                       "discord": "$username#0001",
                       "phoneNumber": "06${System.currentTimeMillis().toString().takeLast(8)}",
                       "newsletter": false,
+                      "consentPrivacy": true,
+                      "photoConsent": false,
                       "password": "$password"
                     }
                     """.trimIndent(),
                 ).`when`()
                 .post("/users")
-                .then()
-                .statusCode(201)
+        }
+        require(response.statusCode == 201) {
+            "POST /users returned ${response.statusCode}: ${response.asString()}"
         }
 
         return RegisteredUser(username, email, password)

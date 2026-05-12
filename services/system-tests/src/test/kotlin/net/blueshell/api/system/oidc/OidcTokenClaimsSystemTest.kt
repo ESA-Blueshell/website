@@ -1,6 +1,6 @@
 package net.blueshell.api.system.oidc
 
-import net.blueshell.api.shared.enums.Role
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -24,14 +24,15 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
 
     @Test
     fun `headlamp authorization_code grant issues id_token with admin groups`() {
-        val admin = userFactory.createUserWithRole(Role.ADMIN)
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
+        val adminId = TestHelper.findUser(admin.username)!!.id
         val pkce = OidcTestHelper.newPkce()
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
         // 1. Authorize -> 302 with ?code=
         val authorizeResp = get(
             buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
-            sessionToken = sessionTokenFor(admin.username),
+            sessionToken = sessionTokenFor(admin),
         )
         assertThat(authorizeResp.statusCode()).isEqualTo(302)
         val location = authorizeResp.headers().firstValue("Location").orElse("")
@@ -55,18 +56,18 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
 
         // 3. ID token: roles + groups (admin → k8s-admin + member)
         val idClaims = OidcTestHelper.decodePayload(tokenJson["id_token"].asString())
-        assertThat(idClaims["sub"].asString()).isEqualTo(admin.id!!.toString())
+        assertThat(idClaims["sub"].asString()).isEqualTo(adminId.toString())
         assertThat(OidcTestHelper.stringValues(idClaims["groups"])).contains("k8s-admin", "member")
-        assertThat(OidcTestHelper.stringValues(idClaims["roles"])).contains(Role.ADMIN.name)
+        assertThat(OidcTestHelper.stringValues(idClaims["roles"])).contains("ADMIN")
 
         // 4. Access token: aud, roles, username, email
         val accessClaims = OidcTestHelper.decodePayload(tokenJson["access_token"].asString())
-        assertThat(accessClaims["sub"].asString()).isEqualTo(admin.id!!.toString())
+        assertThat(accessClaims["sub"].asString()).isEqualTo(adminId.toString())
         assertThat(OidcTestHelper.stringValues(accessClaims["aud"])).contains("headlamp")
         assertThat(accessClaims["username"].asString()).isEqualTo(admin.username)
         assertThat(accessClaims["preferred_username"].asString()).isEqualTo(admin.username)
         assertThat(accessClaims["email"].asString()).isEqualTo(admin.email)
-        assertThat(OidcTestHelper.stringValues(accessClaims["roles"])).contains(Role.ADMIN.name)
+        assertThat(OidcTestHelper.stringValues(accessClaims["roles"])).contains("ADMIN")
     }
 
     @Test
@@ -78,13 +79,14 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
         // pass admin gating but the user does not have a non-ADMIN role
         // alone, so the assertion focuses on `member` always being
         // present for any non-anonymous principal.
-        val admin = userFactory.createUserWithRole(Role.ADMIN)
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
+        val adminId = TestHelper.findUser(admin.username)!!.id
         val pkce = OidcTestHelper.newPkce()
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
         val authorizeResp = get(
             buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
-            sessionToken = sessionTokenFor(admin.username),
+            sessionToken = sessionTokenFor(admin),
         )
         val code = OidcTestHelper.queryParam(
             authorizeResp.headers().firstValue("Location").orElse(""),

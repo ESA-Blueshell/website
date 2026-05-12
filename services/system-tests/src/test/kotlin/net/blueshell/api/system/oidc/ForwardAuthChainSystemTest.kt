@@ -1,6 +1,6 @@
 package net.blueshell.api.system.oidc
 
-import net.blueshell.api.shared.enums.Role
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -10,13 +10,10 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
 /**
- * Lifts the existing ForwardAuthControllerIT integration test to the
- * system-test layer: drives /oauth2/forward-auth over real HTTP against
- * the embedded server. Parametrized across every host the controller
- * gates today (vault, headlamp, listmonk, stalwart, traefik) so a future
- * host added to HOST_ROLE without a system-test entry fails this suite.
- *
- * Models personal-stack's ForwardAuthChainSystemTest pattern.
+ * System-test coverage for `/oauth2/forward-auth`. Parametrized across
+ * every host the controller gates today (vault, headlamp, listmonk,
+ * stalwart, traefik) so a future host added to `HOST_ROLE` without a
+ * matching system-test entry fails this suite.
  */
 @Tag("system")
 class ForwardAuthChainSystemTest : OidcSystemTestBase() {
@@ -26,15 +23,15 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
         @JvmStatic
         fun adminGatedHosts(): Stream<Arguments> = Stream.of(
-            Arguments.of("vault.esa-blueshell.nl", Role.ADMIN),
-            Arguments.of("headlamp.esa-blueshell.nl", Role.ADMIN),
-            Arguments.of("traefik.esa-blueshell.nl", Role.ADMIN),
+            Arguments.of("vault.esa-blueshell.nl"),
+            Arguments.of("headlamp.esa-blueshell.nl"),
+            Arguments.of("traefik.esa-blueshell.nl"),
         )
 
         @JvmStatic
         fun boardGatedHosts(): Stream<Arguments> = Stream.of(
-            Arguments.of("listmonk.esa-blueshell.nl", Role.BOARD),
-            Arguments.of("stalwart.esa-blueshell.nl", Role.BOARD),
+            Arguments.of("listmonk.esa-blueshell.nl"),
+            Arguments.of("stalwart.esa-blueshell.nl"),
         )
 
         @JvmStatic
@@ -44,7 +41,7 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @ParameterizedTest(name = "anonymous → 302 to /login (host={0})")
     @MethodSource("allGatedHosts")
-    fun anonymous_redirects_to_login(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
+    fun anonymous_redirects_to_login(host: String) {
         val response = get(
             "/oauth2/forward-auth",
             headers = mapOf(
@@ -63,12 +60,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @ParameterizedTest(name = "member → 302 /unauthorized (host={0})")
     @MethodSource("allGatedHosts")
-    fun member_blocked_with_unauthorized_redirect(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
-        val member = userFactory.createUserWithRole(Role.MEMBER)
+    fun member_blocked_with_unauthorized_redirect(host: String) {
+        val member = TestHelper.registerActivateAndPromote("MEMBER")
 
         val response = get(
             "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(member.username),
+            sessionToken = sessionTokenFor(member),
             headers = mapOf("X-Forwarded-Host" to host, "X-Forwarded-Uri" to "/"),
         )
 
@@ -79,30 +76,31 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @ParameterizedTest(name = "admin → 200 with X-User-Id (host={0})")
     @MethodSource("allGatedHosts")
-    fun admin_passes_every_host(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
-        val admin = userFactory.createUserWithRole(Role.ADMIN)
+    fun admin_passes_every_host(host: String) {
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
+        val adminId = TestHelper.findUser(admin.username)!!.id
 
         val response = get(
             "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(admin.username),
+            sessionToken = sessionTokenFor(admin),
             headers = mapOf("X-Forwarded-Host" to host),
         )
 
         assertThat(response.statusCode()).isEqualTo(200)
         assertThat(response.headers().firstValue("X-User-Id").orElse(""))
-            .isEqualTo(admin.id!!.toString())
+            .isEqualTo(adminId.toString())
         assertThat(response.headers().firstValue("X-User-Groups").orElse(""))
             .contains("ADMIN")
     }
 
     @ParameterizedTest(name = "board → 200 (host={0}, board-gated)")
     @MethodSource("boardGatedHosts")
-    fun board_passes_board_gated_hosts(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
-        val board = userFactory.createUserWithRole(Role.BOARD)
+    fun board_passes_board_gated_hosts(host: String) {
+        val board = TestHelper.registerActivateAndPromote("BOARD")
 
         val response = get(
             "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(board.username),
+            sessionToken = sessionTokenFor(board),
             headers = mapOf("X-Forwarded-Host" to host),
         )
 
@@ -112,12 +110,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @ParameterizedTest(name = "board → 302 /unauthorized (host={0}, admin-gated)")
     @MethodSource("adminGatedHosts")
-    fun board_blocked_on_admin_gated_hosts(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
-        val board = userFactory.createUserWithRole(Role.BOARD)
+    fun board_blocked_on_admin_gated_hosts(host: String) {
+        val board = TestHelper.registerActivateAndPromote("BOARD")
 
         val response = get(
             "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(board.username),
+            sessionToken = sessionTokenFor(board),
             headers = mapOf("X-Forwarded-Host" to host),
         )
 
@@ -128,11 +126,10 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @ParameterizedTest(name = "anonymous XHR → 401 (host={0})")
     @MethodSource("allGatedHosts")
-    fun anonymous_xhr_returns_401_not_302(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
-        // Stalwart/Headlamp/etc. SPAs fetch /api/* with Accept: application/json
-        // (no text/html). A 302 to v2.esa-blueshell.nl/login auto-follows and
-        // browser CORS-blocks it → SPA shows a generic network error. 401 lets
-        // the SPA recognise an expired session.
+    fun anonymous_xhr_returns_401_not_302(host: String) {
+        // SPAs fetch `/api/*` with `Accept: application/json`. A 302 to
+        // the login page auto-follows and CORS-blocks; 401 lets the SPA
+        // recognise an expired session.
         val response = java.net.http.HttpClient.newHttpClient().send(
             java.net.http.HttpRequest.newBuilder()
                 .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
@@ -152,15 +149,15 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @ParameterizedTest(name = "member XHR on board-gated → 403 (host={0})")
     @MethodSource("boardGatedHosts")
-    fun member_xhr_on_board_host_returns_403(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
-        val member = userFactory.createUserWithRole(Role.MEMBER)
+    fun member_xhr_on_board_host_returns_403(host: String) {
+        val member = TestHelper.registerActivateAndPromote("MEMBER")
 
         val response = java.net.http.HttpClient.newHttpClient().send(
             java.net.http.HttpRequest.newBuilder()
                 .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
                 .GET()
                 .header("Accept", "application/json")
-                .header("Cookie", "$authCookieName=${sessionTokenFor(member.username)}")
+                .header("Cookie", "$authCookieName=${sessionTokenFor(member)}")
                 .header("X-Forwarded-Host", host)
                 .build(),
             java.net.http.HttpResponse.BodyHandlers.discarding(),
@@ -201,11 +198,11 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @Test
     fun `unknown host falls back to ADMIN-required and rejects board`() {
-        val board = userFactory.createUserWithRole(Role.BOARD)
+        val board = TestHelper.registerActivateAndPromote("BOARD")
 
         val response = get(
             "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(board.username),
+            sessionToken = sessionTokenFor(board),
             headers = mapOf("X-Forwarded-Host" to "rogue.example.com"),
         )
 

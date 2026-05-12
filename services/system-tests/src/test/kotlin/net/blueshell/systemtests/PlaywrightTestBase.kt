@@ -89,6 +89,17 @@ abstract class PlaywrightTestBase {
     }
 
     companion object {
-        const val DEFAULT_TIMEOUT_MS: Double = 5_000.0
+        /**
+         * Default per-action timeout. 5 s used to be enough when every
+         * test had the whole api context to itself, but with the
+         * sharded matrix running the in-process Spring Boot context
+         * alongside async background jobs (contact sync, email send,
+         * job dispatch) a fresh page render that calls `/users/{id}`
+         * can comfortably overshoot 5 s. 15 s leaves room for that
+         * without masking real regressions — Playwright still polls
+         * the locator continuously, so a fast page returns
+         * immediately.
+         */
+        const val DEFAULT_TIMEOUT_MS: Double = 15_000.0
     }
 }

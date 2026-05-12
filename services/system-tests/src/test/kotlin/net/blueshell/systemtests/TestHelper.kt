@@ -387,6 +387,45 @@ object TestHelper {
     }
 
     /**
+     * Insert a `job_executions` row in the given status. The job
+     * manager's stats endpoint reads counts and timings off this
+     * table directly, so tests that want to exercise the stats panel
+     * just need a few well-shaped rows. `queuedAt` / `startedAt` /
+     * `finishedAt` follow the lifecycle implied by `status`:
+     * a `SUCCESS` / `FAILED` row has all three set; a `RUNNING` /
+     * `RETRYING` / `DEAD` row has `queuedAt` + `startedAt`; a
+     * `QUEUED` row has only `queuedAt`.
+     */
+    fun createJobExecution(
+        jobType: String,
+        status: String = "SUCCESS",
+        queuedAt: java.time.Instant = java.time.Instant.now().minusSeconds(600),
+        startedAt: java.time.Instant? = java.time.Instant.now().minusSeconds(300),
+        finishedAt: java.time.Instant? = java.time.Instant.now().minusSeconds(120),
+        attempts: Int = 1,
+    ): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO job_executions (job_type, status, attempts, queued_at, started_at, finished_at, " +
+                    "initiated_by_type, initiated_by_role) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, 'SYSTEM', 'ADMIN')",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setString(1, jobType)
+                stmt.setString(2, status)
+                stmt.setInt(3, attempts)
+                stmt.setTimestamp(4, java.sql.Timestamp.from(queuedAt))
+                stmt.setTimestamp(5, startedAt?.let { java.sql.Timestamp.from(it) })
+                stmt.setTimestamp(6, finishedAt?.let { java.sql.Timestamp.from(it) })
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT job_executions produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
      * Attach a `member_profiles` row to a user via `POST /memberProfiles`.
      * Logs the user in to satisfy the controller's `hasPermission(userId,
      * 'User', 'write')` guard. Defaults cover the columns the api marks

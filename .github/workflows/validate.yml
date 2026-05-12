@@ -297,9 +297,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           yarn-version: ${{ env.YARN_VERSION }}
 
-      - name: Install Playwright browser for system tests
-        run: ./gradlew --no-daemon :services:system-tests:installChromium
-
       - name: Start instrumented frontend for system tests
         run: |
           set -euo pipefail

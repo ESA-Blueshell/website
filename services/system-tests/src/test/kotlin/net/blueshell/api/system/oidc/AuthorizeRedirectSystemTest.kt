@@ -1,6 +1,6 @@
 package net.blueshell.api.system.oidc
 
-import net.blueshell.api.shared.enums.Role
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -66,13 +66,13 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
     @Test
     fun `member hitting admin-only headlamp authorize is blocked by 403`() {
-        val member = userFactory.createUserWithRole(Role.MEMBER)
+        val member = TestHelper.registerActivateAndPromote("MEMBER")
         val pkce = OidcTestHelper.newPkce()
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
         val response = get(
             authorizeUrl("headlamp", pkce, redirect),
-            sessionToken = sessionTokenFor(member.username),
+            sessionToken = sessionTokenFor(member),
         )
 
         assertThat(response.statusCode()).isEqualTo(403)
@@ -80,12 +80,12 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
     @Test
     fun `member hitting admin-only vault authorize is blocked by 403`() {
-        val member = userFactory.createUserWithRole(Role.MEMBER)
+        val member = TestHelper.registerActivateAndPromote("MEMBER")
         val redirect = "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback"
 
         val response = get(
             authorizeUrl("vault", pkce = null, redirect = redirect),
-            sessionToken = sessionTokenFor(member.username),
+            sessionToken = sessionTokenFor(member),
         )
 
         assertThat(response.statusCode()).isEqualTo(403)
@@ -93,13 +93,13 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
     @Test
     fun `admin authorize for headlamp redirects to client redirect_uri with code`() {
-        val admin = userFactory.createUserWithRole(Role.ADMIN)
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
         val pkce = OidcTestHelper.newPkce()
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
         val response = get(
             authorizeUrl("headlamp", pkce, redirect),
-            sessionToken = sessionTokenFor(admin.username),
+            sessionToken = sessionTokenFor(admin),
         )
 
         assertThat(response.statusCode()).isEqualTo(302)
@@ -111,12 +111,12 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
 
     @Test
     fun `admin authorize for vault redirects to client redirect_uri with code`() {
-        val admin = userFactory.createUserWithRole(Role.ADMIN)
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
         val redirect = "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback"
 
         val response = get(
             authorizeUrl("vault", pkce = null, redirect = redirect),
-            sessionToken = sessionTokenFor(admin.username),
+            sessionToken = sessionTokenFor(admin),
         )
 
         assertThat(response.statusCode()).isEqualTo(302)

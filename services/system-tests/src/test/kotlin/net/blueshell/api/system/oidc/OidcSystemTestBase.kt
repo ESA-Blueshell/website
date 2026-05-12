@@ -1,15 +1,10 @@
 package net.blueshell.api.system.oidc
 
-import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TestCleanUpListener
-import net.blueshell.api.factory.user.persistence.UserFactory
-import net.blueshell.api.infrastructure.security.JwtTokenGenerator
+import net.blueshell.systemtests.PlaywrightShardCondition
+import net.blueshell.systemtests.TestEnvironment
+import net.blueshell.systemtests.TestHelper
 import org.junit.jupiter.api.TestInstance
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestExecutionListeners
+import org.junit.jupiter.api.extension.ExtendWith
 import java.net.CookieManager
 import java.net.URI
 import java.net.URLEncoder
@@ -19,34 +14,27 @@ import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 
-@ActiveProfiles("test")
+/**
+ * Base for OIDC system tests that drive the api over plain HTTP. No
+ * Playwright (these flows are about HTTP redirects and JWT contents,
+ * not pixels), no `@SpringBootTest` — every observable behaviour comes
+ * from real HTTP requests against the running api.
+ *
+ * Concrete tests that need a browser layer on top can compose
+ * Playwright over the same `TestHelper`.
+ */
+@ExtendWith(PlaywrightShardCondition::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@TestExecutionListeners(
-    listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
-)
-@SpringBootTest(
-    classes = [ApiApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"]
-)
 abstract class OidcSystemTestBase {
 
-    @Autowired
-    protected lateinit var userFactory: UserFactory
+    protected val baseUrl: String = TestEnvironment.apiUrl
 
-    @Autowired
-    protected lateinit var tokenGenerator: JwtTokenGenerator
-
-    @Value($$"\${security.auth-cookie.name:BSH_AUTH}")
-    protected lateinit var authCookieName: String
-
-    protected val baseUrl: String = "http://localhost:8080"
+    protected val authCookieName: String get() = TestEnvironment.authCookieName
 
     /**
-     * HttpClient that does NOT follow redirects — every OIDC test needs to
-     * inspect 302 Location headers (login redirect, unauthorized redirect,
-     * authorize → callback with code).
+     * HttpClient that does NOT follow redirects — every OIDC test
+     * needs to inspect 302 Location headers (login redirect,
+     * unauthorized redirect, authorize → callback with code).
      */
     protected fun newClient(): HttpClient =
         HttpClient.newBuilder()
@@ -55,16 +43,22 @@ abstract class OidcSystemTestBase {
             .connectTimeout(Duration.ofSeconds(5))
             .build()
 
-    protected fun sessionTokenFor(username: String): String =
-        tokenGenerator.generateToken(username)
+    /**
+     * Log a `RegisteredUser` in and return the auth cookie value.
+     * Mints the JWT through the real `/auth` endpoint — same shape
+     * as the previous `tokenGenerator.generateToken(...)` call, just
+     * routed through HTTP rather than an in-process bean.
+     */
+    protected fun sessionTokenFor(user: TestHelper.RegisteredUser): String =
+        TestHelper.login(user).auth
 
     /**
-     * GET against the running app. Matches the browser-driven OIDC flow:
-     * session JWT carried as the BSH_AUTH cookie (not Authorization: Bearer
-     * — `.oidc()` brings in a resource-server BearerTokenAuthenticationFilter
-     * that would reject our HS256 session JWT), Accept: text/html so the
-     * SAS chain dispatches AuthenticationExceptions to our loginRedirect
-     * entry point rather than the resource-server's 401 default.
+     * GET against the running app. Carries the session JWT as the
+     * auth cookie (not `Authorization: Bearer` — the OIDC chain
+     * would reject our HS256 session JWT through the resource-server
+     * filter), and asks for `text/html` so the SAS chain dispatches
+     * `AuthenticationException` to the loginRedirect entry point
+     * rather than the resource server's 401 default.
      */
     protected fun get(
         path: String,

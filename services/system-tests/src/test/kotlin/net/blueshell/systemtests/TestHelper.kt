@@ -333,6 +333,41 @@ object TestHelper {
         }
 
     /**
+     * Attach a `memberships` row directly via JDBC. The api's
+     * `POST /memberships` requires the calling user to have both a
+     * profile and an address, and `POST /users/{id}/memberships`
+     * requires a board-level caller — neither shape fits a test that
+     * just wants a member-status user as a precondition. A plain
+     * insert sidesteps both. Audit columns (`created_at`,
+     * `updated_at`, `version`, `deleted_at`) have schema defaults;
+     * `created_by_id` / `updated_by_id` are nullable. Returns the
+     * new membership id.
+     */
+    fun attachMembership(
+        username: String,
+        memberType: String = "REGULAR",
+        startDate: String = java.time.LocalDate.now().minusDays(30).toString(),
+        incasso: Boolean = true,
+    ): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            return conn.prepareStatement(
+                "INSERT INTO memberships (user_id, start_date, type, incasso) VALUES (?, ?, ?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.setString(2, startDate)
+                stmt.setString(3, memberType)
+                stmt.setBoolean(4, incasso)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT memberships produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
      * Attach a `member_profiles` row to a user via `POST /memberProfiles`.
      * Logs the user in to satisfy the controller's `hasPermission(userId,
      * 'User', 'write')` guard. Defaults cover the columns the api marks

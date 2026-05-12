@@ -31,6 +31,7 @@ class AccountPageSystemTest : PlaywrightTestBase() {
     fun `member can update editable account fields`() {
         val member = TestHelper.registerActivateAndPromote("MEMBER")
         TestHelper.attachMemberProfile(member)
+        TestHelper.attachMembership(member.username)
 
         val suffix = System.currentTimeMillis().toString().takeLast(8)
         val updatedDiscord = "account$suffix"

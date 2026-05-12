@@ -312,8 +312,8 @@ object TestHelper {
     fun findUser(username: String): RegisteredUserRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
-                "SELECT id, username, email, enabled FROM users " +
-                    "WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+                "SELECT id, username, email, enabled, discord, phone_number " +
+                    "FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
             ).use { stmt ->
                 stmt.setString(1, username)
                 val rs = stmt.executeQuery()
@@ -323,12 +323,58 @@ object TestHelper {
                         username = rs.getString("username"),
                         email = rs.getString("email"),
                         enabled = rs.getBoolean("enabled"),
+                        discord = rs.getString("discord"),
+                        phoneNumber = rs.getString("phone_number"),
                     )
                 } else {
                     null
                 }
             }
         }
+
+    /**
+     * Attach a `member_profiles` row to a user via `POST /memberProfiles`.
+     * Logs the user in to satisfy the controller's `hasPermission(userId,
+     * 'User', 'write')` guard. Defaults cover the columns the api marks
+     * `@field:NotNull` / `@field:NotBlank`; callers can override any of
+     * them.
+     */
+    fun attachMemberProfile(
+        user: RegisteredUser,
+        dateOfBirth: String = "1999-05-05",
+        studentNumber: String = "s${System.currentTimeMillis()}",
+        gender: String = "X",
+        nationality: String = "NL",
+        bhv: Boolean = false,
+        ehbo: Boolean = false,
+    ): Long {
+        val cookies = login(user)
+        val userId = findUser(user.username)!!.id
+        val response = retryOnConnectionFailure {
+            givenCsrfApi()
+                .baseUri(apiBaseUrl)
+                .cookie(TestEnvironment.authCookieName, cookies.auth)
+                .contentType(ContentType.JSON)
+                .body(
+                    """
+                    {
+                      "userId": $userId,
+                      "dateOfBirth": "$dateOfBirth",
+                      "studentNumber": "$studentNumber",
+                      "gender": "$gender",
+                      "nationality": "$nationality",
+                      "bhv": $bhv,
+                      "ehbo": $ehbo
+                    }
+                    """.trimIndent(),
+                ).`when`()
+                .post("/memberProfiles")
+        }
+        require(response.statusCode == 201) {
+            "POST /memberProfiles returned ${response.statusCode}: ${response.asString()}"
+        }
+        return response.jsonPath().getLong("id")
+    }
 
     /**
      * Hits `POST /auth` and returns the auth cookie (default name
@@ -377,6 +423,8 @@ object TestHelper {
         val username: String,
         val email: String,
         val enabled: Boolean,
+        val discord: String?,
+        val phoneNumber: String?,
     )
 
     data class AddressRow(

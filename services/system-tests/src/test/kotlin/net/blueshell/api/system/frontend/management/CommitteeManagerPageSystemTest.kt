@@ -1,238 +1,232 @@
 package net.blueshell.api.system.frontend.management
 
-import com.microsoft.playwright.Page
-import net.blueshell.api.domain.committee.persistence.repository.CommitteeRepository
-import net.blueshell.api.factory.committee.persistence.CommitteeFactory
-import net.blueshell.api.factory.user.persistence.UserFactory
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.ApiApplication
+import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.CommitteeFormHelper
 import net.blueshell.api.system.frontend.helper.CommitteeManagerHelper
+import net.blueshell.systemtests.PlaywrightTestBase
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestExecutionListeners
 
 @Tag("system")
-class CommitteeManagerPageSystemTest : FrontendSystemTestBase() {
-
-    @Autowired
-    private lateinit var userFactory: UserFactory
-
-    @Autowired
-    private lateinit var committeeFactory: CommitteeFactory
-
-    @Autowired
-    private lateinit var committeeRepository: CommitteeRepository
+@ActiveProfiles("test")
+@TestExecutionListeners(
+    listeners = [TestCleanUpListener::class],
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
+)
+@SpringBootTest(
+    classes = [ApiApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
+)
+class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `creates committee from manager`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val memberSuffix = System.currentTimeMillis().toString().takeLast(6)
+        val member = TestHelper.registerActivateAndPromote(
+            role = "MEMBER",
+            firstName = "Create$memberSuffix",
+            lastName = "Member",
+        )
         val suffix = System.currentTimeMillis().toString().takeLast(6)
         val committeeName = "SiteCie$suffix"
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-            CommitteeManagerHelper.open(page, frontendUrl)
-            CommitteeManagerHelper.openCreateForm(page)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+        CommitteeManagerHelper.open(page, frontendUrl)
+        CommitteeManagerHelper.openCreateForm(page)
 
-            CommitteeFormHelper.fillCommittee(
-                page,
-                committeeName,
-                "Committee focused on testing management flows end-to-end."
-            )
-            CommitteeFormHelper.addMember(page, role = "Chair", fullName = member.fullName)
+        CommitteeFormHelper.fillCommittee(
+            page,
+            committeeName,
+            "Committee focused on testing management flows end-to-end.",
+        )
+        CommitteeFormHelper.addMember(page, role = "Chair", fullName = member.fullName)
 
-            val response = page.waitForResponse("**/committees") {
-                CommitteeFormHelper.submit(page)
-            }
-            assertThat(response.status()).isEqualTo(201)
+        val response = page.waitForResponse("**/committees") {
+            CommitteeFormHelper.submit(page)
         }
+        assertThat(response.status()).isEqualTo(201)
 
-        waitFor(
-            onTimeoutMessage = { "Expected committee '$committeeName' to be persisted" }
-        ) {
-            committeeRepository.findAll().any { it.name == committeeName }
-        }
-        val persisted = committeeRepository.findAll().first { it.name == committeeName }
-        assertThat(persisted.description).contains("testing management flows")
-        assertThat(persisted.members.mapNotNull { it.user.id }).contains(member.id)
+        val memberId = TestHelper.findUser(member.username)!!.id
+        val byName = pollForCommitteeByName(committeeName)
+        assertThat(byName.description).contains("testing management flows")
+        val members = TestHelper.findCommitteeMembers(byName.id)
+        assertThat(members.map { it.userId }).contains(memberId)
     }
 
     @Test
     fun `deletes committee from manager`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
-        val committee = committeeFactory.create(
-            name = "DeleteCommittee${System.currentTimeMillis().toString().takeLast(6)}",
-            description = "Committee that will be deleted through board management page"
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val member = TestHelper.registerActivateAndPromote("MEMBER")
+        val committeeName = "DeleteCommittee${System.currentTimeMillis().toString().takeLast(6)}"
+        val committeeId = TestHelper.createCommittee(
+            name = committeeName,
+            description = "Committee that will be deleted through board management page",
         )
-        committeeFactory.createMember(committee = committee, user = member, role = "Chair")
-        val committeeId = checkNotNull(committee.id) { "Expected persisted committee id" }
+        TestHelper.addCommitteeMember(committeeId, member.username, role = "Chair")
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-            CommitteeManagerHelper.open(page, frontendUrl)
-            waitFor(
-                onTimeoutMessage = { "Expected committee '${committee.name}' to be visible before deletion" }
-            ) {
-                CommitteeManagerHelper.committeeRow(page, committeeId).count() > 0
-            }
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+        CommitteeManagerHelper.open(page, frontendUrl)
+        CommitteeManagerHelper.committeeRow(page, committeeId).first().waitFor()
 
-            CommitteeManagerHelper.openDeleteDialog(page, committeeId)
+        CommitteeManagerHelper.openDeleteDialog(page, committeeId)
 
-            val response = page.waitForResponse("**/committees/$committeeId") {
-                page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
-            }
-            assertThat(response.status()).isEqualTo(204)
+        val response = page.waitForResponse("**/committees/$committeeId") {
+            page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
         }
+        assertThat(response.status()).isEqualTo(204)
 
-        waitFor(
-            onTimeoutMessage = { "Expected committee $committeeId to be deleted" }
-        ) {
-            committeeRepository.findById(committeeId).isEmpty
-        }
+        pollFor("committee $committeeId deleted") { TestHelper.findCommittee(committeeId) == null }
     }
 
     @Test
     fun `updates committee members and committee roles`() {
         val suffix = System.currentTimeMillis().toString().takeLast(6)
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val removedMember = userFactory.createUserWithRole(Role.MEMBER, enabled = true).apply {
-            firstName = "Removed$suffix"
-            lastName = "Member"
-            addRole(Role.COMMITTEE)
-        }
-        userRepository.save(removedMember)
-        val addedMember = userFactory.createUserWithRole(Role.MEMBER, enabled = true).apply {
-            firstName = "Added$suffix"
-            lastName = "Member"
-        }
-        userRepository.save(addedMember)
-        val committee = committeeFactory.create(
-            name = "RoleSyncCommittee${System.currentTimeMillis().toString().takeLast(6)}",
-            description = "Committee used to verify role sync after member changes"
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val removedMember = TestHelper.registerActivateAndPromote(
+            role = "MEMBER",
+            firstName = "Removed$suffix",
+            lastName = "Member",
         )
-        committeeFactory.createMember(committee = committee, user = removedMember, role = "Chair")
-        val committeeId = checkNotNull(committee.id) { "Expected persisted committee id" }
-
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-            CommitteeManagerHelper.open(page, frontendUrl)
-            waitFor(
-                onTimeoutMessage = { "Expected committee '${committee.name}' to be visible before editing" }
-            ) {
-                CommitteeManagerHelper.committeeRow(page, committeeId).count() > 0
-            }
-
-            CommitteeManagerHelper.openEditForm(page, committeeId)
-
-            CommitteeFormHelper.removeFirstMember(page)
-            waitFor(
-                onTimeoutMessage = { "Expected existing committee member row to be removed before adding replacement" }
-            ) {
-                page.locator("[data-testid^='committee-form-remove-member-btn-']").count() == 0
-            }
-
-            CommitteeFormHelper.addMember(page, role = "Secretary", fullName = addedMember.fullName)
-
-            val response = page.waitForResponse("**/committees/$committeeId") {
-                CommitteeFormHelper.submit(page)
-            }
-            assertThat(response.status())
-                .withFailMessage("Expected update to succeed but got %s, body=%s", response.status(), response.text())
-                .isEqualTo(200)
-        }
-
-        waitFor(
-            timeoutMs = 12_000,
-            onTimeoutMessage = {
-                val refreshed = committeeRepository.findById(committeeId).orElse(null)
-                "Expected committee membership to be updated to only the replacement member, current members=${
-                    refreshed?.members?.map { it.userId to it.role }
-                }"
-            }
-        ) {
-            val refreshed = committeeRepository.findById(committeeId).orElse(null)
-            refreshed != null &&
-                refreshed.members.size == 1 &&
-                refreshed.members.first().userId == checkNotNull(addedMember.id)
-        }
-
-        waitFor(
-            timeoutMs = 12_000,
-            onTimeoutMessage = { "Expected committee roles to be synchronized after membership update" }
-        ) {
-            val removed = userRepository.findById(checkNotNull(removedMember.id)).orElse(null)
-            val added = userRepository.findById(checkNotNull(addedMember.id)).orElse(null)
-            removed != null &&
-                added != null &&
-                !removed.roles.contains(Role.COMMITTEE) &&
-                added.roles.contains(Role.COMMITTEE)
-        }
-
-        val removedAfter = waitForOptional(
-            producer = { userRepository.findById(checkNotNull(removedMember.id)) },
-            onTimeoutMessage = { "Expected removed user to be present after committee update" }
+        // Match the original test: removedMember starts with both MEMBER and COMMITTEE.
+        TestHelper.replaceRoles(removedMember.username, setOf("MEMBER", "COMMITTEE"))
+        val addedMember = TestHelper.registerActivateAndPromote(
+            role = "MEMBER",
+            firstName = "Added$suffix",
+            lastName = "Member",
         )
-        val addedAfter = waitForOptional(
-            producer = { userRepository.findById(checkNotNull(addedMember.id)) },
-            onTimeoutMessage = { "Expected added user to be present after committee update" }
+        val committeeName = "RoleSyncCommittee${System.currentTimeMillis().toString().takeLast(6)}"
+        val committeeId = TestHelper.createCommittee(
+            name = committeeName,
+            description = "Committee used to verify role sync after member changes",
         )
-        assertThat(removedAfter.roles).doesNotContain(Role.COMMITTEE)
-        assertThat(addedAfter.roles).contains(Role.COMMITTEE)
+        TestHelper.addCommitteeMember(committeeId, removedMember.username, role = "Chair")
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+        CommitteeManagerHelper.open(page, frontendUrl)
+        CommitteeManagerHelper.committeeRow(page, committeeId).first().waitFor()
+
+        CommitteeManagerHelper.openEditForm(page, committeeId)
+
+        CommitteeFormHelper.removeFirstMember(page)
+        pollFor("existing member row removed") {
+            page.locator("[data-testid^='committee-form-remove-member-btn-']").count() == 0
+        }
+
+        CommitteeFormHelper.addMember(page, role = "Secretary", fullName = addedMember.fullName)
+
+        val response = page.waitForResponse("**/committees/$committeeId") {
+            CommitteeFormHelper.submit(page)
+        }
+        assertThat(response.status())
+            .withFailMessage("Expected update to succeed but got %s, body=%s", response.status(), response.text())
+            .isEqualTo(200)
+
+        val addedId = TestHelper.findUser(addedMember.username)!!.id
+        pollFor("committee membership updated", timeoutMs = 12_000) {
+            val members = TestHelper.findCommitteeMembers(committeeId)
+            members.size == 1 && members.first().userId == addedId
+        }
+
+        pollFor("committee roles synced", timeoutMs = 12_000) {
+            val removedRoles = TestHelper.findRoles(removedMember.username)
+            val addedRoles = TestHelper.findRoles(addedMember.username)
+            "COMMITTEE" !in removedRoles && "COMMITTEE" in addedRoles
+        }
+
+        assertThat(TestHelper.findRoles(removedMember.username)).doesNotContain("COMMITTEE")
+        assertThat(TestHelper.findRoles(addedMember.username)).contains("COMMITTEE")
     }
 
     @Test
     fun `updates committee name and description`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val member = userFactory.createUserWithRole(Role.MEMBER, enabled = true)
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val member = TestHelper.registerActivateAndPromote("MEMBER")
         val suffix = System.currentTimeMillis().toString().takeLast(6)
-        val committee = committeeFactory.create(
-            name = "MetaCommittee$suffix",
-            description = "Old description for metadata update test"
+        val committeeName = "MetaCommittee$suffix"
+        val committeeId = TestHelper.createCommittee(
+            name = committeeName,
+            description = "Old description for metadata update test",
         )
-        committeeFactory.createMember(committee = committee, user = member, role = "Chair")
-        val committeeId = checkNotNull(committee.id) { "Expected persisted committee id" }
+        TestHelper.addCommitteeMember(committeeId, member.username, role = "Chair")
         val updatedName = "MetaCommitteeUpdated$suffix"
         val updatedDescription = "Updated description for committee manager metadata flow."
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
-            CommitteeManagerHelper.open(page, frontendUrl)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+        CommitteeManagerHelper.open(page, frontendUrl)
+        CommitteeManagerHelper.committeeRow(page, committeeId).first().waitFor()
 
-            waitFor(
-                onTimeoutMessage = { "Expected committee '${committee.name}' before metadata update" }
-            ) {
-                CommitteeManagerHelper.committeeRow(page, committeeId).count() > 0
-            }
+        CommitteeManagerHelper.openEditForm(page, committeeId)
+        CommitteeFormHelper.fillCommittee(page, updatedName, updatedDescription)
 
-            CommitteeManagerHelper.openEditForm(page, committeeId)
-            CommitteeFormHelper.fillCommittee(page, updatedName, updatedDescription)
-
-            val response = page.waitForResponse("**/committees/$committeeId") {
-                CommitteeFormHelper.submit(page)
-            }
-            assertThat(response.status())
-                .withFailMessage("Expected committee metadata update to succeed but got %s, body=%s", response.status(), response.text())
-                .isEqualTo(200)
+        val response = page.waitForResponse("**/committees/$committeeId") {
+            CommitteeFormHelper.submit(page)
         }
+        assertThat(response.status())
+            .withFailMessage("Expected metadata update to succeed but got %s, body=%s", response.status(), response.text())
+            .isEqualTo(200)
 
-        waitFor(
-            onTimeoutMessage = { "Expected committee metadata for id=$committeeId to be updated" }
-        ) {
-            val refreshed = committeeRepository.findById(committeeId).orElse(null)
+        pollFor("committee metadata updated") {
+            val refreshed = TestHelper.findCommittee(committeeId)
             refreshed != null && refreshed.name == updatedName && refreshed.description == updatedDescription
         }
     }
 
-    private companion object {
-        const val DEFAULT_PASSWORD = "Password123!"
+    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (predicate()) return
+            Thread.sleep(200)
+        }
+        throw AssertionError("Expected '$description' within ${timeoutMs}ms")
+    }
+
+    private fun pollForCommitteeByName(name: String, timeoutMs: Long = 10_000): TestHelper.CommitteeRow {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val row = findCommitteeByName(name)
+            if (row != null) return row
+            Thread.sleep(200)
+        }
+        throw AssertionError("Expected committee '$name' within ${timeoutMs}ms")
+    }
+
+    private fun findCommitteeByName(name: String): TestHelper.CommitteeRow? {
+        // Inline SQL — `TestHelper` exposes by-id; this scoped lookup is
+        // only useful to this test class so it stays local.
+        java.sql.DriverManager.getConnection(
+            System.getProperty("test.db.url", "jdbc:mariadb://localhost:3306/blueshell"),
+            System.getProperty("test.db.user", "blueshell"),
+            System.getProperty("test.db.password", "ci-blueshell"),
+        ).use { conn ->
+            conn.prepareStatement(
+                "SELECT id, name, description FROM committees " +
+                    "WHERE name = ? AND deleted_at = '9999-12-31 23:59:59'",
+            ).use { stmt ->
+                stmt.setString(1, name)
+                val rs = stmt.executeQuery()
+                return if (rs.next()) {
+                    TestHelper.CommitteeRow(
+                        id = rs.getLong("id"),
+                        name = rs.getString("name"),
+                        description = rs.getString("description"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
     }
 }

@@ -106,6 +106,9 @@ object TestHelper {
         email: String = "$username@systemtest.example.com",
         discord: String = "$username#0001",
         phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
+        firstName: String = "Test",
+        lastName: String = "User",
+        initials: String = "TU",
     ): RegisteredUser {
         val response = retryOnConnectionFailure {
             givenCsrfApi()
@@ -116,9 +119,9 @@ object TestHelper {
                     {
                       "username": "$username",
                       "email": "$email",
-                      "initials": "TU",
-                      "firstName": "Test",
-                      "lastName": "User",
+                      "initials": "$initials",
+                      "firstName": "$firstName",
+                      "lastName": "$lastName",
                       "discord": "$discord",
                       "phoneNumber": "$phoneNumber",
                       "newsletter": false,
@@ -140,6 +143,8 @@ object TestHelper {
             password = password,
             discord = discord,
             phoneNumber = phoneNumber,
+            firstName = firstName,
+            lastName = lastName,
         )
     }
 
@@ -153,8 +158,10 @@ object TestHelper {
         email: String = "$username@systemtest.example.com",
         discord: String = "$username#0001",
         phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
+        firstName: String = "Test",
+        lastName: String = "User",
     ): RegisteredUser {
-        val user = register(username, password, email, discord, phoneNumber)
+        val user = register(username, password, email, discord, phoneNumber, firstName, lastName)
         setEnabled(user.username, true)
         return user
     }
@@ -171,6 +178,8 @@ object TestHelper {
         email: String = "$username@systemtest.example.com",
         discord: String = "$username#0001",
         phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
+        firstName: String = "Test",
+        lastName: String = "User",
     ): RegisteredUser {
         val user = registerAndActivate(
             username = username,
@@ -178,6 +187,8 @@ object TestHelper {
             email = email,
             discord = discord,
             phoneNumber = phoneNumber,
+            firstName = firstName,
+            lastName = lastName,
         )
         replaceRoles(user.username, setOf(role))
         return user
@@ -550,6 +561,72 @@ object TestHelper {
     }
 
     /**
+     * Look up a `committees` row by id. Returns null when the
+     * committee was soft-deleted or never existed.
+     */
+    fun findCommittee(committeeId: Long): CommitteeRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id, name, description FROM committees WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, committeeId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    CommitteeRow(
+                        id = rs.getLong("id"),
+                        name = rs.getString("name"),
+                        description = rs.getString("description"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
+     * Return all active `committee_members` rows for the given
+     * committee. Soft-deleted rows are filtered out.
+     */
+    fun findCommitteeMembers(committeeId: Long): List<CommitteeMemberRow> =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT user_id, role FROM committee_members " +
+                    "WHERE committee_id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, committeeId)
+                val rs = stmt.executeQuery()
+                val rows = mutableListOf<CommitteeMemberRow>()
+                while (rs.next()) {
+                    rows += CommitteeMemberRow(
+                        userId = rs.getLong("user_id"),
+                        role = rs.getString("role"),
+                    )
+                }
+                rows
+            }
+        }
+
+    /**
+     * Read the role authorities (`authorities.authority`) for the
+     * given user. Returns an empty set when the user has no rows.
+     */
+    fun findRoles(username: String): Set<String> =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "SELECT authority FROM authorities WHERE user_id = ?",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                val rs = stmt.executeQuery()
+                val roles = mutableSetOf<String>()
+                while (rs.next()) {
+                    roles += rs.getString("authority")
+                }
+                roles
+            }
+        }
+
+    /**
      * Insert an `events` row. Returns the new event id.
      */
     fun createEvent(
@@ -713,6 +790,21 @@ object TestHelper {
         val password: String,
         val discord: String,
         val phoneNumber: String,
+        val firstName: String = "Test",
+        val lastName: String = "User",
+    ) {
+        val fullName: String get() = "$firstName $lastName"
+    }
+
+    data class CommitteeRow(
+        val id: Long,
+        val name: String,
+        val description: String,
+    )
+
+    data class CommitteeMemberRow(
+        val userId: Long,
+        val role: String?,
     )
 
     data class RegisteredUserRow(

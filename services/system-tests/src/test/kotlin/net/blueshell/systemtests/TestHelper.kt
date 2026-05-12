@@ -28,6 +28,9 @@ object TestHelper {
     private const val API_RETRY_ATTEMPTS = 3
     private const val API_RETRY_DELAY_MS = 2_000L
     private const val ACTIVE_ROW_PREDICATE = "deleted_at = '9999-12-31 23:59:59'"
+    private const val EVENT_SELECT =
+        "SELECT id, title, description, location, approved, sign_up, members_only, " +
+            "committee_id, sign_up_limit FROM events "
 
     val apiBaseUrl: String get() = TestEnvironment.apiUrl
 
@@ -532,7 +535,7 @@ object TestHelper {
      * committee. `role` is optional (matches the entity's nullable
      * column).
      */
-    fun addCommitteeMember(committeeId: Long, username: String, role: String? = null) {
+    fun addCommitteeMember(committeeId: Long, username: String, role: String? = "Member") {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
             conn.prepareStatement(
@@ -559,12 +562,13 @@ object TestHelper {
         approved: Boolean = false,
         signUp: Boolean = false,
         membersOnly: Boolean = false,
+        signUpLimit: Int? = null,
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             return conn.prepareStatement(
                 "INSERT INTO events (committee_id, title, description, location, start_time, end_time, " +
-                    "approved, members_only, sign_up) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "approved, members_only, sign_up, sign_up_limit) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 java.sql.Statement.RETURN_GENERATED_KEYS,
             ).use { stmt ->
                 if (committeeId != null) stmt.setLong(1, committeeId) else stmt.setNull(1, java.sql.Types.BIGINT)
@@ -576,6 +580,7 @@ object TestHelper {
                 stmt.setBoolean(7, approved)
                 stmt.setBoolean(8, membersOnly)
                 stmt.setBoolean(9, signUp)
+                if (signUpLimit != null) stmt.setInt(10, signUpLimit) else stmt.setNull(10, java.sql.Types.INTEGER)
                 stmt.executeUpdate()
                 val keys = stmt.generatedKeys
                 require(keys.next()) { "INSERT events produced no id" }
@@ -590,27 +595,37 @@ object TestHelper {
      */
     fun findEvent(eventId: Long): EventRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id, title, description, location, approved, sign_up, members_only " +
-                    "FROM events WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
+            conn.prepareStatement(EVENT_SELECT + "WHERE id = ? AND $ACTIVE_ROW_PREDICATE").use { stmt ->
                 stmt.setLong(1, eventId)
                 val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    EventRow(
-                        id = rs.getLong("id"),
-                        title = rs.getString("title"),
-                        description = rs.getString("description"),
-                        location = rs.getString("location"),
-                        approved = rs.getBoolean("approved"),
-                        signUp = rs.getBoolean("sign_up"),
-                        membersOnly = rs.getBoolean("members_only"),
-                    )
-                } else {
-                    null
-                }
+                if (rs.next()) rs.toEventRow() else null
             }
         }
+
+    /**
+     * Look up an event by title. Returns null when no active event
+     * carries that title.
+     */
+    fun findEventByTitle(title: String): EventRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(EVENT_SELECT + "WHERE title = ? AND $ACTIVE_ROW_PREDICATE").use { stmt ->
+                stmt.setString(1, title)
+                val rs = stmt.executeQuery()
+                if (rs.next()) rs.toEventRow() else null
+            }
+        }
+
+    private fun java.sql.ResultSet.toEventRow(): EventRow = EventRow(
+        id = getLong("id"),
+        title = getString("title"),
+        description = getString("description"),
+        location = getString("location"),
+        approved = getBoolean("approved"),
+        signUp = getBoolean("sign_up"),
+        membersOnly = getBoolean("members_only"),
+        committeeId = getObject("committee_id") as Long?,
+        signUpLimit = getObject("sign_up_limit") as Int?,
+    )
 
     /**
      * Attach a `member_profiles` row to a user via `POST /memberProfiles`.
@@ -727,6 +742,8 @@ object TestHelper {
         val approved: Boolean,
         val signUp: Boolean,
         val membersOnly: Boolean,
+        val committeeId: Long?,
+        val signUpLimit: Int?,
     )
 
     data class AddressRow(

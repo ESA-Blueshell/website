@@ -387,6 +387,19 @@ object TestHelper {
     }
 
     /**
+     * Truncate every row from `job_executions`. The api dispatches a
+     * couple of background jobs as part of `POST /users` (contact
+     * sync, activation email) with `app.jobs.auto-dispatch=true`, so
+     * tests that assert exact stats counts have to wipe those carrier
+     * rows after their setup completes.
+     */
+    fun clearJobExecutions() {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement("DELETE FROM job_executions").use { it.executeUpdate() }
+        }
+    }
+
+    /**
      * Insert a `job_executions` row in the given status. The job
      * manager's stats endpoint reads counts and timings off this
      * table directly, so tests that want to exercise the stats panel

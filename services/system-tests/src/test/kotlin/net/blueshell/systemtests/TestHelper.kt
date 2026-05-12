@@ -234,6 +234,90 @@ object TestHelper {
     }
 
     /**
+     * Read the address row currently linked to `username`, if any. Used
+     * by tests that previously inspected `User.address?.field` after a
+     * Playwright-driven form submit.
+     */
+    fun findAddress(username: String): AddressRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT a.id, a.country, a.city, a.street, a.house_number, a.zip_code " +
+                    "FROM addresses a " +
+                    "JOIN users u ON u.address_id = a.id " +
+                    "WHERE u.username = ? AND u.$ACTIVE_ROW_PREDICATE " +
+                    "AND a.$ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setString(1, username)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    AddressRow(
+                        id = rs.getLong("id"),
+                        country = rs.getString("country"),
+                        city = rs.getString("city"),
+                        street = rs.getString("street"),
+                        houseNumber = rs.getString("house_number"),
+                        zipCode = rs.getString("zip_code"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
+     * Insert an `addresses` row for `username` and point the user's
+     * `address_id` column at it. Pre-seeds the address that a follow-up
+     * test edits through the UI. Returns the new address id.
+     */
+    fun attachAddress(
+        username: String,
+        country: String = "NL",
+        city: String,
+        street: String,
+        houseNumber: String,
+        zipCode: String,
+    ): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.autoCommit = false
+            try {
+                val userId = userIdOrThrow(conn, username)
+                val addressId = conn.prepareStatement(
+                    "INSERT INTO addresses (country, city, street, house_number, zip_code, " +
+                        "created_at, last_updated_at, deleted_at, version) " +
+                        "VALUES (?, ?, ?, ?, ?, NOW(), NOW(), '9999-12-31 23:59:59', 0)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setString(1, country)
+                    stmt.setString(2, city)
+                    stmt.setString(3, street)
+                    stmt.setString(4, houseNumber)
+                    stmt.setString(5, zipCode)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT addresses produced no id" }
+                    keys.getLong(1)
+                }
+                conn.prepareStatement(
+                    "UPDATE users SET address_id = ? WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, addressId)
+                    stmt.setLong(2, userId)
+                    require(stmt.executeUpdate() == 1) {
+                        "Failed to link address $addressId to user $username"
+                    }
+                }
+                conn.commit()
+                return addressId
+            } catch (e: Exception) {
+                conn.rollback()
+                throw e
+            } finally {
+                conn.autoCommit = true
+            }
+        }
+    }
+
+    /**
      * Read a user back from the DB. Returns null when the user doesn't
      * exist (or is soft-deleted). Used by tests that previously polled
      * `userRepository.findByUsername(...)` to verify async writes.
@@ -306,6 +390,15 @@ object TestHelper {
         val username: String,
         val email: String,
         val enabled: Boolean,
+    )
+
+    data class AddressRow(
+        val id: Long,
+        val country: String?,
+        val city: String?,
+        val street: String?,
+        val houseNumber: String?,
+        val zipCode: String?,
     )
 
     data class LoginCookies(

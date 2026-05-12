@@ -168,12 +168,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     @ParameterizedTest(name = "junk Authorization + valid cookie → 200 (Stalwart pattern, host={0})")
     @MethodSource("boardGatedHosts")
-    fun junk_bearer_plus_cookie_still_authenticates(host: String, @Suppress("UNUSED_PARAMETER") required: Role) {
+    fun junk_bearer_plus_cookie_still_authenticates(host: String) {
         // The Stalwart webadmin SPA sends its own opaque OAuth bearer in
         // `Authorization` alongside our BSH_AUTH cookie. JwtAuthFilter used to
         // short-circuit on the bearer and never read the cookie, leaving the
         // request anonymous → forward-auth 401 → SPA bounced back to /login.
-        val board = userFactory.createUserWithRole(Role.BOARD)
+        val board = TestHelper.registerActivateAndPromote("BOARD")
         val opaqueThirdPartyBearer = "QpT8jgss9DY3YS2YsIZrc4mLpgvEETjMEMDn+zR4gS+oUxl5"
 
         val response = java.net.http.HttpClient.newHttpClient().send(
@@ -182,7 +182,7 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
                 .GET()
                 .header("Accept", "application/json")
                 .header("Authorization", "Bearer $opaqueThirdPartyBearer")
-                .header("Cookie", "$authCookieName=${sessionTokenFor(board.username)}")
+                .header("Cookie", "$authCookieName=${sessionTokenFor(board)}")
                 .header("X-Forwarded-Host", host)
                 .build(),
             java.net.http.HttpResponse.BodyHandlers.discarding(),

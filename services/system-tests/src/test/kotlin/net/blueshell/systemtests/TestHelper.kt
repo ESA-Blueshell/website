@@ -416,12 +416,16 @@ object TestHelper {
         startedAt: java.time.Instant? = java.time.Instant.now().minusSeconds(300),
         finishedAt: java.time.Instant? = java.time.Instant.now().minusSeconds(120),
         attempts: Int = 1,
+        errorType: String? = null,
+        errorReason: String? = null,
     ): Long {
+        val errorMessage = if (errorType != null && errorReason != null) "$errorType: $errorReason" else null
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             return conn.prepareStatement(
-                "INSERT INTO job_executions (job_type, status, attempts, queued_at, started_at, finished_at, " +
-                    "initiated_by_type, initiated_by_role) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, 'SYSTEM', 'ADMIN')",
+                "INSERT INTO job_executions " +
+                    "(job_type, status, attempts, queued_at, started_at, finished_at, " +
+                    "error_type, error_reason, error_message, initiated_by_type, initiated_by_role) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'SYSTEM', 'ADMIN')",
                 java.sql.Statement.RETURN_GENERATED_KEYS,
             ).use { stmt ->
                 stmt.setString(1, jobType)
@@ -430,6 +434,9 @@ object TestHelper {
                 stmt.setTimestamp(4, java.sql.Timestamp.from(queuedAt))
                 stmt.setTimestamp(5, startedAt?.let { java.sql.Timestamp.from(it) })
                 stmt.setTimestamp(6, finishedAt?.let { java.sql.Timestamp.from(it) })
+                stmt.setString(7, errorType)
+                stmt.setString(8, errorReason)
+                stmt.setString(9, errorMessage)
                 stmt.executeUpdate()
                 val keys = stmt.generatedKeys
                 require(keys.next()) { "INSERT job_executions produced no id" }
@@ -437,6 +444,36 @@ object TestHelper {
             }
         }
     }
+
+    /**
+     * Read a `job_executions` row back by id. Returns null when the
+     * row does not exist. Used by tests that previously polled
+     * `jobExecutionRepository.findById(id)` to verify the retry
+     * pipeline mutated `status` / `queued_at`.
+     */
+    fun findJobExecution(id: Long): JobExecutionRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id, job_type, status, attempts, queued_at, started_at, finished_at " +
+                    "FROM job_executions WHERE id = ?",
+            ).use { stmt ->
+                stmt.setLong(1, id)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    JobExecutionRow(
+                        id = rs.getLong("id"),
+                        jobType = rs.getString("job_type"),
+                        status = rs.getString("status"),
+                        attempts = rs.getInt("attempts"),
+                        queuedAt = rs.getTimestamp("queued_at")?.toInstant(),
+                        startedAt = rs.getTimestamp("started_at")?.toInstant(),
+                        finishedAt = rs.getTimestamp("finished_at")?.toInstant(),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
 
     /**
      * Attach a `member_profiles` row to a user via `POST /memberProfiles`.
@@ -533,6 +570,16 @@ object TestHelper {
         val enabled: Boolean,
         val discord: String?,
         val phoneNumber: String?,
+    )
+
+    data class JobExecutionRow(
+        val id: Long,
+        val jobType: String,
+        val status: String,
+        val attempts: Int,
+        val queuedAt: java.time.Instant?,
+        val startedAt: java.time.Instant?,
+        val finishedAt: java.time.Instant?,
     )
 
     data class AddressRow(

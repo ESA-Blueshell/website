@@ -371,7 +371,12 @@ jobs:
           SHARD_INDEX: ${{ matrix.shard }}
         run: |
           ./gradlew --no-daemon :services:system-tests:test \
-            -Dsystem.frontend.url="$FRONTEND_URL"
+            -Dsystem.frontend.url="$FRONTEND_URL" \
+            -Dtest.frontend.url="$FRONTEND_URL" \
+            -Dtest.api.url="$APP_URL" \
+            -Dtest.db.url="jdbc:mariadb://$MYSQL_HOST:$MYSQL_PORT/$MYSQL_DATABASE" \
+            -Dtest.db.user="$MYSQL_USER" \
+            -Dtest.db.password="$MYSQL_PASSWORD"
 
       - name: Stop frontend process
         if: always()

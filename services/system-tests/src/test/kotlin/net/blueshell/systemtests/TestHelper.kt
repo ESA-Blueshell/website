@@ -270,51 +270,38 @@ object TestHelper {
      * test edits through the UI. Returns the new address id.
      */
     fun attachAddress(
-        username: String,
+        user: RegisteredUser,
         country: String = "NL",
         city: String,
         street: String,
         houseNumber: String,
         zipCode: String,
     ): Long {
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.autoCommit = false
-            try {
-                val userId = userIdOrThrow(conn, username)
-                val addressId = conn.prepareStatement(
-                    "INSERT INTO addresses (country, city, street, house_number, zip_code, " +
-                        "created_at, last_updated_at, deleted_at, version) " +
-                        "VALUES (?, ?, ?, ?, ?, NOW(), NOW(), '9999-12-31 23:59:59', 0)",
-                    java.sql.Statement.RETURN_GENERATED_KEYS,
-                ).use { stmt ->
-                    stmt.setString(1, country)
-                    stmt.setString(2, city)
-                    stmt.setString(3, street)
-                    stmt.setString(4, houseNumber)
-                    stmt.setString(5, zipCode)
-                    stmt.executeUpdate()
-                    val keys = stmt.generatedKeys
-                    require(keys.next()) { "INSERT addresses produced no id" }
-                    keys.getLong(1)
-                }
-                conn.prepareStatement(
-                    "UPDATE users SET address_id = ? WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
-                ).use { stmt ->
-                    stmt.setLong(1, addressId)
-                    stmt.setLong(2, userId)
-                    require(stmt.executeUpdate() == 1) {
-                        "Failed to link address $addressId to user $username"
+        val cookies = login(user)
+        val userId = findUser(user.username)!!.id
+        val response = retryOnConnectionFailure {
+            givenCsrfApi()
+                .baseUri(apiBaseUrl)
+                .cookie(TestEnvironment.authCookieName, cookies.auth)
+                .contentType(ContentType.JSON)
+                .body(
+                    """
+                    {
+                      "userId": $userId,
+                      "country": "$country",
+                      "city": "$city",
+                      "street": "$street",
+                      "houseNumber": "$houseNumber",
+                      "zipCode": "$zipCode"
                     }
-                }
-                conn.commit()
-                return addressId
-            } catch (e: Exception) {
-                conn.rollback()
-                throw e
-            } finally {
-                conn.autoCommit = true
-            }
+                    """.trimIndent(),
+                ).`when`()
+                .post("/addresses")
         }
+        require(response.statusCode == 201) {
+            "POST /addresses returned ${response.statusCode}: ${response.asString()}"
+        }
+        return response.jsonPath().getLong("id")
     }
 
     /**

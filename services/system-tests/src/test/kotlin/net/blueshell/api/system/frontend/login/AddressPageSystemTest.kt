@@ -64,7 +64,7 @@ class AddressPageSystemTest : PlaywrightTestBase() {
     fun `updates address from account address page`() {
         val user = TestHelper.registerActivateAndPromote("GUEST")
         val addressId = TestHelper.attachAddress(
-            username = user.username,
+            user = user,
             country = "NL",
             city = "Oldenzaal",
             street = "Stationsstraat",

@@ -15,10 +15,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  * Verifies the per-host role gating that Traefik forwardAuth delegates
  * to. Each test sends a GET to `/oauth2/forward-auth` with the
  * `X-Forwarded-Host` (and `X-Forwarded-Uri`) headers Traefik would set;
- * the controller is expected to return either:
- *  - 200 with X-User-Id / X-User-Groups (authenticated + role OK), or
- *  - 302 to /login (anonymous), or
- *  - 302 to /unauthorized (authenticated but role too low).
+ * the controller branches on the Accept header:
+ *  - text/html (browser navigation) → 302 to /login or /unauthorized
+ *  - anything else (SPA XHR) → 401 or 403 so the cross-origin auto-follow
+ *    doesn't get CORS-blocked
+ *  - authorised → 200 with X-User-Id / X-User-Groups
  */
 @SpringBootTest
 class ForwardAuthControllerIT : UserTestSupport() {
@@ -26,9 +27,10 @@ class ForwardAuthControllerIT : UserTestSupport() {
     @Nested
     inner class Anonymous {
         @Test
-        fun `redirects anonymous caller to login with the original URL preserved as redirect query`() {
+        fun `redirects anonymous HTML navigation to login with the original URL preserved as redirect query`() {
             mvc.perform(
                 get("/oauth2/forward-auth")
+                    .header(HttpHeaders.ACCEPT, "text/html")
                     .header("X-Forwarded-Proto", "https")
                     .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
                     .header("X-Forwarded-Uri", "/ui/dashboard")
@@ -39,9 +41,22 @@ class ForwardAuthControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `unknown host falls back to ADMIN required and still redirects anonymous to login`() {
+        fun `anonymous XHR receives 401 with WWW-Authenticate instead of cross-origin redirect`() {
             mvc.perform(
                 get("/oauth2/forward-auth")
+                    .header(HttpHeaders.ACCEPT, "application/json")
+                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
+                    .header("X-Forwarded-Uri", "/api/principal")
+            )
+                .andExpect(status().isUnauthorized)
+                .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, org.hamcrest.Matchers.startsWith("Bearer realm=")))
+        }
+
+        @Test
+        fun `unknown host with HTML accept falls back to ADMIN required and still redirects anonymous to login`() {
+            mvc.perform(
+                get("/oauth2/forward-auth")
+                    .header(HttpHeaders.ACCEPT, "text/html")
                     .header("X-Forwarded-Host", "rogue.example.com")
                     .header("X-Forwarded-Uri", "/")
             )
@@ -53,11 +68,12 @@ class ForwardAuthControllerIT : UserTestSupport() {
     @Nested
     inner class WrongRole {
         @Test
-        fun `member hitting vault is redirected to unauthorized with the service in the query`() {
+        fun `member HTML navigation to vault is redirected to unauthorized with the service in the query`() {
             val member = createUserWithRole(Role.MEMBER)
             mvc.perform(
                 get("/oauth2/forward-auth")
                     .with(bearer(member))
+                    .header(HttpHeaders.ACCEPT, "text/html")
                     .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
                     .header("X-Forwarded-Uri", "/")
             )
@@ -66,16 +82,29 @@ class ForwardAuthControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `board hitting vault is redirected to unauthorized — board does not inherit admin`() {
+        fun `board HTML navigation to vault is redirected to unauthorized — board does not inherit admin`() {
             val board = createUserWithRole(Role.BOARD)
             mvc.perform(
                 get("/oauth2/forward-auth")
                     .with(bearer(board))
+                    .header(HttpHeaders.ACCEPT, "text/html")
                     .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
                     .header("X-Forwarded-Uri", "/")
             )
                 .andExpect(status().isFound)
                 .andExpect(header().string(HttpHeaders.LOCATION, "https://v2.esa-blueshell.nl/unauthorized?service=vault.esa-blueshell.nl"))
+        }
+
+        @Test
+        fun `member XHR on board-gated host receives 403, not redirect`() {
+            val member = createUserWithRole(Role.MEMBER)
+            mvc.perform(
+                get("/oauth2/forward-auth")
+                    .with(bearer(member))
+                    .header(HttpHeaders.ACCEPT, "application/json")
+                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
+            )
+                .andExpect(status().isForbidden)
         }
     }
 

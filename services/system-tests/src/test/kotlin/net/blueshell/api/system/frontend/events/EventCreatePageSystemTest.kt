@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
@@ -190,10 +189,12 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
                     r.url().contains("approved=true")
             },
         ) {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Awaiting approval").setExact(false),
-            ).first().click()
+            // Target the approve button by its per-event test id —
+            // unapproved events from earlier tests in the shard stay
+            // on the page (no TestCleanUpListener wiping data between
+            // tests), and clicking `.first()` would fire PUT for the
+            // wrong event id.
+            page.locator("[data-testid='event-approve-btn-$eventId']").click()
         }
         assertThat(response.status()).isEqualTo(200)
 

@@ -99,6 +99,6 @@ abstract class PlaywrightTestBase {
          * shard. Matches Playwright's own default; locator polling
          * still returns immediately on fast pages.
          */
-        const val DEFAULT_TIMEOUT_MS: Double = 45_000.0
+        const val DEFAULT_TIMEOUT_MS: Double = 30_000.0
     }
 }

@@ -980,7 +980,8 @@ object TestHelper {
      * Skipping the controller because the membership-only/active
      * checks are evaluated against the *current* logged-in principal;
      * the tests that need a pre-existing signup just want a row to
-     * exist so the UI flips into "update" mode.
+     * exist so the UI flips into "update" mode, or so a follow-up
+     * helper can attach answers to a known signup id.
      */
     fun createUserEventSignUp(eventId: Long, userId: Long): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
@@ -1044,6 +1045,158 @@ object TestHelper {
                 }
             }
         }
+
+    /**
+     * Insert a `surveys` row and point `events.survey_id` at it. The
+     * `surveys.event_id` column was dropped in V24 — the relationship
+     * is now one-way from event to survey via `events.survey_id`.
+     * Returns the survey id so the caller can attach questions.
+     */
+    fun attachSurveyToEvent(eventId: Long): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val surveyId = conn.prepareStatement(
+                "INSERT INTO surveys () VALUES ()",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT surveys produced no id" }
+                keys.getLong(1)
+            }
+            conn.prepareStatement("UPDATE events SET survey_id = ? WHERE id = ?").use { stmt ->
+                stmt.setLong(1, surveyId)
+                stmt.setLong(2, eventId)
+                stmt.executeUpdate()
+            }
+            return surveyId
+        }
+    }
+
+    /**
+     * Insert a `questions` row attached to the given survey. `type` is
+     * one of `OPEN`, `RADIO`, `CHECKBOX`; `choiceLabels` is encoded as
+     * JSON for RADIO/CHECKBOX. Returns the question id.
+     */
+    fun createQuestion(
+        surveyId: Long,
+        idx: Int,
+        type: String,
+        label: String,
+        choiceLabels: List<String>? = null,
+    ): Long {
+        val choiceJson = choiceLabels?.joinToString(prefix = "[", postfix = "]") {
+            "\"" + it.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+        }
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO questions (survey_id, type, label, choice_labels, idx) VALUES (?, ?, ?, ?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setLong(1, surveyId)
+                stmt.setString(2, type)
+                stmt.setString(3, label)
+                if (choiceJson != null) stmt.setString(4, choiceJson) else stmt.setNull(4, java.sql.Types.VARCHAR)
+                stmt.setInt(5, idx)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT questions produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
+     * Insert a `guests` row with an access-token hash. Mirrors what
+     * `GuestAccessTokenCodec.hash(rawToken)` does in the api: a hex
+     * SHA-256 of the raw token, lower-cased. Returns the guest id.
+     */
+    fun createGuest(name: String, discord: String, email: String, accessToken: String): Long {
+        val hash = sha256Hex(accessToken)
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO guests (name, discord, email, access_token_hash) VALUES (?, ?, ?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setString(1, name)
+                stmt.setString(2, discord)
+                stmt.setString(3, email)
+                stmt.setString(4, hash)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT guests produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
+     * Insert a guest-backed `event_signups` row. Returns the signup
+     * id so the caller can wire answers to it.
+     */
+    fun createGuestEventSignUp(eventId: Long, guestId: Long): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO event_signups (event_id, guest_id) VALUES (?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setLong(1, eventId)
+                stmt.setLong(2, guestId)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT event_signups (guest) produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
+     * Insert an `answers` row + the matching `event_sign_up_answers`
+     * link in one call. V24 split the response payload out of
+     * `event_sign_up_answers` into the `answers` table — the link
+     * table now only carries `event_sign_up_id` and `answer_id`. The
+     * payload (`text_response` / `option_selections`) lives in
+     * `answers` keyed by `question_id`. Returns the new
+     * `event_sign_up_answers.id`.
+     */
+    fun createEventSignUpAnswer(
+        eventSignUpId: Long,
+        questionId: Long,
+        textResponse: String? = null,
+        optionSelections: List<Boolean>? = null,
+    ): Long {
+        val optionsJson = optionSelections?.joinToString(prefix = "[", postfix = "]") { if (it) "true" else "false" }
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val answerId = conn.prepareStatement(
+                "INSERT INTO answers (question_id, option_selections, text_response) VALUES (?, ?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setLong(1, questionId)
+                if (optionsJson != null) stmt.setString(2, optionsJson) else stmt.setNull(2, java.sql.Types.VARCHAR)
+                if (textResponse != null) stmt.setString(3, textResponse) else stmt.setNull(3, java.sql.Types.VARCHAR)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT answers produced no id" }
+                keys.getLong(1)
+            }
+            return conn.prepareStatement(
+                "INSERT INTO event_sign_up_answers (event_sign_up_id, answer_id) VALUES (?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setLong(1, eventSignUpId)
+                stmt.setLong(2, answerId)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT event_sign_up_answers produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    private fun sha256Hex(input: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val bytes = digest.digest(input.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
 
     private fun java.sql.ResultSet.toEventRow(): EventRow = EventRow(
         id = getLong("id"),

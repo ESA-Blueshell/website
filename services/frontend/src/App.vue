@@ -533,11 +533,21 @@ const statusSnackbarMessage = computed({
 
 const statusSnackbarAction = computed((): SnackbarAction | null => store.state.statusSnackbarAction)
 
-// Drop the bare layout for /login when the caller explicitly asked
-// for the regular site chrome (e.g. the 401 snackbar's Login action,
-// which embeds `chrome=keep` in the href). Vault's OIDC popup still
-// omits the param and falls through to the meta.bare default.
-const isBareLayout = computed((): boolean => !!route.meta.bare && route.query.chrome !== "keep")
+// Bare layout (no app bar / drawer / footer) is reserved for the
+// SSO redirect chain. Two triggers:
+//   - `route.meta.bare === true`: routes that only ever surface
+//     inside an OIDC popup (currently /unauthorized).
+//   - `route.query.redirect` points at the api's OAuth2 authorize
+//     endpoint: the Spring Authorization Server bounced an
+//     unauthenticated /api/oauth2/authorize hit through /login, so
+//     the login form should sit alone in the popup.
+// Regular logged-out browsing — navbar Login click, direct visit,
+// the 401 snackbar's Login action — falls through to chrome.
+const isBareLayout = computed((): boolean => {
+  if (route.meta.bare === true) return true
+  const redirect = route.query?.redirect
+  return typeof redirect === "string" && redirect.includes("/oauth2/authorize")
+})
 
 // Auto-dismiss the snackbar (and its Login action) the moment we
 // reach /login. Belt-and-braces: the action button below already

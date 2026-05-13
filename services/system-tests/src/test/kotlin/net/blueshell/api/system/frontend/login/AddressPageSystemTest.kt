@@ -1,5 +1,7 @@
 package net.blueshell.api.system.frontend.login
 
+import com.microsoft.playwright.Page
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import net.blueshell.api.system.frontend.helper.AddressFormHelper
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
@@ -65,6 +67,15 @@ class AddressPageSystemTest : PlaywrightTestBase() {
         }
         assertThat(loadResponse.status()).isEqualTo(200)
         page.waitForURL("**/account/addresses/**")
+
+        // The address page's onMounted writes the loaded record to its
+        // reactive ref *after* the GET response resolves. Playwright's
+        // waitForResponse returns the moment the response arrives —
+        // before the Vue assignment — so filling here would race the
+        // load: the GET resolution then replaces `address.value` and
+        // clobbers our edits. Wait until the street input actually
+        // reflects the pre-existing value before editing.
+        assertPw(page.getByLabel("Street", Page.GetByLabelOptions().setExact(true))).hasValue("Stationsstraat")
 
         AddressFormHelper.fill(
             page = page,

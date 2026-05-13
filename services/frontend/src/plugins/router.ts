@@ -98,23 +98,20 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/partners/MarketingMaatwerk.vue"),
   },
   {
-    // `meta.bare = true` (here and on /unauthorized below) tells App.vue
-    // to drop the v-app-bar / v-navigation-drawer / footer-banner so the
-    // login form is the only thing on screen. Mainly so Vault's OIDC
-    // popup at https://v2.esa-blueshell.nl/api/oauth2/authorize?... ->
-    // /login?redirect=... isn't visually wrapped in the full website
-    // chrome; same goes for forgot-password / account-create which are
-    // linked from the login form.
+    // Login / forgot-password / account-create render inside the full
+    // site chrome by default — they're regular pages a logged-out user
+    // navigates between. App.vue flips them to a bare layout only when
+    // the OIDC popup chain has redirected here (the Spring Authorization
+    // Server hop at /api/oauth2/authorize... → /login?redirect=...);
+    // see `isBareLayout` in App.vue for the detection logic.
     path: "/login",
     name: "login",
     component: () => import("@/pages/login/Login.vue"),
-    meta: {bare: true},
   },
   {
     path: "/login/forgor",
     name: "forgotPassword",
     component: () => import("@/pages/login/ForgotPassword.vue"),
-    meta: {bare: true},
   },
   {
     path: "/account",
@@ -126,7 +123,6 @@ const routes: RouteRecordRaw[] = [
     path: "/account/create",
     name: "accountCreation",
     component: () => import("@/pages/login/CreateAccount.vue"),
-    meta: {bare: true},
   },
   {
     path: "/account/reset-password",

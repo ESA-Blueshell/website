@@ -520,6 +520,73 @@ object TestHelper {
         }
 
     /**
+     * Insert a `contribution_periods` row. Returns the new id.
+     */
+    fun createContributionPeriod(
+        startDate: java.time.LocalDate,
+        endDate: java.time.LocalDate,
+        halfYearFee: Double = 0.0,
+        fullYearFee: Double = 0.0,
+        alumniFee: Double = 0.0,
+    ): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO contribution_periods " +
+                    "(start_date, end_date, half_year_fee, full_year_fee, alumni_fee) " +
+                    "VALUES (?, ?, ?, ?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setDate(1, java.sql.Date.valueOf(startDate))
+                stmt.setDate(2, java.sql.Date.valueOf(endDate))
+                stmt.setDouble(3, halfYearFee)
+                stmt.setDouble(4, fullYearFee)
+                stmt.setDouble(5, alumniFee)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT contribution_periods produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
+     * Mark a user as paid for a contribution period. Inserts a row in
+     * `contributions` keyed on (user_id, contribution_period_id).
+     */
+    fun createContribution(periodId: Long, username: String) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "INSERT INTO contributions (user_id, contribution_period_id) VALUES (?, ?)",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.setLong(2, periodId)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
+    /**
+     * Return all active `contributions` rows for the given period as
+     * `(userId, periodId)` pairs.
+     */
+    fun findContributions(periodId: Long): List<Long> =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT user_id FROM contributions " +
+                    "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, periodId)
+                val rs = stmt.executeQuery()
+                val userIds = mutableListOf<Long>()
+                while (rs.next()) {
+                    userIds += rs.getLong("user_id")
+                }
+                userIds
+            }
+        }
+
+    /**
      * Insert a `committees` row. Returns the new committee id.
      */
     fun createCommittee(

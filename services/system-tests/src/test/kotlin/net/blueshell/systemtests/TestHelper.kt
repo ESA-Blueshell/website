@@ -736,7 +736,12 @@ object TestHelper {
     }
 
     /**
-     * Insert a `contribution_periods` row. Returns the new id.
+     * Get-or-create a `contribution_periods` row for the given date
+     * range and return its id. Idempotent across runs in the same
+     * compose stack: tests that re-use the same fixed start/end dates
+     * (e.g. "today − 15d → today + 345d") would otherwise collide on
+     * `uk_contribution_periods_start_end_deleted_at` once the first
+     * test in the shard had already inserted it.
      */
     fun createContributionPeriod(
         startDate: java.time.LocalDate,
@@ -746,6 +751,15 @@ object TestHelper {
         alumniFee: Double = 0.0,
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id FROM contribution_periods " +
+                    "WHERE start_date = ? AND end_date = ? AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+            ).use { stmt ->
+                stmt.setDate(1, java.sql.Date.valueOf(startDate))
+                stmt.setDate(2, java.sql.Date.valueOf(endDate))
+                val rs = stmt.executeQuery()
+                if (rs.next()) return rs.getLong("id")
+            }
             return conn.prepareStatement(
                 "INSERT INTO contribution_periods " +
                     "(start_date, end_date, half_year_fee, full_year_fee, alumni_fee) " +

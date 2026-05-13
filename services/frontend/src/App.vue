@@ -545,7 +545,7 @@ const statusSnackbarAction = computed((): SnackbarAction | null => store.state.s
 // the 401 snackbar's Login action — falls through to chrome.
 const isBareLayout = computed((): boolean => {
   if (route.meta.bare === true) return true
-  const redirect = route.query.redirect
+  const redirect = route.query?.redirect
   return typeof redirect === "string" && redirect.includes("/oauth2/authorize")
 })
 

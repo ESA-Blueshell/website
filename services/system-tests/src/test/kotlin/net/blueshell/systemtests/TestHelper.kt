@@ -467,6 +467,21 @@ object TestHelper {
         }
 
     /**
+     * Returns true when a `member_profiles` row exists for the user
+     * (the row's primary key IS the user id; the table inherits from
+     * the `users` row in the api's JPA hierarchy).
+     */
+    fun hasMemberProfile(userId: Long): Boolean =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT 1 FROM member_profiles WHERE id = ? AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.executeQuery().next()
+            }
+        }
+
+    /**
      * Returns true when the user has an active (end_date IS NULL)
      * membership row. Mirrors `MemberRepository.existsByUser_IdAndEndDateIsNull`.
      */

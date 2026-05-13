@@ -67,6 +67,15 @@ services:
     volumes: !reset []
     environment:
       - TZ=Europe/Amsterdam
+    # The prod nginx image exposes /healthz at root (see nginx.conf);
+    # the dev healthcheck hits `/` which works too, but explicit beats
+    # ambiguous. wget ships in nginx-unprivileged:alpine via busybox.
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
 
   # ── CI-specific MariaDB credentials ───────────────────────────────
   db:

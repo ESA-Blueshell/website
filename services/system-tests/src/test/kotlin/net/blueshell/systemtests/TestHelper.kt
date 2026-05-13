@@ -572,6 +572,55 @@ object TestHelper {
         }
 
     /**
+     * Query the test-only `/test-support/emails` endpoint for emails
+     * the in-process `MockListmonkEmailClient` captured. Empty list
+     * when nothing matches. Used by tests that previously asserted
+     * `emailTransportClient.sentEmails.any { … }`.
+     */
+    fun findEmails(recipient: String? = null, subject: String? = null): List<SentEmail> {
+        val response = retryOnConnectionFailure {
+            var spec = givenApi().baseUri(apiBaseUrl)
+            if (recipient != null) spec = spec.queryParam("recipient", recipient)
+            if (subject != null) spec = spec.queryParam("subject", subject)
+            spec.`when`().get("/test-support/emails")
+        }
+        require(response.statusCode == 200) {
+            "GET /test-support/emails returned ${response.statusCode}: ${response.asString()}"
+        }
+        return response.jsonPath().getList("", Map::class.java).map { row ->
+            @Suppress("UNCHECKED_CAST")
+            val asMap = row as Map<String, Any?>
+            SentEmail(
+                toEmail = asMap["toEmail"] as String,
+                toName = asMap["toName"] as String,
+                subject = asMap["subject"] as String,
+                htmlContent = asMap["htmlContent"] as String,
+            )
+        }
+    }
+
+    /**
+     * Polls `findEmails(...)` until at least one email arrives that
+     * matches the recipient + subject filter. Replaces the
+     * `assertEmailSent(...)` helper the in-process base used to expose.
+     */
+    fun assertEmailSent(
+        recipient: String,
+        subject: String,
+        timeoutMs: Long = 10_000,
+    ): SentEmail {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val matches = findEmails(recipient = recipient, subject = subject)
+            if (matches.isNotEmpty()) return matches.first()
+            Thread.sleep(200)
+        }
+        throw AssertionError(
+            "Expected an email subject=\"$subject\" recipient=$recipient within ${timeoutMs}ms",
+        )
+    }
+
+    /**
      * Mint a recovery token directly via JDBC. The api's
      * `RecoveryTokenFactory.issue(...)` returns "selector.verifier"
      * — selector is a 16-byte URL-safe random, verifier is 32 bytes,
@@ -971,6 +1020,13 @@ object TestHelper {
     ) {
         val fullName: String get() = "$firstName $lastName"
     }
+
+    data class SentEmail(
+        val toEmail: String,
+        val toName: String,
+        val subject: String,
+        val htmlContent: String,
+    )
 
     data class MembershipRow(
         val id: Long,

@@ -6,7 +6,7 @@
          the canonical case — where the top bar / drawer / footer are
          purely visual noise around the login form. -->
     <v-app-bar
-      v-if="!route.meta.bare"
+      v-if="!isBareLayout"
       theme="dark"
     >
       <v-btn
@@ -268,7 +268,7 @@
     </v-app-bar>
 
     <v-navigation-drawer
-      v-if="!route.meta.bare"
+      v-if="!isBareLayout"
       v-model="drawer"
       temporary
     >
@@ -424,7 +424,8 @@
 
     <router-view />
 
-    <footer-banner v-if="!route.meta.bare" />
+    <footer-banner v-if="!isBareLayout" />
+
 
 
     <v-snackbar
@@ -451,6 +452,14 @@
       <!-- eslint-disable-next-line vue/no-v-html -->
       <span v-html="DOMPurify.sanitize(statusSnackbarMessage)" />
       <template #actions>
+        <v-btn
+          v-if="statusSnackbarAction"
+          color="primary"
+          variant="text"
+          @click="handleSnackbarAction(statusSnackbarAction)"
+        >
+          {{ statusSnackbarAction.label }}
+        </v-btn>
         <v-btn
           color="blue"
           variant="text"
@@ -487,9 +496,10 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
 import {useStore} from "vuex"
-import {useRoute} from "vue-router"
+import {useRoute, useRouter} from "vue-router"
+import type {SnackbarAction} from "@/plugins/store"
 import {useDisplay, useTheme} from "vuetify"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import {$goto} from "@/plugins/goto"
@@ -511,6 +521,7 @@ const {
 // Composables
 const store = useStore()
 const route = useRoute()
+const router = useRouter()
 const theme = useTheme()
 const display = useDisplay()
 
@@ -519,6 +530,32 @@ const statusSnackbarMessage = computed({
   get: (): string => store.state.statusSnackbarMessage,
   set: (message: string) => store.commit("setStatusSnackbarMessage", message),
 })
+
+const statusSnackbarAction = computed((): SnackbarAction | null => store.state.statusSnackbarAction)
+
+// Drop the bare layout for /login when the caller explicitly asked
+// for the regular site chrome (e.g. the 401 snackbar's Login action,
+// which embeds `chrome=keep` in the href). Vault's OIDC popup still
+// omits the param and falls through to the meta.bare default.
+const isBareLayout = computed((): boolean => !!route.meta.bare && route.query.chrome !== "keep")
+
+// Auto-dismiss the snackbar (and its Login action) the moment we
+// reach /login. Belt-and-braces: the action button below already
+// clears state on click, but a direct navbar/browser-history hop to
+// /login should drop the stale "you're not logged in" toast too.
+watch(
+  () => route.path,
+  (path) => {
+    if (path === "/login") {
+      store.commit("clearStatusSnackbar")
+    }
+  },
+)
+
+async function handleSnackbarAction(action: SnackbarAction): Promise<void> {
+  store.commit("clearStatusSnackbar")
+  await router.push(action.to)
+}
 
 const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
 const isBoard = computed((): boolean => store.getters.isBoard)

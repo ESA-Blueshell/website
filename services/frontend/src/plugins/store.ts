@@ -7,11 +7,17 @@ export type GuestSessionData = GuestResponse & {
   accessToken: string;
 }
 
+export interface SnackbarAction {
+  label: string;
+  to: string;
+}
+
 export interface State {
   login: LoginResponse | null;
   authToken: string | null;
   guestData: GuestSessionData | null;
   statusSnackbarMessage: string | null;
+  statusSnackbarAction: SnackbarAction | null;
   loggedInSnackbar: boolean;
   xsrfToken: string | null;
 }
@@ -28,6 +34,10 @@ export interface Mutations {
   setAddressId(state: State, addressId: number): void;
 
   setStatusSnackbarMessage(state: State, message: string): void;
+
+  setStatusSnackbarAction(state: State, action: SnackbarAction | null): void;
+
+  clearStatusSnackbar(state: State): void;
 
   saveGuestData(state: State, data: GuestSessionData): void;
 
@@ -105,6 +115,7 @@ const store = createStore<State>({
       authToken: null,
       guestData: readJsonCookie<GuestSessionData>("guestData"),
       statusSnackbarMessage: null,
+      statusSnackbarAction: null,
       loggedInSnackbar: false,
       xsrfToken: null,
     }
@@ -147,7 +158,15 @@ const store = createStore<State>({
         state.statusSnackbarMessage = message
       } else {
         state.statusSnackbarMessage = null
+        state.statusSnackbarAction = null
       }
+    },
+    setStatusSnackbarAction(state: State, action: SnackbarAction | null): void {
+      state.statusSnackbarAction = action
+    },
+    clearStatusSnackbar(state: State): void {
+      state.statusSnackbarMessage = null
+      state.statusSnackbarAction = null
     },
     saveGuestData(state: State, data: GuestSessionData): void {
       writeJsonCookie("guestData", data)

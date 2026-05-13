@@ -405,7 +405,7 @@ object TestHelper {
     fun hasDeletedUserSnapshot(userId: Long): Boolean =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
-                "SELECT 1 FROM deleted_users WHERE id = ? LIMIT 1",
+                "SELECT 1 FROM deleted_users WHERE user_id = ? LIMIT 1",
             ).use { stmt ->
                 stmt.setLong(1, userId)
                 stmt.executeQuery().next()

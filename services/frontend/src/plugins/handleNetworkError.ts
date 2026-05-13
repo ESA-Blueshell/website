@@ -33,12 +33,18 @@ export function $handleNetworkError(err: unknown): void {
         // Don't auto-logout or auto-redirect on a 401: the user might
         // genuinely still be signed in (the Vault OIDC popup chain hit
         // this path repeatedly, blowing away live sessions). Surface a
-        // snackbar with a Login link instead and let the user decide.
+        // snackbar with a Login action instead and let the user decide.
+        // `chrome=keep` tells App.vue to leave the navbar/footer in
+        // place when /login is reached from inside the app, so the
+        // user can navigate elsewhere instead of being trapped on a
+        // bare login screen.
         const redirectTarget = (currentRoute.query.redirect as string)
           || currentRoute.fullPath
-        const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}`
-        errorMessage = `Woah there, looks like you're not logged in (anymore). <a href="${loginHref}" class="text-decoration-none">Login</a>`
-        break
+        const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}&chrome=keep`
+        errorMessage = "Woah there, looks like you're not logged in (anymore)."
+        store.commit("setStatusSnackbarMessage", errorMessage)
+        store.commit("setStatusSnackbarAction", {label: "Login", to: loginHref})
+        return
       }
       case 403:
         errorMessage = "Woah there, you don't have enough authority to access this. Go to jail and DO NOT PASS GO, DO NOT COLLECT $200."

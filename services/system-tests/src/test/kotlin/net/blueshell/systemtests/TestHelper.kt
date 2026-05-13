@@ -917,6 +917,76 @@ object TestHelper {
             }
         }
 
+    /**
+     * Insert an `event_signups` row tying the given user to an event.
+     * Skipping the controller because the membership-only/active
+     * checks are evaluated against the *current* logged-in principal;
+     * the tests that need a pre-existing signup just want a row to
+     * exist so the UI flips into "update" mode.
+     */
+    fun createUserEventSignUp(eventId: Long, userId: Long): Long {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn.prepareStatement(
+                "INSERT INTO event_signups (event_id, user_id) VALUES (?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setLong(1, eventId)
+                stmt.setLong(2, userId)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT event_signups produced no id" }
+                keys.getLong(1)
+            }
+        }
+    }
+
+    /**
+     * Read the active `event_signups` row for (event, user). Returns
+     * null when the user never signed up or the row was soft-deleted.
+     */
+    fun findUserEventSignUp(eventId: Long, userId: Long): Long? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id FROM event_signups " +
+                    "WHERE event_id = ? AND user_id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, eventId)
+                stmt.setLong(2, userId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) rs.getLong("id") else null
+            }
+        }
+
+    /**
+     * Read the first active guest-backed `event_signups` row for a
+     * given event, joined with the `guests` row so callers can assert
+     * the guest details that the api persisted from the form payload.
+     */
+    fun findGuestEventSignUp(eventId: Long): GuestSignUpRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT es.id AS signup_id, g.name, g.discord, g.email, g.phone_number " +
+                    "FROM event_signups es JOIN guests g ON es.guest_id = g.id " +
+                    "WHERE es.event_id = ? AND es.$ACTIVE_ROW_PREDICATE " +
+                    "AND g.$ACTIVE_ROW_PREDICATE " +
+                    "ORDER BY es.id DESC LIMIT 1",
+            ).use { stmt ->
+                stmt.setLong(1, eventId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    GuestSignUpRow(
+                        id = rs.getLong("signup_id"),
+                        name = rs.getString("name"),
+                        discord = rs.getString("discord"),
+                        email = rs.getString("email"),
+                        phoneNumber = rs.getString("phone_number"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
     private fun java.sql.ResultSet.toEventRow(): EventRow = EventRow(
         id = getLong("id"),
         title = getString("title"),
@@ -1077,6 +1147,14 @@ object TestHelper {
         val membersOnly: Boolean,
         val committeeId: Long?,
         val signUpLimit: Int?,
+    )
+
+    data class GuestSignUpRow(
+        val id: Long,
+        val name: String,
+        val discord: String,
+        val email: String,
+        val phoneNumber: String?,
     )
 
     data class AddressRow(

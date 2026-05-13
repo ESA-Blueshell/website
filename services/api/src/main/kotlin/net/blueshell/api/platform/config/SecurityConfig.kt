@@ -160,6 +160,7 @@ class SecurityConfig(
                 "/actuator/health",
                 "/actuator/health/**",
                 "/actuator/prometheus",
+                "/test-support/**",
             ).permitAll()
 
             if (openApiPublicEnabled) {

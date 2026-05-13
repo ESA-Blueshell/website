@@ -28,6 +28,8 @@ object TestHelper {
     private const val API_RETRY_ATTEMPTS = 3
     private const val API_RETRY_DELAY_MS = 2_000L
     private const val ACTIVE_ROW_PREDICATE = "deleted_at = '9999-12-31 23:59:59'"
+    private const val SELECTOR_BYTES = 16
+    private const val VERIFIER_BYTES = 32
     private const val EVENT_SELECT =
         "SELECT id, title, description, location, approved, sign_up, members_only, " +
             "committee_id, sign_up_limit FROM events "
@@ -568,6 +570,63 @@ object TestHelper {
                 }
             }
         }
+
+    /**
+     * Mint a recovery token directly via JDBC. The api's
+     * `RecoveryTokenFactory.issue(...)` returns "selector.verifier"
+     * — selector is a 16-byte URL-safe random, verifier is 32 bytes,
+     * and only the BCrypt hash of the verifier lands in the table.
+     * This helper reproduces all three steps so tests that exercise
+     * the activation / password-reset flows can plant a known
+     * plaintext token without going through the in-process factory.
+     *
+     * `type` accepts the `ResetType` enum names:
+     * `USER_ACTIVATION`, `MEMBER_ACTIVATION`, `PASSWORD_RESET`.
+     */
+    fun mintRecoveryToken(
+        username: String,
+        type: String,
+        ttl: java.time.Duration = java.time.Duration.ofDays(7),
+    ): String {
+        val selector = randomUrlSafe(SELECTOR_BYTES)
+        val verifier = randomUrlSafe(VERIFIER_BYTES)
+        val verifierHash = org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+            .encode(verifier)
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            // Remove any prior unconsumed token of the same type for
+            // this user — `RecoveryTokenFactory.issue(...)` deletes
+            // those before inserting the new row.
+            conn.prepareStatement(
+                "DELETE FROM recovery_tokens " +
+                    "WHERE user_id = ? AND type = ? AND consumed_at IS NULL " +
+                    "AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.setString(2, type)
+                stmt.executeUpdate()
+            }
+            conn.prepareStatement(
+                "INSERT INTO recovery_tokens " +
+                    "(user_id, type, selector, verifier_hash, expires_at, created_at, updated_at, version) " +
+                    "VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 0)",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.setString(2, type)
+                stmt.setString(3, selector)
+                stmt.setString(4, verifierHash)
+                stmt.setTimestamp(5, java.sql.Timestamp.from(java.time.Instant.now().plus(ttl)))
+                stmt.executeUpdate()
+            }
+        }
+        return "$selector.$verifier"
+    }
+
+    private fun randomUrlSafe(byteCount: Int): String {
+        val bytes = ByteArray(byteCount)
+        java.security.SecureRandom().nextBytes(bytes)
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+    }
 
     /**
      * Insert a `contribution_periods` row. Returns the new id.

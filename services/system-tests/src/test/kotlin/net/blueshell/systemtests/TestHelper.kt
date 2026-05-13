@@ -409,19 +409,26 @@ object TestHelper {
     fun attachMembership(
         username: String,
         memberType: String = "REGULAR",
-        startDate: String = java.time.LocalDate.now().minusDays(30).toString(),
+        startDate: java.time.LocalDate = java.time.LocalDate.now().minusDays(30),
+        endDate: java.time.LocalDate? = null,
         incasso: Boolean = true,
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
             return conn.prepareStatement(
-                "INSERT INTO memberships (user_id, start_date, type, incasso) VALUES (?, ?, ?, ?)",
+                "INSERT INTO memberships (user_id, start_date, end_date, type, incasso) " +
+                    "VALUES (?, ?, ?, ?, ?)",
                 java.sql.Statement.RETURN_GENERATED_KEYS,
             ).use { stmt ->
                 stmt.setLong(1, userId)
-                stmt.setString(2, startDate)
-                stmt.setString(3, memberType)
-                stmt.setBoolean(4, incasso)
+                stmt.setDate(2, java.sql.Date.valueOf(startDate))
+                if (endDate != null) {
+                    stmt.setDate(3, java.sql.Date.valueOf(endDate))
+                } else {
+                    stmt.setNull(3, java.sql.Types.DATE)
+                }
+                stmt.setString(4, memberType)
+                stmt.setBoolean(5, incasso)
                 stmt.executeUpdate()
                 val keys = stmt.generatedKeys
                 require(keys.next()) { "INSERT memberships produced no id" }
@@ -429,6 +436,49 @@ object TestHelper {
             }
         }
     }
+
+    /**
+     * Look up a single membership row by id. Returns null when no
+     * active row exists.
+     */
+    fun findMembership(membershipId: Long): MembershipRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id, user_id, start_date, end_date, type, incasso " +
+                    "FROM memberships WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, membershipId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    MembershipRow(
+                        id = rs.getLong("id"),
+                        userId = rs.getLong("user_id"),
+                        startDate = rs.getDate("start_date").toLocalDate(),
+                        endDate = rs.getDate("end_date")?.toLocalDate(),
+                        type = rs.getString("type"),
+                        incasso = rs.getBoolean("incasso"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
+     * Returns true when the user has an active (end_date IS NULL)
+     * membership row. Mirrors `MemberRepository.existsByUser_IdAndEndDateIsNull`.
+     */
+    fun hasActiveMembership(username: String): Boolean =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "SELECT 1 FROM memberships " +
+                    "WHERE user_id = ? AND end_date IS NULL AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.executeQuery().next()
+            }
+        }
 
     /**
      * Truncate every row from `job_executions`. The api dispatches a
@@ -862,6 +912,15 @@ object TestHelper {
     ) {
         val fullName: String get() = "$firstName $lastName"
     }
+
+    data class MembershipRow(
+        val id: Long,
+        val userId: Long,
+        val startDate: java.time.LocalDate,
+        val endDate: java.time.LocalDate?,
+        val type: String,
+        val incasso: Boolean,
+    )
 
     data class CommitteeRow(
         val id: Long,

@@ -1,221 +1,199 @@
 package net.blueshell.api.system.frontend.management
 
-import com.microsoft.playwright.Page
-import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
-import net.blueshell.api.factory.user.persistence.UserFactory
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.system.frontend.FrontendSystemTestBase
+import net.blueshell.api.ApiApplication
+import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.MemberManagerHelper
 import net.blueshell.api.system.frontend.helper.RecoveryManagerHelper
+import net.blueshell.systemtests.PlaywrightTestBase
+import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestExecutionListeners
 import java.util.function.Predicate
 
 @Tag("system")
-class RecoveryManagerPageSystemTest : FrontendSystemTestBase() {
-
-    @Autowired
-    private lateinit var userFactory: UserFactory
-
-    @Autowired
-    private lateinit var deletedUsers: DeletedUserRepository
+@ActiveProfiles("test")
+@TestExecutionListeners(
+    listeners = [TestCleanUpListener::class],
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
+)
+@SpringBootTest(
+    classes = [ApiApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
+)
+class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `recovery manager resends activation for inactive user`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val inactiveUser = userFactory.createUserWithRole(Role.GUEST, enabled = false)
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val inactiveUser = TestHelper.register()
+        val inactiveId = TestHelper.findUser(inactiveUser.username)!!.id
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            RecoveryManagerHelper.open(page, frontendUrl)
+        RecoveryManagerHelper.open(page, frontendUrl)
+        RecoveryManagerHelper.openSection(page, "inactive")
+        RecoveryManagerHelper.searchUser(page, "inactive", inactiveUser.username)
 
-            RecoveryManagerHelper.openSection(page, "inactive")
-            RecoveryManagerHelper.searchUser(page, "inactive", inactiveUser.username)
-
-            waitFor(
-                onTimeoutMessage = { "Expected inactive user ${inactiveUser.username} to be visible" }
-            ) {
-                RecoveryManagerHelper.rowCount(page, "inactive", inactiveUser.id!!) > 0
-            }
-
-            val response = page.waitForResponse("**/recovery/user/activate/resend/**") {
-                RecoveryManagerHelper.clickAction(page, "activation", inactiveUser.id!!)
-            }
-            assertThat(response.status()).isEqualTo(204)
+        pollFor("inactive user ${inactiveUser.username} visible") {
+            RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
         }
 
-        assertEmailSent(inactiveUser.email, "Activate your Account")
+        val response = page.waitForResponse("**/recovery/user/activate/resend/**") {
+            RecoveryManagerHelper.clickAction(page, "activation", inactiveId)
+        }
+        assertThat(response.status()).isEqualTo(204)
+
+        TestHelper.assertEmailSent(inactiveUser.email, "Activate your Account")
     }
 
     @Test
     fun `recovery manager sends password reset for active user`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val activeUser = userFactory.createUserWithRole(Role.GUEST, enabled = true)
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val activeUser = TestHelper.registerActivateAndPromote("GUEST")
+        val activeId = TestHelper.findUser(activeUser.username)!!.id
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            RecoveryManagerHelper.open(page, frontendUrl)
+        RecoveryManagerHelper.open(page, frontendUrl)
+        RecoveryManagerHelper.openSection(page, "active")
+        RecoveryManagerHelper.searchUser(page, "active", activeUser.username)
 
-            RecoveryManagerHelper.openSection(page, "active")
-            RecoveryManagerHelper.searchUser(page, "active", activeUser.username)
-
-            waitFor(
-                onTimeoutMessage = { "Expected active user ${activeUser.username} to be visible" }
-            ) {
-                RecoveryManagerHelper.rowCount(page, "active", activeUser.id!!) > 0
-            }
-
-            val response = page.waitForResponse("**/recovery/password/reset/**") {
-                RecoveryManagerHelper.clickAction(page, "password", activeUser.id!!)
-            }
-            assertThat(response.status()).isEqualTo(204)
+        pollFor("active user ${activeUser.username} visible") {
+            RecoveryManagerHelper.rowCount(page, "active", activeId) > 0
         }
 
-        assertEmailSent(activeUser.email, "Reset Your Blueshell Account Password")
+        val response = page.waitForResponse("**/recovery/password/reset/**") {
+            RecoveryManagerHelper.clickAction(page, "password", activeId)
+        }
+        assertThat(response.status()).isEqualTo(204)
+
+        TestHelper.assertEmailSent(activeUser.email, "Reset Your Blueshell Account Password")
     }
 
     @Test
     fun `board deletes user from member manager and restores in recovery manager`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val target = userFactory.createUserWithRole(Role.GUEST, enabled = true)
-        val targetId = checkNotNull(target.id) { "Expected target user id" }
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val target = TestHelper.registerActivateAndPromote("GUEST")
+        val targetId = TestHelper.findUser(target.username)!!.id
         val originalUsername = target.username
         val originalEmail = target.email
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            MemberManagerHelper.open(page, frontendUrl)
-            MemberManagerHelper.openNonMembers(page)
-            MemberManagerHelper.searchNonMembers(page, originalUsername)
+        MemberManagerHelper.open(page, frontendUrl)
+        MemberManagerHelper.openNonMembers(page)
+        MemberManagerHelper.searchNonMembers(page, originalUsername)
 
-            waitFor(
-                onTimeoutMessage = { "Expected non-member user $originalUsername to be visible before deletion" }
-            ) {
-                page.locator("[data-testid='member-user-row-$targetId']").count() > 0
-            }
-
-            val deleteResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
-                }
-            ) {
-                MemberManagerHelper.clickDeleteUser(page, targetId)
-                MemberManagerHelper.confirmDelete(page)
-            }
-            assertThat(deleteResponse.status()).isEqualTo(204)
-
-            waitFor(
-                onTimeoutMessage = { "Expected user row $targetId to disappear from non-members after deletion" }
-            ) {
-                page.locator("[data-testid='member-user-row-$targetId']").count() == 0
-            }
-
-            RecoveryManagerHelper.open(page, frontendUrl)
-            RecoveryManagerHelper.openSection(page, "deleted")
-            RecoveryManagerHelper.searchUser(page, "deleted", originalUsername)
-
-            waitFor(
-                onTimeoutMessage = { "Expected deleted user $originalUsername to appear in deleted recovery pane" }
-            ) {
-                RecoveryManagerHelper.rowCount(page, "deleted", targetId) > 0
-            }
-
-            val restoreResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "PUT" && response.url().contains("/users/$targetId/restore")
-                }
-            ) {
-                RecoveryManagerHelper.clickAction(page, "restore", targetId)
-            }
-            assertThat(restoreResponse.status()).isEqualTo(204)
-
-            waitFor(
-                onTimeoutMessage = { "Expected deleted recovery row for user $targetId to be removed after restore" }
-            ) {
-                RecoveryManagerHelper.rowCount(page, "deleted", targetId) == 0
-            }
-
-            RecoveryManagerHelper.openSection(page, "active")
-            RecoveryManagerHelper.searchUser(page, "active", originalUsername)
-
-            waitFor(
-                onTimeoutMessage = { "Expected restored user $originalUsername to appear in active recovery pane" }
-            ) {
-                RecoveryManagerHelper.rowCount(page, "active", targetId) > 0
-            }
+        pollFor("non-member user $originalUsername visible before deletion") {
+            page.locator("[data-testid='member-user-row-$targetId']").count() > 0
         }
 
-        waitFor(
-            onTimeoutMessage = { "Expected deleted snapshot to be removed and user restored in persistence layer" }
+        val deleteResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
+            },
         ) {
-            val restored = userRepository.findById(targetId).orElse(null)
+            MemberManagerHelper.clickDeleteUser(page, targetId)
+            MemberManagerHelper.confirmDelete(page)
+        }
+        assertThat(deleteResponse.status()).isEqualTo(204)
+
+        pollFor("user row $targetId removed from non-members after deletion") {
+            page.locator("[data-testid='member-user-row-$targetId']").count() == 0
+        }
+
+        RecoveryManagerHelper.open(page, frontendUrl)
+        RecoveryManagerHelper.openSection(page, "deleted")
+        RecoveryManagerHelper.searchUser(page, "deleted", originalUsername)
+
+        pollFor("deleted user $originalUsername in deleted pane") {
+            RecoveryManagerHelper.rowCount(page, "deleted", targetId) > 0
+        }
+
+        val restoreResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "PUT" && response.url().contains("/users/$targetId/restore")
+            },
+        ) {
+            RecoveryManagerHelper.clickAction(page, "restore", targetId)
+        }
+        assertThat(restoreResponse.status()).isEqualTo(204)
+
+        pollFor("deleted recovery row for user $targetId removed after restore") {
+            RecoveryManagerHelper.rowCount(page, "deleted", targetId) == 0
+        }
+
+        RecoveryManagerHelper.openSection(page, "active")
+        RecoveryManagerHelper.searchUser(page, "active", originalUsername)
+
+        pollFor("restored user $originalUsername visible in active pane") {
+            RecoveryManagerHelper.rowCount(page, "active", targetId) > 0
+        }
+
+        pollFor("deleted snapshot removed and user restored in persistence layer") {
+            val restored = TestHelper.findUserById(targetId)
             restored != null &&
                 restored.username == originalUsername &&
                 restored.email == originalEmail &&
-                deletedUsers.findById(targetId).isEmpty
+                !TestHelper.hasDeletedUserSnapshot(targetId)
         }
     }
 
     @Test
     fun `deleted user remains visible in inactive pane while also present in deleted pane`() {
-        val board = userFactory.createUserWithRole(Role.BOARD, enabled = true)
-        val target = userFactory.createUserWithRole(Role.GUEST, enabled = true)
-        val targetId = checkNotNull(target.id) { "Expected target user id" }
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val target = TestHelper.registerActivateAndPromote("GUEST")
+        val targetId = TestHelper.findUser(target.username)!!.id
 
-        withPage { page ->
-            val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, DEFAULT_PASSWORD)
-            assertThat(loginStatus).isEqualTo(200)
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
 
-            MemberManagerHelper.open(page, frontendUrl)
-            MemberManagerHelper.openNonMembers(page)
-            MemberManagerHelper.searchNonMembers(page, target.username)
+        MemberManagerHelper.open(page, frontendUrl)
+        MemberManagerHelper.openNonMembers(page)
+        MemberManagerHelper.searchNonMembers(page, target.username)
 
-            waitFor(
-                onTimeoutMessage = { "Expected target user ${target.username} to be visible before deletion" }
-            ) {
-                page.locator("[data-testid='member-user-row-$targetId']").count() > 0
-            }
+        pollFor("target user ${target.username} visible before deletion") {
+            page.locator("[data-testid='member-user-row-$targetId']").count() > 0
+        }
 
-            val deleteResponse = page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
-                }
-            ) {
-                MemberManagerHelper.clickDeleteUser(page, targetId)
-                MemberManagerHelper.confirmDelete(page)
-            }
-            assertThat(deleteResponse.status()).isEqualTo(204)
+        val deleteResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
+            },
+        ) {
+            MemberManagerHelper.clickDeleteUser(page, targetId)
+            MemberManagerHelper.confirmDelete(page)
+        }
+        assertThat(deleteResponse.status()).isEqualTo(204)
 
-            RecoveryManagerHelper.open(page, frontendUrl)
+        RecoveryManagerHelper.open(page, frontendUrl)
 
-            RecoveryManagerHelper.openSection(page, "deleted")
-            waitFor(
-                onTimeoutMessage = { "Expected deleted user $targetId in deleted pane" }
-            ) {
-                RecoveryManagerHelper.rowCount(page, "deleted", targetId) > 0
-            }
+        RecoveryManagerHelper.openSection(page, "deleted")
+        pollFor("deleted user $targetId visible in deleted pane") {
+            RecoveryManagerHelper.rowCount(page, "deleted", targetId) > 0
+        }
 
-            RecoveryManagerHelper.openSection(page, "inactive")
-            waitFor(
-                onTimeoutMessage = {
-                    "Expected deleted user $targetId to remain visible in inactive pane as anonymized user"
-                }
-            ) {
-                RecoveryManagerHelper.rowCount(page, "inactive", targetId) > 0
-            }
+        RecoveryManagerHelper.openSection(page, "inactive")
+        pollFor("deleted user $targetId visible in inactive pane as anonymized row") {
+            RecoveryManagerHelper.rowCount(page, "inactive", targetId) > 0
         }
     }
 
-    private companion object {
-        const val DEFAULT_PASSWORD = "Password123!"
+    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (predicate()) return
+            Thread.sleep(200)
+        }
+        throw AssertionError("Expected $description within ${timeoutMs}ms")
     }
 }

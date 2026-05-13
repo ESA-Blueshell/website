@@ -24,6 +24,7 @@ on:
       - '.github/actions/**'
       - '.github/workflows/**'
       - 'docker-compose.yml'
+      - 'docker-compose.ci.yml'
       - 'services/*/docker-compose.yml'
   workflow_dispatch:
 

@@ -72,16 +72,16 @@ class MemberManagerPageSystemTest : PlaywrightTestBase() {
         MemberManagerHelper.openMembers(page)
 
         MemberManagerHelper.searchMembers(page, stableMember.username)
-        page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).first().waitFor()
+        waitUntilAttached(page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).first())
 
         MemberManagerHelper.searchMembers(page, periodOnlyMember.username)
-        page.getByText(periodOnlyMember.username, Page.GetByTextOptions().setExact(true)).first().waitFor()
+        waitUntilAttached(page.getByText(periodOnlyMember.username, Page.GetByTextOptions().setExact(true)).first())
 
         selectPeriod(addedLabel)
         MemberManagerHelper.openMembers(page)
 
         MemberManagerHelper.searchMembers(page, stableMember.username)
-        page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).first().waitFor()
+        waitUntilAttached(page.getByText(stableMember.username, Page.GetByTextOptions().setExact(true)).first())
 
         MemberManagerHelper.searchMembers(page, periodOnlyMember.username)
         page.getByText("No users found.", Page.GetByTextOptions().setExact(true)).first().waitFor()
@@ -198,6 +198,13 @@ class MemberManagerPageSystemTest : PlaywrightTestBase() {
     private fun selectPeriod(periodLabel: String) {
         page.getByText(periodLabel, Page.GetByTextOptions().setExact(false)).first().waitFor()
         page.getByText(periodLabel, Page.GetByTextOptions().setExact(false)).first().click()
+    }
+
+    private fun waitUntilAttached(locator: com.microsoft.playwright.Locator) {
+        locator.waitFor(
+            com.microsoft.playwright.Locator.WaitForOptions()
+                .setState(com.microsoft.playwright.options.WaitForSelectorState.ATTACHED),
+        )
     }
 
     private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {

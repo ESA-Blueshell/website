@@ -370,6 +370,49 @@ object TestHelper {
     }
 
     /**
+     * Read a user back from the DB by id. Returns null when the user
+     * was hard-deleted; soft-deleted users are *not* filtered (the
+     * recovery flow restores them so the test needs to see the row
+     * regardless of `deleted_at`).
+     */
+    fun findUserById(userId: Long): RegisteredUserRow? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id, username, email, enabled, discord, phone_number FROM users WHERE id = ?",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) {
+                    RegisteredUserRow(
+                        id = rs.getLong("id"),
+                        username = rs.getString("username"),
+                        email = rs.getString("email"),
+                        enabled = rs.getBoolean("enabled"),
+                        discord = rs.getString("discord"),
+                        phoneNumber = rs.getString("phone_number"),
+                    )
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
+     * Returns true when a row exists in `deleted_users` for the given
+     * user id — the snapshot table `UserErasureService.deleteUser(...)`
+     * writes to. Empty after the user is restored.
+     */
+    fun hasDeletedUserSnapshot(userId: Long): Boolean =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT 1 FROM deleted_users WHERE user_id = ? LIMIT 1",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.executeQuery().next()
+            }
+        }
+
+    /**
      * Read a user back from the DB. Returns null when the user doesn't
      * exist (or is soft-deleted). Used by tests that previously polled
      * `userRepository.findByUsername(...)` to verify async writes.

@@ -288,82 +288,26 @@ jobs:
     name: System tests (shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [ api-static, fe-static ]
+    needs: [ api-static, fe-static, build-images ]
     strategy:
       fail-fast: false
       matrix:
         shard: [ 1, 2, 3, 4, 5, 6 ]
 
-    services:
-      db:
-        image: mariadb:10.11.10
-        ports: [ "3306:3306" ]
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
-          MYSQL_PORT: ${{ env.MYSQL_PORT }}
-          MYSQL_USER: ${{ env.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Wait for database service
-        run: |
-          sudo apt-get update && sudo apt-get install -y default-mysql-client
-          for i in {1..30}; do
-            if mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
-              echo "Database is ready!"
-              exit 0
-            fi
-            echo "Waiting for database... ($i/30)"
-            sleep 2
-          done
-          echo "Database did not become ready in time."
-          exit 1
-
-      - name: Prepare test database schema
-        run: |
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
 
       - name: Set up Java + Gradle
         uses: ./.github/actions/setup-java-gradle
         with:
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Set up Node.js and Yarn
-        uses: ./.github/actions/setup-node-yarn
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          yarn-version: ${{ env.YARN_VERSION }}
+      - name: Load CI-built images
+        uses: ./.github/actions/prepare-ci-host
 
-      - name: Start instrumented frontend for system tests
-        run: |
-          set -euo pipefail
-          VITE_COVERAGE=true VITE_APP_URL="$APP_URL" \
-            yarn --cwd services/frontend dev --host 0.0.0.0 --port 3000 > frontend-dev.log 2>&1 &
-          echo $! > frontend-dev.pid
-
-      - name: Wait for frontend readiness
-        run: |
-          set -euo pipefail
-          for i in {1..60}; do
-            if curl -fsS "$FRONTEND_URL" >/dev/null 2>&1; then
-              echo "Frontend is ready."
-              exit 0
-            fi
-            echo "Waiting for frontend... ($i/60)"
-            sleep 2
-          done
-          echo "Frontend failed to start."
-          exit 1
+      - name: Start docker compose stack
+        run: bash .github/scripts/start-system-test-stack.sh
 
       - name: Run system tests
         env:
@@ -371,19 +315,20 @@ jobs:
           SHARD_INDEX: ${{ matrix.shard }}
         run: |
           ./gradlew --no-daemon :services:system-tests:test \
-            -Dsystem.frontend.url="$FRONTEND_URL" \
-            -Dtest.frontend.url="$FRONTEND_URL" \
-            -Dtest.api.url="$APP_URL" \
-            -Dtest.db.url="jdbc:mariadb://$MYSQL_HOST:$MYSQL_PORT/$MYSQL_DATABASE" \
+            -Dsystem.frontend.url=http://localhost:3000 \
+            -Dtest.frontend.url=http://localhost:3000 \
+            -Dtest.api.url=http://localhost:8080 \
+            -Dtest.db.url="jdbc:mariadb://localhost:3307/blueshell" \
             -Dtest.db.user="$MYSQL_USER" \
-            -Dtest.db.password="$MYSQL_PASSWORD"
+            -Dtest.db.password=ci-blueshell
 
-      - name: Stop frontend process
+      - name: Dump compose diagnostics
+        if: failure()
+        run: bash .github/scripts/dump-compose-ci-diagnostics.sh
+
+      - name: Stop containers
         if: always()
-        run: |
-          if [ -f frontend-dev.pid ]; then
-            kill "$(cat frontend-dev.pid)" || true
-          fi
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v --remove-orphans || true
 
       - name: Upload system-test reports
         if: always()
@@ -393,7 +338,6 @@ jobs:
           name: system-test-reports-shard-${{ matrix.shard }}
           path: |
             services/system-tests/build/reports/tests/test
-            frontend-dev.log
           if-no-files-found: warn
 
   fe-unit:

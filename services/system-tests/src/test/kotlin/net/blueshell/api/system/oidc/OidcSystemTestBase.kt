@@ -1,15 +1,10 @@
 package net.blueshell.api.system.oidc
 
-import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.systemtests.PlaywrightShardCondition
 import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.systemtests.TestHelper
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestExecutionListeners
 import java.net.CookieManager
 import java.net.URI
 import java.net.URLEncoder
@@ -21,25 +16,13 @@ import java.time.Duration
 
 /**
  * Base for OIDC system tests that talk to the api strictly over HTTP.
- * The Spring annotations here exist to host `ApiApplication` on
- * `localhost:8080` from inside the test JVM — the test bodies never
- * inject beans or reach into repositories, every observable behaviour
- * comes from real HTTP requests routed through `TestHelper`. Once CI
- * runs against a containerised api the four bootstrap annotations
- * come off and `baseUrl` points at the container instead.
+ * The api runs as a docker-compose service on `localhost:8080`; the
+ * test bodies never inject beans or reach into repositories, every
+ * observable behaviour comes from real HTTP requests routed through
+ * `TestHelper`.
  */
 @ExtendWith(PlaywrightShardCondition::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ActiveProfiles("test")
-@TestExecutionListeners(
-    listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
-)
-@SpringBootTest(
-    classes = [ApiApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
-)
 abstract class OidcSystemTestBase {
 
     protected val baseUrl: String = TestEnvironment.apiUrl

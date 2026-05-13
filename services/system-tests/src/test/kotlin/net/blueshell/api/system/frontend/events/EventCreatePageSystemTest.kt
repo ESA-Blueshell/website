@@ -2,8 +2,6 @@ package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
-import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
@@ -11,22 +9,9 @@ import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestExecutionListeners
 import java.util.function.Predicate
 
 @Tag("system")
-@ActiveProfiles("test")
-@TestExecutionListeners(
-    listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
-)
-@SpringBootTest(
-    classes = [ApiApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
-)
 class EventCreatePageSystemTest : PlaywrightTestBase() {
 
     @Test

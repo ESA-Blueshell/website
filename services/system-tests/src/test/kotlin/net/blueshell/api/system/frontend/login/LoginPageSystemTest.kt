@@ -2,37 +2,20 @@ package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
-import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestExecutionListeners
 
 /**
  * Worked example of a test that talks to the api strictly over HTTP +
- * JDBC through `TestHelper`, even though the api itself runs inside the
- * test JVM via `@SpringBootTest`. The Spring context exists to host
- * `ApiApplication` on `localhost:8080`; the test body never injects
- * beans or reaches into repositories. Once CI runs against a
- * containerised api the four bootstrap annotations come off.
+ * JDBC through `TestHelper`. The api itself runs as a docker-compose
+ * service on `localhost:8080`; the test body never injects beans or
+ * reaches into repositories.
  */
 @Tag("system")
-@ActiveProfiles("test")
-@TestExecutionListeners(
-    listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
-)
-@SpringBootTest(
-    classes = [ApiApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
-)
 class LoginPageSystemTest : PlaywrightTestBase() {
 
     @Test

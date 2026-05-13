@@ -1,7 +1,5 @@
 package net.blueshell.api.system.frontend.security
 
-import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
@@ -10,9 +8,6 @@ import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestExecutionListeners
 import tools.jackson.databind.ObjectMapper
 import java.net.URI
 import java.net.http.HttpClient
@@ -20,16 +15,6 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 @Tag("system")
-@ActiveProfiles("test")
-@TestExecutionListeners(
-    listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
-)
-@SpringBootTest(
-    classes = [ApiApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
-)
 class CsrfSystemTest : PlaywrightTestBase() {
 
     @Test

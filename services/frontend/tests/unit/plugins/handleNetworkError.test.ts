@@ -41,21 +41,21 @@ describe("handleNetworkError plugin", () => {
     expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("unknown error"))
   })
 
-  it("surfaces a login-link snackbar on 401 without auto-logout or auto-redirect", () => {
+  it("surfaces a login-action snackbar on 401 without auto-logout or auto-redirect", () => {
     $handleNetworkError(axiosStatusError(401))
     // No auto-logout, no auto-router push: the user might genuinely
     // still be signed in (Vault's OIDC popup chain hits 401 transiently).
-    // We just show a snackbar with a Login link and let the user act.
+    // We just show a snackbar with a Login action and let the user act.
     expect(mockCommit).not.toHaveBeenCalledWith("logout")
     expect(mockPush).not.toHaveBeenCalled()
     expect(mockCommit).toHaveBeenCalledWith(
       "setStatusSnackbarMessage",
       expect.stringContaining("not logged in"),
     )
-    expect(mockCommit).toHaveBeenCalledWith(
-      "setStatusSnackbarMessage",
-      expect.stringContaining(`/login?redirect=${encodeURIComponent("/events")}`),
-    )
+    expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarAction", {
+      label: "Login",
+      to: `/login?redirect=${encodeURIComponent("/events")}&chrome=keep`,
+    })
   })
 
   it("surfaces a snackbar on 403 without auto-redirecting to /account", () => {

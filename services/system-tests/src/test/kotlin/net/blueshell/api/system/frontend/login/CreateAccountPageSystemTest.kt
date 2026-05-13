@@ -84,10 +84,19 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
             }
         }
 
-        page.getByRole(
-            AriaRole.BUTTON,
-            Page.GetByRoleOptions().setName("Create Account").setExact(false),
-        ).click()
+        // Wait for the POST /users response before returning so the
+        // user is fully persisted by the time the caller chains the
+        // next action (login attempt, navigation away, …).
+        page.waitForResponse(
+            { response ->
+                response.request().method() == "POST" && response.url().contains("/users")
+            },
+        ) {
+            page.getByRole(
+                AriaRole.BUTTON,
+                Page.GetByRoleOptions().setName("Create Account").setExact(false),
+            ).click()
+        }
 
         return Credentials(username, email, password)
     }

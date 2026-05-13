@@ -1150,31 +1150,40 @@ object TestHelper {
     }
 
     /**
-     * Insert an `event_sign_up_answers` row mirroring the JPA
-     * `EventSignUpAnswer` shape — the row stores both the answer link
-     * and a flattened `text_response` / `option_selections` so reads
-     * don't need to walk back through `answers`. Returns the row id.
+     * Insert an `answers` row + the matching `event_sign_up_answers`
+     * link in one call. V24 split the response payload out of
+     * `event_sign_up_answers` into the `answers` table — the link
+     * table now only carries `event_sign_up_id` and `answer_id`. The
+     * payload (`text_response` / `option_selections`) lives in
+     * `answers` keyed by `question_id`. Returns the new
+     * `event_sign_up_answers.id`.
      */
     fun createEventSignUpAnswer(
         eventSignUpId: Long,
         questionId: Long,
-        answerId: Long? = null,
         textResponse: String? = null,
         optionSelections: List<Boolean>? = null,
     ): Long {
         val optionsJson = optionSelections?.joinToString(prefix = "[", postfix = "]") { if (it) "true" else "false" }
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val answerId = conn.prepareStatement(
+                "INSERT INTO answers (question_id, option_selections, text_response) VALUES (?, ?, ?)",
+                java.sql.Statement.RETURN_GENERATED_KEYS,
+            ).use { stmt ->
+                stmt.setLong(1, questionId)
+                if (optionsJson != null) stmt.setString(2, optionsJson) else stmt.setNull(2, java.sql.Types.VARCHAR)
+                if (textResponse != null) stmt.setString(3, textResponse) else stmt.setNull(3, java.sql.Types.VARCHAR)
+                stmt.executeUpdate()
+                val keys = stmt.generatedKeys
+                require(keys.next()) { "INSERT answers produced no id" }
+                keys.getLong(1)
+            }
             return conn.prepareStatement(
-                "INSERT INTO event_sign_up_answers " +
-                    "(event_sign_up_id, answer_id, question_id, option_selections, text_response) " +
-                    "VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO event_sign_up_answers (event_sign_up_id, answer_id) VALUES (?, ?)",
                 java.sql.Statement.RETURN_GENERATED_KEYS,
             ).use { stmt ->
                 stmt.setLong(1, eventSignUpId)
-                if (answerId != null) stmt.setLong(2, answerId) else stmt.setNull(2, java.sql.Types.BIGINT)
-                stmt.setLong(3, questionId)
-                if (optionsJson != null) stmt.setString(4, optionsJson) else stmt.setNull(4, java.sql.Types.VARCHAR)
-                if (textResponse != null) stmt.setString(5, textResponse) else stmt.setNull(5, java.sql.Types.VARCHAR)
+                stmt.setLong(2, answerId)
                 stmt.executeUpdate()
                 val keys = stmt.generatedKeys
                 require(keys.next()) { "INSERT event_sign_up_answers produced no id" }

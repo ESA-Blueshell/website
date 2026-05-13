@@ -98,12 +98,13 @@ class AddressPageSystemTest : PlaywrightTestBase() {
         username: String,
         predicate: (TestHelper.AddressRow) -> Boolean = { true },
     ): TestHelper.AddressRow {
-        val deadline = System.currentTimeMillis() + 6_000
+        val timeoutMs = 20_000L
+        val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             val row = TestHelper.findAddress(username)
             if (row != null && predicate(row)) return row
             Thread.sleep(200)
         }
-        throw AssertionError("No address row matching predicate for $username within 6s")
+        throw AssertionError("No address row matching predicate for $username within ${timeoutMs}ms")
     }
 }

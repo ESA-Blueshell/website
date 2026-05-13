@@ -34,13 +34,13 @@ export function $handleNetworkError(err: unknown): void {
         // genuinely still be signed in (the Vault OIDC popup chain hit
         // this path repeatedly, blowing away live sessions). Surface a
         // snackbar with a Login action instead and let the user decide.
-        // `chrome=keep` tells App.vue to leave the navbar/footer in
-        // place when /login is reached from inside the app, so the
-        // user can navigate elsewhere instead of being trapped on a
-        // bare login screen.
+        // /login renders inside the regular site chrome by default
+        // (App.vue only goes bare for the OIDC popup path), so the
+        // user can navigate elsewhere if they didn't actually mean to
+        // sign in.
         const redirectTarget = (currentRoute.query.redirect as string)
           || currentRoute.fullPath
-        const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}&chrome=keep`
+        const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}`
         errorMessage = "Woah there, looks like you're not logged in (anymore)."
         store.commit("setStatusSnackbarMessage", errorMessage)
         store.commit("setStatusSnackbarAction", {label: "Login", to: loginHref})

@@ -54,7 +54,7 @@ describe("handleNetworkError plugin", () => {
     )
     expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarAction", {
       label: "Login",
-      to: `/login?redirect=${encodeURIComponent("/events")}&chrome=keep`,
+      to: `/login?redirect=${encodeURIComponent("/events")}`,
     })
   })
 

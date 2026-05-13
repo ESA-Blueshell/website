@@ -91,9 +91,11 @@ class ContributionManagerPageSystemTest : PlaywrightTestBase() {
             memberId in TestHelper.findContributions(periodId)
         }
 
-        // Second page navigation: mark unpaid via DELETE.
-        page.navigate("$frontendUrl/")
-        AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        // Second page navigation: mark unpaid via DELETE. The session
+        // from the initial submitLogin is still valid; no need to
+        // re-login (re-logging in races the SPA's cookie reconcile
+        // path now that /login renders inside the regular site
+        // chrome).
         ContributionManagerHelper.open(page, frontendUrl)
         page.getByText(periodLabel, Page.GetByTextOptions().setExact(false)).first().waitFor()
         ContributionManagerHelper.selectPeriod(page, periodLabel)

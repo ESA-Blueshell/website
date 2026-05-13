@@ -1,8 +1,6 @@
 package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
-import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.ContributionPeriodHelper
 import net.blueshell.api.system.frontend.helper.MemberManagerHelper
@@ -11,24 +9,11 @@ import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestExecutionListeners
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.function.Predicate
 
 @Tag("system")
-@ActiveProfiles("test")
-@TestExecutionListeners(
-    listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
-)
-@SpringBootTest(
-    classes = [ApiApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
-)
 class MemberManagerPageSystemTest : PlaywrightTestBase() {
 
     @Test

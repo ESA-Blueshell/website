@@ -15,14 +15,21 @@ object CommitteeFormHelper {
             TestIdLocatorHelper.byTestId(page, "committee-form-add-member-btn").click()
         }
         page.getByLabel("Role").nth(index).fill(role)
-        page.getByRole(
+        val combobox = page.getByRole(
             AriaRole.COMBOBOX,
-            Page.GetByRoleOptions().setName("Member name").setExact(false)
-        ).nth(index).fill(fullName)
+            Page.GetByRoleOptions().setName("Member name").setExact(false),
+        ).nth(index)
+        combobox.fill(fullName)
+        // Click the matching dropdown option rather than pressing Enter:
+        // pressing Enter relies on Vuetify's auto-select-first having
+        // populated against the `users` prop, but the parent page
+        // loads users asynchronously after mount — on a fresh create
+        // form the autocomplete can be empty when this helper runs.
+        // Waiting for the option locks the binding without polling.
         page.getByRole(
-            AriaRole.COMBOBOX,
-            Page.GetByRoleOptions().setName("Member name").setExact(false)
-        ).nth(index).press("Enter")
+            AriaRole.OPTION,
+            Page.GetByRoleOptions().setName(fullName).setExact(false),
+        ).first().click()
     }
 
     fun removeFirstMember(page: Page) {

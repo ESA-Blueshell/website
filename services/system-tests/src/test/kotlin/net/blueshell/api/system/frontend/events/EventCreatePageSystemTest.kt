@@ -1,9 +1,6 @@
 package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.options.AriaRole
-import net.blueshell.api.ApiApplication
-import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
@@ -11,22 +8,9 @@ import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestExecutionListeners
 import java.util.function.Predicate
 
 @Tag("system")
-@ActiveProfiles("test")
-@TestExecutionListeners(
-    listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
-)
-@SpringBootTest(
-    classes = [ApiApplication::class],
-    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-    properties = ["server.port=8080", "app.jobs.auto-dispatch=true"],
-)
 class EventCreatePageSystemTest : PlaywrightTestBase() {
 
     @Test
@@ -205,10 +189,12 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
                     r.url().contains("approved=true")
             },
         ) {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Awaiting approval").setExact(false),
-            ).first().click()
+            // Target the approve button by its per-event test id —
+            // unapproved events from earlier tests in the shard stay
+            // on the page (no TestCleanUpListener wiping data between
+            // tests), and clicking `.first()` would fire PUT for the
+            // wrong event id.
+            page.locator("[data-testid='event-approve-btn-$eventId']").click()
         }
         assertThat(response.status()).isEqualTo(200)
 

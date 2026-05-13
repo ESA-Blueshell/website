@@ -18,9 +18,16 @@ services:
     # Drop the dev source-mount + Playwright cache mounts; the prod
     # image is self-contained.
     volumes: !reset []
+    # The test profile activates MockListmonkEmailClient + the
+    # /test-support outbox endpoint and skips the listmonk-setup
+    # bootstrap dependency; the system-test stack doesn't need the
+    # real Listmonk + Postgres + Stalwart triplet to spin up.
+    depends_on: !override
+      db:
+        condition: service_healthy
     environment:
       - TZ=Europe/Amsterdam
-      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_PROFILES_ACTIVE=test
       - APP_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
       - MYSQL_HOST=db
@@ -28,11 +35,30 @@ services:
       - MYSQL_DATABASE=blueshell
       - MYSQL_USER=blueshell
       - MYSQL_PASSWORD=ci-blueshell
+      - SPRING_APPLICATION_DB=blueshell
       - JWT_SECRET=YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh
       - STORAGE_LOCATION=/tmp/storage
       - BREVO_API_KEY=ci-stub
       - BREVO_FOLDER_CONTRIBUTION_PERIODS_ID=1234
+      - APP_JOBS_AUTO_DISPATCH=true
+      # The api image is built with -Dspring.aot.enabled=true, which
+      # bakes the active profile's beans in at build time. The image
+      # ships configured for `prod`, so `test`-profiled mocks
+      # (MockListmonkEmailClient, TestSupportController) would be
+      # pruned at runtime — and ProductionSecurityHardeningGuard
+      # would still fire because it was scoped to `prod` during AOT.
+      # Drop AOT here so Spring re-evaluates @Profile at boot.
+      - JAVA_OPTS=-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=20.0
     env_file: !reset []
+    # The prod runtime image is alpine + jre with no curl, so the dev
+    # compose's `curl http://localhost:8080/health` always fails.
+    # Swap to wget which alpine ships out of the box.
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   frontend:
     image: blueshell-website/frontend:ci
@@ -41,10 +67,25 @@ services:
     volumes: !reset []
     environment:
       - TZ=Europe/Amsterdam
+    # The prod nginx image exposes /healthz at root (see nginx.conf);
+    # the dev healthcheck hits `/` which works too, but explicit beats
+    # ambiguous. wget ships in nginx-unprivileged:alpine via busybox.
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
 
   # ── CI-specific MariaDB credentials ───────────────────────────────
   db:
     env_file: !reset []
+    # Only mount the schema bootstrap; the dev dump is 700KB of seed
+    # data the tests don't want — they create their own fixtures, and
+    # the seed would just create row-collision noise.
+    volumes: !override
+      - data:/var/lib/mysql
+      - "./services/api/0_init.sql:/docker-entrypoint-initdb.d/0_init.sql"
     environment:
       - MYSQL_ROOT_PASSWORD=ci-blueshell-root
       - MYSQL_DATABASE=blueshell

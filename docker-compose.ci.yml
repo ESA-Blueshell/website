@@ -41,6 +41,14 @@ services:
       - BREVO_API_KEY=ci-stub
       - BREVO_FOLDER_CONTRIBUTION_PERIODS_ID=1234
       - APP_JOBS_AUTO_DISPATCH=true
+      # The api image is built with -Dspring.aot.enabled=true, which
+      # bakes the active profile's beans in at build time. The image
+      # ships configured for `prod`, so `test`-profiled mocks
+      # (MockListmonkEmailClient, TestSupportController) would be
+      # pruned at runtime — and ProductionSecurityHardeningGuard
+      # would still fire because it was scoped to `prod` during AOT.
+      # Drop AOT here so Spring re-evaluates @Profile at boot.
+      - JAVA_OPTS=-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=20.0
     env_file: !reset []
     # The prod runtime image is alpine + jre with no curl, so the dev
     # compose's `curl http://localhost:8080/health` always fails.

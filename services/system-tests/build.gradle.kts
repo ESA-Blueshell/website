@@ -30,38 +30,28 @@ configurations.configureEach {
     exclude(group = "org.yaml", module = "snakeyaml")
 }
 
-val mockitoAgent by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-    isTransitive = false
-}
-
 dependencies {
     // Depend on the api so the in-process Spring Boot system tests can
-    // bootstrap ApiApplication and reach its repositories / services.
-    // testFixtures pulls in the shared factories + TestCleanUpListener.
+    // bootstrap ApiApplication on localhost:8080. The test bodies drive
+    // every assertion over HTTP via TestHelper — they never autowire
+    // beans — but Spring still needs the application classpath to host
+    // the api. testFixtures pulls in TestCleanUpListener.
     testImplementation(project(":services:api"))
     testImplementation(testFixtures(project(":services:api")))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
     testImplementation("org.springframework.boot:spring-boot-starter-security")
     testImplementation("org.springframework.boot:spring-boot-starter-flyway")
-    testImplementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     testImplementation("org.flywaydb:flyway-mysql:12.0.2")
     testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
     testImplementation("tools.jackson.module:jackson-module-kotlin")
 
-    testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
-    testImplementation("io.mockk:mockk:1.14.9")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
+    testImplementation("io.rest-assured:rest-assured:6.0.0")
     testImplementation("com.microsoft.playwright:playwright:1.59.0")
-    testImplementation("com.github.javafaker:javafaker:1.0.2")
-    testImplementation("io.github.classgraph:classgraph:4.8.184")
 
     // IMAP access for StalwartMailClient — used by tests that need to
     // assert what the api delivered to the mail server.
@@ -70,8 +60,6 @@ dependencies {
     // JUnit 6 does not automatically put the platform launcher on the
     // runtime classpath; Gradle 9's test-engine selection needs it.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-    mockitoAgent("org.mockito:mockito-core:5.21.0")
 }
 
 tasks.withType<Test>().configureEach {
@@ -89,9 +77,6 @@ tasks.withType<Test>().configureEach {
         if (key.startsWith("test.") || key.startsWith("system.")) {
             systemProperty(key, value)
         }
-    }
-    jvmArgumentProviders += CommandLineArgumentProvider {
-        listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
     }
     testLogging {
         events(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED)
@@ -156,9 +141,6 @@ val vaultOidcLiveTest by tasks.registering(Test::class) {
         // tasks.withType<Test>().configureEach — we only want vault-oidc-live.
         includeTags.clear()
         includeTags("vault-oidc-live")
-    }
-    jvmArgumentProviders += CommandLineArgumentProvider {
-        listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
     }
     testLogging {
         events(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED)

@@ -50,7 +50,7 @@ dependencies {
     testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
     testImplementation("tools.jackson.module:jackson-module-kotlin")
 
-    testImplementation("io.rest-assured:rest-assured:5.5.6")
+    testImplementation("io.rest-assured:rest-assured:6.0.0")
     testImplementation("com.microsoft.playwright:playwright:1.59.0")
 
     // IMAP access for StalwartMailClient — used by tests that need to

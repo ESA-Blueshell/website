@@ -72,6 +72,14 @@ class ListmonkContactAdapterLiveIT {
 
     @Test
     @Order(3)
+    fun `create contact adopts existing subscriber by email when listmonk reports duplicate`() {
+        assumeContactExists()
+        val adopted = contactAdapter.createContact(contactData("Adopted"))
+        assertThat(adopted).isEqualTo(contactId)
+    }
+
+    @Test
+    @Order(4)
     fun `create list and add then remove contact`() {
         assumeContactExists()
         val listId = listAdapter.createList("live-test-${System.currentTimeMillis()}", "contributionPeriods")
@@ -83,7 +91,7 @@ class ListmonkContactAdapterLiveIT {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     fun `delete contact succeeds`() {
         assumeContactExists()
         contactAdapter.deleteContact(contactId!!)

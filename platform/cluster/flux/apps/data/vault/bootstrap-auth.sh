@@ -266,14 +266,21 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
       default_role="admin"; then
     # `bound_claims` is defence-in-depth: the api already 403s non-admins
     # at /oauth2/authorize. `roles` is emitted as Role.name ("ADMIN").
+    #
+    # `bound_claims` is a Vault map field; passing it inline as
+    # `bound_claims='{"roles":["ADMIN"]}'` makes Vault treat the value
+    # as a string (`expected a map, got 'string'`, 400). Use `@file`
+    # syntax so the CLI reads the file as JSON.
+    printf '%s' '{"roles":["ADMIN"]}' > /tmp/bound_claims.json
     vault write auth/oidc/role/admin \
       bound_audiences="vault" \
       allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
       user_claim="sub" \
       groups_claim="groups" \
       oidc_scopes="openid,profile,email,groups" \
-      bound_claims='{"roles":["ADMIN"]}' \
+      bound_claims=@/tmp/bound_claims.json \
       token_policies="admin"
+    rm -f /tmp/bound_claims.json
   else
     echo "auth/oidc/config write failed (api OIDC discovery URL likely not"
     echo "reachable yet — fresh cluster, apps-stateless not Ready). Skipping"

@@ -66,7 +66,19 @@ class JobExecutionService(
 
     @Transactional(readOnly = true)
     fun findStaleQueued(threshold: Instant, pageable: Pageable): List<JobExecution> =
-        jobExecutionRepository.findByStatusAndQueuedAtBefore(JobExecutionStatus.QUEUED, threshold, pageable)
+        jobExecutionRepository.findByStatusAndNextAttemptAtIsNullAndQueuedAtBefore(
+            JobExecutionStatus.QUEUED,
+            threshold,
+            pageable
+        )
+
+    @Transactional(readOnly = true)
+    fun findDueScheduledRetries(now: Instant, pageable: Pageable): List<JobExecution> =
+        jobExecutionRepository.findByStatusAndNextAttemptAtLessThanEqual(
+            JobExecutionStatus.QUEUED,
+            now,
+            pageable
+        )
 
     @Transactional
     fun resetRunningToQueued(execution: JobExecution): JobExecution {
@@ -120,16 +132,18 @@ class JobExecutionService(
     }
 
     @Transactional
-    fun markRetryQueued(
+    fun markRetryScheduled(
         execution: JobExecution,
         errorType: String,
         errorReason: String,
-        stackTrace: String? = null
+        stackTrace: String? = null,
+        nextAttemptAt: Instant
     ): JobExecution {
         execution.status = JobExecutionStatus.QUEUED
         execution.queuedAt = Instant.now()
         execution.startedAt = null
         execution.finishedAt = null
+        execution.nextAttemptAt = nextAttemptAt
         applyErrorInfo(execution, errorType, errorReason, stackTrace)
         execution.attempts += 1
         return super.update(execution)
@@ -146,16 +160,23 @@ class JobExecutionService(
         execution.errorMessage = "$errorType: $errorReason"
     }
 
+    /**
+     * Manual retry triggered from the admin UI. Preserves the attempt count
+     * (incrementing it) and clears any pending retry schedule so the job runs
+     * immediately.
+     */
     @Transactional
     fun requeue(execution: JobExecution): JobExecution {
         execution.status = JobExecutionStatus.QUEUED
         execution.queuedAt = Instant.now()
         execution.startedAt = null
         execution.finishedAt = null
+        execution.nextAttemptAt = null
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null
-        execution.attempts = 0
+        execution.attempts += 1
         return super.update(execution)
     }
+
 }

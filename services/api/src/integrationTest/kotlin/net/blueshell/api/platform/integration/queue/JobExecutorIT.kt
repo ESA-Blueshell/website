@@ -33,13 +33,28 @@ class JobExecutorIT : ServiceTestSupport() {
     }
 
     @Test
-    fun `retries with exponential backoff and eventually succeeds`() {
-        retryingHandler.failForFirstCalls(2)
+    fun `first failure schedules a retry and increments attempts`() {
+        retryingHandler.failForFirstCalls(1)
         val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"))!!
 
-        executor.execute(
-            jobExecutions.findById(execution.id!!).orElseThrow()
-        )
+        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+
+        val updated = jobExecutions.findById(execution.id!!).orElseThrow()
+        assertThat(updated.status).isEqualTo(JobExecutionStatus.QUEUED)
+        assertThat(updated.attempts).isEqualTo(1)
+        assertThat(updated.nextAttemptAt).isNotNull()
+        assertThat(updated.errorType).isEqualTo(IllegalStateException::class.java.name)
+        assertThat(retryingHandler.invocations()).isEqualTo(1)
+    }
+
+    @Test
+    fun `repeated executions eventually succeed`() {
+        retryingHandler.failForFirstCalls(2)
+        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "abc"))!!
+
+        repeat(3) {
+            executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+        }
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.SUCCESS)
@@ -47,29 +62,28 @@ class JobExecutorIT : ServiceTestSupport() {
     }
 
     @Test
-    fun `fails after exhausting configured retries and stores error details`() {
+    fun `exhausting maxRetries marks the job as FAILED`() {
         retryingHandler.alwaysFail()
         val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "456"))!!
 
-        executor.execute(
-            jobExecutions.findById(execution.id!!).orElseThrow()
-        )
+        val maxInvocations = jobQueueProperties.maxRetries + 1
+        repeat(maxInvocations) {
+            executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
+        }
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.FAILED)
         assertThat(updated.errorType).isEqualTo(IllegalStateException::class.java.name)
         assertThat(updated.errorReason).contains("planned failure")
         assertThat(updated.errorMessage).contains("planned failure")
-        assertThat(retryingHandler.invocations()).isEqualTo(jobQueueProperties.maxRetries + 1)
+        assertThat(retryingHandler.invocations()).isEqualTo(maxInvocations)
     }
 
     @Test
     fun `marks missing handler errors as DEAD`() {
         val execution = dispatcher.enqueue("test.missing.handler", mapOf("id" to "789"))!!
 
-        executor.execute(
-            jobExecutions.findById(execution.id!!).orElseThrow()
-        )
+        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)
@@ -83,9 +97,7 @@ class JobExecutorIT : ServiceTestSupport() {
         retryingHandler.throwNonRetryable()
         val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "dead"))!!
 
-        executor.execute(
-            jobExecutions.findById(execution.id!!).orElseThrow()
-        )
+        executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)

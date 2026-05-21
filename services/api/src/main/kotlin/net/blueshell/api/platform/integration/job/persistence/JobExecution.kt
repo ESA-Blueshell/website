@@ -21,6 +21,7 @@ import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
         Index(name = "idx_job_executions_job_type", columnList = "job_type"),
         Index(name = "idx_job_executions_created_at", columnList = "created_at"),
         Index(name = "idx_job_executions_dedup", columnList = "job_type, dedup_key, status"),
+        Index(name = "idx_job_executions_due_retry", columnList = "status, next_attempt_at"),
     ]
 )
 class JobExecution(
@@ -57,6 +58,9 @@ class JobExecution(
 
     @Column(name = "finished_at")
     var finishedAt: Instant? = null,
+
+    @Column(name = "next_attempt_at")
+    var nextAttemptAt: Instant? = null,
 
     @Column(name = "dedup_key")
     var dedupKey: String? = null,

@@ -11,8 +11,18 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 /**
- * Recovers jobs orphaned by app crashes.
- * Periodically checks for stale RUNNING or QUEUED jobs and re-executes them.
+ * Two responsibilities, both driven by `@Scheduled`:
+ *
+ * 1. Recovers jobs orphaned by app crashes. Runs on the stale-check interval
+ *    (default 60s). Picks up RUNNING jobs whose handler never finished and
+ *    QUEUED jobs that the async dispatch path missed.
+ *
+ * 2. Dispatches scheduled retries whose `next_attempt_at` has elapsed. Runs on
+ *    the retry-check interval (default 30s) so backoff windows do not slip.
+ *
+ * Crash-orphaned QUEUED rows have `next_attempt_at = NULL`; scheduled retries
+ * have it set, so the two queries are disjoint and the same row is never
+ * fired twice in the same tick.
  */
 @Component
 class StaleJobRecovery(
@@ -51,6 +61,23 @@ class StaleJobRecovery(
         if (totalRecovered > 0) {
             meterRegistry.counter("job.recovery.count").increment(totalRecovered.toDouble())
             logger.info("Recovered {} stale jobs.", totalRecovered)
+        }
+    }
+
+    @Scheduled(fixedDelayString = "\${app.jobs.retry-check-interval-ms:30000}")
+    fun dispatchDueRetries() {
+        val now = Instant.now()
+        val pageable = PageRequest.of(0, properties.staleRecoveryBatchSize)
+        val due = jobExecutionService.findDueScheduledRetries(now, pageable)
+        for (execution in due) {
+            logger.info(
+                "Dispatching scheduled retry for job execution {}. jobType={}, attempts={}, scheduledFor={}",
+                execution.id, execution.jobType, execution.attempts, execution.nextAttemptAt
+            )
+            jobExecutor.executeAsync(execution.id!!)
+        }
+        if (due.isNotEmpty()) {
+            meterRegistry.counter("job.retry.dispatched.count").increment(due.size.toDouble())
         }
     }
 }

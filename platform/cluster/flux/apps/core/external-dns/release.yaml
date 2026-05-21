@@ -56,7 +56,7 @@ spec:
       - --annotation-filter=kubernetes.io/ingress.class=traefik-public
       # Zone-wide. We manage one-label admin hosts directly under
       # `esa-blueshell.nl` (auth, kube, mail-admin, status, vault)
-      # rather than two-label hosts under `*.v2.esa-blueshell.nl`,
+      # rather than two-label hosts under `*.esa-blueshell.nl`,
       # because Cloudflare's free Universal SSL edge cert only covers
       # one label deep (`*.esa-blueshell.nl`). Policy stays upsert-only
       # (external-dns default) so apex records managed outside the

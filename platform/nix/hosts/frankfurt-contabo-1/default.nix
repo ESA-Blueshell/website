@@ -30,7 +30,7 @@
 
   networking = {
     hostName = "frankfurt-contabo-1";
-    domain = "v2.esa-blueshell.nl";
+    domain = "esa-blueshell.nl";
     # Contabo does not run DHCP — the cidata ISO ships static config that
     # Debian picks up on first boot. We bake those exact values here; the
     # public IP is permanent for the lifetime of this VPS.

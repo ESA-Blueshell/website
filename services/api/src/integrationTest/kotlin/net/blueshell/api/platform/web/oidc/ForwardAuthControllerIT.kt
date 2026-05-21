@@ -36,7 +36,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
                     .header("X-Forwarded-Uri", "/ui/dashboard")
             )
                 .andExpect(status().isFound)
-                .andExpect(redirectedUrlPattern("https://v2.esa-blueshell.nl/login?redirect=*"))
+                .andExpect(redirectedUrlPattern("https://esa-blueshell.nl/login?redirect=*"))
                 .andExpect(header().string(HttpHeaders.LOCATION, org.hamcrest.Matchers.containsString("vault.esa-blueshell.nl%2Fui%2Fdashboard")))
         }
 
@@ -61,7 +61,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
                     .header("X-Forwarded-Uri", "/")
             )
                 .andExpect(status().isFound)
-                .andExpect(redirectedUrlPattern("https://v2.esa-blueshell.nl/login?redirect=*"))
+                .andExpect(redirectedUrlPattern("https://esa-blueshell.nl/login?redirect=*"))
         }
     }
 
@@ -78,7 +78,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
                     .header("X-Forwarded-Uri", "/")
             )
                 .andExpect(status().isFound)
-                .andExpect(header().string(HttpHeaders.LOCATION, "https://v2.esa-blueshell.nl/unauthorized?service=vault.esa-blueshell.nl"))
+                .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/unauthorized?service=vault.esa-blueshell.nl"))
         }
 
         @Test
@@ -92,7 +92,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
                     .header("X-Forwarded-Uri", "/")
             )
                 .andExpect(status().isFound)
-                .andExpect(header().string(HttpHeaders.LOCATION, "https://v2.esa-blueshell.nl/unauthorized?service=vault.esa-blueshell.nl"))
+                .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/unauthorized?service=vault.esa-blueshell.nl"))
         }
 
         @Test

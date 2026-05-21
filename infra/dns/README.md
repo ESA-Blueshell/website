@@ -7,14 +7,16 @@ Authoritative zone files, one per domain. Imported into Cloudflare via
 
 - Zone: [`esa-blueshell.nl.zone`](./esa-blueshell.nl.zone)
 - Migrated off TransIP on 2026-04-21.
-- Apex `esa-blueshell.nl` continues to serve the legacy single-VPS stack at
-  `136.144.191.63`.
-- The new NixOS + k3s platform lives under `v2.esa-blueshell.nl` and the
-  `*.v2` wildcard (`157.173.115.164` / `2a02:c207:2316:2642::1`). Every
-  service hostname the platform advertises (`api.v2`, `kube.v2`, `vault.v2`,
-  `mail.v2`, `auth.v2`, `status.v2`, …) resolves through that wildcard.
-- Once the v2 stack is validated end-to-end the apex A/AAAA records flip
-  to the v2 backend and the `v2` label retires.
+- Apex `esa-blueshell.nl` serves the NixOS + k3s stack at
+  `157.173.115.164` / `2a02:c207:2316:2642::1`. Every service hostname
+  the platform advertises (`api` lives at apex `/api`, plus admin hosts
+  `kube`, `vault`, `mail-admin`, `status`, `traefik`) resolves through
+  that node — admin records are external-dns managed off each
+  IngressRoute.
+- `v2.esa-blueshell.nl` remains pointed at the same node as a fallback
+  during the 30-day grace period after the apex cutover; the frontend
+  and api IngressRoutes match both hostnames so legacy bookmarks keep
+  working. Retired in PR 11.
 
 ## Proxy status
 
@@ -26,11 +28,11 @@ After import, toggle the orange cloud per record:
 | `@` (MX target)              | off   | Mail cannot be proxied.                                |
 | `minecraft`                  | off   | Game traffic — Cloudflare proxy is HTTP(S) only.       |
 | `ftp`                        | off   | Non-HTTP protocol.                                     |
-| `v2`, `*.v2`                 | off   | Different backend; wildcard wildcard-cert via DNS-01.  |
+| `v2`                         | on    | Grace-period fallback to the apex backend (PR 11).     |
 
 ## ACME / Let's Encrypt
 
-Wildcard `*.v2.esa-blueshell.nl` is issued via DNS-01. cert-manager writes
-the challenge TXT record at `_acme-challenge.v2.esa-blueshell.nl` through
+Wildcard `*.esa-blueshell.nl` is issued via DNS-01. cert-manager writes
+the challenge TXT record at `_acme-challenge.esa-blueshell.nl` through
 the Cloudflare API. The API token needs `Zone:DNS:Edit` scoped to this
 zone.

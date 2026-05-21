@@ -260,7 +260,7 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
   # for the first run on a cold cluster (api not yet Ready); the next
   # reconcile re-runs this Job idempotently.
   if vault write auth/oidc/config \
-      oidc_discovery_url="https://v2.esa-blueshell.nl/api" \
+      oidc_discovery_url="https://esa-blueshell.nl/api" \
       oidc_client_id="vault" \
       oidc_client_secret="${OIDC_CLIENT_SECRET}" \
       default_role="admin"; then

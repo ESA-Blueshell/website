@@ -7,20 +7,16 @@ spec:
   secretName: esa-blueshell-nl-tls
   commonName: esa-blueshell.nl
   # One cert covers:
-  #   - `v2.esa-blueshell.nl`                 (main site during staged
-  #                                            bringup; still matches
-  #                                            *.esa-blueshell.nl)
-  #   - `auth|kube|mail-admin|status|vault.esa-blueshell.nl`
-  #                                           (admin hosts — one label
-  #                                            deep, so they also fit
-  #                                            inside Cloudflare's
-  #                                            Universal SSL
-  #                                            `*.esa-blueshell.nl`
-  #                                            edge cert while proxied)
-  #   - apex `esa-blueshell.nl`               (pre-issued for PR 10
-  #                                            cutover; no harm while
-  #                                            the apex still serves
-  #                                            from the old VPS)
+  #   - apex `esa-blueshell.nl`               (main site)
+  #   - `*.esa-blueshell.nl`                  (admin hosts: auth, kube,
+  #                                            mail-admin, status,
+  #                                            vault, traefik; plus the
+  #                                            v2.esa-blueshell.nl
+  #                                            grace-period fallback —
+  #                                            wildcard matches one
+  #                                            label deep, so this
+  #                                            covers it without
+  #                                            adding a SAN)
   #
   # ACME DNS-01 uses the Cloudflare API token stored at
   # secret/data/platform/edge.cloudflare-api-token; the Cloudflare

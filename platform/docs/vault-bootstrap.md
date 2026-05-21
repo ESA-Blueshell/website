@@ -79,7 +79,7 @@ of them blocks at least one downstream Secret.
 - **GHCR pull credential**: GitHub username + a fine-grained PAT scoped
   to `read:packages` on `ESA-Blueshell` (private api/frontend images).
 - **Stalwart admin user/password** + base64-encoded RSA-2048 DKIM
-  private key + bounce mailbox `bounce@v2.esa-blueshell.nl` credentials.
+  private key + bounce mailbox `bounce@esa-blueshell.nl` credentials.
 - **One-shot generated values** (only if missing from the legacy env):
   - `JWT_SECRET` — `openssl rand -base64 64`.
   - `vault-oidc-client-secret` — `openssl rand -hex 32`.
@@ -182,7 +182,7 @@ vault kv put secret/platform/mail \
   admin-user=admin \
   admin-password=<stalwart-admin-password> \
   dkim-private-key=<base64-encoded-rsa-2048-pem> \
-  bounce-mailbox-user=bounce@v2.esa-blueshell.nl \
+  bounce-mailbox-user=bounce@esa-blueshell.nl \
   bounce-mailbox-password=<bounce-mailbox-password>
 ```
 

@@ -42,7 +42,7 @@ import java.nio.charset.StandardCharsets
 @Tag(name = "Forward Auth")
 @RequestMapping("/oauth2/forward-auth")
 class ForwardAuthController(
-    @param:Value($$"${forward-auth.frontend-base-url:https://v2.esa-blueshell.nl}")
+    @param:Value($$"${forward-auth.frontend-base-url:https://esa-blueshell.nl}")
     private val frontendBaseUrl: String,
 ) {
 
@@ -68,7 +68,7 @@ class ForwardAuthController(
         }
 
         // SPAs (Stalwart webadmin, Headlamp, …) fetch their own /api/* via XHR.
-        // A 302 to v2.esa-blueshell.nl/login auto-follows cross-origin and the
+        // A 302 to esa-blueshell.nl/login auto-follows cross-origin and the
         // browser blocks it with CORS, surfacing as a generic network error in
         // the SPA. 401 lets the SPA show a proper "session expired" state.
         val wantsHtml = request.getHeader(HttpHeaders.ACCEPT).orEmpty().contains("text/html")

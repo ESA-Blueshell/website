@@ -21,7 +21,7 @@ data class ListmonkProperties(
     )
 
     data class FromProperties(
-        val address: String = "no-reply@mg.v2.esa-blueshell.nl",
+        val address: String = "no-reply@mg.esa-blueshell.nl",
     )
 
     data class BounceProperties(

@@ -15,7 +15,7 @@ metadata:
   namespace: edge-system
   annotations:
     # No DNS record of our own — the frontend IngressRoute already
-    # publishes `v2.esa-blueshell.nl`. We just piggy-back on that
+    # publishes `esa-blueshell.nl`. We just piggy-back on that
     # host with path-based rules that win over frontend's catch-all.
     kubernetes.io/ingress.class: traefik-public
 spec:
@@ -23,26 +23,29 @@ spec:
     - websecure
   # Same-origin /api/*. Spring Authorization Server's `issuer` setting
   # advertises every endpoint nested under /api (jwks_uri etc. are
-  # https://v2.esa-blueshell.nl/api/oauth2/jwks), but every controller
+  # https://esa-blueshell.nl/api/oauth2/jwks), but every controller
   # in the api is mapped at root paths — `/health`, `/events`,
   # `/me/services`, `/oauth2/...`. We strip the `/api` prefix uniformly
   # before forwarding so REST paths reach their controllers AND the
   # SecurityFilterChain matchers (which permit `/health`, `/events/**`,
   # `/csrf`, `/contributionPeriods/current`, ...) actually fire.
   #
-  # Two routes on this host:
+  # Two routes per host:
   #   - OIDC paths under /api/* — priority 100, kept distinct in case
   #     a future change wants a different middleware on this subset.
   #   - Plain REST /api/*       — priority 50, catch-all under /api.
-  # Both apply `strip-api-prefix`. frontend.yaml's `Host(v2)` catch-all
-  # keeps default priority and naturally falls below both.
+  # Both apply `strip-api-prefix`. frontend.yaml's apex catch-all keeps
+  # default priority and naturally falls below both.
+  #
+  # Matched against both apex and the v2.esa-blueshell.nl fallback for
+  # the 30-day grace window after the apex cutover. Retired in PR 11.
   routes:
     - kind: Rule
       priority: 100
       # Single line on purpose: Traefik's rule parser rejects embedded
       # newlines, and YAML folded scalars (>-) preserve them when
       # subsequent lines are more-indented than the first.
-      match: Host(`v2.esa-blueshell.nl`) && (PathPrefix(`/api/oauth2`) || PathPrefix(`/api/userinfo`) || Path(`/api/.well-known/openid-configuration`) || Path(`/api/.well-known/oauth-authorization-server`))
+      match: (Host(`esa-blueshell.nl`) || Host(`v2.esa-blueshell.nl`)) && (PathPrefix(`/api/oauth2`) || PathPrefix(`/api/userinfo`) || Path(`/api/.well-known/openid-configuration`) || Path(`/api/.well-known/oauth-authorization-server`))
       middlewares:
         - name: strip-api-prefix
           namespace: edge-system
@@ -52,7 +55,7 @@ spec:
           port: 8080
     - kind: Rule
       priority: 50
-      match: Host(`v2.esa-blueshell.nl`) && PathPrefix(`/api`)
+      match: (Host(`esa-blueshell.nl`) || Host(`v2.esa-blueshell.nl`)) && PathPrefix(`/api`)
       middlewares:
         - name: strip-api-prefix
           namespace: edge-system

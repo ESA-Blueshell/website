@@ -10,5 +10,5 @@ data:
       path: /data/data.db
     ui:
       title: Blueshell Esports status
-      description: Uptime for the v2.esa-blueshell.nl stack.
+      description: Uptime for the esa-blueshell.nl stack.
       header: Blueshell Esports

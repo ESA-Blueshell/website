@@ -133,14 +133,14 @@ spec:
             - name: MYSQL_PORT
               value: '3306'
             - name: APP_URL
-              value: https://v2.esa-blueshell.nl/api
+              value: https://esa-blueshell.nl/api
             - name: FRONTEND_URL
-              value: https://v2.esa-blueshell.nl
+              value: https://esa-blueshell.nl
             # Leading dot scopes BSH_AUTH (and the future logout cookie)
             # to every subdomain of esa-blueshell.nl. Traefik forwardAuth
             # on vault/headlamp/listmonk/stalwart/traefik subdomains can't
             # authenticate the user without it (host-only cookie set on
-            # v2.esa-blueshell.nl wouldn't be sent to the others).
+            # esa-blueshell.nl wouldn't be sent to the others).
             - name: AUTH_COOKIE_DOMAIN
               value: .esa-blueshell.nl
             - name: STORAGE_LOCATION
@@ -148,7 +148,7 @@ spec:
             - name: LISTMONK_API_BASE_URL
               value: http://listmonk.default.svc.cluster.local:9000/api
             - name: LISTMONK_FROM_ADDRESS
-              value: no-reply@v2.esa-blueshell.nl
+              value: no-reply@esa-blueshell.nl
             - name: LISTMONK_REPLY_TO_ADDRESS
               value: sitecie@esa-blueshell.nl
             - name: LISTMONK_BOUNCE_MAILBOX_ENABLED
@@ -162,7 +162,7 @@ spec:
             - name: LISTMONK_BOUNCE_MAILBOX_FOLDER
               value: INBOX
             - name: LISTMONK_BOUNCE_MAILBOX_RETURN_PATH
-              value: bounce@v2.esa-blueshell.nl
+              value: bounce@esa-blueshell.nl
             # Listmonk admin credentials synced from Vault via VSO remain the
             # bootstrap fallback. Once listmonk-setup creates the runtime
             # listmonk-api-token Secret, the api reads

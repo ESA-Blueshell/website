@@ -131,7 +131,7 @@ server:
 security:
   cors:
     allowed-origins:
-      - ${FRONTEND_URL:https://v2.esa-blueshell.nl}
+      - ${FRONTEND_URL:https://esa-blueshell.nl}
   auth-cookie:
     name: BSH_AUTH
     path: /
@@ -160,7 +160,7 @@ listmonk:
     api-user: ${LISTMONK_ADMIN_API_USER:api}
     token-file: ${LISTMONK_API_TOKEN_FILE:/run/secrets/listmonk/api-token.env}
   from:
-    address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.v2.esa-blueshell.nl}
+    address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.esa-blueshell.nl}
   reply-to: ${LISTMONK_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
   # ID of the pre-existing "Blueshell Transactional" template in Listmonk.
   # Provisioned by the listmonk setup Job or manually via the admin UI; the
@@ -209,7 +209,7 @@ management:
         http.server.requests: 0.5, 0.95, 0.99
 
 auth:
-  issuer: ${AUTH_ISSUER:https://v2.esa-blueshell.nl/api}
+  issuer: ${AUTH_ISSUER:https://esa-blueshell.nl/api}
   transit:
     enabled: ${AUTH_TRANSIT_ENABLED:false}
     key-name: ${AUTH_TRANSIT_KEY_NAME:api-jwt}

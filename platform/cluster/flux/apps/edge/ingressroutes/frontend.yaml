@@ -13,15 +13,18 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # `www.v2.esa-blueshell.nl` is intentionally NOT served. Cloudflare
-    # already holds an operator-managed CNAME at that name, and
-    # external-dns cannot CREATE an A/AAAA record next to a CNAME — the
-    # whole reconcile batch 400s with error 81054, which in turn blocks
-    # every other subdomain from being created in the same run. The
-    # `www.` alias can come back (or get routed via a CF page-rule
-    # redirect) at PR 10 apex cutover.
+    # Matches both apex and the v2 fallback. v2.esa-blueshell.nl keeps
+    # resolving through the 30-day grace window after the apex cutover
+    # so legacy bookmarks and the OIDC clients that haven't rolled yet
+    # land on a working frontend. Retired in PR 11.
+    #
+    # `www.esa-blueshell.nl` is served via a Cloudflare-side CNAME →
+    # apex; external-dns cannot CREATE an A/AAAA record next to that
+    # CNAME (reconcile batch 400s with error 81054 and blocks every
+    # other host), so we route the apex Host header here and leave the
+    # `www` flattening to Cloudflare.
     - kind: Rule
-      match: Host(`v2.esa-blueshell.nl`)
+      match: Host(`esa-blueshell.nl`) || Host(`v2.esa-blueshell.nl`)
       services:
         - name: frontend
           namespace: default

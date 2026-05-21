@@ -69,7 +69,7 @@ export default defineConfig({
     server: {
         port: 3000,
         host: true,
-        allowedHosts: ['frontend', process.env.ALLOWED_HOST || 'v2.esa-blueshell.nl'],
+        allowedHosts: ['frontend', process.env.ALLOWED_HOST || 'esa-blueshell.nl'],
         hmr: {
             protocol: 'ws'
         },

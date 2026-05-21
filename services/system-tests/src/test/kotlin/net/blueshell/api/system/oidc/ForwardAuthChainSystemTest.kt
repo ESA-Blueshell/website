@@ -19,7 +19,7 @@ import java.util.stream.Stream
 class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
     companion object {
-        private const val FRONTEND_BASE = "https://v2.esa-blueshell.nl"
+        private const val FRONTEND_BASE = "https://esa-blueshell.nl"
 
         @JvmStatic
         fun adminGatedHosts(): Stream<Arguments> = Stream.of(

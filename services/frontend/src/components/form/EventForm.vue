@@ -92,7 +92,7 @@ const signUpFormIsDirty = computed(() => JSON.stringify(event.value.signUpForm) 
 defineRule("fileSize", (value: File | File[] | null) => {
   const f = Array.isArray(value) ? value[0] ?? null : (value as File | null)
   if (!f) return true
-  return f.size <= 2 * 1024 * 1024 || "Promo image must be ≤ 2MB"
+  return f.size <= 10 * 1024 * 1024 || "Promo image must be ≤ 10MB"
 })
 
 const eventFieldMap: FieldMap = {
@@ -424,7 +424,7 @@ defineExpose({validate, save})
               'show-size': true
             }"
             :update="(file: File, handle: HandleChange<string>) => onBannerChange(file as File | null, handle)"
-            label="Promo image (Max 2MB)"
+            label="Promo image (Max 10MB)"
             name="banner"
             rules="fileSize"
           />

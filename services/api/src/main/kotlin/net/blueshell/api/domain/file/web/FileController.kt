@@ -37,7 +37,7 @@ class FileController(
     )
     @PreAuthorize("hasPermission('__NO_TARGET__', 'EventBanner', 'write')")
     fun uploadEventBanner(
-        @RequestPart("file") @NotNull(message = "File is required") @FileSize(max = 2 * 1024 * 1024) @AllowedContentTypes(
+        @RequestPart("file") @NotNull(message = "File is required") @FileSize(max = 10 * 1024 * 1024) @AllowedContentTypes(
             "image/png",
             "image/jpeg",
             "image/jpg",

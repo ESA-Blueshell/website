@@ -581,6 +581,7 @@ export type QuestionRequest = {
     choiceLabels?: Array<string>;
     idx: number;
     label: string;
+    required?: boolean;
     type: QuestionType;
 };
 
@@ -590,6 +591,7 @@ export type QuestionResponse = {
     id: number;
     idx: number;
     label: string;
+    required?: boolean;
     surveyId: number;
     type: QuestionType;
     updatedAt: string;
@@ -711,6 +713,7 @@ export type UpdateEventRequest = {
     memberPrice?: number;
     membersOnly: boolean;
     publicPrice?: number;
+    removeExistingSignUps?: boolean;
     signUp: boolean;
     signUpDeadline?: string;
     signUpForm?: SurveyRequest;

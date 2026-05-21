@@ -18,5 +18,7 @@ data class QuestionRequest(
     @field:Size(max = 2055, message = "Label cannot exceed 2055 characters.")
     var label: String? = null,
 
-    var choiceLabels: MutableList<String>? = null
+    var choiceLabels: MutableList<String>? = null,
+
+    var required: Boolean? = false,
 )

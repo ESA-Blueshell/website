@@ -21,6 +21,7 @@ class CreateQuestionHandler(
             type = command.type,
             label = command.label,
             choiceLabels = command.choiceLabels,
+            required = command.required,
         )
         return service.create(question)
     }
@@ -39,6 +40,7 @@ class UpdateQuestionHandler(
         question.type = command.type
         question.label = command.label
         question.choiceLabels = command.choiceLabels
+        question.required = command.required
         question.survey = surveyService.findById(command.surveyId)
         return service.update(question)
     }

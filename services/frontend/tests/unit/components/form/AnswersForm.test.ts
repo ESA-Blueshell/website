@@ -21,6 +21,8 @@ describe("AnswersForm", () => {
         stubs: {
           Form: formStub,
           AnswerField: true,
+          QuestionCard: {template: "<div><slot /></div>"},
+          QuestionLabel: true,
         },
       },
     })

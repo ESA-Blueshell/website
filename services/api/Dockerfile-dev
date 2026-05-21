@@ -23,9 +23,8 @@ RUN ./gradlew --no-daemon --version
 RUN --mount=type=cache,target=/root/.gradle/caches \
     ./gradlew --no-daemon :services:api:assemble -x test
 
-RUN --mount=type=cache,target=/root/.gradle/caches \
-    --mount=type=cache,target=/ms-playwright \
-    ./gradlew --no-daemon :services:system-tests:installChromium -x test
+# Playwright browser install task is absent on this branch; skip it
+# so the dev image still builds. System tests aren't run from this image.
 
 WORKDIR /src/services/api
 

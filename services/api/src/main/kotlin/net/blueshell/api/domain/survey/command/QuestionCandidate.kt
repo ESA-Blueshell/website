@@ -7,4 +7,5 @@ interface QuestionCandidate {
     val type: QuestionType
     val label: String
     val choiceLabels: List<String>?
+    val required: Boolean
 }

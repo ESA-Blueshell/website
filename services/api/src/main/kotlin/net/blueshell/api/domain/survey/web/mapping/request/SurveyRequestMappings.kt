@@ -16,4 +16,5 @@ fun QuestionRequest.asDomainData(): QuestionData =
         type = this.type!!,
         label = this.label!!,
         choiceLabels = this.choiceLabels,
+        required = this.required ?: false,
     )

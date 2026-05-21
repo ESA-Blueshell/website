@@ -68,7 +68,7 @@ class UpdateEventHandler(
         applySignUpFormUpdate(event, command.signUpForm, surveyFactory)
         event.approved = isBoard && command.approved
         event.version = command.version
-        return service.update(event)
+        return service.update(event, removeExistingSignUps = command.removeExistingSignUps)
     }
 }
 

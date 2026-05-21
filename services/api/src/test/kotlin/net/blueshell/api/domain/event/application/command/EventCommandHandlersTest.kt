@@ -112,7 +112,7 @@ class EventCommandHandlersTest {
             whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
             whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(survey)
             whenever(fileService.findById(88L)).thenReturn(bannerFile)
-            whenever(eventService.update(existing)).thenReturn(existing)
+            whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
             val command = updateEventCommand()
 
             val result = handler.handle(command)

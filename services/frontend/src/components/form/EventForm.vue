@@ -82,6 +82,7 @@ const hasStarted = computed(() => !!event.value.id && DateTime.fromISO(event.val
 
 const hadSignUp = ref<boolean>(!!event.value.signUp)
 const enableSignUpForm = ref<boolean>(!!event.value.signUpForm)
+const removeExistingSignUps = ref<boolean>(false)
 
 const initialEvent = ref(JSON.stringify(event.value))
 const eventIsDirty = computed(() => JSON.stringify(event.value) !== initialEvent.value)
@@ -225,6 +226,7 @@ const save = async () => {
               label: question.label,
               type: question.type,
               choiceLabels: question.choiceLabels,
+              required: question.required === true,
             }),
           ),
         }
@@ -258,6 +260,7 @@ const save = async () => {
           path: {id: event.value.id},
           body: {
             ...(bodyBase as UpdateEventRequest),
+            removeExistingSignUps: removeExistingSignUps.value,
             version: event.value.version!,
           },
           throwOnError: true,
@@ -494,14 +497,43 @@ defineExpose({validate, save})
 
       <v-expand-transition>
         <v-alert
-          v-if="(hadSignUp && !event.signUp) || signUpFormIsDirty"
-          class="mt-4 mx-3"
-          prominent
-          type="warning"
-          variant="outlined"
+          v-if="event.id && (event.signUpCount ?? 0) > 0 && (signUpFormIsDirty || (hadSignUp && !event.signUp))"
+          class="event-form__signup-alert mt-6 mx-3"
+          variant="tonal"
+          :type="removeExistingSignUps ? 'warning' : 'info'"
+          density="comfortable"
+          :icon="removeExistingSignUps ? 'mdi-alert-outline' : 'mdi-account-multiple-outline'"
         >
-          Woah there! Looks like you changed sign-up settings. Once you submit, any existing sign-ups <b>will be
-            removed</b>!
+          <div class="text-subtitle-2 mb-1">
+            {{ removeExistingSignUps ? 'Existing sign-ups will be deleted' : 'Existing sign-ups will be kept' }}
+          </div>
+          <p class="mb-3 text-body-2">
+            <template v-if="removeExistingSignUps">
+              All {{ event.signUpCount }} existing sign-ups and their answers will be permanently removed on submit.
+            </template>
+            <template v-else>
+              Sign-ups and their answers are retained on save. Answers to new or changed questions stay blank until
+              each respondent updates their event sign-up.
+            </template>
+          </p>
+          <v-radio-group
+            v-model="removeExistingSignUps"
+            density="comfortable"
+            hide-details
+            data-testid="event-form-signup-disposition"
+          >
+            <v-radio
+              :value="false"
+              label="Retain event sign-ups"
+              data-testid="event-form-signup-disposition-retain"
+            />
+            <v-radio
+              :value="true"
+              :color="removeExistingSignUps ? 'error' : undefined"
+              label="Delete event sign-ups"
+              data-testid="event-form-signup-disposition-delete"
+            />
+          </v-radio-group>
         </v-alert>
       </v-expand-transition>
     </v-container>

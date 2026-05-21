@@ -25,6 +25,9 @@ data class QuestionResponse(
     var label: String,
 
     var choiceLabels: MutableList<String>? = null,
+
+    var required: Boolean? = false,
+
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant,

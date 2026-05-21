@@ -56,6 +56,12 @@ data class UpdateEventRequest(
     @field:Valid
     var signUpForm: SurveyRequest? = null,
 
+    /**
+     * When true, all existing sign-ups for this event are deleted on save.
+     * Defaults to false: form edits no longer cascade-delete sign-ups.
+     */
+    var removeExistingSignUps: Boolean? = false,
+
     @field:NotNull
     var version: Long? = null
 ) : HasSignUpDeadline

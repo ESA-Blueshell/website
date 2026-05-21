@@ -25,5 +25,7 @@ data class QuestionData(
     @field:NotNull(message = "Question label is required")
     override var label: String,
 
-    override val choiceLabels: List<String>?
+    override val choiceLabels: List<String>?,
+
+    override val required: Boolean = false,
 ) : QuestionCandidate

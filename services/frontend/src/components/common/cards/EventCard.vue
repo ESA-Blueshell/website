@@ -225,6 +225,11 @@ async function loadBanner() {
     if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
     bannerUrl.value = URL.createObjectURL(blob)
   } catch (e) {
+    // 404 = banner record exists but the underlying file is gone (e.g. seeded
+    // events without uploaded binaries). Treat as "no banner" silently.
+    const status = (e as { status?: number; response?: { status?: number } })?.status
+      ?? (e as { response?: { status?: number } })?.response?.status
+    if (status === 404) return
     console.error("Failed to download event banner:", e)
   }
 }

@@ -1,38 +1,36 @@
 package net.blueshell.api.domain.survey.application.listener
 
-import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.survey.application.AnswerService
 import net.blueshell.api.domain.survey.application.event.QuestionChange
 import net.blueshell.api.domain.survey.application.event.QuestionChanged
-import net.blueshell.api.shared.enums.QuestionType
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * Reacts to question lifecycle events.
+ *
+ * Adding or editing a question no longer destroys existing sign-ups; that
+ * cascade is now opt-in via UpdateEventRequest.removeExistingSignUps.
+ * Deleting a question still cleans up its orphan answers so they don't
+ * dangle in the database.
+ */
 @Component
 class QuestionEventListener(
     private val answers: AnswerService,
-    private val signUps: EventSignUpService
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onChange(evt: QuestionChanged) {
         when (evt.changeType) {
             QuestionChange.CREATED -> {
-                log.info("On persist question {}", evt.questionId)
-                if (evt.type != QuestionType.DESCRIPTION) {
-                    signUps.deleteAll(signUps.findBySurveyId(evt.surveyId))
-                }
+                log.info("Question {} created — keeping existing sign-ups", evt.questionId)
             }
 
             QuestionChange.UPDATED -> {
-                log.info("Question update dirty fields: {}", evt.dirtyFields)
-                if (evt.hasAnswers && evt.dirty) {
-                    signUps.deleteAll(signUps.findBySurveyId(evt.surveyId))
-                    answers.deleteAll(answers.findByQuestionId(evt.questionId))
-                }
+                log.info("Question {} updated (dirty fields: {}) — keeping existing sign-ups", evt.questionId, evt.dirtyFields)
             }
 
             QuestionChange.DELETED -> {

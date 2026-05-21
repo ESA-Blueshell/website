@@ -1,8 +1,14 @@
 package net.blueshell.api.domain.event.web
 
+import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.factory.event.web.request.EventRequestFactory
 import net.blueshell.api.factory.event.web.request.EventSignUpRequestFactory
+import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,6 +23,32 @@ import java.time.Instant
 class EventSignUpControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var eventSignUpRequestFactory: EventSignUpRequestFactory
+
+    @Autowired
+    private lateinit var eventRequestFactory: EventRequestFactory
+
+    private fun attachSurvey(event: Event, vararg questions: Question): Event {
+        val survey = Survey()
+        val attached = questions.map { q ->
+            Question(
+                idx = q.idx,
+                survey = survey,
+                type = q.type,
+                label = q.label,
+                choiceLabels = q.choiceLabels?.toMutableList(),
+                required = q.required,
+            )
+        }
+        survey.replaceQuestions(attached)
+        event.replaceSignUpForm(survey)
+        return persist(event)
+    }
+
+    private fun openQuestion(idx: Long, label: String, required: Boolean): Question =
+        Question(idx = idx, survey = Survey(), type = QuestionType.OPEN, label = label, required = required)
+
+    private fun checkboxQuestion(idx: Long, label: String, required: Boolean, choices: MutableList<String>): Question =
+        Question(idx = idx, survey = Survey(), type = QuestionType.CHECKBOX, label = label, choiceLabels = choices, required = required)
 
     @Nested
     inner class FindEventSignUps {
@@ -258,6 +290,193 @@ class EventSignUpControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.user").doesNotExist())
+        }
+    }
+
+    @Nested
+    inner class RequiredAndOptionalAnswers {
+        @Test
+        fun `accepts signup with blank optional open answer`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val event = attachSurvey(
+                createEventFixture(approved = true, signUp = true),
+                openQuestion(0, "Dietary notes?", required = false),
+            )
+            val questionId = event.signUpForm!!.questions.first().id!!
+
+            val payload = eventSignUpRequestFactory.createUserSignUpPayload(
+                member.id!!,
+                eventSignUpRequestFactory.answersArray(
+                    eventSignUpRequestFactory.openAnswerJson(questionId, ""),
+                ),
+            )
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload),
+            )
+                .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `rejects signup with blank required open answer`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val event = attachSurvey(
+                createEventFixture(approved = true, signUp = true),
+                openQuestion(0, "Your name?", required = true),
+            )
+            val questionId = event.signUpForm!!.questions.first().id!!
+
+            val payload = eventSignUpRequestFactory.createUserSignUpPayload(
+                member.id!!,
+                eventSignUpRequestFactory.answersArray(
+                    eventSignUpRequestFactory.openAnswerJson(questionId, "   "),
+                ),
+            )
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload),
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `accepts checkbox signup with no selections when optional`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val event = attachSurvey(
+                createEventFixture(approved = true, signUp = true),
+                checkboxQuestion(0, "Allergies", required = false, choices = mutableListOf("Nuts", "Gluten", "Dairy")),
+            )
+            val questionId = event.signUpForm!!.questions.first().id!!
+
+            val payload = eventSignUpRequestFactory.createUserSignUpPayload(
+                member.id!!,
+                eventSignUpRequestFactory.answersArray(
+                    eventSignUpRequestFactory.selectionsAnswerJson(questionId, listOf(false, false, false)),
+                ),
+            )
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload),
+            )
+                .andExpect(status().isCreated)
+        }
+
+        @Test
+        fun `rejects checkbox signup with no selections when required`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val event = attachSurvey(
+                createEventFixture(approved = true, signUp = true),
+                checkboxQuestion(0, "Pick", required = true, choices = mutableListOf("Pizza", "Pasta")),
+            )
+            val questionId = event.signUpForm!!.questions.first().id!!
+
+            val payload = eventSignUpRequestFactory.createUserSignUpPayload(
+                member.id!!,
+                eventSignUpRequestFactory.answersArray(
+                    eventSignUpRequestFactory.selectionsAnswerJson(questionId, listOf(false, false)),
+                ),
+            )
+
+            mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload),
+            )
+                .andExpect(status().isBadRequest)
+        }
+    }
+
+    @Nested
+    inner class AmendSignupAfterFormChange {
+        @Test
+        fun `existing signup persists when board adds a new question and member can amend with new answer`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val event = attachSurvey(
+                createEventFixture(committee = committee, approved = true, signUp = true),
+                openQuestion(0, "Pre-existing question", required = false),
+            )
+            val originalQuestionId = event.signUpForm!!.questions.first().id!!
+
+            val createResult = mvc.perform(
+                post("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventSignUpRequestFactory.createUserSignUpPayload(
+                            member.id!!,
+                            eventSignUpRequestFactory.answersArray(
+                                eventSignUpRequestFactory.openAnswerJson(originalQuestionId, "first answer"),
+                            ),
+                        ),
+                    ),
+            )
+                .andExpect(status().isCreated)
+                .andReturn()
+
+            val signUpId = mapper.readTree(createResult.response.contentAsByteArray).path("id").asLong()
+            val signUpVersion = mapper.readTree(createResult.response.contentAsByteArray).path("version").asLong()
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = event.version,
+                            signUpFormJson = eventRequestFactory.signUpFormJson(
+                                eventRequestFactory.questionJson(0, "OPEN", "Pre-existing question"),
+                                eventRequestFactory.questionJson(1, "OPEN", "New required question", required = true),
+                            ),
+                        ),
+                    ),
+            )
+                .andExpect(status().isOk)
+
+            mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[0].id").value(signUpId))
+                .andExpect(jsonPath("$[0].answers[0].textResponse").value("first answer"))
+
+            val refreshedEvent = mvc.perform(get("/events/{id}", event.id).with(bearer(board)))
+                .andExpect(status().isOk)
+                .andReturn()
+            val refreshedEventJson = mapper.readTree(refreshedEvent.response.contentAsByteArray)
+            val newQuestionId = refreshedEventJson.path("signUpForm").path("questions")
+                .first { it.path("idx").asLong() == 1L }
+                .path("id").asLong()
+            assertThat(newQuestionId).isPositive()
+
+            mvc.perform(
+                put("/events/{eventId}/signups", event.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventSignUpRequestFactory.updateUserSignUpPayload(
+                            member.id!!,
+                            signUpVersion,
+                            eventSignUpRequestFactory.answersArray(
+                                eventSignUpRequestFactory.openAnswerJson(originalQuestionId, "first answer"),
+                                eventSignUpRequestFactory.openAnswerJson(newQuestionId, "answered later"),
+                            ),
+                        ),
+                    ),
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(signUpId))
+                .andExpect(jsonPath("$.answers[?(@.questionId == $newQuestionId)].textResponse").value("answered later"))
         }
     }
 

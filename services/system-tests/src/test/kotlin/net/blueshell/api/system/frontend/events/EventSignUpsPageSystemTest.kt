@@ -72,6 +72,70 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
+    fun `sign-ups page renders placeholder when an answer is missing after a question is added`() {
+        val viewer = TestHelper.registerActivateAndPromote("COMMITTEE")
+        val respondent = TestHelper.registerActivateAndPromote("MEMBER")
+        val respondentId = TestHelper.findUser(respondent.username)!!.id
+
+        val committeeId = TestHelper.createCommittee(name = "Missing Answers Committee ${System.currentTimeMillis()}")
+        TestHelper.addCommitteeMember(committeeId, viewer.username)
+
+        val eventId = TestHelper.createEvent(
+            committeeId = committeeId,
+            title = "Missing Answers Event ${System.currentTimeMillis()}",
+            startTime = Instant.now().plusSeconds(2 * 3600),
+            endTime = Instant.now().plusSeconds(3 * 3600),
+            approved = true,
+            signUp = true,
+        )
+
+        val surveyId = TestHelper.attachSurveyToEvent(eventId)
+        val originalLabel = "Original question"
+        val laterLabel = "Question added later"
+
+        val originalQuestionId = TestHelper.createQuestion(
+            surveyId = surveyId,
+            idx = 0,
+            type = "OPEN",
+            label = originalLabel,
+            required = false,
+        )
+
+        val signUpId = TestHelper.createUserEventSignUp(eventId, respondentId)
+        TestHelper.createEventSignUpAnswer(signUpId, originalQuestionId, textResponse = "answered up front")
+
+        TestHelper.createQuestion(
+            surveyId = surveyId,
+            idx = 1,
+            type = "CHECKBOX",
+            label = laterLabel,
+            choiceLabels = listOf("Yes", "No"),
+            required = true,
+        )
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, viewer.username, viewer.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        val signupsResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "GET" &&
+                    response.url().contains("/events/$eventId/signups")
+            },
+        ) {
+            page.navigate("$frontendUrl/events/signups/$eventId")
+        }
+        assertThat(signupsResponse.status()).isEqualTo(200)
+
+        pollFor("answer row visible for question added later") {
+            page.locator(".v-card:has(.v-card-title:has-text(\"$laterLabel\")) .radio-table tbody tr").count() >= 1
+        }
+
+        val laterQuestionCard = page.locator(".v-card:has(.v-card-title:has-text(\"$laterLabel\"))").first()
+        val missingIcons = laterQuestionCard.locator(".radio-table tbody tr .mdi-minus")
+        assertThat(missingIcons.count()).isEqualTo(2)
+    }
+
+    @Test
     fun `deleted signup user remains visible on sign-up page as anonymized identity`() {
         val seeded = seedEventSignUpsData()
         TestHelper.eraseUser(seeded.memberRespondent.username)

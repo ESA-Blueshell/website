@@ -39,6 +39,7 @@ files/
 files
 data
 /storage/
+services/api/storage/
 private
 **/.yarn
 .playwright

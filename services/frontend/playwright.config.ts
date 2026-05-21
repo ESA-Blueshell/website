@@ -14,6 +14,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:4173",
     trace: "on-first-retry",
     navigationTimeout: 60_000,
+    reducedMotion: "reduce",
   },
   webServer: {
     command: "VITE_COVERAGE=true yarn dev --host 127.0.0.1 --port 4173",

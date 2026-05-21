@@ -13,18 +13,23 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # Matches both apex and the v2 fallback. v2.esa-blueshell.nl keeps
-    # resolving through the 30-day grace window after the apex cutover
-    # so legacy bookmarks and the OIDC clients that haven't rolled yet
-    # land on a working frontend. Retired in PR 11.
-    #
     # `www.esa-blueshell.nl` is served via a Cloudflare-side CNAME →
     # apex; external-dns cannot CREATE an A/AAAA record next to that
     # CNAME (reconcile batch 400s with error 81054 and blocks every
     # other host), so we route the apex Host header here and leave the
     # `www` flattening to Cloudflare.
+    #
+    # Explicit `priority: 1` — Traefik computes a default priority
+    # equal to the rule string length when none is set. The api
+    # IngressRoute's `PathPrefix(/api)` catch-all sits at priority 50;
+    # without an explicit low number here, growing the Host matcher
+    # (e.g. a parallel-serve alias) can push the frontend's
+    # auto-priority above 50, sending /api/* to the SPA nginx (which
+    # returns index.html for GETs and 405 for POSTs). Anchoring the
+    # frontend at 1 makes the precedence "specificity wins" explicit.
     - kind: Rule
-      match: Host(`esa-blueshell.nl`) || Host(`v2.esa-blueshell.nl`)
+      priority: 1
+      match: Host(`esa-blueshell.nl`)
       services:
         - name: frontend
           namespace: default

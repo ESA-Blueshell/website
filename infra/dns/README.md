@@ -13,10 +13,9 @@ Authoritative zone files, one per domain. Imported into Cloudflare via
   `kube`, `vault`, `mail-admin`, `status`, `traefik`) resolves through
   that node — admin records are external-dns managed off each
   IngressRoute.
-- `v2.esa-blueshell.nl` remains pointed at the same node as a fallback
-  during the 30-day grace period after the apex cutover; the frontend
-  and api IngressRoutes match both hostnames so legacy bookmarks keep
-  working. Retired in PR 11.
+- `v2.esa-blueshell.nl` has been retired — both the DNS records and
+  the IngressRoute Host matchers were dropped once the apex cutover
+  was confirmed healthy.
 
 ## Proxy status
 
@@ -28,7 +27,6 @@ After import, toggle the orange cloud per record:
 | `@` (MX target)              | off   | Mail cannot be proxied.                                |
 | `minecraft`                  | off   | Game traffic — Cloudflare proxy is HTTP(S) only.       |
 | `ftp`                        | off   | Non-HTTP protocol.                                     |
-| `v2`                         | on    | Grace-period fallback to the apex backend (PR 11).     |
 
 ## ACME / Let's Encrypt
 

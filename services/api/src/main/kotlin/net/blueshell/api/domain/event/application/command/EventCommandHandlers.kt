@@ -179,12 +179,14 @@ private fun applySignUpFormUpdate(
             type = incoming.type
             label = incoming.label
             choiceLabels = incoming.choiceLabels?.toMutableList()
+            required = incoming.required
         } ?: Question(
             idx = incoming.idx,
             survey = existingSurvey,
             type = incoming.type,
             label = incoming.label,
             choiceLabels = incoming.choiceLabels?.toMutableList(),
+            required = incoming.required,
         )
     }
     existingSurvey.replaceQuestions(mappedQuestions)

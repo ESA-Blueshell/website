@@ -436,6 +436,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                         eventRequestFactory.updateEventPayload(
                             committeeId = committee.id!!,
                             version = event.version,
+                            approved = true,
                             signUpFormJson = eventRequestFactory.signUpFormJson(
                                 eventRequestFactory.questionJson(0, "OPEN", "Pre-existing question"),
                                 eventRequestFactory.questionJson(1, "OPEN", "New required question", required = true),

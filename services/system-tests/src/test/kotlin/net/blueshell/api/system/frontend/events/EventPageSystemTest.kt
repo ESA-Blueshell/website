@@ -127,6 +127,8 @@ class EventPageSystemTest : PlaywrightTestBase() {
             signUp = true,
             title = "Member Signup Update Event ${System.currentTimeMillis()}",
         )
+        val surveyId = TestHelper.attachSurveyToEvent(eventId)
+        TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
         val existingSignUpId = TestHelper.createUserEventSignUp(eventId, memberId)
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
@@ -163,6 +165,8 @@ class EventPageSystemTest : PlaywrightTestBase() {
             signUp = true,
             title = "Member Signup Delete Event ${System.currentTimeMillis()}",
         )
+        val surveyId = TestHelper.attachSurveyToEvent(eventId)
+        TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
         val existingSignUpId = TestHelper.createUserEventSignUp(eventId, memberId)
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
@@ -239,6 +243,8 @@ class EventPageSystemTest : PlaywrightTestBase() {
             signUp = true,
             title = "Guest Signup Update Event ${System.currentTimeMillis()}",
         )
+        val surveyId = TestHelper.attachSurveyToEvent(eventId)
+        TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
         val originalGuestName = "Guest Original"
         val originalGuestDiscord = "guest_original"
         val originalGuestEmail = "guest-original-${System.currentTimeMillis()}@example.com"
@@ -311,6 +317,8 @@ class EventPageSystemTest : PlaywrightTestBase() {
             signUp = true,
             title = "Guest Signup Delete Event ${System.currentTimeMillis()}",
         )
+        val surveyId = TestHelper.attachSurveyToEvent(eventId)
+        TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
         val originalGuestName = "Guest Delete"
         val originalGuestDiscord = "guest_delete"
         val originalGuestEmail = "guest-delete-${System.currentTimeMillis()}@example.com"

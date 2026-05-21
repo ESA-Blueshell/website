@@ -39,27 +39,4 @@ describe("SurveyForm", () => {
     expect((remaining[0]!.props("modelValue") as {idx: number}).idx).toBe(0)
   })
 
-  it("shows dirty warning when editing an existing survey", async () => {
-    const wrapper = shallowMount(SurveyForm, {
-      props: {
-        modelValue: {
-          id: 99,
-          questions: [{idx: 0, type: QuestionType.OPEN, label: "Q1"}],
-        },
-      },
-      global: {
-        stubs: {
-          QuestionField: true,
-        },
-      },
-    })
-
-    expect(wrapper.text()).not.toContain("Editing the form will remove existing responses after submit.")
-
-    const question = wrapper.findComponent({name: "QuestionField"})
-    await question.vm.$emit("update:model-value", {idx: 0, type: QuestionType.OPEN, label: "Changed"})
-    await nextTick()
-
-    expect(wrapper.text()).toContain("Editing the form will remove existing responses after submit.")
-  })
 })

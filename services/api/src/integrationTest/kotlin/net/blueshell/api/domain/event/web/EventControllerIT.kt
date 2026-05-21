@@ -497,7 +497,7 @@ class EventControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `adding sign up form removes existing signups`() {
+        fun `adding a sign up form keeps existing signups by default`() {
             val board = createUserWithRole(Role.BOARD)
             val committee = createCommitteeFixture()
             val event = createEventFixture(committee = committee, signUp = true)
@@ -522,11 +522,11 @@ class EventControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
 
-            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).isEmpty()
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).hasSize(1)
         }
 
         @Test
-        fun `adding a non description question removes existing signups`() {
+        fun `adding a non description question keeps existing signups by default`() {
             val board = createUserWithRole(Role.BOARD)
             val committee = createCommitteeFixture()
             val event = createEventFixture(committee = committee, signUp = true)
@@ -562,6 +562,36 @@ class EventControllerIT : UserTestSupport() {
                             signUpFormJson = signUpFormJson(
                                 questionJson(0, "DESCRIPTION", "Read this first"),
                                 questionJson(1, "OPEN", "Any allergies?")
+                            )
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
+
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).hasSize(1)
+        }
+
+        @Test
+        fun `removeExistingSignUps flag deletes existing signups on update`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val event = createEventFixture(committee = committee, signUp = true)
+            val member = createUserWithRole(Role.MEMBER)
+            createEventSignUpFixture(event = event, user = member)
+
+            assertThat(eventSignUpRepository.findByEvent_Id(event.id!!)).hasSize(1)
+
+            mvc.perform(
+                put("/events/{id}", event.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        eventRequestFactory.updateEventPayload(
+                            committeeId = committee.id!!,
+                            version = event.version,
+                            removeExistingSignUps = true,
+                            signUpFormJson = signUpFormJson(
+                                questionJson(0, "OPEN", "Any allergies?")
                             )
                         )
                     )

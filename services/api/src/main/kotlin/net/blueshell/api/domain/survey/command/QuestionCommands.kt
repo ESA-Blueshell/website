@@ -23,7 +23,9 @@ data class CreateQuestionCommand(
     @field:Size(max = 2055, message = "Label cannot exceed 2055 characters")
     override var label: String,
 
-    override val choiceLabels: MutableList<String>?
+    override val choiceLabels: MutableList<String>?,
+
+    override val required: Boolean = false,
 ) : Command<Question>, QuestionCandidate
 
 @ValidQuestion
@@ -44,7 +46,9 @@ data class UpdateQuestionCommand(
     @field:Size(max = 2055, message = "Label cannot exceed 2055 characters")
     override var label: String,
 
-    override val choiceLabels: MutableList<String>?
+    override val choiceLabels: MutableList<String>?,
+
+    override val required: Boolean = false,
 ) : Command<Question>, QuestionCandidate
 
 class FindQuestionsCommand : Command<MutableList<Question>>

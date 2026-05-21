@@ -2,6 +2,8 @@
 import {computed, ref, watch} from "vue"
 import {Form, type FormContext} from "vee-validate"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
+import QuestionCard from "@/components/form/common/QuestionCard.vue"
+import QuestionLabel from "@/components/form/common/QuestionLabel.vue"
 import {type AnswerRequest, type QuestionResponse, QuestionType, type SurveyResponse} from "@/services/api"
 
 const props = defineProps<{ survey?: SurveyResponse | null }>()
@@ -14,14 +16,14 @@ const answerIndexByQuestionIdx = ref<Map<number, number>>(new Map())
 watch(
   questions,
   (qs) => {
-    const map = new Map<number, number>()
-    let idx = 0
+    const answerMap = new Map<number, number>()
+    let answerIdx = 0
     for (const q of qs) {
       if (q.type !== QuestionType.DESCRIPTION) {
-        map.set(q.idx, idx++)
+        answerMap.set(q.idx, answerIdx++)
       }
     }
-    answerIndexByQuestionIdx.value = map
+    answerIndexByQuestionIdx.value = answerMap
   },
   {immediate: true, deep: true},
 )
@@ -38,33 +40,49 @@ defineExpose({validate})
   <Form
     ref="formRef"
     as="div"
+    class="answers-form"
   >
-    <div
+    <template
       v-for="question in questions"
       :key="question?.idx"
-      class="mb-4"
     >
-      <p
+      <question-card
         v-if="question.type === QuestionType.DESCRIPTION"
-        class="text-body-1"
+        description
+        class="answers-form__item"
       >
-        {{ question.label }}
-      </p>
-
-      <template v-else>
-        <p
-          v-if="question.type === QuestionType.RADIO || question.type === QuestionType.CHECKBOX"
-          class="text-h6 mb-2"
-        >
+        <p class="text-body-1 mb-0 answers-form__description">
           {{ question.label }}
         </p>
+      </question-card>
 
+      <question-card
+        v-else
+        class="answers-form__item"
+      >
+        <question-label
+          :label="question.label || 'Question'"
+          :required="question.required === true"
+        />
         <answer-field
           v-if="answerIndexByQuestionIdx.has(question.idx)"
           v-model="answers[answerIndexByQuestionIdx.get(question.idx)!]"
           :question="question"
         />
-      </template>
-    </div>
+      </question-card>
+    </template>
   </Form>
 </template>
+
+<style lang="scss" scoped>
+.answers-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+
+  &__description {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+</style>

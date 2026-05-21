@@ -50,6 +50,10 @@ class Question(
     @Convert(converter = StringListConverter::class)
     @field:DirtyField
     var choiceLabels: MutableList<String>? = null,
+
+    @Column(name = "required", nullable = false)
+    @field:DirtyField
+    var required: Boolean = false,
 ) : DirtyAwareModel() {
     val surveyId: Long
         get() = survey.id ?: 0

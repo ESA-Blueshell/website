@@ -8,7 +8,6 @@ import net.blueshell.api.domain.event.persistence.repository.EventBannerReposito
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSpecifications
 import net.blueshell.api.domain.file.application.FileService
-import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
@@ -36,14 +35,22 @@ class EventService @Autowired constructor(
     }
 
     @Transactional
-    override fun update(entity: Event): Event {
+    override fun update(entity: Event): Event = update(entity, removeExistingSignUps = false)
+
+    /**
+     * Form edits no longer cascade-delete sign-ups: that only happens when the caller
+     * explicitly asks for it via [removeExistingSignUps]. The previous heuristic (dirty
+     * questions / changed keys) silently destroyed responses on any non-trivial edit.
+     */
+    @Transactional
+    fun update(entity: Event, removeExistingSignUps: Boolean): Event {
         val previous = findById(entity.id!!).toUpdateSnapshot()
 
         mergeAssociations(entity)
         val saved = super.update(entity)
 
         maybeDeleteReplacedBannerFile(previous.bannerFileId, saved.banner?.file?.id)
-        if (shouldInvalidateSignUps(previous, saved)) {
+        if (removeExistingSignUps) {
             clearSignUpsForEvent(saved.id!!)
         }
 
@@ -124,29 +131,6 @@ class EventService @Autowired constructor(
         }
     }
 
-    private fun shouldInvalidateSignUps(previous: EventUpdateSnapshot, updated: Event): Boolean {
-        val updatedForm = updated.signUpForm ?: return false
-        if (!previous.hadSignUpForm) {
-            return true
-        }
-
-        if ((updated.nonDescriptionQuestionKeys() - previous.nonDescriptionQuestionKeys).isNotEmpty()) {
-            return true
-        }
-
-        return updatedForm.questions.any { question ->
-            question.type != QuestionType.DESCRIPTION && question.dirty
-        }
-    }
-
-    private fun Event.nonDescriptionQuestionKeys(): Set<NonDescriptionQuestionKey> {
-        return signUpForm?.questions
-            ?.filter { it.type != QuestionType.DESCRIPTION }
-            ?.map { NonDescriptionQuestionKey(it.idx, it.type) }
-            ?.toSet()
-            ?: emptySet()
-    }
-
     private fun publishEventChanged(eventId: Long, changeType: EventChange) {
         trackedEvents.publish { actor ->
             EventChanged(eventId, changeType, actor = actor)
@@ -155,20 +139,11 @@ class EventService @Autowired constructor(
 
     private data class EventUpdateSnapshot(
         val bannerFileId: Long?,
-        val hadSignUpForm: Boolean,
-        val nonDescriptionQuestionKeys: Set<NonDescriptionQuestionKey>
-    )
-
-    private data class NonDescriptionQuestionKey(
-        val idx: Long,
-        val type: QuestionType
     )
 
     private fun Event.toUpdateSnapshot(): EventUpdateSnapshot {
         return EventUpdateSnapshot(
             bannerFileId = banner?.file?.id,
-            hadSignUpForm = signUpForm != null,
-            nonDescriptionQuestionKeys = nonDescriptionQuestionKeys(),
         )
     }
 }

@@ -43,5 +43,6 @@ fun UpdateEventRequest.asCommand(id: Long): UpdateEventCommand =
         signUpLimit = this.signUpLimit,
         banner = this.banner?.asDomainData(),
         signUpForm = this.signUpForm?.asDomainData(),
+        removeExistingSignUps = this.removeExistingSignUps == true,
         version = this.version!!,
     )

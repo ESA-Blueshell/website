@@ -25,6 +25,7 @@ fun Question.asResponse(): QuestionResponse =
         type = this.type,
         label = this.label,
         choiceLabels = this.choiceLabels,
+        required = this.required,
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

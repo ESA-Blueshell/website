@@ -26,4 +26,26 @@ class EventSignUpRequestFactory {
         phoneNumber: String = "+31612345678"
     ): String =
         """{"guest":{"name":"$name","discord":"$discord","email":"$email","phoneNumber":"$phoneNumber"},"version":$version}"""
+
+    fun createUserSignUpPayload(userId: Long, answersJson: String): String =
+        """{"userId":$userId,"answers":$answersJson}"""
+
+    fun updateUserSignUpPayload(userId: Long, version: Long, answersJson: String): String =
+        """{"userId":$userId,"version":$version,"answers":$answersJson}"""
+
+    fun openAnswerJson(questionId: Long, text: String?): String {
+        val textPart = text?.let { ""","textResponse":${escapeJson(it)}""" } ?: ""
+        return """{"questionId":$questionId$textPart}"""
+    }
+
+    fun selectionsAnswerJson(questionId: Long, selections: List<Boolean>): String =
+        """{"questionId":$questionId,"optionSelections":[${selections.joinToString(",")}]}"""
+
+    fun answersArray(vararg answersJson: String): String =
+        "[${answersJson.joinToString(",")}]"
+
+    private fun escapeJson(s: String): String {
+        val escaped = s.replace("\\", "\\\\").replace("\"", "\\\"")
+        return "\"$escaped\""
+    }
 }

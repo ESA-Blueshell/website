@@ -94,6 +94,28 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
   }
 }
 
+function hasAnswerForQuestion(response: Response, question: QuestionResponse): boolean {
+  return response.answers.has(question.id!)
+}
+
+function selectionState(
+  response: Response,
+  question: QuestionResponse,
+  optionIdx: number,
+): "checked" | "unchecked" | "missing" {
+  const answer = response.answers.get(question.id!)
+  if (!answer) return "missing"
+  const selections = answer.optionSelections ?? []
+  if (selections.length !== (question.choiceLabels?.length ?? 0)) return "missing"
+  return selections[optionIdx] ? "checked" : "unchecked"
+}
+
+function isOpenAnswerEmpty(response: Response, question: QuestionResponse): boolean {
+  const answer = response.answers.get(question.id!)
+  const text = answer?.textResponse
+  return !answer || typeof text !== "string" || text.trim().length === 0
+}
+
 </script>
 
 <template>
@@ -189,7 +211,15 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
                 >
                   <td>{{ response.person.fullName }}</td>
                   <td class="whitespace-pre-wrap">
-                    {{ response.answers.get(question.id!)?.textResponse }}
+                    <template v-if="!hasAnswerForQuestion(response, question)">
+                      <span class="text-medium-emphasis font-italic">— not yet answered —</span>
+                    </template>
+                    <template v-else-if="isOpenAnswerEmpty(response, question)">
+                      <span class="text-medium-emphasis font-italic">(left blank)</span>
+                    </template>
+                    <template v-else>
+                      {{ response.answers.get(question.id!)?.textResponse }}
+                    </template>
                   </td>
                 </tr>
               </tbody>
@@ -239,16 +269,35 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
                     :key="idx"
                     class="text-center check-cell"
                   >
-                    <v-icon
-                      v-if="(response.answers.get(question.id!)?.optionSelections ?? [])[idx]"
-                      icon="mdi-check-bold"
-                      size="18"
-                    />
-                    <v-icon
-                      v-else
-                      icon="mdi-close-thick"
-                      size="18"
-                    />
+                    <template v-if="selectionState(response, question, idx) === 'checked'">
+                      <v-icon
+                        icon="mdi-check-bold"
+                        size="18"
+                        color="success"
+                      />
+                    </template>
+                    <template v-else-if="selectionState(response, question, idx) === 'unchecked'">
+                      <v-icon
+                        icon="mdi-close-thick"
+                        size="18"
+                        class="text-medium-emphasis"
+                      />
+                    </template>
+                    <template v-else>
+                      <v-tooltip
+                        text="No answer yet — respondent hasn't edited their sign-up since this question was added"
+                        location="top"
+                      >
+                        <template #activator="{ props }">
+                          <v-icon
+                            v-bind="props"
+                            icon="mdi-minus"
+                            size="18"
+                            class="text-medium-emphasis"
+                          />
+                        </template>
+                      </v-tooltip>
+                    </template>
                   </td>
                 </tr>
               </tbody>

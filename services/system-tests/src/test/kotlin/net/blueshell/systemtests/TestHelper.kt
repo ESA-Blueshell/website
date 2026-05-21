@@ -1097,13 +1097,14 @@ object TestHelper {
         type: String,
         label: String,
         choiceLabels: List<String>? = null,
+        required: Boolean = false,
     ): Long {
         val choiceJson = choiceLabels?.joinToString(prefix = "[", postfix = "]") {
             "\"" + it.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
         }
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             return conn.prepareStatement(
-                "INSERT INTO questions (survey_id, type, label, choice_labels, idx) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO questions (survey_id, type, label, choice_labels, idx, required) VALUES (?, ?, ?, ?, ?, ?)",
                 java.sql.Statement.RETURN_GENERATED_KEYS,
             ).use { stmt ->
                 stmt.setLong(1, surveyId)
@@ -1111,6 +1112,7 @@ object TestHelper {
                 stmt.setString(3, label)
                 if (choiceJson != null) stmt.setString(4, choiceJson) else stmt.setNull(4, java.sql.Types.VARCHAR)
                 stmt.setInt(5, idx)
+                stmt.setBoolean(6, required)
                 stmt.executeUpdate()
                 val keys = stmt.generatedKeys
                 require(keys.next()) { "INSERT questions produced no id" }

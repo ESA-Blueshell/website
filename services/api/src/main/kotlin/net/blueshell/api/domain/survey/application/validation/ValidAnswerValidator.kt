@@ -25,27 +25,37 @@ class ValidAnswerValidator(
         }
 
         return when (question.type) {
-            QuestionType.OPEN -> !candidate.textResponse.isNullOrBlank()
+            QuestionType.OPEN -> isValidOpenAnswer(candidate, question)
             QuestionType.CHECKBOX -> isValidCheckboxAnswer(candidate, question)
             QuestionType.RADIO -> isValidRadioAnswer(candidate, question)
             QuestionType.DESCRIPTION -> true
         }
     }
 
+    private fun isValidOpenAnswer(candidate: AnswerCandidate, question: Question): Boolean {
+        val text = candidate.textResponse
+        if (question.required) return !text.isNullOrBlank()
+        return true
+    }
+
     private fun isValidCheckboxAnswer(candidate: AnswerCandidate, question: Question): Boolean {
-        val selections = candidate.optionSelections ?: return false
         val choiceLabels = question.choiceLabels
-        return !choiceLabels.isNullOrEmpty() && selections.size == choiceLabels.size
+        if (choiceLabels.isNullOrEmpty()) return false
+        val selections = candidate.optionSelections ?: return !question.required
+        if (selections.size != choiceLabels.size) return false
+        if (question.required && selections.none { it }) return false
+        return true
     }
 
     private fun isValidRadioAnswer(candidate: AnswerCandidate, question: Question): Boolean {
-        val selections = candidate.optionSelections ?: return false
         val choiceLabels = question.choiceLabels
-
-        if (!choiceLabels.isNullOrEmpty() && selections.size != choiceLabels.size) {
-            return false
-        }
-
-        return selections.count { it } == 1
+        if (choiceLabels.isNullOrEmpty()) return false
+        val selections = candidate.optionSelections
+            ?: return !question.required
+        if (selections.size != choiceLabels.size) return false
+        val chosen = selections.count { it }
+        if (chosen > 1) return false
+        if (question.required && chosen == 0) return false
+        return true
     }
 }

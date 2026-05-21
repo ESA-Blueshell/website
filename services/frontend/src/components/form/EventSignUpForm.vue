@@ -15,12 +15,13 @@ import {
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
+import sadgeImg from "@/assets/icons/sadge-icon.png"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useSaving, useSubmitFeedback} from "@/composables/formUtils"
 
 const emit = defineEmits<{
   (e: "update:signUp", value: EventSignUpResponse): void
-  (e: "delete:signUp", id: number): void // ⬅️ new emit
+  (e: "delete:signUp", id: number): void
 }>()
 
 const props = defineProps<{ event: EventResponse; buttonLoading?: boolean; initialSignUp?: EventSignUpResponse }>()
@@ -31,6 +32,7 @@ const login = computed(() => store.getters.getLogin)
 const guestAccessHeader = "X-Guest-Access-Token"
 
 const survey = computed(() => props.event.signUpForm ?? null)
+const hasQuestions = computed(() => (survey.value?.questions ?? []).length > 0)
 const guest = ref(store.getters.getGuestData ?? {name: "", discord: "", email: "", phoneNumber: ""})
 
 const guestRef = ref<InstanceType<typeof GuestForm>>()
@@ -63,6 +65,7 @@ function sortAnswersBySurveyIdx() {
 watch(survey, sortAnswersBySurveyIdx, {immediate: true})
 
 const signUp = computed<EventSignUpResponse | undefined>(() => props.initialSignUp)
+const isEditing = computed(() => !!signUp.value?.id)
 
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
@@ -81,7 +84,7 @@ async function validate() {
     const guestFormValid = await guestRef.value?.validate?.()
     if (!guestFormValid) return false
   }
-  if (!survey.value) return true
+  if (!hasQuestions.value) return true
   return answersRef.value?.validate?.()
 }
 
@@ -166,76 +169,96 @@ defineExpose({save, validate})
 </script>
 
 <template>
-  <div data-testid="event-signup-form">
+  <div
+    class="event-signup"
+    data-testid="event-signup-form"
+  >
     <guest-form
       v-if="!isLoggedIn"
       ref="guestRef"
       v-model="guest"
-      class="mb-4"
     />
 
     <answers-form
-      v-if="survey"
+      v-if="survey && hasQuestions"
       :key="survey.questions.map((q: QuestionResponse) => q.id).join('')"
       ref="answersRef"
       v-model="answers"
       :survey="survey"
-      class="mb-4"
     />
 
-    <v-expand-transition>
-      <v-alert
-        prominent
-        type="warning"
-        variant="outlined"
-      >
-        By signing up to this event, you consent to share your name, username, email, Discord handle, phone number,
-        and your responses with members of the organizing committee.
-      </v-alert>
-    </v-expand-transition>
-
-    <v-row
-      class="mt-3 mb-0 ms-auto"
-      justify="end"
+    <v-alert
+      class="event-signup__consent"
+      type="info"
+      variant="tonal"
+      density="comfortable"
+      icon="mdi-shield-account-outline"
     >
-      <v-col
-        v-if="signUp?.id"
-        cols="auto"
+      By signing up to this event, you consent to share your name, username, email, Discord handle, phone number,
+      and your responses with members of the organizing committee.
+    </v-alert>
+
+    <div class="event-signup__actions">
+      <v-btn
+        v-if="isEditing"
+        data-testid="event-signup-delete-btn"
+        :disabled="isSaving || buttonLoading"
+        :loading="isSaving || buttonLoading"
+        color="error"
+        variant="text"
+        class="event-signup__sign-out"
+        @click="removeSignUp"
       >
-        <submit-button
-          data-testid="event-signup-delete-btn"
-          :block="true"
-          :disabled="isSaving || buttonLoading"
-          :loading="isSaving || buttonLoading"
-          :show-submit-status="showSubmitStatus"
-          :submit-state="submitState"
-          color="error"
-          icon="mdi-account-multiple-remove"
-          text="Delete sign-up"
-          variant="plain"
-          @click="removeSignUp"
-        />
-      </v-col>
-      <v-col cols="auto">
-        <submit-button
-          data-testid="event-signup-submit-btn"
-          :data-signup-mode="signUp?.id ? 'update' : 'create'"
-          :block="true"
-          :disabled="isSaving || buttonLoading"
-          :icon="signUp?.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
-          :loading="isSaving || buttonLoading"
-          :show-submit-status="showSubmitStatus"
-          :submit-state="submitState"
-          :text="`${signUp?.id ? 'Update' : 'Save'} sign-up`"
-          @click="save"
-        />
-      </v-col>
-    </v-row>
+        <img
+          :src="sadgeImg"
+          alt=""
+          class="event-signup__sign-out-icon"
+        >
+        Sign me out
+      </v-btn>
+      <submit-button
+        data-testid="event-signup-submit-btn"
+        :data-signup-mode="isEditing ? 'update' : 'create'"
+        :block="false"
+        :disabled="isSaving || buttonLoading"
+        :icon="isEditing ? 'mdi-content-save-edit' : 'mdi-content-save'"
+        :loading="isSaving || buttonLoading"
+        :show-submit-status="showSubmitStatus"
+        :submit-state="submitState"
+        :text="isEditing ? 'Update sign-up' : 'Sign me up'"
+        color="primary"
+        size="large"
+        @click="save"
+      />
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.v-checkbox .v-selection-control {
-  min-height: 40px !important;
+.event-signup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__consent {
+    border-radius: 10px;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: 0.25rem;
+  }
+
+  &__sign-out-icon {
+    width: 22px;
+    height: 22px;
+    margin-inline-end: 0.5rem;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
 }
 </style>

@@ -68,7 +68,7 @@ class UpdateEventHandler(
         applySignUpFormUpdate(event, command.signUpForm, surveyFactory)
         event.approved = isBoard && command.approved
         event.version = command.version
-        return service.update(event)
+        return service.update(event, removeExistingSignUps = command.removeExistingSignUps)
     }
 }
 
@@ -179,12 +179,14 @@ private fun applySignUpFormUpdate(
             type = incoming.type
             label = incoming.label
             choiceLabels = incoming.choiceLabels?.toMutableList()
+            required = incoming.required
         } ?: Question(
             idx = incoming.idx,
             survey = existingSurvey,
             type = incoming.type,
             label = incoming.label,
             choiceLabels = incoming.choiceLabels?.toMutableList(),
+            required = incoming.required,
         )
     }
     existingSurvey.replaceQuestions(mappedQuestions)

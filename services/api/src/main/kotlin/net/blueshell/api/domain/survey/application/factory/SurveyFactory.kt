@@ -16,6 +16,7 @@ class SurveyFactory {
                 type = qData.type,
                 label = qData.label,
                 choiceLabels = qData.choiceLabels?.toMutableList(),
+                required = qData.required,
             )
         }
         survey.replaceQuestions(questions)

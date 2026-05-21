@@ -78,7 +78,6 @@ const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 const nowISO = DateTime.now().toISO()
-const hasStarted = computed(() => !!event.value.id && DateTime.fromISO(event.value.startTime) < DateTime.now())
 
 const hadSignUp = ref<boolean>(!!event.value.signUp)
 const enableSignUpForm = ref<boolean>(!!event.value.signUpForm)
@@ -550,22 +549,11 @@ defineExpose({validate, save})
       </v-alert>
     </v-expand-transition>
 
-    <v-expand-transition class="mt-4">
-      <v-alert
-        v-if="event.id && hasStarted"
-        prominent
-        type="error"
-        variant="outlined"
-      >
-        It is not allowed to make changes to events which have already started.
-      </v-alert>
-    </v-expand-transition>
-
     <v-row>
       <v-col cols="12">
         <submit-button
           :block="true"
-          :disabled="hasStarted || isSaving"
+          :disabled="isSaving"
           :icon="event.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
           :loading="isSaving"
           :show-submit-status="showSubmitStatus"

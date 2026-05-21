@@ -35,6 +35,7 @@ data class JobExecutionDTO(
     val queuedAt: Instant?,
     val startedAt: Instant?,
     val finishedAt: Instant?,
+    val nextAttemptAt: Instant?,
     val actor: Actor?,
     val initiatedByUserId: Long?,
     val initiatedByType: ActionActorType?,

@@ -10,8 +10,9 @@ class NonRetryableJobException(
     companion object {
         /**
          * Canonical set of exception types that should never be retried.
-         * Both [net.blueshell.api.platform.config.JobRetryConfig] and
-         * [net.blueshell.api.platform.integration.queue.JobExecutor] derive from this set.
+         * [net.blueshell.api.platform.integration.queue.JobExecutor] inspects this
+         * set to decide whether a failed attempt should be marked DEAD immediately
+         * or scheduled for an exponential-backoff retry.
          */
         val NON_RETRYABLE_EXCEPTIONS: Set<Class<out Throwable>> = setOf(
             NonRetryableJobException::class.java,

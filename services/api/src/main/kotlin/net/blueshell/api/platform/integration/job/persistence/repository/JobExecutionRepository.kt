@@ -38,4 +38,16 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
         threshold: Instant,
         pageable: Pageable
     ): List<JobExecution>
+
+    fun findByStatusAndNextAttemptAtIsNullAndQueuedAtBefore(
+        status: JobExecutionStatus,
+        threshold: Instant,
+        pageable: Pageable
+    ): List<JobExecution>
+
+    fun findByStatusAndNextAttemptAtLessThanEqual(
+        status: JobExecutionStatus,
+        threshold: Instant,
+        pageable: Pageable
+    ): List<JobExecution>
 }

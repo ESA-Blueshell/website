@@ -766,8 +766,14 @@ onMounted(async () => {
                       <p class="text-body-2 mb-1">
                         <strong>Started:</strong> {{ formatDate(execution.startedAt) }}
                       </p>
-                      <p class="text-body-2 mb-0">
+                      <p class="text-body-2 mb-1">
                         <strong>Finished:</strong> {{ formatDate(execution.finishedAt) }}
+                      </p>
+                      <p
+                        v-if="execution.nextAttemptAt"
+                        class="text-body-2 mb-0"
+                      >
+                        <strong>Next attempt:</strong> {{ formatDate(execution.nextAttemptAt) }}
                       </p>
                     </v-sheet>
                   </div>

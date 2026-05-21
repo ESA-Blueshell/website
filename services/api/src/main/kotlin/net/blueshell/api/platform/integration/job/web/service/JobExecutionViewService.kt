@@ -14,6 +14,7 @@ import net.blueshell.api.platform.integration.job.web.dto.JobExecutionDTO
 import net.blueshell.api.platform.integration.job.web.dto.JobExecutionRelatedEntityDTO
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
+import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.JobExecutionCategory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -80,7 +81,7 @@ class JobExecutionViewService(
             id = execution.id,
             jobType = execution.jobType,
             category = categoryFor(execution.jobType),
-            summary = buildSummary(execution.jobType, relatedEntities),
+            summary = buildSummary(execution.jobType, parsedPayload, relatedEntities),
             status = execution.status,
             errorMessage = execution.errorMessage,
             errorType = execution.errorType,
@@ -91,6 +92,7 @@ class JobExecutionViewService(
             queuedAt = execution.queuedAt,
             startedAt = execution.startedAt,
             finishedAt = execution.finishedAt,
+            nextAttemptAt = execution.nextAttemptAt,
             actor = execution.actor,
             initiatedByUserId = execution.initiatedByUserId,
             initiatedByType = execution.initiatedByType,
@@ -226,19 +228,51 @@ class JobExecutionViewService(
         }
     }
 
-    private fun buildSummary(jobType: String, relatedEntities: List<JobExecutionRelatedEntityDTO>): String {
+    private fun buildSummary(
+        jobType: String,
+        payload: ParsedPayload,
+        relatedEntities: List<JobExecutionRelatedEntityDTO>
+    ): String {
         val primary = relatedEntities.firstOrNull()?.label
-        return when {
-            jobType.startsWith("calendar.") -> primary?.let { "Calendar sync for $it" } ?: "Calendar synchronization"
-            jobType.startsWith("contact.") -> primary?.let { "Contact sync for $it" } ?: "Contact synchronization"
-            jobType == "email.recovery" -> primary?.let { "Recovery email for $it" } ?: "Recovery email"
-            jobType == "email.event-signup" -> primary?.let { "Event sign-up email for $it" } ?: "Event sign-up email"
-            jobType == "email.contribution-reminder" -> {
+        val system = payload.system?.let { contactSystemDisplay(it) }
+
+        return when (jobType) {
+            "contact.dispatch-syncs" -> "Dispatch contact syncs to all systems"
+            "contact.dispatch-list-syncs" -> "Dispatch list-membership syncs to all systems"
+            "contact.sync-to-system" -> when {
+                system != null && primary != null -> "Sync contact to $system for $primary"
+                system != null -> "Sync contact to $system"
+                primary != null -> "Sync contact for $primary"
+                else -> "Sync contact"
+            }
+            "contact.sync-list-to-system" -> when {
+                system != null && primary != null -> "Sync list membership to $system for $primary"
+                system != null -> "Sync list membership to $system"
+                primary != null -> "Sync list membership for $primary"
+                else -> "Sync list membership"
+            }
+            "contact.delete" -> primary?.let { "Delete contact for $it" } ?: "Delete contact"
+            "contact.process-list-membership" -> {
+                primary?.let { "Process list membership for $it" } ?: "Process list membership"
+            }
+            "email.recovery" -> primary?.let { "Recovery email for $it" } ?: "Recovery email"
+            "email.event-signup" -> primary?.let { "Event sign-up email for $it" } ?: "Event sign-up email"
+            "email.contribution-reminder" -> {
                 primary?.let { "Contribution reminder for $it" } ?: "Contribution reminder email"
             }
-
-            else -> humanizeJobType(jobType)
+            else -> when {
+                jobType.startsWith("calendar.") -> primary?.let { "Calendar sync for $it" }
+                    ?: "Calendar synchronization"
+                jobType.startsWith("contact.") -> primary?.let { "Contact sync for $it" }
+                    ?: "Contact synchronization"
+                else -> humanizeJobType(jobType)
+            }
         }
+    }
+
+    private fun contactSystemDisplay(system: ContactSystem): String = when (system) {
+        ContactSystem.LISTMONK -> "Listmonk"
+        ContactSystem.BREVO -> "Brevo"
     }
 
     private fun humanizeJobType(jobType: String): String {
@@ -273,8 +307,16 @@ class JobExecutionViewService(
             userId = root.longValue("userId"),
             eventId = root.longValue("eventId"),
             eventSignUpId = root.longValue("eventSignUpId"),
-            contributionPeriodId = root.longValue("contributionPeriodId") ?: root.longValue("periodId")
+            contributionPeriodId = root.longValue("contributionPeriodId") ?: root.longValue("periodId"),
+            system = root.contactSystem("system")
         )
+    }
+
+    private fun JsonNode.contactSystem(field: String): ContactSystem? {
+        val node = get(field) ?: return null
+        if (node.isNull) return null
+        val text = node.stringValue() ?: return null
+        return runCatching { ContactSystem.valueOf(text.uppercase()) }.getOrNull()
     }
 
     private fun JsonNode.longValue(field: String): Long? {
@@ -318,6 +360,7 @@ class JobExecutionViewService(
         val userId: Long? = null,
         val eventId: Long? = null,
         val eventSignUpId: Long? = null,
-        val contributionPeriodId: Long? = null
+        val contributionPeriodId: Long? = null,
+        val system: ContactSystem? = null
     )
 }

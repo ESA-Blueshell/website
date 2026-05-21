@@ -450,6 +450,7 @@ export type JobExecution = {
     initiatedByUserId?: number;
     initiatedByUsername?: string;
     jobType: string;
+    nextAttemptAt?: string;
     queuedAt?: string;
     relatedEntities: Array<JobExecutionRelatedEntity>;
     stackTrace?: string;

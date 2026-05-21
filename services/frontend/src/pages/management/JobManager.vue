@@ -19,12 +19,63 @@ type JobRelatedEntity = {
 
 type JobExecutionView = JobExecution & {
   category?: JobExecutionCategory
-  summary?: string
   stackTrace?: string | null
   initiatedByDisplay?: string
   initiatedByUsername?: string | null
   initiatedByFullName?: string | null
   relatedEntities?: JobRelatedEntity[]
+}
+
+const CONTACT_SYSTEM_LABELS: Record<NonNullable<JobExecutionView["targetSystem"]>, string> = {
+  LISTMONK: "Listmonk",
+  BREVO: "Brevo",
+}
+
+const humanizeJobType = (jobType: string): string =>
+  jobType
+    .replace(/[._-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())
+    .join(" ")
+
+const summarizeExecution = (execution: JobExecutionView): string => {
+  const jobType = execution.jobType ?? ""
+  const primary = execution.relatedEntities?.[0]?.label
+  const system = execution.targetSystem ? CONTACT_SYSTEM_LABELS[execution.targetSystem] : undefined
+
+  switch (jobType) {
+    case "contact.dispatch-syncs":
+      return "Dispatch contact syncs to all systems"
+    case "contact.dispatch-list-syncs":
+      return "Dispatch list-membership syncs to all systems"
+    case "contact.sync-to-system":
+      if (system && primary) return `Sync contact to ${system} for ${primary}`
+      if (system) return `Sync contact to ${system}`
+      return primary ? `Sync contact for ${primary}` : "Sync contact"
+    case "contact.sync-list-to-system":
+      if (system && primary) return `Sync list membership to ${system} for ${primary}`
+      if (system) return `Sync list membership to ${system}`
+      return primary ? `Sync list membership for ${primary}` : "Sync list membership"
+    case "contact.delete":
+      return primary ? `Delete contact for ${primary}` : "Delete contact"
+    case "contact.process-list-membership":
+      return primary ? `Process list membership for ${primary}` : "Process list membership"
+    case "email.recovery":
+      return primary ? `Recovery email for ${primary}` : "Recovery email"
+    case "email.event-signup":
+      return primary ? `Event sign-up email for ${primary}` : "Event sign-up email"
+    case "email.contribution-reminder":
+      return primary ? `Contribution reminder for ${primary}` : "Contribution reminder email"
+  }
+  if (jobType.startsWith("calendar.")) {
+    return primary ? `Calendar sync for ${primary}` : "Calendar synchronization"
+  }
+  if (jobType.startsWith("contact.")) {
+    return primary ? `Contact sync for ${primary}` : "Contact synchronization"
+  }
+  return humanizeJobType(jobType)
 }
 
 type JobPage = {
@@ -145,7 +196,8 @@ const previewActorDisplay = (execution: JobExecutionView): string => {
 }
 
 const previewTitle = (execution: JobExecutionView): string => {
-  if (execution.summary?.trim()) return execution.summary
+  const summary = summarizeExecution(execution).trim()
+  if (summary) return summary
   return `${titleCase(execution.category ?? "job")} job`
 }
 

@@ -81,7 +81,7 @@ class JobExecutionViewService(
             id = execution.id,
             jobType = execution.jobType,
             category = categoryFor(execution.jobType),
-            summary = buildSummary(execution.jobType, parsedPayload, relatedEntities),
+            targetSystem = parsedPayload.system,
             status = execution.status,
             errorMessage = execution.errorMessage,
             errorType = execution.errorType,
@@ -226,65 +226,6 @@ class JobExecutionViewService(
 
             else -> JobExecutionCategory.other
         }
-    }
-
-    private fun buildSummary(
-        jobType: String,
-        payload: ParsedPayload,
-        relatedEntities: List<JobExecutionRelatedEntityDTO>
-    ): String {
-        val primary = relatedEntities.firstOrNull()?.label
-        val system = payload.system?.let { contactSystemDisplay(it) }
-
-        return when (jobType) {
-            "contact.dispatch-syncs" -> "Dispatch contact syncs to all systems"
-            "contact.dispatch-list-syncs" -> "Dispatch list-membership syncs to all systems"
-            "contact.sync-to-system" -> when {
-                system != null && primary != null -> "Sync contact to $system for $primary"
-                system != null -> "Sync contact to $system"
-                primary != null -> "Sync contact for $primary"
-                else -> "Sync contact"
-            }
-            "contact.sync-list-to-system" -> when {
-                system != null && primary != null -> "Sync list membership to $system for $primary"
-                system != null -> "Sync list membership to $system"
-                primary != null -> "Sync list membership for $primary"
-                else -> "Sync list membership"
-            }
-            "contact.delete" -> primary?.let { "Delete contact for $it" } ?: "Delete contact"
-            "contact.process-list-membership" -> {
-                primary?.let { "Process list membership for $it" } ?: "Process list membership"
-            }
-            "email.recovery" -> primary?.let { "Recovery email for $it" } ?: "Recovery email"
-            "email.event-signup" -> primary?.let { "Event sign-up email for $it" } ?: "Event sign-up email"
-            "email.contribution-reminder" -> {
-                primary?.let { "Contribution reminder for $it" } ?: "Contribution reminder email"
-            }
-            else -> when {
-                jobType.startsWith("calendar.") -> primary?.let { "Calendar sync for $it" }
-                    ?: "Calendar synchronization"
-                jobType.startsWith("contact.") -> primary?.let { "Contact sync for $it" }
-                    ?: "Contact synchronization"
-                else -> humanizeJobType(jobType)
-            }
-        }
-    }
-
-    private fun contactSystemDisplay(system: ContactSystem): String = when (system) {
-        ContactSystem.LISTMONK -> "Listmonk"
-        ContactSystem.BREVO -> "Brevo"
-    }
-
-    private fun humanizeJobType(jobType: String): String {
-        return jobType
-            .replace('.', ' ')
-            .replace('-', ' ')
-            .replace('_', ' ')
-            .trim()
-            .split(Regex("\\s+"))
-            .joinToString(" ") { token ->
-                token.lowercase().replaceFirstChar { ch -> ch.uppercase() }
-            }
     }
 
     private fun extractStackTrace(rawReason: String?): String? {

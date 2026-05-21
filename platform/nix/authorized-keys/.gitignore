@@ -1,10 +1,10 @@
 # Only exclude private keys here — public keys must be tracked so the
-# flake's base module can read authorized-keys/deploy.pub at eval time.
-# Nix flakes filter the source tree by `git ls-files`, so a gitignored
-# pubkey would silently be missing from the store copy at install time,
-# producing a deploy user with no authorized_keys and no way in.
+# flake's base module can read authorized-keys/bs-deploy.pub at eval
+# time. Nix flakes filter the source tree by `git ls-files`, so a
+# gitignored pubkey would silently be missing from the store copy at
+# install time, producing a deploy user with no authorized_keys and
+# no way in.
 *
 !README.md
 !.gitignore
-!deploy.pub
 !*.pub

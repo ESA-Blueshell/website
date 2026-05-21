@@ -8,8 +8,9 @@ platform/
 ├── flake.nix                                 flake inputs + nixosConfigurations
 ├── nix/
 │   ├── authorized-keys/
-│   │   ├── README.md                         how to compose deploy.pub
-│   │   └── .gitignore                        deploy.pub is local-only
+│   │   ├── README.md                         operator pubkey layout
+│   │   ├── bs-deploy.pub                     keys baked into deploy user
+│   │   └── .gitignore                        excludes private keys only
 │   ├── hosts/
 │   │   └── frankfurt-contabo-1/
 │   │       ├── default.nix                   hostname, networking, boot loader
@@ -30,9 +31,9 @@ runbook: `bringup-v2.md`.
 1. Use `ssh-copy-id` to add `~/.ssh/bs-deploy.pub` to the admin
    account's authorized_keys, using `~/.ssh/blueshell-admin` for the
    initial authentication.
-2. Ensure `platform/nix/authorized-keys/deploy.pub` contains the
+2. Ensure `platform/nix/authorized-keys/bs-deploy.pub` contains the
    public key(s) you want the post-install `deploy` user to accept
-   (see that directory's README). Both files are tracked in git.
+   (see that directory's README). The file is tracked in git.
 3. From a workstation with Nix installed:
    ```
    nix run github:nix-community/nixos-anywhere -- \
@@ -43,7 +44,7 @@ runbook: `bringup-v2.md`.
      --ssh-option IdentitiesOnly=yes
    ```
 4. Reboot. SSH reaches the VPS at `deploy@157.173.115.164:2222` with
-   whichever keys are in `deploy.pub`.
+   whichever keys are in `bs-deploy.pub`.
 
 ## Ongoing updates
 
@@ -51,7 +52,7 @@ runbook: `bringup-v2.md`.
 nix run 'nixpkgs#deploy-rs' -- './platform#frankfurt-contabo-1'
 ```
 
-`deploy-rs` uses the SSH keys in `platform/nix/authorized-keys/deploy.pub`
+`deploy-rs` uses the SSH keys in `platform/nix/authorized-keys/bs-deploy.pub`
 and activates a new profile with an automatic rollback window.
 
 ## Local validation

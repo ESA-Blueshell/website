@@ -1,5 +1,5 @@
 # cert-manager reads cloudflare-api-token.api-token to satisfy DNS-01
-# challenges for *.v2.esa-blueshell.nl. external-dns reads the same secret
+# challenges for *.esa-blueshell.nl. external-dns reads the same secret
 # shape to manage A/AAAA records. VSO syncs both from the same Vault path
 # (`secret/platform/edge:cloudflare.dns_api_token`).
 #

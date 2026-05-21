@@ -4,7 +4,7 @@ The `platform/` tree manages the production stack:
 **NixOS + k3s + FluxCD + Kustomize + Helm**.
 
 Production runs on a single Contabo VPS (`frankfurt-contabo-1`) under
-`v2.esa-blueshell.nl`. Flux reconciles every manifest from this
+`esa-blueshell.nl`. Flux reconciles every manifest from this
 repository against `main`; Keel rolls Deployments when new
 `ghcr.io/esa-blueshell/*:latest` images appear.
 

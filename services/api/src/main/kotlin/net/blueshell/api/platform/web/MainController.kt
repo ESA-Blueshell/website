@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Health")
 class MainController {
     // `/health` is the external-facing endpoint: the public Gatus probe at
-    // `https://v2.esa-blueshell.nl/api/health` arrives here as `/health`
+    // `https://esa-blueshell.nl/api/health` arrives here as `/health`
     // because Traefik's apex `PathPrefix(/api)` rule strips the `/api`
     // prefix uniformly (see apps/edge/ingressroutes/api.yaml).
     // Pod-level k8s probes use Spring Boot's

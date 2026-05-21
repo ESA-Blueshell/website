@@ -1,6 +1,6 @@
 # Bringing up the v2 stack on the Frankfurt Contabo VPS
 
-Stands up the NixOS + k3s + Flux stack at `*.v2.esa-blueshell.nl` on
+Stands up the NixOS + k3s + Flux stack at `*.esa-blueshell.nl` on
 a fresh Contabo VPS. Use this when provisioning a replacement node or
 a recovery box.
 
@@ -9,7 +9,7 @@ a recovery box.
 - **Contabo VPS 20** — 6 vCPU / 12 GB RAM / 400 GB NVMe SSD
 - **Public IPv4:** `157.173.115.164` (permanent — baked into the flake)
 - **Hostname (nix + k8s):** `frankfurt-contabo-1`
-- **DNS:** `v2.esa-blueshell.nl` + wildcard `*.v2.esa-blueshell.nl`
+- **DNS:** `esa-blueshell.nl` + wildcard `*.esa-blueshell.nl`
 - **SSH:** `~/.ssh/bs-deploy` throughout
   - Pre-install: `admin@157.173.115.164:2222` (Debian base image; the
     `admin` account disappears once NixOS is installed).
@@ -176,7 +176,7 @@ Later, once `listmonk-setup` has run successfully, also expect
 kubectl -n edge-system get certificate -w
 ```
 
-Expect `wildcard-v2-esa-blueshell-nl` → Ready in 3–8 min (DNS-01
+Expect `wildcard-esa-blueshell-nl` → Ready in 3–8 min (DNS-01
 propagation).
 
 ```bash
@@ -231,11 +231,11 @@ S3/B2 bucket: dump → upload → `kubectl cp` from workstation → restore.
 
 Cloudflare zone `esa-blueshell.nl`:
 
-- `v2.esa-blueshell.nl` A → `157.173.115.164`, AAAA →
+- `esa-blueshell.nl` A → `157.173.115.164`, AAAA →
   `2a02:c207:2316:2642::1`, both proxied (orange cloud).
-- `*.v2.esa-blueshell.nl` — external-dns auto-materialises records
+- `*.esa-blueshell.nl` — external-dns auto-materialises records
   from every IngressRoute; no manual action needed.
-- `stalwart.v2.esa-blueshell.nl` A → `157.173.115.164`, **grey cloud**
+- `stalwart.esa-blueshell.nl` A → `157.173.115.164`, **grey cloud**
   (Cloudflare cannot proxy SMTP/IMAP).
 - `esa-blueshell.nl` apex + `www.esa-blueshell.nl`: A records also
   pointing at `157.173.115.164`, **orange cloud**.
@@ -243,25 +243,25 @@ Cloudflare zone `esa-blueshell.nl`:
 ## 10. Verify
 
 ```bash
-curl -I https://v2.esa-blueshell.nl
+curl -I https://esa-blueshell.nl
 ```
 ```bash
-curl https://v2.esa-blueshell.nl/api/health
+curl https://esa-blueshell.nl/api/health
 ```
 ```bash
-curl https://v2.esa-blueshell.nl/api/.well-known/openid-configuration | jq .issuer
+curl https://esa-blueshell.nl/api/.well-known/openid-configuration | jq .issuer
 ```
 ```bash
-curl https://status.v2.esa-blueshell.nl/
+curl https://status.esa-blueshell.nl/
 ```
 ```bash
-SYSTEM_TEST_BASE_URL=https://v2.esa-blueshell.nl ./gradlew :services:system-tests:test
+SYSTEM_TEST_BASE_URL=https://esa-blueshell.nl ./gradlew :services:system-tests:test
 ```
 ```bash
 vault login -method=oidc
 ```
 
-All Gatus monitors green on `https://status.v2.esa-blueshell.nl` is
+All Gatus monitors green on `https://status.esa-blueshell.nl` is
 the headline check.
 
 ## 11. Retire the old admin key
@@ -285,7 +285,7 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
 - `vault login -method=oidc` + Headlamp login both succeed and land
   the user at `cluster-admin`.
 - `:services:system-tests:test` passes against
-  `https://v2.esa-blueshell.nl`.
+  `https://esa-blueshell.nl`.
 
 ## Ongoing updates
 

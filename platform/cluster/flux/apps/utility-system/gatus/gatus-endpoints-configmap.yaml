@@ -26,7 +26,7 @@ data:
     # ---------- Public (browser-equivalent) ----------
     - name: "Blueshell Frontend"
       group: "public"
-      url: "https://v2.esa-blueshell.nl/"
+      url: "https://esa-blueshell.nl/"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
@@ -37,7 +37,7 @@ data:
       # Same-origin /api/health routes via the apex PathPrefix(/api)
       # rule in apps/edge/ingressroutes/api.yaml. Handler:
       # `MainController.healthCheck` (registers /health + /api/health).
-      url: "https://v2.esa-blueshell.nl/api/health"
+      url: "https://esa-blueshell.nl/api/health"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
@@ -55,7 +55,7 @@ data:
       interval: "60s"
       conditions:
       - "[STATUS] == 200"
-      - "[BODY].issuer == https://v2.esa-blueshell.nl/api"
+      - "[BODY].issuer == https://esa-blueshell.nl/api"
       - "[RESPONSE_TIME] < 500"
 
     # ---------- Admin services (forward-auth) ----------

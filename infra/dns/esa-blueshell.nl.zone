@@ -1,38 +1,94 @@
-; Zone file for esa-blueshell.nl
-; Import into Cloudflare via Dashboard → DNS → Records → Import
-; Source: migrated from TransIP DNS (2026-04-21)
-;
-; Notes on proxy status (set after import in Cloudflare UI):
-;   - Proxy ON  (orange cloud): @, www
-;   - Proxy OFF (grey cloud, "DNS only"):
-;       * MX target (esa-blueshell.nl itself cannot be proxied for mail)
-;       * minecraft  (game traffic — Cloudflare proxy is HTTP/S only)
-;       * ftp        (non-HTTP protocol)
-;       * v2, *.v2   (different backend IP; proxy only if it serves HTTP(S))
-;
-; Apex / website ----------------------------------------------------------
-; No wildcard at the apex — only the explicit hostnames below resolve.
-@           1   IN  A       136.144.191.63
-@           1   IN  AAAA    2a01:7c8:aacb:1e5::101:55
-@           1   IN  MX  10  esa-blueshell.nl.
+;;
+;; Domain:     esa-blueshell.nl.
+;; Exported:   2026-05-21 08:03:30
+;;
+;; This file is intended for use for informational and archival
+;; purposes ONLY and MUST be edited before use on a production
+;; DNS server.  In particular, you must:
+;;   -- update the SOA record with the correct authoritative name server
+;;   -- update the SOA record with the contact e-mail address information
+;;   -- update the NS record(s) with the authoritative name servers for this domain.
+;;
+;; For further information, please consult the BIND documentation
+;; located on the following website:
+;;
+;; http://www.isc.org/
+;;
+;; And RFC 1035:
+;;
+;; http://www.ietf.org/rfc/rfc1035.txt
+;;
+;; Please note that we do NOT offer technical support for any use
+;; of this zone data, the BIND name server, or any other third-party
+;; DNS software.
+;;
+;; Use at your own risk.
+;; SOA Record
+esa-blueshell.nl	3600	IN	SOA	dakota.ns.cloudflare.com. dns.cloudflare.com. 2053101721 10000 2400 604800 3600
 
-; www ---------------------------------------------------------------------
-www         1   IN  CNAME   esa-blueshell.nl.
+;; NS Records
+esa-blueshell.nl.	86400	IN	NS	dakota.ns.cloudflare.com.
+esa-blueshell.nl.	86400	IN	NS	karina.ns.cloudflare.com.
 
-; ftp ---------------------------------------------------------------------
-ftp         1   IN  CNAME   esa-blueshell.nl.
+;; A Records
+auth.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+headlamp.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+kube.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+listmonk.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+mail-admin.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+minecraft.event.esa-blueshell.nl.	1	IN	A	193.123.34.253 ; cf_tags=cf-proxied:false
+minecraft.server.esa-blueshell.nl.	1	IN	A	130.89.149.197 ; cf_tags=cf-proxied:false
+stalwart.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+status.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+traefik.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+v2.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+vault.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 
-; Minecraft server --------------------------------------------------------
-minecraft   1   IN  A       162.33.20.159
+;; AAAA Records
+auth.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+headlamp.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+kube.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+listmonk.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+mail-admin.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+stalwart.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+status.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+traefik.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+v2.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+vault.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 
-; v2 backend (different host than apex) -----------------------------------
-v2          1   IN  A       157.173.115.164
-v2          1   IN  AAAA    2a02:c207:2316:2642::1
+;; CNAME Records
+ftp.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:false
+www.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:true
 
-; Wildcard for *.v2.esa-blueshell.nl → v2 backend -------------------------
-; ACME DNS-01 for the *.v2 wildcard cert uses a TXT record at
-; _acme-challenge.v2.esa-blueshell.nl, written dynamically by the ACME
-; client via the Cloudflare API (token needs Zone:DNS:Edit on this zone).
-; No conflict with these A/AAAA records — TXT lives at a different label.
-*.v2        1   IN  A       157.173.115.164
-*.v2        1   IN  AAAA    2a02:c207:2316:2642::1
+;; MX Records
+esa-blueshell.nl.	1	IN	MX	10 esa-blueshell.nl.
+
+;; TXT Records
+aaaa-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
+aaaa-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
+aaaa-kube.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
+aaaa-listmonk.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
+aaaa-mail-admin.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
+aaaa-stalwart.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/stalwart-admin"
+aaaa-status.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/status"
+aaaa-traefik.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/traefik-dashboard"
+aaaa-vault.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/vault"
+aaaa-www.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/frontend"
+a-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
+a-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
+a-kube.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
+a-listmonk.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
+a-mail-admin.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
+a-stalwart.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/stalwart-admin"
+a-status.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/status"
+a-traefik.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/traefik-dashboard"
+a-vault.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/vault"
+a-www.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/frontend"
+cname-api.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/api"
+cname-auth.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
+cname-kube.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
+cname-mail-admin.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
+cname-status.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/status"
+cname-www.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/frontend"

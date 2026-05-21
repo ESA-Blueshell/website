@@ -127,7 +127,7 @@ spec:
                   key: bounce-mailbox-password
                   optional: true
             - name: LISTMONK_SMTP_HELLO_HOSTNAME
-              value: stalwart.v2.esa-blueshell.nl
+              value: stalwart.esa-blueshell.nl
             - name: LISTMONK_SMTP_TLS_TYPE
               value: STARTTLS
             - name: LISTMONK_BOUNCE_MAILBOX_ENABLED
@@ -153,7 +153,7 @@ spec:
             - name: LISTMONK_BOUNCE_MAILBOX_FOLDER
               value: INBOX
             - name: LISTMONK_BOUNCE_MAILBOX_RETURN_PATH
-              value: bounce@v2.esa-blueshell.nl
+              value: bounce@esa-blueshell.nl
           volumeMounts:
             - name: setup-script
               mountPath: /scripts

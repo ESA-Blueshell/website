@@ -11,6 +11,6 @@ data class EmailContent(
     val subject: String,
     val markdownContent: String,
     val senderName: String = "Blueshell",
-    val senderAddress: String = "no-reply@mg.v2.esa-blueshell.nl",
+    val senderAddress: String = "no-reply@mg.esa-blueshell.nl",
     val replyTo: String = "sitecie@blueshell.utwente.nl"
 )

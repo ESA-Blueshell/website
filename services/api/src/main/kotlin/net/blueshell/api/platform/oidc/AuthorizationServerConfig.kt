@@ -123,7 +123,7 @@ class AuthorizationServerConfig {
 
     @Bean
     fun authorizationServerSettings(
-        @Value("\${auth.issuer:https://v2.esa-blueshell.nl/api}") issuer: String,
+        @Value("\${auth.issuer:https://esa-blueshell.nl/api}") issuer: String,
     ): AuthorizationServerSettings {
         return AuthorizationServerSettings.builder()
             .issuer(issuer)

@@ -164,11 +164,8 @@ every VaultStaticSecret as a Kubernetes Secret:
 kubectl get vaultstaticsecret -A
 ```
 ```bash
-kubectl get secret -A | grep -E 'api-secrets|listmonk-secrets|stalwart-secrets|cloudflare'
+kubectl get secret -A | grep -E 'api-secrets|stalwart-secrets|cloudflare'
 ```
-
-Later, once `listmonk-setup` has run successfully, also expect
-`default/listmonk-api-token`.
 
 ## 7. Wait for the wildcard cert + IngressRoutes
 
@@ -183,8 +180,8 @@ propagation).
 kubectl -n edge-system get ingressroute
 ```
 
-Expect: `api`, `frontend`, `headlamp`, `listmonk`, `stalwart-admin`,
-`status`, `traefik-dashboard`, `vault`.
+Expect: `api`, `frontend`, `headlamp`, `stalwart-admin`, `status`,
+`traefik-dashboard`, `vault`.
 
 ## 8. Migrate data from the old VPS
 
@@ -206,12 +203,6 @@ ssh old-vps 'mysqldump --single-transaction --routines --triggers blueshell' | k
 
 ```bash
 cat /path/to/blueshell.sql | kubectl -n data-system exec -i mariadb-0 -- mysql -uroot -p"$MARIADB_ROOT" blueshell
-```
-
-Listmonk Postgres:
-
-```bash
-ssh old-vps 'pg_dump -Fc listmonk' | kubectl -n data-system exec -i listmonk-db-0 -- pg_restore -d listmonk --clean --if-exists
 ```
 
 User-uploaded storage:
@@ -279,8 +270,7 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
 ## Exit criteria
 
 - Gatus monitors green for ≥72 h straight.
-- No pod restarts on api / frontend / listmonk / stalwart / vault in
-  the last 72 h.
+- No pod restarts on api / frontend / stalwart / vault in the last 72 h.
 - `kubectl top pods -A` shows ≥25 % RAM headroom per namespace.
 - `vault login -method=oidc` + Headlamp login both succeed and land
   the user at `cluster-admin`.

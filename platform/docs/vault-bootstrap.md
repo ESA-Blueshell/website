@@ -69,11 +69,10 @@ of them blocks at least one downstream Secret.
   repo's `scripts/seed-vault-from-env.sh` reads dotenv-style files;
   typical inventory:
   - `services/api/.api.env` — `JWT_SECRET` (Base64, ≥64 bytes), Brevo,
-    Mollie, Google Calendar SA, Facebook, X, Discord tokens.
+    Mollie, Google Calendar SA, Facebook, X, Discord tokens, SMTP relay
+    credentials, optional IMAP bounce credentials.
   - `services/api/.db.env` — `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`,
     `MYSQL_PASSWORD`.
-  - `services/listmonk/.listmonk.env` — `LISTMONK_DB_PASSWORD`,
-    `LISTMONK_ADMIN_*`, optional `LISTMONK_SMTP_*` and bounce IMAP.
 - **Cloudflare DNS API token** with `Zone:DNS:Edit` scope on
   `esa-blueshell.nl` (cert-manager DNS-01 + external-dns).
 - **GHCR pull credential**: GitHub username + a fine-grained PAT scoped
@@ -90,7 +89,6 @@ Sanity-check the env files locally with a dry run *before* unsealing:
 scripts/seed-vault-from-env.sh \
   /path/to/old/.api.env \
   /path/to/old/.db.env \
-  /path/to/old/.listmonk.env \
   /path/to/extra-tokens.env
 ```
 
@@ -105,15 +103,14 @@ These paths must exist in Vault before the corresponding VSO
 will eventually succeed once the paths are present; there is no need to
 unseal+re-bootstrap after seeding.
 
-The MariaDB and Listmonk-Postgres `existingSecret` references look like
-a chicken-and-egg — the Bitnami charts won't start until their k8s
-Secrets exist, but the Secrets only appear after VSO syncs from Vault.
-The repo solves this by placing the two chart-blocking VaultStaticSecret
-CRs (`mariadb-credentials`, `listmonk-db-credentials`) inside `apps-data`
-itself, so they apply alongside the HelmReleases. As soon as Vault is
+The MariaDB chart's `existingSecret` reference looks like a chicken-and-egg
+— the Bitnami chart won't start until its k8s Secret exists, but the
+Secret only appears after VSO syncs from Vault. The repo solves this
+by placing the `mariadb-credentials` VaultStaticSecret inside `apps-data`
+itself, so it applies alongside the HelmRelease. As soon as Vault is
 unsealed and the bootstrap Job has wired up the kubernetes auth role
-for VSO, both Secrets materialise in-place and the charts upgrade on
-their own. No manual `kubectl create secret` pre-seed is needed.
+for VSO, the Secret materialises in-place and the chart upgrades on
+its own. No manual `kubectl create secret` pre-seed is needed.
 
 If you already have dotenv files from the old VPS and/or the current
 repo-local examples, the repo can translate them into the Vault paths
@@ -123,8 +120,7 @@ below:
 scripts/seed-vault-from-env.sh \
   ../blueshell-website-old/.env \
   services/api/.db.env \
-  services/api/.api.env \
-  services/listmonk/.listmonk.env
+  services/api/.api.env
 ```
 
 Preview is the default. Re-run with `--apply` once the mapping looks
@@ -161,19 +157,6 @@ It is safe to run the Job before seeding — the block short-circuits and
 prints a reminder. If you want to preserve the old Swarm-era database
 login for operator reference, store it separately as
 `legacy-user` / `legacy-password`; the v2 restore flow does not need it.
-
-### Listmonk
-
-```bash
-vault kv put secret/listmonk \
-  db-admin-password=<postgres-superuser-password> \
-  db-password=<listmonk-user-password> \
-  admin-user=listmonk-admin \
-  admin-password=<listmonk-ui-password> \
-  admin-email=admin@esa-blueshell.nl \
-  api-user=api \
-  smtp-password=<smtp-password>
-```
 
 ### Stalwart mail server
 
@@ -281,16 +264,10 @@ After seeding, force a VSO reconcile and verify secrets appear:
 flux reconcile kustomization apps-vso-secrets --timeout=3m
 kubectl get secret -n cert-manager cloudflare-api-token
 kubectl get secret -n data-system  mariadb-credentials
-kubectl get secret -n data-system  listmonk-db-credentials
 kubectl get secret -n default      api-secrets
-kubectl get secret -n default      listmonk-secrets
 kubectl get secret -n default      stalwart-secrets
 kubectl get secret -n mail-system  stalwart-secrets
 ```
-
-`listmonk-api-token` is not a Vault/VSO Secret. The `listmonk-setup` Job
-creates it after first-time setup and the api pod mounts it at
-`/run/secrets/listmonk/api-token.env`.
 
 ## 6. Rotate the root token
 
@@ -348,7 +325,6 @@ Same shape, narrower blast radius:
 | Path | Consumers | Restart |
 |---|---|---|
 | `secret/api` | api Deployment | `kubectl -n default rollout restart deployment/api` |
-| `secret/listmonk` | listmonk Deployment, listmonk-db chart | `kubectl -n default rollout restart deployment/listmonk` (+ `data-system listmonk-db-postgresql-0` after VSO refresh) |
 | `secret/platform/mail` | stalwart Deployment | `kubectl -n mail-system rollout restart deployment/stalwart` |
 | `secret/platform/edge` | cert-manager + external-dns | restarts not usually needed; VSO refreshes the Secret in place |
 | `secret/platform/ghcr` | api + frontend `imagePullSecrets` | next image pull picks up the new auth |

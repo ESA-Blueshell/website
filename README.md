@@ -15,8 +15,8 @@ Domain-Driven Design with a clean layered architecture:
 |-------|-----------|
 | **Backend API** | Spring Boot 4 (Kotlin), Spring Security, Spring Data JPA |
 | **Frontend** | Vue.js 3, TypeScript, Vuetify 3, Vite |
-| **Database** | MariaDB 10.11 (application), PostgreSQL 17 (Listmonk) |
-| **Email (marketing)** | Listmonk v4 |
+| **Database** | MariaDB 10.11 |
+| **Email (transport)** | Spring `JavaMailSender` (SMTP) |
 | **Email (MTA)** | Stalwart |
 | **Secrets** | HashiCorp Vault + Vault Secrets Operator |
 | **Auth / OIDC** | API issues tokens (Spring Authorization Server) for Headlamp, Vault |
@@ -50,7 +50,6 @@ This starts:
 | Frontend | http://localhost:3000 | Hot-reload via Vite |
 | Swagger UI | http://localhost:8080/swagger-ui | Set `SPRINGDOC_API_DOCS_ENABLED=true` |
 | MariaDB | localhost:3307 | |
-| Listmonk | http://localhost:9000 | Email management UI |
 | Stalwart | http://localhost:8085 | Dev MTA admin UI (SMTP :1025, IMAP :1143, admin `admin`/`admin`) |
 
 ### Environment files
@@ -59,8 +58,8 @@ The compose files include sensible defaults. For production-like secrets,
 copy the examples:
 
 ```bash
-cp services/api/.db.example.env             services/api/.db.env
-cp services/listmonk/.listmonk.example.env  services/listmonk/.listmonk.env
+cp services/api/.db.example.env  services/api/.db.env
+cp services/api/.api.example.env services/api/.api.env
 ```
 
 ### Run tests
@@ -103,8 +102,7 @@ Runbook: [`platform/docs/runbook.md`](platform/docs/runbook.md).
 | `api` | `ghcr.io/esa-blueshell/api` | 8080 | Spring Boot REST API |
 | `frontend` | `ghcr.io/esa-blueshell/frontend` | 3000 | Vue.js SPA |
 | `db` | `mariadb:10.11` | 3306 | Application database |
-| `listmonk` | `listmonk/listmonk:v4.1.0` | 9000 | Email + contact management |
-| `listmonk-db` | `postgres:17-alpine` | 5432 | Listmonk database |
+| `stalwart` | `stalwartlabs/stalwart-mail` | 8080 / 25 / 143 | Mail transfer agent (SMTP relay + bounce IMAP) |
 
 ---
 

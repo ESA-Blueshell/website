@@ -45,7 +45,7 @@ class UserContactSyncIT : UserTestSupport() {
         enqueueInTransaction {
             jobs.enqueue(
                 ContactJobs.SyncContactToSystem,
-                SyncContactCommand(member.id!!, ContactSystem.LISTMONK)
+                SyncContactCommand(member.id!!, ContactSystem.BREVO)
             )
         }
 
@@ -65,7 +65,7 @@ class UserContactSyncIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         enqueueInTransaction {
-            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.BREVO))
         }
         awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 
@@ -79,7 +79,7 @@ class UserContactSyncIT : UserTestSupport() {
         }
 
         enqueueInTransaction {
-            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.BREVO))
         }
 
         awaitJobSuccess(ContactJobs.SyncContactToSystem.type, expectedCount = 2)

@@ -42,7 +42,7 @@ services:
     entrypoint: ["sh", "-eu", "-c"]
     command:
       - |
-        # Seed the dev bounce@dev.local mailbox that Listmonk polls for bounces.
+        # Seed the dev bounce@dev.local mailbox the API's IMAP poller reads.
         # Idempotent — 409 on re-run is expected and ignored.
         for _ in $$(seq 1 30); do
           if curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \

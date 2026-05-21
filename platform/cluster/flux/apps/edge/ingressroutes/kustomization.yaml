@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - api.yaml
   - frontend.yaml
-  - listmonk.yaml
   - headlamp.yaml
   - stalwart-admin.yaml
   - status.yaml

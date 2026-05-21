@@ -8,7 +8,7 @@ import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
-import net.blueshell.api.platform.integration.mock.MockListmonkEmailClient
+import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
@@ -35,7 +35,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
     private lateinit var emailService: EmailSenderService
 
     @Autowired
-    private lateinit var emailClient: MockListmonkEmailClient
+    private lateinit var emailClient: InMemoryEmailClient
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder

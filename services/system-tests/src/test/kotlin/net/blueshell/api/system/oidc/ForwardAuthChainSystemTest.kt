@@ -11,8 +11,8 @@ import java.util.stream.Stream
 
 /**
  * System-test coverage for `/oauth2/forward-auth`. Parametrized across
- * every host the controller gates today (vault, headlamp, listmonk,
- * stalwart, traefik) so a future host added to `HOST_ROLE` without a
+ * every host the controller gates today (vault, headlamp, stalwart,
+ * traefik) so a future host added to `HOST_ROLE` without a
  * matching system-test entry fails this suite.
  */
 @Tag("system")
@@ -30,7 +30,6 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
 
         @JvmStatic
         fun boardGatedHosts(): Stream<Arguments> = Stream.of(
-            Arguments.of("listmonk.esa-blueshell.nl"),
             Arguments.of("stalwart.esa-blueshell.nl"),
         )
 

@@ -2,8 +2,8 @@ package net.blueshell.api.platform.integration.email.adapter
 
 /**
  * Abstraction over email transport.
- * Implemented by [ListmonkEmailClient] (via Listmonk transactional API) in dev/prod
- * and [net.blueshell.api.platform.integration.mock.MockListmonkEmailClient] in tests.
+ * Implemented by [SmtpEmailClient] (via Spring's [org.springframework.mail.javamail.JavaMailSender])
+ * in dev/prod and [net.blueshell.api.platform.integration.mock.InMemoryEmailClient] in tests.
  */
 interface EmailTransportClient {
     /**

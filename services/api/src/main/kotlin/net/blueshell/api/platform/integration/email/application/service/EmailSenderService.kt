@@ -61,7 +61,8 @@ class EmailSenderService(
     }
 
     /**
-     * Render via template service, inject tracking pixel, create outbox record, and send via Listmonk transactional API.
+     * Render via template service, inject tracking pixel, create outbox record, and dispatch
+     * through the configured [EmailTransportClient] (SMTP in dev/prod, in-memory in tests).
      */
     private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
         val htmlContent = templateService.createEmail(

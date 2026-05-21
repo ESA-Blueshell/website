@@ -35,7 +35,6 @@ services:
       - gradle-cache:/root/.gradle/caches
       - playwright-browsers:/ms-playwright
       - playwright-browsers:/root/.cache/ms-playwright
-      - listmonk-secrets:/run/secrets/listmonk:ro
     ports:
       - "8080:8080"
       - "5005:5005"
@@ -49,15 +48,16 @@ services:
       - APP_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-      - LISTMONK_FROM_ADDRESS=no-reply@localhost
-      - LISTMONK_REPLY_TO_ADDRESS=dev@localhost
-      - LISTMONK_API_USERNAME=${LISTMONK_ADMIN_USERNAME:-listmonk}
-      - LISTMONK_API_PASSWORD=${LISTMONK_ADMIN_PASSWORD:-listmonk}
+      - EMAIL_FROM_ADDRESS=no-reply@localhost
+      - EMAIL_REPLY_TO_ADDRESS=dev@localhost
+      # Dev SMTP routed through the bundled Stalwart container.
+      - SMTP_HOST=${SMTP_HOST:-stalwart}
+      - SMTP_PORT=${SMTP_PORT:-25}
+      - SMTP_AUTH=${SMTP_AUTH:-false}
+      - SMTP_STARTTLS=${SMTP_STARTTLS:-false}
     depends_on:
       db:
         condition: service_healthy
-      listmonk-setup:
-        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8080/health" ]
       interval: 30s

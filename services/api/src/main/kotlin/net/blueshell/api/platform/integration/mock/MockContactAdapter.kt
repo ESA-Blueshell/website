@@ -19,14 +19,14 @@ import java.util.concurrent.atomic.AtomicLong
  * Active in 'test' and 'dev' profiles.
  *
  * Implements [ContactAdapter] and [ContactListAdapter].
- * Reported system is [ContactSystem.LISTMONK] so tests exercise the Listmonk path.
+ * Reported system is [ContactSystem.BREVO] so tests exercise the only real provider.
  */
 @Service
 @Primary
 @Profile("test | dev")
 class MockContactAdapter : ContactAdapter, ContactListAdapter {
 
-    override val system = ContactSystem.LISTMONK
+    override val system = ContactSystem.BREVO
 
     private val contacts = ConcurrentHashMap<Long, MockContact>()
     private val lists = ConcurrentHashMap<Long, MockList>()

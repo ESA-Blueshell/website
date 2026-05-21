@@ -26,7 +26,7 @@ class UserEventListenerTest : ServiceTestSupport() {
 
         listener.onCreate(event)
 
-        // MockContactIntegrationJobProvider dispatches listmonk.contact.sync
+        // MockContactIntegrationJobProvider dispatches contact.sync-to-system
         val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
         assertThat(jobs)
             .describedAs("Should schedule one SyncContactForSystem job")

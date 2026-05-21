@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 /**
  * Soft-deletes the local [Contact] record and dispatches per-integration contact sync jobs.
  *
- * Each per-integration sync job (Brevo/Listmonk) reads [Contact.deletedAt] via
+ * Each per-integration sync job reads [Contact.deletedAt] via
  * [ContactRepository.findByUserIdIncludingDeleted] and removes the contact from the
  * external system, clearing the stored external ID.
  */

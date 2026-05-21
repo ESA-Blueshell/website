@@ -16,7 +16,7 @@ import java.util.Properties
  * configured inbox.
  *
  * Mirrors the call surface tests previously got from the in-process
- * `MockListmonkEmailClient`: `reset()` empties the inbox before each
+ * `InMemoryEmailClient`: `reset()` empties the inbox before each
  * test, `findEmail(...)` returns the first matching delivery,
  * `assertEmailSent(...)` polls until one arrives or the timeout
  * elapses.

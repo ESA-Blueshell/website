@@ -142,8 +142,8 @@ The API integrates with several external services via anti-corruption layers in 
 
 - **Google Calendar API**: Event synchronization
 - **Mollie**: Payment processing
-- **Brevo**: Email campaigns (contact sync fallback)
-- **Listmonk**: Transactional email delivery and contact/list management
+- **Brevo**: Contact list and contribution-period folder sync
+- **SMTP relay + IMAP DSN poller**: Transactional email delivery (Spring `JavaMailSender`) and bounce ingestion
 - **Job Dispatch**: @Async thread pool + RetryTemplate (no external broker)
 
 See [ADR-019: Anti-Corruption Layers](../docs/adr/api/ADR-019-anti-corruption-layers-for-external-integration.md) for integration patterns.

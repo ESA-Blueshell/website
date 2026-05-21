@@ -268,7 +268,7 @@ const routes: RouteRecordRaw[] = [
   {
     // Landing page when Traefik forwardAuth refuses an authenticated user
     // because their role isn't high enough for the requested admin host
-    // (vault, headlamp, listmonk, stalwart, traefik). The api redirects
+    // (vault, headlamp, stalwart, traefik). The api redirects
     // here with `?service=<host>` so the page can name what was blocked.
     // `meta.bare` because this page is reached from a popup / new tab
     // that has no business showing the full site chrome.

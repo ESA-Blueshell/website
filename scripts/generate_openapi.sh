@@ -36,7 +36,6 @@ docker compose exec -T api sh -c \
 
 download_external_specs
 regen_brevo_client
-regen_listmonk_client
 normalize_specs
 
 # ---- Generate frontend TypeScript clients ----

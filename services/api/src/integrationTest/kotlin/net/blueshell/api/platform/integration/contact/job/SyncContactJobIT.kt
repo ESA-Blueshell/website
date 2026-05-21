@@ -41,7 +41,7 @@ class SyncContactJobIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
             ContactJobs.SyncContactToSystem,
-            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
+            SyncContactCommand(user.id!!, ContactSystem.BREVO)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -63,7 +63,7 @@ class SyncContactJobIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
             ContactJobs.SyncContactToSystem,
-            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
+            SyncContactCommand(user.id!!, ContactSystem.BREVO)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -85,7 +85,7 @@ class SyncContactJobIT : UserTestSupport() {
         val user = createUserWithRole(Role.GUEST)
         val execution = jobs.enqueue(
             ContactJobs.SyncContactToSystem,
-            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
+            SyncContactCommand(user.id!!, ContactSystem.BREVO)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -99,14 +99,14 @@ class SyncContactJobIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val execution = jobs.enqueue(
             ContactJobs.SyncContactToSystem,
-            SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
+            SyncContactCommand(user.id!!, ContactSystem.BREVO)
         )!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val record = contactRepository.findByUserId(user.id!!)!!
-        assertThat(record.externalId(ContactSystem.LISTMONK))
-            .describedAs("Listmonk external ID should be persisted")
+        assertThat(record.externalId(ContactSystem.BREVO))
+            .describedAs("External ID should be persisted")
             .isNotNull()
     }
 }

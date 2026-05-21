@@ -102,7 +102,7 @@ class DeleteContactJobIT : UserTestSupport() {
     private fun syncContact(userId: Long) {
         val syncExecution = jobs.enqueue(
             ContactJobs.SyncContactToSystem,
-            SyncContactCommand(userId, ContactSystem.LISTMONK)
+            SyncContactCommand(userId, ContactSystem.BREVO)
         )!!
         executor.execute(jobExecutions.findById(syncExecution.id!!).orElseThrow())
     }

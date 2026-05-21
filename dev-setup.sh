@@ -7,8 +7,7 @@
 # What this script does:
 #   1. Creates services/api/.db.env          (dev MariaDB credentials)
 #   2. Creates services/api/.api.env         (auto-generated JWT secret + defaults)
-#   3. Creates services/listmonk/.listmonk.env (dev Listmonk credentials)
-#   4. Generates a self-signed CA + TLS cert for the dev mailserver
+#   3. Generates a self-signed CA + TLS cert for the dev mailserver
 #      (required by docker-mailserver with SSL_TYPE=self-signed)
 #
 # After running this script:
@@ -74,45 +73,6 @@ EOF
   ok "Created ${API_ENV} (JWT_SECRET auto-generated)"
 else
   skip "${API_ENV}"
-fi
-
-# ── services/listmonk/.listmonk.env ───────────────────────────────────────────
-LISTMONK_ENV="${SCRIPT_DIR}/services/listmonk/.listmonk.env"
-if [[ ! -f "${LISTMONK_ENV}" ]]; then
-  # Credentials match the hardcoded values in services/listmonk/docker-compose.yml
-  # so Listmonk and the API agree without extra config.
-  cat > "${LISTMONK_ENV}" <<'EOF'
-LISTMONK_DB_PASSWORD=listmonk
-LISTMONK_ADMIN_USERNAME=listmonk
-LISTMONK_ADMIN_PASSWORD=listmonk
-LISTMONK_ADMIN_EMAIL=admin@listmonk.local
-LISTMONK_ADMIN_API_USER=api
-
-# SMTP (leave blank — the dev mailserver is configured directly in docker-compose)
-LISTMONK_SMTP_HOST=
-LISTMONK_SMTP_PORT=587
-LISTMONK_SMTP_AUTH_PROTOCOL=plain
-LISTMONK_SMTP_USERNAME=
-LISTMONK_SMTP_PASSWORD=
-LISTMONK_SMTP_HELLO_HOSTNAME=
-LISTMONK_SMTP_TLS_TYPE=starttls
-LISTMONK_SMTP_TLS_SKIP_VERIFY=false
-
-# Bounce mailbox (disabled for dev — dev mailserver handles this directly)
-LISTMONK_BOUNCE_MAILBOX_ENABLED=false
-LISTMONK_BOUNCE_MAILBOX_HOST=
-LISTMONK_BOUNCE_MAILBOX_PORT=993
-LISTMONK_BOUNCE_MAILBOX_USERNAME=
-LISTMONK_BOUNCE_MAILBOX_PASSWORD=
-LISTMONK_BOUNCE_MAILBOX_TLS_ENABLED=true
-LISTMONK_BOUNCE_MAILBOX_TLS_SKIP_VERIFY=false
-LISTMONK_BOUNCE_MAILBOX_FOLDER=INBOX
-LISTMONK_BOUNCE_MAILBOX_RETURN_PATH=
-LISTMONK_BOUNCE_MAILBOX_SCAN_INTERVAL=10m
-EOF
-  ok "Created ${LISTMONK_ENV}"
-else
-  skip "${LISTMONK_ENV}"
 fi
 
 # ── Mailserver self-signed TLS certificates ───────────────────────────────────

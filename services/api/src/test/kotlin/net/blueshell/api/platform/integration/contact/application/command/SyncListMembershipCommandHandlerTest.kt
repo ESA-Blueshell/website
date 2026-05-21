@@ -41,14 +41,14 @@ class SyncListMembershipCommandHandlerTest {
 
     private val userId = 10L
     private val contactListId = 20L
-    private val system = ContactSystem.LISTMONK
+    private val system = ContactSystem.BREVO
     private val externalContactId = 100L
     private val externalListId = 200L
     private val command = SyncListMembershipCommand(userId, contactListId, system)
 
     @BeforeEach
     fun setUp() {
-        whenever(listAdapter.system).thenReturn(ContactSystem.LISTMONK)
+        whenever(listAdapter.system).thenReturn(ContactSystem.BREVO)
     }
 
     @Test

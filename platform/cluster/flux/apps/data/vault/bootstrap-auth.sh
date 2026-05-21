@@ -89,20 +89,6 @@ path "transit/keys/api-jwt" {
 }
 EOF
 
-cat <<'EOF' >/tmp/listmonk.hcl
-path "secret/data/listmonk" {
-  capabilities = ["read"]
-}
-
-path "secret/data/listmonk/*" {
-  capabilities = ["read"]
-}
-
-path "database/creds/listmonk" {
-  capabilities = ["read"]
-}
-EOF
-
 cat <<'EOF' >/tmp/stalwart.hcl
 path "secret/data/platform/mail" {
   capabilities = ["read"]
@@ -117,8 +103,7 @@ EOF
 # them — platform/edge (Cloudflare DNS-01 token for cert-manager and
 # external-dns), api (third-party integration keys — Brevo, Mollie,
 # Google Calendar, Facebook, X, Discord, plus jwt-secret and the Vault
-# OIDC client secret), listmonk (postgres + admin + SMTP passwords),
-# platform/mail (stalwart admin, bounce mailbox, DKIM),
+# OIDC client secret), platform/mail (stalwart admin, bounce mailbox, DKIM),
 # platform/ghcr (GitHub PAT for pulling private ghcr.io images).
 # See platform/docs/vault-bootstrap.md §4 for the full key list.
 cat <<'EOF' >/tmp/admin.hcl
@@ -156,10 +141,6 @@ path "secret/data/api" {
   capabilities = ["read"]
 }
 
-path "secret/data/listmonk" {
-  capabilities = ["read"]
-}
-
 path "secret/data/platform/mail" {
   capabilities = ["read"]
 }
@@ -174,7 +155,6 @@ path "secret/data/platform/mariadb" {
 EOF
 
 vault policy write api /tmp/api.hcl
-vault policy write listmonk /tmp/listmonk.hcl
 vault policy write stalwart /tmp/stalwart.hcl
 vault policy write vso /tmp/vso.hcl
 vault policy write admin /tmp/admin.hcl
@@ -185,12 +165,6 @@ vault write auth/kubernetes/role/api \
   bound_service_account_names="api" \
   bound_service_account_namespaces="default" \
   policies="api" \
-  ttl="1h"
-
-vault write auth/kubernetes/role/listmonk \
-  bound_service_account_names="listmonk" \
-  bound_service_account_namespaces="default" \
-  policies="listmonk" \
   ttl="1h"
 
 vault write auth/kubernetes/role/stalwart \

@@ -133,7 +133,7 @@ class JobAutoDispatchIT : UserTestSupport() {
         enqueueInTransaction {
             jobs.enqueue(
                 ContactJobs.SyncContactToSystem,
-                SyncContactCommand(user.id!!, ContactSystem.LISTMONK)
+                SyncContactCommand(user.id!!, ContactSystem.BREVO)
             )
         }
 

@@ -38,10 +38,10 @@ class ProcessListMembershipJobTest {
     private val jobs: TrackedJobDispatcher = mock()
 
     private val contactAdapter: ContactAdapter = mock<ContactAdapter>().also {
-        whenever(it.system).thenReturn(ContactSystem.LISTMONK)
+        whenever(it.system).thenReturn(ContactSystem.BREVO)
     }
     private val listAdapter: ContactListAdapter = mock<ContactListAdapter>().also {
-        whenever(it.system).thenReturn(ContactSystem.LISTMONK)
+        whenever(it.system).thenReturn(ContactSystem.BREVO)
     }
 
     private val job = ProcessListMembershipJob(

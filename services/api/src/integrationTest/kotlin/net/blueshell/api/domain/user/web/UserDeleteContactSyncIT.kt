@@ -44,7 +44,7 @@ class UserDeleteContactSyncIT : UserTestSupport() {
 
         // Sync contact first to assign external ID
         enqueueInTransaction {
-            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.LISTMONK))
+            jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(member.id!!, ContactSystem.BREVO))
         }
         awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
 

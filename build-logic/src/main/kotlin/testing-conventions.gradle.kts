@@ -25,7 +25,7 @@ configurations["integrationTestRuntimeOnly"].extendsFrom(configurations.testRunt
 
 tasks.withType<Test> {
     useJUnitPlatform {
-        excludeTags("system", "brevo-live", "listmonk-live")
+        excludeTags("system", "brevo-live")
     }
 }
 
@@ -35,7 +35,7 @@ tasks.register<Test>("integrationTest") {
     testClassesDirs = sourceSets["integrationTest"].output.classesDirs
     classpath = sourceSets["integrationTest"].runtimeClasspath
     useJUnitPlatform {
-        excludeTags("system", "brevo-live", "listmonk-live")
+        excludeTags("system", "brevo-live")
     }
     shouldRunAfter(tasks.test)
 }

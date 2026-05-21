@@ -14,7 +14,7 @@ import tools.jackson.databind.ObjectMapper
  * then dispatches it through the [CommandBus] to [SyncContactCommandHandler].
  *
  * Works in all profiles — no @Profile needed.
- * In test/dev, [MockContactAdapter] (system=LISTMONK) is the only registered ContactAdapter.
+ * In test/dev, [MockContactAdapter] (system=BREVO) is the only registered ContactAdapter.
  */
 @Component
 class SyncContactToSystemJob(

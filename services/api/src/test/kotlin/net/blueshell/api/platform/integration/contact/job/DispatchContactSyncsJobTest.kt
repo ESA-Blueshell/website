@@ -38,7 +38,7 @@ class DispatchContactSyncsJobTest {
 
     @Test
     fun `enqueues one SyncContactForSystem job per user per adapter`() {
-        val adapter1 = adapterFor(ContactSystem.LISTMONK)
+        val adapter1 = adapterFor(ContactSystem.BREVO)
         val adapter2 = adapterFor(ContactSystem.BREVO)
         val job = DispatchContactSyncsJob(objectMapper, userService, listOf(adapter1, adapter2), jobs)
 
@@ -53,7 +53,7 @@ class DispatchContactSyncsJobTest {
 
     @Test
     fun `does nothing when no users exist`() {
-        val adapter = adapterFor(ContactSystem.LISTMONK)
+        val adapter = adapterFor(ContactSystem.BREVO)
         val job = DispatchContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
 
         whenever(userService.findAll()).thenReturn(mutableListOf())
@@ -65,7 +65,7 @@ class DispatchContactSyncsJobTest {
 
     @Test
     fun `continues when enqueue throws for one user`() {
-        val adapter = adapterFor(ContactSystem.LISTMONK)
+        val adapter = adapterFor(ContactSystem.BREVO)
         val job = DispatchContactSyncsJob(objectMapper, userService, listOf(adapter), jobs)
 
         val users = listOf(userWithId(1L), userWithId(2L))

@@ -39,12 +39,12 @@ class SyncContactCommandHandlerTest {
 
     private val userId = 42L
     private val externalId = 1000L
-    private val system = ContactSystem.LISTMONK
+    private val system = ContactSystem.BREVO
     private val command = SyncContactCommand(userId, system)
 
     @BeforeEach
     fun setUp() {
-        whenever(adapter.system).thenReturn(ContactSystem.LISTMONK)
+        whenever(adapter.system).thenReturn(ContactSystem.BREVO)
 
         val user = mock<User>()
         whenever(user.email).thenReturn("test@example.com")

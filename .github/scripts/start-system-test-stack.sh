@@ -10,10 +10,10 @@ set -Eeuo pipefail
 compose_args=(-f docker-compose.yml -f docker-compose.ci.yml)
 
 # Only bring up the services the system-test JVM actually talks to.
-# Listmonk + listmonk-db + stalwart + vault are part of the dev compose
-# but the api runs with SPRING_PROFILES_ACTIVE=test, which routes mail
-# through MockListmonkEmailClient — none of those upstream containers
-# are touched. Naming services explicitly also stops `--wait` from
-# blocking on health checks for containers we never started.
+# Stalwart + vault are part of the dev compose but the api runs with
+# SPRING_PROFILES_ACTIVE=test, which routes mail through
+# InMemoryEmailClient — none of those upstream containers are touched.
+# Naming services explicitly also stops `--wait` from blocking on
+# health checks for containers we never started.
 echo "Starting system test services (db, api, frontend)..."
 docker compose "${compose_args[@]}" up -d --no-build --wait --timeout 300 db api frontend

@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets
 
 /**
  * Called by the Traefik ForwardAuth middleware for every request to a
- * protected admin IngressRoute (vault, headlamp, listmonk, stalwart,
+ * protected admin IngressRoute (vault, headlamp, stalwart,
  * traefik). The middleware sends an authenticated GET to this endpoint
  * with the original request's `X-Forwarded-Host` / `X-Forwarded-Uri`
  * headers and forwards back any `X-User-Id` / `X-User-Groups` headers
@@ -106,12 +106,11 @@ class ForwardAuthController(
 
     companion object {
         // Keep in lockstep with MyServicesController.kt's visibility filter
-        // — same five entries, same role gates.
+        // — same entries, same role gates.
         val HOST_ROLE: Map<String, Role> = mapOf(
             "traefik.esa-blueshell.nl"  to Role.ADMIN,
             "vault.esa-blueshell.nl"    to Role.ADMIN,
             "headlamp.esa-blueshell.nl" to Role.ADMIN,
-            "listmonk.esa-blueshell.nl" to Role.BOARD,
             "stalwart.esa-blueshell.nl" to Role.BOARD,
         )
     }

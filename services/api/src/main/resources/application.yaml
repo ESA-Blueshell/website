@@ -6,6 +6,16 @@ spring:
   main:
     web-application-type: servlet
 
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:true}
+      mail.smtp.ssl.enable: ${SMTP_USE_SSL:false}
+
   cloud:
     vault:
       enabled: ${VAULT_ENABLED:false}
@@ -139,8 +149,8 @@ security:
     # Empty default → host-only cookie (works against localhost in dev).
     # Production (apps/stateless/api/deployment.yaml) sets
     # AUTH_COOKIE_DOMAIN=.esa-blueshell.nl so the cookie travels to every
-    # subdomain — Traefik forwardAuth on vault/headlamp/listmonk/stalwart/
-    # traefik subdomains needs the cookie to authenticate the request.
+    # subdomain — Traefik forwardAuth on vault/headlamp/stalwart/traefik
+    # subdomains needs the cookie to authenticate the request.
     domain: ${AUTH_COOKIE_DOMAIN:}
   openapi:
     public:
@@ -152,25 +162,25 @@ security:
     bucket-idle-ttl: PT30M
     cleanup-interval: 128
 
-listmonk:
-  api:
-    base-url: ${LISTMONK_API_BASE_URL:http://listmonk:9000/api}
-    username: ${LISTMONK_API_USERNAME:listmonk}
-    password: ${LISTMONK_API_PASSWORD:listmonk}
-    api-user: ${LISTMONK_ADMIN_API_USER:api}
-    token-file: ${LISTMONK_API_TOKEN_FILE:/run/secrets/listmonk/api-token.env}
+email:
   from:
-    address: ${LISTMONK_FROM_ADDRESS:no-reply@mg.esa-blueshell.nl}
-  reply-to: ${LISTMONK_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
-  # ID of the pre-existing "Blueshell Transactional" template in Listmonk.
-  # Provisioned by the listmonk setup Job or manually via the admin UI; the
-  # api does not create or mutate Listmonk templates. The operator must set
-  # LISTMONK_TEMPLATE_ID to the template's id; sends fail at runtime otherwise.
-  template-id: ${LISTMONK_TEMPLATE_ID:0}
+    address: ${EMAIL_FROM_ADDRESS:no-reply@esa-blueshell.nl}
+    name: ${EMAIL_FROM_NAME:Blueshell Esports}
+  reply-to: ${EMAIL_REPLY_TO_ADDRESS:sitecie@blueshell.utwente.nl}
   bounce:
-    poll-interval-ms: ${LISTMONK_BOUNCE_POLL_INTERVAL_MS:300000}
-  contact:
-    sync-cron: ${LISTMONK_CONTACT_SYNC_CRON:0 0 2 * * *}
+    poll-interval-ms: ${EMAIL_BOUNCE_POLL_INTERVAL_MS:300000}
+    imap:
+      enabled: ${EMAIL_BOUNCE_IMAP_ENABLED:false}
+      host: ${EMAIL_BOUNCE_IMAP_HOST:}
+      port: ${EMAIL_BOUNCE_IMAP_PORT:993}
+      username: ${EMAIL_BOUNCE_IMAP_USERNAME:}
+      password: ${EMAIL_BOUNCE_IMAP_PASSWORD:}
+      folder: ${EMAIL_BOUNCE_IMAP_FOLDER:INBOX}
+      tls: ${EMAIL_BOUNCE_IMAP_TLS:true}
+
+contact:
+  sync-cron: ${CONTACT_SYNC_CRON:0 0 2 * * *}
+  list-sync-cron: ${CONTACT_LIST_SYNC_CRON:0 30 2 * * *}
 
 logging:
   level:

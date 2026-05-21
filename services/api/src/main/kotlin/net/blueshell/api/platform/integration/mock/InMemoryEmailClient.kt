@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 /**
- * In-memory mock of [net.blueshell.api.platform.integration.email.EmailTransportClient] for the test profile.
+ * In-memory mock of [EmailTransportClient] for the test profile.
  *
  * Captures all sent emails in [sentEmails] for test assertions.
  * Supports [simulateSendFailure] / [stopSimulateSendFailure] for error-path tests.
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
 @Component
 @Primary
 @Profile("test")
-class MockListmonkEmailClient : EmailTransportClient {
+class InMemoryEmailClient : EmailTransportClient {
 
     private val _sentEmails = mutableListOf<SentEmail>()
     val sentEmails: List<SentEmail> get() = _sentEmails.toList()
@@ -56,7 +56,7 @@ class MockListmonkEmailClient : EmailTransportClient {
             replyToAddress = replyToAddress,
         )
         _sentEmails.add(email)
-        return "<mock-${System.nanoTime()}@listmonk.test>"
+        return "<mock-${System.nanoTime()}@in-memory.test>"
     }
 
     data class SentEmail(

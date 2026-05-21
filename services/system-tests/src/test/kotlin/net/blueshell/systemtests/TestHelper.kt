@@ -631,7 +631,7 @@ object TestHelper {
 
     /**
      * Query the test-only `/test-support/emails` endpoint for emails
-     * the in-process `MockListmonkEmailClient` captured. Empty list
+     * the in-process `InMemoryEmailClient` captured. Empty list
      * when nothing matches. Used by tests that previously asserted
      * `emailTransportClient.sentEmails.any { … }`.
      */

@@ -59,7 +59,7 @@ export default {
         },
         {
           icon: "mdi-linkedin",
-          url: "https://www.instagram.com/esablueshell/",
+          url: "https://linkedin.com/company/blueshell-esports",
         },
       ],
     }

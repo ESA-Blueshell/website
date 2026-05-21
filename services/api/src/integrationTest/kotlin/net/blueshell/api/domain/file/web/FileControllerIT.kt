@@ -109,7 +109,7 @@ class FileControllerIT : UserTestSupport() {
         @Test
         fun `returns bad request for oversized file`() {
             val committee = createUserWithRole(Role.COMMITTEE)
-            val oversized = ByteArray(2 * 1024 * 1024 + 1) { 1 }
+            val oversized = ByteArray(10 * 1024 * 1024 + 1) { 1 }
             val file = MockMultipartFile(
                 "file",
                 "large.png",

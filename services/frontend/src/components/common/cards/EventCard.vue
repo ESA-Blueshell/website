@@ -11,12 +11,16 @@ import {
   approveEvent,
   type CommitteeDetailResponse,
   deleteEventById,
+  deleteEventSignup,
   downloadEventBanner,
   type EventResponse,
   type EventSignUpResponse,
 } from "@/services/api"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
+import sadgeImg from "@/assets/icons/sadge-icon.png"
+import type {GuestSessionData} from "@/plugins/store.ts"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 
 const router = useRouter()
 const theme = useTheme()
@@ -87,7 +91,10 @@ const signUpDisabled = computed<boolean>(
 
 const signUpTooltip = computed<string>(() => {
   if (signUpBlockedReason.value) return signUpBlockedReason.value
-  if (signUp.value?.id) return expanded.value ? "Cancel editing sign-up" : "Edit sign-up"
+  if (signUp.value?.id) {
+    if (!hasSignUpForm.value) return "Sign me out"
+    return expanded.value ? "Cancel editing sign-up" : "Edit sign-up"
+  }
   return expanded.value ? "Cancel signing up" : "Sign up"
 })
 
@@ -269,10 +276,53 @@ const cardStyle = computed(() => {
 })
 
 const isSignedUp = computed<boolean>(() => signUp.value?.id !== undefined)
-
-const signUpIcon = computed(() =>
-  isSignedUp.value ? "custom:account-multiple-edit" : "mdi-account-multiple-plus",
+const hasSignUpForm = computed<boolean>(
+  () => (event.value.signUpForm?.questions?.length ?? 0) > 0,
 )
+const signOutInline = computed<boolean>(() => isSignedUp.value && !hasSignUpForm.value)
+const signUpHover = ref(false)
+const signingOut = ref(false)
+
+const signUpIcon = computed(() => {
+  if (!isSignedUp.value) return "mdi-account-multiple-plus"
+  if (signOutInline.value) return signUpHover.value ? null : "mdi-account-check"
+  return signUpHover.value && !expanded.value ? "mdi-pencil" : "mdi-account-check"
+})
+
+const showSadgeIcon = computed(() => signOutInline.value && signUpHover.value)
+const signUpButtonColor = computed(() => {
+  if (showSadgeIcon.value) return "error"
+  return isSignedUp.value ? "success" : undefined
+})
+const signUpButtonVariant = computed(() => (isSignedUp.value ? "tonal" : "plain"))
+
+async function directSignOut() {
+  const existing = signUp.value
+  if (!existing?.id) return
+  signingOut.value = true
+  try {
+    const guestAccessToken =
+      (store.getters.getGuestData as GuestSessionData | null)?.accessToken ?? null
+    await deleteEventSignup({
+      path: {id: existing.id as number},
+      headers: guestAccessToken ? {"X-Guest-Access-Token": guestAccessToken} : undefined,
+      throwOnError: true,
+    })
+    emit("delete:signUp", existing.id as number)
+  } catch (err) {
+    $handleNetworkError(err)
+  } finally {
+    signingOut.value = false
+  }
+}
+
+function handleSignUpClick() {
+  if (signOutInline.value) {
+    directSignOut()
+  } else {
+    toggleExpanded()
+  }
+}
 </script>
 
 <template v-if="event.id">
@@ -321,23 +371,22 @@ const signUpIcon = computed(() =>
               </v-card-title>
 
               <v-card-subtitle>
-                {{ event.location }} <br>
-                {{ formatEventTime() }} <br>
-                <span
-                  v-if="event.membersOnly"
-                  :class="['v-card-subtitle', {
-                    'text-red': !isMember,
-                    'font-weight-bold': !isMember,
-                    'text-decoration-underline': !isMember,
-                  }]"
-                >
-                  Members only
-                </span>
+                <span class="event-meta">{{ event.location }}</span><br>
+                <span class="event-meta">{{ formatEventTime() }}</span><br>
                 <span
                   v-if="event.signUp && signUpDeadlineLabel"
-                  :class="['sign-up-deadline', { 'text-error': deadlinePassed, 'text-medium-emphasis': !deadlinePassed }]"
+                  class="event-meta"
+                  :class="{ 'text-error': deadlinePassed }"
                 >
                   {{ deadlinePassed ? 'Sign-ups closed:' : 'Sign-ups close:' }} {{ signUpDeadlineLabel }}
+                </span>
+                <br v-if="event.signUp && signUpDeadlineLabel && event.membersOnly">
+                <span
+                  v-if="event.membersOnly"
+                  class="event-meta"
+                  :class="{ 'text-error': !isMember }"
+                >
+                  Members only
                 </span>
               </v-card-subtitle>
             </v-card-item>
@@ -467,13 +516,40 @@ const signUpIcon = computed(() =>
                   v-bind="p"
                 >
                   <v-btn
+                    v-if="showSadgeIcon"
                     :aria-label="signUpTooltip"
                     :data-testid="`event-signup-toggle-btn-${event.id}`"
-                    :disabled="signUpDisabled"
+                    :disabled="signUpDisabled || signingOut"
+                    icon
+                    :loading="submitting || signingOut"
+                    :color="signUpButtonColor"
+                    :variant="signUpButtonVariant"
+                    @click="handleSignUpClick"
+                    @mouseenter="signUpHover = true"
+                    @mouseleave="signUpHover = false"
+                    @focus="signUpHover = true"
+                    @blur="signUpHover = false"
+                  >
+                    <img
+                      :src="sadgeImg"
+                      alt=""
+                      class="signup-sadge"
+                    >
+                  </v-btn>
+                  <v-btn
+                    v-else
+                    :aria-label="signUpTooltip"
+                    :data-testid="`event-signup-toggle-btn-${event.id}`"
+                    :disabled="signUpDisabled || signingOut"
                     :icon="signUpIcon"
-                    :loading="submitting"
-                    variant="plain"
-                    @click="toggleExpanded()"
+                    :loading="submitting || signingOut"
+                    :color="signUpButtonColor"
+                    :variant="signUpButtonVariant"
+                    @click="handleSignUpClick"
+                    @mouseenter="signUpHover = true"
+                    @mouseleave="signUpHover = false"
+                    @focus="signUpHover = true"
+                    @blur="signUpHover = false"
                   />
                   <v-chip
                     :color="atCapacity ? 'error' : 'primary'"
@@ -609,9 +685,18 @@ const signUpIcon = computed(() =>
   height: 18px !important;
 }
 
-.sign-up-deadline {
+.event-meta {
+  display: inline;
+  font: inherit;
+  font-weight: inherit;
+  text-decoration: inherit;
+}
+
+.signup-sadge {
+  width: 22px;
+  height: 22px;
   display: block;
-  font-size: 0.78rem;
-  margin-top: 2px;
+  position: relative;
+  z-index: 1;
 }
 </style>

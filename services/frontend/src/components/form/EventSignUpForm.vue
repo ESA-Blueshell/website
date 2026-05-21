@@ -15,6 +15,7 @@ import {
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
+import sadgeImg from "@/assets/icons/sadge-icon.png"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useSaving, useSubmitFeedback} from "@/composables/formUtils"
 
@@ -198,20 +199,23 @@ defineExpose({save, validate})
     </v-alert>
 
     <div class="event-signup__actions">
-      <submit-button
+      <v-btn
         v-if="isEditing"
         data-testid="event-signup-delete-btn"
-        :block="false"
         :disabled="isSaving || buttonLoading"
         :loading="isSaving || buttonLoading"
-        :show-submit-status="showSubmitStatus"
-        :submit-state="submitState"
         color="error"
-        icon="mdi-account-multiple-remove"
-        text="Delete sign-up"
         variant="text"
+        class="event-signup__sign-out"
         @click="removeSignUp"
-      />
+      >
+        <img
+          :src="sadgeImg"
+          alt=""
+          class="event-signup__sign-out-icon"
+        >
+        Sign me out
+      </v-btn>
       <submit-button
         data-testid="event-signup-submit-btn"
         :data-signup-mode="isEditing ? 'update' : 'create'"
@@ -247,6 +251,14 @@ defineExpose({save, validate})
     justify-content: flex-end;
     align-items: center;
     padding-top: 0.25rem;
+  }
+
+  &__sign-out-icon {
+    width: 22px;
+    height: 22px;
+    margin-inline-end: 0.5rem;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 }
 </style>

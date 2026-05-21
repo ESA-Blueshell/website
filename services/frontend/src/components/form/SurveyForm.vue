@@ -64,6 +64,8 @@ function moveQuestionDown(i: number) {
       </h3>
       <p class="survey-editor__subtitle text-body-2 text-medium-emphasis">
         Define the questions respondents will answer when signing up for this event.
+        Their name, email, Discord username, and phone number are always collected — no
+        need to add questions for those.
       </p>
     </header>
 

@@ -13,23 +13,17 @@ const formRef = ref<FormContext | undefined>()
 const questions = computed<QuestionResponse[]>(() => props.survey?.questions ?? [])
 
 const answerIndexByQuestionIdx = ref<Map<number, number>>(new Map())
-const displayNumberByQuestionIdx = ref<Map<number, number>>(new Map())
 watch(
   questions,
   (qs) => {
     const answerMap = new Map<number, number>()
-    const numberMap = new Map<number, number>()
     let answerIdx = 0
-    let displayNumber = 0
     for (const q of qs) {
       if (q.type !== QuestionType.DESCRIPTION) {
         answerMap.set(q.idx, answerIdx++)
-        displayNumber += 1
-        numberMap.set(q.idx, displayNumber)
       }
     }
     answerIndexByQuestionIdx.value = answerMap
-    displayNumberByQuestionIdx.value = numberMap
   },
   {immediate: true, deep: true},
 )
@@ -64,7 +58,6 @@ defineExpose({validate})
 
       <question-card
         v-else
-        :index="displayNumberByQuestionIdx.get(question.idx)"
         class="answers-form__item"
       >
         <question-label
@@ -90,8 +83,6 @@ defineExpose({validate})
   &__description {
     white-space: pre-wrap;
     word-break: break-word;
-    color: rgba(var(--v-theme-on-surface), 0.82);
-    font-style: italic;
   }
 }
 </style>

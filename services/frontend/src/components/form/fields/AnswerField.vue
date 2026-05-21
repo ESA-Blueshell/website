@@ -73,7 +73,7 @@ watch(
         class="answer-field__open"
         :error-messages="meta.touched ? errors : []"
         :model-value="value"
-        :placeholder="required ? 'Your answer' : 'Your answer (optional)'"
+        placeholder="Your answer"
         :rows="1"
         auto-grow
         @blur="handleBlur"
@@ -155,6 +155,11 @@ watch(
 
 <style lang="scss" scoped>
 .answer-field {
+  &__radio,
+  &__checkbox {
+    margin-inline-start: 0.75rem;
+  }
+
   &__option :deep(.v-selection-control) {
     min-height: 36px;
   }

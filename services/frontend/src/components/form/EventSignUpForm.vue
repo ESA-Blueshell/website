@@ -84,7 +84,7 @@ async function validate() {
     const guestFormValid = await guestRef.value?.validate?.()
     if (!guestFormValid) return false
   }
-  if (!survey.value) return true
+  if (!hasQuestions.value) return true
   return answersRef.value?.validate?.()
 }
 

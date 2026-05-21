@@ -190,11 +190,9 @@ describe("EventSignUpForm", () => {
       },
     })
 
-    const deleteButton = wrapper
-      .findAll("submit-button-stub")
-      .find((button) => button.attributes("text") === "Delete sign-up")
-    expect(deleteButton).toBeTruthy()
-    await deleteButton!.trigger("click")
+    const deleteButton = wrapper.find("[data-testid='event-signup-delete-btn']")
+    expect(deleteButton.exists()).toBe(true)
+    await deleteButton.trigger("click")
 
     expect(mockDeleteEventSignup).toHaveBeenCalledWith({
       path: {id: 44},

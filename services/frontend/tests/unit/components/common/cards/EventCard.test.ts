@@ -6,6 +6,7 @@ const {
   mockMarkdownToHtml,
   mockApproveEvent,
   mockDeleteEventById,
+  mockDeleteEventSignup,
   mockDownloadEventBanner,
   mockGoto,
   mockRouterPush,
@@ -13,10 +14,12 @@ const {
   mockCreateIcs,
   mockRoute,
   mockStoreGetters,
+  mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockMarkdownToHtml: vi.fn((text: string) => `<p>${text}</p>`),
   mockApproveEvent: vi.fn(),
   mockDeleteEventById: vi.fn(),
+  mockDeleteEventSignup: vi.fn(),
   mockDownloadEventBanner: vi.fn(),
   mockGoto: vi.fn(),
   mockRouterPush: vi.fn(),
@@ -28,6 +31,7 @@ const {
     isLoggedIn: true,
     isBoard: true,
   },
+  mockHandleNetworkError: vi.fn(),
 }))
 
 vi.mock("@/plugins/markdownToHtml.ts", () => ({
@@ -37,7 +41,12 @@ vi.mock("@/plugins/markdownToHtml.ts", () => ({
 vi.mock("@/services/api", () => ({
   approveEvent: mockApproveEvent,
   deleteEventById: mockDeleteEventById,
+  deleteEventSignup: mockDeleteEventSignup,
   downloadEventBanner: mockDownloadEventBanner,
+}))
+
+vi.mock("@/plugins/handleNetworkError.ts", () => ({
+  $handleNetworkError: mockHandleNetworkError,
 }))
 
 vi.mock("@/plugins/goto.ts", () => ({

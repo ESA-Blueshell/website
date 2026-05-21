@@ -437,6 +437,8 @@ class EventSignUpControllerIT : UserTestSupport() {
                             committeeId = committee.id!!,
                             version = event.version,
                             approved = true,
+                            startTime = Instant.now().plusSeconds(3600).toString(),
+                            endTime = Instant.now().plusSeconds(7200).toString(),
                             signUpFormJson = eventRequestFactory.signUpFormJson(
                                 eventRequestFactory.questionJson(0, "OPEN", "Pre-existing question"),
                                 eventRequestFactory.questionJson(1, "OPEN", "New required question", required = true),

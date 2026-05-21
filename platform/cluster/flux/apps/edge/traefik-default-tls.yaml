@@ -10,13 +10,9 @@ spec:
   #   - apex `esa-blueshell.nl`               (main site)
   #   - `*.esa-blueshell.nl`                  (admin hosts: auth, kube,
   #                                            mail-admin, status,
-  #                                            vault, traefik; plus the
-  #                                            v2.esa-blueshell.nl
-  #                                            grace-period fallback —
+  #                                            vault, traefik —
   #                                            wildcard matches one
-  #                                            label deep, so this
-  #                                            covers it without
-  #                                            adding a SAN)
+  #                                            label deep)
   #
   # ACME DNS-01 uses the Cloudflare API token stored at
   # secret/data/platform/edge.cloudflare-api-token; the Cloudflare

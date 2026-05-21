@@ -30,22 +30,21 @@ spec:
   # SecurityFilterChain matchers (which permit `/health`, `/events/**`,
   # `/csrf`, `/contributionPeriods/current`, ...) actually fire.
   #
-  # Two routes per host:
+  # Two routes:
   #   - OIDC paths under /api/* — priority 100, kept distinct in case
   #     a future change wants a different middleware on this subset.
   #   - Plain REST /api/*       — priority 50, catch-all under /api.
-  # Both apply `strip-api-prefix`. frontend.yaml's apex catch-all keeps
-  # default priority and naturally falls below both.
-  #
-  # Matched against both apex and the v2.esa-blueshell.nl fallback for
-  # the 30-day grace window after the apex cutover. Retired in PR 11.
+  # Both apply `strip-api-prefix`. frontend.yaml pins its catch-all
+  # to an explicit `priority: 1` so these routes always win on /api/*
+  # — Traefik's default priority is the rule string length, which can
+  # otherwise exceed 50 once a Host matcher grows.
   routes:
     - kind: Rule
       priority: 100
       # Single line on purpose: Traefik's rule parser rejects embedded
       # newlines, and YAML folded scalars (>-) preserve them when
       # subsequent lines are more-indented than the first.
-      match: (Host(`esa-blueshell.nl`) || Host(`v2.esa-blueshell.nl`)) && (PathPrefix(`/api/oauth2`) || PathPrefix(`/api/userinfo`) || Path(`/api/.well-known/openid-configuration`) || Path(`/api/.well-known/oauth-authorization-server`))
+      match: Host(`esa-blueshell.nl`) && (PathPrefix(`/api/oauth2`) || PathPrefix(`/api/userinfo`) || Path(`/api/.well-known/openid-configuration`) || Path(`/api/.well-known/oauth-authorization-server`))
       middlewares:
         - name: strip-api-prefix
           namespace: edge-system
@@ -55,7 +54,7 @@ spec:
           port: 8080
     - kind: Rule
       priority: 50
-      match: (Host(`esa-blueshell.nl`) || Host(`v2.esa-blueshell.nl`)) && PathPrefix(`/api`)
+      match: Host(`esa-blueshell.nl`) && PathPrefix(`/api`)
       middlewares:
         - name: strip-api-prefix
           namespace: edge-system

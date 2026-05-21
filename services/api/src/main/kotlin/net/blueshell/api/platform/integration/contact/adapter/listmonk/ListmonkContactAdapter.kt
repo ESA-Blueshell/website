@@ -6,10 +6,13 @@ import net.blueshell.api.platform.integration.contact.adapter.ContactServiceExce
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.listmonk.api.SubscribersApi
 import net.blueshell.clients.listmonk.model.NewSubscriber
+import net.blueshell.clients.listmonk.model.Subscriber
 import net.blueshell.clients.listmonk.model.UpdateSubscriber
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClientResponseException
 
 /**
@@ -35,9 +38,40 @@ class ListmonkContactAdapter(
             val id = created.id ?: throw ContactServiceException("Listmonk subscriber has no id for ${data.email}")
             log.info("Created Listmonk subscriber id={} for {}", id, data.email)
             id.toLong()
+        } catch (e: HttpClientErrorException) {
+            if (e.statusCode == HttpStatus.CONFLICT) {
+                log.info("Listmonk subscriber {} already exists — adopting and updating", data.email)
+                return adoptExisting(data)
+            }
+            log.error("Failed to create Listmonk subscriber for {}", data.email, e)
+            throw ContactServiceException("Failed to create contact", e)
         } catch (e: RestClientResponseException) {
             log.error("Failed to create Listmonk subscriber for {}", data.email, e)
             throw ContactServiceException("Failed to create contact", e)
+        }
+    }
+
+    private fun adoptExisting(data: ContactData): Long {
+        val existing = findByEmail(data.email)
+            ?: throw ContactServiceException("Listmonk rejected create as duplicate but no subscriber found for ${data.email}")
+        val id = existing.id?.toLong()
+            ?: throw ContactServiceException("Listmonk subscriber lookup for ${data.email} returned no id")
+        updateContact(id, data)
+        return id
+    }
+
+    private fun findByEmail(email: String): Subscriber? {
+        val sqlEmail = email.replace("'", "''")
+        val query = "subscribers.email = '$sqlEmail'"
+        return try {
+            subscribersApi
+                .getSubscribers(1, 1, query, null, null, null, null)
+                ?.data
+                ?.results
+                ?.firstOrNull()
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to look up Listmonk subscriber by email {}", email, e)
+            throw ContactServiceException("Failed to look up contact by email", e)
         }
     }
 

@@ -13,6 +13,21 @@ spec:
         name: traefik
         namespace: ingress-system
   values:
+    # Force Recreate on upgrade. The chart default is RollingUpdate
+    # with maxSurge=1/maxUnavailable=0, which on this single-node
+    # cluster guarantees a deadlock: the new pod is scheduled before
+    # the old one is killed, but only one pod can hold hostPort 80
+    # and 443. The new pod stays Pending with
+    # `FailedScheduling: didn't have free ports for the requested pod
+    # ports` until the Helm upgrade times out, the HelmRelease goes
+    # to `Failed`, and apps-core cascade-blocks every downstream
+    # Kustomization. Recreate accepts a brief 80/443 gap on the node
+    # in exchange for an upgrade path that actually completes.
+    deployment:
+      kind: Deployment
+      strategy:
+        type: Recreate
+        rollingUpdate: null
     ingressClass:
       enabled: true
       isDefaultClass: true

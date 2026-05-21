@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 let
   authorizedKeysDir = ../../authorized-keys;
-  deployAuthorizedKeysPath = authorizedKeysDir + "/deploy.pub";
+  deployAuthorizedKeysPath = authorizedKeysDir + "/bs-deploy.pub";
   deployAuthorizedKeys =
     if builtins.pathExists deployAuthorizedKeysPath then
       lib.filter (line: line != "" && !(lib.hasPrefix "#" line)) (
@@ -74,14 +74,14 @@ in
     "d /srv/blueshell/storage 0755 root root -"
   ];
 
-  # A missing deploy.pub is caught loudly at install/deploy time by the
-  # bash guards in platform/scripts. Surface it here as a warning too,
-  # but do not fail the build — otherwise `nix flake check` blows up on
-  # a clean checkout (deploy.pub is gitignored per design).
+  # A missing bs-deploy.pub is caught loudly at install/deploy time by
+  # the bash guards in platform/scripts. Surface it here as a warning
+  # too, but do not fail the build — otherwise `nix flake check` blows
+  # up on a fresh clone before the operator commits their pubkey.
   warnings = lib.optional (deployAuthorizedKeys == [ ]) ''
     No deploy SSH public keys configured in ${toString deployAuthorizedKeysPath}.
-    The `deploy` user on this host will have no authorized keys. Create the
-    file locally (see platform/nix/authorized-keys/README.md) before the
+    The `deploy` user on this host will have no authorized keys. Create
+    the file (see platform/nix/authorized-keys/README.md) before the
     next install or deploy-rs activation.
   '';
 

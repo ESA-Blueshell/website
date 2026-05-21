@@ -52,17 +52,17 @@ Confirm the pre-install SSH path works and has passwordless sudo
 ssh -i ~/.ssh/bs-deploy -o IdentitiesOnly=yes -p 2222 admin@157.173.115.164 'sudo -n true && echo sudo-ok'
 ```
 
-## 1. Deploy.pub is already populated
+## 1. bs-deploy.pub is already populated
 
-`platform/nix/authorized-keys/deploy.pub` is tracked in the repo and
-already contains the `bs-deploy` public key. If you later rotate the
-operator set, regenerate and commit:
+`platform/nix/authorized-keys/bs-deploy.pub` is tracked in the repo
+and already contains the `bs-deploy` public key. If you ever rotate
+the key, overwrite the file and commit:
 
 ```bash
-cat platform/nix/authorized-keys/bs-deploy.pub > platform/nix/authorized-keys/deploy.pub
+cp ~/.ssh/bs-deploy.pub platform/nix/authorized-keys/bs-deploy.pub
 ```
 ```bash
-git commit -am "authorized-keys: rotate operator set" && git push
+git commit -am "authorized-keys: rotate bs-deploy" && git push
 ```
 
 ## 2. Host config has the real addresses

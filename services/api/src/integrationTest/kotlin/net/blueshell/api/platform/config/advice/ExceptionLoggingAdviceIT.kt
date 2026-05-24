@@ -26,7 +26,7 @@ import org.springframework.web.server.ResponseStatusException
 @Import(ExceptionLoggingAdviceITConfig::class)
 class ExceptionLoggingAdviceIT : UserTestSupport() {
 
-    private val advicelogger =
+    private val adviceLogger =
         LoggerFactory.getLogger(ExceptionLoggingAdvice::class.java) as Logger
     private val appender = ListAppender<ILoggingEvent>()
 
@@ -34,29 +34,28 @@ class ExceptionLoggingAdviceIT : UserTestSupport() {
     fun attachAppender() {
         appender.list.clear()
         appender.start()
-        advicelogger.addAppender(appender)
+        adviceLogger.addAppender(appender)
     }
 
     @AfterEach
     fun detachAppender() {
-        advicelogger.detachAppender(appender)
+        adviceLogger.detachAppender(appender)
         appender.stop()
     }
 
     @Test
-    fun `ResponseStatusException logs at ERROR and surfaces its status`() {
+    fun `ResponseStatusException logs at ERROR and Spring still surfaces its status`() {
         val user = createUserWithRole(Role.MEMBER)
 
         mvc.perform(get("/__it/advice/response-status").with(bearer(user)))
             .andExpect(status().isIAmATeapot)
 
-        val errors = appender.list.filter { it.level == Level.ERROR }
-        assertThat(errors).hasSize(1)
-        val event = errors.single()
+        val event = singleErrorEvent()
         assertThat(event.formattedMessage)
-            .contains("GET", "/__it/advice/response-status", "418", "teapot reason")
-        assertThat(event.throwableProxy).isNotNull
-        assertThat(event.throwableProxy.className).contains("ResponseStatusException")
+            .contains("GET", "/__it/advice/response-status", "ResponseStatusException")
+        assertThat(event.throwableProxy.className)
+            .endsWith("ResponseStatusException")
+        assertThat(event.throwableProxy.message).contains("teapot reason")
     }
 
     @Test
@@ -66,28 +65,29 @@ class ExceptionLoggingAdviceIT : UserTestSupport() {
         mvc.perform(get("/__it/advice/access-denied").with(bearer(user)))
             .andExpect(status().isForbidden)
 
-        val errors = appender.list.filter { it.level == Level.ERROR }
-        assertThat(errors).hasSize(1)
-        val event = errors.single()
+        val event = singleErrorEvent()
         assertThat(event.formattedMessage)
             .contains("GET", "/__it/advice/access-denied", "AuthorizationDeniedException")
-        assertThat(event.throwableProxy.className)
-            .contains("AuthorizationDeniedException")
+        assertThat(event.throwableProxy.className).contains("AuthorizationDeniedException")
     }
 
     @Test
-    fun `unhandled RuntimeException is logged at ERROR`() {
+    fun `unhandled RuntimeException is logged at ERROR with original message`() {
         val user = createUserWithRole(Role.MEMBER)
 
         runCatching {
             mvc.perform(get("/__it/advice/runtime").with(bearer(user)))
         }
 
+        val event = singleErrorEvent()
+        assertThat(event.throwableProxy.className).endsWith("IllegalStateException")
+        assertThat(event.throwableProxy.message).isEqualTo("boom for tests")
+    }
+
+    private fun singleErrorEvent(): ILoggingEvent {
         val errors = appender.list.filter { it.level == Level.ERROR }
         assertThat(errors).hasSize(1)
-        val event = errors.single()
-        assertThat(event.throwableProxy.className).contains("IllegalStateException")
-        assertThat(event.formattedMessage).contains("boom for tests")
+        return errors.single()
     }
 }
 

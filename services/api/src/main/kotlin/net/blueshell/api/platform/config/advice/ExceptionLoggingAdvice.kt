@@ -2,56 +2,45 @@ package net.blueshell.api.platform.config.advice
 
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
-import org.springframework.http.ProblemDetail
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
-import org.springframework.web.server.ResponseStatusException
-import java.net.URI
 
-// Fallback advice: Spring's built-in ResponseStatusExceptionResolver
-// translates ResponseStatusException to an HTTP response silently —
-// no stack trace anywhere — which made unrelated 5xx upload failures
-// invisible in pod logs.
+// Fallback advice that guarantees every exception escaping a
+// controller reaches the logs. The handler is the most generic
+// possible (`Exception`), runs after more specific advices in
+// sibling @RestControllerAdvice classes (LOWEST_PRECEDENCE), and
+// rethrows the original exception so the framework keeps doing its
+// normal job:
 //
-// The Exception handler logs at ERROR and rethrows so the framework
-// keeps doing its normal job: Spring Security's
-// ExceptionTranslationFilter translates AccessDeniedException to 403
-// and AuthenticationException to 401, more specific @ExceptionHandler
-// methods in sibling advices keep precedence (Spring picks the most
-// specific match first), and the default resolvers still produce the
-// appropriate ProblemDetail for framework exceptions. The only effect
-// added here is a guaranteed ERROR log line with a stack trace.
+//   - ResponseStatusException is still translated to its declared
+//     status by ResponseStatusExceptionResolver.
+//   - Spring Security's ExceptionTranslationFilter still maps
+//     AccessDeniedException to 403 or 401 (anonymous), and
+//     AuthenticationException to 401 via the configured entry
+//     point.
+//   - Anything left over reaches the servlet error dispatch and is
+//     surfaced as a 500 ProblemDetail.
+//
+// Without this advice ResponseStatusException was translated
+// silently (no log line, no stack trace), which made banner upload
+// 500s invisible in pod logs.
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE)
 class ExceptionLoggingAdvice {
-    private val log = LoggerFactory.getLogger(javaClass)
-
-    @ExceptionHandler(ResponseStatusException::class)
-    fun handleResponseStatus(
-        ex: ResponseStatusException,
-        request: HttpServletRequest,
-    ): ResponseEntity<ProblemDetail> {
-        log.error(
-            "{} {} -> {} ({})",
-            request.method,
-            request.requestURI,
-            ex.statusCode,
-            ex.reason,
-            ex,
-        )
-        val pd = ex.body
-        pd.instance = URI.create(request.requestURI)
-        MDC.get("traceId")?.let { pd.setProperty("traceId", it) }
-        return ResponseEntity.status(ex.statusCode).headers(ex.headers).body(pd)
-    }
+    private val log = LoggerFactory.getLogger(ExceptionLoggingAdvice::class.java)
 
     @ExceptionHandler(Exception::class)
-    fun handleException(ex: Exception, request: HttpServletRequest): Nothing {
-        log.error("{} {} -> {}", request.method, request.requestURI, ex.javaClass.simpleName, ex)
+    fun logAndRethrow(ex: Exception, request: HttpServletRequest): Nothing {
+        log.error(
+            "{} {} -> {}: {}",
+            request.method,
+            request.requestURI,
+            ex.javaClass.simpleName,
+            ex.message,
+            ex,
+        )
         throw ex
     }
 }

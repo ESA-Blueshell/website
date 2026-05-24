@@ -74,4 +74,24 @@ class Contact(
         syncedNewsletter = newsletter
         syncedIsMember = isMember
     }
+
+    /**
+     * True when the locally stored "last successfully synced" snapshot matches
+     * the supplied desired state. Used by sync handlers to skip a redundant
+     * external API call when an earlier run has already pushed the same data.
+     */
+    fun matchesSnapshot(
+        email: String,
+        firstName: String,
+        lastName: String,
+        phoneNumber: String?,
+        newsletter: Boolean,
+        isMember: Boolean,
+    ): Boolean =
+        syncedEmail == email &&
+            syncedFirstName == firstName &&
+            syncedLastName == lastName &&
+            syncedPhoneNumber == phoneNumber &&
+            syncedNewsletter == newsletter &&
+            syncedIsMember == isMember
 }

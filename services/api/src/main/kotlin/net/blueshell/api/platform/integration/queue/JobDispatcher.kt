@@ -33,7 +33,13 @@ class JobDispatcher(
         actor: Actor?
     ): JobExecution? {
         val dedupKey = job.dedupKey(payload)
-        return enqueue(job.type, payload, actor, dedupKey)
+        return enqueueInternal(
+            jobType = job.type,
+            payload = payload,
+            actor = actor,
+            dedupKey = dedupKey,
+            coalesceAgainstQueuedOnly = job.coalesceAgainstQueuedOnly
+        )
     }
 
     override fun enqueue(
@@ -41,6 +47,20 @@ class JobDispatcher(
         payload: Any?,
         actor: Actor?,
         dedupKey: String?
+    ): JobExecution? = enqueueInternal(
+        jobType = jobType,
+        payload = payload,
+        actor = actor,
+        dedupKey = dedupKey,
+        coalesceAgainstQueuedOnly = false
+    )
+
+    private fun enqueueInternal(
+        jobType: String,
+        payload: Any?,
+        actor: Actor?,
+        dedupKey: String?,
+        coalesceAgainstQueuedOnly: Boolean
     ): JobExecution? {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
         val resolvedActor = actor ?: actorProvider.currentOrSystem()
@@ -48,7 +68,8 @@ class JobDispatcher(
             jobType = jobType,
             payload = payloadJson,
             actor = resolvedActor,
-            dedupKey = dedupKey
+            dedupKey = dedupKey,
+            coalesceAgainstQueuedOnly = coalesceAgainstQueuedOnly
         ) ?: return null
 
         if (properties.autoDispatch) {

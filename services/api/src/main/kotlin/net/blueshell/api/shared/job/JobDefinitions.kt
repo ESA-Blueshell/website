@@ -73,11 +73,15 @@ object ContactJobs {
     object SyncContactToSystem : CommandJobDefinition<SyncContactCommand> {
         override val type: String = "contact.sync-to-system"
         override val payloadType: Class<SyncContactCommand> = SyncContactCommand::class.java
+        // Upstream changes arriving while a run is in flight must enqueue a
+        // successor; the running attempt may have read pre-change state.
+        override val coalesceAgainstQueuedOnly: Boolean = true
     }
 
     object SyncListMembershipToSystem : CommandJobDefinition<SyncListMembershipCommand> {
         override val type: String = "contact.sync-list-to-system"
         override val payloadType: Class<SyncListMembershipCommand> = SyncListMembershipCommand::class.java
+        override val coalesceAgainstQueuedOnly: Boolean = true
     }
 
     data class DispatchContactSyncsPayload(val unused: Unit = Unit)

@@ -270,17 +270,29 @@ spec:
               mountPath: /run/secrets/listmonk
               readOnly: true
       # The api image runs as an Alpine `-S` system user with a
-      # dynamic uid, so we can't fsGroup our way onto the hostPath
-      # mount. Loosen the mount root to 0777 at pod start instead;
-      # traversal from outside is still gated by /srv/blueshell
-      # (0755 root:root, owned by systemd-tmpfiles on the node).
+      # dynamic uid that changes across image rebuilds, so we can't
+      # fsGroup our way onto the hostPath mount. Instead, on every
+      # pod start, walk the volume and force directories to 0777 and
+      # regular files to 0666 (u+rwX,g+rwX,o+rwX — capital X means
+      # +x only on directories and already-executable files). This
+      # makes Files.move into subdirectories like event-banners/
+      # succeed regardless of which dynamic uid wrote them last, and
+      # the setgid bit on directories keeps newly-created subdirs
+      # group-consistent. The init container runs as root on every
+      # pod restart, so reboots and clean reinstalls converge to a
+      # working state without manual intervention. Traversal from
+      # outside is still gated by /srv/blueshell (0755 root:root,
+      # owned by systemd-tmpfiles on the node).
       initContainers:
         - name: storage-perms
           image: busybox:1.37-musl
           command:
             - sh
             - -c
-            - chmod 0777 /srv/storage
+            - |
+              set -e
+              chmod -R u+rwX,g+rwX,o+rwX /srv/storage
+              find /srv/storage -type d -exec chmod g+s {} +
           securityContext:
             runAsUser: 0
           volumeMounts:

@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
-import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -16,10 +15,16 @@ import java.net.URI
 // Fallback advice: Spring's built-in ResponseStatusExceptionResolver
 // translates ResponseStatusException to an HTTP response silently —
 // no stack trace anywhere — which made unrelated 5xx upload failures
-// invisible in pod logs. This advice catches anything more specific
-// advices (validation, optimistic locking, …) do not, logs the full
-// stack trace at ERROR, and returns the same ProblemDetail payload
-// the framework would have produced.
+// invisible in pod logs.
+//
+// The Exception handler logs at ERROR and rethrows so the framework
+// keeps doing its normal job: Spring Security's
+// ExceptionTranslationFilter translates AccessDeniedException to 403
+// and AuthenticationException to 401, more specific @ExceptionHandler
+// methods in sibling advices keep precedence (Spring picks the most
+// specific match first), and the default resolvers still produce the
+// appropriate ProblemDetail for framework exceptions. The only effect
+// added here is a guaranteed ERROR log line with a stack trace.
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE)
 class ExceptionLoggingAdvice {
@@ -45,17 +50,8 @@ class ExceptionLoggingAdvice {
     }
 
     @ExceptionHandler(Exception::class)
-    fun handleException(
-        ex: Exception,
-        request: HttpServletRequest,
-    ): ResponseEntity<ProblemDetail> {
-        log.error("{} {} -> unhandled exception", request.method, request.requestURI, ex)
-        val pd = ProblemDetail.forStatusAndDetail(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "Internal Server Error",
-        )
-        pd.instance = URI.create(request.requestURI)
-        MDC.get("traceId")?.let { pd.setProperty("traceId", it) }
-        return ResponseEntity.internalServerError().body(pd)
+    fun handleException(ex: Exception, request: HttpServletRequest): Nothing {
+        log.error("{} {} -> {}", request.method, request.requestURI, ex.javaClass.simpleName, ex)
+        throw ex
     }
 }

@@ -23,28 +23,28 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 
-@Import(ExceptionLoggingAdviceITConfig::class)
-class ExceptionLoggingAdviceIT : UserTestSupport() {
+@Import(ExceptionLoggingResolverITConfig::class)
+class ExceptionLoggingResolverIT : UserTestSupport() {
 
-    private val adviceLogger =
-        LoggerFactory.getLogger(ExceptionLoggingAdvice::class.java) as Logger
+    private val resolverLogger =
+        LoggerFactory.getLogger(ExceptionLoggingResolver::class.java) as Logger
     private val appender = ListAppender<ILoggingEvent>()
 
     @BeforeEach
     fun attachAppender() {
         appender.list.clear()
         appender.start()
-        adviceLogger.addAppender(appender)
+        resolverLogger.addAppender(appender)
     }
 
     @AfterEach
     fun detachAppender() {
-        adviceLogger.detachAppender(appender)
+        resolverLogger.detachAppender(appender)
         appender.stop()
     }
 
     @Test
-    fun `ResponseStatusException logs at ERROR and Spring still surfaces its status`() {
+    fun `ResponseStatusException is logged at ERROR and surfaces its status`() {
         val user = createUserWithRole(Role.MEMBER)
 
         mvc.perform(get("/__it/advice/response-status").with(bearer(user)))
@@ -53,8 +53,7 @@ class ExceptionLoggingAdviceIT : UserTestSupport() {
         val event = singleErrorEvent()
         assertThat(event.formattedMessage)
             .contains("GET", "/__it/advice/response-status", "ResponseStatusException")
-        assertThat(event.throwableProxy.className)
-            .endsWith("ResponseStatusException")
+        assertThat(event.throwableProxy.className).endsWith("ResponseStatusException")
         assertThat(event.throwableProxy.message).contains("teapot reason")
     }
 
@@ -92,15 +91,15 @@ class ExceptionLoggingAdviceIT : UserTestSupport() {
 }
 
 @TestConfiguration
-class ExceptionLoggingAdviceITConfig {
+class ExceptionLoggingResolverITConfig {
     @Bean
-    fun exceptionLoggingAdviceTestController(): ExceptionLoggingAdviceTestController =
-        ExceptionLoggingAdviceTestController()
+    fun exceptionLoggingResolverTestController(): ExceptionLoggingResolverTestController =
+        ExceptionLoggingResolverTestController()
 }
 
 @RestController
 @RequestMapping("/__it/advice")
-class ExceptionLoggingAdviceTestController {
+class ExceptionLoggingResolverTestController {
     @GetMapping("/response-status")
     @PreAuthorize("isAuthenticated()")
     fun throwResponseStatus(): Nothing {

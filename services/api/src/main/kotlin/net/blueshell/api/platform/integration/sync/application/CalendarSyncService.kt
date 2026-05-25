@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 /**
- * Drives calendar sync to every registered [CalendarSyncTarget].
+ * Drives calendar sync to every registered calendar target.
  *
  * `data == null` (unapproved or soft-deleted) signals removal. Bridges to
  * `Event.googleId` until that column is dropped.
@@ -18,7 +18,7 @@ import java.time.Instant
 @Service
 class CalendarSyncService(
     private val registry: SyncTargetRegistry,
-    private val mappings: ExternalIdMappingService,
+    private val fanOut: SyncFanOut,
     private val events: EventService,
 ) {
     @Transactional
@@ -29,22 +29,20 @@ class CalendarSyncService(
             return
         }
         val isSoftDeleted = event.deletedAt?.isBefore(ACTIVE_ROW_THRESHOLD) == true
-        val present = event.approved && !isSoftDeleted
-        val data = if (present) CalendarEventData(
-            title = event.title,
-            location = event.location,
-            description = event.description,
-            startTime = event.startTime,
-            endTime = event.endTime,
-            approved = true,
-        ) else null
+        val data = if (event.approved && !isSoftDeleted) {
+            CalendarEventData(
+                title = event.title,
+                location = event.location,
+                description = event.description,
+                startTime = event.startTime,
+                endTime = event.endTime,
+                approved = true,
+            )
+        } else null
 
-        registry.forCalendar().forEach { target ->
-            val current = mappings.find(AGGREGATE, eventId, target.system.name)?.externalId
-            val newId = target.push(eventId, data, current)
-            mappings.upsert(AGGREGATE, eventId, target.system.name, newId)
-            if (target.system == TargetSystem.GOOGLE_CALENDAR && !isSoftDeleted) {
-                events.updateCalendarLink(event, newId)
+        fanOut.push(AGGREGATE, eventId, data, registry.forCalendar()) { system, externalId ->
+            if (system == TargetSystem.GOOGLE_CALENDAR && !isSoftDeleted) {
+                events.updateCalendarLink(event, externalId)
             }
         }
     }

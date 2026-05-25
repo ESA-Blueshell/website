@@ -67,8 +67,9 @@ spring:
     events:
       jdbc:
         schema-initialization:
-          enabled: true
+          enabled: false        # owned by Flyway (V59__modulith_event_publication.sql)
       republish-outstanding-events-on-restart: true
+      completion-mode: update   # keep completed rows as an audit trail (default 2.0 is DELETE)
 
   mvc:
     dispatch-options-request: true

@@ -5,7 +5,6 @@ import net.blueshell.api.platform.integration.contact.adapter.ContactData
 import net.blueshell.api.platform.integration.contact.adapter.toContactData
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
-import net.blueshell.api.platform.integration.sync.port.ContactSyncTarget
 import net.blueshell.api.platform.integration.sync.port.SyncTargetRegistry
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.enums.ContactSystem
@@ -14,16 +13,17 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Drives contact sync to every registered [ContactSyncTarget].
+ * Drives contact sync to every registered contact target.
  *
- * Reads the user inside the transaction, fans out, persists each target's
- * external id in `external_id_mapping`. Also bridges to `Contact.externalId`
- * so the list-membership handler keeps working until that column is dropped.
+ * Reads the user inside the transaction and delegates the per-target push +
+ * mapping bookkeeping to [SyncFanOut]. Each push also writes back to
+ * `Contact.externalId` so the legacy list-membership handler keeps working
+ * until that column is dropped.
  */
 @Service
 class ContactSyncService(
     private val registry: SyncTargetRegistry,
-    private val mappings: ExternalIdMappingService,
+    private val fanOut: SyncFanOut,
     private val userService: UserService,
     private val contactRepository: ContactRepository,
 ) {
@@ -38,19 +38,13 @@ class ContactSyncService(
 
     @Transactional
     fun remove(userId: Long) {
-        val contact = contactRepository.findByUserId(userId)
-        if (contact != null) {
-            contactRepository.softDeleteById(contact.id!!)
-        }
+        contactRepository.findByUserId(userId)?.let { contactRepository.softDeleteById(it.id!!) }
         push(userId, null)
     }
 
     private fun push(userId: Long, data: ContactData?) {
-        registry.forContact().forEach { target ->
-            val current = mappings.find(AGGREGATE, userId, target.system.name)?.externalId
-            val newId = target.push(userId, data, current)
-            mappings.upsert(AGGREGATE, userId, target.system.name, newId)
-            bridgeToLegacyContact(userId, target.system, newId)
+        fanOut.push(AGGREGATE, userId, data, registry.forContact()) { system, externalId ->
+            bridgeToLegacyContact(userId, system, externalId)
         }
     }
 

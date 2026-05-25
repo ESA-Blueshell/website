@@ -20,14 +20,22 @@ metadata:
     keel.sh/pollSchedule: '@every 2m'
 spec:
   replicas: 1
-  # maxSurge=0 avoids a second pod pending when the node is near capacity.
-  # The ~30 s gap is hidden behind Traefik's retry; the Spring Boot warm-up
-  # is fast enough that liveness/readiness gates catch any real failure.
+  # Zero-downtime rollout: bring a second pod up first (maxSurge=1) and only
+  # tear the old one down once the new pod's readiness probe reports
+  # ACCEPTING_TRAFFIC (maxUnavailable=0). A broken image — failed Flyway
+  # migration, Vault token miss, anything that keeps /actuator/health/readiness
+  # red — never displaces the healthy old pod, so the rollout silently
+  # ProgressDeadline-stalls instead of taking the api offline.
+  #
+  # progressDeadlineSeconds is generous because Spring Boot's cold start with
+  # Flyway + Hibernate + Vault agent handshake can take several minutes on a
+  # fresh image pull.
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
+      maxSurge: 1
+      maxUnavailable: 0
+  progressDeadlineSeconds: 900
   selector:
     matchLabels:
       app.kubernetes.io/name: api

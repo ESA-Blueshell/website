@@ -48,7 +48,6 @@ class ContributionContactSyncIT : UserTestSupport() {
             .andExpect(status().isCreated)
 
         awaitJobSuccess(ContactJobs.ProcessListMembership.type)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
         awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val lists = mockContactAdapter.getAllLists()
@@ -79,7 +78,6 @@ class ContributionContactSyncIT : UserTestSupport() {
             .andExpect(status().isCreated)
 
         awaitJobSuccess(ContactJobs.ProcessListMembership.type)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
         awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val listId = mockContactAdapter.getAllLists().keys.single()

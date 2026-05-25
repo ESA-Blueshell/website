@@ -2,27 +2,18 @@ package net.blueshell.api.platform.integration.contact.application.job
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.platform.integration.sync.application.ContactSyncService
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.SyncContactCommand
-import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
-/**
- * Iterates all users and enqueues per-integration contact sync jobs for each.
- *
- * Replaces the inline loop in [ContactSyncScheduler]: the scheduler now simply
- * enqueues one [ContactJobs.DispatchContactSyncs] job, and this handler performs the
- * tracked, retryable iteration so that individual failures are visible in the job log.
- */
+/** Daily bulk refresh of every user's contact state across all targets. */
 @Component
 class DispatchContactSyncsJob(
     objectMapper: ObjectMapper,
     private val userService: UserService,
-    private val contactAdapters: List<ContactAdapter>,
-    private val jobs: TrackedJobDispatcher,
+    private val contactSync: ContactSyncService,
 ) : AbstractJsonJobHandler<ContactJobs.DispatchContactSyncsPayload>(
     objectMapper,
     ContactJobs.DispatchContactSyncs.payloadType,
@@ -31,15 +22,10 @@ class DispatchContactSyncsJob(
 
     override fun handlePayload(payload: ContactJobs.DispatchContactSyncsPayload) {
         val users = userService.findAll()
-        log.info("Spawning contact sync jobs for {} users × {} systems", users.size, contactAdapters.size)
-
+        log.info("Refreshing contact sync for {} users", users.size)
         users.forEach { user ->
-            contactAdapters.forEach { adapter ->
-                runCatching {
-                    jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(user.id!!, adapter.system))
-                }.onFailure { e ->
-                    log.error("Failed to enqueue contact sync for user {} via {}: {}", user.id, adapter.system, e.message)
-                }
+            runCatching { contactSync.sync(user.id!!) }.onFailure { e ->
+                log.error("Bulk contact sync failed for user {}: {}", user.id, e.message)
             }
         }
     }

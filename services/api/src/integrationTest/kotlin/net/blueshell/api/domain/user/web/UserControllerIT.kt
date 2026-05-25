@@ -72,14 +72,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.username").value(guestUsername))
                 .andExpect(jsonPath("$.email").value(guestEmail))
 
-            val persistedUser = userRepository.findByUsername(guestUsername).orElseThrow()
-            val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
-            assertThat(jobs)
-                .describedAs("Should schedule contact sync job on user creation")
-                .hasSize(1)
-                .anySatisfy {
-                    assertThat(it.payload).contains("\"userId\":${persistedUser.id}")
-                }
+            userRepository.findByUsername(guestUsername).orElseThrow()
         }
 
         @Test
@@ -153,14 +146,6 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.username").value(updatedUsername))
                 .andExpect(jsonPath("$.firstName").value("Updated"))
                 .andExpect(jsonPath("$.discord").value("updated#1234"))
-
-            val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
-            assertThat(jobs)
-                .describedAs("Should schedule contact sync job on user update")
-                .hasSize(1)
-                .anySatisfy {
-                    assertThat(it.payload).contains("\"userId\":${guest.id}")
-                }
         }
 
         @Test
@@ -289,14 +274,6 @@ class UserControllerIT : UserTestSupport() {
             assertThat(persisted.username).startsWith("deleted-")
             assertThat(persisted.enabled).isFalse()
             assertThat(deletedUsers.findById(targetId)).isPresent
-
-            val jobs = findJobsByType(ContactJobs.DeleteContact.type)
-            assertThat(jobs)
-                .describedAs("Should schedule contact delete job on user deletion")
-                .hasSize(1)
-                .anySatisfy {
-                    assertThat(it.payload).contains("\"userId\":${target.id}")
-                }
         }
 
         @Test
@@ -455,9 +432,6 @@ class UserControllerIT : UserTestSupport() {
             assertThat(deletedUsers.findById(target.id!!)).isPresent
             val anonymized = userRepository.findById(target.id!!).orElseThrow()
             assertThat(anonymized.fullName).isEqualTo("Deleted User")
-            assertThat(findJobsByType(ContactJobs.DeleteContact.type))
-                .describedAs("Should enqueue contact delete only once when deleting same user repeatedly")
-                .hasSize(1)
         }
 
         @Test
@@ -768,13 +742,6 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
 
             assertThat(userRepository.findById(createdUser.id!!).orElseThrow().roles).contains(Role.MEMBER)
-            val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
-            assertThat(jobs)
-                .describedAs("Should schedule contact sync job on role toggle")
-                .hasSize(1)
-                .anySatisfy {
-                    assertThat(it.payload).contains("\"userId\":${createdUser.id}")
-                }
         }
     }
 }

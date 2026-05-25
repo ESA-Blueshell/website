@@ -9,6 +9,10 @@ import org.springframework.transaction.annotation.Transactional
 class ExternalIdMappingService(
     private val repository: ExternalIdMappingRepository,
 ) {
+    @Transactional(readOnly = true)
+    fun find(aggregateType: String, aggregateId: Long, system: String): ExternalIdMapping? =
+        repository.findByAggregateTypeAndAggregateIdAndSystem(aggregateType, aggregateId, system)
+
     @Transactional
     fun upsert(aggregateType: String, aggregateId: Long, system: String, externalId: String?) {
         val existing = repository.findByAggregateTypeAndAggregateIdAndSystem(aggregateType, aggregateId, system)

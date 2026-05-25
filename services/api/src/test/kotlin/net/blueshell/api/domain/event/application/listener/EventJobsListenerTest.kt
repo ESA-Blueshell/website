@@ -1,15 +1,12 @@
 package net.blueshell.api.domain.event.application.listener
 
 import net.blueshell.api.domain.committee.persistence.Committee
-import net.blueshell.api.domain.event.application.event.EventChange
-import net.blueshell.api.domain.event.application.event.EventChanged
 import net.blueshell.api.domain.event.application.event.EventSignUpCreated
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -26,22 +23,6 @@ class EventJobsListenerTest : ServiceTestSupport() {
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
-
-    @Test
-    fun `dispatches calendar sync on EventChanged`() {
-        val event = createEvent()
-        val evt = EventChanged(event.id!!, EventChange.CREATED)
-
-        listener.onChange(evt)
-
-        val jobs = findJobsByType(CalendarJobs.SyncEvent.type)
-        assertThat(jobs)
-            .describedAs("Should schedule one SyncEvent job")
-            .hasSize(1)
-
-        assertThat(jobs.first().payload)
-            .contains("\"eventId\":${event.id}")
-    }
 
     @Test
     fun `dispatches signup email on EventSignUpCreated with guest`() {

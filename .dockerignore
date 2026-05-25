@@ -11,7 +11,9 @@ env
 **/node_modules
 **/.yarn/cache
 **/.yarn/install-state.gz
-**/target
+# `**/target` is intentionally absent: no subproject uses Maven, and
+# a `target` directory exists under sync/ as a legitimate Kotlin
+# package (services/api/.../sync/target/contact/...).
 
 # IDE / OS scratch
 **/.idea

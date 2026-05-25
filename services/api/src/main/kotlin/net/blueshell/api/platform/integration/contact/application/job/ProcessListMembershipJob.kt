@@ -3,12 +3,11 @@ package net.blueshell.api.platform.integration.contact.application.job
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
-import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.platform.integration.sync.application.ContactSyncService
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.SyncContactCommand
 import net.blueshell.api.shared.job.SyncListMembershipCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
@@ -29,7 +28,7 @@ class ProcessListMembershipJob(
     private val contactListService: ContactListService,
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
-    private val contactAdapters: List<ContactAdapter>,
+    private val contactSync: ContactSyncService,
     private val listAdapters: List<ContactListAdapter>,
     private val jobs: TrackedJobDispatcher,
 ) : AbstractJsonJobHandler<ContactJobs.ProcessListMembershipPayload>(
@@ -54,13 +53,11 @@ class ProcessListMembershipJob(
 
         if (hasContribution) {
             contactListService.createMembership(contactList.id!!, payload.userId)
-            contactAdapters.forEach { adapter ->
-                jobs.enqueue(ContactJobs.SyncContactToSystem, SyncContactCommand(payload.userId, adapter.system))
-            }
+            contactSync.sync(payload.userId)
             listAdapters.forEach { adapter ->
                 jobs.enqueue(ContactJobs.SyncListMembershipToSystem, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
             }
-            log.debug("Queued contact + add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
+            log.debug("Synced contact + queued add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         } else {
             contactListService.deleteMembership(contactList.id!!, payload.userId)
             listAdapters.forEach { adapter ->

@@ -30,11 +30,13 @@ class SyncContactCommandHandlerTest {
     private val adapter: ContactAdapter = mock()
     private val contactRepository: ContactRepository = mock()
     private val userService: UserService = mock()
+    private val mappings: net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService = mock()
 
     private val handler = SyncContactCommandHandler(
         contactAdapters = listOf(adapter),
         contactRepository = contactRepository,
         userService = userService,
+        mappings = mappings,
     )
 
     private val userId = 42L
@@ -120,6 +122,7 @@ class SyncContactCommandHandlerTest {
             contactAdapters = emptyList(),
             contactRepository = contactRepository,
             userService = userService,
+            mappings = mappings,
         )
 
         assertThrows(NonRetryableJobException::class.java) {

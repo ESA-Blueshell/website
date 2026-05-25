@@ -4,6 +4,7 @@ import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.adapter.toContactData
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -30,6 +31,7 @@ class SyncContactCommandHandler(
     private val contactAdapters: List<ContactAdapter>,
     private val contactRepository: ContactRepository,
     private val userService: UserService,
+    private val mappings: ExternalIdMappingService,
 ) : CommandHandler<SyncContactCommand, Unit> {
 
     override val commandType: KClass<SyncContactCommand> = SyncContactCommand::class
@@ -49,6 +51,7 @@ class SyncContactCommandHandler(
             adapter.deleteContact(externalId)
             contact.clearExternalId(command.system)
             contactRepository.save(contact)
+            mappings.upsert("USER", userId, command.system.name, null)
             log.info("Deleted {} contact for user {}", command.system, userId)
             return
         }
@@ -63,11 +66,13 @@ class SyncContactCommandHandler(
             record.setExternalId(command.system, newId)
             record.updateSnapshot(data.email, data.firstName, data.lastName, data.phoneNumber, data.newsletter, data.isMember)
             contactRepository.save(record)
+            mappings.upsert("USER", userId, command.system.name, newId.toString())
             log.info("Created {} contact for user {}", command.system, userId)
         } else {
             adapter.updateContact(existingId, data)
             record.updateSnapshot(data.email, data.firstName, data.lastName, data.phoneNumber, data.newsletter, data.isMember)
             contactRepository.save(record)
+            mappings.upsert("USER", userId, command.system.name, existingId.toString())
             log.debug("Updated {} contact for user {}", command.system, userId)
         }
     }

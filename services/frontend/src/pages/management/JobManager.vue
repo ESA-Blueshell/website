@@ -5,6 +5,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {JobExecutionCategory, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
 import store from "@/plugins/store"
+import {attemptsLabel} from "@/utils/jobAttempts"
 
 defineOptions({name: "JobManagerPage"})
 
@@ -233,11 +234,6 @@ const formatDateNoSeconds = (value?: string): string => {
     hour: "2-digit",
     minute: "2-digit",
   })
-}
-
-const attemptsLabel = (attempts?: number): string => {
-  const count = (attempts ?? 0) + 1
-  return `${count} ${count === 1 ? "attempt" : "attempts"}`
 }
 
 const relatedEntityTypeLabel = (type?: string): string => {

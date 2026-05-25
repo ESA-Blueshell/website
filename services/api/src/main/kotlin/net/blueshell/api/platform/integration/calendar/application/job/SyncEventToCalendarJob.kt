@@ -5,6 +5,7 @@ import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.calendar.CalendarAdapter
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.shared.job.CalendarEventRef
 import net.blueshell.api.shared.job.CalendarJobs
 import org.slf4j.LoggerFactory
@@ -21,7 +22,8 @@ import java.time.Instant
 class SyncEventToCalendarJob(
     objectMapper: ObjectMapper,
     private val calendarAdapter: CalendarAdapter,
-    private val events: EventService
+    private val events: EventService,
+    private val mappings: ExternalIdMappingService,
 ) : AbstractJsonJobHandler<CalendarEventRef>(objectMapper, CalendarJobs.SyncEvent.payloadType) {
     override val jobType: String = CalendarJobs.SyncEvent.type
 
@@ -53,6 +55,7 @@ class SyncEventToCalendarJob(
         if (!isSoftDeleted) {
             events.updateCalendarLink(event, ref?.externalId)
         }
+        mappings.upsert("EVENT", event.id!!, "GOOGLE_CALENDAR", ref?.externalId)
     }
 
     private fun isDeleted(deletedAt: Instant?): Boolean {

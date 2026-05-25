@@ -39,13 +39,6 @@ object EmailJobs {
     )
 }
 
-object CalendarJobs {
-    object SyncEvent : JobDefinition<CalendarEventRef> {
-        override val type: String = "calendar.sync-event"
-        override val payloadType: Class<CalendarEventRef> = CalendarEventRef::class.java
-    }
-}
-
 object ContactJobs {
     object DispatchContactSyncs : JobDefinition<DispatchContactSyncsPayload> {
         override val type: String = "contact.dispatch-syncs"
@@ -60,19 +53,9 @@ object ContactJobs {
         override fun dedupKey(payload: DispatchListMembershipSyncsPayload): String? = null
     }
 
-    object DeleteContact : JobDefinition<DeleteContactPayload> {
-        override val type: String = "contact.delete"
-        override val payloadType: Class<DeleteContactPayload> = DeleteContactPayload::class.java
-    }
-
     object ProcessListMembership : JobDefinition<ProcessListMembershipPayload> {
         override val type: String = "contact.process-list-membership"
         override val payloadType: Class<ProcessListMembershipPayload> = ProcessListMembershipPayload::class.java
-    }
-
-    object SyncContactToSystem : CommandJobDefinition<SyncContactCommand> {
-        override val type: String = "contact.sync-to-system"
-        override val payloadType: Class<SyncContactCommand> = SyncContactCommand::class.java
     }
 
     object SyncListMembershipToSystem : CommandJobDefinition<SyncListMembershipCommand> {
@@ -83,14 +66,8 @@ object ContactJobs {
     data class DispatchContactSyncsPayload(val unused: Unit = Unit)
     data class DispatchListMembershipSyncsPayload(val unused: Unit = Unit)
 
-    data class DeleteContactPayload(
-        val userId: Long
-    )
-
     data class ProcessListMembershipPayload(
         val userId: Long,
         val periodId: Long
     )
 }
-
-data class CalendarEventRef(val eventId: Long)

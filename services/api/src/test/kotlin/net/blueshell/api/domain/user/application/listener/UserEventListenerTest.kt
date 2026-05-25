@@ -1,10 +1,11 @@
 package net.blueshell.api.domain.user.application.listener
 
-import net.blueshell.api.domain.user.application.event.UserCreated
+import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.domain.committee.persistence.CommitteeMember
+import net.blueshell.api.domain.committee.persistence.repository.CommitteeMemberRepository
 import net.blueshell.api.domain.user.application.event.UserUpdated
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -19,37 +20,23 @@ class UserEventListenerTest : ServiceTestSupport() {
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
 
-    @Test
-    fun `dispatches per-integration contact sync on UserCreated`() {
-        val user = createAndSaveUser("newuser", "newuser@example.com")
-        val event = UserCreated(user.id!!)
-
-        listener.onCreate(event)
-
-        // MockContactIntegrationJobProvider dispatches listmonk.contact.sync
-        val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
-        assertThat(jobs)
-            .describedAs("Should schedule one SyncContactForSystem job")
-            .hasSize(1)
-
-        assertThat(jobs.first().payload)
-            .contains("\"userId\":${user.id}")
-    }
+    @Autowired
+    private lateinit var committeeMemberRepository: CommitteeMemberRepository
 
     @Test
-    fun `dispatches per-integration contact sync on UserUpdated`() {
-        val user = createAndSaveUser("existinguser", "existing@example.com")
-        val event = UserUpdated(user.id!!)
+    fun `removes committee memberships when the user no longer has the MEMBER role`() {
+        val user = createAndSaveUser("former_member", "former@example.com")
+        val committee = persist(Committee(name = "Test Committee ${System.currentTimeMillis()}", description = "x"))
+        val membership = persist(CommitteeMember(user = user, committee = committee))
 
-        listener.onUpdate(event)
+        user.roles = mutableSetOf()
+        persist(user)
 
-        val jobs = findJobsByType(ContactJobs.SyncContactToSystem.type)
-        assertThat(jobs)
-            .describedAs("Should schedule one SyncContactForSystem job")
-            .hasSize(1)
+        listener.onUpdate(UserUpdated(user.id!!))
 
-        assertThat(jobs.first().payload)
-            .contains("\"userId\":${user.id}")
+        assertThat(committeeMemberRepository.findById(membership.id!!))
+            .describedAs("Committee membership should be deleted")
+            .isEmpty
     }
 
     private fun createAndSaveUser(username: String, email: String): User {

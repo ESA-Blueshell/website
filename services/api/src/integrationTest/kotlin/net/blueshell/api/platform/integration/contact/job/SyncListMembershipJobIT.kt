@@ -100,9 +100,6 @@ class SyncListMembershipJobIT : UserTestSupport() {
             objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
 
-        // Wait for per-integration contact sync (needed before list membership sync)
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
-
         val contactList = contactListRepository.findAll().single()
 
         // Wait for per-integration list sync
@@ -126,8 +123,6 @@ class SyncListMembershipJobIT : UserTestSupport() {
             objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
 
-        // Wait for contact sync + list sync to complete
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
         awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val contactId = mockContactAdapter.getAllContacts().keys.single()
@@ -147,7 +142,6 @@ class SyncListMembershipJobIT : UserTestSupport() {
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
-        awaitJobSuccess(ContactJobs.SyncContactToSystem.type)
         awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
 
         val record = contactRepository.findByUserId(user.id!!)!!

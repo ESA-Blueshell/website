@@ -4,11 +4,11 @@ import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.contact.application.job.ProcessListMembershipJob
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
+import net.blueshell.api.platform.integration.sync.application.ContactSyncService
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobDefinition
@@ -35,11 +35,9 @@ class ProcessListMembershipJobTest {
     private val contactListService: ContactListService = mock()
     private val periods: ContributionPeriodService = mock()
     private val contributions: ContributionService = mock()
+    private val contactSync: ContactSyncService = mock()
     private val jobs: TrackedJobDispatcher = mock()
 
-    private val contactAdapter: ContactAdapter = mock<ContactAdapter>().also {
-        whenever(it.system).thenReturn(ContactSystem.LISTMONK)
-    }
     private val listAdapter: ContactListAdapter = mock<ContactListAdapter>().also {
         whenever(it.system).thenReturn(ContactSystem.LISTMONK)
     }
@@ -49,7 +47,7 @@ class ProcessListMembershipJobTest {
         contactListService = contactListService,
         periods = periods,
         contributions = contributions,
-        contactAdapters = listOf(contactAdapter),
+        contactSync = contactSync,
         listAdapters = listOf(listAdapter),
         jobs = jobs,
     )
@@ -74,23 +72,23 @@ class ProcessListMembershipJobTest {
     }
 
     @Test
-    fun `dispatches contact and list sync jobs when user has contribution`() {
+    fun `syncs contact and dispatches one list sync job when user has contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(true)
         whenever(contactListService.createMembership(listId, userId)).thenReturn(true)
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
-        // 2 enqueue calls: 1 contact sync (SyncContactForSystem) + 1 list sync (SyncListMembershipForSystem)
-        verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())
+        verify(contactSync, times(1)).sync(userId)
+        verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
     }
 
     @Test
-    fun `dispatches only list sync job when user has no contribution`() {
+    fun `dispatches only list sync job and does not touch contact sync when user has no contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(false)
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
-        // 1 enqueue call: list sync only (no contact sync when removing)
+        verify(contactSync, never()).sync(any())
         verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
     }
 

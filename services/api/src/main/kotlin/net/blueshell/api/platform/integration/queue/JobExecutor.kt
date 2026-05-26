@@ -85,10 +85,13 @@ class JobExecutor(
             return
         }
 
-        if (execution.attempts >= properties.maxRetries) {
+        // attempts is now the 1-indexed counter of the run that just
+        // finished. With maxRetries == 3 we permit 4 total attempts, so we
+        // give up once the just-failed run is the (maxRetries + 1)th one.
+        if (execution.attempts >= properties.maxRetries + 1) {
             logger.error(
                 "Job execution {} failed after {} attempts; giving up. errorType={}, errorReason={}.",
-                execution.id, execution.attempts + 1, errorType, errorReason, ex
+                execution.id, execution.attempts, errorType, errorReason, ex
             )
             jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace)
             sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
@@ -96,10 +99,13 @@ class JobExecutor(
             return
         }
 
-        val nextAttemptAt = Instant.now().plusMillis(computeBackoffMillis(execution.attempts))
+        // Backoff schedule indexes from 0 = "first failure" so the initial
+        // delay is exactly initialBackoffMillis. attempts is 1-indexed
+        // (1 on the first failure), so subtract one before computing.
+        val nextAttemptAt = Instant.now().plusMillis(computeBackoffMillis(execution.attempts - 1))
         logger.warn(
             "Job execution {} failed (attempt {}/{}). Scheduling retry at {}. errorType={}, errorReason={}.",
-            execution.id, execution.attempts + 1, properties.maxRetries + 1, nextAttemptAt, errorType, errorReason
+            execution.id, execution.attempts, properties.maxRetries + 1, nextAttemptAt, errorType, errorReason
         )
         jobExecutionService.markRetryScheduled(execution, errorType, errorReason, stackTrace, nextAttemptAt)
         sample.stop(
@@ -109,8 +115,9 @@ class JobExecutor(
     }
 
     /**
-     * Exponential backoff. [attemptsSoFar] is the count of completed attempts
-     * (0 after the first failure). Capped at [JobQueueProperties.maxBackoffMillis].
+     * Exponential backoff. [attemptsSoFar] is the number of completed
+     * failures (0 means "this is the first failure, use the base delay").
+     * Capped at [JobQueueProperties.maxBackoffMillis].
      */
     private fun computeBackoffMillis(attemptsSoFar: Int): Long {
         val raw = properties.initialBackoffMillis.toDouble() *

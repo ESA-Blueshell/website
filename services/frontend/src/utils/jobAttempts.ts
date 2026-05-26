@@ -1,12 +1,11 @@
 /**
  * Human label for a job's attempt counter.
  *
- * The server-side `attempts` field is the number of attempts that have already
- * been made (incremented by `JobExecutionService.requeue` and `markRetryScheduled`).
- * The label reflects that number directly — a job that has failed four times shows
- * "4 attempts", a job that has never run shows "0 attempts". The previous
- * implementation added `+ 1`, which made server `attempts=0` show as "1 attempt"
- * and made successful retries look like the counter regressed.
+ * The server-side `attempts` field is the 1-indexed counter of the run that
+ * is currently happening (or about to happen): a freshly enqueued job shows
+ * "1 attempt", a job that has run three times shows "3 attempts", and the
+ * counter ticks up the moment the admin presses retry. The frontend reflects
+ * that value directly.
  */
 export const attemptsLabel = (attempts?: number): string => {
   const count = attempts ?? 0

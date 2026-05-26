@@ -68,7 +68,7 @@ class SyncListenerIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
         val mapping = awaitMapping("USER", user.id!!, TargetSystem.BREVO)
-        val externalId = mapping.externalId!!
+        val externalIdLong = mapping.externalId!!.toLong()
 
         tx.executeWithoutResult { publisher.publishEvent(UserDeleted(user.id!!)) }
 
@@ -80,7 +80,7 @@ class SyncListenerIT : UserTestSupport() {
         }
         assertThat(mockContactAdapter.getAllContacts().keys)
             .describedAs("adapter dropped the contact after the remove job ran")
-            .doesNotContain(externalId)
+            .doesNotContain(externalIdLong)
     }
 
     @Test

@@ -78,9 +78,9 @@ class SyncListenerIT : UserTestSupport() {
             )
             current?.externalId == null
         }
-        assertThat(externalId)
+        assertThat(mockContactAdapter.getAllContacts().keys)
             .describedAs("adapter dropped the contact after the remove job ran")
-            .matches { it !in mockContactAdapter.getAllContacts().keys }
+            .doesNotContain(externalId)
     }
 
     @Test

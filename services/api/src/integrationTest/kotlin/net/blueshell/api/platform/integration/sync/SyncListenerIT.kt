@@ -42,7 +42,7 @@ class SyncListenerIT : UserTestSupport() {
         mockCalendarAdapter.clear()
         mappings.deleteAll()
         jdbc.update("DELETE FROM EVENT_PUBLICATION")
-        jdbc.update("DELETE FROM JOB_EXECUTION")
+        jdbc.update("DELETE FROM job_executions")
     }
 
     @Test

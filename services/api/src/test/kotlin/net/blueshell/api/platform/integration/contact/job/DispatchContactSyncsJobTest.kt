@@ -14,13 +14,18 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.SimpleTransactionStatus
 
 class DispatchContactSyncsJobTest {
 
     private val objectMapper = ObjectMapper()
     private val userService: UserService = mock()
     private val contactSync: ContactSyncService = mock()
-    private val job = DispatchContactSyncsJob(objectMapper, userService, contactSync)
+    private val transactionManager: PlatformTransactionManager = mock<PlatformTransactionManager>().also {
+        whenever(it.getTransaction(org.mockito.kotlin.any())).thenReturn(SimpleTransactionStatus())
+    }
+    private val job = DispatchContactSyncsJob(objectMapper, userService, contactSync, transactionManager)
 
     private fun userWithId(id: Long): User = mock<User>().also {
         whenever(it.id).thenReturn(id)
@@ -56,5 +61,18 @@ class DispatchContactSyncsJobTest {
 
         verify(contactSync, times(1)).sync(eq(1L))
         verify(contactSync, times(1)).sync(eq(2L))
+    }
+
+    @Test
+    fun `opens a fresh transaction per user`() {
+        val users = mutableListOf(userWithId(1L), userWithId(2L), userWithId(3L))
+        whenever(userService.findAll()).thenReturn(users)
+
+        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchContactSyncsPayload()))
+
+        // One getTransaction call per user proves the TransactionTemplate with
+        // REQUIRES_NEW propagation is invoked individually — i.e. a failing sync
+        // can only mark its own transaction rollback-only, not the dispatcher's.
+        verify(transactionManager, times(3)).getTransaction(org.mockito.kotlin.any())
     }
 }

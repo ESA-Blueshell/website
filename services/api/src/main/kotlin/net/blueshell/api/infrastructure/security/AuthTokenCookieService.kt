@@ -19,7 +19,7 @@ class AuthTokenCookieService(
     // Empty default → no `Domain` attribute → host-only cookie (the
     // browser only sends it back to the exact host that set it). Set
     // explicitly in production to e.g. `.esa-blueshell.nl` so the cookie
-    // is sent to every subdomain (vault, headlamp, traefik, listmonk,
+    // is sent to every subdomain (vault, headlamp, traefik,
     // stalwart) — Traefik's forwardAuth needs the cookie to authenticate
     // the request. Local dev uses an empty domain so the cookie still
     // works against `localhost` / `127.0.0.1`.

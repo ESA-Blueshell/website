@@ -45,7 +45,7 @@ class DispatchListMembershipSyncsJobTest {
 
     @Test
     fun `enqueues one SyncListMembershipForSystem job per membership per adapter`() {
-        val adapter1 = adapterFor(ContactSystem.LISTMONK)
+        val adapter1 = adapterFor(ContactSystem.BREVO)
         val adapter2 = adapterFor(ContactSystem.BREVO)
         val job = DispatchListMembershipSyncsJob(objectMapper, contactListMembershipRepository, listOf(adapter1, adapter2), jobs)
 
@@ -60,7 +60,7 @@ class DispatchListMembershipSyncsJobTest {
 
     @Test
     fun `does nothing when no memberships exist`() {
-        val adapter = adapterFor(ContactSystem.LISTMONK)
+        val adapter = adapterFor(ContactSystem.BREVO)
         val job = DispatchListMembershipSyncsJob(objectMapper, contactListMembershipRepository, listOf(adapter), jobs)
 
         whenever(contactListMembershipRepository.findAll()).thenReturn(emptyList())
@@ -72,7 +72,7 @@ class DispatchListMembershipSyncsJobTest {
 
     @Test
     fun `continues when enqueue throws for one membership`() {
-        val adapter = adapterFor(ContactSystem.LISTMONK)
+        val adapter = adapterFor(ContactSystem.BREVO)
         val job = DispatchListMembershipSyncsJob(objectMapper, contactListMembershipRepository, listOf(adapter), jobs)
 
         val memberships = listOf(membershipFor(1L, 10L), membershipFor(2L, 10L))

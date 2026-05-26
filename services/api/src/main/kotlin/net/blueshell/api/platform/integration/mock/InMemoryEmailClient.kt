@@ -6,15 +6,16 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 /**
- * In-memory mock of [net.blueshell.api.platform.integration.email.EmailTransportClient] for the test profile.
+ * In-memory capture mock of [EmailTransportClient] used in the test profile.
  *
- * Captures all sent emails in [sentEmails] for test assertions.
- * Supports [simulateSendFailure] / [stopSimulateSendFailure] for error-path tests.
+ * Sent messages land in [sentEmails] for assertion; [simulateSendFailure]
+ * forces the next `send(...)` to throw. Drop-in replacement for the former
+ * the former MockListmonkEmailClient.
  */
 @Component
 @Primary
 @Profile("test")
-class MockListmonkEmailClient : EmailTransportClient {
+class InMemoryEmailClient : EmailTransportClient {
 
     private val _sentEmails = mutableListOf<SentEmail>()
     val sentEmails: List<SentEmail> get() = _sentEmails.toList()
@@ -46,17 +47,18 @@ class MockListmonkEmailClient : EmailTransportClient {
     ): String {
         if (shouldFail) throw RuntimeException("Simulated send failure")
 
-        val email = SentEmail(
-            toEmail = toEmail,
-            toName = toName,
-            subject = subject,
-            htmlContent = htmlContent,
-            senderName = senderName,
-            senderAddress = senderAddress,
-            replyToAddress = replyToAddress,
+        _sentEmails.add(
+            SentEmail(
+                toEmail = toEmail,
+                toName = toName,
+                subject = subject,
+                htmlContent = htmlContent,
+                senderName = senderName,
+                senderAddress = senderAddress,
+                replyToAddress = replyToAddress,
+            )
         )
-        _sentEmails.add(email)
-        return "<mock-${System.nanoTime()}@listmonk.test>"
+        return "<mock-${System.nanoTime()}@blueshell.test>"
     }
 
     data class SentEmail(

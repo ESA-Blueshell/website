@@ -16,8 +16,7 @@ Examples:
   scripts/seed-vault-from-env.sh \
     ../blueshell-website-old/.env \
     services/api/.db.env \
-    services/api/.api.env \
-    services/listmonk/.listmonk.env
+    services/api/.api.env
 
   scripts/seed-vault-from-env.sh --apply services/api/.db.env services/api/.api.env
 
@@ -99,10 +98,6 @@ append_field() {
       MARIADB_ARGS+=("$field=$value")
       MARIADB_FIELDS+=("$field")
       ;;
-    secret/listmonk)
-      LISTMONK_ARGS+=("$field=$value")
-      LISTMONK_FIELDS+=("$field")
-      ;;
     secret/platform/mail)
       MAIL_ARGS+=("$field=$value")
       MAIL_FIELDS+=("$field")
@@ -139,12 +134,6 @@ write_path() {
       if (( ${#MARIADB_ARGS[@]} > 0 )); then
         args=("${MARIADB_ARGS[@]}")
         fields=("${MARIADB_FIELDS[@]}")
-      fi
-      ;;
-    secret/listmonk)
-      if (( ${#LISTMONK_ARGS[@]} > 0 )); then
-        args=("${LISTMONK_ARGS[@]}")
-        fields=("${LISTMONK_FIELDS[@]}")
       fi
       ;;
     secret/platform/mail)
@@ -329,8 +318,6 @@ API_ARGS=()
 API_FIELDS=()
 MARIADB_ARGS=()
 MARIADB_FIELDS=()
-LISTMONK_ARGS=()
-LISTMONK_FIELDS=()
 MAIL_ARGS=()
 MAIL_FIELDS=()
 EDGE_ARGS=()
@@ -393,25 +380,17 @@ append_field secret/platform/mariadb admin-password "$mariadb_admin_password"
 append_field secret/platform/mariadb legacy-user "$(first_value DATABASE_USERNAME 2>/dev/null || true)"
 append_field secret/platform/mariadb legacy-password "$(first_value DATABASE_PASSWORD 2>/dev/null || true)"
 
-append_field secret/listmonk db-admin-password "$(first_value LISTMONK_DB_ADMIN_PASSWORD 2>/dev/null || first_value LISTMONK_DB_PASSWORD 2>/dev/null || true)"
-append_field secret/listmonk db-password "$(first_value LISTMONK_DB_PASSWORD 2>/dev/null || true)"
-append_field secret/listmonk admin-user "$(first_value LISTMONK_ADMIN_USERNAME 2>/dev/null || true)"
-append_field secret/listmonk admin-password "$(first_value LISTMONK_ADMIN_PASSWORD 2>/dev/null || true)"
-append_field secret/listmonk admin-email "$(first_value LISTMONK_ADMIN_EMAIL 2>/dev/null || true)"
-append_field secret/listmonk api-user "$(first_value LISTMONK_ADMIN_API_USER 2>/dev/null || true)"
-append_field secret/listmonk smtp-password "$(first_value LISTMONK_SMTP_PASSWORD 2>/dev/null || true)"
-
 append_field secret/platform/mail admin-user "$(first_value STALWART_ADMIN_USER 2>/dev/null || true)"
 append_field secret/platform/mail admin-password "$(first_value STALWART_ADMIN_PASSWORD 2>/dev/null || true)"
 append_field secret/platform/mail dkim-private-key "$(first_value DKIM_PRIVATE_KEY 2>/dev/null || true)"
-append_field secret/platform/mail bounce-mailbox-user "$(first_value LISTMONK_BOUNCE_MAILBOX_USERNAME BOUNCE_MAILBOX_USER 2>/dev/null || true)"
-append_field secret/platform/mail bounce-mailbox-password "$(first_value LISTMONK_BOUNCE_MAILBOX_PASSWORD BOUNCE_MAILBOX_PASSWORD 2>/dev/null || true)"
+append_field secret/platform/mail bounce-mailbox-user "$(first_value BOUNCE_MAILBOX_USER EMAIL_BOUNCE_IMAP_USERNAME 2>/dev/null || true)"
+append_field secret/platform/mail bounce-mailbox-password "$(first_value BOUNCE_MAILBOX_PASSWORD EMAIL_BOUNCE_IMAP_PASSWORD 2>/dev/null || true)"
 
 append_field secret/platform/edge cloudflare.dns_api_token "$(first_value CLOUDFLARE_DNS_API_TOKEN CF_DNS_API_TOKEN 2>/dev/null || true)"
 append_field secret/platform/ghcr username "$(first_value GHCR_USERNAME GITHUB_PACKAGE_USERNAME 2>/dev/null || true)"
 append_field secret/platform/ghcr token "$(first_value GHCR_TOKEN GITHUB_PACKAGE_TOKEN 2>/dev/null || true)"
 
-if [[ ${#API_ARGS[@]} -eq 0 && ${#MARIADB_ARGS[@]} -eq 0 && ${#LISTMONK_ARGS[@]} -eq 0 && ${#MAIL_ARGS[@]} -eq 0 && ${#EDGE_ARGS[@]} -eq 0 && ${#GHCR_ARGS[@]} -eq 0 ]]; then
+if [[ ${#API_ARGS[@]} -eq 0 && ${#MARIADB_ARGS[@]} -eq 0 && ${#MAIL_ARGS[@]} -eq 0 && ${#EDGE_ARGS[@]} -eq 0 && ${#GHCR_ARGS[@]} -eq 0 ]]; then
   echo "No mapped secret values were found in the provided environment." >&2
   exit 1
 fi
@@ -425,7 +404,6 @@ echo
 
 write_path secret/api
 write_path secret/platform/mariadb
-write_path secret/listmonk
 write_path secret/platform/mail
 write_path secret/platform/edge
 write_path secret/platform/ghcr

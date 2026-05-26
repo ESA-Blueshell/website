@@ -38,7 +38,7 @@ fun createContributionReminderEmail(
         recipientName = recipient.fullName,
         subject = "Contribution Payment Reminder - Blueshell Esports",
         markdownContent = markdownContent,
-        senderName = "Treasurer of Blueshell",
-        replyTo = "board@blueshell.utwente.nl"
+        senderNameOverride = "Treasurer of Blueshell",
+        replyToOverride = "board@blueshell.utwente.nl"
     )
 }

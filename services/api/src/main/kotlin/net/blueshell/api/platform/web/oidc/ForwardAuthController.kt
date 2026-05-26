@@ -20,8 +20,8 @@ import java.nio.charset.StandardCharsets
 
 /**
  * Called by the Traefik ForwardAuth middleware for every request to a
- * protected admin IngressRoute (vault, headlamp, listmonk, stalwart,
- * traefik). The middleware sends an authenticated GET to this endpoint
+ * protected admin IngressRoute (vault, headlamp, stalwart, traefik).
+ * The middleware sends an authenticated GET to this endpoint
  * with the original request's `X-Forwarded-Host` / `X-Forwarded-Uri`
  * headers and forwards back any `X-User-Id` / `X-User-Groups` headers
  * we set. Traefik's contract is "2xx → forward to the backing service,
@@ -111,7 +111,6 @@ class ForwardAuthController(
             "traefik.esa-blueshell.nl"  to Role.ADMIN,
             "vault.esa-blueshell.nl"    to Role.ADMIN,
             "headlamp.esa-blueshell.nl" to Role.ADMIN,
-            "listmonk.esa-blueshell.nl" to Role.BOARD,
             "stalwart.esa-blueshell.nl" to Role.BOARD,
         )
     }

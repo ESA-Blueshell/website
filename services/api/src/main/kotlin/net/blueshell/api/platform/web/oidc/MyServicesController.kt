@@ -19,7 +19,6 @@ data class ServiceEntry(
 )
 
 private val ALL_SERVICES = listOf(
-    ServiceEntry("listmonk", "Listmonk", "https://listmonk.esa-blueshell.nl", "/icons/listmonk.svg", "Newsletter & mailing"),
     ServiceEntry("stalwart", "Mail admin", "https://stalwart.esa-blueshell.nl", "/icons/stalwart.svg", "Mail server admin"),
     ServiceEntry("headlamp", "Headlamp", "https://headlamp.esa-blueshell.nl", "/icons/headlamp.svg", "Kubernetes dashboard"),
     ServiceEntry("vault", "Vault", "https://vault.esa-blueshell.nl", "/icons/vault.svg", "Secrets management"),
@@ -46,7 +45,7 @@ class MyServicesController {
         val visible = ALL_SERVICES.filter { service ->
             val required = when (service.id) {
                 "headlamp", "vault", "traefik" -> Role.ADMIN
-                "listmonk", "stalwart"         -> Role.BOARD
+                "stalwart"                     -> Role.BOARD
                 else                           -> null
             }
             required == null || principal.hasAuthority(required)

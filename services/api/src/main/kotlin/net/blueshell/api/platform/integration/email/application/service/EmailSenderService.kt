@@ -29,7 +29,10 @@ class EmailSenderService(
     private val eventSignUps: EventSignUpService,
     private val emailService: EmailService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
-    @param:Value($$"${app.url}") private val appUrl: String
+    @param:Value($$"${app.url}") private val appUrl: String,
+    @param:Value($$"${email.from.name}") private val senderName: String,
+    @param:Value($$"${email.from.address}") private val senderAddress: String,
+    @param:Value($$"${email.reply-to}") private val defaultReplyTo: String,
 ) {
     fun sendContributionReminderEmail(userId: Long, contributionPeriodId: Long, jobExecutionId: Long? = null) {
         val reminder = requireExists { reminders.findById(ContributionReminder.Id(userId, contributionPeriodId)) }
@@ -60,9 +63,7 @@ class EmailSenderService(
         deliver(emailContent, "email.recovery", jobExecutionId)
     }
 
-    /**
-     * Render via template service, inject tracking pixel, create outbox record, and send via Listmonk transactional API.
-     */
+    /** Render template, inject tracking pixel, create the outbox record, then hand off to the transport. */
     private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
         val htmlContent = templateService.createEmail(
             emailContent.recipientEmail,
@@ -82,9 +83,9 @@ class EmailSenderService(
                 emailContent.recipientName,
                 emailContent.subject,
                 trackedHtml,
-                emailContent.senderName,
-                emailContent.senderAddress,
-                emailContent.replyTo
+                emailContent.senderNameOverride ?: senderName,
+                senderAddress,
+                emailContent.replyToOverride ?: defaultReplyTo,
             )
             log.info("Sent email to {} subject='{}'", emailContent.recipientEmail, emailContent.subject)
             emailService.markSent(outbox, messageId)

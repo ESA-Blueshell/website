@@ -456,7 +456,7 @@ export type JobExecution = {
     stackTrace?: string;
     startedAt?: string;
     status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'DEAD';
-    targetSystem?: 'LISTMONK' | 'BREVO';
+    targetSystem?: 'BREVO';
     updatedAt?: string;
 };
 

@@ -6,8 +6,9 @@ import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
+/** Test / dev contact target backed by [MockContactAdapter]'s in-memory store. */
 @Component
 @Primary
 @Profile("test | dev")
-class MockListmonkContactSyncTarget(adapter: MockContactAdapter) :
-    ContactAdapterSyncTarget(adapter, TargetSystem.LISTMONK)
+class MockBrevoContactSyncTarget(adapter: MockContactAdapter) :
+    ContactAdapterSyncTarget(adapter, TargetSystem.BREVO)

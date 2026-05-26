@@ -50,7 +50,7 @@ class SyncListenerIT : UserTestSupport() {
         awaitListener { mockContactAdapter.getAllContacts().any { it.value.email == user.email } }
 
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
-            "USER", user.id!!, TargetSystem.LISTMONK.name,
+            "USER", user.id!!, TargetSystem.BREVO.name,
         )
         assertThat(mapping).describedAs("external_id_mapping should hold the new external id").isNotNull
         assertThat(mapping!!.externalId).isNotBlank
@@ -67,7 +67,7 @@ class SyncListenerIT : UserTestSupport() {
 
         awaitListener { externalId !in mockContactAdapter.getAllContacts().keys }
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
-            "USER", user.id!!, TargetSystem.LISTMONK.name,
+            "USER", user.id!!, TargetSystem.BREVO.name,
         )
         assertThat(mapping?.externalId).describedAs("mapping external id is cleared on delete").isNull()
     }

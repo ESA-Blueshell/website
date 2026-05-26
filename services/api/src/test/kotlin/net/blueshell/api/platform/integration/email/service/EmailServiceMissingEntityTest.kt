@@ -38,7 +38,10 @@ class EmailServiceMissingEntityTest {
         eventSignUps = eventSignUps,
         emailService = emailService,
         frontendUrl = "http://localhost:3000",
-        appUrl = "http://localhost:8080"
+        appUrl = "http://localhost:8080",
+        senderName = "Blueshell",
+        senderAddress = "no-reply@esa-blueshell.nl",
+        defaultReplyTo = "sitecie@blueshell.utwente.nl",
     )
 
     @Test

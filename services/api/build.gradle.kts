@@ -79,6 +79,7 @@ dependencies {
     implementation(project(":libs:kotlin-common"))
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
@@ -120,7 +121,6 @@ dependencies {
     implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
     implementation(project(":services:api:clients:brevo"))
-    implementation(project(":services:api:clients:listmonk"))
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
@@ -211,16 +211,6 @@ val brevoLiveTest by tasks.registering(Test::class) {
     classpath = sourceSets["test"].runtimeClasspath
     shouldRunAfter(tasks.test)
     useJUnitPlatform { includeTags("brevo-live") }
-}
-
-val listmonkLiveTest by tasks.registering(Test::class) {
-    description =
-        "Runs live Listmonk API integration tests tagged with @Tag(\"listmonk-live\"). Requires a running Listmonk."
-    group = "verification"
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    shouldRunAfter(tasks.test)
-    useJUnitPlatform { includeTags("listmonk-live") }
 }
 
 tasks.withType<BootRun>().configureEach {

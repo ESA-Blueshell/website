@@ -1,1 +1,0 @@
-../../platform/cluster/flux/apps/stateless/listmonk/setup.py

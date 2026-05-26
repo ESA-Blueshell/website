@@ -100,7 +100,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           yarn-version: ${{ env.YARN_VERSION }}
 
-      - name: Run full OpenAPI regen (Blueshell + Discord + Brevo + Listmonk)
+      - name: Run full OpenAPI regen (Blueshell + Discord + Brevo)
         run: |
           chmod +x ./scripts/generate-openapi-local.sh
           ./scripts/generate-openapi-local.sh

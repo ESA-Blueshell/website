@@ -3,21 +3,39 @@ package net.blueshell.api.platform.integration.sync.listener
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserUpdated
-import net.blueshell.api.platform.integration.sync.application.ContactSyncService
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Component
 
-/** Modulith listener that fans user lifecycle events out to every contact target. */
+/**
+ * Modulith listener that fans user lifecycle events out as queued
+ * per-user contact sync jobs.
+ *
+ * The listener used to call [ContactSyncService.sync] / `.remove` inline,
+ * which meant the Brevo HTTP push happened inside the listener's
+ * transaction and had no retry visibility. Enqueueing the work as a
+ * [ContactJobs.SyncContact] / [ContactJobs.RemoveContact] job keeps the
+ * listener cheap, gives each user-change its own JobExecution row, and
+ * lets the queue's exponential backoff retry transient external
+ * failures without re-running the user-side transaction.
+ */
 @Component
 class ContactSyncListener(
-    private val service: ContactSyncService,
+    private val jobs: TrackedJobDispatcher,
 ) {
     @ApplicationModuleListener
-    fun on(event: UserCreated) = service.sync(event.userId)
+    fun on(event: UserCreated) {
+        jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
+    }
 
     @ApplicationModuleListener
-    fun on(event: UserUpdated) = service.sync(event.userId)
+    fun on(event: UserUpdated) {
+        jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
+    }
 
     @ApplicationModuleListener
-    fun on(event: UserDeleted) = service.remove(event.userId)
+    fun on(event: UserDeleted) {
+        jobs.enqueue(ContactJobs.RemoveContact, ContactJobs.RemoveContactPayload(event.userId))
+    }
 }

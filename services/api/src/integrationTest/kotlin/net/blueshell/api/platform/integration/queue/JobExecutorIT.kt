@@ -33,15 +33,18 @@ class JobExecutorIT : ServiceTestSupport() {
     }
 
     @Test
-    fun `first failure schedules a retry and increments attempts`() {
+    fun `first failure schedules a retry and bumps attempts to 2`() {
         retryingHandler.failForFirstCalls(1)
+        // Enqueue starts attempts at 1 (the initial run is already counted).
         val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"))!!
+        assertThat(execution.attempts).describedAs("initial enqueue counts as attempt 1").isEqualTo(1)
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
         assertThat(updated.status).isEqualTo(JobExecutionStatus.QUEUED)
-        assertThat(updated.attempts).isEqualTo(1)
+        // First failure scheduled a retry → the upcoming attempt is the 2nd.
+        assertThat(updated.attempts).isEqualTo(2)
         assertThat(updated.nextAttemptAt).isNotNull()
         assertThat(updated.errorType).isEqualTo(IllegalStateException::class.java.name)
         assertThat(retryingHandler.invocations()).isEqualTo(1)
@@ -89,7 +92,8 @@ class JobExecutorIT : ServiceTestSupport() {
         assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)
         assertThat(updated.errorType).isEqualTo("NoHandlerRegisteredException")
         assertThat(updated.errorReason).contains("No handler registered for job type test.missing.handler.")
-        assertThat(updated.attempts).isEqualTo(0)
+        // Initial enqueue counts as attempt 1; markDead leaves it untouched.
+        assertThat(updated.attempts).isEqualTo(1)
     }
 
     @Test

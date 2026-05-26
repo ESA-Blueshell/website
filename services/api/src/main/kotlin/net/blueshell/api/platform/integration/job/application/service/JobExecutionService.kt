@@ -37,7 +37,10 @@ class JobExecutionService(
             jobType = jobType,
             status = JobExecutionStatus.QUEUED,
             payload = payload,
-            attempts = 0,
+            // The initial enqueue already counts: attempts represents the
+            // upcoming-or-current run number, so a job that hasn't started
+            // yet shows attempts = 1 in the UI rather than 0.
+            attempts = 1,
             queuedAt = Instant.now(),
             dedupKey = dedupKey,
             initiatedByUserId = actor.userId,

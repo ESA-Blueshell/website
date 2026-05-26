@@ -8,7 +8,6 @@ import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.contact.application.job.ProcessListMembershipJob
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
-import net.blueshell.api.platform.integration.sync.application.ContactSyncService
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobDefinition
@@ -16,6 +15,7 @@ import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -27,7 +27,8 @@ import java.time.LocalDate
  * Unit tests for [ProcessListMembershipJob].
  *
  * No Spring context — instantiate directly with mocks.
- * Verifies that the job dispatches per-adapter contact and list sync jobs.
+ * Verifies that the job enqueues per-adapter list sync jobs plus, when
+ * the user has a contribution, a queued SyncContact job.
  */
 class ProcessListMembershipJobTest {
 
@@ -35,7 +36,6 @@ class ProcessListMembershipJobTest {
     private val contactListService: ContactListService = mock()
     private val periods: ContributionPeriodService = mock()
     private val contributions: ContributionService = mock()
-    private val contactSync: ContactSyncService = mock()
     private val jobs: TrackedJobDispatcher = mock()
 
     private val listAdapter: ContactListAdapter = mock<ContactListAdapter>().also {
@@ -47,7 +47,6 @@ class ProcessListMembershipJobTest {
         contactListService = contactListService,
         periods = periods,
         contributions = contributions,
-        contactSync = contactSync,
         listAdapters = listOf(listAdapter),
         jobs = jobs,
     )
@@ -72,23 +71,24 @@ class ProcessListMembershipJobTest {
     }
 
     @Test
-    fun `syncs contact and dispatches one list sync job when user has contribution`() {
+    fun `enqueues SyncContact and one list sync job when user has contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(true)
         whenever(contactListService.createMembership(listId, userId)).thenReturn(true)
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
-        verify(contactSync, times(1)).sync(userId)
-        verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
+        verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(userId)))
+        // SyncContact + one SyncListMembershipToSystem = two enqueue calls
+        verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())
     }
 
     @Test
-    fun `dispatches only list sync job and does not touch contact sync when user has no contribution`() {
+    fun `dispatches only list sync job and does not enqueue SyncContact when user has no contribution`() {
         whenever(contributions.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(false)
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
-        verify(contactSync, never()).sync(any())
+        verify(jobs, never()).enqueue(eq(ContactJobs.SyncContact), any())
         verify(jobs, times(1)).enqueue(any<JobDefinition<Any>>(), any())
     }
 

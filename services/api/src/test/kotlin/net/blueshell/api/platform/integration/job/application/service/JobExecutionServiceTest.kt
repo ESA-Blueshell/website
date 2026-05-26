@@ -133,7 +133,7 @@ class JobExecutionServiceTest {
      * two retries) and succeeds on the third should end at attempts == 3.
      */
     @Test
-    fun `one successful run leaves attempts at 1; three successful runs at 3`() {
+    fun `one successful run leaves attempts at 1 and three successful runs at 3`() {
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
 
         // One run → 1 attempt

@@ -96,7 +96,6 @@ if [ "$BLUESHELL_ONLY" = "true" ]; then
 else
   download_external_specs
   regen_brevo_client
-  regen_listmonk_client
   normalize_specs
 fi
 

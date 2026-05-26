@@ -8,4 +8,3 @@ resources:
   - bitnami-oci-source.yaml
   - vault
   - mariadb
-  - listmonk-db

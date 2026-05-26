@@ -12,7 +12,7 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.mock.MockListmonkEmailClient
+import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.shared.enums.ResetType
 import net.blueshell.api.shared.enums.Role
@@ -45,7 +45,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
     private lateinit var contributionReminderEmailJob: ContributionReminderEmailJob
 
     @Autowired
-    private lateinit var emailClient: MockListmonkEmailClient
+    private lateinit var emailClient: InMemoryEmailClient
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper

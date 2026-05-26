@@ -1,16 +1,19 @@
 package net.blueshell.api.shared.email
 
 /**
- * Email content DTO used as Anti-Corruption Layer (ADR-019) between domains and platform email system.
+ * Email content prepared by a domain for the platform email transport.
  *
- * Domains build EmailContent objects with markdown body, platform handles rendering and delivery.
+ * The sender address always comes from `email.from.address` configuration —
+ * it has to match what the SMTP relay accepts. The display name and reply-to
+ * default to `email.from.name` / `email.reply-to`; per-flow overrides exist
+ * here for semantic labels like "Treasurer of Blueshell" or board-only reply
+ * addresses on activation emails.
  */
 data class EmailContent(
     val recipientEmail: String,
     val recipientName: String,
     val subject: String,
     val markdownContent: String,
-    val senderName: String = "Blueshell",
-    val senderAddress: String = "no-reply@mg.esa-blueshell.nl",
-    val replyTo: String = "sitecie@blueshell.utwente.nl"
+    val senderNameOverride: String? = null,
+    val replyToOverride: String? = null,
 )

@@ -50,7 +50,6 @@ class ContactSyncService(
 
     private fun bridgeToLegacyContact(userId: Long, system: TargetSystem, externalId: String?) {
         val contactSystem = when (system) {
-            TargetSystem.LISTMONK -> ContactSystem.LISTMONK
             TargetSystem.BREVO -> ContactSystem.BREVO
             else -> return
         }

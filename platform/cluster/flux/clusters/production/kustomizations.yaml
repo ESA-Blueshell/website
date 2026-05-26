@@ -5,11 +5,11 @@
 # apps-data depends on apps-core (Vault HelmRelease needs the VSO CRDs
 # present first) and is self-bootstrapping: the VaultStaticSecret CRs
 # the Bitnami MariaDB and PostgreSQL charts need at startup live next
-# to their HelmReleases (apps/data/{mariadb,listmonk-db}), so once the
+# to their HelmReleases (apps/data/{mariadb}), so once the
 # operator unseals Vault and the bootstrap Job wires up the vso role,
 # VSO materialises both Secrets in-place and the chart upgrades unblock
 # without a manual k8s Secret pre-seed. apps-vso-secrets handles the
-# remaining non-blocking secrets (cloudflare, api, listmonk app config,
+# remaining non-blocking secrets (cloudflare, api,
 # stalwart, ghcr) and only depends on apps-core; VSO retries each CR
 # on its own backoff until Vault is reachable.
 apiVersion: kustomize.toolkit.fluxcd.io/v1

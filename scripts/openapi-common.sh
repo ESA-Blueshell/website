@@ -40,11 +40,6 @@ regen_brevo_client() {
   ./gradlew --no-daemon --build-cache :services:api:clients:brevo:generate
 }
 
-regen_listmonk_client() {
-  echo "Regenerating Listmonk Java client..."
-  ./gradlew --no-daemon --build-cache :services:api:clients:listmonk:generate
-}
-
 # Normalizes the Blueshell API spec in-place. Caller must have written
 # either the normalized spec or its `.raw.json` upstream.
 normalize_api_spec() {

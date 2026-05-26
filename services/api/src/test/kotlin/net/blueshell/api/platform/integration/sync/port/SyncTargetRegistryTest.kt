@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 class SyncTargetRegistryTest {
 
     private val contact = object : ContactSyncTarget {
-        override val system = TargetSystem.LISTMONK
+        override val system = TargetSystem.BREVO
         override fun push(aggregateId: Long, data: ContactData?, currentExternalId: String?) = null
     }
     private val calendar = object : CalendarSyncTarget {

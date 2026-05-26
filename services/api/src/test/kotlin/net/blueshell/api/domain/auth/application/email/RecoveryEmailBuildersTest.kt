@@ -71,7 +71,7 @@ class RecoveryEmailBuildersTest {
         assertThat(emailContent.recipientEmail).isEqualTo(user.email)
         assertThat(emailContent.recipientName).isEqualTo(user.fullName)
         assertThat(emailContent.subject).isEqualTo("Activate your Account")
-        assertThat(emailContent.replyTo).isEqualTo("board@blueshell.utwente.nl")
+        assertThat(emailContent.replyToOverride).isEqualTo("board@blueshell.utwente.nl")
 
         // And: Body contains member-specific activation link
         assertThat(emailContent.markdownContent)

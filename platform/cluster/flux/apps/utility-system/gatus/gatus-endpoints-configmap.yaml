@@ -13,7 +13,7 @@ data:
     #   Those get probed externally so the status page reflects what
     #   a real user sees.
     #
-    # - Admin hosts (Headlamp, Listmonk, Stalwart, Vault) sit behind
+    # - Admin hosts (Headlamp, Stalwart, Vault) sit behind
     #   `forward-auth` and always 401 to anonymous callers. An external
     #   probe can only ever assert "Traefik and the forward-auth
     #   handler are up", which says nothing about whether the backing
@@ -69,13 +69,6 @@ data:
       conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 500"
-    - name: "Listmonk Admin"
-      group: "admin"
-      url: "http://listmonk.default.svc.cluster.local:9000/health"
-      interval: "60s"
-      conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 500"
     - name: "Stalwart Admin"
       group: "admin"
       url: "http://stalwart.mail-system.svc.cluster.local:8080/"
@@ -113,13 +106,6 @@ data:
       interval: "60s"
       conditions:
       - "[CONNECTED] == true"
-    - name: "Postgres"
-      group: "data"
-      url: "tcp://listmonk-db-postgresql.data-system.svc.cluster.local:5432"
-      interval: "60s"
-      conditions:
-      - "[CONNECTED] == true"
-
     # ---------- Mail ports ----------
     # TCP connect from inside the cluster proves stalwart is listening
     # on each port; a real end-to-end SMTP/IMAP handshake from outside

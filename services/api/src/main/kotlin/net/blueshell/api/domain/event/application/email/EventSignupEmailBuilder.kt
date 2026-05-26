@@ -68,6 +68,6 @@ fun createEventSignupEmail(
         recipientName = guest.name,
         subject = "Event Registration Confirmed - ${event.title}",
         markdownContent = markdownContent,
-        senderName = "Blueshell Events"
+        senderNameOverride = "Blueshell Events"
     )
 }

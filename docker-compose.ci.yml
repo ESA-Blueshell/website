@@ -18,10 +18,9 @@ services:
     # Drop the dev source-mount + Playwright cache mounts; the prod
     # image is self-contained.
     volumes: !reset []
-    # The test profile activates MockListmonkEmailClient + the
-    # /test-support outbox endpoint and skips the listmonk-setup
-    # bootstrap dependency; the system-test stack doesn't need the
-    # real Listmonk + Postgres + Stalwart triplet to spin up.
+    # The test profile activates InMemoryEmailClient + the
+    # /test-support outbox endpoint; the system-test stack doesn't
+    # need the real Stalwart MTA to spin up.
     depends_on: !override
       db:
         condition: service_healthy
@@ -44,7 +43,7 @@ services:
       # The api image is built with -Dspring.aot.enabled=true, which
       # bakes the active profile's beans in at build time. The image
       # ships configured for `prod`, so `test`-profiled mocks
-      # (MockListmonkEmailClient, TestSupportController) would be
+      # (InMemoryEmailClient, TestSupportController) would be
       # pruned at runtime — and ProductionSecurityHardeningGuard
       # would still fire because it was scoped to `prod` during AOT.
       # Drop AOT here so Spring re-evaluates @Profile at boot.

@@ -14,7 +14,7 @@ spec:
   routes:
     # Stalwart's HTTP admin/webadmin UI is served at the root of
     # port 8080. Previously we shared `mail-admin.esa-blueshell.nl`
-    # with Listmonk and routed only `/webadmin` here; giving Stalwart
+    # alongside another mail UI and routed only `/webadmin` here; giving Stalwart
     # its own host removes the path-prefix coupling and lets users
     # land on its default UI without remembering the suffix.
     - kind: Rule

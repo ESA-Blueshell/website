@@ -2,5 +2,4 @@ include:
   - services/api/docker-compose.yml
   - services/frontend/docker-compose.yml
   - services/stalwart/docker-compose.yml
-  - services/listmonk/docker-compose.yml
   - services/vault/docker-compose.yml

@@ -107,6 +107,6 @@ fun createMemberActivationEmail(
         recipientName = recipient.fullName,
         subject = "Activate your Account",
         markdownContent = markdownContent,
-        replyTo = "board@blueshell.utwente.nl"
+        replyToOverride = "board@blueshell.utwente.nl"
     )
 }

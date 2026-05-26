@@ -40,7 +40,6 @@ const SERVICE_LABELS: Record<string, string> = {
   "traefik.esa-blueshell.nl": "the Traefik dashboard",
   "vault.esa-blueshell.nl": "Vault",
   "headlamp.esa-blueshell.nl": "Headlamp (Kubernetes dashboard)",
-  "listmonk.esa-blueshell.nl": "Listmonk",
   "stalwart.esa-blueshell.nl": "the Stalwart mail admin",
 }
 

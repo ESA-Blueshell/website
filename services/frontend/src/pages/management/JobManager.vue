@@ -28,7 +28,6 @@ type JobExecutionView = JobExecution & {
 }
 
 const CONTACT_SYSTEM_LABELS: Record<NonNullable<JobExecutionView["targetSystem"]>, string> = {
-  LISTMONK: "Listmonk",
   BREVO: "Brevo",
 }
 

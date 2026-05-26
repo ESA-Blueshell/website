@@ -41,7 +41,7 @@ class EventSignupEmailBuilderTest {
         assertThat(emailContent.recipientEmail).isEqualTo("john@example.com")
         assertThat(emailContent.recipientName).isEqualTo("John Doe")
         assertThat(emailContent.subject).isEqualTo("Event Registration Confirmed - Summer Gaming Tournament")
-        assertThat(emailContent.senderName).isEqualTo("Blueshell Events")
+        assertThat(emailContent.senderNameOverride).isEqualTo("Blueshell Events")
 
         // And: Body contains event details
         assertThat(emailContent.markdownContent)

@@ -27,7 +27,7 @@ import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.domain.user.persistence.repository.UserRepository
 import net.blueshell.api.infrastructure.security.JwtTokenGenerator
-import net.blueshell.api.platform.integration.mock.MockListmonkEmailClient
+import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -74,7 +74,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
     protected lateinit var mapper: ObjectMapper
 
     @Autowired
-    protected lateinit var emailTransportClient: MockListmonkEmailClient
+    protected lateinit var emailTransportClient: InMemoryEmailClient
 
     @Autowired
     protected lateinit var userFactory: UserFactory

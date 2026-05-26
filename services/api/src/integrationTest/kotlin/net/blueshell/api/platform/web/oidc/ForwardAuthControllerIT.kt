@@ -124,12 +124,12 @@ class ForwardAuthControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `board hitting listmonk gets 200 (listmonk requires only board)`() {
+        fun `board hitting stalwart gets 200 (stalwart requires only board)`() {
             val board = createUserWithRole(Role.BOARD)
             mvc.perform(
                 get("/oauth2/forward-auth")
                     .with(bearer(board))
-                    .header("X-Forwarded-Host", "listmonk.esa-blueshell.nl")
+                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
             )
                 .andExpect(status().isOk)
                 .andExpect(header().string("X-User-Id", board.id!!.toString()))
@@ -137,12 +137,12 @@ class ForwardAuthControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `admin hitting listmonk gets 200 — admin inherits board`() {
+        fun `admin hitting stalwart gets 200 — admin inherits board`() {
             val admin = createUserWithRole(Role.ADMIN)
             mvc.perform(
                 get("/oauth2/forward-auth")
                     .with(bearer(admin))
-                    .header("X-Forwarded-Host", "listmonk.esa-blueshell.nl")
+                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
             )
                 .andExpect(status().isOk)
         }

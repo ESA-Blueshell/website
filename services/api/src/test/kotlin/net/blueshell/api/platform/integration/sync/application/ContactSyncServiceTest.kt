@@ -24,7 +24,7 @@ class ContactSyncServiceTest {
     private val userService: UserService = mock()
     private val contactRepository: ContactRepository = mock()
     private val target: ContactSyncTarget = mock<ContactSyncTarget>().also {
-        whenever(it.system).thenReturn(TargetSystem.LISTMONK)
+        whenever(it.system).thenReturn(TargetSystem.BREVO)
     }
     private val registry: SyncTargetRegistry = mock<SyncTargetRegistry>().also {
         whenever(it.forContact()).thenReturn(listOf(target))

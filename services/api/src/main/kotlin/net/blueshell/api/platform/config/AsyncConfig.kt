@@ -21,7 +21,7 @@ class AsyncConfig {
         return executor
     }
 
-    /** Dedicated executor for slow external-API work (Listmonk, Brevo, Google Calendar). */
+    /** Dedicated executor for slow external-API work (Brevo, Google Calendar). */
     @Bean
     fun externalApiExecutor(): TaskExecutor {
         val executor = ThreadPoolTaskExecutor()

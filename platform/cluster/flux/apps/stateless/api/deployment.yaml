@@ -146,59 +146,57 @@ spec:
               value: https://esa-blueshell.nl
             # Leading dot scopes BSH_AUTH (and the future logout cookie)
             # to every subdomain of esa-blueshell.nl. Traefik forwardAuth
-            # on vault/headlamp/listmonk/stalwart/traefik subdomains can't
+            # on vault/headlamp/stalwart/traefik subdomains can't
             # authenticate the user without it (host-only cookie set on
             # esa-blueshell.nl wouldn't be sent to the others).
             - name: AUTH_COOKIE_DOMAIN
               value: .esa-blueshell.nl
             - name: STORAGE_LOCATION
               value: /srv/storage
-            - name: LISTMONK_API_BASE_URL
-              value: http://listmonk.default.svc.cluster.local:9000/api
-            - name: LISTMONK_FROM_ADDRESS
-              value: no-reply@esa-blueshell.nl
-            - name: LISTMONK_REPLY_TO_ADDRESS
-              value: sitecie@esa-blueshell.nl
-            - name: LISTMONK_BOUNCE_MAILBOX_ENABLED
-              value: 'true'
-            - name: LISTMONK_BOUNCE_MAILBOX_HOST
+            # SMTP transport — relay through Stalwart in-cluster.
+            - name: SMTP_HOST
               value: stalwart.mail-system.svc.cluster.local
-            - name: LISTMONK_BOUNCE_MAILBOX_PORT
-              value: '993'
-            - name: LISTMONK_BOUNCE_MAILBOX_TLS
+            - name: SMTP_PORT
+              value: '587'
+            - name: SMTP_STARTTLS
               value: 'true'
-            - name: LISTMONK_BOUNCE_MAILBOX_FOLDER
-              value: INBOX
-            - name: LISTMONK_BOUNCE_MAILBOX_RETURN_PATH
-              value: bounce@esa-blueshell.nl
-            # Listmonk admin credentials synced from Vault via VSO remain the
-            # bootstrap fallback. Once listmonk-setup creates the runtime
-            # listmonk-api-token Secret, the api reads
-            # /run/secrets/listmonk/api-token.env and authenticates as the
-            # dedicated LISTMONK_ADMIN_API_USER instead.
-            - name: LISTMONK_API_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: listmonk-secrets
-                  key: admin-user
-            - name: LISTMONK_API_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: listmonk-secrets
-                  key: admin-password
-            - name: LISTMONK_ADMIN_API_USER
-              valueFrom:
-                secretKeyRef:
-                  name: listmonk-secrets
-                  key: api-user
-                  optional: true
-            - name: LISTMONK_BOUNCE_MAILBOX_USERNAME
+            - name: EMAIL_FROM_ADDRESS
+              value: no-reply@esa-blueshell.nl
+            - name: EMAIL_FROM_NAME
+              value: Blueshell
+            - name: EMAIL_REPLY_TO_ADDRESS
+              value: sitecie@esa-blueshell.nl
+            - name: SMTP_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: stalwart-secrets
                   key: bounce-mailbox-user
                   optional: true
-            - name: LISTMONK_BOUNCE_MAILBOX_PASSWORD
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: bounce-mailbox-password
+                  optional: true
+            # IMAP bounce poller — disabled by default; flip the flag once
+            # the bounce mailbox is provisioned.
+            - name: EMAIL_BOUNCE_IMAP_ENABLED
+              value: 'false'
+            - name: EMAIL_BOUNCE_IMAP_HOST
+              value: stalwart.mail-system.svc.cluster.local
+            - name: EMAIL_BOUNCE_IMAP_PORT
+              value: '993'
+            - name: EMAIL_BOUNCE_IMAP_TLS
+              value: 'true'
+            - name: EMAIL_BOUNCE_IMAP_FOLDER
+              value: INBOX
+            - name: EMAIL_BOUNCE_IMAP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: bounce-mailbox-user
+                  optional: true
+            - name: EMAIL_BOUNCE_IMAP_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: stalwart-secrets
@@ -274,9 +272,6 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /srv/storage
-            - name: listmonk-api-token
-              mountPath: /run/secrets/listmonk
-              readOnly: true
       # The api image runs as an Alpine `-S` system user with a
       # dynamic uid that changes across image rebuilds, so we can't
       # fsGroup our way onto the hostPath mount. Instead, on every
@@ -310,10 +305,6 @@ spec:
         - name: storage
           persistentVolumeClaim:
             claimName: api-storage
-        - name: listmonk-api-token
-          secret:
-            secretName: listmonk-api-token
-            optional: true
 ---
 apiVersion: v1
 kind: Service

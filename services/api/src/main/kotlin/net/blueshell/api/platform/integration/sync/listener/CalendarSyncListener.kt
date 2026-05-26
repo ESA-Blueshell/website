@@ -1,15 +1,24 @@
 package net.blueshell.api.platform.integration.sync.listener
 
 import net.blueshell.api.domain.event.application.event.EventChanged
-import net.blueshell.api.platform.integration.sync.application.CalendarSyncService
+import net.blueshell.api.shared.job.CalendarJobs
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Component
 
-/** Modulith listener that fans event-changed out to every calendar target. */
+/**
+ * Modulith listener that fans event-changed out as a queued per-event
+ * calendar sync job. The Google Calendar HTTP push runs inside the
+ * resulting [CalendarJobs.SyncCalendarEvent] handler with its own
+ * retry schedule, so upstream blips don't propagate into the event's
+ * own transaction.
+ */
 @Component
 class CalendarSyncListener(
-    private val service: CalendarSyncService,
+    private val jobs: TrackedJobDispatcher,
 ) {
     @ApplicationModuleListener
-    fun on(event: EventChanged) = service.sync(event.eventId)
+    fun on(event: EventChanged) {
+        jobs.enqueue(CalendarJobs.SyncCalendarEvent, CalendarJobs.SyncCalendarEventPayload(event.eventId))
+    }
 }

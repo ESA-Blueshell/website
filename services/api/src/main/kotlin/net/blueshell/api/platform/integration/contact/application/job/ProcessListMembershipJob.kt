@@ -6,7 +6,6 @@ import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
-import net.blueshell.api.platform.integration.sync.application.ContactSyncService
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.SyncListMembershipCommand
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -28,7 +27,6 @@ class ProcessListMembershipJob(
     private val contactListService: ContactListService,
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
-    private val contactSync: ContactSyncService,
     private val listAdapters: List<ContactListAdapter>,
     private val jobs: TrackedJobDispatcher,
 ) : AbstractJsonJobHandler<ContactJobs.ProcessListMembershipPayload>(
@@ -53,11 +51,11 @@ class ProcessListMembershipJob(
 
         if (hasContribution) {
             contactListService.createMembership(contactList.id!!, payload.userId)
-            contactSync.sync(payload.userId)
+            jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(payload.userId))
             listAdapters.forEach { adapter ->
                 jobs.enqueue(ContactJobs.SyncListMembershipToSystem, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
             }
-            log.debug("Synced contact + queued add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
+            log.debug("Queued contact sync + add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         } else {
             contactListService.deleteMembership(contactList.id!!, payload.userId)
             listAdapters.forEach { adapter ->

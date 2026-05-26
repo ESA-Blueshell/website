@@ -68,6 +68,11 @@ object ContactJobs {
         override val payloadType: Class<SyncContactPayload> = SyncContactPayload::class.java
     }
 
+    object RemoveContact : JobDefinition<RemoveContactPayload> {
+        override val type: String = "contact.remove"
+        override val payloadType: Class<RemoveContactPayload> = RemoveContactPayload::class.java
+    }
+
     data class DispatchContactSyncsPayload(val unused: Unit = Unit)
     data class DispatchListMembershipSyncsPayload(val unused: Unit = Unit)
 
@@ -77,4 +82,14 @@ object ContactJobs {
     )
 
     data class SyncContactPayload(val userId: Long)
+    data class RemoveContactPayload(val userId: Long)
+}
+
+object CalendarJobs {
+    object SyncCalendarEvent : JobDefinition<SyncCalendarEventPayload> {
+        override val type: String = "calendar.sync-event"
+        override val payloadType: Class<SyncCalendarEventPayload> = SyncCalendarEventPayload::class.java
+    }
+
+    data class SyncCalendarEventPayload(val eventId: Long)
 }

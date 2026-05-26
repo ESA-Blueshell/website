@@ -22,11 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.context.TestPropertySource
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Duration
 
 /** Verifies that publishing user / event domain events drives the queued sync pipeline end-to-end. */
 @SpringBootTest
+@TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
 class SyncListenerIT : UserTestSupport() {
 
     @Autowired private lateinit var publisher: ApplicationEventPublisher

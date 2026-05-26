@@ -266,14 +266,25 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
       default_role="admin"; then
     # `bound_claims` is defence-in-depth: the api already 403s non-admins
     # at /oauth2/authorize. `roles` is emitted as Role.name ("ADMIN").
-    vault write auth/oidc/role/admin \
-      bound_audiences="vault" \
-      allowed_redirect_uris="https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback" \
-      user_claim="sub" \
-      groups_claim="groups" \
-      oidc_scopes="openid,profile,email,groups" \
-      bound_claims='{"roles":["ADMIN"]}' \
-      token_policies="admin"
+    #
+    # bound_claims must arrive at Vault as a map, not a JSON-encoded
+    # string. `vault write key=value` always serialises the value as a
+    # string, so the entire role payload is posted as a JSON request
+    # body via `@-` (read from stdin) instead — that keeps the nested
+    # object typed correctly. Without this the OIDC plugin rejects
+    # the write with: `error converting input for field "bound_claims":
+    # '' expected a map, got 'string'`.
+    vault write auth/oidc/role/admin - <<'JSON'
+{
+  "bound_audiences": "vault",
+  "allowed_redirect_uris": "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback",
+  "user_claim": "sub",
+  "groups_claim": "groups",
+  "oidc_scopes": "openid,profile,email,groups",
+  "bound_claims": {"roles": ["ADMIN"]},
+  "token_policies": "admin"
+}
+JSON
   else
     echo "auth/oidc/config write failed (api OIDC discovery URL likely not"
     echo "reachable yet — fresh cluster, apps-stateless not Ready). Skipping"

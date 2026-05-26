@@ -160,14 +160,42 @@ login for operator reference, store it separately as
 
 ### Stalwart mail server
 
+`secret/platform/mail` holds three logically separate identities. They
+share a KV path but they're three different Stalwart principals:
+
+| Key pair                                | Principal                                | Used by                                       |
+|-----------------------------------------|------------------------------------------|-----------------------------------------------|
+| `admin-user` / `admin-password`         | Stalwart fallback-admin                  | Stalwart container only (mail-admin web UI, CLI) |
+| `api-user` / `api-password`             | SMTP submission account (`api@…`)        | api pod — `SMTP_USERNAME` / `SMTP_PASSWORD`   |
+| `bounce-mailbox-user` / `…-password`    | IMAP bounce mailbox (`bounce@…`)         | api pod — `EMAIL_BOUNCE_IMAP_USERNAME` / `…_PASSWORD` |
+
+The admin credential is intentionally not exposed to the api: a
+compromised api token must not yield the mail-server admin. Submission
+and bounce reads run as separate low-privilege principals.
+
 ```bash
 vault kv put secret/platform/mail \
   admin-user=admin \
   admin-password=<stalwart-admin-password> \
   dkim-private-key=<base64-encoded-rsa-2048-pem> \
+  api-user=api@esa-blueshell.nl \
+  api-password=<api-smtp-password> \
   bounce-mailbox-user=bounce@esa-blueshell.nl \
   bounce-mailbox-password=<bounce-mailbox-password>
 ```
+
+To rotate or seed only the SMTP submission keys without touching the
+other fields, use `scripts/seed-api-smtp-user.sh` — it handles the
+Vault port-forward, generates a password if none is provided, patches
+the path (preserving the other keys), forces VSO to refresh both
+mirrored Secrets, and optionally rolls the api pod.
+
+The `api-user` principal must be authorised in Stalwart to send
+envelope-from `no-reply@esa-blueshell.nl` (the only address the api
+code ever uses as `MAIL FROM` — display names and Reply-To vary, but
+the envelope sender is constant). Reply-To headers reference
+`sitecie@esa-blueshell.nl` and `board@blueshell.utwente.nl`; those are
+header values only, no authorisation needed.
 
 ### API third-party secrets
 

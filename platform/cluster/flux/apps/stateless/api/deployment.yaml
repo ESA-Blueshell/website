@@ -166,17 +166,22 @@ spec:
               value: Blueshell
             - name: EMAIL_REPLY_TO_ADDRESS
               value: sitecie@esa-blueshell.nl
+            # SMTP submission runs as a dedicated Stalwart principal
+            # (`api@esa-blueshell.nl`) authorised to send envelope-from
+            # `no-reply@esa-blueshell.nl`. The bounce-mailbox account
+            # stays on its own keys below — different principal, different
+            # blast radius.
             - name: SMTP_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: stalwart-secrets
-                  key: bounce-mailbox-user
+                  key: api-user
                   optional: true
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: stalwart-secrets
-                  key: bounce-mailbox-password
+                  key: api-password
                   optional: true
             # IMAP bounce poller — disabled by default; flip the flag once
             # the bounce mailbox is provisioned.

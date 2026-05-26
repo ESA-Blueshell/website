@@ -63,6 +63,11 @@ object ContactJobs {
         override val payloadType: Class<SyncListMembershipCommand> = SyncListMembershipCommand::class.java
     }
 
+    object SyncContact : JobDefinition<SyncContactPayload> {
+        override val type: String = "contact.sync"
+        override val payloadType: Class<SyncContactPayload> = SyncContactPayload::class.java
+    }
+
     data class DispatchContactSyncsPayload(val unused: Unit = Unit)
     data class DispatchListMembershipSyncsPayload(val unused: Unit = Unit)
 
@@ -70,4 +75,6 @@ object ContactJobs {
         val userId: Long,
         val periodId: Long
     )
+
+    data class SyncContactPayload(val userId: Long)
 }

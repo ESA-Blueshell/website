@@ -9,10 +9,7 @@ import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
-import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.CalendarJobs
-import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
@@ -25,7 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Duration
 
-/** Verifies that publishing user / event domain events drives the queued sync pipeline end-to-end. */
+/** Verifies that publishing user / event domain events drives the new sync pipeline end-to-end. */
 @SpringBootTest
 class SyncListenerIT : UserTestSupport() {
 
@@ -42,17 +39,15 @@ class SyncListenerIT : UserTestSupport() {
         mockCalendarAdapter.clear()
         mappings.deleteAll()
         jdbc.update("DELETE FROM EVENT_PUBLICATION")
-        jdbc.update("DELETE FROM JOB_EXECUTION")
     }
 
     @Test
-    fun `publishing UserCreated enqueues a SyncContact job that pushes to every contact target`() {
+    fun `publishing UserCreated pushes the user to every contact target`() {
         val user = createUserWithRole(Role.MEMBER)
 
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
 
-        awaitJobSuccess(ContactJobs.SyncContact.type)
-        awaitCondition { mockContactAdapter.getAllContacts().any { it.value.email == user.email } }
+        awaitListener { mockContactAdapter.getAllContacts().any { it.value.email == user.email } }
 
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
             "USER", user.id!!, TargetSystem.BREVO.name,
@@ -62,17 +57,15 @@ class SyncListenerIT : UserTestSupport() {
     }
 
     @Test
-    fun `publishing UserDeleted enqueues a RemoveContact job that clears every contact target`() {
+    fun `publishing UserDeleted removes the user from every contact target`() {
         val user = createUserWithRole(Role.MEMBER)
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
-        awaitJobSuccess(ContactJobs.SyncContact.type)
-        awaitCondition { mockContactAdapter.getAllContacts().isNotEmpty() }
+        awaitListener { mockContactAdapter.getAllContacts().isNotEmpty() }
         val externalId = mockContactAdapter.getAllContacts().keys.single()
 
         tx.executeWithoutResult { publisher.publishEvent(UserDeleted(user.id!!)) }
 
-        awaitJobSuccess(ContactJobs.RemoveContact.type)
-        awaitCondition { externalId !in mockContactAdapter.getAllContacts().keys }
+        awaitListener { externalId !in mockContactAdapter.getAllContacts().keys }
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
             "USER", user.id!!, TargetSystem.BREVO.name,
         )
@@ -80,12 +73,11 @@ class SyncListenerIT : UserTestSupport() {
     }
 
     @Test
-    fun `publishing EventChanged enqueues a SyncCalendarEvent job that pushes the approved event`() {
+    fun `publishing EventChanged pushes the approved event to the calendar target`() {
         val event: Event = createEventFixture()
         tx.executeWithoutResult { publisher.publishEvent(EventChanged(event.id!!, EventChange.CREATED)) }
 
-        awaitJobSuccess(CalendarJobs.SyncCalendarEvent.type)
-        awaitCondition { mockCalendarAdapter.getAllEvents().isNotEmpty() }
+        awaitListener { mockCalendarAdapter.getAllEvents().isNotEmpty() }
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
             "EVENT", event.id!!, TargetSystem.GOOGLE_CALENDAR.name,
         )
@@ -93,10 +85,10 @@ class SyncListenerIT : UserTestSupport() {
     }
 
     @Test
-    fun `Modulith writes an event_publication row that completes after the listener enqueues`() {
+    fun `Modulith writes an event_publication row that completes after the listener succeeds`() {
         val user = createUserWithRole(Role.MEMBER)
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
-        awaitJobSuccess(ContactJobs.SyncContact.type)
+        awaitListener { mockContactAdapter.getAllContacts().isNotEmpty() }
 
         val rows = jdbc.queryForList(
             "SELECT LISTENER_ID, COMPLETION_DATE FROM EVENT_PUBLICATION WHERE EVENT_TYPE = ?",
@@ -110,26 +102,7 @@ class SyncListenerIT : UserTestSupport() {
             .isNotNull
     }
 
-    private fun awaitCondition(condition: () -> Boolean) {
-        await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(50)).until(condition)
-    }
-
-    private fun awaitJobSuccess(
-        jobType: String,
-        expectedCount: Int = 1,
-        timeoutMs: Long = 10_000,
-        pollMs: Long = 100,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val successCount = findJobsByType(jobType).count { it.status == JobExecutionStatus.SUCCESS }
-            if (successCount >= expectedCount) return
-            Thread.sleep(pollMs)
-        }
-        val executions = findJobsByType(jobType)
-        val successCount = executions.count { it.status == JobExecutionStatus.SUCCESS }
-        assertThat(successCount)
-            .describedAs("Expected $expectedCount successful $jobType jobs, but found $successCount among $executions")
-            .isGreaterThanOrEqualTo(expectedCount)
+    private fun awaitListener(condition: () -> Boolean) {
+        await().atMost(Duration.ofSeconds(5)).pollInterval(Duration.ofMillis(50)).until(condition)
     }
 }

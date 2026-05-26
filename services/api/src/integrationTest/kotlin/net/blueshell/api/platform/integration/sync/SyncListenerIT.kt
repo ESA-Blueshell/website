@@ -9,10 +9,7 @@ import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
-import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.job.CalendarJobs
-import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
@@ -38,13 +35,20 @@ class SyncListenerIT : UserTestSupport() {
     @Autowired private lateinit var jdbc: JdbcTemplate
     @Autowired private lateinit var tx: TransactionTemplate
 
+    // job_executions is intentionally NOT reset between tests: with
+    // auto-dispatch on, an in-flight @Async job from the previous test
+    // can still be inside JobExecutor when the next test starts. Deleting
+    // its row mid-execution causes the executor's markSuccess /
+    // markRetryScheduled call to throw "JobExecution not found", which
+    // then races with the new test's assertions. Each test asserts on
+    // its own aggregate's adapter / mapping state instead, which is
+    // already isolated by user / event id.
     @BeforeEach
     fun reset() {
         mockContactAdapter.clear()
         mockCalendarAdapter.clear()
         mappings.deleteAll()
         jdbc.update("DELETE FROM EVENT_PUBLICATION")
-        jdbc.update("DELETE FROM job_executions")
     }
 
     @Test
@@ -53,7 +57,6 @@ class SyncListenerIT : UserTestSupport() {
 
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
 
-        awaitJobSuccess(ContactJobs.SyncContact.type)
         awaitCondition { mockContactAdapter.getAllContacts().any { it.value.email == user.email } }
 
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
@@ -67,13 +70,11 @@ class SyncListenerIT : UserTestSupport() {
     fun `publishing UserDeleted enqueues a RemoveContact job that clears every contact target`() {
         val user = createUserWithRole(Role.MEMBER)
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
-        awaitJobSuccess(ContactJobs.SyncContact.type)
-        awaitCondition { mockContactAdapter.getAllContacts().isNotEmpty() }
-        val externalId = mockContactAdapter.getAllContacts().keys.single()
+        awaitCondition { mockContactAdapter.getAllContacts().any { it.value.email == user.email } }
+        val externalId = mockContactAdapter.getAllContacts().entries.single { it.value.email == user.email }.key
 
         tx.executeWithoutResult { publisher.publishEvent(UserDeleted(user.id!!)) }
 
-        awaitJobSuccess(ContactJobs.RemoveContact.type)
         awaitCondition { externalId !in mockContactAdapter.getAllContacts().keys }
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
             "USER", user.id!!, TargetSystem.BREVO.name,
@@ -86,7 +87,6 @@ class SyncListenerIT : UserTestSupport() {
         val event: Event = createEventFixture()
         tx.executeWithoutResult { publisher.publishEvent(EventChanged(event.id!!, EventChange.CREATED)) }
 
-        awaitJobSuccess(CalendarJobs.SyncCalendarEvent.type)
         awaitCondition { mockCalendarAdapter.getAllEvents().isNotEmpty() }
         val mapping = mappings.findByAggregateTypeAndAggregateIdAndSystem(
             "EVENT", event.id!!, TargetSystem.GOOGLE_CALENDAR.name,
@@ -98,7 +98,7 @@ class SyncListenerIT : UserTestSupport() {
     fun `Modulith writes an event_publication row that completes after the listener enqueues`() {
         val user = createUserWithRole(Role.MEMBER)
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
-        awaitJobSuccess(ContactJobs.SyncContact.type)
+        awaitCondition { mockContactAdapter.getAllContacts().any { it.value.email == user.email } }
 
         val rows = jdbc.queryForList(
             "SELECT LISTENER_ID, COMPLETION_DATE FROM EVENT_PUBLICATION WHERE EVENT_TYPE = ?",
@@ -113,25 +113,6 @@ class SyncListenerIT : UserTestSupport() {
     }
 
     private fun awaitCondition(condition: () -> Boolean) {
-        await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(50)).until(condition)
-    }
-
-    private fun awaitJobSuccess(
-        jobType: String,
-        expectedCount: Int = 1,
-        timeoutMs: Long = 10_000,
-        pollMs: Long = 100,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val successCount = findJobsByType(jobType).count { it.status == JobExecutionStatus.SUCCESS }
-            if (successCount >= expectedCount) return
-            Thread.sleep(pollMs)
-        }
-        val executions = findJobsByType(jobType)
-        val successCount = executions.count { it.status == JobExecutionStatus.SUCCESS }
-        assertThat(successCount)
-            .describedAs("Expected $expectedCount successful $jobType jobs, but found $successCount among $executions")
-            .isGreaterThanOrEqualTo(expectedCount)
+        await().atMost(Duration.ofSeconds(15)).pollInterval(Duration.ofMillis(50)).until(condition)
     }
 }

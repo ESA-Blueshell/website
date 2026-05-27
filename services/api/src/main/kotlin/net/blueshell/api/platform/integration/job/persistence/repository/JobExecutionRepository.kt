@@ -11,6 +11,10 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
 
     fun findByJobType(jobType: String): List<JobExecution>
 
+    fun findByJobTypeAndDedupKey(jobType: String, dedupKey: String): List<JobExecution>
+
+    fun findByJobTypeAndPayload(jobType: String, payload: String): List<JobExecution>
+
     fun existsByJobTypeAndDedupKeyAndStatusIn(
         jobType: String,
         dedupKey: String,

@@ -159,6 +159,56 @@ class JobExecutionServiceTest {
         assertThat(thrice.attempts).describedAs("attempts after retry click").isEqualTo(4)
     }
 
+    @Test
+    fun `retryWithSupersede marks same-kind siblings dead and requeues the target`() {
+        val target = jobExecution(100L, dedupKey = "k", status = JobExecutionStatus.FAILED, attempts = 3)
+        val failedSibling = jobExecution(101L, dedupKey = "k", status = JobExecutionStatus.FAILED)
+        val succeededSibling = jobExecution(102L, dedupKey = "k", status = JobExecutionStatus.SUCCESS)
+        val alreadyDead = jobExecution(103L, dedupKey = "k", status = JobExecutionStatus.DEAD)
+        whenever(repository.findByJobTypeAndDedupKey("contact.sync", "k"))
+            .thenReturn(listOf(target, failedSibling, succeededSibling, alreadyDead))
+        whenever(repository.existsById(any())).thenReturn(true)
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] }
+
+        val result = service.retryWithSupersede(target)
+
+        assertThat(result.id).isEqualTo(100L)
+        assertThat(result.status).isEqualTo(JobExecutionStatus.QUEUED)
+        assertThat(result.attempts).isEqualTo(4)
+        assertThat(failedSibling.status).isEqualTo(JobExecutionStatus.DEAD)
+        assertThat(succeededSibling.status).isEqualTo(JobExecutionStatus.DEAD)
+        assertThat(alreadyDead.errorMessage).describedAs("already-dead sibling left untouched").isNull()
+    }
+
+    @Test
+    fun `retryWithSupersede matches siblings by payload when dedupKey is null`() {
+        val target = jobExecution(1L, dedupKey = null, payload = """{"userId":9}""", status = JobExecutionStatus.DEAD)
+        val sibling = jobExecution(2L, dedupKey = null, payload = """{"userId":9}""", status = JobExecutionStatus.FAILED)
+        whenever(repository.findByJobTypeAndPayload("contact.sync", """{"userId":9}"""))
+            .thenReturn(listOf(target, sibling))
+        whenever(repository.existsById(any())).thenReturn(true)
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] }
+
+        service.retryWithSupersede(target)
+
+        assertThat(sibling.status).isEqualTo(JobExecutionStatus.DEAD)
+        assertThat(target.status).isEqualTo(JobExecutionStatus.QUEUED)
+    }
+
+    private fun jobExecution(
+        id: Long,
+        dedupKey: String?,
+        status: JobExecutionStatus,
+        attempts: Int = 1,
+        payload: String? = """{"userId":1}""",
+    ): JobExecution = JobExecution(
+        jobType = "contact.sync",
+        status = status,
+        payload = payload,
+        attempts = attempts,
+        dedupKey = dedupKey,
+    ).apply { this.id = id }
+
     private fun stubPersistence(entity: JobExecution) {
         whenever(repository.existsById(entity.id!!)).thenReturn(true)
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] }

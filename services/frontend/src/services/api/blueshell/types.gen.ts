@@ -455,7 +455,7 @@ export type JobExecution = {
     relatedEntities: Array<JobExecutionRelatedEntity>;
     stackTrace?: string;
     startedAt?: string;
-    status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'DEAD';
+    status: JobExecutionStatus;
     targetSystem?: 'BREVO';
     updatedAt?: string;
 };
@@ -472,6 +472,14 @@ export type JobExecutionRelatedEntity = {
     label: string;
     type: string;
 };
+
+export enum JobExecutionStatus {
+    QUEUED = 'QUEUED',
+    RUNNING = 'RUNNING',
+    SUCCESS = 'SUCCESS',
+    FAILED = 'FAILED',
+    DEAD = 'DEAD'
+}
 
 export type JobStatsDto = {
     avgSuccessDurationSeconds: number;
@@ -3244,7 +3252,7 @@ export type ListData = {
          * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
          */
         sort?: Array<string>;
-        status?: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'DEAD';
+        status?: JobExecutionStatus;
         category?: JobExecutionCategory;
         search?: string;
         initiatedByType?: 'USER' | 'SYSTEM';

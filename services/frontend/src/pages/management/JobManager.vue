@@ -143,10 +143,12 @@ const categoryOptions = computed(() => {
   ]
 })
 
-const statusOptions = [
-  {title: "All statuses", value: "all"},
-  ...Object.values(JobExecutionStatus).map((value) => ({title: titleCase(value), value})),
-]
+const statusOptions = computed(() => {
+  return [
+    {title: "All statuses", value: "all"},
+    ...Object.values(JobExecutionStatus).map((value) => ({title: titleCase(value), value})),
+  ]
+})
 
 const pageRangeLabel = computed<string>(() => {
   if (totalElements.value === 0 || executions.value.length === 0) return `0 of ${totalElements.value}`

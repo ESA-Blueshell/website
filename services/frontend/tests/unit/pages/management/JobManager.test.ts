@@ -35,16 +35,16 @@ vi.mock("@/plugins/store", () => ({
   default: mockStore,
 }))
 
-vi.mock("@/services/api", () => ({
-  JobExecutionCategory: {
-    CALENDAR: "calendar",
-    CONTACT: "contact",
-    EMAIL: "email",
-    OTHER: "other",
-  },
-  list: mockList,
-  retry: mockRetry,
-}))
+vi.mock("@/services/api", async (importOriginal) => {
+  // Keep the real generated enums (JobExecutionCategory, JobExecutionStatus, …)
+  // so the page's filter options stay in sync with the API; stub only the calls.
+  const actual = await importOriginal<typeof import("@/services/api")>()
+  return {
+    ...actual,
+    list: mockList,
+    retry: mockRetry,
+  }
+})
 
 vi.mock("@/plugins/handleNetworkError", () => ({
   $handleNetworkError: mockHandleNetworkError,

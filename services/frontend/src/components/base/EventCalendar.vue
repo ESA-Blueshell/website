@@ -60,7 +60,7 @@
     v-model="displayedMonth"
     :events="calendarEvents"
     :show-adjacent-months="true"
-    :weekdays="[1, 2, 3, 4, 5, 6, 0]"
+    :first-day-of-week="1"
     type="month"
     @click:event="showEvent"
   />

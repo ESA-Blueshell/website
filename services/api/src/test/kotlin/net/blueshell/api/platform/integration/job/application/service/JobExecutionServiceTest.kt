@@ -195,6 +195,26 @@ class JobExecutionServiceTest {
         assertThat(target.status).isEqualTo(JobExecutionStatus.QUEUED)
     }
 
+    @Test
+    fun `retryWithSupersede unions dedup and payload matches without double-marking`() {
+        val target = jobExecution(1L, dedupKey = "k", payload = """{"userId":9}""", status = JobExecutionStatus.FAILED)
+        val dedupSibling = jobExecution(2L, dedupKey = "k", payload = """{"userId":9}""", status = JobExecutionStatus.FAILED)
+        // Same args but enqueued without a dedup key: only reachable via payload match.
+        val payloadOnlySibling = jobExecution(3L, dedupKey = null, payload = """{"userId":9}""", status = JobExecutionStatus.FAILED)
+        whenever(repository.findByJobTypeAndDedupKey("contact.sync", "k"))
+            .thenReturn(listOf(target, dedupSibling))
+        whenever(repository.findByJobTypeAndPayload("contact.sync", """{"userId":9}"""))
+            .thenReturn(listOf(target, dedupSibling, payloadOnlySibling))
+        whenever(repository.existsById(any())).thenReturn(true)
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] }
+
+        service.retryWithSupersede(target)
+
+        assertThat(dedupSibling.status).isEqualTo(JobExecutionStatus.DEAD)
+        assertThat(payloadOnlySibling.status).isEqualTo(JobExecutionStatus.DEAD)
+        assertThat(target.status).isEqualTo(JobExecutionStatus.QUEUED)
+    }
+
     private fun jobExecution(
         id: Long,
         dedupKey: String?,

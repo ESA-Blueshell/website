@@ -250,6 +250,37 @@ class JobManagementControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `retry supersedes dedup-less siblings matched by payload`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            // dedupKey left null on purpose: these must match by payload, which
+            // requires the native LONGTEXT comparison (a derived query never matches).
+            val target = createJobExecutionFixture(jobType = "payload-supersede")
+            target.status = JobExecutionStatus.FAILED
+            target.payload = """{"userId":42}"""
+            jobExecutions.saveAndFlush(target)
+
+            val sibling = createJobExecutionFixture(jobType = "payload-supersede")
+            sibling.status = JobExecutionStatus.FAILED
+            sibling.payload = """{"userId":42}"""
+            jobExecutions.saveAndFlush(sibling)
+
+            val differentArgs = createJobExecutionFixture(jobType = "payload-supersede")
+            differentArgs.status = JobExecutionStatus.FAILED
+            differentArgs.payload = """{"userId":99}"""
+            jobExecutions.saveAndFlush(differentArgs)
+
+            mvc.perform(post("/management/jobs/{id}/retry", target.id).with(bearer(admin)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.status").value("QUEUED"))
+
+            assertThat(jobExecutions.findById(sibling.id!!).orElseThrow().status)
+                .isEqualTo(JobExecutionStatus.DEAD)
+            assertThat(jobExecutions.findById(differentArgs.id!!).orElseThrow().status)
+                .isEqualTo(JobExecutionStatus.FAILED)
+        }
+
+        @Test
         fun `admin cannot retry queued job`() {
             val admin = createUserWithRole(Role.ADMIN)
             val job = createJobExecutionFixture(jobType = "queued-target")

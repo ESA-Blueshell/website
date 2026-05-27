@@ -176,14 +176,17 @@ class JobExecutionService(
     }
 
     private fun supersedeSiblings(execution: JobExecution) {
-        val siblings = when {
-            execution.dedupKey != null ->
-                jobExecutionRepository.findByJobTypeAndDedupKey(execution.jobType, execution.dedupKey!!)
-            execution.payload != null ->
-                jobExecutionRepository.findByJobTypeAndPayload(execution.jobType, execution.payload!!)
-            else -> emptyList()
-        }
-        siblings
+        // Match on both keys and union: a sibling counts as the same kind+args if
+        // it shares the dedup key OR the payload. Jobs that opt out of dedup
+        // (dedupKey == null) are only reachable via the payload match.
+        val byDedup = execution.dedupKey
+            ?.let { jobExecutionRepository.findByJobTypeAndDedupKey(execution.jobType, it) }
+            ?: emptyList()
+        val byPayload = execution.payload
+            ?.let { jobExecutionRepository.findByJobTypeAndPayload(execution.jobType, it) }
+            ?: emptyList()
+        (byDedup + byPayload)
+            .distinctBy { it.id }
             .filter { it.id != execution.id && it.status != JobExecutionStatus.DEAD }
             .forEach {
                 markDead(it, "SupersededByRetry", "Superseded by manual retry of job ${execution.id}")

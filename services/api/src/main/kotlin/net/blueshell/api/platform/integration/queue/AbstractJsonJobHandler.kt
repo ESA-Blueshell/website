@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 
 abstract class AbstractJsonJobHandler<T : Any>(
     private val objectMapper: ObjectMapper,
-    private val payloadType: Class<T>
+    final override val payloadType: Class<T>
 ) : JobHandler {
 
     /**

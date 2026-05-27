@@ -244,12 +244,6 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresAdmin: true},
   },
   {
-    path: "/management/jobs/trigger",
-    name: "jobTrigger",
-    component: () => import("@/pages/management/JobTrigger.vue"),
-    meta: {requiresAuth: true, requiresAdmin: true},
-  },
-  {
     path: "/management/emails",
     name: "emailManager",
     component: () => import("@/pages/management/EmailManager.vue"),

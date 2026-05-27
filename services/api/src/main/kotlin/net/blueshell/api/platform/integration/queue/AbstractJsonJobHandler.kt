@@ -5,7 +5,11 @@ import org.springframework.transaction.annotation.Transactional
 
 abstract class AbstractJsonJobHandler<T : Any>(
     private val objectMapper: ObjectMapper,
-    final override val payloadType: Class<T>
+    // Not `final`: these handlers are @Transactional, so Spring wraps them in
+    // CGLIB proxies. A final getter can't be intercepted, so reading it on the
+    // proxy returns the proxy's uninitialized (null) field instead of delegating
+    // to the target — which left the job catalog without payload types.
+    override val payloadType: Class<T>
 ) : JobHandler {
 
     /**

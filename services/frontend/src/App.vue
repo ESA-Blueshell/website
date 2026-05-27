@@ -229,12 +229,6 @@
             </v-list-item>
             <v-list-item
               v-if="isAdmin"
-              to="/management/jobs/trigger"
-            >
-              Trigger job
-            </v-list-item>
-            <v-list-item
-              v-if="isAdmin"
               to="/management/emails"
             >
               Manage emails

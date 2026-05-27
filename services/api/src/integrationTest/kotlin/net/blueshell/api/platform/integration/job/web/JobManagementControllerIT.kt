@@ -224,19 +224,25 @@ class JobManagementControllerIT : UserTestSupport() {
         fun `retry supersedes other jobs of the same kind and args`() {
             val admin = createUserWithRole(Role.ADMIN)
 
+            // Payloads track the dedup keys: same args share a payload, different
+            // args differ. (Production never has same payload but different dedup
+            // key, since the dedup key is derived from the payload.)
             val target = createJobExecutionFixture(jobType = "supersede-target")
             target.status = JobExecutionStatus.FAILED
             target.dedupKey = "user-1"
+            target.payload = """{"userId":1}"""
             jobExecutions.saveAndFlush(target)
 
             val sibling = createJobExecutionFixture(jobType = "supersede-target")
             sibling.status = JobExecutionStatus.FAILED
             sibling.dedupKey = "user-1"
+            sibling.payload = """{"userId":1}"""
             jobExecutions.saveAndFlush(sibling)
 
             val differentArgs = createJobExecutionFixture(jobType = "supersede-target")
             differentArgs.status = JobExecutionStatus.FAILED
             differentArgs.dedupKey = "user-2"
+            differentArgs.payload = """{"userId":2}"""
             jobExecutions.saveAndFlush(differentArgs)
 
             mvc.perform(post("/management/jobs/{id}/retry", target.id).with(bearer(admin)))

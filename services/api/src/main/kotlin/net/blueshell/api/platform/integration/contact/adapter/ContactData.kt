@@ -31,7 +31,7 @@ fun User.toContactData(): ContactData = ContactData(
  * Domain exception for contact operations.
  * Thrown when contact adapter operations fail.
  */
-class ContactServiceException(
+open class ContactServiceException(
     message: String,
     cause: Throwable? = null
 ) : RuntimeException(message, cause)

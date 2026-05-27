@@ -145,16 +145,19 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         }
 
         @Test
-        fun `ADMIN can enqueue a job`() {
+        fun `ADMIN is authorized to enqueue`() {
             val admin = createUserWithRole(Role.ADMIN)
 
+            // An unknown type yields 400 from the controller, which proves the
+            // request passed authorization (a non-admin is rejected with 403
+            // before the handler runs). Avoids depending on a registered type.
             mvc.perform(
                 post("/management/jobs/enqueue")
                     .with(bearer(admin))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(enqueueBody)
+                    .content("""{"jobType":"does.not.exist","payload":{}}""")
             )
-                .andExpect(status().isOk)
+                .andExpect(status().isBadRequest)
         }
 
         @Test

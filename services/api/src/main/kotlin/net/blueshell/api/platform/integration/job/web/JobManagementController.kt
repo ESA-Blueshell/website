@@ -35,7 +35,7 @@ class JobManagementController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'read')")
     fun list(
         @ParameterObject
-        @PageableDefault(size = PAGE_SIZE, sort = ["createdAt"], direction = Sort.Direction.DESC)
+        @PageableDefault(size = PAGE_SIZE, sort = ["updatedAt"], direction = Sort.Direction.DESC)
         pageable: Pageable,
         @ParameterObject filter: JobExecutionQuery = JobExecutionQuery()
     ): Page<JobExecutionDTO> {
@@ -54,7 +54,7 @@ class JobManagementController(
                 "Only FAILED or DEAD jobs can be retried. Current status: ${execution.status}"
             )
         }
-        val requeued = jobExecutionService.requeue(execution)
+        val requeued = jobExecutionService.retryWithSupersede(execution)
         jobExecutor.executeAsync(requeued.id!!)
         return views.toDto(requeued)
     }
@@ -99,7 +99,7 @@ class JobManagementController(
     companion object {
         private const val PAGE_SIZE = 50
         private val DEFAULT_SORT: Sort = Sort.by(
-            Sort.Order.desc("createdAt"),
+            Sort.Order.desc("updatedAt"),
             Sort.Order.desc("id")
         )
     }

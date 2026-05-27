@@ -3,7 +3,7 @@ import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {JobExecutionCategory, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
+import {JobExecutionCategory, JobExecutionStatus, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
 
@@ -122,17 +122,14 @@ const successRate = computed(() => {
 })
 
 const statusCounts = computed(() => {
-  const counts: Record<string, number> = {
-    QUEUED: 0,
-    RUNNING: 0,
-    SUCCESS: 0,
-    FAILED: 0,
-  }
+  const counts = Object.fromEntries(
+    Object.values(JobExecutionStatus).map((status) => [status, 0]),
+  ) as Record<JobExecutionStatus, number>
 
   for (const execution of executions.value) {
     const status = execution.status
-    if (status && Object.prototype.hasOwnProperty.call(counts, status)) {
-      counts[status] = (counts[status] ?? 0) + 1
+    if (status && status in counts) {
+      counts[status] += 1
     }
   }
 
@@ -146,13 +143,12 @@ const categoryOptions = computed(() => {
   ]
 })
 
-const statusOptions = [
-  {title: "All statuses", value: "all"},
-  {title: "Queued", value: "QUEUED"},
-  {title: "Running", value: "RUNNING"},
-  {title: "Success", value: "SUCCESS"},
-  {title: "Failed", value: "FAILED"},
-]
+const statusOptions = computed(() => {
+  return [
+    {title: "All statuses", value: "all"},
+    ...Object.values(JobExecutionStatus).map((value) => ({title: titleCase(value), value})),
+  ]
+})
 
 const pageRangeLabel = computed<string>(() => {
   if (totalElements.value === 0 || executions.value.length === 0) return `0 of ${totalElements.value}`
@@ -307,7 +303,7 @@ const refresh = async () => {
     const query: JobListQuery = {
       page: Math.max(0, page.value - 1),
       size: PAGE_SIZE,
-      sort: ["createdAt,desc", "id,desc"],
+      sort: ["updatedAt,desc", "id,desc"],
       ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
       ...(selectedStatus.value !== "all" ? {status: selectedStatus.value as JobExecution["status"]} : {}),
       ...(normalizedSearch ? {search: normalizedSearch} : {}),
@@ -755,7 +751,7 @@ onMounted(async () => {
                     </v-chip>
 
                     <v-btn
-                      v-if="execution.status === 'FAILED'"
+                      v-if="execution.status === 'FAILED' || execution.status === 'DEAD'"
                       :data-testid="`job-retry-btn-${execution.id}`"
                       size="small"
                       variant="outlined"

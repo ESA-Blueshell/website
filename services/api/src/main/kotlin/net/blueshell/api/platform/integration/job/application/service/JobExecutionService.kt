@@ -164,6 +164,33 @@ class JobExecutionService(
     }
 
     /**
+     * Manual retry triggered from the admin UI. Marks every other execution of
+     * the same kind and arguments DEAD (so the list collapses to one canonical
+     * job), then requeues this one. The requeue bumps `updatedAt`, so with the
+     * list ordered by most-recent activity the retried job jumps to the top.
+     */
+    @Transactional
+    fun retryWithSupersede(execution: JobExecution): JobExecution {
+        supersedeSiblings(execution)
+        return requeue(execution)
+    }
+
+    private fun supersedeSiblings(execution: JobExecution) {
+        val siblings = when {
+            execution.dedupKey != null ->
+                jobExecutionRepository.findByJobTypeAndDedupKey(execution.jobType, execution.dedupKey!!)
+            execution.payload != null ->
+                jobExecutionRepository.findByJobTypeAndPayload(execution.jobType, execution.payload!!)
+            else -> emptyList()
+        }
+        siblings
+            .filter { it.id != execution.id && it.status != JobExecutionStatus.DEAD }
+            .forEach {
+                markDead(it, "SupersededByRetry", "Superseded by manual retry of job ${execution.id}")
+            }
+    }
+
+    /**
      * Manual retry triggered from the admin UI. Preserves the attempt count
      * (incrementing it) and clears any pending retry schedule so the job runs
      * immediately.

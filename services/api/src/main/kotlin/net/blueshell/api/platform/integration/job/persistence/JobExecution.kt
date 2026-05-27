@@ -20,6 +20,7 @@ import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
         Index(name = "idx_job_executions_status", columnList = "status"),
         Index(name = "idx_job_executions_job_type", columnList = "job_type"),
         Index(name = "idx_job_executions_created_at", columnList = "created_at"),
+        Index(name = "idx_job_executions_updated_at", columnList = "updated_at"),
         Index(name = "idx_job_executions_dedup", columnList = "job_type, dedup_key, status"),
         Index(name = "idx_job_executions_due_retry", columnList = "status, next_attempt_at"),
     ]

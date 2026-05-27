@@ -164,6 +164,56 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
     }
 
+    @Test
+    fun `admin triggers a job from the trigger modal`() {
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
+        TestHelper.clearJobExecutions()
+        val adminId = checkNotNull(TestHelper.findUser(admin.username)?.id) {
+            "Expected the registered admin to have an id"
+        }
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/management/jobs")
+        page.locator("[data-testid='job-manager-trigger-btn']").first().waitFor()
+
+        // Opening the modal loads the catalog of triggerable job types.
+        val typesResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "GET" &&
+                    response.url().contains("/management/jobs/types")
+            },
+        ) {
+            page.locator("[data-testid='job-manager-trigger-btn']").first().click()
+        }
+        assertThat(typesResponse.status()).isEqualTo(200)
+
+        page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
+        page.locator("[data-testid='job-trigger-type']").first().click()
+        page.getByText("Contact Sync", Page.GetByTextOptions().setExact(true)).first().click()
+
+        // The argument input is rendered from the job's reflected payload fields.
+        val userIdField = page.locator("[data-testid='job-trigger-field-userId'] input").first()
+        userIdField.waitFor()
+        userIdField.fill(adminId.toString())
+
+        val enqueueResponse = page.waitForResponse(
+            Predicate { response ->
+                response.request().method() == "POST" &&
+                    response.url().contains("/management/jobs/enqueue")
+            },
+        ) {
+            page.locator("[data-testid='job-trigger-submit']").first().click()
+        }
+        assertThat(enqueueResponse.status()).isEqualTo(200)
+        assertThat(enqueueResponse.text()).contains("\"jobType\":\"contact.sync\"")
+
+        val enqueuedId = Regex("\"id\":(\\d+)").find(enqueueResponse.text())?.groupValues?.get(1)?.toLong()
+        assertThat(enqueuedId).isNotNull()
+        waitForJob(enqueuedId!!) { row -> row.queuedAt != null }
+    }
+
     private fun waitForJob(id: Long, predicate: (TestHelper.JobExecutionRow) -> Boolean) {
         val deadline = System.currentTimeMillis() + 30_000
         while (System.currentTimeMillis() < deadline) {

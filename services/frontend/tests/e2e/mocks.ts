@@ -353,6 +353,27 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         avgSuccessDurationSeconds: 0,
       })
     }
+    if (method === "GET" && path === "/management/jobs/types") {
+      return fulfillJson(route, [
+        {type: "contact.dispatch-syncs", payloadFields: []},
+        {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", required: true}]},
+        {type: "email.recovery", payloadFields: [
+          {name: "userId", type: "Long", required: true},
+          {name: "token", type: "String", required: false},
+        ]},
+      ])
+    }
+    if (method === "POST" && path === "/management/jobs/enqueue") {
+      const body = (route.request().postDataJSON() ?? {}) as {jobType?: string}
+      const enqueued = {
+        id: 9000 + baseJobs.length,
+        jobType: body.jobType ?? "contact.sync",
+        status: "QUEUED",
+        attempts: 1,
+      }
+      baseJobs.unshift(enqueued)
+      return fulfillJson(route, enqueued)
+    }
     if (method === "GET" && path === "/management/jobs") {
       const page = Number(url.searchParams.get("page") ?? "0")
       const size = Number(url.searchParams.get("size") ?? "50")

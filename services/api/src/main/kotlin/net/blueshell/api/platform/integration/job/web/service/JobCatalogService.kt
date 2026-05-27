@@ -9,8 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
 import tools.jackson.databind.ObjectMapper
-import kotlin.reflect.KClass
-import kotlin.reflect.full.primaryConstructor
+import java.lang.reflect.Modifier
 
 /**
  * Backs the manual job-trigger admin page: lists the triggerable job types with
@@ -50,15 +49,33 @@ class JobCatalogService(
             )
         }
 
-    private fun reflectFields(payloadType: Class<*>): List<JobPayloadFieldDTO> {
-        val ctor = payloadType.kotlin.primaryConstructor ?: return emptyList()
-        return ctor.parameters.mapNotNull { param ->
-            val name = param.name ?: return@mapNotNull null
-            JobPayloadFieldDTO(
-                name = name,
-                type = (param.type.classifier as? KClass<*>)?.simpleName ?: param.type.toString(),
-                required = !param.type.isMarkedNullable && !param.isOptional,
-            )
-        }
+    /**
+     * Reflects payload fields via plain Java reflection on the declared fields.
+     * Kotlin keeps the real property names on the backing fields (unlike
+     * constructor parameter names, which need kotlin-reflect), and Java
+     * reflection uses the class's own loader — so this works under the dev
+     * DevTools restart classloader where `KClass.primaryConstructor` returns null.
+     * A non-null Kotlin primitive compiles to a primitive field, which is how we
+     * infer "required".
+     */
+    private fun reflectFields(payloadType: Class<*>): List<JobPayloadFieldDTO> =
+        payloadType.declaredFields
+            .filterNot { it.isSynthetic || Modifier.isStatic(it.modifiers) || it.type == Unit::class.java }
+            .map { field ->
+                JobPayloadFieldDTO(
+                    name = field.name,
+                    type = normalizeType(field.type),
+                    required = field.type.isPrimitive,
+                )
+            }
+
+    private fun normalizeType(type: Class<*>): String = when (type) {
+        java.lang.Long.TYPE -> "Long"
+        Integer.TYPE -> "Int"
+        java.lang.Short.TYPE -> "Short"
+        java.lang.Double.TYPE -> "Double"
+        java.lang.Float.TYPE -> "Float"
+        java.lang.Boolean.TYPE -> "Boolean"
+        else -> type.simpleName
     }
 }

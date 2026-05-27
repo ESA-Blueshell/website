@@ -2,6 +2,7 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
+import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {JobExecutionCategory, JobExecutionStatus, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
 import store from "@/plugins/store"
@@ -256,6 +257,8 @@ const rowStatusClass = (status?: string): string => {
   return ""
 }
 
+const showTriggerDialog = ref<boolean>(false)
+
 const resetToFirstPageAndRefresh = () => {
   expandedRows.value = []
   if (page.value !== 1) {
@@ -263,6 +266,10 @@ const resetToFirstPageAndRefresh = () => {
     return
   }
   void refresh()
+}
+
+const onJobTriggered = () => {
+  resetToFirstPageAndRefresh()
 }
 
 watch([selectedCategory, selectedStatus], () => {
@@ -383,6 +390,11 @@ onMounted(async () => {
 <template>
   <v-main>
     <top-banner title="Job Manager" />
+
+    <job-trigger-dialog
+      v-model="showTriggerDialog"
+      @enqueued="onJobTriggered"
+    />
 
     <div class="mx-3">
       <div
@@ -553,15 +565,24 @@ onMounted(async () => {
               </p>
             </div>
 
-            <v-btn
-              :disabled="loading"
-              color="primary"
-              data-testid="job-manager-refresh-btn"
-              variant="flat"
-              @click="refresh"
-            >
-              Refresh
-            </v-btn>
+            <div class="d-flex ga-2">
+              <v-btn
+                color="primary"
+                data-testid="job-manager-trigger-btn"
+                variant="flat"
+                @click="showTriggerDialog = true"
+              >
+                Trigger job
+              </v-btn>
+              <v-btn
+                :disabled="loading"
+                data-testid="job-manager-refresh-btn"
+                variant="outlined"
+                @click="refresh"
+              >
+                Refresh
+              </v-btn>
+            </div>
           </div>
 
           <div class="manager-card__body">

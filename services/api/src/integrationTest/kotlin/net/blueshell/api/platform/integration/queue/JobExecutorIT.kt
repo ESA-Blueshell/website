@@ -117,6 +117,7 @@ class JobExecutorITConfig {
 
 class RetryingTestJobHandler : JobHandler {
     override val jobType: String = JOB_TYPE
+    override val payloadType: Class<*> = Map::class.java
 
     private val invocationCounter = AtomicInteger(0)
     @Volatile

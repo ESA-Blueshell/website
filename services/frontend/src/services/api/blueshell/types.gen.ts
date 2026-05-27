@@ -332,6 +332,16 @@ export type EmailStats = {
     totalCount: number;
 };
 
+export type EnqueueJobRequest = {
+    jobType: string;
+    /**
+     * Job payload fields keyed by name; shape depends on the job type
+     */
+    payload?: {
+        [key: string]: unknown;
+    };
+};
+
 export type EventBannerRequest = {
     fileId: number;
     version?: number;
@@ -481,6 +491,12 @@ export enum JobExecutionStatus {
     DEAD = 'DEAD'
 }
 
+export type JobPayloadField = {
+    name: string;
+    required: boolean;
+    type: string;
+};
+
 export type JobStatsDto = {
     avgSuccessDurationSeconds: number;
     deadCount: number;
@@ -492,6 +508,11 @@ export type JobStatsDto = {
     runningCount: number;
     successCount: number;
     totalCount: number;
+};
+
+export type JobTypeDescriptor = {
+    payloadFields: Array<JobPayloadField>;
+    type: string;
 };
 
 export type JwtRequest = {
@@ -3295,6 +3316,47 @@ export type ListResponses = {
 
 export type ListResponse = ListResponses[keyof ListResponses];
 
+export type EnqueueData = {
+    body: EnqueueJobRequest;
+    path?: never;
+    query?: never;
+    url: '/management/jobs/enqueue';
+};
+
+export type EnqueueErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EnqueueError = EnqueueErrors[keyof EnqueueErrors];
+
+export type EnqueueResponses = {
+    /**
+     * OK
+     */
+    200: JobExecution;
+};
+
+export type EnqueueResponse = EnqueueResponses[keyof EnqueueResponses];
+
 export type GetStatsData = {
     body?: never;
     path?: never;
@@ -3335,6 +3397,47 @@ export type GetStatsResponses = {
 };
 
 export type GetStatsResponse = GetStatsResponses[keyof GetStatsResponses];
+
+export type JobTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/jobs/types';
+};
+
+export type JobTypesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type JobTypesError = JobTypesErrors[keyof JobTypesErrors];
+
+export type JobTypesResponses = {
+    /**
+     * OK
+     */
+    200: Array<JobTypeDescriptor>;
+};
+
+export type JobTypesResponse = JobTypesResponses[keyof JobTypesResponses];
 
 export type RetryData = {
     body?: never;

@@ -6,6 +6,7 @@ import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -118,6 +119,63 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
             val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
             mvc.perform(post("/management/jobs/{id}/retry", jobId))
+                .andExpect(status().isUnauthorized)
+        }
+    }
+
+    @Nested
+    inner class Catalog {
+
+        private val enqueueBody = """{"jobType":"contact.sync","payload":{"userId":1}}"""
+
+        @Test
+        fun `ADMIN can list job types`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            mvc.perform(get("/management/jobs/types").with(bearer(admin)))
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `denies regular user from listing job types`() {
+            val member = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(get("/management/jobs/types").with(bearer(member)))
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `ADMIN is authorized to enqueue`() {
+            val admin = createUserWithRole(Role.ADMIN)
+
+            // An unknown type yields 400 from the controller, which proves the
+            // request passed authorization (a non-admin is rejected with 403
+            // before the handler runs). Avoids depending on a registered type.
+            mvc.perform(
+                post("/management/jobs/enqueue")
+                    .with(bearer(admin))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"jobType":"does.not.exist","payload":{}}""")
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `denies regular user from enqueuing a job`() {
+            val member = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                post("/management/jobs/enqueue")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(enqueueBody)
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            mvc.perform(get("/management/jobs/types"))
                 .andExpect(status().isUnauthorized)
         }
     }

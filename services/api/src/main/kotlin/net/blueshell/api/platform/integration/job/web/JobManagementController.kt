@@ -3,10 +3,14 @@ package net.blueshell.api.platform.integration.job.web
 import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.platform.integration.job.application.query.JobExecutionQuery
+import jakarta.validation.Valid
 import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
+import net.blueshell.api.platform.integration.job.web.service.JobCatalogService
 import net.blueshell.api.platform.integration.job.web.service.JobExecutionViewService
+import net.blueshell.api.platform.integration.job.web.dto.EnqueueJobRequest
 import net.blueshell.api.platform.integration.job.web.dto.JobExecutionDTO
 import net.blueshell.api.platform.integration.job.web.dto.JobStatsDTO
+import net.blueshell.api.platform.integration.job.web.dto.JobTypeDescriptorDTO
 import net.blueshell.api.platform.integration.queue.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springdoc.core.annotations.ParameterObject
@@ -29,6 +33,7 @@ class JobManagementController(
     private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,
     private val views: JobExecutionViewService,
+    private val jobCatalog: JobCatalogService,
     private val meterRegistry: MeterRegistry
 ) {
     @GetMapping
@@ -58,6 +63,15 @@ class JobManagementController(
         jobExecutor.executeAsync(requeued.id!!)
         return views.toDto(requeued)
     }
+
+    @GetMapping("/types")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'read')")
+    fun jobTypes(): List<JobTypeDescriptorDTO> = jobCatalog.describe()
+
+    @PostMapping("/enqueue")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'write')")
+    fun enqueue(@Valid @RequestBody request: EnqueueJobRequest): JobExecutionDTO =
+        views.toDto(jobCatalog.enqueue(request.jobType, request.payload))
 
     @GetMapping("/stats")
     @PreAuthorize("hasAnyAuthority('BOARD', 'ADMIN')")

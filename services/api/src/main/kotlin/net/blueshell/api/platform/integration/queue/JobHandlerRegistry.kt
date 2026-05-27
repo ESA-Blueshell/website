@@ -9,4 +9,6 @@ class JobHandlerRegistry(handlers: List<JobHandler>) {
     fun get(jobType: String): JobHandler? = handlerMap[jobType]
 
     fun jobTypes(): Set<String> = handlerMap.keys
+
+    fun payloadType(jobType: String): Class<*>? = handlerMap[jobType]?.payloadType
 }

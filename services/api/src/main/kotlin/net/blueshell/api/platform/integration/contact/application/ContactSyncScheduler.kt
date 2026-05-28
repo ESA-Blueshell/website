@@ -16,24 +16,24 @@ import org.springframework.stereotype.Component
 class ContactSyncScheduler(
     private val jobs: TrackedJobDispatcher,
 ) {
-    @Scheduled(cron = "\${contact.ensure-period-lists-cron:0 0 1 * * *}")
-    fun ensureContributionPeriodLists() {
+    @Scheduled(cron = "\${contact.period-list-sync-all-cron:0 0 1 * * *}")
+    fun syncAllPeriodLists() {
         jobs.enqueue(
-            ContactJobs.EnsureContributionPeriodLists,
-            ContactJobs.EnsureContributionPeriodListsPayload(),
+            ContactJobs.SyncAllPeriodLists,
+            ContactJobs.SyncAllPeriodListsPayload(),
         )
     }
 
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")
-        jobs.enqueue(ContactJobs.DispatchContactSyncs, ContactJobs.DispatchContactSyncsPayload())
+        jobs.enqueue(ContactJobs.SyncAllContacts, ContactJobs.SyncAllContactsPayload())
     }
 
     @Scheduled(cron = "\${contact.list-sync-cron:0 30 2 * * *}")
     fun syncAllListMemberships() {
         log.info("Scheduling list membership sync spawn job")
-        jobs.enqueue(ContactJobs.DispatchListMembershipSyncs, ContactJobs.DispatchListMembershipSyncsPayload())
+        jobs.enqueue(ContactJobs.SyncAllListMemberships, ContactJobs.SyncAllListMembershipsPayload())
     }
 
     companion object {

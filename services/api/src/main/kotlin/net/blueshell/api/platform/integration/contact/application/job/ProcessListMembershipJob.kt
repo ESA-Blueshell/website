@@ -47,13 +47,13 @@ class ProcessListMembershipJob(
             contactListService.createMembership(contactList.id!!, payload.userId)
             jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(payload.userId))
             listAdapters.forEach { adapter ->
-                jobs.enqueue(ContactJobs.SyncListMembershipToSystem, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
+                jobs.enqueue(ContactJobs.SyncListMembership, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
             }
             log.debug("Queued contact sync + add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         } else {
             contactListService.deleteMembership(contactList.id!!, payload.userId)
             listAdapters.forEach { adapter ->
-                jobs.enqueue(ContactJobs.SyncListMembershipToSystem, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
+                jobs.enqueue(ContactJobs.SyncListMembership, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
             }
             log.debug("Queued remove-from-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         }

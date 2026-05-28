@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.contact.job
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
-import net.blueshell.api.platform.integration.contact.application.job.DispatchListMembershipSyncsJob
+import net.blueshell.api.platform.integration.contact.application.job.SyncAllListMembershipsJob
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.platform.integration.contact.persistence.ContactListMembership
@@ -20,11 +20,11 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 /**
- * Unit tests for [DispatchListMembershipSyncsJob].
+ * Unit tests for [SyncAllListMembershipsJob].
  *
  * No Spring context — instantiate directly with mocks.
  */
-class DispatchListMembershipSyncsJobTest {
+class SyncAllListMembershipsJobTest {
 
     private val objectMapper = ObjectMapper()
     private val contactListMembershipRepository: ContactListMembershipRepository = mock()
@@ -47,12 +47,12 @@ class DispatchListMembershipSyncsJobTest {
     fun `enqueues one SyncListMembershipForSystem job per membership per adapter`() {
         val adapter1 = adapterFor(ContactSystem.BREVO)
         val adapter2 = adapterFor(ContactSystem.BREVO)
-        val job = DispatchListMembershipSyncsJob(objectMapper, contactListMembershipRepository, listOf(adapter1, adapter2), jobs)
+        val job = SyncAllListMembershipsJob(objectMapper, contactListMembershipRepository, listOf(adapter1, adapter2), jobs)
 
         val memberships = listOf(membershipFor(1L, 10L), membershipFor(2L, 10L))
         whenever(contactListMembershipRepository.findAll()).thenReturn(memberships)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchListMembershipSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllListMembershipsPayload()))
 
         // 2 memberships × 2 adapters = 4 enqueue calls
         verify(jobs, times(4)).enqueue(any<JobDefinition<Any>>(), any())
@@ -61,11 +61,11 @@ class DispatchListMembershipSyncsJobTest {
     @Test
     fun `does nothing when no memberships exist`() {
         val adapter = adapterFor(ContactSystem.BREVO)
-        val job = DispatchListMembershipSyncsJob(objectMapper, contactListMembershipRepository, listOf(adapter), jobs)
+        val job = SyncAllListMembershipsJob(objectMapper, contactListMembershipRepository, listOf(adapter), jobs)
 
         whenever(contactListMembershipRepository.findAll()).thenReturn(emptyList())
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchListMembershipSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllListMembershipsPayload()))
 
         verifyNoInteractions(jobs)
     }
@@ -73,7 +73,7 @@ class DispatchListMembershipSyncsJobTest {
     @Test
     fun `continues when enqueue throws for one membership`() {
         val adapter = adapterFor(ContactSystem.BREVO)
-        val job = DispatchListMembershipSyncsJob(objectMapper, contactListMembershipRepository, listOf(adapter), jobs)
+        val job = SyncAllListMembershipsJob(objectMapper, contactListMembershipRepository, listOf(adapter), jobs)
 
         val memberships = listOf(membershipFor(1L, 10L), membershipFor(2L, 10L))
         whenever(contactListMembershipRepository.findAll()).thenReturn(memberships)
@@ -81,7 +81,7 @@ class DispatchListMembershipSyncsJobTest {
             .thenThrow(RuntimeException("enqueue failure"))
             .thenReturn(null)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchListMembershipSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllListMembershipsPayload()))
 
         // 2 attempts were made despite the first failure
         verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())

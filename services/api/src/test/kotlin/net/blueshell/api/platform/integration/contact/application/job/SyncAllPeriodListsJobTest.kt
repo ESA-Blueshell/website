@@ -19,7 +19,7 @@ import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
-class EnsureContributionPeriodListsJobTest {
+class SyncAllPeriodListsJobTest {
 
     private val listResolver: ContributionPeriodListResolver = mock()
     private val periods: ContributionPeriodService = mock()
@@ -27,7 +27,7 @@ class EnsureContributionPeriodListsJobTest {
     private val jobs: TrackedJobDispatcher = mock()
     private val objectMapper: ObjectMapper = JsonMapper.builder().build()
 
-    private val job = EnsureContributionPeriodListsJob(
+    private val job = SyncAllPeriodListsJob(
         objectMapper = objectMapper,
         listResolver = listResolver,
         periods = periods,
@@ -91,6 +91,6 @@ class EnsureContributionPeriodListsJobTest {
 
     /** handlePayload is protected, so drive the job through the public handle. */
     private fun invokeJob() {
-        job.handle(objectMapper.writeValueAsString(ContactJobs.EnsureContributionPeriodListsPayload()), null)
+        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllPeriodListsPayload()), null)
     }
 }

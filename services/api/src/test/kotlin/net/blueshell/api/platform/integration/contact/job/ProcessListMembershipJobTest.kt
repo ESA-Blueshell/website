@@ -80,7 +80,7 @@ class ProcessListMembershipJobTest {
         job.handle(objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(userId, periodId)))
 
         verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(userId)))
-        // SyncContact + one SyncListMembershipToSystem = two enqueue calls
+        // SyncContact + one SyncListMembership = two enqueue calls
         verify(jobs, times(2)).enqueue(any<JobDefinition<Any>>(), any())
     }
 

@@ -18,19 +18,19 @@ import tools.jackson.databind.ObjectMapper
  * Scheduled before the regular contact / list syncs by [net.blueshell.api.platform.integration.contact.application.ContactSyncScheduler].
  */
 @Component
-class EnsureContributionPeriodListsJob(
+class SyncAllPeriodListsJob(
     objectMapper: ObjectMapper,
     private val listResolver: ContributionPeriodListResolver,
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
     private val jobs: TrackedJobDispatcher,
-) : AbstractJsonJobHandler<ContactJobs.EnsureContributionPeriodListsPayload>(
+) : AbstractJsonJobHandler<ContactJobs.SyncAllPeriodListsPayload>(
     objectMapper,
-    ContactJobs.EnsureContributionPeriodLists.payloadType,
+    ContactJobs.SyncAllPeriodLists.payloadType,
 ) {
-    override val jobType: String = ContactJobs.EnsureContributionPeriodLists.type
+    override val jobType: String = ContactJobs.SyncAllPeriodLists.type
 
-    override fun handlePayload(payload: ContactJobs.EnsureContributionPeriodListsPayload) {
+    override fun handlePayload(payload: ContactJobs.SyncAllPeriodListsPayload) {
         val allPeriods = periods.findAll()
         log.info("Reconciling contribution-period lists for {} periods", allPeriods.size)
 
@@ -64,6 +64,6 @@ class EnsureContributionPeriodListsJob(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(EnsureContributionPeriodListsJob::class.java)
+        private val log = LoggerFactory.getLogger(SyncAllPeriodListsJob::class.java)
     }
 }

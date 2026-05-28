@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.contact.job
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.contact.application.job.DispatchContactSyncsJob
+import net.blueshell.api.platform.integration.contact.application.job.SyncAllContactsJob
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test
@@ -15,12 +15,12 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
-class DispatchContactSyncsJobTest {
+class SyncAllContactsJobTest {
 
     private val objectMapper = ObjectMapper()
     private val userService: UserService = mock()
     private val jobs: TrackedJobDispatcher = mock()
-    private val job = DispatchContactSyncsJob(objectMapper, userService, jobs)
+    private val job = SyncAllContactsJob(objectMapper, userService, jobs)
 
     private fun userWithId(id: Long): User = mock<User>().also {
         whenever(it.id).thenReturn(id)
@@ -31,7 +31,7 @@ class DispatchContactSyncsJobTest {
         val users = mutableListOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchContactSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
         verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
         verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
@@ -41,7 +41,7 @@ class DispatchContactSyncsJobTest {
     fun `does nothing when no users exist`() {
         whenever(userService.findAll()).thenReturn(mutableListOf())
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchContactSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
         verifyNoInteractions(jobs)
     }
@@ -53,7 +53,7 @@ class DispatchContactSyncsJobTest {
         doThrow(RuntimeException("enqueue boom")).whenever(jobs)
             .enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.DispatchContactSyncsPayload()))
+        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
         verify(jobs, times(1)).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
         verify(jobs, times(1)).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))

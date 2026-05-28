@@ -47,15 +47,17 @@ const summarizeExecution = (execution: JobExecutionView): string => {
   const system = execution.targetSystem ? CONTACT_SYSTEM_LABELS[execution.targetSystem] : undefined
 
   switch (jobType) {
-    case "contact.dispatch-syncs":
-      return "Dispatch contact syncs to all systems"
-    case "contact.dispatch-list-syncs":
-      return "Dispatch list-membership syncs to all systems"
+    case "contact.sync-all":
+      return "Sync all contacts to every system"
+    case "contact.list-sync-all":
+      return "Sync all list memberships to every system"
+    case "contact.period-list-sync-all":
+      return "Reconcile contribution-period lists"
     case "contact.sync-to-system":
       if (system && primary) return `Sync contact to ${system} for ${primary}`
       if (system) return `Sync contact to ${system}`
       return primary ? `Sync contact for ${primary}` : "Sync contact"
-    case "contact.sync-list-to-system":
+    case "contact.list-sync":
       if (system && primary) return `Sync list membership to ${system} for ${primary}`
       if (system) return `Sync list membership to ${system}`
       return primary ? `Sync list membership for ${primary}` : "Sync list membership"

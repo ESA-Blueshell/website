@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.contact.application.job
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.platform.integration.contact.application.ContactListService
+import net.blueshell.api.platform.integration.contact.application.ContributionPeriodListResolver
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -30,7 +30,7 @@ import tools.jackson.databind.ObjectMapper
 @Component
 class EnsureContributionPeriodListsJob(
     objectMapper: ObjectMapper,
-    private val contactListService: ContactListService,
+    private val listResolver: ContributionPeriodListResolver,
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
     private val jobs: TrackedJobDispatcher,
@@ -62,7 +62,7 @@ class EnsureContributionPeriodListsJob(
     }
 
     private fun reconcilePeriod(period: ContributionPeriod, periodId: Long) {
-        ensureListLinked(period)
+        listResolver.resolve(period)
         val rows = contributions.findByContributionPeriodId(periodId)
         log.debug("Period {}: enqueuing {} ProcessListMembership jobs", periodId, rows.size)
         for (contribution in rows) {
@@ -71,14 +71,6 @@ class EnsureContributionPeriodListsJob(
                 ContactJobs.ProcessListMembershipPayload(contribution.userId, periodId),
             )
         }
-    }
-
-    private fun ensureListLinked(period: ContributionPeriod) {
-        if (period.contactListId != null) return
-        val name = "Contribution Paid ${period.startDate.year} - ${period.endDate.year}"
-        val list = contactListService.findOrCreateList(name, "contributionPeriods")
-        periods.updateContactListId(period.id!!, list.id!!)
-        log.info("Linked period {} to contact list {} ('{}')", period.id, list.id, name)
     }
 
     companion object {

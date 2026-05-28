@@ -4,7 +4,7 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.platform.integration.contact.application.ContactListService
+import net.blueshell.api.platform.integration.contact.application.ContributionPeriodListResolver
 import net.blueshell.api.platform.integration.contact.persistence.ContactList
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -21,7 +21,7 @@ import java.time.LocalDate
 
 class EnsureContributionPeriodListsJobTest {
 
-    private val contactListService: ContactListService = mock()
+    private val listResolver: ContributionPeriodListResolver = mock()
     private val periods: ContributionPeriodService = mock()
     private val contributions: ContributionService = mock()
     private val jobs: TrackedJobDispatcher = mock()
@@ -29,7 +29,7 @@ class EnsureContributionPeriodListsJobTest {
 
     private val job = EnsureContributionPeriodListsJob(
         objectMapper = objectMapper,
-        contactListService = contactListService,
+        listResolver = listResolver,
         periods = periods,
         contributions = contributions,
         jobs = jobs,
@@ -42,7 +42,9 @@ class EnsureContributionPeriodListsJobTest {
         whenever(periods.findAll()).thenReturn(mutableListOf(periodA, periodB))
 
         val createdList = mock<ContactList>().also { whenever(it.id).thenReturn(42L) }
-        whenever(contactListService.findOrCreateList(any(), any())).thenReturn(createdList)
+        val existingList = mock<ContactList>().also { whenever(it.id).thenReturn(99L) }
+        whenever(listResolver.resolve(periodA)).thenReturn(createdList)
+        whenever(listResolver.resolve(periodB)).thenReturn(existingList)
 
         // Build the mock Contribution rows up-front so their stubbing doesn't
         // run inside the enclosing whenever's argument (which Mockito treats
@@ -53,14 +55,9 @@ class EnsureContributionPeriodListsJobTest {
 
         invokeJob()
 
-        // periodA had no list → service creates one and the period is linked.
-        verify(contactListService).findOrCreateList(eq("Contribution Paid 2024 - 2025"), eq("contributionPeriods"))
-        verify(periods).updateContactListId(1L, 42L)
-        // periodB already had a list → the service is not asked to (re)create it.
-        verify(contactListService, never()).findOrCreateList(eq("Contribution Paid 2025 - 2026"), any())
-        verify(periods, never()).updateContactListId(eq(2L), any())
+        verify(listResolver).resolve(periodA)
+        verify(listResolver).resolve(periodB)
 
-        // Each paid contribution gets a ProcessListMembership enqueued for its period.
         verify(jobs).enqueue(ContactJobs.ProcessListMembership, ContactJobs.ProcessListMembershipPayload(101L, 1L))
         verify(jobs).enqueue(ContactJobs.ProcessListMembership, ContactJobs.ProcessListMembershipPayload(102L, 1L))
         verify(jobs).enqueue(ContactJobs.ProcessListMembership, ContactJobs.ProcessListMembershipPayload(101L, 2L))

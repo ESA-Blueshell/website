@@ -34,6 +34,7 @@ class ProcessListMembershipJobTest {
 
     private val objectMapper = ObjectMapper()
     private val contactListService: ContactListService = mock()
+    private val listResolver: net.blueshell.api.platform.integration.contact.application.ContributionPeriodListResolver = mock()
     private val periods: ContributionPeriodService = mock()
     private val contributions: ContributionService = mock()
     private val jobs: TrackedJobDispatcher = mock()
@@ -45,6 +46,7 @@ class ProcessListMembershipJobTest {
     private val job = ProcessListMembershipJob(
         objectMapper = objectMapper,
         contactListService = contactListService,
+        listResolver = listResolver,
         periods = periods,
         contributions = contributions,
         listAdapters = listOf(listAdapter),
@@ -67,7 +69,7 @@ class ProcessListMembershipJobTest {
         val contactList = ContactList(name = "Contribution Paid 2024 - 2025").apply { id = listId }
 
         whenever(periods.findById(periodId)).thenReturn(period)
-        whenever(contactListService.findById(listId)).thenReturn(contactList)
+        whenever(listResolver.resolve(period)).thenReturn(contactList)
     }
 
     @Test

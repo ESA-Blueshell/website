@@ -50,6 +50,22 @@ class BrevoListAdapterTest {
     }
 
     @Test
+    fun `addToList treats inconclusive lookup as retryable, not as a missing contact`() {
+        // Brevo returned the ambiguous "already in list and/or does not exist",
+        // and the disambiguating GET hit a transient 503 instead of a clean
+        // 404. We must not churn local pairing on a provider outage — surface
+        // a plain ContactServiceException so the job retries.
+        doThrow(alreadyInListOrMissing()).whenever(contactsApi)
+            .addContactToList(eq(200L), any<AddContactToListRequest>())
+        doThrow(error(503, """{"code":"server_error","message":"Upstream timeout"}"""))
+            .whenever(contactsApi).getContactInfo(eq("100"), eq("contact_id"), anyOrNull(), anyOrNull())
+
+        assertThatThrownBy { adapter.addToList(100L, 200L) }
+            .isInstanceOf(ContactServiceException::class.java)
+            .isNotInstanceOf(ExternalContactGoneException::class.java)
+    }
+
+    @Test
     fun `addToList surfaces other errors as ContactServiceException`() {
         doThrow(error(500, """{"code":"internal","message":"boom"}"""))
             .whenever(contactsApi).addContactToList(any(), any<AddContactToListRequest>())

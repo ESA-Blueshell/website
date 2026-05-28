@@ -72,18 +72,32 @@ class BrevoListAdapter(
         } catch (e: RestClientResponseException) {
             val error = parseBrevoError(e, jsonMapper)
             if (error?.code == INVALID_PARAMETER && isAlreadyInListOrMissing(error)) {
-                if (contactExists(externalUserId)) {
-                    log.info(
-                        "Brevo contact {} already in list {} — treating add as a no-op",
-                        externalUserId, externalListId,
-                    )
-                    return
+                when (lookupContact(externalUserId)) {
+                    ContactLookup.EXISTS -> {
+                        log.info(
+                            "Brevo contact {} already in list {} — treating add as a no-op",
+                            externalUserId, externalListId,
+                        )
+                        return
+                    }
+                    ContactLookup.MISSING -> {
+                        log.warn(
+                            "Brevo says contact {} does not exist while adding to list {}",
+                            externalUserId, externalListId,
+                        )
+                        throw ExternalContactGoneException(system, externalUserId, e)
+                    }
+                    ContactLookup.UNKNOWN -> {
+                        // Lookup itself failed (transient 5xx, 429, network).
+                        // Don't churn local pairing for a provider outage; let
+                        // the job retry the whole add via its backoff schedule.
+                        log.warn(
+                            "Brevo contact existence check inconclusive for {} — letting the job retry",
+                            externalUserId,
+                        )
+                        throw ContactServiceException("Failed to add contact to list", e)
+                    }
                 }
-                log.warn(
-                    "Brevo says contact {} does not exist while adding to list {}",
-                    externalUserId, externalListId,
-                )
-                throw ExternalContactGoneException(system, externalUserId, e)
             }
             log.error("Failed to add contact {} to Brevo list {}", externalUserId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)
@@ -122,11 +136,24 @@ class BrevoListAdapter(
         }
     }
 
-    private fun contactExists(contactId: Long): Boolean = try {
+    /**
+     * Result of disambiguating Brevo's "already in list and/or does not exist"
+     * error. Only a confirmed 404 / `document_not_found` is treated as MISSING;
+     * any other lookup failure stays UNKNOWN so callers don't repair pairing on
+     * a provider outage.
+     */
+    private enum class ContactLookup { EXISTS, MISSING, UNKNOWN }
+
+    private fun lookupContact(contactId: Long): ContactLookup = try {
         contactsApi.getContactInfo(contactId.toString(), "contact_id", null, null)
-        true
+        ContactLookup.EXISTS
     } catch (e: RestClientResponseException) {
-        false
+        val error = parseBrevoError(e, jsonMapper)
+        if (e.statusCode.value() == 404 || error?.code == DOCUMENT_NOT_FOUND) {
+            ContactLookup.MISSING
+        } else {
+            ContactLookup.UNKNOWN
+        }
     }
 
     private fun isAlreadyInListOrMissing(error: BrevoError): Boolean {

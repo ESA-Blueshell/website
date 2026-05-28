@@ -46,10 +46,9 @@ class EnsureContributionPeriodListsJobTest {
         whenever(listResolver.resolve(periodA)).thenReturn(createdList)
         whenever(listResolver.resolve(periodB)).thenReturn(existingList)
 
-        // Build the mock Contribution rows up-front so their stubbing doesn't
-        // run inside the enclosing whenever's argument (which Mockito treats
-        // as unfinished stubbing).
-        val cA1 = contribution(101L); val cA2 = contribution(102L); val cB1 = contribution(101L)
+        val cA1 = contribution(101L)
+        val cA2 = contribution(102L)
+        val cB1 = contribution(101L)
         whenever(contributions.findByContributionPeriodId(1L)).thenReturn(mutableListOf(cA1, cA2))
         whenever(contributions.findByContributionPeriodId(2L)).thenReturn(mutableListOf(cB1))
 
@@ -90,9 +89,8 @@ class EnsureContributionPeriodListsJobTest {
         return c
     }
 
+    /** handlePayload is protected, so drive the job through the public handle. */
     private fun invokeJob() {
-        // handlePayload is protected; drive the job through its public handle
-        // entry point (which AbstractJsonJobHandler routes to handlePayload).
         job.handle(objectMapper.writeValueAsString(ContactJobs.EnsureContributionPeriodListsPayload()), null)
     }
 }

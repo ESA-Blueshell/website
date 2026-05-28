@@ -196,8 +196,6 @@ class SyncListMembershipCommandHandlerTest {
 
         assertThrows(RuntimeException::class.java) { handler.handle(command) }
 
-        // Local pairing for BREVO is cleared so the next attempt won't reuse
-        // the dead id, and a contact sync is queued to repair it.
         assertThat(contact.externalId(system)).isNull()
         verify(contactRepository).save(contact)
         verify(jobs).enqueue(

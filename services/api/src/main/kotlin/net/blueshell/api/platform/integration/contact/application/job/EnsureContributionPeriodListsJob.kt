@@ -12,20 +12,10 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
 /**
- * Nightly job that reconciles the per–contribution-period contact lists.
- *
- * For every [ContributionPeriod] it makes sure the matching contact list
- * exists (creating it in every registered system on first run via
- * [ContactListService.findOrCreateList]) and links it back to the period.
- * It then enqueues one [ContactJobs.ProcessListMembership] per contribution,
- * which is the existing per-(user, period) flow — that handler is idempotent,
- * so on subsequent runs it only flips memberships that have actually
- * changed and is suppressed by the job-queue dedup when an identical job is
- * still in flight.
- *
- * Runs before the daily contact sync (02:00) and the daily list-membership
- * sync (02:30) so the lists exist and the membership rows are seeded by the
- * time those passes start.
+ * Nightly reconciliation of per-period contact lists: makes sure each
+ * [ContributionPeriod] has a linked [net.blueshell.api.platform.integration.contact.persistence.ContactList]
+ * and enqueues one [ContactJobs.ProcessListMembership] per paid contribution.
+ * Scheduled before the regular contact / list syncs by [net.blueshell.api.platform.integration.contact.application.ContactSyncScheduler].
  */
 @Component
 class EnsureContributionPeriodListsJob(

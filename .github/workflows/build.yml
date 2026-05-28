@@ -54,6 +54,8 @@ jobs:
               - 'services/api/**'
             frontend:
               - 'services/frontend/**'
+            stalwart-tools:
+              - 'infra/stalwart/**'
             build-logic:
               - 'build-logic/**'
             libs:
@@ -72,6 +74,7 @@ jobs:
           FILTER_WORKFLOW: ${{ steps.filter.outputs.workflow }}
           FILTER_API: ${{ steps.filter.outputs.api }}
           FILTER_FRONTEND: ${{ steps.filter.outputs.frontend }}
+          FILTER_STALWART_TOOLS: ${{ steps.filter.outputs.stalwart-tools }}
           FILTER_BUILD_LOGIC: ${{ steps.filter.outputs.build-logic }}
           FILTER_LIBS: ${{ steps.filter.outputs.libs }}
           FILTER_GRADLE_CONFIG: ${{ steps.filter.outputs.gradle-config }}
@@ -107,6 +110,14 @@ jobs:
             add_platform frontend services/frontend services/frontend/Dockerfile linux/amd64 amd64 ubuntu-latest
             add_platform frontend services/frontend services/frontend/Dockerfile linux/arm64 arm64 ubuntu-24.04-arm
             add_service frontend
+          fi
+          # stalwart-tools is the apply-sidecar image for the Stalwart
+          # Deployment; the Dockerfile expects the repo root as build
+          # context so it can COPY infra/stalwart/*. Workflow changes
+          # rebuild it too (FILTER_WORKFLOW).
+          if [[ "$(any "$FILTER_WORKFLOW" "$FILTER_STALWART_TOOLS")" == "true" ]]; then
+            add_platform stalwart-tools . infra/stalwart/Dockerfile linux/amd64 amd64 ubuntu-latest
+            add_service stalwart-tools
           fi
 
           echo "build-matrix=$MATRIX" >> "$GITHUB_OUTPUT"

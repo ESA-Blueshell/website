@@ -92,9 +92,20 @@ reconcile() {
   printf '{"@type":"update","object":"SystemSettings","value":{"defaultHostname":"%s","defaultDomainId":"%s"}}\n' \
     "$STALWART_HOSTNAME" "$dom" | sc apply --file /dev/stdin
 
-  # 3. Wire the domain to automatic ACME + Cloudflare DNS-01. Convergent
-  #    so a webadmin change gets straightened on the next pod boot.
-  printf '{"@type":"update","object":"Domain","id":"%s","value":{"certificateManagement":{"@type":"Automatic","acmeProviderId":"%s"},"dnsManagement":{"@type":"Automatic","dnsServerId":"%s"}}}\n' \
+  # 3. Wire the domain:
+  #    - certificateManagement: Automatic via the ACME provider (DNS-01).
+  #    - dnsManagement: Automatic with publishRecords:[] — Stalwart keeps
+  #      its DnsServer ref for ACME challenges, but does not auto-publish
+  #      SPF / DMARC / MX / DKIM / MTA-STS / TLS-RPT / CAA / autoconfig
+  #      records. Those live in the operator-managed zone file
+  #      (infra/dns) so the Cloudflare import is the single source of
+  #      truth and Stalwart never fights the zone.
+  #    - dkimManagement: Manual — reconcile_dkim below owns the
+  #      DkimSignature lifecycle, and the matching DNS TXT record is
+  #      operator-published; Stalwart's automatic rotation logic would
+  #      just clash with both.
+  #    Convergent: webadmin changes get straightened on the next boot.
+  printf '{"@type":"update","object":"Domain","id":"%s","value":{"certificateManagement":{"@type":"Automatic","acmeProviderId":"%s"},"dnsManagement":{"@type":"Automatic","dnsServerId":"%s","publishRecords":[]},"dkimManagement":{"@type":"Manual"}}}\n' \
     "$dom" "$acme" "$dns" | sc apply --file /dev/stdin
 
   # 4. Renew the Cloudflare DNS-01 token every boot. Rotating the Vault
@@ -103,7 +114,12 @@ reconcile() {
   printf '{"@type":"update","object":"DnsServer","id":"%s","value":{"secret":{"@type":"Value","secret":"%s"}}}\n' \
     "$dns" "$CF_DNS_API_TOKEN" | sc apply --file /dev/stdin
 
-  # 5. Reconcile Vault-managed accounts (passwords, aliases, group
+  # 5. DKIM signing — create one Dkim1RsaSha256 signature for the
+  #    domain using the private key from secret/platform/mail. No-op
+  #    once a DkimSignature exists; rotation is operator-driven.
+  reconcile_dkim "$dom"
+
+  # 6. Reconcile Vault-managed accounts (passwords, aliases, group
   #    memberships) from accounts.json. Existing accounts get update-
   #    only — never delete and never recreate — so the mailbox an
   #    account links to is never disturbed. Only list accounts whose
@@ -112,6 +128,44 @@ reconcile() {
   reconcile_accounts "$dom"
 
   echo "apply: reconcile complete"
+}
+
+reconcile_dkim() {
+  # $1 is the Domain object id. Creates a Dkim1RsaSha256 signature
+  # with selector "default", using the PEM-encoded private key from
+  # secret/platform/mail (key `dkim-private-key`). The Vault value
+  # must be the raw PEM with literal -----BEGIN PRIVATE KEY-----
+  # markers — write it with `vault kv put -mount=secret platform/mail
+  # dkim-private-key=@/path/to/key.pem`.
+  #
+  # No-op when a DkimSignature already exists for this domain. To
+  # rotate: delete the existing DkimSignature via webadmin or CLI
+  # (`stalwart-cli delete DkimSignature <id>`), bump the Vault key to
+  # the new private key, restart the pod. The matching DNS TXT record
+  # (`default._domainkey`) must be published manually in Cloudflare
+  # from the resulting publicKey field — `infra/dns` ships a
+  # placeholder ready to receive it.
+  dom="$1"
+  pkey_file="${ACCOUNT_PASSWORDS_DIR}/dkim-private-key"
+  if [ ! -s "$pkey_file" ]; then
+    echo "apply: skipping DKIM: dkim-private-key missing from secret/platform/mail (mail will deliver unsigned)" >&2
+    return 0
+  fi
+
+  existing="$(sc query DkimSignature --json 2>/dev/null \
+    | jq -rs --arg d "$dom" 'map(select(.domainId==$d))[0].id // empty')"
+  if [ -n "$existing" ]; then
+    echo "apply: DkimSignature already exists for ${STALWART_DOMAIN} (id=${existing}) — skipping"
+    return 0
+  fi
+
+  echo "apply: creating DkimSignature (selector=default, algorithm=Dkim1RsaSha256)"
+  pkey="$(cat "$pkey_file")"
+  jq -nc --arg dom "$dom" --arg pk "$pkey" \
+    '{"@type":"create","object":"DkimSignature","value":{"dkim-rsa":{"@type":"Dkim1RsaSha256",domainId:$dom,selector:"default",privateKey:$pk}}}' \
+    | sc apply --file /dev/stdin
+  echo "apply: DkimSignature created. Read the public key for DNS publishing with:"
+  echo "  stalwart-cli query DkimSignature --fields selector publicKey"
 }
 
 # objectList/set values are encoded by the apply API as index-keyed maps,

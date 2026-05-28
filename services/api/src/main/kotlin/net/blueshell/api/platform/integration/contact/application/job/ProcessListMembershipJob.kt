@@ -5,6 +5,7 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.application.ContactListService
+import net.blueshell.api.platform.integration.contact.application.ContributionPeriodListResolver
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.SyncListMembershipCommand
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Component
 class ProcessListMembershipJob(
     objectMapper: ObjectMapper,
     private val contactListService: ContactListService,
+    private val listResolver: ContributionPeriodListResolver,
     private val periods: ContributionPeriodService,
     private val contributions: ContributionService,
     private val listAdapters: List<ContactListAdapter>,
@@ -37,15 +39,7 @@ class ProcessListMembershipJob(
 
     override fun handlePayload(payload: ContactJobs.ProcessListMembershipPayload) {
         val period = periods.findById(payload.periodId)
-
-        val listName = "Contribution Paid ${period.startDate.year} - ${period.endDate.year}"
-        val contactList = if (period.contactListId == null) {
-            val list = contactListService.findOrCreateList(listName, "contributionPeriods")
-            periods.updateContactListId(period.id!!, list.id!!)
-            list
-        } else {
-            contactListService.findById(period.contactListId!!)
-        }
+        val contactList = listResolver.resolve(period)
 
         val hasContribution = contributions.existsByUserIdAndPeriodId(payload.userId, payload.periodId)
 
@@ -53,13 +47,13 @@ class ProcessListMembershipJob(
             contactListService.createMembership(contactList.id!!, payload.userId)
             jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(payload.userId))
             listAdapters.forEach { adapter ->
-                jobs.enqueue(ContactJobs.SyncListMembershipToSystem, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
+                jobs.enqueue(ContactJobs.SyncListMembership, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
             }
             log.debug("Queued contact sync + add-to-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         } else {
             contactListService.deleteMembership(contactList.id!!, payload.userId)
             listAdapters.forEach { adapter ->
-                jobs.enqueue(ContactJobs.SyncListMembershipToSystem, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
+                jobs.enqueue(ContactJobs.SyncListMembership, SyncListMembershipCommand(payload.userId, contactList.id!!, adapter.system))
             }
             log.debug("Queued remove-from-list for user {} in list {} (period {})", payload.userId, contactList.id, payload.periodId)
         }

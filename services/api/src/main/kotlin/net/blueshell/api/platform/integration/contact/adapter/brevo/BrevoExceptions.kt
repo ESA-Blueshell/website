@@ -1,6 +1,9 @@
 package net.blueshell.api.platform.integration.contact.adapter.brevo
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
+import org.slf4j.LoggerFactory
+import org.springframework.web.client.RestClientResponseException
+import tools.jackson.databind.json.JsonMapper
 
 /**
  * Which Brevo unique identifier collided on a create. Brevo reports these in
@@ -56,3 +59,35 @@ class BrevoDuplicateContactException(
         "but could not be resolved for email=$email phone=$phone",
     cause,
 )
+
+/** Parsed shape of a Brevo error response body. */
+internal data class BrevoError(
+    val code: String?,
+    val message: String?,
+    val duplicateIdentifiers: List<String>,
+)
+
+internal const val DUPLICATE_PARAMETER: String = "duplicate_parameter"
+internal const val INVALID_PARAMETER: String = "invalid_parameter"
+internal const val DOCUMENT_NOT_FOUND: String = "document_not_found"
+
+private val parseLog = LoggerFactory.getLogger("net.blueshell.api.platform.integration.contact.adapter.brevo.BrevoError")
+
+internal fun parseBrevoError(e: RestClientResponseException, jsonMapper: JsonMapper): BrevoError? {
+    val body = e.responseBodyAsString.takeIf { it.isNotBlank() } ?: return null
+    return try {
+        val map = jsonMapper.readValue(body, Map::class.java)
+        val metadata = map["metadata"] as? Map<*, *>
+        val ids = (metadata?.get("duplicate_identifiers") as? List<*>)
+            ?.mapNotNull { it as? String }
+            ?: emptyList()
+        BrevoError(
+            code = map["code"] as? String,
+            message = map["message"] as? String,
+            duplicateIdentifiers = ids,
+        )
+    } catch (ex: Exception) {
+        parseLog.warn("Could not parse Brevo error body: {}", body, ex)
+        null
+    }
+}

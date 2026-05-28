@@ -17,6 +17,6 @@ abstract class ContactAdapterSyncTarget(
         data == null && currentExternalId == null -> null
         data == null -> { adapter.deleteContact(currentExternalId!!.toLong()); null }
         currentExternalId == null -> adapter.createContact(data).toString()
-        else -> { adapter.updateContact(currentExternalId.toLong(), data); currentExternalId }
+        else -> adapter.updateContact(currentExternalId.toLong(), data).toString()
     }
 }

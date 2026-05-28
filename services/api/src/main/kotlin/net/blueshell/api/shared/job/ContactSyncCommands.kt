@@ -20,7 +20,7 @@ data class SyncContactCommand(
 /**
  * Command to sync a user's list membership to one external system.
  *
- * Serves as both the command object and job payload for [ContactJobs.SyncListMembershipToSystem].
+ * Serves as both the command object and job payload for [ContactJobs.SyncListMembership].
  * Adds or removes the user from the external list depending on whether an active
  * ContactListMembership record exists in the database.
  */

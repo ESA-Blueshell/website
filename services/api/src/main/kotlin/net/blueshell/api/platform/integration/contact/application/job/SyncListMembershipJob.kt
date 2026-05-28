@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
 /**
- * Job handler for [ContactJobs.SyncListMembershipToSystem].
+ * Job handler for [ContactJobs.SyncListMembership].
  *
  * Thin wrapper: deserializes the [SyncListMembershipCommand] payload from JSON,
  * then dispatches it through the [CommandBus] to [SyncListMembershipCommandHandler].
@@ -17,7 +17,7 @@ import tools.jackson.databind.ObjectMapper
  * In test/dev, [MockContactAdapter] (system=BREVO) is the only registered ContactListAdapter.
  */
 @Component
-class SyncListMembershipToSystemJob(
+class SyncListMembershipJob(
     objectMapper: ObjectMapper,
     commandBus: CommandBus,
 ) : AbstractCommandJobHandler<SyncListMembershipCommand, Unit>(
@@ -25,5 +25,5 @@ class SyncListMembershipToSystemJob(
     SyncListMembershipCommand::class.java,
     commandBus,
 ) {
-    override val jobType: String = ContactJobs.SyncListMembershipToSystem.type
+    override val jobType: String = ContactJobs.SyncListMembership.type
 }

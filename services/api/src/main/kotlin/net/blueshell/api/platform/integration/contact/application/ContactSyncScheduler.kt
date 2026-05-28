@@ -7,26 +7,33 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 /**
- * Triggers daily full-syncs of all contacts and list memberships to external providers.
- *
- * Enqueues [ContactJobs.DispatchContactSyncs] and [ContactJobs.DispatchListMembershipSyncs] jobs
- * which perform the tracked, retryable iteration. The list sync runs 30 minutes after the
- * contact sync so contacts are likely already created when list membership is processed.
+ * Daily-sync triggers. The methods run in order: period-list reconciliation
+ * at 01:00, full contact sync at 02:00, list-membership sync at 02:30 — so
+ * by the time the per-membership pass runs, every period has its list and
+ * every contact has been pushed.
  */
 @Component
 class ContactSyncScheduler(
     private val jobs: TrackedJobDispatcher,
 ) {
+    @Scheduled(cron = "\${contact.period-list-sync-all-cron:0 0 1 * * *}")
+    fun syncAllPeriodLists() {
+        jobs.enqueue(
+            ContactJobs.SyncAllPeriodLists,
+            ContactJobs.SyncAllPeriodListsPayload(),
+        )
+    }
+
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")
-        jobs.enqueue(ContactJobs.DispatchContactSyncs, ContactJobs.DispatchContactSyncsPayload())
+        jobs.enqueue(ContactJobs.SyncAllContacts, ContactJobs.SyncAllContactsPayload())
     }
 
     @Scheduled(cron = "\${contact.list-sync-cron:0 30 2 * * *}")
     fun syncAllListMemberships() {
         log.info("Scheduling list membership sync spawn job")
-        jobs.enqueue(ContactJobs.DispatchListMembershipSyncs, ContactJobs.DispatchListMembershipSyncsPayload())
+        jobs.enqueue(ContactJobs.SyncAllListMemberships, ContactJobs.SyncAllListMembershipsPayload())
     }
 
     companion object {

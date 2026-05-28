@@ -24,7 +24,7 @@ vi.mock("@/plugins/handleNetworkError", () => ({
 
 const descriptors = [
   {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", required: true}]},
-  {type: "contact.dispatch-syncs", payloadFields: []},
+  {type: "contact.sync-all", payloadFields: []},
 ]
 
 const openDialog = async () => {
@@ -46,8 +46,8 @@ describe("JobTriggerDialog", () => {
 
     expect(mockJobTypes).toHaveBeenCalledTimes(1)
     expect((wrapper.vm as any).typeOptions).toEqual([
-      {title: "Contact Dispatch Syncs", value: "contact.dispatch-syncs"},
       {title: "Contact Sync", value: "contact.sync"},
+      {title: "Contact Sync All", value: "contact.sync-all"},
     ])
   })
 
@@ -82,7 +82,7 @@ describe("JobTriggerDialog", () => {
     mockEnqueue.mockResolvedValue({status: 400})
     const wrapper = await openDialog()
 
-    ;(wrapper.vm as any).selectedType = "contact.dispatch-syncs"
+    ;(wrapper.vm as any).selectedType = "contact.sync-all"
     await settle()
     await (wrapper.vm as any).submit()
 

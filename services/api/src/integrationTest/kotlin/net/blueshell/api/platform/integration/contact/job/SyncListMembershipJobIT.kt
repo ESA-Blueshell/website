@@ -103,7 +103,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
         val contactList = contactListRepository.findAll().single()
 
         // Wait for per-integration list sync
-        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembership.type)
 
         val record = contactRepository.findByUserId(user.id!!)
         assertThat(record).describedAs("Contact should be created for user").isNotNull()
@@ -123,7 +123,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
             objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
 
-        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembership.type)
 
         val contactId = mockContactAdapter.getAllContacts().keys.single()
         val externalListId = mockContactAdapter.getAllLists().keys.single()
@@ -142,7 +142,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
-        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type)
+        awaitJobSuccess(ContactJobs.SyncListMembership.type)
 
         val record = contactRepository.findByUserId(user.id!!)!!
         val contactList = contactListRepository.findAll().single()
@@ -164,7 +164,7 @@ class SyncListMembershipJobIT : UserTestSupport() {
         syncListMembershipJob.handle(
             objectMapper.writeValueAsString(ContactJobs.ProcessListMembershipPayload(user.id!!, period.id!!))
         )
-        awaitJobSuccess(ContactJobs.SyncListMembershipToSystem.type, expectedCount = 2)
+        awaitJobSuccess(ContactJobs.SyncListMembership.type, expectedCount = 2)
 
         assertThat(
             contactListMembershipRepository.findByContactIdAndContactListId(record.id!!, contactList.id!!)

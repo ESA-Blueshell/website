@@ -355,7 +355,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/management/jobs/types") {
       return fulfillJson(route, [
-        {type: "contact.dispatch-syncs", payloadFields: []},
+        {type: "contact.sync-all", payloadFields: []},
         {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", required: true}]},
         {type: "email.recovery", payloadFields: [
           {name: "userId", type: "Long", required: true},

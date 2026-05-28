@@ -10,7 +10,7 @@ import tools.jackson.databind.ObjectMapper
  * Per-user contact sync: pushes one user's current contact state to every
  * registered contact target.
  *
- * Enqueued by [DispatchContactSyncsJob] (daily fan-out) and could also be
+ * Enqueued by [SyncAllContactsJob] (daily fan-out) and could also be
  * fired ad-hoc. Each invocation is its own JobExecution row with its own
  * retry schedule, so per-user failures stay observable in the Job Manager
  * instead of being swallowed inside a batch handler.

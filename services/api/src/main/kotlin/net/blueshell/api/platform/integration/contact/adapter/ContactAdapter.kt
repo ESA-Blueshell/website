@@ -16,6 +16,9 @@ interface ContactAdapter {
     val system: ContactSystem
 
     fun createContact(data: ContactData): Long
-    fun updateContact(externalId: Long, data: ContactData)
+
+    /** Updates the contact and returns its current external id (which adapters may rewrite when repairing stale pairing). */
+    fun updateContact(externalId: Long, data: ContactData): Long
+
     fun deleteContact(externalId: Long)
 }

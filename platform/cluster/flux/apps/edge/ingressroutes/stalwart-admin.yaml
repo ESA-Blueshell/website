@@ -19,7 +19,13 @@ spec:
     # land on its default UI without remembering the suffix.
     - kind: Rule
       match: Host(`stalwart.esa-blueshell.nl`)
+      # stalwart-root-to-admin runs first so a bare-host hit becomes
+      # `/admin/` immediately (Stalwart v0.16 404s the root). The
+      # regex matches only the exact root, so `/admin/` itself does
+      # not loop. forward-auth then SSO-gates `/admin/`.
       middlewares:
+        - name: stalwart-root-to-admin
+          namespace: edge-system
         - name: forward-auth
           namespace: edge-system
       services:

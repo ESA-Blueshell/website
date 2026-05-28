@@ -1,0 +1,15 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: stalwart-root-to-admin
+  namespace: edge-system
+spec:
+  # Stalwart v0.16 serves the webadmin under /admin/ and returns 404 at
+  # the bare root, so visiting the host root lands on a 404. Redirect
+  # only the exact root ("/" or no path) to /admin/; /admin/ itself
+  # does not match this regex, so there is no loop. 302 (not permanent)
+  # keeps the redirect uncached in case the landing path changes.
+  redirectRegex:
+    regex: ^https?://([^/]+)/?$
+    replacement: https://${1}/admin/
+    permanent: false

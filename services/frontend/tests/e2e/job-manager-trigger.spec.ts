@@ -48,7 +48,9 @@ test.describe("job manager trigger modal", () => {
 
     await expect(page.getByTestId("job-trigger-submit")).toBeDisabled()
 
-    await page.getByTestId("job-trigger-field-userId").locator("input").fill("7")
+    const userIdField = page.getByTestId("job-trigger-field-userId").locator("input")
+    await expect(userIdField).toBeVisible()
+    await userIdField.fill("7")
     await expect(page.getByTestId("job-trigger-submit")).toBeEnabled()
   })
 })

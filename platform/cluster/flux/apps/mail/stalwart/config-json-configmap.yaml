@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-config-json
+  namespace: mail-system
+data:
+  # Stalwart reads only the datastore pointer from disk; every other
+  # setting (listeners, accounts, ACME, DNS) is a JMAP object in the
+  # datastore, reconciled by the stalwart-apply sidecar.
+  config.json: |
+    {
+      "@type": "RocksDb",
+      "path": "/var/lib/stalwart/data"
+    }

@@ -21,10 +21,19 @@ kind: Deployment
 metadata:
   name: stalwart
   namespace: mail-system
+  # Keel rolls the pod when a new stalwart-tools :latest is published
+  # (apply.sh / plan / accounts changes). The main stalwart container is
+  # pinned to a version tag so match-tag leaves it alone.
+  annotations:
+    keel.sh/policy: force
+    keel.sh/match-tag: 'true'
+    keel.sh/trigger: poll
+    keel.sh/pollSchedule: '@every 2m'
 spec:
   replicas: 1
   # Mail server state lives in the RocksDB PVC; two replicas would race
-  # on the same files. Recreate is correct for single-replica stateful pods.
+  # on the same files. Recreate is correct for single-replica stateful
+  # pods.
   strategy:
     type: Recreate
   selector:
@@ -34,44 +43,34 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: stalwart
-      annotations:
-        vault.hashicorp.com/agent-inject: 'true'
-        vault.hashicorp.com/agent-inject-token: 'true'
-        # Pre-populate only: Stalwart reads env on startup; we don't need
-        # the agent refreshing creds while the server is running.
-        vault.hashicorp.com/agent-pre-populate-only: 'true'
-        vault.hashicorp.com/role: stalwart
-        vault.hashicorp.com/agent-inject-secret-stalwart.env: secret/data/platform/mail
-        vault.hashicorp.com/agent-inject-template-stalwart.env: |
-          {{- with secret "secret/data/platform/mail" -}}
-          STALWART_ADMIN_USER={{ index .Data.data "admin-user" }}
-          STALWART_ADMIN_SECRET={{ index .Data.data "admin-password" }}
-          {{- end }}
-          {{- with secret "secret/data/platform/edge" }}
-          CF_DNS_API_TOKEN={{ index .Data.data "cloudflare.dns_api_token" }}
-          {{- end }}
-          STALWART_HOSTNAME=stalwart.esa-blueshell.nl
-          STALWART_DOMAIN=esa-blueshell.nl
     spec:
       serviceAccountName: stalwart
+      # Mail protocols are raw TCP and can't traverse Cloudflare's HTTP
+      # proxy. stalwart.esa-blueshell.nl is a non-proxied A record
+      # pointing at the Frankfurt VPS public IP; each mail port binds on
+      # the host via hostPort, which only works if the pod is scheduled
+      # on the public-IP node.
+      nodeSelector:
+        kubernetes.io/hostname: frankfurt-contabo-1
       containers:
+        # Stalwart reads /etc/stalwart/config.json (datastore pointer
+        # only) on boot; everything else is reconciled by the apply
+        # sidecar. The webui bundle is fetched from github.com on first
+        # boot, so the node needs outbound HTTPS.
         - name: stalwart
-          image: stalwartlabs/stalwart:v0.15.5
+          image: stalwartlabs/stalwart:v0.16.6
           imagePullPolicy: IfNotPresent
-          command:
-            - /bin/sh
-            - -ec
-            - |
-              set -a
-              . /vault/secrets/stalwart.env
-              set +a
-              mkdir -p /opt/stalwart/etc
-              cp /config/config.toml /opt/stalwart/etc/config.toml
-              exec /usr/local/bin/entrypoint.sh /usr/local/bin/stalwart
-          # Mail protocols are raw TCP and cannot traverse Cloudflare's HTTP
-          # proxy. stalwart.esa-blueshell.nl is a non-proxied A record pointing
-          # directly at the VPS IP. Each mail port binds on the host via
-          # hostPort so the pod answers directly without MetalLB.
+          env:
+            # Despite the name, this is Stalwart's canonical env var for
+            # seeding a fallback administrator credential — the apply
+            # sidecar authenticates as this admin to call the management
+            # API. Rotating the secret rolls the pod via the VSS
+            # rolloutRestartTarget on stalwart-secrets.
+            - name: STALWART_RECOVERY_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: STALWART_RECOVERY_ADMIN
           ports:
             - containerPort: 25
               hostPort: 25
@@ -100,17 +99,23 @@ spec:
             - containerPort: 8080
               name: http
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /admin/
               port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             tcpSocket:
               port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
           volumeMounts:
             - name: stalwart-data
-              mountPath: /opt/stalwart
-            - name: stalwart-config-template
-              mountPath: /config/config.toml
-              subPath: config.toml
+              mountPath: /var/lib/stalwart
+            - name: stalwart-config-json
+              mountPath: /etc/stalwart/config.json
+              subPath: config.json
           resources:
             requests:
               cpu: 200m
@@ -118,13 +123,50 @@ spec:
             limits:
               cpu: 1000m
               memory: 2Gi
+        # Reconciles the declarative settings Stalwart stores in its
+        # datastore (listeners, domain wiring, ACME/DNS providers,
+        # Vault-managed accounts) and refreshes the Cloudflare DNS-01
+        # token in the store on every pod start. Idles after a
+        # successful pass.
+        - name: stalwart-apply
+          image: ghcr.io/esa-blueshell/stalwart-tools:latest
+          command: ['sh', '/opt/stalwart-tools/apply.sh']
+          env:
+            - name: STALWART_URL
+              value: http://127.0.0.1:8080
+            - name: STALWART_HOSTNAME
+              value: stalwart.esa-blueshell.nl
+            - name: STALWART_DOMAIN
+              value: esa-blueshell.nl
+            - name: STALWART_USER
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: admin-user
+            - name: STALWART_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: admin-password
+            - name: CF_DNS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-api-token
+                  key: api-token
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
       volumes:
         - name: stalwart-data
           persistentVolumeClaim:
             claimName: stalwart-data
-        - name: stalwart-config-template
+        - name: stalwart-config-json
           configMap:
-            name: stalwart-config-template
+            name: stalwart-config-json
 ---
 apiVersion: v1
 kind: Service

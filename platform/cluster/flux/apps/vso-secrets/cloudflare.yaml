@@ -63,3 +63,26 @@ spec:
         api-token:
           text: '{{- get .Secrets "cloudflare.dns_api_token" -}}'
   refreshAfter: 1h
+---
+# Third mirror: the stalwart-apply sidecar in mail-system uses this
+# token to refresh Stalwart's DnsServer secret (Cloudflare DNS-01) on
+# every pod boot. The vault-secrets-operator ServiceAccount in
+# mail-system is created by stalwart-secrets.yaml.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: cloudflare-api-token
+  namespace: mail-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/edge
+  destination:
+    name: cloudflare-api-token
+    create: true
+    transformation:
+      templates:
+        api-token:
+          text: '{{- get .Secrets "cloudflare.dns_api_token" -}}'
+  refreshAfter: 1h

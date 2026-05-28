@@ -153,9 +153,16 @@ spec:
               value: .esa-blueshell.nl
             - name: STORAGE_LOCATION
               value: /srv/storage
-            # SMTP transport — relay through Stalwart in-cluster.
+            # SMTP transport — relay through Stalwart via its public
+            # mail hostname. The traffic still terminates on the same
+            # Frankfurt VPS (hairpin through the public IP) but the
+            # JavaMail client validates the cert SAN against the
+            # connect host, and the wildcard ACME cert covers
+            # `mail.esa-blueshell.nl` while in-cluster Service DNS is
+            # not in the cert. Using the public name keeps strict
+            # TLS verification on without bypass flags.
             - name: SMTP_HOST
-              value: stalwart.mail-system.svc.cluster.local
+              value: mail.esa-blueshell.nl
             - name: SMTP_PORT
               value: '587'
             - name: SMTP_STARTTLS
@@ -186,7 +193,7 @@ spec:
             - name: EMAIL_BOUNCE_IMAP_ENABLED
               value: 'false'
             - name: EMAIL_BOUNCE_IMAP_HOST
-              value: stalwart.mail-system.svc.cluster.local
+              value: mail.esa-blueshell.nl
             - name: EMAIL_BOUNCE_IMAP_PORT
               value: '993'
             - name: EMAIL_BOUNCE_IMAP_TLS

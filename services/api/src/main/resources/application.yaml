@@ -176,19 +176,24 @@ spring.mail:
     # Stalwart's TLS cert is ACME-issued for the public mail hostname
     # (`stalwart.esa-blueshell.nl`) — public CAs can't sign certs for
     # `*.svc.cluster.local`, so STARTTLS to `stalwart.mail-system.svc`
-    # failed strict-hostname-verify with
-    #   "(certificate_unknown) No subject alternative DNS name matching
+    # fails the JSSE endpoint-identity check with
+    #   "No subject alternative DNS name matching
     #   stalwart.mail-system.svc.cluster.local found"
-    # and every Recovery / Activation / Reminder job died with
-    # MailSendException.
+    # at `HostnameChecker.matchDNS`, and every Recovery / Activation /
+    # Reminder job dies with MailSendException.
     #
-    # `mail.smtp.ssl.trust=<host>` tells JavaMail to trust whatever cert
-    # the configured SMTP host presents, skipping the SAN check for that
-    # one host. Encryption still happens (STARTTLS); the client just
-    # doesn't insist the cert's CN/SANs include the internal hostname.
-    # Acceptable because the traffic is intra-cluster — the pod overlay
-    # network is the trust boundary.
-    mail.smtp.ssl.trust: ${SMTP_SSL_TRUST:${SMTP_HOST:stalwart}}
+    # Two distinct checks happen on the TLS socket:
+    #   1. trust-manager (does a known CA sign this cert?) — passes,
+    #      the cert is Let's Encrypt-signed.
+    #   2. endpoint-identity (does the connect-host match a SAN?) —
+    #      fails, the SAN is the public mail hostname.
+    # `mail.smtp.ssl.trust` only affects (1). The SAN check is gated
+    # by `mail.smtp.ssl.checkserveridentity` (Angus default `true`,
+    # which sets `SSLParameters.endpointIdentificationAlgorithm=HTTPS`).
+    # Turning that off skips (2) for this connection. Acceptable
+    # because intra-cluster traffic is the trust boundary — the cert
+    # itself is still validated against the CA chain.
+    mail.smtp.ssl.checkserveridentity: ${SMTP_SSL_CHECK_SERVER_IDENTITY:false}
     mail.smtp.connectiontimeout: 10000
     mail.smtp.timeout: 30000
     mail.smtp.writetimeout: 30000

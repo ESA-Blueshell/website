@@ -59,13 +59,22 @@ class BrevoContactAdapterTest {
     }
 
     @Test
-    fun `duplicate SMS adopts the existing contact looked up by phone`() {
-        whenever(contactsApi.createContact(any())).thenThrow(duplicateError("SMS"))
-        whenever(contactsApi.getContactInfo(eq(data.phoneNumber!!), eq("phone_id"), anyOrNull(), anyOrNull()))
-            .thenReturn(GetContactInfo200Response().id(77L))
+    fun `phone-only duplicate on create drops SMS-WHATSAPP and retries instead of adopting by phone`() {
+        // Adopting a stranger who happens to share a phone number would corrupt
+        // the pairing. The right behaviour is to drop the conflicting phone
+        // attributes and create a fresh contact without them.
+        doThrow(duplicateError("SMS"))
+            .doReturn(CreateContact201Response().id(77L))
+            .whenever(contactsApi).createContact(any())
 
         assertThat(adapter.createContact(data)).isEqualTo(77L)
-        verify(contactsApi).updateContact(eq("77"), any<UpdateContactRequest>(), eq("contact_id"))
+
+        val captor = argumentCaptor<CreateContactRequest>()
+        verify(contactsApi, org.mockito.kotlin.times(2)).createContact(captor.capture())
+        val retry = captor.allValues.last()
+        assertThat(retry.attributes!!.keys).doesNotContain("SMS", "WHATSAPP")
+        // No phone-based lookup → no adoption.
+        verify(contactsApi, never()).updateContact(any(), any<UpdateContactRequest>(), any())
     }
 
     @Test

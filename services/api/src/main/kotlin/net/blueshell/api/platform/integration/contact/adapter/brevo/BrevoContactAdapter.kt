@@ -85,7 +85,7 @@ class BrevoContactAdapter(
         } catch (e: RestClientResponseException) {
             val error = parseBrevoError(e, jsonMapper)
             return when {
-                error?.code == DUPLICATE_PARAMETER -> adoptExistingContact(data, error, e)
+                error?.code == DUPLICATE_PARAMETER -> handleCreateDuplicate(data, omittedAttrs, error, e)
                 shouldDropPhone(error, omittedAttrs) -> {
                     log.warn("Brevo create rejected phone for {}; retrying without SMS/WHATSAPP", data.email)
                     createOrAdopt(data, omittedAttrs + PHONE_ATTRS)
@@ -96,6 +96,42 @@ class BrevoContactAdapter(
                 }
             }
         }
+    }
+
+    /**
+     * Decide what to do when Brevo rejected the create with `duplicate_parameter`.
+     *
+     * We only adopt when the duplicated identifier is `EMAIL`, because email is
+     * the stable identity we control: matching emails almost certainly means we
+     * are looking at the same person. Phone- or EXT_ID-only duplicates can
+     * collide on a completely different contact (a partner / family member
+     * sharing a number, or someone whose Brevo `ext_id` happens to match an old
+     * email of ours), so attaching there would corrupt the pairing. In that
+     * case we drop the conflicting attributes and try creating a fresh contact
+     * without them — the rest of the contact still syncs and the colliding
+     * data simply isn't pushed.
+     */
+    private fun handleCreateDuplicate(
+        data: ContactData,
+        omittedAttrs: Set<String>,
+        error: BrevoError,
+        cause: RestClientResponseException,
+    ): Long {
+        val duplicates = error.duplicateIdentifiers.map { BrevoDuplicateIdentifier.from(it) }.toSet()
+        if (BrevoDuplicateIdentifier.EMAIL in duplicates) {
+            return adoptExistingContact(data, error, cause)
+        }
+        val expanded = expandOmissions(error.duplicateIdentifiers, omittedAttrs)
+        if (expanded.size == omittedAttrs.size) {
+            // Brevo reported a duplicate but we don't recognise the identifier,
+            // so we can't drop it. Surface the situation rather than loop.
+            throw BrevoDuplicateContactException(duplicates, data.email, data.phoneNumber, cause)
+        }
+        log.warn(
+            "Brevo create on {} conflicted on non-email identifier(s) {}; retrying without {}",
+            data.email, error.duplicateIdentifiers, expanded - omittedAttrs,
+        )
+        return createOrAdopt(data, expanded)
     }
 
     /**

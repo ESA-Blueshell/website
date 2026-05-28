@@ -9,11 +9,26 @@ import istanbul from 'vite-plugin-istanbul'
 export default defineConfig({
     build: {
         target: "esnext",
+        // vuetify (~500 kB) and country-data (~615 kB) are legitimately
+        // above Vite's 500 kB default; lift the threshold above the floor.
+        chunkSizeWarningLimit: 700,
         rollupOptions: {
             output: {
                 entryFileNames: 'assets/[hash].js',
                 chunkFileNames: 'assets/[hash].js',
                 assetFileNames: 'assets/[hash][extname]',
+                // Pin heavy vendors to dedicated chunks so the browser
+                // caches them independently from app code.
+                manualChunks(id) {
+                    if (!/[\\/](?:node_modules|\.yarn[\\/]cache)[\\/]/.test(id)) return
+                    if (/[\\/]vuetify[\\/]/.test(id)) return 'vuetify'
+                    if (/[\\/]libphonenumber-js[\\/]/.test(id)) return 'libphonenumber'
+                    if (/[\\/](?:world-countries|countries-list|i18n-nationality)[\\/]/.test(id)) return 'country-data'
+                    if (/[\\/](?:v-phone-input|flag-icons)[\\/]/.test(id)) return 'phone-input'
+                    if (/[\\/](?:vue|@vue|vue-router|vuex|vue-axios)[\\/]/.test(id)) return 'vue-core'
+                    if (/[\\/]luxon[\\/]/.test(id)) return 'datetime'
+                    if (/[\\/](?:marked|dompurify|xss|node-emoji)[\\/]/.test(id)) return 'markup'
+                },
             },
         },
     },

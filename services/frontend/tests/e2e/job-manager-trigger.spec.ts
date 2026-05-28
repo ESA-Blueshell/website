@@ -15,7 +15,7 @@ test.describe("job manager trigger modal", () => {
 
     // Pick a job type from the generated catalog.
     await page.getByTestId("job-trigger-type").click()
-    await page.getByRole("option", {name: "Contact Sync"}).click()
+    await page.getByRole("option", {name: "Contact Sync", exact: true}).click()
 
     // The argument input is rendered from the type's payload fields.
     const userIdField = page.getByTestId("job-trigger-field-userId").locator("input")
@@ -44,7 +44,7 @@ test.describe("job manager trigger modal", () => {
 
     await page.getByTestId("job-manager-trigger-btn").click()
     await page.getByTestId("job-trigger-type").click()
-    await page.getByRole("option", {name: "Contact Sync"}).click()
+    await page.getByRole("option", {name: "Contact Sync", exact: true}).click()
 
     await expect(page.getByTestId("job-trigger-submit")).toBeDisabled()
 

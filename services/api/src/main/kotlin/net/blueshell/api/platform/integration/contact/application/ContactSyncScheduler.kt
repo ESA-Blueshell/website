@@ -17,6 +17,22 @@ import org.springframework.stereotype.Component
 class ContactSyncScheduler(
     private val jobs: TrackedJobDispatcher,
 ) {
+    /**
+     * Reconciles per-contribution-period contact lists. Creates missing lists,
+     * links them to the period, and enqueues a ProcessListMembership job per
+     * paid contribution. Runs before the contact and list-membership syncs so
+     * that by the time those passes start, the lists exist and the membership
+     * rows have been seeded.
+     */
+    @Scheduled(cron = "\${contact.ensure-period-lists-cron:0 0 1 * * *}")
+    fun ensureContributionPeriodLists() {
+        log.info("Scheduling ensure-contribution-period-lists spawn job")
+        jobs.enqueue(
+            ContactJobs.EnsureContributionPeriodLists,
+            ContactJobs.EnsureContributionPeriodListsPayload(),
+        )
+    }
+
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")

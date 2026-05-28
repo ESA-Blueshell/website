@@ -63,6 +63,14 @@ object ContactJobs {
         override val payloadType: Class<SyncListMembershipCommand> = SyncListMembershipCommand::class.java
     }
 
+    object EnsureContributionPeriodLists : JobDefinition<EnsureContributionPeriodListsPayload> {
+        override val type: String = "contact.ensure-period-lists"
+        override val payloadType: Class<EnsureContributionPeriodListsPayload> =
+            EnsureContributionPeriodListsPayload::class.java
+        // No dedup: each nightly run reconciles the latest contribution state.
+        override fun dedupKey(payload: EnsureContributionPeriodListsPayload): String? = null
+    }
+
     object SyncContact : JobDefinition<SyncContactPayload> {
         override val type: String = "contact.sync"
         override val payloadType: Class<SyncContactPayload> = SyncContactPayload::class.java
@@ -75,6 +83,7 @@ object ContactJobs {
 
     data class DispatchContactSyncsPayload(val unused: Unit = Unit)
     data class DispatchListMembershipSyncsPayload(val unused: Unit = Unit)
+    data class EnsureContributionPeriodListsPayload(val unused: Unit = Unit)
 
     data class ProcessListMembershipPayload(
         val userId: Long,

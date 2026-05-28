@@ -17,6 +17,9 @@ abstract class ContactAdapterSyncTarget(
         data == null && currentExternalId == null -> null
         data == null -> { adapter.deleteContact(currentExternalId!!.toLong()); null }
         currentExternalId == null -> adapter.createContact(data).toString()
-        else -> { adapter.updateContact(currentExternalId.toLong(), data); currentExternalId }
+        // The adapter may repair stale pairing (e.g. the old contact was deleted
+        // on the external side) and return a different id; pass it back so
+        // SyncFanOut updates the external_id_mapping.
+        else -> adapter.updateContact(currentExternalId.toLong(), data).toString()
     }
 }

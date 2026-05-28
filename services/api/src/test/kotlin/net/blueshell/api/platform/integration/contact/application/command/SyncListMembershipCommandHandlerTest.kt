@@ -10,7 +10,10 @@ import net.blueshell.api.platform.integration.contact.persistence.repository.Con
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.SyncListMembershipCommand
+import net.blueshell.api.shared.job.TrackedJobDispatcher
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.mockito.kotlin.eq
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -31,12 +34,14 @@ class SyncListMembershipCommandHandlerTest {
     private val contactRepository: ContactRepository = mock()
     private val contactListRepository: ContactListRepository = mock()
     private val contactListMembershipRepository: ContactListMembershipRepository = mock()
+    private val jobs: TrackedJobDispatcher = mock()
 
     private val handler = SyncListMembershipCommandHandler(
         listAdapters = listOf(listAdapter),
         contactRepository = contactRepository,
         contactListRepository = contactListRepository,
         contactListMembershipRepository = contactListMembershipRepository,
+        jobs = jobs,
     )
 
     private val userId = 10L
@@ -148,11 +153,53 @@ class SyncListMembershipCommandHandlerTest {
             contactRepository = contactRepository,
             contactListRepository = contactListRepository,
             contactListMembershipRepository = contactListMembershipRepository,
+            jobs = jobs,
         )
 
         assertThrows(NonRetryableJobException::class.java) {
             handlerNoAdapters.handle(command)
         }
+    }
+
+    @Test
+    fun `missing contact pairing enqueues a sync and throws retryable`() {
+        val contact = Contact(userId = userId).also { it.id = 1L }  // no external id yet
+        val membership = mock<ContactListMembership>()
+        val list = listWithExternalId()
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(contactListId)).thenReturn(Optional.of(list))
+        whenever(contactListMembershipRepository.findByContactIdAndContactListId(1L, contactListId)).thenReturn(membership)
+
+        assertThrows(RuntimeException::class.java) { handler.handle(command) }
+
+        verify(jobs).enqueue(
+            eq(net.blueshell.api.shared.job.ContactJobs.SyncContact),
+            eq(net.blueshell.api.shared.job.ContactJobs.SyncContactPayload(userId)),
+        )
+        verify(listAdapter, never()).addToList(any(), any())
+    }
+
+    @Test
+    fun `contact gone upstream clears the pairing, enqueues a sync, and throws retryable`() {
+        val contact = contactWithExternalId()
+        val membership = mock<ContactListMembership>()
+        val list = listWithExternalId()
+        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
+        whenever(contactListRepository.findById(contactListId)).thenReturn(Optional.of(list))
+        whenever(contactListMembershipRepository.findByContactIdAndContactListId(1L, contactListId)).thenReturn(membership)
+        whenever(listAdapter.addToList(externalContactId, externalListId))
+            .thenThrow(net.blueshell.api.platform.integration.contact.adapter.brevo.BrevoContactGoneException(externalContactId))
+
+        assertThrows(RuntimeException::class.java) { handler.handle(command) }
+
+        // Local pairing for BREVO is cleared so the next attempt won't reuse
+        // the dead id, and a contact sync is queued to repair it.
+        assertThat(contact.externalId(system)).isNull()
+        verify(contactRepository).save(contact)
+        verify(jobs).enqueue(
+            eq(net.blueshell.api.shared.job.ContactJobs.SyncContact),
+            eq(net.blueshell.api.shared.job.ContactJobs.SyncContactPayload(userId)),
+        )
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

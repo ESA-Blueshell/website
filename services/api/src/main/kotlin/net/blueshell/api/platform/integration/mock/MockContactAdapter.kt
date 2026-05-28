@@ -52,7 +52,7 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
         return contactId
     }
 
-    override fun updateContact(externalId: Long, data: ContactData) {
+    override fun updateContact(externalId: Long, data: ContactData): Long {
         val contact = contacts[externalId]
             ?: throw ContactServiceException("Mock: Contact not found: $externalId")
         contact.apply {
@@ -65,6 +65,7 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
             attributes.putAll(data.attributes)
         }
         log.info("Mock: Updated contact id={}", externalId)
+        return externalId
     }
 
     override fun deleteContact(externalId: Long) {

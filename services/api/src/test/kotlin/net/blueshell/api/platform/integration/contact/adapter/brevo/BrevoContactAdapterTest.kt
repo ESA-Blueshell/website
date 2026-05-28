@@ -11,6 +11,10 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -41,7 +45,7 @@ class BrevoContactAdapterTest {
     }
 
     @Test
-    fun `duplicate email adopts the existing contact and pushes attributes`() {
+    fun `duplicate email adopts the existing contact and updates by contact_id`() {
         whenever(contactsApi.createContact(any())).thenThrow(duplicateError("email"))
         whenever(contactsApi.getContactInfo(eq(data.email), eq("email_id"), anyOrNull(), anyOrNull()))
             .thenReturn(GetContactInfo200Response().id(99L))
@@ -49,7 +53,9 @@ class BrevoContactAdapterTest {
         val id = adapter.createContact(data)
 
         assertThat(id).isEqualTo(99L)
-        verify(contactsApi).updateContact(eq(data.email), any<UpdateContactRequest>(), eq("email_id"))
+        // Critical: the adopt-then-update path must address the contact by its
+        // resolved numeric id, not by the email it just collided on.
+        verify(contactsApi).updateContact(eq("99"), any<UpdateContactRequest>(), eq("contact_id"))
     }
 
     @Test
@@ -59,6 +65,7 @@ class BrevoContactAdapterTest {
             .thenReturn(GetContactInfo200Response().id(77L))
 
         assertThat(adapter.createContact(data)).isEqualTo(77L)
+        verify(contactsApi).updateContact(eq("77"), any<UpdateContactRequest>(), eq("contact_id"))
     }
 
     @Test
@@ -73,7 +80,7 @@ class BrevoContactAdapterTest {
     }
 
     @Test
-    fun `non-duplicate error surfaces as BrevoApiException with parsed code`() {
+    fun `non-duplicate create error surfaces as BrevoApiException with parsed code`() {
         whenever(contactsApi.createContact(any())).thenThrow(
             error(400, """{"code":"invalid_parameter","message":"Invalid email"}"""),
         )
@@ -82,6 +89,93 @@ class BrevoContactAdapterTest {
             .isInstanceOf(BrevoApiException::class.java)
             .hasMessageContaining("invalid_parameter")
             .hasMessageContaining("Invalid email")
+    }
+
+    @Test
+    fun `invalid phone on create retries without SMS-WHATSAPP and succeeds`() {
+        doThrow(error(400, """{"code":"invalid_parameter","message":"Invalid phone number"}"""))
+            .doReturn(CreateContact201Response().id(55L))
+            .whenever(contactsApi).createContact(any())
+
+        assertThat(adapter.createContact(data)).isEqualTo(55L)
+
+        val captor = argumentCaptor<CreateContactRequest>()
+        verify(contactsApi, org.mockito.kotlin.times(2)).createContact(captor.capture())
+        val second = captor.allValues.last().attributes!!
+        assertThat(second.keys).doesNotContain("SMS", "WHATSAPP")
+    }
+
+    @Test
+    fun `updateContact uses contact_id with the supplied numeric id`() {
+        doNothing().whenever(contactsApi).updateContact(any(), any<UpdateContactRequest>(), any())
+
+        val returned = adapter.updateContact(123L, data)
+
+        assertThat(returned).isEqualTo(123L)
+        verify(contactsApi).updateContact(eq("123"), any<UpdateContactRequest>(), eq("contact_id"))
+    }
+
+    @Test
+    fun `404 on updateContact triggers re-create and returns the new id`() {
+        // The stored mapping points at a Brevo contact that no longer exists.
+        // The adapter must self-heal by creating fresh (or adopting a different
+        // existing one) and returning that new id so the orchestration layer
+        // repairs the external_id_mapping.
+        doThrow(error(404, """{"code":"document_not_found","message":"Contact does not exist"}"""))
+            .whenever(contactsApi).updateContact(eq("888"), any<UpdateContactRequest>(), eq("contact_id"))
+        whenever(contactsApi.createContact(any())).thenReturn(CreateContact201Response().id(900L))
+
+        val returned = adapter.updateContact(888L, data)
+
+        assertThat(returned).isEqualTo(900L)
+        verify(contactsApi).createContact(any())
+    }
+
+    @Test
+    fun `duplicate_parameter on update retries with the conflicting attributes dropped`() {
+        // First call: SMS / WHATSAPP / EXT_ID conflict on the resolved contact.
+        // Second call (after dropping those attributes) succeeds — the rest of
+        // the contact still gets synced.
+        var callCount = 0
+        doAnswer {
+            callCount++
+            if (callCount == 1) {
+                throw error(
+                    400,
+                    """{"code":"duplicate_parameter","message":"Unable to update contact, SMS or WHATSAPP or EXT_ID are already associated","metadata":{"duplicate_identifiers":["SMS","WHATSAPP","EXT_ID"]}}""",
+                )
+            }
+            null
+        }.whenever(contactsApi).updateContact(any(), any<UpdateContactRequest>(), any())
+
+        assertThat(adapter.updateContact(500L, data)).isEqualTo(500L)
+
+        val captor = argumentCaptor<UpdateContactRequest>()
+        verify(contactsApi, org.mockito.kotlin.times(2))
+            .updateContact(eq("500"), captor.capture(), eq("contact_id"))
+        val retry = captor.allValues.last()
+        assertThat(retry.extId).isNull()
+        assertThat(retry.attributes!!.keys).doesNotContain("SMS", "WHATSAPP")
+    }
+
+    @Test
+    fun `invalid phone on update retries without SMS-WHATSAPP and succeeds`() {
+        var callCount = 0
+        doAnswer {
+            callCount++
+            if (callCount == 1) {
+                throw error(400, """{"code":"invalid_parameter","message":"Invalid phone number"}""")
+            }
+            null
+        }.whenever(contactsApi).updateContact(any(), any<UpdateContactRequest>(), any())
+
+        assertThat(adapter.updateContact(601L, data)).isEqualTo(601L)
+
+        val captor = argumentCaptor<UpdateContactRequest>()
+        verify(contactsApi, org.mockito.kotlin.times(2))
+            .updateContact(eq("601"), captor.capture(), eq("contact_id"))
+        val retry = captor.allValues.last()
+        assertThat(retry.attributes!!.keys).doesNotContain("SMS", "WHATSAPP")
     }
 
     private fun duplicateError(identifier: String): RestClientResponseException =

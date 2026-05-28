@@ -16,6 +16,14 @@ interface ContactAdapter {
     val system: ContactSystem
 
     fun createContact(data: ContactData): Long
-    fun updateContact(externalId: Long, data: ContactData)
+
+    /**
+     * Updates the contact and returns its current external id. The returned id is
+     * usually the same one passed in, but adapters may repair stale pairing on
+     * the fly (e.g. when the external contact was deleted) and return a new id;
+     * the orchestration layer persists the result so the mapping stays correct.
+     */
+    fun updateContact(externalId: Long, data: ContactData): Long
+
     fun deleteContact(externalId: Long)
 }

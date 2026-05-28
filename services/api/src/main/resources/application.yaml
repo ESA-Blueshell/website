@@ -173,6 +173,22 @@ spring.mail:
     mail.smtp.auth: ${SMTP_AUTH:true}
     mail.smtp.starttls.enable: ${SMTP_STARTTLS:true}
     mail.smtp.starttls.required: ${SMTP_STARTTLS_REQUIRED:false}
+    # Stalwart's TLS cert is ACME-issued for the public mail hostname
+    # (`stalwart.esa-blueshell.nl`) — public CAs can't sign certs for
+    # `*.svc.cluster.local`, so STARTTLS to `stalwart.mail-system.svc`
+    # failed strict-hostname-verify with
+    #   "(certificate_unknown) No subject alternative DNS name matching
+    #   stalwart.mail-system.svc.cluster.local found"
+    # and every Recovery / Activation / Reminder job died with
+    # MailSendException.
+    #
+    # `mail.smtp.ssl.trust=<host>` tells JavaMail to trust whatever cert
+    # the configured SMTP host presents, skipping the SAN check for that
+    # one host. Encryption still happens (STARTTLS); the client just
+    # doesn't insist the cert's CN/SANs include the internal hostname.
+    # Acceptable because the traffic is intra-cluster — the pod overlay
+    # network is the trust boundary.
+    mail.smtp.ssl.trust: ${SMTP_SSL_TRUST:${SMTP_HOST:stalwart}}
     mail.smtp.connectiontimeout: 10000
     mail.smtp.timeout: 30000
     mail.smtp.writetimeout: 30000

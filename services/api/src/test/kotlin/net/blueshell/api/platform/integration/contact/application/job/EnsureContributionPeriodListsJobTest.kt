@@ -67,7 +67,7 @@ class EnsureContributionPeriodListsJobTest {
     }
 
     @Test
-    fun `one period failing does not stop the rest`() {
+    fun `one period failing does not stop the rest, but the job throws to mark partial failure`() {
         val periodA = period(id = 1L, hasList = true, listId = 10L, startYear = 2024, endYear = 2025)
         val periodB = period(id = 2L, hasList = true, listId = 20L, startYear = 2025, endYear = 2026)
         whenever(periods.findAll()).thenReturn(mutableListOf(periodA, periodB))
@@ -75,9 +75,8 @@ class EnsureContributionPeriodListsJobTest {
         whenever(contributions.findByContributionPeriodId(1L)).thenThrow(RuntimeException("boom"))
         whenever(contributions.findByContributionPeriodId(2L)).thenReturn(mutableListOf(c7))
 
-        invokeJob()
+        org.junit.jupiter.api.assertThrows<IllegalStateException> { invokeJob() }
 
-        // periodB still gets processed even though periodA threw.
         verify(jobs).enqueue(ContactJobs.ProcessListMembership, ContactJobs.ProcessListMembershipPayload(7L, 2L))
     }
 

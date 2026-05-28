@@ -44,23 +44,32 @@ class EnsureContributionPeriodListsJob(
         val allPeriods = periods.findAll()
         log.info("Reconciling contribution-period lists for {} periods", allPeriods.size)
 
+        val failures = mutableListOf<Long>()
         for (period in allPeriods) {
             val periodId = period.id ?: continue
-            try {
-                ensureListLinked(period)
-                val rows = contributions.findByContributionPeriodId(periodId)
-                log.debug("Period {}: enqueuing {} ProcessListMembership jobs", periodId, rows.size)
-                for (contribution in rows) {
-                    jobs.enqueue(
-                        ContactJobs.ProcessListMembership,
-                        ContactJobs.ProcessListMembershipPayload(contribution.userId, periodId),
-                    )
+            runCatching { reconcilePeriod(period, periodId) }
+                .onFailure {
+                    failures += periodId
+                    log.error("Failed to reconcile period {}", periodId, it)
                 }
-            } catch (e: Exception) {
-                // Don't let one period's failure block the others; each
-                // ProcessListMembership job is tracked on its own.
-                log.error("Failed to reconcile period {}", periodId, e)
-            }
+        }
+
+        if (failures.isNotEmpty()) {
+            // Other periods still processed; surface partial failure so the
+            // JobExecution row reflects it and the retry/supersede flow can act.
+            throw IllegalStateException("Failed to reconcile contribution periods: $failures")
+        }
+    }
+
+    private fun reconcilePeriod(period: ContributionPeriod, periodId: Long) {
+        ensureListLinked(period)
+        val rows = contributions.findByContributionPeriodId(periodId)
+        log.debug("Period {}: enqueuing {} ProcessListMembership jobs", periodId, rows.size)
+        for (contribution in rows) {
+            jobs.enqueue(
+                ContactJobs.ProcessListMembership,
+                ContactJobs.ProcessListMembershipPayload(contribution.userId, periodId),
+            )
         }
     }
 

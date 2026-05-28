@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "localPart": "api",
+    "vaultKey": "account.api",
+    "aliases": ["no-reply"]
+  },
+  {
+    "localPart": "bounce",
+    "vaultKey": "account.bounce"
+  },
+  {
+    "localPart": "board",
+    "vaultKey": "account.board",
+    "aliases": ["bestuur"]
+  },
+  {
+    "localPart": "secretary",
+    "vaultKey": "account.secretary",
+    "aliases": ["secretaris"]
+  },
+  {
+    "localPart": "treasurer",
+    "vaultKey": "account.treasurer",
+    "aliases": ["penningmeester"]
+  },
+  {
+    "localPart": "events",
+    "vaultKey": "account.events",
+    "aliases": ["sitecie", "evenementen"]
+  }
+]

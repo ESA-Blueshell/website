@@ -24,6 +24,10 @@ set -eu
 : "${CF_DNS_API_TOKEN:?}"
 : "${PLAN_TEMPLATE:=/opt/stalwart-tools/plan.ndjson.tmpl}"
 : "${ACCOUNTS_FILE:=/opt/stalwart-tools/accounts.json}"
+# Directory containing one file per Vault key, mounted from the
+# stalwart-secrets Secret. accounts.json's `vaultKey` field names the
+# file to read (e.g. `account.api`).
+: "${ACCOUNT_PASSWORDS_DIR:=/etc/stalwart-accounts}"
 
 export STALWART_URL STALWART_USER STALWART_PASSWORD
 
@@ -126,12 +130,15 @@ reconcile_accounts() {
     entry="$(jq -c ".[$i]" "$ACCOUNTS_FILE")"
     i=$((i + 1))
     lp="$(printf '%s' "$entry" | jq -r '.localPart')"
-    pwenv="$(printf '%s' "$entry" | jq -r '.passwordEnv')"
-    pw="$(eval printf '%s' "\"\${$pwenv:-}\"")"
-    if [ -z "$pw" ]; then
-      echo "apply: skipping ${lp}: \$${pwenv} is empty" >&2
+    vault_key="$(printf '%s' "$entry" | jq -r '.vaultKey')"
+    pw_file="${ACCOUNT_PASSWORDS_DIR}/${vault_key}"
+    if [ ! -s "$pw_file" ]; then
+      echo "apply: skipping ${lp}: ${pw_file} missing or empty (seed ${vault_key} in secret/platform/mail)" >&2
       continue
     fi
+    # Strip a single trailing newline if the secret was written with
+    # `vault kv put …=@file` from a CLI tool that appended one.
+    pw="$(awk 'NR==1{printf "%s", $0; next} {printf "\n%s", $0}' "$pw_file")"
 
     # Always set the password. aliases/memberGroupIds are only touched
     # when the entry explicitly declares them, so password-only entries

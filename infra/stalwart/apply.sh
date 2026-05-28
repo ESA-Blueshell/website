@@ -94,18 +94,23 @@ reconcile() {
 
   # 3. Wire the domain:
   #    - certificateManagement: Automatic via the ACME provider (DNS-01).
-  #    - dnsManagement: Automatic with publishRecords:[] — Stalwart keeps
-  #      its DnsServer ref for ACME challenges, but does not auto-publish
-  #      SPF / DMARC / MX / DKIM / MTA-STS / TLS-RPT / CAA / autoconfig
-  #      records. Those live in the operator-managed zone file
-  #      (infra/dns) so the Cloudflare import is the single source of
-  #      truth and Stalwart never fights the zone.
+  #    - dnsManagement: Automatic — Stalwart uses the configured
+  #      DnsServer for ACME DNS-01 challenges AND for auto-publishing
+  #      mail records (DKIM/SPF/MX/DMARC/MTA-STS/TLS-RPT/CAA/autoConfig).
+  #      The publishRecords field is intentionally not patched here:
+  #      empty `{}` is rejected (`must be at least 1 chars`) and `[]`
+  #      is rejected as invalidPatch — the field requires at least one
+  #      record type. We let Stalwart keep its default-all-true setting
+  #      so it manages those records based on its own model; the
+  #      operator-imported records in infra/dns are advance scaffolding
+  #      (placeholders / fallbacks) and get authoritatively replaced by
+  #      Stalwart's writes once the Domain object is wired up.
   #    - dkimManagement: Manual — reconcile_dkim below owns the
   #      DkimSignature lifecycle, and the matching DNS TXT record is
   #      operator-published; Stalwart's automatic rotation logic would
   #      just clash with both.
   #    Convergent: webadmin changes get straightened on the next boot.
-  printf '{"@type":"update","object":"Domain","id":"%s","value":{"certificateManagement":{"@type":"Automatic","acmeProviderId":"%s"},"dnsManagement":{"@type":"Automatic","dnsServerId":"%s","publishRecords":[]},"dkimManagement":{"@type":"Manual"}}}\n' \
+  printf '{"@type":"update","object":"Domain","id":"%s","value":{"certificateManagement":{"@type":"Automatic","acmeProviderId":"%s"},"dnsManagement":{"@type":"Automatic","dnsServerId":"%s"},"dkimManagement":{"@type":"Manual"}}}\n' \
     "$dom" "$acme" "$dns" | sc apply --file /dev/stdin
 
   # 4. Renew the Cloudflare DNS-01 token every boot. Rotating the Vault

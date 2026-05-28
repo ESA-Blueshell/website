@@ -9,6 +9,7 @@ $accent: rgb(var(--v-theme-accent));
   transition-property: all;
   transition-duration: 0.15s;
   transition-delay: 0ms;
+  border-radius: settings.$border-radius-root;
 }
 
 .v-theme--dark.v-application {

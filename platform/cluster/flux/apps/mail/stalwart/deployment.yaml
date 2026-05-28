@@ -52,6 +52,33 @@ spec:
       # on the public-IP node.
       nodeSelector:
         kubernetes.io/hostname: frankfurt-contabo-1
+      # The stalwart-tools image is published private under
+      # ghcr.io/esa-blueshell/, same as api / frontend. Without this
+      # secret the apply sidecar ImagePullBackOffs, and the pod's
+      # readiness probe never passes because the sidecar is part of the
+      # pod's combined ready state.
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      # The PVC carries over from the v0.15 deployment, which ran as
+      # root and left every file in /var/lib/stalwart owned by uid 0.
+      # v0.16 runs as uid 2000 and can't write to those files, so the
+      # main container crashes at boot with
+      # `Permission denied: /var/lib/stalwart/data/LOG`. Chown the
+      # mount once per pod start as uid 0 (the init container is its
+      # own securityContext). Cheap on a clean tree, fixes the v0.15
+      # carry-over PVC on the very first boot of v0.16.
+      initContainers:
+        - name: stalwart-data-perms
+          image: busybox:1.37-musl
+          command:
+            - sh
+            - -c
+            - 'chown -R 2000:2000 /var/lib/stalwart'
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: stalwart-data
+              mountPath: /var/lib/stalwart
       containers:
         # Stalwart reads /etc/stalwart/config.json (datastore pointer
         # only) on boot; everything else is reconciled by the apply

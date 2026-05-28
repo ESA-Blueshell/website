@@ -37,3 +37,29 @@ spec:
             {{- $auth := printf "%s:%s" (get .Secrets "username") (get .Secrets "token") | b64enc -}}
             {"auths":{"ghcr.io":{"username":"{{ get .Secrets "username" }}","password":"{{ get .Secrets "token" }}","auth":"{{ $auth }}"}}}
   refreshAfter: 1h
+---
+# Second mirror: the stalwart-apply sidecar pulls
+# ghcr.io/esa-blueshell/stalwart-tools (private package) into the
+# mail-system namespace. The vault-secrets-operator ServiceAccount in
+# mail-system already exists (created by stalwart-secrets.yaml).
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: ghcr-pull-secret
+  namespace: mail-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/ghcr
+  destination:
+    name: ghcr-pull-secret
+    create: true
+    type: kubernetes.io/dockerconfigjson
+    transformation:
+      templates:
+        .dockerconfigjson:
+          text: |
+            {{- $auth := printf "%s:%s" (get .Secrets "username") (get .Secrets "token") | b64enc -}}
+            {"auths":{"ghcr.io":{"username":"{{ get .Secrets "username" }}","password":"{{ get .Secrets "token" }}","auth":"{{ $auth }}"}}}
+  refreshAfter: 1h

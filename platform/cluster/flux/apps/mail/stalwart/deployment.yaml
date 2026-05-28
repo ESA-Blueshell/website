@@ -165,16 +165,17 @@ spec:
               value: stalwart.esa-blueshell.nl
             - name: STALWART_DOMAIN
               value: esa-blueshell.nl
+            # Vault keys follow the `account.<localpart>` convention.
+            # `account.admin` is the password for the fallback admin
+            # principal seeded by STALWART_RECOVERY_ADMIN on the main
+            # container; its username is the literal localPart `admin`.
             - name: STALWART_USER
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-secrets
-                  key: admin-user
+              value: admin
             - name: STALWART_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: stalwart-secrets
-                  key: admin-password
+                  key: account.admin
             - name: CF_DNS_API_TOKEN
               valueFrom:
                 secretKeyRef:

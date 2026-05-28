@@ -166,17 +166,20 @@ spec:
               value: Blueshell
             - name: EMAIL_REPLY_TO_ADDRESS
               value: sitecie@esa-blueshell.nl
+            # Mail principal credentials follow the
+            # `account.<localpart>` convention. The username is the
+            # full email derived from the localPart; the password
+            # lives at Vault key `account.<localpart>`.
+            #
+            # SMTP submission auths as api@ (the api's dedicated
+            # principal). IMAP bounce-poll auths as bounce@.
             - name: SMTP_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-secrets
-                  key: bounce-mailbox-user
-                  optional: true
+              value: api@esa-blueshell.nl
             - name: SMTP_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: stalwart-secrets
-                  key: bounce-mailbox-password
+                  key: account.api
                   optional: true
             # IMAP bounce poller — disabled by default; flip the flag once
             # the bounce mailbox is provisioned.
@@ -191,16 +194,12 @@ spec:
             - name: EMAIL_BOUNCE_IMAP_FOLDER
               value: INBOX
             - name: EMAIL_BOUNCE_IMAP_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: stalwart-secrets
-                  key: bounce-mailbox-user
-                  optional: true
+              value: bounce@esa-blueshell.nl
             - name: EMAIL_BOUNCE_IMAP_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: stalwart-secrets
-                  key: bounce-mailbox-password
+                  key: account.bounce
                   optional: true
             - name: AUTH_TRANSIT_ENABLED
               value: 'true'

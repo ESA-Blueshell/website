@@ -88,9 +88,34 @@ reconcile() {
     return 1
   fi
 
-  # 2. Hostname + default domain (idempotent).
-  printf '{"@type":"update","object":"SystemSettings","value":{"defaultHostname":"%s","defaultDomainId":"%s"}}\n' \
-    "$STALWART_HOSTNAME" "$dom" | sc apply --file /dev/stdin
+  # 2. Hostname + default domain + advertised-service hostnames
+  #    (idempotent).
+  #
+  #    `defaultHostname` is just the SMTP greeting / fallback name.
+  #    Auto-publish for SRV / autoconfig / autodiscover / MX records
+  #    reads each *advertised service's own* `hostname` field, and
+  #    falls back to the OS hostname (= pod name in k8s, e.g.
+  #    `stalwart-54b9578f55-cttqm`) when that field is null. That
+  #    fallback leaks pod names into the public zone and breaks every
+  #    mail client doing autodiscovery. Pin every advertised hostname
+  #    + the MX target to STALWART_HOSTNAME so the records Stalwart
+  #    writes to Cloudflare reference a name that actually resolves
+  #    publicly.
+  jq -nc --arg host "$STALWART_HOSTNAME" --arg dom "$dom" '
+    {
+      "@type": "update",
+      "object": "SystemSettings",
+      "value": {
+        defaultHostname: $host,
+        defaultDomainId: $dom,
+        mailExchangers: {"0": {hostname: $host, priority: 10}},
+        services: (
+          ["caldav","carddav","imap","jmap","managesieve","pop3","smtp","webdav"]
+          | map({(.): {hostname: $host, cleartext: false}})
+          | add
+        )
+      }
+    }' | sc apply --file /dev/stdin
 
   # 3. Wire the domain:
   #    - certificateManagement: Automatic via the ACME provider (DNS-01).

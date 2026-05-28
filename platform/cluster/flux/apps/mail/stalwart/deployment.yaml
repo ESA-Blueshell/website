@@ -153,6 +153,16 @@ spec:
                 secretKeyRef:
                   name: cloudflare-api-token
                   key: api-token
+          # accounts.json names a `vaultKey` per principal (e.g.
+          # `account.api`). The whole stalwart-secrets Secret is
+          # projected here read-only; apply.sh reads
+          # `/etc/stalwart-accounts/<vaultKey>` to get each password.
+          # Adding a new managed account is one accounts.json entry
+          # plus one new Vault key — no env-block edits.
+          volumeMounts:
+            - name: stalwart-account-passwords
+              mountPath: /etc/stalwart-accounts
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -167,6 +177,9 @@ spec:
         - name: stalwart-config-json
           configMap:
             name: stalwart-config-json
+        - name: stalwart-account-passwords
+          secret:
+            secretName: stalwart-secrets
 ---
 apiVersion: v1
 kind: Service

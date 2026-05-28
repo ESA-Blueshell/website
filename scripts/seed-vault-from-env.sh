@@ -382,7 +382,6 @@ append_field secret/platform/mariadb legacy-password "$(first_value DATABASE_PAS
 
 append_field secret/platform/mail admin-user "$(first_value STALWART_ADMIN_USER 2>/dev/null || true)"
 append_field secret/platform/mail admin-password "$(first_value STALWART_ADMIN_PASSWORD 2>/dev/null || true)"
-append_field secret/platform/mail dkim-private-key "$(first_value DKIM_PRIVATE_KEY 2>/dev/null || true)"
 append_field secret/platform/mail bounce-mailbox-user "$(first_value BOUNCE_MAILBOX_USER EMAIL_BOUNCE_IMAP_USERNAME 2>/dev/null || true)"
 append_field secret/platform/mail bounce-mailbox-password "$(first_value BOUNCE_MAILBOX_PASSWORD EMAIL_BOUNCE_IMAP_PASSWORD 2>/dev/null || true)"
 

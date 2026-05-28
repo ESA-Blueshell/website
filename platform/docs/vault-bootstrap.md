@@ -164,7 +164,6 @@ login for operator reference, store it separately as
 vault kv put secret/platform/mail \
   admin-user=admin \
   admin-password=<stalwart-admin-password> \
-  dkim-private-key=<base64-encoded-rsa-2048-pem> \
   bounce-mailbox-user=bounce@esa-blueshell.nl \
   bounce-mailbox-password=<bounce-mailbox-password>
 ```

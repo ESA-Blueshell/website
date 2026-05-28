@@ -67,8 +67,10 @@ object ContactJobs {
         override val type: String = "contact.ensure-period-lists"
         override val payloadType: Class<EnsureContributionPeriodListsPayload> =
             EnsureContributionPeriodListsPayload::class.java
-        // No dedup: each nightly run reconciles the latest contribution state.
-        override fun dedupKey(payload: EnsureContributionPeriodListsPayload): String? = null
+        // Default payload-hash dedup is fine here: it only suppresses a second
+        // concurrent active job (QUEUED/RUNNING) with the same empty payload,
+        // not tomorrow's run. Manual triggers can still force a run via the
+        // admin enqueue endpoint, which passes dedupKey = null.
     }
 
     object SyncContact : JobDefinition<SyncContactPayload> {

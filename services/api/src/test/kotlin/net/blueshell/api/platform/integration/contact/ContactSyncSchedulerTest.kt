@@ -37,4 +37,14 @@ class ContactSyncSchedulerTest {
             eq(ContactJobs.SyncAllListMembershipsPayload())
         )
     }
+
+    @Test
+    fun `enqueues a single SyncAllPeriodLists job`() {
+        scheduler.syncAllPeriodLists()
+
+        verify(jobs).enqueue(
+            eq(ContactJobs.SyncAllPeriodLists),
+            eq(ContactJobs.SyncAllPeriodListsPayload())
+        )
+    }
 }

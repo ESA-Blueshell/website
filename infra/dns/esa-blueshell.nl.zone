@@ -36,6 +36,7 @@ esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 headlamp.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 kube.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 listmonk.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
+mail.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:false
 mail-admin.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 minecraft.event.esa-blueshell.nl.	1	IN	A	193.123.34.253 ; cf_tags=cf-proxied:false
 minecraft.server.esa-blueshell.nl.	1	IN	A	130.89.149.197 ; cf_tags=cf-proxied:false
@@ -51,6 +52,7 @@ esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 headlamp.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 kube.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 listmonk.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+mail.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:false
 mail-admin.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 stalwart.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 status.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
@@ -63,9 +65,39 @@ ftp.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:false
 www.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:true
 
 ;; MX Records
-esa-blueshell.nl.	1	IN	MX	10 esa-blueshell.nl.
+;; The MX target must NOT be Cloudflare-proxied (mail is raw TCP, not
+;; HTTP) — point it at mail.esa-blueshell.nl, whose A/AAAA are
+;; explicitly cf-proxied:false. Mail flowing to *@esa-blueshell.nl
+;; therefore reaches the Stalwart pod directly on the VPS public IP.
+esa-blueshell.nl.	1	IN	MX	10 mail.esa-blueshell.nl.
 
 ;; TXT Records
+;; SPF — authorise the MX hosts (i.e. mail.esa-blueshell.nl) to send
+;; mail for the domain. `~all` is soft-fail; tighten to `-all` after
+;; a few weeks of DMARC reports confirm no legitimate sender was
+;; missed.
+esa-blueshell.nl.	1	IN	TXT	"v=spf1 mx ~all" ; cf_tags=cf-proxied:false
+
+;; DMARC — start in monitor-only (`p=none`) so misconfigurations don't
+;; drop legitimate mail. Aggregate reports go to postmaster@.
+;; Promote to `p=quarantine` once the rua reports show 100% SPF/DKIM
+;; alignment on outbound mail.
+_dmarc.esa-blueshell.nl.	1	IN	TXT	"v=DMARC1; p=none; rua=mailto:postmaster@esa-blueshell.nl; adkim=r; aspf=r" ; cf_tags=cf-proxied:false
+
+;; DKIM — selector matches Stalwart's DkimSignature.selector
+;; (`default`). The `p=` value is the base64-encoded public key
+;; Stalwart derives from the dkim-private-key stored in Vault. Read
+;; the actual value from the running pod after the apply sidecar
+;; creates the DkimSignature for the first time:
+;;
+;;   kubectl -n mail-system exec deploy/stalwart -c stalwart-apply -- \
+;;     stalwart-cli query DkimSignature --fields selector publicKey
+;;
+;; then paste the public key (without BEGIN/END PEM markers, all on
+;; one line) into the TXT record below.
+default._domainkey.esa-blueshell.nl.	1	IN	TXT	"v=DKIM1; k=rsa; p=REPLACE_AFTER_FIRST_BOOT" ; cf_tags=cf-proxied:false
+
+
 aaaa-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
 aaaa-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
 aaaa-kube.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"

@@ -1,7 +1,7 @@
 name: Validate
 
 # Runs on every push to a non-main branch. Main itself only triggers
-# deploy.yml (image build + push). pull_request isn't a trigger here
+# build.yml (image build + push). pull_request isn't a trigger here
 # because every PR commit is also a push, so listening to both produces
 # duplicate runs.
 on:

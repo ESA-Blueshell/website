@@ -60,16 +60,6 @@ class BrevoDuplicateContactException(
     cause,
 )
 
-/**
- * Brevo returned `document_not_found` for an operation against a contact id we
- * thought existed. The id is stale (contact deleted or merged on Brevo's side);
- * callers should clear the local mapping and re-create/adopt.
- */
-class BrevoContactGoneException(
-    val contactId: Long,
-    cause: Throwable? = null,
-) : ContactServiceException("Brevo contact $contactId does not exist (document_not_found)", cause)
-
 /** Parsed shape of a Brevo error response body. */
 internal data class BrevoError(
     val code: String?,

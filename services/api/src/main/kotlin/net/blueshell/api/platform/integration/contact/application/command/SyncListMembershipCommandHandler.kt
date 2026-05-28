@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.contact.application.command
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
-import net.blueshell.api.platform.integration.contact.adapter.brevo.BrevoContactGoneException
+import net.blueshell.api.platform.integration.contact.adapter.ExternalContactGoneException
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListMembershipRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactListRepository
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
@@ -72,7 +72,7 @@ class SyncListMembershipCommandHandler(
             try {
                 adapter.addToList(externalContactId, externalListId)
                 log.debug("Added user {} to {} list {}", command.userId, command.system, command.contactListId)
-            } catch (e: BrevoContactGoneException) {
+            } catch (e: ExternalContactGoneException) {
                 // Upstream contact is gone; the local pairing is stale. Clear
                 // it and trigger a contact sync so the next retry can re-add.
                 if (contact != null) {

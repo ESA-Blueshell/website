@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.contact.adapter.brevo
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
+import net.blueshell.api.platform.integration.contact.adapter.ExternalContactGoneException
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
@@ -82,7 +83,7 @@ class BrevoListAdapter(
                     "Brevo says contact {} does not exist while adding to list {}",
                     externalUserId, externalListId,
                 )
-                throw BrevoContactGoneException(externalUserId, e)
+                throw ExternalContactGoneException(system, externalUserId, e)
             }
             log.error("Failed to add contact {} to Brevo list {}", externalUserId, externalListId, e)
             throw ContactServiceException("Failed to add contact to list", e)

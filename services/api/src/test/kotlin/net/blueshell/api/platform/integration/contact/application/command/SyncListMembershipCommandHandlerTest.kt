@@ -188,7 +188,11 @@ class SyncListMembershipCommandHandlerTest {
         whenever(contactListRepository.findById(contactListId)).thenReturn(Optional.of(list))
         whenever(contactListMembershipRepository.findByContactIdAndContactListId(1L, contactListId)).thenReturn(membership)
         whenever(listAdapter.addToList(externalContactId, externalListId))
-            .thenThrow(net.blueshell.api.platform.integration.contact.adapter.brevo.BrevoContactGoneException(externalContactId))
+            .thenThrow(
+                net.blueshell.api.platform.integration.contact.adapter.ExternalContactGoneException(
+                    system, externalContactId,
+                )
+            )
 
         assertThrows(RuntimeException::class.java) { handler.handle(command) }
 

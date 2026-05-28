@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.contact.adapter.brevo
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.platform.integration.contact.adapter.ExternalContactGoneException
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.CreateContactRequest
@@ -48,7 +49,7 @@ class BrevoContactAdapter(
     override fun updateContact(externalId: Long, data: ContactData): Long {
         return try {
             updateById(externalId, data, omittedAttrs = emptySet())
-        } catch (e: BrevoContactGoneException) {
+        } catch (e: ExternalContactGoneException) {
             // Stale local mapping: the Brevo contact was deleted or merged. Fall
             // through to create-or-adopt so the next external id replaces the
             // dead one in external_id_mapping.
@@ -158,7 +159,7 @@ class BrevoContactAdapter(
         } catch (e: RestClientResponseException) {
             val error = parseBrevoError(e, jsonMapper)
             return when {
-                error?.code == DOCUMENT_NOT_FOUND -> throw BrevoContactGoneException(externalId, e)
+                error?.code == DOCUMENT_NOT_FOUND -> throw ExternalContactGoneException(system, externalId, e)
                 error?.code == DUPLICATE_PARAMETER -> {
                     val newOmissions = expandOmissions(error.duplicateIdentifiers, omittedAttrs)
                     if (newOmissions.size == omittedAttrs.size) {

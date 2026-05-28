@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.contact.adapter.brevo
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
+import net.blueshell.api.platform.integration.contact.adapter.ExternalContactGoneException
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.GetContactInfo200Response
@@ -38,14 +39,14 @@ class BrevoListAdapterTest {
     }
 
     @Test
-    fun `addToList throws BrevoContactGoneException when the contact does not exist`() {
+    fun `addToList throws ExternalContactGoneException when the contact does not exist`() {
         doThrow(alreadyInListOrMissing()).whenever(contactsApi)
             .addContactToList(eq(200L), any<AddContactToListRequest>())
         doThrow(error(404, """{"code":"document_not_found"}""")).whenever(contactsApi)
             .getContactInfo(eq("100"), eq("contact_id"), anyOrNull(), anyOrNull())
 
         assertThatThrownBy { adapter.addToList(100L, 200L) }
-            .isInstanceOf(BrevoContactGoneException::class.java)
+            .isInstanceOf(ExternalContactGoneException::class.java)
     }
 
     @Test

@@ -71,7 +71,11 @@ data:
       - "[RESPONSE_TIME] < 500"
     - name: "Stalwart Admin"
       group: "admin"
-      url: "http://stalwart.mail-system.svc.cluster.local:8080/"
+      # Stalwart v0.16 serves the webadmin at /admin/ and 404s the root.
+      # The probe runs internally against the Service DNS, which bypasses
+      # forward-auth at the edge (an external probe of an SSO-gated host
+      # only ever sees 302, telling us nothing about the backing app).
+      url: "http://stalwart.mail-system.svc.cluster.local:8080/admin/"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"

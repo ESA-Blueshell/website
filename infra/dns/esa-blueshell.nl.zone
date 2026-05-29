@@ -84,19 +84,12 @@ esa-blueshell.nl.	1	IN	TXT	"v=spf1 mx ~all" ; cf_tags=cf-proxied:false
 ;; alignment on outbound mail.
 _dmarc.esa-blueshell.nl.	1	IN	TXT	"v=DMARC1; p=none; rua=mailto:postmaster@esa-blueshell.nl; adkim=r; aspf=r" ; cf_tags=cf-proxied:false
 
-;; DKIM — selector matches Stalwart's DkimSignature.selector
-;; (`default`). The `p=` value is the base64-encoded public key
-;; Stalwart derives from the dkim-private-key stored in Vault. Read
-;; the actual value from the running pod after the apply sidecar
-;; creates the DkimSignature for the first time:
-;;
-;;   kubectl -n mail-system exec deploy/stalwart -c stalwart-apply -- \
-;;     stalwart-cli query DkimSignature --fields selector publicKey
-;;
-;; then paste the public key (without BEGIN/END PEM markers, all on
-;; one line) into the TXT record below.
-default._domainkey.esa-blueshell.nl.	1	IN	TXT	"v=DKIM1; k=rsa; p=REPLACE_AFTER_FIRST_BOOT" ; cf_tags=cf-proxied:false
-
+;; DKIM is owned by Stalwart. The Domain object has
+;; dkimManagement=Automatic, so Stalwart generates Dkim1RsaSha256 +
+;; Dkim1Ed25519Sha256 keys at first boot, rotates them on a
+;; schedule, and publishes the matching <selector>._domainkey TXT
+;; records through the same Cloudflare DnsServer that handles ACME.
+;; No DKIM records belong in this zone file.
 
 aaaa-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
 aaaa-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"

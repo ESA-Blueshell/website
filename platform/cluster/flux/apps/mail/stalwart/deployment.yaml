@@ -161,8 +161,17 @@ spec:
           env:
             - name: STALWART_URL
               value: http://127.0.0.1:8080
+            # The hostname Stalwart advertises in auto-published DNS
+            # records (SRV / MX / autodiscover / autoconfig / MTA-STS).
+            # `mail.esa-blueshell.nl` is non-Cloudflare-proxied per the
+            # infra/dns zone — mail protocols are raw TCP and can't
+            # traverse Cloudflare's HTTP proxy, so any client (Outlook,
+            # Thunderbird, our own api) needs an unproxied target.
+            # `stalwart.esa-blueshell.nl` exists for the admin UI and
+            # is proxied; pointing autodiscovery at it would break
+            # IMAPS/SMTP submission at TLS.
             - name: STALWART_HOSTNAME
-              value: stalwart.esa-blueshell.nl
+              value: mail.esa-blueshell.nl
             - name: STALWART_DOMAIN
               value: esa-blueshell.nl
             # Vault keys follow the `account.<localpart>` convention.

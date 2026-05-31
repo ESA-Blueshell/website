@@ -12,8 +12,10 @@ import {
   QuestionType,
   type SurveyResponse,
 } from "@/services/api"
+import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUpsCsv"
 
 const event = ref<EventResponse>()
+const signUps = ref<EventSignUpResponse[]>([])
 
 type PersonInfo = {
   fullName: string;
@@ -38,7 +40,8 @@ onMounted(async () => {
       findEventSignUpsByEventId({path: {eventId}}),
     ])
 
-    responses.value = (signupsResp.data ?? []).map((es: EventSignUpResponse) => {
+    signUps.value = signupsResp.data ?? []
+    responses.value = signUps.value.map((es: EventSignUpResponse) => {
       const answers: Map<number, AnswerResponse> = new Map()
       es.answers?.forEach((answer: AnswerResponse) => {
         answers.set(answer.questionId, answer)
@@ -116,6 +119,20 @@ function isOpenAnswerEmpty(response: Response, question: QuestionResponse): bool
   return !answer || typeof text !== "string" || text.trim().length === 0
 }
 
+function exportCsv(): void {
+  if (!event.value) return
+  const csv = buildEventSignUpsCsv(event.value, signUps.value)
+  const blob = new Blob([csv], {type: "text/csv;charset=utf-8"})
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = eventSignUpsCsvFilename(event.value.title)
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
+
 </script>
 
 <template>
@@ -127,6 +144,19 @@ function isOpenAnswerEmpty(response: Response, question: QuestionResponse): bool
         class="mx-auto my-10"
         style="max-width: 1100px"
       >
+        <div class="d-flex justify-end mb-4">
+          <v-btn
+            color="primary"
+            data-testid="export-csv-btn"
+            :disabled="responses.length === 0"
+            prepend-icon="mdi-download"
+            variant="flat"
+            @click="exportCsv"
+          >
+            Export as CSV
+          </v-btn>
+        </div>
+
         <v-card class="mb-10">
           <v-card-title class="text-h5">
             Respondents

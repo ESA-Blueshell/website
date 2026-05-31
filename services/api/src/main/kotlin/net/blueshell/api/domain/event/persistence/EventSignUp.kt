@@ -28,9 +28,10 @@ import org.hibernate.annotations.SQLRestriction
     ]
 )
 @NamedEntityGraph(
-    name = "EventSignUp.withGuestAndAnswers",
+    name = "EventSignUp.withGuestUserAndAnswers",
     attributeNodes = [
         NamedAttributeNode("guest"),
+        NamedAttributeNode("user"),
         NamedAttributeNode(value = "_answers", subgraph = "answersSub")
     ],
     subgraphs = [

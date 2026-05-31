@@ -13,6 +13,8 @@ type Fixtures = {
   addresses?: Array<Record<string, unknown>>
   events?: Array<Record<string, unknown>>
   eventSignUps?: Array<Record<string, unknown>>
+  eventDetailsById?: Record<string, Record<string, unknown>>
+  eventSignUpsByEventId?: Record<string, Array<Record<string, unknown>>>
   committees?: Array<Record<string, unknown>>
   blogs?: Array<Record<string, unknown>>
   blogsById?: Record<string, Record<string, unknown>>
@@ -312,6 +314,17 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && (path === "/events/signups/byAccessToken" || path.startsWith("/events/signups/byAccessToken/"))) {
       return fulfillJson(route, baseEventSignUps)
+    }
+    if (method === "GET" && /^\/events\/\d+\/signups$/.test(path)) {
+      const eventId = path.split("/")[2]
+      return fulfillJson(route, fixtures.eventSignUpsByEventId?.[eventId] ?? [])
+    }
+    if (method === "GET" && /^\/events\/\d+$/.test(path)) {
+      const eventId = Number(path.split("/").at(-1))
+      const detail = fixtures.eventDetailsById?.[String(eventId)]
+        ?? baseEvents.find((candidate) => Number(candidate.id) === eventId)
+        ?? {id: eventId}
+      return fulfillJson(route, detail)
     }
     if (method === "GET" && path === "/committees") {
       return fulfillJson(route, baseCommittees)

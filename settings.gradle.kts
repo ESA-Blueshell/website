@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 include(":libs:kotlin-common")
 include(":services:api")
 include(":services:api:clients:brevo")
+include(":services:api:clients:discord")
 include(":services:system-tests")
 
 // libs:kotlin-common is an empty skeleton in this PR. When the OIDC / Vault

@@ -124,6 +124,11 @@ brevo:
   folders:
     contributionPeriodsId: ${BREVO_FOLDER_CONTRIBUTION_PERIODS_ID:0}
 
+discord:
+  botToken: ${DISCORD_BOT_TOKEN:}
+  guildId: ${DISCORD_GUILD_ID:}
+  baseUrl: ${DISCORD_BASE_URL:https://discord.com/api/v10}
+
 google:
   calendar:
     id: ${GOOGLE_CALENDAR_ID:}

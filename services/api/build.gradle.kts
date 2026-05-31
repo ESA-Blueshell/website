@@ -121,6 +121,7 @@ dependencies {
     implementation("org.openapitools:jackson-databind-nullable:0.2.9")
 
     implementation(project(":services:api:clients:brevo"))
+    implementation(project(":services:api:clients:discord"))
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
@@ -211,6 +212,16 @@ val brevoLiveTest by tasks.registering(Test::class) {
     classpath = sourceSets["test"].runtimeClasspath
     shouldRunAfter(tasks.test)
     useJUnitPlatform { includeTags("brevo-live") }
+}
+
+val discordLiveTest by tasks.registering(Test::class) {
+    description =
+        "Runs live Discord API integration tests tagged with @Tag(\"discord-live\"). Requires DISCORD_BOT_TOKEN."
+    group = "verification"
+    testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+    classpath = sourceSets["integrationTest"].runtimeClasspath
+    shouldRunAfter(tasks.named("integrationTest"))
+    useJUnitPlatform { includeTags("discord-live") }
 }
 
 tasks.withType<BootRun>().configureEach {

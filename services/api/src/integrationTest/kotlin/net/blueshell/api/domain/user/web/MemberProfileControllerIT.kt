@@ -76,7 +76,7 @@ class MemberProfileControllerIT : UserTestSupport() {
                 post("/memberProfiles")
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"","gender":"X","nationality":"NL","bhv":true,"ehbo":false}""")
+                    .content("""{"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"","bhv":true,"ehbo":false}""")
             )
                 .andExpect(status().isBadRequest)
         }

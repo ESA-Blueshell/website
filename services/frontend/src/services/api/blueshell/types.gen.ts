@@ -266,7 +266,7 @@ export type CreateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string;
     nationality: string;
-    studentNumber: string;
+    studentNumber?: string;
     userId: number;
 };
 
@@ -766,7 +766,7 @@ export type UpdateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string;
     nationality: string;
-    studentNumber: string;
+    studentNumber?: string;
     version: number;
 };
 
@@ -800,7 +800,7 @@ export type UpsertMemberProfileRequest = {
     ehbo: boolean;
     gender?: string;
     nationality: string;
-    studentNumber: string;
+    studentNumber?: string;
     version?: number;
 };
 

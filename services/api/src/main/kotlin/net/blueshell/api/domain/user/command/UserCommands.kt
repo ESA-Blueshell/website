@@ -14,7 +14,7 @@ import java.sql.Date
 
 data class UpsertMemberProfileData(
     val dateOfBirth: Date,
-    val studentNumber: String,
+    val studentNumber: String?,
     val gender: String?,
     val nationality: String,
     val bhv: Boolean,

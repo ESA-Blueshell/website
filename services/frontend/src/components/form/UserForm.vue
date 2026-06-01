@@ -432,9 +432,8 @@ defineExpose({validate, save})
             <VvField
               v-model="memberProfileModel.studentNumber"
               test-id="user-form-student-number-field"
-              label="Student Number*"
+              label="Student Number"
               name="studentNumber"
-              rules="required"
             />
           </v-col>
         </v-row>

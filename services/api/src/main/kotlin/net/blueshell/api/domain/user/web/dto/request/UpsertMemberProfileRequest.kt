@@ -10,7 +10,6 @@ data class UpsertMemberProfileRequest(
     @field:NotNull
     var dateOfBirth: LocalDate? = null,
 
-    @field:NotBlank
     var studentNumber: String? = null,
 
     var gender: String? = null,

@@ -7,7 +7,7 @@ import java.sql.Date
 data class CreateMemberProfileCommand(
     val userId: Long,
     val dateOfBirth: Date,
-    val studentNumber: String,
+    val studentNumber: String?,
     val gender: String?,
     val nationality: String,
     val bhv: Boolean,
@@ -17,7 +17,7 @@ data class CreateMemberProfileCommand(
 data class UpdateMemberProfileCommand(
     val userId: Long,
     val dateOfBirth: Date,
-    val studentNumber: String,
+    val studentNumber: String?,
     val gender: String?,
     val nationality: String,
     val bhv: Boolean,

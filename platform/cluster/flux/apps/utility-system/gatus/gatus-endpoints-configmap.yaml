@@ -110,6 +110,16 @@ data:
       interval: "60s"
       conditions:
       - "[CONNECTED] == true"
+    - name: "Valkey"
+      group: "data"
+      # Backs HTTP sessions + the api's user-lookup cache. A TCP connect
+      # from inside the cluster proves valkey is listening; if this goes
+      # red, authenticated api requests degrade (cache falls back to the
+      # DB) and new sessions can't be persisted.
+      url: "tcp://valkey.data-system.svc.cluster.local:6379"
+      interval: "60s"
+      conditions:
+      - "[CONNECTED] == true"
     # ---------- Mail ports ----------
     # TCP connect from inside the cluster proves stalwart is listening
     # on each port; a real end-to-end SMTP/IMAP handshake from outside

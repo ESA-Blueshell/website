@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.integration.audience.persistence
+package net.blueshell.api.platform.integration.cohort.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -18,35 +18,35 @@ import java.time.Instant
 
 /**
  * Admin-editable rule: users whose facts include `(factKind, factKey)`
- * should be members of `audience`. The rule table is small and
- * configuration-only — no soft-delete and no audit-trail columns; admins
- * just create and remove rows.
+ * should be members of `cohort`. The rule table is small and
+ * configuration-only — no soft-delete and no audit-trail columns;
+ * admins just create and remove rows.
  */
 @Entity
 @Table(
-    name = "audience_rule",
+    name = "cohort_rule",
     uniqueConstraints = [
         UniqueConstraint(
-            name = "uk_audience_rule",
-            columnNames = ["fact_kind", "fact_key", "audience_id"],
+            name = "uk_cohort_rule",
+            columnNames = ["fact_kind", "fact_key", "cohort_id"],
         ),
     ],
     indexes = [
-        Index(name = "idx_audience_rule_fact_enabled", columnList = "fact_kind, fact_key, enabled"),
-        Index(name = "idx_audience_rule_audience", columnList = "audience_id"),
+        Index(name = "idx_cohort_rule_fact_enabled", columnList = "fact_kind, fact_key, enabled"),
+        Index(name = "idx_cohort_rule_cohort", columnList = "cohort_id"),
     ],
 )
-class AudienceRule(
+class CohortRule(
     @Enumerated(EnumType.STRING)
     @Column(name = "fact_kind", nullable = false, length = 32)
-    var factKind: AudienceFactKind,
+    var factKind: CohortFactKind,
 
     @Column(name = "fact_key", nullable = false, length = 64)
     var factKey: String,
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "audience_id", nullable = false)
-    var audience: Audience,
+    @JoinColumn(name = "cohort_id", nullable = false)
+    var cohort: Cohort,
 
     @Column(name = "enabled", nullable = false)
     @ColumnDefault("true")

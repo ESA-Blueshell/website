@@ -62,7 +62,15 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "Starting API via Gradle (bootRun)..."
-./gradlew --no-daemon --build-cache :services:api:bootRun > "$API_LOG_FILE" 2>&1 &
+# bootRun pulls the Spring AOT chain (processAot/compileAot*/aotClasses) into
+# its task graph via the GraalVM native plugin. Spec generation just needs the
+# app running, and the AOT compile is slow enough — especially on a cold cache —
+# to exhaust the readiness window before the app serves. Skip AOT so bootRun
+# launches from the regular classes.
+./gradlew --no-daemon --build-cache :services:api:bootRun \
+  -x processAot -x processAotResources -x aotClasses \
+  -x compileAotJava -x compileAotKotlin -x kaptAotKotlin -x kaptGenerateStubsAotKotlin \
+  > "$API_LOG_FILE" 2>&1 &
 API_PID="$!"
 
 echo "Waiting for API OpenAPI endpoint: $API_SPEC_URL"

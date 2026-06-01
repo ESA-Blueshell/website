@@ -15,6 +15,8 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.security.access.AccessDeniedException
@@ -40,6 +42,9 @@ class UserService @Autowired constructor(
         }
     }
 
+    // Hot path: JwtAuthFilter calls this on every authenticated request.
+    // Cached in Valkey (short TTL), evicted whenever the user is mutated.
+    @Cacheable("users.principalByUsername")
     fun loadUserPrincipalByUsername(username: String): UserPrincipal {
         return UserPrincipalMapper.fromUser(findByUsername(username))
     }
@@ -58,6 +63,7 @@ class UserService @Autowired constructor(
     }
 
     @Transactional
+    @CacheEvict("users.principalByUsername", key = "#entity.username")
     override fun update(entity: User): User {
         val saved = super.update(entity)
         trackedEvents.publish { actor ->

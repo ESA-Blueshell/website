@@ -40,6 +40,12 @@ spring:
       connection-test-query: "SELECT 1"
       keepalive-time: 30000
 
+  data:
+    redis:
+      host: ${VALKEY_HOST:localhost}
+      port: ${VALKEY_PORT:6379}
+      timeout: 500ms
+
   jpa:
     hibernate:
       ddl-auto: none
@@ -114,6 +120,18 @@ app:
 
 frontend:
   url: ${FRONTEND_URL:http://localhost:3000}
+
+# Valkey-backed HTTP sessions. The SESSION cookie domain defaults to the same
+# value as the auth cookie so the session travels to every subdomain in prod.
+session:
+  timeout: ${SESSION_TIMEOUT:30d}
+  cookie:
+    name: ${SESSION_COOKIE_NAME:SESSION}
+    same-site: ${SESSION_COOKIE_SAME_SITE:None}
+    domain: ${SESSION_COOKIE_DOMAIN:${AUTH_COOKIE_DOMAIN:}}
+
+cache:
+  ttl: ${CACHE_TTL:5m}
 
 storage:
   location: ${STORAGE_LOCATION:./storage}

@@ -47,6 +47,9 @@ class AuthenticationController(
             val validation = jwtTokenUtil.parseAndValidate(token)
             validation.jti?.let(jwtRevocationService::revoke)
         }
+        // Drop the server-side session from Valkey so the SESSION cookie can't
+        // outlive the logout (the JWT cookie alone expiring is not enough).
+        request.getSession(false)?.invalidate()
         authTokenCookieService.clearAuthCookie(response)
     }
 

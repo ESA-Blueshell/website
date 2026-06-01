@@ -8,3 +8,4 @@ resources:
   - bitnami-oci-source.yaml
   - vault
   - mariadb
+  - valkey

@@ -122,7 +122,10 @@ class SecurityConfig(
 
         http.securityMatcher("/**")
             .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout") }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            // IF_REQUIRED (not STATELESS) so the SecurityContext JwtAuthFilter
+            // saves is persisted to the Valkey-backed session, keeping the user
+            // signed in after the JWT expires.
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
             http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)

@@ -140,6 +140,10 @@ spec:
               value: mariadb.data-system.svc.cluster.local
             - name: MYSQL_PORT
               value: '3306'
+            - name: VALKEY_HOST
+              value: valkey.data-system.svc.cluster.local
+            - name: VALKEY_PORT
+              value: '6379'
             - name: APP_URL
               value: https://esa-blueshell.nl/api
             - name: FRONTEND_URL

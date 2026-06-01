@@ -188,9 +188,7 @@ onMounted(async () => {
 }
 
 .discord-widget {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(168, 255, 0, 0.5);
-  padding: 24px;
+  background: transparent;
 
   &__header {
     display: flex;
@@ -247,9 +245,6 @@ onMounted(async () => {
   }
 
   &__panel {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 12px;
-    padding: 8px;
     max-height: 230px;
     overflow-y: auto;
   }

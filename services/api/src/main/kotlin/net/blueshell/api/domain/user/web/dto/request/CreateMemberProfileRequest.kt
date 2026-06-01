@@ -13,7 +13,6 @@ data class CreateMemberProfileRequest(
     @field:NotNull
     var dateOfBirth: LocalDate? = null,
 
-    @field:NotBlank
     var studentNumber: String? = null,
 
     var gender: String? = null,

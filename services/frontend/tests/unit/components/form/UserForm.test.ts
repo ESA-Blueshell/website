@@ -183,7 +183,7 @@ describe("UserForm", () => {
       dateOfBirth: "dateRequired",
       nationality: "required",
       gender: "",
-      studentNumber: "required",
+      studentNumber: "",
       consentPrivacy: "acceptedPrivacyPolicy",
     })
   })

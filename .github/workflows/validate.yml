@@ -37,10 +37,11 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
   JAVA_VERSION: '21'
-  # Node 22 (not 24) — yarn 4.10 + playwright hit an EBADF fstat
-  # regression in Node 24's ESM loader during install steps. Dev image
-  # pinned to node:22-bookworm-slim for the same reason.
-  NODE_VERSION: '22'
+  # The EBADF fstat regression in Node 24's ESM loader that forced the
+  # earlier node:22 pin is gone in Node 26: yarn 4.10 `install --immutable`
+  # runs clean. Node 26 no longer bundles corepack, so it is installed
+  # explicitly (see setup-node-yarn action + frontend Dockerfiles).
+  NODE_VERSION: '26'
   YARN_VERSION: '4.10.3'
 
   MYSQL_ROOT_PASSWORD: blueshell

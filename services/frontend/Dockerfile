@@ -1,11 +1,14 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/ .yarn/
-RUN corepack enable \
+# Node 26 dropped the bundled corepack; install it explicitly before
+# letting it provision the pinned Yarn from package.json#packageManager.
+RUN npm install --global corepack@latest \
+ && corepack enable \
  && yarn --version \
  && yarn install --immutable
 

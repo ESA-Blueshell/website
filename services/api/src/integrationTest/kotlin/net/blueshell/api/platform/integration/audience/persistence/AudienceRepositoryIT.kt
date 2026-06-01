@@ -32,7 +32,7 @@ class AudienceRepositoryIT : UserTestSupport() {
     @Test
     fun `audience persists and reloads with all configured fields`() {
         val audience = Audience(
-            system = TargetSystem.BREVO,
+            system = TargetSystem.BREVO.name,
             kind = AudienceGroupKind.LIST,
             label = "Members",
         )
@@ -40,7 +40,7 @@ class AudienceRepositoryIT : UserTestSupport() {
         val saved = audiences.save(audience)
         val reloaded = audiences.findById(saved.id!!).orElseThrow()
 
-        assertThat(reloaded.system).isEqualTo(TargetSystem.BREVO)
+        assertThat(reloaded.system).isEqualTo(TargetSystem.BREVO.name)
         assertThat(reloaded.kind).isEqualTo(AudienceGroupKind.LIST)
         assertThat(reloaded.label).isEqualTo("Members")
         assertThat(reloaded.isSoftDeleted).isFalse()
@@ -48,20 +48,20 @@ class AudienceRepositoryIT : UserTestSupport() {
 
     @Test
     fun `audience filters by system and kind`() {
-        audiences.save(Audience(TargetSystem.BREVO, AudienceGroupKind.LIST, "brevo-list"))
-        audiences.save(Audience(TargetSystem.GOOGLE_CALENDAR, AudienceGroupKind.GROUP, "g-group"))
+        audiences.save(Audience(TargetSystem.BREVO.name, AudienceGroupKind.LIST, "brevo-list"))
+        audiences.save(Audience(TargetSystem.GOOGLE_CALENDAR.name, AudienceGroupKind.GROUP, "g-group"))
 
-        assertThat(audiences.findAllBySystem(TargetSystem.BREVO))
+        assertThat(audiences.findAllBySystem(TargetSystem.BREVO.name))
             .extracting<String> { it.label }
             .contains("brevo-list")
-        assertThat(audiences.findAllBySystemAndKind(TargetSystem.BREVO, AudienceGroupKind.ROLE))
+        assertThat(audiences.findAllBySystemAndKind(TargetSystem.BREVO.name, AudienceGroupKind.ROLE))
             .isEmpty()
     }
 
     @Test
     fun `audience member round-trips with FK to audience and user_id`() {
         val user = createUserWithRole(Role.MEMBER)
-        val audience = audiences.save(Audience(TargetSystem.BREVO, AudienceGroupKind.LIST, "Members"))
+        val audience = audiences.save(Audience(TargetSystem.BREVO.name, AudienceGroupKind.LIST, "Members"))
 
         val saved = audienceMembers.save(AudienceMember(audience = audience, userId = user.id!!))
         val reloaded = audienceMembers.findById(saved.id!!).orElseThrow()
@@ -77,7 +77,7 @@ class AudienceRepositoryIT : UserTestSupport() {
 
     @Test
     fun `audience rule lookup by fact returns enabled rows only`() {
-        val audience = audiences.save(Audience(TargetSystem.BREVO, AudienceGroupKind.LIST, "Members"))
+        val audience = audiences.save(Audience(TargetSystem.BREVO.name, AudienceGroupKind.LIST, "Members"))
 
         audienceRules.save(
             AudienceRule(

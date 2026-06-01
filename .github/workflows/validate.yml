@@ -36,7 +36,7 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-  JAVA_VERSION: '21'
+  JAVA_VERSION: '25'
   # Node 22 (not 24) — yarn 4.10 + playwright hit an EBADF fstat
   # regression in Node 24's ESM loader during install steps. Dev image
   # pinned to node:22-bookworm-slim for the same reason.

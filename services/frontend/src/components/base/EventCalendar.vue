@@ -212,10 +212,18 @@ defineExpose({
   border-bottom: 0.5px solid #e0e0e0;
 }
 
-.v-icon-btn {
-  height: 20px;
-  margin-top: 5px;
-  margin-bottom: 5px;
+// Vuetify 4 renders the day number as a circular icon button; the old
+// `height: 20px` rule squashed today's marker into a lop-sided 40x20 oval.
+// Mark today with a clean filled primary circle instead.
+.v-calendar-weekly__day.v-present .v-icon-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  margin: 4px 0;
+  border: none !important;
+  border-radius: 50% !important;
+  background-color: rgb(var(--v-theme-primary)) !important;
+  color: #fff !important;
 }
 
 .v-calendar-weekly__day-label {

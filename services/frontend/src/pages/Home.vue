@@ -35,7 +35,8 @@
           style="max-width:450px;min-height: 250px"
         >
           <a
-            style="width: 100%"
+            class="d-block"
+            style="width: 100%; color: inherit; text-decoration: none;"
             @click="$goto(col.url)"
           >
             <v-icon
@@ -47,13 +48,13 @@
             <p class="text-h3 ma-3 font-weight-thin">
               {{ col.title }}
             </p>
+            <p
+              class="text-body-1 font-weight-light mx-auto"
+              style="max-width: 400px"
+            >
+              {{ col.text }}
+            </p>
           </a>
-          <p
-            class="text-body-1 font-weight-light mx-auto"
-            style="max-width: 400px"
-          >
-            {{ col.text }}
-          </p>
         </v-col>
       </v-row>
     </v-container>

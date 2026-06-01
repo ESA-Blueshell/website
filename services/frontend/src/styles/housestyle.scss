@@ -4,10 +4,11 @@
 
 $accent: rgb(var(--v-theme-accent));
 
-// Don't force the house border-radius onto the pill (`rounded`) or icon
-// buttons — Vuetify 4 keeps their radius in a layer, and an unlayered rule
-// here would otherwise flatten them (e.g. the "Join now" pill).
-.v-btn:not(.v-btn--rounded):not(.v-btn--icon) {
+// Don't force the house border-radius onto rounded/pill/icon buttons —
+// Vuetify 4 applies `rounded="pill"` as the `.rounded-pill` utility (not
+// `.v-btn--rounded`), and an unlayered rule here would otherwise flatten it
+// back to 10px (e.g. the home "Join now" pill).
+.v-btn:not(.v-btn--rounded):not(.v-btn--icon):not(.rounded-pill):not(.rounded-circle):not(.rounded-0) {
   border-radius: settings.$border-radius-root;
 }
 

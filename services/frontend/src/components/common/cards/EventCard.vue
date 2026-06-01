@@ -616,6 +616,9 @@ function handleSignUpClick() {
 .approve-btn {
   flex: 0 0 auto;
   white-space: nowrap;
+  // The card title is text-h4; without an explicit size the marker inherits
+  // that large font under Vuetify 4. Keep it a small badge.
+  font-size: 0.7rem !important;
 }
 
 .sign-up-form {

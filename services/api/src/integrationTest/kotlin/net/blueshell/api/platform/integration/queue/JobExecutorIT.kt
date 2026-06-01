@@ -10,9 +10,21 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.test.context.TestPropertySource
 import java.util.concurrent.atomic.AtomicInteger
 
 @Import(JobExecutorITConfig::class)
+// These tests drive the executor manually. The test profile runs
+// StaleJobRecovery's retry/stale schedulers every 100ms, which would pick up
+// the same QUEUED job and call markRetryScheduled concurrently with the manual
+// execute() loop — an optimistic-lock race ("expected row count 1 but was 0").
+// Park both schedulers so manual execution is the only writer.
+@TestPropertySource(
+    properties = [
+        "app.jobs.retry-check-interval-ms=3600000",
+        "app.jobs.stale-check-interval-ms=3600000",
+    ],
+)
 class JobExecutorIT : ServiceTestSupport() {
 
     @Autowired

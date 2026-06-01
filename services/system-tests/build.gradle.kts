@@ -19,19 +19,19 @@ dependencies {
     // through localhost:8080. So no project(":services:api") dep, no
     // Spring Boot starters; just an HTTP client, JDBC, Playwright, and
     // IMAP/JSON helpers for assertions.
-    testImplementation("org.springframework.security:spring-security-crypto:7.0.0")
-    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
-    testImplementation("tools.jackson.module:jackson-module-kotlin:3.1.0")
+    testImplementation("org.springframework.security:spring-security-crypto:7.0.5")
+    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+    testImplementation("tools.jackson.module:jackson-module-kotlin:3.1.4")
 
     testImplementation("io.rest-assured:rest-assured:6.0.0")
-    testImplementation("com.microsoft.playwright:playwright:1.59.0")
+    testImplementation("com.microsoft.playwright:playwright:1.60.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:6.0.0")
-    testImplementation("org.assertj:assertj-core:3.27.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testImplementation("org.assertj:assertj-core:3.27.7")
 
     // IMAP access for StalwartMailClient — used by tests that need to
     // assert what the api delivered to the mail server.
-    testImplementation("org.eclipse.angus:jakarta.mail:2.0.3")
+    testImplementation("org.eclipse.angus:jakarta.mail:2.0.5")
 
     // JUnit 6 does not automatically put the platform launcher on the
     // runtime classpath; Gradle 9's test-engine selection needs it.

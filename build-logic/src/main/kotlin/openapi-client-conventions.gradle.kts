@@ -25,11 +25,14 @@ dependencies {
     "implementation"("org.springframework:spring-context:7.0.5")
 
     "implementation"(platform("tools.jackson:jackson-bom:3.1.0"))
+    // Jackson 3 split the databind into tools.jackson.* but kept the annotations
+    // under com.fasterxml.jackson.annotation, which the generated DTOs use. The
+    // java.time (jsr310) support that needed a separate module in Jackson 2 is
+    // built into the Jackson 3 databind, so no datatype module is required.
     "implementation"("com.fasterxml.jackson.core:jackson-annotations:2.21")
     "implementation"("tools.jackson.core:jackson-core")
     "implementation"("tools.jackson.core:jackson-databind")
-    "implementation"("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.1")
-    "implementation"("org.openapitools:jackson-databind-nullable:0.2.9")
+    "implementation"("org.openapitools:jackson-databind-nullable:0.2.10")
 
     "compileOnly"("jakarta.validation:jakarta.validation-api:3.1.1")
     "compileOnly"("jakarta.annotation:jakarta.annotation-api:3.0.0")
@@ -72,7 +75,7 @@ tasks.register<GenerateTask>("generate") {
     // clients can use repo-root-relative paths (libs/openapi-specs/foo.yml).
     inputSpec.set(
         openApiClient.specPath.map { path ->
-            rootProject.layout.projectDirectory.file(path).asFile.absolutePath
+            rootProject.layout.projectDirectory.file(path)
         },
     )
     outputDir.set(generatedRoot.get().asFile.absolutePath)
@@ -85,6 +88,9 @@ tasks.register<GenerateTask>("generate") {
             "useJakartaEe" to "true",
             "useBeanValidation" to "true",
             "useJackson3" to "true",
+            // openapi-generator 7.22 gates Jackson 3 for the restclient library
+            // behind useSpringBoot4; the project runs on Spring Boot 4.
+            "useSpringBoot4" to "true",
             "enumPropertyNaming" to "MACRO_CASE",
         ),
     )

@@ -58,16 +58,6 @@ configurations.configureEach {
     exclude(group = "org.yaml", module = "snakeyaml")
 }
 
-dependencyLocking {
-    lockAllConfigurations()
-    // DEFAULT (not STRICT) so Gradle does not fail on configurations that
-    // are declared lockable but have no state persisted yet (e.g. jacocoAgent,
-    // installChromium classpath). Regenerate locks with
-    // `./gradlew :services:api:<task> --write-locks` when adding new tasks
-    // that pull fresh configurations.
-    lockMode.set(LockMode.DEFAULT)
-}
-
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -118,7 +108,7 @@ dependencies {
     // generation, which uses its own com.fasterxml.jackson ObjectMapper
     // independently of our tools.jackson mapper.
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.0")
-    implementation("org.openapitools:jackson-databind-nullable:0.2.9")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.10")
 
     implementation(project(":services:api:clients:brevo"))
     implementation(project(":services:api:clients:discord"))

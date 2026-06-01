@@ -22,5 +22,5 @@ dependencies {
     // style failures on the existing tree. Introduce per service later.
     implementation("dev.detekt:detekt-gradle-plugin:2.0.0-alpha.2")
     implementation("org.jlleitschuh.gradle:ktlint-gradle:14.2.0")
-    implementation("org.openapitools:openapi-generator-gradle-plugin:7.20.0")
+    implementation("org.openapitools:openapi-generator-gradle-plugin:7.22.0")
 }

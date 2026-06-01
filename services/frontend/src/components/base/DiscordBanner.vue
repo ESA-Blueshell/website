@@ -188,7 +188,11 @@ onMounted(async () => {
 }
 
 .discord-widget {
-  background: transparent;
+  // Discord-flavoured surface: their dark panel tone with a faint blurple
+  // hairline — minimal, but enough to frame the widget against the section.
+  background: rgba(88, 101, 242, 0.06);
+  border: 1px solid rgba(88, 101, 242, 0.25);
+  padding: 20px 24px;
 
   &__header {
     display: flex;
@@ -244,9 +248,27 @@ onMounted(async () => {
     margin-bottom: 8px;
   }
 
+  // Inset scroll area: a darker Discord-style well with a thin visible
+  // scrollbar so it reads as scrollable, plus a bottom fade hinting at more.
   &__panel {
+    position: relative;
     max-height: 230px;
     overflow-y: auto;
+    padding: 4px 10px 4px 4px;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 8px;
+
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
+    }
   }
 
   &__vc {

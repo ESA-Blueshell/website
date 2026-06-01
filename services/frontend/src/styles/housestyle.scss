@@ -4,12 +4,18 @@
 
 $accent: rgb(var(--v-theme-accent));
 
+// Don't force the house border-radius onto the pill (`rounded`) or icon
+// buttons — Vuetify 4 keeps their radius in a layer, and an unlayered rule
+// here would otherwise flatten them (e.g. the "Join now" pill).
+.v-btn:not(.v-btn--rounded):not(.v-btn--icon) {
+  border-radius: settings.$border-radius-root;
+}
+
 .v-btn {
   letter-spacing: 0;
   transition-property: all;
   transition-duration: 0.15s;
   transition-delay: 0ms;
-  border-radius: settings.$border-radius-root;
 }
 
 .v-theme--dark.v-application {
@@ -70,21 +76,31 @@ CSS MOMENT
 
 
 //TODO: dit met settings.scss oplossen
+// Vuetify 4's MD3 typography sets tall line-heights and its own
+// letter-spacing on the heading classes; pin both here so the house
+// headings keep their compact display look (otherwise e.g. the banner
+// title overflows its box and overlaps the subtitle below it).
 .v-application .text-h1, .v-application h1 {
   font-family: "Fugaz One", sans-serif !important;
   text-transform: uppercase;
   font-size: 90px;
+  line-height: 1.1;
+  letter-spacing: normal;
 }
 
 .v-application .text-h2, .v-application h2 {
   font-family: "Fugaz One", sans-serif !important;
   text-transform: uppercase;
   font-size: 38px;
+  line-height: 1.1;
+  letter-spacing: normal;
 }
 
 .v-application .text-h3, .v-application h3 {
   font-family: "Barlow Semi Condensed", sans-serif !important;
-  font-size: 26px
+  font-size: 26px;
+  line-height: 1.3;
+  letter-spacing: normal;
 }
 
 .v-application .v-btn {
@@ -179,10 +195,11 @@ a:visited.text-decoration-none {
   opacity: 1;
 }
 
-.v-row {
-  margin-left: 0;
-  margin-right: 0;
-}
+// Vuetify 3 rows used negative side margins (offsetting column padding),
+// which this rule cancelled. Vuetify 4's grid uses `gap` instead, so rows
+// already have no side margin — and keeping this rule here (unlayered) beat
+// the `mx-auto`/`ma-*` utilities, so any row meant to be centred was pinned
+// to the left. Dropped: the banners' centred containers line up again.
 
 @media #{map.get(settings.$display-breakpoints, 'xs')} {
   .v-container {

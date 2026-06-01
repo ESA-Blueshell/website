@@ -2294,7 +2294,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"awesome-phonenumber@npm:^7.6.0":
+"awesome-phonenumber@npm:^7.8.0":
   version: 7.8.0
   resolution: "awesome-phonenumber@npm:7.8.0"
   checksum: 10c0/33b06a46ebaea6fe00f5c159cbc972e5acf827439d00b8234ded44d96b255cb97a2ce98684236236c4ad946919000b28ed7d2ad9ed4a3c56123fb515feb1f4bb
@@ -2407,7 +2407,7 @@ __metadata:
     serve: "npm:^14.2.5"
     typescript: "npm:^6.0.3"
     typescript-eslint: "npm:^8.60.0"
-    v-phone-input: "npm:^6.0.1"
+    v-phone-input: "npm:^7.0.0"
     vee-validate: "npm:^4.15.1"
     vite: "npm:^7.3.1"
     vite-plugin-istanbul: "npm:^7.2.1"
@@ -2886,6 +2886,13 @@ __metadata:
   version: 3.2.2
   resolution: "countries-list@npm:3.2.2"
   checksum: 10c0/7f45d73ebe707bc4bcb8d42c01201bc05309352f8285c53fbfd05eff4d561b56290a3121df1f6c3c87a2f69e3099840b4ffe5503e89b4b3439b62aa9c243e6db
+  languageName: node
+  linkType: hard
+
+"countries-list@npm:^3.3.0":
+  version: 3.3.0
+  resolution: "countries-list@npm:3.3.0"
+  checksum: 10c0/7f71b163f9b34fbe5d023b2d4eab32e00af75a9e8b40c9635ee035539ff885b948b0cca36619fd5c76920606411b1eb3093b67ce96fbe81a6823deb6d35f6bfb
   languageName: node
   linkType: hard
 
@@ -6576,14 +6583,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"v-phone-input@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "v-phone-input@npm:6.0.1"
+"v-phone-input@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "v-phone-input@npm:7.0.0"
   dependencies:
-    awesome-phonenumber: "npm:^7.6.0"
-    countries-list: "npm:^3.2.2"
+    awesome-phonenumber: "npm:^7.8.0"
+    countries-list: "npm:^3.3.0"
     flag-icons: "npm:^7.5.0"
-    vuetify: "npm:^3.11.8"
+    vuetify: "npm:^4.0.1"
     world-flags-sprite: "npm:^0.0.2"
   peerDependencies:
     vue: ^3.5.0
@@ -6594,7 +6601,7 @@ __metadata:
       optional: true
     world-flags-sprite:
       optional: true
-  checksum: 10c0/9b34f4f7b1b1552bc3016d7755911d8c68e57a4c0f5ff889cc0fd37bcb4a8b8e0d09ec8588e861d3e6533b4ae286a9ce2705f9367eb7bdbcad0debbb85fec54a
+  checksum: 10c0/55e76e1496ba9133f36a3d472a7cec5b8f6f09e0e05cab24fbd7dd077ea5150fedaf12ad97bf3f4223abcd25e114fcb34ba3c0e35cc3dc0aeb0a972dbe2ccb63
   languageName: node
   linkType: hard
 
@@ -6999,26 +7006,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vuetify@npm:^3.11.8":
-  version: 3.12.0
-  resolution: "vuetify@npm:3.12.0"
-  peerDependencies:
-    typescript: ">=4.7"
-    vite-plugin-vuetify: ">=2.1.0"
-    vue: ^3.5.0
-    webpack-plugin-vuetify: ">=3.1.0"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-    vite-plugin-vuetify:
-      optional: true
-    webpack-plugin-vuetify:
-      optional: true
-  checksum: 10c0/e109f3cfbfa61c6bf84e805b67d20d4fa744161b69e58dd0f9d2930b00e76804152839b219ed6172faf4b9a721cb990e0730dd48f9a17b3b961d93adc54feee1
-  languageName: node
-  linkType: hard
-
-"vuetify@npm:^4.0.8":
+"vuetify@npm:^4.0.1, vuetify@npm:^4.0.8":
   version: 4.0.8
   resolution: "vuetify@npm:4.0.8"
   peerDependencies:

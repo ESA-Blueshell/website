@@ -1,127 +1,117 @@
 <template>
   <div :style="backgroundStyle">
-    <v-container class="pa-0">
-      <v-row
-        align="center"
-        class="mx-auto container flex-nowrap"
+    <v-container class="discord-section py-10">
+      <v-sheet
+        class="discord-widget mx-auto"
+        rounded="xl"
       >
-        <v-col
-          class="flex-shrink-1"
-          cols="auto"
-        >
-          <p
-            class="text-white text-h5 text-sm-h4 font-weight-thin mb-0"
-            style="float: left"
-          >
-            Join us on our Discord server
-          </p>
-        </v-col>
-
-        <v-spacer />
-
-        <v-col cols="auto">
-          <v-btn
-            color="primary"
-            href="https://discord.gg/23YMFQy"
-            target="_blank"
-          >
-            <v-icon size="xx-large">
+        <!-- Header: branding + live count on the left, join CTA on the right -->
+        <div class="discord-widget__header">
+          <div class="discord-widget__brand">
+            <v-icon
+              class="discord-widget__logo"
+              size="44"
+            >
               custom:discord
             </v-icon>
-          </v-btn>
-        </v-col>
-      </v-row>
+            <div class="discord-widget__heading">
+              <p class="text-h5 text-sm-h4 text-white mb-0">
+                Join us on our Discord server
+              </p>
+              <p
+                v-if="discordData"
+                class="discord-widget__online mb-0"
+              >
+                <span class="discord-widget__dot" />
+                {{ discordData!.presence_count }} online now
+              </p>
+            </div>
+          </div>
 
-      <v-row
-        v-if="discordData"
-        class="mx-auto pt-4 container"
-      >
-        <v-col
-          :md="hasChannels ? 5 : 12"
-          cols="12"
-        >
-          <p class="text-h6 text-sm-h5 text-white mb-2">
-            {{ discordData!.presence_count }} people now online on discord
-          </p>
-
-          <div
-            class="overflow-hidden"
-            style="border: 1px solid #A8FF00;border-radius: 10px"
+          <v-btn
+            class="discord-widget__join"
+            color="primary"
+            href="https://discord.gg/23YMFQy"
+            prepend-icon="custom:discord"
+            rounded="pill"
+            size="large"
+            target="_blank"
           >
-            <div
-              class="overflow-y-auto"
-              style="max-height: 205px"
-            >
-              <v-container class="px-0 pt-2">
-                <v-row justify="start">
+            Join our Discord
+          </v-btn>
+        </div>
+
+        <!-- Body: online members + active voice channels -->
+        <v-row
+          v-if="discordData"
+          class="discord-widget__body"
+        >
+          <v-col
+            :md="hasChannels ? 6 : 12"
+            cols="12"
+          >
+            <div class="discord-widget__panel">
+              <v-row
+                class="ma-0"
+                justify="start"
+              >
+                <discord-user
+                  v-for="membership in discordData!.members"
+                  :key="membership.username"
+                  :avatar-url="membership.avatar_url"
+                  :half-width="hasChannels"
+                  :status="membership.status"
+                  :username="membership.username"
+                />
+                <discord-user
+                  v-if="discordData!.members.length > 99"
+                  :custom-text="'+' + (discordData!.presence_count - discordData!.members.length) + ' more'"
+                  :half-width="hasChannels"
+                />
+              </v-row>
+            </div>
+          </v-col>
+
+          <v-col
+            v-if="hasChannels"
+            cols="12"
+            md="6"
+          >
+            <p class="discord-widget__label">
+              Active public VCs
+            </p>
+            <div class="discord-widget__panel">
+              <div
+                v-for="[channelId, channelName] in channelEntries"
+                :key="channelId"
+                class="discord-widget__vc"
+              >
+                <div class="discord-widget__vc-name">
+                  <v-icon
+                    color="white"
+                    icon="mdi-volume-high"
+                    size="20"
+                  />
+                  <span
+                    class="text-subtitle-1 text-white font-weight-medium"
+                    v-text="channelName"
+                  />
+                </div>
+                <v-row class="ma-0">
                   <discord-user
-                    v-for="membership in discordData!.members"
+                    v-for="membership in membersInVC[channelId]"
                     :key="membership.username"
                     :avatar-url="membership.avatar_url"
-                    :half-width="hasChannels"
+                    :half-width="true"
                     :status="membership.status"
                     :username="membership.username"
                   />
-                  <discord-user
-                    v-if="discordData!.members.length > 99"
-                    :custom-text="'+' + (discordData!.presence_count - discordData!.members.length) + ' more'"
-                    :half-width="hasChannels"
-                  />
                 </v-row>
-              </v-container>
+              </div>
             </div>
-          </div>
-        </v-col>
-
-        <v-spacer />
-
-        <v-col
-          v-if="hasChannels"
-          cols="12"
-          md="5"
-        >
-          <p class="text-h5 text-white mb-2">
-            Active public VCs
-          </p>
-
-          <v-container
-            class="overflow-y-auto pa-0"
-            style="max-height: 205px"
-          >
-            <v-row
-              v-for="[channelId, channelName] in channelEntries"
-              :key="channelId"
-              class="mb-2"
-              style="border: 1px solid #A8FF00;border-radius: 10px"
-            >
-              <v-col
-                class="discord-membership-entry"
-                cols="12"
-              >
-                <v-icon
-                  color="white"
-                  icon="mdi-volume-high"
-                  size="20"
-                  style="margin: 6px !important; margin-right: 10px !important;"
-                />
-                <span
-                  class="text-h6 text-white font-italic font-weight-thin"
-                  v-text="channelName"
-                />
-              </v-col>
-
-              <discord-user
-                v-for="membership in membersInVC[channelId]"
-                :key="membership.username"
-                :avatar-url="membership.avatar_url"
-                :half-width="true"
-                :status="membership.status"
-                :username="membership.username"
-              />
-            </v-row>
-          </v-container>
-        </v-col>
-      </v-row>
+          </v-col>
+        </v-row>
+      </v-sheet>
     </v-container>
   </div>
 </template>
@@ -190,19 +180,111 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.container {
+.discord-section {
   max-width: 1100px;
-  height: 100%;
 }
 
-.v-btn {
-  padding: 10px !important;
-  width: 65px !important;
-  height: 65px !important;
-  min-width: 0 !important;
-}
+.discord-widget {
+  // Discord-flavoured surface: their dark panel tone with a faint blurple
+  // hairline — minimal, but enough to frame the widget against the section.
+  background: rgba(88, 101, 242, 0.06);
+  border: 1px solid rgba(88, 101, 242, 0.25);
+  padding: 14px 36px 28px;
 
-.v-row {
-  margin: 0;
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  &__logo {
+    color: rgb(var(--v-theme-primary));
+    flex: 0 0 auto;
+  }
+
+  &__heading {
+    min-width: 0;
+  }
+
+  &__online {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+  }
+
+  &__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #3ba55d;
+    box-shadow: 0 0 0 3px rgba(59, 165, 93, 0.25);
+  }
+
+  &__join {
+    flex: 0 0 auto;
+  }
+
+  &__body {
+    margin-top: 0;
+  }
+
+  &__label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+
+  // Neutralise the global forms.scss `.v-col:first-child { padding-left: 0 }`
+  // (a Vuetify-3 gutter hack) so the first member lines up with the rest.
+  :deep(.discord-membership-entry) {
+    padding-inline: 12px !important;
+  }
+
+  // Inset scroll area: a darker Discord-style well with a thin visible
+  // scrollbar so it reads as scrollable, plus a bottom fade hinting at more.
+  &__panel {
+    position: relative;
+    max-height: 230px;
+    overflow-y: auto;
+    padding: 4px 10px 4px 4px;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 16px;
+
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
+    }
+  }
+
+  &__vc {
+    & + & {
+      margin-top: 8px;
+    }
+  }
+
+  &__vc-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 4px 8px;
+  }
 }
 </style>

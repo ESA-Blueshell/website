@@ -18,7 +18,7 @@
               id="blueshell"
               :style="$vuetify.display.mdAndUp?{ 'font-size': '175px !important'} : ($vuetify.display.smAndUp?{ 'font-size': '110px !important'}:{ 'font-size': '16vw !important' })"
               class="text-white text-h2 text-sm-h1 text-md-h1 text-lg-h1 text-xl-h1"
-              style="height: 150px"
+              style="line-height: 1"
             >
               BLUESHELL
             </p>
@@ -32,7 +32,7 @@
             <v-btn
               class="mt-5"
               color="primary"
-              rounded
+              rounded="pill"
               size="x-large"
               style="font-size: 30px;height: 50px;"
               @click="$goto('membership/signup')"

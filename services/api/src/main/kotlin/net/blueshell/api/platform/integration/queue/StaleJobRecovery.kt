@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.data.domain.PageRequest
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -24,7 +25,10 @@ import java.time.temporal.ChronoUnit
  * have it set, so the two queries are disjoint and the same row is never
  * fired twice in the same tick.
  */
+// Default on. Tests that drive the executor manually disable it
+// (app.jobs.recovery.enabled=false) so the scheduler does not race them.
 @Component
+@ConditionalOnProperty(name = ["app.jobs.recovery.enabled"], havingValue = "true", matchIfMissing = true)
 class StaleJobRecovery(
     private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,

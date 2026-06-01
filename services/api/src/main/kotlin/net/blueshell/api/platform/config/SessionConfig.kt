@@ -41,7 +41,12 @@ class SessionConfig(
             // SameSite=None requires Secure; localhost is a secure context in dev.
             setUseSecureCookie(requireHttps || sameSite.equals("None", ignoreCase = true))
             if (cookieDomain.isNotBlank()) {
-                setDomainName(cookieDomain)
+                // Spring Session's DefaultCookieSerializer rejects a leading-dot
+                // domain (legacy RFC 2109) and throws on every session commit,
+                // 500-ing the whole API. The auth cookie keeps its dotted value;
+                // strip the dot here — RFC 6265 `Domain=esa-blueshell.nl` already
+                // scopes the cookie to every subdomain.
+                setDomainName(cookieDomain.removePrefix("."))
             }
         }
 

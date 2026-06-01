@@ -148,13 +148,14 @@ spec:
               value: https://esa-blueshell.nl/api
             - name: FRONTEND_URL
               value: https://esa-blueshell.nl
-            # Leading dot scopes BSH_AUTH (and the future logout cookie)
-            # to every subdomain of esa-blueshell.nl. Traefik forwardAuth
-            # on vault/headlamp/stalwart/traefik subdomains can't
-            # authenticate the user without it (host-only cookie set on
-            # esa-blueshell.nl wouldn't be sent to the others).
+            # Scopes BSH_AUTH (and the SESSION cookie) to every subdomain of
+            # esa-blueshell.nl so Traefik forwardAuth on
+            # vault/headlamp/stalwart/traefik can authenticate the user.
+            # No leading dot: per RFC 6265 `Domain=esa-blueshell.nl` already
+            # covers all subdomains, and a leading dot makes Spring Session's
+            # cookie serializer throw (Invalid cookie domain) on every request.
             - name: AUTH_COOKIE_DOMAIN
-              value: .esa-blueshell.nl
+              value: esa-blueshell.nl
             - name: STORAGE_LOCATION
               value: /srv/storage
             # SMTP transport — relay through Stalwart via its public

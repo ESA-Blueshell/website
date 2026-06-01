@@ -29,6 +29,13 @@ vi.mock("vue-router", () => ({
   useRouter: () => mockRouter,
 }))
 
+// PastEventsPane now routes load failures through $handleNetworkError, whose
+// real module pulls in the router + store (and thus vue-router's createRouter).
+// Stub it so this unit test stays isolated to the pane's own behaviour.
+vi.mock("@/plugins/handleNetworkError", () => ({
+  $handleNetworkError: vi.fn(),
+}))
+
 vi.mock("@/components/common/lists/EventList.vue", () => ({
   default: {
     name: "EventList",

@@ -1,0 +1,85 @@
+# Dependabot configuration.
+#
+# Every ecosystem below defines `groups`, and each group is declared twice —
+# once for `version-updates` and once for `security-updates`. Grouping is what
+# makes Dependabot fold newly discovered updates into the PR that is already
+# open instead of leaving a stale per-dependency PR behind: a grouped PR is
+# rebuilt on every run, so the next bump joins the existing branch rather than
+# being skipped once the open-PR limit is reached.
+#
+# Labels are left to Dependabot's defaults (`dependencies` plus the language
+# label), which already match the repo's existing dependency PRs.
+version: 2
+
+updates:
+  # ── Frontend (yarn / npm) ────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /services/frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      frontend:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      frontend-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # ── JVM modules (Gradle) ─────────────────────────────────────────────────
+  - package-ecosystem: gradle
+    directories:
+      - /
+      - /build-logic
+      - /libs/kotlin-common
+      - /services/api
+      - /services/system-tests
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      gradle:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      gradle-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # ── Container base images (Dockerfiles) ──────────────────────────────────
+  - package-ecosystem: docker
+    directories:
+      - /services/api
+      - /services/frontend
+      - /infra/stalwart
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      docker:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      docker-security:
+        applies-to: security-updates
+        patterns:
+          - "*"

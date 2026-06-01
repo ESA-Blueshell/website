@@ -18,13 +18,19 @@ object EventFormHelper {
     private const val SUBMIT_BUTTON_TEST_ID = "event-form-submit-btn"
 
     fun openCreatePage(page: Page, frontendUrl: String) {
-        page.navigate("$frontendUrl/events/create")
+        // Wait for the committee list the form loads on mount, so the committee
+        // select is populated (and enabled) before any interaction.
+        page.waitForResponse("**/committees") {
+            page.navigate("$frontendUrl/events/create")
+        }
         page.waitForURL("**/events/create**")
         TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
     }
 
     fun openEditPage(page: Page, frontendUrl: String, eventId: Long) {
-        page.navigate("$frontendUrl/events/edit/$eventId")
+        page.waitForResponse("**/committees") {
+            page.navigate("$frontendUrl/events/edit/$eventId")
+        }
         page.waitForURL("**/events/edit/$eventId**")
         TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
     }
@@ -49,15 +55,16 @@ object EventFormHelper {
     fun openCommitteeSelect(page: Page) {
         val committeeField = TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
         val combo = committeeField.getByRole(AriaRole.COMBOBOX).first()
+        val listbox = page.getByRole(AriaRole.LISTBOX).first()
         combo.waitFor()
-        // The select stays disabled until the committee list finishes loading;
-        // opening it before then is a no-op and the option lookup later times
-        // out. Wait for it to become enabled, then confirm the menu opened.
+        // Clicking the select before its list has loaded is a no-op, so retry
+        // opening until the options menu actually appears.
         page.waitForCondition {
-            combo.getAttribute("disabled") == null && combo.getAttribute("aria-disabled") != "true"
+            if (!listbox.isVisible()) {
+                combo.click(Locator.ClickOptions().setForce(true))
+            }
+            listbox.isVisible()
         }
-        combo.click(Locator.ClickOptions().setForce(true))
-        page.getByRole(AriaRole.LISTBOX).first().waitFor()
     }
 
     fun selectCommittee(page: Page, committeeName: String) {

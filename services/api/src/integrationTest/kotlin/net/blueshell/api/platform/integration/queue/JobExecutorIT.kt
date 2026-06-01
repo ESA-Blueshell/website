@@ -10,9 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.test.context.TestPropertySource
 import java.util.concurrent.atomic.AtomicInteger
 
+// These tests drive the executor by hand; disable the background recovery
+// scheduler so it cannot dispatch the same job concurrently and trip an
+// optimistic-lock failure.
 @Import(JobExecutorITConfig::class)
+@TestPropertySource(properties = ["app.jobs.recovery.enabled=false"])
 class JobExecutorIT : ServiceTestSupport() {
 
     @Autowired

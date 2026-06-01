@@ -1,0 +1,51 @@
+package net.blueshell.api.platform.config
+
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.session.config.SessionRepositoryCustomizer
+import org.springframework.session.data.redis.RedisSessionRepository
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession
+import org.springframework.session.web.http.CookieSerializer
+import org.springframework.session.web.http.DefaultCookieSerializer
+import java.time.Duration
+
+/**
+ * Server-side HTTP sessions stored in Valkey. The SESSION cookie outlives the
+ * 24h JWT, so once authenticated the browser stays signed in for the session
+ * timeout (default 30d) without re-login. Cookie domain mirrors the auth
+ * cookie so the session travels to every subdomain behind Traefik forwardAuth.
+ */
+@Configuration
+@EnableRedisHttpSession(redisNamespace = "blueshell-api")
+class SessionConfig(
+    @param:Value($$"${session.cookie.name:SESSION}")
+    private val cookieName: String,
+    @param:Value($$"${session.cookie.domain:}")
+    private val cookieDomain: String,
+    @param:Value($$"${session.cookie.same-site:None}")
+    private val sameSite: String,
+    @param:Value($$"${app.security.require-https:true}")
+    private val requireHttps: Boolean,
+    @param:Value($$"${session.timeout:30d}")
+    private val sessionTimeout: Duration,
+) {
+    @Bean
+    fun cookieSerializer(): CookieSerializer =
+        DefaultCookieSerializer().apply {
+            setCookieName(cookieName)
+            setCookiePath("/")
+            setSameSite(sameSite)
+            setUseHttpOnlyCookie(true)
+            setCookieMaxAge(sessionTimeout.seconds.toInt())
+            // SameSite=None requires Secure; localhost is a secure context in dev.
+            setUseSecureCookie(requireHttps || sameSite.equals("None", ignoreCase = true))
+            if (cookieDomain.isNotBlank()) {
+                setDomainName(cookieDomain)
+            }
+        }
+
+    @Bean
+    fun redisSessionRepositoryCustomizer(): SessionRepositoryCustomizer<RedisSessionRepository> =
+        SessionRepositoryCustomizer { it.setDefaultMaxInactiveInterval(sessionTimeout) }
+}

@@ -5,6 +5,7 @@ import net.blueshell.api.config.TestCleanUpListener
 import net.blueshell.api.platform.integration.job.persistence.repository.JobExecutionRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestExecutionListeners
 import org.springframework.test.context.event.ApplicationEvents
@@ -24,6 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(ValkeyTestContainerConfig::class)
 @RecordApplicationEvents
 @TestExecutionListeners(
     listeners = [TestCleanUpListener::class],

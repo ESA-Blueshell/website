@@ -24,9 +24,13 @@ services:
     depends_on: !override
       db:
         condition: service_healthy
+      valkey:
+        condition: service_healthy
     environment:
       - TZ=Europe/Amsterdam
       - SPRING_PROFILES_ACTIVE=test
+      - VALKEY_HOST=valkey
+      - VALKEY_PORT=6379
       - APP_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:3000
       - MYSQL_HOST=db

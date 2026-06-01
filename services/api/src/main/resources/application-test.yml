@@ -2,6 +2,11 @@ spring:
   application:
     db: blueshell-test
 
+  # Caching off in tests so DB resets between cases are never masked by a
+  # stale Valkey entry. Sessions still use the throwaway Valkey container.
+  cache:
+    type: none
+
   flyway:
     clean-on-validation-error: true
     clean-disabled: false

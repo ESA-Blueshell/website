@@ -63,6 +63,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-authorization-server")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Valkey-backed server-side HTTP sessions + a Valkey cache layer. Lettuce
+    // is the default client pulled in by spring-boot-starter-data-redis.
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.session:spring-session-data-redis")
     implementation(platform("org.springframework.modulith:spring-modulith-bom:2.0.6"))
     implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
     implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.1")
@@ -141,6 +145,10 @@ dependencies {
     testFixturesApi("org.springframework.boot:spring-boot-starter-flyway")
     testFixturesApi("org.flywaydb:flyway-mysql:12.0.2")
     testFixturesApi("com.github.javafaker:javafaker:1.0.2")
+    // Shared test base boots a throwaway Valkey via @ServiceConnection so the
+    // Redis-backed HTTP session path is exercised under the real prod config.
+    testFixturesApi("org.springframework.boot:spring-boot-testcontainers")
+    testFixturesApi("org.testcontainers:testcontainers:1.21.4")
     testFixturesCompileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
 
     mockitoAgent("org.mockito:mockito-core:5.21.0")

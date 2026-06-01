@@ -22,6 +22,22 @@ services:
       retries: 5
       start_period: 30s
 
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey-data:/data
+    networks:
+      - global_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     image: api:dev
     pull_policy: never
@@ -50,8 +66,12 @@ services:
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
       - EMAIL_FROM_ADDRESS=no-reply@localhost
       - EMAIL_REPLY_TO_ADDRESS=dev@localhost
+      - VALKEY_HOST=valkey
+      - VALKEY_PORT=6379
     depends_on:
       db:
+        condition: service_healthy
+      valkey:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:8080/health" ]
@@ -66,5 +86,6 @@ networks:
 
 volumes:
   data:
+  valkey-data:
   gradle-cache:
   playwright-browsers:

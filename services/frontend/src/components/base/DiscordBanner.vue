@@ -37,7 +37,7 @@
             size="large"
             target="_blank"
           >
-            Join Discord
+            Join our Discord
           </v-btn>
         </div>
 
@@ -50,9 +50,6 @@
             :md="hasChannels ? 6 : 12"
             cols="12"
           >
-            <p class="discord-widget__label">
-              Online members
-            </p>
             <div class="discord-widget__panel">
               <v-row
                 class="ma-0"
@@ -192,7 +189,7 @@ onMounted(async () => {
   // hairline — minimal, but enough to frame the widget against the section.
   background: rgba(88, 101, 242, 0.06);
   border: 1px solid rgba(88, 101, 242, 0.25);
-  padding: 20px 24px;
+  padding: 14px 36px 28px;
 
   &__header {
     display: flex;
@@ -239,13 +236,19 @@ onMounted(async () => {
   }
 
   &__body {
-    margin-top: 24px;
+    margin-top: 0;
   }
 
   &__label {
-    color: #fff;
-    font-size: 1.1rem;
-    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+
+  // Neutralise the global forms.scss `.v-col:first-child { padding-left: 0 }`
+  // (a Vuetify-3 gutter hack) so the first member lines up with the rest.
+  :deep(.discord-membership-entry) {
+    padding-inline: 12px !important;
   }
 
   // Inset scroll area: a darker Discord-style well with a thin visible
@@ -256,7 +259,7 @@ onMounted(async () => {
     overflow-y: auto;
     padding: 4px 10px 4px 4px;
     background: rgba(0, 0, 0, 0.22);
-    border-radius: 8px;
+    border-radius: 16px;
 
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.28) transparent;

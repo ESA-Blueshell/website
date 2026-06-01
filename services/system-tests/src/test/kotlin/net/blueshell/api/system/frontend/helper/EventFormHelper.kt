@@ -49,7 +49,15 @@ object EventFormHelper {
     fun openCommitteeSelect(page: Page) {
         val committeeField = TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
         val combo = committeeField.getByRole(AriaRole.COMBOBOX).first()
+        combo.waitFor()
+        // The select stays disabled until the committee list finishes loading;
+        // opening it before then is a no-op and the option lookup later times
+        // out. Wait for it to become enabled, then confirm the menu opened.
+        page.waitForCondition {
+            combo.getAttribute("disabled") == null && combo.getAttribute("aria-disabled") != "true"
+        }
         combo.click(Locator.ClickOptions().setForce(true))
+        page.getByRole(AriaRole.LISTBOX).first().waitFor()
     }
 
     fun selectCommittee(page: Page, committeeName: String) {

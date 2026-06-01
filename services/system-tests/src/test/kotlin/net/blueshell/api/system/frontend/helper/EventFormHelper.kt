@@ -92,6 +92,8 @@ object EventFormHelper {
     fun setSignUpLimit(page: Page, limit: Int) {
         val input = signUpLimitInput(page)
         input.fill(limit.toString())
+        // Force blur so Vuetify + vee-validate commit the value before submit.
+        input.press("Tab")
     }
 
     fun submit(page: Page) {

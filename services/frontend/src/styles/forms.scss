@@ -1,9 +1,16 @@
 // Vuetify 4's grid replaced negative-margin gutters with a flexbox `gap`
-// defaulting to 24px, which blew out the spacing between stacked form fields.
-// Pull the gutters back tight — the app's rows were always compact.
+// (defaulting to 24px) AND spaces consecutive rows with
+// `.v-row + .v-row { margin-top: var(--v-col-gap-y) }` (also 24px). Both blew
+// out form spacing; pull them back tight — the app's rows were always compact.
 .v-row {
   row-gap: 2px;
   column-gap: 16px;
+}
+
+// The real culprit behind "too much space between form rows": the inter-row
+// top margin. Override it (unlayered beats Vuetify's layered rule).
+.v-row + .v-row {
+  margin-top: 4px;
 }
 
 .v-row > .v-col {

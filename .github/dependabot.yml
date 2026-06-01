@@ -15,6 +15,13 @@
 # supply-chain attacks that rely on a compromised version being pulled in
 # immediately, leaving time for a malicious release to be yanked or flagged
 # before it reaches a PR here.
+#
+# The version-update groups carry only `minor` and `patch` updates. Major
+# bumps are excluded from the groups so Dependabot raises one PR per major
+# instead — a single grouped PR mixing a breaking major (a framework or
+# toolchain jump that needs code changes) with routine updates can never go
+# green and blocks the safe updates behind it. Security-update groups are
+# left unfiltered: a fix matters regardless of how the version moves.
 version: 2
 
 updates:
@@ -29,6 +36,9 @@ updates:
     groups:
       frontend:
         applies-to: version-updates
+        update-types:
+          - minor
+          - patch
         patterns:
           - "*"
       frontend-security:
@@ -52,6 +62,9 @@ updates:
     groups:
       gradle:
         applies-to: version-updates
+        update-types:
+          - minor
+          - patch
         patterns:
           - "*"
       gradle-security:
@@ -70,6 +83,9 @@ updates:
     groups:
       actions:
         applies-to: version-updates
+        update-types:
+          - minor
+          - patch
         patterns:
           - "*"
       actions-security:
@@ -91,6 +107,9 @@ updates:
     groups:
       docker:
         applies-to: version-updates
+        update-types:
+          - minor
+          - patch
         patterns:
           - "*"
       docker-security:

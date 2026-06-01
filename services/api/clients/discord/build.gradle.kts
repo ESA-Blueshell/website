@@ -100,9 +100,40 @@ val filterDiscordSpec = tasks.register("filterDiscordSpec") {
             // Rewrite to `type: "boolean"` so the property still appears on the
             // generated DTO with the natural "present == true" semantics.
             rewriteNullTypeProperties(schemas)
+
+            // A few properties (e.g. GuildStickerResponse.type) both $ref an
+            // integer enum and re-declare a narrowing `enum`. openapi-generator
+            // 7.22 emits a broken inline enum for these — String constants on a
+            // field typed as the referenced enum. Collapse them to the bare
+            // $ref so the generator reuses the referenced enum as-is.
+            rewriteRedundantEnumAllOf(schemas)
         }
 
         target.writeText(groovy.json.JsonOutput.toJson(spec))
+    }
+}
+
+/**
+ * Collapse `{ allOf: [ { $ref } ], enum: [...], ... }` shapes to a bare `{ $ref }`.
+ * The redundant inline `enum` alongside a single `$ref` makes openapi-generator emit
+ * a malformed inline enum (String-valued constants on a field typed as the referenced
+ * enum), which fails to compile.
+ */
+fun rewriteRedundantEnumAllOf(node: Any?) {
+    when (node) {
+        is MutableMap<*, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            val map = node as MutableMap<String, Any?>
+            val allOf = map["allOf"] as? List<*>
+            val ref = (allOf?.singleOrNull() as? Map<*, *>)?.get("\$ref") as? String
+            if (ref != null && map.containsKey("enum")) {
+                map.clear()
+                map["\$ref"] = ref
+                return
+            }
+            map.values.forEach { rewriteRedundantEnumAllOf(it) }
+        }
+        is List<*> -> node.forEach { rewriteRedundantEnumAllOf(it) }
     }
 }
 

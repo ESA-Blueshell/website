@@ -64,7 +64,6 @@ jobs:
               - 'gradle/**'
               - 'build.gradle.kts'
               - 'settings.gradle.kts'
-              - 'gradle.lockfile'
               - 'gradlew'
               - 'gradlew.bat'
 

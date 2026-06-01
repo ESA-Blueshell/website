@@ -1,7 +1,11 @@
 package net.blueshell.api.platform.config
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cache.Cache
+import org.springframework.cache.annotation.CachingConfigurer
 import org.springframework.cache.annotation.EnableCaching
+import org.springframework.cache.interceptor.CacheErrorHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -22,7 +26,7 @@ import java.time.Duration
 class CacheConfig(
     @param:Value($$"${cache.ttl:5m}")
     private val ttl: Duration,
-) {
+) : CachingConfigurer {
     @Bean
     fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager =
         RedisCacheManager.builder(connectionFactory)
@@ -32,4 +36,33 @@ class CacheConfig(
                     .disableCachingNullValues(),
             )
             .build()
+
+    /**
+     * The cache is an optimisation, not a source of truth. If Valkey is
+     * unreachable, a cache get/put must not abort the request — otherwise
+     * every authenticated call (which caches its principal lookup) turns into
+     * a 500. Log and swallow cache errors so the call falls through to the
+     * database instead.
+     */
+    override fun errorHandler(): CacheErrorHandler = ResilientCacheErrorHandler()
+}
+
+private class ResilientCacheErrorHandler : CacheErrorHandler {
+    private val log = LoggerFactory.getLogger(ResilientCacheErrorHandler::class.java)
+
+    override fun handleCacheGetError(exception: RuntimeException, cache: Cache, key: Any) {
+        log.warn("Cache GET failed on '{}' (key={}); falling back to source", cache.name, key, exception)
+    }
+
+    override fun handleCachePutError(exception: RuntimeException, cache: Cache, key: Any, value: Any?) {
+        log.warn("Cache PUT failed on '{}' (key={}); value not cached", cache.name, key, exception)
+    }
+
+    override fun handleCacheEvictError(exception: RuntimeException, cache: Cache, key: Any) {
+        log.warn("Cache EVICT failed on '{}' (key={})", cache.name, key, exception)
+    }
+
+    override fun handleCacheClearError(exception: RuntimeException, cache: Cache) {
+        log.warn("Cache CLEAR failed on '{}'", cache.name, exception)
+    }
 }

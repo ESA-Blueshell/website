@@ -4,6 +4,7 @@ import {DateTime} from "luxon"
 import {type CommitteeDetailResponse, type EventResponse, type EventSignUpResponse, findEvents, type PageMetadata} from "@/services/api"
 import EventList from "@/components/common/lists/EventList.vue"
 import {useRoute, useRouter} from "vue-router"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
 
 type Event = EventResponse
 type EventSignUp = EventSignUpResponse
@@ -56,7 +57,12 @@ async function loadPast(pageOneIndexed = 1) {
       },
     })
     pastEvents.value = resp.data?.content ?? []
-    pageMeta.value = resp.data!.page!
+    // The API can fail (5xx) — resp.data is then undefined. Never force-unwrap
+    // it: pageMeta is optional and every consumer already guards it, so a
+    // failed load just leaves the pane empty instead of crashing the page.
+    pageMeta.value = resp.data?.page
+  } catch (e) {
+    $handleNetworkError(e)
   } finally {
     isLoading.value = false
   }

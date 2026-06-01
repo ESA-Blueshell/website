@@ -1,12 +1,13 @@
+// Vuetify 4's grid switched from negative-margin gutters (which the old
+// col-padding resets here cancelled) to a flexbox `gap` that defaults to 24px.
+// That blew out the spacing between stacked form fields. Restore a tight,
+// form-appropriate gutter globally — the app's rows were always compact.
+.v-row {
+  row-gap: 8px;
+  column-gap: 16px;
+}
+
 .v-row > .v-col {
   padding-top: 0;
   padding-bottom: 0;
-}
-
-.v-row > .v-col:first-child {
-  padding-left: 0;
-}
-
-.v-row > .v-col:last-child {
-  padding-right: 0;
 }

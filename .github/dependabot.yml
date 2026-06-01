@@ -9,6 +9,12 @@
 #
 # Labels are left to Dependabot's defaults (`dependencies` plus the language
 # label), which already match the repo's existing dependency PRs.
+#
+# Each ecosystem also sets a 7-day `cooldown`: a freshly published release
+# is not proposed until it has been on the registry for a week. This blunts
+# supply-chain attacks that rely on a compromised version being pulled in
+# immediately, leaving time for a malicious release to be yanked or flagged
+# before it reaches a PR here.
 version: 2
 
 updates:
@@ -17,6 +23,8 @@ updates:
     directory: /services/frontend
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       frontend:
@@ -38,6 +46,8 @@ updates:
       - /services/system-tests
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       gradle:
@@ -54,6 +64,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       actions:
@@ -73,6 +85,8 @@ updates:
       - /infra/stalwart
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       docker:

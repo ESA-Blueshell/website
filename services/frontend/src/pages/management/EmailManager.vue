@@ -382,10 +382,10 @@ onMounted(() => {
                   label="Status"
                   variant="outlined"
                 >
-                  <template #item="{props, item}">
+                  <template #item="{props, internalItem}">
                     <v-list-item
                       v-bind="props"
-                      :data-testid="`email-filter-status-option-${String(item.raw.value).toLowerCase()}`"
+                      :data-testid="`email-filter-status-option-${String(internalItem.value).toLowerCase()}`"
                     />
                   </template>
                 </v-select>

@@ -605,10 +605,10 @@ onMounted(async () => {
                   label="Category"
                   variant="outlined"
                 >
-                  <template #item="{ props, item }">
+                  <template #item="{ props, internalItem }">
                     <v-list-item
                       v-bind="props"
-                      :data-testid="`job-filter-category-option-${item.raw.value}`"
+                      :data-testid="`job-filter-category-option-${internalItem.value}`"
                     />
                   </template>
                 </v-select>
@@ -629,10 +629,10 @@ onMounted(async () => {
                   label="Status"
                   variant="outlined"
                 >
-                  <template #item="{ props, item }">
+                  <template #item="{ props, internalItem }">
                     <v-list-item
                       v-bind="props"
-                      :data-testid="`job-filter-status-option-${String(item.raw.value).toLowerCase()}`"
+                      :data-testid="`job-filter-status-option-${String(internalItem.value).toLowerCase()}`"
                     />
                   </template>
                 </v-select>

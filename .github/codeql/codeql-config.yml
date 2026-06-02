@@ -4,8 +4,8 @@
 # "default setup", which only ever analysed `actions` and
 # `javascript-typescript` here — the Kotlin backend (the bulk of the
 # code) was never scanned at all. Advanced setup adds `java-kotlin`
-# via build-mode `none` (source extraction, no Gradle build) so the
-# backend is covered too.
+# via a traced Gradle build (on main pushes + the weekly schedule; see
+# the workflow) so the backend is covered too.
 name: blueshell-codeql
 
 # `security-and-quality` is the broadest first-party suite: it layers

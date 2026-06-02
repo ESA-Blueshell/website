@@ -1,0 +1,105 @@
+name: CodeQL
+
+# Advanced CodeQL setup. To take effect, GitHub's managed "default setup"
+# must be turned off:
+#   Settings -> Code security -> CodeQL analysis -> Tool: CodeQL ->
+#   switch from "Default" to "Advanced".
+# While default setup is enabled, the analyze step fails with
+# "Code Scanning could not process the submitted SARIF: default setup
+# is enabled". The two cannot run side by side.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly re-scan so newly published queries flag latent issues even
+    # when no code changed. Monday 06:17 UTC — off the top of the hour to
+    # avoid the cron stampede.
+    - cron: '17 6 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # actions + javascript-typescript extract straight from source
+  # (build-mode none): fast, no toolchain, safe to run on every PR.
+  analyze-buildless:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: '/language:${{ matrix.language }}'
+
+  # The backend is Kotlin-only, and CodeQL's standalone extractor cannot
+  # see Kotlin without a traced build (build-mode none yields "no source
+  # code seen"). Tracing the Gradle + kapt compile is slow (~20 min), so
+  # this leg is kept off the per-PR path and runs on main pushes and the
+  # weekly schedule instead — default setup never scanned Kotlin at all,
+  # so main + weekly is already a strict improvement.
+  analyze-kotlin:
+    name: Analyze (java-kotlin)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: '25'
+
+      # compileKotlin on the api drags in the shared lib and the generated
+      # clients it depends on, which is the whole main source tree CodeQL
+      # needs to trace. Tests are out of scope for these queries.
+      - name: Build Kotlin sources for analysis
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            :services:api:compileKotlin \
+            :libs:kotlin-common:compileKotlin
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: '/language:java-kotlin'

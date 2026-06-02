@@ -1,0 +1,36 @@
+# Repo-wide editor defaults. Kotlin formatting is owned by ktlint
+# (build-logic/ktlint-conventions) and the frontend keeps its own
+# services/frontend/.editorconfig for JS/TS/Vue, so this file only sets
+# universal hygiene plus indentation for the misc file types nothing
+# else governs.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Markdown uses two trailing spaces as a hard line break.
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.{json,json5}]
+indent_style = space
+indent_size = 2
+
+[*.sh]
+indent_style = space
+indent_size = 2
+
+[*.{tf,nix}]
+indent_style = space
+indent_size = 2
+
+# Windows launcher must keep CRLF to run under cmd.exe.
+[*.bat]
+end_of_line = crlf

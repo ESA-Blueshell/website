@@ -8,7 +8,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
-import net.blueshell.api.platform.integration.cohort.adapter.CohortAdapter
+import net.blueshell.api.platform.integration.cohort.port.CohortPort
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.CohortJobs.SyncCohortMembershipIntent
@@ -25,7 +25,7 @@ class SyncCohortMembershipJobTest {
 
     private val objectMapper = ObjectMapper()
     private val cohorts: CohortRepository = mockk()
-    private val brevoAdapter: CohortAdapter = mockk(relaxed = true) {
+    private val brevoAdapter: CohortPort = mockk(relaxed = true) {
         every { system } returns TargetSystem.BREVO
     }
     private val externalIds: ExternalIdMappingService = mockk(relaxed = true)
@@ -121,14 +121,14 @@ class SyncCohortMembershipJobTest {
 
     @Test
     fun `cohort whose system has no registered adapter throws NonRetryableJobException`() {
-        // Cohort's system is a valid TargetSystem value but no matching CohortAdapter bean exists
+        // Cohort's system is a valid TargetSystem value but no matching CohortPort bean exists
         // (GOOGLE_CALENDAR has none yet).
         givenCohort(id = 10L, system = "GOOGLE_CALENDAR", label = "events")
 
         assertThatThrownBy {
             runJob(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(NonRetryableJobException::class.java)
-            .hasMessageContaining("No CohortAdapter")
+            .hasMessageContaining("No CohortPort")
     }
 
     private fun runJob(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent) {

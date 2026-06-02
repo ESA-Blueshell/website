@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.adapter.brevo
 
-import net.blueshell.api.platform.integration.cohort.adapter.CohortAdapter
+import net.blueshell.api.platform.integration.cohort.port.CohortPort
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.enums.ContactSystem
@@ -8,25 +8,16 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
 /**
- * Brevo's [CohortAdapter] implementation. Delegates to the existing
- * [ContactListAdapter] beans for the actual Brevo HTTP calls so we
- * inherit their recovery semantics (idempotent add, contact-gone
+ * Brevo's [CohortPort] implementation. Delegates to the existing
+ * Brevo [ContactListAdapter] bean for the actual HTTP calls so we
+ * inherit its recovery semantics (idempotent add, contact-gone
  * disambiguation, ...) without duplicating client wiring.
- *
- * The legacy `ContactListAdapter` interface continues to exist
- * alongside this adapter while the engine cutover happens; PR
- * D2a-iii-b deletes the legacy interface and inlines the implementation
- * here. Two-phase rollout keeps each diff reviewable.
- *
- * Lives under `cohort/adapter/brevo/` to mirror the existing
- * `contact/adapter/brevo/` structure and satisfy the platform
- * adapter-package convention (ADR-022).
  */
 @Service
 @Profile("!test & !dev")
 class BrevoCohortAdapter(
     contactListAdapters: List<ContactListAdapter>,
-) : CohortAdapter {
+) : CohortPort {
 
     private val delegate: ContactListAdapter = contactListAdapters.single { it.system == ContactSystem.BREVO }
 

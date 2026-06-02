@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.application.job
 
-import net.blueshell.api.platform.integration.cohort.adapter.CohortAdapter
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
+import net.blueshell.api.platform.integration.cohort.port.CohortPort
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
@@ -18,24 +18,23 @@ import tools.jackson.databind.ObjectMapper
  * Pushes one `(user, cohort)` membership to one external system.
  *
  * Resolves both ids through `external_id_mapping` (the unified
- * aggregate-to-external-id table) so cohort sync doesn't need to read
- * the legacy `Contact.externalId` column. If the user has no external
- * mapping yet (typically because `SyncContact` has not run for them),
+ * aggregate-to-external-id table) so cohort sync does not need to read
+ * the legacy per-system identity columns. When the user has no external
+ * mapping yet — typically because `SyncContact` has not run for them —
  * the job enqueues `SyncContact` and throws a retryable exception so
- * the retry picks up after the contact has materialised externally —
- * same recovery pattern as `SyncListMembershipCommandHandler`.
+ * the retry picks up after the contact has materialised externally.
  *
- * On `ADD` the cohort's external counterpart is lazily created via
- * `adapter.createCohort(...)` on first use and its id stored back in
+ * On `ADD` the cohort's external counterpart is created lazily via
+ * [CohortPort.createCohort] on first use and its id stored back in
  * `external_id_mapping` so subsequent runs are a single lookup.
- * `REMOVE` calls with no external mapping on either side are a no-op
- * (there is no external state to converge to).
+ * `REMOVE` with no external mapping on either side is a no-op — there
+ * is no external state to converge to.
  */
 @Component
 class SyncCohortMembershipJob(
     objectMapper: ObjectMapper,
     private val cohorts: CohortRepository,
-    private val adapters: List<CohortAdapter>,
+    private val adapters: List<CohortPort>,
     private val externalIds: ExternalIdMappingService,
     private val jobs: TrackedJobDispatcher,
 ) : AbstractJsonJobHandler<CohortJobs.SyncCohortMembershipPayload>(
@@ -52,7 +51,7 @@ class SyncCohortMembershipJob(
             throw NonRetryableJobException("Cohort ${payload.cohortId} has unknown system '${cohort.system}'")
         }
         val adapter = adapters.find { it.system == system }
-            ?: throw NonRetryableJobException("No CohortAdapter registered for system $system")
+            ?: throw NonRetryableJobException("No CohortPort registered for system $system")
 
         when (payload.intent) {
             SyncCohortMembershipIntent.ADD -> add(payload, cohort.id!!, cohort.label, cohort.system, adapter)
@@ -65,7 +64,7 @@ class SyncCohortMembershipJob(
         cohortId: Long,
         cohortLabel: String,
         system: String,
-        adapter: CohortAdapter,
+        adapter: CohortPort,
     ) {
         val externalUserId = externalIds.find(USER_AGGREGATE, payload.userId, system)?.externalId
         if (externalUserId == null) {
@@ -74,8 +73,7 @@ class SyncCohortMembershipJob(
                 "user ${payload.userId} has no $system external id — enqueued SyncContact, will retry",
             )
         }
-        val externalCohortId = externalIds.find(COHORT_AGGREGATE, cohortId, system)?.externalId
-            ?: createExternal(cohortId, cohortLabel, system, adapter)
+        val externalCohortId = findOrCreateExternalCohortId(cohortId, cohortLabel, system, adapter)
         adapter.addMember(externalUserId, externalCohortId)
         log.debug("Added user {} to {} cohort {} (ext={})", payload.userId, system, cohortId, externalCohortId)
     }
@@ -84,7 +82,7 @@ class SyncCohortMembershipJob(
         payload: CohortJobs.SyncCohortMembershipPayload,
         cohortId: Long,
         system: String,
-        adapter: CohortAdapter,
+        adapter: CohortPort,
     ) {
         val externalUserId = externalIds.find(USER_AGGREGATE, payload.userId, system)?.externalId
         val externalCohortId = externalIds.find(COHORT_AGGREGATE, cohortId, system)?.externalId
@@ -99,16 +97,23 @@ class SyncCohortMembershipJob(
         log.debug("Removed user {} from {} cohort {} (ext={})", payload.userId, system, cohortId, externalCohortId)
     }
 
-    private fun createExternal(
+    /**
+     * Returns the cohort's external id on `system`, creating the external
+     * counterpart through [CohortPort.createCohort] on first use and
+     * recording the new id in `external_id_mapping`. Mirrors the
+     * existing `findOrCreateList` lazy-resolution idiom.
+     */
+    private fun findOrCreateExternalCohortId(
         cohortId: Long,
         cohortLabel: String,
         system: String,
-        adapter: CohortAdapter,
+        adapter: CohortPort,
     ): String {
-        log.info("Lazy-creating $system cohort {} ('{}') externally", cohortId, cohortLabel)
-        val externalId = adapter.createCohort(cohortLabel)
-        externalIds.upsert(COHORT_AGGREGATE, cohortId, system, externalId)
-        return externalId
+        externalIds.find(COHORT_AGGREGATE, cohortId, system)?.externalId?.let { return it }
+        log.info("Creating $system cohort {} ('{}') externally", cohortId, cohortLabel)
+        val created = adapter.createCohort(cohortLabel)
+        externalIds.upsert(COHORT_AGGREGATE, cohortId, system, created)
+        return created
     }
 
     companion object {

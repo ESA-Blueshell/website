@@ -7,11 +7,9 @@ package net.blueshell.api.shared.job
  * called with [SyncCohortMembershipIntent.ADD] or
  * [SyncCohortMembershipIntent.REMOVE] semantics.
  *
- * Per-pair fan-out (rather than per-user batch) means a single
- * adapter failure is isolated to its own job execution row in the
- * Job Manager with its own retry budget — the same observability
- * model as the existing `ContactJobs.SyncListMembership` it
- * supersedes.
+ * Per-pair fan-out (rather than per-user batch) means a single adapter
+ * failure is isolated to its own JobExecution row in the Job Manager
+ * with its own retry budget.
  */
 object CohortJobs {
 

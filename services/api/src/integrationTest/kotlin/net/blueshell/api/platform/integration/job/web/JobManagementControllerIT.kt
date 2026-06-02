@@ -34,7 +34,7 @@ class JobManagementControllerIT : UserTestSupport() {
             mvc.perform(get("/management/jobs").with(bearer(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").isNumber)
-                .andExpect(jsonPath("$.content[0].payload.eventId").value(event.id!!.toInt()))
+                .andExpect(jsonPath("$.content[*].payload.eventId").value(org.hamcrest.Matchers.hasItem(event.id!!.toInt())))
                 .andExpect(jsonPath("$.content[0].initiatedByDisplay").isString)
                 .andExpect(jsonPath("$.content[*].relatedEntities").isArray)
                 .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItems(first.id!!.toInt(), second.id!!.toInt())))

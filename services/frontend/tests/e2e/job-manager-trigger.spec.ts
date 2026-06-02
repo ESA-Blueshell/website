@@ -2,7 +2,7 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin} from "./mocks"
 
 test.describe("job manager trigger modal", () => {
-  test("admin opens the modal, fills arguments and triggers a job", async ({page}) => {
+  test("admin opens the modal, picks a user via the UserPicker and triggers a job", async ({page}) => {
     await installApiMocks(page, {jobs: []})
     await loginAsAdmin(page.context())
     await page.goto("/management/jobs")
@@ -17,10 +17,13 @@ test.describe("job manager trigger modal", () => {
     await page.getByTestId("job-trigger-type").click()
     await page.getByRole("option", {name: "Contact Sync", exact: true}).click()
 
-    // The argument input is rendered from the type's payload fields.
-    const userIdField = page.getByTestId("job-trigger-field-userId").locator("input")
+    // A `userId: Long` payload field renders as a UserPicker
+    // (v-autocomplete backed by /users). Click the input to open the
+    // dropdown, then pick the mocked user "Emma Dokter" (id=1).
+    const userIdField = page.getByTestId("job-trigger-field-userId").locator("input").first()
     await expect(userIdField).toBeVisible()
-    await userIdField.fill("42")
+    await userIdField.click()
+    await page.getByRole("option", {name: /Emma Dokter/}).click()
 
     const enqueueResponse = page.waitForResponse(
       (response) =>
@@ -32,7 +35,7 @@ test.describe("job manager trigger modal", () => {
 
     const body = response.request().postDataJSON() as {jobType: string; payload: Record<string, unknown>}
     expect(body.jobType).toBe("contact.sync")
-    expect(body.payload).toEqual({userId: 42})
+    expect(body.payload).toEqual({userId: 1})
 
     await expect(dialog).toBeHidden()
   })
@@ -48,9 +51,10 @@ test.describe("job manager trigger modal", () => {
 
     await expect(page.getByTestId("job-trigger-submit")).toBeDisabled()
 
-    const userIdField = page.getByTestId("job-trigger-field-userId").locator("input")
+    const userIdField = page.getByTestId("job-trigger-field-userId").locator("input").first()
     await expect(userIdField).toBeVisible()
-    await userIdField.fill("7")
+    await userIdField.click()
+    await page.getByRole("option", {name: /Emma Dokter/}).click()
     await expect(page.getByTestId("job-trigger-submit")).toBeEnabled()
   })
 })

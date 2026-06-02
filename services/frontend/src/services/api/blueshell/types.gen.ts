@@ -123,6 +123,20 @@ export type BoardResponse = {
     version: number;
 };
 
+export enum CohortKind {
+    LIST = 'LIST',
+    ROLE = 'ROLE',
+    GROUP = 'GROUP'
+}
+
+export type CohortSummary = {
+    id: number;
+    kind: CohortKind;
+    label: string;
+    memberCount: number;
+    system: string;
+};
+
 export type CommitteeDetailResponse = {
     createdAt: string;
     description: string;
@@ -492,10 +506,18 @@ export enum JobExecutionStatus {
 }
 
 export type JobPayloadField = {
+    enumValues?: Array<string>;
+    kind: JobPayloadFieldKind;
     name: string;
     required: boolean;
     type: string;
 };
+
+export enum JobPayloadFieldKind {
+    PRIMITIVE = 'PRIMITIVE',
+    ENUM = 'ENUM',
+    OBJECT = 'OBJECT'
+}
 
 export type JobStatsDto = {
     avgSuccessDurationSeconds: number;
@@ -3115,6 +3137,47 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type FindCohortsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/cohorts';
+};
+
+export type FindCohortsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCohortsError = FindCohortsErrors[keyof FindCohortsErrors];
+
+export type FindCohortsResponses = {
+    /**
+     * OK
+     */
+    200: Array<CohortSummary>;
+};
+
+export type FindCohortsResponse = FindCohortsResponses[keyof FindCohortsResponses];
 
 export type List1Data = {
     body?: never;

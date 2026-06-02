@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.job.web.service
 
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.web.dto.JobPayloadFieldDTO
+import net.blueshell.api.platform.integration.job.web.dto.JobPayloadFieldKind
 import net.blueshell.api.platform.integration.job.web.dto.JobTypeDescriptorDTO
 import net.blueshell.api.platform.integration.queue.JobDispatcher
 import net.blueshell.api.platform.integration.queue.JobHandlerRegistry
@@ -62,12 +63,26 @@ class JobCatalogService(
         payloadType.declaredFields
             .filterNot { it.isSynthetic || Modifier.isStatic(it.modifiers) || it.type == Unit::class.java }
             .map { field ->
+                val kind = classifyKind(field.type)
                 JobPayloadFieldDTO(
                     name = field.name,
                     type = normalizeType(field.type),
+                    kind = kind,
                     required = field.type.isPrimitive,
+                    enumValues = if (kind == JobPayloadFieldKind.ENUM) enumConstantNames(field.type) else null,
                 )
             }
+
+    private fun classifyKind(type: Class<*>): JobPayloadFieldKind = when {
+        type.isEnum -> JobPayloadFieldKind.ENUM
+        type.isPrimitive || isPrimitiveWrapper(type) || type == String::class.java -> JobPayloadFieldKind.PRIMITIVE
+        else -> JobPayloadFieldKind.OBJECT
+    }
+
+    private fun enumConstantNames(type: Class<*>): List<String> =
+        type.enumConstants?.mapNotNull { (it as? Enum<*>)?.name } ?: emptyList()
+
+    private fun isPrimitiveWrapper(type: Class<*>): Boolean = type in PRIMITIVE_WRAPPERS
 
     private fun normalizeType(type: Class<*>): String = when (type) {
         java.lang.Long.TYPE -> "Long"
@@ -77,5 +92,18 @@ class JobCatalogService(
         java.lang.Float.TYPE -> "Float"
         java.lang.Boolean.TYPE -> "Boolean"
         else -> type.simpleName
+    }
+
+    companion object {
+        private val PRIMITIVE_WRAPPERS: Set<Class<*>> = setOf(
+            java.lang.Long::class.java,
+            java.lang.Integer::class.java,
+            java.lang.Short::class.java,
+            java.lang.Double::class.java,
+            java.lang.Float::class.java,
+            java.lang.Boolean::class.java,
+            java.lang.Byte::class.java,
+            java.lang.Character::class.java,
+        )
     }
 }

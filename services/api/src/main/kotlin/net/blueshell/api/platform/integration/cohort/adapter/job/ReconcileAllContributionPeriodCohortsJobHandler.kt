@@ -1,0 +1,27 @@
+package net.blueshell.api.platform.integration.cohort.adapter.job
+
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortReconciliation
+import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.shared.job.CohortJobs
+import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
+
+/**
+ * Driving adapter: invokes
+ * [CohortReconciliation.reconcileAllContributionPeriodCohorts]. No
+ * payload; the use case walks all periods on its own.
+ */
+@Component
+class ReconcileAllContributionPeriodCohortsJobHandler(
+    objectMapper: ObjectMapper,
+    private val cohortReconciliation: CohortReconciliation,
+) : AbstractJsonJobHandler<CohortJobs.ReconcileAllContributionPeriodCohortsPayload>(
+    objectMapper,
+    CohortJobs.ReconcileAllContributionPeriodCohorts.payloadType,
+) {
+    override val jobType: String = CohortJobs.ReconcileAllContributionPeriodCohorts.type
+
+    override fun handlePayload(payload: CohortJobs.ReconcileAllContributionPeriodCohortsPayload) {
+        cohortReconciliation.reconcileAllContributionPeriodCohorts()
+    }
+}

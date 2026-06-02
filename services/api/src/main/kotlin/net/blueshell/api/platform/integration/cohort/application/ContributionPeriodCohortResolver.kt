@@ -69,7 +69,7 @@ class ContributionPeriodCohortResolver(
         private val BREVO_SYSTEM = TargetSystem.BREVO.name
 
         fun paidLabelFor(period: ContributionPeriod): String =
-            "Contribution Paid ${period.startDate.year} - ${period.endDate.year}"
+            "Members ${period.startDate.year} - ${period.endDate.year}"
 
         fun activeLabelFor(period: ContributionPeriod): String =
             "Active Members ${period.startDate.year} - ${period.endDate.year}"

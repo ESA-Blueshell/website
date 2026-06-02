@@ -16,13 +16,12 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     const resp = await findUsers()
-    if (resp.status === 200 && Array.isArray(resp.data)) {
-      items.value = (resp.data as UserDetailResponse[]).slice().sort((a, b) => {
-        const left = a.fullName ?? a.email ?? ""
-        const right = b.fullName ?? b.email ?? ""
-        return left.localeCompare(right)
-      })
-    }
+    const content = resp.data?.content ?? []
+    items.value = content.slice().sort((a, b) => {
+      const left = a.fullName ?? a.email ?? ""
+      const right = b.fullName ?? b.email ?? ""
+      return left.localeCompare(right)
+    })
   } catch (error) {
     $handleNetworkError(error)
   } finally {

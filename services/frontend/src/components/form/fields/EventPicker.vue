@@ -16,11 +16,10 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     const resp = await findEvents()
-    if (resp.status === 200 && Array.isArray(resp.data)) {
-      items.value = (resp.data as EventResponse[])
-        .slice()
-        .sort((a, b) => (b.startTime ?? "").localeCompare(a.startTime ?? ""))
-    }
+    const content = resp.data?.content ?? []
+    items.value = content
+      .slice()
+      .sort((a, b) => (b.startTime ?? "").localeCompare(a.startTime ?? ""))
   } catch (error) {
     $handleNetworkError(error)
   } finally {

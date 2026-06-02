@@ -193,10 +193,14 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         page.locator("[data-testid='job-trigger-type']").first().click()
         page.getByText("Contact Sync", Page.GetByTextOptions().setExact(true)).first().click()
 
-        // The argument input is rendered from the job's reflected payload fields.
+        // userId is rendered as a UserPicker (v-autocomplete backed by
+        // /users). Click to open the dropdown, type the admin's email to
+        // filter to one option, then click the highlighted result.
         val userIdField = page.locator("[data-testid='job-trigger-field-userId'] input").first()
         userIdField.waitFor()
-        userIdField.fill(adminId.toString())
+        userIdField.click()
+        userIdField.fill(admin.email)
+        page.getByRole(com.microsoft.playwright.options.AriaRole.OPTION).first().click()
 
         val enqueueResponse = page.waitForResponse(
             Predicate { response ->
@@ -208,6 +212,8 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         }
         assertThat(enqueueResponse.status()).isEqualTo(200)
         assertThat(enqueueResponse.text()).contains("\"jobType\":\"contact.sync\"")
+        // The picker should have resolved the admin's display label to their id.
+        assertThat(enqueueResponse.request().postData()).contains("\"userId\":$adminId")
 
         val enqueuedId = Regex("\"id\":(\\d+)").find(enqueueResponse.text())?.groupValues?.get(1)?.toLong()
         assertThat(enqueuedId).isNotNull()

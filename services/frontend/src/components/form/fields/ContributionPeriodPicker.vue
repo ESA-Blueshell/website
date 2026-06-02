@@ -16,11 +16,10 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     const resp = await findContributionPeriods()
-    if (resp.status === 200 && Array.isArray(resp.data)) {
-      items.value = (resp.data as ContributionPeriodResponse[])
-        .slice()
-        .sort((a, b) => (b.startDate ?? "").localeCompare(a.startDate ?? ""))
-    }
+    const data = resp.data ?? []
+    items.value = data
+      .slice()
+      .sort((a, b) => (b.startDate ?? "").localeCompare(a.startDate ?? ""))
   } catch (error) {
     $handleNetworkError(error)
   } finally {

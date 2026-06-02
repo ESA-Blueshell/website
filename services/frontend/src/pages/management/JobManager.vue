@@ -7,6 +7,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {JobExecutionCategory, JobExecutionStatus, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
+import {jobCatalogEntry} from "@/utils/jobCatalog"
 
 defineOptions({name: "JobManagerPage"})
 
@@ -28,57 +29,63 @@ type JobExecutionView = JobExecution & {
   relatedEntities?: JobRelatedEntity[]
 }
 
-const CONTACT_SYSTEM_LABELS: Record<NonNullable<JobExecutionView["targetSystem"]>, string> = {
-  BREVO: "Brevo",
+const summarizeExecution = (execution: JobExecutionView): string => {
+  const title = jobCatalogEntry(execution.jobType ?? "").title
+  const primary = execution.relatedEntities?.[0]?.label
+  return primary ? `${title} — ${primary}` : title
 }
 
-const humanizeJobType = (jobType: string): string =>
-  jobType
+const titleCaseToken = (value: string): string =>
+  value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+
+const humanizeFieldName = (name: string): string =>
+  name
+    .replace(/([A-Z])/g, " $1")
     .replace(/[._-]+/g, " ")
     .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())
+    .map(titleCaseToken)
     .join(" ")
 
-const summarizeExecution = (execution: JobExecutionView): string => {
-  const jobType = execution.jobType ?? ""
-  const primary = execution.relatedEntities?.[0]?.label
-  const system = execution.targetSystem ? CONTACT_SYSTEM_LABELS[execution.targetSystem] : undefined
+const formatPayloadValue = (value: unknown): string => {
+  if (value == null) return "—"
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  try { return JSON.stringify(value) } catch { return String(value) }
+}
 
-  switch (jobType) {
-    case "contact.sync-all":
-      return "Sync all contacts to every system"
-    case "contact.list-sync-all":
-      return "Sync all list memberships to every system"
-    case "contact.period-list-sync-all":
-      return "Reconcile contribution-period lists"
-    case "contact.sync-to-system":
-      if (system && primary) return `Sync contact to ${system} for ${primary}`
-      if (system) return `Sync contact to ${system}`
-      return primary ? `Sync contact for ${primary}` : "Sync contact"
-    case "contact.list-sync":
-      if (system && primary) return `Sync list membership to ${system} for ${primary}`
-      if (system) return `Sync list membership to ${system}`
-      return primary ? `Sync list membership for ${primary}` : "Sync list membership"
-    case "contact.delete":
-      return primary ? `Delete contact for ${primary}` : "Delete contact"
-    case "contact.process-list-membership":
-      return primary ? `Process list membership for ${primary}` : "Process list membership"
-    case "email.recovery":
-      return primary ? `Recovery email for ${primary}` : "Recovery email"
-    case "email.event-signup":
-      return primary ? `Event sign-up email for ${primary}` : "Event sign-up email"
-    case "email.contribution-reminder":
-      return primary ? `Contribution reminder for ${primary}` : "Contribution reminder email"
-  }
-  if (jobType.startsWith("calendar.")) {
-    return primary ? `Calendar sync for ${primary}` : "Calendar synchronization"
-  }
-  if (jobType.startsWith("contact.")) {
-    return primary ? `Contact sync for ${primary}` : "Contact synchronization"
-  }
-  return humanizeJobType(jobType)
+type PayloadChip = { key: string; label: string; value: string }
+
+/**
+ * Renders the raw payload map as `{label, value}` chips. Skips fields
+ * the row already shows as resolved related-entity rows (userId,
+ * eventId, periodId, contributionPeriodId, eventSignUpId) so the chip
+ * row only carries enum values, intents and other non-id payload bits.
+ */
+const SUPPRESSED_PAYLOAD_KEYS = new Set([
+  "userid",
+  "eventid",
+  "eventsignupid",
+  "periodid",
+  "contributionperiodid",
+  "cohortid",
+])
+
+const payloadChips = (execution: JobExecutionView): PayloadChip[] => {
+  const payload = execution.payload
+  if (!payload || typeof payload !== "object") return []
+  return Object.entries(payload)
+    .filter(([key, value]) => {
+      if (value == null) return false
+      if (typeof value === "string" && value.trim() === "") return false
+      return !SUPPRESSED_PAYLOAD_KEYS.has(key.toLowerCase())
+    })
+    .map(([key, value]) => ({
+      key,
+      label: humanizeFieldName(key),
+      value: formatPayloadValue(value),
+    }))
 }
 
 type JobPage = {
@@ -124,20 +131,18 @@ const successRate = computed(() => {
   return Math.round(stats.value.successCount / stats.value.totalCount * 100)
 })
 
-const statusCounts = computed(() => {
-  const counts = Object.fromEntries(
-    Object.values(JobExecutionStatus).map((status) => [status, 0]),
-  ) as Record<JobExecutionStatus, number>
-
-  for (const execution of executions.value) {
-    const status = execution.status
-    if (status && status in counts) {
-      counts[status] += 1
-    }
-  }
-
-  return counts
-})
+/**
+ * Counts come from the dedicated stats endpoint so the chips reflect
+ * DB totals, not whichever page is currently loaded. While stats are
+ * loading we fall back to a zero map so the chip row stays mounted.
+ */
+const statusCounts = computed<Record<JobExecutionStatus, number>>(() => ({
+  [JobExecutionStatus.QUEUED]: stats.value?.queuedCount ?? 0,
+  [JobExecutionStatus.RUNNING]: stats.value?.runningCount ?? 0,
+  [JobExecutionStatus.SUCCESS]: stats.value?.successCount ?? 0,
+  [JobExecutionStatus.FAILED]: stats.value?.failedCount ?? 0,
+  [JobExecutionStatus.DEAD]: stats.value?.deadCount ?? 0,
+}))
 
 const categoryOptions = computed(() => {
   return [
@@ -199,6 +204,9 @@ const previewTitle = (execution: JobExecutionView): string => {
   if (summary) return summary
   return `${titleCase(execution.category ?? "job")} job`
 }
+
+const jobDescription = (execution: JobExecutionView): string =>
+  jobCatalogEntry(execution.jobType ?? "").description
 
 const isExpanded = (execution: JobExecutionView): boolean => {
   if (execution.id == null) return false
@@ -481,6 +489,36 @@ onMounted(async () => {
                     Dead
                   </div>
                 </v-col>
+                <v-divider vertical />
+                <v-col
+                  class="stats-cell"
+                  data-testid="job-stats-queued"
+                >
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.queuedCount > 0 ? 'text-warning' : ''"
+                  >
+                    {{ stats.queuedCount }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Queued
+                  </div>
+                </v-col>
+                <v-divider vertical />
+                <v-col
+                  class="stats-cell"
+                  data-testid="job-stats-running"
+                >
+                  <div
+                    class="text-h5 font-weight-bold"
+                    :class="stats.runningCount > 0 ? 'text-info' : ''"
+                  >
+                    {{ stats.runningCount }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-uppercase">
+                    Running
+                  </div>
+                </v-col>
               </v-row>
             </v-col>
 
@@ -745,6 +783,27 @@ onMounted(async () => {
                     <p class="job-title">
                       {{ previewTitle(execution) }}
                     </p>
+                    <p
+                      v-if="jobDescription(execution)"
+                      class="job-description"
+                    >
+                      {{ jobDescription(execution) }}
+                    </p>
+
+                    <div
+                      v-if="payloadChips(execution).length"
+                      class="job-payload-chips"
+                      :data-testid="`job-row-payload-${execution.id}`"
+                    >
+                      <v-chip
+                        v-for="chip in payloadChips(execution)"
+                        :key="chip.key"
+                        size="x-small"
+                        variant="tonal"
+                      >
+                        <strong>{{ chip.label }}:</strong>&nbsp;{{ chip.value }}
+                      </v-chip>
+                    </div>
 
                     <div class="job-meta-grid">
                       <div class="job-meta-cell">
@@ -1033,6 +1092,25 @@ onMounted(async () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   white-space: normal;
+}
+
+.job-description {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.job-payload-chips {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .job-meta-grid {

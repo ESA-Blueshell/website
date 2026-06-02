@@ -123,13 +123,47 @@ export type BoardResponse = {
     version: number;
 };
 
+export type CohortDetail = {
+    externalId?: string;
+    id: number;
+    kind: CohortKind;
+    label: string;
+    memberCount: number;
+    members: Array<CohortMemberRow>;
+    rules: Array<CohortRule>;
+    system: string;
+};
+
+export enum CohortFactKind {
+    ROLE = 'ROLE',
+    COMMITTEE = 'COMMITTEE',
+    CONTRIBUTION_PAID = 'CONTRIBUTION_PAID',
+    NEWSLETTER = 'NEWSLETTER'
+}
+
 export enum CohortKind {
     LIST = 'LIST',
     ROLE = 'ROLE',
     GROUP = 'GROUP'
 }
 
+export type CohortMemberRow = {
+    cohortMemberId: number;
+    joinedAt: string;
+    userEmail?: string;
+    userFullName?: string;
+    userId: number;
+};
+
+export type CohortRule = {
+    enabled: boolean;
+    factKey: string;
+    factKind: CohortFactKind;
+    id: number;
+};
+
 export type CohortSummary = {
+    externalId?: string;
     id: number;
     kind: CohortKind;
     label: string;
@@ -475,6 +509,9 @@ export type JobExecution = {
     initiatedByUsername?: string;
     jobType: string;
     nextAttemptAt?: string;
+    payload?: {
+        [key: string]: unknown;
+    };
     queuedAt?: string;
     relatedEntities: Array<JobExecutionRelatedEntity>;
     stackTrace?: string;
@@ -3178,6 +3215,49 @@ export type FindCohortsResponses = {
 };
 
 export type FindCohortsResponse = FindCohortsResponses[keyof FindCohortsResponses];
+
+export type FindCohortByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}';
+};
+
+export type FindCohortByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCohortByIdError = FindCohortByIdErrors[keyof FindCohortByIdErrors];
+
+export type FindCohortByIdResponses = {
+    /**
+     * OK
+     */
+    200: CohortDetail;
+};
+
+export type FindCohortByIdResponse = FindCohortByIdResponses[keyof FindCohortByIdResponses];
 
 export type List1Data = {
     body?: never;

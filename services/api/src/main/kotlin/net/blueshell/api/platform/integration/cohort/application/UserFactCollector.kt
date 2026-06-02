@@ -45,14 +45,21 @@ class UserFactCollector(
             facts.add(UserFact(CohortFactKind.CONTRIBUTION_PAID, periodId.toString()))
         }
 
-        // ACTIVE_IN_PERIOD: a user is active in the current contribution
-        // period if they hold at least one committee membership today.
-        // Historical periods will be backfilled once committee_members
-        // grows queryable join-history (esports-team activity slots in
-        // here too, once teams have a persistence layer). Until then the
-        // engine simply does not emit the fact for past periods.
-        if (user.committeeMembers.isNotEmpty()) {
-            periods.findLatest()?.id?.let { currentPeriodId ->
+        // MEMBER_IN_PERIOD / ACTIVE_IN_PERIOD: both pivot on the current
+        // contribution period — the engine cannot yet reconstruct
+        // historical role / committee state, so past periods are not
+        // emitted. The fact for the current period is:
+        //   - MEMBER_IN_PERIOD when the user currently holds Role.MEMBER
+        //     (matches the "Members <YYYY - YYYY>" cohort label).
+        //   - ACTIVE_IN_PERIOD when the user holds any committee
+        //     membership today (esports-team activity slots in once
+        //     teams gain a persistence layer).
+        val currentPeriodId = periods.findLatest()?.id
+        if (currentPeriodId != null) {
+            if (user.roles.any { it == net.blueshell.api.shared.enums.Role.MEMBER }) {
+                facts.add(UserFact(CohortFactKind.MEMBER_IN_PERIOD, currentPeriodId.toString()))
+            }
+            if (user.committeeMembers.isNotEmpty()) {
                 facts.add(UserFact(CohortFactKind.ACTIVE_IN_PERIOD, currentPeriodId.toString()))
             }
         }

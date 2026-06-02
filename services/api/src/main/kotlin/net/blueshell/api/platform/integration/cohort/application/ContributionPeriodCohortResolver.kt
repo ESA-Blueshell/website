@@ -44,6 +44,11 @@ class ContributionPeriodCohortResolver(
             label = paidLabelFor(period),
         )
         ensureCohort(
+            factKind = CohortFactKind.MEMBER_IN_PERIOD,
+            periodId = periodId,
+            label = memberLabelFor(period),
+        )
+        ensureCohort(
             factKind = CohortFactKind.ACTIVE_IN_PERIOD,
             periodId = periodId,
             label = activeLabelFor(period),
@@ -69,6 +74,9 @@ class ContributionPeriodCohortResolver(
         private val BREVO_SYSTEM = TargetSystem.BREVO.name
 
         fun paidLabelFor(period: ContributionPeriod): String =
+            "Contribution Paid ${period.startDate.year} - ${period.endDate.year}"
+
+        fun memberLabelFor(period: ContributionPeriod): String =
             "Members ${period.startDate.year} - ${period.endDate.year}"
 
         fun activeLabelFor(period: ContributionPeriod): String =

@@ -10,6 +10,13 @@ import io.swagger.v3.oas.annotations.media.Schema
  *  - [ROLE]: a [net.blueshell.api.shared.enums.Role] enum name.
  *  - [COMMITTEE]: a committee id (decimal string).
  *  - [CONTRIBUTION_PAID]: a contribution-period id (decimal string).
+ *    True when the user has any contribution row for the period.
+ *  - [MEMBER_IN_PERIOD]: a contribution-period id (decimal string).
+ *    True when the user held `Role.MEMBER` during the period — the
+ *    membership-status counterpart of `CONTRIBUTION_PAID`, which only
+ *    proves the contribution was paid. Historical periods will be
+ *    backfilled once user-role history is queryable; today the fact
+ *    is emitted for the current period only.
  *  - [NEWSLETTER]: literally `"true"`; opt-out cohorts are simply
  *    represented by the absence of a rule.
  *  - [ACTIVE_IN_PERIOD]: a contribution-period id (decimal string).
@@ -26,6 +33,7 @@ enum class CohortFactKind {
     ROLE,
     COMMITTEE,
     CONTRIBUTION_PAID,
+    MEMBER_IN_PERIOD,
     NEWSLETTER,
     ACTIVE_IN_PERIOD,
 }

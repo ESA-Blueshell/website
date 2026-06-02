@@ -23,8 +23,10 @@
 --
 -- Backfill maps each existing cohort to a freshly-minted subject. The
 -- subject's `type` is derived from the first rule attached to that
--- cohort (which today is always the only rule), falling back to OTHER
--- for ruleless cohorts.
+-- cohort (which today is always the only rule), falling back to CUSTOM
+-- for ruleless cohorts. Doing this in SQL keeps the migration
+-- self-contained — the type-classification table stays next to the
+-- column shapes that produce it.
 
 CREATE TABLE cohort_subject (
     id            BIGINT       AUTO_INCREMENT PRIMARY KEY,
@@ -47,8 +49,8 @@ ALTER TABLE cohort        ADD COLUMN subject_id BIGINT NULL AFTER folder;
 ALTER TABLE cohort_rule   ADD COLUMN subject_id BIGINT NULL AFTER cohort_id;
 ALTER TABLE cohort_member ADD COLUMN subject_id BIGINT NULL AFTER cohort_id;
 
--- Backfill: one subject per existing cohort. The subject's `type` is
--- inferred from the cohort's first (and today only) rule.
+-- One subject per existing active cohort. Type derived from the
+-- cohort's first (and today only) rule's fact_kind.
 INSERT INTO cohort_subject (type, label)
 SELECT
     COALESCE(
@@ -72,9 +74,8 @@ SELECT
 FROM cohort c
 WHERE c.deleted_at = '9999-12-31 23:59:59.000000';
 
--- Link each existing cohort to its freshly-minted subject. The
--- backfill above preserved insertion order so we pair them by row
--- order on a deterministic ORDER BY id.
+-- Pair each cohort with its freshly-inserted subject by row position
+-- inside the deterministic ORDER BY id we used for the INSERT.
 UPDATE cohort c
 JOIN (
     SELECT c.id AS cohort_id, s.id AS subject_id
@@ -90,9 +91,6 @@ JOIN (
 ) pair ON pair.cohort_id = c.id
 SET c.subject_id = pair.subject_id;
 
--- Propagate the subject_id from cohort to the rules + members that
--- referenced it. Done as a direct join — no row-number ambiguity
--- because the cohort row already carries the subject_id at this point.
 UPDATE cohort_rule r
 JOIN cohort c ON c.id = r.cohort_id
 SET r.subject_id = c.subject_id
@@ -103,10 +101,6 @@ JOIN cohort c ON c.id = m.cohort_id
 SET m.subject_id = c.subject_id
 WHERE m.subject_id IS NULL;
 
--- Now that every active row has a subject, lock the column down.
--- Soft-deleted cohort rows are left nullable on subject_id since
--- nothing reads them; future cleanup can drop them entirely.
-ALTER TABLE cohort        MODIFY COLUMN subject_id BIGINT NULL;
 ALTER TABLE cohort_rule   MODIFY COLUMN subject_id BIGINT NOT NULL;
 ALTER TABLE cohort_member MODIFY COLUMN subject_id BIGINT NOT NULL;
 

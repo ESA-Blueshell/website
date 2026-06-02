@@ -15,4 +15,6 @@ interface CohortRuleRepository : BaseRepository<CohortRule, Long> {
     ): List<CohortRule>
 
     fun findAllByCohortId(cohortId: Long): List<CohortRule>
+
+    fun findAllBySubjectId(subjectId: Long): List<CohortRule>
 }

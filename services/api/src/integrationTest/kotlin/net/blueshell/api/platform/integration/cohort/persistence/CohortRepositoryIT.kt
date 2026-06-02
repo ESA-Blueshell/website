@@ -29,6 +29,9 @@ class CohortRepositoryIT : UserTestSupport() {
     @Autowired
     private lateinit var cohortRules: CohortRuleRepository
 
+    @Autowired
+    private lateinit var subjects: net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+
     @Test
     fun `cohort persists and reloads with all configured fields`() {
         val cohort = Cohort(
@@ -61,9 +64,24 @@ class CohortRepositoryIT : UserTestSupport() {
     @Test
     fun `cohort member round-trips with FK to cohort and user_id`() {
         val user = createUserWithRole(Role.MEMBER)
-        val cohort = cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Members"))
+        val subject = subjects.save(
+            net.blueshell.api.platform.integration.cohort.persistence.CohortSubject(
+                type = net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType.CUSTOM,
+                label = "Members",
+            )
+        )
+        val cohort = cohorts.save(
+            Cohort(
+                system = TargetSystem.BREVO.name,
+                kind = CohortKind.LIST,
+                label = "Members",
+                subjectId = subject.id,
+            )
+        )
 
-        val saved = cohortMembers.save(CohortMember(cohort = cohort, userId = user.id!!))
+        val saved = cohortMembers.save(
+            CohortMember(cohort = cohort, userId = user.id!!, subject = subject)
+        )
         val reloaded = cohortMembers.findById(saved.id!!).orElseThrow()
 
         assertThat(reloaded.cohort.id).isEqualTo(cohort.id)
@@ -77,13 +95,30 @@ class CohortRepositoryIT : UserTestSupport() {
 
     @Test
     fun `cohort rule lookup by fact returns enabled rows only`() {
-        val cohort = cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Members"))
+        // Rules attach to the subject after V72, not directly to the
+        // cohort. Save the subject first so we can pass it into both
+        // rule constructors below.
+        val subject = subjects.save(
+            net.blueshell.api.platform.integration.cohort.persistence.CohortSubject(
+                type = net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType.CUSTOM,
+                label = "Members",
+            )
+        )
+        val cohort = cohorts.save(
+            Cohort(
+                system = TargetSystem.BREVO.name,
+                kind = CohortKind.LIST,
+                label = "Members",
+                subjectId = subject.id,
+            )
+        )
 
         cohortRules.save(
             CohortRule(
                 factKind = CohortFactKind.ROLE,
                 factKey = Role.MEMBER.name,
                 cohort = cohort,
+                subject = subject,
                 enabled = true,
             )
         )
@@ -92,6 +127,7 @@ class CohortRepositoryIT : UserTestSupport() {
                 factKind = CohortFactKind.ROLE,
                 factKey = Role.BOARD.name,
                 cohort = cohort,
+                subject = subject,
                 enabled = false,
             )
         )

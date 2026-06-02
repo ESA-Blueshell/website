@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.adapter.brevo
 
-import net.blueshell.api.platform.integration.cohort.port.CohortPort
+import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.enums.ContactSystem

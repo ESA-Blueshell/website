@@ -313,15 +313,30 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * directory at the module root bypasses the standard 3-layer integration structure.
      * Groups A1–A3 enforce inheritance and lifecycle; I1 enforces placement.
      */
+    /**
+     * I1: Concrete job handlers must reside in either the legacy
+     * `..application.job..` location or the hexagonal `..adapter.job..`
+     * location.
+     *
+     * A job handler is a driving (inbound) adapter — it adapts the queue's
+     * "execute this payload" message into a call against an inbound
+     * application port. In a true hexagonal split it lives under
+     * `adapter/job/`. The legacy placement under `application/job/` is
+     * accepted while the rest of the codebase migrates; new modules
+     * should land directly under `adapter/job/`.
+     */
     @Test
-    fun `platform job handlers must reside in application job packages`(): Unit =
-        arch("Concrete *Job classes in platform.integration must reside in ..application.job.. packages") {
+    fun `platform job handlers must reside in a job sub-package`(): Unit =
+        arch("Concrete *Job classes in platform.integration must reside in ..application.job.. or ..adapter.job.. packages") {
             classes()
                 .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
                 .and().haveSimpleNameEndingWith("Job")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should().resideInAnyPackage(ArchitecturePackages.APPLICATION_JOB)
-                .because("ADR-022: Job handlers must reside in ..application.job.. sub-package")
+                .should().resideInAnyPackage(
+                    ArchitecturePackages.APPLICATION_JOB,
+                    ArchitecturePackages.ADAPTER_JOB,
+                )
+                .because("ADR-022: Job handlers are driving adapters and belong in a job sub-package")
         }
 
     // ── Group J: Queue Isolation ──────────────────────────────────────────────

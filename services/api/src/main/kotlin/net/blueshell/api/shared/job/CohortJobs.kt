@@ -1,13 +1,16 @@
 package net.blueshell.api.shared.job
 
+import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
+
 /**
  * Per-target cohort membership sync jobs. One job execution pushes one
  * `(user, cohort)` pair to one external system, idempotently. The
- * [SyncCohortMembershipPayload.intent] decides whether the adapter is
- * called with [SyncCohortMembershipIntent.ADD] or
- * [SyncCohortMembershipIntent.REMOVE] semantics.
+ * payload's [SyncCohortMembershipIntent] decides whether the inbound
+ * port is called with `ADD` or `REMOVE` semantics — the enum lives on
+ * the application port so callers and the driving job handler share
+ * one source of truth for the verb.
  *
- * Per-pair fan-out (rather than per-user batch) means a single adapter
+ * Per-pair fan-out (rather than per-user batch) means a single sync
  * failure is isolated to its own JobExecution row in the Job Manager
  * with its own retry budget.
  */
@@ -24,6 +27,4 @@ object CohortJobs {
         val cohortId: Long,
         val intent: SyncCohortMembershipIntent,
     )
-
-    enum class SyncCohortMembershipIntent { ADD, REMOVE }
 }

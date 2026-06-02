@@ -1,0 +1,37 @@
+name: Dependency review
+
+# Inspects the dependency delta a PR introduces (resolved from the
+# dependency graph, free for this repo) and blocks the merge when it
+# pulls in a vulnerable package or a disallowed licence. Only the diff
+# is checked, so existing dependencies never retroactively fail a PR.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Review dependencies
+        uses: actions/dependency-review-action@v5.0.0
+        with:
+          # Fail the PR on a newly introduced high or critical advisory.
+          # Moderate/low surface as warnings in the summary without
+          # blocking — Dependabot's grouped security PRs sweep those up.
+          fail-on-severity: high
+          # Strong copyleft is incompatible with shipping a closed web
+          # app, so block it at the door. Only newly added dependencies
+          # are evaluated, so this never trips on the existing tree.
+          deny-licenses: AGPL-1.0-or-later, AGPL-3.0-or-later, GPL-2.0-or-later, GPL-3.0-or-later, SSPL-1.0
+          comment-summary-in-pr: on-failure

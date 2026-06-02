@@ -1,0 +1,86 @@
+name: CodeQL
+
+# Advanced CodeQL setup. To take effect, GitHub's managed "default setup"
+# must be turned off first:
+#   Settings -> Code security -> CodeQL analysis -> Tool: CodeQL ->
+#   switch from "Default" to "Advanced".
+# While default setup is enabled, the analyze step below fails with
+# "Code Scanning could not process the submitted SARIF: default setup
+# is enabled". The two cannot run side by side.
+#
+# Scans every analysable language in the repo. Unlike the prior default
+# setup, the Kotlin backend is built manually here so it is actually
+# analysed rather than silently skipped.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly re-scan so newly published queries flag latent issues even
+    # when no code changed. Monday 06:17 UTC — off the top of the hour to
+    # avoid the cron stampede.
+    - cron: '17 6 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+          - language: java-kotlin
+            build-mode: manual
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      # Kotlin has no autobuild that copes with the Java 25 multi-module
+      # Gradle layout, so compile the backend explicitly. compileKotlin on
+      # the api + shared lib is enough for the extractor to see the whole
+      # main source tree; tests are out of scope for the security/quality
+      # queries that matter here.
+      - name: Set up Java + Gradle
+        if: matrix.build-mode == 'manual'
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: '25'
+
+      - name: Build Kotlin sources for analysis
+        if: matrix.build-mode == 'manual'
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            :services:api:compileKotlin \
+            :libs:kotlin-common:compileKotlin
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: '/language:${{ matrix.language }}'

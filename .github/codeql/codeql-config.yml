@@ -1,0 +1,32 @@
+# CodeQL advanced-setup configuration.
+#
+# Used by .github/workflows/codeql.yml. Replaces GitHub's managed
+# "default setup", which only ever analysed `actions` and
+# `javascript-typescript` here — the Kotlin backend (the bulk of the
+# code) was never scanned because default setup cannot build the
+# Java 25 multi-module Gradle project. Advanced setup compiles the
+# backend manually (see the workflow) so `java-kotlin` is covered too.
+name: blueshell-codeql
+
+# `security-and-quality` is the broadest first-party suite: it layers
+# the maintainability / correctness "quality" queries on top of
+# `security-extended`. This is the "Code Quality" half of the request —
+# dead code, resource leaks, nullness, inconsistent equals/hashCode,
+# useless comparisons, etc., on top of the security queries.
+queries:
+  - uses: security-and-quality
+
+# Path filters apply to the interpreted languages (javascript-typescript).
+# Generated and vendored code is excluded so findings point at code that
+# is actually hand-maintained — scanning the generated OpenAPI clients or
+# the Yarn PnP runtime only produces noise nobody can act on.
+paths-ignore:
+  - services/frontend/src/services/api/blueshell
+  - services/frontend/src/services/api/discord
+  - services/frontend/.pnp.cjs
+  - services/frontend/.pnp.loader.mjs
+  - services/frontend/.yarn
+  - '**/dist'
+  - '**/node_modules'
+  - '**/*.min.js'
+  - '**/*.gen.ts'

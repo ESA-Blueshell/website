@@ -122,6 +122,18 @@ class UserService @Autowired constructor(
     fun findAllByIds(ids: Collection<Long>): List<User> =
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 
+    /**
+     * Returns true when the user has been soft-deleted (a row exists in
+     * `users` with `deleted_at <> sentinel`). Callers can distinguish
+     * "user was deleted, preserve historical state" from "user was never
+     * here, treat as gone" — the cohort engine uses this to keep
+     * cohort_member rows around for soft-deleted users rather than diffing
+     * them out of every cohort and pushing REMOVE calls to external
+     * systems.
+     */
+    fun isSoftDeleted(userId: Long): Boolean =
+        repository.findSoftDeletedUserId(userId) != null
+
     @Transactional
     fun toggleRole(id: Long, role: Role): User {
         val user = findById(id)

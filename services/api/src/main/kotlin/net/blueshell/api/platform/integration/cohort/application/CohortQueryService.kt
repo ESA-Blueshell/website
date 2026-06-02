@@ -45,7 +45,17 @@ class CohortQueryService(
             ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
         }
         val members = cohortMembers.findAllByCohortId(cohortId)
-        val userById = users.findAllByIds(members.map { it.userId }.distinct()).associateBy { it.id }
+        val memberUserIds = members.map { it.userId }.distinct()
+        val userById = users.findAllByIds(memberUserIds).associateBy { it.id }
+        // Members whose User row is gone from the active query are either
+        // soft-deleted (retained for stats) or hard-deleted. Flag the
+        // soft-deleted ones explicitly so the admin UI can render them as
+        // greyed-out / "Deleted" entries rather than the cryptic
+        // "User #<id>" fallback.
+        val softDeletedIds = memberUserIds
+            .filter { userById[it] == null }
+            .filter { users.isSoftDeleted(it) }
+            .toSet()
         val rules = cohortRules.findAllByCohortId(cohortId)
 
         return CohortDetail(
@@ -55,8 +65,14 @@ class CohortQueryService(
                 CohortMemberRow(
                     member = member,
                     user = userById[member.userId],
+                    isUserDeleted = userById[member.userId] == null && softDeletedIds.contains(member.userId),
                 )
-            }.sortedBy { it.user?.fullName?.lowercase() ?: "~~~" },
+            }.sortedWith(
+                compareBy(
+                    { it.isUserDeleted },  // active members first, deleted at the bottom
+                    { it.user?.fullName?.lowercase() ?: "~~~" },
+                ),
+            ),
             rules = rules.sortedWith(compareBy({ it.factKind.name }, { it.factKey })),
         )
     }
@@ -81,8 +97,15 @@ data class CohortDetail(
     val rules: List<CohortRule>,
 )
 
-/** One row in the per-cohort members table, with the joined user record. */
+/**
+ * One row in the per-cohort members table, with the joined user record
+ * if the user is still active. [isUserDeleted] is true when the user
+ * has been soft-deleted but the cohort_member row was retained for
+ * historical stats — the admin UI renders these in a muted style with
+ * a "Deleted" badge instead of the active user details.
+ */
 data class CohortMemberRow(
     val member: CohortMember,
     val user: User?,
+    val isUserDeleted: Boolean = false,
 )

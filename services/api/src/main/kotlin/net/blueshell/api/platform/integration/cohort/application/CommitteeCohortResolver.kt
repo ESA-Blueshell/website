@@ -6,8 +6,11 @@ import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional
 class CommitteeCohortResolver(
     private val cohorts: CohortRepository,
     private val cohortRules: CohortRuleRepository,
+    private val subjects: CohortSubjectRepository,
     private val committees: CommitteeService,
 ) {
     @Transactional
@@ -45,11 +49,19 @@ class CommitteeCohortResolver(
             ?.let { return it.cohort }
 
         val committee = committees.findById(committeeId)
+        val subject = subjects.save(
+            CohortSubject(
+                type = CohortSubjectType.COMMITTEE_MEMBERS,
+                label = labelFor(committee),
+            )
+        )
         val cohort = cohorts.save(
             Cohort(
                 system = BREVO_SYSTEM,
                 kind = CohortKind.LIST,
                 label = labelFor(committee),
+                folder = COMMITTEE_FOLDER,
+                subjectId = subject.id,
             )
         )
         cohortRules.save(
@@ -57,6 +69,7 @@ class CommitteeCohortResolver(
                 factKind = CohortFactKind.COMMITTEE,
                 factKey = committeeId.toString(),
                 cohort = cohort,
+                subject = subject,
             )
         )
         return cohort
@@ -64,6 +77,7 @@ class CommitteeCohortResolver(
 
     companion object {
         private val BREVO_SYSTEM = TargetSystem.BREVO.name
+        const val COMMITTEE_FOLDER = "Committees"
 
         fun labelFor(committee: Committee): String = committee.name
     }

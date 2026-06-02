@@ -26,8 +26,14 @@ class CohortRuleEvaluatorTest {
     private val rules: CohortRuleRepository = mockk()
     private val memberships: CohortMemberRepository = mockk(relaxed = true)
     private val cohorts: CohortRepository = mockk()
+    private val subjectRepo: net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository =
+        mockk(relaxed = true)
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
-    private val evaluator = CohortRuleEvaluator(factCollector, rules, memberships, cohorts, jobs)
+    private val users: net.blueshell.api.domain.user.application.UserService =
+        mockk<net.blueshell.api.domain.user.application.UserService>(relaxed = true).also {
+            every { it.isSoftDeleted(any<Long>()) } returns false
+        }
+    private val evaluator = CohortRuleEvaluator(factCollector, rules, memberships, cohorts, subjectRepo, jobs, users)
 
     @Test
     fun `cohorts in the desired set but not currently joined are added and a SyncCohortMembership job is enqueued`() {
@@ -137,6 +143,11 @@ class CohortRuleEvaluatorTest {
         every { c.id } returns id
         every { c.kind } returns CohortKind.LIST
         every { c.system } returns "BREVO"
+        // Every cohort created after V72 has a subject; the evaluator now
+        // looks it up so members can be inserted with both FKs populated.
+        every { c.subjectId } returns id + 1000L
+        val subject = mockk<net.blueshell.api.platform.integration.cohort.persistence.CohortSubject>(relaxed = true)
+        every { subjectRepo.findById(id + 1000L) } returns java.util.Optional.of(subject)
         return c
     }
 

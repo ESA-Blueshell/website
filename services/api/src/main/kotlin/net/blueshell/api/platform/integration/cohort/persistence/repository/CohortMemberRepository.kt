@@ -11,4 +11,6 @@ interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
     fun findAllByCohortId(cohortId: Long): List<CohortMember>
 
     fun findByCohortIdAndUserId(cohortId: Long, userId: Long): CohortMember?
+
+    fun findAllBySubjectId(subjectId: Long): List<CohortMember>
 }

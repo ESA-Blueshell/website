@@ -1,0 +1,70 @@
+package net.blueshell.api.platform.integration.cohort.persistence
+
+import io.swagger.v3.oas.annotations.media.Schema
+
+/**
+ * Coarse classification of a [CohortSubject] used to group subjects on
+ * the admin dashboard.
+ *
+ * Naming pattern is `<SCOPE>_<ROLE>`:
+ *  - `<SCOPE>` is the dimension that fans out the subjects of this
+ *    type — COMMITTEE (one subject per committee), PERIOD (one subject
+ *    per contribution period), NEWSLETTER (one global subject) or
+ *    CUSTOM (operator-created, no canonical scope).
+ *  - `<ROLE>` is the noun describing the people in the subject —
+ *    MEMBERS, PAYERS, SUBSCRIBERS — kept plural because each subject is
+ *    a group of users.
+ *
+ *  - [COMMITTEE_MEMBERS]: members of one committee. Rule pivots on
+ *    `COMMITTEE`.
+ *  - [PERIOD_PAYERS]: members who paid the contribution for one period.
+ *    Rule pivots on `CONTRIBUTION_PAID`.
+ *  - [PERIOD_MEMBERS]: members who held a Membership during one period.
+ *    Rule pivots on `MEMBER_IN_PERIOD`.
+ *  - [PERIOD_ACTIVE_MEMBERS]: members active in a committee (or in the
+ *    future an esports team) during one period. Rule pivots on
+ *    `ACTIVE_IN_PERIOD`.
+ *  - [NEWSLETTER_SUBSCRIBERS]: the single newsletter opt-in subject.
+ *    Rule pivots on `NEWSLETTER`.
+ *  - [CUSTOM]: anything an operator added manually that does not match
+ *    one of the canonical resolvers.
+ */
+@Schema(enumAsRef = true)
+enum class CohortSubjectType {
+    COMMITTEE_MEMBERS,
+    PERIOD_PAYERS,
+    PERIOD_MEMBERS,
+    PERIOD_ACTIVE_MEMBERS,
+    NEWSLETTER_SUBSCRIBERS,
+    CUSTOM,
+    ;
+
+    /**
+     * Operator-facing grouping shown as the section header on the
+     * admin dashboard. Several types fold into the same category — e.g.
+     * MEMBERS contains PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS and
+     * NEWSLETTER_SUBSCRIBERS, since those all describe "people we treat
+     * as members on some axis".
+     */
+    fun category(): CohortSubjectCategory = when (this) {
+        COMMITTEE_MEMBERS -> CohortSubjectCategory.COMMITTEES
+        PERIOD_PAYERS -> CohortSubjectCategory.CONTRIBUTIONS
+        PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS, NEWSLETTER_SUBSCRIBERS -> CohortSubjectCategory.MEMBERS
+        CUSTOM -> CohortSubjectCategory.OTHER
+    }
+}
+
+/**
+ * Coarse buckets the admin UI uses to group subjects. Distinct from
+ * [CohortSubjectType] (which is precise — "active in period 25-26" vs
+ * "paid contribution for period 25-26") so the engine keeps the
+ * granular fact-kind signal while operators see a flatter taxonomy
+ * matching their mental model.
+ */
+@Schema(enumAsRef = true)
+enum class CohortSubjectCategory {
+    COMMITTEES,
+    MEMBERS,
+    CONTRIBUTIONS,
+    OTHER,
+}

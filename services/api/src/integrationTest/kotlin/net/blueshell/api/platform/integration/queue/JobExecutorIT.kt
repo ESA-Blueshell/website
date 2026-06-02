@@ -102,14 +102,18 @@ class JobExecutorIT : ServiceTestSupport() {
     }
 
     @Test
-    fun `non-retryable exception marks job as DEAD immediately`() {
+    fun `non-retryable exception marks job as FAILED immediately`() {
         retryingHandler.throwNonRetryable()
-        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "dead"))!!
+        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "failed"))!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
         val updated = jobExecutions.findById(execution.id!!).orElseThrow()
-        assertThat(updated.status).isEqualTo(JobExecutionStatus.DEAD)
+        // Non-retryable errors are terminal but FAILED, not DEAD — DEAD is
+        // reserved for jobs the queue itself cannot run (e.g. no handler).
+        // FAILED lights up the operator dashboard and exposes the Retry
+        // button so the job can be re-run once the underlying bug is fixed.
+        assertThat(updated.status).isEqualTo(JobExecutionStatus.FAILED)
         assertThat(retryingHandler.invocations()).isEqualTo(1)
     }
 }

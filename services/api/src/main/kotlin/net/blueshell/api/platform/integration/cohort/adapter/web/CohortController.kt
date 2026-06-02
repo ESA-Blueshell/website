@@ -46,6 +46,8 @@ data class CohortSummaryResponse(
     val system: String,
     val kind: CohortKind,
     val label: String,
+    /** Optional grouping name shown as a section header in the admin UI; null means "ungrouped". */
+    val folder: String?,
     val memberCount: Int,
     /** Native id on the external system; null until the cohort is materialised externally. */
     val externalId: String?,
@@ -57,6 +59,7 @@ data class CohortDetailResponse(
     val system: String,
     val kind: CohortKind,
     val label: String,
+    val folder: String?,
     val memberCount: Int,
     val externalId: String?,
     val members: List<CohortMemberRowResponse>,
@@ -70,6 +73,12 @@ data class CohortMemberRowResponse(
     /** Null when the user has been hard-deleted but the cohort_member row still exists. */
     val userFullName: String?,
     val userEmail: String?,
+    /**
+     * True when the user is soft-deleted: the cohort_member row was
+     * preserved for historical stats but the user is no longer active.
+     * The admin UI renders these rows muted with a "Deleted" tag.
+     */
+    val isUserDeleted: Boolean,
     val joinedAt: Instant,
 )
 
@@ -87,6 +96,7 @@ private fun CohortSummary.toResponse(): CohortSummaryResponse =
         system = cohort.system,
         kind = cohort.kind,
         label = cohort.label,
+        folder = cohort.folder,
         memberCount = memberCount,
         externalId = externalId,
     )
@@ -97,6 +107,7 @@ private fun CohortDetail.toResponse(): CohortDetailResponse =
         system = cohort.system,
         kind = cohort.kind,
         label = cohort.label,
+        folder = cohort.folder,
         memberCount = members.size,
         externalId = externalId,
         members = members.map { it.toResponse() },
@@ -116,5 +127,6 @@ private fun CohortMemberRow.toResponse(): CohortMemberRowResponse =
         userId = member.userId,
         userFullName = user?.fullName,
         userEmail = user?.email,
+        isUserDeleted = isUserDeleted,
         joinedAt = member.createdAt,
     )

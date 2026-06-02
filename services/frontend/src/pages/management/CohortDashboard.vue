@@ -22,21 +22,46 @@ const triggering = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
-const groupedCohorts = computed<{system: string; rows: CohortSummary[]}[]>(() => {
-  const bySystem = new Map<string, CohortSummary[]>()
+const UNGROUPED = "Other"
+
+/**
+ * Group cohorts by folder first (the operator-facing organisation —
+ * Committees / Periods / …), then by external system inside each
+ * folder. Cohorts without a folder fall into the "Other" group so
+ * nothing is hidden from the dashboard.
+ */
+const groupedCohorts = computed<{folder: string; systems: {system: string; rows: CohortSummary[]}[]}[]>(() => {
+  const byFolder = new Map<string, Map<string, CohortSummary[]>>()
   for (const cohort of cohorts.value) {
-    const list = bySystem.get(cohort.system) ?? []
+    const folder = cohort.folder ?? UNGROUPED
+    const systems = byFolder.get(folder) ?? new Map<string, CohortSummary[]>()
+    const list = systems.get(cohort.system) ?? []
     list.push(cohort)
-    bySystem.set(cohort.system, list)
+    systems.set(cohort.system, list)
+    byFolder.set(folder, systems)
   }
-  return Array.from(bySystem.entries())
-    .sort(([leftSystem], [rightSystem]) => leftSystem.localeCompare(rightSystem))
-    .map(([system, rows]) => ({
-      system,
-      rows: rows.slice().sort((leftCohort, rightCohort) => {
-        const byKind = leftCohort.kind.localeCompare(rightCohort.kind)
-        return byKind !== 0 ? byKind : leftCohort.label.localeCompare(rightCohort.label)
-      }),
+
+  const folderRank = (name: string): number => {
+    if (name === UNGROUPED) return Number.MAX_SAFE_INTEGER
+    return 0
+  }
+
+  return Array.from(byFolder.entries())
+    .sort(([leftFolder], [rightFolder]) => {
+      const rankDelta = folderRank(leftFolder) - folderRank(rightFolder)
+      return rankDelta !== 0 ? rankDelta : leftFolder.localeCompare(rightFolder)
+    })
+    .map(([folder, systems]) => ({
+      folder,
+      systems: Array.from(systems.entries())
+        .sort(([leftSystem], [rightSystem]) => leftSystem.localeCompare(rightSystem))
+        .map(([system, rows]) => ({
+          system,
+          rows: rows.slice().sort((leftCohort, rightCohort) => {
+            const byKind = leftCohort.kind.localeCompare(rightCohort.kind)
+            return byKind !== 0 ? byKind : leftCohort.label.localeCompare(rightCohort.label)
+          }),
+        })),
     }))
 })
 
@@ -196,43 +221,53 @@ onMounted(async () => {
               title="No cohorts yet."
             />
             <template
-              v-for="group in groupedCohorts"
-              :key="group.system"
+              v-for="folderGroup in groupedCohorts"
+              :key="folderGroup.folder"
             >
-              <v-list-subheader>{{ group.system }}</v-list-subheader>
-              <v-list-item
-                v-for="cohort in group.rows"
-                :key="cohort.id"
-                :data-testid="`cohort-row-${cohort.id}`"
-                role="button"
-                tabindex="0"
-                @click="openDetail(cohort)"
-                @keydown.enter.prevent="openDetail(cohort)"
-                @keydown.space.prevent="openDetail(cohort)"
+              <v-list-subheader class="cohort-folder-header">
+                {{ folderGroup.folder }}
+              </v-list-subheader>
+              <template
+                v-for="group in folderGroup.systems"
+                :key="`${folderGroup.folder}-${group.system}`"
               >
-                <template #prepend>
-                  <v-icon :icon="kindIcon[cohort.kind]" />
-                </template>
+                <v-list-subheader class="cohort-system-header">
+                  {{ group.system }}
+                </v-list-subheader>
+                <v-list-item
+                  v-for="cohort in group.rows"
+                  :key="cohort.id"
+                  :data-testid="`cohort-row-${cohort.id}`"
+                  role="button"
+                  tabindex="0"
+                  @click="openDetail(cohort)"
+                  @keydown.enter.prevent="openDetail(cohort)"
+                  @keydown.space.prevent="openDetail(cohort)"
+                >
+                  <template #prepend>
+                    <v-icon :icon="kindIcon[cohort.kind]" />
+                  </template>
 
-                <v-list-item-title>{{ cohort.label }}</v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ cohort.kind }} · {{ cohort.memberCount }} members<span
-                    v-if="cohort.externalId"
-                  > · external id {{ cohort.externalId }}</span>
-                </v-list-item-subtitle>
+                  <v-list-item-title>{{ cohort.label }}</v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{ cohort.kind }} · {{ cohort.memberCount }} members<span
+                      v-if="cohort.externalId"
+                    > · external id {{ cohort.externalId }}</span>
+                  </v-list-item-subtitle>
 
-                <template #append>
-                  <v-btn
-                    :data-testid="`cohort-resync-btn-${cohort.id}`"
-                    :disabled="!!triggering"
-                    size="x-small"
-                    variant="outlined"
-                    @click.stop="resyncCohort(cohort)"
-                  >
-                    Re-push
-                  </v-btn>
-                </template>
-              </v-list-item>
+                  <template #append>
+                    <v-btn
+                      :data-testid="`cohort-resync-btn-${cohort.id}`"
+                      :disabled="!!triggering"
+                      size="x-small"
+                      variant="outlined"
+                      @click.stop="resyncCohort(cohort)"
+                    >
+                      Re-push
+                    </v-btn>
+                  </template>
+                </v-list-item>
+              </template>
             </template>
           </v-list>
         </v-card>
@@ -267,5 +302,20 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.cohort-folder-header {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(var(--v-theme-primary), 0.9);
+  padding-block: 4px;
+}
+
+.cohort-system-header {
+  font-size: 11px;
+  padding-inline-start: 24px;
+  color: rgba(var(--v-theme-on-surface), 0.55);
 }
 </style>

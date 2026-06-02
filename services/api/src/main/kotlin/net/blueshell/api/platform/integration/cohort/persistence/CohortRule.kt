@@ -48,6 +48,17 @@ class CohortRule(
     @JoinColumn(name = "cohort_id", nullable = false)
     var cohort: Cohort,
 
+    /**
+     * Subject this rule belongs to. Conceptually rules attach to the
+     * logical subject; today they also carry a cohort FK for backwards
+     * compatibility with the engine, which still diffs cohort_member.
+     * The follow-up PR migrates the engine onto subjects and drops the
+     * cohort FK.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "subject_id", nullable = false)
+    var subject: CohortSubject,
+
     @Column(name = "enabled", nullable = false)
     @ColumnDefault("true")
     var enabled: Boolean = true,

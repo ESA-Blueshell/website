@@ -1,10 +1,12 @@
 package net.blueshell.api.platform.integration.cohort.application
 
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -40,10 +42,22 @@ class CohortRuleEvaluator(
     private val rules: CohortRuleRepository,
     private val memberships: CohortMemberRepository,
     private val cohorts: CohortRepository,
+    private val subjects: CohortSubjectRepository,
     private val jobs: TrackedJobDispatcher,
+    private val users: UserService,
 ) {
     @Transactional
     fun evaluate(userId: Long): CohortRuleEvaluation {
+        // Soft-deleted users are kept in cohort_member for historical
+        // statistics. Skip the diff so the row stays put, and no REMOVE
+        // jobs get pushed to external systems on their behalf. Hard-deleted
+        // ids fall through to the normal collect → empty-facts path and
+        // diff out as removes, which is what we want for genuinely-gone
+        // users.
+        if (users.isSoftDeleted(userId)) {
+            log.debug("[cohort] user={} soft-deleted, skipping evaluation", userId)
+            return CohortRuleEvaluation(userId, emptySet(), emptySet(), emptySet())
+        }
         val facts = userFactCollector.collect(userId)
         val desired = facts.flatMap { fact ->
             rules.findAllByFactKindAndFactKeyAndEnabledTrue(fact.kind, fact.key)
@@ -76,7 +90,14 @@ class CohortRuleEvaluator(
         val cohort: Cohort = cohorts.findById(cohortId).orElseThrow {
             IllegalStateException("Rule references unknown cohort $cohortId for user $userId")
         }
-        memberships.save(CohortMember(cohort = cohort, userId = userId))
+        val subject = cohort.subjectId?.let { id ->
+            subjects.findById(id).orElseThrow {
+                IllegalStateException("Cohort $cohortId references unknown subject $id")
+            }
+        } ?: error(
+            "Cohort $cohortId has no subject_id; V72 backfill should have populated it. Refusing to insert orphan member.",
+        )
+        memberships.save(CohortMember(cohort = cohort, userId = userId, subject = subject))
         jobs.enqueue(
             CohortJobs.SyncCohortMembership,
             CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.ADD),

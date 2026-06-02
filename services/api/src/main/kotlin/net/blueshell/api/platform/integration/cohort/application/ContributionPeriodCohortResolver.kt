@@ -6,8 +6,11 @@ import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -33,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional
 class ContributionPeriodCohortResolver(
     private val cohorts: CohortRepository,
     private val cohortRules: CohortRuleRepository,
+    private val subjects: CohortSubjectRepository,
     private val periods: ContributionPeriodService,
 ) {
     @Transactional
@@ -40,38 +44,59 @@ class ContributionPeriodCohortResolver(
         val period = periods.findById(periodId)
         val paidCohort = ensureCohort(
             factKind = CohortFactKind.CONTRIBUTION_PAID,
+            subjectType = CohortSubjectType.PERIOD_PAYERS,
             periodId = periodId,
             label = paidLabelFor(period),
         )
         ensureCohort(
             factKind = CohortFactKind.MEMBER_IN_PERIOD,
+            subjectType = CohortSubjectType.PERIOD_MEMBERS,
             periodId = periodId,
             label = memberLabelFor(period),
         )
         ensureCohort(
             factKind = CohortFactKind.ACTIVE_IN_PERIOD,
+            subjectType = CohortSubjectType.PERIOD_ACTIVE_MEMBERS,
             periodId = periodId,
             label = activeLabelFor(period),
         )
         return paidCohort
     }
 
-    private fun ensureCohort(factKind: CohortFactKind, periodId: Long, label: String): Cohort {
+    private fun ensureCohort(
+        factKind: CohortFactKind,
+        subjectType: CohortSubjectType,
+        periodId: Long,
+        label: String,
+    ): Cohort {
         cohortRules.findAllByFactKindAndFactKeyAndEnabledTrue(factKind, periodId.toString())
             .firstOrNull { it.cohort.system == BREVO_SYSTEM }
             ?.let { return it.cohort }
 
+        val subject = subjects.save(CohortSubject(type = subjectType, label = label))
         val cohort = cohorts.save(
-            Cohort(system = BREVO_SYSTEM, kind = CohortKind.LIST, label = label)
+            Cohort(
+                system = BREVO_SYSTEM,
+                kind = CohortKind.LIST,
+                label = label,
+                folder = PERIOD_FOLDER,
+                subjectId = subject.id,
+            )
         )
         cohortRules.save(
-            CohortRule(factKind = factKind, factKey = periodId.toString(), cohort = cohort)
+            CohortRule(
+                factKind = factKind,
+                factKey = periodId.toString(),
+                cohort = cohort,
+                subject = subject,
+            )
         )
         return cohort
     }
 
     companion object {
         private val BREVO_SYSTEM = TargetSystem.BREVO.name
+        const val PERIOD_FOLDER = "Periods"
 
         fun paidLabelFor(period: ContributionPeriod): String =
             "Contribution Paid ${period.startDate.year} - ${period.endDate.year}"

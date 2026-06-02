@@ -163,6 +163,21 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                         "user entity"
                     ) { it.simpleName == "User" && it.packageName.contains(".persistence") }
                 )
+                // Job payloads in `shared/job/` are queue-transport DTOs that carry the inputs
+                // of an inbound use-case port. In a hexagonal split the verb that names the
+                // operation (intent enums, request types) belongs to the application's inbound
+                // port, and the transport DTO references it — driving-adapter direction. We
+                // accept that direction by exempting shared/job payload types from referencing
+                // platform.integration..port.in.. types. Same direction, just expressed through
+                // the queue transport instead of a direct method call.
+                .ignoreDependency(
+                    com.tngtech.archunit.base.DescribedPredicate.describe<com.tngtech.archunit.core.domain.JavaClass>(
+                        "queue job payload definitions"
+                    ) { it.packageName.contains(".shared.job") },
+                    com.tngtech.archunit.base.DescribedPredicate.describe<com.tngtech.archunit.core.domain.JavaClass>(
+                        "inbound application ports"
+                    ) { it.packageName.contains(".platform.integration") && it.packageName.contains(".port.in") }
+                )
         }
 
     @Test

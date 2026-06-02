@@ -66,8 +66,17 @@ object ArchitecturePackages {
     /** Web DTO sub-packages */
     const val PLATFORM_WEB_DTO = "$ROOT.platform.integration..web.dto.."
 
-    /** Job handler sub-packages under application */
+    /** Job handler sub-packages under application (legacy non-hex placement). */
     const val APPLICATION_JOB = "$ROOT.platform.integration..application.job.."
+
+    /**
+     * Job handler sub-packages under adapter (hex placement). A job handler
+     * is a driving (inbound) adapter — it adapts the queue's "execute this
+     * payload" message to an inbound application port — so the hexagonal
+     * home is `adapter/job/`. New modules land here directly; legacy modules
+     * still live under [APPLICATION_JOB] and migrate as they get touched.
+     */
+    const val ADAPTER_JOB = "$ROOT.platform.integration..adapter.job.."
 
     /** Job queue infrastructure */
     const val PLATFORM_QUEUE = "$ROOT.platform.integration.queue.."

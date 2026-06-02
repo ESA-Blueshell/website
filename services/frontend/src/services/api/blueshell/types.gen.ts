@@ -176,8 +176,8 @@ export type CohortRule = {
 
 export enum CohortSubjectCategory {
     COMMITTEES = 'COMMITTEES',
+    PERIODS = 'PERIODS',
     MEMBERS = 'MEMBERS',
-    CONTRIBUTIONS = 'CONTRIBUTIONS',
     OTHER = 'OTHER'
 }
 

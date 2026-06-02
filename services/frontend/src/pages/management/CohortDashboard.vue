@@ -4,10 +4,10 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
-  type CohortSummary,
-  CohortKind,
+  type CohortSubjectSummary,
+  CohortSubjectCategory,
   enqueue,
-  findCohorts,
+  findCohortSubjects,
 } from "@/services/api"
 import store from "@/plugins/store"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
@@ -16,60 +16,72 @@ defineOptions({name: "CohortDashboardPage"})
 
 const router = useRouter()
 
-const cohorts = ref<CohortSummary[]>([])
+const subjects = ref<CohortSubjectSummary[]>([])
 const loading = ref<boolean>(false)
 const triggering = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
-const UNGROUPED = "Other"
-
 /**
- * Group cohorts by folder first (the operator-facing organisation —
- * Committees / Periods / …), then by external system inside each
- * folder. Cohorts without a folder fall into the "Other" group so
- * nothing is hidden from the dashboard.
+ * Top-level taxonomy shown as the landing page. Each card links to a
+ * per-category browse page. Order is fixed (Committees, Periods,
+ * Members, Other) rather than enum-iteration order so the most-touched
+ * categories sit at the top regardless of the backend enum's
+ * declaration order.
  */
-const groupedCohorts = computed<{folder: string; systems: {system: string; rows: CohortSummary[]}[]}[]>(() => {
-  const byFolder = new Map<string, Map<string, CohortSummary[]>>()
-  for (const cohort of cohorts.value) {
-    const folder = cohort.folder ?? UNGROUPED
-    const systems = byFolder.get(folder) ?? new Map<string, CohortSummary[]>()
-    const list = systems.get(cohort.system) ?? []
-    list.push(cohort)
-    systems.set(cohort.system, list)
-    byFolder.set(folder, systems)
-  }
+type Card = {
+  category: CohortSubjectCategory
+  title: string
+  blurb: string
+  icon: string
+}
 
-  const folderRank = (name: string): number => {
-    if (name === UNGROUPED) return Number.MAX_SAFE_INTEGER
-    return 0
-  }
+const CARDS: Card[] = [
+  {
+    category: CohortSubjectCategory.COMMITTEES,
+    title: "Committees",
+    blurb: "One cohort per committee. Driven by committee_members.",
+    icon: "mdi-account-group",
+  },
+  {
+    category: CohortSubjectCategory.PERIODS,
+    title: "Periods",
+    blurb: "Contribution-period scoped cohorts: Members, Active Members, Contribution Paid.",
+    icon: "mdi-calendar-range",
+  },
+  {
+    category: CohortSubjectCategory.MEMBERS,
+    title: "Members",
+    blurb: "Member-status cohorts that aren't tied to a single period (today: Newsletter).",
+    icon: "mdi-shield-account",
+  },
+  {
+    category: CohortSubjectCategory.OTHER,
+    title: "Other",
+    blurb: "Custom cohorts created by an operator.",
+    icon: "mdi-dots-horizontal-circle",
+  },
+]
 
-  return Array.from(byFolder.entries())
-    .sort(([leftFolder], [rightFolder]) => {
-      const rankDelta = folderRank(leftFolder) - folderRank(rightFolder)
-      return rankDelta !== 0 ? rankDelta : leftFolder.localeCompare(rightFolder)
-    })
-    .map(([folder, systems]) => ({
-      folder,
-      systems: Array.from(systems.entries())
-        .sort(([leftSystem], [rightSystem]) => leftSystem.localeCompare(rightSystem))
-        .map(([system, rows]) => ({
-          system,
-          rows: rows.slice().sort((leftCohort, rightCohort) => {
-            const byKind = leftCohort.kind.localeCompare(rightCohort.kind)
-            return byKind !== 0 ? byKind : leftCohort.label.localeCompare(rightCohort.label)
-          }),
-        })),
-    }))
+const countsByCategory = computed<Record<CohortSubjectCategory, {subjects: number; members: number}>>(() => {
+  const counts: Record<CohortSubjectCategory, {subjects: number; members: number}> = {
+    [CohortSubjectCategory.COMMITTEES]: {subjects: 0, members: 0},
+    [CohortSubjectCategory.PERIODS]: {subjects: 0, members: 0},
+    [CohortSubjectCategory.MEMBERS]: {subjects: 0, members: 0},
+    [CohortSubjectCategory.OTHER]: {subjects: 0, members: 0},
+  }
+  for (const subject of subjects.value) {
+    counts[subject.category].subjects += 1
+    counts[subject.category].members += subject.memberCount
+  }
+  return counts
 })
 
 const refresh = async () => {
   loading.value = true
   try {
-    const response = await findCohorts()
-    cohorts.value = response.data ?? []
+    const response = await findCohortSubjects()
+    subjects.value = response.data ?? []
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -97,21 +109,11 @@ const triggerJob = async (jobType: string, payload?: Record<string, unknown>) =>
   }
 }
 
-const resyncCohort = (cohort: CohortSummary) => triggerJob("cohort.resync", {cohortId: cohort.id})
-
-const reconcileContributionPeriods = () =>
-  triggerJob("cohort.reconcile-contribution-periods")
-
+const reconcilePeriods = () => triggerJob("cohort.reconcile-contribution-periods")
 const reconcileAllUsers = () => triggerJob("cohort.reconcile-all-users")
 
-const kindIcon: Record<CohortKind, string> = {
-  [CohortKind.LIST]: "mdi-format-list-bulleted",
-  [CohortKind.ROLE]: "mdi-shield-account",
-  [CohortKind.GROUP]: "mdi-account-group",
-}
-
-const openDetail = (cohort: CohortSummary) => {
-  void router.push({name: "cohortDetail", params: {id: cohort.id}})
+const openCategory = (category: CohortSubjectCategory) => {
+  void router.push({name: "cohortCategory", params: {category: category.toLowerCase()}})
 }
 
 onMounted(async () => {
@@ -128,7 +130,7 @@ onMounted(async () => {
     <top-banner title="Cohorts" />
 
     <div class="mx-3">
-      <div class="mx-auto my-2 cohorts-page">
+      <div class="mx-auto my-3 cohorts-page">
         <v-alert
           v-if="errorMessage"
           class="mb-3"
@@ -148,129 +150,87 @@ onMounted(async () => {
           {{ successMessage }}
         </v-alert>
 
-        <v-card
-          class="manager-card mb-2"
-          rounded="lg"
-          variant="flat"
-        >
-          <div class="manager-card__header">
-            <div>
-              <p class="text-overline mb-0">
-                Cohort Engine
-              </p>
-              <p class="text-caption text-medium-emphasis mb-0">
-                Each button enqueues a job. Watch progress in Manage jobs.
-              </p>
-            </div>
-            <div class="d-flex flex-wrap ga-2">
-              <v-btn
-                :disabled="!!triggering"
-                :loading="triggering === 'cohort.reconcile-contribution-periods'"
-                color="primary"
-                data-testid="cohort-action-reconcile-periods"
-                size="small"
-                variant="flat"
-                @click="reconcileContributionPeriods"
-              >
-                Reconcile periods
-              </v-btn>
-              <v-btn
-                :disabled="!!triggering"
-                :loading="triggering === 'cohort.reconcile-all-users'"
-                color="primary"
-                data-testid="cohort-action-reconcile-users"
-                size="small"
-                variant="flat"
-                @click="reconcileAllUsers"
-              >
-                Re-evaluate all users
-              </v-btn>
-              <v-btn
-                :disabled="loading"
-                data-testid="cohort-refresh-btn"
-                size="small"
-                variant="outlined"
-                @click="refresh"
-              >
-                Refresh
-              </v-btn>
-            </div>
-          </div>
-        </v-card>
-
-        <v-card
-          class="manager-card"
-          rounded="lg"
-          variant="flat"
-        >
-          <div class="manager-card__header">
-            <div>
-              <p class="text-overline mb-0">
-                Cohorts ({{ cohorts.length }})
-              </p>
-            </div>
-          </div>
-
-          <v-list
-            data-testid="cohort-list"
-            density="compact"
+        <div class="dashboard-actions mb-3">
+          <v-btn
+            :disabled="!!triggering"
+            :loading="triggering === 'cohort.reconcile-contribution-periods'"
+            color="primary"
+            data-testid="cohort-action-reconcile-periods"
+            size="small"
+            variant="flat"
+            @click="reconcilePeriods"
           >
-            <v-list-item
-              v-if="!loading && cohorts.length === 0"
-              subtitle="They appear automatically when the engine first encounters them."
-              title="No cohorts yet."
-            />
-            <template
-              v-for="folderGroup in groupedCohorts"
-              :key="folderGroup.folder"
-            >
-              <v-list-subheader class="cohort-folder-header">
-                {{ folderGroup.folder }}
-              </v-list-subheader>
-              <template
-                v-for="group in folderGroup.systems"
-                :key="`${folderGroup.folder}-${group.system}`"
-              >
-                <v-list-subheader class="cohort-system-header">
-                  {{ group.system }}
-                </v-list-subheader>
-                <v-list-item
-                  v-for="cohort in group.rows"
-                  :key="cohort.id"
-                  :data-testid="`cohort-row-${cohort.id}`"
-                  role="button"
-                  tabindex="0"
-                  @click="openDetail(cohort)"
-                  @keydown.enter.prevent="openDetail(cohort)"
-                  @keydown.space.prevent="openDetail(cohort)"
-                >
-                  <template #prepend>
-                    <v-icon :icon="kindIcon[cohort.kind]" />
-                  </template>
+            Reconcile periods
+          </v-btn>
+          <v-btn
+            :disabled="!!triggering"
+            :loading="triggering === 'cohort.reconcile-all-users'"
+            color="primary"
+            data-testid="cohort-action-reconcile-users"
+            size="small"
+            variant="flat"
+            @click="reconcileAllUsers"
+          >
+            Re-evaluate all users
+          </v-btn>
+          <v-btn
+            :disabled="loading"
+            data-testid="cohort-refresh-btn"
+            size="small"
+            variant="outlined"
+            @click="refresh"
+          >
+            Refresh
+          </v-btn>
+        </div>
 
-                  <v-list-item-title>{{ cohort.label }}</v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{ cohort.kind }} · {{ cohort.memberCount }} members<span
-                      v-if="cohort.externalId"
-                    > · external id {{ cohort.externalId }}</span>
-                  </v-list-item-subtitle>
-
-                  <template #append>
-                    <v-btn
-                      :data-testid="`cohort-resync-btn-${cohort.id}`"
-                      :disabled="!!triggering"
-                      size="x-small"
-                      variant="outlined"
-                      @click.stop="resyncCohort(cohort)"
-                    >
-                      Re-push
-                    </v-btn>
-                  </template>
-                </v-list-item>
-              </template>
-            </template>
-          </v-list>
-        </v-card>
+        <div class="category-grid">
+          <v-card
+            v-for="card in CARDS"
+            :key="card.category"
+            :data-testid="`cohort-category-card-${card.category.toLowerCase()}`"
+            class="category-card"
+            role="button"
+            tabindex="0"
+            variant="flat"
+            @click="openCategory(card.category)"
+            @keydown.enter.prevent="openCategory(card.category)"
+            @keydown.space.prevent="openCategory(card.category)"
+          >
+            <div class="category-card__header">
+              <v-icon
+                :icon="card.icon"
+                class="category-card__icon"
+                size="32"
+              />
+              <h2 class="category-card__title">
+                {{ card.title }}
+              </h2>
+            </div>
+            <p class="category-card__blurb">
+              {{ card.blurb }}
+            </p>
+            <div class="category-card__stats">
+              <div class="stat">
+                <div class="stat-value">
+                  {{ countsByCategory[card.category].subjects }}
+                </div>
+                <div class="stat-label">
+                  Cohorts
+                </div>
+              </div>
+              <v-divider vertical />
+              <div class="stat">
+                <div class="stat-value">
+                  {{ countsByCategory[card.category].members }}
+                </div>
+                <div class="stat-label">
+                  Members
+                </div>
+              </div>
+            </div>
+          </v-card>
+        </div>
       </div>
     </div>
   </v-main>
@@ -281,41 +241,81 @@ onMounted(async () => {
   max-width: 980px;
 }
 
-.manager-card {
-  background: rgba(var(--v-theme-surface), 0.92);
-  box-shadow: none;
-}
-
-.manager-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-}
-
-.manager-card__body {
-  padding: 8px 12px 10px;
-}
-
-.global-actions {
+.dashboard-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
 }
 
-.cohort-folder-header {
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.category-card {
+  background: rgba(var(--v-theme-surface), 0.92);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, outline-color 0.15s ease;
+  outline: 1px solid transparent;
+}
+
+.category-card:hover,
+.category-card:focus-visible {
+  background: rgba(var(--v-theme-on-surface), 0.05);
+  outline-color: rgba(var(--v-theme-primary), 0.4);
+}
+
+.category-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.category-card__icon {
+  color: rgba(var(--v-theme-primary), 0.85);
+}
+
+.category-card__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.category-card__blurb {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  min-height: 34px;
+}
+
+.category-card__stats {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.stat-value {
+  font-size: 22px;
   font-weight: 700;
-  font-size: 12px;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(var(--v-theme-primary), 0.9);
-  padding-block: 4px;
-}
-
-.cohort-system-header {
-  font-size: 11px;
-  padding-inline-start: 24px;
-  color: rgba(var(--v-theme-on-surface), 0.55);
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 </style>

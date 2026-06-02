@@ -7,6 +7,7 @@ import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserUpdated
 import net.blueshell.api.platform.integration.cohort.application.CohortRuleEvaluator
+import net.blueshell.api.platform.integration.cohort.application.ContributionPeriodCohortResolver
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional
 @Component
 class CohortRuleListener(
     private val evaluator: CohortRuleEvaluator,
+    private val contributionPeriodCohorts: ContributionPeriodCohortResolver,
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -63,6 +65,12 @@ class CohortRuleListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onContributionChanged(evt: ContributionChanged) {
+        // Brand-new periods (created post-cutover) have no cohort/rule yet —
+        // materialise them so the evaluator finds the rule for the
+        // `(CONTRIBUTION_PAID, <periodId>)` fact. Idempotent: no-op when
+        // the rule already exists (which is the steady state once a
+        // period's first contribution has been seen).
+        contributionPeriodCohorts.materialize(evt.periodId)
         evaluator.evaluate(evt.userId)
     }
 }

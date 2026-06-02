@@ -47,32 +47,6 @@ object ContactJobs {
         override fun dedupKey(payload: SyncAllContactsPayload): String? = null
     }
 
-    object SyncAllListMemberships : JobDefinition<SyncAllListMembershipsPayload> {
-        override val type: String = "contact.list-sync-all"
-        override val payloadType: Class<SyncAllListMembershipsPayload> = SyncAllListMembershipsPayload::class.java
-        override fun dedupKey(payload: SyncAllListMembershipsPayload): String? = null
-    }
-
-    object ProcessListMembership : JobDefinition<ProcessListMembershipPayload> {
-        override val type: String = "contact.process-list-membership"
-        override val payloadType: Class<ProcessListMembershipPayload> = ProcessListMembershipPayload::class.java
-    }
-
-    object SyncListMembership : CommandJobDefinition<SyncListMembershipCommand> {
-        override val type: String = "contact.list-sync"
-        override val payloadType: Class<SyncListMembershipCommand> = SyncListMembershipCommand::class.java
-    }
-
-    object SyncAllPeriodLists : JobDefinition<SyncAllPeriodListsPayload> {
-        override val type: String = "contact.period-list-sync-all"
-        override val payloadType: Class<SyncAllPeriodListsPayload> =
-            SyncAllPeriodListsPayload::class.java
-        // Default payload-hash dedup is fine here: it only suppresses a second
-        // concurrent active job (QUEUED/RUNNING) with the same empty payload,
-        // not tomorrow's run. Manual triggers can still force a run via the
-        // admin enqueue endpoint, which passes dedupKey = null.
-    }
-
     object SyncContact : JobDefinition<SyncContactPayload> {
         override val type: String = "contact.sync"
         override val payloadType: Class<SyncContactPayload> = SyncContactPayload::class.java
@@ -84,13 +58,6 @@ object ContactJobs {
     }
 
     data class SyncAllContactsPayload(val unused: Unit = Unit)
-    data class SyncAllListMembershipsPayload(val unused: Unit = Unit)
-    data class SyncAllPeriodListsPayload(val unused: Unit = Unit)
-
-    data class ProcessListMembershipPayload(
-        val userId: Long,
-        val periodId: Long
-    )
 
     data class SyncContactPayload(val userId: Long)
     data class RemoveContactPayload(val userId: Long)

@@ -150,6 +150,14 @@ export enum CohortKind {
     GROUP = 'GROUP'
 }
 
+export type CohortMapping = {
+    cohortId: number;
+    externalId?: string;
+    kind: CohortKind;
+    label: string;
+    system: string;
+};
+
 export type CohortMemberRow = {
     cohortMemberId: number;
     isUserDeleted: boolean;
@@ -165,6 +173,58 @@ export type CohortRule = {
     factKind: CohortFactKind;
     id: number;
 };
+
+export enum CohortSubjectCategory {
+    COMMITTEES = 'COMMITTEES',
+    MEMBERS = 'MEMBERS',
+    CONTRIBUTIONS = 'CONTRIBUTIONS',
+    OTHER = 'OTHER'
+}
+
+export type CohortSubjectDetail = {
+    category: CohortSubjectCategory;
+    description?: string;
+    id: number;
+    label: string;
+    mappings: Array<CohortMapping>;
+    members: Array<CohortSubjectMember>;
+    rules: Array<CohortSubjectRule>;
+    type: CohortSubjectType;
+};
+
+export type CohortSubjectMember = {
+    cohortMemberId: number;
+    isUserDeleted: boolean;
+    joinedAt: string;
+    userEmail?: string;
+    userFullName?: string;
+    userId: number;
+};
+
+export type CohortSubjectRule = {
+    enabled: boolean;
+    factKey: string;
+    factKind: CohortFactKind;
+    id: number;
+};
+
+export type CohortSubjectSummary = {
+    category: CohortSubjectCategory;
+    id: number;
+    label: string;
+    mappingCount: number;
+    memberCount: number;
+    type: CohortSubjectType;
+};
+
+export enum CohortSubjectType {
+    COMMITTEE_MEMBERS = 'COMMITTEE_MEMBERS',
+    PERIOD_PAYERS = 'PERIOD_PAYERS',
+    PERIOD_MEMBERS = 'PERIOD_MEMBERS',
+    PERIOD_ACTIVE_MEMBERS = 'PERIOD_ACTIVE_MEMBERS',
+    NEWSLETTER_SUBSCRIBERS = 'NEWSLETTER_SUBSCRIBERS',
+    CUSTOM = 'CUSTOM'
+}
 
 export type CohortSummary = {
     externalId?: string;
@@ -3180,6 +3240,90 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type FindCohortSubjectsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/cohort-subjects';
+};
+
+export type FindCohortSubjectsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCohortSubjectsError = FindCohortSubjectsErrors[keyof FindCohortSubjectsErrors];
+
+export type FindCohortSubjectsResponses = {
+    /**
+     * OK
+     */
+    200: Array<CohortSubjectSummary>;
+};
+
+export type FindCohortSubjectsResponse = FindCohortSubjectsResponses[keyof FindCohortSubjectsResponses];
+
+export type FindCohortSubjectByIdData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}';
+};
+
+export type FindCohortSubjectByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCohortSubjectByIdError = FindCohortSubjectByIdErrors[keyof FindCohortSubjectByIdErrors];
+
+export type FindCohortSubjectByIdResponses = {
+    /**
+     * OK
+     */
+    200: CohortSubjectDetail;
+};
+
+export type FindCohortSubjectByIdResponse = FindCohortSubjectByIdResponses[keyof FindCohortSubjectByIdResponses];
 
 export type FindCohortsData = {
     body?: never;

@@ -227,20 +227,40 @@ watch(cohortId, () => void load())
             <v-list-item
               v-for="member in cohort.members"
               :key="member.cohortMemberId"
+              :class="{'cohort-member--deleted': member.isUserDeleted}"
               :data-testid="`cohort-member-${member.userId}`"
             >
               <template #prepend>
-                <v-icon icon="mdi-account" />
+                <v-icon :icon="member.isUserDeleted ? 'mdi-account-off' : 'mdi-account'" />
               </template>
               <v-list-item-title>
-                {{ member.userFullName ?? `User #${member.userId}` }}
+                <span
+                  v-if="member.isUserDeleted"
+                  class="cohort-member-label"
+                >
+                  Deleted user #{{ member.userId }}
+                </span>
+                <span v-else>
+                  {{ member.userFullName ?? `User #${member.userId}` }}
+                </span>
+                <v-chip
+                  v-if="member.isUserDeleted"
+                  class="ml-2"
+                  color="warning"
+                  size="x-small"
+                  variant="tonal"
+                >
+                  Deleted
+                </v-chip>
               </v-list-item-title>
               <v-list-item-subtitle>
                 <span v-if="member.userEmail">{{ member.userEmail }} · </span>
+                <span v-if="member.isUserDeleted">Retained for historical stats · </span>
                 Joined {{ formatJoinedAt(member.joinedAt) }}
               </v-list-item-subtitle>
               <template #append>
                 <v-btn
+                  v-if="!member.isUserDeleted"
                   :data-testid="`cohort-member-reeval-${member.userId}`"
                   :disabled="!!triggering"
                   size="small"
@@ -279,5 +299,13 @@ watch(cohortId, () => void load())
   align-items: flex-start;
   gap: 12px;
   padding: 18px 18px 14px;
+}
+
+.cohort-member--deleted {
+  opacity: 0.6;
+}
+
+.cohort-member--deleted .cohort-member-label {
+  font-style: italic;
 }
 </style>

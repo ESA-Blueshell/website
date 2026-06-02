@@ -50,6 +50,7 @@ class CommitteeCohortResolver(
                 system = BREVO_SYSTEM,
                 kind = CohortKind.LIST,
                 label = labelFor(committee),
+                folder = COMMITTEE_FOLDER,
             )
         )
         cohortRules.save(
@@ -64,6 +65,7 @@ class CommitteeCohortResolver(
 
     companion object {
         private val BREVO_SYSTEM = TargetSystem.BREVO.name
+        const val COMMITTEE_FOLDER = "Committees"
 
         fun labelFor(committee: Committee): String = committee.name
     }

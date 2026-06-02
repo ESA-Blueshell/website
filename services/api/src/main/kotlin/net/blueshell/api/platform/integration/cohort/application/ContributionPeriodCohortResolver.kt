@@ -62,7 +62,12 @@ class ContributionPeriodCohortResolver(
             ?.let { return it.cohort }
 
         val cohort = cohorts.save(
-            Cohort(system = BREVO_SYSTEM, kind = CohortKind.LIST, label = label)
+            Cohort(
+                system = BREVO_SYSTEM,
+                kind = CohortKind.LIST,
+                label = label,
+                folder = PERIOD_FOLDER,
+            )
         )
         cohortRules.save(
             CohortRule(factKind = factKind, factKey = periodId.toString(), cohort = cohort)
@@ -72,6 +77,7 @@ class ContributionPeriodCohortResolver(
 
     companion object {
         private val BREVO_SYSTEM = TargetSystem.BREVO.name
+        const val PERIOD_FOLDER = "Periods"
 
         fun paidLabelFor(period: ContributionPeriod): String =
             "Contribution Paid ${period.startDate.year} - ${period.endDate.year}"

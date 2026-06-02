@@ -75,13 +75,19 @@ class JobExecutor(
         val stackTrace = ex.stackTraceToString()
 
         if (isNonRetryable(ex)) {
+            // Non-retryable means "retrying will not change the outcome", so
+            // we stop attempts here. We use FAILED rather than DEAD: DEAD is
+            // reserved for jobs the queue itself cannot run (e.g. no handler
+            // registered), while FAILED surfaces an attempt-level error that
+            // an operator can clear with the Retry button once the underlying
+            // bug or input is fixed.
             logger.error(
                 "Job execution {} failed with non-retryable error. errorType={}, errorReason={}.",
                 execution.id, errorType, errorReason, ex
             )
-            jobExecutionService.markDead(execution, errorType, errorReason, stackTrace)
-            sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "dead"))
-            meterRegistry.counter("job.dead.count", "job_type", execution.jobType).increment()
+            jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace)
+            sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
+            meterRegistry.counter("job.failed.count", "job_type", execution.jobType).increment()
             return
         }
 

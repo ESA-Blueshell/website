@@ -28,6 +28,7 @@ import org.hibernate.annotations.SQLRestriction
     name = "cohort",
     indexes = [
         Index(name = "idx_cohort_system_kind", columnList = "system, kind, deleted_at"),
+        Index(name = "idx_cohort_folder", columnList = "folder"),
         Index(name = "idx_cohort_deleted_at", columnList = "deleted_at"),
     ],
 )
@@ -43,4 +44,15 @@ class Cohort(
 
     @Column(name = "label", nullable = false)
     var label: String,
+
+    /**
+     * Optional folder name used to group cohorts in the admin UI. Mirrors
+     * the folder concept on Brevo (and later Discord category / Google
+     * group org-unit) — the column carries the canonical display name and
+     * the per-target adapter is responsible for translating that into the
+     * vendor's folder id when materialising the external counterpart.
+     * `null` means the cohort sits at the top level / "Other" group.
+     */
+    @Column(name = "folder", nullable = true, length = 64)
+    var folder: String? = null,
 ) : AuditedAutoIdEntity()

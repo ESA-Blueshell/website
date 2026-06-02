@@ -79,10 +79,25 @@ class CommitteeMemberService(
         repository.findWindowsByUserId(userId).map { row ->
             CommitteeMembershipWindow(
                 committeeId = (row[0] as Number).toLong(),
-                joinedAt = (row[1] as java.sql.Timestamp).toInstant(),
-                leftAt = (row[2] as java.sql.Timestamp).toInstant(),
+                joinedAt = toInstant(row[1]),
+                leftAt = toInstant(row[2]),
             )
         }
+
+    /**
+     * MariaDB's JDBC driver returns DATETIME columns as `java.time.LocalDateTime`
+     * by default, but legacy connector versions and some pooling layers still
+     * hand back `java.sql.Timestamp`. Either way the value carries no zone
+     * information, so we treat it as already-UTC (which matches how the
+     * persistence layer writes Instants today).
+     */
+    private fun toInstant(value: Any?): java.time.Instant = when (value) {
+        is java.time.LocalDateTime -> value.toInstant(java.time.ZoneOffset.UTC)
+        is java.time.OffsetDateTime -> value.toInstant()
+        is java.sql.Timestamp -> value.toInstant()
+        is java.util.Date -> value.toInstant()
+        else -> throw IllegalStateException("Unexpected datetime value type: ${value?.javaClass?.name}")
+    }
 
     private fun publishChange(member: CommitteeMember) {
         trackedEvents.publish { actor ->

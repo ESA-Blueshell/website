@@ -27,7 +27,11 @@ class CohortRuleEvaluatorTest {
     private val memberships: CohortMemberRepository = mockk(relaxed = true)
     private val cohorts: CohortRepository = mockk()
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
-    private val evaluator = CohortRuleEvaluator(factCollector, rules, memberships, cohorts, jobs)
+    private val users: net.blueshell.api.domain.user.application.UserService =
+        mockk<net.blueshell.api.domain.user.application.UserService>(relaxed = true).also {
+            every { it.isSoftDeleted(any<Long>()) } returns false
+        }
+    private val evaluator = CohortRuleEvaluator(factCollector, rules, memberships, cohorts, jobs, users)
 
     @Test
     fun `cohorts in the desired set but not currently joined are added and a SyncCohortMembership job is enqueued`() {

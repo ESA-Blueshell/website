@@ -58,10 +58,16 @@ const formatPayloadValue = (value: unknown): string => {
 type PayloadChip = { key: string; label: string; value: string }
 
 /**
- * Renders the raw payload map as `{label, value}` chips. Skips fields
- * the row already shows as resolved related-entity rows (userId,
- * eventId, periodId, contributionPeriodId, eventSignUpId) so the chip
- * row only carries enum values, intents and other non-id payload bits.
+ * Renders the raw payload map as `{label, value}` chips. Three reasons
+ * a key gets dropped:
+ *  - It's already surfaced as a resolved related-entity chip (userId,
+ *    eventId, periodId, contributionPeriodId, cohortId, eventSignUpId).
+ *  - It's a marker / placeholder that has no useful display value
+ *    ("unused" sentinels on zero-argument payloads, internal flags,
+ *    empty objects).
+ *  - It carries secrets / opaque blobs that should never appear in the
+ *    admin UI (any "token"-shaped field, full HTML bodies, raw JSON
+ *    blobs, etc.).
  */
 const SUPPRESSED_PAYLOAD_KEYS = new Set([
   "userid",
@@ -70,16 +76,33 @@ const SUPPRESSED_PAYLOAD_KEYS = new Set([
   "periodid",
   "contributionperiodid",
   "cohortid",
+  "unused",
 ])
+
+const isSensitiveKey = (key: string): boolean => {
+  const k = key.toLowerCase()
+  return k.includes("token") || k.includes("secret") || k.includes("password") || k.includes("apikey") || k === "key"
+}
+
+const isUninterestingValue = (value: unknown): boolean => {
+  if (value == null) return true
+  if (typeof value === "string") return value.trim() === ""
+  if (typeof value === "object") {
+    // Empty objects (e.g. `{}` from Unit-payload jobs) carry no info.
+    return Object.keys(value as Record<string, unknown>).length === 0
+  }
+  return false
+}
 
 const payloadChips = (execution: JobExecutionView): PayloadChip[] => {
   const payload = execution.payload
   if (!payload || typeof payload !== "object") return []
   return Object.entries(payload)
     .filter(([key, value]) => {
-      if (value == null) return false
-      if (typeof value === "string" && value.trim() === "") return false
-      return !SUPPRESSED_PAYLOAD_KEYS.has(key.toLowerCase())
+      if (SUPPRESSED_PAYLOAD_KEYS.has(key.toLowerCase())) return false
+      if (isSensitiveKey(key)) return false
+      if (isUninterestingValue(value)) return false
+      return true
     })
     .map(([key, value]) => ({
       key,
@@ -752,7 +775,7 @@ onMounted(async () => {
         >
           <v-list
             data-testid="job-manager-table"
-            density="compact"
+            density="comfortable"
           >
             <v-list-item
               v-if="executions.length === 0"
@@ -781,14 +804,14 @@ onMounted(async () => {
                 >
                   <v-chip
                     class="mr-2 job-category-pill"
-                    size="x-small"
+                    size="small"
                     variant="tonal"
                   >
                     {{ titleCase(execution.category) }}
                   </v-chip>
                 </template>
 
-                <v-list-item-title class="mb-0">
+                <v-list-item-title class="job-row-title-slot">
                   <div class="job-preview">
                     <p
                       class="job-title"
@@ -826,7 +849,7 @@ onMounted(async () => {
                   <div class="job-row-actions">
                     <v-chip
                       :color="statusColor(execution.status)"
-                      size="x-small"
+                      size="small"
                       variant="tonal"
                     >
                       {{ statusTitle(execution.status) }}
@@ -835,7 +858,7 @@ onMounted(async () => {
                     <v-btn
                       v-if="execution.status === 'FAILED' || execution.status === 'DEAD'"
                       :data-testid="`job-retry-btn-${execution.id}`"
-                      size="x-small"
+                      size="small"
                       variant="outlined"
                       @click.stop="retry(execution)"
                     >
@@ -1075,10 +1098,10 @@ onMounted(async () => {
 }
 
 .job-category-pill {
-  min-height: 22px;
-  height: 22px;
-  padding-inline: 6px;
-  font-size: 10px;
+  min-height: 28px;
+  height: 28px;
+  padding-inline: 10px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1087,14 +1110,14 @@ onMounted(async () => {
 .job-preview {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
 .job-title {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.25;
+  font-size: 15px;
+  line-height: 1.2;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -1109,6 +1132,7 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  margin-top: 2px;
 }
 
 .job-meta-inline {
@@ -1116,9 +1140,10 @@ onMounted(async () => {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  line-height: 1.3;
-  color: rgba(var(--v-theme-on-surface), 0.62);
+  margin-top: 0;
+  font-size: 12.5px;
+  line-height: 1.2;
+  color: rgba(var(--v-theme-on-surface), 0.7);
 }
 
 .job-meta-sep {
@@ -1128,6 +1153,21 @@ onMounted(async () => {
 .job-divider {
   border-color: rgba(var(--v-theme-success), 0.45);
   opacity: 1;
+}
+
+.job-row-title-slot {
+  /*
+   * Vuetify's default v-list-item-title sets margin-bottom to keep
+   * space between title and subtitle. We render title + meta in a
+   * single flex stack, so collapse that gap to keep the row visually
+   * tight.
+   */
+  margin-bottom: 0 !important;
+  white-space: normal;
+}
+
+.job-row-title-slot :deep(.v-list-item-subtitle) {
+  display: none;
 }
 
 .job-row-actions {

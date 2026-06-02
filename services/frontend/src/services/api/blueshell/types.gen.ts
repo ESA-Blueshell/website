@@ -125,6 +125,7 @@ export type BoardResponse = {
 
 export type CohortDetail = {
     externalId?: string;
+    folder?: string;
     id: number;
     kind: CohortKind;
     label: string;
@@ -151,6 +152,7 @@ export enum CohortKind {
 
 export type CohortMemberRow = {
     cohortMemberId: number;
+    isUserDeleted: boolean;
     joinedAt: string;
     userEmail?: string;
     userFullName?: string;
@@ -166,6 +168,7 @@ export type CohortRule = {
 
 export type CohortSummary = {
     externalId?: string;
+    folder?: string;
     id: number;
     kind: CohortKind;
     label: string;

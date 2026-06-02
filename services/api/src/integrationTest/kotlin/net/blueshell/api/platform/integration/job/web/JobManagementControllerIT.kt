@@ -34,7 +34,7 @@ class JobManagementControllerIT : UserTestSupport() {
             mvc.perform(get("/management/jobs").with(bearer(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").isNumber)
-                .andExpect(jsonPath("$.content[0].payload").doesNotExist())
+                .andExpect(jsonPath("$.content[*].payload.eventId").value(org.hamcrest.Matchers.hasItem(event.id!!.toInt())))
                 .andExpect(jsonPath("$.content[0].initiatedByDisplay").isString)
                 .andExpect(jsonPath("$.content[*].relatedEntities").isArray)
                 .andExpect(jsonPath("$.content[*].id").value(org.hamcrest.Matchers.hasItems(first.id!!.toInt(), second.id!!.toInt())))
@@ -111,7 +111,7 @@ class JobManagementControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.content[0].id").value(matching.id!!.toInt()))
                 .andExpect(jsonPath("$.content[0].jobType").value("calendar.sync-user"))
                 .andExpect(jsonPath("$.content[0].initiatedByType").value("USER"))
-                .andExpect(jsonPath("$.content[0].payload").doesNotExist())
+                .andExpect(jsonPath("$.content[0].payload.key").value("value"))
         }
 
         @Test
@@ -200,7 +200,7 @@ class JobManagementControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.id").value(job.id))
                 .andExpect(jsonPath("$.jobType").value("retry-target"))
                 .andExpect(jsonPath("$.status").value("QUEUED"))
-                .andExpect(jsonPath("$.payload").doesNotExist())
+                .andExpect(jsonPath("$.payload.key").value("value"))
                 .andExpect(jsonPath("$.attempts").value(1))
 
             val reloaded = jobExecutions.findById(job.id!!).orElseThrow()

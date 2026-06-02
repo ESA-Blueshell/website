@@ -191,7 +191,7 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
 
         page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
         page.locator("[data-testid='job-trigger-type']").first().click()
-        page.getByText("Contact Sync", Page.GetByTextOptions().setExact(true)).first().click()
+        page.getByText("Sync contact", Page.GetByTextOptions().setExact(true)).first().click()
 
         // userId is rendered as a UserPicker (v-autocomplete backed by
         // /users). Click to open the dropdown, type the admin's email to

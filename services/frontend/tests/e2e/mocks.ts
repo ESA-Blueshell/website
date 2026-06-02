@@ -427,6 +427,35 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         },
       })
     }
+    if (method === "GET" && path === "/management/cohorts") {
+      return fulfillJson(route, [
+        {id: 1, system: "BREVO", kind: "LIST", label: "Members", memberCount: 2, externalId: "7"},
+        {id: 2, system: "BREVO", kind: "LIST", label: "Contribution Paid 25-26", memberCount: 1, externalId: "33"},
+      ])
+    }
+    if (method === "GET" && /^\/management\/cohorts\/\d+$/.test(path)) {
+      const id = Number(path.split("/")[3] ?? "0")
+      return fulfillJson(route, {
+        id,
+        system: "BREVO",
+        kind: "LIST",
+        label: id === 2 ? "Contribution Paid 25-26" : "Members",
+        memberCount: id === 2 ? 1 : 2,
+        externalId: id === 2 ? "33" : "7",
+        members: [
+          {
+            cohortMemberId: 100 + id,
+            userId: 1,
+            userFullName: "Emma Dokter",
+            userEmail: "emma@example.com",
+            joinedAt: "2026-01-15T10:00:00Z",
+          },
+        ],
+        rules: id === 2
+          ? [{id: 9, factKind: "CONTRIBUTION_PAID", factKey: "42", enabled: true}]
+          : [{id: 5, factKind: "ROLE", factKey: "MEMBER", enabled: true}],
+      })
+    }
     if (method === "POST" && /^\/management\/jobs\/\d+\/retry$/.test(path)) {
       const rawId = path.split("/")[3]
       const id = Number(rawId)

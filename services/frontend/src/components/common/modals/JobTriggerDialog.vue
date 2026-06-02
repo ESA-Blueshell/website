@@ -7,6 +7,7 @@ import CohortPicker from "@/components/form/fields/CohortPicker.vue"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
 import ContributionPeriodPicker from "@/components/form/fields/ContributionPeriodPicker.vue"
 import EnumPicker from "@/components/form/fields/EnumPicker.vue"
+import {humanizeJobType, jobCatalogEntry} from "@/utils/jobCatalog"
 
 const props = defineProps<{modelValue: boolean}>()
 const emit = defineEmits<{
@@ -30,21 +31,21 @@ const fieldValues = ref<Record<string, unknown>>({})
 const submitting = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
 
-const humanize = (value: string): string =>
-  value
-    .replace(/[._-]+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())
-    .join(" ")
+const humanize = (value: string): string => humanizeJobType(value)
 
 const typeOptions = computed(() =>
-  descriptors.value.map((descriptor) => ({title: humanize(descriptor.type), value: descriptor.type})),
+  descriptors.value.map((descriptor) => ({
+    title: jobCatalogEntry(descriptor.type).title,
+    value: descriptor.type,
+  })),
 )
 
 const selectedDescriptor = computed<JobTypeDescriptor | null>(
   () => descriptors.value.find((descriptor) => descriptor.type === selectedType.value) ?? null,
+)
+
+const selectedDescription = computed<string>(() =>
+  selectedType.value ? jobCatalogEntry(selectedType.value).description : "",
 )
 
 const NUMERIC_TYPES = new Set(["Long", "Int", "Integer", "Short", "Double", "Float", "BigDecimal", "BigInteger"])
@@ -187,6 +188,16 @@ const submit = async () => {
           item-value="value"
           label="Job type"
         />
+
+        <!-- Plain-text description below the type select; mounted always so
+             choosing a job type does not shift the payload form. -->
+        <p
+          v-show="selectedDescription"
+          class="text-caption text-medium-emphasis mt-n2 mb-3"
+          data-testid="job-trigger-description"
+        >
+          {{ selectedDescription }}
+        </p>
 
         <template v-if="selectedDescriptor">
           <p

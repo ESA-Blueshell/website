@@ -113,6 +113,14 @@ class UserService @Autowired constructor(
         return repository.existsByDiscordAndIdNot(discord, id)
     }
 
+    /**
+     * Batch lookup. Returns the users whose ids are in [ids] in unspecified
+     * order; ids without a corresponding active user are silently skipped.
+     * Used by cross-domain admin views (e.g. cohort dashboard) that resolve
+     * a list of user ids to display rows in one round trip.
+     */
+    fun findAllByIds(ids: Collection<Long>): List<User> =
+        if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 
     @Transactional
     fun toggleRole(id: Long, role: Role): User {

@@ -10,6 +10,8 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.cohort.persistence.Cohort
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.job.web.dto.JobExecutionDTO
 import net.blueshell.api.platform.integration.job.web.dto.JobExecutionRelatedEntityDTO
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
@@ -26,7 +28,8 @@ class JobExecutionViewService(
     private val userService: UserService,
     private val eventService: EventService,
     private val eventSignUpService: EventSignUpService,
-    private val contributionPeriodService: ContributionPeriodService
+    private val contributionPeriodService: ContributionPeriodService,
+    private val cohortRepository: CohortRepository,
 ) {
 
     fun toDtos(executions: List<JobExecution>): List<JobExecutionDTO> {
@@ -34,6 +37,7 @@ class JobExecutionViewService(
         val eventCache = mutableMapOf<Long, Event?>()
         val signUpCache = mutableMapOf<Long, EventSignUp?>()
         val periodCache = mutableMapOf<Long, ContributionPeriod?>()
+        val cohortCache = mutableMapOf<Long, Cohort?>()
 
         return executions.map { execution ->
             toDto(
@@ -41,21 +45,21 @@ class JobExecutionViewService(
                 userCache = userCache,
                 eventCache = eventCache,
                 signUpCache = signUpCache,
-                periodCache = periodCache
+                periodCache = periodCache,
+                cohortCache = cohortCache,
             )
         }
     }
 
-    fun toDto(execution: JobExecution): JobExecutionDTO {
-        return toDtos(listOf(execution)).first()
-    }
+    fun toDto(execution: JobExecution): JobExecutionDTO = toDtos(listOf(execution)).first()
 
     private fun toDto(
         execution: JobExecution,
         userCache: MutableMap<Long, User?>,
         eventCache: MutableMap<Long, Event?>,
         signUpCache: MutableMap<Long, EventSignUp?>,
-        periodCache: MutableMap<Long, ContributionPeriod?>
+        periodCache: MutableMap<Long, ContributionPeriod?>,
+        cohortCache: MutableMap<Long, Cohort?>,
     ): JobExecutionDTO {
         val parsedPayload = parsePayload(execution.payload)
         val relatedEntities = buildRelatedEntities(
@@ -63,7 +67,8 @@ class JobExecutionViewService(
             userCache = userCache,
             eventCache = eventCache,
             signUpCache = signUpCache,
-            periodCache = periodCache
+            periodCache = periodCache,
+            cohortCache = cohortCache,
         )
         val initiatedByUser = execution.initiatedByUserId?.let { userId ->
             getOrPutNullable(userCache, userId) {
@@ -89,6 +94,7 @@ class JobExecutionViewService(
             stackTrace = stackTrace,
             attempts = execution.attempts,
             dedupKey = execution.dedupKey,
+            payload = parsedPayload.raw,
             queuedAt = execution.queuedAt,
             startedAt = execution.startedAt,
             finishedAt = execution.finishedAt,
@@ -111,7 +117,8 @@ class JobExecutionViewService(
         userCache: MutableMap<Long, User?>,
         eventCache: MutableMap<Long, Event?>,
         signUpCache: MutableMap<Long, EventSignUp?>,
-        periodCache: MutableMap<Long, ContributionPeriod?>
+        periodCache: MutableMap<Long, ContributionPeriod?>,
+        cohortCache: MutableMap<Long, Cohort?>,
     ): List<JobExecutionRelatedEntityDTO> {
         val entities = linkedMapOf<String, JobExecutionRelatedEntityDTO>()
 
@@ -166,7 +173,19 @@ class JobExecutionViewService(
             add(type = "CONTRIBUTION_PERIOD", id = periodId, label = periodLabel(periodId, period))
         }
 
+        payload.cohortId?.let { cohortId ->
+            val cohort = getOrPutNullable(cohortCache, cohortId) {
+                cohortRepository.findById(cohortId).orElse(null)
+            }
+            add(type = "COHORT", id = cohortId, label = cohortLabel(cohortId, cohort))
+        }
+
         return entities.values.toList()
+    }
+
+    private fun cohortLabel(cohortId: Long, cohort: Cohort?): String {
+        if (cohort == null) return "Cohort #$cohortId"
+        return "${cohort.label} (${cohort.system} ${cohort.kind})"
     }
 
     private fun periodLabel(periodId: Long, period: ContributionPeriod?): String {
@@ -244,12 +263,18 @@ class JobExecutionViewService(
     private fun parsePayload(payload: String?): ParsedPayload {
         val raw = payload?.trim()?.takeIf { it.isNotBlank() } ?: return ParsedPayload()
         val root = runCatching { objectMapper.readTree(raw) }.getOrNull() ?: return ParsedPayload()
+        val rawMap: Map<String, Any?>? = runCatching {
+            @Suppress("UNCHECKED_CAST")
+            objectMapper.convertValue(root, Map::class.java) as Map<String, Any?>?
+        }.getOrNull()
         return ParsedPayload(
             userId = root.longValue("userId"),
             eventId = root.longValue("eventId"),
             eventSignUpId = root.longValue("eventSignUpId"),
             contributionPeriodId = root.longValue("contributionPeriodId") ?: root.longValue("periodId"),
-            system = root.contactSystem("system")
+            cohortId = root.longValue("cohortId"),
+            system = root.contactSystem("system"),
+            raw = rawMap,
         )
     }
 
@@ -302,6 +327,9 @@ class JobExecutionViewService(
         val eventId: Long? = null,
         val eventSignUpId: Long? = null,
         val contributionPeriodId: Long? = null,
-        val system: ContactSystem? = null
+        val cohortId: Long? = null,
+        val system: ContactSystem? = null,
+        /** The full payload as a plain map; the admin UI renders unknown fields itself. */
+        val raw: Map<String, Any?>? = null,
     )
 }

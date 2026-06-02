@@ -46,8 +46,8 @@ describe("JobTriggerDialog", () => {
 
     expect(mockJobTypes).toHaveBeenCalledTimes(1)
     expect((wrapper.vm as any).typeOptions).toEqual([
-      {title: "Contact Sync", value: "contact.sync"},
-      {title: "Contact Sync All", value: "contact.sync-all"},
+      {title: "Sync contact", value: "contact.sync"},
+      {title: "Sync all contacts", value: "contact.sync-all"},
     ])
   })
 

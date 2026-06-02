@@ -233,6 +233,12 @@
             >
               Manage emails
             </v-list-item>
+            <v-list-item
+              v-if="isAdmin"
+              to="/management/cohorts"
+            >
+              Manage cohorts
+            </v-list-item>
           </v-list>
         </v-menu>
         <v-menu

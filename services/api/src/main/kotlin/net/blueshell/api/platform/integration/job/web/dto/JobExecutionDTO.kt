@@ -33,6 +33,13 @@ data class JobExecutionDTO(
 
     val dedupKey: String?,
 
+    /**
+     * The raw job payload parsed into a key/value map (or `null` when the
+     * stored payload was empty or unparseable). Shipped as structured data
+     * so the admin UI can render fields itself — no formatting applied here.
+     */
+    val payload: Map<String, Any?>?,
+
     val queuedAt: Instant?,
     val startedAt: Instant?,
     val finishedAt: Instant?,

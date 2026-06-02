@@ -15,7 +15,7 @@ test.describe("job manager trigger modal", () => {
 
     // Pick a job type from the generated catalog.
     await page.getByTestId("job-trigger-type").click()
-    await page.getByRole("option", {name: "Contact Sync", exact: true}).click()
+    await page.getByRole("option", {name: "Sync contact", exact: true}).click()
 
     // A `userId: Long` payload field renders as a UserPicker
     // (v-autocomplete backed by /users). Click the input to open the
@@ -47,7 +47,7 @@ test.describe("job manager trigger modal", () => {
 
     await page.getByTestId("job-manager-trigger-btn").click()
     await page.getByTestId("job-trigger-type").click()
-    await page.getByRole("option", {name: "Contact Sync", exact: true}).click()
+    await page.getByRole("option", {name: "Sync contact", exact: true}).click()
 
     await expect(page.getByTestId("job-trigger-submit")).toBeDisabled()
 

@@ -10,7 +10,9 @@ export default {
     },
     {
       name: '@hey-api/client-axios',
-      runtimeConfigPath: '../blueshell.runtime.ts',
+      // openapi-ts 0.97 resolves runtimeConfigPath relative to this config
+      // file rather than the output dir, so point it at the actual file.
+      runtimeConfigPath: './src/services/api/blueshell.runtime.ts',
     },
     {
       asClass: false,

@@ -22,9 +22,59 @@ object CohortJobs {
             SyncCohortMembershipPayload::class.java
     }
 
+    /**
+     * Walks every active contribution period and ensures its cohort +
+     * `(CONTRIBUTION_PAID, <periodId>)` rule exist. Idempotent.
+     */
+    object ReconcileAllContributionPeriodCohorts : JobDefinition<ReconcileAllContributionPeriodCohortsPayload> {
+        override val type: String = "cohort.reconcile-contribution-periods"
+        override val payloadType: Class<ReconcileAllContributionPeriodCohortsPayload> =
+            ReconcileAllContributionPeriodCohortsPayload::class.java
+        // No dedup: cheap, idempotent, useful to fire on demand multiple times.
+        override fun dedupKey(payload: ReconcileAllContributionPeriodCohortsPayload): String? = null
+    }
+
+    /**
+     * Spawn job: enqueues one [EvaluateUserCohorts] per user. Used to
+     * force a full re-evaluation pass — typically after a rule change
+     * or to recover from drift.
+     */
+    object ReconcileAllUserCohorts : JobDefinition<ReconcileAllUserCohortsPayload> {
+        override val type: String = "cohort.reconcile-all-users"
+        override val payloadType: Class<ReconcileAllUserCohortsPayload> =
+            ReconcileAllUserCohortsPayload::class.java
+        override fun dedupKey(payload: ReconcileAllUserCohortsPayload): String? = null
+    }
+
+    /**
+     * Re-evaluates one user's cohort membership against the current
+     * rules. Local writes happen here; the per-target push fans out
+     * through [SyncCohortMembership] jobs.
+     */
+    object EvaluateUserCohorts : JobDefinition<EvaluateUserCohortsPayload> {
+        override val type: String = "cohort.evaluate-user"
+        override val payloadType: Class<EvaluateUserCohortsPayload> =
+            EvaluateUserCohortsPayload::class.java
+    }
+
+    /**
+     * Pushes every active `cohort_member` row for one cohort back to
+     * its external system. Does not change local state.
+     */
+    object ResyncCohort : JobDefinition<ResyncCohortPayload> {
+        override val type: String = "cohort.resync"
+        override val payloadType: Class<ResyncCohortPayload> =
+            ResyncCohortPayload::class.java
+    }
+
     data class SyncCohortMembershipPayload(
         val userId: Long,
         val cohortId: Long,
         val intent: SyncCohortMembershipIntent,
     )
+
+    data class ReconcileAllContributionPeriodCohortsPayload(val unused: Unit = Unit)
+    data class ReconcileAllUserCohortsPayload(val unused: Unit = Unit)
+    data class EvaluateUserCohortsPayload(val userId: Long)
+    data class ResyncCohortPayload(val cohortId: Long)
 }

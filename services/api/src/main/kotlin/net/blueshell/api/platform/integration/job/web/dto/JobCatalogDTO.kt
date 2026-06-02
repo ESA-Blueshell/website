@@ -15,8 +15,25 @@ data class JobTypeDescriptorDTO(
 data class JobPayloadFieldDTO(
     val name: String,
     val type: String,
+    val kind: JobPayloadFieldKind,
     val required: Boolean,
+    /** Populated when [kind] is [JobPayloadFieldKind.ENUM]; the literal enum constant names in declaration order. */
+    val enumValues: List<String>? = null,
 )
+
+/**
+ * Coarse classification of a payload field so the admin UI can pick
+ * the right input component without parsing the raw
+ * [JobPayloadFieldDTO.type]:
+ *  - [PRIMITIVE]: numeric / boolean / string, render a plain text or
+ *    number control.
+ *  - [ENUM]: a Kotlin/Java enum; [JobPayloadFieldDTO.enumValues]
+ *    carries the options.
+ *  - [OBJECT]: anything else (nested DTO, collection, ...) — the UI
+ *    currently falls back to a free-text JSON input.
+ */
+@Schema(name = "JobPayloadFieldKind", enumAsRef = true)
+enum class JobPayloadFieldKind { PRIMITIVE, ENUM, OBJECT }
 
 /** Request to manually enqueue a job from the admin UI. */
 @Schema(name = "EnqueueJobRequest")

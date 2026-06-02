@@ -43,13 +43,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - language: actions
-            build-mode: none
-          - language: javascript-typescript
-            build-mode: none
-          - language: java-kotlin
-            build-mode: manual
+        # build-mode `none` extracts straight from source for every
+        # language here. For java-kotlin this is the key difference from a
+        # `manual` Gradle build: the CodeQL Kotlin extractor tracing a
+        # cold-cache Gradle + kapt compile on the Java 25 toolchain ran
+        # past 30 minutes, whereas source extraction covers the backend in
+        # a few. Either way Kotlin is now scanned — default setup never
+        # included it at all.
+        language: [actions, javascript-typescript, java-kotlin]
 
     steps:
       - name: Checkout repository
@@ -59,26 +60,8 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
+          build-mode: none
           config-file: ./.github/codeql/codeql-config.yml
-
-      # Kotlin has no autobuild that copes with the Java 25 multi-module
-      # Gradle layout, so compile the backend explicitly. compileKotlin on
-      # the api + shared lib is enough for the extractor to see the whole
-      # main source tree; tests are out of scope for the security/quality
-      # queries that matter here.
-      - name: Set up Java + Gradle
-        if: matrix.build-mode == 'manual'
-        uses: ./.github/actions/setup-java-gradle
-        with:
-          java-version: '25'
-
-      - name: Build Kotlin sources for analysis
-        if: matrix.build-mode == 'manual'
-        run: |
-          ./gradlew --no-daemon --build-cache \
-            :services:api:compileKotlin \
-            :libs:kotlin-common:compileKotlin
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4

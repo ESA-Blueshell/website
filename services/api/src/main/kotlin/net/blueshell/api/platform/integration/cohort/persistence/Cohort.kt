@@ -55,4 +55,13 @@ class Cohort(
      */
     @Column(name = "folder", nullable = true, length = 64)
     var folder: String? = null,
+
+    /**
+     * Parent subject. After V72 every active cohort row is a per-system
+     * mapping under one subject, but the column is still nullable in the
+     * persistence layer so soft-deleted rows from before the migration
+     * remain readable. New rows MUST populate this — the resolvers do.
+     */
+    @Column(name = "subject_id", nullable = true)
+    var subjectId: Long? = null,
 ) : AuditedAutoIdEntity()

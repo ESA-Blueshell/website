@@ -6,6 +6,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -41,6 +42,7 @@ class CohortRuleEvaluator(
     private val rules: CohortRuleRepository,
     private val memberships: CohortMemberRepository,
     private val cohorts: CohortRepository,
+    private val subjects: CohortSubjectRepository,
     private val jobs: TrackedJobDispatcher,
     private val users: UserService,
 ) {
@@ -88,7 +90,14 @@ class CohortRuleEvaluator(
         val cohort: Cohort = cohorts.findById(cohortId).orElseThrow {
             IllegalStateException("Rule references unknown cohort $cohortId for user $userId")
         }
-        memberships.save(CohortMember(cohort = cohort, userId = userId))
+        val subject = cohort.subjectId?.let { id ->
+            subjects.findById(id).orElseThrow {
+                IllegalStateException("Cohort $cohortId references unknown subject $id")
+            }
+        } ?: error(
+            "Cohort $cohortId has no subject_id; V72 backfill should have populated it. Refusing to insert orphan member.",
+        )
+        memberships.save(CohortMember(cohort = cohort, userId = userId, subject = subject))
         jobs.enqueue(
             CohortJobs.SyncCohortMembership,
             CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.ADD),

@@ -45,4 +45,13 @@ class CohortMember(
 
     @Column(name = "user_id", nullable = false)
     val userId: Long,
+
+    /**
+     * Subject this membership belongs to. Same backwards-compatibility
+     * story as on [CohortRule]: today both columns coexist; a follow-up
+     * PR moves the engine fully onto subject_id and drops cohort_id.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "subject_id", nullable = false)
+    val subject: CohortSubject,
 ) : AuditedAutoIdEntity()

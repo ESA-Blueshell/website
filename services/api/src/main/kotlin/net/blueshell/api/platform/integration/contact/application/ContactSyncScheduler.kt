@@ -7,33 +7,22 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 /**
- * Daily-sync triggers. The methods run in order: period-list reconciliation
- * at 01:00, full contact sync at 02:00, list-membership sync at 02:30 — so
- * by the time the per-membership pass runs, every period has its list and
- * every contact has been pushed.
+ * Daily contact-aggregate sync trigger. Pushes the current state of every
+ * user as a Contact to every registered contact target (Brevo + future
+ * integrations) at 02:00.
+ *
+ * Cohort-membership convergence is event-driven through `CohortRuleListener`
+ * — there is no nightly equivalent for it. The cohort engine reconciles on
+ * every fact-changing event for the affected user.
  */
 @Component
 class ContactSyncScheduler(
     private val jobs: TrackedJobDispatcher,
 ) {
-    @Scheduled(cron = "\${contact.period-list-sync-all-cron:0 0 1 * * *}")
-    fun syncAllPeriodLists() {
-        jobs.enqueue(
-            ContactJobs.SyncAllPeriodLists,
-            ContactJobs.SyncAllPeriodListsPayload(),
-        )
-    }
-
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")
         jobs.enqueue(ContactJobs.SyncAllContacts, ContactJobs.SyncAllContactsPayload())
-    }
-
-    @Scheduled(cron = "\${contact.list-sync-cron:0 30 2 * * *}")
-    fun syncAllListMemberships() {
-        log.info("Scheduling list membership sync spawn job")
-        jobs.enqueue(ContactJobs.SyncAllListMemberships, ContactJobs.SyncAllListMembershipsPayload())
     }
 
     companion object {

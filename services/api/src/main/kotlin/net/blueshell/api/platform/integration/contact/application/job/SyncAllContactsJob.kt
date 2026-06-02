@@ -14,8 +14,7 @@ import org.springframework.stereotype.Component
  * Each per-user job becomes its own JobExecution row with its own retry
  * schedule and observable failure state, so a single user's adapter failure
  * does not affect the rest of the batch and does not need an extra
- * REQUIRES_NEW transaction to isolate it. Matches the pattern already used
- * by [SyncAllListMembershipsJob].
+ * REQUIRES_NEW transaction to isolate it.
  */
 @Component
 class SyncAllContactsJob(

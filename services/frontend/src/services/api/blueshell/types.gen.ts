@@ -138,7 +138,9 @@ export enum CohortFactKind {
     ROLE = 'ROLE',
     COMMITTEE = 'COMMITTEE',
     CONTRIBUTION_PAID = 'CONTRIBUTION_PAID',
-    NEWSLETTER = 'NEWSLETTER'
+    MEMBER_IN_PERIOD = 'MEMBER_IN_PERIOD',
+    NEWSLETTER = 'NEWSLETTER',
+    ACTIVE_IN_PERIOD = 'ACTIVE_IN_PERIOD'
 }
 
 export enum CohortKind {
@@ -524,6 +526,7 @@ export type JobExecution = {
 export enum JobExecutionCategory {
     CALENDAR = 'calendar',
     CONTACT = 'contact',
+    COHORT = 'cohort',
     EMAIL = 'email',
     OTHER = 'other'
 }

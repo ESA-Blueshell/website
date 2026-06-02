@@ -418,11 +418,11 @@ onMounted(async () => {
         >
           <v-row
             align="stretch"
-            class="ma-0 pa-3"
+            class="ma-0 pa-2"
             no-gutters
           >
-            <v-col class="text-center px-3 py-1">
-              <p class="text-h6 font-weight-medium mb-2">
+            <v-col class="text-center px-2 py-1">
+              <p class="text-overline mb-1">
                 All-time
               </p>
               <v-row
@@ -433,10 +433,10 @@ onMounted(async () => {
                   class="stats-cell"
                   data-testid="job-stats-total"
                 >
-                  <div class="text-h5 font-weight-bold">
+                  <div class="text-h6 font-weight-bold">
                     {{ stats.totalCount }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Total
                   </div>
                 </v-col>
@@ -446,7 +446,7 @@ onMounted(async () => {
                   data-testid="job-stats-success"
                 >
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.successCount > 0 ? 'text-success' : ''"
                   >
                     {{ stats.successCount }}
@@ -455,7 +455,7 @@ onMounted(async () => {
                       class="text-body-2 font-weight-medium ml-1"
                     >{{ successRate }}%</span>
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Succeeded
                   </div>
                 </v-col>
@@ -465,12 +465,12 @@ onMounted(async () => {
                   data-testid="job-stats-failed"
                 >
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.failedCount > 0 ? 'text-error' : ''"
                   >
                     {{ stats.failedCount }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Failed
                   </div>
                 </v-col>
@@ -480,12 +480,12 @@ onMounted(async () => {
                   data-testid="job-stats-dead"
                 >
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.deadCount > 0 ? 'text-error' : ''"
                   >
                     {{ stats.deadCount }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Dead
                   </div>
                 </v-col>
@@ -495,12 +495,12 @@ onMounted(async () => {
                   data-testid="job-stats-queued"
                 >
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.queuedCount > 0 ? 'text-warning' : ''"
                   >
                     {{ stats.queuedCount }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Queued
                   </div>
                 </v-col>
@@ -510,12 +510,12 @@ onMounted(async () => {
                   data-testid="job-stats-running"
                 >
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.runningCount > 0 ? 'text-info' : ''"
                   >
                     {{ stats.runningCount }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Running
                   </div>
                 </v-col>
@@ -528,10 +528,10 @@ onMounted(async () => {
             />
 
             <v-col
-              class="text-center px-3 py-1"
+              class="text-center px-2 py-1"
               data-testid="job-stats-runtime"
             >
-              <p class="text-h6 font-weight-medium mb-2">
+              <p class="text-overline mb-1">
                 Since last startup
               </p>
               <v-row
@@ -540,45 +540,45 @@ onMounted(async () => {
               >
                 <v-col class="stats-cell">
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.deadSinceStartup > 0 ? 'text-error' : ''"
                   >
                     {{ stats.deadSinceStartup.toFixed(0) }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Dead
                   </div>
                 </v-col>
                 <v-divider vertical />
                 <v-col class="stats-cell">
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.failedSinceStartup > 0 ? 'text-error' : ''"
                   >
                     {{ stats.failedSinceStartup.toFixed(0) }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Failed
                   </div>
                 </v-col>
                 <v-divider vertical />
                 <v-col class="stats-cell">
-                  <div class="text-h5 font-weight-bold">
+                  <div class="text-h6 font-weight-bold">
                     {{ stats.avgSuccessDurationSeconds.toFixed(2) }}s
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Avg. exec
                   </div>
                 </v-col>
                 <v-divider vertical />
                 <v-col class="stats-cell">
                   <div
-                    class="text-h5 font-weight-bold"
+                    class="text-h6 font-weight-bold"
                     :class="stats.recoveriesSinceStartup > 0 ? 'text-warning' : ''"
                   >
                     {{ stats.recoveriesSinceStartup.toFixed(0) }}
                   </div>
-                  <div class="text-caption text-medium-emphasis text-uppercase">
+                  <div class="stats-label">
                     Recoveries
                   </div>
                 </v-col>
@@ -728,6 +728,13 @@ onMounted(async () => {
               >
                 Failed {{ statusCounts.FAILED }}
               </v-chip>
+              <v-chip
+                color="error"
+                size="small"
+                variant="tonal"
+              >
+                Dead {{ statusCounts.DEAD }}
+              </v-chip>
               <span
                 v-if="loading"
                 class="text-caption text-medium-emphasis"
@@ -745,7 +752,7 @@ onMounted(async () => {
         >
           <v-list
             data-testid="job-manager-table"
-            density="comfortable"
+            density="compact"
           >
             <v-list-item
               v-if="executions.length === 0"
@@ -761,33 +768,33 @@ onMounted(async () => {
                 :data-testid="`job-row-${execution.id}`"
                 :aria-expanded="isExpanded(execution)"
                 :aria-label="`Toggle details for job ${execution.id}`"
-                :class="['job-row py-2', rowStatusClass(execution.status), {'job-row--expanded': isExpanded(execution)}]"
+                :class="['job-row', rowStatusClass(execution.status), {'job-row--expanded': isExpanded(execution)}]"
                 role="button"
                 tabindex="0"
                 @click="toggleExpanded(execution)"
                 @keydown.enter.prevent="toggleExpanded(execution)"
                 @keydown.space.prevent="toggleExpanded(execution)"
               >
-                <template #prepend>
+                <template
+                  v-if="execution.category && execution.category !== 'other'"
+                  #prepend
+                >
                   <v-chip
-                    class="mr-3 job-category-pill"
-                    size="small"
+                    class="mr-2 job-category-pill"
+                    size="x-small"
                     variant="tonal"
                   >
-                    {{ titleCase(execution.category ?? "other") }}
+                    {{ titleCase(execution.category) }}
                   </v-chip>
                 </template>
 
                 <v-list-item-title class="mb-0">
                   <div class="job-preview">
-                    <p class="job-title">
-                      {{ previewTitle(execution) }}
-                    </p>
                     <p
-                      v-if="jobDescription(execution)"
-                      class="job-description"
+                      class="job-title"
+                      :title="previewTitle(execution)"
                     >
-                      {{ jobDescription(execution) }}
+                      {{ previewTitle(execution) }}
                     </p>
 
                     <div
@@ -805,19 +812,12 @@ onMounted(async () => {
                       </v-chip>
                     </div>
 
-                    <div class="job-meta-grid">
-                      <div class="job-meta-cell">
-                        <span class="job-meta-label">Triggered by</span>
-                        <span class="job-meta-value">{{ previewActorDisplay(execution) }}</span>
-                      </div>
-                      <div class="job-meta-cell">
-                        <span class="job-meta-label">Attempts</span>
-                        <span class="job-meta-value">{{ attemptsLabel(execution.attempts) }}</span>
-                      </div>
-                      <div class="job-meta-cell">
-                        <span class="job-meta-label">Queued at</span>
-                        <span class="job-meta-value">{{ formatDateNoSeconds(execution.queuedAt) }}</span>
-                      </div>
+                    <div class="job-meta-inline">
+                      <span>{{ previewActorDisplay(execution) }}</span>
+                      <span class="job-meta-sep">·</span>
+                      <span>{{ attemptsLabel(execution.attempts) }}</span>
+                      <span class="job-meta-sep">·</span>
+                      <span>{{ formatDateNoSeconds(execution.queuedAt) }}</span>
                     </div>
                   </div>
                 </v-list-item-title>
@@ -826,7 +826,7 @@ onMounted(async () => {
                   <div class="job-row-actions">
                     <v-chip
                       :color="statusColor(execution.status)"
-                      size="small"
+                      size="x-small"
                       variant="tonal"
                     >
                       {{ statusTitle(execution.status) }}
@@ -835,7 +835,7 @@ onMounted(async () => {
                     <v-btn
                       v-if="execution.status === 'FAILED' || execution.status === 'DEAD'"
                       :data-testid="`job-retry-btn-${execution.id}`"
-                      size="small"
+                      size="x-small"
                       variant="outlined"
                       @click.stop="retry(execution)"
                     >
@@ -849,8 +849,15 @@ onMounted(async () => {
                 <div
                   v-if="isExpanded(execution)"
                   :data-testid="`job-detail-${execution.id}`"
-                  class="job-detail px-4 pb-4"
+                  class="job-detail px-4 pb-3"
                 >
+                  <p
+                    v-if="jobDescription(execution)"
+                    class="job-description-expanded text-caption text-medium-emphasis mb-3"
+                  >
+                    {{ jobDescription(execution) }}
+                  </p>
+
                   <div class="job-detail-grid">
                     <v-sheet
                       class="detail-panel"
@@ -999,12 +1006,24 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
-  padding: 18px 18px 14px;
+  gap: 8px;
+  padding: 10px 14px 8px;
 }
 
 .manager-card__body {
-  padding: 14px 18px 18px;
+  padding: 8px 14px 12px;
+}
+
+.stats-label {
+  font-size: 10px;
+  line-height: 1.1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.stats-cell {
+  padding: 2px 6px;
 }
 
 .manager-filters {
@@ -1056,95 +1075,54 @@ onMounted(async () => {
 }
 
 .job-category-pill {
-  min-height: 34px;
-  width: 108px;
-  max-width: 108px;
-  min-width: 108px;
-  padding-inline: 8px;
+  min-height: 22px;
+  height: 22px;
+  padding-inline: 6px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  justify-content: center;
-}
-
-.job-category-pill :deep(.v-chip__content) {
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
 }
 
 .job-preview {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.6fr);
-  gap: 10px 12px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .job-title {
   margin: 0;
-  font-size: 15px;
-  line-height: 1.3;
+  font-size: 13px;
+  line-height: 1.25;
   font-weight: 600;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.job-description-expanded {
   white-space: normal;
 }
 
-.job-description {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.35;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 .job-payload-chips {
-  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.job-meta-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1.55fr);
-  gap: 0;
-}
-
-.job-meta-cell {
-  min-width: 0;
+.job-meta-inline {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 0 10px;
-}
-
-.job-meta-cell + .job-meta-cell {
-  border-left: 1px solid rgba(var(--v-theme-success), 0.45);
-}
-
-.job-meta-label {
-  font-size: 10px;
-  line-height: 1.2;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(var(--v-theme-on-surface), 0.58);
-}
-
-.job-meta-value {
-  font-size: 13px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
   line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+}
+
+.job-meta-sep {
+  opacity: 0.5;
 }
 
 .job-divider {
@@ -1157,11 +1135,15 @@ onMounted(async () => {
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  min-width: 140px;
+  min-width: 96px;
 }
 
 .job-detail {
-  margin-top: 6px;
+  margin-top: 4px;
+}
+
+.job-description-expanded {
+  font-style: italic;
 }
 
 .job-detail-grid {

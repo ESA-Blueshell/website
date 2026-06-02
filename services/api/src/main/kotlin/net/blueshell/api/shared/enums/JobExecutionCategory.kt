@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 enum class JobExecutionCategory {
     calendar,
     contact,
+    cohort,
     email,
     other,
 }

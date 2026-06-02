@@ -37,26 +37,35 @@ class ContributionPeriodCohortResolver(
 ) {
     @Transactional
     fun materialize(periodId: Long): Cohort {
-        cohortRules.findAllByFactKindAndFactKeyAndEnabledTrue(
-            CohortFactKind.CONTRIBUTION_PAID,
-            periodId.toString(),
-        ).firstOrNull { it.cohort.system == BREVO_SYSTEM }
+        val period = periods.findById(periodId)
+        val paidCohort = ensureCohort(
+            factKind = CohortFactKind.CONTRIBUTION_PAID,
+            periodId = periodId,
+            label = paidLabelFor(period),
+        )
+        ensureCohort(
+            factKind = CohortFactKind.MEMBER_IN_PERIOD,
+            periodId = periodId,
+            label = memberLabelFor(period),
+        )
+        ensureCohort(
+            factKind = CohortFactKind.ACTIVE_IN_PERIOD,
+            periodId = periodId,
+            label = activeLabelFor(period),
+        )
+        return paidCohort
+    }
+
+    private fun ensureCohort(factKind: CohortFactKind, periodId: Long, label: String): Cohort {
+        cohortRules.findAllByFactKindAndFactKeyAndEnabledTrue(factKind, periodId.toString())
+            .firstOrNull { it.cohort.system == BREVO_SYSTEM }
             ?.let { return it.cohort }
 
-        val period = periods.findById(periodId)
         val cohort = cohorts.save(
-            Cohort(
-                system = BREVO_SYSTEM,
-                kind = CohortKind.LIST,
-                label = labelFor(period),
-            )
+            Cohort(system = BREVO_SYSTEM, kind = CohortKind.LIST, label = label)
         )
         cohortRules.save(
-            CohortRule(
-                factKind = CohortFactKind.CONTRIBUTION_PAID,
-                factKey = periodId.toString(),
-                cohort = cohort,
-            )
+            CohortRule(factKind = factKind, factKey = periodId.toString(), cohort = cohort)
         )
         return cohort
     }
@@ -64,7 +73,16 @@ class ContributionPeriodCohortResolver(
     companion object {
         private val BREVO_SYSTEM = TargetSystem.BREVO.name
 
-        fun labelFor(period: ContributionPeriod): String =
+        fun paidLabelFor(period: ContributionPeriod): String =
             "Contribution Paid ${period.startDate.year} - ${period.endDate.year}"
+
+        fun memberLabelFor(period: ContributionPeriod): String =
+            "Members ${period.startDate.year} - ${period.endDate.year}"
+
+        fun activeLabelFor(period: ContributionPeriod): String =
+            "Active Members ${period.startDate.year} - ${period.endDate.year}"
+
+        @Deprecated("Use paidLabelFor", ReplaceWith("paidLabelFor(period)"))
+        fun labelFor(period: ContributionPeriod): String = paidLabelFor(period)
     }
 }

@@ -103,7 +103,7 @@ onMounted(async () => {
     <top-banner title="Cohorts" />
 
     <div class="mx-3">
-      <div class="mx-auto my-3 cohorts-page">
+      <div class="mx-auto my-2 cohorts-page">
         <v-alert
           v-if="errorMessage"
           class="mb-3"
@@ -124,52 +124,52 @@ onMounted(async () => {
         </v-alert>
 
         <v-card
-          class="manager-card mb-4"
+          class="manager-card mb-2"
           rounded="lg"
           variant="flat"
         >
           <div class="manager-card__header">
             <div>
-              <p class="text-overline mb-1">
+              <p class="text-overline mb-0">
                 Cohort Engine
               </p>
-              <h2 class="text-h6 mb-1">
-                Global actions
-              </h2>
               <p class="text-caption text-medium-emphasis mb-0">
                 Each button enqueues a job. Watch progress in Manage jobs.
               </p>
             </div>
-          </div>
-          <div class="manager-card__body global-actions">
-            <v-btn
-              :disabled="!!triggering"
-              :loading="triggering === 'cohort.reconcile-contribution-periods'"
-              color="primary"
-              data-testid="cohort-action-reconcile-periods"
-              variant="flat"
-              @click="reconcileContributionPeriods"
-            >
-              Reconcile contribution-period cohorts
-            </v-btn>
-            <v-btn
-              :disabled="!!triggering"
-              :loading="triggering === 'cohort.reconcile-all-users'"
-              color="primary"
-              data-testid="cohort-action-reconcile-users"
-              variant="flat"
-              @click="reconcileAllUsers"
-            >
-              Re-evaluate every user's cohorts
-            </v-btn>
-            <v-btn
-              :disabled="loading"
-              data-testid="cohort-refresh-btn"
-              variant="outlined"
-              @click="refresh"
-            >
-              Refresh
-            </v-btn>
+            <div class="d-flex flex-wrap ga-2">
+              <v-btn
+                :disabled="!!triggering"
+                :loading="triggering === 'cohort.reconcile-contribution-periods'"
+                color="primary"
+                data-testid="cohort-action-reconcile-periods"
+                size="small"
+                variant="flat"
+                @click="reconcileContributionPeriods"
+              >
+                Reconcile periods
+              </v-btn>
+              <v-btn
+                :disabled="!!triggering"
+                :loading="triggering === 'cohort.reconcile-all-users'"
+                color="primary"
+                data-testid="cohort-action-reconcile-users"
+                size="small"
+                variant="flat"
+                @click="reconcileAllUsers"
+              >
+                Re-evaluate all users
+              </v-btn>
+              <v-btn
+                :disabled="loading"
+                data-testid="cohort-refresh-btn"
+                size="small"
+                variant="outlined"
+                @click="refresh"
+              >
+                Refresh
+              </v-btn>
+            </div>
           </div>
         </v-card>
 
@@ -180,18 +180,15 @@ onMounted(async () => {
         >
           <div class="manager-card__header">
             <div>
-              <p class="text-overline mb-1">
-                Membership
-              </p>
-              <h2 class="text-h6 mb-1">
+              <p class="text-overline mb-0">
                 Cohorts ({{ cohorts.length }})
-              </h2>
+              </p>
             </div>
           </div>
 
           <v-list
             data-testid="cohort-list"
-            density="comfortable"
+            density="compact"
           >
             <v-list-item
               v-if="!loading && cohorts.length === 0"
@@ -228,8 +225,7 @@ onMounted(async () => {
                   <v-btn
                     :data-testid="`cohort-resync-btn-${cohort.id}`"
                     :disabled="!!triggering"
-                    :loading="triggering === 'cohort.resync' && false"
-                    size="small"
+                    size="x-small"
                     variant="outlined"
                     @click.stop="resyncCohort(cohort)"
                   >
@@ -258,13 +254,13 @@ onMounted(async () => {
 .manager-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 18px 18px 14px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
 }
 
 .manager-card__body {
-  padding: 14px 18px 18px;
+  padding: 8px 12px 10px;
 }
 
 .global-actions {

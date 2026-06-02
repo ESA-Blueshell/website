@@ -7,6 +7,7 @@ import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserUpdated
 import net.blueshell.api.platform.integration.cohort.application.CohortRuleEvaluator
+import net.blueshell.api.platform.integration.cohort.application.CommitteeCohortResolver
 import net.blueshell.api.platform.integration.cohort.application.ContributionPeriodCohortResolver
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional
 class CohortRuleListener(
     private val evaluator: CohortRuleEvaluator,
     private val contributionPeriodCohorts: ContributionPeriodCohortResolver,
+    private val committeeCohorts: CommitteeCohortResolver,
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -59,6 +61,11 @@ class CohortRuleListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onCommitteeMembershipChanged(evt: CommitteeMembershipChanged) {
+        // New committees (created post-V69) have no cohort/rule yet —
+        // materialise them so the evaluator finds the rule for the
+        // `(COMMITTEE, <committeeId>)` fact. Idempotent: no-op when
+        // the rule already exists (steady state after first member).
+        committeeCohorts.materialize(evt.committeeId)
         evaluator.evaluate(evt.userId)
     }
 

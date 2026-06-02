@@ -243,6 +243,11 @@ class JobExecutionViewService(
                 lowered.startsWith("email_") ||
                 lowered.startsWith("email-") -> JobExecutionCategory.email
 
+            lowered == "cohort" ||
+                lowered.startsWith("cohort.") ||
+                lowered.startsWith("cohort_") ||
+                lowered.startsWith("cohort-") -> JobExecutionCategory.cohort
+
             else -> JobExecutionCategory.other
         }
     }

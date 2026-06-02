@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.application
 
+import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import org.springframework.stereotype.Service
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserFactCollector(
     private val users: UserService,
+    private val periods: ContributionPeriodService,
 ) {
     @Transactional(readOnly = true)
     fun collect(userId: Long): Set<UserFact> {
@@ -41,6 +43,18 @@ class UserFactCollector(
         user.contributions.forEach { contribution ->
             val periodId = contribution.id.contributionPeriodId ?: return@forEach
             facts.add(UserFact(CohortFactKind.CONTRIBUTION_PAID, periodId.toString()))
+        }
+
+        // ACTIVE_IN_PERIOD: a user is active in the current contribution
+        // period if they hold at least one committee membership today.
+        // Historical periods will be backfilled once committee_members
+        // grows queryable join-history (esports-team activity slots in
+        // here too, once teams have a persistence layer). Until then the
+        // engine simply does not emit the fact for past periods.
+        if (user.committeeMembers.isNotEmpty()) {
+            periods.findLatest()?.id?.let { currentPeriodId ->
+                facts.add(UserFact(CohortFactKind.ACTIVE_IN_PERIOD, currentPeriodId.toString()))
+            }
         }
 
         // NEWSLETTER: a single boolean fact; opt-out is represented by

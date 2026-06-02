@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
+import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
@@ -15,7 +16,8 @@ import org.junit.jupiter.api.Test
 class UserFactCollectorTest {
 
     private val users: UserService = mockk()
-    private val collector = UserFactCollector(users)
+    private val periods: ContributionPeriodService = mockk(relaxed = true)
+    private val collector = UserFactCollector(users, periods)
 
     @Test
     fun `returns empty set when user is not found`() {

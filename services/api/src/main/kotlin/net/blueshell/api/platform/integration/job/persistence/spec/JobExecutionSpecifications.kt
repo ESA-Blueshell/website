@@ -31,15 +31,18 @@ object JobExecutionSpecifications {
             val jobType = cb.lower(root.get<String>("jobType"))
             val calendar = categoryPrefix(jobType, cb, JobExecutionCategory.calendar.name)
             val contact = categoryPrefix(jobType, cb, JobExecutionCategory.contact.name)
+            val cohort = categoryPrefix(jobType, cb, JobExecutionCategory.cohort.name)
             val email = categoryPrefix(jobType, cb, JobExecutionCategory.email.name)
 
             when (category) {
                 JobExecutionCategory.calendar -> calendar
                 JobExecutionCategory.contact -> contact
+                JobExecutionCategory.cohort -> cohort
                 JobExecutionCategory.email -> email
                 JobExecutionCategory.other -> cb.and(
                     cb.not(calendar),
                     cb.not(contact),
+                    cb.not(cohort),
                     cb.not(email)
                 )
             }

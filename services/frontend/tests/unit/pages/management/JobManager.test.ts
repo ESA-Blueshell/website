@@ -154,6 +154,7 @@ describe("JobManager page", () => {
       {title: "All categories", value: "all"},
       {title: "Calendar", value: "calendar"},
       {title: "Contact", value: "contact"},
+      {title: "Cohort", value: "cohort"},
       {title: "Email", value: "email"},
       {title: "Other", value: "other"},
     ])

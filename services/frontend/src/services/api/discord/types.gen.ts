@@ -1000,7 +1000,6 @@ export type ApplicationResponse = {
     custom_install_url?: string;
     description: string;
     flags: number;
-    flags_new: string;
     guild_id?: SnowflakeType;
     icon: string | null;
     id: SnowflakeType;
@@ -1217,62 +1216,6 @@ export type ThreadsResponse = {
     has_more: boolean;
     members: Array<ThreadMemberResponse>;
     threads: Array<ThreadResponse>;
-};
-
-export type TextInputFormFieldResponse = {
-    /**
-     * Optional helper text shown below label
-     */
-    description?: string;
-    /**
-     * Type of form field
-     */
-    field_type: 'TEXT_INPUT';
-    /**
-     * Label shown above field
-     */
-    label?: string;
-    /**
-     * Placeholder text shown in empty input
-     */
-    placeholder?: string;
-    /**
-     * Whether applicant must fill in field
-     */
-    required?: boolean;
-    /**
-     * Applicant's text response
-     */
-    response?: string;
-};
-
-export type GuildMemberVerificationFormFieldType = 'TERMS' | 'TEXT_INPUT' | 'PARAGRAPH' | 'MULTIPLE_CHOICE';
-
-export type TermsFormFieldResponse = {
-    /**
-     * Optional helper text shown below label
-     */
-    description?: string;
-    /**
-     * Type of form field
-     */
-    field_type: 'TERMS';
-    /**
-     * Label shown above field
-     */
-    label?: string;
-    /**
-     * Whether applicant must fill in field
-     */
-    required?: boolean;
-    /**
-     * Whether applicant accepted terms
-     */
-    response?: boolean;
-    /**
-     * Terms applicant must acknowledge
-     */
-    values: Array<string>;
 };
 
 export type StageScheduledEventResponse = {
@@ -1577,33 +1520,6 @@ export type PartialDiscordIntegrationResponse = {
     type: 'discord';
 };
 
-export type ParagraphFormFieldResponse = {
-    /**
-     * Optional helper text shown below label
-     */
-    description?: string;
-    /**
-     * Type of form field
-     */
-    field_type: 'PARAGRAPH';
-    /**
-     * Label shown above field
-     */
-    label?: string;
-    /**
-     * Placeholder text shown in empty input
-     */
-    placeholder?: string;
-    /**
-     * Whether applicant must fill in field
-     */
-    required?: boolean;
-    /**
-     * Applicant's text response
-     */
-    response?: string;
-};
-
 export type NewMemberActionType = 0 | 1;
 
 export type NewMemberActionResponse = {
@@ -1616,33 +1532,6 @@ export type NewMemberActionResponse = {
 };
 
 export type GuildFeatures = 'ANIMATED_BANNER' | 'ANIMATED_ICON' | 'APPLICATION_COMMAND_PERMISSIONS_V2' | 'AUTO_MODERATION' | 'BANNER' | 'COMMUNITY' | 'CREATOR_MONETIZABLE_PROVISIONAL' | 'CREATOR_STORE_PAGE' | 'DEVELOPER_SUPPORT_SERVER' | 'DISCOVERABLE' | 'FEATURABLE' | 'INVITES_DISABLED' | 'INVITE_SPLASH' | 'MEMBER_VERIFICATION_GATE_ENABLED' | 'MORE_STICKERS' | 'NEWS' | 'PARTNERED' | 'PREVIEW_ENABLED' | 'RAID_ALERTS_DISABLED' | 'ROLE_ICONS' | 'ROLE_SUBSCRIPTIONS_AVAILABLE_FOR_PURCHASE' | 'ROLE_SUBSCRIPTIONS_ENABLED' | 'TICKETED_EVENTS_ENABLED' | 'VANITY_URL' | 'VERIFIED' | 'VIP_REGIONS' | 'WELCOME_SCREEN_ENABLED' | 'OFFICIAL_GAME_GUILD';
-
-export type MultipleChoiceFormFieldResponse = {
-    /**
-     * Choices applicant can select from
-     */
-    choices: Array<string>;
-    /**
-     * Optional helper text shown below label
-     */
-    description?: string;
-    /**
-     * Type of form field
-     */
-    field_type: 'MULTIPLE_CHOICE';
-    /**
-     * Label shown above field
-     */
-    label?: string;
-    /**
-     * Whether applicant must fill in field
-     */
-    required?: boolean;
-    /**
-     * Index of choice selected by applicant
-     */
-    response?: number;
-};
 
 export type MentionSpamUpsertRequestPartial = {
     actions?: Array<BlockMessageAction | FlagToChannelAction | QuarantineUserAction | UserCommunicationDisabledAction> | null;
@@ -1867,7 +1756,6 @@ export type InviteApplicationResponse = {
     custom_install_url?: string;
     description: string;
     flags: number;
-    flags_new: string;
     guild_id?: SnowflakeType;
     icon: string | null;
     id: SnowflakeType;
@@ -2176,32 +2064,6 @@ export type GuildOnboardingResponse = {
     guild_id: SnowflakeType;
     mode: GuildOnboardingMode;
     prompts: Array<OnboardingPromptResponse>;
-};
-
-export type GuildJoinRequestsListResponse = {
-    guild_join_requests?: Array<GuildJoinRequestResponse>;
-    total?: number;
-};
-
-export type GuildJoinRequestApplicationStatus = 'STARTED' | 'SUBMITTED' | 'REJECTED' | 'APPROVED';
-
-export type GuildJoinRequestResponse = {
-    actioned_by_user?: null | UserResponse;
-    application_status: null | GuildJoinRequestApplicationStatus;
-    created_at: string;
-    /**
-     * Applicant's responses on join request form
-     */
-    form_responses?: Array<MultipleChoiceFormFieldResponse | ParagraphFormFieldResponse | TermsFormFieldResponse | TextInputFormFieldResponse> | null;
-    guild_id: SnowflakeType;
-    id: SnowflakeType;
-    /**
-     * Reason request was rejected. Only set when application_status is REJECTED
-     */
-    rejection_reason: string | null;
-    reviewed_at: string | null;
-    user?: null | UserResponse;
-    user_id: SnowflakeType;
 };
 
 export type GuildInviteResponse = {
@@ -4190,83 +4052,6 @@ export type ListGuildVoiceRegionsResponses = {
 };
 
 export type ListGuildVoiceRegionsResponse = ListGuildVoiceRegionsResponses[keyof ListGuildVoiceRegionsResponses];
-
-export type GetGuildJoinRequestsData = {
-    body?: never;
-    path: {
-        guild_id: SnowflakeType;
-    };
-    query?: {
-        status?: never;
-        limit?: number;
-        before?: SnowflakeType;
-        after?: SnowflakeType;
-    };
-    url: '/guilds/{guild_id}/requests';
-};
-
-export type GetGuildJoinRequestsErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
-};
-
-export type GetGuildJoinRequestsError = GetGuildJoinRequestsErrors[keyof GetGuildJoinRequestsErrors];
-
-export type GetGuildJoinRequestsResponses = {
-    /**
-     * 200 response for get_guild_join_requests
-     */
-    200: GuildJoinRequestsListResponse;
-};
-
-export type GetGuildJoinRequestsResponse = GetGuildJoinRequestsResponses[keyof GetGuildJoinRequestsResponses];
-
-export type ActionGuildJoinRequestData = {
-    body: {
-        /**
-         * Whether to approve or reject the join request
-         */
-        action?: never;
-        /**
-         * Reason for rejection. Only used when action is REJECTED
-         */
-        rejection_reason?: string | null;
-    };
-    path: {
-        guild_id: SnowflakeType;
-        request_id: SnowflakeType;
-    };
-    query?: never;
-    url: '/guilds/{guild_id}/requests/{request_id}';
-};
-
-export type ActionGuildJoinRequestErrors = {
-    /**
-     * Client ratelimited response
-     */
-    429: RatelimitedResponse;
-    /**
-     * Client error response
-     */
-    '4XX': ErrorResponse;
-};
-
-export type ActionGuildJoinRequestError = ActionGuildJoinRequestErrors[keyof ActionGuildJoinRequestErrors];
-
-export type ActionGuildJoinRequestResponses = {
-    /**
-     * 200 response for action_guild_join_request
-     */
-    200: GuildJoinRequestResponse;
-};
-
-export type ActionGuildJoinRequestResponse = ActionGuildJoinRequestResponses[keyof ActionGuildJoinRequestResponses];
 
 export type ListGuildRolesData = {
     body?: never;

@@ -35,13 +35,7 @@ export const createClient = (config: Config = {}): Client => {
     return getConfig();
   };
 
-  const beforeRequest = async <
-    TData = unknown,
-    ThrowOnError extends boolean = boolean,
-    Url extends string = string,
-  >(
-    options: RequestOptions<TData, ThrowOnError, Url>,
-  ) => {
+  const beforeRequest = async (options: RequestOptions) => {
     const opts = {
       ..._config,
       ...options,
@@ -50,7 +44,10 @@ export const createClient = (config: Config = {}): Client => {
     };
 
     if (opts.security) {
-      await setAuthParams(opts);
+      await setAuthParams({
+        ...opts,
+        security: opts.security,
+      });
     }
 
     if (opts.requestValidator) {
@@ -68,6 +65,7 @@ export const createClient = (config: Config = {}): Client => {
 
   // @ts-expect-error
   const request: Client['request'] = async (options) => {
+    // @ts-expect-error
     const { opts, url } = await beforeRequest(options);
     try {
       // assign Axios here for consistency with fetch
@@ -128,11 +126,8 @@ export const createClient = (config: Config = {}): Client => {
     });
   };
 
-  const _buildUrl: Client['buildUrl'] = (options) =>
-    buildUrl({ axios: instance, ..._config, ...options });
-
   return {
-    buildUrl: _buildUrl,
+    buildUrl,
     connect: makeMethodFn('CONNECT'),
     delete: makeMethodFn('DELETE'),
     get: makeMethodFn('GET'),

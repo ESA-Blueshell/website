@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.application
 
-import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
+import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
@@ -23,11 +23,21 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 
+/**
+ * Operator/scheduled remediation against external membership. The list
+ * reconcile is now a *verifier*: the per-member sync path establishes
+ * health (`syncedAt`), and this confirms it (`verifiedAt`), demotes
+ * vanished members, and records strangers.
+ *
+ * All `cohort_member` writes go through [CohortLedger]; this service only
+ * decides which transition applies and enqueues follow-up jobs.
+ */
 @Service
 class CohortRemediationService(
     private val cohortRepo: CohortRepository,
     private val subjectRepo: CohortSubjectRepository,
     private val memberRepo: CohortMemberRepository,
+    private val ledger: CohortLedger,
     private val externalIds: ExternalIdMappingService,
     private val registry: CohortPortRegistry,
     private val jobs: TrackedJobDispatcher,
@@ -59,36 +69,18 @@ class CohortRemediationService(
             ?: throw NonRetryableJobException("Cohort $cohortId has no external id on $system")
 
         registry.require(system).removeMember(externalUserId, externalCohortId)
-
-        // Soft-delete the stranger row so the drift panel reflects the change.
-        memberRepo.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohortId, externalUserId)
-            ?.let { memberRepo.delete(it) }
+        ledger.removeStranger(cohortId, externalUserId)
     }
 
     /**
-     * Fetches the full external member list for [cohortId], updates the
-     * unified [CohortMember] ledger, then enqueues narrow ADD jobs for
-     * each discrepancy. One network call per run.
-     *
-     * Ledger semantics after this call:
-     * - Desired rows whose external id is present remotely: stamped with
-     *   `externalUserId` + `observedAt`.
-     * - Desired rows absent remotely but with a known external id:
-     *   `observedAt` cleared; ADD job enqueued.
-     * - Desired rows with no external id yet: `SyncContact` enqueued.
-     * - Remote ids not matching any desired row: upserted as stranger
-     *   rows (`userId == null`).
-     * - Extras are recorded only; removal is admin-triggered via
-     *   remove-external, not automatic.
+     * Fetches the full external member list for [cohortId] and reconciles
+     * the ledger against it. One network call per run; runs the fetch
+     * outside any DB transaction.
      */
     override fun reconcileList(cohortId: Long) {
-        val plan = readOnlyTransaction.execute { loadPlan(cohortId) }
-
+        val plan = readOnlyTransaction.execute { loadPlan(cohortId) }!!
         val remote = registry.require(plan.system).listMembers(plan.externalCohortId)
-
-        writeTransaction.executeWithoutResult {
-            applySnapshot(plan, remote)
-        }
+        writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
     }
 
     private fun loadPlan(cohortId: Long): ReconcilePlan {
@@ -111,19 +103,10 @@ class CohortRemediationService(
             .findBatch(USER_AGGREGATE, desiredUserIds, system.name)
             .associate { it.aggregateId to it.externalId }
 
-        return ReconcilePlan(
-            cohortId = cohortId,
-            subjectId = subjectId,
-            system = system,
-            externalCohortId = externalCohortId,
-            externalIdByUserId = extIdByUserId,
-        )
+        return ReconcilePlan(cohortId, subjectId, system, externalCohortId, extIdByUserId)
     }
 
-    private fun applySnapshot(
-        plan: ReconcilePlan,
-        remote: List<MemberRef>,
-    ) {
+    private fun applySnapshot(plan: ReconcilePlan, remote: List<MemberRef>) {
         val cohort = cohortRepo.findById(plan.cohortId).orElseThrow {
             NonRetryableJobException("Cohort ${plan.cohortId} not found")
         }
@@ -131,77 +114,79 @@ class CohortRemediationService(
             NonRetryableJobException("Cohort ${plan.cohortId} references missing subject ${plan.subjectId}")
         }
         val remoteByExtId = remote.associateBy { it.externalUserId }
-        val remoteExtIds = remoteByExtId.keys
-
         val now = LocalDateTime.now()
         val desiredRows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(plan.cohortId)
 
-        // Update desired rows and collect confirmed external ids.
-        val confirmedExtIds = mutableSetOf<String>()
+        val confirmed = confirmPresentDesiredRows(plan, desiredRows, remoteByExtId, now)
+        demoteVanishedDesiredRows(plan, desiredRows, remoteByExtId.keys)
+        enqueueFollowUpsForMissing(plan, desiredRows, remoteByExtId.keys)
+        reconcileStrangers(cohort, subject, remoteByExtId, confirmed, now)
+    }
+
+    /** Desired rows present in the snapshot: confirm and collapse any matching stranger. */
+    private fun confirmPresentDesiredRows(
+        plan: ReconcilePlan,
+        desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
+        remoteByExtId: Map<String, MemberRef>,
+        now: LocalDateTime,
+    ): Set<String> {
+        val confirmed = mutableSetOf<String>()
+        desiredRows.forEach { row ->
+            val extId = plan.externalIdByUserId[row.userId] ?: return@forEach
+            val remoteMember = remoteByExtId[extId] ?: return@forEach
+            ledger.markVerified(row, extId, remoteMember.label, now)
+            ledger.removeStranger(plan.cohortId, extId)
+            confirmed += extId
+        }
+        return confirmed
+    }
+
+    /** Desired rows that claimed sync/verify but are now absent: demote so they re-bucket as missing. */
+    private fun demoteVanishedDesiredRows(
+        plan: ReconcilePlan,
+        desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
+        remoteExtIds: Set<String>,
+    ) {
         desiredRows.forEach { row ->
             val extId = plan.externalIdByUserId[row.userId]
-            if (extId != null && extId in remoteExtIds) {
-                // Confirmed present: stamp the ledger.
-                row.externalUserId = extId
-                row.observedAt = now
-                row.label = remoteByExtId[extId]?.label
-                confirmedExtIds.add(extId)
-                memberRepo.save(row)
-                memberRepo.findByCohortIdAndExternalUserIdAndUserIdIsNull(plan.cohortId, extId)
-                    ?.let { memberRepo.delete(it) }
-            } else if (row.observedAt != null) {
-                // Was confirmed before but no longer present remotely.
-                row.observedAt = null
-                memberRepo.save(row)
-            }
+            val absent = extId == null || extId !in remoteExtIds
+            if (absent && (row.syncedAt != null || row.verifiedAt != null)) ledger.markDrifted(row)
         }
+    }
 
-        // Enqueue follow-ups for desired rows missing from the remote snapshot.
+    /** Desired rows absent remotely: materialise the contact, or re-push. */
+    private fun enqueueFollowUpsForMissing(
+        plan: ReconcilePlan,
+        desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
+        remoteExtIds: Set<String>,
+    ) {
         desiredRows.forEach { row ->
             val extId = plan.externalIdByUserId[row.userId]
             if (extId == null) {
-                jobs.enqueue(
-                    ContactJobs.SyncContact,
-                    ContactJobs.SyncContactPayload(row.userId!!),
-                )
+                jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!))
             } else if (extId !in remoteExtIds) {
                 jobs.enqueue(
                     CohortJobs.SyncCohortMembership,
-                    CohortJobs.SyncCohortMembershipPayload(
-                        row.userId!!,
-                        plan.cohortId,
-                        SyncCohortMembershipIntent.ADD,
-                    ),
+                    CohortJobs.SyncCohortMembershipPayload(row.userId!!, plan.cohortId, SyncCohortMembershipIntent.ADD),
                 )
             }
         }
+    }
 
-        // Upsert stranger rows for remote ids not confirmed as desired.
-        val strangerExtIds = remoteExtIds - confirmedExtIds
-        strangerExtIds.forEach { extId ->
-            val existing = memberRepo.findByCohortIdAndExternalUserIdAndUserIdIsNull(plan.cohortId, extId)
-            if (existing != null) {
-                existing.observedAt = now
-                existing.label = remoteByExtId[extId]?.label
-                memberRepo.save(existing)
-            } else {
-                memberRepo.save(
-                    CohortMember(
-                        cohort = cohort,
-                        userId = null,
-                        subject = subject,
-                        externalUserId = extId,
-                        observedAt = now,
-                        label = remoteByExtId[extId]?.label,
-                    ),
-                )
-            }
+    /** Remote ids with no desired owner become strangers; strangers gone remotely are removed. */
+    private fun reconcileStrangers(
+        cohort: net.blueshell.api.platform.integration.cohort.persistence.Cohort,
+        subject: net.blueshell.api.platform.integration.cohort.persistence.CohortSubject,
+        remoteByExtId: Map<String, MemberRef>,
+        confirmedExtIds: Set<String>,
+        now: LocalDateTime,
+    ) {
+        (remoteByExtId.keys - confirmedExtIds).forEach { extId ->
+            ledger.upsertStranger(cohort, subject, extId, remoteByExtId[extId]?.label, now)
         }
-
-        // Soft-delete stranger rows for remote ids no longer present.
-        memberRepo.findAllByCohortIdAndUserIdIsNull(plan.cohortId)
-            .filter { it.externalUserId !in remoteExtIds }
-            .forEach { memberRepo.delete(it) }
+        memberRepo.findAllByCohortIdAndUserIdIsNull(cohort.id!!)
+            .filter { it.externalUserId !in remoteByExtId.keys }
+            .forEach { ledger.removeStranger(it) }
     }
 
     private fun foldLinkedUser(
@@ -212,15 +197,9 @@ class CohortRemediationService(
     ) {
         val cohort = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name) ?: return
         val cohortId = cohort.id ?: return
-        val stranger = memberRepo.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohortId, externalUserId)
-            ?: return
+        val stranger = memberRepo.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohortId, externalUserId) ?: return
         val desired = memberRepo.findByCohortIdAndUserId(cohortId, userId) ?: return
-
-        desired.externalUserId = stranger.externalUserId
-        desired.observedAt = stranger.observedAt
-        desired.label = stranger.label
-        memberRepo.save(desired)
-        memberRepo.delete(stranger)
+        ledger.foldStrangerIntoDesired(desired, stranger)
     }
 
     private data class ReconcilePlan(
@@ -230,5 +209,4 @@ class CohortRemediationService(
         val externalCohortId: String,
         val externalIdByUserId: Map<Long, String?>,
     )
-
 }

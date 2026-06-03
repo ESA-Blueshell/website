@@ -19,9 +19,9 @@ import java.time.ZoneOffset
  * (subject, system) pair. No outbound port calls — the live external
  * fetch happens in the reconcile job, not here.
  *
- * - Missing: desired rows (`userId != null`) with null `observedAt`.
- * - Extra:   stranger rows (`userId == null`) with non-null `observedAt`.
- * - `lastReconciledAt`: max `observedAt` across all ledger rows.
+ * - Missing: desired rows (`userId != null`) not yet pushed (`syncedAt == null`).
+ * - Extra:   stranger rows (`userId == null`) confirmed externally (`verifiedAt != null`).
+ * - `lastReconciledAt`: max `verifiedAt` across all ledger rows.
  */
 @Service
 @Transactional(readOnly = true)
@@ -41,8 +41,8 @@ class CohortDriftService(
 
         val allRows = memberRepo.findAllByCohortId(cohort.id!!)
 
-        // Missing: desired rows not yet confirmed present externally.
-        val missingRows = allRows.filter { it.userId != null && it.observedAt == null }
+        // Missing: desired rows not yet successfully pushed.
+        val missingRows = allRows.filter { it.userId != null && it.syncedAt == null }
         val missingUserIds = missingRows.mapNotNull { it.userId }.toSet()
         val missingMappedUserIds = externalIds.findBatch(USER_AGGREGATE, missingUserIds, system.name)
             .map { it.aggregateId }
@@ -55,7 +55,7 @@ class CohortDriftService(
         }
 
         // Extras: stranger rows present externally but not desired locally.
-        val strangerRows = allRows.filter { it.userId == null && it.observedAt != null }
+        val strangerRows = allRows.filter { it.userId == null && it.verifiedAt != null }
         val strangerExtIds = strangerRows.mapNotNull { it.externalUserId }.toSet()
         val ownerMappings = externalIds.findByExternalIds(USER_AGGREGATE, system.name, strangerExtIds)
             .associateBy { it.externalId }
@@ -99,7 +99,7 @@ class CohortDriftService(
         }
 
         val lastReconciledAt = allRows
-            .mapNotNull { it.observedAt }
+            .mapNotNull { it.verifiedAt }
             .maxOfOrNull { it }
             ?.toInstant(ZoneOffset.UTC)
 

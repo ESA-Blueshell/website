@@ -134,6 +134,9 @@ class UserService @Autowired constructor(
     fun isSoftDeleted(userId: Long): Boolean =
         repository.findSoftDeletedUserId(userId) != null
 
+    fun findSoftDeletedIds(userIds: Collection<Long>): Set<Long> =
+        if (userIds.isEmpty()) emptySet() else repository.findSoftDeletedUserIds(userIds).toSet()
+
     @Transactional
     fun toggleRole(id: Long, role: Role): User {
         val user = findById(id)

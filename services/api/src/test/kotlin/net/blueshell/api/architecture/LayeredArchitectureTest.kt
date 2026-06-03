@@ -102,6 +102,16 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                         "validation annotations and interfaces"
                     ) { it.packageName.contains(".application.validation") }
                 )
+                // Allow commands to reference TargetSystem: it is a value-level enum that identifies
+                // an external sync target, used as a typed parameter on cross-system commands.
+                .ignoreDependency(
+                    com.tngtech.archunit.base.DescribedPredicate.describe<com.tngtech.archunit.core.domain.JavaClass>(
+                        "command classes"
+                    ) { it.packageName.contains(".command") && it.simpleName.endsWith("Command") },
+                    com.tngtech.archunit.base.DescribedPredicate.describe<com.tngtech.archunit.core.domain.JavaClass>(
+                        "TargetSystem enum"
+                    ) { it.simpleName == "TargetSystem" }
+                )
 
                 // Domain layer can access: Persistence (for domain services), Shared, and Application exceptions
                 .whereLayer("Domain")

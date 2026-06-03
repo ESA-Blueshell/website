@@ -223,6 +223,7 @@ val discordLiveTest by tasks.registering(Test::class) {
 }
 
 tasks.withType<BootRun>().configureEach {
+    outputs.upToDateWhen { false }
     jvmArgs("-Dspring.devtools.restart.enabled=true")
 }
 

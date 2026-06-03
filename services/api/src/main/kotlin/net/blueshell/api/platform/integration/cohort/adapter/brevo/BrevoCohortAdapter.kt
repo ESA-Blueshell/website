@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.adapter.brevo
 
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
+import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.enums.ContactSystem
@@ -37,4 +38,8 @@ class BrevoCohortAdapter(
     override fun deleteCohort(externalCohortId: String) {
         delegate.deleteList(externalCohortId.toLong())
     }
+
+    override fun listMembers(externalCohortId: String): List<MemberRef> =
+        delegate.listMembers(externalCohortId.toLong())
+            .map { MemberRef(it.externalUserId.toString(), it.email) }
 }

@@ -12,6 +12,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -43,7 +44,7 @@ class CohortSubjectQueryService(
             val subjectId = subject.id!!
             CohortSubjectSummary(
                 subject = subject,
-                memberCount = cohortMembers.findAllBySubjectId(subjectId).size,
+                memberCount = cohortMembers.findAllBySubjectIdAndUserIdIsNotNull(subjectId).size,
                 mappingCount = cohorts.findAllBySubjectId(subjectId).size,
             )
         }.sortedWith(
@@ -63,8 +64,8 @@ class CohortSubjectQueryService(
             )
         }.sortedBy { it.cohort.system }
 
-        val members = cohortMembers.findAllBySubjectId(subjectId)
-        val memberUserIds = members.map { it.userId }.distinct()
+        val members = cohortMembers.findAllBySubjectIdAndUserIdIsNotNull(subjectId)
+        val memberUserIds = members.mapNotNull { it.userId }.distinct()
         val userById = users.findAllByIds(memberUserIds).associateBy { it.id }
         val softDeletedIds = memberUserIds
             .filter { userById[it] == null }
@@ -77,8 +78,8 @@ class CohortSubjectQueryService(
             members = members.map { member ->
                 CohortMemberRow(
                     member = member,
-                    user = userById[member.userId],
-                    isUserDeleted = userById[member.userId] == null && softDeletedIds.contains(member.userId),
+                    user = userById[member.userId!!],
+                    isUserDeleted = userById[member.userId!!] == null && softDeletedIds.contains(member.userId!!),
                 )
             }.sortedWith(
                 compareBy(
@@ -91,9 +92,6 @@ class CohortSubjectQueryService(
         )
     }
 
-    companion object {
-        private const val COHORT_AGGREGATE = "COHORT"
-    }
 }
 
 /** Read-model projection for the dashboard's top-level list. */

@@ -13,6 +13,8 @@
 export type JobCatalogEntry = {
   /** Short title shown in lists, dropdowns and rows (e.g. "Sync contact"). */
   title: string
+  /** Deprecated but still registered for compatibility with existing queued/manual jobs. */
+  legacy?: boolean
   /**
    * Plain-English paragraph: what does the job do, which subsystem does
    * it touch, and is it safe to re-run? Shown in the trigger dialog and
@@ -88,22 +90,36 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     description:
       "Fans out one Re-evaluate-user-cohorts job per active user. Each child job " +
       "recomputes that user's cohort memberships from current facts (role, committee " +
-      "membership, contribution payments, newsletter opt-in) and emits per-system " +
-      "Sync-cohort-membership jobs for any drift it finds.",
+      "membership, contribution payments, newsletter opt-in) and enqueues list " +
+      "reconciliation for any cohort whose desired membership changed.",
   },
   "cohort.evaluate-user": {
     title: "Re-evaluate one user's cohorts",
     description:
-      "Recomputes one user's cohort memberships locally, then fans out a Sync-cohort-" +
-      "membership job per external system that needs to change. Does not call external " +
-      "systems directly — those happen in the follow-up sync jobs.",
+      "Recomputes one user's desired cohort memberships locally, then enqueues " +
+      "cohort-level list reconciliation for touched external mappings. Does not call " +
+      "external systems directly.",
   },
   "cohort.resync": {
     title: "Re-push one cohort to its external system",
+    legacy: true,
     description:
-      "Takes every active cohort_member row for one cohort and enqueues an ADD against " +
-      "that cohort's external system. Use after restoring external state from backup or " +
-      "re-enabling an integration. Does not change local membership state.",
+      "Legacy job retained for compatibility. It takes every active desired cohort " +
+      "member row and enqueues an ADD against that cohort's external system without " +
+      "observing remote state first. Prefer Reconcile list.",
+  },
+  "cohort.remove-external-member": {
+    title: "Remove from external list",
+    description:
+      "Removes one external member from this mapping's external target " +
+      "(e.g. a Brevo list). Used to clean up drift detected by the drift inspector.",
+  },
+  "cohort.reconcile-list": {
+    title: "Reconcile list",
+    description:
+      "Fetches the full external member list for one cohort mapping, updates the " +
+      "membership ledger, and enqueues ADD or contact-sync follow-ups for missing " +
+      "desired members. Extras are recorded for admin remediation.",
   },
 }
 

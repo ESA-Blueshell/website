@@ -416,6 +416,15 @@ export type CsrfToken = {
     token?: string;
 };
 
+export type DriftReport = {
+    cohortId: number;
+    externalCohortId?: string;
+    extras: Array<ExtraRow>;
+    lastReconciledAt?: string;
+    missing: Array<MissingRow>;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+};
+
 export type Email = {
     attempts?: number;
     createdAt?: string;
@@ -500,6 +509,16 @@ export type EventSignUpResponse = {
     updatedAt: string;
     user?: UserSummaryResponse;
     version: number;
+};
+
+export type ExtraRow = {
+    email?: string;
+    externalUserId: string;
+    fullName?: string;
+    kind: 'KNOWN_LOCAL_USER' | 'UNKNOWN_EXTERNAL';
+    label?: string;
+    softDeleted?: boolean;
+    userId?: number;
 };
 
 /**
@@ -645,6 +664,18 @@ export type JwtRequest = {
     username: string;
 };
 
+export type LinkUserRequest = {
+    externalUserId: string;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    userId: number;
+};
+
+export type LinkedUser = {
+    externalUserId: string;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    userId: number;
+};
+
 export type LoginResponse = {
     addressId?: number;
     expiration: number;
@@ -691,6 +722,11 @@ export type MembershipResponse = {
     updatedAt: string;
     userId: number;
     version: number;
+};
+
+export type MissingRow = {
+    hasExternalMapping: boolean;
+    userId: number;
 };
 
 export type PageMetadata = {
@@ -3324,6 +3360,94 @@ export type FindCohortSubjectByIdResponses = {
 };
 
 export type FindCohortSubjectByIdResponse = FindCohortSubjectByIdResponses[keyof FindCohortSubjectByIdResponses];
+
+export type GetDriftData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query: {
+        system: 'BREVO' | 'GOOGLE_CALENDAR';
+    };
+    url: '/management/cohort-subjects/{id}/drift';
+};
+
+export type GetDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type GetDriftError = GetDriftErrors[keyof GetDriftErrors];
+
+export type GetDriftResponses = {
+    /**
+     * OK
+     */
+    200: DriftReport;
+};
+
+export type GetDriftResponse = GetDriftResponses[keyof GetDriftResponses];
+
+export type LinkUserData = {
+    body: LinkUserRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/drift/link-user';
+};
+
+export type LinkUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkUserError = LinkUserErrors[keyof LinkUserErrors];
+
+export type LinkUserResponses = {
+    /**
+     * OK
+     */
+    200: LinkedUser;
+};
+
+export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
 
 export type FindCohortsData = {
     body?: never;

@@ -78,7 +78,7 @@ class CohortReconciliationServiceTest {
 
     @Test
     fun `resyncCohort enqueues one ADD job per active member`() {
-        every { cohortMembers.findAllByCohortId(99L) } returns listOf(
+        every { cohortMembers.findAllByCohortIdAndUserIdIsNotNull(99L) } returns listOf(
             member(userId = 1L), member(userId = 2L),
         )
 
@@ -100,11 +100,13 @@ class CohortReconciliationServiceTest {
 
     @Test
     fun `resyncCohort is a no-op when the cohort has no members`() {
-        every { cohortMembers.findAllByCohortId(99L) } returns emptyList()
+        every { cohortMembers.findAllByCohortIdAndUserIdIsNotNull(99L) } returns emptyList()
 
         service.resyncCohort(99L)
 
-        verify(exactly = 0) { jobs.enqueue(any(), any()) }
+        verify(exactly = 0) {
+            jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
+        }
     }
 
     private fun period(id: Long): ContributionPeriod {

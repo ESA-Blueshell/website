@@ -40,4 +40,10 @@ interface UserRepository : BaseRepository<User, Long> {
         nativeQuery = true,
     )
     fun findSoftDeletedUserId(@Param("userId") userId: Long): Long?
+
+    @Query(
+        value = "SELECT id FROM users WHERE id IN (:userIds) AND deleted_at <> '9999-12-31 23:59:59.000000'",
+        nativeQuery = true,
+    )
+    fun findSoftDeletedUserIds(@Param("userIds") userIds: Collection<Long>): List<Long>
 }

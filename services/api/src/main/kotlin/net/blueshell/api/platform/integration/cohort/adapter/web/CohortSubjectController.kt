@@ -7,14 +7,22 @@ import net.blueshell.api.platform.integration.cohort.application.CohortMemberRow
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectDetail
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectQueryService
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectSummary
+import net.blueshell.api.platform.integration.cohort.application.DriftReport
+import net.blueshell.api.platform.integration.cohort.command.LinkExternalUserCommand
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
+import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.command.CommandBus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
@@ -34,6 +42,8 @@ import java.time.Instant
 @PreAuthorize("hasAuthority('ADMIN')")
 class CohortSubjectController(
     private val queries: CohortSubjectQueryService,
+    private val drift: CohortDrift,
+    private val commandBus: CommandBus,
 ) {
     @GetMapping
     fun findCohortSubjects(): List<CohortSubjectSummaryResponse> =
@@ -42,7 +52,36 @@ class CohortSubjectController(
     @GetMapping("/{id}")
     fun findCohortSubjectById(@PathVariable id: Long): CohortSubjectDetailResponse =
         queries.detail(id).toResponse()
+
+    @GetMapping("/{id}/drift")
+    fun getDrift(
+        @PathVariable id: Long,
+        @RequestParam system: TargetSystem,
+    ): DriftReport =
+        drift.compute(id, system)
+
+    @PostMapping("/{id}/drift/link-user")
+    fun linkUser(
+        @PathVariable id: Long,
+        @RequestBody body: LinkUserRequest,
+    ): LinkedUserResponse {
+        val mapping = commandBus.dispatch(
+            LinkExternalUserCommand(
+                subjectId = id,
+                userId = body.userId,
+                system = body.system,
+                externalUserId = body.externalUserId,
+            ),
+        )
+        return LinkedUserResponse(
+            userId = mapping.aggregateId,
+            system = TargetSystem.valueOf(mapping.system),
+            externalUserId = mapping.externalId ?: body.externalUserId,
+        )
+    }
 }
+
+// ── Request / response DTOs ──────────────────────────────────────────────────
 
 @Schema(name = "CohortSubjectSummary")
 data class CohortSubjectSummaryResponse(
@@ -95,6 +134,13 @@ data class CohortSubjectMemberResponse(
     val joinedAt: Instant,
 )
 
+data class LinkUserRequest(val userId: Long, val system: TargetSystem, val externalUserId: String)
+
+@Schema(name = "LinkedUser")
+data class LinkedUserResponse(val userId: Long, val system: TargetSystem, val externalUserId: String)
+
+// ── Extension mappings ───────────────────────────────────────────────────────
+
 private fun CohortSubjectSummary.toResponse(): CohortSubjectSummaryResponse =
     CohortSubjectSummaryResponse(
         id = subject.id!!,
@@ -136,7 +182,7 @@ private fun CohortMappingRow.toResponse(): CohortMappingResponse =
 private fun CohortMemberRow.toMemberResponse(): CohortSubjectMemberResponse =
     CohortSubjectMemberResponse(
         cohortMemberId = member.id!!,
-        userId = member.userId,
+        userId = member.userId!!,
         userFullName = user?.fullName,
         userEmail = user?.email,
         isUserDeleted = isUserDeleted,

@@ -12,7 +12,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
-import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -36,14 +35,14 @@ class CohortRuleEvaluatorTest {
     private val evaluator = CohortRuleEvaluator(factCollector, rules, memberships, cohorts, subjectRepo, jobs, users)
 
     @Test
-    fun `cohorts in the desired set but not currently joined are added and a SyncCohortMembership job is enqueued`() {
+    fun `cohorts in the desired set but not currently joined are added and a ReconcileList job is enqueued`() {
         every { factCollector.collect(1L) } returns setOf(
             UserFact(CohortFactKind.ROLE, Role.MEMBER.name),
         )
         val members = cohort(id = 10L)
         every { rules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.ROLE, Role.MEMBER.name) } returns
             listOf(rule(members))
-        every { memberships.findAllByUserId(1L) } returns emptyList()
+        every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns emptyList()
         every { cohorts.findById(10L) } returns Optional.of(members)
 
         val saved = slot<CohortMember>()
@@ -58,18 +57,21 @@ class CohortRuleEvaluatorTest {
         assertThat(saved.captured.userId).isEqualTo(1L)
         verify {
             jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(1L, 10L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.ReconcileList,
+                CohortJobs.ReconcileListPayload(10L),
             )
+        }
+        verify(exactly = 0) {
+            jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
         }
     }
 
     @Test
-    fun `cohorts currently joined but no longer desired are soft-deleted and a REMOVE job is enqueued`() {
+    fun `cohorts currently joined but no longer desired are soft-deleted and a ReconcileList job is enqueued`() {
         every { factCollector.collect(1L) } returns emptySet()
         val stale = cohort(id = 99L)
         val staleMembership = membership(stale)
-        every { memberships.findAllByUserId(1L) } returns listOf(staleMembership)
+        every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns listOf(staleMembership)
 
         val result = evaluator.evaluate(1L)
 
@@ -78,9 +80,12 @@ class CohortRuleEvaluatorTest {
         verify { memberships.delete(staleMembership) }
         verify {
             jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.REMOVE),
+                CohortJobs.ReconcileList,
+                CohortJobs.ReconcileListPayload(99L),
             )
+        }
+        verify(exactly = 0) {
+            jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
         }
     }
 
@@ -92,14 +97,17 @@ class CohortRuleEvaluatorTest {
         val members = cohort(id = 10L)
         every { rules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.ROLE, Role.MEMBER.name) } returns
             listOf(rule(members))
-        every { memberships.findAllByUserId(1L) } returns listOf(membership(members))
+        every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns listOf(membership(members))
 
         val result = evaluator.evaluate(1L)
 
         assertThat(result.isNoOp).isTrue()
         verify(exactly = 0) { memberships.save(any<CohortMember>()) }
         verify(exactly = 0) { memberships.delete(any<CohortMember>()) }
-        verify(exactly = 0) { jobs.enqueue(any(), any()) }
+        verify(exactly = 0) { jobs.enqueue(CohortJobs.ReconcileList, any<CohortJobs.ReconcileListPayload>()) }
+        verify(exactly = 0) {
+            jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
+        }
     }
 
     @Test
@@ -114,7 +122,7 @@ class CohortRuleEvaluatorTest {
             listOf(rule(brevoMembers))
         every { rules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.NEWSLETTER, "true") } returns
             listOf(rule(newsletter))
-        every { memberships.findAllByUserId(1L) } returns emptyList()
+        every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns emptyList()
         every { cohorts.findById(10L) } returns Optional.of(brevoMembers)
         every { cohorts.findById(20L) } returns Optional.of(newsletter)
         every { memberships.save(any<CohortMember>()) } answers { firstArg<CohortMember>() }
@@ -123,19 +131,26 @@ class CohortRuleEvaluatorTest {
 
         assertThat(result.desired).containsExactlyInAnyOrder(10L, 20L)
         assertThat(result.toAdd).containsExactlyInAnyOrder(10L, 20L)
+        verify {
+            jobs.enqueue(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(10L))
+            jobs.enqueue(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(20L))
+        }
     }
 
     @Test
     fun `evaluation with no facts and no current memberships is a no-op`() {
         every { factCollector.collect(404L) } returns emptySet()
-        every { memberships.findAllByUserId(404L) } returns emptyList()
+        every { memberships.findAllByUserIdAndUserIdIsNotNull(404L) } returns emptyList()
 
         val result = evaluator.evaluate(404L)
 
         assertThat(result.desired).isEmpty()
         assertThat(result.current).isEmpty()
         assertThat(result.isNoOp).isTrue()
-        verify(exactly = 0) { jobs.enqueue(any(), any()) }
+        verify(exactly = 0) { jobs.enqueue(CohortJobs.ReconcileList, any<CohortJobs.ReconcileListPayload>()) }
+        verify(exactly = 0) {
+            jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
+        }
     }
 
     private fun cohort(id: Long): Cohort {

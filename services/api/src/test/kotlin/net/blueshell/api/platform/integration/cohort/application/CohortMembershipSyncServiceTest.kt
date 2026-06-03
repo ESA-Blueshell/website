@@ -8,6 +8,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
+import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
@@ -28,7 +29,7 @@ class CohortMembershipSyncServiceTest {
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
     private val service = CohortMembershipSyncService(
         cohorts = cohorts,
-        cohortPorts = listOf(brevoPort),
+        registry = CohortPortRegistry(listOf(brevoPort)),
         externalIds = externalIds,
         jobs = jobs,
     )

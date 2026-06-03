@@ -11,15 +11,21 @@ import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.time.LocalDateTime
 
 /**
- * Join row: user U is currently in cohort C. The DB row is the source
- * of truth — sync targets converge the external state to whatever set
- * of `(user, cohort)` rows is live here. Soft-delete preserves history
- * of past memberships for debugging and audit.
+ * Unified membership ledger. A row is one of three kinds:
  *
- * `user_id` is stored as a plain FK rather than `@ManyToOne User` so
- * cohort code stays decoupled from the `domain.user` entity graph.
+ * - **Desired** (`userId != null`, `observedAt == null`): the local
+ *   rule engine has decided this user belongs here but the reconcile
+ *   job has not yet confirmed their presence externally.
+ * - **Healthy** (`userId != null`, `observedAt != null`): desired and
+ *   confirmed present on the last reconcile run.
+ * - **Stranger** (`userId == null`, `observedAt != null`): present
+ *   externally but not desired locally (extra row).
+ *
+ * `userId` is a plain Long (not `@ManyToOne User`) so cohort code
+ * stays decoupled from the `domain.user` entity graph.
  */
 @Entity
 @Table(
@@ -29,11 +35,17 @@ import org.hibernate.annotations.SQLRestriction
             name = "uk_cohort_member",
             columnNames = ["cohort_id", "user_id", "deleted_at"],
         ),
+        UniqueConstraint(
+            name = "uk_cohort_member_external",
+            columnNames = ["cohort_id", "external_user_id", "deleted_at"],
+        ),
     ],
     indexes = [
         Index(name = "idx_cohort_member_cohort", columnList = "cohort_id"),
         Index(name = "idx_cohort_member_user", columnList = "user_id"),
         Index(name = "idx_cohort_member_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_cohort_member_external", columnList = "cohort_id,external_user_id"),
+        Index(name = "idx_cohort_member_observed", columnList = "cohort_id,observed_at"),
     ],
 )
 @SQLDelete(sql = "UPDATE cohort_member SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
@@ -43,15 +55,19 @@ class CohortMember(
     @JoinColumn(name = "cohort_id", nullable = false)
     val cohort: Cohort,
 
-    @Column(name = "user_id", nullable = false)
-    val userId: Long,
+    @Column(name = "user_id", nullable = true)
+    val userId: Long?,
 
-    /**
-     * Subject this membership belongs to. Same backwards-compatibility
-     * story as on [CohortRule]: today both columns coexist; a follow-up
-     * PR moves the engine fully onto subject_id and drops cohort_id.
-     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_id", nullable = false)
     val subject: CohortSubject,
+
+    @Column(name = "external_user_id", nullable = true)
+    var externalUserId: String? = null,
+
+    @Column(name = "observed_at", nullable = true)
+    var observedAt: LocalDateTime? = null,
+
+    @Column(name = "label", nullable = true)
+    var label: String? = null,
 ) : AuditedAutoIdEntity()

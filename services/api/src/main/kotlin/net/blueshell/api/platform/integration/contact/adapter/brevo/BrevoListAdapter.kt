@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.contact.adapter.brevo
 
+import net.blueshell.api.platform.integration.contact.adapter.ContactListMember
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.contact.adapter.ExternalContactGoneException
@@ -134,6 +135,36 @@ class BrevoListAdapter(
             log.error("Failed to delete Brevo list id={}", externalListId, e)
             throw ContactServiceException("Failed to delete list", e)
         }
+    }
+
+    /**
+     * Pages [contactsApi.getContactsFromList] in batches of 500 until a
+     * short page signals the end. De-duplicates by external user id across
+     * pages in case of cursor drift. Never returns more than ~2 000 rows.
+     */
+    override fun listMembers(externalListId: Long): List<ContactListMember> {
+        val pageSize = 500L
+        val seen = LinkedHashSet<Long>()
+        val result = mutableListOf<ContactListMember>()
+        var offset = 0L
+        while (true) {
+            val page = try {
+                contactsApi.getContactsFromList(externalListId, null, pageSize, offset, null)
+            } catch (e: RestClientResponseException) {
+                log.error("Failed to list members of Brevo list id={}", externalListId, e)
+                throw ContactServiceException("Failed to list members", e)
+            }
+            val contacts = page.contacts ?: break
+            for (c in contacts) {
+                val id = c.id ?: continue
+                if (seen.add(id)) {
+                    result += ContactListMember(id, c.email)
+                }
+            }
+            if (contacts.size < pageSize) break
+            offset += pageSize
+        }
+        return result
     }
 
     /**

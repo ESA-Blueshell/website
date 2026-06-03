@@ -1,0 +1,118 @@
+/**
+ * Cohort domain adapter — the only file in this domain that imports
+ * from @/services/api (per frontend ADR-002). Everything else imports
+ * from this module or from ../types.
+ */
+import {
+  enqueue,
+  getDrift,
+  linkUser,
+} from "@/services/api"
+import type { DriftReport as ApiDriftReport, ExtraRow as ApiExtraRow } from "@/services/api"
+
+export type TargetSystem = ApiDriftReport["system"]
+
+export type ExtraRow = {
+  kind: "KNOWN_LOCAL_USER" | "UNKNOWN_EXTERNAL"
+  externalUserId: string
+  label: string | null
+  userId: number | null
+  fullName: string | null
+  email: string | null
+  softDeleted: boolean | null
+}
+
+export type MissingRow = {
+  userId: number
+  hasExternalMapping: boolean
+}
+
+export type DriftReport = {
+  cohortId: number
+  system: TargetSystem
+  externalCohortId: string | null
+  extras: ExtraRow[]
+  missing: MissingRow[]
+  lastReconciledAt: string | null
+}
+
+export type ExternalUserConflict = {
+  existingUserId: number
+  system: string
+  existingUserFullName: string | null
+}
+
+export async function fetchDrift(subjectId: number, system: TargetSystem): Promise<DriftReport> {
+  const res = await getDrift({ path: { id: subjectId }, query: { system } })
+  const raw = res.data!
+  return {
+    cohortId: raw.cohortId,
+    system: raw.system as TargetSystem,
+    externalCohortId: raw.externalCohortId ?? null,
+    extras: (raw.extras ?? []).map(toExtraRow),
+    missing: (raw.missing ?? []).map((m) => ({
+      userId: m.userId,
+      hasExternalMapping: m.hasExternalMapping,
+    })),
+    lastReconciledAt: raw.lastReconciledAt ?? null,
+  }
+}
+
+function toExtraRow(raw: ApiExtraRow): ExtraRow {
+  const known = String(raw.kind) === "KNOWN_LOCAL_USER" && raw.userId != null
+  return {
+    kind: known ? "KNOWN_LOCAL_USER" : "UNKNOWN_EXTERNAL",
+    externalUserId: raw.externalUserId,
+    label: raw.label ?? null,
+    userId: known ? raw.userId! : null,
+    fullName: known ? raw.fullName ?? null : null,
+    email: known ? raw.email ?? null : null,
+    softDeleted: known ? raw.softDeleted ?? false : null,
+  }
+}
+
+export async function triggerReconcile(cohortId: number): Promise<number | null> {
+  const res = await enqueue({ body: { jobType: "cohort.reconcile-list", payload: { cohortId } } })
+  return res.data?.id ?? null
+}
+
+export async function removeExternalMember(
+  cohortId: number,
+  externalUserId: string,
+): Promise<number | null> {
+  const res = await enqueue({
+    body: { jobType: "cohort.remove-external-member", payload: { cohortId, externalUserId } },
+  })
+  return res.data?.id ?? null
+}
+
+export type LinkUserResult = { type: "ok" } | { type: "conflict"; conflict: ExternalUserConflict }
+
+export async function linkUserToExternal(
+  subjectId: number,
+  userId: number,
+  system: TargetSystem,
+  externalUserId: string,
+): Promise<LinkUserResult> {
+  try {
+    await linkUser({
+      path: { id: subjectId },
+      body: { userId, system, externalUserId },
+    })
+    return { type: "ok" }
+  } catch (err: unknown) {
+    const resp = (err as { response?: { status?: number; data?: Record<string, unknown> } })?.response
+    if (resp?.status === 409 && resp.data) {
+      const d = resp.data
+      return {
+        type: "conflict",
+        conflict: {
+          existingUserId: d["existingUserId"] as number,
+          system: d["system"] as string,
+          existingUserFullName: (d["existingUserFullName"] as string | null) ?? null,
+        },
+      }
+    }
+    throw err
+  }
+}

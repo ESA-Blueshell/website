@@ -9,4 +9,22 @@ interface ExternalIdMappingRepository : BaseRepository<ExternalIdMapping, Long> 
         aggregateId: Long,
         system: String,
     ): ExternalIdMapping?
+
+    fun findByAggregateTypeAndSystemAndAggregateIdIn(
+        aggregateType: String,
+        system: String,
+        aggregateIds: Collection<Long>,
+    ): List<ExternalIdMapping>
+
+    fun findByAggregateTypeAndSystemAndExternalIdIn(
+        aggregateType: String,
+        system: String,
+        externalIds: Collection<String>,
+    ): List<ExternalIdMapping>
+
+    fun findFirstByAggregateTypeAndSystemAndExternalId(
+        aggregateType: String,
+        system: String,
+        externalId: String,
+    ): ExternalIdMapping?
 }

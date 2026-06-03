@@ -169,8 +169,10 @@ class SecurityConfig(
             if (openApiPublicEnabled) {
                 auth.requestMatchers(
                     HttpMethod.GET,
-                    "/v3/api-docs**/**",
-                    "/swagger-ui**/**"
+                    "/v3/api-docs",
+                    "/v3/api-docs/**",
+                    "/swagger-ui",
+                    "/swagger-ui/**"
                 ).permitAll()
             }
 

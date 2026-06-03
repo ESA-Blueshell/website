@@ -20,4 +20,10 @@ interface ContactListAdapter {
     fun addToList(externalUserId: Long, externalListId: Long)
     fun removeFromList(externalUserId: Long, externalListId: Long)
     fun deleteList(externalListId: Long)
+
+    /** Lists all members currently present in the given external list. */
+    fun listMembers(externalListId: Long): List<ContactListMember>
 }
+
+/** One member as the external system knows them: a native numeric id and optional email label. */
+data class ContactListMember(val externalUserId: Long, val email: String?)

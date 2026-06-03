@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.platform.integration.contact.adapter.ContactListMember
 import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
@@ -104,6 +105,11 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
         memberships.keys.removeIf { (_, listId) -> listId == externalListId }
         log.info("Mock: Deleted list id={}", externalListId)
     }
+
+    override fun listMembers(externalListId: Long): List<ContactListMember> =
+        memberships.keys
+            .filter { (_, listId) -> listId == externalListId }
+            .map { (contactId, _) -> ContactListMember(contactId, contacts[contactId]?.email) }
 
     // ── Test helpers ──────────────────────────────────────────────────────────
 

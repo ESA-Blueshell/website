@@ -124,7 +124,7 @@ private fun CohortDetail.toResponse(): CohortDetailResponse =
 private fun CohortMemberRow.toResponse(): CohortMemberRowResponse =
     CohortMemberRowResponse(
         cohortMemberId = member.id!!,
-        userId = member.userId,
+        userId = member.userId!!,
         userFullName = user?.fullName,
         userEmail = user?.email,
         isUserDeleted = isUserDeleted,

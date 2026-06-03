@@ -80,8 +80,8 @@ const triggerJob = async (jobType: string, payload: Record<string, unknown>) => 
   }
 }
 
-const resyncMapping = (cohortId: number) => {
-  void triggerJob("cohort.resync", {cohortId})
+const reconcileMapping = (cohortId: number) => {
+  void triggerJob("cohort.reconcile-list", {cohortId})
 }
 
 const reevaluateMember = (userId: number) => {
@@ -272,13 +272,13 @@ watch(subjectId, () => void load())
                 <v-btn
                   :data-testid="`cohort-subject-mapping-resync-${mapping.system.toLowerCase()}`"
                   :disabled="!!triggering"
-                  :loading="triggering === 'cohort.resync'"
+                  :loading="triggering === 'cohort.reconcile-list'"
                   color="primary"
                   size="small"
                   variant="flat"
-                  @click="resyncMapping(mapping.cohortId)"
+                  @click="reconcileMapping(mapping.cohortId)"
                 >
-                  Re-push to {{ labelForSystem(mapping.system) }}
+                  Reconcile {{ labelForSystem(mapping.system) }}
                 </v-btn>
 
                 <cohort-drift-panel

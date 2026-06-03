@@ -416,6 +416,14 @@ export type CsrfToken = {
     token?: string;
 };
 
+export type DriftReport = {
+    cohortId: number;
+    externalCohortId?: string;
+    extras: Array<ExtraRow>;
+    missing: Array<MissingRow>;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+};
+
 export type Email = {
     attempts?: number;
     createdAt?: string;
@@ -453,6 +461,10 @@ export type EnqueueJobRequest = {
     payload?: {
         [key: string]: unknown;
     };
+};
+
+export type EnqueueResponse = {
+    jobId?: number;
 };
 
 export type EventBannerRequest = {
@@ -500,6 +512,16 @@ export type EventSignUpResponse = {
     updatedAt: string;
     user?: UserSummaryResponse;
     version: number;
+};
+
+export type ExtraRow = {
+    email?: string;
+    externalUserId: string;
+    fullName?: string;
+    kind: string;
+    label?: string;
+    softDeleted?: boolean;
+    userId?: number;
 };
 
 /**
@@ -645,6 +667,18 @@ export type JwtRequest = {
     username: string;
 };
 
+export type LinkUserRequest = {
+    externalUserId: string;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    userId: number;
+};
+
+export type LinkedUser = {
+    externalUserId: string;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    userId: number;
+};
+
 export type LoginResponse = {
     addressId?: number;
     expiration: number;
@@ -691,6 +725,11 @@ export type MembershipResponse = {
     updatedAt: string;
     userId: number;
     version: number;
+};
+
+export type MissingRow = {
+    hasExternalMapping: boolean;
+    userId: number;
 };
 
 export type PageMetadata = {
@@ -762,6 +801,11 @@ export enum QuestionType {
 
 export type RedirectResponse = {
     path: string;
+};
+
+export type RemoveExternalRequest = {
+    cohortId: number;
+    externalUserId: string;
 };
 
 export enum Role {
@@ -3282,6 +3326,47 @@ export type FindCohortSubjectsResponses = {
 
 export type FindCohortSubjectsResponse = FindCohortSubjectsResponses[keyof FindCohortSubjectsResponses];
 
+export type ListSystemsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/cohort-subjects/systems';
+};
+
+export type ListSystemsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListSystemsError = ListSystemsErrors[keyof ListSystemsErrors];
+
+export type ListSystemsResponses = {
+    /**
+     * OK
+     */
+    200: Array<'BREVO' | 'GOOGLE_CALENDAR'>;
+};
+
+export type ListSystemsResponse = ListSystemsResponses[keyof ListSystemsResponses];
+
 export type FindCohortSubjectByIdData = {
     body?: never;
     path: {
@@ -3324,6 +3409,137 @@ export type FindCohortSubjectByIdResponses = {
 };
 
 export type FindCohortSubjectByIdResponse = FindCohortSubjectByIdResponses[keyof FindCohortSubjectByIdResponses];
+
+export type GetDriftData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query: {
+        system: 'BREVO' | 'GOOGLE_CALENDAR';
+    };
+    url: '/management/cohort-subjects/{id}/drift';
+};
+
+export type GetDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type GetDriftError = GetDriftErrors[keyof GetDriftErrors];
+
+export type GetDriftResponses = {
+    /**
+     * OK
+     */
+    200: DriftReport;
+};
+
+export type GetDriftResponse = GetDriftResponses[keyof GetDriftResponses];
+
+export type LinkUserData = {
+    body: LinkUserRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/drift/link-user';
+};
+
+export type LinkUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkUserError = LinkUserErrors[keyof LinkUserErrors];
+
+export type LinkUserResponses = {
+    /**
+     * OK
+     */
+    200: LinkedUser;
+};
+
+export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
+
+export type RemoveExternalData = {
+    body: RemoveExternalRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/drift/remove-external';
+};
+
+export type RemoveExternalErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveExternalError = RemoveExternalErrors[keyof RemoveExternalErrors];
+
+export type RemoveExternalResponses = {
+    /**
+     * Accepted
+     */
+    202: EnqueueResponse;
+};
+
+export type RemoveExternalResponse = RemoveExternalResponses[keyof RemoveExternalResponses];
 
 export type FindCohortsData = {
     body?: never;
@@ -3648,7 +3864,7 @@ export type EnqueueResponses = {
     200: JobExecution;
 };
 
-export type EnqueueResponse = EnqueueResponses[keyof EnqueueResponses];
+export type EnqueueResponse2 = EnqueueResponses[keyof EnqueueResponses];
 
 export type GetStatsData = {
     body?: never;

@@ -5,6 +5,8 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -69,24 +71,30 @@ class CohortDriftService(
         val softDeletedUserIds = users.findSoftDeletedIds(missingActiveUserIds)
 
         val extras = strangerRows.map { row ->
-            val extId = row.externalUserId ?: return@map ExtraRow.UnknownExternal(
+            val extId = row.externalUserId ?: return@map ExtraRow(
                 externalUserId = "",
                 label = row.label,
+                kind = DriftExtraKind.UNKNOWN_EXTERNAL,
             )
             val owner = ownerMappings[extId]
             if (owner != null) {
                 val user = userById[owner.aggregateId]
                 val softDeleted = owner.aggregateId in softDeletedUserIds
-                ExtraRow.KnownLocalUser(
+                ExtraRow(
                     externalUserId = extId,
                     label = row.label,
+                    kind = DriftExtraKind.KNOWN_LOCAL_USER,
                     userId = owner.aggregateId,
                     fullName = user?.fullName,
                     email = user?.email,
                     softDeleted = softDeleted,
                 )
             } else {
-                ExtraRow.UnknownExternal(externalUserId = extId, label = row.label)
+                ExtraRow(
+                    externalUserId = extId,
+                    label = row.label,
+                    kind = DriftExtraKind.UNKNOWN_EXTERNAL,
+                )
             }
         }
 
@@ -105,8 +113,4 @@ class CohortDriftService(
         )
     }
 
-    companion object {
-        private const val COHORT_AGGREGATE = "COHORT"
-        private const val USER_AGGREGATE = "USER"
-    }
 }

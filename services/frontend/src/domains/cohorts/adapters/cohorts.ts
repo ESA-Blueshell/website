@@ -4,23 +4,43 @@
  * from this module or from ../types.
  */
 import {
+  enqueue,
   getDrift,
   linkUser,
-  listSystems,
-  reconcile,
-  removeExternal,
 } from "@/services/api"
-import type { DriftReport, ExternalUserConflict, TargetSystem } from "../types"
-import type { ExtraRow } from "../types"
+import type { DriftReport as ApiDriftReport, ExtraRow as ApiExtraRow } from "@/services/api"
 
-// ── Systems ───────────────────────────────────────────────────────────────────
+export type TargetSystem = ApiDriftReport["system"]
 
-export async function fetchSystems(): Promise<TargetSystem[]> {
-  const res = await listSystems()
-  return (res.data ?? []) as TargetSystem[]
+export type ExtraRow = {
+  kind: "KNOWN_LOCAL_USER" | "UNKNOWN_EXTERNAL"
+  externalUserId: string
+  label: string | null
+  userId: number | null
+  fullName: string | null
+  email: string | null
+  softDeleted: boolean | null
 }
 
-// ── Drift ─────────────────────────────────────────────────────────────────────
+export type MissingRow = {
+  userId: number
+  hasExternalMapping: boolean
+}
+
+export type DriftReport = {
+  cohortId: number
+  system: TargetSystem
+  externalCohortId: string | null
+  extras: ExtraRow[]
+  missing: MissingRow[]
+  lastReconciledAt: string | null
+}
+
+export type ExternalUserConflict = {
+  existingUserId: number
+  system: string
+  existingUserFullName: string | null
+}
 
 export async function fetchDrift(subjectId: number, system: TargetSystem): Promise<DriftReport> {
   const res = await getDrift({ path: { id: subjectId }, query: { system } })
@@ -38,55 +58,33 @@ export async function fetchDrift(subjectId: number, system: TargetSystem): Promi
   }
 }
 
-// ── Reconcile ──────────────────────────────────────────────────────────────────
-
-export async function triggerReconcile(subjectId: number, system: TargetSystem): Promise<number | null> {
-  const res = await reconcile({ path: { id: subjectId }, query: { system } })
-  return res.data?.jobId ?? null
-}
-
-function toExtraRow(raw: {
-  kind: string
-  externalUserId: string
-  label?: string
-  userId?: number
-  fullName?: string
-  email?: string
-  softDeleted?: boolean
-}): ExtraRow {
-  if (raw.kind === "KNOWN_LOCAL_USER" && raw.userId != null) {
-    return {
-      kind: "KNOWN_LOCAL_USER",
-      externalUserId: raw.externalUserId,
-      label: raw.label ?? null,
-      userId: raw.userId,
-      fullName: raw.fullName ?? null,
-      email: raw.email ?? null,
-      softDeleted: raw.softDeleted ?? false,
-    }
-  }
+function toExtraRow(raw: ApiExtraRow): ExtraRow {
+  const known = String(raw.kind) === "KNOWN_LOCAL_USER" && raw.userId != null
   return {
-    kind: "UNKNOWN_EXTERNAL",
+    kind: known ? "KNOWN_LOCAL_USER" : "UNKNOWN_EXTERNAL",
     externalUserId: raw.externalUserId,
     label: raw.label ?? null,
+    userId: known ? raw.userId! : null,
+    fullName: known ? raw.fullName ?? null : null,
+    email: known ? raw.email ?? null : null,
+    softDeleted: known ? raw.softDeleted ?? false : null,
   }
 }
 
-// ── Remove external ───────────────────────────────────────────────────────────
+export async function triggerReconcile(cohortId: number): Promise<number | null> {
+  const res = await enqueue({ body: { jobType: "cohort.reconcile-list", payload: { cohortId } } })
+  return res.data?.id ?? null
+}
 
 export async function removeExternalMember(
-  subjectId: number,
   cohortId: number,
   externalUserId: string,
 ): Promise<number | null> {
-  const res = await removeExternal({
-    path: { id: subjectId },
-    body: { cohortId, externalUserId },
+  const res = await enqueue({
+    body: { jobType: "cohort.remove-external-member", payload: { cohortId, externalUserId } },
   })
-  return res.data?.jobId ?? null
+  return res.data?.id ?? null
 }
-
-// ── Link user ─────────────────────────────────────────────────────────────────
 
 export type LinkUserResult = { type: "ok" } | { type: "conflict"; conflict: ExternalUserConflict }
 

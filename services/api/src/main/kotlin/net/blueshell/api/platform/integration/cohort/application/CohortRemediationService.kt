@@ -9,6 +9,8 @@ import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembers
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
@@ -229,8 +231,4 @@ class CohortRemediationService(
         val externalIdByUserId: Map<Long, String?>,
     )
 
-    companion object {
-        private const val COHORT_AGGREGATE = "COHORT"
-        private const val USER_AGGREGATE = "USER"
-    }
 }

@@ -4,7 +4,10 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortMembershipSync
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
+import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -30,7 +33,7 @@ import org.springframework.stereotype.Service
 @Service
 class CohortMembershipSyncService(
     private val cohorts: CohortRepository,
-    private val cohortPorts: List<CohortPort>,
+    private val registry: CohortPortRegistry,
     private val externalIds: ExternalIdMappingService,
     private val jobs: TrackedJobDispatcher,
 ) : CohortMembershipSync {
@@ -42,8 +45,7 @@ class CohortMembershipSyncService(
         val system = runCatching { TargetSystem.valueOf(cohort.system) }.getOrElse {
             throw NonRetryableJobException("Cohort $cohortId has unknown system '${cohort.system}'")
         }
-        val port = cohortPorts.find { it.system == system }
-            ?: throw NonRetryableJobException("No CohortPort registered for system $system")
+        val port = registry.require(system)
 
         when (intent) {
             SyncCohortMembershipIntent.ADD -> add(userId, cohort.id!!, cohort.label, cohort.system, port)
@@ -98,8 +100,6 @@ class CohortMembershipSyncService(
     }
 
     companion object {
-        private const val USER_AGGREGATE = "USER"
-        private const val COHORT_AGGREGATE = "COHORT"
         private val log = LoggerFactory.getLogger(CohortMembershipSyncService::class.java)
     }
 }

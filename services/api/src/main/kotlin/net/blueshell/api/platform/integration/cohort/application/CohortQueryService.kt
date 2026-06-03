@@ -9,6 +9,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -77,9 +78,6 @@ class CohortQueryService(
         )
     }
 
-    companion object {
-        private const val COHORT_AGGREGATE = "COHORT"
-    }
 }
 
 /** Read-model projection of a [Cohort] for admin listings. */

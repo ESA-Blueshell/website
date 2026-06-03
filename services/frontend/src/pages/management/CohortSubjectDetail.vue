@@ -11,6 +11,7 @@ import {
   findCohortSubjectById,
 } from "@/services/api"
 import CohortDriftPanel from "@/domains/cohorts/components/CohortDriftPanel.vue"
+import type { TargetSystem } from "@/domains/cohorts/adapters/cohorts"
 import store from "@/plugins/store"
 
 defineOptions({name: "CohortSubjectDetailPage"})
@@ -78,10 +79,6 @@ const triggerJob = async (jobType: string, payload: Record<string, unknown>) => 
   } finally {
     triggering.value = null
   }
-}
-
-const reconcileMapping = (cohortId: number) => {
-  void triggerJob("cohort.reconcile-list", {cohortId})
 }
 
 const reevaluateMember = (userId: number) => {
@@ -269,23 +266,12 @@ watch(subjectId, () => void load())
                   </div>
                 </div>
 
-                <v-btn
-                  :data-testid="`cohort-subject-mapping-resync-${mapping.system.toLowerCase()}`"
-                  :disabled="!!triggering"
-                  :loading="triggering === 'cohort.reconcile-list'"
-                  color="primary"
-                  size="small"
-                  variant="flat"
-                  @click="reconcileMapping(mapping.cohortId)"
-                >
-                  Reconcile {{ labelForSystem(mapping.system) }}
-                </v-btn>
-
                 <cohort-drift-panel
                   v-if="subjectId != null"
+                  :cohort-id="mapping.cohortId"
                   :subject-id="subjectId"
                   :subject-type="(subject.type as CohortSubjectType)"
-                  :system="(mapping.system as any)"
+                  :system="(mapping.system as TargetSystem)"
                   class="mt-4"
                 />
               </div>

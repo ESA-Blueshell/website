@@ -68,23 +68,29 @@ class CohortDriftServiceTest {
             MissingRow(userId = 2L, hasExternalMapping = false),
         )
         assertThat(report.extras).containsExactlyInAnyOrder(
-            ExtraRow.KnownLocalUser(
+            ExtraRow(
                 externalUserId = "ext-active",
                 label = null,
+                kind = DriftExtraKind.KNOWN_LOCAL_USER,
                 userId = 10L,
                 fullName = "Ada Lovelace",
                 email = "ada@example.test",
                 softDeleted = false,
             ),
-            ExtraRow.KnownLocalUser(
+            ExtraRow(
                 externalUserId = "ext-soft",
                 label = null,
+                kind = DriftExtraKind.KNOWN_LOCAL_USER,
                 userId = 20L,
                 fullName = null,
                 email = null,
                 softDeleted = true,
             ),
-            ExtraRow.UnknownExternal(externalUserId = "ext-unknown", label = null),
+            ExtraRow(
+                externalUserId = "ext-unknown",
+                label = null,
+                kind = DriftExtraKind.UNKNOWN_EXTERNAL,
+            ),
         )
         assertThat(report.lastReconciledAt).isEqualTo(lastObserved.toInstant(ZoneOffset.UTC))
         verify(exactly = 0) { users.isSoftDeleted(any()) }

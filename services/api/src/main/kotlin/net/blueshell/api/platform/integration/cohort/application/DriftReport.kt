@@ -6,25 +6,18 @@ package net.blueshell.api.platform.integration.cohort.application
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import java.time.Instant
 
+enum class DriftExtraKind { KNOWN_LOCAL_USER, UNKNOWN_EXTERNAL }
+
 /** Classifies one external member that is not in the desired local set. */
-sealed interface ExtraRow {
-    val externalUserId: String
-    val label: String?
-
-    data class KnownLocalUser(
-        override val externalUserId: String,
-        override val label: String?,
-        val userId: Long,
-        val fullName: String?,
-        val email: String?,
-        val softDeleted: Boolean,
-    ) : ExtraRow
-
-    data class UnknownExternal(
-        override val externalUserId: String,
-        override val label: String?,
-    ) : ExtraRow
-}
+data class ExtraRow(
+    val externalUserId: String,
+    val label: String?,
+    val kind: DriftExtraKind,
+    val userId: Long? = null,
+    val fullName: String? = null,
+    val email: String? = null,
+    val softDeleted: Boolean? = null,
+)
 
 /** A locally-desired member that is absent from the observed external ledger. */
 data class MissingRow(val userId: Long, val hasExternalMapping: Boolean)

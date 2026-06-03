@@ -464,10 +464,6 @@ export type EnqueueJobRequest = {
     };
 };
 
-export type EnqueueResponse = {
-    jobId?: number;
-};
-
 export type EventBannerRequest = {
     fileId: number;
     version?: number;
@@ -519,7 +515,7 @@ export type ExtraRow = {
     email?: string;
     externalUserId: string;
     fullName?: string;
-    kind: string;
+    kind: 'KNOWN_LOCAL_USER' | 'UNKNOWN_EXTERNAL';
     label?: string;
     softDeleted?: boolean;
     userId?: number;
@@ -802,11 +798,6 @@ export enum QuestionType {
 
 export type RedirectResponse = {
     path: string;
-};
-
-export type RemoveExternalRequest = {
-    cohortId: number;
-    externalUserId: string;
 };
 
 export enum Role {
@@ -3327,47 +3318,6 @@ export type FindCohortSubjectsResponses = {
 
 export type FindCohortSubjectsResponse = FindCohortSubjectsResponses[keyof FindCohortSubjectsResponses];
 
-export type ListSystemsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/management/cohort-subjects/systems';
-};
-
-export type ListSystemsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ListSystemsError = ListSystemsErrors[keyof ListSystemsErrors];
-
-export type ListSystemsResponses = {
-    /**
-     * OK
-     */
-    200: Array<'BREVO' | 'GOOGLE_CALENDAR'>;
-};
-
-export type ListSystemsResponse = ListSystemsResponses[keyof ListSystemsResponses];
-
 export type FindCohortSubjectByIdData = {
     body?: never;
     path: {
@@ -3498,94 +3448,6 @@ export type LinkUserResponses = {
 };
 
 export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
-
-export type ReconcileData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query: {
-        system: 'BREVO' | 'GOOGLE_CALENDAR';
-    };
-    url: '/management/cohort-subjects/{id}/drift/reconcile';
-};
-
-export type ReconcileErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ReconcileError = ReconcileErrors[keyof ReconcileErrors];
-
-export type ReconcileResponses = {
-    /**
-     * Accepted
-     */
-    202: EnqueueResponse;
-};
-
-export type ReconcileResponse = ReconcileResponses[keyof ReconcileResponses];
-
-export type RemoveExternalData = {
-    body: RemoveExternalRequest;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}/drift/remove-external';
-};
-
-export type RemoveExternalErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RemoveExternalError = RemoveExternalErrors[keyof RemoveExternalErrors];
-
-export type RemoveExternalResponses = {
-    /**
-     * Accepted
-     */
-    202: EnqueueResponse;
-};
-
-export type RemoveExternalResponse = RemoveExternalResponses[keyof RemoveExternalResponses];
 
 export type FindCohortsData = {
     body?: never;
@@ -3910,7 +3772,7 @@ export type EnqueueResponses = {
     200: JobExecution;
 };
 
-export type EnqueueResponse2 = EnqueueResponses[keyof EnqueueResponses];
+export type EnqueueResponse = EnqueueResponses[keyof EnqueueResponses];
 
 export type GetStatsData = {
     body?: never;

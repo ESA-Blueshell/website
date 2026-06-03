@@ -45,15 +45,6 @@ class CohortSubjectControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `admin lists the registered systems`() {
-        val admin = createUserWithRole(Role.ADMIN)
-
-        mvc.perform(get("/management/cohort-subjects/systems").with(bearer(admin)))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$").isArray)
-    }
-
-    @Test
     fun `admin drift read returns a not-materialised report when the cohort has no external mapping`() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
@@ -69,21 +60,6 @@ class CohortSubjectControllerIT : UserTestSupport() {
             .andExpect(jsonPath("$.missing.length()").value(0))
             .andExpect(jsonPath("$.extras.length()").value(0))
             .andExpect(jsonPath("$.lastReconciledAt").doesNotExist())
-    }
-
-    @Test
-    fun `admin reconcile enqueues a reconcile-list job for the resolved cohort`() {
-        val admin = createUserWithRole(Role.ADMIN)
-        val subject = newSubject()
-        newCohort(subject)
-
-        mvc.perform(
-            post("/management/cohort-subjects/{id}/drift/reconcile", subject.id)
-                .queryParam("system", TargetSystem.BREVO.name)
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isAccepted)
-            .andExpect(jsonPath("$.jobId").isNumber)
     }
 
     @Test

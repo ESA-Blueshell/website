@@ -6,9 +6,11 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   type CohortSubjectDetail,
   CohortSubjectCategory,
+  CohortSubjectType,
   enqueue,
   findCohortSubjectById,
 } from "@/services/api"
+import CohortDriftPanel from "@/domains/cohorts/components/CohortDriftPanel.vue"
 import store from "@/plugins/store"
 
 defineOptions({name: "CohortSubjectDetailPage"})
@@ -278,6 +280,14 @@ watch(subjectId, () => void load())
                 >
                   Re-push to {{ labelForSystem(mapping.system) }}
                 </v-btn>
+
+                <cohort-drift-panel
+                  v-if="subjectId != null"
+                  :subject-id="subjectId"
+                  :subject-type="(subject.type as CohortSubjectType)"
+                  :system="(mapping.system as any)"
+                  class="mt-4"
+                />
               </div>
             </v-window-item>
           </v-window>

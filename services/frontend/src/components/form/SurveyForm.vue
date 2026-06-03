@@ -133,7 +133,6 @@ function moveQuestionDown(i: number) {
         </v-list-item>
       </v-list>
     </v-menu>
-
   </div>
 </template>
 

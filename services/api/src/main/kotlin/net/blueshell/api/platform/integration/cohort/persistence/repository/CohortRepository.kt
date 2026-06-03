@@ -17,4 +17,6 @@ interface CohortRepository : BaseRepository<Cohort, Long> {
     fun findAllBySystemAndKind(system: String, kind: CohortKind): List<Cohort>
 
     fun findAllBySubjectId(subjectId: Long): List<Cohort>
+
+    fun findBySubjectIdAndSystem(subjectId: Long, system: String): Cohort?
 }

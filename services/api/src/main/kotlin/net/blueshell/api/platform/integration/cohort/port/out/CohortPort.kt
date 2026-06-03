@@ -34,4 +34,14 @@ interface CohortPort {
     fun removeMember(externalUserId: String, externalCohortId: String)
 
     fun deleteCohort(externalCohortId: String)
+
+    /**
+     * Lists all members currently present in the external target.
+     * Returns a bounded list; the largest live cohort is ~350 rows.
+     * If a cohort ever grows past ~2 000, switch to cursor-based pages.
+     */
+    fun listMembers(externalCohortId: String): List<MemberRef>
 }
+
+/** One member as the external system knows them: a native id and an optional human-readable label. */
+data class MemberRef(val externalUserId: String, val label: String?)

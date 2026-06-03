@@ -105,6 +105,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "that cohort's external system. Use after restoring external state from backup or " +
       "re-enabling an integration. Does not change local membership state.",
   },
+  "cohort.remove-external-member": {
+    title: "Remove from external list",
+    description:
+      "Removes one external member from this mapping's external target " +
+      "(e.g. a Brevo list). Used to clean up drift detected by the drift inspector.",
+  },
 }
 
 export const humanizeJobType = (jobType: string): string =>

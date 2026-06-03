@@ -67,6 +67,17 @@ object CohortJobs {
             ResyncCohortPayload::class.java
     }
 
+    /**
+     * Removes one external member from a cohort's external target.
+     * Used by the drift-remediation UI to clean up extras.
+     * Dedup-key default (payload hash) collapses double-clicks.
+     */
+    object RemoveExternalMember : JobDefinition<RemoveExternalMemberPayload> {
+        override val type: String = "cohort.remove-external-member"
+        override val payloadType: Class<RemoveExternalMemberPayload> =
+            RemoveExternalMemberPayload::class.java
+    }
+
     data class SyncCohortMembershipPayload(
         val userId: Long,
         val cohortId: Long,
@@ -77,4 +88,5 @@ object CohortJobs {
     data class ReconcileAllUserCohortsPayload(val unused: Unit = Unit)
     data class EvaluateUserCohortsPayload(val userId: Long)
     data class ResyncCohortPayload(val cohortId: Long)
+    data class RemoveExternalMemberPayload(val cohortId: Long, val externalUserId: String)
 }

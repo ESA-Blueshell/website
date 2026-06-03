@@ -40,16 +40,16 @@ enum class CohortSubjectType {
     ;
 
     /**
-     * Operator-facing grouping shown as the section header on the
-     * admin dashboard. Several types fold into the same category — e.g.
-     * MEMBERS contains PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS and
-     * NEWSLETTER_SUBSCRIBERS, since those all describe "people we treat
-     * as members on some axis".
+     * Operator-facing grouping shown as the top-level browse page on
+     * the admin dashboard. The PERIODS bucket covers every per-period
+     * subject (paid, member, active) since they all share the same
+     * "scoped by contribution period" mental shape; MEMBERS holds the
+     * non-period member-status axes (today: just newsletter).
      */
     fun category(): CohortSubjectCategory = when (this) {
         COMMITTEE_MEMBERS -> CohortSubjectCategory.COMMITTEES
-        PERIOD_PAYERS -> CohortSubjectCategory.CONTRIBUTIONS
-        PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS, NEWSLETTER_SUBSCRIBERS -> CohortSubjectCategory.MEMBERS
+        PERIOD_PAYERS, PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS -> CohortSubjectCategory.PERIODS
+        NEWSLETTER_SUBSCRIBERS -> CohortSubjectCategory.MEMBERS
         CUSTOM -> CohortSubjectCategory.OTHER
     }
 }
@@ -64,7 +64,7 @@ enum class CohortSubjectType {
 @Schema(enumAsRef = true)
 enum class CohortSubjectCategory {
     COMMITTEES,
+    PERIODS,
     MEMBERS,
-    CONTRIBUTIONS,
     OTHER,
 }

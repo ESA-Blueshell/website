@@ -427,33 +427,67 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         },
       })
     }
+    // Legacy /management/cohorts list (still used by CohortPicker until
+    // the engine is fully on subjects).
     if (method === "GET" && path === "/management/cohorts") {
       return fulfillJson(route, [
-        {id: 1, system: "BREVO", kind: "LIST", label: "Members", memberCount: 2, externalId: "7"},
-        {id: 2, system: "BREVO", kind: "LIST", label: "Contribution Paid 25-26", memberCount: 1, externalId: "33"},
+        {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2, externalId: "7", folder: "Periods"},
+        {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1, externalId: "33", folder: "Committees"},
       ])
     }
-    if (method === "GET" && /^\/management\/cohorts\/\d+$/.test(path)) {
+    if (method === "GET" && path === "/management/cohort-subjects") {
+      return fulfillJson(route, [
+        {
+          id: 101,
+          type: "PERIOD_MEMBERS",
+          category: "PERIODS",
+          label: "Members 2025-2026",
+          memberCount: 2,
+          mappingCount: 1,
+        },
+        {
+          id: 102,
+          type: "COMMITTEE_MEMBERS",
+          category: "COMMITTEES",
+          label: "Web Cmte",
+          memberCount: 1,
+          mappingCount: 1,
+        },
+      ])
+    }
+    if (method === "GET" && /^\/management\/cohort-subjects\/\d+$/.test(path)) {
       const id = Number(path.split("/")[3] ?? "0")
+      const isCommittee = id === 102
       return fulfillJson(route, {
         id,
-        system: "BREVO",
-        kind: "LIST",
-        label: id === 2 ? "Contribution Paid 25-26" : "Members",
-        memberCount: id === 2 ? 1 : 2,
-        externalId: id === 2 ? "33" : "7",
+        type: isCommittee ? "COMMITTEE_MEMBERS" : "PERIOD_MEMBERS",
+        category: isCommittee ? "COMMITTEES" : "PERIODS",
+        label: isCommittee ? "Web Cmte" : "Members 2025-2026",
+        description: null,
+        mappings: [
+          {
+            cohortId: isCommittee ? 2 : 1,
+            system: "BREVO",
+            kind: "LIST",
+            label: isCommittee ? "Web Cmte" : "Members 2025-2026",
+            externalId: isCommittee ? "33" : "7",
+          },
+        ],
+        rules: [
+          isCommittee
+            ? {id: 9, factKind: "COMMITTEE", factKey: "42", enabled: true}
+            : {id: 5, factKind: "MEMBER_IN_PERIOD", factKey: "1", enabled: true},
+        ],
         members: [
           {
-            cohortMemberId: 100 + id,
+            cohortMemberId: 200 + id,
             userId: 1,
             userFullName: "Emma Dokter",
             userEmail: "emma@example.com",
+            isUserDeleted: false,
             joinedAt: "2026-01-15T10:00:00Z",
           },
         ],
-        rules: id === 2
-          ? [{id: 9, factKind: "CONTRIBUTION_PAID", factKey: "42", enabled: true}]
-          : [{id: 5, factKind: "ROLE", factKey: "MEMBER", enabled: true}],
       })
     }
     if (method === "POST" && /^\/management\/jobs\/\d+\/retry$/.test(path)) {

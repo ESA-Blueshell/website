@@ -89,6 +89,21 @@ class CohortSubjectController(
         return EnqueueResponse(jobId = execution?.id)
     }
 
+    @PostMapping("/{id}/drift/reconcile")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    fun reconcile(
+        @PathVariable id: Long,
+        @RequestParam system: TargetSystem,
+    ): EnqueueResponse {
+        val cohort = queries.findCohortBySubjectAndSystem(id, system)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No $system mapping for subject $id")
+        val execution = dispatcher.enqueue(
+            CohortJobs.ReconcileList,
+            CohortJobs.ReconcileListPayload(cohortId = cohort.id!!),
+        )
+        return EnqueueResponse(jobId = execution?.id)
+    }
+
     @PostMapping("/{id}/drift/link-user")
     fun linkUser(
         @PathVariable id: Long,
@@ -163,6 +178,7 @@ data class DriftResponse(
     val externalCohortId: String?,
     val extras: List<ExtraRowResponse>,
     val missing: List<MissingRowResponse>,
+    val lastReconciledAt: Instant?,
 )
 
 @Schema(name = "ExtraRow")
@@ -252,6 +268,7 @@ private fun DriftReport.toResponse(): DriftResponse =
         externalCohortId = externalCohortId,
         extras = extras.map { it.toResponse() },
         missing = missing.map { MissingRowResponse(it.userId, it.hasExternalMapping) },
+        lastReconciledAt = lastReconciledAt,
     )
 
 private fun ExtraRow.toResponse(): ExtraRowResponse = when (this) {

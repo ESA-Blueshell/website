@@ -7,6 +7,7 @@ import {
   getDrift,
   linkUser,
   listSystems,
+  reconcile,
   removeExternal,
 } from "@/services/api"
 import type { DriftReport, ExternalUserConflict, TargetSystem } from "../types"
@@ -33,7 +34,15 @@ export async function fetchDrift(subjectId: number, system: TargetSystem): Promi
       userId: m.userId,
       hasExternalMapping: m.hasExternalMapping,
     })),
+    lastReconciledAt: raw.lastReconciledAt ?? null,
   }
+}
+
+// ── Reconcile ──────────────────────────────────────────────────────────────────
+
+export async function triggerReconcile(subjectId: number, system: TargetSystem): Promise<number | null> {
+  const res = await reconcile({ path: { id: subjectId }, query: { system } })
+  return res.data?.jobId ?? null
 }
 
 function toExtraRow(raw: {

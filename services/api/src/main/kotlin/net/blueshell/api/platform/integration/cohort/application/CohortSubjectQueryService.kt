@@ -5,6 +5,7 @@ import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
+import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
@@ -90,6 +91,9 @@ class CohortSubjectQueryService(
                 .sortedWith(compareBy({ it.factKind.name }, { it.factKey })),
         )
     }
+
+    fun findCohortBySubjectAndSystem(subjectId: Long, system: TargetSystem): Cohort? =
+        cohorts.findBySubjectIdAndSystem(subjectId, system.name)
 
     companion object {
         private const val COHORT_AGGREGATE = "COHORT"

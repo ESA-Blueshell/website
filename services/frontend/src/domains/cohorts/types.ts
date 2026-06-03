@@ -38,6 +38,7 @@ export type DriftReport = {
   externalCohortId: string | null
   extras: ExtraRow[]
   missing: MissingRow[]
+  lastReconciledAt: string | null
 }
 
 // ── Conflict ──────────────────────────────────────────────────────────────────

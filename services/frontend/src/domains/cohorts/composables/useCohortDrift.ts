@@ -3,6 +3,7 @@ import {
   fetchDrift,
   linkUserToExternal,
   removeExternalMember,
+  triggerReconcile,
 } from "../adapters/cohorts"
 import type { DriftReport, ExternalUserConflict, TargetSystem } from "../types"
 
@@ -12,6 +13,7 @@ export function useCohortDrift(subjectId: number, system: TargetSystem) {
   const error = ref<string | null>(null)
   const removing = ref<string | null>(null) // externalUserId being removed
   const linking = ref(false)
+  const reconciling = ref(false)
 
   async function load() {
     loading.value = true
@@ -58,5 +60,17 @@ export function useCohortDrift(subjectId: number, system: TargetSystem) {
     }
   }
 
-  return { report, loading, error, removing, linking, load, remove, link }
+  async function reconcile(): Promise<void> {
+    reconciling.value = true
+    error.value = null
+    try {
+      await triggerReconcile(subjectId, system)
+    } catch (e: unknown) {
+      error.value = (e as Error)?.message ?? "Failed to enqueue reconcile"
+    } finally {
+      reconciling.value = false
+    }
+  }
+
+  return { report, loading, error, removing, linking, reconciling, load, remove, link, reconcile }
 }

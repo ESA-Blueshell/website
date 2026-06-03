@@ -111,6 +111,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Removes one external member from this mapping's external target " +
       "(e.g. a Brevo list). Used to clean up drift detected by the drift inspector.",
   },
+  "cohort.reconcile-list": {
+    title: "Reconcile list",
+    description:
+      "Fetches the full external member list for one cohort mapping, updates the shadow " +
+      "table, and enqueues ADD or REMOVE jobs for each discrepancy found.",
+  },
 }
 
 export const humanizeJobType = (jobType: string): string =>

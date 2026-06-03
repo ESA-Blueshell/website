@@ -5,8 +5,8 @@ import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 
 /**
- * Inbound port: operator-triggered remediation of external-system
- * membership drift.
+ * Inbound port: operator-triggered and scheduled remediation of
+ * external-system membership drift.
  */
 interface CohortRemediation {
     /**
@@ -18,10 +18,17 @@ interface CohortRemediation {
     fun linkUser(userId: Long, system: TargetSystem, externalUserId: String): ExternalIdMapping
 
     /**
-     * Removes one member from the external target backing [cohortId].
-     * Called by the [RemoveExternalMemberJobHandler]; the cohort must
-     * be materialised (non-null externalCohortId) or a
-     * [net.blueshell.api.shared.job.NonRetryableJobException] is thrown.
+     * Removes one member from the external target backing [cohortId]
+     * and deletes the corresponding shadow row so the drift panel
+     * reflects the change without waiting for the next reconcile run.
+     * Called by [net.blueshell.api.platform.integration.cohort.adapter.job.RemoveExternalMemberJobHandler].
      */
     fun removeExternalMember(cohortId: Long, externalUserId: String)
+
+    /**
+     * Fetches the full external member list for [cohortId], updates the
+     * shadow table, and enqueues ADD/REMOVE jobs for each discrepancy.
+     * Called by [net.blueshell.api.platform.integration.cohort.adapter.job.ReconcileListJobHandler].
+     */
+    fun reconcileList(cohortId: Long)
 }

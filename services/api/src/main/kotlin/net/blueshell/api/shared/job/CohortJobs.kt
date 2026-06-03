@@ -78,6 +78,18 @@ object CohortJobs {
             RemoveExternalMemberPayload::class.java
     }
 
+    /**
+     * Fetches the full external member list for one cohort mapping,
+     * updates the shadow table, and enqueues ADD/REMOVE jobs for each
+     * discrepancy. One network call per run; all downstream jobs are
+     * narrow single-operation units.
+     */
+    object ReconcileList : JobDefinition<ReconcileListPayload> {
+        override val type: String = "cohort.reconcile-list"
+        override val payloadType: Class<ReconcileListPayload> =
+            ReconcileListPayload::class.java
+    }
+
     data class SyncCohortMembershipPayload(
         val userId: Long,
         val cohortId: Long,
@@ -89,4 +101,5 @@ object CohortJobs {
     data class EvaluateUserCohortsPayload(val userId: Long)
     data class ResyncCohortPayload(val cohortId: Long)
     data class RemoveExternalMemberPayload(val cohortId: Long, val externalUserId: String)
+    data class ReconcileListPayload(val cohortId: Long)
 }

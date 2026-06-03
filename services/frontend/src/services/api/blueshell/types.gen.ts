@@ -420,6 +420,7 @@ export type DriftReport = {
     cohortId: number;
     externalCohortId?: string;
     extras: Array<ExtraRow>;
+    lastReconciledAt?: string;
     missing: Array<MissingRow>;
     system: 'BREVO' | 'GOOGLE_CALENDAR';
 };
@@ -3497,6 +3498,51 @@ export type LinkUserResponses = {
 };
 
 export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
+
+export type ReconcileData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query: {
+        system: 'BREVO' | 'GOOGLE_CALENDAR';
+    };
+    url: '/management/cohort-subjects/{id}/drift/reconcile';
+};
+
+export type ReconcileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReconcileError = ReconcileErrors[keyof ReconcileErrors];
+
+export type ReconcileResponses = {
+    /**
+     * Accepted
+     */
+    202: EnqueueResponse;
+};
+
+export type ReconcileResponse = ReconcileResponses[keyof ReconcileResponses];
 
 export type RemoveExternalData = {
     body: RemoveExternalRequest;

@@ -4,6 +4,7 @@ package net.blueshell.api.platform.integration.cohort.application
 // Kept in the application package so they travel with the use-case layer.
 
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import java.time.Instant
 
 /** Classifies one external member that is not in the desired local set. */
 sealed interface ExtraRow {
@@ -25,19 +26,21 @@ sealed interface ExtraRow {
     ) : ExtraRow
 }
 
-/** A locally-desired member that is absent from the external target. */
+/** A locally-desired member that is absent from the external shadow table. */
 data class MissingRow(val userId: Long, val hasExternalMapping: Boolean)
 
-/** The full drift picture for one (subject, system) pair. */
+/** The full drift picture for one (subject, system) pair, backed by the shadow table. */
 data class DriftReport(
     val cohortId: Long,
     val system: TargetSystem,
     val externalCohortId: String?,
     val extras: List<ExtraRow>,
     val missing: List<MissingRow>,
+    /** Timestamp of the most recent reconcile run; null if never reconciled. */
+    val lastReconciledAt: Instant?,
 ) {
     companion object {
         fun notMaterialised(cohortId: Long, system: TargetSystem) =
-            DriftReport(cohortId, system, null, emptyList(), emptyList())
+            DriftReport(cohortId, system, null, emptyList(), emptyList(), null)
     }
 }

@@ -7,6 +7,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
@@ -26,10 +27,15 @@ import org.springframework.transaction.annotation.Transactional
  * 2. Fetches every enabled rule whose left-hand side matches a held
  *    fact and builds the desired cohort set.
  * 3. Diffs against the user's current `cohort_member` rows.
- * 4. For each cohort to add: inserts a desired `CohortMember` row.
- * 5. For each cohort to remove: soft-deletes the desired row.
- * 6. Enqueues one `ReconcileList` job per touched cohort so observed
- *    external state converges through the ledger.
+ * 4. For each cohort to add: inserts a desired `CohortMember` row and
+ *    enqueues a per-member `SyncCohortMembership(ADD)`.
+ * 5. For each cohort to remove: soft-deletes the desired row and
+ *    enqueues a per-member `SyncCohortMembership(REMOVE)`.
+ *
+ * The per-member sync is the primary path to a healthy ledger: a
+ * successful ADD stamps `observed_at` on the desired row. List reconcile
+ * (`ReconcileList`) is a separate periodic/manual verifier, not enqueued
+ * here.
  *
  * All of the above runs in a single transaction. The job dispatch
  * uses the `afterCommit` hook in `JobDispatcher.enqueue`, so a
@@ -73,14 +79,18 @@ class CohortRuleEvaluator(
             return evaluation
         }
 
-        evaluation.toAdd.forEach { cohortId -> add(userId, cohortId) }
+        evaluation.toAdd.forEach { cohortId ->
+            add(userId, cohortId)
+            jobs.enqueue(
+                CohortJobs.SyncCohortMembership,
+                CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.ADD),
+            )
+        }
         evaluation.toRemove.forEach { cohortId ->
             removeExistingMembership(currentMemberships, cohortId)
-        }
-        (evaluation.toAdd + evaluation.toRemove).forEach { cohortId ->
             jobs.enqueue(
-                CohortJobs.ReconcileList,
-                CohortJobs.ReconcileListPayload(cohortId),
+                CohortJobs.SyncCohortMembership,
+                CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.REMOVE),
             )
         }
 

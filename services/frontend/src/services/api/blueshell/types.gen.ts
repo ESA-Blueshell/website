@@ -388,6 +388,12 @@ export type CreateSponsorRequest = {
     name: string;
 };
 
+export type CreateTargetRequest = {
+    folderHint?: string;
+    label: string;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+};
+
 export type CreateTelemetryRequest = {
     platform: PlatformType;
     url: string;
@@ -664,6 +670,11 @@ export type JwtRequest = {
     username: string;
 };
 
+export type LinkExistingTargetRequest = {
+    externalId: string;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+};
+
 export type LinkUserRequest = {
     externalUserId: string;
     system: 'BREVO' | 'GOOGLE_CALENDAR';
@@ -841,6 +852,12 @@ export type SurveyResponse = {
     responseCount: number;
     updatedAt: string;
     version: number;
+};
+
+export type SwitchTargetRequest = {
+    deletePrevious: boolean;
+    externalId: string;
+    reconcileNow: boolean;
 };
 
 export type TelemetryResponse = {
@@ -3448,6 +3465,136 @@ export type LinkUserResponses = {
 };
 
 export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
+
+export type LinkExistingTargetData = {
+    body: LinkExistingTargetRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/targets/existing';
+};
+
+export type LinkExistingTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkExistingTargetError = LinkExistingTargetErrors[keyof LinkExistingTargetErrors];
+
+export type LinkExistingTargetResponses = {
+    /**
+     * OK
+     */
+    200: CohortMapping;
+};
+
+export type LinkExistingTargetResponse = LinkExistingTargetResponses[keyof LinkExistingTargetResponses];
+
+export type CreateTargetData = {
+    body: CreateTargetRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/targets/new';
+};
+
+export type CreateTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateTargetError = CreateTargetErrors[keyof CreateTargetErrors];
+
+export type CreateTargetResponses = {
+    /**
+     * OK
+     */
+    200: CohortMapping;
+};
+
+export type CreateTargetResponse = CreateTargetResponses[keyof CreateTargetResponses];
+
+export type SwitchTargetData = {
+    body: SwitchTargetRequest;
+    path: {
+        id: number;
+        cohortId: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/targets/{cohortId}';
+};
+
+export type SwitchTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SwitchTargetError = SwitchTargetErrors[keyof SwitchTargetErrors];
+
+export type SwitchTargetResponses = {
+    /**
+     * OK
+     */
+    200: CohortMapping;
+};
+
+export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
 
 export type FindCohortsData = {
     body?: never;

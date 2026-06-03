@@ -109,7 +109,7 @@ class CohortSubjectController(
         @PathVariable id: Long,
         @RequestBody body: LinkUserRequest,
     ): LinkedUserResponse {
-        val mapping = remediation.linkUser(body.userId, body.system, body.externalUserId)
+        val mapping = remediation.linkUser(id, body.userId, body.system, body.externalUserId)
         return LinkedUserResponse(
             userId = mapping.aggregateId,
             system = TargetSystem.valueOf(mapping.system),

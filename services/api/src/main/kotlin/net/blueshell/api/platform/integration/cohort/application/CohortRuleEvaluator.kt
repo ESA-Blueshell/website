@@ -7,7 +7,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
-import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
@@ -27,10 +26,10 @@ import org.springframework.transaction.annotation.Transactional
  * 2. Fetches every enabled rule whose left-hand side matches a held
  *    fact and builds the desired cohort set.
  * 3. Diffs against the user's current `cohort_member` rows.
- * 4. For each cohort to add: inserts a `CohortMember` row and
- *    enqueues `SyncCohortMembership(userId, cohortId, ADD)`.
- * 5. For each cohort to remove: soft-deletes the `CohortMember` row
- *    and enqueues `SyncCohortMembership(userId, cohortId, REMOVE)`.
+ * 4. For each cohort to add: inserts a desired `CohortMember` row.
+ * 5. For each cohort to remove: soft-deletes the desired row.
+ * 6. Enqueues one `ReconcileList` job per touched cohort so observed
+ *    external state converges through the ledger.
  *
  * All of the above runs in a single transaction. The job dispatch
  * uses the `afterCommit` hook in `JobDispatcher.enqueue`, so a
@@ -76,7 +75,13 @@ class CohortRuleEvaluator(
 
         evaluation.toAdd.forEach { cohortId -> add(userId, cohortId) }
         evaluation.toRemove.forEach { cohortId ->
-            removeExistingMembership(currentMemberships, cohortId, userId)
+            removeExistingMembership(currentMemberships, cohortId)
+        }
+        (evaluation.toAdd + evaluation.toRemove).forEach { cohortId ->
+            jobs.enqueue(
+                CohortJobs.ReconcileList,
+                CohortJobs.ReconcileListPayload(cohortId),
+            )
         }
 
         log.info(
@@ -98,23 +103,14 @@ class CohortRuleEvaluator(
             "Cohort $cohortId has no subject_id; V72 backfill should have populated it. Refusing to insert orphan member.",
         )
         memberships.save(CohortMember(cohort = cohort, userId = userId, subject = subject))
-        jobs.enqueue(
-            CohortJobs.SyncCohortMembership,
-            CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.ADD),
-        )
     }
 
     private fun removeExistingMembership(
         currentMemberships: List<CohortMember>,
         cohortId: Long,
-        userId: Long,
     ) {
         val existing = currentMemberships.first { it.cohort.id == cohortId }
         memberships.delete(existing) // soft-delete via @SQLDelete on CohortMember
-        jobs.enqueue(
-            CohortJobs.SyncCohortMembership,
-            CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.REMOVE),
-        )
     }
 
     companion object {

@@ -40,14 +40,17 @@ class CohortDriftService(
         val allRows = memberRepo.findAllByCohortId(cohort.id!!)
 
         // Missing: desired rows not yet confirmed present externally.
-        val missing = allRows
-            .filter { it.userId != null && it.observedAt == null }
-            .map { row ->
-                MissingRow(
-                    userId = row.userId!!,
-                    hasExternalMapping = externalIds.find(USER_AGGREGATE, row.userId!!, system.name) != null,
-                )
-            }
+        val missingRows = allRows.filter { it.userId != null && it.observedAt == null }
+        val missingUserIds = missingRows.mapNotNull { it.userId }.toSet()
+        val missingMappedUserIds = externalIds.findBatch(USER_AGGREGATE, missingUserIds, system.name)
+            .map { it.aggregateId }
+            .toSet()
+        val missing = missingRows.map { row ->
+            MissingRow(
+                userId = row.userId!!,
+                hasExternalMapping = row.userId in missingMappedUserIds,
+            )
+        }
 
         // Extras: stranger rows present externally but not desired locally.
         val strangerRows = allRows.filter { it.userId == null && it.observedAt != null }
@@ -57,10 +60,13 @@ class CohortDriftService(
 
         val knownUserIds = ownerMappings.values.map { it.aggregateId }.distinct()
         val userById = if (knownUserIds.isNotEmpty()) {
-            users.findAllByIds(knownUserIds).associateBy { it.id }
+            users.findAllByIds(knownUserIds).associateBy { requireNotNull(it.id) }
         } else {
             emptyMap()
         }
+
+        val missingActiveUserIds = knownUserIds.toSet() - userById.keys
+        val softDeletedUserIds = users.findSoftDeletedIds(missingActiveUserIds)
 
         val extras = strangerRows.map { row ->
             val extId = row.externalUserId ?: return@map ExtraRow.UnknownExternal(
@@ -70,7 +76,7 @@ class CohortDriftService(
             val owner = ownerMappings[extId]
             if (owner != null) {
                 val user = userById[owner.aggregateId]
-                val softDeleted = user == null && users.isSoftDeleted(owner.aggregateId)
+                val softDeleted = owner.aggregateId in softDeletedUserIds
                 ExtraRow.KnownLocalUser(
                     externalUserId = extId,
                     label = row.label,

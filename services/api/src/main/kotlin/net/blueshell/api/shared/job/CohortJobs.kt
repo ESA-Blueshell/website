@@ -48,8 +48,8 @@ object CohortJobs {
 
     /**
      * Re-evaluates one user's cohort membership against the current
-     * rules. Local writes happen here; the per-target push fans out
-     * through [SyncCohortMembership] jobs.
+     * rules. Local desired-row writes happen here; touched cohorts
+     * converge through [ReconcileList] jobs.
      */
     object EvaluateUserCohorts : JobDefinition<EvaluateUserCohortsPayload> {
         override val type: String = "cohort.evaluate-user"
@@ -80,14 +80,15 @@ object CohortJobs {
 
     /**
      * Fetches the full external member list for one cohort mapping,
-     * updates the shadow table, and enqueues ADD/REMOVE jobs for each
-     * discrepancy. One network call per run; all downstream jobs are
-     * narrow single-operation units.
+     * updates the membership ledger, and enqueues ADD/contact jobs for
+     * missing desired members. One network call per run; extras are
+     * recorded for admin remediation rather than removed automatically.
      */
     object ReconcileList : JobDefinition<ReconcileListPayload> {
         override val type: String = "cohort.reconcile-list"
         override val payloadType: Class<ReconcileListPayload> =
             ReconcileListPayload::class.java
+        override fun dedupKey(payload: ReconcileListPayload): String = "cohort=${payload.cohortId}"
     }
 
     data class SyncCohortMembershipPayload(

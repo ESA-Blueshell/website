@@ -26,10 +26,10 @@ sealed interface ExtraRow {
     ) : ExtraRow
 }
 
-/** A locally-desired member that is absent from the external shadow table. */
+/** A locally-desired member that is absent from the observed external ledger. */
 data class MissingRow(val userId: Long, val hasExternalMapping: Boolean)
 
-/** The full drift picture for one (subject, system) pair, backed by the shadow table. */
+/** The full drift picture for one (subject, system) pair, backed by the membership ledger. */
 data class DriftReport(
     val cohortId: Long,
     val system: TargetSystem,

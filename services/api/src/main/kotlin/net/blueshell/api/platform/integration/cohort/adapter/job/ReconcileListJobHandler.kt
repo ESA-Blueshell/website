@@ -9,8 +9,8 @@ import tools.jackson.databind.ObjectMapper
 /**
  * Driving adapter: invokes [CohortRemediation.reconcileList].
  * Fetches the full external member list for one cohort mapping,
- * updates the shadow table, and fans out ADD/REMOVE jobs for
- * each discrepancy. One external API call per job execution.
+ * updates the membership ledger, and fans out follow-up jobs for
+ * missing desired members. One external API call per job execution.
  */
 @Component
 class ReconcileListJobHandler(

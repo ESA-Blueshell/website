@@ -14,14 +14,20 @@ import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDateTime
 
 /**
- * Unified membership ledger. A row is one of three kinds:
+ * Unified membership ledger. Two nullable timestamps name two distinct
+ * facts, so a row's state is unambiguous:
  *
- * - **Desired** (`userId != null`, `observedAt == null`): the local
- *   rule engine has decided this user belongs here but the reconcile
- *   job has not yet confirmed their presence externally.
- * - **Healthy** (`userId != null`, `observedAt != null`): desired and
- *   confirmed present on the last reconcile run.
- * - **Stranger** (`userId == null`, `observedAt != null`): present
+ * - `syncedAt`   — we successfully pushed this member to the external
+ *   system (owned by the per-member sync path).
+ * - `verifiedAt` — a reconcile confirmed the member present in a live
+ *   remote snapshot (owned by the verifier).
+ *
+ * Row kinds:
+ * - **Desired, not synced** (`userId != null`, `syncedAt == null`): the
+ *   rule engine wants this user here but the push has not succeeded yet.
+ * - **Synced** (`userId != null`, `syncedAt != null`): pushed; healthy
+ *   once `verifiedAt` is also set.
+ * - **Stranger** (`userId == null`, `verifiedAt != null`): present
  *   externally but not desired locally (extra row).
  *
  * `userId` is a plain Long (not `@ManyToOne User`) so cohort code
@@ -45,7 +51,8 @@ import java.time.LocalDateTime
         Index(name = "idx_cohort_member_user", columnList = "user_id"),
         Index(name = "idx_cohort_member_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_cohort_member_external", columnList = "cohort_id,external_user_id"),
-        Index(name = "idx_cohort_member_observed", columnList = "cohort_id,observed_at"),
+        Index(name = "idx_cohort_member_synced", columnList = "cohort_id,synced_at"),
+        Index(name = "idx_cohort_member_verified", columnList = "cohort_id,verified_at"),
     ],
 )
 @SQLDelete(sql = "UPDATE cohort_member SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
@@ -65,8 +72,11 @@ class CohortMember(
     @Column(name = "external_user_id", nullable = true)
     var externalUserId: String? = null,
 
-    @Column(name = "observed_at", nullable = true)
-    var observedAt: LocalDateTime? = null,
+    @Column(name = "synced_at", nullable = true)
+    var syncedAt: LocalDateTime? = null,
+
+    @Column(name = "verified_at", nullable = true)
+    var verifiedAt: LocalDateTime? = null,
 
     @Column(name = "label", nullable = true)
     var label: String? = null,

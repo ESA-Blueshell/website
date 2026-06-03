@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.application
 
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
+import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortMembershipSync
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
@@ -36,7 +36,7 @@ import java.time.LocalDateTime
 @Service
 class CohortMembershipSyncService(
     private val cohorts: CohortRepository,
-    private val members: CohortMemberRepository,
+    private val ledger: CohortLedger,
     private val registry: CohortPortRegistry,
     private val externalIds: ExternalIdMappingService,
     private val jobs: TrackedJobDispatcher,
@@ -71,13 +71,8 @@ class CohortMembershipSyncService(
 
         // Stamp the ledger so the desired row reads as synced. This is the
         // primary path to healthy; reconcile only verifies afterwards.
-        val row = members.findByCohortIdAndUserId(cohortId, userId)
-        if (row == null) {
+        if (!ledger.markPushed(cohortId, userId, externalUserId, LocalDateTime.now())) {
             log.warn("Pushed user {} to {} cohort {} but its desired row is gone — not stamping", userId, system, cohortId)
-        } else {
-            row.externalUserId = externalUserId
-            row.observedAt = LocalDateTime.now()
-            members.save(row)
         }
         log.debug("Added user {} to {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
     }

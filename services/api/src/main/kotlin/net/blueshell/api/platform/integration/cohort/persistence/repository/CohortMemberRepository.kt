@@ -17,7 +17,7 @@ interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
 
     fun findByCohortIdAndUserId(cohortId: Long, userId: Long): CohortMember?
 
-    // ── Stranger rows (userId == null, observedAt != null) ────────────────────
+    // ── Stranger rows (userId == null, verifiedAt != null) ────────────────────
 
     fun findAllByCohortIdAndUserIdIsNull(cohortId: Long): List<CohortMember>
 

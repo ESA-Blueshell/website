@@ -162,7 +162,7 @@ class CohortRepositoryIT : UserTestSupport() {
                 userId = null,
                 subject = subject,
                 externalUserId = "ext-stranger",
-                observedAt = LocalDateTime.now(),
+                verifiedAt = LocalDateTime.now(),
             )
         )
 
@@ -194,10 +194,10 @@ class CohortRepositoryIT : UserTestSupport() {
         val now = LocalDateTime.now()
 
         cohortMembers.saveAndFlush(
-            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-a", observedAt = now)
+            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-a", verifiedAt = now)
         )
         cohortMembers.saveAndFlush(
-            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-b", observedAt = now)
+            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-b", verifiedAt = now)
         )
 
         assertThat(cohortMembers.findAllByCohortIdAndUserIdIsNull(cohort.id!!)).hasSize(2)
@@ -209,7 +209,7 @@ class CohortRepositoryIT : UserTestSupport() {
         val cohort = newCohort(subject)
         val now = LocalDateTime.now()
         cohortMembers.saveAndFlush(
-            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-dup", observedAt = now)
+            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-dup", verifiedAt = now)
         )
 
         assertThatThrownBy {
@@ -219,7 +219,7 @@ class CohortRepositoryIT : UserTestSupport() {
                     userId = null,
                     subject = subject,
                     externalUserId = "ext-dup",
-                    observedAt = now,
+                    verifiedAt = now,
                 )
             )
         }.isInstanceOf(DataIntegrityViolationException::class.java)

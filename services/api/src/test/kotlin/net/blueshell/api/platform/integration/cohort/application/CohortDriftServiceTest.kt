@@ -39,10 +39,10 @@ class CohortDriftServiceTest {
         every { members.findAllByCohortId(99L) } returns listOf(
             member(cohort, subject, userId = 1L),
             member(cohort, subject, userId = 2L),
-            member(cohort, subject, userId = 9L, observedAt = lastObserved),
-            member(cohort, subject, userId = null, externalUserId = "ext-active", observedAt = lastObserved),
-            member(cohort, subject, userId = null, externalUserId = "ext-soft", observedAt = lastObserved.minusDays(1)),
-            member(cohort, subject, userId = null, externalUserId = "ext-unknown", observedAt = lastObserved.minusDays(2)),
+            member(cohort, subject, userId = 9L, syncedAt = lastObserved, verifiedAt = lastObserved),
+            member(cohort, subject, userId = null, externalUserId = "ext-active", verifiedAt = lastObserved),
+            member(cohort, subject, userId = null, externalUserId = "ext-soft", verifiedAt = lastObserved.minusDays(1)),
+            member(cohort, subject, userId = null, externalUserId = "ext-unknown", verifiedAt = lastObserved.minusDays(2)),
         )
         every {
             externalIds.findBatch("USER", setOf(1L, 2L), TargetSystem.BREVO.name)
@@ -125,14 +125,16 @@ class CohortDriftServiceTest {
         subject: CohortSubject,
         userId: Long?,
         externalUserId: String? = null,
-        observedAt: LocalDateTime? = null,
+        syncedAt: LocalDateTime? = null,
+        verifiedAt: LocalDateTime? = null,
     ): CohortMember =
         CohortMember(
             cohort = cohort,
             userId = userId,
             subject = subject,
             externalUserId = externalUserId,
-            observedAt = observedAt,
+            syncedAt = syncedAt,
+            verifiedAt = verifiedAt,
         )
 
     private fun user(id: Long): User =

@@ -3,10 +3,9 @@ package net.blueshell.api.platform.integration.cohort.application
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
-import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
@@ -24,7 +23,7 @@ import java.util.Optional
 class CohortMembershipSyncServiceTest {
 
     private val cohorts: CohortRepository = mockk()
-    private val members: CohortMemberRepository = mockk(relaxed = true)
+    private val ledger: CohortLedger = mockk(relaxed = true)
     private val brevoPort: CohortPort = mockk(relaxed = true) {
         every { system } returns TargetSystem.BREVO
     }
@@ -32,17 +31,14 @@ class CohortMembershipSyncServiceTest {
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
     private val service = CohortMembershipSyncService(
         cohorts = cohorts,
-        members = members,
+        ledger = ledger,
         registry = CohortPortRegistry(listOf(brevoPort)),
         externalIds = externalIds,
         jobs = jobs,
     )
 
     init {
-        // Default: no desired row to stamp (overridden by the stamping test).
-        // save echoes its argument so the relaxed return type does not mis-cast.
-        every { members.findByCohortIdAndUserId(any(), any()) } returns null
-        every { members.save(any<CohortMember>()) } answers { firstArg() }
+        every { ledger.markPushed(any(), any(), any(), any()) } returns true
     }
 
     @Test
@@ -71,19 +67,15 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `ADD stamps externalUserId and observedAt on the desired row after a successful push`() {
+    fun `ADD marks the desired row pushed after a successful external add`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { externalIds.find("COHORT", 10L, "BREVO") } returns mapping("COHORT", 10L, "BREVO", "42")
-        val row = mockk<CohortMember>(relaxed = true)
-        every { members.findByCohortIdAndUserId(10L, 1L) } returns row
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
 
         verify { brevoPort.addMember("777", "42") }
-        verify { row.externalUserId = "777" }
-        verify { row.observedAt = any() }
-        verify { members.save(row) }
+        verify { ledger.markPushed(10L, 1L, "777", any()) }
     }
 
     @Test

@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional
  *    enqueues a per-member `SyncCohortMembership(REMOVE)`.
  *
  * The per-member sync is the primary path to a healthy ledger: a
- * successful ADD stamps `observed_at` on the desired row. List reconcile
+ * successful ADD stamps `synced_at` on the desired row. List reconcile
  * (`ReconcileList`) is a separate periodic/manual verifier, not enqueued
  * here.
  *

@@ -8,6 +8,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
+import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
@@ -42,6 +43,7 @@ class CohortRemediationServiceTest {
         cohortRepo = cohorts,
         subjectRepo = subjects,
         memberRepo = members,
+        ledger = CohortLedger(members),
         externalIds = externalIds,
         registry = CohortPortRegistry(listOf(port)),
         jobs = jobs,
@@ -58,7 +60,8 @@ class CohortRemediationServiceTest {
             subject,
             userId = 2L,
             externalUserId = "ext-2",
-            observedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
+            syncedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
+            verifiedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
         )
         val missingWithoutExternalId = member(cohort, subject, userId = 3L)
         val matchingStranger = member(
@@ -66,7 +69,7 @@ class CohortRemediationServiceTest {
             subject,
             userId = null,
             externalUserId = "ext-1",
-            observedAt = LocalDateTime.parse("2026-01-02T12:00:00"),
+            verifiedAt = LocalDateTime.parse("2026-01-02T12:00:00"),
             label = "old stranger",
         )
         val staleStranger = member(
@@ -74,7 +77,7 @@ class CohortRemediationServiceTest {
             subject,
             userId = null,
             externalUserId = "stale",
-            observedAt = LocalDateTime.parse("2026-01-03T12:00:00"),
+            verifiedAt = LocalDateTime.parse("2026-01-03T12:00:00"),
         )
         port.remote = listOf(
             MemberRef("ext-1", "Alice Remote"),
@@ -107,9 +110,11 @@ class CohortRemediationServiceTest {
         assertThat(port.lastExternalCohortId).isEqualTo("list-99")
         assertThat(port.sawTransactionDuringList).isFalse()
         assertThat(confirmed.externalUserId).isEqualTo("ext-1")
-        assertThat(confirmed.observedAt).isNotNull()
+        assertThat(confirmed.syncedAt).isNotNull()
+        assertThat(confirmed.verifiedAt).isNotNull()
         assertThat(confirmed.label).isEqualTo("Alice Remote")
-        assertThat(missingWithExternalId.observedAt).isNull()
+        assertThat(missingWithExternalId.syncedAt).isNull()
+        assertThat(missingWithExternalId.verifiedAt).isNull()
         verify { members.delete(matchingStranger) }
         verify { members.delete(staleStranger) }
         verify {
@@ -127,7 +132,7 @@ class CohortRemediationServiceTest {
                 match {
                     it.userId == null &&
                         it.externalUserId == "ext-extra" &&
-                        it.observedAt != null &&
+                        it.verifiedAt != null &&
                         it.label == "Extra Remote"
                 },
             )
@@ -143,7 +148,7 @@ class CohortRemediationServiceTest {
             subject,
             userId = null,
             externalUserId = "ext-9",
-            observedAt = LocalDateTime.parse("2026-03-01T08:00:00"),
+            verifiedAt = LocalDateTime.parse("2026-03-01T08:00:00"),
         )
         every { cohorts.findById(99L) } returns Optional.of(cohort)
         every { externalIds.find("COHORT", 99L, TargetSystem.BREVO.name) } returns
@@ -166,7 +171,7 @@ class CohortRemediationServiceTest {
             subject,
             userId = null,
             externalUserId = "ext-7",
-            observedAt = LocalDateTime.parse("2026-02-01T09:00:00"),
+            verifiedAt = LocalDateTime.parse("2026-02-01T09:00:00"),
             label = "Linked Remote",
         )
         val desired = member(cohort, subject, userId = 7L)
@@ -182,7 +187,8 @@ class CohortRemediationServiceTest {
 
         assertThat(result).isSameAs(mapping)
         assertThat(desired.externalUserId).isEqualTo("ext-7")
-        assertThat(desired.observedAt).isEqualTo(stranger.observedAt)
+        assertThat(desired.verifiedAt).isEqualTo(stranger.verifiedAt)
+        assertThat(desired.syncedAt).isEqualTo(stranger.verifiedAt)
         assertThat(desired.label).isEqualTo("Linked Remote")
         verify { members.save(desired) }
         verify { members.delete(stranger) }
@@ -204,7 +210,8 @@ class CohortRemediationServiceTest {
         subject: CohortSubject,
         userId: Long?,
         externalUserId: String? = null,
-        observedAt: LocalDateTime? = null,
+        syncedAt: LocalDateTime? = null,
+        verifiedAt: LocalDateTime? = null,
         label: String? = null,
     ): CohortMember =
         CohortMember(
@@ -212,7 +219,8 @@ class CohortRemediationServiceTest {
             userId = userId,
             subject = subject,
             externalUserId = externalUserId,
-            observedAt = observedAt,
+            syncedAt = syncedAt,
+            verifiedAt = verifiedAt,
             label = label,
         )
 

@@ -91,6 +91,17 @@ object CohortJobs {
         override fun dedupKey(payload: ReconcileListPayload): String = "cohort=${payload.cohortId}"
     }
 
+    /**
+     * Deletes one external target (Brevo list / Discord role / Google
+     * group). Enqueued by `switchTarget` when "delete previous" is set;
+     * the adapter treats provider "already gone" as idempotent success.
+     */
+    object DeleteExternalTarget : JobDefinition<DeleteExternalTargetPayload> {
+        override val type: String = "cohort.delete-external-target"
+        override val payloadType: Class<DeleteExternalTargetPayload> =
+            DeleteExternalTargetPayload::class.java
+    }
+
     data class SyncCohortMembershipPayload(
         val userId: Long,
         val cohortId: Long,
@@ -103,4 +114,6 @@ object CohortJobs {
     data class ResyncCohortPayload(val cohortId: Long)
     data class RemoveExternalMemberPayload(val cohortId: Long, val externalUserId: String)
     data class ReconcileListPayload(val cohortId: Long)
+    /** `system` holds a `TargetSystem.name()`; shared/job cannot depend on the sync.port package. */
+    data class DeleteExternalTargetPayload(val system: String, val externalTargetId: String)
 }

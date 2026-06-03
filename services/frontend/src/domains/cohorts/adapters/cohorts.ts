@@ -4,11 +4,18 @@
  * from this module or from ../types.
  */
 import {
+  createTarget,
   enqueue,
   getDrift,
+  linkExistingTarget,
   linkUser,
+  switchTarget,
 } from "@/services/api"
-import type { DriftReport as ApiDriftReport, ExtraRow as ApiExtraRow } from "@/services/api"
+import type {
+  CohortMapping as ApiCohortMapping,
+  DriftReport as ApiDriftReport,
+  ExtraRow as ApiExtraRow,
+} from "@/services/api"
 
 export type TargetSystem = ApiDriftReport["system"]
 
@@ -115,4 +122,74 @@ export async function linkUserToExternal(
     }
     throw err
   }
+}
+
+export type TargetMapping = {
+  cohortId: number
+  system: string
+  externalId: string | null
+  label: string
+}
+
+export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
+
+function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
+  return {
+    cohortId: raw.cohortId,
+    system: raw.system,
+    externalId: raw.externalId ?? null,
+    label: raw.label,
+  }
+}
+
+function asConflict(err: unknown): AddTargetResult | null {
+  const status = (err as { response?: { status?: number } })?.response?.status
+  return status === 409 ? { type: "conflict" } : null
+}
+
+/** Maps the subject's per-system cohort to an external target that already exists. */
+export async function linkExistingTargetForSubject(
+  subjectId: number,
+  system: TargetSystem,
+  externalId: string,
+): Promise<AddTargetResult> {
+  try {
+    const res = await linkExistingTarget({ path: { id: subjectId }, body: { system, externalId } })
+    return { type: "ok", mapping: toTargetMapping(res.data!) }
+  } catch (err: unknown) {
+    return asConflict(err) ?? Promise.reject(err)
+  }
+}
+
+/** Creates a fresh external target and maps the subject's per-system cohort to it. */
+export async function createTargetForSubject(
+  subjectId: number,
+  system: TargetSystem,
+  label: string,
+  folderHint: string | null,
+): Promise<AddTargetResult> {
+  try {
+    const res = await createTarget({
+      path: { id: subjectId },
+      body: { system, label, folderHint: folderHint ?? undefined },
+    })
+    return { type: "ok", mapping: toTargetMapping(res.data!) }
+  } catch (err: unknown) {
+    return asConflict(err) ?? Promise.reject(err)
+  }
+}
+
+/** Repoints an existing cohort mapping at a different external target. */
+export async function switchCohortTarget(
+  subjectId: number,
+  cohortId: number,
+  externalId: string,
+  deletePrevious: boolean,
+  reconcileNow: boolean,
+): Promise<TargetMapping> {
+  const res = await switchTarget({
+    path: { id: subjectId, cohortId },
+    body: { externalId, deletePrevious, reconcileNow },
+  })
+  return toTargetMapping(res.data!)
 }

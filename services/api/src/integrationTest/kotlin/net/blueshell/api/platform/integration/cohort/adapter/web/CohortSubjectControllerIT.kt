@@ -6,17 +6,20 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -83,6 +86,95 @@ class CohortSubjectControllerIT : UserTestSupport() {
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.existingUserId").value(owner.id!!.toInt()))
             .andExpect(jsonPath("$.system").value(TargetSystem.BREVO.name))
+    }
+
+    @Test
+    fun `non-admin is forbidden from creating a target`() {
+        val member = createUserWithRole(Role.MEMBER)
+        val subject = newSubject()
+
+        mvc.perform(
+            post("/management/cohort-subjects/{id}/targets/new", subject.id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"system":"BREVO","label":"Members"}""")
+                .with(bearer(member)),
+        ).andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `admin links the subject to an existing external target`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+
+        mvc.perform(
+            post("/management/cohort-subjects/{id}/targets/existing", subject.id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"system":"BREVO","externalId":"list-123"}""")
+                .with(bearer(admin)),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.externalId").value("list-123"))
+
+        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
+        assertThat(externalIds.findByAggregateTypeAndAggregateIdAndSystem(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name)?.externalId)
+            .isEqualTo("list-123")
+    }
+
+    @Test
+    fun `admin creates a fresh external target and maps it`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+
+        mvc.perform(
+            post("/management/cohort-subjects/{id}/targets/new", subject.id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"system":"BREVO","label":"Newsletter","folderHint":"Lists"}""")
+                .with(bearer(admin)),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.label").value("Newsletter"))
+            .andExpect(jsonPath("$.externalId").isNotEmpty)
+
+        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
+        assertThat(cohort.folder).isEqualTo("Lists")
+        assertThat(externalIds.findByAggregateTypeAndAggregateIdAndSystem(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name)?.externalId)
+            .isNotBlank()
+    }
+
+    @Test
+    fun `creating a second target for a system the subject already maps returns 409`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        newCohort(subject)
+
+        mvc.perform(
+            post("/management/cohort-subjects/{id}/targets/new", subject.id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"system":"BREVO","label":"Members"}""")
+                .with(bearer(admin)),
+        ).andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `admin switches a cohort to a new external target`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        val cohort = newCohort(subject)
+        externalIds.saveAndFlush(
+            ExternalIdMapping(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name, "old-list"),
+        )
+
+        mvc.perform(
+            put("/management/cohort-subjects/{id}/targets/{cohortId}", subject.id, cohort.id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
+                .with(bearer(admin)),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.externalId").value("new-list"))
+
+        assertThat(externalIds.findByAggregateTypeAndAggregateIdAndSystem(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name)?.externalId)
+            .isEqualTo("new-list")
     }
 
     private fun newSubject(): CohortSubject =

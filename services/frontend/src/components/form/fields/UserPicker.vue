@@ -16,26 +16,29 @@ const loaded = ref(false)
 const search = ref("")
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+async function loadUsers() {
+  if (loaded.value || loading.value) return
+  loading.value = true
+  try {
+    const resp = await findUsers({ query: { size: 500 } })
+    const content = resp.data?.content ?? []
+    items.value = content.slice().sort((a, b) => {
+      const left = a.fullName ?? a.email ?? ""
+      const right = b.fullName ?? b.email ?? ""
+      return left.localeCompare(right)
+    })
+    loaded.value = true
+  } catch (error) {
+    $handleNetworkError(error)
+  } finally {
+    loading.value = false
+  }
+}
+
 watch(search, (term) => {
   if (loaded.value || !term || term.length < 1) return
   if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(async () => {
-    loading.value = true
-    try {
-      const resp = await findUsers({ query: { size: 500 } })
-      const content = resp.data?.content ?? []
-      items.value = content.slice().sort((a, b) => {
-        const left = a.fullName ?? a.email ?? ""
-        const right = b.fullName ?? b.email ?? ""
-        return left.localeCompare(right)
-      })
-      loaded.value = true
-    } catch (error) {
-      $handleNetworkError(error)
-    } finally {
-      loading.value = false
-    }
-  }, 300)
+  debounceTimer = setTimeout(() => void loadUsers(), 300)
 })
 
 const itemTitle = (u: UserDetailResponse): string => {
@@ -58,6 +61,7 @@ const itemTitle = (u: UserDetailResponse): string => {
     clearable
     item-value="id"
     no-data-text="Type to search users"
+    @update:focused="(focused: boolean) => { if (focused) void loadUsers() }"
     @update:model-value="$emit('update:modelValue', $event)"
   />
 </template>

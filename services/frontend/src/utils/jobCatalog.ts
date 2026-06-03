@@ -100,14 +100,6 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "cohort-level list reconciliation for touched external mappings. Does not call " +
       "external systems directly.",
   },
-  "cohort.resync": {
-    title: "Re-push one cohort to its external system",
-    legacy: true,
-    description:
-      "Legacy job retained for compatibility. It takes every active desired cohort " +
-      "member row and enqueues an ADD against that cohort's external system without " +
-      "observing remote state first. Prefer Reconcile list.",
-  },
   "cohort.remove-external-member": {
     title: "Remove from external list",
     description:

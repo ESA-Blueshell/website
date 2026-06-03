@@ -77,7 +77,7 @@ class CohortRemediationService(
      * the ledger against it. One network call per run; runs the fetch
      * outside any DB transaction.
      */
-    override fun reconcileList(cohortId: Long) {
+    override fun verifyCohort(cohortId: Long) {
         val plan = readOnlyTransaction.execute { loadPlan(cohortId) }!!
         val remote = registry.require(plan.system).listMembers(plan.externalCohortId)
         writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }

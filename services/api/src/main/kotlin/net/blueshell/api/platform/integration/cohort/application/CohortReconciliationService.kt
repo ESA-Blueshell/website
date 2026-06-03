@@ -2,9 +2,7 @@ package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortReconciliation
-import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
@@ -21,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional
 class CohortReconciliationService(
     private val periods: ContributionPeriodService,
     private val users: UserService,
-    private val cohortMembers: CohortMemberRepository,
     private val contributionPeriodCohorts: ContributionPeriodCohortResolver,
     private val evaluator: CohortRuleEvaluator,
     private val jobs: TrackedJobDispatcher,
@@ -59,26 +56,6 @@ class CohortReconciliationService(
             }.onFailure { e ->
                 log.error("Failed to enqueue evaluation for user {}: {}", userId, e.message)
             }
-        }
-    }
-
-    @Transactional
-    override fun resyncCohort(cohortId: Long) {
-        val members = cohortMembers.findAllByCohortIdAndUserIdIsNotNull(cohortId)
-        if (members.isEmpty()) {
-            log.info("Resync for cohort {} has no active desired members", cohortId)
-            return
-        }
-        log.info("Resyncing cohort {} ({} desired members) by re-enqueuing ADD jobs", cohortId, members.size)
-        members.forEach { member ->
-            jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(
-                    userId = member.userId!!,
-                    cohortId = cohortId,
-                    intent = SyncCohortMembershipIntent.ADD,
-                ),
-            )
         }
     }
 

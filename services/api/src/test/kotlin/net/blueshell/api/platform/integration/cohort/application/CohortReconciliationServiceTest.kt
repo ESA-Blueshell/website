@@ -7,9 +7,6 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
-import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test
@@ -18,12 +15,11 @@ class CohortReconciliationServiceTest {
 
     private val periods: ContributionPeriodService = mockk()
     private val users: UserService = mockk()
-    private val cohortMembers: CohortMemberRepository = mockk()
     private val resolver: ContributionPeriodCohortResolver = mockk(relaxed = true)
     private val evaluator: CohortRuleEvaluator = mockk(relaxed = true)
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
     private val service = CohortReconciliationService(
-        periods, users, cohortMembers, resolver, evaluator, jobs,
+        periods, users, resolver, evaluator, jobs,
     )
 
     @Test
@@ -76,39 +72,6 @@ class CohortReconciliationServiceTest {
         }
     }
 
-    @Test
-    fun `resyncCohort enqueues one ADD job per active member`() {
-        every { cohortMembers.findAllByCohortIdAndUserIdIsNotNull(99L) } returns listOf(
-            member(userId = 1L), member(userId = 2L),
-        )
-
-        service.resyncCohort(99L)
-
-        verify {
-            jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.ADD),
-            )
-        }
-        verify {
-            jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
-            )
-        }
-    }
-
-    @Test
-    fun `resyncCohort is a no-op when the cohort has no members`() {
-        every { cohortMembers.findAllByCohortIdAndUserIdIsNotNull(99L) } returns emptyList()
-
-        service.resyncCohort(99L)
-
-        verify(exactly = 0) {
-            jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
-        }
-    }
-
     private fun period(id: Long): ContributionPeriod {
         val p = mockk<ContributionPeriod>()
         every { p.id } returns id
@@ -119,11 +82,5 @@ class CohortReconciliationServiceTest {
         val u = mockk<User>()
         every { u.id } returns id
         return u
-    }
-
-    private fun member(userId: Long): CohortMember {
-        val m = mockk<CohortMember>()
-        every { m.userId } returns userId
-        return m
     }
 }

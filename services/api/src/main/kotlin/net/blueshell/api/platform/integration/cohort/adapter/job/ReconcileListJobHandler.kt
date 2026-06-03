@@ -7,10 +7,11 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
 /**
- * Driving adapter: invokes [CohortRemediation.reconcileList].
+ * Driving adapter: invokes [CohortRemediation.verifyCohort].
  * Fetches the full external member list for one cohort mapping,
- * updates the membership ledger, and fans out follow-up jobs for
- * missing desired members. One external API call per job execution.
+ * reconciles the ledger against it, and fans out follow-up jobs for
+ * discrepancies. One external API call per job execution. The job type
+ * stays `cohort.reconcile-list` for queue compatibility.
  */
 @Component
 class ReconcileListJobHandler(
@@ -23,6 +24,6 @@ class ReconcileListJobHandler(
     override val jobType: String = CohortJobs.ReconcileList.type
 
     override fun handlePayload(payload: CohortJobs.ReconcileListPayload) {
-        remediation.reconcileList(payload.cohortId)
+        remediation.verifyCohort(payload.cohortId)
     }
 }

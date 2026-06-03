@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.application
 
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortMembershipSync
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
@@ -14,6 +15,8 @@ import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 /**
  * Application implementation of the [CohortMembershipSync] inbound
@@ -33,11 +36,13 @@ import org.springframework.stereotype.Service
 @Service
 class CohortMembershipSyncService(
     private val cohorts: CohortRepository,
+    private val members: CohortMemberRepository,
     private val registry: CohortPortRegistry,
     private val externalIds: ExternalIdMappingService,
     private val jobs: TrackedJobDispatcher,
 ) : CohortMembershipSync {
 
+    @Transactional
     override fun sync(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent) {
         val cohort = cohorts.findById(cohortId).orElseThrow {
             NonRetryableJobException("Cohort $cohortId not found")
@@ -63,6 +68,17 @@ class CohortMembershipSyncService(
         }
         val externalCohortId = findOrCreateExternalCohortId(cohortId, cohortLabel, system, port)
         port.addMember(externalUserId, externalCohortId)
+
+        // Stamp the ledger so the desired row reads as synced. This is the
+        // primary path to healthy; reconcile only verifies afterwards.
+        val row = members.findByCohortIdAndUserId(cohortId, userId)
+        if (row == null) {
+            log.warn("Pushed user {} to {} cohort {} but its desired row is gone — not stamping", userId, system, cohortId)
+        } else {
+            row.externalUserId = externalUserId
+            row.observedAt = LocalDateTime.now()
+            members.save(row)
+        }
         log.debug("Added user {} to {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
     }
 

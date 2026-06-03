@@ -64,17 +64,17 @@ class CohortReconciliationService(
 
     @Transactional
     override fun resyncCohort(cohortId: Long) {
-        val members = cohortMembers.findAllByCohortId(cohortId)
+        val members = cohortMembers.findAllByCohortIdAndUserIdIsNotNull(cohortId)
         if (members.isEmpty()) {
-            log.info("Resync for cohort {} has no active members", cohortId)
+            log.info("Resync for cohort {} has no active desired members", cohortId)
             return
         }
-        log.info("Resyncing cohort {} ({} members) by re-enqueuing ADD jobs", cohortId, members.size)
+        log.info("Resyncing cohort {} ({} desired members) by re-enqueuing ADD jobs", cohortId, members.size)
         members.forEach { member ->
             jobs.enqueue(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(
-                    userId = member.userId,
+                    userId = member.userId!!,
                     cohortId = cohortId,
                     intent = SyncCohortMembershipIntent.ADD,
                 ),

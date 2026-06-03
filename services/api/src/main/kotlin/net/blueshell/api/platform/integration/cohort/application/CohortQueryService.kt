@@ -34,7 +34,7 @@ class CohortQueryService(
         cohorts.findAll().map { cohort ->
             CohortSummary(
                 cohort = cohort,
-                memberCount = cohortMembers.findAllByCohortId(cohort.id!!).size,
+                memberCount = cohortMembers.findAllByCohortIdAndUserIdIsNotNull(cohort.id!!).size,
                 externalId = externalIds.find(COHORT_AGGREGATE, cohort.id!!, cohort.system)?.externalId,
             )
         }
@@ -44,8 +44,8 @@ class CohortQueryService(
         val cohort = cohorts.findById(cohortId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
         }
-        val members = cohortMembers.findAllByCohortId(cohortId)
-        val memberUserIds = members.map { it.userId }.distinct()
+        val members = cohortMembers.findAllByCohortIdAndUserIdIsNotNull(cohortId)
+        val memberUserIds = members.mapNotNull { it.userId }.distinct()
         val userById = users.findAllByIds(memberUserIds).associateBy { it.id }
         // Members whose User row is gone from the active query are either
         // soft-deleted (retained for stats) or hard-deleted. Flag the
@@ -64,8 +64,8 @@ class CohortQueryService(
             members = members.map { member ->
                 CohortMemberRow(
                     member = member,
-                    user = userById[member.userId],
-                    isUserDeleted = userById[member.userId] == null && softDeletedIds.contains(member.userId),
+                    user = userById[member.userId!!],
+                    isUserDeleted = userById[member.userId!!] == null && softDeletedIds.contains(member.userId!!),
                 )
             }.sortedWith(
                 compareBy(

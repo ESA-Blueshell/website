@@ -19,15 +19,16 @@ interface CohortRemediation {
 
     /**
      * Removes one member from the external target backing [cohortId]
-     * and deletes the corresponding shadow row so the drift panel
-     * reflects the change without waiting for the next reconcile run.
-     * Called by [net.blueshell.api.platform.integration.cohort.adapter.job.RemoveExternalMemberJobHandler].
+     * and soft-deletes the corresponding stranger row from the
+     * [net.blueshell.api.platform.integration.cohort.persistence.CohortMember]
+     * ledger. Called by [net.blueshell.api.platform.integration.cohort.adapter.job.RemoveExternalMemberJobHandler].
      */
     fun removeExternalMember(cohortId: Long, externalUserId: String)
 
     /**
      * Fetches the full external member list for [cohortId], updates the
-     * shadow table, and enqueues ADD/REMOVE jobs for each discrepancy.
+     * unified [net.blueshell.api.platform.integration.cohort.persistence.CohortMember]
+     * ledger, and enqueues ADD jobs for each discrepancy.
      * Called by [net.blueshell.api.platform.integration.cohort.adapter.job.ReconcileListJobHandler].
      */
     fun reconcileList(cohortId: Long)

@@ -62,7 +62,7 @@ class CohortRuleEvaluator(
         val desired = facts.flatMap { fact ->
             rules.findAllByFactKindAndFactKeyAndEnabledTrue(fact.kind, fact.key)
         }.mapNotNull { it.cohort.id }.toSet()
-        val currentMemberships = memberships.findAllByUserId(userId)
+        val currentMemberships = memberships.findAllByUserIdAndUserIdIsNotNull(userId)
         val current = currentMemberships.mapNotNull { it.cohort.id }.toSet()
 
         val evaluation = CohortRuleEvaluation(userId, facts, desired, current)

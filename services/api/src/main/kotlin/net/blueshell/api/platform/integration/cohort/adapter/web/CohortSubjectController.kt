@@ -254,7 +254,7 @@ private fun CohortMappingRow.toResponse(): CohortMappingResponse =
 private fun CohortMemberRow.toMemberResponse(): CohortSubjectMemberResponse =
     CohortSubjectMemberResponse(
         cohortMemberId = member.id!!,
-        userId = member.userId,
+        userId = member.userId!!,
         userFullName = user?.fullName,
         userEmail = user?.email,
         isUserDeleted = isUserDeleted,

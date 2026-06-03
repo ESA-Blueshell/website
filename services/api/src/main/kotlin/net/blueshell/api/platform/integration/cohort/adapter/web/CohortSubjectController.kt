@@ -1,6 +1,9 @@
 package net.blueshell.api.platform.integration.cohort.adapter.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.platform.integration.cohort.application.CohortMappingRow
 import net.blueshell.api.platform.integration.cohort.application.CohortMemberRow
@@ -8,18 +11,19 @@ import net.blueshell.api.platform.integration.cohort.application.CohortSubjectDe
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectQueryService
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectSummary
 import net.blueshell.api.platform.integration.cohort.application.DriftReport
-import net.blueshell.api.platform.integration.cohort.command.LinkExternalUserCommand
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
-import net.blueshell.api.shared.command.CommandBus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -43,7 +47,8 @@ import java.time.Instant
 class CohortSubjectController(
     private val queries: CohortSubjectQueryService,
     private val drift: CohortDrift,
-    private val commandBus: CommandBus,
+    private val remediation: CohortRemediation,
+    private val targeting: CohortTargeting,
 ) {
     @GetMapping
     fun findCohortSubjects(): List<CohortSubjectSummaryResponse> =
@@ -63,15 +68,13 @@ class CohortSubjectController(
     @PostMapping("/{id}/drift/link-user")
     fun linkUser(
         @PathVariable id: Long,
-        @RequestBody body: LinkUserRequest,
+        @RequestBody @Valid body: LinkUserRequest,
     ): LinkedUserResponse {
-        val mapping = commandBus.dispatch(
-            LinkExternalUserCommand(
-                subjectId = id,
-                userId = body.userId,
-                system = body.system,
-                externalUserId = body.externalUserId,
-            ),
+        val mapping = remediation.linkUser(
+            subjectId = id,
+            userId = body.userId,
+            system = body.system,
+            externalUserId = body.externalUserId,
         )
         return LinkedUserResponse(
             userId = mapping.aggregateId,
@@ -79,6 +82,28 @@ class CohortSubjectController(
             externalUserId = mapping.externalId ?: body.externalUserId,
         )
     }
+
+    @PostMapping("/{id}/targets/existing")
+    fun linkExistingTarget(
+        @PathVariable id: Long,
+        @RequestBody @Valid body: LinkExistingTargetRequest,
+    ): CohortMappingResponse =
+        targeting.linkExisting(id, body.system, body.externalId).toResponse()
+
+    @PostMapping("/{id}/targets/new")
+    fun createTarget(
+        @PathVariable id: Long,
+        @RequestBody @Valid body: CreateTargetRequest,
+    ): CohortMappingResponse =
+        targeting.create(id, body.system, body.label, body.folderHint).toResponse()
+
+    @PutMapping("/{id}/targets/{cohortId}")
+    fun switchTarget(
+        @PathVariable id: Long,
+        @PathVariable cohortId: Long,
+        @RequestBody @Valid body: SwitchTargetRequest,
+    ): CohortMappingResponse =
+        targeting.switchTarget(cohortId, body.externalId, body.deletePrevious, body.reconcileNow).toResponse()
 }
 
 // ── Request / response DTOs ──────────────────────────────────────────────────
@@ -134,10 +159,34 @@ data class CohortSubjectMemberResponse(
     val joinedAt: Instant,
 )
 
-data class LinkUserRequest(val userId: Long, val system: TargetSystem, val externalUserId: String)
+data class LinkUserRequest(
+    @field:NotNull val userId: Long,
+    @field:NotNull val system: TargetSystem,
+    @field:NotBlank val externalUserId: String,
+)
 
 @Schema(name = "LinkedUser")
 data class LinkedUserResponse(val userId: Long, val system: TargetSystem, val externalUserId: String)
+
+/** Map the subject's per-system cohort to an external target that already exists. */
+data class LinkExistingTargetRequest(
+    @field:NotNull val system: TargetSystem,
+    @field:NotBlank val externalId: String,
+)
+
+/** Create a fresh external target and map the subject's per-system cohort to it. */
+data class CreateTargetRequest(
+    @field:NotNull val system: TargetSystem,
+    @field:NotBlank val label: String,
+    val folderHint: String? = null,
+)
+
+/** Repoint an existing cohort mapping at a different external target. */
+data class SwitchTargetRequest(
+    @field:NotBlank val externalId: String,
+    val deletePrevious: Boolean = false,
+    val reconcileNow: Boolean = false,
+)
 
 // ── Extension mappings ───────────────────────────────────────────────────────
 

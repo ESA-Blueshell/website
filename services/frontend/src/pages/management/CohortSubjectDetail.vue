@@ -11,6 +11,7 @@ import {
   findCohortSubjectById,
 } from "@/services/api"
 import CohortDriftPanel from "@/domains/cohorts/components/CohortDriftPanel.vue"
+import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"
 import type { TargetSystem } from "@/domains/cohorts/adapters/cohorts"
 import store from "@/plugins/store"
 
@@ -25,6 +26,11 @@ const triggering = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const activeTab = ref<string>("")
+
+const pickerOpen = ref<boolean>(false)
+const pickerMode = ref<"add" | "switch">("add")
+const pickerSystem = ref<TargetSystem>("BREVO")
+const pickerCohortId = ref<number | undefined>(undefined)
 
 const subjectId = computed<number | null>(() => {
   const raw = route.params.id
@@ -89,6 +95,25 @@ const formatJoinedAt = (value: string): string => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString()
+}
+
+const openAddTarget = () => {
+  pickerMode.value = "add"
+  pickerSystem.value = "BREVO"
+  pickerCohortId.value = undefined
+  pickerOpen.value = true
+}
+
+const openSwitchTarget = (cohortId: number, system: string) => {
+  pickerMode.value = "switch"
+  pickerSystem.value = system as TargetSystem
+  pickerCohortId.value = cohortId
+  pickerOpen.value = true
+}
+
+const onTargetSaved = () => {
+  successMessage.value = "External target saved."
+  void load()
 }
 
 const backToCategory = () => {
@@ -210,6 +235,21 @@ watch(subjectId, () => void load())
           rounded="lg"
           variant="flat"
         >
+          <div class="manager-card__header d-flex align-center justify-space-between">
+            <p class="text-overline mb-0">
+              Sync targets
+            </p>
+            <v-btn
+              data-testid="cohort-subject-add-target"
+              prepend-icon="mdi-plus"
+              size="small"
+              variant="outlined"
+              @click="openAddTarget"
+            >
+              Add target
+            </v-btn>
+          </div>
+
           <v-tabs
             v-model="activeTab"
             color="primary"
@@ -264,6 +304,17 @@ watch(subjectId, () => void load())
                       {{ mapping.externalId ?? "—" }}
                     </div>
                   </div>
+                  <div class="mapping-meta-cell mapping-meta-cell--action">
+                    <v-btn
+                      :data-testid="`cohort-subject-switch-target-${mapping.system.toLowerCase()}`"
+                      prepend-icon="mdi-swap-horizontal"
+                      size="small"
+                      variant="outlined"
+                      @click="openSwitchTarget(mapping.cohortId, mapping.system)"
+                    >
+                      Switch target
+                    </v-btn>
+                  </div>
                 </div>
 
                 <cohort-drift-panel
@@ -282,9 +333,19 @@ watch(subjectId, () => void load())
             v-if="!subject.mappings.length"
             class="mapping-panel"
           >
-            <p class="text-body-2 text-medium-emphasis mb-0">
-              No external mappings yet. They are created lazily on first sync.
+            <p class="text-body-2 text-medium-emphasis">
+              No external mappings yet. Engine cohorts are created lazily on first sync,
+              or attach one now.
             </p>
+            <v-btn
+              data-testid="cohort-subject-add-target-empty"
+              prepend-icon="mdi-plus"
+              size="small"
+              variant="outlined"
+              @click="openAddTarget"
+            >
+              Add target
+            </v-btn>
           </div>
         </v-card>
 
@@ -355,6 +416,16 @@ watch(subjectId, () => void load())
         <v-progress-linear
           v-if="loading"
           indeterminate
+        />
+
+        <target-picker-modal
+          v-if="subjectId != null"
+          v-model="pickerOpen"
+          :cohort-id="pickerCohortId"
+          :mode="pickerMode"
+          :subject-id="subjectId"
+          :system="pickerSystem"
+          @saved="onTargetSaved"
         />
       </div>
     </div>

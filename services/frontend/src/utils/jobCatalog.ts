@@ -121,6 +121,13 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "membership ledger, and enqueues ADD or contact-sync follow-ups for missing " +
       "desired members. Extras are recorded for admin remediation.",
   },
+  "cohort.delete-external-target": {
+    title: "Delete external target",
+    description:
+      "Deletes one external target (e.g. a Brevo list) on its system. Enqueued when " +
+      "switching a cohort to a different target with \"delete previous\" set; the " +
+      "adapter treats an already-gone target as success.",
+  },
 }
 
 export const humanizeJobType = (jobType: string): string =>

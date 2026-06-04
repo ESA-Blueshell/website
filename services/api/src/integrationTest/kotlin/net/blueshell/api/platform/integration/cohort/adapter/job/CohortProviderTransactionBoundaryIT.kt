@@ -8,7 +8,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.mock.MockCohortPort
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
@@ -53,7 +52,6 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val cohort = newCohort(newSubject())
         externalIds.saveAndFlush(ExternalIdMapping(USER_AGGREGATE, user.id!!, TargetSystem.BREVO.name, "ext-user"))
-        externalIds.saveAndFlush(ExternalIdMapping(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name, "ext-cohort"))
         port.transactionActiveDuringCalls.clear()
 
         syncHandler.handle(
@@ -69,7 +67,6 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     @Test
     fun `reconcile-list verify fetches the member list outside any transaction`() {
         val cohort = newCohort(newSubject())
-        externalIds.saveAndFlush(ExternalIdMapping(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name, "ext-cohort"))
         port.transactionActiveDuringCalls.clear()
 
         verifyHandler.handle(
@@ -90,6 +87,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,
+                externalId = "ext-cohort",
             ),
         )
 }

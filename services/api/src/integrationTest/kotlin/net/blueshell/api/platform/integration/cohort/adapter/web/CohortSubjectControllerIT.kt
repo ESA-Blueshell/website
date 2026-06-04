@@ -6,7 +6,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
@@ -116,8 +115,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
             .andExpect(jsonPath("$.externalId").value("list-123"))
 
         val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
-        assertThat(externalIds.findByAggregateTypeAndAggregateIdAndSystem(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name)?.externalId)
-            .isEqualTo("list-123")
+        assertThat(cohort.externalId).isEqualTo("list-123")
     }
 
     @Test
@@ -137,8 +135,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
 
         val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
         assertThat(cohort.folder).isEqualTo("Lists")
-        assertThat(externalIds.findByAggregateTypeAndAggregateIdAndSystem(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name)?.externalId)
-            .isNotBlank()
+        assertThat(cohort.externalId).isNotBlank()
     }
 
     @Test
@@ -159,10 +156,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
     fun `admin switches a cohort to a new external target`() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
-        val cohort = newCohort(subject)
-        externalIds.saveAndFlush(
-            ExternalIdMapping(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name, "old-list"),
-        )
+        val cohort = newCohort(subject, externalId = "old-list")
 
         mvc.perform(
             put("/management/cohort-subjects/{id}/targets/{cohortId}", subject.id, cohort.id)
@@ -173,8 +167,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.externalId").value("new-list"))
 
-        assertThat(externalIds.findByAggregateTypeAndAggregateIdAndSystem(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name)?.externalId)
-            .isEqualTo("new-list")
+        assertThat(cohorts.findById(cohort.id!!).orElseThrow().externalId).isEqualTo("new-list")
     }
 
     @Test
@@ -195,13 +188,14 @@ class CohortSubjectControllerIT : UserTestSupport() {
     private fun newSubject(): CohortSubject =
         subjects.save(CohortSubject(type = CohortSubjectType.CUSTOM, label = "Members"))
 
-    private fun newCohort(subject: CohortSubject): Cohort =
+    private fun newCohort(subject: CohortSubject, externalId: String? = null): Cohort =
         cohorts.save(
             Cohort(
                 system = TargetSystem.BREVO.name,
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,
+                externalId = externalId,
             ),
         )
 }

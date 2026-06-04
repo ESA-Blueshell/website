@@ -20,9 +20,9 @@ interface CohortReconciliation {
     fun evaluateUserCohorts(userId: Long)
 
     /**
-     * Walks every active `ContributionPeriod` and ensures its
-     * cohort + `(CONTRIBUTION_PAID, <periodId>)` rule exist. No-op
-     * for periods that already have both rows.
+     * Walks every active `ContributionPeriod` and ensures its three period
+     * cohorts — contribution-paid, members and active-members — and their
+     * subjects exist. No-op for periods already provisioned.
      */
     fun reconcileAllContributionPeriodCohorts()
 

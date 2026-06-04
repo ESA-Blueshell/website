@@ -63,6 +63,9 @@ class CohortLedger(private val members: CohortMemberRepository) {
         label: String?,
         at: LocalDateTime,
     ) {
+        // A blank external id would produce an INVALID stranger row (see
+        // CohortMemberState); reject it at the edge so the ledger never holds one.
+        require(externalUserId.isNotBlank()) { "Stranger external id must not be blank for cohort ${cohort.id}" }
         val existing = members.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohort.id!!, externalUserId)
         if (existing != null) {
             existing.verifiedAt = at

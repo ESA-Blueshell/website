@@ -3,11 +3,15 @@ package net.blueshell.api.platform.integration.cohort.application.ledger
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.slot
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
+import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
+import net.blueshell.api.platform.integration.cohort.persistence.state
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
@@ -33,6 +37,7 @@ class CohortLedgerTest {
         assertThat(stamped).isTrue()
         assertThat(row.syncedAt).isEqualTo(now)
         assertThat(row.externalUserId).isEqualTo("ext-1")
+        assertThat(row.state).isEqualTo(CohortMemberState.SYNCED)
         verify { members.save(row) }
     }
 
@@ -53,6 +58,7 @@ class CohortLedgerTest {
         assertThat(row.verifiedAt).isEqualTo(now)
         assertThat(row.syncedAt).isEqualTo(now)
         assertThat(row.label).isEqualTo("Ada")
+        assertThat(row.state).isEqualTo(CohortMemberState.VERIFIED)
     }
 
     @Test
@@ -77,6 +83,7 @@ class CohortLedgerTest {
 
         assertThat(row.syncedAt).isNull()
         assertThat(row.verifiedAt).isNull()
+        assertThat(row.state).isEqualTo(CohortMemberState.DESIRED)
     }
 
     @Test
@@ -94,7 +101,27 @@ class CohortLedgerTest {
         assertThat(desired.syncedAt).isEqualTo(now)
         assertThat(desired.verifiedAt).isEqualTo(now)
         assertThat(desired.label).isEqualTo("Linked")
+        assertThat(desired.state).isEqualTo(CohortMemberState.VERIFIED)
         verify { members.delete(stranger) }
+    }
+
+    @Test
+    fun `upsertStranger inserts a STRANGER row`() {
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-9") } returns null
+        val saved = slot<CohortMember>()
+        every { members.save(capture(saved)) } answers { firstArg() }
+
+        ledger.upsertStranger(cohort, subject, "ext-9", "Stranger", now)
+
+        assertThat(saved.captured.state).isEqualTo(CohortMemberState.STRANGER)
+        assertThat(saved.captured.externalUserId).isEqualTo("ext-9")
+    }
+
+    @Test
+    fun `upsertStranger rejects a blank external id`() {
+        assertThatThrownBy { ledger.upsertStranger(cohort, subject, "  ", null, now) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+        verify(exactly = 0) { members.save(any<CohortMember>()) }
     }
 
     private fun member(userId: Long?): CohortMember =

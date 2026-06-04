@@ -22,13 +22,10 @@ import java.time.LocalDateTime
  * - `verifiedAt` — a reconcile confirmed the member present in a live
  *   remote snapshot (owned by the verifier).
  *
- * Row kinds:
- * - **Desired, not synced** (`userId != null`, `syncedAt == null`): the
- *   rule engine wants this user here but the push has not succeeded yet.
- * - **Synced** (`userId != null`, `syncedAt != null`): pushed; healthy
- *   once `verifiedAt` is also set.
- * - **Stranger** (`userId == null`, `verifiedAt != null`): present
- *   externally but not desired locally (extra row).
+ * Callers classify a row through the computed [CohortMemberState]
+ * ([state]) rather than reading these nullable fields by hand:
+ * `DESIRED`, `SYNCED`, `VERIFIED` for the desired-row lifecycle and
+ * `STRANGER` for an externally-present row with no local user.
  *
  * `userId` is a plain Long (not `@ManyToOne User`) so cohort code
  * stays decoupled from the `domain.user` entity graph.

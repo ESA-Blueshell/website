@@ -57,34 +57,10 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {DateTime} from "luxon"
+import {associationYearOrdinal} from "@/utils/association"
 
 defineOptions({name: "AboutUs"})
 
-const getOrdinalWord = (n: number): string => {
-  const ordinals = [
-    "first", "second", "third", "fourth", "fifth",
-    "sixth", "seventh", "eighth", "ninth", "tenth",
-    "eleventh", "twelfth",
-  ] as const
-
-  if (n <= ordinals.length) {
-    return ordinals[n - 1]!
-  }
-
-  let suffix = "th"
-  if (n % 10 === 1 && n % 100 !== 11) suffix = "st"
-  else if (n % 10 === 2 && n % 100 !== 12) suffix = "nd"
-  else if (n % 10 === 3 && n % 100 !== 13) suffix = "rd"
-  return `${n}${suffix}`
-}
-
-const FOUNDED = DateTime.fromISO("2017-12-12")
-
-const boardYear = computed<number>(() =>
-  Math.floor(DateTime.now().diff(FOUNDED, "years").years),
-)
-
-const boardYearOrdinal = computed<string>(() => getOrdinalWord(boardYear.value))
+const boardYearOrdinal = computed<string>(() => associationYearOrdinal())
 </script>
 

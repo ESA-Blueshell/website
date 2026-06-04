@@ -31,12 +31,30 @@ interface CohortTargeting {
     fun create(subjectId: Long, system: TargetSystem, label: String, folderHint: String?): CohortMappingRow
 
     /**
-     * Repoints [cohortId]'s external mapping at [externalId], keeping the
-     * same local `Cohort` row. Optionally enqueues `cohort.delete-external-
-     * target` for the previous target and `cohort.reconcile-list` for the
-     * new one.
+     * Repoints [cohortId]'s external target at [externalId], keeping the same
+     * local `Cohort` row. [subjectId] is the subject the cohort must belong to
+     * (the route carries it); a mismatch is rejected so a wrong-path admin call
+     * cannot repoint another subject's cohort. Optionally enqueues
+     * `cohort.delete-external-target` for the previous target and
+     * `cohort.reconcile-list` for the new one.
      */
-    fun switchTarget(cohortId: Long, externalId: String, deletePrevious: Boolean, reconcileNow: Boolean): CohortMappingRow
+    fun switchTarget(
+        subjectId: Long,
+        cohortId: Long,
+        externalId: String,
+        deletePrevious: Boolean,
+        reconcileNow: Boolean,
+    ): CohortMappingRow
+
+    /**
+     * Materialises [cohortId]'s external target: re-checks the id, and only when
+     * still missing creates it through the
+     * [net.blueshell.api.platform.integration.cohort.port.out.CohortPort]
+     * (passing the cohort's folder) and records it. Driven by the
+     * `cohort.materialize-target` job, which is deduplicated per cohort so only
+     * one create runs. Idempotent: returns the existing id when already set.
+     */
+    fun materialize(cohortId: Long): CohortTargetRef
 
     /**
      * Deletes an external target. Driven by
@@ -45,3 +63,6 @@ interface CohortTargeting {
      */
     fun deleteTarget(system: TargetSystem, externalTargetId: String)
 }
+
+/** Result of [CohortTargeting.materialize]: a cohort and its resolved target id. */
+data class CohortTargetRef(val cohortId: Long, val externalId: String)

@@ -19,4 +19,7 @@ interface CohortRepository : BaseRepository<Cohort, Long> {
     fun findAllBySubjectId(subjectId: Long): List<Cohort>
 
     fun findBySubjectIdAndSystem(subjectId: Long, system: String): Cohort?
+
+    /** Active cohort already owning [externalId] on [system], if any (CohortTargetIds uniqueness guard). */
+    fun findFirstBySystemAndExternalId(system: String, externalId: String): Cohort?
 }

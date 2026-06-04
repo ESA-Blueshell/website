@@ -8,7 +8,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import org.springframework.http.HttpStatus
@@ -32,6 +31,7 @@ class CohortDriftService(
     private val cohortRepo: CohortRepository,
     private val memberRepo: CohortMemberRepository,
     private val externalIds: ExternalIdMappingService,
+    private val targetIds: CohortTargetIds,
     private val users: UserService,
 ) : CohortDrift {
 
@@ -39,7 +39,7 @@ class CohortDriftService(
         val cohort = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No $system mapping for subject $subjectId")
 
-        val externalCohortId = externalIds.find(COHORT_AGGREGATE, cohort.id!!, system.name)?.externalId
+        val externalCohortId = targetIds.find(cohort)
             ?: return DriftReport.notMaterialised(cohort.id!!, system)
 
         val allRows = memberRepo.findAllByCohortId(cohort.id!!)

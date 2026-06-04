@@ -13,6 +13,7 @@ import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -28,12 +29,14 @@ class CohortMembershipSyncServiceTest {
         every { system } returns TargetSystem.BREVO
     }
     private val externalIds: ExternalIdMappingService = mockk(relaxed = true)
+    private val targetIds: CohortTargetIds = mockk(relaxed = true)
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
     private val service = CohortMembershipSyncService(
         cohorts = cohorts,
         ledger = ledger,
         registry = CohortPortRegistry(listOf(brevoPort)),
         externalIds = externalIds,
+        targetIds = targetIds,
         jobs = jobs,
         // A relaxed manager still runs the TransactionTemplate callbacks; the
         // real no-active-transaction guarantee is asserted in
@@ -49,7 +52,7 @@ class CohortMembershipSyncServiceTest {
     fun `ADD calls port when both external ids exist`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { externalIds.find("COHORT", 10L, "BREVO") } returns mapping("COHORT", 10L, "BREVO", "42")
+        every { targetIds.find(any()) } returns "42"
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
 
@@ -57,24 +60,27 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `ADD lazy-creates the cohort externally on first use and stores its id`() {
+    fun `ADD without a cohort target enqueues materialize-target, throws retryable and never creates a target`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { externalIds.find("COHORT", 10L, "BREVO") } returns null
-        every { brevoPort.createCohort("Members", null) } returns "99"
+        every { targetIds.find(any()) } returns null
 
-        service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+        assertThatThrownBy {
+            service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
+        }.isInstanceOf(CohortMembershipNotReadyException::class.java)
 
-        verify { brevoPort.createCohort("Members", null) }
-        verify { externalIds.upsert("COHORT", 10L, "BREVO", "99") }
-        verify { brevoPort.addMember("777", "99") }
+        verify {
+            jobs.enqueue(CohortJobs.MaterializeCohortTarget, CohortJobs.MaterializeCohortTargetPayload(10L))
+        }
+        verify(exactly = 0) { brevoPort.addMember(any(), any()) }
+        verify(exactly = 0) { brevoPort.createCohort(any(), any()) }
     }
 
     @Test
     fun `ADD marks the desired row pushed after a successful external add`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { externalIds.find("COHORT", 10L, "BREVO") } returns mapping("COHORT", 10L, "BREVO", "42")
+        every { targetIds.find(any()) } returns "42"
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
 
@@ -101,7 +107,7 @@ class CohortMembershipSyncServiceTest {
     fun `REMOVE calls port when both external ids exist`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
-        every { externalIds.find("COHORT", 10L, "BREVO") } returns mapping("COHORT", 10L, "BREVO", "42")
+        every { targetIds.find(any()) } returns "42"
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
 
@@ -112,7 +118,7 @@ class CohortMembershipSyncServiceTest {
     fun `REMOVE is a no-op when an external id is missing`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns null
-        every { externalIds.find("COHORT", 10L, "BREVO") } returns null
+        every { targetIds.find(any()) } returns null
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
 

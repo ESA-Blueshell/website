@@ -23,7 +23,7 @@ class ExternalIdMapping(
     @Column(name = "system", nullable = false, length = 64)
     val system: String,
 
-    @Column(name = "external_id", length = 255)
+    @Column(name = "external_id", length = 1024)
     var externalId: String? = null,
 
     @Column(name = "synced_version")

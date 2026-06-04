@@ -11,7 +11,6 @@ import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembers
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
@@ -42,6 +41,7 @@ class CohortRemediationService(
     private val memberRepo: CohortMemberRepository,
     private val ledger: CohortLedger,
     private val externalIds: ExternalIdMappingService,
+    private val targetIds: CohortTargetIds,
     private val registry: CohortPortRegistry,
     private val jobs: TrackedJobDispatcher,
     transactionManager: PlatformTransactionManager,
@@ -74,8 +74,7 @@ class CohortRemediationService(
             NonRetryableJobException("Cohort $cohortId not found")
         }
         val system = TargetSystem.valueOf(cohort.system)
-        val externalCohortId = externalIds.find(COHORT_AGGREGATE, cohortId, cohort.system)?.externalId
-            ?: throw NonRetryableJobException("Cohort $cohortId has no external id on $system")
+        val externalCohortId = targetIds.require(cohort)
 
         outsideTransaction.executeWithoutResult { registry.require(system).removeMember(externalUserId, externalCohortId) }
         ledger.removeStranger(cohortId, externalUserId)
@@ -102,8 +101,7 @@ class CohortRemediationService(
             NonRetryableJobException("Cohort $cohortId references missing subject $subjectId")
         }
         val system = TargetSystem.valueOf(cohort.system)
-        val externalCohortId = externalIds.find(COHORT_AGGREGATE, cohortId, cohort.system)?.externalId
-            ?: throw NonRetryableJobException("Cohort $cohortId has no external id on $system")
+        val externalCohortId = targetIds.require(cohort)
 
         val desiredUserIds = memberRepo.findAllByCohortIdAndUserIdIsNotNull(cohortId)
             .mapNotNull { it.userId }

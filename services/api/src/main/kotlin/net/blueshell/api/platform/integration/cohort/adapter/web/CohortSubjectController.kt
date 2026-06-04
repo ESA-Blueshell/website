@@ -103,7 +103,7 @@ class CohortSubjectController(
         @PathVariable cohortId: Long,
         @RequestBody @Valid body: SwitchTargetRequest,
     ): CohortMappingResponse =
-        targeting.switchTarget(cohortId, body.externalId, body.deletePrevious, body.reconcileNow).toResponse()
+        targeting.switchTarget(id, cohortId, body.externalId, body.deletePrevious, body.reconcileNow).toResponse()
 }
 
 // ── Request / response DTOs ──────────────────────────────────────────────────

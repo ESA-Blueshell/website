@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -136,6 +137,14 @@ class UserService @Autowired constructor(
 
     fun findSoftDeletedIds(userIds: Collection<Long>): Set<Long> =
         if (userIds.isEmpty()) emptySet() else repository.findSoftDeletedUserIds(userIds).toSet()
+
+    /**
+     * Up to [limit] active user ids greater than [afterId], ascending — keyset
+     * pagination for bulk fan-out (e.g. the cohort all-users reconcile) so a
+     * sweep never loads the whole user table or holds one transaction across it.
+     */
+    fun findActiveIdsAfter(afterId: Long, limit: Int): List<Long> =
+        repository.findActiveIdsAfter(afterId, PageRequest.of(0, limit))
 
     @Transactional
     fun toggleRole(id: Long, role: Role): User {

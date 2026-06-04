@@ -2,6 +2,7 @@ package net.blueshell.api.domain.user.persistence.repository
 
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.repository.BaseRepository
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -46,4 +47,12 @@ interface UserRepository : BaseRepository<User, Long> {
         nativeQuery = true,
     )
     fun findSoftDeletedUserIds(@Param("userIds") userIds: Collection<Long>): List<Long>
+
+    /**
+     * Active user ids greater than [afterId], ascending — keyset pagination for
+     * bulk fan-out that does not hold one transaction (or one big result set)
+     * across the whole user table. Respects the `@SQLRestriction` on [User].
+     */
+    @Query("SELECT u.id FROM User u WHERE u.id > :afterId ORDER BY u.id")
+    fun findActiveIdsAfter(@Param("afterId") afterId: Long, pageable: Pageable): List<Long>
 }

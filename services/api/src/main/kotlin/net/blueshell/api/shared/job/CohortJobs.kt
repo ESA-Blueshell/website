@@ -48,8 +48,10 @@ object CohortJobs {
 
     /**
      * Re-evaluates one user's cohort membership against the current
-     * rules. Local desired-row writes happen here; touched cohorts
-     * converge through [ReconcileList] jobs.
+     * rules. Local desired-row writes happen here, and the evaluator
+     * enqueues one per-member [SyncCohortMembership] ADD/REMOVE job for
+     * each cohort the user joins or leaves. [ReconcileList] is the
+     * separate periodic verifier, not this job's convergence path.
      */
     object EvaluateUserCohorts : JobDefinition<EvaluateUserCohortsPayload> {
         override val type: String = "cohort.evaluate-user"

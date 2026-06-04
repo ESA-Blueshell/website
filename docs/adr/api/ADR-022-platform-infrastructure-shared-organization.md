@@ -139,6 +139,52 @@ Simple integrations (e.g. `calendar/`) may omit sub-packages that don't apply
 (no web, no persistence), but must still use `adapter/` and `application/job/` for
 their adapter and job handler files.
 
+**Hexagonal ports (`port/in` and `port/out`) — optional refinement.**
+
+An integration with non-trivial inbound use cases and a vendor-facing
+Anti-Corruption Layer may name its ports explicitly under `port/`. The cohort
+module is the canonical example:
+
+```
+integration/cohort/
+├── port/in/                    # Inbound (driving) ports — one per use-case group
+│   ├── CohortMembershipSync.kt # ADD/REMOVE one (user, target) pair
+│   ├── CohortReconciliation.kt # "kick the engine" admin operations
+│   ├── CohortRemediation.kt    # link / verify / remove-external-member
+│   ├── CohortTargeting.kt      # link / create / switch / delete external target
+│   └── CohortDrift.kt          # compute a drift report
+├── port/out/                   # Outbound (driven) ACL ports
+│   ├── CohortPort.kt           # vendor-neutral target operations
+│   └── CohortPortRegistry.kt   # selects a CohortPort by TargetSystem
+├── adapter/                    # driving adapters (job handlers, web) + the ACL implementation (brevo/)
+├── application/                # port/in implementations: *Service, evaluator, ledger, schedulers
+└── persistence/                # entities + repositories
+```
+
+Conventions:
+
+- **Inbound use-case ports live under `port/in`.** One port per use-case group;
+  do **not** split one use case across several ports, and do **not** add a port
+  just to read or write a single column. A port with one implementation is fine —
+  its value is a published contract for driving adapters (job handlers, controllers),
+  a stable test seam, and consistency with hexagonal architecture, not caller count.
+- **Outbound ACL ports live under `port/out`.** These are the ADR-019
+  Anti-Corruption Layer interfaces (`CohortPort` is a vendor-neutral facade selected
+  at runtime by `TargetSystem`); their vendor implementations live under `adapter/`
+  (e.g. `adapter/brevo/BrevoCohortAdapter`).
+- **`application/` holds the `port/in` implementations** — the `*Service` beans,
+  the rule evaluator, the ledger writer, schedulers — exactly as the 4-sub-package
+  rule already requires for `@Service` beans.
+- **Driving adapters stay under `adapter/`** (job handlers under
+  `adapter/job/`, controllers under `adapter/web/` or `web/`).
+
+This is a refinement of the 4-sub-package structure, not a replacement: most
+integrations have a single trivial inbound path and do not need named ports. The
+architecture tests already permit it — `LayeredArchitectureTest` treats `platform/`
+as infrastructure and lets `shared/job` payloads reference
+`platform.integration..port.in..`, and `PlatformConsistencyArchitectureTest` has no
+rule against port packages.
+
 **Mock adapters** live in a shared sub-package, easily excludable by ArchUnit and profiles:
 ```
 integration/mock/
@@ -433,6 +479,8 @@ These tests enforce the canonical 4-sub-package structure within every integrati
 - ✅ Place ACL adapters and HTTP clients in `platform/integration/{system}/adapter/`
 - ✅ Place `@Service` beans in `platform/integration/{system}/application/`
 - ✅ Place schedulers in `platform/integration/{system}/application/`
+- ✅ Place inbound use-case ports in `platform/integration/{system}/port/in/` (one per use-case group) and their implementations in `application/`
+- ✅ Place outbound ACL ports in `platform/integration/{system}/port/out/` and their vendor implementations in `adapter/`
 - ✅ Place DTOs in `platform/integration/{system}/web/dto/`
 - ✅ Place permission evaluators in `infrastructure/security/permission/`
 - ✅ Place email builders in domain `application/email/`
@@ -450,6 +498,7 @@ These tests enforce the canonical 4-sub-package structure within every integrati
 - ❌ Place Spring `@Configuration` in infrastructure (use platform/config)
 - ❌ Place `*Adapter` or `*Client` classes at the module root (use `adapter/` sub-package)
 - ❌ Access repositories directly from `queue/` classes (use the service layer)
+- ❌ Split one inbound use case across multiple `port/in` interfaces, or add a port just to read/write a single column
 
 ---
 

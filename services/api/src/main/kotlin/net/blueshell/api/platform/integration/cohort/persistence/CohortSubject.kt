@@ -11,12 +11,16 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * The logical thing the engine syncs — "Web Cmte", "Members 2025-2026",
+ * The logical audience the engine syncs — "Web Cmte", "Members 2025-2026",
  * "Newsletter Subscribers". One subject can map to zero or more
  * [Cohort]s, one per external system (Brevo list, Discord role, Google
- * group). Rules and member rows attach to the subject, not the mapping,
- * so adding a Discord mapping later does not require duplicating
- * membership state.
+ * group).
+ *
+ * The subject-level engine sketched by V72 — where rules and membership
+ * attach to the subject so a second system reuses the same desired state —
+ * is **not** finished. Today [CohortRule] and [CohortMember] still carry
+ * `cohort_id` and the evaluator diffs cohort rows; finishing the
+ * subject-level model is deferred until a second external system is real.
  */
 @Entity
 @Table(

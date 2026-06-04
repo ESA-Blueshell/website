@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.cohort.application
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import net.blueshell.api.domain.committee.application.CommitteeMemberService
 import net.blueshell.api.domain.committee.application.CommitteeMembershipWindow
 import net.blueshell.api.domain.committee.persistence.Committee
@@ -170,6 +171,57 @@ class UserFactCollectorTest {
 
         assertThat(facts).contains(UserFact(CohortFactKind.ACTIVE_IN_PERIOD, "20"))
         assertThat(facts).doesNotContain(UserFact(CohortFactKind.ACTIVE_IN_PERIOD, "21"))
+    }
+
+    @Test
+    fun `loads the user exactly once`() {
+        every { users.findById(1L) } returns userWith(roles = setOf(Role.MEMBER))
+
+        collector.collect(1L)
+
+        verify(exactly = 1) { users.findById(1L) }
+    }
+
+    @Test
+    fun `does not query periods when the user has no memberships or committee windows`() {
+        every { users.findById(1L) } returns userWith(roles = setOf(Role.MEMBER))
+
+        collector.collect(1L)
+
+        verify(exactly = 0) { periods.findAll() }
+    }
+
+    @Test
+    fun `queries periods once when there is a membership candidate`() {
+        every { periods.findAll() } returns mutableListOf(periodFixture(10L, "2023-09-01", "2024-08-31"))
+        every { users.findById(1L) } returns userWith(memberships = setOf(membership("2024-01-01", "2024-06-01")))
+
+        collector.collect(1L)
+
+        verify(exactly = 1) { periods.findAll() }
+    }
+
+    @Test
+    fun `open-ended membership overlaps periods up to the given today`() {
+        val today = LocalDate.parse("2025-03-01")
+        every { periods.findAll() } returns mutableListOf(
+            periodFixture(id = 10L, start = "2023-09-01", end = "2024-08-31"),
+            periodFixture(id = 11L, start = "2024-09-01", end = "2025-08-31"),
+            periodFixture(id = 12L, start = "2025-09-01", end = "2026-08-31"),
+        )
+        every { users.findById(1L) } returns userWith(
+            memberships = setOf(membership(start = "2024-01-01", end = null)),
+        )
+
+        val facts = collector.collect(1L, today)
+
+        // The open-ended membership extends to today (2025-03-01), so it overlaps the
+        // 2023-24 and 2024-25 periods but not the period starting 2025-09.
+        assertThat(facts).contains(
+            UserFact(CohortFactKind.MEMBER_IN_PERIOD, "10"),
+            UserFact(CohortFactKind.MEMBER_IN_PERIOD, "11"),
+        )
+        assertThat(facts).doesNotContain(UserFact(CohortFactKind.MEMBER_IN_PERIOD, "12"))
     }
 
     private fun periodFixture(id: Long, start: String, end: String): ContributionPeriod {

@@ -107,6 +107,7 @@ import GamesWePlay from "@/components/base/GamesWePlay.vue"
 
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"
+import {associationYears} from "@/utils/association"
 
 interface GameTitle {
   title: string
@@ -229,7 +230,7 @@ const columns = ref<Column[]>([
     title: "About us",
     url: "/aboutus",
     text:
-      "Despite its memberbase, Blueshell Esports is a relatively young student association with only 5 years since its inception. Learn all about our association by clicking above!",
+      `Despite its memberbase, Blueshell Esports is a relatively young student association with only ${associationYears()} years since its inception. Learn all about our association by clicking above!`,
   },
   {
     icon: "mdi-trophy",

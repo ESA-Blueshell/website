@@ -1,6 +1,9 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
+import net.blueshell.api.platform.integration.cohort.persistence.needsPush
+import net.blueshell.api.platform.integration.cohort.persistence.state
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
@@ -42,7 +45,7 @@ class CohortDriftService(
         val allRows = memberRepo.findAllByCohortId(cohort.id!!)
 
         // Missing: desired rows not yet successfully pushed.
-        val missingRows = allRows.filter { it.userId != null && it.syncedAt == null }
+        val missingRows = allRows.filter { it.needsPush }
         val missingUserIds = missingRows.mapNotNull { it.userId }.toSet()
         val missingMappedUserIds = externalIds.findBatch(USER_AGGREGATE, missingUserIds, system.name)
             .map { it.aggregateId }
@@ -55,7 +58,7 @@ class CohortDriftService(
         }
 
         // Extras: stranger rows present externally but not desired locally.
-        val strangerRows = allRows.filter { it.userId == null && it.verifiedAt != null }
+        val strangerRows = allRows.filter { it.state == CohortMemberState.STRANGER }
         val strangerExtIds = strangerRows.mapNotNull { it.externalUserId }.toSet()
         val ownerMappings = externalIds.findByExternalIds(USER_AGGREGATE, system.name, strangerExtIds)
             .associateBy { it.externalId }

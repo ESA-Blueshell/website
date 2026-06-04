@@ -1,6 +1,8 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
+import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
+import net.blueshell.api.platform.integration.cohort.persistence.state
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
@@ -157,7 +159,9 @@ class CohortRemediationService(
         desiredRows.forEach { row ->
             val extId = plan.externalIdByUserId[row.userId]
             val absent = extId == null || extId !in remoteExtIds
-            if (absent && (row.syncedAt != null || row.verifiedAt != null)) ledger.markDrifted(row)
+            if (absent && (row.state == CohortMemberState.SYNCED || row.state == CohortMemberState.VERIFIED)) {
+                ledger.markDrifted(row)
+            }
         }
     }
 

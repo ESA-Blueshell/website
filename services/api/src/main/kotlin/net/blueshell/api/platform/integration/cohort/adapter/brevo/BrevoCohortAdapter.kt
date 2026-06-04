@@ -42,4 +42,7 @@ class BrevoCohortAdapter(
     override fun listMembers(externalCohortId: String): List<MemberRef> =
         delegate.listMembers(externalCohortId.toLong())
             .map { MemberRef(it.externalUserId.toString(), it.email) }
+            // Never surface a blank external id: it would classify as an
+            // INVALID ledger row downstream (see CohortMemberState).
+            .filter { it.externalUserId.isNotBlank() }
 }

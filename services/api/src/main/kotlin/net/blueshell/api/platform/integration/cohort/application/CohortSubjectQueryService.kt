@@ -4,12 +4,10 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
-import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -27,7 +25,6 @@ class CohortSubjectQueryService(
     private val subjects: CohortSubjectRepository,
     private val cohorts: CohortRepository,
     private val cohortMembers: CohortMemberRepository,
-    private val cohortRules: CohortRuleRepository,
     private val users: UserService,
     private val targetIds: CohortTargetIds,
 ) {
@@ -85,8 +82,7 @@ class CohortSubjectQueryService(
                     { it.user?.fullName?.lowercase() ?: "~~~" },
                 ),
             ),
-            rules = cohortRules.findAllBySubjectId(subjectId)
-                .sortedWith(compareBy({ it.factKind.name }, { it.factKey })),
+            rules = subject.ruleView()?.let { listOf(it) } ?: emptyList(),
         )
     }
 
@@ -101,12 +97,12 @@ data class CohortSubjectSummary(
     val category: CohortSubjectCategory get() = subject.type.category()
 }
 
-/** Detail view: subject + its per-system mappings + rules + members. */
+/** Detail view: subject + its per-system mappings + the rule it carries + members. */
 data class CohortSubjectDetail(
     val subject: CohortSubject,
     val mappings: List<CohortMappingRow>,
     val members: List<CohortMemberRow>,
-    val rules: List<CohortRule>,
+    val rules: List<CohortRuleView>,
 )
 
 /** One per-system mapping under a subject, with its external id resolved. */

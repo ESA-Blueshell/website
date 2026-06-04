@@ -2,100 +2,50 @@ package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
-import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
-import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
-import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Ensures the cohort and rule for a [ContributionPeriod] exist before
- * the engine evaluates a user against `CONTRIBUTION_PAID` facts.
+ * Ensures the subjects + cohorts for a [ContributionPeriod] exist before the
+ * engine evaluates a user against the period facts.
  *
- * Each period maps to one [Cohort] (`system = BREVO`, `kind = LIST`,
- * label `"Contribution Paid YYYY - YYYY"`) plus one [CohortRule]
- * `(CONTRIBUTION_PAID, "<periodId>", that-cohort)`. V67 backfilled
- * these for every existing period; this resolver only does work for
- * periods created after cutover — when the first `Contribution` is
- * recorded for a new period, the cohort listener calls
- * [materialize] before re-evaluating the user.
- *
- * The cohort's external counterpart on Brevo is **not** created here.
- * It is materialised lazily by `CohortMembershipSyncService` on the
- * first `ADD` for any user — keeping the resolver in the application
- * layer with no outbound-port dependency.
+ * Each period fans out to three subjects — `CONTRIBUTION_PAID`,
+ * `MEMBER_IN_PERIOD`, `ACTIVE_IN_PERIOD` — each with one BREVO list cohort.
+ * V67 backfilled these for existing periods; this resolver only does work for
+ * periods created after cutover. A thin spec builder over
+ * [CohortProvisioningService]; Brevo lists are created lazily on first ADD.
  */
 @Service
 class ContributionPeriodCohortResolver(
-    private val cohorts: CohortRepository,
-    private val cohortRules: CohortRuleRepository,
-    private val subjects: CohortSubjectRepository,
+    private val provisioning: CohortProvisioningService,
     private val periods: ContributionPeriodService,
 ) {
     @Transactional
-    fun materialize(periodId: Long): Cohort {
+    fun materialize(periodId: Long) {
         val period = periods.findById(periodId)
-        val paidCohort = ensureCohort(
-            factKind = CohortFactKind.CONTRIBUTION_PAID,
-            subjectType = CohortSubjectType.PERIOD_PAYERS,
-            periodId = periodId,
-            label = paidLabelFor(period),
+        provisioning.provision(
+            spec(CohortFactKind.CONTRIBUTION_PAID, CohortSubjectType.PERIOD_PAYERS, periodId, paidLabelFor(period)),
         )
-        ensureCohort(
-            factKind = CohortFactKind.MEMBER_IN_PERIOD,
-            subjectType = CohortSubjectType.PERIOD_MEMBERS,
-            periodId = periodId,
-            label = memberLabelFor(period),
+        provisioning.provision(
+            spec(CohortFactKind.MEMBER_IN_PERIOD, CohortSubjectType.PERIOD_MEMBERS, periodId, memberLabelFor(period)),
         )
-        ensureCohort(
-            factKind = CohortFactKind.ACTIVE_IN_PERIOD,
-            subjectType = CohortSubjectType.PERIOD_ACTIVE_MEMBERS,
-            periodId = periodId,
-            label = activeLabelFor(period),
+        provisioning.provision(
+            spec(CohortFactKind.ACTIVE_IN_PERIOD, CohortSubjectType.PERIOD_ACTIVE_MEMBERS, periodId, activeLabelFor(period)),
         )
-        return paidCohort
     }
 
-    private fun ensureCohort(
-        factKind: CohortFactKind,
-        subjectType: CohortSubjectType,
-        periodId: Long,
-        label: String,
-    ): Cohort {
-        cohortRules.findAllByFactKindAndFactKeyAndEnabledTrue(factKind, periodId.toString())
-            .firstOrNull { it.cohort.system == BREVO_SYSTEM }
-            ?.let { return it.cohort }
-
-        val subject = subjects.save(CohortSubject(type = subjectType, label = label))
-        val cohort = cohorts.save(
-            Cohort(
-                system = BREVO_SYSTEM,
-                kind = CohortKind.LIST,
-                label = label,
-                folder = PERIOD_FOLDER,
-                subjectId = subject.id,
-            )
+    private fun spec(factKind: CohortFactKind, subjectType: CohortSubjectType, periodId: Long, label: String) =
+        CohortProvisioningSpec(
+            factKind = factKind,
+            factKey = periodId.toString(),
+            subjectType = subjectType,
+            label = label,
+            folder = PERIOD_FOLDER,
         )
-        cohortRules.save(
-            CohortRule(
-                factKind = factKind,
-                factKey = periodId.toString(),
-                cohort = cohort,
-                subject = subject,
-            )
-        )
-        return cohort
-    }
 
     companion object {
-        private val BREVO_SYSTEM = TargetSystem.BREVO.name
         const val PERIOD_FOLDER = "Periods"
 
         fun paidLabelFor(period: ContributionPeriod): String =
@@ -106,8 +56,5 @@ class ContributionPeriodCohortResolver(
 
         fun activeLabelFor(period: ContributionPeriod): String =
             "Active Members ${period.startDate.year} - ${period.endDate.year}"
-
-        @Deprecated("Use paidLabelFor", ReplaceWith("paidLabelFor(period)"))
-        fun labelFor(period: ContributionPeriod): String = paidLabelFor(period)
     }
 }

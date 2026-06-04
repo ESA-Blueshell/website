@@ -113,7 +113,7 @@ private fun CohortDetail.toResponse(): CohortDetailResponse =
         members = members.map { it.toResponse() },
         rules = rules.map {
             CohortRuleResponse(
-                id = it.id!!,
+                id = it.id,
                 factKind = it.factKind,
                 factKey = it.factKey,
                 enabled = it.enabled,

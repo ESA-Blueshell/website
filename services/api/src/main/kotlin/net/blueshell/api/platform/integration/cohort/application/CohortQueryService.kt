@@ -3,11 +3,12 @@ package net.blueshell.api.platform.integration.cohort.application
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
+import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
-import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,7 +25,7 @@ import org.springframework.web.server.ResponseStatusException
 class CohortQueryService(
     private val cohorts: CohortRepository,
     private val cohortMembers: CohortMemberRepository,
-    private val cohortRules: CohortRuleRepository,
+    private val subjects: CohortSubjectRepository,
     private val users: UserService,
     private val targetIds: CohortTargetIds,
 ) {
@@ -55,7 +56,12 @@ class CohortQueryService(
             .filter { userById[it] == null }
             .filter { users.isSoftDeleted(it) }
             .toSet()
-        val rules = cohortRules.findAllByCohortId(cohortId)
+        // The rule now lives on the cohort's subject (one fact pair per subject).
+        val rules = cohort.subjectId
+            ?.let { subjects.findById(it).orElse(null) }
+            ?.ruleView()
+            ?.let { listOf(it) }
+            ?: emptyList()
 
         return CohortDetail(
             cohort = cohort,
@@ -85,12 +91,12 @@ data class CohortSummary(
     val externalId: String?,
 )
 
-/** Detail view: the cohort itself plus its members and the rules that target it. */
+/** Detail view: the cohort itself plus its members and the rule its subject carries. */
 data class CohortDetail(
     val cohort: Cohort,
     val externalId: String?,
     val members: List<CohortMemberRow>,
-    val rules: List<CohortRule>,
+    val rules: List<CohortRuleView>,
 )
 
 /**
@@ -105,3 +111,22 @@ data class CohortMemberRow(
     val user: User?,
     val isUserDeleted: Boolean = false,
 )
+
+/**
+ * Read projection of the membership rule a subject carries, replacing the
+ * retired `CohortRule` row in read responses. [id] is the subject id — the
+ * rule's identity is the subject now (one fact pair per subject).
+ */
+data class CohortRuleView(
+    val id: Long,
+    val factKind: CohortFactKind,
+    val factKey: String,
+    val enabled: Boolean,
+)
+
+/** The subject's rule as a [CohortRuleView], or null when its fact pair is unset (a bare CUSTOM subject). */
+fun CohortSubject.ruleView(): CohortRuleView? {
+    val kind = factKind ?: return null
+    val key = factKey ?: return null
+    return CohortRuleView(id = id!!, factKind = kind, factKey = key, enabled = enabled)
+}

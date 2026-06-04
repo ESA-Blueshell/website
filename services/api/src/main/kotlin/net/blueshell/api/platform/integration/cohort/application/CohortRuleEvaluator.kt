@@ -5,7 +5,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.job.CohortJobs
@@ -17,14 +16,14 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * Decides which cohorts a user should belong to, based on the
  * [UserFact]s currently true for them and the enabled
- * [CohortRule][net.blueshell.api.platform.integration.cohort.persistence.CohortRule]s,
- * and reconciles the user's `cohort_member` rows against that
- * desired set.
+ * [CohortSubject][net.blueshell.api.platform.integration.cohort.persistence.CohortSubject]
+ * rules (the `(factKind, factKey)` columns), and reconciles the user's
+ * `cohort_member` rows against that desired set.
  *
  * Each call:
  *
  * 1. Collects the user's facts via [UserFactCollector].
- * 2. Fetches every enabled rule whose left-hand side matches a held
+ * 2. Fetches every cohort whose subject's enabled rule matches a held
  *    fact and builds the desired cohort set.
  * 3. Diffs against the user's current `cohort_member` rows.
  * 4. For each cohort to add: inserts a desired `CohortMember` row and
@@ -44,7 +43,6 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CohortRuleEvaluator(
     private val userFactCollector: UserFactCollector,
-    private val rules: CohortRuleRepository,
     private val memberships: CohortMemberRepository,
     private val cohorts: CohortRepository,
     private val subjects: CohortSubjectRepository,
@@ -65,8 +63,8 @@ class CohortRuleEvaluator(
         }
         val facts = userFactCollector.collect(userId)
         val desired = facts.flatMap { fact ->
-            rules.findAllByFactKindAndFactKeyAndEnabledTrue(fact.kind, fact.key)
-        }.mapNotNull { it.cohort.id }.toSet()
+            cohorts.findAllForEnabledSubjectFact(fact.kind, fact.key)
+        }.mapNotNull { it.id }.toSet()
         val currentMemberships = memberships.findAllByUserIdAndUserIdIsNotNull(userId)
         val current = currentMemberships.mapNotNull { it.cohort.id }.toSet()
 

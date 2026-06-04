@@ -211,7 +211,7 @@ private fun CohortSubjectDetail.toResponse(): CohortSubjectDetailResponse =
         mappings = mappings.map { it.toResponse() },
         rules = rules.map {
             CohortSubjectRuleResponse(
-                id = it.id!!,
+                id = it.id,
                 factKind = it.factKind,
                 factKey = it.factKey,
                 enabled = it.enabled,

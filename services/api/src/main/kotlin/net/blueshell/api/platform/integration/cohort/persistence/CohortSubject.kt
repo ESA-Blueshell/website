@@ -16,11 +16,16 @@ import org.hibernate.annotations.SQLRestriction
  * [Cohort]s, one per external system (Brevo list, Discord role, Google
  * group).
  *
- * The subject-level engine sketched by V72 — where rules and membership
- * attach to the subject so a second system reuses the same desired state —
- * is **not** finished. Today [CohortRule] and [CohortMember] still carry
- * `cohort_id` and the evaluator diffs cohort rows; finishing the
- * subject-level model is deferred until a second external system is real.
+ * The subject owns the rule that selects its members: users whose facts
+ * include `(factKind, factKey)` belong to it, when [enabled]. There is one
+ * subject per `(factKind, factKey)` (unique key `uk_cohort_subject_fact`).
+ * Both columns are nullable so an operator-created [CohortSubjectType.CUSTOM]
+ * subject can exist before its fact pair is populated.
+ *
+ * The subject-level *engine* sketched by V72 — where membership attaches to
+ * the subject so a second system reuses one desired set — is still **not**
+ * finished: [CohortMember] carries `cohort_id` and the evaluator diffs cohort
+ * rows. This change moves only the rule columns onto the subject.
  */
 @Entity
 @Table(
@@ -42,4 +47,17 @@ class CohortSubject(
 
     @Column(name = "description")
     var description: String? = null,
+
+    /** Fact kind this subject's rule pivots on; null for an unconfigured CUSTOM subject. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "fact_kind", nullable = true, length = 32)
+    var factKind: CohortFactKind? = null,
+
+    /** Fact key (committee id, period id, "true", a Role name); null until set. */
+    @Column(name = "fact_key", nullable = true, length = 64)
+    var factKey: String? = null,
+
+    /** When false the rule is dormant — the evaluator skips this subject. */
+    @Column(name = "enabled", nullable = false)
+    var enabled: Boolean = true,
 ) : AuditedAutoIdEntity()

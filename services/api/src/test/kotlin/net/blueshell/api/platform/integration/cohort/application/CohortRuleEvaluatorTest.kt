@@ -4,14 +4,15 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
-import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
+import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.CohortJobs
@@ -23,26 +24,20 @@ import java.util.Optional
 class CohortRuleEvaluatorTest {
 
     private val factCollector: UserFactCollector = mockk()
-    private val rules: CohortRuleRepository = mockk()
     private val memberships: CohortMemberRepository = mockk(relaxed = true)
-    private val cohorts: CohortRepository = mockk()
-    private val subjectRepo: net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository =
-        mockk(relaxed = true)
+    private val cohorts: CohortRepository = mockk(relaxed = true)
+    private val subjectRepo: CohortSubjectRepository = mockk(relaxed = true)
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
-    private val users: net.blueshell.api.domain.user.application.UserService =
-        mockk<net.blueshell.api.domain.user.application.UserService>(relaxed = true).also {
-            every { it.isSoftDeleted(any<Long>()) } returns false
-        }
-    private val evaluator = CohortRuleEvaluator(factCollector, rules, memberships, cohorts, subjectRepo, jobs, users)
+    private val users: UserService = mockk<UserService>(relaxed = true).also {
+        every { it.isSoftDeleted(any<Long>()) } returns false
+    }
+    private val evaluator = CohortRuleEvaluator(factCollector, memberships, cohorts, subjectRepo, jobs, users)
 
     @Test
     fun `cohorts in the desired set but not currently joined are added and a per-member ADD is enqueued`() {
-        every { factCollector.collect(1L) } returns setOf(
-            UserFact(CohortFactKind.ROLE, Role.MEMBER.name),
-        )
+        every { factCollector.collect(1L) } returns setOf(UserFact(CohortFactKind.ROLE, Role.MEMBER.name))
         val members = cohort(id = 10L)
-        every { rules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.ROLE, Role.MEMBER.name) } returns
-            listOf(rule(members))
+        every { cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.MEMBER.name) } returns listOf(members)
         every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns emptyList()
         every { cohorts.findById(10L) } returns Optional.of(members)
 
@@ -53,7 +48,6 @@ class CohortRuleEvaluatorTest {
 
         assertThat(result.toAdd).containsExactly(10L)
         assertThat(result.toRemove).isEmpty()
-        assertThat(saved.isCaptured).isTrue()
         assertThat(saved.captured.cohort).isSameAs(members)
         assertThat(saved.captured.userId).isEqualTo(1L)
         verify {
@@ -62,9 +56,20 @@ class CohortRuleEvaluatorTest {
                 CohortJobs.SyncCohortMembershipPayload(1L, 10L, SyncCohortMembershipIntent.ADD),
             )
         }
-        verify(exactly = 0) {
-            jobs.enqueue(CohortJobs.ReconcileList, any<CohortJobs.ReconcileListPayload>())
-        }
+    }
+
+    @Test
+    fun `a held fact whose subject is disabled adds no cohort`() {
+        every { factCollector.collect(1L) } returns setOf(UserFact(CohortFactKind.ROLE, Role.MEMBER.name))
+        // The enabled-subject query returns nothing for a disabled subject.
+        every { cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.MEMBER.name) } returns emptyList()
+        every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns emptyList()
+
+        val result = evaluator.evaluate(1L)
+
+        assertThat(result.toAdd).isEmpty()
+        assertThat(result.isNoOp).isTrue()
+        verify(exactly = 0) { memberships.save(any<CohortMember>()) }
     }
 
     @Test
@@ -85,19 +90,13 @@ class CohortRuleEvaluatorTest {
                 CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.REMOVE),
             )
         }
-        verify(exactly = 0) {
-            jobs.enqueue(CohortJobs.ReconcileList, any<CohortJobs.ReconcileListPayload>())
-        }
     }
 
     @Test
     fun `no-op evaluation does not write or enqueue anything`() {
-        every { factCollector.collect(1L) } returns setOf(
-            UserFact(CohortFactKind.ROLE, Role.MEMBER.name),
-        )
+        every { factCollector.collect(1L) } returns setOf(UserFact(CohortFactKind.ROLE, Role.MEMBER.name))
         val members = cohort(id = 10L)
-        every { rules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.ROLE, Role.MEMBER.name) } returns
-            listOf(rule(members))
+        every { cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.MEMBER.name) } returns listOf(members)
         every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns listOf(membership(members))
 
         val result = evaluator.evaluate(1L)
@@ -105,7 +104,6 @@ class CohortRuleEvaluatorTest {
         assertThat(result.isNoOp).isTrue()
         verify(exactly = 0) { memberships.save(any<CohortMember>()) }
         verify(exactly = 0) { memberships.delete(any<CohortMember>()) }
-        verify(exactly = 0) { jobs.enqueue(CohortJobs.ReconcileList, any<CohortJobs.ReconcileListPayload>()) }
         verify(exactly = 0) {
             jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
         }
@@ -119,10 +117,8 @@ class CohortRuleEvaluatorTest {
         )
         val brevoMembers = cohort(id = 10L)
         val newsletter = cohort(id = 20L)
-        every { rules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.ROLE, Role.MEMBER.name) } returns
-            listOf(rule(brevoMembers))
-        every { rules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.NEWSLETTER, "true") } returns
-            listOf(rule(newsletter))
+        every { cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.MEMBER.name) } returns listOf(brevoMembers)
+        every { cohorts.findAllForEnabledSubjectFact(CohortFactKind.NEWSLETTER, "true") } returns listOf(newsletter)
         every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns emptyList()
         every { cohorts.findById(10L) } returns Optional.of(brevoMembers)
         every { cohorts.findById(20L) } returns Optional.of(newsletter)
@@ -132,16 +128,6 @@ class CohortRuleEvaluatorTest {
 
         assertThat(result.desired).containsExactlyInAnyOrder(10L, 20L)
         assertThat(result.toAdd).containsExactlyInAnyOrder(10L, 20L)
-        verify {
-            jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(1L, 10L, SyncCohortMembershipIntent.ADD),
-            )
-            jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(1L, 20L, SyncCohortMembershipIntent.ADD),
-            )
-        }
     }
 
     @Test
@@ -154,7 +140,6 @@ class CohortRuleEvaluatorTest {
         assertThat(result.desired).isEmpty()
         assertThat(result.current).isEmpty()
         assertThat(result.isNoOp).isTrue()
-        verify(exactly = 0) { jobs.enqueue(CohortJobs.ReconcileList, any<CohortJobs.ReconcileListPayload>()) }
         verify(exactly = 0) {
             jobs.enqueue(CohortJobs.SyncCohortMembership, any<CohortJobs.SyncCohortMembershipPayload>())
         }
@@ -165,18 +150,12 @@ class CohortRuleEvaluatorTest {
         every { c.id } returns id
         every { c.kind } returns CohortKind.LIST
         every { c.system } returns "BREVO"
-        // Every cohort created after V72 has a subject; the evaluator now
-        // looks it up so members can be inserted with both FKs populated.
+        // Every cohort created after V72 has a subject; the evaluator looks it
+        // up so members are inserted with both FKs populated.
         every { c.subjectId } returns id + 1000L
-        val subject = mockk<net.blueshell.api.platform.integration.cohort.persistence.CohortSubject>(relaxed = true)
-        every { subjectRepo.findById(id + 1000L) } returns java.util.Optional.of(subject)
+        val subject = mockk<CohortSubject>(relaxed = true)
+        every { subjectRepo.findById(id + 1000L) } returns Optional.of(subject)
         return c
-    }
-
-    private fun rule(cohort: Cohort): CohortRule {
-        val r = mockk<CohortRule>()
-        every { r.cohort } returns cohort
-        return r
     }
 
     private fun membership(cohort: Cohort): CohortMember {

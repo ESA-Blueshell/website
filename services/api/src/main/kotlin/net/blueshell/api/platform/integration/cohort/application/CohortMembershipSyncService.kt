@@ -1,15 +1,16 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
+import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortMembershipSync
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -23,16 +24,18 @@ import java.time.LocalDateTime
 
 /**
  * Application implementation of the [CohortMembershipSync] inbound
- * port. Drives one `(user, cohort)` sync end-to-end: resolves the
- * external ids through the unified `external_id_mapping` table,
- * picks the right [CohortPort] for the cohort's system, lazily
- * materialises the cohort's external counterpart on first `ADD`,
- * and asks the outbound port to apply the change.
+ * port. Drives one `(user, cohort)` sync end-to-end: resolves the user
+ * external id, resolves the cohort target id through [CohortTargetIds],
+ * picks the right [CohortPort] for the cohort's system, and asks the
+ * outbound port to apply the change.
  *
  * Recovery semantics:
  * - `ADD` with no user external id enqueues `SyncContact` and throws
  *   a retryable exception so the retry picks up after the contact
  *   has materialised externally.
+ * - `ADD` with no cohort target id enqueues `cohort.materialize-target`
+ *   and throws a retryable exception — it never creates the target
+ *   itself, so two racing ADDs cannot create two remote targets.
  * - `REMOVE` with no external state on either side is a no-op —
  *   there is nothing to converge to.
  */
@@ -42,6 +45,7 @@ class CohortMembershipSyncService(
     private val ledger: CohortLedger,
     private val registry: CohortPortRegistry,
     private val externalIds: ExternalIdMappingService,
+    private val targetIds: CohortTargetIds,
     private val jobs: TrackedJobDispatcher,
     transactionManager: PlatformTransactionManager,
 ) : CohortMembershipSync {
@@ -66,12 +70,14 @@ class CohortMembershipSyncService(
         val port = registry.require(system)
 
         when (intent) {
-            SyncCohortMembershipIntent.ADD -> add(userId, cohort.id!!, cohort.label, cohort.system, port)
-            SyncCohortMembershipIntent.REMOVE -> remove(userId, cohort.id!!, cohort.system, port)
+            SyncCohortMembershipIntent.ADD -> add(userId, cohort, port)
+            SyncCohortMembershipIntent.REMOVE -> remove(userId, cohort, port)
         }
     }
 
-    private fun add(userId: Long, cohortId: Long, cohortLabel: String, system: String, port: CohortPort) {
+    private fun add(userId: Long, cohort: Cohort, port: CohortPort) {
+        val cohortId = cohort.id!!
+        val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
         if (externalUserId == null) {
             jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId))
@@ -79,7 +85,13 @@ class CohortMembershipSyncService(
                 "user $userId has no $system external id — enqueued SyncContact, will retry",
             )
         }
-        val externalCohortId = findOrCreateExternalCohortId(cohortId, cohortLabel, system, port)
+        val externalCohortId = targetIds.find(cohort)
+        if (externalCohortId == null) {
+            jobs.enqueue(CohortJobs.MaterializeCohortTarget, CohortJobs.MaterializeCohortTargetPayload(cohortId))
+            throw CohortMembershipNotReadyException(
+                "cohort $cohortId has no $system target — enqueued materialize-target, will retry",
+            )
+        }
         outsideTransaction.executeWithoutResult { port.addMember(externalUserId, externalCohortId) }
 
         // Stamp the ledger so the desired row reads as synced. This is the
@@ -90,9 +102,11 @@ class CohortMembershipSyncService(
         log.debug("Added user {} to {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
     }
 
-    private fun remove(userId: Long, cohortId: Long, system: String, port: CohortPort) {
+    private fun remove(userId: Long, cohort: Cohort, port: CohortPort) {
+        val cohortId = cohort.id!!
+        val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
-        val externalCohortId = externalIds.find(COHORT_AGGREGATE, cohortId, system)?.externalId
+        val externalCohortId = targetIds.find(cohort)
         if (externalUserId == null || externalCohortId == null) {
             log.debug(
                 "No $system external ids for user {} / cohort {} — skipping removal",
@@ -102,25 +116,6 @@ class CohortMembershipSyncService(
         }
         outsideTransaction.executeWithoutResult { port.removeMember(externalUserId, externalCohortId) }
         log.debug("Removed user {} from {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
-    }
-
-    /**
-     * Returns the cohort's external id on `system`, creating the external
-     * counterpart through [CohortPort.createCohort] on first use and
-     * recording the new id in `external_id_mapping`. Mirrors the existing
-     * `findOrCreateList` lazy-resolution idiom.
-     */
-    private fun findOrCreateExternalCohortId(
-        cohortId: Long,
-        cohortLabel: String,
-        system: String,
-        port: CohortPort,
-    ): String {
-        externalIds.find(COHORT_AGGREGATE, cohortId, system)?.externalId?.let { return it }
-        log.info("Creating $system cohort {} ('{}') externally", cohortId, cohortLabel)
-        val created = outsideTransaction.execute { port.createCohort(cohortLabel) }!!
-        externalIds.upsert(COHORT_AGGREGATE, cohortId, system, created)
-        return created
     }
 
     companion object {

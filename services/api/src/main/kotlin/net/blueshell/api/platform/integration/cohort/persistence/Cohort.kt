@@ -13,10 +13,11 @@ import org.hibernate.annotations.SQLRestriction
 /**
  * A named group on one external system: a defined population of users
  * sharing one or more facts. Brevo lists, Discord roles and Google
- * groups all map to one row here. The native-side id lives in the
- * existing `external_id_mapping` table with `aggregate_type='COHORT'`,
- * so a brand-new cohort can exist locally before it has been
- * materialised externally (and adapters create it lazily on first use).
+ * groups all map to one row here. The native-side id lives in
+ * [externalId] (owned by `CohortTargetIds`), which is `null` until the
+ * cohort has been materialised externally by the `cohort.materialize-target`
+ * job. During the compatibility window `CohortTargetIds` also falls back to
+ * the legacy `external_id_mapping` row with `aggregate_type='COHORT'`.
  *
  * `system` is stored as a plain string holding a `TargetSystem.name()`;
  * the persistence layer cannot depend on the `sync.port` package per the
@@ -64,4 +65,12 @@ class Cohort(
      */
     @Column(name = "subject_id", nullable = true)
     var subjectId: Long? = null,
+
+    /**
+     * Native id of this cohort's target on [system] (e.g. a Brevo list id).
+     * `null` until materialised. Written only through `CohortTargetIds`;
+     * `1024` matches the widened `external_id_mapping.external_id` (V61).
+     */
+    @Column(name = "external_id", nullable = true, length = 1024)
+    var externalId: String? = null,
 ) : AuditedAutoIdEntity()

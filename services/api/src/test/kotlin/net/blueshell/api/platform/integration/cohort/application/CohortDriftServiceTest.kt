@@ -25,8 +25,9 @@ class CohortDriftServiceTest {
     private val cohorts: CohortRepository = mockk()
     private val members: CohortMemberRepository = mockk()
     private val externalIds: ExternalIdMappingService = mockk()
+    private val targetIds: CohortTargetIds = mockk()
     private val users: UserService = mockk()
-    private val service = CohortDriftService(cohorts, members, externalIds, users)
+    private val service = CohortDriftService(cohorts, members, externalIds, targetIds, users)
 
     @Test
     fun `compute classifies ledger rows without external port calls`() {
@@ -34,8 +35,7 @@ class CohortDriftServiceTest {
         val cohort = cohort(99L, subject.id!!)
         val lastObserved = LocalDateTime.parse("2026-05-03T10:15:30")
         every { cohorts.findBySubjectIdAndSystem(7L, TargetSystem.BREVO.name) } returns cohort
-        every { externalIds.find("COHORT", 99L, TargetSystem.BREVO.name) } returns
-            ExternalIdMapping("COHORT", 99L, TargetSystem.BREVO.name, "list-99")
+        every { targetIds.find(any()) } returns "list-99"
         every { members.findAllByCohortId(99L) } returns listOf(
             member(cohort, subject, userId = 1L),
             member(cohort, subject, userId = 2L),
@@ -101,7 +101,7 @@ class CohortDriftServiceTest {
         val subject = subject(7L)
         val cohort = cohort(99L, subject.id!!)
         every { cohorts.findBySubjectIdAndSystem(7L, TargetSystem.BREVO.name) } returns cohort
-        every { externalIds.find("COHORT", 99L, TargetSystem.BREVO.name) } returns null
+        every { targetIds.find(any()) } returns null
 
         val report = service.compute(7L, TargetSystem.BREVO)
 

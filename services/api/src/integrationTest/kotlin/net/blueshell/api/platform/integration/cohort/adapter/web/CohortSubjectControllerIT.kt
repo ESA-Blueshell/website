@@ -177,6 +177,21 @@ class CohortSubjectControllerIT : UserTestSupport() {
             .isEqualTo("new-list")
     }
 
+    @Test
+    fun `switching a cohort that belongs to another subject returns 404`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val ownerSubject = newSubject()
+        val otherSubject = newSubject()
+        val cohort = newCohort(ownerSubject)
+
+        mvc.perform(
+            put("/management/cohort-subjects/{id}/targets/{cohortId}", otherSubject.id, cohort.id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
+                .with(bearer(admin)),
+        ).andExpect(status().isNotFound)
+    }
+
     private fun newSubject(): CohortSubject =
         subjects.save(CohortSubject(type = CohortSubjectType.CUSTOM, label = "Members"))
 

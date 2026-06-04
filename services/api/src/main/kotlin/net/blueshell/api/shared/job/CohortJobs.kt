@@ -94,6 +94,19 @@ object CohortJobs {
             DeleteExternalTargetPayload::class.java
     }
 
+    /**
+     * Creates one cohort's external target when it has none yet, and records
+     * the new id. Enqueued by a per-member ADD that found no target id, so the
+     * ADD can retry once the target exists. Deduplicated by cohort id, so only
+     * one create runs per cohort however many ADDs raced.
+     */
+    object MaterializeCohortTarget : JobDefinition<MaterializeCohortTargetPayload> {
+        override val type: String = "cohort.materialize-target"
+        override val payloadType: Class<MaterializeCohortTargetPayload> =
+            MaterializeCohortTargetPayload::class.java
+        override fun dedupKey(payload: MaterializeCohortTargetPayload): String = "cohort=${payload.cohortId}"
+    }
+
     data class SyncCohortMembershipPayload(
         val userId: Long,
         val cohortId: Long,
@@ -107,4 +120,5 @@ object CohortJobs {
     data class ReconcileListPayload(val cohortId: Long)
     /** `system` holds a `TargetSystem.name()`; shared/job cannot depend on the sync.port package. */
     data class DeleteExternalTargetPayload(val system: String, val externalTargetId: String)
+    data class MaterializeCohortTargetPayload(val cohortId: Long)
 }

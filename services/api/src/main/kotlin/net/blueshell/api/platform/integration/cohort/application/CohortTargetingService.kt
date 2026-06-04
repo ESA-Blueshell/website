@@ -5,11 +5,11 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargetRef
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -19,27 +19,27 @@ import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.server.ResponseStatusException
 
 /**
- * Application implementation of [CohortTargeting]. External target
- * creation runs outside any DB transaction (the PR A reconcile pattern);
- * the local `Cohort` row and its `external_id_mapping` are persisted in a
- * short write transaction afterwards so a provider failure leaves no
- * orphan mapping.
+ * Application implementation of [CohortTargeting]. External target creation
+ * runs outside any DB transaction; the local `Cohort` row and its external id
+ * are persisted in a short write transaction afterwards so a provider failure
+ * leaves no half-written row. [CohortTargetIds] owns every write of the id.
  */
 @Service
 class CohortTargetingService(
     private val cohortRepo: CohortRepository,
     private val subjectRepo: CohortSubjectRepository,
-    private val externalIds: ExternalIdMappingService,
+    private val targetIds: CohortTargetIds,
     private val registry: CohortPortRegistry,
     private val jobs: TrackedJobDispatcher,
     transactionManager: PlatformTransactionManager,
 ) : CohortTargeting {
 
+    private val readOnlyTransaction = TransactionTemplate(transactionManager).apply { isReadOnly = true }
     private val writeTransaction = TransactionTemplate(transactionManager)
 
     // Suspends any active transaction (e.g. the one AbstractJsonJobHandler opens
-    // around deleteTarget) so provider HTTP calls hold no DB connection —
-    // ADR-006/ADR-023.
+    // around deleteTarget / materialize) so provider HTTP calls hold no DB
+    // connection — ADR-006/ADR-023.
     private val outsideTransaction = TransactionTemplate(transactionManager).apply {
         propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
     }
@@ -49,7 +49,7 @@ class CohortTargetingService(
             val subject = requireSubject(subjectId)
             requireNoExistingMapping(subjectId, system)
             val cohort = cohortRepo.save(newCohort(system, subject.label, folder = null, subjectId = subjectId))
-            externalIds.upsert(COHORT_AGGREGATE, cohort.id!!, system.name, externalId)
+            targetIds.record(cohort, externalId)
             CohortMappingRow(cohort, externalId)
         }!!
 
@@ -65,12 +65,13 @@ class CohortTargetingService(
 
         return writeTransaction.execute {
             val cohort = cohortRepo.save(newCohort(system, label, folder = folderHint, subjectId = subjectId))
-            externalIds.upsert(COHORT_AGGREGATE, cohort.id!!, system.name, externalId)
+            targetIds.record(cohort, externalId)
             CohortMappingRow(cohort, externalId)
         }!!
     }
 
     override fun switchTarget(
+        subjectId: Long,
         cohortId: Long,
         externalId: String,
         deletePrevious: Boolean,
@@ -80,9 +81,14 @@ class CohortTargetingService(
             val cohort = cohortRepo.findById(cohortId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
             }
+            // The route carries the subject id; reject a cohort that is not its
+            // target so a wrong-path admin call cannot repoint another subject's.
+            if (cohort.subjectId != subjectId) {
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId is not a target of subject $subjectId")
+            }
             val system = TargetSystem.valueOf(cohort.system)
-            val previousExternalId = externalIds.find(COHORT_AGGREGATE, cohortId, cohort.system)?.externalId
-            externalIds.switchCohortTarget(cohortId, system, externalId)
+            val previousExternalId = targetIds.find(cohort)
+            targetIds.record(cohort, externalId)
             Switched(cohort, system, previousExternalId)
         }!!
 
@@ -96,6 +102,41 @@ class CohortTargetingService(
             jobs.enqueue(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId))
         }
         return CohortMappingRow(switched.cohort, externalId)
+    }
+
+    override fun materialize(cohortId: Long): CohortTargetRef {
+        // Re-check the id first: the job is cohort-deduped, but a target may have
+        // been recorded (admin link, an earlier run) since this job was enqueued.
+        val prep = readOnlyTransaction.execute {
+            val cohort = cohortRepo.findById(cohortId).orElseThrow {
+                NonRetryableJobException("Cohort $cohortId not found")
+            }
+            MaterializePrep(TargetSystem.valueOf(cohort.system), cohort.label, cohort.folder, targetIds.find(cohort))
+        }!!
+        prep.existingExternalId?.let { return CohortTargetRef(cohortId, it) }
+
+        // Pass the folder — the old lazy ADD path created the list with no
+        // folder while admin creation passed it.
+        val created = outsideTransaction.execute { registry.require(prep.system).createCohort(prep.label, prep.folder) }!!
+
+        return writeTransaction.execute {
+            val cohort = cohortRepo.findById(cohortId).orElseThrow {
+                NonRetryableJobException("Cohort $cohortId not found")
+            }
+            targetIds.find(cohort)?.let { return@execute CohortTargetRef(cohortId, it) }
+            try {
+                targetIds.record(cohort, created)
+            } catch (e: Exception) {
+                // The remote target exists but could not be recorded. Fail
+                // terminally carrying its id so an operator links it, rather
+                // than letting retries create a second remote target.
+                throw NonRetryableJobException(
+                    "Created ${prep.system} target '$created' for cohort $cohortId but could not record it; link it manually",
+                    e,
+                )
+            }
+            CohortTargetRef(cohortId, created)
+        }!!
     }
 
     override fun deleteTarget(system: TargetSystem, externalTargetId: String) {
@@ -132,4 +173,11 @@ class CohortTargetingService(
     }
 
     private data class Switched(val cohort: Cohort, val system: TargetSystem, val previousExternalId: String?)
+
+    private data class MaterializePrep(
+        val system: TargetSystem,
+        val label: String,
+        val folder: String?,
+        val existingExternalId: String?,
+    )
 }

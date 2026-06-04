@@ -37,6 +37,7 @@ class CohortRemediationServiceTest {
     private val subjects: CohortSubjectRepository = mockk()
     private val members: CohortMemberRepository = mockk(relaxed = true)
     private val externalIds: ExternalIdMappingService = mockk()
+    private val targetIds: CohortTargetIds = mockk()
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
     private val port = RecordingCohortPort()
     private val service = CohortRemediationService(
@@ -45,6 +46,7 @@ class CohortRemediationServiceTest {
         memberRepo = members,
         ledger = CohortLedger(members),
         externalIds = externalIds,
+        targetIds = targetIds,
         registry = CohortPortRegistry(listOf(port)),
         jobs = jobs,
         transactionManager = ImmediateTransactionManager(),
@@ -86,8 +88,7 @@ class CohortRemediationServiceTest {
 
         every { cohorts.findById(99L) } returns Optional.of(cohort)
         every { subjects.findById(7L) } returns Optional.of(subject)
-        every { externalIds.find("COHORT", 99L, TargetSystem.BREVO.name) } returns
-            ExternalIdMapping("COHORT", 99L, TargetSystem.BREVO.name, "list-99")
+        every { targetIds.require(any()) } returns "list-99"
         every {
             externalIds.findBatch("USER", setOf(1L, 2L, 3L), TargetSystem.BREVO.name)
         } returns listOf(
@@ -151,8 +152,7 @@ class CohortRemediationServiceTest {
             verifiedAt = LocalDateTime.parse("2026-03-01T08:00:00"),
         )
         every { cohorts.findById(99L) } returns Optional.of(cohort)
-        every { externalIds.find("COHORT", 99L, TargetSystem.BREVO.name) } returns
-            ExternalIdMapping("COHORT", 99L, TargetSystem.BREVO.name, "list-99")
+        every { targetIds.require(any()) } returns "list-99"
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-9") } returns stranger
 
         service.removeExternalMember(99L, "ext-9")

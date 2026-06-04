@@ -8,8 +8,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,7 +26,7 @@ class CohortQueryService(
     private val cohortMembers: CohortMemberRepository,
     private val cohortRules: CohortRuleRepository,
     private val users: UserService,
-    private val externalIds: ExternalIdMappingService,
+    private val targetIds: CohortTargetIds,
 ) {
     @Transactional(readOnly = true)
     fun summaries(): List<CohortSummary> =
@@ -36,7 +34,7 @@ class CohortQueryService(
             CohortSummary(
                 cohort = cohort,
                 memberCount = cohortMembers.findAllByCohortIdAndUserIdIsNotNull(cohort.id!!).size,
-                externalId = externalIds.find(COHORT_AGGREGATE, cohort.id!!, cohort.system)?.externalId,
+                externalId = targetIds.find(cohort),
             )
         }
 
@@ -61,7 +59,7 @@ class CohortQueryService(
 
         return CohortDetail(
             cohort = cohort,
-            externalId = externalIds.find(COHORT_AGGREGATE, cohortId, cohort.system)?.externalId,
+            externalId = targetIds.find(cohort),
             members = members.map { member ->
                 CohortMemberRow(
                     member = member,

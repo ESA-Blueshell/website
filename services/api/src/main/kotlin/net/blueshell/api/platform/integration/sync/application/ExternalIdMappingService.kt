@@ -58,13 +58,6 @@ class ExternalIdMappingService(
         return repository.findByAggregateTypeAndAggregateIdAndSystem(USER_AGGREGATE, userId, system.name)!!
     }
 
-    /** Updates the mapping row for [cohortId]/[system] to point at [externalTargetId]. */
-    @Transactional
-    fun switchCohortTarget(cohortId: Long, system: TargetSystem, externalTargetId: String): ExternalIdMapping {
-        upsert(COHORT_AGGREGATE, cohortId, system.name, externalTargetId)
-        return repository.findByAggregateTypeAndAggregateIdAndSystem(COHORT_AGGREGATE, cohortId, system.name)!!
-    }
-
     companion object {
         const val USER_AGGREGATE = "USER"
         const val COHORT_AGGREGATE = "COHORT"

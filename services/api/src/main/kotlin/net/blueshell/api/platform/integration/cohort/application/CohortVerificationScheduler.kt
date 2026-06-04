@@ -1,8 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
@@ -19,13 +17,13 @@ import org.springframework.stereotype.Component
 @Component
 class CohortVerificationScheduler(
     private val cohorts: CohortRepository,
-    private val externalIds: ExternalIdMappingService,
+    private val targetIds: CohortTargetIds,
     private val jobs: TrackedJobDispatcher,
 ) {
     @Scheduled(cron = "\${cohort.verify-cron:0 0 3 * * *}")
     fun verifyAllCohorts() {
         val mapped = cohorts.findAll().filter { cohort ->
-            externalIds.find(COHORT_AGGREGATE, cohort.id!!, cohort.system) != null
+            targetIds.find(cohort) != null
         }
         log.info("Scheduling reconcile for {} externally-mapped cohorts", mapped.size)
         mapped.forEach { jobs.enqueue(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(it.id!!)) }

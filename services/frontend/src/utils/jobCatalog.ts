@@ -81,24 +81,25 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
   "cohort.reconcile-contribution-periods": {
     title: "Reconcile contribution-period cohorts",
     description:
-      "Walks every contribution period and makes sure its 'contribution paid' cohort " +
-      "and matching rule exist locally. Does not touch external systems on its own — " +
-      "subsequent user re-evaluations push any resulting changes outward. Safe to run.",
+      "Walks every contribution period and makes sure all three of its cohorts — " +
+      "contribution paid, members, and active members — exist locally. Does not touch " +
+      "external systems on its own; subsequent user re-evaluations push any resulting " +
+      "changes outward. Safe to run.",
   },
   "cohort.reconcile-all-users": {
     title: "Re-evaluate every user's cohorts",
     description:
       "Fans out one Re-evaluate-user-cohorts job per active user. Each child job " +
       "recomputes that user's cohort memberships from current facts (role, committee " +
-      "membership, contribution payments, newsletter opt-in) and enqueues list " +
-      "reconciliation for any cohort whose desired membership changed.",
+      "membership, contribution payments, newsletter opt-in) and enqueues a per-member " +
+      "membership-sync job for any cohort the user joins or leaves.",
   },
   "cohort.evaluate-user": {
     title: "Re-evaluate one user's cohorts",
     description:
-      "Recomputes one user's desired cohort memberships locally, then enqueues " +
-      "cohort-level list reconciliation for touched external mappings. Does not call " +
-      "external systems directly.",
+      "Recomputes one user's desired cohort memberships locally, then enqueues a " +
+      "per-member membership-sync job (add or remove) for each cohort the user joins " +
+      "or leaves. Does not call external systems directly.",
   },
   "cohort.remove-external-member": {
     title: "Remove from external list",
@@ -107,11 +108,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "(e.g. a Brevo list). Used to clean up drift detected by the drift inspector.",
   },
   "cohort.reconcile-list": {
-    title: "Reconcile list",
+    title: "Verify cohort",
     description:
-      "Fetches the full external member list for one cohort mapping, updates the " +
-      "membership ledger, and enqueues ADD or contact-sync follow-ups for missing " +
-      "desired members. Extras are recorded for admin remediation.",
+      "Fetches the full external member list for one cohort and verifies the ledger " +
+      "against it: confirms members present, demotes ones that vanished, records " +
+      "strangers, and enqueues ADD or contact-sync follow-ups for missing desired " +
+      "members. One external call per run; extras are recorded for admin remediation.",
   },
   "cohort.delete-external-target": {
     title: "Delete external target",

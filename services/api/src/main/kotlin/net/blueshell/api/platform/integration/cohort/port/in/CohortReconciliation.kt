@@ -32,12 +32,4 @@ interface CohortReconciliation {
      * user's adapter failure stays isolated.
      */
     fun reconcileAllUserCohorts()
-
-    /**
-     * Pushes every active `cohort_member` row for one cohort back
-     * to its external system. Does not change local state — useful
-     * for recovering from external drift where the upstream system
-     * was modified out of band.
-     */
-    fun resyncCohort(cohortId: Long)
 }

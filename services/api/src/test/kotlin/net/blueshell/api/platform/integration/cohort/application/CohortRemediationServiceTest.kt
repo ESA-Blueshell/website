@@ -51,7 +51,7 @@ class CohortRemediationServiceTest {
     )
 
     @Test
-    fun `reconcileList fetches remote members outside a transaction and applies ledger changes`() {
+    fun `verifyCohort fetches remote members outside a transaction and applies ledger changes`() {
         val subject = subject(7L)
         val cohort = cohort(99L, subject.id!!)
         val confirmed = member(cohort, subject, userId = 1L)
@@ -104,7 +104,7 @@ class CohortRemediationServiceTest {
         every { members.findAllByCohortIdAndUserIdIsNull(99L) } returns listOf(staleStranger)
         every { members.save(any<CohortMember>()) } answers { firstArg() }
 
-        service.reconcileList(99L)
+        service.verifyCohort(99L)
 
         assertThat(port.listCalls).isEqualTo(1)
         assertThat(port.lastExternalCohortId).isEqualTo("list-99")

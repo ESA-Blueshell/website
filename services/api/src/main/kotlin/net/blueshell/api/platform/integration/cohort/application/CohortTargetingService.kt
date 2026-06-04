@@ -14,6 +14,7 @@ import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.server.ResponseStatusException
 
@@ -36,6 +37,13 @@ class CohortTargetingService(
 
     private val writeTransaction = TransactionTemplate(transactionManager)
 
+    // Suspends any active transaction (e.g. the one AbstractJsonJobHandler opens
+    // around deleteTarget) so provider HTTP calls hold no DB connection —
+    // ADR-006/ADR-023.
+    private val outsideTransaction = TransactionTemplate(transactionManager).apply {
+        propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
+    }
+
     override fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow =
         writeTransaction.execute {
             val subject = requireSubject(subjectId)
@@ -53,7 +61,7 @@ class CohortTargetingService(
             requireNoExistingMapping(subjectId, system)
         }
 
-        val externalId = registry.require(system).createCohort(label, folderHint)
+        val externalId = outsideTransaction.execute { registry.require(system).createCohort(label, folderHint) }!!
 
         return writeTransaction.execute {
             val cohort = cohortRepo.save(newCohort(system, label, folder = folderHint, subjectId = subjectId))
@@ -91,7 +99,7 @@ class CohortTargetingService(
     }
 
     override fun deleteTarget(system: TargetSystem, externalTargetId: String) {
-        registry.require(system).deleteCohort(externalTargetId)
+        outsideTransaction.executeWithoutResult { registry.require(system).deleteCohort(externalTargetId) }
     }
 
     private fun requireSubject(subjectId: Long) =

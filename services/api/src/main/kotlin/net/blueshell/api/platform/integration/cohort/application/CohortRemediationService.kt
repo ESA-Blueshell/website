@@ -19,6 +19,7 @@ import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
@@ -47,6 +48,12 @@ class CohortRemediationService(
     private val readOnlyTransaction = TransactionTemplate(transactionManager).apply { isReadOnly = true }
     private val writeTransaction = TransactionTemplate(transactionManager)
 
+    // Suspends any active transaction (notably the one AbstractJsonJobHandler
+    // opens) so provider HTTP calls hold no DB connection — ADR-006/ADR-023.
+    private val outsideTransaction = TransactionTemplate(transactionManager).apply {
+        propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
+    }
+
     @Transactional
     override fun linkUser(
         subjectId: Long,
@@ -68,7 +75,7 @@ class CohortRemediationService(
         val externalCohortId = externalIds.find(COHORT_AGGREGATE, cohortId, cohort.system)?.externalId
             ?: throw NonRetryableJobException("Cohort $cohortId has no external id on $system")
 
-        registry.require(system).removeMember(externalUserId, externalCohortId)
+        outsideTransaction.executeWithoutResult { registry.require(system).removeMember(externalUserId, externalCohortId) }
         ledger.removeStranger(cohortId, externalUserId)
     }
 
@@ -79,7 +86,7 @@ class CohortRemediationService(
      */
     override fun verifyCohort(cohortId: Long) {
         val plan = readOnlyTransaction.execute { loadPlan(cohortId) }!!
-        val remote = registry.require(plan.system).listMembers(plan.externalCohortId)
+        val remote = outsideTransaction.execute { registry.require(plan.system).listMembers(plan.externalCohortId) }!!
         writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
     }
 

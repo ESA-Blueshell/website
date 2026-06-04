@@ -2,7 +2,6 @@ package net.blueshell.api.platform.integration.cohort.persistence
 
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
@@ -16,8 +15,8 @@ import org.springframework.dao.DataIntegrityViolationException
 import java.time.LocalDateTime
 
 /**
- * Round-trip checks that the V66 schema and the Cohort / CohortMember /
- * CohortRule entities agree on column names and types. With
+ * Round-trip checks that the schema and the Cohort / CohortMember /
+ * CohortSubject entities agree on column names and types. With
  * `hibernate.ddl-auto=none` Hibernate cannot fail at startup on a
  * mismatch, so this IT is the earliest place a typo here will surface.
  */
@@ -29,9 +28,6 @@ class CohortRepositoryIT : UserTestSupport() {
 
     @Autowired
     private lateinit var cohortMembers: CohortMemberRepository
-
-    @Autowired
-    private lateinit var cohortRules: CohortRuleRepository
 
     @Autowired
     private lateinit var subjects: CohortSubjectRepository
@@ -98,52 +94,35 @@ class CohortRepositoryIT : UserTestSupport() {
     }
 
     @Test
-    fun `cohort rule lookup by fact returns enabled rows only`() {
-        // Rules attach to the subject after V72, not directly to the
-        // cohort. Save the subject first so we can pass it into both
-        // rule constructors below.
-        val subject = subjects.save(
-            net.blueshell.api.platform.integration.cohort.persistence.CohortSubject(
-                type = net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType.CUSTOM,
+    fun `findAllForEnabledSubjectFact returns cohorts for enabled subjects only`() {
+        // The rule now lives on the subject: one subject per (factKind, factKey),
+        // carrying the enabled flag the evaluator filters on.
+        val enabledSubject = subjects.save(
+            CohortSubject(
+                type = CohortSubjectType.CUSTOM,
                 label = "Members",
-            )
-        )
-        val cohort = cohorts.save(
-            Cohort(
-                system = TargetSystem.BREVO.name,
-                kind = CohortKind.LIST,
-                label = "Members",
-                subjectId = subject.id,
-            )
-        )
-
-        cohortRules.save(
-            CohortRule(
                 factKind = CohortFactKind.ROLE,
                 factKey = Role.MEMBER.name,
-                cohort = cohort,
-                subject = subject,
                 enabled = true,
-            )
+            ),
         )
-        cohortRules.save(
-            CohortRule(
+        val disabledSubject = subjects.save(
+            CohortSubject(
+                type = CohortSubjectType.CUSTOM,
+                label = "Board",
                 factKind = CohortFactKind.ROLE,
                 factKey = Role.BOARD.name,
-                cohort = cohort,
-                subject = subject,
                 enabled = false,
-            )
+            ),
         )
+        val memberCohort = cohorts.save(
+            Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Members", subjectId = enabledSubject.id),
+        )
+        cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Board", subjectId = disabledSubject.id))
 
-        val memberRules =
-            cohortRules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.ROLE, Role.MEMBER.name)
-        val boardRules =
-            cohortRules.findAllByFactKindAndFactKeyAndEnabledTrue(CohortFactKind.ROLE, Role.BOARD.name)
-
-        assertThat(memberRules).hasSize(1)
-        assertThat(boardRules).isEmpty()
-        assertThat(cohortRules.findAllByCohortId(cohort.id!!)).hasSize(2)
+        assertThat(cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.MEMBER.name).map { it.id })
+            .containsExactly(memberCohort.id)
+        assertThat(cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.BOARD.name)).isEmpty()
     }
 
     // ── Ledger invariants (V74) ───────────────────────────────────────────────

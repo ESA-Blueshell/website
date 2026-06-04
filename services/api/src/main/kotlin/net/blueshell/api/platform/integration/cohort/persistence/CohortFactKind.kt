@@ -3,9 +3,9 @@ package net.blueshell.api.platform.integration.cohort.persistence
 import io.swagger.v3.oas.annotations.media.Schema
 
 /**
- * Closed set of facts about a user that a [CohortRule] can pivot on.
+ * Closed set of facts about a user that a [CohortSubject] rule can pivot on.
  *
- * The `factKey` column on [CohortRule] is a free-form string whose
+ * The `factKey` column on [CohortSubject] is a free-form string whose
  * interpretation depends on this kind:
  *  - [ROLE]: a [net.blueshell.api.shared.enums.Role] enum name.
  *  - [COMMITTEE]: a committee id (decimal string).

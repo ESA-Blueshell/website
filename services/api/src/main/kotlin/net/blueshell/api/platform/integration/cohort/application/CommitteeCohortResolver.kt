@@ -2,81 +2,42 @@ package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee
-import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
-import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
-import net.blueshell.api.platform.integration.cohort.persistence.CohortRule
-import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRuleRepository
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Ensures the cohort and rule for a [Committee] exist before the engine
+ * Ensures the subject + cohort for a [Committee] exist before the engine
  * evaluates a user against `COMMITTEE` facts.
  *
- * One committee maps to one [Cohort] (`system = BREVO`, `kind = LIST`,
- * label = committee name) plus one [CohortRule]
- * `(COMMITTEE, "<committeeId>", that-cohort)`.
- *
- * V69 backfills the cohort + rule rows for every existing committee.
- * This resolver only does work for committees created post-V69, when
- * the first `CommitteeMembershipChanged` event arrives — the listener
- * calls [materialize] before re-evaluating the user.
- *
- * The cohort's Brevo list is created lazily by `CohortMembershipSyncService`
- * on the first `ADD` for any user, keeping this resolver in the application
- * layer with no outbound-port dependency (mirrors
- * [ContributionPeriodCohortResolver]).
+ * One committee maps to one subject `(COMMITTEE, "<committeeId>")` and one
+ * BREVO list cohort under it. V69 backfilled these for existing committees;
+ * this resolver only does work for committees created post-V69, when the
+ * first `CommitteeMembershipChanged` event arrives. It is a thin spec builder
+ * over [CohortProvisioningService]; the Brevo list itself is created lazily by
+ * the `cohort.materialize-target` job on the first ADD.
  */
 @Service
 class CommitteeCohortResolver(
-    private val cohorts: CohortRepository,
-    private val cohortRules: CohortRuleRepository,
-    private val subjects: CohortSubjectRepository,
+    private val provisioning: CohortProvisioningService,
     private val committees: CommitteeService,
 ) {
     @Transactional
-    fun materialize(committeeId: Long): Cohort {
-        cohortRules.findAllByFactKindAndFactKeyAndEnabledTrue(
-            CohortFactKind.COMMITTEE,
-            committeeId.toString(),
-        ).firstOrNull { it.cohort.system == BREVO_SYSTEM }
-            ?.let { return it.cohort }
-
+    fun materialize(committeeId: Long): CohortProvisioningResult {
         val committee = committees.findById(committeeId)
-        val subject = subjects.save(
-            CohortSubject(
-                type = CohortSubjectType.COMMITTEE_MEMBERS,
-                label = labelFor(committee),
-            )
-        )
-        val cohort = cohorts.save(
-            Cohort(
-                system = BREVO_SYSTEM,
-                kind = CohortKind.LIST,
-                label = labelFor(committee),
-                folder = COMMITTEE_FOLDER,
-                subjectId = subject.id,
-            )
-        )
-        cohortRules.save(
-            CohortRule(
+        return provisioning.provision(
+            CohortProvisioningSpec(
                 factKind = CohortFactKind.COMMITTEE,
                 factKey = committeeId.toString(),
-                cohort = cohort,
-                subject = subject,
-            )
+                subjectType = CohortSubjectType.COMMITTEE_MEMBERS,
+                label = labelFor(committee),
+                folder = COMMITTEE_FOLDER,
+            ),
         )
-        return cohort
     }
 
     companion object {
-        private val BREVO_SYSTEM = TargetSystem.BREVO.name
         const val COMMITTEE_FOLDER = "Committees"
 
         fun labelFor(committee: Committee): String = committee.name

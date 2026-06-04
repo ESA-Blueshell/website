@@ -155,7 +155,10 @@ export type CohortMapping = {
     externalId?: string;
     kind: CohortKind;
     label: string;
-    system: string;
+    /**
+     * External system this mapping targets
+     */
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
 };
 
 export type CohortMemberRow = {

@@ -134,7 +134,8 @@ data class CohortSubjectDetailResponse(
 data class CohortMappingResponse(
     /** The id of the underlying [net.blueshell.api.platform.integration.cohort.persistence.Cohort] row. */
     val cohortId: Long,
-    val system: String,
+    @field:Schema(description = "External system this mapping targets")
+    val system: TargetSystem,
     val kind: CohortKind,
     val label: String,
     /** Native id on the external system; null until the cohort has been materialised. */
@@ -222,7 +223,7 @@ private fun CohortSubjectDetail.toResponse(): CohortSubjectDetailResponse =
 private fun CohortMappingRow.toResponse(): CohortMappingResponse =
     CohortMappingResponse(
         cohortId = cohort.id!!,
-        system = cohort.system,
+        system = TargetSystem.valueOf(cohort.system),
         kind = cohort.kind,
         label = cohort.label,
         externalId = externalId,

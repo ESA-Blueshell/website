@@ -35,6 +35,10 @@ class CohortMembershipSyncServiceTest {
         registry = CohortPortRegistry(listOf(brevoPort)),
         externalIds = externalIds,
         jobs = jobs,
+        // A relaxed manager still runs the TransactionTemplate callbacks; the
+        // real no-active-transaction guarantee is asserted in
+        // CohortProviderTransactionBoundaryIT against a real transaction manager.
+        transactionManager = mockk(relaxed = true),
     )
 
     init {

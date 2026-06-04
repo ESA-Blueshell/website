@@ -15,7 +15,10 @@ import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 
 /**
@@ -40,7 +43,17 @@ class CohortMembershipSyncService(
     private val registry: CohortPortRegistry,
     private val externalIds: ExternalIdMappingService,
     private val jobs: TrackedJobDispatcher,
+    transactionManager: PlatformTransactionManager,
 ) : CohortMembershipSync {
+
+    // Suspends the surrounding transaction (this service's own and the
+    // @Transactional opened by AbstractJsonJobHandler) so the provider HTTP
+    // call holds no DB connection and runs with no transaction active —
+    // ADR-006/ADR-023. DB reads/writes stay in the suspended-and-resumed
+    // outer transaction around it.
+    private val outsideTransaction = TransactionTemplate(transactionManager).apply {
+        propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
+    }
 
     @Transactional
     override fun sync(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent) {
@@ -67,7 +80,7 @@ class CohortMembershipSyncService(
             )
         }
         val externalCohortId = findOrCreateExternalCohortId(cohortId, cohortLabel, system, port)
-        port.addMember(externalUserId, externalCohortId)
+        outsideTransaction.executeWithoutResult { port.addMember(externalUserId, externalCohortId) }
 
         // Stamp the ledger so the desired row reads as synced. This is the
         // primary path to healthy; reconcile only verifies afterwards.
@@ -87,7 +100,7 @@ class CohortMembershipSyncService(
             )
             return
         }
-        port.removeMember(externalUserId, externalCohortId)
+        outsideTransaction.executeWithoutResult { port.removeMember(externalUserId, externalCohortId) }
         log.debug("Removed user {} from {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
     }
 
@@ -105,7 +118,7 @@ class CohortMembershipSyncService(
     ): String {
         externalIds.find(COHORT_AGGREGATE, cohortId, system)?.externalId?.let { return it }
         log.info("Creating $system cohort {} ('{}') externally", cohortId, cohortLabel)
-        val created = port.createCohort(cohortLabel)
+        val created = outsideTransaction.execute { port.createCohort(cohortLabel) }!!
         externalIds.upsert(COHORT_AGGREGATE, cohortId, system, created)
         return created
     }

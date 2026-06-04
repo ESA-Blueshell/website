@@ -16,10 +16,12 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * Funnels every change event that can alter a user's [UserFact]s into a
- * single re-evaluation of cohort membership. Shadow mode for now: the
- * evaluator only logs the diff. Hooking up every relevant source-of-truth
- * event in this PR means the follow-up cutover PR has nothing to wire —
- * it only flips the evaluator's "log" tail into "act".
+ * single re-evaluation of cohort membership. The evaluator writes the
+ * desired `cohort_member` rows and enqueues per-member
+ * `cohort.membership-sync` ADD/REMOVE jobs — it is not shadow mode.
+ *
+ * The engine still diffs cohort rows; the subject-level engine sketched
+ * by V72 is a deferred follow-up (see [CohortSubject]).
  *
  * `REQUIRES_NEW` mirrors the other listeners in the codebase: the
  * re-evaluation runs in its own transaction so an evaluator failure

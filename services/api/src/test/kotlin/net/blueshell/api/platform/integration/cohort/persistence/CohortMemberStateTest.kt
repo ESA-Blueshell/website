@@ -54,6 +54,18 @@ class CohortMemberStateTest {
     }
 
     @Test
+    fun `invalid — empty string external id stranger`() {
+        val row = member(userId = null).apply { externalUserId = ""; verifiedAt = at }
+        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+    }
+
+    @Test
+    fun `invalid — blank external id does not surface as synced even with syncedAt set`() {
+        val row = member(userId = null).apply { externalUserId = "  "; syncedAt = at }
+        assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
+    }
+
+    @Test
     fun `invalid — verifiedAt without syncedAt on a desired row`() {
         val row = member(userId = 7L).apply { externalUserId = "ext"; verifiedAt = at }
         assertThat(row.state).isEqualTo(CohortMemberState.INVALID)

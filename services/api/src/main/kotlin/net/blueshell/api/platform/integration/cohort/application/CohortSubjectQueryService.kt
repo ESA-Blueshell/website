@@ -39,8 +39,8 @@ class CohortSubjectQueryService(
             val subjectId = subject.id!!
             CohortSubjectSummary(
                 subject = subject,
-                memberCount = cohortMembers.findAllBySubjectIdAndUserIdIsNotNull(subjectId).size,
-                mappingCount = cohorts.findAllBySubjectId(subjectId).size,
+                memberCount = cohortMembers.countBySubjectIdAndUserIdIsNotNull(subjectId).toInt(),
+                mappingCount = cohorts.countBySubjectId(subjectId).toInt(),
             )
         }.sortedWith(
             compareBy({ it.subject.type.category() }, { it.subject.type.name }, { it.subject.label.lowercase() }),

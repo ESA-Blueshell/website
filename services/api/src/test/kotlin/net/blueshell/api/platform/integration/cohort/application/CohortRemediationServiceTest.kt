@@ -205,6 +205,8 @@ class CohortRemediationServiceTest {
             subjectId = subjectId,
         ).apply { this.id = id }
 
+    private var nextMemberId = 0L
+
     private fun member(
         cohort: Cohort,
         subject: CohortSubject,
@@ -222,7 +224,9 @@ class CohortRemediationServiceTest {
             syncedAt = syncedAt,
             verifiedAt = verifiedAt,
             label = label,
-        )
+        // applySnapshot now reloads rows by id (the reconciler emits id keys),
+        // so every test row needs a stable persistent id.
+        ).apply { id = ++nextMemberId }
 
     private class RecordingCohortPort : CohortPort {
         override val system: TargetSystem = TargetSystem.BREVO

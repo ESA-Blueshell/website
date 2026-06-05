@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
+import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
@@ -22,6 +23,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.TransactionStatus
 import org.springframework.transaction.support.SimpleTransactionStatus
+import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
 
@@ -74,6 +76,38 @@ class CohortTargetingServiceTest {
         verify(port).createCohort("Members", "Lists")
         verify(targetIds).record(saved, "999")
         assert(row.externalId == "999")
+    }
+
+    @Test
+    fun `linkExisting records the id with the port's kind`() {
+        val saved = mock<Cohort> { on { id } doReturn 42L }
+        val subject = mock<net.blueshell.api.platform.integration.cohort.persistence.CohortSubject> {
+            on { label } doReturn "Members"
+        }
+        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
+        whenever(registry.find(TargetSystem.BREVO)).thenReturn(port)
+        whenever(port.kind).thenReturn(CohortKind.LIST)
+        val cohortSlot = org.mockito.kotlin.argumentCaptor<Cohort>()
+        whenever(cohortRepo.save(cohortSlot.capture())).thenReturn(saved)
+
+        val row = service.linkExisting(1L, TargetSystem.BREVO, "list-1")
+
+        assert(row.externalId == "list-1")
+        assert(cohortSlot.firstValue.kind == CohortKind.LIST)
+        verify(targetIds).record(saved, "list-1")
+    }
+
+    @Test
+    fun `linkExisting rejects a system with no registered port with BAD_REQUEST`() {
+        whenever(registry.find(TargetSystem.GOOGLE_CALENDAR)).thenReturn(null)
+
+        val ex = assertThrows<ResponseStatusException> {
+            service.linkExisting(1L, TargetSystem.GOOGLE_CALENDAR, "list-1")
+        }
+        assert(ex.statusCode == HttpStatus.BAD_REQUEST)
+        verify(cohortRepo, never()).save(any())
+        verify(targetIds, never()).record(any(), any())
     }
 
     @Test

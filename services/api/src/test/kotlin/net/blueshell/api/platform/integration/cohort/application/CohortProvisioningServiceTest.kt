@@ -11,15 +11,28 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
+import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class CohortProvisioningServiceTest {
 
     private val subjects: CohortSubjectRepository = mockk(relaxed = true)
     private val cohorts: CohortRepository = mockk(relaxed = true)
-    private val service = CohortProvisioningService(subjects, cohorts)
+    private val registry: CohortPortRegistry = mockk()
+    private val service = CohortProvisioningService(subjects, cohorts, registry)
+
+    private val brevoPort: CohortPort = mockk {
+        every { kind } returns CohortKind.LIST
+    }
+
+    init {
+        every { registry.require(TargetSystem.BREVO) } returns brevoPort
+    }
 
     private fun spec(system: TargetSystem = TargetSystem.BREVO) = CohortProvisioningSpec(
         factKind = CohortFactKind.COMMITTEE,
@@ -107,5 +120,18 @@ class CohortProvisioningServiceTest {
 
         assertThat(result).isEqualTo(CohortProvisioningResult.Ready(googleCohort))
         verify(exactly = 0) { subjects.save(any()) }
+    }
+
+    @Test
+    fun `provisioning a cohort for an unregistered system fails terminally`() {
+        every { subjects.findByFactKindAndFactKey(CohortFactKind.COMMITTEE, "7") } returns subject(id = 5L)
+        every { cohorts.findBySubjectIdAndSystem(5L, "GOOGLE_CALENDAR") } returns null
+        every { registry.require(TargetSystem.GOOGLE_CALENDAR) } throws
+            NonRetryableJobException("No CohortPort registered for GOOGLE_CALENDAR")
+
+        assertThatThrownBy { service.provision(spec(system = TargetSystem.GOOGLE_CALENDAR)) }
+            .isInstanceOf(NonRetryableJobException::class.java)
+
+        verify(exactly = 0) { cohorts.save(any()) }
     }
 }

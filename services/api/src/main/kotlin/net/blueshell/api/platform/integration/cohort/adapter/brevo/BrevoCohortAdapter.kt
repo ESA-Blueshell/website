@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.adapter.brevo
 
+import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
@@ -23,6 +24,8 @@ class BrevoCohortAdapter(
     private val delegate: ContactListAdapter = contactListAdapters.single { it.system == ContactSystem.BREVO }
 
     override val system: TargetSystem = TargetSystem.BREVO
+
+    override val kind: CohortKind = CohortKind.LIST
 
     override fun createCohort(label: String, hint: String?): String =
         delegate.createList(label, hint).toString()

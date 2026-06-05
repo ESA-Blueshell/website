@@ -3,6 +3,7 @@ package net.blueshell.api.platform.integration.cohort.adapter.brevo
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.ContactSystem
@@ -20,6 +21,11 @@ class BrevoCohortAdapterTest {
     @Test
     fun `system is TargetSystem BREVO`() {
         assertThat(adapter.system).isEqualTo(TargetSystem.BREVO)
+    }
+
+    @Test
+    fun `kind is CohortKind LIST`() {
+        assertThat(adapter.kind).isEqualTo(CohortKind.LIST)
     }
 
     @Test

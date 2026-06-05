@@ -44,14 +44,17 @@ class CohortTargetingService(
         propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
     }
 
-    override fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow =
-        writeTransaction.execute {
+    override fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow {
+        val port = registry.find(system)
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$system has no cohort target kind")
+        return writeTransaction.execute {
             val subject = requireSubject(subjectId)
             requireNoExistingMapping(subjectId, system)
-            val cohort = cohortRepo.save(newCohort(system, subject.label, folder = null, subjectId = subjectId))
+            val cohort = cohortRepo.save(newCohort(system, port.kind, subject.label, folder = null, subjectId = subjectId))
             targetIds.record(cohort, externalId)
             CohortMappingRow(cohort, externalId)
         }!!
+    }
 
     override fun create(subjectId: Long, system: TargetSystem, label: String, folderHint: String?): CohortMappingRow {
         // Validate before touching the provider so a duplicate/missing subject
@@ -61,10 +64,11 @@ class CohortTargetingService(
             requireNoExistingMapping(subjectId, system)
         }
 
-        val externalId = outsideTransaction.execute { registry.require(system).createCohort(label, folderHint) }!!
+        val port = registry.require(system)
+        val externalId = outsideTransaction.execute { port.createCohort(label, folderHint) }!!
 
         return writeTransaction.execute {
-            val cohort = cohortRepo.save(newCohort(system, label, folder = folderHint, subjectId = subjectId))
+            val cohort = cohortRepo.save(newCohort(system, port.kind, label, folder = folderHint, subjectId = subjectId))
             targetIds.record(cohort, externalId)
             CohortMappingRow(cohort, externalId)
         }!!
@@ -157,20 +161,14 @@ class CohortTargetingService(
         }
     }
 
-    private fun newCohort(system: TargetSystem, label: String, folder: String?, subjectId: Long) =
+    private fun newCohort(system: TargetSystem, kind: CohortKind, label: String, folder: String?, subjectId: Long) =
         Cohort(
             system = system.name,
-            kind = kindFor(system),
+            kind = kind,
             label = label,
             folder = folder,
             subjectId = subjectId,
         )
-
-    private fun kindFor(system: TargetSystem): CohortKind = when (system) {
-        TargetSystem.BREVO -> CohortKind.LIST
-        TargetSystem.GOOGLE_CALENDAR ->
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$system has no cohort target kind")
-    }
 
     private data class Switched(val cohort: Cohort, val system: TargetSystem, val previousExternalId: String?)
 

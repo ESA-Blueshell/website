@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.port.out
 
+import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.shared.enums.TargetSystem
 
 /**
@@ -19,6 +20,9 @@ import net.blueshell.api.shared.enums.TargetSystem
  */
 interface CohortPort {
     val system: TargetSystem
+
+    /** The [CohortKind] every cohort on this target system carries (e.g. Brevo → LIST). */
+    val kind: CohortKind
 
     /**
      * Creates the cohort on the external system and returns its native

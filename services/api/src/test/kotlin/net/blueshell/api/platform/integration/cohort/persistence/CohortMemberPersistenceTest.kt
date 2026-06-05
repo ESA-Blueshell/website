@@ -3,6 +3,8 @@ package net.blueshell.api.platform.integration.cohort.persistence
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.factory.user.persistence.UserFactory
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -34,9 +36,15 @@ class CohortMemberPersistenceTest : ServiceTestSupport() {
     @Autowired
     private lateinit var members: CohortMemberRepository
 
+    @Autowired
+    private lateinit var userFactory: UserFactory
+
     @Test
     fun `persists and reloads a member with its transient state resolving`() {
         val at = LocalDateTime.parse("2026-06-01T10:00:00")
+
+        val user = userFactory.createUserWithRole(Role.MEMBER)
+        val userId = user.id
 
         val memberId = transactionTemplate.execute {
             val subject = subjects.save(CohortSubject(type = CohortSubjectType.CUSTOM, label = "Members"))
@@ -51,7 +59,7 @@ class CohortMemberPersistenceTest : ServiceTestSupport() {
             val saved = members.save(
                 CohortMember(
                     cohort = cohort,
-                    userId = 7L,
+                    userId = userId,
                     subject = subject,
                     externalUserId = "ext-7",
                     syncedAt = at,

@@ -68,6 +68,7 @@ class CohortTargetingServiceTest {
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(mock()))
         whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
         whenever(registry.require(TargetSystem.BREVO)).thenReturn(port)
+        whenever(port.kind).thenReturn(CohortKind.LIST)
         whenever(port.createCohort("Members", "Lists")).thenReturn("999")
         whenever(cohortRepo.save(any<Cohort>())).thenReturn(saved)
 

@@ -7,6 +7,7 @@ import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
 import net.blueshell.api.platform.integration.sync.port.TargetSystem
 import net.blueshell.api.shared.enums.ContactSystem
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class BrevoCohortAdapterTest {
@@ -65,5 +66,65 @@ class BrevoCohortAdapterTest {
         adapter.deleteCohort("456")
 
         verify { brevoLegacy.deleteList(456L) }
+    }
+
+    @Test
+    fun `addMember throws InvalidExternalIdException when externalUserId is malformed`() {
+        assertThatThrownBy { adapter.addMember("not-a-number", "456") }
+            .isInstanceOf(InvalidExternalIdException::class.java)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("not-a-number")
+            .hasMessageContaining("externalUserId")
+            .hasMessageContaining("addMember")
+    }
+
+    @Test
+    fun `addMember throws InvalidExternalIdException when externalCohortId is malformed`() {
+        assertThatThrownBy { adapter.addMember("123", "bad-cohort") }
+            .isInstanceOf(InvalidExternalIdException::class.java)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("bad-cohort")
+            .hasMessageContaining("externalCohortId")
+            .hasMessageContaining("addMember")
+    }
+
+    @Test
+    fun `removeMember throws InvalidExternalIdException when externalUserId is malformed`() {
+        assertThatThrownBy { adapter.removeMember("oops", "456") }
+            .isInstanceOf(InvalidExternalIdException::class.java)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("oops")
+            .hasMessageContaining("externalUserId")
+            .hasMessageContaining("removeMember")
+    }
+
+    @Test
+    fun `removeMember throws InvalidExternalIdException when externalCohortId is malformed`() {
+        assertThatThrownBy { adapter.removeMember("123", "oops") }
+            .isInstanceOf(InvalidExternalIdException::class.java)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("oops")
+            .hasMessageContaining("externalCohortId")
+            .hasMessageContaining("removeMember")
+    }
+
+    @Test
+    fun `deleteCohort throws InvalidExternalIdException when externalCohortId is malformed`() {
+        assertThatThrownBy { adapter.deleteCohort("not-a-long") }
+            .isInstanceOf(InvalidExternalIdException::class.java)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("not-a-long")
+            .hasMessageContaining("externalCohortId")
+            .hasMessageContaining("deleteCohort")
+    }
+
+    @Test
+    fun `listMembers throws InvalidExternalIdException when externalCohortId is malformed`() {
+        assertThatThrownBy { adapter.listMembers("xyz") }
+            .isInstanceOf(InvalidExternalIdException::class.java)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("xyz")
+            .hasMessageContaining("externalCohortId")
+            .hasMessageContaining("listMembers")
     }
 }

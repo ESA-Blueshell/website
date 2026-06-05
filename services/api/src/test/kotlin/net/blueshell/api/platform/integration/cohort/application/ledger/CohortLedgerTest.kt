@@ -124,6 +124,13 @@ class CohortLedgerTest {
         verify(exactly = 0) { members.save(any<CohortMember>()) }
     }
 
+    @Test
+    fun `upsertStranger rejects an empty external id`() {
+        assertThatThrownBy { ledger.upsertStranger(cohort, subject, "", null, now) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+        verify(exactly = 0) { members.save(any<CohortMember>()) }
+    }
+
     private fun member(userId: Long?): CohortMember =
         CohortMember(cohort = cohort, userId = userId, subject = subject)
 }

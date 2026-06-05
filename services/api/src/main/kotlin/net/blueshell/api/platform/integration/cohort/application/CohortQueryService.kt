@@ -34,7 +34,7 @@ class CohortQueryService(
         cohorts.findAll().map { cohort ->
             CohortSummary(
                 cohort = cohort,
-                memberCount = cohortMembers.findAllByCohortIdAndUserIdIsNotNull(cohort.id!!).size,
+                memberCount = cohortMembers.countByCohortIdAndUserIdIsNotNull(cohort.id!!).toInt(),
                 externalId = targetIds.find(cohort),
             )
         }

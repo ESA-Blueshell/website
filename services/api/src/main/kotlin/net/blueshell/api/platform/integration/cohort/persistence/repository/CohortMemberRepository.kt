@@ -13,7 +13,11 @@ interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
 
     fun findAllByCohortIdAndUserIdIsNotNull(cohortId: Long): List<CohortMember>
 
+    fun countByCohortIdAndUserIdIsNotNull(cohortId: Long): Long
+
     fun findAllBySubjectIdAndUserIdIsNotNull(subjectId: Long): List<CohortMember>
+
+    fun countBySubjectIdAndUserIdIsNotNull(subjectId: Long): Long
 
     fun findByCohortIdAndUserId(cohortId: Long, userId: Long): CohortMember?
 

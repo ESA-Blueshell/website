@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.port.`in`
 
 import net.blueshell.api.platform.integration.cohort.application.CohortMappingRow
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Inbound (driving) port: admin management of a subject's external

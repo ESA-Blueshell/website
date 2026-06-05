@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.port.`in`
 
 import net.blueshell.api.platform.integration.cohort.application.DriftReport
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Inbound port: computes the difference between what the external

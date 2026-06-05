@@ -18,7 +18,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectTy
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

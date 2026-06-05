@@ -7,7 +7,7 @@ import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.sync.port.ContactSyncTarget
 import net.blueshell.api.platform.integration.sync.port.SyncTargetRegistry
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor

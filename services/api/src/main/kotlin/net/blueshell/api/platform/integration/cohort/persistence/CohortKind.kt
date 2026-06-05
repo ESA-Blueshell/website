@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  *
  * Brevo cohorts are mailing lists; Discord cohorts are server roles;
  * Google Workspace cohorts are groups. The adapter for each
- * [net.blueshell.api.platform.integration.sync.port.TargetSystem] knows
+ * [net.blueshell.api.shared.enums.TargetSystem] knows
  * which kinds it supports.
  */
 @Schema(enumAsRef = true)

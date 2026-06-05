@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.cohort.application
 // Value types used by the CohortDrift port and CohortDriftService.
 // Kept in the application package so they travel with the use-case layer.
 
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import java.time.Instant
 
 enum class DriftExtraKind { KNOWN_LOCAL_USER, UNKNOWN_EXTERNAL }

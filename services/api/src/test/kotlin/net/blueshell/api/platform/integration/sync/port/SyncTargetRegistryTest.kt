@@ -2,6 +2,7 @@ package net.blueshell.api.platform.integration.sync.port
 
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.shared.enums.TargetSystem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

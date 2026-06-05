@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.cohort.port.`in`
 
 import net.blueshell.api.platform.integration.sync.application.ExternalIdConflictException
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Inbound port: operator-triggered and scheduled remediation of

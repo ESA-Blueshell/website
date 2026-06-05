@@ -7,7 +7,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargetRef
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher

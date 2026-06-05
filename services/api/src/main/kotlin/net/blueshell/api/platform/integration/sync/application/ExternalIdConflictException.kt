@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.sync.application
 
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Thrown when [ExternalIdMappingService.linkUser] is asked to assign an

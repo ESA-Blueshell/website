@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.sync.application
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import net.blueshell.api.platform.integration.sync.port.SyncTargetRegistry
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

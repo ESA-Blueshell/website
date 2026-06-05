@@ -9,7 +9,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
-import net.blueshell.api.platform.integration.cohort.persistence.state
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -64,7 +63,7 @@ class CohortLedgerTest {
     @Test
     fun `markVerified keeps an earlier syncedAt`() {
         val pushedAt = now.minusHours(1)
-        val row = member(userId = 1L).apply { syncedAt = pushedAt }
+        val row = member(userId = 1L, syncedAt = pushedAt)
 
         ledger.markVerified(row, "ext-1", null, now)
 
@@ -74,10 +73,7 @@ class CohortLedgerTest {
 
     @Test
     fun `markDrifted clears both stamps`() {
-        val row = member(userId = 1L).apply {
-            syncedAt = now
-            verifiedAt = now
-        }
+        val row = member(userId = 1L, syncedAt = now, verifiedAt = now)
 
         ledger.markDrifted(row)
 
@@ -88,11 +84,7 @@ class CohortLedgerTest {
 
     @Test
     fun `foldStrangerIntoDesired moves external state and drops the stranger`() {
-        val stranger = member(userId = null).apply {
-            externalUserId = "ext-7"
-            verifiedAt = now
-            label = "Linked"
-        }
+        val stranger = member(userId = null, externalUserId = "ext-7", verifiedAt = now, label = "Linked")
         val desired = member(userId = 7L)
 
         ledger.foldStrangerIntoDesired(desired, stranger)
@@ -131,6 +123,20 @@ class CohortLedgerTest {
         verify(exactly = 0) { members.save(any<CohortMember>()) }
     }
 
-    private fun member(userId: Long?): CohortMember =
-        CohortMember(cohort = cohort, userId = userId, subject = subject)
+    private fun member(
+        userId: Long?,
+        externalUserId: String? = null,
+        syncedAt: LocalDateTime? = null,
+        verifiedAt: LocalDateTime? = null,
+        label: String? = null,
+    ): CohortMember =
+        CohortMember(
+            cohort = cohort,
+            userId = userId,
+            subject = subject,
+            externalUserId = externalUserId,
+            syncedAt = syncedAt,
+            verifiedAt = verifiedAt,
+            label = label,
+        )
 }

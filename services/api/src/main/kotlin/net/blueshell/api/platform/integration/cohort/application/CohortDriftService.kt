@@ -2,8 +2,6 @@ package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
-import net.blueshell.api.platform.integration.cohort.persistence.needsPush
-import net.blueshell.api.platform.integration.cohort.persistence.state
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift

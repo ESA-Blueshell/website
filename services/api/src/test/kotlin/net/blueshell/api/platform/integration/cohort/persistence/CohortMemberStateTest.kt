@@ -19,64 +19,76 @@ class CohortMemberStateTest {
 
     @Test
     fun `synced row — user with syncedAt only`() {
-        val row = member(userId = 7L).apply { externalUserId = "ext"; syncedAt = at }
+        val row = member(userId = 7L, externalUserId = "ext", syncedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.SYNCED)
     }
 
     @Test
     fun `verified row — user with both stamps`() {
-        val row = member(userId = 7L).apply { externalUserId = "ext"; syncedAt = at; verifiedAt = at }
+        val row = member(userId = 7L, externalUserId = "ext", syncedAt = at, verifiedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.VERIFIED)
     }
 
     @Test
     fun `stranger row — no user, external id, verified`() {
-        val row = member(userId = null).apply { externalUserId = "ext"; verifiedAt = at }
+        val row = member(userId = null, externalUserId = "ext", verifiedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.STRANGER)
     }
 
     @Test
     fun `invalid — no user and no external id`() {
-        val row = member(userId = null).apply { verifiedAt = at }
+        val row = member(userId = null, verifiedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
     }
 
     @Test
     fun `invalid — no user, external id, but not verified`() {
-        val row = member(userId = null).apply { externalUserId = "ext" }
+        val row = member(userId = null, externalUserId = "ext")
         assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
     }
 
     @Test
     fun `invalid — blank external id stranger`() {
-        val row = member(userId = null).apply { externalUserId = "  "; verifiedAt = at }
+        val row = member(userId = null, externalUserId = "  ", verifiedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
     }
 
     @Test
     fun `invalid — empty string external id stranger`() {
-        val row = member(userId = null).apply { externalUserId = ""; verifiedAt = at }
+        val row = member(userId = null, externalUserId = "", verifiedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
     }
 
     @Test
     fun `invalid — blank external id does not surface as synced even with syncedAt set`() {
-        val row = member(userId = null).apply { externalUserId = "  "; syncedAt = at }
+        val row = member(userId = null, externalUserId = "  ", syncedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
     }
 
     @Test
     fun `invalid — verifiedAt without syncedAt on a desired row`() {
-        val row = member(userId = 7L).apply { externalUserId = "ext"; verifiedAt = at }
+        val row = member(userId = 7L, externalUserId = "ext", verifiedAt = at)
         assertThat(row.state).isEqualTo(CohortMemberState.INVALID)
     }
 
     @Test
     fun `needsPush is true only for a desired row`() {
         assertThat(member(userId = 7L).needsPush).isTrue()
-        assertThat(member(userId = 7L).apply { externalUserId = "ext"; syncedAt = at }.needsPush).isFalse()
+        assertThat(member(userId = 7L, externalUserId = "ext", syncedAt = at).needsPush).isFalse()
     }
 
-    private fun member(userId: Long?): CohortMember =
-        CohortMember(cohort = cohort, userId = userId, subject = subject)
+    private fun member(
+        userId: Long?,
+        externalUserId: String? = null,
+        syncedAt: LocalDateTime? = null,
+        verifiedAt: LocalDateTime? = null,
+    ): CohortMember =
+        CohortMember(
+            cohort = cohort,
+            userId = userId,
+            subject = subject,
+            externalUserId = externalUserId,
+            syncedAt = syncedAt,
+            verifiedAt = verifiedAt,
+        )
 }

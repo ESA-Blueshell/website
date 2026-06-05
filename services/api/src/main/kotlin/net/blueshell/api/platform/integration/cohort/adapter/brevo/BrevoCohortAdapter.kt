@@ -28,21 +28,32 @@ class BrevoCohortAdapter(
         delegate.createList(label, hint).toString()
 
     override fun addMember(externalUserId: String, externalCohortId: String) {
-        delegate.addToList(externalUserId.toLong(), externalCohortId.toLong())
+        delegate.addToList(
+            externalUserId.toBrevoId("externalUserId", "addMember"),
+            externalCohortId.toBrevoId("externalCohortId", "addMember"),
+        )
     }
 
     override fun removeMember(externalUserId: String, externalCohortId: String) {
-        delegate.removeFromList(externalUserId.toLong(), externalCohortId.toLong())
+        delegate.removeFromList(
+            externalUserId.toBrevoId("externalUserId", "removeMember"),
+            externalCohortId.toBrevoId("externalCohortId", "removeMember"),
+        )
     }
 
     override fun deleteCohort(externalCohortId: String) {
-        delegate.deleteList(externalCohortId.toLong())
+        delegate.deleteList(externalCohortId.toBrevoId("externalCohortId", "deleteCohort"))
     }
 
     override fun listMembers(externalCohortId: String): List<MemberRef> =
-        delegate.listMembers(externalCohortId.toLong())
+        delegate.listMembers(externalCohortId.toBrevoId("externalCohortId", "listMembers"))
             .map { MemberRef(it.externalUserId.toString(), it.email) }
             // Never surface a blank external id: it would classify as an
             // INVALID ledger row downstream (see CohortMemberState).
             .filter { it.externalUserId.isNotBlank() }
+
+    private fun String.toBrevoId(field: String, operation: String): Long =
+        toLongOrNull() ?: throw InvalidExternalIdException(
+            "Brevo $operation: $field \"$this\" is not a valid numeric id"
+        )
 }

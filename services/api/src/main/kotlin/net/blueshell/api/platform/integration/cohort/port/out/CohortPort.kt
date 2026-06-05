@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.port.out
 
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Outbound (driven) port for cohort membership sync. Each

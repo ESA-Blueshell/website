@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.sync.application
 
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

@@ -13,7 +13,7 @@ import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException

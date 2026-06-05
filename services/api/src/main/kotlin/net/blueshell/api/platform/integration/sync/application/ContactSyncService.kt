@@ -6,7 +6,7 @@ import net.blueshell.api.platform.integration.contact.adapter.toContactData
 import net.blueshell.api.platform.integration.contact.persistence.Contact
 import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
 import net.blueshell.api.platform.integration.sync.port.SyncTargetRegistry
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.ContactSystem
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service

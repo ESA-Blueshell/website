@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.port.out
 
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.springframework.stereotype.Component
 

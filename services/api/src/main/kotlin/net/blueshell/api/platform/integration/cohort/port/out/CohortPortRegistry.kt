@@ -18,5 +18,7 @@ class CohortPortRegistry(ports: List<CohortPort>) {
         bySystem[system]
             ?: throw NonRetryableJobException("No CohortPort registered for $system")
 
+    fun find(system: TargetSystem): CohortPort? = bySystem[system]
+
     fun systems(): Set<TargetSystem> = bySystem.keys
 }

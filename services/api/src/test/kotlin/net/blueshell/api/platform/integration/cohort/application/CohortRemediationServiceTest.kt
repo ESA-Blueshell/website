@@ -226,6 +226,7 @@ class CohortRemediationServiceTest {
 
     private class RecordingCohortPort : CohortPort {
         override val system: TargetSystem = TargetSystem.BREVO
+        override val kind: CohortKind = CohortKind.LIST
         var remote: List<MemberRef> = emptyList()
         var listCalls = 0
         var lastExternalCohortId: String? = null

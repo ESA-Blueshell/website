@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.integration.mock
 
+import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
 import net.blueshell.api.shared.enums.TargetSystem
@@ -26,6 +27,8 @@ import java.util.concurrent.atomic.AtomicLong
 class MockCohortPort : CohortPort {
 
     override val system: TargetSystem = TargetSystem.BREVO
+
+    override val kind: CohortKind = CohortKind.LIST
 
     // cohortId → label
     private val cohorts = ConcurrentHashMap<String, String>()

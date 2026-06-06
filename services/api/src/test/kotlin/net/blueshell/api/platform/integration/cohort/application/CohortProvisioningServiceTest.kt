@@ -52,7 +52,7 @@ class CohortProvisioningServiceTest {
             enabled = enabled,
         ).apply { this.id = id }
 
-    private fun cohort(id: Long, subjectId: Long, system: String = "BREVO") =
+    private fun cohort(id: Long, subjectId: Long, system: TargetSystem = TargetSystem.BREVO) =
         Cohort(system = system, kind = CohortKind.LIST, label = "Web Cmte", subjectId = subjectId).apply { this.id = id }
 
     @Test
@@ -60,7 +60,7 @@ class CohortProvisioningServiceTest {
         every { subjects.findByFactKindAndFactKey(CohortFactKind.COMMITTEE, "7") } returns null
         val savedSubject = subject(id = 5L)
         every { subjects.save(any()) } returns savedSubject
-        every { cohorts.findBySubjectIdAndSystem(5L, "BREVO") } returns null
+        every { cohorts.findBySubjectIdAndSystem(5L, TargetSystem.BREVO) } returns null
         val savedCohort = cohort(id = 50L, subjectId = 5L)
         every { cohorts.save(any()) } returns savedCohort
 
@@ -77,7 +77,7 @@ class CohortProvisioningServiceTest {
     @Test
     fun `reuses an existing enabled subject and only adds the cohort`() {
         every { subjects.findByFactKindAndFactKey(CohortFactKind.COMMITTEE, "7") } returns subject(id = 5L)
-        every { cohorts.findBySubjectIdAndSystem(5L, "BREVO") } returns null
+        every { cohorts.findBySubjectIdAndSystem(5L, TargetSystem.BREVO) } returns null
         every { cohorts.save(any()) } returns cohort(id = 50L, subjectId = 5L)
 
         service.provision(spec())
@@ -90,7 +90,7 @@ class CohortProvisioningServiceTest {
     fun `is idempotent when subject and cohort already exist`() {
         val existingCohort = cohort(id = 50L, subjectId = 5L)
         every { subjects.findByFactKindAndFactKey(CohortFactKind.COMMITTEE, "7") } returns subject(id = 5L)
-        every { cohorts.findBySubjectIdAndSystem(5L, "BREVO") } returns existingCohort
+        every { cohorts.findBySubjectIdAndSystem(5L, TargetSystem.BREVO) } returns existingCohort
 
         val result = service.provision(spec())
 
@@ -112,9 +112,9 @@ class CohortProvisioningServiceTest {
 
     @Test
     fun `a second system reuses the subject rather than creating a new one`() {
-        val googleCohort = cohort(id = 60L, subjectId = 5L, system = "GOOGLE_CALENDAR")
+        val googleCohort = cohort(id = 60L, subjectId = 5L, system = TargetSystem.GOOGLE_CALENDAR)
         every { subjects.findByFactKindAndFactKey(CohortFactKind.COMMITTEE, "7") } returns subject(id = 5L)
-        every { cohorts.findBySubjectIdAndSystem(5L, "GOOGLE_CALENDAR") } returns googleCohort
+        every { cohorts.findBySubjectIdAndSystem(5L, TargetSystem.GOOGLE_CALENDAR) } returns googleCohort
 
         val result = service.provision(spec(system = TargetSystem.GOOGLE_CALENDAR))
 
@@ -125,7 +125,7 @@ class CohortProvisioningServiceTest {
     @Test
     fun `provisioning a cohort for an unregistered system fails terminally`() {
         every { subjects.findByFactKindAndFactKey(CohortFactKind.COMMITTEE, "7") } returns subject(id = 5L)
-        every { cohorts.findBySubjectIdAndSystem(5L, "GOOGLE_CALENDAR") } returns null
+        every { cohorts.findBySubjectIdAndSystem(5L, TargetSystem.GOOGLE_CALENDAR) } returns null
         every { registry.require(TargetSystem.GOOGLE_CALENDAR) } throws
             NonRetryableJobException("No CohortPort registered for GOOGLE_CALENDAR")
 

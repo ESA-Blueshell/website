@@ -6,6 +6,7 @@ import io.mockk.verify
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -18,7 +19,7 @@ class CohortTargetIdsTest {
     private val targetIds = CohortTargetIds(cohorts)
 
     private fun cohort(id: Long, externalId: String? = null) =
-        Cohort(system = "BREVO", kind = CohortKind.LIST, label = "Members").apply {
+        Cohort(system = TargetSystem.BREVO, kind = CohortKind.LIST, label = "Members").apply {
             this.id = id
             this.externalId = externalId
         }
@@ -43,7 +44,7 @@ class CohortTargetIdsTest {
     @Test
     fun `record writes the column`() {
         val cohort = cohort(5L, externalId = null)
-        every { cohorts.findFirstBySystemAndExternalId("BREVO", "list-9") } returns null
+        every { cohorts.findFirstBySystemAndExternalId(TargetSystem.BREVO, "list-9") } returns null
         every { cohorts.save(cohort) } returns cohort
 
         targetIds.record(cohort, "list-9")
@@ -62,7 +63,7 @@ class CohortTargetIdsTest {
     @Test
     fun `record refuses to relink an id already owned by another active cohort`() {
         val cohort = cohort(5L)
-        every { cohorts.findFirstBySystemAndExternalId("BREVO", "list-9") } returns cohort(99L, "list-9")
+        every { cohorts.findFirstBySystemAndExternalId(TargetSystem.BREVO, "list-9") } returns cohort(99L, "list-9")
 
         assertThatThrownBy { targetIds.record(cohort, "list-9") }
             .isInstanceOf(ResponseStatusException::class.java)

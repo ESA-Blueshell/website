@@ -90,7 +90,7 @@ class CohortTargetingService(
             if (cohort.subjectId != subjectId) {
                 throw ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId is not a target of subject $subjectId")
             }
-            val system = TargetSystem.valueOf(cohort.system)
+            val system = cohort.system
             val previousExternalId = targetIds.find(cohort)
             targetIds.record(cohort, externalId)
             Switched(cohort, system, previousExternalId)
@@ -115,7 +115,7 @@ class CohortTargetingService(
             val cohort = cohortRepo.findById(cohortId).orElseThrow {
                 NonRetryableJobException("Cohort $cohortId not found")
             }
-            MaterializePrep(TargetSystem.valueOf(cohort.system), cohort.label, cohort.folder, targetIds.find(cohort))
+            MaterializePrep(cohort.system, cohort.label, cohort.folder, targetIds.find(cohort))
         }!!
         prep.existingExternalId?.let { return CohortTargetRef(cohortId, it) }
 
@@ -153,7 +153,7 @@ class CohortTargetingService(
         }
 
     private fun requireNoExistingMapping(subjectId: Long, system: TargetSystem) {
-        if (cohortRepo.findBySubjectIdAndSystem(subjectId, system.name) != null) {
+        if (cohortRepo.findBySubjectIdAndSystem(subjectId, system) != null) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
                 "Subject $subjectId already has a $system target",
@@ -163,7 +163,7 @@ class CohortTargetingService(
 
     private fun newCohort(system: TargetSystem, kind: CohortKind, label: String, folder: String?, subjectId: Long) =
         Cohort(
-            system = system.name,
+            system = system,
             kind = kind,
             label = label,
             folder = folder,

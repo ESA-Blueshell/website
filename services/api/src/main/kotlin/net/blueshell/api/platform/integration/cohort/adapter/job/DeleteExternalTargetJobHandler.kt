@@ -24,7 +24,7 @@ class DeleteExternalTargetJobHandler(
     override val jobType: String = CohortJobs.DeleteExternalTarget.type
 
     override fun handlePayload(payload: CohortJobs.DeleteExternalTargetPayload) {
-        val system = runCatching { TargetSystem.valueOf(payload.system) }.getOrElse {
+        val system = runCatching { TargetSystem.fromPersisted(payload.system) }.getOrElse {
             throw NonRetryableJobException("Delete-target job has unknown system '${payload.system}'")
         }
         targeting.deleteTarget(system, payload.externalTargetId)

@@ -34,7 +34,7 @@ class CohortDriftService(
 ) : CohortDrift {
 
     override fun compute(subjectId: Long, system: TargetSystem): DriftReport {
-        val cohort = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name)
+        val cohort = cohortRepo.findBySubjectIdAndSystem(subjectId, system)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No $system mapping for subject $subjectId")
 
         val externalCohortId = targetIds.find(cohort)

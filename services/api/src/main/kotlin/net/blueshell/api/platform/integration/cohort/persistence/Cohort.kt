@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -19,10 +20,11 @@ import org.hibernate.annotations.SQLRestriction
  * job. During the compatibility window `CohortTargetIds` also falls back to
  * the legacy `external_id_mapping` row with `aggregate_type='COHORT'`.
  *
- * `system` is stored as a plain string holding a `TargetSystem.name()`;
- * the persistence layer cannot depend on the `sync.port` package per the
- * layered architecture rule, matching how `ExternalIdMapping.system` is
- * modelled.
+ * `system` is the [TargetSystem] enum, persisted via `@Enumerated(STRING)`
+ * as the enum name ("BREVO"/"GOOGLE_CALENDAR") in the same `VARCHAR(32)`
+ * column — legal because the enum lives in the Shared layer, which the
+ * persistence layer may depend on. (`ExternalIdMapping.system` is a
+ * separate, still-String concern and is deliberately left untyped.)
  */
 @Entity
 @Table(
@@ -36,8 +38,9 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE cohort SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class Cohort(
+    @Enumerated(EnumType.STRING)
     @Column(name = "system", nullable = false, length = 32)
-    var system: String,
+    var system: TargetSystem,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "kind", nullable = false, length = 32)

@@ -34,7 +34,7 @@ class CohortDriftServiceTest {
         val subject = subject(7L)
         val cohort = cohort(99L, subject.id!!)
         val lastObserved = LocalDateTime.parse("2026-05-03T10:15:30")
-        every { cohorts.findBySubjectIdAndSystem(7L, TargetSystem.BREVO.name) } returns cohort
+        every { cohorts.findBySubjectIdAndSystem(7L, TargetSystem.BREVO) } returns cohort
         every { targetIds.find(any()) } returns "list-99"
         every { members.findAllByCohortId(99L) } returns listOf(
             member(cohort, subject, userId = 1L),
@@ -100,7 +100,7 @@ class CohortDriftServiceTest {
     fun `compute returns not materialised when the cohort has no external mapping`() {
         val subject = subject(7L)
         val cohort = cohort(99L, subject.id!!)
-        every { cohorts.findBySubjectIdAndSystem(7L, TargetSystem.BREVO.name) } returns cohort
+        every { cohorts.findBySubjectIdAndSystem(7L, TargetSystem.BREVO) } returns cohort
         every { targetIds.find(any()) } returns null
 
         val report = service.compute(7L, TargetSystem.BREVO)
@@ -114,7 +114,7 @@ class CohortDriftServiceTest {
 
     private fun cohort(id: Long, subjectId: Long): Cohort =
         Cohort(
-            system = TargetSystem.BREVO.name,
+            system = TargetSystem.BREVO,
             kind = CohortKind.LIST,
             label = "Members",
             subjectId = subjectId,

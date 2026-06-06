@@ -40,10 +40,10 @@ class CohortProvisioningService(
                 enabled = true,
             ),
         )
-        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, spec.system.name)
+        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, spec.system)
             ?: cohorts.save(
                 Cohort(
-                    system = spec.system.name,
+                    system = spec.system,
                     kind = registry.require(spec.system).kind,
                     label = spec.label,
                     folder = spec.folder,

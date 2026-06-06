@@ -15,6 +15,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.assertj.core.api.Assertions.assertThat
@@ -149,7 +150,7 @@ class CohortRuleEvaluatorTest {
         val c = mockk<Cohort>()
         every { c.id } returns id
         every { c.kind } returns CohortKind.LIST
-        every { c.system } returns "BREVO"
+        every { c.system } returns TargetSystem.BREVO
         // Every cohort created after V72 has a subject; the evaluator looks it
         // up so members are inserted with both FKs populated.
         every { c.subjectId } returns id + 1000L

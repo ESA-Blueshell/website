@@ -178,7 +178,7 @@ class CohortRemediationServiceTest {
         val mapping = ExternalIdMapping("USER", 7L, TargetSystem.BREVO.name, "ext-7")
 
         every { externalIds.linkUser(7L, TargetSystem.BREVO, "ext-7") } returns mapping
-        every { cohorts.findBySubjectIdAndSystem(44L, TargetSystem.BREVO.name) } returns cohort
+        every { cohorts.findBySubjectIdAndSystem(44L, TargetSystem.BREVO) } returns cohort
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(55L, "ext-7") } returns stranger
         every { members.findByCohortIdAndUserId(55L, 7L) } returns desired
         every { members.save(any<CohortMember>()) } answers { firstArg() }
@@ -199,7 +199,7 @@ class CohortRemediationServiceTest {
 
     private fun cohort(id: Long, subjectId: Long): Cohort =
         Cohort(
-            system = TargetSystem.BREVO.name,
+            system = TargetSystem.BREVO,
             kind = CohortKind.LIST,
             label = "Members",
             subjectId = subjectId,

@@ -78,6 +78,9 @@ class CohortSubjectController(
         )
         return LinkedUserResponse(
             userId = mapping.aggregateId,
+            // `mapping` is an ExternalIdMapping, whose `system` is still a plain
+            // String (out of this PR's scope) — so it is parsed here, unlike the
+            // now-typed `Cohort.system`. The String inconsistency is deliberate.
             system = TargetSystem.valueOf(mapping.system),
             externalUserId = mapping.externalId ?: body.externalUserId,
         )
@@ -223,7 +226,7 @@ private fun CohortSubjectDetail.toResponse(): CohortSubjectDetailResponse =
 private fun CohortMappingRow.toResponse(): CohortMappingResponse =
     CohortMappingResponse(
         cohortId = cohort.id!!,
-        system = TargetSystem.valueOf(cohort.system),
+        system = cohort.system,
         kind = cohort.kind,
         label = cohort.label,
         externalId = externalId,

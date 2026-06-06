@@ -74,7 +74,7 @@ class CohortRemediationService(
         val cohort = cohortRepo.findById(cohortId).orElseThrow {
             NonRetryableJobException("Cohort $cohortId not found")
         }
-        val system = TargetSystem.valueOf(cohort.system)
+        val system = cohort.system
         val externalCohortId = targetIds.require(cohort)
 
         outsideTransaction.executeWithoutResult { registry.require(system).removeMember(externalUserId, externalCohortId) }
@@ -101,7 +101,7 @@ class CohortRemediationService(
         subjectRepo.findById(subjectId).orElseThrow {
             NonRetryableJobException("Cohort $cohortId references missing subject $subjectId")
         }
-        val system = TargetSystem.valueOf(cohort.system)
+        val system = cohort.system
         val externalCohortId = targetIds.require(cohort)
 
         return ReconcilePlan(cohortId, subjectId, system, externalCohortId)
@@ -172,7 +172,7 @@ class CohortRemediationService(
         system: TargetSystem,
         externalUserId: String,
     ) {
-        val cohort = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name) ?: return
+        val cohort = cohortRepo.findBySubjectIdAndSystem(subjectId, system) ?: return
         val cohortId = cohort.id ?: return
         val stranger = memberRepo.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohortId, externalUserId) ?: return
         val desired = memberRepo.findByCohortIdAndUserId(cohortId, userId) ?: return

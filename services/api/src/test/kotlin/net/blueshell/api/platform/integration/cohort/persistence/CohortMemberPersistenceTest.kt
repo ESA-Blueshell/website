@@ -50,7 +50,7 @@ class CohortMemberPersistenceTest : ServiceTestSupport() {
             val subject = subjects.save(CohortSubject(type = CohortSubjectType.CUSTOM, label = "Members"))
             val cohort = cohorts.save(
                 Cohort(
-                    system = TargetSystem.BREVO.name,
+                    system = TargetSystem.BREVO,
                     kind = CohortKind.LIST,
                     label = "Members",
                     subjectId = subject.id,

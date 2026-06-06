@@ -35,7 +35,7 @@ class CohortRepositoryIT : UserTestSupport() {
     @Test
     fun `cohort persists and reloads with all configured fields`() {
         val cohort = Cohort(
-            system = TargetSystem.BREVO.name,
+            system = TargetSystem.BREVO,
             kind = CohortKind.LIST,
             label = "Members",
         )
@@ -43,7 +43,7 @@ class CohortRepositoryIT : UserTestSupport() {
         val saved = cohorts.save(cohort)
         val reloaded = cohorts.findById(saved.id!!).orElseThrow()
 
-        assertThat(reloaded.system).isEqualTo(TargetSystem.BREVO.name)
+        assertThat(reloaded.system).isEqualTo(TargetSystem.BREVO)
         assertThat(reloaded.kind).isEqualTo(CohortKind.LIST)
         assertThat(reloaded.label).isEqualTo("Members")
         assertThat(reloaded.isSoftDeleted).isFalse()
@@ -51,13 +51,13 @@ class CohortRepositoryIT : UserTestSupport() {
 
     @Test
     fun `cohort filters by system and kind`() {
-        cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "brevo-list"))
-        cohorts.save(Cohort(TargetSystem.GOOGLE_CALENDAR.name, CohortKind.GROUP, "g-group"))
+        cohorts.save(Cohort(TargetSystem.BREVO, CohortKind.LIST, "brevo-list"))
+        cohorts.save(Cohort(TargetSystem.GOOGLE_CALENDAR, CohortKind.GROUP, "g-group"))
 
-        assertThat(cohorts.findAllBySystem(TargetSystem.BREVO.name))
+        assertThat(cohorts.findAllBySystem(TargetSystem.BREVO))
             .extracting<String> { it.label }
             .contains("brevo-list")
-        assertThat(cohorts.findAllBySystemAndKind(TargetSystem.BREVO.name, CohortKind.ROLE))
+        assertThat(cohorts.findAllBySystemAndKind(TargetSystem.BREVO, CohortKind.ROLE))
             .isEmpty()
     }
 
@@ -72,7 +72,7 @@ class CohortRepositoryIT : UserTestSupport() {
         )
         val cohort = cohorts.save(
             Cohort(
-                system = TargetSystem.BREVO.name,
+                system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,
@@ -116,9 +116,9 @@ class CohortRepositoryIT : UserTestSupport() {
             ),
         )
         val memberCohort = cohorts.save(
-            Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Members", subjectId = enabledSubject.id),
+            Cohort(TargetSystem.BREVO, CohortKind.LIST, "Members", subjectId = enabledSubject.id),
         )
-        cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Board", subjectId = disabledSubject.id))
+        cohorts.save(Cohort(TargetSystem.BREVO, CohortKind.LIST, "Board", subjectId = disabledSubject.id))
 
         assertThat(cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.MEMBER.name).map { it.id })
             .containsExactly(memberCohort.id)
@@ -210,7 +210,7 @@ class CohortRepositoryIT : UserTestSupport() {
     private fun newCohort(subject: CohortSubject): Cohort =
         cohorts.save(
             Cohort(
-                system = TargetSystem.BREVO.name,
+                system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,

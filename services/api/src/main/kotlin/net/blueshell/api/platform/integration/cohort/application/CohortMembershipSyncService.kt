@@ -9,7 +9,6 @@ import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
-import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -64,10 +63,7 @@ class CohortMembershipSyncService(
         val cohort = cohorts.findById(cohortId).orElseThrow {
             NonRetryableJobException("Cohort $cohortId not found")
         }
-        val system = runCatching { TargetSystem.valueOf(cohort.system) }.getOrElse {
-            throw NonRetryableJobException("Cohort $cohortId has unknown system '${cohort.system}'")
-        }
-        val port = registry.require(system)
+        val port = registry.require(cohort.system)
 
         when (intent) {
             SyncCohortMembershipIntent.ADD -> add(userId, cohort, port)
@@ -78,7 +74,7 @@ class CohortMembershipSyncService(
     private fun add(userId: Long, cohort: Cohort, port: CohortPort) {
         val cohortId = cohort.id!!
         val system = cohort.system
-        val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
+        val externalUserId = externalIds.find(USER_AGGREGATE, userId, system.name)?.externalId
         if (externalUserId == null) {
             jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId))
             throw CohortMembershipNotReadyException(
@@ -105,7 +101,7 @@ class CohortMembershipSyncService(
     private fun remove(userId: Long, cohort: Cohort, port: CohortPort) {
         val cohortId = cohort.id!!
         val system = cohort.system
-        val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
+        val externalUserId = externalIds.find(USER_AGGREGATE, userId, system.name)?.externalId
         val externalCohortId = targetIds.find(cohort)
         if (externalUserId == null || externalCohortId == null) {
             log.debug(

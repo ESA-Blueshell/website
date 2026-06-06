@@ -83,7 +83,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     private fun newCohort(subject: CohortSubject): Cohort =
         cohorts.save(
             Cohort(
-                system = TargetSystem.BREVO.name,
+                system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,

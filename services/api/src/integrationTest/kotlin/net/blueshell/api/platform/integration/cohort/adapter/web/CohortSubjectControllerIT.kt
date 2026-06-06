@@ -114,7 +114,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.externalId").value("list-123"))
 
-        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
+        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO)!!
         assertThat(cohort.externalId).isEqualTo("list-123")
     }
 
@@ -133,7 +133,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
             .andExpect(jsonPath("$.label").value("Newsletter"))
             .andExpect(jsonPath("$.externalId").isNotEmpty)
 
-        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
+        val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO)!!
         assertThat(cohort.folder).isEqualTo("Lists")
         assertThat(cohort.externalId).isNotBlank()
     }
@@ -191,7 +191,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
     private fun newCohort(subject: CohortSubject, externalId: String? = null): Cohort =
         cohorts.save(
             Cohort(
-                system = TargetSystem.BREVO.name,
+                system = TargetSystem.BREVO,
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,

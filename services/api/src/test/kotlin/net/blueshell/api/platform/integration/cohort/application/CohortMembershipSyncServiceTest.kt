@@ -50,7 +50,7 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `ADD calls port when both external ids exist`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenCohort(id = 10L, system = TargetSystem.BREVO, label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns "42"
 
@@ -61,7 +61,7 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `ADD without a cohort target enqueues materialize-target, throws retryable and never creates a target`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenCohort(id = 10L, system = TargetSystem.BREVO, label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns null
 
@@ -78,7 +78,7 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `ADD marks the desired row pushed after a successful external add`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenCohort(id = 10L, system = TargetSystem.BREVO, label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns "42"
 
@@ -90,7 +90,7 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `ADD without a user external id enqueues SyncContact and throws retryable`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenCohort(id = 10L, system = TargetSystem.BREVO, label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns null
 
         assertThatThrownBy {
@@ -105,7 +105,7 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `REMOVE calls port when both external ids exist`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenCohort(id = 10L, system = TargetSystem.BREVO, label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns "42"
 
@@ -116,7 +116,7 @@ class CohortMembershipSyncServiceTest {
 
     @Test
     fun `REMOVE is a no-op when an external id is missing`() {
-        givenCohort(id = 10L, system = "BREVO", label = "Members")
+        givenCohort(id = 10L, system = TargetSystem.BREVO, label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns null
         every { targetIds.find(any()) } returns null
 
@@ -136,19 +136,10 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `unknown system on cohort throws NonRetryableJobException`() {
-        givenCohort(id = 10L, system = "MARS_NETWORK", label = "Settlers")
-
-        assertThatThrownBy {
-            service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
-        }.isInstanceOf(NonRetryableJobException::class.java)
-    }
-
-    @Test
     fun `cohort whose system has no registered port throws NonRetryableJobException`() {
         // Cohort's system is a valid TargetSystem value but no matching CohortPort bean exists
         // (GOOGLE_CALENDAR has none yet).
-        givenCohort(id = 10L, system = "GOOGLE_CALENDAR", label = "events")
+        givenCohort(id = 10L, system = TargetSystem.GOOGLE_CALENDAR, label = "events")
 
         assertThatThrownBy {
             service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
@@ -156,7 +147,7 @@ class CohortMembershipSyncServiceTest {
             .hasMessageContaining("No CohortPort")
     }
 
-    private fun givenCohort(id: Long, system: String, label: String) {
+    private fun givenCohort(id: Long, system: TargetSystem, label: String) {
         val c = mockk<Cohort>()
         every { c.id } returns id
         every { c.system } returns system

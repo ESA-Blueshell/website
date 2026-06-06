@@ -52,7 +52,7 @@ class CohortTargetingServiceTest {
     @Test
     fun `create does not touch the provider when the subject already maps the system`() {
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(mock()))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(mock<Cohort>())
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, TargetSystem.BREVO)).thenReturn(mock<Cohort>())
 
         assertThrows<ResponseStatusException> {
             service.create(1L, TargetSystem.BREVO, "Members", null)
@@ -66,7 +66,7 @@ class CohortTargetingServiceTest {
     fun `create materialises the target and records the id`() {
         val saved = mock<Cohort> { on { id } doReturn 42L }
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(mock()))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, TargetSystem.BREVO)).thenReturn(null)
         whenever(registry.require(TargetSystem.BREVO)).thenReturn(port)
         whenever(port.kind).thenReturn(CohortKind.LIST)
         whenever(port.createCohort("Members", "Lists")).thenReturn("999")
@@ -86,7 +86,7 @@ class CohortTargetingServiceTest {
             on { label } doReturn "Members"
         }
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
-        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, TargetSystem.BREVO)).thenReturn(null)
         whenever(registry.find(TargetSystem.BREVO)).thenReturn(port)
         whenever(port.kind).thenReturn(CohortKind.LIST)
         val cohortSlot = org.mockito.kotlin.argumentCaptor<Cohort>()
@@ -115,7 +115,7 @@ class CohortTargetingServiceTest {
     fun `materialize creates the target with the cohort folder and records it`() {
         val cohort = mock<Cohort> {
             on { id } doReturn 7L
-            on { system } doReturn "BREVO"
+            on { system } doReturn TargetSystem.BREVO
             on { label } doReturn "Members"
             on { folder } doReturn "Committees"
         }
@@ -133,7 +133,7 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `materialize is a no-op when the target already exists`() {
-        val cohort = mock<Cohort> { on { id } doReturn 7L; on { system } doReturn "BREVO"; on { label } doReturn "Members" }
+        val cohort = mock<Cohort> { on { id } doReturn 7L; on { system } doReturn TargetSystem.BREVO; on { label } doReturn "Members" }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn("existing")
 
@@ -146,7 +146,7 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `switch enqueues delete-previous and reconcile when asked`() {
-        val cohort = mock<Cohort> { on { system } doReturn "BREVO"; on { subjectId } doReturn 1L }
+        val cohort = mock<Cohort> { on { system } doReturn TargetSystem.BREVO; on { subjectId } doReturn 1L }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn("old-list")
 
@@ -165,7 +165,7 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `switch does not enqueue a delete when there is no previous target`() {
-        val cohort = mock<Cohort> { on { system } doReturn "BREVO"; on { subjectId } doReturn 1L }
+        val cohort = mock<Cohort> { on { system } doReturn TargetSystem.BREVO; on { subjectId } doReturn 1L }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn(null)
 

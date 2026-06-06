@@ -30,7 +30,7 @@ class CohortExternalIdMigrationIT : UserTestSupport() {
     @Test
     fun `external_id column round-trips through the entity`() {
         val saved = cohorts.save(
-            Cohort(system = TargetSystem.BREVO.name, kind = CohortKind.LIST, label = "Members", externalId = "list-1"),
+            Cohort(system = TargetSystem.BREVO, kind = CohortKind.LIST, label = "Members", externalId = "list-1"),
         )
         assertThat(cohorts.findById(saved.id!!).orElseThrow().externalId).isEqualTo("list-1")
     }
@@ -51,7 +51,7 @@ class CohortExternalIdMigrationIT : UserTestSupport() {
     @Test
     fun `the V77 backfill copies the legacy mapping id into the column`() {
         val cohort = cohorts.save(
-            Cohort(system = TargetSystem.BREVO.name, kind = CohortKind.LIST, label = "Members", externalId = null),
+            Cohort(system = TargetSystem.BREVO, kind = CohortKind.LIST, label = "Members", externalId = null),
         )
         externalIds.saveAndFlush(
             ExternalIdMapping(COHORT_AGGREGATE, cohort.id!!, TargetSystem.BREVO.name, "legacy-9"),

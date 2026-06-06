@@ -9,6 +9,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -80,7 +81,7 @@ class CohortQueryServiceTest {
 
     private fun cohort(id: Long, subjectId: Long): Cohort =
         Cohort(
-            system = "BREVO",
+            system = TargetSystem.BREVO,
             kind = CohortKind.LIST,
             label = "Test Cohort $id",
             subjectId = subjectId,

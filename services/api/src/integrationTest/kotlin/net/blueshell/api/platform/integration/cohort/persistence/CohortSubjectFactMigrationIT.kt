@@ -58,7 +58,7 @@ class CohortSubjectFactMigrationIT : UserTestSupport() {
     fun `the V78 backfill copies a cohort_rule onto its subject`() {
         val subject = subjects.save(CohortSubject(type = CohortSubjectType.COMMITTEE_MEMBERS, label = "Backfill Cmte"))
         val cohort = cohorts.save(
-            Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Backfill Cmte", subjectId = subject.id),
+            Cohort(TargetSystem.BREVO, CohortKind.LIST, "Backfill Cmte", subjectId = subject.id),
         )
         jdbc.update(
             "INSERT INTO cohort_rule (fact_kind, fact_key, cohort_id, subject_id, enabled, created_at, updated_at) " +

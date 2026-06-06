@@ -93,7 +93,7 @@ data class CohortRuleResponse(
 private fun CohortSummary.toResponse(): CohortSummaryResponse =
     CohortSummaryResponse(
         id = cohort.id!!,
-        system = cohort.system,
+        system = cohort.system.name,
         kind = cohort.kind,
         label = cohort.label,
         folder = cohort.folder,
@@ -104,7 +104,7 @@ private fun CohortSummary.toResponse(): CohortSummaryResponse =
 private fun CohortDetail.toResponse(): CohortDetailResponse =
     CohortDetailResponse(
         id = cohort.id!!,
-        system = cohort.system,
+        system = cohort.system.name,
         kind = cohort.kind,
         label = cohort.label,
         folder = cohort.folder,

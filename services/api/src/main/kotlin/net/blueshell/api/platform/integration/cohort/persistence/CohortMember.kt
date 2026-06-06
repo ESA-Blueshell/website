@@ -66,15 +66,102 @@ class CohortMember(
     @JoinColumn(name = "subject_id", nullable = false)
     val subject: CohortSubject,
 
+    externalUserId: String? = null,
+
+    syncedAt: LocalDateTime? = null,
+
+    verifiedAt: LocalDateTime? = null,
+
+    label: String? = null,
+) : AuditedAutoIdEntity() {
+
+    // Write-protected so the entity's own transition methods are the only
+    // mutators. `internal set` (matching the base `id`) rather than
+    // `private set`: the kotlin-jpa all-open plugin opens these properties,
+    // and Kotlin forbids a private setter on an open property. Hibernate
+    // hydrates via the backing field, so this stays correct.
     @Column(name = "external_user_id", nullable = true)
-    var externalUserId: String? = null,
+    var externalUserId: String? = externalUserId
+        internal set
 
     @Column(name = "synced_at", nullable = true)
-    var syncedAt: LocalDateTime? = null,
+    var syncedAt: LocalDateTime? = syncedAt
+        internal set
 
     @Column(name = "verified_at", nullable = true)
-    var verifiedAt: LocalDateTime? = null,
+    var verifiedAt: LocalDateTime? = verifiedAt
+        internal set
 
     @Column(name = "label", nullable = true)
-    var label: String? = null,
-) : AuditedAutoIdEntity()
+    var label: String? = label
+        internal set
+
+    /**
+     * Classification of this row, computed from its nullable fields so
+     * call sites stop re-deriving it by hand. `@Transient` is mandatory:
+     * without a backing field Hibernate would otherwise treat this getter
+     * as a persistent property and break the metamodel.
+     */
+    @get:jakarta.persistence.Transient
+    val state: CohortMemberState
+        get() = when {
+            userId == null && externalUserId.isNullOrBlank() -> CohortMemberState.INVALID
+            userId == null && verifiedAt == null -> CohortMemberState.INVALID
+            userId == null -> CohortMemberState.STRANGER
+            verifiedAt != null && syncedAt == null -> CohortMemberState.INVALID
+            verifiedAt != null -> CohortMemberState.VERIFIED
+            syncedAt != null -> CohortMemberState.SYNCED
+            else -> CohortMemberState.DESIRED
+        }
+
+    /** A desired row still awaiting its first successful push. */
+    @get:jakarta.persistence.Transient
+    val needsPush: Boolean get() = state == CohortMemberState.DESIRED
+
+    /**
+     * A successful per-member push: stamp the external id and `syncedAt`
+     * on this desired row.
+     */
+    internal fun markPushed(externalUserId: String, at: LocalDateTime) {
+        this.externalUserId = externalUserId
+        this.syncedAt = at
+    }
+
+    /**
+     * Reconcile confirmed this desired row present in the live snapshot:
+     * stamp `verifiedAt`, ensure `syncedAt` is set (present implies
+     * pushed), and record the external id + label.
+     */
+    internal fun markVerified(externalUserId: String, label: String?, at: LocalDateTime) {
+        this.externalUserId = externalUserId
+        if (syncedAt == null) syncedAt = at
+        verifiedAt = at
+        this.label = label
+    }
+
+    /**
+     * Reconcile found this previously-pushed desired row absent remotely:
+     * clear both stamps so it re-buckets as not-synced.
+     */
+    internal fun markDrifted() {
+        syncedAt = null
+        verifiedAt = null
+    }
+
+    /**
+     * Claim fold: move a stranger's external state onto this desired row
+     * (the member is confirmed present, so it counts as synced + verified).
+     */
+    internal fun foldFrom(stranger: CohortMember) {
+        externalUserId = stranger.externalUserId
+        syncedAt = stranger.verifiedAt
+        verifiedAt = stranger.verifiedAt
+        label = stranger.label
+    }
+
+    /** Re-stamp an existing stranger row from a fresh remote snapshot. */
+    internal fun refreshStranger(label: String?, at: LocalDateTime) {
+        verifiedAt = at
+        this.label = label
+    }
+}

@@ -18,17 +18,3 @@ package net.blueshell.api.platform.integration.cohort.persistence
  *   an impossible row surfaces instead of silently classifying.
  */
 enum class CohortMemberState { DESIRED, SYNCED, VERIFIED, STRANGER, INVALID }
-
-val CohortMember.state: CohortMemberState
-    get() = when {
-        userId == null && externalUserId.isNullOrBlank() -> CohortMemberState.INVALID
-        userId == null && verifiedAt == null -> CohortMemberState.INVALID
-        userId == null -> CohortMemberState.STRANGER
-        verifiedAt != null && syncedAt == null -> CohortMemberState.INVALID
-        verifiedAt != null -> CohortMemberState.VERIFIED
-        syncedAt != null -> CohortMemberState.SYNCED
-        else -> CohortMemberState.DESIRED
-    }
-
-/** A desired row still awaiting its first successful push. */
-val CohortMember.needsPush: Boolean get() = state == CohortMemberState.DESIRED

@@ -25,8 +25,7 @@ class CohortLedger(private val members: CohortMemberRepository) {
      */
     fun markPushed(cohortId: Long, userId: Long, externalUserId: String, at: LocalDateTime): Boolean {
         val row = members.findByCohortIdAndUserId(cohortId, userId) ?: return false
-        row.externalUserId = externalUserId
-        row.syncedAt = at
+        row.markPushed(externalUserId, at)
         members.save(row)
         return true
     }
@@ -37,10 +36,7 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * pushed), and records the external id + label.
      */
     fun markVerified(row: CohortMember, externalUserId: String, label: String?, at: LocalDateTime) {
-        row.externalUserId = externalUserId
-        if (row.syncedAt == null) row.syncedAt = at
-        row.verifiedAt = at
-        row.label = label
+        row.markVerified(externalUserId, label, at)
         members.save(row)
     }
 
@@ -50,8 +46,7 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * re-enqueues an ADD.
      */
     fun markDrifted(row: CohortMember) {
-        row.syncedAt = null
-        row.verifiedAt = null
+        row.markDrifted()
         members.save(row)
     }
 
@@ -68,8 +63,7 @@ class CohortLedger(private val members: CohortMemberRepository) {
         require(externalUserId.isNotBlank()) { "Stranger external id must not be blank for cohort ${cohort.id}" }
         val existing = members.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohort.id!!, externalUserId)
         if (existing != null) {
-            existing.verifiedAt = at
-            existing.label = label
+            existing.refreshStranger(label, at)
             members.save(existing)
         } else {
             members.save(
@@ -102,10 +96,7 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * present, so it counts as synced + verified) and drop the stranger.
      */
     fun foldStrangerIntoDesired(desired: CohortMember, stranger: CohortMember) {
-        desired.externalUserId = stranger.externalUserId
-        desired.syncedAt = stranger.verifiedAt
-        desired.verifiedAt = stranger.verifiedAt
-        desired.label = stranger.label
+        desired.foldFrom(stranger)
         members.save(desired)
         members.delete(stranger)
     }

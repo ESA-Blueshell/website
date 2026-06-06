@@ -9,7 +9,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

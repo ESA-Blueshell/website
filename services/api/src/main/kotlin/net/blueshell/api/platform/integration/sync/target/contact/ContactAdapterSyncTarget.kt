@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.sync.target.contact
 import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
 import net.blueshell.api.platform.integration.contact.adapter.ContactData
 import net.blueshell.api.platform.integration.sync.port.ContactSyncTarget
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Base for any [ContactSyncTarget] that delegates to a [ContactAdapter].

@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.sync.application
 import net.blueshell.api.platform.integration.contact.adapter.ContactData
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.port.ContactSyncTarget
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull

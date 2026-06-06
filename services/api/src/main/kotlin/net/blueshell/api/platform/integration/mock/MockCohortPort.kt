@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile

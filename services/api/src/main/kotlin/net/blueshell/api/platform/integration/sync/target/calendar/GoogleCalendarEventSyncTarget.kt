@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.sync.target.calendar
 import net.blueshell.api.domain.event.application.calendar.CalendarAdapter
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import net.blueshell.api.platform.integration.sync.port.CalendarSyncTarget
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 

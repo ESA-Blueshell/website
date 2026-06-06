@@ -9,7 +9,7 @@ import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
-import net.blueshell.api.platform.integration.sync.port.TargetSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat

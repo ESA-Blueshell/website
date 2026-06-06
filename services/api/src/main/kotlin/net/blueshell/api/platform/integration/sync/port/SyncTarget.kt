@@ -2,16 +2,7 @@ package net.blueshell.api.platform.integration.sync.port
 
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
 import net.blueshell.api.platform.integration.contact.adapter.ContactData
-
-/**
- * External system this app pushes aggregate state to. Persisted as a string in
- * `external_id_mapping.system`.
- *
- * Adding a new target (e.g. `GOOGLE_WORKSPACE`, `DISCORD`) is one new enum
- * value here plus one new `SyncTarget` implementation; the fan-out driver and
- * the mapping table need no further change.
- */
-enum class TargetSystem { BREVO, GOOGLE_CALENDAR }
+import net.blueshell.api.shared.enums.TargetSystem
 
 /** Kind of aggregate a target syncs. Persisted as a string in `external_id_mapping.aggregate_type`. */
 enum class AggregateType { USER, EVENT, CONTACT_LIST }

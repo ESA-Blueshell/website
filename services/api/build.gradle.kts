@@ -128,7 +128,7 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:mariadb:1.21.4")
+    testImplementation("org.testcontainers:mariadb:2.0.5")
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
@@ -150,7 +150,7 @@ dependencies {
     // Shared test base boots a throwaway Valkey via @ServiceConnection so the
     // Redis-backed HTTP session path is exercised under the real prod config.
     testFixturesApi("org.springframework.boot:spring-boot-testcontainers")
-    testFixturesApi("org.testcontainers:testcontainers:1.21.4")
+    testFixturesApi("org.testcontainers:testcontainers:2.0.5")
     testFixturesCompileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
 
     mockitoAgent("org.mockito:mockito-core:5.23.0")

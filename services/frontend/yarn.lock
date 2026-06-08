@@ -2600,7 +2600,7 @@ __metadata:
     jsdom: "npm:^29.1.1"
     libphonenumber-js: "npm:^1.13.3"
     luxon: "npm:^3.7.2"
-    marked: "npm:^17.0.3"
+    marked: "npm:^18.0.4"
     node-emoji: "npm:^2.2.0"
     roboto-fontface: "npm:^0.10.0"
     sass: "npm:^1.100.0"
@@ -5168,12 +5168,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"marked@npm:^17.0.3":
-  version: 17.0.3
-  resolution: "marked@npm:17.0.3"
+"marked@npm:^18.0.4":
+  version: 18.0.4
+  resolution: "marked@npm:18.0.4"
   bin:
     marked: bin/marked.js
-  checksum: 10c0/3970f96ce3b1a7fd5bba82a6c7e4dffec9f7e0f238633e57139e8aa8fe637bccb1c1b61f2b3ed21b1afdbd4e076326f29e449d147203a0bdb9394e21e9a6a722
+  checksum: 10c0/f54dcbb39d3acdcd0356f7629b42811eec56db5f6daef7404e582cdf800f5b598b681f9f8a187e7f51262e37c607f5e0cd9880e56b5c8160a49c3f7828e9e459
   languageName: node
   linkType: hard
 

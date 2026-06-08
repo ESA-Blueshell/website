@@ -67,7 +67,7 @@ const RAW_RUNTIME_STATE =
           ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:29.1.1"],\
           ["libphonenumber-js", "npm:1.13.4"],\
           ["luxon", "npm:3.7.2"],\
-          ["marked", "npm:17.0.3"],\
+          ["marked", "npm:18.0.4"],\
           ["node-emoji", "npm:2.2.0"],\
           ["roboto-fontface", "npm:0.10.0"],\
           ["sass", "npm:1.100.0"],\
@@ -3105,7 +3105,7 @@ const RAW_RUNTIME_STATE =
           ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:29.1.1"],\
           ["libphonenumber-js", "npm:1.13.4"],\
           ["luxon", "npm:3.7.2"],\
-          ["marked", "npm:17.0.3"],\
+          ["marked", "npm:18.0.4"],\
           ["node-emoji", "npm:2.2.0"],\
           ["roboto-fontface", "npm:0.10.0"],\
           ["sass", "npm:1.100.0"],\
@@ -5987,10 +5987,10 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["marked", [\
-      ["npm:17.0.3", {\
-        "packageLocation": "./.yarn/cache/marked-npm-17.0.3-cadef1d407-3970f96ce3.zip/node_modules/marked/",\
+      ["npm:18.0.4", {\
+        "packageLocation": "./.yarn/cache/marked-npm-18.0.4-a1e033a987-f54dcbb39d.zip/node_modules/marked/",\
         "packageDependencies": [\
-          ["marked", "npm:17.0.3"]\
+          ["marked", "npm:18.0.4"]\
         ],\
         "linkType": "HARD"\
       }]\

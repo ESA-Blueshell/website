@@ -68,7 +68,7 @@ jobs:
           --health-start-period=30s
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
 
       - name: Wait for database service
         run: |

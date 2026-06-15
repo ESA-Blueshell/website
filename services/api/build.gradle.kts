@@ -9,7 +9,7 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.10.6"
     `java-test-fixtures`
 
-    val kotlinVersion = "2.3.21"
+    val kotlinVersion = "2.4.0"
     kotlin("plugin.jpa") version kotlinVersion
     kotlin("plugin.allopen") version kotlinVersion
     kotlin("plugin.noarg") version kotlinVersion
@@ -77,7 +77,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-    implementation("com.nimbusds:nimbus-jose-jwt:10.9")
+    implementation("com.nimbusds:nimbus-jose-jwt:10.9.1")
     // Nimbus RSAKey.parseFromPEMEncodedObjects needs JcaPEMKeyConverter (bcpkix); bcprov alone is insufficient.
     runtimeOnly("org.bouncycastle:bcpkix-jdk18on:1.84")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
@@ -86,7 +86,7 @@ dependencies {
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20251207-2.0.0")
     implementation("com.google.apis:google-api-services-groupssettings:v1-rev20220614-2.0.0")
-    implementation("com.google.auth:google-auth-library-oauth2-http:1.47.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.48.0")
 
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation("jakarta.validation:jakarta.validation-api")
@@ -97,13 +97,13 @@ dependencies {
 
     implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
     implementation("org.apache.tika:tika-core:3.3.1")
-    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.31")
+    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.32")
     implementation("com.github.scribejava:scribejava-apis:8.3.3")
     implementation("org.springframework.retry:spring-retry:2.0.12")
     implementation("org.springframework:spring-aop")
     implementation("org.aspectj:aspectjweaver")
 
-    implementation("org.flywaydb:flyway-mysql:12.6.2")
+    implementation("org.flywaydb:flyway-mysql:12.8.1")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.8")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -111,13 +111,13 @@ dependencies {
     // Jackson 2.x Kotlin module — required for SpringDoc/swagger-core schema
     // generation, which uses its own com.fasterxml.jackson ObjectMapper
     // independently of our tools.jackson mapper.
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.3")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.0")
     implementation("org.openapitools:jackson-databind-nullable:0.2.10")
 
     implementation(project(":services:api:clients:brevo"))
     implementation(project(":services:api:clients:discord"))
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
     implementation("org.commonmark:commonmark:0.28.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.28.0")
@@ -132,7 +132,7 @@ dependencies {
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
-    testImplementation("io.mockk:mockk:1.14.9")
+    testImplementation("io.mockk:mockk:1.14.11")
 
     // Shared test-fixture consumers expose main starter deps so factories
     // and support classes compile against Spring / JPA / Jackson / Security.
@@ -143,7 +143,7 @@ dependencies {
     testFixturesApi("org.springframework.boot:spring-boot-starter-data-jpa")
     testFixturesApi("org.springframework.boot:spring-boot-starter-web")
     testFixturesApi("org.springframework.boot:spring-boot-starter-flyway")
-    testFixturesApi("org.flywaydb:flyway-mysql:12.6.2")
+    testFixturesApi("org.flywaydb:flyway-mysql:12.8.1")
     testFixturesApi("com.github.javafaker:javafaker:1.0.2")
     // Shared test base boots a throwaway Valkey via @ServiceConnection so the
     // Redis-backed HTTP session path is exercised under the real prod config.

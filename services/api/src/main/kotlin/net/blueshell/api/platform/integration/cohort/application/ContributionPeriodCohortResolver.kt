@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional
  * `MEMBER_IN_PERIOD`, `ACTIVE_IN_PERIOD` — each with one BREVO list cohort.
  * V67 backfilled these for existing periods; this resolver only does work for
  * periods created after cutover. A thin spec builder over
- * [CohortProvisioningService]; Brevo lists are created lazily on first ADD.
+ * [CohortProvisioningService]; operators must explicitly create or link the
+ * Brevo lists before membership ADD jobs can push.
  */
 @Service
 class ContributionPeriodCohortResolver(

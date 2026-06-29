@@ -8,6 +8,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRepairResult
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
@@ -90,6 +91,10 @@ class CohortRemediationService(
         val plan = readOnlyTransaction.execute { loadPlan(cohortId) }!!
         val remote = outsideTransaction.execute { registry.require(plan.system).listMembers(plan.externalCohortId) }!!
         writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
+    }
+
+    override fun repairMissingAdds(cohortId: Long): CohortRepairResult {
+        TODO("repair missing cohort ADDs")
     }
 
     private fun loadPlan(cohortId: Long): ReconcilePlan {

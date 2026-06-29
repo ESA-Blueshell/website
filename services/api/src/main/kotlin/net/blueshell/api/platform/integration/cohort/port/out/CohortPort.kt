@@ -8,7 +8,8 @@ import net.blueshell.api.shared.enums.TargetSystem
  * `cohort/adapter/<vendor>/`.
  *
  * The contract is operation-based rather than state-replace: callers
- * add or remove a single `(user, cohort)` pair by external id. External
+ * add a single `(user, cohort)` pair by external id, list remote state,
+ * and perform explicit operator-driven removals/deletions. External
  * target creation is explicit operator-driven provisioning; membership
  * sync requires the cohort target id to already be linked.
  * All ids are passed as `String` so Discord snowflakes and Google

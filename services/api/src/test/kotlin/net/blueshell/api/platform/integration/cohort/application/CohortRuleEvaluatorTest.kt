@@ -73,21 +73,31 @@ class CohortRuleEvaluatorTest {
     }
 
     @Test
-    fun `cohorts currently joined but no longer desired are soft-deleted and a per-member REMOVE is enqueued`() {
-        every { factCollector.collect(1L) } returns emptySet()
+    fun `desired set shrink soft-deletes locally without enqueueing external REMOVE and still enqueues ADDs`() {
+        every { factCollector.collect(1L) } returns setOf(UserFact(CohortFactKind.NEWSLETTER, "true"))
         val stale = cohort(id = 99L)
+        val new = cohort(id = 20L)
         val staleMembership = membership(stale)
+        every { cohorts.findAllForEnabledSubjectFact(CohortFactKind.NEWSLETTER, "true") } returns listOf(new)
         every { memberships.findAllByUserIdAndUserIdIsNotNull(1L) } returns listOf(staleMembership)
+        every { cohorts.findById(20L) } returns Optional.of(new)
+        every { memberships.save(any<CohortMember>()) } answers { firstArg<CohortMember>() }
 
         val result = evaluator.evaluate(1L)
 
         assertThat(result.toRemove).containsExactly(99L)
-        assertThat(result.toAdd).isEmpty()
+        assertThat(result.toAdd).containsExactly(20L)
         verify { memberships.delete(staleMembership) }
         verify {
             jobs.enqueue(
                 CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.REMOVE),
+                CohortJobs.SyncCohortMembershipPayload(1L, 20L, SyncCohortMembershipIntent.ADD),
+            )
+        }
+        verify(exactly = 0) {
+            jobs.enqueue(
+                CohortJobs.SyncCohortMembership,
+                match { it.intent == SyncCohortMembershipIntent.REMOVE },
             )
         }
     }

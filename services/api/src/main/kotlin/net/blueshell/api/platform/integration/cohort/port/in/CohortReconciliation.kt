@@ -14,8 +14,10 @@ interface CohortReconciliation {
     /**
      * Re-evaluates one user's cohort membership against the current
      * rules. Desired-row writes happen synchronously; external state
-     * converges through per-member `cohort.membership-sync` ADD/REMOVE
-     * jobs enqueued for each cohort the user joins or leaves.
+     * converges through per-member `cohort.membership-sync` ADD jobs
+     * enqueued for each cohort the user joins. Cohorts the user leaves are
+     * soft-deleted locally and surface as external extras during drift
+     * reconciliation.
      */
     fun evaluateUserCohorts(userId: Long)
 

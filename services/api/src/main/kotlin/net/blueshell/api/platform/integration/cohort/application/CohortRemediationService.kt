@@ -47,6 +47,7 @@ class CohortRemediationService(
     private val targetIds: CohortTargetIds,
     private val registry: CohortPortRegistry,
     private val jobs: TrackedJobDispatcher,
+    private val removalPolicy: CohortMemberRemovalPolicy,
     transactionManager: PlatformTransactionManager,
 ) : CohortRemediation {
 
@@ -79,7 +80,12 @@ class CohortRemediationService(
         val system = TargetSystem.valueOf(cohort.system)
         val externalCohortId = targetIds.require(cohort)
 
-        outsideTransaction.executeWithoutResult { registry.require(system).removeMember(externalUserId, externalCohortId) }
+        if (!removalPolicy.allows(system, CohortMemberRemovalOrigin.EXPLICIT_OPERATOR)) {
+            throw NonRetryableJobException("External member removal is not allowed for $system cohort $cohortId")
+        }
+        outsideTransaction.executeWithoutResult {
+            registry.require(system).removeMember(externalUserId, externalCohortId)
+        }
         ledger.removeStranger(cohortId, externalUserId)
     }
 

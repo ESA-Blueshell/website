@@ -34,8 +34,9 @@ import java.time.LocalDateTime
  *   has materialised externally.
  * - `ADD` with no cohort target id fails terminally. An operator must
  *   explicitly create or link a target before retrying the membership push.
- * - `REMOVE` with no external state on either side is a no-op —
- *   there is nothing to converge to.
+ * - `REMOVE` is a legacy automatic intent. For Brevo it is blocked before
+ *   calling the provider; explicit operator drift removal uses
+ *   [CohortRemediationService.removeExternalMember] instead.
  */
 @Service
 class CohortMembershipSyncService(
@@ -45,6 +46,7 @@ class CohortMembershipSyncService(
     private val externalIds: ExternalIdMappingService,
     private val targetIds: CohortTargetIds,
     private val jobs: TrackedJobDispatcher,
+    private val removalPolicy: CohortMemberRemovalPolicy,
     transactionManager: PlatformTransactionManager,
 ) : CohortMembershipSync {
 
@@ -106,6 +108,13 @@ class CohortMembershipSyncService(
             log.debug(
                 "No $system external ids for user {} / cohort {} — skipping removal",
                 userId, cohortId,
+            )
+            return
+        }
+        if (!removalPolicy.allows(TargetSystem.valueOf(system), CohortMemberRemovalOrigin.AUTOMATIC_SYNC)) {
+            log.info(
+                "Blocked automatic {} external removal for user {} / cohort {}; reconcile will surface any remote extra",
+                system, userId, cohortId,
             )
             return
         }

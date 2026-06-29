@@ -38,6 +38,7 @@ class CohortMembershipSyncServiceTest {
         externalIds = externalIds,
         targetIds = targetIds,
         jobs = jobs,
+        removalPolicy = CohortMemberRemovalPolicy(),
         // A relaxed manager still runs the TransactionTemplate callbacks; the
         // real no-active-transaction guarantee is asserted in
         // CohortProviderTransactionBoundaryIT against a real transaction manager.
@@ -105,14 +106,14 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `REMOVE calls port when both external ids exist`() {
+    fun `automatic REMOVE for Brevo is blocked even when both external ids exist`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns "42"
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
 
-        verify { brevoPort.removeMember("777", "42") }
+        verify(exactly = 0) { brevoPort.removeMember(any(), any()) }
     }
 
     @Test

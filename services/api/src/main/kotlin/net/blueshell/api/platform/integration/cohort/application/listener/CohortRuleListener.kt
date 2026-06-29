@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional
  * Funnels every change event that can alter a user's [UserFact]s into a
  * single re-evaluation of cohort membership. The evaluator writes the
  * desired `cohort_member` rows and enqueues per-member
- * `cohort.membership-sync` ADD/REMOVE jobs — it is not shadow mode.
+ * `cohort.membership-sync` ADD jobs for newly desired memberships. Rows
+ * that leave the desired set are soft-deleted locally and reviewed later
+ * through drift reconciliation.
  *
  * The engine still diffs cohort rows; the subject-level engine sketched
  * by V72 is a deferred follow-up (see [CohortSubject]).
@@ -49,8 +51,8 @@ class CohortRuleListener(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUserDeleted(evt: UserDeleted) {
         // After deletion the fact collector returns an empty set, so the
-        // diff is "remove from every cohort the user was in". Exactly the
-        // semantics we want.
+        // diff soft-deletes every desired cohort row the user was in without
+        // pushing external member removals.
         evaluator.evaluate(evt.userId)
     }
 

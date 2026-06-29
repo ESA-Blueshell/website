@@ -28,12 +28,13 @@ import org.springframework.transaction.annotation.Transactional
  * 3. Diffs against the user's current `cohort_member` rows.
  * 4. For each cohort to add: inserts a desired `CohortMember` row and
  *    enqueues a per-member `SyncCohortMembership(ADD)`.
- * 5. For each cohort to remove: soft-deletes the desired row and
- *    enqueues a per-member `SyncCohortMembership(REMOVE)`.
+ * 5. For each cohort to remove: soft-deletes the desired row locally.
  *
- * The per-member sync is the primary path to a healthy ledger: a
- * successful ADD stamps `synced_at` on the desired row. List reconcile
- * (`ReconcileList`) is a separate periodic/manual verifier, not enqueued
+ * The per-member ADD sync is the primary path to a healthy ledger: a
+ * successful ADD stamps `synced_at` on the desired row. Automatic
+ * removals are local-only; if the external list still contains the
+ * member, list reconcile records it as a stranger for operator review.
+ * `ReconcileList` is a separate periodic/manual verifier, not enqueued
  * here.
  *
  * All of the above runs in a single transaction. The job dispatch
@@ -86,10 +87,6 @@ class CohortRuleEvaluator(
         }
         evaluation.toRemove.forEach { cohortId ->
             removeExistingMembership(currentMemberships, cohortId)
-            jobs.enqueue(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.REMOVE),
-            )
         }
 
         log.info(

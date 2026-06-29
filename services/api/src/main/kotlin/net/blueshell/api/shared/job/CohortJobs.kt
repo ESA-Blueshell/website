@@ -5,10 +5,10 @@ import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembers
 /**
  * Per-target cohort membership sync jobs. One job execution pushes one
  * `(user, cohort)` pair to one external system, idempotently. The
- * payload's [SyncCohortMembershipIntent] decides whether the inbound
- * port is called with `ADD` or `REMOVE` semantics — the enum lives on
- * the application port so callers and the driving job handler share
- * one source of truth for the verb.
+ * payload's [SyncCohortMembershipIntent] decides which legacy inbound
+ * intent is sent. `ADD` pushes membership to the external system; `REMOVE`
+ * is retained for payload compatibility but provider removal is blocked
+ * for automatic Brevo sync.
  *
  * Per-pair fan-out (rather than per-user batch) means a single sync
  * failure is isolated to its own JobExecution row in the Job Manager
@@ -50,9 +50,9 @@ object CohortJobs {
     /**
      * Re-evaluates one user's cohort membership against the current
      * rules. Local desired-row writes happen here, and the evaluator
-     * enqueues one per-member [SyncCohortMembership] ADD/REMOVE job for
-     * each cohort the user joins or leaves. [ReconcileList] is the
-     * separate periodic verifier, not this job's convergence path.
+     * enqueues one per-member [SyncCohortMembership] ADD job for each
+     * newly joined cohort. Leaving a cohort is local-only; [ReconcileList]
+     * later surfaces any external extra for operator review.
      */
     object EvaluateUserCohorts : JobDefinition<EvaluateUserCohortsPayload> {
         override val type: String = "cohort.evaluate-user"

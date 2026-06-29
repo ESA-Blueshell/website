@@ -49,6 +49,7 @@ class CohortRemediationServiceTest {
         targetIds = targetIds,
         registry = CohortPortRegistry(listOf(port)),
         jobs = jobs,
+        removalPolicy = CohortMemberRemovalPolicy(),
         transactionManager = ImmediateTransactionManager(),
     )
 

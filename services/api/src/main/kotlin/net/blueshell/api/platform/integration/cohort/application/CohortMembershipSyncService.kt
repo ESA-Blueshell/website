@@ -10,7 +10,6 @@ import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -33,9 +32,8 @@ import java.time.LocalDateTime
  * - `ADD` with no user external id enqueues `SyncContact` and throws
  *   a retryable exception so the retry picks up after the contact
  *   has materialised externally.
- * - `ADD` with no cohort target id enqueues `cohort.materialize-target`
- *   and throws a retryable exception — it never creates the target
- *   itself, so two racing ADDs cannot create two remote targets.
+ * - `ADD` with no cohort target id fails terminally. An operator must
+ *   explicitly create or link a target before retrying the membership push.
  * - `REMOVE` with no external state on either side is a no-op —
  *   there is nothing to converge to.
  */
@@ -87,10 +85,7 @@ class CohortMembershipSyncService(
         }
         val externalCohortId = targetIds.find(cohort)
         if (externalCohortId == null) {
-            jobs.enqueue(CohortJobs.MaterializeCohortTarget, CohortJobs.MaterializeCohortTargetPayload(cohortId))
-            throw CohortMembershipNotReadyException(
-                "cohort $cohortId has no $system target — enqueued materialize-target, will retry",
-            )
+            throw CohortTargetNotLinkedException(cohortId, system)
         }
         outsideTransaction.executeWithoutResult { port.addMember(externalUserId, externalCohortId) }
 
@@ -131,3 +126,7 @@ class CohortMembershipSyncService(
  * the prerequisite job has had a chance to complete.
  */
 class CohortMembershipNotReadyException(message: String) : RuntimeException(message)
+
+class CohortTargetNotLinkedException(cohortId: Long, system: String) : NonRetryableJobException(
+    "cohort $cohortId has no $system target — create or link an external target, then retry the membership job",
+)

@@ -52,6 +52,10 @@ class CohortRemediationServiceTest {
         transactionManager = ImmediateTransactionManager(),
     )
 
+    init {
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(any(), any()) } returns null
+    }
+
     @Test
     fun `verifyCohort fetches remote members outside a transaction and applies ledger changes`() {
         val subject = subject(7L)
@@ -100,8 +104,11 @@ class CohortRemediationServiceTest {
             missingWithExternalId,
             missingWithoutExternalId,
         )
-        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-1") } returns matchingStranger
+        every {
+            members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1"))
+        } returns listOf(matchingStranger)
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-extra") } returns null
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-extra") } returns null
         every { members.findAllByCohortIdAndUserIdIsNull(99L) } returns listOf(staleStranger)
         every { members.save(any<CohortMember>()) } answers { firstArg() }
 
@@ -192,6 +199,51 @@ class CohortRemediationServiceTest {
         assertThat(desired.label).isEqualTo("Linked Remote")
         verify { members.save(desired) }
         verify { members.delete(stranger) }
+    }
+
+    @Test
+    fun `repairMissingAdds requires a bound cohort and re-enqueues unsynced desired rows`() {
+        val subject = subject(7L)
+        val cohort = cohort(99L, subject.id!!).apply { externalId = "list-99" }
+        val unsynced = member(cohort, subject, userId = 1L)
+        val drifted = member(
+            cohort,
+            subject,
+            userId = 2L,
+            externalUserId = "ext-2",
+            syncedAt = null,
+            verifiedAt = null,
+        )
+        val alreadySynced = member(
+            cohort,
+            subject,
+            userId = 3L,
+            externalUserId = "ext-3",
+            syncedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
+        )
+        every { cohorts.findById(99L) } returns Optional.of(cohort)
+        every { targetIds.require(cohort) } returns "list-99"
+        every { members.findAllByCohortIdAndUserIdIsNotNull(99L) } returns listOf(unsynced, drifted, alreadySynced)
+
+        val result = service.repairMissingAdds(99L)
+
+        assertThat(result.enqueuedAdds).isEqualTo(2)
+        verify {
+            jobs.enqueue(
+                CohortJobs.SyncCohortMembership,
+                CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.ADD),
+            )
+            jobs.enqueue(
+                CohortJobs.SyncCohortMembership,
+                CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
+            )
+        }
+        verify(exactly = 0) {
+            jobs.enqueue(
+                CohortJobs.SyncCohortMembership,
+                CohortJobs.SyncCohortMembershipPayload(3L, 99L, SyncCohortMembershipIntent.ADD),
+            )
+        }
     }
 
     private fun subject(id: Long): CohortSubject =

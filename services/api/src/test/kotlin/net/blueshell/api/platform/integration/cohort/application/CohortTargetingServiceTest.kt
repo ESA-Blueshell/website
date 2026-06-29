@@ -7,6 +7,7 @@ import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -77,7 +78,7 @@ class CohortTargetingServiceTest {
     }
 
     @Test
-    fun `materialize creates the target with the cohort folder and records it`() {
+    fun `materialize without an existing target fails terminally and never creates a provider target`() {
         val cohort = mock<Cohort> {
             on { id } doReturn 7L
             on { system } doReturn "BREVO"
@@ -87,13 +88,13 @@ class CohortTargetingServiceTest {
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn(null)
         whenever(registry.require(TargetSystem.BREVO)).thenReturn(port)
-        whenever(port.createCohort("Members", "Committees")).thenReturn("999")
 
-        val ref = service.materialize(7L)
+        assertThrows<NonRetryableJobException> {
+            service.materialize(7L)
+        }
 
-        verify(port).createCohort("Members", "Committees")
-        verify(targetIds).record(cohort, "999")
-        assert(ref.externalId == "999")
+        verify(port, never()).createCohort(any(), any())
+        verify(targetIds, never()).record(any(), any())
     }
 
     @Test
@@ -107,6 +108,24 @@ class CohortTargetingServiceTest {
         assert(ref.externalId == "existing")
         verifyNoInteractions(registry)
         verify(targetIds, never()).record(any(), any())
+    }
+
+    @Test
+    fun `linkExisting fills an existing unbound mapping`() {
+        val subject = mock<net.blueshell.api.platform.integration.cohort.persistence.CohortSubject>()
+        val cohort = mock<Cohort> {
+            on { id } doReturn 7L
+            on { externalId } doReturn null
+        }
+        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(cohort)
+
+        val row = service.linkExisting(1L, TargetSystem.BREVO, "list-123")
+
+        verify(cohortRepo, never()).save(any())
+        verify(targetIds).record(cohort, "list-123")
+        assert(row.cohort == cohort)
+        assert(row.externalId == "list-123")
     }
 
     @Test

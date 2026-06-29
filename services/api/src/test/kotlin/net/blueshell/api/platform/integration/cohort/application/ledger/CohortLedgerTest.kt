@@ -3,6 +3,7 @@ package net.blueshell.api.platform.integration.cohort.application.ledger
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifySequence
 import io.mockk.slot
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
@@ -22,6 +23,7 @@ class CohortLedgerTest {
 
     init {
         every { members.save(any<CohortMember>()) } answers { firstArg() }
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(any(), any()) } returns null
     }
     private val cohort: Cohort = mockk { every { id } returns 99L }
     private val subject: CohortSubject = mockk()
@@ -31,6 +33,7 @@ class CohortLedgerTest {
     fun `markPushed stamps syncedAt and external id on the desired row`() {
         val row = member(userId = 1L)
         every { members.findByCohortIdAndUserId(99L, 1L) } returns row
+        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1")) } returns emptyList()
 
         val stamped = ledger.markPushed(99L, 1L, "ext-1", now)
 
@@ -39,6 +42,47 @@ class CohortLedgerTest {
         assertThat(row.externalUserId).isEqualTo("ext-1")
         assertThat(row.state).isEqualTo(CohortMemberState.SYNCED)
         verify { members.save(row) }
+    }
+
+    @Test
+    fun `markPushed claims a matching stranger before stamping the desired row`() {
+        val row = member(userId = 1L)
+        val stranger = member(userId = null).apply {
+            externalUserId = "ext-1"
+            verifiedAt = now.minusHours(1)
+        }
+        every { members.findByCohortIdAndUserId(99L, 1L) } returns row
+        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1")) } returns listOf(stranger)
+
+        val stamped = ledger.markPushed(99L, 1L, "ext-1", now)
+
+        assertThat(stamped).isTrue()
+        verifySequence {
+            members.findByCohortIdAndUserId(99L, 1L)
+            members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-1")
+            members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1"))
+            members.delete(stranger)
+            members.flush()
+            members.save(row)
+        }
+    }
+
+    @Test
+    fun `markPushed refuses external id owned by another desired row`() {
+        val row = member(userId = 1L)
+        val owner = member(userId = 2L).apply { externalUserId = "ext-1" }
+        every { members.findByCohortIdAndUserId(99L, 1L) } returns row
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-1") } returns owner
+
+        assertThatThrownBy { ledger.markPushed(99L, 1L, "ext-1", now) }
+            .isInstanceOf(ExternalIdAlreadyOwnedException::class.java)
+            .hasMessageContaining("cohort 99")
+            .hasMessageContaining("ext-1")
+            .hasMessageContaining("user 2")
+
+        assertThat(row.externalUserId).isNull()
+        assertThat(row.syncedAt).isNull()
+        verify(exactly = 0) { members.save(any<CohortMember>()) }
     }
 
     @Test
@@ -52,6 +96,7 @@ class CohortLedgerTest {
     @Test
     fun `markVerified sets verifiedAt and backfills syncedAt when absent`() {
         val row = member(userId = 1L)
+        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1")) } returns emptyList()
 
         ledger.markVerified(row, "ext-1", "Ada", now)
 
@@ -65,11 +110,32 @@ class CohortLedgerTest {
     fun `markVerified keeps an earlier syncedAt`() {
         val pushedAt = now.minusHours(1)
         val row = member(userId = 1L).apply { syncedAt = pushedAt }
+        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1")) } returns emptyList()
 
         ledger.markVerified(row, "ext-1", null, now)
 
         assertThat(row.syncedAt).isEqualTo(pushedAt)
         assertThat(row.verifiedAt).isEqualTo(now)
+    }
+
+    @Test
+    fun `markVerified claims a matching stranger before stamping the desired row`() {
+        val row = member(userId = 1L)
+        val stranger = member(userId = null).apply {
+            externalUserId = "ext-1"
+            verifiedAt = now.minusHours(1)
+        }
+        every { members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1")) } returns listOf(stranger)
+
+        ledger.markVerified(row, "ext-1", "Ada", now)
+
+        verifySequence {
+            members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-1")
+            members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1"))
+            members.delete(stranger)
+            members.flush()
+            members.save(row)
+        }
     }
 
     @Test
@@ -106,8 +172,52 @@ class CohortLedgerTest {
     }
 
     @Test
+    fun `foldStrangerIntoDesired soft deletes and flushes the stranger before saving desired`() {
+        val stranger = member(userId = null).apply {
+            externalUserId = "ext-7"
+            verifiedAt = now
+            label = "Linked"
+        }
+        val desired = member(userId = 7L)
+
+        ledger.foldStrangerIntoDesired(desired, stranger)
+
+        verifySequence {
+            members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-7")
+            members.delete(stranger)
+            members.flush()
+            members.save(desired)
+        }
+    }
+
+    @Test
+    fun `foldStrangerIntoDesired refuses external id owned by another desired row`() {
+        val stranger = member(userId = null).apply {
+            externalUserId = "ext-7"
+            verifiedAt = now
+            label = "Linked"
+        }
+        val desired = member(userId = 7L)
+        val owner = member(userId = 8L).apply { externalUserId = "ext-7" }
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-7") } returns owner
+
+        assertThatThrownBy { ledger.foldStrangerIntoDesired(desired, stranger) }
+            .isInstanceOf(ExternalIdAlreadyOwnedException::class.java)
+            .hasMessageContaining("cohort 99")
+            .hasMessageContaining("ext-7")
+            .hasMessageContaining("user 8")
+
+        assertThat(desired.externalUserId).isNull()
+        assertThat(desired.syncedAt).isNull()
+        assertThat(desired.verifiedAt).isNull()
+        verify(exactly = 0) { members.delete(stranger) }
+        verify(exactly = 0) { members.save(any<CohortMember>()) }
+    }
+
+    @Test
     fun `upsertStranger inserts a STRANGER row`() {
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-9") } returns null
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-9") } returns null
         val saved = slot<CohortMember>()
         every { members.save(capture(saved)) } answers { firstArg() }
 
@@ -115,6 +225,17 @@ class CohortLedgerTest {
 
         assertThat(saved.captured.state).isEqualTo(CohortMemberState.STRANGER)
         assertThat(saved.captured.externalUserId).isEqualTo("ext-9")
+    }
+
+    @Test
+    fun `upsertStranger refuses to insert when a desired row already owns the external id`() {
+        val desired = member(userId = 9L).apply { externalUserId = "ext-9" }
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-9") } returns null
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-9") } returns desired
+
+        ledger.upsertStranger(cohort, subject, "ext-9", "Desired", now)
+
+        verify(exactly = 0) { members.save(any<CohortMember>()) }
     }
 
     @Test

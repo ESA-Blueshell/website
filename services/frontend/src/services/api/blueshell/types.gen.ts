@@ -170,6 +170,11 @@ export type CohortMemberRow = {
     userId: number;
 };
 
+export type CohortRepair = {
+    cohortId: number;
+    enqueuedAdds: number;
+};
+
 export type CohortRule = {
     enabled: boolean;
     factKey: string;
@@ -3682,6 +3687,49 @@ export type FindCohortByIdResponses = {
 };
 
 export type FindCohortByIdResponse = FindCohortByIdResponses[keyof FindCohortByIdResponses];
+
+export type RepairMissingAddsData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/repair-missing-adds';
+};
+
+export type RepairMissingAddsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RepairMissingAddsError = RepairMissingAddsErrors[keyof RepairMissingAddsErrors];
+
+export type RepairMissingAddsResponses = {
+    /**
+     * OK
+     */
+    200: CohortRepair;
+};
+
+export type RepairMissingAddsResponse = RepairMissingAddsResponses[keyof RepairMissingAddsResponses];
 
 export type List1Data = {
     body?: never;

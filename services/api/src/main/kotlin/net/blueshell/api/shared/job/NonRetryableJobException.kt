@@ -2,7 +2,7 @@ package net.blueshell.api.shared.job
 
 import jakarta.validation.ConstraintViolationException
 
-class NonRetryableJobException(
+open class NonRetryableJobException(
     message: String,
     cause: Throwable? = null
 ) : RuntimeException(message, cause) {

@@ -96,10 +96,9 @@ object CohortJobs {
     }
 
     /**
-     * Creates one cohort's external target when it has none yet, and records
-     * the new id. Enqueued by a per-member ADD that found no target id, so the
-     * ADD can retry once the target exists. Deduplicated by cohort id, so only
-     * one create runs per cohort however many ADDs raced.
+     * Stale compatibility job for cohorts that already have a target id.
+     * It returns the existing id or fails terminally when missing; target
+     * creation is now explicit operator action only.
      */
     object MaterializeCohortTarget : JobDefinition<MaterializeCohortTargetPayload> {
         override val type: String = "cohort.materialize-target"

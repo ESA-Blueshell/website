@@ -60,17 +60,18 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `ADD without a cohort target enqueues materialize-target, throws retryable and never creates a target`() {
+    fun `ADD without a cohort target fails terminally and does not enqueue materialization`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns null
 
         assertThatThrownBy {
             service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
-        }.isInstanceOf(CohortMembershipNotReadyException::class.java)
+        }.isInstanceOf(NonRetryableJobException::class.java)
+            .hasMessageContaining("cohort 10 has no BREVO target")
 
-        verify {
-            jobs.enqueue(CohortJobs.MaterializeCohortTarget, CohortJobs.MaterializeCohortTargetPayload(10L))
+        verify(exactly = 0) {
+            jobs.enqueue(CohortJobs.MaterializeCohortTarget, any<CohortJobs.MaterializeCohortTargetPayload>())
         }
         verify(exactly = 0) { brevoPort.addMember(any(), any()) }
         verify(exactly = 0) { brevoPort.createCohort(any(), any()) }

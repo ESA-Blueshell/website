@@ -8,8 +8,9 @@ import net.blueshell.api.shared.enums.TargetSystem
  * `cohort/adapter/<vendor>/`.
  *
  * The contract is operation-based rather than state-replace: callers
- * add or remove a single `(user, cohort)` pair by external id, and
- * the cohort's external counterpart is created lazily on first use.
+ * add or remove a single `(user, cohort)` pair by external id. External
+ * target creation is explicit operator-driven provisioning; membership
+ * sync requires the cohort target id to already be linked.
  * All ids are passed as `String` so Discord snowflakes and Google
  * group emails fit alongside Brevo's numeric list ids without forcing
  * every adapter to coerce to `Long`.

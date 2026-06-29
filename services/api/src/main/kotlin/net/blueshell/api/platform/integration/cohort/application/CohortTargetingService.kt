@@ -47,8 +47,19 @@ class CohortTargetingService(
     override fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow =
         writeTransaction.execute {
             val subject = requireSubject(subjectId)
-            requireNoExistingMapping(subjectId, system)
-            val cohort = cohortRepo.save(newCohort(system, subject.label, folder = null, subjectId = subjectId))
+            val existing = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name)
+            val cohort = if (existing == null) {
+                cohortRepo.save(newCohort(system, subject.label, folder = null, subjectId = subjectId))
+            } else {
+                val currentExternalId = targetIds.find(existing)
+                if (currentExternalId != null) {
+                    throw ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Subject $subjectId already has a $system target",
+                    )
+                }
+                existing
+            }
             targetIds.record(cohort, externalId)
             CohortMappingRow(cohort, externalId)
         }!!
@@ -115,28 +126,10 @@ class CohortTargetingService(
         }!!
         prep.existingExternalId?.let { return CohortTargetRef(cohortId, it) }
 
-        // Pass the folder — the old lazy ADD path created the list with no
-        // folder while admin creation passed it.
-        val created = outsideTransaction.execute { registry.require(prep.system).createCohort(prep.label, prep.folder) }!!
-
-        return writeTransaction.execute {
-            val cohort = cohortRepo.findById(cohortId).orElseThrow {
-                NonRetryableJobException("Cohort $cohortId not found")
-            }
-            targetIds.find(cohort)?.let { return@execute CohortTargetRef(cohortId, it) }
-            try {
-                targetIds.record(cohort, created)
-            } catch (e: Exception) {
-                // The remote target exists but could not be recorded. Fail
-                // terminally carrying its id so an operator links it, rather
-                // than letting retries create a second remote target.
-                throw NonRetryableJobException(
-                    "Created ${prep.system} target '$created' for cohort $cohortId but could not record it; link it manually",
-                    e,
-                )
-            }
-            CohortTargetRef(cohortId, created)
-        }!!
+        throw NonRetryableJobException(
+            "Cohort $cohortId has no ${prep.system} target; materialize-target no longer creates targets. " +
+                "Create or link an external target manually.",
+        )
     }
 
     override fun deleteTarget(system: TargetSystem, externalTargetId: String) {

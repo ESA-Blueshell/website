@@ -23,6 +23,7 @@ class CohortLedgerTest {
 
     init {
         every { members.save(any<CohortMember>()) } answers { firstArg() }
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(any(), any()) } returns null
     }
     private val cohort: Cohort = mockk { every { id } returns 99L }
     private val subject: CohortSubject = mockk()
@@ -58,11 +59,30 @@ class CohortLedgerTest {
         assertThat(stamped).isTrue()
         verifySequence {
             members.findByCohortIdAndUserId(99L, 1L)
+            members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-1")
             members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1"))
             members.delete(stranger)
             members.flush()
             members.save(row)
         }
+    }
+
+    @Test
+    fun `markPushed refuses external id owned by another desired row`() {
+        val row = member(userId = 1L)
+        val owner = member(userId = 2L).apply { externalUserId = "ext-1" }
+        every { members.findByCohortIdAndUserId(99L, 1L) } returns row
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-1") } returns owner
+
+        assertThatThrownBy { ledger.markPushed(99L, 1L, "ext-1", now) }
+            .isInstanceOf(ExternalIdAlreadyOwnedException::class.java)
+            .hasMessageContaining("cohort 99")
+            .hasMessageContaining("ext-1")
+            .hasMessageContaining("user 2")
+
+        assertThat(row.externalUserId).isNull()
+        assertThat(row.syncedAt).isNull()
+        verify(exactly = 0) { members.save(any<CohortMember>()) }
     }
 
     @Test
@@ -110,6 +130,7 @@ class CohortLedgerTest {
         ledger.markVerified(row, "ext-1", "Ada", now)
 
         verifySequence {
+            members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-1")
             members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1"))
             members.delete(stranger)
             members.flush()
@@ -162,10 +183,35 @@ class CohortLedgerTest {
         ledger.foldStrangerIntoDesired(desired, stranger)
 
         verifySequence {
+            members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-7")
             members.delete(stranger)
             members.flush()
             members.save(desired)
         }
+    }
+
+    @Test
+    fun `foldStrangerIntoDesired refuses external id owned by another desired row`() {
+        val stranger = member(userId = null).apply {
+            externalUserId = "ext-7"
+            verifiedAt = now
+            label = "Linked"
+        }
+        val desired = member(userId = 7L)
+        val owner = member(userId = 8L).apply { externalUserId = "ext-7" }
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-7") } returns owner
+
+        assertThatThrownBy { ledger.foldStrangerIntoDesired(desired, stranger) }
+            .isInstanceOf(ExternalIdAlreadyOwnedException::class.java)
+            .hasMessageContaining("cohort 99")
+            .hasMessageContaining("ext-7")
+            .hasMessageContaining("user 8")
+
+        assertThat(desired.externalUserId).isNull()
+        assertThat(desired.syncedAt).isNull()
+        assertThat(desired.verifiedAt).isNull()
+        verify(exactly = 0) { members.delete(stranger) }
+        verify(exactly = 0) { members.save(any<CohortMember>()) }
     }
 
     @Test

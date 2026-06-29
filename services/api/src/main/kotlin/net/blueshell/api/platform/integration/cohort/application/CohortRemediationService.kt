@@ -20,6 +20,7 @@ import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
@@ -136,7 +137,7 @@ class CohortRemediationService(
         val remoteByExtId = remote.associateBy { it.externalUserId }
         val now = LocalDateTime.now()
         val desiredRows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(plan.cohortId)
-        val externalIdByUserId = loadCurrentExternalIds(desiredRows, plan.system)
+        val externalIdByUserId = loadCurrentExternalIds(plan.cohortId, desiredRows, plan.system)
 
         val confirmed = confirmPresentDesiredRows(plan, desiredRows, externalIdByUserId, remoteByExtId, now)
         demoteVanishedDesiredRows(plan, desiredRows, externalIdByUserId, remoteByExtId.keys)
@@ -145,6 +146,7 @@ class CohortRemediationService(
     }
 
     private fun loadCurrentExternalIds(
+        cohortId: Long,
         desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
         system: TargetSystem,
     ): Map<Long, String> {
@@ -153,6 +155,16 @@ class CohortRemediationService(
             .findBatch(USER_AGGREGATE, desiredUserIds, system.name)
             .filter { !it.externalId.isNullOrBlank() }
             .groupBy { it.externalId }
+            .also { grouped ->
+                grouped.filterValues { it.size > 1 }.forEach { (externalId, mappings) ->
+                    log.warn(
+                        "Ignoring duplicate external id mapping for cohort {} and external id {} across user ids {}",
+                        cohortId,
+                        externalId,
+                        mappings.map { it.aggregateId },
+                    )
+                }
+            }
             .filterValues { it.size == 1 }
             .values
             .flatten()
@@ -246,4 +258,8 @@ class CohortRemediationService(
         val system: TargetSystem,
         val externalCohortId: String,
     )
+
+    companion object {
+        private val log = LoggerFactory.getLogger(CohortRemediationService::class.java)
+    }
 }

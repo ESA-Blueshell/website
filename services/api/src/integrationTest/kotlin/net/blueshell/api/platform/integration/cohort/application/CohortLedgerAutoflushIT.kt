@@ -105,6 +105,26 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
             members.delete(second)
             members.flush()
         }.doesNotThrowAnyException()
+
+        val deletedAtValues = entityManager.createNativeQuery(
+            """
+            SELECT DATE_FORMAT(deleted_at, '%Y-%m-%d %H:%i:%s.%f')
+            FROM cohort_member
+            WHERE cohort_id = :cohortId
+              AND external_user_id = :externalUserId
+              AND deleted_at <> '9999-12-31 23:59:59'
+            ORDER BY id
+            """.trimIndent(),
+        )
+            .setParameter("cohortId", cohort.id!!)
+            .setParameter("externalUserId", "ext-fast")
+            .resultList
+            .map { it.toString() }
+
+        assertThat(deletedAtValues)
+            .hasSize(2)
+            .allMatch { it.matches(Regex(""".*\.\d{6}$""")) }
+        assertThat(deletedAtValues.toSet()).hasSize(2)
     }
 
     private fun newSubject(): CohortSubject =

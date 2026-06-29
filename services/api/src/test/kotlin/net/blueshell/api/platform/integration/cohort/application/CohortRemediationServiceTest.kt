@@ -52,6 +52,10 @@ class CohortRemediationServiceTest {
         transactionManager = ImmediateTransactionManager(),
     )
 
+    init {
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(any(), any()) } returns null
+    }
+
     @Test
     fun `verifyCohort fetches remote members outside a transaction and applies ledger changes`() {
         val subject = subject(7L)

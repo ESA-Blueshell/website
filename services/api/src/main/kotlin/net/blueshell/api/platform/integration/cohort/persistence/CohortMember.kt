@@ -52,7 +52,7 @@ import java.time.LocalDateTime
         Index(name = "idx_cohort_member_verified", columnList = "cohort_id,verified_at"),
     ],
 )
-@SQLDelete(sql = "UPDATE cohort_member SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE cohort_member SET deleted_at = NOW(6), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class CohortMember(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -100,8 +100,11 @@ class CohortRemediationServiceTest {
             missingWithExternalId,
             missingWithoutExternalId,
         )
-        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-1") } returns matchingStranger
+        every {
+            members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1"))
+        } returns listOf(matchingStranger)
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-extra") } returns null
+        every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(99L, "ext-extra") } returns null
         every { members.findAllByCohortIdAndUserIdIsNull(99L) } returns listOf(staleStranger)
         every { members.save(any<CohortMember>()) } answers { firstArg() }
 

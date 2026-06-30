@@ -12,6 +12,24 @@ vi.mock("@/services/api", () => ({
   deleteContribution: mockDeleteContribution,
 }))
 
+const mountRow = (props: Record<string, unknown>) =>
+  mount(ContributionUserRow, {
+    props: {
+      user: {id: 1, fullName: "Emma", username: "emma", roles: ["MEMBER"]},
+      contributionPeriodId: 9,
+      contributions: [],
+      ...props,
+    },
+    global: {
+      stubs: {
+        VChip: {
+          props: ["color"],
+          template: "<span data-testid=\"membership-chip\" :data-color=\"color\"><slot /></span>",
+        },
+      },
+    },
+  })
+
 describe("ContributionUserRow", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -20,13 +38,7 @@ describe("ContributionUserRow", () => {
   })
 
   it("marks and unmarks contribution", async () => {
-    const wrapper = mount(ContributionUserRow, {
-      props: {
-        user: {id: 1, fullName: "Emma", username: "emma", roles: ["MEMBER"]},
-        contributionPeriodId: 9,
-        contributions: [],
-      },
-    })
+    const wrapper = mountRow({})
 
     await (wrapper.vm as any).markPaid()
     expect(mockCreateContribution).toHaveBeenCalledWith({
@@ -47,5 +59,31 @@ describe("ContributionUserRow", () => {
         userId: 1,
       },
     })
+  })
+
+  it("renders membership chip from selected-period membership set instead of current roles", () => {
+    const periodMember = mountRow({
+      user: {id: 1, fullName: "Emma", username: "emma", roles: ["USER"]},
+      periodMemberUserIds: new Set([1]),
+    })
+
+    expect(periodMember.get("[data-testid='membership-chip']").text()).toBe("Member")
+    expect(periodMember.get("[data-testid='membership-chip']").attributes("data-color")).toBe("primary")
+
+    const currentMemberOnly = mountRow({
+      user: {id: 1, fullName: "Emma", username: "emma", roles: ["MEMBER"]},
+      periodMemberUserIds: new Set<number>(),
+    })
+
+    expect(currentMemberOnly.get("[data-testid='membership-chip']").text()).toBe("User")
+    expect(currentMemberOnly.get("[data-testid='membership-chip']").attributes("data-color")).toBe("grey")
+
+    const noRoles = mountRow({
+      user: {id: 1, fullName: "Emma", username: "emma", roles: []},
+      periodMemberUserIds: new Set<number>(),
+    })
+
+    expect(noRoles.get("[data-testid='membership-chip']").text()).toBe("User")
+    expect(noRoles.get("[data-testid='membership-chip']").attributes("data-color")).toBe("grey")
   })
 })

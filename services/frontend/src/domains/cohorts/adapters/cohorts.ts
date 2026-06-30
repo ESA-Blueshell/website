@@ -163,7 +163,7 @@ export type ExternalTarget = {
   linkedCohortId: number | null
 }
 
-export type InboundReconcilePreview = Omit<ApiInboundReconcilePreview, "system"> & { system: TargetSystem }
+export type InboundReconcilePreview = ApiInboundReconcilePreview
 export type InboundReconcileApplyResponse = ApiInboundReconcileApplyResponse
 
 function toTargetMapping(raw: ApiCohortMapping): TargetMapping {

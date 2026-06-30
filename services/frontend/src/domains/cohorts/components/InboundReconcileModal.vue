@@ -175,7 +175,7 @@ async function confirm() {
                 :data-testid="`inbound-skip-${row.externalUserId}`"
               >
                 <td>{{ row.externalLabel ?? row.externalUserId }}</td>
-                <td>{{ row.reason.replace(/_/g, " ").toLowerCase() }}</td>
+                <td>{{ row.reason?.replace(/_/g, " ").toLowerCase() ?? "" }}</td>
               </tr>
               <tr v-if="reconcile.preview.value.skipped.length === 0">
                 <td

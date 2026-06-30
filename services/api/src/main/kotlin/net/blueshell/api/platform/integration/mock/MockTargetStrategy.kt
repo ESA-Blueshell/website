@@ -66,15 +66,6 @@ class MockTargetStrategy : TargetStrategy {
         members.keys.removeIf { it.second == target.externalId }
     }
 
-    fun seed(target: ExternalTarget) {
-        targets[target.externalId] = target
-    }
-
-    fun clear() {
-        targets.clear()
-        members.clear()
-    }
-
     private fun ExternalTarget.matches(query: String): Boolean =
         query.isBlank() ||
             externalId == query ||

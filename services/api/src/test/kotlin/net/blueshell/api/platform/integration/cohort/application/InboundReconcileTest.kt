@@ -91,7 +91,7 @@ class InboundReconcileTest {
         assertThat(strategy.listCalls).isEqualTo(1)
         assertThat(strategy.sawTransactionDuringMembers).isFalse()
         assertThat(preview.writerSupported).isTrue()
-        assertThat(preview.matched).extracting<Long> { it.userId }.containsExactly(1L)
+        assertThat(preview.matched).extracting<Long?> { it.userId }.containsExactly(1L)
         assertThat(preview.matched.single().writable).isTrue()
         assertThat(preview.skipped).extracting<InboundReconcileSkipReason> { it.reason }
             .containsExactlyInAnyOrder(
@@ -203,7 +203,7 @@ class InboundReconcileTest {
         )
         every { writers.find(CohortFactKind.CONTRIBUTION_PAID) } returns contributionWriter
         every { contributionWriter.apply(1L, SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12")) } returns
-            FactWriteResult(FactWriteStatus.WRITTEN)
+            FactWriteStatus.WRITTEN
 
         val result = service.applyJob(
             CohortJobs.ApplyInboundReconcilePayload(

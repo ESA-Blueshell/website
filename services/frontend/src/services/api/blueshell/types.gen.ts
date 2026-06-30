@@ -609,34 +609,24 @@ export type InboundReconcileApplyResponse = {
     skippedCount: number;
 };
 
-export type InboundReconcileMatchedRow = {
-    alreadyTrue: boolean;
-    externalLabel?: string;
-    externalUserId: string;
-    userEmail?: string;
-    userFullName?: string;
-    userId: number;
-    writable: boolean;
-};
-
 export type InboundReconcilePreview = {
-    cohortId: number;
-    externalTargetId: string;
     fact: SubjectFact;
-    fetchedAt: string;
-    matched: Array<InboundReconcileMatchedRow>;
+    matched: Array<InboundReconcileRow>;
     previewToken: string;
     remoteCount: number;
-    skipped: Array<InboundReconcileSkippedRow>;
-    subjectId: number;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    skipped: Array<InboundReconcileRow>;
     writerSupported: boolean;
 };
 
-export type InboundReconcileSkippedRow = {
+export type InboundReconcileRow = {
+    alreadyTrue: boolean;
     externalLabel?: string;
     externalUserId: string;
-    reason: 'DUPLICATE_REMOTE_ID' | 'MAPPING_CONFLICT' | 'DUPLICATE_USER_MATCH' | 'MAPPED_USER_INACTIVE' | 'UNMATCHED';
+    reason?: 'DUPLICATE_REMOTE_ID' | 'MAPPING_CONFLICT' | 'DUPLICATE_USER_MATCH' | 'MAPPED_USER_INACTIVE' | 'UNMATCHED';
+    userEmail?: string;
+    userFullName?: string;
+    userId?: number;
+    writable: boolean;
 };
 
 export type JobExecution = {

@@ -1,8 +1,13 @@
-import { reactive, ref } from "vue"
+import { computed, reactive, ref } from "vue"
 import {
   createTargetForSubject,
+  fetchTargetDescriptors,
+  fetchTargetOptions,
   linkExistingTargetForSubject,
   switchCohortTarget,
+  type TargetCapability,
+  type ExternalTarget,
+  type TargetDescriptor,
   type TargetSystem,
 } from "@/domains/cohorts/adapters/cohorts"
 
@@ -16,12 +21,17 @@ export type TargetPickerTab = "existing" | "create"
  */
 export function useTargetPicker() {
   const submitting = ref(false)
+  const loading = ref(false)
   const errorMessage = ref<string | null>(null)
   const conflict = ref(false)
+  const descriptors = ref<TargetDescriptor[]>([])
+  const descriptor = ref<TargetDescriptor | null>(null)
+  const options = ref<ExternalTarget[]>([])
 
   const form = reactive({
     tab: "existing" as TargetPickerTab,
     externalId: "",
+    search: "",
     label: "",
     folderHint: "",
     deletePrevious: false,
@@ -34,10 +44,33 @@ export function useTargetPicker() {
     conflict.value = false
     form.tab = "existing"
     form.externalId = ""
+    form.search = ""
     form.label = ""
     form.folderHint = ""
     form.deletePrevious = false
     form.reconcileNow = false
+  }
+
+  const hasCatalog = computed(() => supports("CATALOG"))
+  const canCreate = computed(() => supports("CREATE"))
+  const filteredOptions = computed(() => {
+    const q = form.search.trim().toLowerCase()
+    if (!q) return options.value
+    return options.value.filter((target) => matches(target, q))
+  })
+
+  async function load(system: TargetSystem): Promise<void> {
+    loading.value = true
+    errorMessage.value = null
+    try {
+      if (descriptors.value.length === 0) descriptors.value = await fetchTargetDescriptors()
+      descriptor.value = descriptors.value.find((item) => item.system === system) ?? null
+      options.value = hasCatalog.value ? await fetchTargetOptions(system) : []
+    } catch (err: unknown) {
+      errorMessage.value = (err as Error)?.message ?? "Could not load targets."
+    } finally {
+      loading.value = false
+    }
   }
 
   /** Link or create, depending on the active tab. Returns true on success. */
@@ -84,5 +117,32 @@ export function useTargetPicker() {
     }
   }
 
-  return { submitting, errorMessage, conflict, form, reset, submitAdd, submitSwitch }
+  function supports(capability: TargetCapability): boolean {
+    return descriptor.value?.capabilities.includes(capability) ?? false
+  }
+
+  function matches(target: ExternalTarget, query: string): boolean {
+    return (
+      target.externalId.toLowerCase() === query ||
+      target.label.toLowerCase().includes(query) ||
+      (target.folderLabel ?? "").toLowerCase().includes(query)
+    )
+  }
+
+  return {
+    submitting,
+    loading,
+    errorMessage,
+    conflict,
+    descriptor,
+    options,
+    filteredOptions,
+    hasCatalog,
+    canCreate,
+    form,
+    reset,
+    load,
+    submitAdd,
+    submitSwitch,
+  }
 }

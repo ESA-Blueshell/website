@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { watch } from "vue"
+import { computed, watch } from "vue"
 import { useTargetPicker } from "@/domains/cohorts/composables/useTargetPicker"
 import type { TargetSystem } from "@/domains/cohorts/adapters/cohorts"
 
@@ -16,12 +16,39 @@ const emit = defineEmits<{
   saved: []
 }>()
 
-const { submitting, errorMessage, conflict, form, reset, submitAdd, submitSwitch } = useTargetPicker()
+const {
+  submitting,
+  loading,
+  errorMessage,
+  conflict,
+  descriptor,
+  filteredOptions,
+  hasCatalog,
+  canCreate,
+  form,
+  reset,
+  load,
+  submitAdd,
+  submitSwitch,
+} = useTargetPicker()
+
+const idLabel = computed(() => descriptor.value?.idLabel ?? "External target id")
+const targetLabel = computed(() => descriptor.value?.targetLabel ?? "Target name")
+const folderLabel = computed(() => descriptor.value?.folderLabel ?? null)
+const catalogItems = computed(() =>
+  filteredOptions.value.map((target) => ({
+    ...target,
+    title: [target.folderLabel, target.label].filter(Boolean).join(" / "),
+    subtitle: target.memberCount == null ? target.externalId : `${target.externalId} · ${target.memberCount}`,
+  })),
+)
 
 watch(
   () => props.modelValue,
   (open) => {
-    if (open) reset()
+    if (!open) return
+    reset()
+    void load(props.system)
   },
 )
 
@@ -74,6 +101,7 @@ const submit = async () => {
         <!-- Add mode: pick between linking an existing target and creating one. -->
         <template v-if="mode === 'add'">
           <v-tabs
+            v-if="canCreate"
             v-model="form.tab"
             color="primary"
             data-testid="target-picker-tabs"
@@ -88,28 +116,43 @@ const submit = async () => {
 
           <v-window
             v-model="form.tab"
-            class="mt-3"
+            :class="{ 'mt-3': canCreate }"
           >
             <v-window-item value="existing">
+              <v-combobox
+                v-if="hasCatalog"
+                v-model="form.externalId"
+                v-model:search="form.search"
+                :items="catalogItems"
+                :label="idLabel"
+                :loading="loading"
+                data-testid="target-picker-combobox"
+                item-title="title"
+                item-value="externalId"
+                no-filter
+              />
               <v-text-field
+                v-else
                 v-model="form.externalId"
                 data-testid="target-picker-external-id"
-                label="External target id"
-                hint="The native id of the list/role/group on the external system."
-                persistent-hint
+                :label="idLabel"
               />
             </v-window-item>
-            <v-window-item value="create">
+            <v-window-item
+              v-if="canCreate"
+              value="create"
+            >
               <v-text-field
                 v-model="form.label"
                 data-testid="target-picker-label"
-                label="Target name"
+                :label="targetLabel"
               />
               <v-text-field
+                v-if="folderLabel"
                 v-model="form.folderHint"
                 class="mt-2"
                 data-testid="target-picker-folder"
-                label="Folder (optional)"
+                :label="`${folderLabel} (optional)`"
               />
             </v-window-item>
           </v-window>
@@ -117,10 +160,23 @@ const submit = async () => {
 
         <!-- Switch mode: repoint at a different target. -->
         <template v-else>
+          <v-combobox
+            v-if="hasCatalog"
+            v-model="form.externalId"
+            v-model:search="form.search"
+            :items="catalogItems"
+            :label="idLabel"
+            :loading="loading"
+            data-testid="target-picker-combobox"
+            item-title="title"
+            item-value="externalId"
+            no-filter
+          />
           <v-text-field
+            v-else
             v-model="form.externalId"
             data-testid="target-picker-external-id"
-            label="New external target id"
+            :label="idLabel"
           />
           <v-checkbox
             v-model="form.deletePrevious"

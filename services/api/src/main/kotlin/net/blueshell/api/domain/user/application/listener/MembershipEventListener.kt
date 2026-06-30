@@ -23,13 +23,21 @@ class MembershipEventListener(
         // an active membership.
         when (evt.changeType) {
             MembershipChange.CREATED,
-            MembershipChange.UPDATED,
-            MembershipChange.DELETED -> {
+            MembershipChange.UPDATED -> {
                 if (evt.active) {
                     log.info("Membership {} for user {}: ensuring role {}", evt.changeType, evt.userId, Role.MEMBER)
                     users.addRole(evt.userId, Role.MEMBER)
                 } else {
                     log.info("Membership {} for user {}: removing role {}", evt.changeType, evt.userId, Role.MEMBER)
+                    users.removeRole(evt.userId, Role.MEMBER)
+                }
+            }
+            MembershipChange.DELETED -> {
+                if (users.existsActiveMembershipByUserId(evt.userId)) {
+                    log.info("Deleting inactive membership for user {} while another active membership remains", evt.userId)
+                    users.addRole(evt.userId, Role.MEMBER)
+                } else {
+                    log.info("Deleting membership for user {} removing role {}", evt.userId, Role.MEMBER)
                     users.removeRole(evt.userId, Role.MEMBER)
                 }
             }

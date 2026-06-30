@@ -11,6 +11,10 @@ import net.blueshell.api.platform.integration.cohort.application.CohortSubjectDe
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectQueryService
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectSummary
 import net.blueshell.api.platform.integration.cohort.application.DriftReport
+import net.blueshell.api.platform.integration.cohort.application.InboundReconcile
+import net.blueshell.api.platform.integration.cohort.application.InboundReconcileApplyRequest
+import net.blueshell.api.platform.integration.cohort.application.InboundReconcileApplyResponse
+import net.blueshell.api.platform.integration.cohort.application.InboundReconcilePreview
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
@@ -49,6 +53,7 @@ class CohortSubjectController(
     private val drift: CohortDrift,
     private val remediation: CohortRemediation,
     private val targeting: CohortTargeting,
+    private val inboundReconcile: InboundReconcile,
 ) {
     @GetMapping
     fun findCohortSubjects(): List<CohortSubjectSummaryResponse> =
@@ -104,6 +109,21 @@ class CohortSubjectController(
         @RequestBody @Valid body: SwitchTargetRequest,
     ): CohortMappingResponse =
         targeting.switchTarget(id, cohortId, body.externalId, body.deletePrevious, body.reconcileNow).toResponse()
+
+    @PostMapping("/{id}/targets/{cohortId}/inbound-reconcile/preview")
+    fun previewInboundReconcile(
+        @PathVariable id: Long,
+        @PathVariable cohortId: Long,
+    ): InboundReconcilePreview =
+        inboundReconcile.preview(id, cohortId)
+
+    @PostMapping("/{id}/targets/{cohortId}/inbound-reconcile/apply")
+    fun applyInboundReconcile(
+        @PathVariable id: Long,
+        @PathVariable cohortId: Long,
+        @RequestBody @Valid body: InboundReconcileApplyRequest,
+    ): InboundReconcileApplyResponse =
+        inboundReconcile.apply(id, cohortId, body)
 }
 
 // ── Request / response DTOs ──────────────────────────────────────────────────

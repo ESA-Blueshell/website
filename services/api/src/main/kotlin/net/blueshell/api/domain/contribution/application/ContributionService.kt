@@ -4,9 +4,11 @@ import net.blueshell.api.domain.contribution.application.event.ContributionChang
 import net.blueshell.api.domain.contribution.application.event.ContributionChanged
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.repository.ContributionRepository
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 class ContributionService @Autowired constructor(
     repository: ContributionRepository,
     private val periodService: ContributionPeriodService,
+    private val users: UserService,
     private val trackedEvents: TrackedEventPublisher
 ) : BaseModelService<Contribution, Contribution.Id, ContributionRepository>(repository) {
     @Transactional
@@ -61,6 +64,23 @@ class ContributionService @Autowired constructor(
     @Transactional(readOnly = true)
     fun existsByUserIdAndPeriodId(userId: Long, periodId: Long): Boolean {
         return repository.existsById(Contribution.Id(userId, periodId))
+    }
+
+    @Transactional
+    fun ensurePaid(userId: Long, periodId: Long): Boolean {
+        if (existsByUserIdAndPeriodId(userId, periodId)) return false
+        try {
+            create(
+                Contribution(
+                    user = users.findById(userId),
+                    contributionPeriod = periodService.findById(periodId),
+                ),
+            )
+        } catch (ex: DataIntegrityViolationException) {
+            if (existsByUserIdAndPeriodId(userId, periodId)) return false
+            throw ex
+        }
+        return true
     }
 
     private fun publishChange(contribution: Contribution, changeType: ContributionChange) {

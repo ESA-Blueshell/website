@@ -38,27 +38,46 @@ const vuetifyStubs = {
 }
 
 describe("ContributionUserList", () => {
-  it("renders list and forwards contribution update event", async () => {
+  it("renders list and forwards contribution update event and period membership set", async () => {
     const wrapper = mount(ContributionUserList, {
       props: {
         title: "Contribution paid",
         users,
         contributionPeriodId: 2,
         contributions: [],
+        periodMemberUserIds: new Set([1]),
         startOpen: true,
       },
       global: {
         stubs: {
           ...vuetifyStubs,
           ContributionUserRow: {
-            template: "<button @click=\"$emit('update:contribution', { id: 99, userId: 1, contributionPeriodId: 2 })\">row</button>",
+            props: ["user", "periodMemberUserIds"],
+            template: `
+              <button
+                class="row"
+                :data-username="user.username"
+                :data-is-period-member="String(periodMemberUserIds.has(user.id))"
+                @click="$emit('update:contribution', { id: 99, userId: user.id, contributionPeriodId: 2 })"
+              >
+                row
+              </button>
+            `,
           },
         },
       },
     })
 
     expect(wrapper.text()).toContain("Contribution paid")
-    await wrapper.find("button").trigger("click")
+
+    const rows = wrapper.findAll("button.row")
+    expect(rows).toHaveLength(2)
+    expect(rows[0].attributes("data-username")).toBe("lyndisluna")
+    expect(rows[0].attributes("data-is-period-member")).toBe("true")
+    expect(rows[1].attributes("data-username")).toBe("ariosfury")
+    expect(rows[1].attributes("data-is-period-member")).toBe("false")
+
+    await rows[0].trigger("click")
     expect(wrapper.emitted("update:contribution")?.length).toBe(1)
   })
 
@@ -75,7 +94,7 @@ describe("ContributionUserList", () => {
         stubs: {
           ...vuetifyStubs,
           ContributionUserRow: {
-            props: ["user"],
+            props: ["user", "periodMemberUserIds"],
             template: "<div class='row-username'>{{ user.username }}</div>",
           },
         },

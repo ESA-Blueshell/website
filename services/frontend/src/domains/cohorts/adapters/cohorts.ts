@@ -4,12 +4,14 @@
  * from this module or from ../types.
  */
 import {
+  applyInboundReconcile,
   createTarget,
   enqueue,
   getDrift,
   linkExistingTarget,
   linkUser,
   listCohortTargetSystems,
+  previewInboundReconcile,
   searchCohortTargets,
   switchTarget,
 } from "@/services/api"
@@ -18,6 +20,8 @@ import type {
   DriftReport as ApiDriftReport,
   ExternalTarget as ApiExternalTarget,
   ExtraRow as ApiExtraRow,
+  InboundReconcileApplyResponse as ApiInboundReconcileApplyResponse,
+  InboundReconcilePreview as ApiInboundReconcilePreview,
   TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
 
@@ -159,6 +163,9 @@ export type ExternalTarget = {
   linkedCohortId: number | null
 }
 
+export type InboundReconcilePreview = Omit<ApiInboundReconcilePreview, "system"> & { system: TargetSystem }
+export type InboundReconcileApplyResponse = ApiInboundReconcileApplyResponse
+
 function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
   return {
     cohortId: raw.cohortId,
@@ -252,4 +259,25 @@ function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
     memberCount: raw.memberCount ?? null,
     linkedCohortId: raw.linkedCohortId ?? null,
   }
+}
+
+export async function fetchInboundReconcilePreview(
+  subjectId: number,
+  cohortId: number,
+): Promise<InboundReconcilePreview> {
+  const res = await previewInboundReconcile({ path: { id: subjectId, cohortId } })
+  return res.data! as InboundReconcilePreview
+}
+
+export async function applyInboundReconcileSelection(
+  subjectId: number,
+  cohortId: number,
+  previewToken: string,
+  selectedExternalUserIds: string[],
+): Promise<InboundReconcileApplyResponse> {
+  const res = await applyInboundReconcile({
+    path: { id: subjectId, cohortId },
+    body: { previewToken, selectedExternalUserIds },
+  })
+  return res.data!
 }

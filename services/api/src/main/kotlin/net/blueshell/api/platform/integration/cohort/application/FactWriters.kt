@@ -13,21 +13,12 @@ fun SubjectFact.toUserFact(): UserFact = UserFact(kind, key)
 
 data class FactPreview(val alreadyTrue: Boolean)
 
-data class FactWriteResult(val status: FactWriteStatus, val reason: String? = null)
-
-enum class FactWriteStatus {
-    WRITTEN,
-    NOOP_ALREADY_TRUE,
-    UNSUPPORTED,
-    SKIPPED_UNMATCHED,
-    SKIPPED_MAPPING_CONFLICT,
-    FAILED,
-}
+enum class FactWriteStatus { WRITTEN, NOOP_ALREADY_TRUE, UNSUPPORTED, SKIPPED_UNMATCHED, SKIPPED_MAPPING_CONFLICT, FAILED }
 
 interface FactWriter {
     val kind: CohortFactKind
     fun preview(userId: Long, fact: SubjectFact): FactPreview
-    fun apply(userId: Long, fact: SubjectFact): FactWriteResult
+    fun apply(userId: Long, fact: SubjectFact): FactWriteStatus
 }
 
 @Component
@@ -35,9 +26,6 @@ class FactWriters(writers: List<FactWriter>) {
     private val byKind = writers.associateBy { it.kind }
 
     fun find(kind: CohortFactKind): FactWriter? = byKind[kind]
-
-    fun require(kind: CohortFactKind): FactWriter =
-        find(kind) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "No inbound fact writer for $kind")
 }
 
 @Component
@@ -51,15 +39,15 @@ class ContributionPaidWriter(
     override fun preview(userId: Long, fact: SubjectFact): FactPreview =
         FactPreview(facts.collect(userId).contains(fact.toUserFact()))
 
-    override fun apply(userId: Long, fact: SubjectFact): FactWriteResult {
+    override fun apply(userId: Long, fact: SubjectFact): FactWriteStatus {
         if (preview(userId, fact).alreadyTrue) {
             reconciliation.evaluateUserCohorts(userId)
-            return FactWriteResult(FactWriteStatus.NOOP_ALREADY_TRUE)
+            return FactWriteStatus.NOOP_ALREADY_TRUE
         }
         val periodId = fact.key.toLongOrNull()
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Contribution period id must be numeric")
         val created = contributions.ensurePaid(userId, periodId)
         reconciliation.evaluateUserCohorts(userId)
-        return FactWriteResult(if (created) FactWriteStatus.WRITTEN else FactWriteStatus.NOOP_ALREADY_TRUE)
+        return if (created) FactWriteStatus.WRITTEN else FactWriteStatus.NOOP_ALREADY_TRUE
     }
 }

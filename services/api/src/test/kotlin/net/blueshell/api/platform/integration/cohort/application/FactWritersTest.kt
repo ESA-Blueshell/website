@@ -44,8 +44,8 @@ class FactWritersTest {
         val first = writer.apply(5L, SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12"))
         val second = writer.apply(5L, SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12"))
 
-        assertThat(first.status).isEqualTo(FactWriteStatus.WRITTEN)
-        assertThat(second.status).isEqualTo(FactWriteStatus.NOOP_ALREADY_TRUE)
+        assertThat(first).isEqualTo(FactWriteStatus.WRITTEN)
+        assertThat(second).isEqualTo(FactWriteStatus.NOOP_ALREADY_TRUE)
         verify(exactly = 1) { contributions.ensurePaid(5L, 12L) }
         verify(exactly = 2) { reconciliation.evaluateUserCohorts(5L) }
     }

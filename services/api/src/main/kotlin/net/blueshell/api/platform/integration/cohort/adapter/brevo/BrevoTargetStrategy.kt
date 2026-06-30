@@ -43,21 +43,19 @@ class BrevoTargetStrategy(
     )
 
     override fun catalog(query: String?): List<ExternalTarget> {
-        val folderNames = folders()
         val q = query?.trim()?.lowercase().orEmpty()
-        return listTargets(folderNames)
+        return listTargets(folders())
             .filter { it.matches(q) }
             .sortedWith(compareBy({ it.folderLabel.orEmpty() }, { it.label }))
     }
 
-    override fun create(label: String, folder: String?): ExternalTarget =
-        ExternalTarget(
-            system = system,
-            externalId = lists.createList(label, folder).toString(),
-            kind = descriptor.kind,
-            label = label,
-            folderLabel = folder,
-        )
+    override fun create(label: String, folder: String?): ExternalTarget = ExternalTarget(
+        system = system,
+        externalId = lists.createList(label, folder).toString(),
+        kind = descriptor.kind,
+        label = label,
+        folderLabel = folder,
+    )
 
     override fun members(target: ExternalTarget): List<ExternalMember> =
         lists.listMembers(target.externalId.toBrevoId("externalId", "members"))
@@ -100,19 +98,17 @@ class BrevoTargetStrategy(
         val results = mutableListOf<T>()
         var offset = 0L
         while (true) {
-            val page = fetchPage(kind) { fetch(PAGE_SIZE, offset) }
+            val page = try {
+                fetch(PAGE_SIZE, offset)
+            } catch (e: RestClientResponseException) {
+                if (e.statusCode.value() == 429) log.warn("Brevo target catalog {} fetch was rate limited", kind)
+                throw ContactServiceException("Failed to fetch Brevo $kind catalog", e)
+            }
             results += page.items
             if (page.items.size < PAGE_SIZE || page.count != null && results.size >= page.count) break
             offset += PAGE_SIZE
         }
         return results
-    }
-
-    private fun <T> fetchPage(kind: String, fetch: () -> Page<T>): Page<T> = try {
-        fetch()
-    } catch (e: RestClientResponseException) {
-        if (e.statusCode.value() == 429) log.warn("Brevo target catalog {} fetch was rate limited", kind)
-        throw ContactServiceException("Failed to fetch Brevo $kind catalog", e)
     }
 
     private fun ExternalTarget.matches(query: String): Boolean =
@@ -133,13 +129,12 @@ class BrevoTargetStrategy(
 }
 
 private fun GetLists200ResponseListsInner.toTarget(folderNames: Map<String, String>): ExternalTarget {
-    val folderExternalId = folderId?.toString()
     return ExternalTarget(
         system = TargetSystem.BREVO,
         externalId = id.toString(),
         kind = CohortKind.LIST,
         label = name,
-        folderLabel = folderExternalId?.let { folderNames[it] },
+        folderLabel = folderNames[folderId.toString()],
         memberCount = uniqueSubscribers,
     )
 }

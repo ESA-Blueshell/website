@@ -114,6 +114,9 @@ class UserService @Autowired constructor(
         return repository.existsByDiscordAndIdNot(discord, id)
     }
 
+    fun existsActiveMembershipByUserId(userId: Long): Boolean =
+        repository.existsActiveMembershipByUserId(userId)
+
     /**
      * Batch lookup. Returns the users whose ids are in [ids] in unspecified
      * order; ids without a corresponding active user are silently skipped.

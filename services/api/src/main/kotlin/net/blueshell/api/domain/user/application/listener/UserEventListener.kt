@@ -19,7 +19,7 @@ class UserEventListener(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: UserUpdated) {
         val u = users.findById(evt.userId)
-        if (!u.hasRole(Role.MEMBER)) {
+        if (!u.hasAuthority(Role.MEMBER)) {
             u.committeeMembers.forEach { committeeMembers.delete(it) }
         }
     }

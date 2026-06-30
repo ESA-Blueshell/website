@@ -12,6 +12,7 @@
         <contribution-user-list
           :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
+          :period-member-user-ids="periodMemberUserIds"
           :disabled="!selectedPeriodId"
           panel-key="paid"
           :users="usersPaid"
@@ -24,6 +25,7 @@
         <contribution-user-list
           :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
+          :period-member-user-ids="periodMemberUserIds"
           :disabled="!selectedPeriodId"
           panel-key="unpaid"
           :users="usersUnpaid"
@@ -47,12 +49,14 @@ import {
   type ContributionPeriodResponse,
   type ContributionResponse,
   findContributionsByPeriodId,
+  findMemberships,
   findUsers,
   type UserDetailResponse,
 } from "@/services/api"
 
 const users = ref<UserDetailResponse[]>([])
 const contributions = ref<ContributionResponse[]>([])
+const periodMemberUserIds = ref<Set<number>>(new Set())
 
 const selectedPeriodId = ref<number>(0)
 
@@ -106,14 +110,25 @@ const contributionPeriodChanged = async (newPeriod?: ContributionPeriodResponse)
   if (!periodId) {
     selectedPeriodId.value = 0
     contributions.value = []
+    periodMemberUserIds.value = new Set()
     return
   }
 
   selectedPeriodId.value = periodId
   contributions.value = []
+  periodMemberUserIds.value = new Set()
 
-  const resp = await findContributionsByPeriodId({path: {periodId}})
-  if (selectedPeriodId.value === periodId) contributions.value = resp.data ?? []
+  const [contributionsResp, membershipsResp] = await Promise.all([
+    findContributionsByPeriodId({path: {periodId}}),
+    findMemberships({query: {from: newPeriod.startDate, to: newPeriod.endDate}}),
+  ])
+
+  if (selectedPeriodId.value !== periodId) return
+
+  contributions.value = contributionsResp.data ?? []
+  periodMemberUserIds.value = new Set(
+    (membershipsResp.data ?? []).map((membership) => membership.userId),
+  )
 }
 
 onMounted(async () => {

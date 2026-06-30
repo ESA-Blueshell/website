@@ -17,14 +17,13 @@
         >
           <div class="d-flex align-center mr-4">
             <v-chip
-              v-if="!!user?.roles?.length"
-              :color="user.roles.includes('MEMBER') ? 'primary' : 'grey'"
+              :color="wasMemberDuringPeriod ? 'primary' : 'grey'"
               class="mr-3 d-flex justify-center align-center text-capitalize"
               size="small"
               style="width: 60px"
               variant="flat"
             >
-              {{ user.roles.includes("MEMBER") ? "Member" : "User" }}
+              {{ wasMemberDuringPeriod ? "Member" : "User" }}
             </v-chip>
 
             <v-btn
@@ -53,9 +52,11 @@ const props = withDefaults(defineProps<{
   user: UserDetailResponse
   contributionPeriodId: number
   contributions?: Array<ContributionResponse>
+  periodMemberUserIds?: Set<number>
   disabled?: boolean
 }>(), {
   contributions: () => [],
+  periodMemberUserIds: () => new Set<number>(),
   disabled: false,
 })
 
@@ -65,6 +66,8 @@ const emit = defineEmits<{
 }>()
 
 const saving = ref(false)
+
+const wasMemberDuringPeriod = computed(() => props.periodMemberUserIds.has(props.user.id))
 
 const contribution = computed<ContributionResponse | undefined>(() =>
   props.contributions.find(

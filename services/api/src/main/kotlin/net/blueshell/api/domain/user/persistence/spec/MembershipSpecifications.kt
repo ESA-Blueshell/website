@@ -6,6 +6,7 @@ import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import net.blueshell.api.domain.user.application.query.MembershipQuery
 import net.blueshell.api.domain.user.persistence.Membership
+import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.security.CurrentUser
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
@@ -45,6 +46,10 @@ object MembershipSpecifications {
 
         if (query.from != null || query.to != null) {
             spec = spec.and(timeOverlap(query.from, query.to))
+        }
+
+        if (query.userId != null) {
+            spec = spec.and(Specification { root, _, cb -> cb.equal(root.get<User>("user").get<Long>("id"), query.userId) })
         }
 
         return spec

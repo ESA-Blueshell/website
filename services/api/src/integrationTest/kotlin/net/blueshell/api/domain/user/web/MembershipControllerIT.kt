@@ -428,10 +428,15 @@ class MembershipControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors").isArray)
+                // Restoring an active membership while another is active trips both the
+                // one-active and overlap rules; violations arrive as an unordered Set, so
+                // assert the expected message is present rather than pinning errors[0].
                 .andExpect(
                     jsonPath(
-                        "$.errors[0].message",
-                        org.hamcrest.Matchers.containsString("active membership")
+                        "$.errors[*].message",
+                        org.hamcrest.Matchers.hasItem(
+                            org.hamcrest.Matchers.containsString("active membership")
+                        )
                     )
                 )
         }

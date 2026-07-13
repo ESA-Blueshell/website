@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Positive
 import net.blueshell.api.domain.user.application.query.MembershipQuery
+import net.blueshell.api.domain.user.application.validation.MembershipIntervalCandidate
+import net.blueshell.api.domain.user.application.validation.ValidMembership
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.MemberType
@@ -13,6 +15,7 @@ data class FindMembershipsCommand(
     val filter: MembershipQuery
 ) : Command<MutableList<Membership>>
 
+@ValidMembership
 data class CreateMembershipCommand(
     val userId: Long,
     @field:NotNull(message = "isMember flag is required")
@@ -21,8 +24,15 @@ data class CreateMembershipCommand(
     val hasAddress: Boolean?,
     @field:NotNull(message = "hasMemberProfile flag is required")
     val hasMemberProfile: Boolean?
-) : Command<Membership>
+) : Command<Membership>, MembershipIntervalCandidate {
+    override val candidateUserId: Long get() = userId
+    override val candidateMembershipId: Long? get() = null
+    // Self-signup always creates a new active membership starting today.
+    override val candidateStartDate: LocalDate get() = LocalDate.now()
+    override val candidateEndDate: LocalDate? get() = null
+}
 
+@ValidMembership
 data class BoardCreateMembershipCommand(
     @field:NotNull(message = "User ID is required")
     val userId: Long?,
@@ -35,8 +45,14 @@ data class BoardCreateMembershipCommand(
     val endDate: LocalDate?,
     @field:NotNull(message = "Incasso flag is required")
     val incasso: Boolean?
-) : Command<Membership>
+) : Command<Membership>, MembershipIntervalCandidate {
+    override val candidateUserId: Long? get() = userId
+    override val candidateMembershipId: Long? get() = null
+    override val candidateStartDate: LocalDate? get() = startDate
+    override val candidateEndDate: LocalDate? get() = endDate
+}
 
+@ValidMembership
 data class CorrectMembershipCommand(
     @field:NotNull(message = "Membership ID is required")
     val id: Long?,
@@ -51,7 +67,12 @@ data class CorrectMembershipCommand(
     val incasso: Boolean?,
     @field:NotNull(message = "Version is required for optimistic locking")
     val version: Long
-) : Command<Membership>
+) : Command<Membership>, MembershipIntervalCandidate {
+    override val candidateUserId: Long? get() = userId
+    override val candidateMembershipId: Long? get() = id
+    override val candidateStartDate: LocalDate? get() = startDate
+    override val candidateEndDate: LocalDate? get() = endDate
+}
 
 data class EndMembershipCommand(
     @field:NotNull(message = "Membership ID is required")

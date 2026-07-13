@@ -1,10 +1,11 @@
 package net.blueshell.api.domain.user.application.command
 
+import jakarta.validation.ConstraintViolation
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validator
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.exception.InvalidMembershipException
 import net.blueshell.api.domain.user.application.query.MembershipQuery
-import net.blueshell.api.domain.user.application.validation.MembershipInvariants
 import net.blueshell.api.domain.user.command.BoardCreateMembershipCommand
 import net.blueshell.api.domain.user.command.CorrectMembershipCommand
 import net.blueshell.api.domain.user.command.CreateMembershipCommand
@@ -18,19 +19,28 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException
-import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 
 class MembershipCommandHandlersTest {
 
     private val membershipService = mock<MembershipService>()
     private val userService = mock<UserService>()
-    private val invariants = mock<MembershipInvariants>()
+    private val validator = mock<Validator>()
+
+    private fun noViolations() {
+        whenever(validator.validate(any<CorrectMembershipCommand>())).thenReturn(mutableSetOf())
+    }
+
+    private fun withViolation() {
+        whenever(validator.validate(any<CorrectMembershipCommand>()))
+            .thenReturn(mutableSetOf(mock<ConstraintViolation<CorrectMembershipCommand>>()))
+    }
 
     @Nested
     inner class FindMemberships {
@@ -53,13 +63,13 @@ class MembershipCommandHandlersTest {
     @Nested
     inner class CreateMembership {
 
-        private val handler = CreateMembershipHandler(membershipService, userService, invariants)
+        private val handler = CreateMembershipHandler(membershipService, userService)
 
         @Test
         fun `creates membership when user is eligible`() {
             val user = testUser("john")
             whenever(userService.findById(1L)).thenReturn(user)
-            whenever(membershipService.create(org.mockito.kotlin.any())).thenAnswer { it.getArgument<Membership>(0) }
+            whenever(membershipService.create(any())).thenAnswer { it.getArgument<Membership>(0) }
 
             val result = handler.handle(
                 CreateMembershipCommand(
@@ -123,7 +133,7 @@ class MembershipCommandHandlersTest {
     @Nested
     inner class BoardCreateMembership {
 
-        private val handler = BoardCreateMembershipHandler(membershipService, userService, invariants)
+        private val handler = BoardCreateMembershipHandler(membershipService, userService)
 
         @Test
         fun `creates membership from board command fields`() {
@@ -132,7 +142,7 @@ class MembershipCommandHandlersTest {
             val startDate = LocalDate.of(2025, 1, 1)
             val endDate = LocalDate.of(2025, 12, 31)
             val expected = Membership(user = user, startDate = startDate)
-            whenever(membershipService.create(org.mockito.kotlin.any())).thenReturn(expected)
+            whenever(membershipService.create(any())).thenReturn(expected)
 
             val result = handler.handle(
                 BoardCreateMembershipCommand(
@@ -158,7 +168,7 @@ class MembershipCommandHandlersTest {
     @Nested
     inner class CorrectMembership {
 
-        private val handler = CorrectMembershipHandler(membershipService, invariants)
+        private val handler = CorrectMembershipHandler(membershipService)
 
         @Test
         fun `corrects membership fields and version`() {
@@ -185,7 +195,6 @@ class MembershipCommandHandlersTest {
                 )
             )
 
-            assertThat(membership.user).isSameAs(user)
             assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
             assertThat(membership.startDate).isEqualTo(LocalDate.of(2025, 1, 1))
             assertThat(membership.endDate).isEqualTo(LocalDate.of(2025, 12, 31))
@@ -198,18 +207,18 @@ class MembershipCommandHandlersTest {
     @Nested
     inner class EndMembership {
 
-        private val handler = EndMembershipHandler(membershipService)
+        private val handler = EndMembershipHandler(membershipService, validator)
 
         @Test
         fun `ends membership by setting endDate to today`() {
-            val user = testUser("john")
             val membership = Membership(
-                user = user,
+                user = testUser("john"),
                 startDate = LocalDate.of(2024, 1, 1),
                 endDate = null
             )
             whenever(membershipService.findById(4L)).thenReturn(membership)
             whenever(membershipService.update(membership)).thenReturn(membership)
+            noViolations()
 
             val result = handler.handle(EndMembershipCommand(4L))
 
@@ -218,56 +227,37 @@ class MembershipCommandHandlersTest {
         }
 
         @Test
-        fun `rejects ending membership that started today`() {
-            val user = testUser("john")
+        fun `throws when the resulting interval is invalid`() {
             val membership = Membership(
-                user = user,
+                user = testUser("john"),
                 startDate = LocalDate.now(),
                 endDate = null
             )
             whenever(membershipService.findById(5L)).thenReturn(membership)
+            withViolation()
 
             assertThatThrownBy {
                 handler.handle(EndMembershipCommand(5L))
-            }.isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
-                assertThat(ex.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-                assertThat(ex.reason).contains("delete it instead")
-            }
-        }
-
-        @Test
-        fun `rejects ending an already-ended membership`() {
-            val membership = Membership(
-                user = testUser("john"),
-                startDate = LocalDate.of(2024, 1, 1),
-                endDate = LocalDate.of(2024, 6, 1)
-            )
-            whenever(membershipService.findById(8L)).thenReturn(membership)
-
-            assertThatThrownBy {
-                handler.handle(EndMembershipCommand(8L))
-            }.isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
-                assertThat(ex.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-                assertThat(ex.reason).contains("already ended")
-            }
+            }.isInstanceOf(ConstraintViolationException::class.java)
+            verify(membershipService, never()).update(any())
         }
     }
 
     @Nested
     inner class ReopenMembership {
 
-        private val handler = ReopenMembershipHandler(membershipService, invariants)
+        private val handler = ReopenMembershipHandler(membershipService, validator)
 
         @Test
         fun `reopens membership by clearing endDate`() {
-            val user = testUser("john")
             val membership = Membership(
-                user = user,
+                user = testUser("john"),
                 startDate = LocalDate.of(2024, 1, 1),
                 endDate = LocalDate.of(2025, 1, 1)
             )
             whenever(membershipService.findById(6L)).thenReturn(membership)
             whenever(membershipService.update(membership)).thenReturn(membership)
+            noViolations()
 
             val result = handler.handle(ReopenMembershipCommand(6L))
 
@@ -276,46 +266,19 @@ class MembershipCommandHandlersTest {
         }
 
         @Test
-        fun `rejects reopening when another active membership exists`() {
-            val user = testUser("john")
+        fun `throws when reopening would conflict`() {
             val membership = Membership(
-                user = user,
+                user = testUser("john"),
                 startDate = LocalDate.of(2024, 1, 1),
                 endDate = LocalDate.of(2025, 1, 1)
             ).apply { id = 6L }
             whenever(membershipService.findById(6L)).thenReturn(membership)
-            org.mockito.kotlin.doThrow(
-                InvalidMembershipException("User already has an active membership")
-            ).whenever(invariants).validate(
-                org.mockito.kotlin.any(),
-                org.mockito.kotlin.anyOrNull(),
-                org.mockito.kotlin.any(),
-                org.mockito.kotlin.anyOrNull()
-            )
+            withViolation()
 
             assertThatThrownBy {
                 handler.handle(ReopenMembershipCommand(6L))
-            }.isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
-                assertThat(ex.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-                assertThat(ex.reason).contains("active membership")
-            }
-        }
-
-        @Test
-        fun `rejects reopening an already-active membership`() {
-            val membership = Membership(
-                user = testUser("john"),
-                startDate = LocalDate.of(2024, 1, 1),
-                endDate = null
-            )
-            whenever(membershipService.findById(9L)).thenReturn(membership)
-
-            assertThatThrownBy {
-                handler.handle(ReopenMembershipCommand(9L))
-            }.isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
-                assertThat(ex.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-                assertThat(ex.reason).contains("already active")
-            }
+            }.isInstanceOf(ConstraintViolationException::class.java)
+            verify(membershipService, never()).update(any())
         }
     }
 

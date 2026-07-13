@@ -4370,6 +4370,49 @@ export type CreateMembershipResponses = {
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
 
+export type DeleteMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}';
+};
+
+export type DeleteMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteMembershipError = DeleteMembershipErrors[keyof DeleteMembershipErrors];
+
+export type DeleteMembershipResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteMembershipResponse = DeleteMembershipResponses[keyof DeleteMembershipResponses];
+
 export type FindMembershipByIdData = {
     body?: never;
     path: {
@@ -4541,6 +4584,49 @@ export type ReopenMembershipResponses = {
 };
 
 export type ReopenMembershipResponse = ReopenMembershipResponses[keyof ReopenMembershipResponses];
+
+export type RestoreMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/restore';
+};
+
+export type RestoreMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RestoreMembershipError = RestoreMembershipErrors[keyof RestoreMembershipErrors];
+
+export type RestoreMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type RestoreMembershipResponse = RestoreMembershipResponses[keyof RestoreMembershipResponses];
 
 export type ForwardAuthData = {
     body?: never;
@@ -5536,6 +5622,49 @@ export type BoardCreateMembershipResponses = {
 };
 
 export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
+
+export type FindDeletedMembershipsData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/memberships/deleted';
+};
+
+export type FindDeletedMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDeletedMembershipsError = FindDeletedMembershipsErrors[keyof FindDeletedMembershipsErrors];
+
+export type FindDeletedMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MembershipResponse>;
+};
+
+export type FindDeletedMembershipsResponse = FindDeletedMembershipsResponses[keyof FindDeletedMembershipsResponses];
 
 export type RestoreDeletedUserByIdData = {
     body?: never;

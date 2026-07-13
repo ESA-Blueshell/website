@@ -11,6 +11,11 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.platform.integration.cohort.port.out.ExternalMember
+import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
+import net.blueshell.api.platform.integration.cohort.port.out.TargetCapability
+import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
+import net.blueshell.api.platform.integration.cohort.port.out.TargetStrategy
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -19,7 +24,7 @@ class CohortProvisioningServiceTest {
 
     private val subjects: CohortSubjectRepository = mockk(relaxed = true)
     private val cohorts: CohortRepository = mockk(relaxed = true)
-    private val service = CohortProvisioningService(subjects, cohorts)
+    private val service = CohortProvisioningService(subjects, cohorts, TargetStrategies(listOf(TestStrategy)))
 
     private fun spec(system: TargetSystem = TargetSystem.BREVO) = CohortProvisioningSpec(
         factKind = CohortFactKind.COMMITTEE,
@@ -107,5 +112,22 @@ class CohortProvisioningServiceTest {
 
         assertThat(result).isEqualTo(CohortProvisioningResult.Ready(googleCohort))
         verify(exactly = 0) { subjects.save(any()) }
+    }
+
+    private object TestStrategy : TargetStrategy {
+        override val descriptor = TargetDescriptor(
+            system = TargetSystem.BREVO,
+            kind = CohortKind.LIST,
+            systemLabel = "Brevo",
+            targetLabel = "Brevo list",
+            idLabel = "List id",
+            capabilities = setOf(TargetCapability.CREATE),
+        )
+
+        override fun members(target: ExternalTarget): List<ExternalMember> = emptyList()
+        override fun add(target: ExternalTarget, externalUserId: String) = Unit
+        override fun remove(target: ExternalTarget, externalUserId: String) = Unit
+        override fun create(label: String, folder: String?): ExternalTarget = error("not used")
+        override fun delete(target: ExternalTarget) = Unit
     }
 }

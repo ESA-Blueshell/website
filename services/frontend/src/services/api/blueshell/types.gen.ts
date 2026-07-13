@@ -525,6 +525,16 @@ export type EventSignUpResponse = {
     version: number;
 };
 
+export type ExternalTarget = {
+    externalId: string;
+    folderLabel?: string;
+    kind: CohortKind;
+    label: string;
+    linkedCohortId?: number;
+    memberCount?: number;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+};
+
 export type ExtraRow = {
     email?: string;
     externalUserId: string;
@@ -866,6 +876,16 @@ export type SwitchTargetRequest = {
     deletePrevious: boolean;
     externalId: string;
     reconcileNow: boolean;
+};
+
+export type TargetDescriptor = {
+    capabilities: Array<'CATALOG' | 'CREATE' | 'READ_MEMBERS' | 'WRITE_MEMBERS' | 'DELETE'>;
+    folderLabel?: string;
+    idLabel: string;
+    kind: CohortKind;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    systemLabel: string;
+    targetLabel: string;
 };
 
 export type TelemetryResponse = {
@@ -3603,6 +3623,92 @@ export type SwitchTargetResponses = {
 };
 
 export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
+
+export type ListCohortTargetSystemsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/cohort-targets/systems';
+};
+
+export type ListCohortTargetSystemsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListCohortTargetSystemsError = ListCohortTargetSystemsErrors[keyof ListCohortTargetSystemsErrors];
+
+export type ListCohortTargetSystemsResponses = {
+    /**
+     * OK
+     */
+    200: Array<TargetDescriptor>;
+};
+
+export type ListCohortTargetSystemsResponse = ListCohortTargetSystemsResponses[keyof ListCohortTargetSystemsResponses];
+
+export type SearchCohortTargetsData = {
+    body?: never;
+    path: {
+        system: 'BREVO' | 'GOOGLE_CALENDAR';
+    };
+    query?: {
+        query?: string;
+    };
+    url: '/management/cohort-targets/{system}';
+};
+
+export type SearchCohortTargetsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SearchCohortTargetsError = SearchCohortTargetsErrors[keyof SearchCohortTargetsErrors];
+
+export type SearchCohortTargetsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ExternalTarget>;
+};
+
+export type SearchCohortTargetsResponse = SearchCohortTargetsResponses[keyof SearchCohortTargetsResponses];
 
 export type FindCohortsData = {
     body?: never;

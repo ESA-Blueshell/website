@@ -161,9 +161,11 @@ const rows = computed<MemberRow[]>(() =>
 const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
 
 const filteredRows = computed<MemberRow[]>(() => {
-  const searched = filterUsers(rows.value, search.value, {keys: ["fullName", "username", "role"]})
+  // Search across all user fields (name, username, first/last name, discord, email…),
+  // matching the previous manager's behaviour, then keep the derived rows for those users.
+  const matchedIds = new Set(filterUsers(users.value, search.value).map((u) => u.id))
 
-  return [...searched].sort((a, b) => {
+  return [...rows.value.filter((r) => matchedIds.has(r.id))].sort((a, b) => {
     let cmp = 0
     if (sortKey.value === "name") {
       cmp = a.fullName.localeCompare(b.fullName)

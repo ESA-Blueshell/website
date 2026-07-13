@@ -245,7 +245,7 @@ class MembershipControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
-                .andExpect(jsonPath("$.endDate").isEmpty)
+                .andExpect(jsonPath("$.endDate").doesNotExist())
 
             val reopened = membershipRepository.findById(membership.id!!).orElseThrow()
             assertThat(reopened.endDate).isNull()

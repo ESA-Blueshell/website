@@ -51,6 +51,41 @@ class MembershipControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].id").isNumber)
         }
+
+        @Test
+        fun `returns all non-deleted memberships when no query params given`() {
+            val board = createUserWithRole(Role.BOARD)
+            val firstUser = createUserWithRole(Role.MEMBER)
+            val secondUser = createUserWithRole(Role.MEMBER)
+            val first = createMembershipFixture(user = firstUser)
+            val second = createMembershipFixture(user = secondUser)
+
+            mvc.perform(
+                get("/memberships")
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[?(@.id == ${first.id})]").exists())
+                .andExpect(jsonPath("$[?(@.id == ${second.id})]").exists())
+        }
+
+        @Test
+        fun `filters memberships by userId query parameter`() {
+            val board = createUserWithRole(Role.BOARD)
+            val targetUser = createUserWithRole(Role.MEMBER)
+            val otherUser = createUserWithRole(Role.MEMBER)
+            val targetMembership = createMembershipFixture(user = targetUser)
+            val otherMembership = createMembershipFixture(user = otherUser)
+
+            mvc.perform(
+                get("/memberships")
+                    .param("userId", targetUser.id.toString())
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[?(@.id == ${targetMembership.id})]").exists())
+                .andExpect(jsonPath("$[?(@.id == ${otherMembership.id})]").doesNotExist())
+        }
     }
 
     @Nested

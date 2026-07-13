@@ -4291,6 +4291,7 @@ export type FindMembershipsData = {
     query?: {
         from?: string;
         to?: string;
+        userId?: number;
     };
     url: '/memberships';
 };

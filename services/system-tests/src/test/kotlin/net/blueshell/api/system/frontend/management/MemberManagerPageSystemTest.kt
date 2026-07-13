@@ -42,8 +42,9 @@ class MemberManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(deleteResponse.status()).isEqualTo(204)
 
         MemberManagerHelper.open(page, frontendUrl)
-        MemberManagerHelper.search(page, target.username)
 
+        // Deletion anonymizes the user (username scrubbed to a placeholder), so the
+        // still-present row is located by id among all rows, not by the old username.
         page.locator("[data-testid='member-manager-row-$targetId']").first().waitFor()
     }
 }

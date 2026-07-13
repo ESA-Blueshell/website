@@ -294,7 +294,7 @@ describe("MemberManager row model", () => {
     expect(unpaidRow?.paid).toBe(false)
   })
 
-  it("search filters on fullName, username, role only", async () => {
+  it("search filters across user fields", async () => {
     const wrapper = mountWithData(
       [
         {id: 10, fullName: "Search Alpha", username: "salpha", roles: ["MEMBER"]},

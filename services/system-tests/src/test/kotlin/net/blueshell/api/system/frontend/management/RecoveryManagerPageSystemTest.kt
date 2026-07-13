@@ -75,11 +75,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         MemberManagerHelper.open(page, frontendUrl)
-        MemberManagerHelper.openNonMembers(page)
-        MemberManagerHelper.searchNonMembers(page, originalUsername)
+        MemberManagerHelper.search(page, originalUsername)
 
         pollFor("non-member user $originalUsername visible before deletion") {
-            page.locator("[data-testid='member-user-row-$targetId']").count() > 0
+            page.locator("[data-testid='member-manager-row-$targetId']").count() > 0
         }
 
         val deleteResponse = page.waitForResponse(
@@ -93,7 +92,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(deleteResponse.status()).isEqualTo(204)
 
         pollFor("user row $targetId removed from non-members after deletion") {
-            page.locator("[data-testid='member-user-row-$targetId']").count() == 0
+            page.locator("[data-testid='member-manager-row-$targetId']").count() == 0
         }
 
         RecoveryManagerHelper.open(page, frontendUrl)
@@ -143,11 +142,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         MemberManagerHelper.open(page, frontendUrl)
-        MemberManagerHelper.openNonMembers(page)
-        MemberManagerHelper.searchNonMembers(page, target.username)
+        MemberManagerHelper.search(page, target.username)
 
         pollFor("target user ${target.username} visible before deletion") {
-            page.locator("[data-testid='member-user-row-$targetId']").count() > 0
+            page.locator("[data-testid='member-manager-row-$targetId']").count() > 0
         }
 
         val deleteResponse = page.waitForResponse(

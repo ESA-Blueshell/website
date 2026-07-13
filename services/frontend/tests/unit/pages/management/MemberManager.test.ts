@@ -10,13 +10,23 @@ const {
   mockFindMemberships,
   mockFindContributionsByPeriodId,
   mockDeleteUserById,
+  mockLgAndUp,
 } = vi.hoisted(() => ({
   mockFindUsers: vi.fn(),
   mockFindUserById: vi.fn(),
   mockFindMemberships: vi.fn(),
   mockFindContributionsByPeriodId: vi.fn(),
   mockDeleteUserById: vi.fn(),
+  mockLgAndUp: {value: true},
 }))
+
+vi.mock("vuetify", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vuetify")>()
+  return {
+    ...(actual as Record<string, unknown>),
+    useDisplay: () => ({lgAndUp: mockLgAndUp}),
+  }
+})
 
 vi.mock("@/services/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api")>()
@@ -47,6 +57,20 @@ vi.mock("@/components/common/banners/TopBanner.vue", () => ({
 vi.mock("@/components/common/modals/DeletionConfirmationDialog.vue", () => ({
   default: {
     name: "DeletionConfirmationDialog",
+    template: "<div />",
+  },
+}))
+
+vi.mock("@/components/common/modals/ManageMembershipDialog.vue", () => ({
+  default: {
+    name: "ManageMembershipDialog",
+    template: "<div />",
+  },
+}))
+
+vi.mock("@/components/form/UserForm.vue", () => ({
+  default: {
+    name: "UserForm",
     template: "<div />",
   },
 }))
@@ -121,8 +145,38 @@ describe("MemberManager page", () => {
     expect((wrapper.vm as any).users).toHaveLength(2)
     expect((wrapper.vm as any).users[0].username).toBe("alice-updated")
 
-    await (wrapper.vm as any)._membershipChanged(makeMembership({id: 90, userId: 1, startDate: "2024-01-01"}))
+    ;(wrapper.vm as any).manageUserId = 1
+    await (wrapper.vm as any).onMembershipChanged()
+    expect(mockFindMemberships).toHaveBeenCalled()
     expect(mockFindUserById).toHaveBeenCalledWith({path: {userId: 1}})
+  })
+
+  it("openAddUser sets addDialog true", async () => {
+    const wrapper = shallowMount(MemberManager)
+    await settle()
+
+    ;(wrapper.vm as any).openAddUser()
+    expect((wrapper.vm as any).addDialog).toBe(true)
+  })
+
+  it("openEditProfile calls findUserById and opens edit dialog", async () => {
+    const wrapper = shallowMount(MemberManager)
+    await settle()
+
+    const row = (wrapper.vm as any).rows[0]
+    await (wrapper.vm as any).openEditProfile(row)
+    expect(mockFindUserById).toHaveBeenCalledWith({path: {userId: row.id}})
+    expect((wrapper.vm as any).editDialog).toBe(true)
+  })
+
+  it("openManageMembership opens manage dialog with correct userId", async () => {
+    const wrapper = shallowMount(MemberManager)
+    await settle()
+
+    const row = (wrapper.vm as any).rows[0]
+    ;(wrapper.vm as any).openManageMembership(row)
+    expect((wrapper.vm as any).manageDialog).toBe(true)
+    expect((wrapper.vm as any).manageUserId).toBe(row.id)
   })
 
   it("resets paidUserIds and fetches contributions on period change", async () => {

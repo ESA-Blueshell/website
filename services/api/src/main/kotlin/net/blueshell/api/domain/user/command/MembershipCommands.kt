@@ -91,3 +91,21 @@ data class FindMembershipByIdCommand(
     @field:Positive(message = "Membership ID must be positive")
     val id: Long?
 ) : Command<Membership>
+
+data class DeleteMembershipCommand(
+    @field:NotNull(message = "Membership ID is required")
+    @field:Positive(message = "Membership ID must be positive")
+    val id: Long?
+) : Command<Unit>
+
+data class RestoreMembershipCommand(
+    @field:NotNull(message = "Membership ID is required")
+    @field:Positive(message = "Membership ID must be positive")
+    val id: Long?
+) : Command<Membership>
+
+data class FindDeletedMembershipsCommand(
+    @field:NotNull(message = "User ID is required")
+    @field:Positive(message = "User ID must be positive")
+    val userId: Long?
+) : Command<MutableList<Membership>>

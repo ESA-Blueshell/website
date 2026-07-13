@@ -4,13 +4,17 @@ import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.exception.MembershipNotFoundException
 import net.blueshell.api.domain.user.command.BoardCreateMembershipCommand
 import net.blueshell.api.domain.user.command.CorrectMembershipCommand
 import net.blueshell.api.domain.user.command.CreateMembershipCommand
+import net.blueshell.api.domain.user.command.DeleteMembershipCommand
 import net.blueshell.api.domain.user.command.EndMembershipCommand
+import net.blueshell.api.domain.user.command.FindDeletedMembershipsCommand
 import net.blueshell.api.domain.user.command.FindMembershipByIdCommand
 import net.blueshell.api.domain.user.command.FindMembershipsCommand
 import net.blueshell.api.domain.user.command.ReopenMembershipCommand
+import net.blueshell.api.domain.user.command.RestoreMembershipCommand
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.security.access.AccessDeniedException
@@ -154,5 +158,53 @@ class FindMembershipByIdHandler(
 
     override fun handle(command: FindMembershipByIdCommand): Membership {
         return service.findById(command.id!!)
+    }
+}
+
+@Component
+class DeleteMembershipHandler(
+    private val service: MembershipService
+) : CommandHandler<DeleteMembershipCommand, Unit> {
+    override val commandType = DeleteMembershipCommand::class
+
+    override fun handle(command: DeleteMembershipCommand) {
+        service.deleteById(command.id!!)
+    }
+}
+
+@Component
+class FindDeletedMembershipsHandler(
+    private val service: MembershipService
+) : CommandHandler<FindDeletedMembershipsCommand, MutableList<Membership>> {
+    override val commandType = FindDeletedMembershipsCommand::class
+
+    override fun handle(command: FindDeletedMembershipsCommand): MutableList<Membership> =
+        service.findDeletedByUserId(command.userId!!)
+}
+
+@Component
+class RestoreMembershipHandler(
+    private val service: MembershipService,
+    private val validator: Validator
+) : CommandHandler<RestoreMembershipCommand, Membership> {
+    override val commandType = RestoreMembershipCommand::class
+
+    override fun handle(command: RestoreMembershipCommand): Membership {
+        val deleted = service.findDeletedById(command.id!!)
+            ?: throw MembershipNotFoundException(command.id)
+        // Validate the interval it would return to, against the user's live memberships,
+        // reusing @ValidMembership (one active max, no overlap, start<end) for consistent errors.
+        val target = CorrectMembershipCommand(
+            id = deleted.id,
+            userId = deleted.userId,
+            memberType = deleted.memberType,
+            startDate = deleted.startDate,
+            endDate = deleted.endDate,
+            incasso = deleted.incasso,
+            version = deleted.version,
+        )
+        val violations = validator.validate(target)
+        if (violations.isNotEmpty()) throw ConstraintViolationException(violations)
+        return service.restore(deleted)
     }
 }

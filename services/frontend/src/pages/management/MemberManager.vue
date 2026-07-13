@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
+import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
+import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
+import UserForm from "@/components/form/UserForm.vue"
 
 import {
   type ContributionPeriodResponse,
@@ -19,6 +22,10 @@ import {filterUsers} from "@/plugins/userFilter"
 
 defineOptions({name: "MemberManagerPage"})
 
+// ── Display ───────────────────────────────────────────────────────────────────
+
+const {lgAndUp} = useDisplay()
+
 // ── State ────────────────────────────────────────────────────────────────────
 
 const users = ref<EditableUser[]>([])
@@ -31,6 +38,19 @@ const sortAsc = ref(true)
 
 const deleteDialog = ref(false)
 const pendingDeleteUser = ref<EditableUser | null>(null)
+
+// Add user dialog
+const addDialog = ref(false)
+const addModel = ref<EditableUser>(blankUser())
+
+// Edit profile dialog
+const editDialog = ref(false)
+const editModel = ref<EditableUser | null>(null)
+
+// Manage membership dialog
+const manageDialog = ref(false)
+const manageUserId = ref<number | null>(null)
+const manageUserName = ref("")
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -75,21 +95,64 @@ const updateUser = (user: EditableUser) => {
   }
 }
 
-// Used by #386 (manage membership stub) when membership changes are submitted
-const _membershipChanged = async (updatedMembership: MembershipResponse) => {
-  const index = memberships.value.findIndex((m) => m.id === updatedMembership.id)
-  if (index === -1) {
-    memberships.value = [...memberships.value, updatedMembership]
-  } else {
-    memberships.value = [
-      ...memberships.value.slice(0, index),
-      updatedMembership,
-      ...memberships.value.slice(index + 1),
-    ]
+// ── Handlers: Add / Edit profile ──────────────────────────────────────────────
+
+function blankUser(): EditableUser {
+  return {
+    discord: "",
+    email: "",
+    phoneNumber: "",
+    initials: "",
+    firstName: "",
+    lastName: "",
+    username: "",
+    newsletter: true,
+    consentPrivacy: false,
+    photoConsent: false,
+    password: "",
   }
-  // Refresh user to pick up role changes from membership update
-  const resp = await findUserById({path: {userId: updatedMembership.userId!}})
-  if (resp.data) updateUser(toEditableUser(resp.data))
+}
+
+function openAddUser() {
+  addModel.value = blankUser()
+  addDialog.value = true
+}
+
+async function openEditProfile(row: MemberRow) {
+  const resp = await findUserById({path: {userId: row.id}})
+  if (resp.data) {
+    editModel.value = toEditableUser(resp.data)
+    editDialog.value = true
+  }
+}
+
+function onUserSaved(ok: boolean) {
+  if (ok) {
+    addDialog.value = false
+    getUsers()
+  }
+}
+
+function onProfileSaved(ok: boolean) {
+  if (ok) {
+    editDialog.value = false
+    getUsers()
+  }
+}
+
+// ── Handlers: Manage membership ───────────────────────────────────────────────
+
+function openManageMembership(row: MemberRow) {
+  manageUserId.value = row.id
+  manageUserName.value = row.fullName
+  manageDialog.value = true
+}
+
+async function onMembershipChanged() {
+  await getMemberships()
+  if (manageUserId.value === null) return
+  const r = await findUserById({path: {userId: manageUserId.value}})
+  if (r.data) updateUser(toEditableUser(r.data))
 }
 
 onMounted(async () => {
@@ -255,17 +318,17 @@ function statusColor(status: MemberStatus): string {
           data-testid="member-manager-table"
         >
           <v-card-text>
-            <!-- Toolbar: search + add user -->
-            <div class="d-flex align-center gap-3 mb-3">
+            <!-- Toolbar: search + add user (shared above both branches) -->
+            <div class="d-flex flex-wrap align-center gap-3 mb-3">
               <v-text-field
                 v-model="search"
+                class="member-manager-search-field"
                 clearable
                 data-testid="member-manager-search-input"
                 density="comfortable"
                 hide-details
                 label="Search members"
                 prepend-inner-icon="mdi-magnify"
-                style="max-width: 380px"
               />
               <v-spacer />
               <v-btn
@@ -273,12 +336,17 @@ function statusColor(status: MemberStatus): string {
                 data-testid="member-manager-add-user-btn"
                 prepend-icon="mdi-plus"
                 variant="flat"
+                @click="openAddUser"
               >
                 Add user
               </v-btn>
             </div>
 
-            <div style="overflow-x: auto">
+            <!-- Desktop table (lg and up) -->
+            <div
+              v-if="lgAndUp"
+              style="overflow-x: auto"
+            >
               <v-table
                 density="comfortable"
                 class="member-manager-vtable"
@@ -427,7 +495,7 @@ function statusColor(status: MemberStatus): string {
                     <td>
                       <div class="d-flex align-center gap-1">
                         <v-tooltip
-                          text="Manage membership (#386)"
+                          text="Manage membership"
                           location="top"
                         >
                           <template #activator="{ props }">
@@ -437,6 +505,7 @@ function statusColor(status: MemberStatus): string {
                               icon
                               size="small"
                               variant="text"
+                              @click="openManageMembership(row)"
                             >
                               <v-icon
                                 icon="mdi-card-account-details"
@@ -447,7 +516,7 @@ function statusColor(status: MemberStatus): string {
                         </v-tooltip>
 
                         <v-tooltip
-                          text="Edit profile (#387)"
+                          text="Edit profile"
                           location="top"
                         >
                           <template #activator="{ props }">
@@ -457,6 +526,7 @@ function statusColor(status: MemberStatus): string {
                               icon
                               size="small"
                               variant="text"
+                              @click="openEditProfile(row)"
                             >
                               <v-icon
                                 icon="mdi-pencil"
@@ -503,6 +573,144 @@ function statusColor(status: MemberStatus): string {
                 </tbody>
               </v-table>
             </div>
+
+            <!-- Mobile list (below lg) -->
+            <div
+              v-else
+              data-testid="member-manager-mobile-list"
+            >
+              <v-card
+                v-for="row in filteredRows"
+                :key="row.id"
+                :data-testid="`member-manager-mobile-row-${row.id}`"
+                class="mb-2"
+                variant="outlined"
+              >
+                <v-card-text>
+                  <div class="d-flex justify-space-between align-start">
+                    <div>
+                      <div class="text-h6 font-weight-bold">
+                        {{ row.fullName }}
+                      </div>
+                      <div class="text-caption font-mono text-medium-emphasis">
+                        {{ row.username }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex flex-wrap gap-1 mt-2">
+                    <v-chip
+                      v-if="row.role"
+                      size="small"
+                      variant="flat"
+                      class="text-capitalize"
+                    >
+                      {{ row.role }}
+                    </v-chip>
+                    <v-chip
+                      :color="statusColor(row.status)"
+                      size="small"
+                      variant="flat"
+                    >
+                      {{ row.status }}
+                    </v-chip>
+                    <v-chip
+                      :color="row.paid ? 'green' : 'red'"
+                      size="small"
+                      variant="flat"
+                    >
+                      {{ row.paid ? "Paid" : "Unpaid" }}
+                    </v-chip>
+                    <span
+                      v-if="row.memberSince"
+                      class="text-caption align-self-center"
+                    >
+                      Since {{ row.memberSince }}
+                    </span>
+                  </div>
+
+                  <div class="d-flex align-center gap-1 mt-1">
+                    <v-tooltip
+                      v-if="isNotableType(row)"
+                      :text="typeLabel(row)"
+                      location="top"
+                    >
+                      <template #activator="{ props }">
+                        <v-icon
+                          v-bind="props"
+                          :icon="typeIcon(row)"
+                          size="18"
+                          color="primary"
+                        />
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip
+                      v-if="row.latestIncasso"
+                      text="Incasso active"
+                      location="top"
+                    >
+                      <template #activator="{ props }">
+                        <v-icon
+                          v-bind="props"
+                          icon="mdi-bank-transfer"
+                          size="18"
+                          color="teal"
+                        />
+                      </template>
+                    </v-tooltip>
+                  </div>
+                </v-card-text>
+
+                <v-card-actions>
+                  <v-btn
+                    :data-testid="`member-manager-mobile-manage-membership-btn-${row.id}`"
+                    icon
+                    size="small"
+                    variant="text"
+                    @click="openManageMembership(row)"
+                  >
+                    <v-icon
+                      icon="mdi-card-account-details"
+                      size="18"
+                    />
+                  </v-btn>
+                  <v-btn
+                    :data-testid="`member-manager-mobile-edit-profile-btn-${row.id}`"
+                    icon
+                    size="small"
+                    variant="text"
+                    @click="openEditProfile(row)"
+                  >
+                    <v-icon
+                      icon="mdi-pencil"
+                      size="18"
+                    />
+                  </v-btn>
+                  <v-btn
+                    :data-testid="`member-manager-mobile-delete-btn-${row.id}`"
+                    :disabled="row.role === 'admin'"
+                    color="red"
+                    icon
+                    size="small"
+                    variant="text"
+                    @click="openDeleteUser(users.find((u) => u.id === row.id)!)"
+                  >
+                    <v-icon
+                      icon="mdi-delete"
+                      size="18"
+                    />
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+
+              <v-card
+                v-if="filteredRows.length === 0"
+                class="text-center text-medium-emphasis py-6"
+                variant="outlined"
+              >
+                No users found.
+              </v-card>
+            </div>
           </v-card-text>
         </v-card>
       </div>
@@ -514,6 +722,80 @@ function statusColor(status: MemberStatus): string {
       :message="pendingDeleteUser ? `Are you sure you want to delete ${pendingDeleteUser.fullName} (${pendingDeleteUser.username})?` : ''"
       title="Confirm User Deletion"
       @confirm="confirmDeleteUser"
+    />
+
+    <!-- Add user dialog -->
+    <v-dialog
+      v-model="addDialog"
+      data-testid="member-manager-add-user-dialog"
+      max-width="760"
+      scrollable
+    >
+      <v-card>
+        <v-card-title class="text-h5">
+          Add user
+        </v-card-title>
+        <v-card-text>
+          <user-form
+            v-model="addModel"
+            show-submit
+            :show-password="true"
+            submit-text="Create user"
+            :options="{includeMemberProfile: true, updateKind: 'board'}"
+            @submitted="onUserSaved"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="secondary"
+            @click="addDialog = false"
+          >
+            Cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit profile dialog -->
+    <v-dialog
+      v-model="editDialog"
+      data-testid="member-manager-edit-profile-dialog"
+      max-width="760"
+      scrollable
+    >
+      <v-card v-if="editModel">
+        <v-card-title class="text-h5">
+          Edit profile
+        </v-card-title>
+        <v-card-text>
+          <user-form
+            v-model="editModel"
+            show-submit
+            submit-text="Save"
+            :options="{includeMemberProfile: true, updateKind: 'board'}"
+            @submitted="onProfileSaved"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="secondary"
+            @click="editDialog = false"
+          >
+            Cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Manage membership dialog -->
+    <manage-membership-dialog
+      v-if="manageUserId !== null"
+      v-model="manageDialog"
+      :user-id="manageUserId"
+      :user-name="manageUserName"
+      @changed="onMembershipChanged"
     />
   </v-main>
 </template>
@@ -548,5 +830,11 @@ tbody tr:nth-child(odd) {
 
 .gap-3 {
   gap: 12px;
+}
+
+.member-manager-search-field {
+  flex: 1 1 260px;
+  max-width: 480px;
+  min-width: 180px;
 }
 </style>

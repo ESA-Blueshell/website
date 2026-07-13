@@ -96,8 +96,10 @@ test.describe("management filters", () => {
     await expect(page.getByTestId("member-manager-row-33")).toHaveCount(0)
     await expect(page.getByTestId("member-manager-row-34")).toHaveCount(0)
 
-    // Filter by username matching only one member
-    await searchInput(page, "member-manager-search-input").fill("member-target")
+    // Filter by first name matching only one member. (Uses the unique "MemberTarget"
+    // first name rather than the "member-target" username, which is a substring of
+    // non-member "nonmember-target" and would match both in the single table.)
+    await searchInput(page, "member-manager-search-input").fill("MemberTarget")
     await expect(page.getByTestId("member-manager-row-33")).toBeVisible()
     await expect(page.getByTestId("member-manager-row-31")).toHaveCount(0)
 

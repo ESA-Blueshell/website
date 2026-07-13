@@ -30,7 +30,7 @@ const ensureListOpen = async (
 }
 
 test.describe("management filters", () => {
-  test("member manager filters non-members and members by multiple fields", async ({page}) => {
+  test("member manager filters users by multiple fields in single table", async ({page}) => {
     await installApiMocks(page, {
       users: [
         {
@@ -81,34 +81,30 @@ test.describe("management filters", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/members/manage")
-    await expect(page.getByTestId("member-user-list-non-members")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
 
-    const nonMembersCard = await ensureListOpen(
-      page,
-      "member-user-list-non-members",
-      "member-user-list-toggle-non-members",
-      "member-user-list-search-non-members",
-    )
-    await expect(nonMembersCard.getByText(exactText("nonmember-target"))).toBeVisible()
-    await expect(nonMembersCard.getByText(exactText("nonmember-other"))).toBeVisible()
+    // All users visible before filtering
+    await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-32")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-33")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
 
-    await searchInput(page, "member-user-list-search-non-members").fill("NonTarget nonmember-discord")
-    await expect(nonMembersCard.getByText(exactText("nonmember-target"))).toBeVisible()
-    await expect(nonMembersCard.getByText(exactText("nonmember-other"))).toHaveCount(0)
+    // Filter by name matching only one non-member
+    await searchInput(page, "member-manager-search-input").fill("NonTarget")
+    await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-32")).toHaveCount(0)
+    await expect(page.getByTestId("member-manager-row-33")).toHaveCount(0)
+    await expect(page.getByTestId("member-manager-row-34")).toHaveCount(0)
 
-    await searchInput(page, "member-user-list-search-non-members").fill("")
-    const membersCard = await ensureListOpen(
-      page,
-      "member-user-list-members",
-      "member-user-list-toggle-members",
-      "member-user-list-search-members",
-    )
-    await expect(membersCard.getByText(exactText("member-target"))).toBeVisible()
-    await expect(membersCard.getByText(exactText("member-other"))).toBeVisible()
+    // Filter by username matching only one member
+    await searchInput(page, "member-manager-search-input").fill("member-target")
+    await expect(page.getByTestId("member-manager-row-33")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-31")).toHaveCount(0)
 
-    await searchInput(page, "member-user-list-search-members").fill("MemberTarget member-discord")
-    await expect(membersCard.getByText(exactText("member-target"))).toBeVisible()
-    await expect(membersCard.getByText(exactText("member-other"))).toHaveCount(0)
+    // Clear filter — all visible again
+    await searchInput(page, "member-manager-search-input").fill("")
+    await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
   })
 
   test("address manager filters users with and without address by multiple fields", async ({page}) => {

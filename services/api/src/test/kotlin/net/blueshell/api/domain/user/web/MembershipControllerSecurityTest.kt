@@ -227,6 +227,85 @@ class MembershipControllerSecurityTest : UserTestSupport() {
     }
 
     @Nested
+    inner class EndMembership {
+
+        @Test
+        fun `allows BOARD to end a membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isOk)
+        }
+
+        @Test
+        fun `denies non-BOARD users from ending a membership`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId)
+                    .with(bearer(member))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+        }
+    }
+
+    @Nested
+    inner class ReopenMembership {
+
+        @Test
+        fun `allows BOARD to reopen a membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture(
+                user = createUserWithRole(Role.GUEST),
+                endDate = java.time.LocalDate.now().minusDays(1)
+            ).id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isOk)
+        }
+
+        @Test
+        fun `denies non-BOARD users from reopening a membership`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val membershipId = createMembershipFixture(
+                endDate = java.time.LocalDate.now().minusDays(1)
+            ).id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId)
+                    .with(bearer(member))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            val membershipId = createMembershipFixture(
+                endDate = java.time.LocalDate.now().minusDays(1)
+            ).id!!
+
+            mvc.perform(MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+        }
+    }
+
+    @Nested
     inner class FindMembershipById {
 
         @Test

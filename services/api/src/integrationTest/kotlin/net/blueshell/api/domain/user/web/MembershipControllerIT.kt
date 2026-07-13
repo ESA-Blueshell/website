@@ -31,7 +31,7 @@ class MembershipControllerIT : UserTestSupport() {
         userId: Long,
         version: Long,
         startDate: LocalDate = LocalDate.now().minusDays(7),
-        endDate: LocalDate = LocalDate.now().plusDays(7)
+        endDate: LocalDate = LocalDate.now().minusDays(1)
     ): String =
         """{"userId":$userId,"memberType":"ALUMNI","startDate":"$startDate","endDate":"$endDate","incasso":false,"version":$version}"""
 
@@ -142,10 +142,10 @@ class MembershipControllerIT : UserTestSupport() {
     }
 
     @Nested
-    inner class UpdateMembership {
+    inner class CorrectMembership {
 
         @Test
-        fun `updates membership`() {
+        fun `corrects membership`() {
             val board = createUserWithRole(Role.BOARD)
             val membership = createMembershipFixture()
 
@@ -176,6 +176,102 @@ class MembershipControllerIT : UserTestSupport() {
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(user.id!!, 0))
+            )
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class EndMembership {
+
+        @Test
+        fun `ends an active membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val membership = createMembershipFixture(user = user)
+            assertThat(membership.endDate).isNull()
+
+            mvc.perform(
+                post("/memberships/{id}/end", membership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(membership.id))
+                .andExpect(jsonPath("$.endDate").isNotEmpty)
+
+            val ended = membershipRepository.findById(membership.id!!).orElseThrow()
+            assertThat(ended.endDate).isNotNull()
+            assertThat(ended.endDate).isEqualTo(LocalDate.now())
+        }
+
+        @Test
+        fun `returns bad request when ending membership started today`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.GUEST)
+            val membership = createMembershipFixture(user = user, startDate = LocalDate.now())
+
+            mvc.perform(
+                post("/memberships/{id}/end", membership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `returns not found when membership does not exist`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/memberships/{id}/end", 999999L)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class ReopenMembership {
+
+        @Test
+        fun `reopens an ended membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.GUEST)
+            val membership = createMembershipFixture(user = user, endDate = LocalDate.now().minusDays(1))
+            assertThat(membership.endDate).isNotNull()
+
+            mvc.perform(
+                post("/memberships/{id}/reopen", membership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(membership.id))
+                .andExpect(jsonPath("$.endDate").doesNotExist())
+
+            val reopened = membershipRepository.findById(membership.id!!).orElseThrow()
+            assertThat(reopened.endDate).isNull()
+        }
+
+        @Test
+        fun `returns bad request when user has another active membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val endedMembership = createMembershipFixture(user = user, endDate = LocalDate.now().minusDays(1))
+            createMembershipFixture(user = user)
+
+            mvc.perform(
+                post("/memberships/{id}/reopen", endedMembership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `returns not found when membership does not exist`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/memberships/{id}/reopen", 999999L)
+                    .with(bearer(board))
             )
                 .andExpect(status().isNotFound)
         }

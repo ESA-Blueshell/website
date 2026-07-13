@@ -25,7 +25,7 @@ class MembershipService @Autowired constructor(
         trackedEvents.publish { actor ->
             MembershipChanged(
                 saved.userId,
-                saved.endDate == null,
+                repository.existsByUser_IdAndEndDateIsNull(saved.userId),
                 MembershipChange.CREATED,
                 actor = actor
             )
@@ -39,7 +39,7 @@ class MembershipService @Autowired constructor(
         trackedEvents.publish { actor ->
             MembershipChanged(
                 saved.userId,
-                saved.endDate == null,
+                repository.existsByUser_IdAndEndDateIsNull(saved.userId),
                 MembershipChange.UPDATED,
                 actor = actor
             )
@@ -54,7 +54,7 @@ class MembershipService @Autowired constructor(
         trackedEvents.publish { actor ->
             MembershipChanged(
                 userId,
-                active = false,
+                repository.existsByUser_IdAndEndDateIsNull(userId),
                 changeType = MembershipChange.DELETED,
                 actor = actor
             )
@@ -68,7 +68,7 @@ class MembershipService @Autowired constructor(
         trackedEvents.publish { actor ->
             MembershipChanged(
                 membership.userId,
-                active = false,
+                repository.existsByUser_IdAndEndDateIsNull(membership.userId),
                 changeType = MembershipChange.DELETED,
                 actor = actor
             )

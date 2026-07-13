@@ -4456,6 +4456,92 @@ export type UpdateMembershipResponses = {
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
 
+export type EndMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/end';
+};
+
+export type EndMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EndMembershipError = EndMembershipErrors[keyof EndMembershipErrors];
+
+export type EndMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type EndMembershipResponse = EndMembershipResponses[keyof EndMembershipResponses];
+
+export type ReopenMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/reopen';
+};
+
+export type ReopenMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReopenMembershipError = ReopenMembershipErrors[keyof ReopenMembershipErrors];
+
+export type ReopenMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type ReopenMembershipResponse = ReopenMembershipResponses[keyof ReopenMembershipResponses];
+
 export type ForwardAuthData = {
     body?: never;
     path?: never;

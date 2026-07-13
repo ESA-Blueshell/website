@@ -223,9 +223,11 @@ abstract class UserTestSupport : ServiceTestSupport() {
 
     protected fun createMembershipFixture(
         user: User = createUserWithRole(Role.MEMBER),
-        memberType: MemberType = MemberType.REGULAR
+        memberType: MemberType = MemberType.REGULAR,
+        startDate: LocalDate = LocalDate.now().minusDays(30),
+        endDate: LocalDate? = null
     ): Membership {
-        return userFactory.createMembership(user, memberType)
+        return userFactory.createMembership(user, memberType, startDate, endDate)
     }
 
     protected fun createContributionPeriodFixture(

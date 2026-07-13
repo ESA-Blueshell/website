@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository
 interface MemberRepository : BaseRepository<Membership, Long> {
     fun existsByUser_Id(userId: Long): Boolean
     fun existsByUser_IdAndEndDateIsNull(userId: Long): Boolean
+    fun findByUser_Id(userId: Long): MutableList<Membership>
 }

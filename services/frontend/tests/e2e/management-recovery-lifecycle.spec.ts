@@ -37,6 +37,10 @@ test.describe("management recovery lifecycle", () => {
     })
     await loginAsBoard(page.context())
 
+    // The member manager renders its unified table only at the lg breakpoint and
+    // up; below that it switches to a mobile card list with its own test ids. This
+    // test exercises the desktop table, so it pins a desktop viewport.
+    await page.setViewportSize({width: 1440, height: 900})
     await page.goto("/members/manage")
     await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
 

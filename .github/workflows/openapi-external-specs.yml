@@ -89,7 +89,7 @@ jobs:
           mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
 
       - name: Set up Java Development Kit
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.4.0
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}

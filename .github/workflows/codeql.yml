@@ -47,14 +47,14 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v4.36.3
         with:
           languages: ${{ matrix.language }}
           build-mode: none
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v4.36.3
         with:
           category: '/language:${{ matrix.language }}'
 
@@ -79,7 +79,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v4.36.3
         with:
           languages: java-kotlin
           build-mode: manual
@@ -100,6 +100,6 @@ jobs:
             :libs:kotlin-common:compileKotlin
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v4.36.3
         with:
           category: '/language:java-kotlin'

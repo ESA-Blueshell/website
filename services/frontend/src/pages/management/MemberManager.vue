@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {onMounted, ref} from "vue"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
@@ -8,16 +8,17 @@ import ManageMembershipDialog from "@/components/common/modals/ManageMembershipD
 import UserForm from "@/components/form/UserForm.vue"
 
 import {
-  type ContributionPeriodResponse,
   deleteUserById,
-  findContributionsByPeriodId,
   findMemberships,
   findUserById,
   findUsers,
-  MemberType,
-  type MembershipResponse,
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
+import {useMemberRows, type MemberRow} from "@/composables/useMemberRows"
+import {useMemberFilters} from "@/composables/useMemberFilters"
+import {usePaidToggle} from "@/composables/usePaidToggle"
+
+export type {MemberRow}
 
 defineOptions({name: "MemberManagerPage"})
 
@@ -28,43 +29,8 @@ const {lgAndUp} = useDisplay()
 // ── State ────────────────────────────────────────────────────────────────────
 
 const users = ref<EditableUser[]>([])
-const memberships = ref<MembershipResponse[]>([])
+const memberships = ref<import("@/services/api").MembershipResponse[]>([])
 const paidUserIds = ref<Set<number>>(new Set())
-
-// searchInput is bound to the v-text-field (instant typing feedback).
-// search is the debounced value that filteredRows depends on — unit tests set it directly.
-const searchInput = ref("")
-const search = ref("")
-const sortKey = ref<"name" | "memberSince" | "status">("name")
-const sortAsc = ref(true)
-
-// Tri-state filters
-type FilterState = "all" | "yes" | "no"
-const memberFilter = ref<FilterState>("all")
-const paidFilter = ref<FilterState>("all")
-const incassoFilter = ref<FilterState>("all")
-
-// Debounce search: copies searchInput → search after 200ms idle
-let searchDebounceHandle: ReturnType<typeof setTimeout> | undefined
-
-const clearSearchDebounce = () => {
-  if (searchDebounceHandle) {
-    clearTimeout(searchDebounceHandle)
-    searchDebounceHandle = undefined
-  }
-}
-
-watch(searchInput, () => {
-  clearSearchDebounce()
-  searchDebounceHandle = setTimeout(() => {
-    searchDebounceHandle = undefined
-    search.value = searchInput.value
-  }, 200)
-})
-
-onBeforeUnmount(() => {
-  clearSearchDebounce()
-})
 
 const deleteDialog = ref(false)
 const pendingDeleteUser = ref<EditableUser | null>(null)
@@ -86,6 +52,32 @@ if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
 }
 
+// ── Composables ───────────────────────────────────────────────────────────────
+
+const {userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
+  useMemberRows(users, memberships, paidUserIds)
+
+const {
+  searchInput,
+  // search/sortKey/sortAsc are not used directly in the template but are accessed
+  // by unit tests via wrapper.vm — keep them in scope for test accessibility.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  search,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  sortKey,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  sortAsc,
+  memberFilter,
+  paidFilter,
+  incassoFilter,
+  filteredRows,
+  toggleSort,
+  sortIcon,
+} = useMemberFilters(rows, userSearchIndex)
+
+const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChanged} =
+  usePaidToggle(paidUserIds)
+
 // ── Data loading ─────────────────────────────────────────────────────────────
 
 const getUsers = async () => {
@@ -100,16 +92,6 @@ const getUsers = async () => {
 const getMemberships = async () => {
   const response = await findMemberships()
   memberships.value = response.data ?? []
-}
-
-const contributionPeriodChanged = async (newPeriod: ContributionPeriodResponse | undefined) => {
-  if (!newPeriod) {
-    paidUserIds.value = new Set()
-    return
-  }
-  const contributionsResp = await findContributionsByPeriodId({path: {periodId: newPeriod.id as number}})
-  const ids = (contributionsResp.data ?? []).map((c) => c.userId)
-  paidUserIds.value = new Set(ids)
 }
 
 const updateUser = (user: EditableUser) => {
@@ -193,140 +175,6 @@ onMounted(async () => {
   }
 })
 
-// ── Row model ─────────────────────────────────────────────────────────────────
-
-type MemberStatus = "Current" | "Former" | "Never"
-
-export type MemberRow = {
-  id: number
-  fullName: string
-  username: string
-  role: string
-  status: MemberStatus
-  memberSince: string | null
-  latestType: MemberType | null
-  latestIncasso: boolean
-  paid: boolean
-}
-
-// Precomputed map: userId → their memberships (O(memberships) once instead of O(users*memberships))
-const membershipsByUserId = computed<Map<number, MembershipResponse[]>>(() => {
-  const map = new Map<number, MembershipResponse[]>()
-  for (const m of memberships.value) {
-    const list = map.get(m.userId)
-    if (list) {
-      list.push(m)
-    } else {
-      map.set(m.userId, [m])
-    }
-  }
-  return map
-})
-
-function deriveStatus(ums: MembershipResponse[]): MemberStatus {
-  if (ums.length === 0) return "Never"
-  if (ums.some((m) => !m.endDate)) return "Current"
-  return "Former"
-}
-
-function deriveMemberSince(ums: MembershipResponse[]): string | null {
-  if (ums.length === 0) return null
-  const first = ums[0]!
-  return ums.reduce((min, m) => (m.startDate < min ? m.startDate : min), first.startDate)
-}
-
-function deriveLatestMembership(ums: MembershipResponse[]): MembershipResponse | null {
-  if (ums.length === 0) return null
-  const first = ums[0]!
-  return ums.reduce<MembershipResponse>((latest, m) => (m.startDate > latest.startDate ? m : latest), first)
-}
-
-const rows = computed<MemberRow[]>(() =>
-  users.value.map((u) => {
-    const ums = membershipsByUserId.value.get(u.id as number) ?? []
-    const latest = deriveLatestMembership(ums)
-    return {
-      id: u.id as number,
-      fullName: u.fullName ?? "",
-      username: u.username ?? "",
-      role: u.roles?.at(-1)?.toLocaleLowerCase() ?? "",
-      status: deriveStatus(ums),
-      memberSince: deriveMemberSince(ums),
-      latestType: latest?.memberType ?? null,
-      latestIncasso: latest?.incasso ?? false,
-      paid: paidUserIds.value.has(u.id as number),
-    }
-  }),
-)
-
-// ── Search & Sort ─────────────────────────────────────────────────────────────
-
-const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
-
-// Precomputed search haystack per user — recomputes only when the user list changes, not on every keystroke.
-const userSearchIndex = computed<Map<number, string>>(() => {
-  const map = new Map<number, string>()
-  for (const u of users.value) {
-    const haystack = [u.fullName, u.username, u.firstName, u.lastName, u.email, (u as Record<string, unknown>)["discord"], (u as Record<string, unknown>)["phoneNumber"]]
-      .filter(Boolean)
-      .map(String)
-      .join(" ")
-      .toLowerCase()
-    map.set(u.id as number, haystack)
-  }
-  return map
-})
-
-const filteredRows = computed<MemberRow[]>(() => {
-  // Search against precomputed per-user haystacks — cheap on every keystroke.
-  const q = search.value.trim().toLowerCase()
-  const terms = q ? q.split(/\s+/) : []
-
-  return [...rows.value.filter((r) => {
-    // Search filter
-    if (terms.length > 0) {
-      const haystack = userSearchIndex.value.get(r.id) ?? ""
-      if (!terms.every((t) => haystack.includes(t))) return false
-    }
-    // Membership filter: yes = status "Current", no = not "Current"
-    if (memberFilter.value === "yes" && r.status !== "Current") return false
-    if (memberFilter.value === "no" && r.status === "Current") return false
-    // Paid filter
-    if (paidFilter.value === "yes" && !r.paid) return false
-    if (paidFilter.value === "no" && r.paid) return false
-    // Incasso filter
-    if (incassoFilter.value === "yes" && !r.latestIncasso) return false
-    if (incassoFilter.value === "no" && r.latestIncasso) return false
-    return true
-  })].sort((a, b) => {
-    let cmp = 0
-    if (sortKey.value === "name") {
-      cmp = a.fullName.localeCompare(b.fullName)
-    } else if (sortKey.value === "memberSince") {
-      const aVal = a.memberSince ?? ""
-      const bVal = b.memberSince ?? ""
-      cmp = aVal.localeCompare(bVal)
-    } else if (sortKey.value === "status") {
-      cmp = statusOrder[a.status] - statusOrder[b.status]
-    }
-    return sortAsc.value ? cmp : -cmp
-  })
-})
-
-function toggleSort(key: "name" | "memberSince" | "status") {
-  if (sortKey.value === key) {
-    sortAsc.value = !sortAsc.value
-  } else {
-    sortKey.value = key
-    sortAsc.value = true
-  }
-}
-
-function sortIcon(key: "name" | "memberSince" | "status"): string {
-  if (sortKey.value !== key) return "mdi-unfold-more-horizontal"
-  return sortAsc.value ? "mdi-arrow-up" : "mdi-arrow-down"
-}
-
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 function openDeleteUser(user: EditableUser) {
@@ -345,30 +193,6 @@ async function confirmDeleteUser() {
   } finally {
     pendingDeleteUser.value = null
   }
-}
-
-// ── Notable type/incasso helpers ──────────────────────────────────────────────
-
-function isNotableType(row: MemberRow): boolean {
-  return row.latestType === MemberType.HONORARY || row.latestType === MemberType.ALUMNI
-}
-
-function typeIcon(row: MemberRow): string {
-  if (row.latestType === MemberType.HONORARY) return "mdi-crown"
-  if (row.latestType === MemberType.ALUMNI) return "mdi-school"
-  return ""
-}
-
-function typeLabel(row: MemberRow): string {
-  if (row.latestType === MemberType.HONORARY) return "Honorary member"
-  if (row.latestType === MemberType.ALUMNI) return "Alumni member"
-  return ""
-}
-
-function statusColor(status: MemberStatus): string {
-  if (status === "Current") return "green"
-  if (status === "Former") return "orange"
-  return "grey"
 }
 </script>
 
@@ -408,7 +232,6 @@ function statusColor(status: MemberStatus): string {
                 hide-details
                 label="Membership"
                 style="max-width:190px"
-                variant="outlined"
               />
               <v-select
                 v-model="paidFilter"
@@ -418,7 +241,6 @@ function statusColor(status: MemberStatus): string {
                 hide-details
                 label="Paid"
                 style="max-width:190px"
-                variant="outlined"
               />
               <v-select
                 v-model="incassoFilter"
@@ -428,7 +250,6 @@ function statusColor(status: MemberStatus): string {
                 hide-details
                 label="Incasso"
                 style="max-width:190px"
-                variant="outlined"
               />
               <v-spacer />
               <v-btn
@@ -595,6 +416,29 @@ function statusColor(status: MemberStatus): string {
                     <td>
                       <div class="d-flex align-center gap-1">
                         <v-tooltip
+                          :text="row.paid ? 'Mark unpaid' : 'Mark paid'"
+                          location="top"
+                        >
+                          <template #activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              :data-testid="`member-manager-toggle-paid-btn-${row.id}`"
+                              :disabled="toggleDisabled"
+                              :loading="isSaving(row.id)"
+                              icon
+                              size="small"
+                              variant="text"
+                              @click="togglePaid(row.id)"
+                            >
+                              <v-icon
+                                :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
+                                size="18"
+                              />
+                            </v-btn>
+                          </template>
+                        </v-tooltip>
+
+                        <v-tooltip
                           text="Manage membership"
                           location="top"
                         >
@@ -686,7 +530,7 @@ function statusColor(status: MemberStatus): string {
                 class="mb-2"
                 variant="outlined"
               >
-                <v-card-text>
+                <v-card-text class="px-4 py-3">
                   <div class="d-flex justify-space-between align-start">
                     <div>
                       <div class="text-h6 font-weight-bold">
@@ -762,6 +606,20 @@ function statusColor(status: MemberStatus): string {
                 </v-card-text>
 
                 <v-card-actions>
+                  <v-btn
+                    :data-testid="`member-manager-mobile-toggle-paid-btn-${row.id}`"
+                    :disabled="toggleDisabled"
+                    :loading="isSaving(row.id)"
+                    icon
+                    size="small"
+                    variant="text"
+                    @click="togglePaid(row.id)"
+                  >
+                    <v-icon
+                      :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
+                      size="18"
+                    />
+                  </v-btn>
                   <v-btn
                     :data-testid="`member-manager-mobile-manage-membership-btn-${row.id}`"
                     icon

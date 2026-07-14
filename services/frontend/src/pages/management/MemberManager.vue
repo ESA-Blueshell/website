@@ -236,11 +236,14 @@ async function confirmDeleteUser() {
           data-testid="member-manager-table"
         >
           <v-card-text>
-            <!-- Toolbar: search + filters + add user (shared above both branches) -->
-            <div class="d-flex flex-wrap align-center gap-3 mb-3">
+            <!-- Toolbar: search + filters + add user. A deliberate responsive
+                 layout (no ragged flex-wrap): desktop = one row; mobile = search
+                 on its own line, the three filters in one equal-width row, and a
+                 full-width Add user button. -->
+            <div class="member-manager-toolbar mb-3">
               <v-text-field
                 v-model="searchInput"
-                class="member-manager-search-field"
+                class="mm-search"
                 clearable
                 data-testid="member-manager-search-input"
                 density="comfortable"
@@ -248,35 +251,34 @@ async function confirmDeleteUser() {
                 label="Search members"
                 prepend-inner-icon="mdi-magnify"
               />
-              <v-select
-                v-model="memberFilter"
-                :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
-                data-testid="member-manager-filter-membership"
-                density="comfortable"
-                hide-details
-                label="Membership"
-                style="max-width:190px"
-              />
-              <v-select
-                v-model="paidFilter"
-                :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
-                data-testid="member-manager-filter-paid"
-                density="comfortable"
-                hide-details
-                label="Paid"
-                style="max-width:190px"
-              />
-              <v-select
-                v-model="incassoFilter"
-                :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
-                data-testid="member-manager-filter-incasso"
-                density="comfortable"
-                hide-details
-                label="Incasso"
-                style="max-width:190px"
-              />
-              <v-spacer />
+              <div class="mm-filters">
+                <v-select
+                  v-model="memberFilter"
+                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                  data-testid="member-manager-filter-membership"
+                  density="comfortable"
+                  hide-details
+                  label="Membership"
+                />
+                <v-select
+                  v-model="paidFilter"
+                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                  data-testid="member-manager-filter-paid"
+                  density="comfortable"
+                  hide-details
+                  label="Paid"
+                />
+                <v-select
+                  v-model="incassoFilter"
+                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                  data-testid="member-manager-filter-incasso"
+                  density="comfortable"
+                  hide-details
+                  label="Incasso"
+                />
+              </div>
               <v-btn
+                class="mm-add"
                 color="primary"
                 data-testid="member-manager-add-user-btn"
                 prepend-icon="mdi-plus"
@@ -547,30 +549,31 @@ async function confirmDeleteUser() {
               v-else
               data-testid="member-manager-mobile-list"
             >
-              <v-list v-if="filteredRows.length > 0">
+              <v-list
+                v-if="filteredRows.length > 0"
+                density="compact"
+              >
                 <template
                   v-for="(row, index) in filteredRows"
                   :key="row.id"
                 >
-                  <v-list-item :data-testid="`member-manager-mobile-row-${row.id}`">
-                    <div class="d-flex justify-space-between align-center">
-                      <div class="flex-grow-1">
-                        <v-list-item-title class="font-weight-medium">
-                          {{ row.fullName }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle>
-                          <span class="font-mono">{{ row.username }}</span>
-                          <v-chip
-                            v-if="row.role"
-                            class="ml-2 text-capitalize"
-                            size="x-small"
-                            variant="flat"
-                          >
-                            {{ row.role }}
-                          </v-chip>
-                        </v-list-item-subtitle>
-                      </div>
-                      <div class="d-flex align-center gap-1">
+                  <v-list-item
+                    class="member-manager-mobile-row"
+                    :data-testid="`member-manager-mobile-row-${row.id}`"
+                  >
+                    <div class="d-flex align-center ga-2">
+                      <span class="font-weight-medium text-truncate">{{ row.fullName }}</span>
+                      <span class="font-mono text-caption text-medium-emphasis text-truncate mm-username">{{ row.username }}</span>
+                      <v-chip
+                        v-if="row.role"
+                        class="text-capitalize flex-shrink-0"
+                        size="x-small"
+                        variant="flat"
+                      >
+                        {{ row.role }}
+                      </v-chip>
+                      <v-spacer />
+                      <div class="d-flex align-center flex-shrink-0">
                         <v-btn
                           :data-testid="`member-manager-mobile-toggle-paid-btn-${row.id}`"
                           :disabled="toggleDisabled"
@@ -749,10 +752,63 @@ tbody tr:nth-child(odd) {
   gap: 12px;
 }
 
-.member-manager-search-field {
-  flex: 1 1 260px;
-  max-width: 480px;
-  min-width: 180px;
+// Toolbar: one row on desktop; deliberate stacking (no ragged wrap) on mobile.
+.member-manager-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .mm-search {
+    flex: 1 1 260px;
+    max-width: 480px;
+    min-width: 180px;
+  }
+
+  .mm-filters {
+    display: flex;
+    gap: 12px;
+
+    > * {
+      width: 190px;
+    }
+  }
+
+  .mm-add {
+    margin-left: auto;
+  }
+}
+
+// Below the lg breakpoint (where the table becomes the mobile list): stack the
+// toolbar into search / a single equal-width filter row / a full-width button.
+@media (max-width: 1279px) {
+  .member-manager-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+
+    .mm-search {
+      max-width: none;
+    }
+
+    .mm-filters > * {
+      flex: 1 1 0;
+      width: auto;
+      min-width: 0;
+    }
+
+    .mm-add {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+}
+
+// Compact, single-line mobile rows (table-like, not tall).
+.member-manager-mobile-row {
+  min-height: 40px;
+
+  .mm-username {
+    min-width: 0;
+  }
 }
 
 .btn-tight {

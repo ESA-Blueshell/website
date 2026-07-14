@@ -40,4 +40,16 @@ data class UserPrincipal(
     fun hasAuthority(role: Role): Boolean {
         return roles.flatMap { it.allInheritedRoles }.any { it.matchesRole(role) }
     }
+
+    companion object {
+        // Pinned so structurally-compatible changes to this class keep
+        // deserializing across deployments. Instances are JDK-serialized into
+        // Valkey both by the principal cache and by the HTTP session; without a
+        // fixed id the compiler-generated serialVersionUID shifts on almost every
+        // recompile, so after a deploy every stored copy fails to deserialize.
+        // Bump this only on a deliberate incompatible change (the fault-tolerant
+        // session serializer then discards the now-unreadable sessions and lets
+        // the JWT cookie re-authenticate, rather than 500ing).
+        private const val serialVersionUID: Long = 1L
+    }
 }

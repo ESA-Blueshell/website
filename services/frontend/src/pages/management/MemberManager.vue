@@ -562,7 +562,7 @@ async function confirmDeleteUser() {
                     :data-testid="`member-manager-mobile-row-${row.id}`"
                   >
                     <div class="d-flex align-center ga-2">
-                      <span class="font-weight-medium text-truncate">{{ row.fullName }}</span>
+                      <span class="font-weight-medium flex-shrink-0">{{ row.fullName }}</span>
                       <span class="font-mono text-caption text-medium-emphasis text-truncate mm-username">{{ row.username }}</span>
                       <v-chip
                         v-if="row.role"

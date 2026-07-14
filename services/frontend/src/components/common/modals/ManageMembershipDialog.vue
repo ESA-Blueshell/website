@@ -1,14 +1,10 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
-import {Form, type FormContext} from "vee-validate"
-import VvField from "@/components/form/fields/VvField.vue"
-import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import BaseModal from "./BaseModal.vue"
 import ConfirmationDialog from "./ConfirmationDialog.vue"
+import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
-  boardCreateMembership,
-  type BoardCreateMembershipRequest,
   deleteMembership,
   endMembership,
   findDeletedMemberships,
@@ -17,10 +13,8 @@ import {
   type MembershipResponse,
   reopenMembership,
   restoreMembership,
-  updateMembership,
 } from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {apply} from "@/plugins/validation.ts"
 import type {TypedStore} from "@/plugins/store"
 
 defineOptions({name: "ManageMembershipDialog"})
@@ -57,26 +51,20 @@ const isLoading = ref(false)
 
 const hasActive = computed(() => memberships.value.some((m) => !m.endDate))
 
-// Create form
-const createFormRef = ref<FormContext>()
-const createForm = ref<BoardCreateMembershipRequest>({
+// Create form — blank MembershipResponse model for MembershipForm in board mode
+const createModel = ref<MembershipResponse>({
+  id: 0,
+  userId: props.userId,
   startDate: "",
   memberType: MemberType.REGULAR,
-  userId: props.userId,
   incasso: false,
-})
-const isCreating = ref(false)
+  version: 0,
+  createdAt: "",
+  updatedAt: "",
+} as MembershipResponse)
 
-// Inline edit state per membership id
-type InlineEdit = {
-  startDate: string
-  endDate: string
-  memberType: string
-  incasso: boolean
-  formRef: FormContext | undefined
-  isSaving: boolean
-}
-const inlineEdits = ref<Record<number, InlineEdit | undefined>>({})
+// Inline edit models per membership id — each is a copy of the membership for editing
+const editModels = ref<Record<number, MembershipResponse | undefined>>({})
 const editingIds = ref<Set<number>>(new Set())
 
 // Delete confirmation state
@@ -106,13 +94,17 @@ watch(
   async (val) => {
     if (val) {
       editingIds.value = new Set()
-      inlineEdits.value = {}
-      createForm.value = {
+      editModels.value = {}
+      createModel.value = {
+        id: 0,
+        userId: props.userId,
         startDate: "",
         memberType: MemberType.REGULAR,
-        userId: props.userId,
         incasso: false,
-      }
+        version: 0,
+        createdAt: "",
+        updatedAt: "",
+      } as MembershipResponse
       await loadMemberships()
     }
   },
@@ -125,24 +117,43 @@ function toggleInlineEdit(m: MembershipResponse) {
   const id = m.id
   if (editingIds.value.has(id)) {
     editingIds.value.delete(id)
-    inlineEdits.value[id] = undefined
+    editModels.value[id] = undefined
     // Force reactivity
     editingIds.value = new Set(editingIds.value)
   } else {
-    inlineEdits.value[id] = {
-      startDate: m.startDate,
-      endDate: m.endDate ?? "",
-      memberType: m.memberType,
-      incasso: m.incasso,
-      formRef: undefined,
-      isSaving: false,
-    }
+    // Make a shallow copy so edits don't affect the list until saved
+    editModels.value[id] = {...m}
     editingIds.value = new Set([...editingIds.value, id])
   }
 }
 
 function isEditing(id: number): boolean {
   return editingIds.value.has(id)
+}
+
+// ── MembershipForm event handlers ─────────────────────────────────────────────
+
+async function onCreateSubmitted(ok: boolean) {
+  if (!ok) return
+  createModel.value = {
+    id: 0,
+    userId: props.userId,
+    startDate: "",
+    memberType: MemberType.REGULAR,
+    incasso: false,
+    version: 0,
+    createdAt: "",
+    updatedAt: "",
+  } as MembershipResponse
+  await loadMemberships()
+  emit("changed")
+}
+
+async function onEditSubmitted(m: MembershipResponse, ok: boolean) {
+  if (!ok) return
+  toggleInlineEdit(m)
+  await loadMemberships()
+  emit("changed")
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
@@ -167,7 +178,7 @@ async function onReopen(m: MembershipResponse) {
   }
 }
 
-// onDelete now opens a confirmation dialog instead of deleting immediately
+// onDelete opens a confirmation dialog instead of deleting immediately
 function onDelete(m: MembershipResponse) {
   deleteTarget.value = m
   deleteConfirmOpen.value = true
@@ -184,62 +195,6 @@ async function onDeleteConfirmed() {
     emit("changed")
   } catch (error) {
     $handleNetworkError(error)
-  }
-}
-
-async function onSaveCorrect(m: MembershipResponse) {
-  const edit = inlineEdits.value[m.id]
-  if (!edit) return
-
-  edit.isSaving = true
-  try {
-    await updateMembership({
-      path: {id: m.id},
-      body: {
-        startDate: edit.startDate,
-        endDate: edit.endDate || undefined,
-        memberType: edit.memberType as MemberType,
-        incasso: edit.incasso,
-        userId: props.userId,
-        version: m.version,
-      },
-      throwOnError: true,
-    })
-    toggleInlineEdit(m)
-    await loadMemberships()
-    emit("changed")
-  } catch (error) {
-    if (edit.formRef && !apply(edit.formRef, error)) $handleNetworkError(error)
-    else if (!edit.formRef) $handleNetworkError(error)
-  } finally {
-    edit.isSaving = false
-  }
-}
-
-async function onCreate() {
-  const validation = await createFormRef.value?.validate()
-  if (!validation?.valid) return
-
-  isCreating.value = true
-  try {
-    await boardCreateMembership({
-      path: {userId: props.userId},
-      body: createForm.value,
-      throwOnError: true,
-    })
-    createForm.value = {
-      startDate: "",
-      memberType: MemberType.REGULAR,
-      userId: props.userId,
-      incasso: false,
-    }
-    await loadMemberships()
-    emit("changed")
-  } catch (error) {
-    if (createFormRef.value && !apply(createFormRef.value, error)) $handleNetworkError(error)
-    else if (!createFormRef.value) $handleNetworkError(error)
-  } finally {
-    isCreating.value = false
   }
 }
 
@@ -262,14 +217,19 @@ defineExpose({
   onReopen,
   onDelete,
   onDeleteConfirmed,
-  onSaveCorrect,
-  onCreate,
   onRestore,
   close,
   hasActive,
   memberships,
   deleteTarget,
   deleteConfirmOpen,
+  // Exposed for tests
+  createModel,
+  editModels,
+  editingIds,
+  toggleInlineEdit,
+  onCreateSubmitted,
+  onEditSubmitted,
 })
 </script>
 
@@ -381,79 +341,19 @@ defineExpose({
                 </div>
               </div>
 
-              <!-- Inline edit form (when editing that row) -->
+              <!-- Inline edit form (when editing that row) — uses MembershipForm in board mode -->
               <div
-                v-if="isEditing(m.id) && inlineEdits[m.id]"
+                v-if="isEditing(m.id) && editModels[m.id]"
                 class="mt-3 w-100"
               >
-                <Form
-                  :ref="(el) => { if (el && inlineEdits[m.id]) inlineEdits[m.id]!.formRef = el as unknown as FormContext }"
-                  as="div"
-                >
-                  <v-row dense>
-                    <v-col
-                      cols="12"
-                      sm="6"
-                    >
-                      <VvField
-                        v-model="inlineEdits[m.id]!.startDate"
-                        :component-props="{ type: 'date' }"
-                        label="Start Date"
-                        name="startDate"
-                        rules="required"
-                      />
-                    </v-col>
-                    <v-col
-                      cols="12"
-                      sm="6"
-                    >
-                      <VvField
-                        v-model="inlineEdits[m.id]!.endDate"
-                        :component-props="{ type: 'date' }"
-                        label="End Date"
-                        name="endDate"
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row dense>
-                    <v-col
-                      cols="12"
-                      sm="6"
-                    >
-                      <VvField
-                        v-model="inlineEdits[m.id]!.memberType"
-                        :component="MemberTypeSelect"
-                        label="Member Type"
-                        name="memberType"
-                        rules="required"
-                      />
-                    </v-col>
-                    <v-col
-                      class="d-flex align-center"
-                      cols="12"
-                      sm="6"
-                    >
-                      <v-checkbox
-                        v-model="inlineEdits[m.id]!.incasso"
-                        hide-details
-                        label="Incasso"
-                      />
-                    </v-col>
-                  </v-row>
-                </Form>
-                <div class="mt-2">
-                  <v-btn
-                    :data-testid="`manage-membership-save-btn-${m.id}`"
-                    :loading="inlineEdits[m.id]?.isSaving"
-                    class="btn-tight"
-                    color="primary"
-                    size="small"
-                    variant="text"
-                    @click="onSaveCorrect(m)"
-                  >
-                    Save
-                  </v-btn>
-                </div>
+                <membership-form
+                  v-model="editModels[m.id]!"
+                  :user-id="userId"
+                  :submit-test-id="`manage-membership-save-btn-${m.id}`"
+                  show-submit
+                  submit-text="Save"
+                  @submitted="onEditSubmitted(m, $event)"
+                />
               </div>
             </v-list-item>
 
@@ -477,66 +377,14 @@ defineExpose({
           Add membership
         </div>
 
-        <Form
-          ref="createFormRef"
-          as="div"
-        >
-          <v-row
-            align="center"
-            dense
-          >
-            <v-col
-              cols="12"
-              sm="4"
-            >
-              <VvField
-                v-model="createForm.startDate"
-                :component-props="{ type: 'date', 'data-testid': 'manage-membership-create-start-date' }"
-                label="Start Date"
-                name="startDate"
-                rules="required"
-              />
-            </v-col>
-            <v-col
-              cols="12"
-              sm="4"
-            >
-              <VvField
-                v-model="createForm.memberType"
-                :component="MemberTypeSelect"
-                :component-props="{ 'data-testid': 'manage-membership-create-member-type' }"
-                label="Member Type"
-                name="memberType"
-                rules="required"
-              />
-            </v-col>
-            <v-col
-              class="d-flex justify-center"
-              cols="12"
-              sm="2"
-            >
-              <v-checkbox
-                v-model="createForm.incasso"
-                data-testid="manage-membership-create-incasso"
-                hide-details
-                label="Incasso"
-              />
-            </v-col>
-            <v-col
-              cols="12"
-              sm="2"
-            >
-              <v-btn
-                :data-testid="`manage-membership-create-btn`"
-                :loading="isCreating"
-                color="primary"
-                @click="onCreate"
-              >
-                Add membership
-              </v-btn>
-            </v-col>
-          </v-row>
-        </Form>
+        <membership-form
+          v-model="createModel"
+          :user-id="userId"
+          submit-test-id="manage-membership-create-btn"
+          show-submit
+          submit-text="Add membership"
+          @submitted="onCreateSubmitted"
+        />
       </div>
 
       <!-- Admin: deleted memberships -->

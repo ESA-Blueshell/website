@@ -9,24 +9,18 @@ import {settle} from "../../../pages/helpers"
 const {
   mockFindMemberships,
   mockFindDeletedMemberships,
-  mockBoardCreateMembership,
   mockEndMembership,
   mockReopenMembership,
   mockDeleteMembership,
-  mockUpdateMembership,
   mockRestoreMembership,
-  mockApply,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockFindMemberships: vi.fn(),
   mockFindDeletedMemberships: vi.fn(),
-  mockBoardCreateMembership: vi.fn(),
   mockEndMembership: vi.fn(),
   mockReopenMembership: vi.fn(),
   mockDeleteMembership: vi.fn(),
-  mockUpdateMembership: vi.fn(),
   mockRestoreMembership: vi.fn(),
-  mockApply: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -36,34 +30,24 @@ vi.mock("@/services/api", async (importOriginal) => {
     ...actual,
     findMemberships: mockFindMemberships,
     findDeletedMemberships: mockFindDeletedMemberships,
-    boardCreateMembership: mockBoardCreateMembership,
     endMembership: mockEndMembership,
     reopenMembership: mockReopenMembership,
     deleteMembership: mockDeleteMembership,
-    updateMembership: mockUpdateMembership,
     restoreMembership: mockRestoreMembership,
   }
 })
-
-vi.mock("@/plugins/validation.ts", () => ({
-  apply: mockApply,
-}))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
-vi.mock("@/components/form/fields/VvField.vue", () => ({
+// Stub MembershipForm — create/update API calls are tested in MembershipForm.test.ts
+vi.mock("@/components/form/MembershipForm.vue", () => ({
   default: {
-    name: "VvField",
-    template: "<div />",
-  },
-}))
-
-vi.mock("@/components/form/fields/MemberTypeSelect.vue", () => ({
-  default: {
-    name: "MemberTypeSelect",
-    template: "<div />",
+    name: "MembershipForm",
+    props: ["modelValue", "userId", "submitTestId", "showSubmit", "submitText"],
+    emits: ["submitted", "update:modelValue"],
+    template: "<div class='membership-form-stub' />",
   },
 }))
 
@@ -119,9 +103,7 @@ function mountDialog(props: {userId?: number; userName?: string; isAdmin?: boole
     },
     global: {
       stubs: {
-        Form: true,
-        VvField: true,
-        MemberTypeSelect: true,
+        MembershipForm: true,
       },
     },
   })
@@ -132,14 +114,11 @@ function mountDialog(props: {userId?: number; userName?: string; isAdmin?: boole
 describe("ManageMembershipDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockApply.mockReturnValue(false)
     mockFindMemberships.mockResolvedValue({data: []})
     mockFindDeletedMemberships.mockResolvedValue({data: []})
-    mockBoardCreateMembership.mockResolvedValue({data: makeMembership({id: 1, userId: 42, startDate: "2025-01-01"})})
     mockEndMembership.mockResolvedValue({data: makeMembership({id: 1, userId: 42, startDate: "2025-01-01", endDate: "2025-06-01"})})
     mockReopenMembership.mockResolvedValue({data: makeMembership({id: 1, userId: 42, startDate: "2025-01-01"})})
     mockDeleteMembership.mockResolvedValue({})
-    mockUpdateMembership.mockResolvedValue({data: makeMembership({id: 1, userId: 42, startDate: "2025-01-01"})})
     mockRestoreMembership.mockResolvedValue({data: makeMembership({id: 99, userId: 42, startDate: "2024-01-01"})})
   })
 
@@ -216,58 +195,66 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
-  it("boardCreateMembership calls correct SDK fn and emits changed", async () => {
+  it("onCreateSubmitted(true) reloads memberships and emits changed", async () => {
     const wrapper = mountDialog()
     await settle()
 
-    ;(wrapper.vm as any).createForm = {
-      startDate: "2025-06-01",
-      memberType: MemberType.REGULAR,
-      userId: 42,
-      incasso: false,
-    }
-    ;(wrapper.vm as any).createFormRef = {
-      validate: vi.fn().mockResolvedValue({valid: true}),
-    }
+    vi.clearAllMocks()
+    mockFindMemberships.mockResolvedValue({data: []})
 
-    await (wrapper.vm as any).onCreate()
-    expect(mockBoardCreateMembership).toHaveBeenCalledWith({
-      path: {userId: 42},
-      body: expect.objectContaining({startDate: "2025-06-01", userId: 42}),
-      throwOnError: true,
-    })
+    await (wrapper.vm as any).onCreateSubmitted(true)
+
+    expect(mockFindMemberships).toHaveBeenCalledWith({query: {userId: 42}})
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
-  it("updateMembership (correct) sends version and emits changed", async () => {
+  it("onCreateSubmitted(false) does NOT reload memberships or emit changed", async () => {
+    const wrapper = mountDialog()
+    await settle()
+
+    vi.clearAllMocks()
+
+    await (wrapper.vm as any).onCreateSubmitted(false)
+
+    expect(mockFindMemberships).not.toHaveBeenCalled()
+    expect(wrapper.emitted("changed")).toBeFalsy()
+  })
+
+  it("onEditSubmitted(m, true) closes inline edit, reloads memberships and emits changed", async () => {
     const m = makeMembership({id: 40, userId: 42, startDate: "2025-01-01", version: 3})
     mockFindMemberships.mockResolvedValue({data: [m]})
 
     const wrapper = mountDialog()
     await settle()
 
-    // Start inline edit
     ;(wrapper.vm as any).toggleInlineEdit(m)
-    const edit = (wrapper.vm as any).inlineEdits[m.id]
-    edit.startDate = "2025-02-01"
-    edit.endDate = ""
-    edit.memberType = MemberType.REGULAR
-    edit.incasso = true
-    edit.formRef = undefined
+    expect((wrapper.vm as any).editingIds.has(m.id)).toBe(true)
 
-    await (wrapper.vm as any).onSaveCorrect(m)
+    vi.clearAllMocks()
+    mockFindMemberships.mockResolvedValue({data: [m]})
 
-    expect(mockUpdateMembership).toHaveBeenCalledWith({
-      path: {id: 40},
-      body: expect.objectContaining({
-        startDate: "2025-02-01",
-        version: 3,
-        userId: 42,
-        incasso: true,
-      }),
-      throwOnError: true,
-    })
+    await (wrapper.vm as any).onEditSubmitted(m, true)
+
+    expect((wrapper.vm as any).editingIds.has(m.id)).toBe(false)
+    expect(mockFindMemberships).toHaveBeenCalledWith({query: {userId: 42}})
     expect(wrapper.emitted("changed")).toBeTruthy()
+  })
+
+  it("onEditSubmitted(m, false) does NOT close inline edit or emit changed", async () => {
+    const m = makeMembership({id: 40, userId: 42, startDate: "2025-01-01", version: 3})
+    mockFindMemberships.mockResolvedValue({data: [m]})
+
+    const wrapper = mountDialog()
+    await settle()
+
+    ;(wrapper.vm as any).toggleInlineEdit(m)
+    vi.clearAllMocks()
+
+    await (wrapper.vm as any).onEditSubmitted(m, false)
+
+    expect((wrapper.vm as any).editingIds.has(m.id)).toBe(true)
+    expect(mockFindMemberships).not.toHaveBeenCalled()
+    expect(wrapper.emitted("changed")).toBeFalsy()
   })
 
   it("restoreMembership calls correct SDK fn and emits changed (admin)", async () => {

@@ -31,7 +31,21 @@ class CacheConfig(
     fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager =
         RedisCacheManager.builder(connectionFactory)
             .cacheDefaults(
-                RedisCacheConfiguration.defaultCacheConfig()
+                // Pin value (de)serialization to the classloader that loaded this
+                // config bean. Cached values (notably the UserPrincipal that
+                // JwtAuthFilter reads on every authenticated request) are
+                // JDK-serialized into Valkey and outlive a process restart. The
+                // default JDK deserializer resolves classes with the "latest
+                // user-defined classloader on the stack", which under Spring Boot
+                // DevTools is the base loader — not the RestartClassLoader that
+                // reloaded the application classes. A cached principal then comes
+                // back as a foreign UserPrincipal type and every authenticated
+                // call 500s with a ClassCastException. This config is itself
+                // reloaded under the current RestartClassLoader, so its
+                // classloader always matches the running code; in production (no
+                // DevTools) it is the single application loader, so behaviour is
+                // unchanged.
+                RedisCacheConfiguration.defaultCacheConfig(javaClass.classLoader)
                     .entryTtl(ttl)
                     .disableCachingNullValues(),
             )

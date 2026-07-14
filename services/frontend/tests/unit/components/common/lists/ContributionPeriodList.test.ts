@@ -15,16 +15,19 @@ vi.mock("@/services/api", () => ({
 describe("ContributionPeriodList", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Deliberately unsorted so the test proves the component sorts by start
+    // date and picks the latest itself, rather than trusting the backend order.
     mockFindContributionPeriods.mockResolvedValue({
       data: [
-        {id: 1, startDate: "2025-01-01", endDate: "2025-06-30"},
         {id: 2, startDate: "2025-07-01", endDate: "2025-12-31"},
+        {id: 3, startDate: "2026-01-01", endDate: "2026-06-30"},
+        {id: 1, startDate: "2025-01-01", endDate: "2025-06-30"},
       ],
     })
     mockDeleteContributionPeriodById.mockResolvedValue({})
   })
 
-  it("loads periods and emits latest selected period", async () => {
+  it("loads periods and emits the period with the latest start date", async () => {
     const wrapper = mount(ContributionPeriodList, {
       global: {
         stubs: {
@@ -43,9 +46,9 @@ describe("ContributionPeriodList", () => {
     await flushPromises()
     expect(mockFindContributionPeriods).toHaveBeenCalled()
     expect(wrapper.emitted("update:contribution-period")?.at(-1)?.[0]).toEqual({
-      id: 2,
-      startDate: "2025-07-01",
-      endDate: "2025-12-31",
+      id: 3,
+      startDate: "2026-01-01",
+      endDate: "2026-06-30",
     })
   })
 

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {onMounted, ref} from "vue"
+import {computed, onMounted, ref} from "vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
@@ -27,6 +27,7 @@ defineOptions({name: "MemberManagerPage"})
 // ── Display ───────────────────────────────────────────────────────────────────
 
 const {lgAndUp} = useDisplay()
+const toolbarDensity = computed(() => (lgAndUp.value ? "comfortable" : "compact"))
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -246,7 +247,7 @@ async function confirmDeleteUser() {
                 class="mm-search"
                 clearable
                 data-testid="member-manager-search-input"
-                density="comfortable"
+                :density="toolbarDensity"
                 hide-details
                 label="Search members"
                 prepend-inner-icon="mdi-magnify"
@@ -256,7 +257,7 @@ async function confirmDeleteUser() {
                   v-model="memberFilter"
                   :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
                   data-testid="member-manager-filter-membership"
-                  density="comfortable"
+                  :density="toolbarDensity"
                   hide-details
                   label="Membership"
                 />
@@ -264,7 +265,7 @@ async function confirmDeleteUser() {
                   v-model="paidFilter"
                   :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
                   data-testid="member-manager-filter-paid"
-                  density="comfortable"
+                  :density="toolbarDensity"
                   hide-details
                   label="Paid"
                 />
@@ -272,7 +273,7 @@ async function confirmDeleteUser() {
                   v-model="incassoFilter"
                   :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
                   data-testid="member-manager-filter-incasso"
-                  density="comfortable"
+                  :density="toolbarDensity"
                   hide-details
                   label="Incasso"
                 />
@@ -561,18 +562,10 @@ async function confirmDeleteUser() {
                     class="member-manager-mobile-row"
                     :data-testid="`member-manager-mobile-row-${row.id}`"
                   >
-                    <div class="d-flex align-center ga-2">
-                      <span class="font-weight-medium flex-shrink-0">{{ row.fullName }}</span>
-                      <span class="font-mono text-caption text-medium-emphasis text-truncate mm-username">{{ row.username }}</span>
-                      <v-chip
-                        v-if="row.role"
-                        class="text-capitalize flex-shrink-0"
-                        size="x-small"
-                        variant="flat"
-                      >
-                        {{ row.role }}
-                      </v-chip>
-                      <v-spacer />
+                    <!-- Line 1: Name (title) + action buttons (append slot) -->
+                    <v-list-item-title class="text-truncate">{{ row.fullName }}</v-list-item-title>
+
+                    <template #append>
                       <div class="d-flex align-center flex-shrink-0">
                         <v-btn
                           :data-testid="`member-manager-mobile-toggle-paid-btn-${row.id}`"
@@ -631,7 +624,20 @@ async function confirmDeleteUser() {
                           />
                         </v-btn>
                       </div>
-                    </div>
+                    </template>
+
+                    <!-- Line 2: Username + role chip -->
+                    <v-list-item-subtitle class="d-flex align-center gap-2">
+                      <span class="font-mono text-medium-emphasis text-truncate">{{ row.username }}</span>
+                      <v-chip
+                        v-if="row.role"
+                        class="text-capitalize flex-shrink-0"
+                        size="x-small"
+                        variant="flat"
+                      >
+                        {{ row.role }}
+                      </v-chip>
+                    </v-list-item-subtitle>
                   </v-list-item>
                   <v-divider v-if="index < filteredRows.length - 1" />
                 </template>

@@ -276,7 +276,10 @@ defineExpose({validate, save})
       as="div"
     >
       <v-row>
-        <v-col cols="4">
+        <v-col
+          cols="12"
+          sm="4"
+        >
           <VvField
             v-model="user.initials"
             test-id="user-form-initials-field"
@@ -286,7 +289,10 @@ defineExpose({validate, save})
             :rules="canEditIdentity ? 'required' : ''"
           />
         </v-col>
-        <v-col cols="8">
+        <v-col
+          cols="12"
+          sm="8"
+        >
           <VvField
             v-model="user.firstName"
             test-id="user-form-first-name-field"
@@ -299,7 +305,10 @@ defineExpose({validate, save})
       </v-row>
 
       <v-row>
-        <v-col cols="4">
+        <v-col
+          cols="12"
+          sm="4"
+        >
           <VvField
             v-model="user.prefix"
             test-id="user-form-prefix-field"
@@ -308,7 +317,10 @@ defineExpose({validate, save})
             name="prefix"
           />
         </v-col>
-        <v-col cols="8">
+        <v-col
+          cols="12"
+          sm="8"
+        >
           <VvField
             v-model="user.lastName"
             test-id="user-form-last-name-field"
@@ -321,7 +333,10 @@ defineExpose({validate, save})
       </v-row>
 
       <v-row>
-        <v-col cols="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <VvField
             v-model="user.username"
             test-id="user-form-username-field"
@@ -331,7 +346,10 @@ defineExpose({validate, save})
             :rules="canEditIdentity ? 'required|alphaNum' : ''"
           />
         </v-col>
-        <v-col cols="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <VvField
             v-model="user.discord"
             test-id="user-form-discord-field"
@@ -343,7 +361,10 @@ defineExpose({validate, save})
       </v-row>
 
       <v-row>
-        <v-col cols="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <VvField
             v-model="user.email"
             test-id="user-form-email-field"
@@ -353,7 +374,10 @@ defineExpose({validate, save})
             name="email"
           />
         </v-col>
-        <v-col cols="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <VvField
             v-model="user.phoneNumber"
             test-id="user-form-phone-number-field"
@@ -372,7 +396,10 @@ defineExpose({validate, save})
       </v-row>
 
       <v-row v-if="showPassword">
-        <v-col cols="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <VvField
             v-model="user.password"
             test-id="user-form-password-field"
@@ -383,7 +410,10 @@ defineExpose({validate, save})
           />
         </v-col>
 
-        <v-col cols="6">
+        <v-col
+          cols="12"
+          sm="6"
+        >
           <VvField
             v-model="confirmPassword"
             test-id="user-form-password-repeat-field"
@@ -397,7 +427,10 @@ defineExpose({validate, save})
 
       <template v-if="includeMemberProfile">
         <v-row>
-          <v-col cols="6">
+          <v-col
+            cols="12"
+            sm="6"
+          >
             <VvField
               v-model="memberProfileModel.dateOfBirth"
               test-id="user-form-date-of-birth-field"
@@ -407,7 +440,10 @@ defineExpose({validate, save})
               rules="dateRequired"
             />
           </v-col>
-          <v-col cols="6">
+          <v-col
+            cols="12"
+            sm="6"
+          >
             <VvField
               v-model="memberProfileModel.nationality"
               test-id="user-form-nationality-field"
@@ -420,7 +456,10 @@ defineExpose({validate, save})
         </v-row>
 
         <v-row>
-          <v-col cols="6">
+          <v-col
+            cols="12"
+            sm="6"
+          >
             <VvField
               v-model="memberProfileModel.gender"
               test-id="user-form-gender-field"
@@ -428,7 +467,10 @@ defineExpose({validate, save})
               name="gender"
             />
           </v-col>
-          <v-col cols="6">
+          <v-col
+            cols="12"
+            sm="6"
+          >
             <VvField
               v-model="memberProfileModel.studentNumber"
               test-id="user-form-student-number-field"

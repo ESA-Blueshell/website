@@ -92,7 +92,10 @@ defineExpose({validate, save})
     as="div"
   >
     <v-row>
-      <v-col cols="8">
+      <v-col
+        cols="12"
+        sm="8"
+      >
         <VvField
           v-model="address.street"
           label="Street"
@@ -100,7 +103,10 @@ defineExpose({validate, save})
           rules="required|minChars:2"
         />
       </v-col>
-      <v-col cols="4">
+      <v-col
+        cols="12"
+        sm="4"
+      >
         <VvField
           v-model="address.houseNumber"
           label="House Number"
@@ -111,7 +117,10 @@ defineExpose({validate, save})
     </v-row>
 
     <v-row>
-      <v-col cols="6">
+      <v-col
+        cols="12"
+        sm="6"
+      >
         <VvField
           v-model="address.zipCode"
           label="Zipcode"
@@ -119,7 +128,10 @@ defineExpose({validate, save})
           rules="required|minChars:2"
         />
       </v-col>
-      <v-col cols="6">
+      <v-col
+        cols="12"
+        sm="6"
+      >
         <VvField
           v-model="address.city"
           label="City"

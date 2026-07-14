@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
@@ -18,7 +18,6 @@ import {
   type MembershipResponse,
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
-import {filterUsers} from "@/plugins/userFilter"
 
 defineOptions({name: "MemberManagerPage"})
 
@@ -32,9 +31,40 @@ const users = ref<EditableUser[]>([])
 const memberships = ref<MembershipResponse[]>([])
 const paidUserIds = ref<Set<number>>(new Set())
 
+// searchInput is bound to the v-text-field (instant typing feedback).
+// search is the debounced value that filteredRows depends on — unit tests set it directly.
+const searchInput = ref("")
 const search = ref("")
 const sortKey = ref<"name" | "memberSince" | "status">("name")
 const sortAsc = ref(true)
+
+// Tri-state filters
+type FilterState = "all" | "yes" | "no"
+const memberFilter = ref<FilterState>("all")
+const paidFilter = ref<FilterState>("all")
+const incassoFilter = ref<FilterState>("all")
+
+// Debounce search: copies searchInput → search after 200ms idle
+let searchDebounceHandle: ReturnType<typeof setTimeout> | undefined
+
+const clearSearchDebounce = () => {
+  if (searchDebounceHandle) {
+    clearTimeout(searchDebounceHandle)
+    searchDebounceHandle = undefined
+  }
+}
+
+watch(searchInput, () => {
+  clearSearchDebounce()
+  searchDebounceHandle = setTimeout(() => {
+    searchDebounceHandle = undefined
+    search.value = searchInput.value
+  }, 200)
+})
+
+onBeforeUnmount(() => {
+  clearSearchDebounce()
+})
 
 const deleteDialog = ref(false)
 const pendingDeleteUser = ref<EditableUser | null>(null)
@@ -179,9 +209,19 @@ export type MemberRow = {
   paid: boolean
 }
 
-function userMemberships(userId: number): MembershipResponse[] {
-  return memberships.value.filter((m) => m.userId === userId)
-}
+// Precomputed map: userId → their memberships (O(memberships) once instead of O(users*memberships))
+const membershipsByUserId = computed<Map<number, MembershipResponse[]>>(() => {
+  const map = new Map<number, MembershipResponse[]>()
+  for (const m of memberships.value) {
+    const list = map.get(m.userId)
+    if (list) {
+      list.push(m)
+    } else {
+      map.set(m.userId, [m])
+    }
+  }
+  return map
+})
 
 function deriveStatus(ums: MembershipResponse[]): MemberStatus {
   if (ums.length === 0) return "Never"
@@ -203,7 +243,7 @@ function deriveLatestMembership(ums: MembershipResponse[]): MembershipResponse |
 
 const rows = computed<MemberRow[]>(() =>
   users.value.map((u) => {
-    const ums = userMemberships(u.id as number)
+    const ums = membershipsByUserId.value.get(u.id as number) ?? []
     const latest = deriveLatestMembership(ums)
     return {
       id: u.id as number,
@@ -223,12 +263,42 @@ const rows = computed<MemberRow[]>(() =>
 
 const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
 
-const filteredRows = computed<MemberRow[]>(() => {
-  // Search across all user fields (name, username, first/last name, discord, email…),
-  // matching the previous manager's behaviour, then keep the derived rows for those users.
-  const matchedIds = new Set(filterUsers(users.value, search.value).map((u) => u.id))
+// Precomputed search haystack per user — recomputes only when the user list changes, not on every keystroke.
+const userSearchIndex = computed<Map<number, string>>(() => {
+  const map = new Map<number, string>()
+  for (const u of users.value) {
+    const haystack = [u.fullName, u.username, u.firstName, u.lastName, u.email, (u as Record<string, unknown>)["discord"], (u as Record<string, unknown>)["phoneNumber"]]
+      .filter(Boolean)
+      .map(String)
+      .join(" ")
+      .toLowerCase()
+    map.set(u.id as number, haystack)
+  }
+  return map
+})
 
-  return [...rows.value.filter((r) => matchedIds.has(r.id))].sort((a, b) => {
+const filteredRows = computed<MemberRow[]>(() => {
+  // Search against precomputed per-user haystacks — cheap on every keystroke.
+  const q = search.value.trim().toLowerCase()
+  const terms = q ? q.split(/\s+/) : []
+
+  return [...rows.value.filter((r) => {
+    // Search filter
+    if (terms.length > 0) {
+      const haystack = userSearchIndex.value.get(r.id) ?? ""
+      if (!terms.every((t) => haystack.includes(t))) return false
+    }
+    // Membership filter: yes = status "Current", no = not "Current"
+    if (memberFilter.value === "yes" && r.status !== "Current") return false
+    if (memberFilter.value === "no" && r.status === "Current") return false
+    // Paid filter
+    if (paidFilter.value === "yes" && !r.paid) return false
+    if (paidFilter.value === "no" && r.paid) return false
+    // Incasso filter
+    if (incassoFilter.value === "yes" && !r.latestIncasso) return false
+    if (incassoFilter.value === "no" && r.latestIncasso) return false
+    return true
+  })].sort((a, b) => {
     let cmp = 0
     if (sortKey.value === "name") {
       cmp = a.fullName.localeCompare(b.fullName)
@@ -318,10 +388,10 @@ function statusColor(status: MemberStatus): string {
           data-testid="member-manager-table"
         >
           <v-card-text>
-            <!-- Toolbar: search + add user (shared above both branches) -->
+            <!-- Toolbar: search + filters + add user (shared above both branches) -->
             <div class="d-flex flex-wrap align-center gap-3 mb-3">
               <v-text-field
-                v-model="search"
+                v-model="searchInput"
                 class="member-manager-search-field"
                 clearable
                 data-testid="member-manager-search-input"
@@ -329,6 +399,36 @@ function statusColor(status: MemberStatus): string {
                 hide-details
                 label="Search members"
                 prepend-inner-icon="mdi-magnify"
+              />
+              <v-select
+                v-model="memberFilter"
+                :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                data-testid="member-manager-filter-membership"
+                density="comfortable"
+                hide-details
+                label="Membership"
+                style="max-width:190px"
+                variant="outlined"
+              />
+              <v-select
+                v-model="paidFilter"
+                :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                data-testid="member-manager-filter-paid"
+                density="comfortable"
+                hide-details
+                label="Paid"
+                style="max-width:190px"
+                variant="outlined"
+              />
+              <v-select
+                v-model="incassoFilter"
+                :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                data-testid="member-manager-filter-incasso"
+                density="comfortable"
+                hide-details
+                label="Incasso"
+                style="max-width:190px"
+                variant="outlined"
               />
               <v-spacer />
               <v-btn

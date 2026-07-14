@@ -185,14 +185,33 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
-  it("deleteMembership calls correct SDK fn and emits changed", async () => {
+  it("onDelete opens confirmation dialog and does NOT call deleteMembership immediately", async () => {
     const endedMembership = makeMembership({id: 30, userId: 42, startDate: "2024-01-01", endDate: "2024-12-31"})
     mockFindMemberships.mockResolvedValue({data: [endedMembership]})
 
     const wrapper = mountDialog()
     await settle()
 
-    await (wrapper.vm as any).onDelete(endedMembership)
+    ;(wrapper.vm as any).onDelete(endedMembership)
+    // confirmation dialog should be open
+    expect((wrapper.vm as any).deleteConfirmOpen).toBe(true)
+    expect((wrapper.vm as any).deleteTarget).toEqual(endedMembership)
+    // deleteMembership must NOT have been called yet
+    expect(mockDeleteMembership).not.toHaveBeenCalled()
+    expect(wrapper.emitted("changed")).toBeFalsy()
+  })
+
+  it("onDeleteConfirmed calls deleteMembership and emits changed", async () => {
+    const endedMembership = makeMembership({id: 30, userId: 42, startDate: "2024-01-01", endDate: "2024-12-31"})
+    mockFindMemberships.mockResolvedValue({data: [endedMembership]})
+
+    const wrapper = mountDialog()
+    await settle()
+
+    // Simulate the confirmation flow
+    ;(wrapper.vm as any).onDelete(endedMembership)
+    await (wrapper.vm as any).onDeleteConfirmed()
+
     expect(mockDeleteMembership).toHaveBeenCalledWith({path: {id: 30}, throwOnError: true})
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
@@ -289,5 +308,26 @@ describe("ManageMembershipDialog", () => {
     await settle()
 
     expect((wrapper.vm as any).hasActive).toBe(false)
+  })
+
+  it("add-membership section is hidden when hasActive=true", async () => {
+    const activeMembership = makeMembership({id: 50, userId: 42, startDate: "2025-01-01"})
+    mockFindMemberships.mockResolvedValue({data: [activeMembership]})
+
+    const wrapper = mountDialog()
+    await settle()
+
+    expect((wrapper.vm as any).hasActive).toBe(true)
+    expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(false)
+  })
+
+  it("add-membership section is shown when hasActive=false", async () => {
+    mockFindMemberships.mockResolvedValue({data: []})
+
+    const wrapper = mountDialog()
+    await settle()
+
+    expect((wrapper.vm as any).hasActive).toBe(false)
+    expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(true)
   })
 })

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed} from "vue"
+import {useDisplay} from "vuetify"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import type {SubmitState} from "@/composables/formUtils"
 
@@ -10,6 +11,8 @@ interface Props {
   title: string
   maxWidth?: string
   scrollable?: boolean
+  /** Use the full screen on mobile (md and down) so the dialog isn't cramped. */
+  fullscreenMobile?: boolean
   testid?: string
   showSave?: boolean
   saveLabel?: string
@@ -34,6 +37,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   maxWidth: "760",
   scrollable: true,
+  fullscreenMobile: false,
   testid: "base-modal",
   showSave: false,
   saveLabel: "Save",
@@ -60,6 +64,17 @@ const emit = defineEmits<{
   (e: "cancel"): void
 }>()
 
+// useDisplay needs Vuetify's display injection, which plain unit mounts don't
+// provide; guard so BaseModal stays mountable in tests without a Vuetify context.
+const mdAndDown = (() => {
+  try {
+    return useDisplay().mdAndDown
+  } catch {
+    return null
+  }
+})()
+const isFullscreen = computed(() => props.fullscreenMobile && Boolean(mdAndDown?.value))
+
 const open = computed({
   get: () => props.modelValue,
   set: (val: boolean) => emit("update:modelValue", val),
@@ -80,6 +95,7 @@ const useSaveAsSubmitButton = computed(
   <v-dialog
     v-model="open"
     :data-testid="testid"
+    :fullscreen="isFullscreen"
     :max-width="maxWidth"
     :scrollable="scrollable"
   >

@@ -238,6 +238,8 @@ defineExpose({
     v-model="open"
     :title="`Manage memberships${userName ? ` — ${userName}` : ''}`"
     testid="manage-membership-dialog"
+    max-width="1000"
+    fullscreen-mobile
     show-cancel
     cancel-label="Close"
     cancel-testid="manage-membership-close-btn"
@@ -318,17 +320,19 @@ defineExpose({
                     >
                       Resume
                     </v-btn>
-                    <v-btn
-                      :data-testid="`manage-membership-delete-btn-${m.id}`"
-                      class="btn-tight"
-                      color="red"
-                      size="small"
-                      variant="text"
-                      @click="onDelete(m)"
-                    >
-                      Delete
-                    </v-btn>
                   </template>
+
+                  <!-- Delete is available for every membership (active or ended) -->
+                  <v-btn
+                    :data-testid="`manage-membership-delete-btn-${m.id}`"
+                    class="btn-tight"
+                    color="red"
+                    size="small"
+                    variant="text"
+                    @click="onDelete(m)"
+                  >
+                    Delete
+                  </v-btn>
 
                   <v-btn
                     class="btn-tight"

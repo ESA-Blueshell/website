@@ -501,3 +501,129 @@ describe("MemberManager row model", () => {
     expect((wrapper.vm as any).users).toHaveLength(0)
   })
 })
+
+describe("MemberManager filters", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockDeleteUserById.mockResolvedValue({})
+    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
+    mockFindUserById.mockResolvedValue({data: {id: 1, username: "u", roles: []}})
+  })
+
+  function mountWithFilterData() {
+    mockFindUsers.mockResolvedValue({
+      status: 200,
+      data: {
+        content: [
+          {id: 1, fullName: "Current Paid Incasso", username: "cpi", roles: ["MEMBER"], email: "a@test.com", enabled: true, firstName: "Current", lastName: "Paid", initials: "CP", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
+          {id: 2, fullName: "Former Unpaid NoIncasso", username: "fun", roles: ["USER"], email: "b@test.com", enabled: true, firstName: "Former", lastName: "Unpaid", initials: "FU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
+          {id: 3, fullName: "Never Unpaid NoIncasso", username: "nun", roles: ["USER"], email: "c@test.com", enabled: true, firstName: "Never", lastName: "Unpaid", initials: "NU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
+        ],
+      },
+    })
+    mockFindMemberships.mockResolvedValue({
+      data: [
+        // user 1: active membership with incasso
+        makeMembership({id: 10, userId: 1, startDate: "2024-01-01", incasso: true}),
+        // user 2: ended membership, no incasso
+        makeMembership({id: 20, userId: 2, startDate: "2022-01-01", endDate: "2023-01-01", incasso: false}),
+        // user 3: no memberships (handled by empty filter)
+      ],
+    })
+    return shallowMount(MemberManager)
+  }
+
+  it("memberFilter=yes shows only Current members", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).memberFilter = "yes"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => r.status === "Current")).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeTruthy()
+    expect(rows.find((r) => r.id === 2)).toBeFalsy()
+    expect(rows.find((r) => r.id === 3)).toBeFalsy()
+  })
+
+  it("memberFilter=no shows only non-Current members", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).memberFilter = "no"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => r.status !== "Current")).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeFalsy()
+  })
+
+  it("paidFilter=yes shows only paid users after period change", async () => {
+    mockFindContributionsByPeriodId.mockResolvedValue({
+      data: [{id: 91, userId: 1, contributionPeriodId: 5}],
+    })
+    const wrapper = mountWithFilterData()
+    await settle()
+    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    ;(wrapper.vm as any).paidFilter = "yes"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => r.paid)).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeTruthy()
+    expect(rows.find((r) => r.id === 2)).toBeFalsy()
+  })
+
+  it("paidFilter=no shows only unpaid users", async () => {
+    mockFindContributionsByPeriodId.mockResolvedValue({
+      data: [{id: 91, userId: 1, contributionPeriodId: 5}],
+    })
+    const wrapper = mountWithFilterData()
+    await settle()
+    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    ;(wrapper.vm as any).paidFilter = "no"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => !r.paid)).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeFalsy()
+  })
+
+  it("incassoFilter=yes shows only users with incasso", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).incassoFilter = "yes"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => r.latestIncasso)).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeTruthy()
+    expect(rows.find((r) => r.id === 2)).toBeFalsy()
+  })
+
+  it("incassoFilter=no shows only users without incasso", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).incassoFilter = "no"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => !r.latestIncasso)).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeFalsy()
+  })
+
+  it("combined search + memberFilter narrows results", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).search = "current"
+    ;(wrapper.vm as any).memberFilter = "yes"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    // Only "Current Paid Incasso" (id=1) matches both
+    expect(rows).toHaveLength(1)
+    expect(rows[0].id).toBe(1)
+  })
+
+  it("all filters default to 'all' so existing tests are unaffected", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    expect((wrapper.vm as any).memberFilter).toBe("all")
+    expect((wrapper.vm as any).paidFilter).toBe("all")
+    expect((wrapper.vm as any).incassoFilter).toBe("all")
+    // filteredRows includes all 3 users
+    expect((wrapper.vm as any).filteredRows).toHaveLength(3)
+  })
+})

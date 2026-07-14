@@ -303,79 +303,82 @@ defineExpose({
           No memberships found.
         </div>
 
-        <v-sheet
-          v-else
-          class="border rounded"
-        >
+        <v-list v-else>
           <template
             v-for="(m, index) in memberships"
             :key="m.id"
           >
-            <div
-              :data-testid="`manage-membership-row-${m.id}`"
-              class="d-flex align-center justify-space-between pa-3 flex-wrap gap-2"
-            >
-              <!-- Left: date range, type, incasso icon -->
-              <div>
-                <span class="font-weight-medium">{{ m.startDate }}</span>
-                <span> – </span>
-                <span v-if="m.endDate">{{ m.endDate }}</span>
-                <span v-else>active</span>
-                <span class="ml-2 text-capitalize text-medium-emphasis">{{ m.memberType?.toLowerCase() }}</span>
-                <v-icon
-                  v-if="m.incasso"
-                  class="ml-1"
-                  color="teal"
-                  icon="mdi-bank-transfer"
-                  size="16"
-                />
-              </div>
+            <v-list-item :data-testid="`manage-membership-row-${m.id}`">
+              <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                <!-- Left: date range + type as title/subtitle -->
+                <div class="flex-grow-1">
+                  <v-list-item-title class="font-weight-medium">
+                    {{ m.startDate }} –
+                    <span v-if="m.endDate">{{ m.endDate }}</span>
+                    <span v-else>active</span>
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
+                    <v-icon
+                      v-if="m.incasso"
+                      class="ml-1"
+                      color="teal"
+                      icon="mdi-bank-transfer"
+                      size="16"
+                    />
+                  </v-list-item-subtitle>
+                </div>
 
-              <!-- Right: action buttons -->
-              <div class="d-flex gap-1">
-                <!-- Active membership actions -->
-                <template v-if="!m.endDate">
-                  <v-btn
-                    :data-testid="`manage-membership-end-btn-${m.id}`"
-                    color="orange"
-                    size="small"
-                    variant="tonal"
-                    @click="onEnd(m)"
-                  >
-                    End
-                  </v-btn>
-                </template>
+                <!-- Right: action buttons -->
+                <div class="d-flex gap-1">
+                  <!-- Active membership actions -->
+                  <template v-if="!m.endDate">
+                    <v-btn
+                      :data-testid="`manage-membership-end-btn-${m.id}`"
+                      class="btn-tight"
+                      color="orange"
+                      size="small"
+                      variant="text"
+                      @click="onEnd(m)"
+                    >
+                      End
+                    </v-btn>
+                  </template>
 
-                <!-- Ended membership actions -->
-                <template v-else>
-                  <v-btn
-                    :data-testid="`manage-membership-reopen-btn-${m.id}`"
-                    :disabled="hasActive"
-                    color="green"
-                    size="small"
-                    variant="tonal"
-                    @click="onReopen(m)"
-                  >
-                    Resume
-                  </v-btn>
-                  <v-btn
-                    :data-testid="`manage-membership-delete-btn-${m.id}`"
-                    color="red"
-                    size="small"
-                    variant="tonal"
-                    @click="onDelete(m)"
-                  >
-                    Delete
-                  </v-btn>
-                </template>
+                  <!-- Ended membership actions -->
+                  <template v-else>
+                    <v-btn
+                      :data-testid="`manage-membership-reopen-btn-${m.id}`"
+                      :disabled="hasActive"
+                      class="btn-tight"
+                      color="green"
+                      size="small"
+                      variant="text"
+                      @click="onReopen(m)"
+                    >
+                      Resume
+                    </v-btn>
+                    <v-btn
+                      :data-testid="`manage-membership-delete-btn-${m.id}`"
+                      class="btn-tight"
+                      color="red"
+                      size="small"
+                      variant="text"
+                      @click="onDelete(m)"
+                    >
+                      Delete
+                    </v-btn>
+                  </template>
 
-                <v-btn
-                  size="small"
-                  variant="tonal"
-                  @click="toggleInlineEdit(m)"
-                >
-                  {{ isEditing(m.id) ? "Cancel" : "Edit" }}
-                </v-btn>
+                  <v-btn
+                    class="btn-tight"
+                    size="small"
+                    variant="text"
+                    @click="toggleInlineEdit(m)"
+                  >
+                    {{ isEditing(m.id) ? "Cancel" : "Edit" }}
+                  </v-btn>
+                </div>
               </div>
 
               <!-- Inline edit form (when editing that row) -->
@@ -442,19 +445,21 @@ defineExpose({
                   <v-btn
                     :data-testid="`manage-membership-save-btn-${m.id}`"
                     :loading="inlineEdits[m.id]?.isSaving"
+                    class="btn-tight"
                     color="primary"
                     size="small"
+                    variant="text"
                     @click="onSaveCorrect(m)"
                   >
                     Save
                   </v-btn>
                 </div>
               </div>
-            </div>
+            </v-list-item>
 
             <v-divider v-if="index < memberships.length - 1" />
           </template>
-        </v-sheet>
+        </v-list>
       </div>
 
       <!-- Add membership form (only when no active membership) -->
@@ -543,34 +548,38 @@ defineExpose({
           Deleted memberships
         </div>
 
-        <v-sheet class="border rounded">
+        <v-list>
           <template
             v-for="(m, index) in deletedMemberships"
             :key="m.id"
           >
-            <div
-              :data-testid="`manage-membership-deleted-row-${m.id}`"
-              class="d-flex align-center justify-space-between pa-3 flex-wrap gap-2"
-            >
-              <div>
-                <span class="font-weight-medium">{{ m.startDate }}</span>
-                <span v-if="m.endDate"> – {{ m.endDate }}</span>
-                <span class="ml-2 text-capitalize text-medium-emphasis">{{ m.memberType?.toLowerCase() }}</span>
-                <span class="ml-2 text-caption text-error">(deleted)</span>
+            <v-list-item :data-testid="`manage-membership-deleted-row-${m.id}`">
+              <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                <div class="flex-grow-1">
+                  <v-list-item-title class="font-weight-medium">
+                    {{ m.startDate }}
+                    <span v-if="m.endDate"> – {{ m.endDate }}</span>
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
+                    <span class="ml-2 text-error">(deleted)</span>
+                  </v-list-item-subtitle>
+                </div>
+                <v-btn
+                  :data-testid="`manage-membership-restore-btn-${m.id}`"
+                  class="btn-tight"
+                  color="primary"
+                  size="small"
+                  variant="text"
+                  @click="onRestore(m)"
+                >
+                  Restore
+                </v-btn>
               </div>
-              <v-btn
-                :data-testid="`manage-membership-restore-btn-${m.id}`"
-                color="primary"
-                size="small"
-                variant="tonal"
-                @click="onRestore(m)"
-              >
-                Restore
-              </v-btn>
-            </div>
+            </v-list-item>
             <v-divider v-if="index < deletedMemberships.length - 1" />
           </template>
-        </v-sheet>
+        </v-list>
       </div>
     </template>
   </base-modal>
@@ -585,3 +594,10 @@ defineExpose({
     @confirm="onDeleteConfirmed"
   />
 </template>
+
+<style lang="scss" scoped>
+.btn-tight {
+  padding-inline: 6px !important;
+  min-width: auto !important;
+}
+</style>

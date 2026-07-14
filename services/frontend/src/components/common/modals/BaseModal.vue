@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import {computed} from "vue"
+import SubmitButton from "@/components/form/SubmitButton.vue"
+import type {SubmitState} from "@/composables/formUtils"
 
 defineOptions({name: "BaseModal"})
 
@@ -15,6 +17,12 @@ interface Props {
   saveLoading?: boolean
   saveDisabled?: boolean
   saveTestid?: string
+  // SubmitButton-specific passthrough — when saveIcon or saveShowStatus is
+  // provided, the save action renders as a SubmitButton with progress feedback.
+  saveIcon?: string | null
+  saveSubmitState?: SubmitState
+  saveShowStatus?: boolean
+  saveVariant?: "elevated" | "flat" | "tonal" | "outlined" | "text" | "plain"
   showDelete?: boolean
   deleteLabel?: string
   deleteTestid?: string
@@ -33,6 +41,10 @@ const props = withDefaults(defineProps<Props>(), {
   saveLoading: false,
   saveDisabled: false,
   saveTestid: undefined,
+  saveIcon: undefined,
+  saveSubmitState: "idle",
+  saveShowStatus: false,
+  saveVariant: "elevated",
   showDelete: false,
   deleteLabel: "Delete",
   deleteTestid: undefined,
@@ -57,6 +69,11 @@ function onCancel() {
   open.value = false
   emit("cancel")
 }
+
+/** When a caller supplies saveIcon or saveShowStatus, render SubmitButton for rich feedback. */
+const useSaveAsSubmitButton = computed(
+  () => props.saveIcon != null || props.saveShowStatus,
+)
 </script>
 
 <template>
@@ -88,26 +105,55 @@ function onCancel() {
 
         <v-spacer />
 
-        <v-btn
-          v-if="showCancel"
-          :data-testid="cancelTestid"
-          @click="onCancel"
-        >
-          {{ cancelLabel }}
-        </v-btn>
+        <!--
+          #actions slot — full override of the entire footer contents.
+          Use this when you need a completely custom set of action buttons.
+        -->
+        <slot name="actions">
+          <v-btn
+            v-if="showCancel"
+            :data-testid="cancelTestid"
+            @click="onCancel"
+          >
+            {{ cancelLabel }}
+          </v-btn>
 
-        <v-btn
-          v-if="showSave"
-          :color="saveColor"
-          :data-testid="saveTestid"
-          :disabled="saveDisabled"
-          :loading="saveLoading"
-          @click="emit('save')"
-        >
-          {{ saveLabel }}
-        </v-btn>
+          <!--
+            #save slot — override just the primary save button.
+            Falls back to SubmitButton (rich) or plain v-btn based on props.
+          -->
+          <slot
+            v-if="showSave"
+            name="save"
+          >
+            <submit-button
+              v-if="useSaveAsSubmitButton"
+              :color="saveColor"
+              :data-testid="saveTestid"
+              :disabled="saveDisabled"
+              :icon="saveIcon ?? null"
+              :loading="saveLoading"
+              :show-submit-status="saveShowStatus"
+              :submit-state="saveSubmitState"
+              :text="saveLabel"
+              :variant="saveVariant"
+              size="default"
+              @click="emit('save')"
+            />
+            <v-btn
+              v-else
+              :color="saveColor"
+              :data-testid="saveTestid"
+              :disabled="saveDisabled"
+              :loading="saveLoading"
+              @click="emit('save')"
+            >
+              {{ saveLabel }}
+            </v-btn>
+          </slot>
 
-        <slot name="actions-append" />
+          <slot name="actions-append" />
+        </slot>
       </v-card-actions>
     </v-card>
   </v-dialog>

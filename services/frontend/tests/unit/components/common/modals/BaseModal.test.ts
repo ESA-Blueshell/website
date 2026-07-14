@@ -84,4 +84,57 @@ describe("BaseModal", () => {
     const wrapper = mountModal()
     expect(wrapper.find("[data-testid='base-modal']").exists()).toBe(true)
   })
+
+  it("renders SubmitButton (rich save) when saveIcon is provided", () => {
+    const wrapper = mountModal({
+      showSave: true,
+      saveTestid: "my-rich-save",
+      saveIcon: "mdi-content-save",
+    })
+    // The SubmitButton wraps a v-btn — testid should be on it
+    expect(wrapper.find("[data-testid='my-rich-save']").exists()).toBe(true)
+  })
+
+  it("renders SubmitButton when saveShowStatus=true", () => {
+    const wrapper = mountModal({
+      showSave: true,
+      saveTestid: "my-status-save",
+      saveShowStatus: true,
+    })
+    expect(wrapper.find("[data-testid='my-status-save']").exists()).toBe(true)
+  })
+
+  it("emits save when SubmitButton is clicked", async () => {
+    const wrapper = mountModal({
+      showSave: true,
+      saveTestid: "my-rich-save",
+      saveIcon: "mdi-content-save",
+    })
+    await wrapper.find("[data-testid='my-rich-save']").trigger("click")
+    expect(wrapper.emitted("save")).toBeTruthy()
+  })
+
+  it("renders custom #save slot content when provided", () => {
+    const wrapper = mount(BaseModal, {
+      props: {modelValue: true, title: "Custom", showSave: true},
+      slots: {
+        default: "<p>body</p>",
+        save: "<button data-testid=\"custom-save-btn\">Custom Save</button>",
+      },
+    })
+    expect(wrapper.find("[data-testid='custom-save-btn']").exists()).toBe(true)
+  })
+
+  it("renders custom #actions slot as full footer override", () => {
+    const wrapper = mount(BaseModal, {
+      props: {modelValue: true, title: "Actions", showCancel: true},
+      slots: {
+        default: "<p>body</p>",
+        actions: "<button data-testid=\"custom-action-btn\">Do It</button>",
+      },
+    })
+    expect(wrapper.find("[data-testid='custom-action-btn']").exists()).toBe(true)
+    // Cancel button should NOT appear since the #actions slot fully overrides it
+    expect(wrapper.find("[data-testid='base-modal-cancel']").exists()).toBe(false)
+  })
 })

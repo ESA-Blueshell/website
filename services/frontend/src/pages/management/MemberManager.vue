@@ -1,10 +1,12 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
+import {useSubmitFeedback} from "@/composables/formUtils"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
+import BaseModal from "@/components/common/modals/BaseModal.vue"
 import UserForm from "@/components/form/UserForm.vue"
 
 import {
@@ -38,10 +40,18 @@ const pendingDeleteUser = ref<EditableUser | null>(null)
 // Add user dialog
 const addDialog = ref(false)
 const addModel = ref<EditableUser>(blankUser())
+const addFormRef = ref<InstanceType<typeof UserForm> | null>(null)
+const addFormSaving = ref(false)
+const {submitState: addSubmitState, showSubmitStatus: addShowStatus, setSubmitResult: addSetResult} =
+  useSubmitFeedback()
 
 // Edit profile dialog
 const editDialog = ref(false)
 const editModel = ref<EditableUser | null>(null)
+const editFormRef = ref<InstanceType<typeof UserForm> | null>(null)
+const editFormSaving = ref(false)
+const {submitState: editSubmitState, showSubmitStatus: editShowStatus, setSubmitResult: editSetResult} =
+  useSubmitFeedback()
 
 // Manage membership dialog
 const manageDialog = ref(false)
@@ -145,11 +155,25 @@ function onUserSaved(ok: boolean) {
   }
 }
 
+async function onAddSave() {
+  addFormSaving.value = true
+  const result = await addFormRef.value?.save()
+  addFormSaving.value = false
+  addSetResult(result != null)
+}
+
 function onProfileSaved(ok: boolean) {
   if (ok) {
     editDialog.value = false
     getUsers()
   }
+}
+
+async function onEditSave() {
+  editFormSaving.value = true
+  const result = await editFormRef.value?.save()
+  editFormSaving.value = false
+  editSetResult(result != null)
 }
 
 // ── Handlers: Manage membership ───────────────────────────────────────────────
@@ -518,156 +542,104 @@ async function confirmDeleteUser() {
               </v-table>
             </div>
 
-            <!-- Mobile list (below lg) -->
+            <!-- Mobile list (below lg) — list idiom matching Address/Recovery/Contribution managers -->
             <div
               v-else
               data-testid="member-manager-mobile-list"
             >
-              <v-card
-                v-for="row in filteredRows"
-                :key="row.id"
-                :data-testid="`member-manager-mobile-row-${row.id}`"
-                class="mb-2"
-                variant="outlined"
-              >
-                <v-card-text class="px-4 py-3">
-                  <div class="d-flex justify-space-between align-start">
-                    <div>
-                      <div class="text-h6 font-weight-bold">
-                        {{ row.fullName }}
+              <v-list v-if="filteredRows.length > 0">
+                <template
+                  v-for="(row, index) in filteredRows"
+                  :key="row.id"
+                >
+                  <v-list-item :data-testid="`member-manager-mobile-row-${row.id}`">
+                    <div class="d-flex justify-space-between align-center">
+                      <div class="flex-grow-1">
+                        <v-list-item-title class="font-weight-medium">
+                          {{ row.fullName }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle>
+                          <span class="font-mono">{{ row.username }}</span>
+                          <v-chip
+                            v-if="row.role"
+                            class="ml-2 text-capitalize"
+                            size="x-small"
+                            variant="flat"
+                          >
+                            {{ row.role }}
+                          </v-chip>
+                        </v-list-item-subtitle>
                       </div>
-                      <div class="text-caption font-mono text-medium-emphasis">
-                        {{ row.username }}
+                      <div class="d-flex align-center gap-1">
+                        <v-btn
+                          :data-testid="`member-manager-mobile-toggle-paid-btn-${row.id}`"
+                          :disabled="toggleDisabled"
+                          :loading="isSaving(row.id)"
+                          class="btn-tight"
+                          icon
+                          size="small"
+                          variant="text"
+                          @click="togglePaid(row.id)"
+                        >
+                          <v-icon
+                            :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
+                            size="18"
+                          />
+                        </v-btn>
+                        <v-btn
+                          :data-testid="`member-manager-mobile-manage-membership-btn-${row.id}`"
+                          class="btn-tight"
+                          icon
+                          size="small"
+                          variant="text"
+                          @click="openManageMembership(row)"
+                        >
+                          <v-icon
+                            icon="mdi-card-account-details"
+                            size="18"
+                          />
+                        </v-btn>
+                        <v-btn
+                          :data-testid="`member-manager-mobile-edit-profile-btn-${row.id}`"
+                          class="btn-tight"
+                          icon
+                          size="small"
+                          variant="text"
+                          @click="openEditProfile(row)"
+                        >
+                          <v-icon
+                            icon="mdi-pencil"
+                            size="18"
+                          />
+                        </v-btn>
+                        <v-btn
+                          :data-testid="`member-manager-mobile-delete-btn-${row.id}`"
+                          :disabled="row.role === 'admin'"
+                          class="btn-tight"
+                          color="red"
+                          icon
+                          size="small"
+                          variant="text"
+                          @click="openDeleteUser(users.find((u) => u.id === row.id)!)"
+                        >
+                          <v-icon
+                            icon="mdi-delete"
+                            size="18"
+                          />
+                        </v-btn>
                       </div>
                     </div>
-                  </div>
+                  </v-list-item>
+                  <v-divider v-if="index < filteredRows.length - 1" />
+                </template>
+              </v-list>
 
-                  <div class="d-flex flex-wrap gap-1 mt-2">
-                    <v-chip
-                      v-if="row.role"
-                      size="small"
-                      variant="flat"
-                      class="text-capitalize"
-                    >
-                      {{ row.role }}
-                    </v-chip>
-                    <v-chip
-                      :color="statusColor(row.status)"
-                      size="small"
-                      variant="flat"
-                    >
-                      {{ row.status }}
-                    </v-chip>
-                    <v-chip
-                      :color="row.paid ? 'green' : 'red'"
-                      size="small"
-                      variant="flat"
-                    >
-                      {{ row.paid ? "Paid" : "Unpaid" }}
-                    </v-chip>
-                    <span
-                      v-if="row.memberSince"
-                      class="text-caption align-self-center"
-                    >
-                      Since {{ row.memberSince }}
-                    </span>
-                  </div>
-
-                  <div class="d-flex align-center gap-1 mt-1">
-                    <v-tooltip
-                      v-if="isNotableType(row)"
-                      :text="typeLabel(row)"
-                      location="top"
-                    >
-                      <template #activator="{ props }">
-                        <v-icon
-                          v-bind="props"
-                          :icon="typeIcon(row)"
-                          size="18"
-                          color="primary"
-                        />
-                      </template>
-                    </v-tooltip>
-                    <v-tooltip
-                      v-if="row.latestIncasso"
-                      text="Incasso active"
-                      location="top"
-                    >
-                      <template #activator="{ props }">
-                        <v-icon
-                          v-bind="props"
-                          icon="mdi-bank-transfer"
-                          size="18"
-                          color="teal"
-                        />
-                      </template>
-                    </v-tooltip>
-                  </div>
-                </v-card-text>
-
-                <v-card-actions>
-                  <v-btn
-                    :data-testid="`member-manager-mobile-toggle-paid-btn-${row.id}`"
-                    :disabled="toggleDisabled"
-                    :loading="isSaving(row.id)"
-                    icon
-                    size="small"
-                    variant="text"
-                    @click="togglePaid(row.id)"
-                  >
-                    <v-icon
-                      :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
-                      size="18"
-                    />
-                  </v-btn>
-                  <v-btn
-                    :data-testid="`member-manager-mobile-manage-membership-btn-${row.id}`"
-                    icon
-                    size="small"
-                    variant="text"
-                    @click="openManageMembership(row)"
-                  >
-                    <v-icon
-                      icon="mdi-card-account-details"
-                      size="18"
-                    />
-                  </v-btn>
-                  <v-btn
-                    :data-testid="`member-manager-mobile-edit-profile-btn-${row.id}`"
-                    icon
-                    size="small"
-                    variant="text"
-                    @click="openEditProfile(row)"
-                  >
-                    <v-icon
-                      icon="mdi-pencil"
-                      size="18"
-                    />
-                  </v-btn>
-                  <v-btn
-                    :data-testid="`member-manager-mobile-delete-btn-${row.id}`"
-                    :disabled="row.role === 'admin'"
-                    color="red"
-                    icon
-                    size="small"
-                    variant="text"
-                    @click="openDeleteUser(users.find((u) => u.id === row.id)!)"
-                  >
-                    <v-icon
-                      icon="mdi-delete"
-                      size="18"
-                    />
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
-
-              <v-card
-                v-if="filteredRows.length === 0"
+              <div
+                v-else
                 class="text-center text-medium-emphasis py-6"
-                variant="outlined"
               >
                 No users found.
-              </v-card>
+              </div>
             </div>
           </v-card-text>
         </v-card>
@@ -683,69 +655,56 @@ async function confirmDeleteUser() {
     />
 
     <!-- Add user dialog -->
-    <v-dialog
+    <base-modal
       v-model="addDialog"
-      data-testid="member-manager-add-user-dialog"
-      max-width="760"
-      scrollable
+      testid="member-manager-add-user-dialog"
+      title="Add user"
+      show-save
+      save-label="Create user"
+      save-testid="user-form-submit-btn"
+      save-icon="mdi-content-save"
+      :save-loading="addFormSaving"
+      :save-submit-state="addSubmitState"
+      :save-show-status="addShowStatus"
+      show-cancel
+      cancel-label="Cancel"
+      @save="onAddSave"
+      @cancel="addDialog = false"
     >
-      <v-card>
-        <v-card-title class="text-h5">
-          Add user
-        </v-card-title>
-        <v-card-text>
-          <user-form
-            v-model="addModel"
-            show-submit
-            :show-password="true"
-            submit-text="Create user"
-            :options="{includeMemberProfile: true, updateKind: 'board'}"
-            @submitted="onUserSaved"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="secondary"
-            @click="addDialog = false"
-          >
-            Cancel
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <user-form
+        ref="addFormRef"
+        v-model="addModel"
+        :show-password="true"
+        :options="{includeMemberProfile: true, updateKind: 'board'}"
+        @submitted="onUserSaved"
+      />
+    </base-modal>
 
     <!-- Edit profile dialog -->
-    <v-dialog
+    <base-modal
+      v-if="editModel"
       v-model="editDialog"
-      data-testid="member-manager-edit-profile-dialog"
-      max-width="760"
-      scrollable
+      testid="member-manager-edit-profile-dialog"
+      title="Edit profile"
+      show-save
+      save-label="Save"
+      save-testid="user-form-submit-btn"
+      save-icon="mdi-content-save-edit"
+      :save-loading="editFormSaving"
+      :save-submit-state="editSubmitState"
+      :save-show-status="editShowStatus"
+      show-cancel
+      cancel-label="Cancel"
+      @save="onEditSave"
+      @cancel="editDialog = false"
     >
-      <v-card v-if="editModel">
-        <v-card-title class="text-h5">
-          Edit profile
-        </v-card-title>
-        <v-card-text>
-          <user-form
-            v-model="editModel"
-            show-submit
-            submit-text="Save"
-            :options="{includeMemberProfile: true, updateKind: 'board'}"
-            @submitted="onProfileSaved"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="secondary"
-            @click="editDialog = false"
-          >
-            Cancel
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <user-form
+        ref="editFormRef"
+        v-model="editModel"
+        :options="{includeMemberProfile: true, updateKind: 'board'}"
+        @submitted="onProfileSaved"
+      />
+    </base-modal>
 
     <!-- Manage membership dialog -->
     <manage-membership-dialog
@@ -794,5 +753,10 @@ tbody tr:nth-child(odd) {
   flex: 1 1 260px;
   max-width: 480px;
   min-width: 180px;
+}
+
+.btn-tight {
+  padding-inline: 6px !important;
+  min-width: auto !important;
 }
 </style>

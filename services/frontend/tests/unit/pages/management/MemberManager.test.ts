@@ -626,4 +626,102 @@ describe("MemberManager filters", () => {
     // filteredRows includes all 3 users
     expect((wrapper.vm as any).filteredRows).toHaveLength(3)
   })
+
+  it("periodMemberFilter defaults to 'all' (wasMemberInPeriod false when no period selected)", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    expect((wrapper.vm as any).periodMemberFilter).toBe("all")
+    // All rows have wasMemberInPeriod=false (no period selected)
+    const rows: MemberRow[] = (wrapper.vm as any).rows
+    expect(rows.every((r) => r.wasMemberInPeriod === false)).toBe(true)
+  })
+
+  it("periodMemberFilter=yes after period change shows only members who overlap", async () => {
+    // User 1 has an active membership starting 2024-01-01 — overlaps period 2024-01-01..2024-12-31
+    // User 2 has a membership ending 2023-01-01 — does NOT overlap
+    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
+    const wrapper = mountWithFilterData()
+    await settle()
+
+    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2024-01-01", endDate: "2024-12-31"})
+    ;(wrapper.vm as any).periodMemberFilter = "yes"
+    await settle()
+
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => r.wasMemberInPeriod)).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeTruthy()
+    expect(rows.find((r) => r.id === 2)).toBeFalsy()
+  })
+
+  it("periodMemberFilter=no shows only members not in the selected period", async () => {
+    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
+    const wrapper = mountWithFilterData()
+    await settle()
+
+    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2024-01-01", endDate: "2024-12-31"})
+    ;(wrapper.vm as any).periodMemberFilter = "no"
+    await settle()
+
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => !r.wasMemberInPeriod)).toBe(true)
+    expect(rows.find((r) => r.id === 1)).toBeFalsy()
+  })
+
+  it("sorts by wasMemberInPeriod ascending (false first)", async () => {
+    mockFindContributionsByPeriodId.mockResolvedValue({data: []})
+    const wrapper = mountWithFilterData()
+    await settle()
+
+    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2024-01-01", endDate: "2024-12-31"})
+    ;(wrapper.vm as any).sortKey = "wasMemberInPeriod"
+    ;(wrapper.vm as any).sortAsc = true
+    await settle()
+
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    // Rows with wasMemberInPeriod=false should come first in ascending order
+    const firstFalseIdx = rows.findIndex((r) => !r.wasMemberInPeriod)
+    const firstTrueIdx = rows.findIndex((r) => r.wasMemberInPeriod)
+    if (firstTrueIdx !== -1 && firstFalseIdx !== -1) {
+      expect(firstFalseIdx).toBeLessThan(firstTrueIdx)
+    }
+  })
+
+  it("sorts by username ascending", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).sortKey = "username"
+    ;(wrapper.vm as any).sortAsc = true
+    await settle()
+
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    // "cpi" < "fun" < "nun" alphabetically
+    expect(rows[0].username).toBe("cpi")
+    expect(rows[1].username).toBe("fun")
+    expect(rows[2].username).toBe("nun")
+  })
+
+  it("sorts by role ascending", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).sortKey = "role"
+    ;(wrapper.vm as any).sortAsc = true
+    await settle()
+
+    // User 1 has role "member", users 2&3 have role "user" — "member" < "user"
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows[0].role).toBe("member")
+  })
+
+  it("header-period-member sort toggle changes sortKey to wasMemberInPeriod", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+
+    ;(wrapper.vm as any).toggleSort("wasMemberInPeriod")
+    expect((wrapper.vm as any).sortKey).toBe("wasMemberInPeriod")
+    expect((wrapper.vm as any).sortAsc).toBe(true)
+
+    // Toggle again flips sortAsc
+    ;(wrapper.vm as any).toggleSort("wasMemberInPeriod")
+    expect((wrapper.vm as any).sortAsc).toBe(false)
+  })
 })

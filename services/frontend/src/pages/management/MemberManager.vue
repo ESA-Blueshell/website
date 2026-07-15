@@ -17,7 +17,7 @@ import {
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useMemberRows, type MemberRow} from "@/composables/useMemberRows"
-import {useMemberFilters} from "@/composables/useMemberFilters"
+import {useMemberFilters, type SortKey} from "@/composables/useMemberFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
 
 export type {MemberRow}
@@ -65,29 +65,32 @@ if ("scrollRestoration" in globalThis.history) {
 
 // ── Composables ───────────────────────────────────────────────────────────────
 
+const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChanged, selectedPeriod} =
+  usePaidToggle(paidUserIds)
+
 const {userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
-  useMemberRows(users, memberships, paidUserIds)
+  useMemberRows(users, memberships, paidUserIds, selectedPeriod)
 
 const {
   searchInput,
-  // search/sortKey/sortAsc are not used directly in the template but are accessed
-  // by unit tests via wrapper.vm — keep them in scope for test accessibility.
+  // search is accessed by unit tests via wrapper.vm; keep it in scope.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   search,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   sortKey,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   sortAsc,
   memberFilter,
   paidFilter,
   incassoFilter,
+  periodMemberFilter,
   filteredRows,
   toggleSort,
   sortIcon,
 } = useMemberFilters(rows, userSearchIndex)
 
-const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChanged} =
-  usePaidToggle(paidUserIds)
+function ariaSort(key: SortKey) {
+  if (sortKey.value !== key) return "none"
+  return sortAsc.value ? "ascending" : "descending"
+}
 
 // ── Data loading ─────────────────────────────────────────────────────────────
 
@@ -237,10 +240,41 @@ async function confirmDeleteUser() {
           data-testid="member-manager-table"
         >
           <v-card-text>
-            <!-- Toolbar: search + filters + add user. A deliberate responsive
-                 layout (no ragged flex-wrap): desktop = one row; mobile = search
-                 on its own line, the three filters in one equal-width row, and a
-                 full-width Add user button. -->
+            <v-toolbar
+              class="member-section-toolbar mb-3"
+              color="surface"
+              density="comfortable"
+              flat
+            >
+              <v-icon
+                class="mr-2"
+                icon="mdi-account-group"
+              />
+              <v-toolbar-title class="text-subtitle-1 font-weight-bold">
+                Members
+              </v-toolbar-title>
+              <v-chip
+                class="ml-2"
+                size="small"
+                variant="tonal"
+              >
+                {{ filteredRows.length }}
+              </v-chip>
+              <v-spacer />
+              <v-btn
+                color="primary"
+                data-testid="member-manager-add-user-btn"
+                prepend-icon="mdi-plus"
+                variant="flat"
+                @click="openAddUser"
+              >
+                Add user
+              </v-btn>
+            </v-toolbar>
+
+            <!-- Toolbar: search + filters. A deliberate responsive layout (no
+                 ragged flex-wrap): desktop = one row; mobile = search on its
+                 own line and filters in equal-width rows. -->
             <div class="member-manager-toolbar mb-3">
               <v-text-field
                 v-model="searchInput"
@@ -277,17 +311,15 @@ async function confirmDeleteUser() {
                   hide-details
                   label="Incasso"
                 />
+                <v-select
+                  v-model="periodMemberFilter"
+                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                  data-testid="member-manager-filter-period-member"
+                  :density="toolbarDensity"
+                  hide-details
+                  label="Member in period"
+                />
               </div>
-              <v-btn
-                class="mm-add"
-                color="primary"
-                data-testid="member-manager-add-user-btn"
-                prepend-icon="mdi-plus"
-                variant="flat"
-                @click="openAddUser"
-              >
-                Add user
-              </v-btn>
             </div>
 
             <!-- Desktop table (lg and up) -->
@@ -305,7 +337,12 @@ async function confirmDeleteUser() {
                     <th
                       class="sortable-header"
                       data-testid="member-manager-header-name"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('name')"
                       @click="toggleSort('name')"
+                      @keydown.enter="toggleSort('name')"
+                      @keydown.space.prevent="toggleSort('name')"
                     >
                       Name
                       <v-icon
@@ -314,16 +351,49 @@ async function confirmDeleteUser() {
                       />
                     </th>
 
-                    <th>Username</th>
-                    <th class="text-right">
+                    <th
+                      class="sortable-header"
+                      data-testid="member-manager-header-username"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('username')"
+                      @click="toggleSort('username')"
+                      @keydown.enter="toggleSort('username')"
+                      @keydown.space.prevent="toggleSort('username')"
+                    >
+                      Username
+                      <v-icon
+                        :icon="sortIcon('username')"
+                        size="16"
+                      />
+                    </th>
+                    <th
+                      class="sortable-header text-right"
+                      data-testid="member-manager-header-role"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('role')"
+                      @click="toggleSort('role')"
+                      @keydown.enter="toggleSort('role')"
+                      @keydown.space.prevent="toggleSort('role')"
+                    >
                       Role
+                      <v-icon
+                        :icon="sortIcon('role')"
+                        size="16"
+                      />
                     </th>
 
                     <!-- Sortable: Status -->
                     <th
                       class="sortable-header"
                       data-testid="member-manager-header-status"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('status')"
                       @click="toggleSort('status')"
+                      @keydown.enter="toggleSort('status')"
+                      @keydown.space.prevent="toggleSort('status')"
                     >
                       Status
                       <v-icon
@@ -336,7 +406,12 @@ async function confirmDeleteUser() {
                     <th
                       class="sortable-header"
                       data-testid="member-manager-header-member-since"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('memberSince')"
                       @click="toggleSort('memberSince')"
+                      @keydown.enter="toggleSort('memberSince')"
+                      @keydown.space.prevent="toggleSort('memberSince')"
                     >
                       Member since
                       <v-icon
@@ -346,7 +421,38 @@ async function confirmDeleteUser() {
                     </th>
 
                     <th>Type / Incasso</th>
-                    <th>Paid</th>
+                    <th
+                      class="sortable-header"
+                      data-testid="member-manager-header-paid"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('paid')"
+                      @click="toggleSort('paid')"
+                      @keydown.enter="toggleSort('paid')"
+                      @keydown.space.prevent="toggleSort('paid')"
+                    >
+                      Paid
+                      <v-icon
+                        :icon="sortIcon('paid')"
+                        size="16"
+                      />
+                    </th>
+                    <th
+                      class="sortable-header"
+                      data-testid="member-manager-header-period-member"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('wasMemberInPeriod')"
+                      @click="toggleSort('wasMemberInPeriod')"
+                      @keydown.enter="toggleSort('wasMemberInPeriod')"
+                      @keydown.space.prevent="toggleSort('wasMemberInPeriod')"
+                    >
+                      Member in period
+                      <v-icon
+                        :icon="sortIcon('wasMemberInPeriod')"
+                        size="16"
+                      />
+                    </th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -438,6 +544,18 @@ async function confirmDeleteUser() {
                         style="width: 56px; justify-content: center"
                       >
                         {{ row.paid ? "Paid" : "Unpaid" }}
+                      </v-chip>
+                    </td>
+
+                    <!-- Member in selected contribution period -->
+                    <td :data-testid="`member-manager-period-member-${row.id}`">
+                      <v-chip
+                        :color="row.wasMemberInPeriod ? 'green' : 'grey'"
+                        size="small"
+                        variant="flat"
+                        style="width: 48px; justify-content: center"
+                      >
+                        {{ row.wasMemberInPeriod ? "Yes" : "No" }}
                       </v-chip>
                     </td>
 
@@ -537,7 +655,7 @@ async function confirmDeleteUser() {
 
                   <tr v-if="filteredRows.length === 0">
                     <td
-                      colspan="8"
+                      colspan="9"
                       class="text-center text-medium-emphasis py-6"
                     >
                       No users found.
@@ -643,6 +761,13 @@ async function confirmDeleteUser() {
                         variant="flat"
                       >
                         {{ row.role }}
+                      </v-chip>
+                      <v-chip
+                        :color="row.wasMemberInPeriod ? 'green' : 'grey'"
+                        size="x-small"
+                        variant="flat"
+                      >
+                        {{ row.wasMemberInPeriod ? "In period" : "Not in period" }}
                       </v-chip>
                     </v-list-item-subtitle>
                   </v-list-item>
@@ -753,6 +878,10 @@ async function confirmDeleteUser() {
   }
 }
 
+.member-section-toolbar {
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
 tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.02);
 }
@@ -782,17 +911,13 @@ tbody tr:nth-child(odd) {
     gap: 12px;
 
     > * {
-      width: 190px;
+      width: 170px;
     }
-  }
-
-  .mm-add {
-    margin-left: auto;
   }
 }
 
 // Below the lg breakpoint (where the table becomes the mobile list): stack the
-// toolbar into search / a single equal-width filter row / a full-width button.
+// toolbar into search / equal-width filter rows.
 @media (max-width: 1279px) {
   .member-manager-toolbar {
     flex-direction: column;
@@ -808,11 +933,6 @@ tbody tr:nth-child(odd) {
       flex: 1 1 0;
       width: auto;
       min-width: 0;
-    }
-
-    .mm-add {
-      margin-left: 0;
-      width: 100%;
     }
   }
 }

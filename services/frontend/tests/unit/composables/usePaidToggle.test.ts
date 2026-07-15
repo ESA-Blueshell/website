@@ -171,4 +171,26 @@ describe("usePaidToggle", () => {
     await togglePromise
     expect(isSaving(1)).toBe(false)
   })
+
+  it("selectedPeriod is set to the period after contributionPeriodChanged", async () => {
+    const paidUserIds = ref(new Set<number>())
+    const {selectedPeriod, contributionPeriodChanged} = usePaidToggle(paidUserIds)
+
+    expect(selectedPeriod.value).toBeNull()
+
+    const period = {id: 7, startDate: "2025-01-01", endDate: "2025-12-31"}
+    await contributionPeriodChanged(period)
+    expect(selectedPeriod.value).toEqual(period)
+  })
+
+  it("selectedPeriod is null after contributionPeriodChanged with undefined", async () => {
+    const paidUserIds = ref(new Set<number>())
+    const {selectedPeriod, contributionPeriodChanged} = usePaidToggle(paidUserIds)
+
+    await contributionPeriodChanged({id: 7, startDate: "2025-01-01", endDate: "2025-12-31"})
+    expect(selectedPeriod.value).not.toBeNull()
+
+    await contributionPeriodChanged(undefined)
+    expect(selectedPeriod.value).toBeNull()
+  })
 })

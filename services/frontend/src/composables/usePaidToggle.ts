@@ -6,6 +6,7 @@ import {type ContributionPeriodResponse} from "@/services/api"
 
 export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
   const selectedPeriodId = ref<number>(0)
+  const selectedPeriod = ref<ContributionPeriodResponse | null>(null)
 
   // Tracks which users are currently being saved (optimistic update in flight)
   const saving = ref<Set<number>>(new Set())
@@ -21,9 +22,11 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     if (!newPeriod) {
       paidUserIds.value = new Set()
       selectedPeriodId.value = 0
+      selectedPeriod.value = null
       return
     }
     selectedPeriodId.value = newPeriod.id as number
+    selectedPeriod.value = newPeriod
     const contributionsResp = await findContributionsByPeriodId({path: {periodId: newPeriod.id as number}})
     const ids = (contributionsResp.data ?? []).map((c) => c.userId)
     paidUserIds.value = new Set(ids)
@@ -82,6 +85,7 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
 
   return {
     selectedPeriodId,
+    selectedPeriod,
     saving,
     isDisabled,
     isSaving,

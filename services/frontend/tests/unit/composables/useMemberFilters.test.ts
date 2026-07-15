@@ -22,6 +22,7 @@ function makeRow(id: number, overrides: Partial<MemberRow> = {}): MemberRow {
     latestType: null,
     latestIncasso: false,
     paid: false,
+    wasMemberInPeriod: false,
     ...overrides,
   }
 }
@@ -121,6 +122,26 @@ describe("useMemberFilters", () => {
     expect(filteredRows.value[0]!.id).toBe(2)
   })
 
+  it("periodMemberFilter=yes shows only members in the selected period", () => {
+    const rows = ref([makeRow(1, {wasMemberInPeriod: true}), makeRow(2, {wasMemberInPeriod: false})])
+    const index = ref(new Map([[1, "u1"], [2, "u2"]]))
+    const {filteredRows, periodMemberFilter} = useMemberFilters(rows, index)
+
+    periodMemberFilter.value = "yes"
+    expect(filteredRows.value).toHaveLength(1)
+    expect(filteredRows.value[0]!.id).toBe(1)
+  })
+
+  it("periodMemberFilter=no shows only users outside the selected period", () => {
+    const rows = ref([makeRow(1, {wasMemberInPeriod: true}), makeRow(2, {wasMemberInPeriod: false})])
+    const index = ref(new Map([[1, "u1"], [2, "u2"]]))
+    const {filteredRows, periodMemberFilter} = useMemberFilters(rows, index)
+
+    periodMemberFilter.value = "no"
+    expect(filteredRows.value).toHaveLength(1)
+    expect(filteredRows.value[0]!.id).toBe(2)
+  })
+
   it("sorts by name ascending by default", () => {
     const rows = ref([makeRow(1, {fullName: "Zoe Last"}), makeRow(2, {fullName: "Anna First"})])
     const index = ref(new Map([[1, "zoe last"], [2, "anna first"]]))
@@ -201,6 +222,28 @@ describe("useMemberFilters", () => {
 
     expect(filteredRows.value[0]!.id).toBe(2)
     expect(filteredRows.value[1]!.id).toBe(1)
+  })
+
+  it("sorts by username, role, paid, and selected-period membership", () => {
+    const rows = ref([
+      makeRow(1, {username: "zoe", role: "member", paid: true, wasMemberInPeriod: true}),
+      makeRow(2, {username: "anna", role: "admin", paid: false, wasMemberInPeriod: false}),
+    ])
+    const index = ref(new Map([[1, "zoe"], [2, "anna"]]))
+    const {filteredRows, sortKey, sortAsc} = useMemberFilters(rows, index)
+
+    sortAsc.value = true
+    sortKey.value = "username"
+    expect(filteredRows.value.map((row) => row.id)).toEqual([2, 1])
+
+    sortKey.value = "role"
+    expect(filteredRows.value.map((row) => row.id)).toEqual([2, 1])
+
+    sortKey.value = "paid"
+    expect(filteredRows.value.map((row) => row.id)).toEqual([2, 1])
+
+    sortKey.value = "wasMemberInPeriod"
+    expect(filteredRows.value.map((row) => row.id)).toEqual([2, 1])
   })
 
   it("combined search + filter narrows results", () => {

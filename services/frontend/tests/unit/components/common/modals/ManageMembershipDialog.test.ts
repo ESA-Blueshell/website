@@ -317,4 +317,51 @@ describe("ManageMembershipDialog", () => {
     expect((wrapper.vm as any).hasActive).toBe(false)
     expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(true)
   })
+
+  it("memberships is empty and v-list is not shown when no memberships exist", async () => {
+    mockFindMemberships.mockResolvedValue({data: []})
+
+    const wrapper = mountDialog()
+    await settle()
+
+    // When memberships is empty, the membership list should be absent
+    expect((wrapper.vm as any).memberships).toHaveLength(0)
+    // The v-list (with membership rows) should not be rendered
+    expect(wrapper.find("[data-testid^='manage-membership-row-']").exists()).toBe(false)
+  })
+
+  it("title contains 'Manage memberships: Alice' (colon, not em-dash)", async () => {
+    const wrapper = mountDialog({userName: "Alice"})
+    await settle()
+
+    // The BaseModal receives the title prop — check the computed prop string
+    const baseModal = wrapper.findComponent({name: "BaseModal"})
+    expect(baseModal.props("title")).toBe("Manage memberships: Alice")
+  })
+
+  it("edit pane (manage-membership-edit-pane) appears when toggling inline edit", async () => {
+    const m = makeMembership({id: 10, userId: 42, startDate: "2025-01-01"})
+    mockFindMemberships.mockResolvedValue({data: [m]})
+
+    const wrapper = mountDialog()
+    await settle()
+
+    // Before editing: no edit pane
+    expect(wrapper.find("[data-testid='manage-membership-edit-pane']").exists()).toBe(false)
+
+    // Toggle inline edit on membership
+    ;(wrapper.vm as any).toggleInlineEdit(m)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find("[data-testid='manage-membership-edit-pane']").exists()).toBe(true)
+  })
+
+  it("add pane (manage-membership-add-pane) renders when no active membership", async () => {
+    mockFindMemberships.mockResolvedValue({data: []})
+
+    const wrapper = mountDialog()
+    await settle()
+
+    expect(wrapper.find("[data-testid='manage-membership-add-pane']").exists()).toBe(true)
+  })
 })

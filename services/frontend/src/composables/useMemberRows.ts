@@ -1,5 +1,5 @@
-import {computed, type Ref} from "vue"
-import {MemberType, type MembershipResponse} from "@/services/api"
+import {computed, ref, type Ref} from "vue"
+import {MemberType, type ContributionPeriodResponse, type MembershipResponse} from "@/services/api"
 import {type EditableUser} from "@/utils/editableUser"
 
 // ── Row model ──────────────────────────────────────────────────────────────────
@@ -16,6 +16,7 @@ export type MemberRow = {
   latestType: MemberType | null
   latestIncasso: boolean
   paid: boolean
+  wasMemberInPeriod: boolean
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -60,12 +61,22 @@ export function statusColor(status: MemberStatus): string {
   return "grey"
 }
 
+export function overlapsContributionPeriod(
+  membership: MembershipResponse,
+  period: ContributionPeriodResponse | null,
+): boolean {
+  return !!period
+    && membership.startDate <= period.endDate
+    && (membership.endDate == null || membership.endDate >= period.startDate)
+}
+
 // ── Composable ─────────────────────────────────────────────────────────────────
 
 export function useMemberRows(
   users: Ref<EditableUser[]>,
   memberships: Ref<MembershipResponse[]>,
   paidUserIds: Ref<Set<number>>,
+  selectedPeriod: Ref<ContributionPeriodResponse | null> = ref(null),
 ) {
   // Precomputed map: userId → their memberships (O(memberships) once instead of O(users*memberships))
   const membershipsByUserId = computed<Map<number, MembershipResponse[]>>(() => {
@@ -109,6 +120,7 @@ export function useMemberRows(
         latestType: latest?.memberType ?? null,
         latestIncasso: latest?.incasso ?? false,
         paid: paidUserIds.value.has(u.id as number),
+        wasMemberInPeriod: ums.some((m) => overlapsContributionPeriod(m, selectedPeriod.value)),
       }
     }),
   )

@@ -13,7 +13,7 @@ import {
   type MemberRow,
 } from "@/composables/useMemberRows"
 import type {EditableUser} from "@/utils/editableUser"
-import type {MembershipResponse} from "@/services/api"
+import type {ContributionPeriodResponse, MembershipResponse} from "@/services/api"
 
 vi.mock("vuetify", () => ({
   useDisplay: () => ({lgAndUp: {value: true}}),
@@ -59,6 +59,21 @@ function makeUser(id: number, fullName: string, username: string, roles: string[
     updatedAt: "2025-01-01T00:00:00.000Z",
     version: 0,
   } as unknown as EditableUser
+}
+
+function makeContributionPeriod(overrides: Partial<ContributionPeriodResponse> = {}): ContributionPeriodResponse {
+  return {
+    alumniFee: 10,
+    createdAt: "2025-01-01T00:00:00.000Z",
+    endDate: "2024-12-31",
+    fullYearFee: 20,
+    halfYearFee: 10,
+    id: 1,
+    startDate: "2024-01-01",
+    updatedAt: "2025-01-01T00:00:00.000Z",
+    version: 1,
+    ...overrides,
+  }
 }
 
 describe("deriveStatus", () => {
@@ -107,7 +122,7 @@ describe("deriveLatestMembership", () => {
 })
 
 describe("isNotableType / typeIcon / typeLabel / statusColor", () => {
-  const honRow: MemberRow = {id: 1, fullName: "A", username: "a", role: "", status: "Current", memberSince: null, latestType: MemberType.HONORARY, latestIncasso: false, paid: false}
+  const honRow: MemberRow = {id: 1, fullName: "A", username: "a", role: "", status: "Current", memberSince: null, latestType: MemberType.HONORARY, latestIncasso: false, paid: false, wasMemberInPeriod: false}
   const alumRow: MemberRow = {...honRow, latestType: MemberType.ALUMNI}
   const regRow: MemberRow = {...honRow, latestType: MemberType.REGULAR}
   const noneRow: MemberRow = {...honRow, latestType: null}
@@ -191,6 +206,26 @@ describe("useMemberRows", () => {
 
     paidUserIds.value = new Set([1])
     expect(rows.value[0]!.paid).toBe(true)
+  })
+
+  it("rows.wasMemberInPeriod reflects selected contribution period overlap", () => {
+    const users = ref([
+      makeUser(1, "Current In Period", "current"),
+      makeUser(2, "Former Outside Period", "former"),
+    ])
+    const memberships = ref([
+      makeMembership({id: 10, userId: 1, startDate: "2023-09-01"}),
+      makeMembership({id: 11, userId: 2, startDate: "2022-01-01", endDate: "2022-12-31"}),
+    ])
+    const paidUserIds = ref(new Set<number>())
+    const selectedPeriod = ref<ContributionPeriodResponse | null>(makeContributionPeriod())
+
+    const {rows} = useMemberRows(users, memberships, paidUserIds, selectedPeriod)
+    expect(rows.value.find((row) => row.id === 1)?.wasMemberInPeriod).toBe(true)
+    expect(rows.value.find((row) => row.id === 2)?.wasMemberInPeriod).toBe(false)
+
+    selectedPeriod.value = null
+    expect(rows.value.every((row) => !row.wasMemberInPeriod)).toBe(true)
   })
 
   it("rows.memberSince is null when no memberships", () => {

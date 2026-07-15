@@ -3,7 +3,7 @@
     class="overflow-hidden"
     data-testid="contribution-period-list"
   >
-    <div class="px-5 d-flex align-center justify-space-between">
+    <div class="px-5 d-flex align-center justify-space-between pb-1">
       <div class="d-flex align-center">
         <h2 class="contrib-title">
           Contribution Periods
@@ -13,7 +13,7 @@
 
     <div class="px-5">
       <v-row
-        class="d-flex align-center mb-2"
+        class="d-flex align-center"
         no-gutters
       >
         <v-col class="flex-grow-1">
@@ -40,7 +40,7 @@
                     'text-body-1',
                     'text-none',
                     isSelected && selectedClass,
-                    'ma-2'
+                    'ma-1'
                   ]"
                   :elevation="isSelected ? 0 : 4"
                   :data-testid="`contribution-period-select-btn-${period.id}`"

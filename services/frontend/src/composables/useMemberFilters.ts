@@ -4,6 +4,7 @@ import {type MemberRow, type MemberStatus} from "@/composables/useMemberRows"
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type FilterState = "all" | "yes" | "no"
+export type SortKey = "name" | "username" | "role" | "status" | "memberSince" | "paid" | "wasMemberInPeriod"
 
 const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
 
@@ -17,13 +18,14 @@ export function useMemberFilters(
   // search is the debounced value that filteredRows depends on — unit tests set it directly.
   const searchInput = ref("")
   const search = ref("")
-  const sortKey = ref<"name" | "memberSince" | "status">("name")
+  const sortKey = ref<SortKey>("name")
   const sortAsc = ref(true)
 
   // Tri-state filters
   const memberFilter = ref<FilterState>("all")
   const paidFilter = ref<FilterState>("all")
   const incassoFilter = ref<FilterState>("all")
+  const periodMemberFilter = ref<FilterState>("all")
 
   // Debounce search: copies searchInput → search after 200ms idle
   let searchDebounceHandle: ReturnType<typeof setTimeout> | undefined
@@ -67,23 +69,34 @@ export function useMemberFilters(
       // Incasso filter
       if (incassoFilter.value === "yes" && !r.latestIncasso) return false
       if (incassoFilter.value === "no" && r.latestIncasso) return false
+      // Selected contribution period membership filter
+      if (periodMemberFilter.value === "yes" && !r.wasMemberInPeriod) return false
+      if (periodMemberFilter.value === "no" && r.wasMemberInPeriod) return false
       return true
     })].sort((a, b) => {
       let cmp = 0
       if (sortKey.value === "name") {
         cmp = a.fullName.localeCompare(b.fullName)
+      } else if (sortKey.value === "username") {
+        cmp = a.username.localeCompare(b.username)
+      } else if (sortKey.value === "role") {
+        cmp = a.role.localeCompare(b.role)
       } else if (sortKey.value === "memberSince") {
         const aVal = a.memberSince ?? ""
         const bVal = b.memberSince ?? ""
         cmp = aVal.localeCompare(bVal)
       } else if (sortKey.value === "status") {
         cmp = statusOrder[a.status] - statusOrder[b.status]
+      } else if (sortKey.value === "paid") {
+        cmp = Number(a.paid) - Number(b.paid)
+      } else if (sortKey.value === "wasMemberInPeriod") {
+        cmp = Number(a.wasMemberInPeriod) - Number(b.wasMemberInPeriod)
       }
       return sortAsc.value ? cmp : -cmp
     })
   })
 
-  function toggleSort(key: "name" | "memberSince" | "status") {
+  function toggleSort(key: SortKey) {
     if (sortKey.value === key) {
       sortAsc.value = !sortAsc.value
     } else {
@@ -92,7 +105,7 @@ export function useMemberFilters(
     }
   }
 
-  function sortIcon(key: "name" | "memberSince" | "status"): string {
+  function sortIcon(key: SortKey): string {
     if (sortKey.value !== key) return "mdi-unfold-more-horizontal"
     return sortAsc.value ? "mdi-arrow-up" : "mdi-arrow-down"
   }
@@ -105,6 +118,7 @@ export function useMemberFilters(
     memberFilter,
     paidFilter,
     incassoFilter,
+    periodMemberFilter,
     filteredRows,
     toggleSort,
     sortIcon,

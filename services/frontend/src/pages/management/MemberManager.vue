@@ -632,7 +632,10 @@ async function confirmDeleteUser() {
 
                     <!-- Line 2: Username + role chip -->
                     <v-list-item-subtitle class="d-flex align-center gap-2">
-                      <span class="font-mono text-medium-emphasis text-truncate">{{ row.username }}</span>
+                      <span
+                        class="font-mono text-medium-emphasis text-truncate flex-grow-1"
+                        style="min-width: 0"
+                      >{{ row.username }}</span>
                       <v-chip
                         v-if="row.role"
                         class="text-capitalize flex-shrink-0"

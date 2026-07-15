@@ -273,8 +273,11 @@ defineExpose({
             <v-list-item :data-testid="`manage-membership-row-${m.id}`">
               <div class="d-flex align-center justify-space-between gap-2">
                 <!-- Left: date range + type as title/subtitle -->
-                <div class="flex-grow-1">
-                  <v-list-item-title class="font-weight-medium">
+                <div
+                  class="flex-grow-1"
+                  style="min-width: 0"
+                >
+                  <v-list-item-title class="font-weight-medium text-truncate">
                     {{ m.startDate }} –
                     <span v-if="m.endDate">{{ m.endDate }}</span>
                     <span v-else>active</span>
@@ -292,7 +295,7 @@ defineExpose({
                 </div>
 
                 <!-- Right: action buttons -->
-                <div class="d-flex gap-1 flex-nowrap">
+                <div class="d-flex gap-1 flex-nowrap flex-shrink-0">
                   <!-- Active membership actions -->
                   <template v-if="!m.endDate">
                     <v-btn
@@ -407,8 +410,11 @@ defineExpose({
           >
             <v-list-item :data-testid="`manage-membership-deleted-row-${m.id}`">
               <div class="d-flex align-center justify-space-between flex-wrap gap-2">
-                <div class="flex-grow-1">
-                  <v-list-item-title class="font-weight-medium">
+                <div
+                  class="flex-grow-1"
+                  style="min-width: 0"
+                >
+                  <v-list-item-title class="font-weight-medium text-truncate">
                     {{ m.startDate }}
                     <span v-if="m.endDate"> – {{ m.endDate }}</span>
                   </v-list-item-title>

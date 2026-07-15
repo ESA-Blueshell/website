@@ -254,21 +254,15 @@ defineExpose({
     <template v-else>
       <!-- Existing memberships -->
       <div class="mb-4">
-        <v-toolbar
-          class="membership-section-bar mb-2"
-          color="surface"
-          density="compact"
-          flat
-        >
+        <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-1">
           <v-icon
             class="mr-2"
             icon="mdi-card-account-details-outline"
             size="20"
           />
-          <v-toolbar-title class="text-subtitle-1 font-weight-bold">
-            Memberships
-          </v-toolbar-title>
-        </v-toolbar>
+          Memberships
+        </div>
+        <v-divider class="mb-2" />
 
         <v-empty-state
           v-if="memberships.length === 0"
@@ -364,25 +358,21 @@ defineExpose({
               <!-- Inline edit form (when editing that row) — uses MembershipForm in board mode -->
               <div
                 v-if="isEditing(m.id) && editModels[m.id]"
-                class="mt-3 w-100"
+                class="mt-2 w-100"
+                data-testid="manage-membership-edit-pane"
               >
-                <v-card
-                  class="pa-3"
-                  data-testid="manage-membership-edit-pane"
-                  variant="outlined"
-                >
-                  <div class="text-subtitle-2 font-weight-bold mb-3">
-                    Edit membership
-                  </div>
-                  <membership-form
-                    v-model="editModels[m.id]!"
-                    :user-id="userId"
-                    :submit-test-id="`manage-membership-save-btn-${m.id}`"
-                    show-submit
-                    submit-text="Save"
-                    @submitted="onEditSubmitted(m, $event)"
-                  />
-                </v-card>
+                <v-divider class="mb-3" />
+                <div class="text-subtitle-2 font-weight-bold mb-3">
+                  Edit membership
+                </div>
+                <membership-form
+                  v-model="editModels[m.id]!"
+                  :user-id="userId"
+                  :submit-test-id="`manage-membership-save-btn-${m.id}`"
+                  show-submit
+                  submit-text="Save"
+                  @submitted="onEditSubmitted(m, $event)"
+                />
               </div>
             </v-list-item>
 
@@ -402,26 +392,15 @@ defineExpose({
           class="mb-4"
         />
 
-        <v-card
-          class="pa-3"
-          data-testid="manage-membership-add-pane"
-          variant="outlined"
-        >
-          <v-toolbar
-            class="membership-section-bar mb-3"
-            color="surface"
-            density="compact"
-            flat
-          >
+        <div data-testid="manage-membership-add-pane">
+          <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-3">
             <v-icon
               class="mr-2"
               icon="mdi-plus-circle-outline"
               size="20"
             />
-            <v-toolbar-title class="text-subtitle-1 font-weight-bold">
-              Add membership
-            </v-toolbar-title>
-          </v-toolbar>
+            Add membership
+          </div>
 
           <membership-form
             v-model="createModel"
@@ -431,7 +410,7 @@ defineExpose({
             submit-text="Add membership"
             @submitted="onCreateSubmitted"
           />
-        </v-card>
+        </div>
       </div>
 
       <!-- Admin: deleted memberships -->
@@ -439,21 +418,15 @@ defineExpose({
         v-if="isAdmin && deletedMemberships.length > 0"
         class="mb-4"
       >
-        <v-toolbar
-          class="membership-section-bar mb-2"
-          color="surface"
-          density="compact"
-          flat
-        >
+        <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-1">
           <v-icon
             class="mr-2"
             icon="mdi-delete-clock-outline"
             size="20"
           />
-          <v-toolbar-title class="text-subtitle-1 font-weight-bold">
-            Deleted memberships
-          </v-toolbar-title>
-        </v-toolbar>
+          Deleted memberships
+        </div>
+        <v-divider class="mb-2" />
 
         <v-list>
           <template
@@ -509,9 +482,5 @@ defineExpose({
 .btn-tight {
   padding-inline: 6px !important;
   min-width: auto !important;
-}
-
-.membership-section-bar {
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>

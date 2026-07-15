@@ -3,15 +3,15 @@
     class="overflow-hidden"
     data-testid="contribution-period-list"
   >
-    <div class="px-5 d-flex align-center justify-space-between pb-1">
+    <div class="px-5 pt-3 pb-2 d-flex align-center justify-space-between">
       <div class="d-flex align-center">
-        <h2 class="contrib-title">
+        <h2 class="contrib-title ma-0">
           Contribution Periods
         </h2>
       </div>
     </div>
 
-    <div class="px-5">
+    <div class="px-5 pb-4">
       <v-row
         class="d-flex align-center"
         no-gutters

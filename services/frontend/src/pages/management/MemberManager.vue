@@ -240,41 +240,21 @@ async function confirmDeleteUser() {
           data-testid="member-manager-table"
         >
           <v-card-text>
-            <v-toolbar
-              class="member-section-toolbar mb-3"
-              color="surface"
-              density="comfortable"
-              flat
-            >
-              <v-icon
-                class="mr-2"
-                icon="mdi-account-group"
-              />
-              <v-toolbar-title class="text-subtitle-1 font-weight-bold">
-                Members
-              </v-toolbar-title>
-              <v-chip
-                class="ml-2"
-                size="small"
-                variant="tonal"
-              >
-                {{ filteredRows.length }}
-              </v-chip>
-              <v-spacer />
-              <v-btn
+            <div class="d-flex align-center mb-4">
+              <v-badge
+                :content="filteredRows.length"
                 color="primary"
-                data-testid="member-manager-add-user-btn"
-                prepend-icon="mdi-plus"
-                variant="flat"
-                @click="openAddUser"
               >
-                Add user
-              </v-btn>
-            </v-toolbar>
+                <h2 class="ma-0">
+                  Members
+                </h2>
+              </v-badge>
+            </div>
 
-            <!-- Toolbar: search + filters. A deliberate responsive layout (no
-                 ragged flex-wrap): desktop = one row; mobile = search on its
-                 own line and filters in equal-width rows. -->
+            <!-- Toolbar: search + filters + add user. A deliberate responsive
+                 layout (no ragged flex-wrap): desktop = one row; mobile = search
+                 on its own line, filters in equal-width rows, and a full-width
+                 Add user button. -->
             <div class="member-manager-toolbar mb-3">
               <v-text-field
                 v-model="searchInput"
@@ -320,6 +300,16 @@ async function confirmDeleteUser() {
                   label="Member in period"
                 />
               </div>
+              <v-btn
+                class="mm-add"
+                color="primary"
+                data-testid="member-manager-add-user-btn"
+                prepend-icon="mdi-plus"
+                variant="flat"
+                @click="openAddUser"
+              >
+                Add user
+              </v-btn>
             </div>
 
             <!-- Desktop table (lg and up) -->
@@ -878,10 +868,6 @@ async function confirmDeleteUser() {
   }
 }
 
-.member-section-toolbar {
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
 tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.02);
 }
@@ -914,6 +900,10 @@ tbody tr:nth-child(odd) {
       width: 170px;
     }
   }
+
+  .mm-add {
+    flex: 0 0 auto;
+  }
 }
 
 // Below the lg breakpoint (where the table becomes the mobile list): stack the
@@ -933,6 +923,10 @@ tbody tr:nth-child(odd) {
       flex: 1 1 0;
       width: auto;
       min-width: 0;
+    }
+
+    .mm-add {
+      width: 100%;
     }
   }
 }

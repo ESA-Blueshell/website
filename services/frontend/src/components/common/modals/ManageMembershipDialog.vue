@@ -271,7 +271,7 @@ defineExpose({
             :key="m.id"
           >
             <v-list-item :data-testid="`manage-membership-row-${m.id}`">
-              <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+              <div class="d-flex align-center justify-space-between gap-2">
                 <!-- Left: date range + type as title/subtitle -->
                 <div class="flex-grow-1">
                   <v-list-item-title class="font-weight-medium">
@@ -292,7 +292,7 @@ defineExpose({
                 </div>
 
                 <!-- Right: action buttons -->
-                <div class="d-flex gap-1">
+                <div class="d-flex gap-1 flex-nowrap">
                   <!-- Active membership actions -->
                   <template v-if="!m.endDate">
                     <v-btn

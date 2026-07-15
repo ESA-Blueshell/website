@@ -315,7 +315,9 @@ async function confirmDeleteUser() {
                     </th>
 
                     <th>Username</th>
-                    <th>Role</th>
+                    <th class="text-right">
+                      Role
+                    </th>
 
                     <!-- Sortable: Status -->
                     <th
@@ -366,7 +368,7 @@ async function confirmDeleteUser() {
                     </td>
 
                     <!-- Role -->
-                    <td>
+                    <td class="text-right">
                       <v-chip
                         v-if="row.role"
                         size="small"
@@ -563,7 +565,9 @@ async function confirmDeleteUser() {
                     :data-testid="`member-manager-mobile-row-${row.id}`"
                   >
                     <!-- Line 1: Name (title) + action buttons (append slot) -->
-                    <v-list-item-title class="text-truncate">{{ row.fullName }}</v-list-item-title>
+                    <v-list-item-title class="text-truncate">
+                      {{ row.fullName }}
+                    </v-list-item-title>
 
                     <template #append>
                       <div class="d-flex align-center flex-shrink-0">
@@ -792,6 +796,8 @@ tbody tr:nth-child(odd) {
     align-items: stretch;
 
     .mm-search {
+      flex: 0 0 auto;
+      width: 100%;
       max-width: none;
     }
 

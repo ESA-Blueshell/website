@@ -4,8 +4,11 @@ import net.blueshell.api.domain.auth.application.email.createMemberActivationEma
 import net.blueshell.api.domain.auth.application.email.createPasswordResetEmail
 import net.blueshell.api.domain.auth.application.email.createUserActivationEmail
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
+import net.blueshell.api.domain.contribution.application.IncassoNotificationService
 import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
+import net.blueshell.api.domain.contribution.application.email.createIncassoNotificationEmail
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.email.createEventSignupEmail
 import net.blueshell.api.domain.user.application.UserService
@@ -26,6 +29,7 @@ class EmailSenderService(
     private val emailClient: EmailTransportClient,
     private val users: UserService,
     private val reminders: ContributionReminderService,
+    private val incassoNotifications: IncassoNotificationService,
     private val eventSignUps: EventSignUpService,
     private val emailService: EmailService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
@@ -54,6 +58,18 @@ class EmailSenderService(
             )
         }
         deliver(emailContent, "email.contribution-reminder", jobExecutionId)
+    }
+
+    fun sendIncassoNotificationEmail(userId: Long, contributionPeriodId: Long, jobExecutionId: Long? = null) {
+        val notification = requireExists { incassoNotifications.findById(IncassoNotification.Id(userId, contributionPeriodId)) }
+        val emailContent = createIncassoNotificationEmail(
+            notification.user,
+            notification.contributionPeriod,
+            notification.amount!!,
+            notification.expectedIncassoDate!!,
+            frontendUrl
+        )
+        deliver(emailContent, "email.incasso-notification", jobExecutionId)
     }
 
     fun sendEventSignupEmail(eventSignUpId: Long, guestAccessToken: String, jobExecutionId: Long? = null) {

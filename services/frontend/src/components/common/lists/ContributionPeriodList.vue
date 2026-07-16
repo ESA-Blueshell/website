@@ -12,11 +12,8 @@
     </div>
 
     <div class="px-5 pb-4">
-      <v-row
-        class="d-flex align-center"
-        no-gutters
-      >
-        <v-col class="flex-grow-1">
+      <div class="d-flex align-center flex-nowrap">
+        <div class="contrib-periods-scroller">
           <v-slide-group
             v-model="selectedPeriodId"
             :show-arrows="true"
@@ -61,21 +58,17 @@
               </div>
             </v-slide-group-item>
           </v-slide-group>
-        </v-col>
+        </div>
 
-        <v-col
-          class="pl-2"
-          cols="auto"
+        <v-btn
+          class="ml-2 flex-shrink-0"
+          data-testid="contribution-period-add-btn"
+          icon
+          @click="openAddPeriodDialog"
         >
-          <v-btn
-            data-testid="contribution-period-add-btn"
-            icon
-            @click="openAddPeriodDialog"
-          >
-            <v-icon>mdi-plus</v-icon>
-          </v-btn>
-        </v-col>
-      </v-row>
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
+      </div>
 
       <contribution-period-dialog
         v-model:show-dialog="showAddPeriodDialog"
@@ -195,5 +188,12 @@ span {
 
 .text-none {
   text-transform: none;
+}
+
+// Let the slide-group shrink below its content width so it scrolls
+// internally instead of pushing the add (+) button onto a new row.
+.contrib-periods-scroller {
+  flex: 1 1 0;
+  min-width: 0;
 }
 </style>

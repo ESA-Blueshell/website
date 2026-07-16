@@ -18,7 +18,7 @@ spring:
     url: jdbc:h2:mem:openapi;MODE=LEGACY;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
-    password: ""
+    password: openapi
 
   sql:
     init:

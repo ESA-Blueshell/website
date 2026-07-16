@@ -158,6 +158,17 @@ export type BulkEndMembershipRequest = {
     userIds: Array<number>;
 };
 
+export type BulkIncassoNotificationRequest = {
+    amountOverrides: {
+        [key: string]: number;
+    };
+    contributionPeriodId: number;
+    cutoffDate: string;
+    expectedIncassoDate: string;
+    includedUserIds: Array<number>;
+    userIds: Array<number>;
+};
+
 export type BulkPreviewResult = {
     action: string;
     contributionPeriodId?: number;
@@ -3537,6 +3548,88 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type ExecuteBulkIncassoNotificationData = {
+    body: BulkIncassoNotificationRequest;
+    path?: never;
+    query?: never;
+    url: '/incassoNotifications/bulk/execute';
+};
+
+export type ExecuteBulkIncassoNotificationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ExecuteBulkIncassoNotificationError = ExecuteBulkIncassoNotificationErrors[keyof ExecuteBulkIncassoNotificationErrors];
+
+export type ExecuteBulkIncassoNotificationResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type ExecuteBulkIncassoNotificationResponse = ExecuteBulkIncassoNotificationResponses[keyof ExecuteBulkIncassoNotificationResponses];
+
+export type PreviewBulkIncassoNotificationData = {
+    body: BulkIncassoNotificationRequest;
+    path?: never;
+    query?: never;
+    url: '/incassoNotifications/bulk/preview';
+};
+
+export type PreviewBulkIncassoNotificationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkIncassoNotificationError = PreviewBulkIncassoNotificationErrors[keyof PreviewBulkIncassoNotificationErrors];
+
+export type PreviewBulkIncassoNotificationResponses = {
+    /**
+     * OK
+     */
+    200: BulkPreviewResult;
+};
+
+export type PreviewBulkIncassoNotificationResponse = PreviewBulkIncassoNotificationResponses[keyof PreviewBulkIncassoNotificationResponses];
 
 export type FindCohortSubjectsData = {
     body?: never;

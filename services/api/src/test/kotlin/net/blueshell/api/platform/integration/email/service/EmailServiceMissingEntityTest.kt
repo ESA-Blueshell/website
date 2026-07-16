@@ -2,8 +2,11 @@ package net.blueshell.api.platform.integration.email.service
 
 import io.mockk.every
 import io.mockk.mockk
+import org.mockito.kotlin.any
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
+import net.blueshell.api.domain.contribution.application.IncassoNotificationService
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
@@ -27,6 +30,7 @@ class EmailServiceMissingEntityTest {
     private val emailClient = mockk<EmailTransportClient>(relaxed = true)
     private val users = mockk<UserService>()
     private val reminders = mockk<ContributionReminderService>()
+    private val incassoNotifications = mockk<IncassoNotificationService>()
     private val eventSignUps = mockk<EventSignUpService>()
     private val emailService = mockk<EmailService>(relaxed = true)
 
@@ -35,6 +39,7 @@ class EmailServiceMissingEntityTest {
         emailClient = emailClient,
         users = users,
         reminders = reminders,
+        incassoNotifications = incassoNotifications,
         eventSignUps = eventSignUps,
         emailService = emailService,
         frontendUrl = "http://localhost:3000",
@@ -66,6 +71,15 @@ class EmailServiceMissingEntityTest {
             ResponseStatusException(HttpStatus.NOT_FOUND, "Reminder not found")
 
         assertThatThrownBy { emailSenderService.sendContributionReminderEmail(1L, 2L) }
+            .isInstanceOf(NonRetryableJobException::class.java)
+    }
+
+    @Test
+    fun `sendIncassoNotificationEmail throws NonRetryableJobException when notification not found`() {
+        every { incassoNotifications.findById(any<IncassoNotification.Id>()) } throws
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found")
+
+        assertThatThrownBy { emailSenderService.sendIncassoNotificationEmail(1L, 2L) }
             .isInstanceOf(NonRetryableJobException::class.java)
     }
 

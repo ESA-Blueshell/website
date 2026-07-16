@@ -128,6 +128,47 @@ export type BoardResponse = {
     version: number;
 };
 
+export type BulkActionCounts = {
+    excluded: number;
+    selected: number;
+    skipped: number;
+    warned: number;
+    willApply: number;
+};
+
+export type BulkActionResult = {
+    applied: number;
+    queued: number;
+    skipped: number;
+};
+
+export type BulkContributionRequest = {
+    contributionPeriodId: number;
+    operation: 'PAID' | 'UNPAID';
+    userIds: Array<number>;
+};
+
+export type BulkEndMembershipRequest = {
+    userIds: Array<number>;
+};
+
+export type BulkPreviewResult = {
+    action: string;
+    contributionPeriodId?: number;
+    counts: BulkActionCounts;
+    rows: Array<BulkPreviewRow>;
+};
+
+export type BulkPreviewRow = {
+    amount?: number;
+    disposition: 'INCLUDED' | 'SKIPPED' | 'EXCLUDED' | 'WARNING';
+    lastSentOn?: string;
+    memberType?: MemberType;
+    name: string;
+    reason?: string;
+    userId: number;
+};
+
 export type CohortDetail = {
     externalId?: string;
     folder?: string;
@@ -2665,6 +2706,88 @@ export type CreateContributionResponses = {
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
 
+export type ExecuteBulkData = {
+    body: BulkContributionRequest;
+    path?: never;
+    query?: never;
+    url: '/contributions/bulk/execute';
+};
+
+export type ExecuteBulkErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ExecuteBulkError = ExecuteBulkErrors[keyof ExecuteBulkErrors];
+
+export type ExecuteBulkResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type ExecuteBulkResponse = ExecuteBulkResponses[keyof ExecuteBulkResponses];
+
+export type PreviewBulkData = {
+    body: BulkContributionRequest;
+    path?: never;
+    query?: never;
+    url: '/contributions/bulk/preview';
+};
+
+export type PreviewBulkErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkError = PreviewBulkErrors[keyof PreviewBulkErrors];
+
+export type PreviewBulkResponses = {
+    /**
+     * OK
+     */
+    200: BulkPreviewResult;
+};
+
+export type PreviewBulkResponse = PreviewBulkResponses[keyof PreviewBulkResponses];
+
 export type CsrfData = {
     body?: never;
     path?: never;
@@ -4517,6 +4640,88 @@ export type CreateMembershipResponses = {
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
+
+export type ExecuteBulkEndData = {
+    body: BulkEndMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/end/execute';
+};
+
+export type ExecuteBulkEndErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ExecuteBulkEndError = ExecuteBulkEndErrors[keyof ExecuteBulkEndErrors];
+
+export type ExecuteBulkEndResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type ExecuteBulkEndResponse = ExecuteBulkEndResponses[keyof ExecuteBulkEndResponses];
+
+export type PreviewBulkEndData = {
+    body: BulkEndMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/end/preview';
+};
+
+export type PreviewBulkEndErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkEndError = PreviewBulkEndErrors[keyof PreviewBulkEndErrors];
+
+export type PreviewBulkEndResponses = {
+    /**
+     * OK
+     */
+    200: BulkPreviewResult;
+};
+
+export type PreviewBulkEndResponse = PreviewBulkEndResponses[keyof PreviewBulkEndResponses];
 
 export type DeleteMembershipData = {
     body?: never;

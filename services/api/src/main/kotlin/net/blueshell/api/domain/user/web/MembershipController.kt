@@ -4,8 +4,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.query.MembershipQuery
 import net.blueshell.api.domain.user.command.CreateMembershipCommand
+import net.blueshell.api.domain.user.command.DeleteMembershipCommand
+import net.blueshell.api.domain.user.command.EndMembershipCommand
+import net.blueshell.api.domain.user.command.FindDeletedMembershipsCommand
 import net.blueshell.api.domain.user.command.FindMembershipByIdCommand
 import net.blueshell.api.domain.user.command.FindMembershipsCommand
+import net.blueshell.api.domain.user.command.ReopenMembershipCommand
+import net.blueshell.api.domain.user.command.RestoreMembershipCommand
 import net.blueshell.api.domain.user.web.dto.request.BoardCreateMembershipRequest
 import net.blueshell.api.domain.user.web.dto.request.UpdateMembershipRequest
 import net.blueshell.api.domain.user.web.dto.response.MembershipResponse
@@ -75,9 +80,40 @@ class MembershipController(
         return membership.asResponse()
     }
 
+    @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
+    @PostMapping(value = ["/memberships/{id}/end"])
+    fun endMembership(@PathVariable id: Long): MembershipResponse {
+        val membership = commandBus.dispatch(EndMembershipCommand(id))
+        return membership.asResponse()
+    }
+
+    @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
+    @PostMapping(value = ["/memberships/{id}/reopen"])
+    fun reopenMembership(@PathVariable id: Long): MembershipResponse {
+        val membership = commandBus.dispatch(ReopenMembershipCommand(id))
+        return membership.asResponse()
+    }
+
     @PreAuthorize("hasPermission(#id, 'Membership', 'read')")
     @GetMapping(value = ["/memberships/{id}"])
     fun findMembershipById(@PathVariable id: Long): MembershipResponse {
         return commandBus.dispatch(FindMembershipByIdCommand(id)).asResponse()
     }
+
+    @PreAuthorize("hasPermission(#id, 'Membership', 'delete')")
+    @DeleteMapping(value = ["/memberships/{id}"])
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteMembership(@PathVariable id: Long) {
+        commandBus.dispatch(DeleteMembershipCommand(id))
+    }
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'restore')")
+    @PutMapping(value = ["/memberships/{id}/restore"])
+    fun restoreMembership(@PathVariable id: Long): MembershipResponse =
+        commandBus.dispatch(RestoreMembershipCommand(id)).asResponse()
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'read-deleted')")
+    @GetMapping(value = ["/users/{userId}/memberships/deleted"])
+    fun findDeletedMemberships(@PathVariable userId: Long): MutableList<MembershipResponse> =
+        commandBus.dispatch(FindDeletedMembershipsCommand(userId)).map { it.asResponse() }.toMutableList()
 }

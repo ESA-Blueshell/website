@@ -1,12 +1,11 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
-import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargetRef
-import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
+import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -29,7 +28,7 @@ class CohortTargetingService(
     private val cohortRepo: CohortRepository,
     private val subjectRepo: CohortSubjectRepository,
     private val targetIds: CohortTargetIds,
-    private val registry: CohortPortRegistry,
+    private val strategies: TargetStrategies,
     private val jobs: TrackedJobDispatcher,
     transactionManager: PlatformTransactionManager,
 ) : CohortTargeting {
@@ -44,11 +43,27 @@ class CohortTargetingService(
         propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
     }
 
-    override fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow =
+    override fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow {
+        resolveTarget(system, externalId)
+        return linkExistingLocal(subjectId, system, externalId)
+    }
+
+    private fun linkExistingLocal(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow =
         writeTransaction.execute {
             val subject = requireSubject(subjectId)
-            requireNoExistingMapping(subjectId, system)
-            val cohort = cohortRepo.save(newCohort(system, subject.label, folder = null, subjectId = subjectId))
+            val existing = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name)
+            val cohort = if (existing == null) {
+                cohortRepo.save(newCohort(system, subject.label, folder = null, subjectId = subjectId))
+            } else {
+                val currentExternalId = targetIds.find(existing)
+                if (currentExternalId != null) {
+                    throw ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Subject $subjectId already has a $system target",
+                    )
+                }
+                existing
+            }
             targetIds.record(cohort, externalId)
             CohortMappingRow(cohort, externalId)
         }!!
@@ -61,12 +76,12 @@ class CohortTargetingService(
             requireNoExistingMapping(subjectId, system)
         }
 
-        val externalId = outsideTransaction.execute { registry.require(system).createCohort(label, folderHint) }!!
+        val target = outsideTransaction.execute { strategies.require(system).create(label, folderHint) }!!
 
         return writeTransaction.execute {
             val cohort = cohortRepo.save(newCohort(system, label, folder = folderHint, subjectId = subjectId))
-            targetIds.record(cohort, externalId)
-            CohortMappingRow(cohort, externalId)
+            targetIds.record(cohort, target.externalId)
+            CohortMappingRow(cohort, target.externalId)
         }!!
     }
 
@@ -77,15 +92,14 @@ class CohortTargetingService(
         deletePrevious: Boolean,
         reconcileNow: Boolean,
     ): CohortMappingRow {
+        val prep = writeTransaction.execute {
+            val cohort = requireOwnedCohort(subjectId, cohortId)
+            TargetSystem.valueOf(cohort.system)
+        }!!
+        resolveTarget(prep, externalId)
+
         val switched = writeTransaction.execute {
-            val cohort = cohortRepo.findById(cohortId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
-            }
-            // The route carries the subject id; reject a cohort that is not its
-            // target so a wrong-path admin call cannot repoint another subject's.
-            if (cohort.subjectId != subjectId) {
-                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId is not a target of subject $subjectId")
-            }
+            val cohort = requireOwnedCohort(subjectId, cohortId)
             val system = TargetSystem.valueOf(cohort.system)
             val previousExternalId = targetIds.find(cohort)
             targetIds.record(cohort, externalId)
@@ -115,32 +129,15 @@ class CohortTargetingService(
         }!!
         prep.existingExternalId?.let { return CohortTargetRef(cohortId, it) }
 
-        // Pass the folder — the old lazy ADD path created the list with no
-        // folder while admin creation passed it.
-        val created = outsideTransaction.execute { registry.require(prep.system).createCohort(prep.label, prep.folder) }!!
-
-        return writeTransaction.execute {
-            val cohort = cohortRepo.findById(cohortId).orElseThrow {
-                NonRetryableJobException("Cohort $cohortId not found")
-            }
-            targetIds.find(cohort)?.let { return@execute CohortTargetRef(cohortId, it) }
-            try {
-                targetIds.record(cohort, created)
-            } catch (e: Exception) {
-                // The remote target exists but could not be recorded. Fail
-                // terminally carrying its id so an operator links it, rather
-                // than letting retries create a second remote target.
-                throw NonRetryableJobException(
-                    "Created ${prep.system} target '$created' for cohort $cohortId but could not record it; link it manually",
-                    e,
-                )
-            }
-            CohortTargetRef(cohortId, created)
-        }!!
+        throw NonRetryableJobException(
+            "Cohort $cohortId has no ${prep.system} target; materialize-target no longer creates targets. " +
+                "Create or link an external target manually.",
+        )
     }
 
     override fun deleteTarget(system: TargetSystem, externalTargetId: String) {
-        outsideTransaction.executeWithoutResult { registry.require(system).deleteCohort(externalTargetId) }
+        val target = ExternalTarget(system, externalTargetId, strategies.descriptor(system).kind, externalTargetId)
+        outsideTransaction.executeWithoutResult { strategies.require(system).delete(target) }
     }
 
     private fun requireSubject(subjectId: Long) =
@@ -160,16 +157,24 @@ class CohortTargetingService(
     private fun newCohort(system: TargetSystem, label: String, folder: String?, subjectId: Long) =
         Cohort(
             system = system.name,
-            kind = kindFor(system),
+            kind = strategies.descriptor(system).kind,
             label = label,
             folder = folder,
             subjectId = subjectId,
         )
 
-    private fun kindFor(system: TargetSystem): CohortKind = when (system) {
-        TargetSystem.BREVO -> CohortKind.LIST
-        TargetSystem.GOOGLE_CALENDAR ->
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$system has no cohort target kind")
+    private fun requireOwnedCohort(subjectId: Long, cohortId: Long): Cohort {
+        val cohort = cohortRepo.findById(cohortId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
+        }
+        if (cohort.subjectId != subjectId) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId is not a target of subject $subjectId")
+        }
+        return cohort
+    }
+
+    private fun resolveTarget(system: TargetSystem, externalId: String) {
+        outsideTransaction.execute { strategies.require(system).resolve(externalId) }
     }
 
     private data class Switched(val cohort: Cohort, val system: TargetSystem, val previousExternalId: String?)

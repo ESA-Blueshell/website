@@ -30,10 +30,20 @@ interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
         externalUserId: String,
     ): CohortMember?
 
+    fun findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(
+        cohortId: Long,
+        externalUserIds: Collection<String>,
+    ): List<CohortMember>
+
     // ── All rows (desired + stranger) ─────────────────────────────────────────
 
     /** All active rows — use sparingly; prefer desired-only or stranger-only. */
     fun findAllByCohortId(cohortId: Long): List<CohortMember>
+
+    fun findByCohortIdAndExternalUserIdAndUserIdIsNotNull(
+        cohortId: Long,
+        externalUserId: String,
+    ): CohortMember?
 
     fun findAllBySubjectId(subjectId: Long): List<CohortMember>
 }

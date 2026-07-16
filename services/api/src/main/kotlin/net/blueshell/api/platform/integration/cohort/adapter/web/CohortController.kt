@@ -8,21 +8,23 @@ import net.blueshell.api.platform.integration.cohort.application.CohortQueryServ
 import net.blueshell.api.platform.integration.cohort.application.CohortSummary
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRepairResult
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
 /**
- * Read-only admin endpoints for cohort listings + the per-cohort
- * detail view (members + rules). Used today by the admin cohort
- * dashboard and the `CohortPicker.vue` component in the JobManager
- * trigger modal.
+ * Admin endpoints for cohort listings, per-cohort detail, and targeted
+ * repair actions. Used today by the admin cohort dashboard and the
+ * `CohortPicker.vue` component in the JobManager trigger modal.
  *
  * Full CRUD lands in a later PR; for now this is the picker- and
- * dashboard-side read.
+ * dashboard-side read plus operational repair.
  */
 @RestController
 @RequestMapping("/management/cohorts")
@@ -30,6 +32,7 @@ import java.time.Instant
 @PreAuthorize("hasAuthority('ADMIN')")
 class CohortController(
     private val cohortQueries: CohortQueryService,
+    private val remediation: CohortRemediation,
 ) {
     @GetMapping
     fun findCohorts(): List<CohortSummaryResponse> =
@@ -38,6 +41,10 @@ class CohortController(
     @GetMapping("/{id}")
     fun findCohortById(@PathVariable id: Long): CohortDetailResponse =
         cohortQueries.detail(id).toResponse()
+
+    @PostMapping("/{id}/repair-missing-adds")
+    fun repairMissingAdds(@PathVariable id: Long): CohortRepairResponse =
+        remediation.repairMissingAdds(id).toResponse()
 }
 
 @Schema(name = "CohortSummary")
@@ -90,6 +97,9 @@ data class CohortRuleResponse(
     val enabled: Boolean,
 )
 
+@Schema(name = "CohortRepair")
+data class CohortRepairResponse(val cohortId: Long, val enqueuedAdds: Int)
+
 private fun CohortSummary.toResponse(): CohortSummaryResponse =
     CohortSummaryResponse(
         id = cohort.id!!,
@@ -130,3 +140,6 @@ private fun CohortMemberRow.toResponse(): CohortMemberRowResponse =
         isUserDeleted = isUserDeleted,
         joinedAt = member.createdAt,
     )
+
+private fun CohortRepairResult.toResponse(): CohortRepairResponse =
+    CohortRepairResponse(cohortId = cohortId, enqueuedAdds = enqueuedAdds)

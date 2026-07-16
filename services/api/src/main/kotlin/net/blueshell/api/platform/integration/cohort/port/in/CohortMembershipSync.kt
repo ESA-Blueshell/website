@@ -7,11 +7,11 @@ package net.blueshell.api.platform.integration.cohort.port.`in`
  * `cohort/application/` owns the business logic.
  *
  * Use case shape: a single deterministic `sync(...)` call. The
- * implementation decides whether to lazily create the external
- * cohort, whether to enqueue a prerequisite sync and retry, and
- * how `REMOVE` interacts with missing external state. Callers do
- * not branch on these — they hand off the (userId, cohortId,
- * intent) triple and let the application layer route it.
+ * implementation decides whether to enqueue a prerequisite user sync
+ * and retry, whether a missing cohort target is terminal, and how
+ * `REMOVE` interacts with missing external state. Callers do not branch
+ * on these — they hand off the (userId, cohortId, intent) triple and
+ * let the application layer route it.
  */
 interface CohortMembershipSync {
     fun sync(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent)

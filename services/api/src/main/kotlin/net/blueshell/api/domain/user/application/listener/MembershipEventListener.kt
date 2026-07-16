@@ -17,20 +17,21 @@ class MembershipEventListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onChange(evt: MembershipChanged) {
+        // The event's `active` flag is recomputed by MembershipService from the
+        // user's full membership set, so every change type (create/update/delete)
+        // resolves the role the same way: the user is a MEMBER iff they still have
+        // an active membership.
         when (evt.changeType) {
             MembershipChange.CREATED,
-            MembershipChange.UPDATED -> {
+            MembershipChange.UPDATED,
+            MembershipChange.DELETED -> {
                 if (evt.active) {
-                    log.info("Updating membership for user {} adding role {}", evt.userId, Role.MEMBER)
+                    log.info("Membership {} for user {}: ensuring role {}", evt.changeType, evt.userId, Role.MEMBER)
                     users.addRole(evt.userId, Role.MEMBER)
                 } else {
-                    log.info("Updating membership for user {} removing role {}", evt.userId, Role.MEMBER)
+                    log.info("Membership {} for user {}: removing role {}", evt.changeType, evt.userId, Role.MEMBER)
                     users.removeRole(evt.userId, Role.MEMBER)
                 }
-            }
-            MembershipChange.DELETED -> {
-                log.info("Deleting membership for user {} removing role {}", evt.userId, Role.MEMBER)
-                users.removeRole(evt.userId, Role.MEMBER)
             }
         }
     }

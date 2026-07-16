@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional
  * BREVO list cohort under it. V69 backfilled these for existing committees;
  * this resolver only does work for committees created post-V69, when the
  * first `CommitteeMembershipChanged` event arrives. It is a thin spec builder
- * over [CohortProvisioningService]; the Brevo list itself is created lazily by
- * the `cohort.materialize-target` job on the first ADD.
+ * over [CohortProvisioningService]; operators must explicitly create or link
+ * the Brevo list before membership ADD jobs can push.
  */
 @Service
 class CommitteeCohortResolver(

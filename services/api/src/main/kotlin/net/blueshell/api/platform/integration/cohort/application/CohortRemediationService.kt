@@ -1,12 +1,14 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
+import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger.DesiredConfirmation
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
 import net.blueshell.api.platform.integration.cohort.persistence.state
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
+import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRepairResult
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
@@ -18,6 +20,7 @@ import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
@@ -91,6 +94,24 @@ class CohortRemediationService(
         writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
     }
 
+    override fun repairMissingAdds(cohortId: Long): CohortRepairResult {
+        return writeTransaction.execute {
+            val cohort = cohortRepo.findById(cohortId).orElseThrow {
+                NonRetryableJobException("Cohort $cohortId not found")
+            }
+            targetIds.require(cohort)
+            val rows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(cohortId)
+                .filter { it.syncedAt == null }
+            rows.forEach { row ->
+                jobs.enqueue(
+                    CohortJobs.SyncCohortMembership,
+                    CohortJobs.SyncCohortMembershipPayload(row.userId!!, cohortId, SyncCohortMembershipIntent.ADD),
+                )
+            }
+            CohortRepairResult(cohortId, rows.size)
+        }!!
+    }
+
     private fun loadPlan(cohortId: Long): ReconcilePlan {
         val cohort = cohortRepo.findById(cohortId).orElseThrow {
             NonRetryableJobException("Cohort $cohortId not found")
@@ -103,14 +124,7 @@ class CohortRemediationService(
         val system = TargetSystem.valueOf(cohort.system)
         val externalCohortId = targetIds.require(cohort)
 
-        val desiredUserIds = memberRepo.findAllByCohortIdAndUserIdIsNotNull(cohortId)
-            .mapNotNull { it.userId }
-            .toSet()
-        val extIdByUserId = externalIds
-            .findBatch(USER_AGGREGATE, desiredUserIds, system.name)
-            .associate { it.aggregateId to it.externalId }
-
-        return ReconcilePlan(cohortId, subjectId, system, externalCohortId, extIdByUserId)
+        return ReconcilePlan(cohortId, subjectId, system, externalCohortId)
     }
 
     private fun applySnapshot(plan: ReconcilePlan, remote: List<MemberRef>) {
@@ -123,39 +137,65 @@ class CohortRemediationService(
         val remoteByExtId = remote.associateBy { it.externalUserId }
         val now = LocalDateTime.now()
         val desiredRows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(plan.cohortId)
+        val externalIdByUserId = loadCurrentExternalIds(plan.cohortId, desiredRows, plan.system)
 
-        val confirmed = confirmPresentDesiredRows(plan, desiredRows, remoteByExtId, now)
-        demoteVanishedDesiredRows(plan, desiredRows, remoteByExtId.keys)
-        enqueueFollowUpsForMissing(plan, desiredRows, remoteByExtId.keys)
+        val confirmed = confirmPresentDesiredRows(plan, desiredRows, externalIdByUserId, remoteByExtId, now)
+        demoteVanishedDesiredRows(plan, desiredRows, externalIdByUserId, remoteByExtId.keys)
+        enqueueFollowUpsForMissing(plan, desiredRows, externalIdByUserId, remoteByExtId.keys)
         reconcileStrangers(cohort, subject, remoteByExtId, confirmed, now)
+    }
+
+    private fun loadCurrentExternalIds(
+        cohortId: Long,
+        desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
+        system: TargetSystem,
+    ): Map<Long, String> {
+        val desiredUserIds = desiredRows.mapNotNull { it.userId }.toSet()
+        return externalIds
+            .findBatch(USER_AGGREGATE, desiredUserIds, system.name)
+            .filter { !it.externalId.isNullOrBlank() }
+            .groupBy { it.externalId }
+            .also { grouped ->
+                grouped.filterValues { it.size > 1 }.forEach { (externalId, mappings) ->
+                    log.warn(
+                        "Ignoring duplicate external id mapping for cohort {} and external id {} across user ids {}",
+                        cohortId,
+                        externalId,
+                        mappings.map { it.aggregateId },
+                    )
+                }
+            }
+            .filterValues { it.size == 1 }
+            .values
+            .flatten()
+            .associate { it.aggregateId to it.externalId!! }
     }
 
     /** Desired rows present in the snapshot: confirm and collapse any matching stranger. */
     private fun confirmPresentDesiredRows(
         plan: ReconcilePlan,
         desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
+        externalIdByUserId: Map<Long, String>,
         remoteByExtId: Map<String, MemberRef>,
         now: LocalDateTime,
     ): Set<String> {
-        val confirmed = mutableSetOf<String>()
-        desiredRows.forEach { row ->
-            val extId = plan.externalIdByUserId[row.userId] ?: return@forEach
-            val remoteMember = remoteByExtId[extId] ?: return@forEach
-            ledger.markVerified(row, extId, remoteMember.label, now)
-            ledger.removeStranger(plan.cohortId, extId)
-            confirmed += extId
+        val confirmations = desiredRows.mapNotNull { row ->
+            val extId = externalIdByUserId[row.userId] ?: return@mapNotNull null
+            val remoteMember = remoteByExtId[extId] ?: return@mapNotNull null
+            DesiredConfirmation(row, extId, remoteMember.label)
         }
-        return confirmed
+        return ledger.markVerified(confirmations, now)
     }
 
     /** Desired rows that claimed sync/verify but are now absent: demote so they re-bucket as missing. */
     private fun demoteVanishedDesiredRows(
         plan: ReconcilePlan,
         desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
+        externalIdByUserId: Map<Long, String>,
         remoteExtIds: Set<String>,
     ) {
         desiredRows.forEach { row ->
-            val extId = plan.externalIdByUserId[row.userId]
+            val extId = externalIdByUserId[row.userId]
             val absent = extId == null || extId !in remoteExtIds
             if (absent && (row.state == CohortMemberState.SYNCED || row.state == CohortMemberState.VERIFIED)) {
                 ledger.markDrifted(row)
@@ -167,10 +207,11 @@ class CohortRemediationService(
     private fun enqueueFollowUpsForMissing(
         plan: ReconcilePlan,
         desiredRows: List<net.blueshell.api.platform.integration.cohort.persistence.CohortMember>,
+        externalIdByUserId: Map<Long, String>,
         remoteExtIds: Set<String>,
     ) {
         desiredRows.forEach { row ->
-            val extId = plan.externalIdByUserId[row.userId]
+            val extId = externalIdByUserId[row.userId]
             if (extId == null) {
                 jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!))
             } else if (extId !in remoteExtIds) {
@@ -216,6 +257,9 @@ class CohortRemediationService(
         val subjectId: Long,
         val system: TargetSystem,
         val externalCohortId: String,
-        val externalIdByUserId: Map<Long, String?>,
     )
+
+    companion object {
+        private val log = LoggerFactory.getLogger(CohortRemediationService::class.java)
+    }
 }

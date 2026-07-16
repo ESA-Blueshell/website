@@ -12,9 +12,10 @@
         <contribution-user-list
           :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
+          :period-member-user-ids="periodMemberUserIds"
           :disabled="!selectedPeriodId"
           panel-key="paid"
-          :users="membersPaid"
+          :users="usersPaid"
           class="mt-3"
           title="Contribution paid"
           @update:contribution="contributionAddedOrUpdated"
@@ -24,9 +25,10 @@
         <contribution-user-list
           :contribution-period-id="selectedPeriodId"
           :contributions="contributions"
+          :period-member-user-ids="periodMemberUserIds"
           :disabled="!selectedPeriodId"
           panel-key="unpaid"
-          :users="membersUnpaid"
+          :users="usersUnpaid"
           class="mt-3"
           title="Contribution unpaid"
           @update:contribution="contributionAddedOrUpdated"
@@ -38,7 +40,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref, watch} from "vue"
+import {computed, onMounted, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
 import ContributionUserList from "@/components/common/lists/ContributionUserList.vue"
@@ -49,18 +51,13 @@ import {
   findContributionsByPeriodId,
   findMemberships,
   findUsers,
-  type MembershipResponse,
   type UserDetailResponse,
 } from "@/services/api"
 
 const users = ref<UserDetailResponse[]>([])
-const memberships = ref<MembershipResponse[]>([])
 const contributions = ref<ContributionResponse[]>([])
+const periodMemberUserIds = ref<Set<number>>(new Set())
 
-const membersPaid = ref<UserDetailResponse[]>([])
-const membersUnpaid = ref<UserDetailResponse[]>([])
-
-const contributionPeriod = ref<ContributionPeriodResponse | undefined>()
 const selectedPeriodId = ref<number>(0)
 
 if ("scrollRestoration" in globalThis.history) {
@@ -73,30 +70,26 @@ const getUsers = async () => {
   else console.log(response.error)
 }
 
-const getMemberships = async () => {
-  try {
-    const response = await findMemberships()
-    memberships.value = response.data ?? []
-  } catch (error) {
-    console.error("Error fetching memberships:", error)
-  }
-}
+const paidUserIds = computed<Set<number>>(() => {
+  const periodId = selectedPeriodId.value
+  if (!periodId) return new Set<number>()
 
-const hasActiveMembership = (userId: number) =>
-  memberships.value.some((membership) => membership.userId === userId && !membership.endDate)
-
-const hasContribution = (userId: number) =>
-  contributions.value.some(
-    (c) => c.userId === userId && c.contributionPeriodId === selectedPeriodId.value,
+  return new Set(
+    contributions.value
+      .filter((contribution) => contribution.contributionPeriodId === periodId)
+      .map((contribution) => contribution.userId),
   )
+})
 
-const updateLists = () => {
-  const all = users.value.filter((u) => hasActiveMembership(u.id))
-  membersPaid.value = all.filter((u) => hasContribution(u.id!))
-  membersUnpaid.value = all.filter((u) => !hasContribution(u.id!))
-}
+const hasSelectedPeriodContribution = (user: UserDetailResponse) => paidUserIds.value.has(user.id)
 
-watch([contributions, memberships, users, selectedPeriodId], updateLists, {deep: true})
+const usersPaid = computed<UserDetailResponse[]>(() =>
+  users.value.filter(hasSelectedPeriodContribution),
+)
+
+const usersUnpaid = computed<UserDetailResponse[]>(() =>
+  users.value.filter((user) => !hasSelectedPeriodContribution(user)),
+)
 
 const contributionAddedOrUpdated = (updated: ContributionResponse) => {
   const idx = contributions.value.findIndex(
@@ -112,17 +105,35 @@ const contributionDeleted = (userId: number) => {
   )
 }
 
-const contributionPeriodChanged = async (newPeriod: ContributionPeriodResponse) => {
-  if (!newPeriod) return
-  contributionPeriod.value = newPeriod
-  selectedPeriodId.value = newPeriod.id as number
-  const resp = await findContributionsByPeriodId({path: {periodId: newPeriod.id as number}})
-  contributions.value = resp.data ?? []
+const contributionPeriodChanged = async (newPeriod?: ContributionPeriodResponse) => {
+  const periodId = newPeriod?.id
+  if (!periodId) {
+    selectedPeriodId.value = 0
+    contributions.value = []
+    periodMemberUserIds.value = new Set()
+    return
+  }
+
+  selectedPeriodId.value = periodId
+  contributions.value = []
+  periodMemberUserIds.value = new Set()
+
+  const [contributionsResp, membershipsResp] = await Promise.all([
+    findContributionsByPeriodId({path: {periodId}}),
+    findMemberships({query: {from: newPeriod.startDate, to: newPeriod.endDate}}),
+  ])
+
+  if (selectedPeriodId.value !== periodId) return
+
+  contributions.value = contributionsResp.data ?? []
+  periodMemberUserIds.value = new Set(
+    (membershipsResp.data ?? []).map((membership) => membership.userId),
+  )
 }
 
 onMounted(async () => {
   try {
-    await Promise.all([getUsers(), getMemberships()])
+    await getUsers()
   } catch (error) {
     console.error("Error fetching data:", error)
   }

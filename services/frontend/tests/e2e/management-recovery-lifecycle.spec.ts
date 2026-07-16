@@ -37,21 +37,25 @@ test.describe("management recovery lifecycle", () => {
     })
     await loginAsBoard(page.context())
 
+    // The member manager renders its unified table only at the lg breakpoint and
+    // up; below that it switches to a mobile card list with its own test ids. This
+    // test exercises the desktop table, so it pins a desktop viewport.
+    await page.setViewportSize({width: 1440, height: 900})
     await page.goto("/members/manage")
-    await expect(page.getByTestId("member-user-list-non-members")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
 
-    const nonMembersToggle = page.getByTestId("member-user-list-toggle-non-members").first()
-    await ensureExpanded(nonMembersToggle)
+    // The user row should be visible in the unified table
+    await expect(page.getByTestId(`member-manager-row-${targetId}`)).toBeVisible()
 
-    const nonMembersCard = page.getByTestId("member-user-list-non-members").first()
-    await expect(nonMembersCard.getByTestId(`member-user-row-${targetId}`)).toBeVisible()
-
-    await nonMembersCard.getByTestId(`member-user-delete-btn-${targetId}`).click()
+    // Click the delete button for this user
+    await page.getByTestId(`member-manager-delete-btn-${targetId}`).click()
     await expect(page.getByTestId("deletion-confirmation-dialog")).toBeVisible()
     await page.getByTestId("deletion-confirmation-confirm-btn").click()
 
-    await expect(nonMembersCard.getByTestId(`member-user-row-${targetId}`)).toHaveCount(0)
+    // Row should be removed from the table
+    await expect(page.getByTestId(`member-manager-row-${targetId}`)).toHaveCount(0)
 
+    // Navigate to recovery manager and restore the deleted user
     await page.goto("/recovery/manage")
     await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible({timeout: 30_000})
 

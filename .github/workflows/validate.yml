@@ -430,45 +430,9 @@ jobs:
     needs: [ api-static, fe-static ]
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
-      db:
-        image: mariadb:10.11.10
-        ports: [ "3306:3306" ]
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
-          MYSQL_PORT: ${{ env.MYSQL_PORT }}
-          MYSQL_USER: ${{ env.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Wait for database service
-        run: |
-          sudo apt-get update && sudo apt-get install -y default-mysql-client
-          for i in {1..30}; do
-            if mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
-              echo "Database is ready!"
-              exit 0
-            fi
-            echo "Waiting for database... ($i/30)"
-            sleep 2
-          done
-          echo "Database did not become ready in time."
-          exit 1
-
-      - name: Prepare test database schema
-        run: |
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
 
       - name: Set up Java + Gradle
         uses: ./.github/actions/setup-java-gradle
@@ -504,5 +468,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: openapi-sync-logs
-          path: openapi-api.log
+          path: |
+            services/api/build/openapi.raw.json
+            services/api/build/*.log
           if-no-files-found: ignore

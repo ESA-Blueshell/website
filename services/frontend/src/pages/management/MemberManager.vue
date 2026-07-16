@@ -393,7 +393,7 @@ async function confirmDeleteUser() {
                       @keydown.enter="toggleSort('status')"
                       @keydown.space.prevent="toggleSort('status')"
                     >
-                      <span>Membership status</span>
+                      Membership status
                       <v-icon
                         :icon="sortIcon('status')"
                         size="16"
@@ -445,7 +445,7 @@ async function confirmDeleteUser() {
                       @keydown.enter="toggleSort('wasMemberInPeriod')"
                       @keydown.space.prevent="toggleSort('wasMemberInPeriod')"
                     >
-                      <span>Member in period</span>
+                      Member in period
                       <v-icon
                         :icon="sortIcon('wasMemberInPeriod')"
                         size="16"

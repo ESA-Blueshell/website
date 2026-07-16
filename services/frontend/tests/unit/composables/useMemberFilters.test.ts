@@ -170,8 +170,24 @@ describe("useMemberFilters", () => {
     expect(sortAsc.value).toBe(true)
     toggleSort("name")
     expect(sortAsc.value).toBe(false)
-    toggleSort("name")
+  })
+
+  it("toggleSort cycles ascending → descending → no sort on the third click", () => {
+    const rows = ref([makeRow(1), makeRow(2)])
+    const index = ref(new Map([[1, "u1"], [2, "u2"]]))
+    const {sortKey, sortAsc, toggleSort} = useMemberFilters(rows, index)
+
+    toggleSort("status")
+    expect(sortKey.value).toBe("status")
     expect(sortAsc.value).toBe(true)
+
+    toggleSort("status")
+    expect(sortKey.value).toBe("status")
+    expect(sortAsc.value).toBe(false)
+
+    // Third click clears the sort back to the default (no active column).
+    toggleSort("status")
+    expect(sortKey.value).toBeNull()
   })
 
   it("sortIcon returns correct icons", () => {

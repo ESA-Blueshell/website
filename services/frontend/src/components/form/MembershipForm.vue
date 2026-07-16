@@ -123,7 +123,7 @@ defineExpose({validate, save})
           />
         </v-col>
         <v-col
-          class="d-flex align-center"
+          class="d-flex align-center justify-center"
           cols="12"
           sm="6"
         >

@@ -18,7 +18,8 @@ export function useMemberFilters(
   // search is the debounced value that filteredRows depends on — unit tests set it directly.
   const searchInput = ref("")
   const search = ref("")
-  const sortKey = ref<SortKey>("name")
+  // sortKey is null when no column sort is active (natural/default order).
+  const sortKey = ref<SortKey | null>("name")
   const sortAsc = ref(true)
 
   // Tri-state filters
@@ -96,11 +97,15 @@ export function useMemberFilters(
     })
   })
 
+  // Three-state cycle per column: ascending → descending → no sort (default).
   function toggleSort(key: SortKey) {
-    if (sortKey.value === key) {
-      sortAsc.value = !sortAsc.value
-    } else {
+    if (sortKey.value !== key) {
       sortKey.value = key
+      sortAsc.value = true
+    } else if (sortAsc.value) {
+      sortAsc.value = false
+    } else {
+      sortKey.value = null
       sortAsc.value = true
     }
   }

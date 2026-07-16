@@ -273,7 +273,7 @@ defineExpose({
           v-if="memberships.length === 0"
           class="py-4"
           icon="mdi-card-account-details-outline"
-          text="Create a membership period to track this user's board membership history."
+          text="Create a membership period to track this user's association membership history."
           title="No memberships yet"
         />
 
@@ -519,5 +519,14 @@ defineExpose({
 
 .mm-chevron {
   opacity: 0.6;
+}
+
+// The house green divider (housestyle.scss) is scoped under
+// `.v-application.v-theme--dark`, which the teleported dialog escapes — so the
+// modal's dividers fall back to grey. Apply the same accent token here so they
+// match the default house divider instead.
+:deep(.v-divider) {
+  border-color: rgb(var(--v-theme-accent));
+  opacity: 1;
 }
 </style>

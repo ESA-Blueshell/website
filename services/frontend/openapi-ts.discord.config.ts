@@ -15,7 +15,12 @@ export default {
   },
   plugins: [
     {name: "@hey-api/typescript", enums: "typescript"},
-    {name: "@hey-api/client-axios", runtimeConfigPath: "../discord.runtime.ts"},
+    {
+      name: "@hey-api/client-axios",
+      // openapi-ts resolves runtimeConfigPath relative to this config file
+      // (frontend root), not the output dir — mirror the blueshell config.
+      runtimeConfigPath: "./src/services/api/discord.runtime.ts",
+    },
     {asClass: false, name: "@hey-api/sdk"},
   ],
 }

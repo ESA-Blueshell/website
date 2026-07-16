@@ -3,8 +3,13 @@ package net.blueshell.api.platform.integration.cohort.application
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
-import net.blueshell.api.platform.integration.cohort.port.out.CohortPort
-import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
+import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
+import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
+import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
+import net.blueshell.api.platform.integration.cohort.port.out.TargetCapability
+import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
+import net.blueshell.api.platform.integration.cohort.port.out.TargetStrategy
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -27,7 +32,7 @@ import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
 
 /**
- * Unit test for [CohortTargetingService]. The port edges (CohortPort,
+ * Unit test for [CohortTargetingService]. The strategy edges,
  * CohortTargetIds, job dispatcher) are the seams — no Spring context.
  * A no-op transaction manager runs the TransactionTemplate callbacks inline.
  */
@@ -36,9 +41,9 @@ class CohortTargetingServiceTest {
     private val cohortRepo = mock<CohortRepository>()
     private val subjectRepo = mock<CohortSubjectRepository>()
     private val targetIds = mock<CohortTargetIds>()
-    private val registry = mock<CohortPortRegistry>()
     private val jobs = mock<TrackedJobDispatcher>()
-    private val port = mock<CohortPort>()
+    private val strategy = mock<TargetStrategy>()
+    private val strategies: TargetStrategies
 
     private val txManager = object : PlatformTransactionManager {
         override fun getTransaction(definition: TransactionDefinition?): TransactionStatus = SimpleTransactionStatus()
@@ -46,7 +51,15 @@ class CohortTargetingServiceTest {
         override fun rollback(status: TransactionStatus) {}
     }
 
-    private val service = CohortTargetingService(cohortRepo, subjectRepo, targetIds, registry, jobs, txManager)
+    private val service: CohortTargetingService
+
+    init {
+        whenever(strategy.system).thenReturn(TargetSystem.BREVO)
+        whenever(strategy.descriptor).thenReturn(brevoDescriptor)
+        whenever(strategy.resolve(any())).thenReturn(null)
+        strategies = TargetStrategies(listOf(strategy))
+        service = CohortTargetingService(cohortRepo, subjectRepo, targetIds, strategies, jobs, txManager)
+    }
 
     @Test
     fun `create does not touch the provider when the subject already maps the system`() {
@@ -57,7 +70,7 @@ class CohortTargetingServiceTest {
             service.create(1L, TargetSystem.BREVO, "Members", null)
         }
 
-        verifyNoInteractions(registry)
+        verify(strategy, never()).create(any(), any())
         verify(cohortRepo, never()).save(any())
     }
 
@@ -66,13 +79,12 @@ class CohortTargetingServiceTest {
         val saved = mock<Cohort> { on { id } doReturn 42L }
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(mock()))
         whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
-        whenever(registry.require(TargetSystem.BREVO)).thenReturn(port)
-        whenever(port.createCohort("Members", "Lists")).thenReturn("999")
+        whenever(strategy.create("Members", "Lists")).thenReturn(target("999", "Members", "Lists"))
         whenever(cohortRepo.save(any<Cohort>())).thenReturn(saved)
 
         val row = service.create(1L, TargetSystem.BREVO, "Members", "Lists")
 
-        verify(port).createCohort("Members", "Lists")
+        verify(strategy).create("Members", "Lists")
         verify(targetIds).record(saved, "999")
         assert(row.externalId == "999")
     }
@@ -87,13 +99,12 @@ class CohortTargetingServiceTest {
         }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn(null)
-        whenever(registry.require(TargetSystem.BREVO)).thenReturn(port)
 
         assertThrows<NonRetryableJobException> {
             service.materialize(7L)
         }
 
-        verify(port, never()).createCohort(any(), any())
+        verify(strategy, never()).create(any(), any())
         verify(targetIds, never()).record(any(), any())
     }
 
@@ -106,7 +117,7 @@ class CohortTargetingServiceTest {
         val ref = service.materialize(7L)
 
         assert(ref.externalId == "existing")
-        verifyNoInteractions(registry)
+        verify(strategy, never()).create(any(), any())
         verify(targetIds, never()).record(any(), any())
     }
 
@@ -122,10 +133,26 @@ class CohortTargetingServiceTest {
 
         val row = service.linkExisting(1L, TargetSystem.BREVO, "list-123")
 
+        verify(strategy).resolve("list-123")
         verify(cohortRepo, never()).save(any())
         verify(targetIds).record(cohort, "list-123")
         assert(row.cohort == cohort)
         assert(row.externalId == "list-123")
+    }
+
+    @Test
+    fun `linkExisting allows ids that are not present in the catalog`() {
+        val subject = CohortSubject(CohortSubjectType.CUSTOM, "Members")
+        val saved = mock<Cohort> { on { id } doReturn 7L }
+        whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
+        whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)
+        whenever(cohortRepo.save(any<Cohort>())).thenReturn(saved)
+        whenever(strategy.resolve("missing-list")).thenReturn(null)
+
+        service.linkExisting(1L, TargetSystem.BREVO, "missing-list")
+
+        verify(strategy).resolve("missing-list")
+        verify(targetIds).record(saved, "missing-list")
     }
 
     @Test
@@ -136,6 +163,7 @@ class CohortTargetingServiceTest {
 
         service.switchTarget(1L, 7L, "new-list", deletePrevious = true, reconcileNow = true)
 
+        verify(strategy).resolve("new-list")
         verify(targetIds).record(cohort, "new-list")
         verify(jobs).enqueue(
             eq(CohortJobs.DeleteExternalTarget),
@@ -173,10 +201,23 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `deleteTarget calls the provider`() {
-        whenever(registry.require(TargetSystem.BREVO)).thenReturn(port)
-
         service.deleteTarget(TargetSystem.BREVO, "stale-list")
 
-        verify(port).deleteCohort("stale-list")
+        verify(strategy).delete(target("stale-list", "stale-list", null))
+    }
+
+    private fun target(id: String, label: String, folder: String?) =
+        ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label, folder)
+
+    private companion object {
+        val brevoDescriptor = TargetDescriptor(
+            system = TargetSystem.BREVO,
+            kind = CohortKind.LIST,
+            systemLabel = "Brevo",
+            targetLabel = "Brevo list",
+            idLabel = "List id",
+            folderLabel = "Folder",
+            capabilities = setOf(TargetCapability.CATALOG, TargetCapability.CREATE, TargetCapability.DELETE),
+        )
     }
 }

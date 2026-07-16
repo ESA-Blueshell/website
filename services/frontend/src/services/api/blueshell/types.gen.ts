@@ -525,6 +525,16 @@ export type EventSignUpResponse = {
     version: number;
 };
 
+export type ExternalTarget = {
+    externalId: string;
+    folderLabel?: string;
+    kind: CohortKind;
+    label: string;
+    linkedCohortId?: number;
+    memberCount?: number;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+};
+
 export type ExtraRow = {
     email?: string;
     externalUserId: string;
@@ -866,6 +876,16 @@ export type SwitchTargetRequest = {
     deletePrevious: boolean;
     externalId: string;
     reconcileNow: boolean;
+};
+
+export type TargetDescriptor = {
+    capabilities: Array<'CATALOG' | 'CREATE' | 'READ_MEMBERS' | 'WRITE_MEMBERS' | 'DELETE'>;
+    folderLabel?: string;
+    idLabel: string;
+    kind: CohortKind;
+    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    systemLabel: string;
+    targetLabel: string;
 };
 
 export type TelemetryResponse = {
@@ -3604,6 +3624,92 @@ export type SwitchTargetResponses = {
 
 export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
 
+export type ListCohortTargetSystemsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/cohort-targets/systems';
+};
+
+export type ListCohortTargetSystemsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListCohortTargetSystemsError = ListCohortTargetSystemsErrors[keyof ListCohortTargetSystemsErrors];
+
+export type ListCohortTargetSystemsResponses = {
+    /**
+     * OK
+     */
+    200: Array<TargetDescriptor>;
+};
+
+export type ListCohortTargetSystemsResponse = ListCohortTargetSystemsResponses[keyof ListCohortTargetSystemsResponses];
+
+export type SearchCohortTargetsData = {
+    body?: never;
+    path: {
+        system: 'BREVO' | 'GOOGLE_CALENDAR';
+    };
+    query?: {
+        query?: string;
+    };
+    url: '/management/cohort-targets/{system}';
+};
+
+export type SearchCohortTargetsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SearchCohortTargetsError = SearchCohortTargetsErrors[keyof SearchCohortTargetsErrors];
+
+export type SearchCohortTargetsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ExternalTarget>;
+};
+
+export type SearchCohortTargetsResponse = SearchCohortTargetsResponses[keyof SearchCohortTargetsResponses];
+
 export type FindCohortsData = {
     body?: never;
     path?: never;
@@ -4185,6 +4291,7 @@ export type FindMembershipsData = {
     query?: {
         from?: string;
         to?: string;
+        userId?: number;
     };
     url: '/memberships';
 };
@@ -4263,6 +4370,49 @@ export type CreateMembershipResponses = {
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
+
+export type DeleteMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}';
+};
+
+export type DeleteMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteMembershipError = DeleteMembershipErrors[keyof DeleteMembershipErrors];
+
+export type DeleteMembershipResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteMembershipResponse = DeleteMembershipResponses[keyof DeleteMembershipResponses];
 
 export type FindMembershipByIdData = {
     body?: never;
@@ -4349,6 +4499,135 @@ export type UpdateMembershipResponses = {
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+
+export type EndMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/end';
+};
+
+export type EndMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EndMembershipError = EndMembershipErrors[keyof EndMembershipErrors];
+
+export type EndMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type EndMembershipResponse = EndMembershipResponses[keyof EndMembershipResponses];
+
+export type ReopenMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/reopen';
+};
+
+export type ReopenMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReopenMembershipError = ReopenMembershipErrors[keyof ReopenMembershipErrors];
+
+export type ReopenMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type ReopenMembershipResponse = ReopenMembershipResponses[keyof ReopenMembershipResponses];
+
+export type RestoreMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/restore';
+};
+
+export type RestoreMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RestoreMembershipError = RestoreMembershipErrors[keyof RestoreMembershipErrors];
+
+export type RestoreMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type RestoreMembershipResponse = RestoreMembershipResponses[keyof RestoreMembershipResponses];
 
 export type ForwardAuthData = {
     body?: never;
@@ -5344,6 +5623,49 @@ export type BoardCreateMembershipResponses = {
 };
 
 export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
+
+export type FindDeletedMembershipsData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/memberships/deleted';
+};
+
+export type FindDeletedMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDeletedMembershipsError = FindDeletedMembershipsErrors[keyof FindDeletedMembershipsErrors];
+
+export type FindDeletedMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MembershipResponse>;
+};
+
+export type FindDeletedMembershipsResponse = FindDeletedMembershipsResponses[keyof FindDeletedMembershipsResponses];
 
 export type RestoreDeletedUserByIdData = {
     body?: never;

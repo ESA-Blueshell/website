@@ -31,7 +31,7 @@ class MembershipControllerIT : UserTestSupport() {
         userId: Long,
         version: Long,
         startDate: LocalDate = LocalDate.now().minusDays(7),
-        endDate: LocalDate = LocalDate.now().plusDays(7)
+        endDate: LocalDate = LocalDate.now().minusDays(1)
     ): String =
         """{"userId":$userId,"memberType":"ALUMNI","startDate":"$startDate","endDate":"$endDate","incasso":false,"version":$version}"""
 
@@ -50,6 +50,41 @@ class MembershipControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].id").isNumber)
+        }
+
+        @Test
+        fun `returns all non-deleted memberships when no query params given`() {
+            val board = createUserWithRole(Role.BOARD)
+            val firstUser = createUserWithRole(Role.MEMBER)
+            val secondUser = createUserWithRole(Role.MEMBER)
+            val first = createMembershipFixture(user = firstUser)
+            val second = createMembershipFixture(user = secondUser)
+
+            mvc.perform(
+                get("/memberships")
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[?(@.id == ${first.id})]").exists())
+                .andExpect(jsonPath("$[?(@.id == ${second.id})]").exists())
+        }
+
+        @Test
+        fun `filters memberships by userId query parameter`() {
+            val board = createUserWithRole(Role.BOARD)
+            val targetUser = createUserWithRole(Role.MEMBER)
+            val otherUser = createUserWithRole(Role.MEMBER)
+            val targetMembership = createMembershipFixture(user = targetUser)
+            val otherMembership = createMembershipFixture(user = otherUser)
+
+            mvc.perform(
+                get("/memberships")
+                    .param("userId", targetUser.id.toString())
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[?(@.id == ${targetMembership.id})]").exists())
+                .andExpect(jsonPath("$[?(@.id == ${otherMembership.id})]").doesNotExist())
         }
     }
 
@@ -142,10 +177,10 @@ class MembershipControllerIT : UserTestSupport() {
     }
 
     @Nested
-    inner class UpdateMembership {
+    inner class CorrectMembership {
 
         @Test
-        fun `updates membership`() {
+        fun `corrects membership`() {
             val board = createUserWithRole(Role.BOARD)
             val membership = createMembershipFixture()
 
@@ -182,6 +217,102 @@ class MembershipControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class EndMembership {
+
+        @Test
+        fun `ends an active membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val membership = createMembershipFixture(user = user)
+            assertThat(membership.endDate).isNull()
+
+            mvc.perform(
+                post("/memberships/{id}/end", membership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(membership.id))
+                .andExpect(jsonPath("$.endDate").isNotEmpty)
+
+            val ended = membershipRepository.findById(membership.id!!).orElseThrow()
+            assertThat(ended.endDate).isNotNull()
+            assertThat(ended.endDate).isEqualTo(LocalDate.now())
+        }
+
+        @Test
+        fun `returns bad request when ending membership started today`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.GUEST)
+            val membership = createMembershipFixture(user = user, startDate = LocalDate.now())
+
+            mvc.perform(
+                post("/memberships/{id}/end", membership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `returns not found when membership does not exist`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/memberships/{id}/end", 999999L)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class ReopenMembership {
+
+        @Test
+        fun `reopens an ended membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.GUEST)
+            val membership = createMembershipFixture(user = user, endDate = LocalDate.now().minusDays(1))
+            assertThat(membership.endDate).isNotNull()
+
+            mvc.perform(
+                post("/memberships/{id}/reopen", membership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(membership.id))
+                .andExpect(jsonPath("$.endDate").doesNotExist())
+
+            val reopened = membershipRepository.findById(membership.id!!).orElseThrow()
+            assertThat(reopened.endDate).isNull()
+        }
+
+        @Test
+        fun `returns bad request when user has another active membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val endedMembership = createMembershipFixture(user = user, endDate = LocalDate.now().minusDays(1))
+            createMembershipFixture(user = user)
+
+            mvc.perform(
+                post("/memberships/{id}/reopen", endedMembership.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `returns not found when membership does not exist`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/memberships/{id}/reopen", 999999L)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
     inner class FindMembershipById {
 
         @Test
@@ -207,6 +338,184 @@ class MembershipControllerIT : UserTestSupport() {
                     .with(bearer(board))
             )
                 .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class DeleteMembership {
+
+        @Test
+        fun `deletes an active membership and hides it from list`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val membership = createMembershipFixture(user = user)
+            val membershipId = membership.id!!
+
+            mvc.perform(
+                delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNoContent)
+
+            mvc.perform(
+                get("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `deleted membership disappears from user's active memberships`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val membership = createMembershipFixture(user = user)
+            val membershipId = membership.id!!
+
+            mvc.perform(
+                delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNoContent)
+
+            mvc.perform(
+                get("/memberships")
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[?(@.id == $membershipId)]").doesNotExist())
+        }
+
+        @Test
+        fun `returns not found when membership does not exist`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                delete("/memberships/{id}", 999999L)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class RestoreMembership {
+
+        @Test
+        fun `restores a deleted membership`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val user = createUserWithRole(Role.MEMBER)
+            val membership = createMembershipFixture(user = user)
+            val membershipId = membership.id!!
+
+            mvc.perform(
+                delete("/memberships/{id}", membershipId)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isNoContent)
+
+            mvc.perform(
+                put("/memberships/{id}/restore", membershipId)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(membershipId))
+                .andExpect(jsonPath("$.userId").value(user.id))
+
+            mvc.perform(
+                get("/memberships/{id}", membershipId)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `returns not found when trying to restore non-deleted membership`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val membership = createMembershipFixture()
+            val membershipId = membership.id!!
+
+            mvc.perform(
+                put("/memberships/{id}/restore", membershipId)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `returns bad request when restored membership would violate constraints`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val user = createUserWithRole(Role.MEMBER)
+            val deletedMembership = createMembershipFixture(user = user)
+            val membershipId = deletedMembership.id!!
+
+            mvc.perform(
+                delete("/memberships/{id}", membershipId)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isNoContent)
+
+            // Create a new active membership for the same user
+            createMembershipFixture(user = user)
+
+            mvc.perform(
+                put("/memberships/{id}/restore", membershipId)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors").isArray)
+                // Restoring an active membership while another is active trips both the
+                // one-active and overlap rules; violations arrive as an unordered Set, so
+                // assert the expected message is present rather than pinning errors[0].
+                .andExpect(
+                    jsonPath(
+                        "$.errors[*].message",
+                        org.hamcrest.Matchers.hasItem(
+                            org.hamcrest.Matchers.containsString("active membership")
+                        )
+                    )
+                )
+        }
+    }
+
+    @Nested
+    inner class FindDeletedMemberships {
+
+        @Test
+        fun `lists deleted memberships for a user`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val membership = createMembershipFixture(user = user)
+            val membershipId = membership.id!!
+
+            mvc.perform(
+                delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNoContent)
+
+            mvc.perform(
+                get("/users/{userId}/memberships/deleted", user.id)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$").isArray)
+                .andExpect(jsonPath("$[0].id").value(membershipId))
+                .andExpect(jsonPath("$[0].userId").value(user.id))
+        }
+
+        @Test
+        fun `returns empty list when no deleted memberships exist`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val user = createUserWithRole(Role.GUEST)
+
+            mvc.perform(
+                get("/users/{userId}/memberships/deleted", user.id)
+                    .with(bearer(admin))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$").isArray)
+                .andExpect(jsonPath("$.length()").value(0))
         }
     }
 }

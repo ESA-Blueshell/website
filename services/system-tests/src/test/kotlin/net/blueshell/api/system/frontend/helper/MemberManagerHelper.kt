@@ -8,46 +8,16 @@ object MemberManagerHelper {
         page.waitForURL("**/members/manage**")
     }
 
-    fun openNonMembers(page: Page) {
-        val toggle = TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-non-members")
-        if (toggle.getAttribute("aria-expanded") != "true") {
-            toggle.click()
-        }
-    }
-
-    fun openMembers(page: Page) {
-        val toggle = TestIdLocatorHelper.byTestId(page, "member-user-list-toggle-members")
-        if (toggle.getAttribute("aria-expanded") != "true") {
-            toggle.click()
-        }
-    }
-
-    fun searchNonMembers(page: Page, query: String) {
-        UserListHelper.searchUser(page, query, searchTestId = "member-user-list-search-non-members")
-    }
-
-    fun searchMembers(page: Page, query: String) {
-        UserListHelper.searchUser(page, query, searchTestId = "member-user-list-search-members")
+    fun search(page: Page, query: String) {
+        UserListHelper.searchUser(page, query, searchTestId = "member-manager-search-input")
     }
 
     fun clickAddUser(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "member-user-list-add-user-btn-non-members").click()
-    }
-
-    fun clickUserRow(page: Page, userId: Long) {
-        TestIdLocatorHelper.byTestId(page, "member-user-toggle-$userId").click()
-    }
-
-    fun clickStartMembership(page: Page, userId: Long) {
-        TestIdLocatorHelper.byTestId(page, "member-user-start-membership-btn-$userId").click()
-    }
-
-    fun clickEndMembership(page: Page, userId: Long) {
-        TestIdLocatorHelper.byTestId(page, "member-user-end-membership-btn-$userId").click()
+        TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 
     fun clickDeleteUser(page: Page, userId: Long) {
-        TestIdLocatorHelper.byTestId(page, "member-user-delete-btn-$userId").click()
+        TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId").click()
     }
 
     fun confirmDelete(page: Page) {

@@ -9,7 +9,7 @@ dependencyManagement {
     imports {
         mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.3")
         mavenBom("tools.jackson:jackson-bom:3.1.0")
-        mavenBom("org.testcontainers:testcontainers-bom:1.21.4")
+        mavenBom("org.testcontainers:testcontainers-bom:2.0.5")
     }
 }
 

@@ -43,7 +43,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - uses: dorny/paths-filter@v4.0.1
+      - uses: dorny/paths-filter@v4.0.2
         id: filter
         with:
           base: ${{ github.event.before }}

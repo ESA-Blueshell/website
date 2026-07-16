@@ -2,7 +2,7 @@
 # script, plan template and account manifest used by the apply sidecar
 # on the production Stalwart Deployment. Build context is the repo root
 # so the same Dockerfile slots into the standard build matrix.
-FROM alpine:3.23.4
+FROM alpine:3.24.1
 
 ARG STALWART_CLI_VERSION=1.0.7
 

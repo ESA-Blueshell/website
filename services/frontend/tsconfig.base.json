@@ -1,6 +1,7 @@
 {
   "extends": "@vue/tsconfig/tsconfig.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "target": "ESNext",
     "module": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],

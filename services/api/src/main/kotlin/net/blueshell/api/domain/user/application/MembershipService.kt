@@ -84,6 +84,10 @@ class MembershipService @Autowired constructor(
         return repository.existsByUser_IdAndEndDateIsNull(userId)
     }
 
+    fun findByUserId(userId: Long): MutableList<Membership> {
+        return repository.findByUser_Id(userId)
+    }
+
     fun findByQuery(query: MembershipQuery): MutableList<Membership> {
         val spec = MembershipSpecifications.fromQuery(
             query,

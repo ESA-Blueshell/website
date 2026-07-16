@@ -64,7 +64,7 @@ const RAW_RUNTIME_STATE =
           ["istanbul-lib-coverage", "npm:3.2.2"],\
           ["istanbul-lib-report", "npm:3.0.1"],\
           ["istanbul-reports", "npm:3.2.0"],\
-          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:28.1.0"],\
+          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:29.1.1"],\
           ["libphonenumber-js", "npm:1.13.4"],\
           ["luxon", "npm:3.7.2"],\
           ["marked", "npm:17.0.3"],\
@@ -100,39 +100,39 @@ const RAW_RUNTIME_STATE =
         "linkType": "SOFT"\
       }]\
     ]],\
-    ["@acemir/cssom", [\
-      ["npm:0.9.31", {\
-        "packageLocation": "./.yarn/cache/@acemir-cssom-npm-0.9.31-806e8cd7a7-cbfff98812.zip/node_modules/@acemir/cssom/",\
-        "packageDependencies": [\
-          ["@acemir/cssom", "npm:0.9.31"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
     ["@asamuzakjp/css-color", [\
-      ["npm:4.1.2", {\
-        "packageLocation": "./.yarn/cache/@asamuzakjp-css-color-npm-4.1.2-585025f523-e432fdef97.zip/node_modules/@asamuzakjp/css-color/",\
+      ["npm:5.1.11", {\
+        "packageLocation": "./.yarn/cache/@asamuzakjp-css-color-npm-5.1.11-3a7e65c45e-32720bdff8.zip/node_modules/@asamuzakjp/css-color/",\
         "packageDependencies": [\
-          ["@asamuzakjp/css-color", "npm:4.1.2"],\
-          ["@csstools/css-calc", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:3.1.1"],\
-          ["@csstools/css-color-parser", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.2"],\
-          ["@csstools/css-parser-algorithms", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.0"],\
-          ["@csstools/css-tokenizer", "npm:4.0.0"],\
-          ["lru-cache", "npm:11.2.6"]\
+          ["@asamuzakjp/css-color", "npm:5.1.11"],\
+          ["@asamuzakjp/generational-cache", "npm:1.0.1"],\
+          ["@csstools/css-calc", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:3.2.1"],\
+          ["@csstools/css-color-parser", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.1.9"],\
+          ["@csstools/css-parser-algorithms", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.0.0"],\
+          ["@csstools/css-tokenizer", "npm:4.0.0"]\
         ],\
         "linkType": "HARD"\
       }]\
     ]],\
     ["@asamuzakjp/dom-selector", [\
-      ["npm:6.8.1", {\
-        "packageLocation": "./.yarn/cache/@asamuzakjp-dom-selector-npm-6.8.1-2d4f0b3661-635de2c3b1.zip/node_modules/@asamuzakjp/dom-selector/",\
+      ["npm:7.1.1", {\
+        "packageLocation": "./.yarn/cache/@asamuzakjp-dom-selector-npm-7.1.1-65712ed7fe-8cec1c6187.zip/node_modules/@asamuzakjp/dom-selector/",\
         "packageDependencies": [\
-          ["@asamuzakjp/dom-selector", "npm:6.8.1"],\
+          ["@asamuzakjp/dom-selector", "npm:7.1.1"],\
+          ["@asamuzakjp/generational-cache", "npm:1.0.1"],\
           ["@asamuzakjp/nwsapi", "npm:2.3.9"],\
           ["bidi-js", "npm:1.0.3"],\
-          ["css-tree", "npm:3.1.0"],\
-          ["is-potential-custom-element-name", "npm:1.0.1"],\
-          ["lru-cache", "npm:11.2.6"]\
+          ["css-tree", "npm:3.2.1"],\
+          ["is-potential-custom-element-name", "npm:1.0.1"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["@asamuzakjp/generational-cache", [\
+      ["npm:1.0.1", {\
+        "packageLocation": "./.yarn/cache/@asamuzakjp-generational-cache-npm-1.0.1-3432a81028-1de62de437.zip/node_modules/@asamuzakjp/generational-cache/",\
+        "packageDependencies": [\
+          ["@asamuzakjp/generational-cache", "npm:1.0.1"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -487,27 +487,27 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["@csstools/color-helpers", [\
-      ["npm:6.0.2", {\
-        "packageLocation": "./.yarn/cache/@csstools-color-helpers-npm-6.0.2-d0267095a4-4c66574563.zip/node_modules/@csstools/color-helpers/",\
+      ["npm:6.1.0", {\
+        "packageLocation": "./.yarn/cache/@csstools-color-helpers-npm-6.1.0-d2262200c0-ebb71eebcd.zip/node_modules/@csstools/color-helpers/",\
         "packageDependencies": [\
-          ["@csstools/color-helpers", "npm:6.0.2"]\
+          ["@csstools/color-helpers", "npm:6.1.0"]\
         ],\
         "linkType": "HARD"\
       }]\
     ]],\
     ["@csstools/css-calc", [\
-      ["npm:3.1.1", {\
-        "packageLocation": "./.yarn/cache/@csstools-css-calc-npm-3.1.1-c16e581ae9-6efcc016d9.zip/node_modules/@csstools/css-calc/",\
+      ["npm:3.2.1", {\
+        "packageLocation": "./.yarn/cache/@csstools-css-calc-npm-3.2.1-8e555a1a29-0191c8d1cd.zip/node_modules/@csstools/css-calc/",\
         "packageDependencies": [\
-          ["@csstools/css-calc", "npm:3.1.1"]\
+          ["@csstools/css-calc", "npm:3.2.1"]\
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:3.1.1", {\
-        "packageLocation": "./.yarn/__virtual__/@csstools-css-calc-virtual-f495a55103/0/cache/@csstools-css-calc-npm-3.1.1-c16e581ae9-6efcc016d9.zip/node_modules/@csstools/css-calc/",\
+      ["virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:3.2.1", {\
+        "packageLocation": "./.yarn/__virtual__/@csstools-css-calc-virtual-684913e173/0/cache/@csstools-css-calc-npm-3.2.1-8e555a1a29-0191c8d1cd.zip/node_modules/@csstools/css-calc/",\
         "packageDependencies": [\
-          ["@csstools/css-calc", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:3.1.1"],\
-          ["@csstools/css-parser-algorithms", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.0"],\
+          ["@csstools/css-calc", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:3.2.1"],\
+          ["@csstools/css-parser-algorithms", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.0.0"],\
           ["@csstools/css-tokenizer", "npm:4.0.0"],\
           ["@types/csstools__css-parser-algorithms", null],\
           ["@types/csstools__css-tokenizer", null]\
@@ -522,20 +522,20 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["@csstools/css-color-parser", [\
-      ["npm:4.0.2", {\
-        "packageLocation": "./.yarn/cache/@csstools-css-color-parser-npm-4.0.2-e3b996f893-487cf507ef.zip/node_modules/@csstools/css-color-parser/",\
+      ["npm:4.1.9", {\
+        "packageLocation": "./.yarn/cache/@csstools-css-color-parser-npm-4.1.9-3b98d580a8-d9330a1d5b.zip/node_modules/@csstools/css-color-parser/",\
         "packageDependencies": [\
-          ["@csstools/css-color-parser", "npm:4.0.2"]\
+          ["@csstools/css-color-parser", "npm:4.1.9"]\
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.2", {\
-        "packageLocation": "./.yarn/__virtual__/@csstools-css-color-parser-virtual-2c66ea3b52/0/cache/@csstools-css-color-parser-npm-4.0.2-e3b996f893-487cf507ef.zip/node_modules/@csstools/css-color-parser/",\
+      ["virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.1.9", {\
+        "packageLocation": "./.yarn/__virtual__/@csstools-css-color-parser-virtual-40aaff4b76/0/cache/@csstools-css-color-parser-npm-4.1.9-3b98d580a8-d9330a1d5b.zip/node_modules/@csstools/css-color-parser/",\
         "packageDependencies": [\
-          ["@csstools/color-helpers", "npm:6.0.2"],\
-          ["@csstools/css-calc", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:3.1.1"],\
-          ["@csstools/css-color-parser", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.2"],\
-          ["@csstools/css-parser-algorithms", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.0"],\
+          ["@csstools/color-helpers", "npm:6.1.0"],\
+          ["@csstools/css-calc", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:3.2.1"],\
+          ["@csstools/css-color-parser", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.1.9"],\
+          ["@csstools/css-parser-algorithms", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.0.0"],\
           ["@csstools/css-tokenizer", "npm:4.0.0"],\
           ["@types/csstools__css-parser-algorithms", null],\
           ["@types/csstools__css-tokenizer", null]\
@@ -557,10 +557,10 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.0", {\
-        "packageLocation": "./.yarn/__virtual__/@csstools-css-parser-algorithms-virtual-eab76b1e62/0/cache/@csstools-css-parser-algorithms-npm-4.0.0-31b0851d2f-94558c2428.zip/node_modules/@csstools/css-parser-algorithms/",\
+      ["virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.0.0", {\
+        "packageLocation": "./.yarn/__virtual__/@csstools-css-parser-algorithms-virtual-c0d3aeb3b6/0/cache/@csstools-css-parser-algorithms-npm-4.0.0-31b0851d2f-94558c2428.zip/node_modules/@csstools/css-parser-algorithms/",\
         "packageDependencies": [\
-          ["@csstools/css-parser-algorithms", "virtual:585025f5234635279c140770b16cae92486a7722575202863ffe85b75e300ebef38d63f0a81c6857e2d75a35b9af27d22074f5ed6b0d56b27f5d2914bd909b74#npm:4.0.0"],\
+          ["@csstools/css-parser-algorithms", "virtual:3a7e65c45e765eefb0aa1ac36390ad32774f58f795041e28b303b28e73bd22bce84d23b5e4c00a22c0750e8cbd7e35a934b1bc8c3699dd57f3abca69ec2677c8#npm:4.0.0"],\
           ["@csstools/css-tokenizer", "npm:4.0.0"],\
           ["@types/csstools__css-tokenizer", null]\
         ],\
@@ -572,10 +572,23 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["@csstools/css-syntax-patches-for-csstree", [\
-      ["npm:1.0.28", {\
-        "packageLocation": "./.yarn/cache/@csstools-css-syntax-patches-for-csstree-npm-1.0.28-39e5ed5da1-d333449954.zip/node_modules/@csstools/css-syntax-patches-for-csstree/",\
+      ["npm:1.1.6", {\
+        "packageLocation": "./.yarn/cache/@csstools-css-syntax-patches-for-csstree-npm-1.1.6-dac35fba98-4f1322833d.zip/node_modules/@csstools/css-syntax-patches-for-csstree/",\
         "packageDependencies": [\
-          ["@csstools/css-syntax-patches-for-csstree", "npm:1.0.28"]\
+          ["@csstools/css-syntax-patches-for-csstree", "npm:1.1.6"]\
+        ],\
+        "linkType": "SOFT"\
+      }],\
+      ["virtual:57f3e142abeeb04d69808bb60755daa57cdb923a16ded99b2b1591ef3bf50556d3377ff8654d20d1341e997be19a10943e4050f72a4db0e8fc5c3c075ffca76b#npm:1.1.6", {\
+        "packageLocation": "./.yarn/__virtual__/@csstools-css-syntax-patches-for-csstree-virtual-cd6883a31c/0/cache/@csstools-css-syntax-patches-for-csstree-npm-1.1.6-dac35fba98-4f1322833d.zip/node_modules/@csstools/css-syntax-patches-for-csstree/",\
+        "packageDependencies": [\
+          ["@csstools/css-syntax-patches-for-csstree", "virtual:57f3e142abeeb04d69808bb60755daa57cdb923a16ded99b2b1591ef3bf50556d3377ff8654d20d1341e997be19a10943e4050f72a4db0e8fc5c3c075ffca76b#npm:1.1.6"],\
+          ["@types/css-tree", null],\
+          ["css-tree", "npm:3.2.1"]\
+        ],\
+        "packagePeers": [\
+          "@types/css-tree",\
+          "css-tree"\
         ],\
         "linkType": "HARD"\
       }]\
@@ -782,10 +795,30 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "SOFT"\
       }],\
+      ["npm:1.15.1", {\
+        "packageLocation": "./.yarn/cache/@exodus-bytes-npm-1.15.1-83126e967c-333056a695.zip/node_modules/@exodus/bytes/",\
+        "packageDependencies": [\
+          ["@exodus/bytes", "npm:1.15.1"]\
+        ],\
+        "linkType": "SOFT"\
+      }],\
       ["virtual:107479fe738b46d9ba616f54ddd1760b0da6893116ebd6fabe5b569b96d6c7fe9f5cac028b0ae1963c7a652f448755a0d8c6ff2fad3c20530b39d427000e39ca#npm:1.14.1", {\
         "packageLocation": "./.yarn/__virtual__/@exodus-bytes-virtual-5422ad0998/0/cache/@exodus-bytes-npm-1.14.1-7871286fb6-486dad3099.zip/node_modules/@exodus/bytes/",\
         "packageDependencies": [\
           ["@exodus/bytes", "virtual:107479fe738b46d9ba616f54ddd1760b0da6893116ebd6fabe5b569b96d6c7fe9f5cac028b0ae1963c7a652f448755a0d8c6ff2fad3c20530b39d427000e39ca#npm:1.14.1"],\
+          ["@noble/hashes", null],\
+          ["@types/noble__hashes", null]\
+        ],\
+        "packagePeers": [\
+          "@noble/hashes",\
+          "@types/noble__hashes"\
+        ],\
+        "linkType": "HARD"\
+      }],\
+      ["virtual:57f3e142abeeb04d69808bb60755daa57cdb923a16ded99b2b1591ef3bf50556d3377ff8654d20d1341e997be19a10943e4050f72a4db0e8fc5c3c075ffca76b#npm:1.15.1", {\
+        "packageLocation": "./.yarn/__virtual__/@exodus-bytes-virtual-081c559192/0/cache/@exodus-bytes-npm-1.15.1-83126e967c-333056a695.zip/node_modules/@exodus/bytes/",\
+        "packageDependencies": [\
+          ["@exodus/bytes", "virtual:57f3e142abeeb04d69808bb60755daa57cdb923a16ded99b2b1591ef3bf50556d3377ff8654d20d1341e997be19a10943e4050f72a4db0e8fc5c3c075ffca76b#npm:1.15.1"],\
           ["@noble/hashes", null],\
           ["@types/noble__hashes", null]\
         ],\
@@ -3057,7 +3090,7 @@ const RAW_RUNTIME_STATE =
           ["istanbul-lib-coverage", "npm:3.2.2"],\
           ["istanbul-lib-report", "npm:3.0.1"],\
           ["istanbul-reports", "npm:3.2.0"],\
-          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:28.1.0"],\
+          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:29.1.1"],\
           ["libphonenumber-js", "npm:1.13.4"],\
           ["luxon", "npm:3.7.2"],\
           ["marked", "npm:17.0.3"],\
@@ -3632,6 +3665,15 @@ const RAW_RUNTIME_STATE =
           ["source-map-js", "npm:1.2.1"]\
         ],\
         "linkType": "HARD"\
+      }],\
+      ["npm:3.2.1", {\
+        "packageLocation": "./.yarn/cache/css-tree-npm-3.2.1-f5a5ee91c7-1f65e9ccaa.zip/node_modules/css-tree/",\
+        "packageDependencies": [\
+          ["css-tree", "npm:3.2.1"],\
+          ["mdn-data", "npm:2.27.1"],\
+          ["source-map-js", "npm:1.2.1"]\
+        ],\
+        "linkType": "HARD"\
       }]\
     ]],\
     ["css-what", [\
@@ -3667,19 +3709,6 @@ const RAW_RUNTIME_STATE =
         "packageDependencies": [\
           ["css-tree", "npm:2.2.1"],\
           ["csso", "npm:5.0.5"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
-    ["cssstyle", [\
-      ["npm:6.0.2", {\
-        "packageLocation": "./.yarn/cache/cssstyle-npm-6.0.2-d45734a9e4-fdef2365be.zip/node_modules/cssstyle/",\
-        "packageDependencies": [\
-          ["@asamuzakjp/css-color", "npm:4.1.2"],\
-          ["@csstools/css-syntax-patches-for-csstree", "npm:1.0.28"],\
-          ["css-tree", "npm:3.1.0"],\
-          ["cssstyle", "npm:6.0.2"],\
-          ["lru-cache", "npm:11.2.6"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -4020,17 +4049,17 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "HARD"\
       }],\
-      ["npm:6.0.1", {\
-        "packageLocation": "./.yarn/cache/entities-npm-6.0.1-84692dab43-ed836ddac5.zip/node_modules/entities/",\
-        "packageDependencies": [\
-          ["entities", "npm:6.0.1"]\
-        ],\
-        "linkType": "HARD"\
-      }],\
       ["npm:7.0.1", {\
         "packageLocation": "./.yarn/cache/entities-npm-7.0.1-61f8ba3430-b4fb9937bb.zip/node_modules/entities/",\
         "packageDependencies": [\
           ["entities", "npm:7.0.1"]\
+        ],\
+        "linkType": "HARD"\
+      }],\
+      ["npm:8.0.0", {\
+        "packageLocation": "./.yarn/cache/entities-npm-8.0.0-eb46224514-938e631664.zip/node_modules/entities/",\
+        "packageDependencies": [\
+          ["entities", "npm:8.0.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -5578,34 +5607,34 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["jsdom", [\
-      ["npm:28.1.0", {\
-        "packageLocation": "./.yarn/cache/jsdom-npm-28.1.0-6a7643ebc8-341ecb4005.zip/node_modules/jsdom/",\
+      ["npm:29.1.1", {\
+        "packageLocation": "./.yarn/cache/jsdom-npm-29.1.1-e241066cc0-20e2174b09.zip/node_modules/jsdom/",\
         "packageDependencies": [\
-          ["jsdom", "npm:28.1.0"]\
+          ["jsdom", "npm:29.1.1"]\
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:28.1.0", {\
-        "packageLocation": "./.yarn/__virtual__/jsdom-virtual-503bd14be1/0/cache/jsdom-npm-28.1.0-6a7643ebc8-341ecb4005.zip/node_modules/jsdom/",\
+      ["virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:29.1.1", {\
+        "packageLocation": "./.yarn/__virtual__/jsdom-virtual-57f3e142ab/0/cache/jsdom-npm-29.1.1-e241066cc0-20e2174b09.zip/node_modules/jsdom/",\
         "packageDependencies": [\
-          ["@acemir/cssom", "npm:0.9.31"],\
-          ["@asamuzakjp/dom-selector", "npm:6.8.1"],\
+          ["@asamuzakjp/css-color", "npm:5.1.11"],\
+          ["@asamuzakjp/dom-selector", "npm:7.1.1"],\
           ["@bramus/specificity", "npm:2.4.2"],\
-          ["@exodus/bytes", "virtual:107479fe738b46d9ba616f54ddd1760b0da6893116ebd6fabe5b569b96d6c7fe9f5cac028b0ae1963c7a652f448755a0d8c6ff2fad3c20530b39d427000e39ca#npm:1.14.1"],\
+          ["@csstools/css-syntax-patches-for-csstree", "virtual:57f3e142abeeb04d69808bb60755daa57cdb923a16ded99b2b1591ef3bf50556d3377ff8654d20d1341e997be19a10943e4050f72a4db0e8fc5c3c075ffca76b#npm:1.1.6"],\
+          ["@exodus/bytes", "virtual:57f3e142abeeb04d69808bb60755daa57cdb923a16ded99b2b1591ef3bf50556d3377ff8654d20d1341e997be19a10943e4050f72a4db0e8fc5c3c075ffca76b#npm:1.15.1"],\
           ["@types/canvas", null],\
           ["canvas", null],\
-          ["cssstyle", "npm:6.0.2"],\
+          ["css-tree", "npm:3.2.1"],\
           ["data-urls", "npm:7.0.0"],\
           ["decimal.js", "npm:10.6.0"],\
           ["html-encoding-sniffer", "npm:6.0.0"],\
-          ["http-proxy-agent", "npm:7.0.2"],\
-          ["https-proxy-agent", "npm:7.0.6"],\
           ["is-potential-custom-element-name", "npm:1.0.1"],\
-          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:28.1.0"],\
-          ["parse5", "npm:8.0.0"],\
+          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:29.1.1"],\
+          ["lru-cache", "npm:11.5.2"],\
+          ["parse5", "npm:8.0.1"],\
           ["saxes", "npm:6.0.0"],\
           ["symbol-tree", "npm:3.2.4"],\
-          ["tough-cookie", "npm:6.0.0"],\
+          ["tough-cookie", "npm:6.0.2"],\
           ["undici", "npm:7.28.0"],\
           ["w3c-xmlserializer", "npm:5.0.0"],\
           ["webidl-conversions", "npm:8.0.1"],\
@@ -5860,13 +5889,6 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "HARD"\
       }],\
-      ["npm:11.2.6", {\
-        "packageLocation": "./.yarn/cache/lru-cache-npm-11.2.6-acb7d4323e-73bbffb298.zip/node_modules/lru-cache/",\
-        "packageDependencies": [\
-          ["lru-cache", "npm:11.2.6"]\
-        ],\
-        "linkType": "HARD"\
-      }],\
       ["npm:11.5.2", {\
         "packageLocation": "./.yarn/cache/lru-cache-npm-11.5.2-4d882549c7-ece1ad731f.zip/node_modules/lru-cache/",\
         "packageDependencies": [\
@@ -5999,6 +6021,13 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/mdn-data-npm-2.12.2-d75edd5e16-b22443b71d.zip/node_modules/mdn-data/",\
         "packageDependencies": [\
           ["mdn-data", "npm:2.12.2"]\
+        ],\
+        "linkType": "HARD"\
+      }],\
+      ["npm:2.27.1", {\
+        "packageLocation": "./.yarn/cache/mdn-data-npm-2.27.1-f4f339e836-eb8abf5d22.zip/node_modules/mdn-data/",\
+        "packageDependencies": [\
+          ["mdn-data", "npm:2.27.1"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -6549,11 +6578,11 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["parse5", [\
-      ["npm:8.0.0", {\
-        "packageLocation": "./.yarn/cache/parse5-npm-8.0.0-c813f23978-8279892dcd.zip/node_modules/parse5/",\
+      ["npm:8.0.1", {\
+        "packageLocation": "./.yarn/cache/parse5-npm-8.0.1-c29b7b9dbc-c3c1c5aab5.zip/node_modules/parse5/",\
         "packageDependencies": [\
-          ["entities", "npm:6.0.1"],\
-          ["parse5", "npm:8.0.0"]\
+          ["entities", "npm:8.0.0"],\
+          ["parse5", "npm:8.0.1"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -7548,11 +7577,11 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["tough-cookie", [\
-      ["npm:6.0.0", {\
-        "packageLocation": "./.yarn/cache/tough-cookie-npm-6.0.0-c7d0e8e15a-7b17a461e9.zip/node_modules/tough-cookie/",\
+      ["npm:6.0.2", {\
+        "packageLocation": "./.yarn/cache/tough-cookie-npm-6.0.2-562216a0c1-5ff521a476.zip/node_modules/tough-cookie/",\
         "packageDependencies": [\
           ["tldts", "npm:7.0.23"],\
-          ["tough-cookie", "npm:6.0.0"]\
+          ["tough-cookie", "npm:6.0.2"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -8132,7 +8161,7 @@ const RAW_RUNTIME_STATE =
           ["es-module-lexer", "npm:2.1.0"],\
           ["expect-type", "npm:1.3.0"],\
           ["happy-dom", null],\
-          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:28.1.0"],\
+          ["jsdom", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:29.1.1"],\
           ["magic-string", "npm:0.30.21"],\
           ["obug", "npm:2.1.1"],\
           ["pathe", "npm:2.0.3"],\

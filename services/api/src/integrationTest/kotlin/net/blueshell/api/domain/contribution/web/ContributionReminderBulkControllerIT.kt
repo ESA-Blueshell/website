@@ -156,7 +156,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.counts.willApply").value(0))
                 .andExpect(jsonPath("$.rows[0].disposition").value("EXCLUDED"))
                 .andExpect(jsonPath("$.rows[0].reason").value("HONORARY"))
-                .andExpect(jsonPath("$.rows[0].amount").isEmpty)
+                .andExpect(jsonPath("$.rows[0].amount").doesNotExist())
                 .andExpect(jsonPath("$.rows[0].memberType").value("HONORARY"))
         }
 

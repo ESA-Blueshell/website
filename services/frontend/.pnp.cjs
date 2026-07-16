@@ -52,7 +52,7 @@ const RAW_RUNTIME_STATE =
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.49.0"],\
           ["countries-list", "npm:3.3.0"],\
-          ["dompurify", "npm:3.4.7"],\
+          ["dompurify", "npm:3.4.11"],\
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.4.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.9.1"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.7.2"],\
@@ -3045,7 +3045,7 @@ const RAW_RUNTIME_STATE =
           ["blueshell-frontend", "workspace:."],\
           ["core-js", "npm:3.49.0"],\
           ["countries-list", "npm:3.3.0"],\
-          ["dompurify", "npm:3.4.7"],\
+          ["dompurify", "npm:3.4.11"],\
           ["eslint", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.4.1"],\
           ["eslint-plugin-vue", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:10.9.1"],\
           ["eslint-plugin-vuetify", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:2.7.2"],\
@@ -3904,11 +3904,11 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["dompurify", [\
-      ["npm:3.4.7", {\
-        "packageLocation": "./.yarn/cache/dompurify-npm-3.4.7-440dacdb20-b39940e952.zip/node_modules/dompurify/",\
+      ["npm:3.4.11", {\
+        "packageLocation": "./.yarn/cache/dompurify-npm-3.4.11-7df48fdceb-31439481c7.zip/node_modules/dompurify/",\
         "packageDependencies": [\
           ["@types/trusted-types", "npm:2.0.7"],\
-          ["dompurify", "npm:3.4.7"]\
+          ["dompurify", "npm:3.4.11"]\
         ],\
         "linkType": "HARD"\
       }]\

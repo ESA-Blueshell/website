@@ -3,6 +3,7 @@ package net.blueshell.api.platform.config
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.redis.serializer.RedisSerializer
 import org.springframework.session.config.SessionRepositoryCustomizer
 import org.springframework.session.data.redis.RedisSessionRepository
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession
@@ -53,4 +54,15 @@ class SessionConfig(
     @Bean
     fun redisSessionRepositoryCustomizer(): SessionRepositoryCustomizer<RedisSessionRepository> =
         SessionRepositoryCustomizer { it.setDefaultMaxInactiveInterval(sessionTimeout) }
+
+    /**
+     * Spring Session picks up a bean named `springSessionDefaultRedisSerializer`
+     * to (de)serialize session attributes — including the Spring Security context
+     * that holds the UserPrincipal. Using the fault-tolerant serializer means a
+     * session written by a previous deploy that can no longer be deserialized is
+     * dropped and rebuilt from the JWT cookie, instead of 500ing every request
+     * until the 30-day session TTL lapses.
+     */
+    @Bean
+    fun springSessionDefaultRedisSerializer(): RedisSerializer<Any> = FaultTolerantRedisSerializer()
 }

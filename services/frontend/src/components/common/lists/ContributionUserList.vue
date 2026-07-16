@@ -55,6 +55,7 @@
             <contribution-user-row
               :contribution-period-id="contributionPeriodId"
               :contributions="contributions"
+              :period-member-user-ids="periodMemberUserIds"
               :disabled="disabled"
               :user="user"
               @update:contribution="contributionChanged"
@@ -88,16 +89,27 @@ const props = withDefaults(defineProps<{
   users: UserDetailResponse[]
   contributionPeriodId: number
   contributions?: ContributionResponse[]
+  periodMemberUserIds?: Set<number>
   disabled?: boolean
   startOpen?: boolean
 }>(), {
   panelKey: "",
   contributions: () => [],
+  periodMemberUserIds: () => new Set<number>(),
   disabled: false,
   startOpen: false,
 })
 
-const {title, panelKey, users, contributions, disabled, contributionPeriodId, startOpen} = toRefs(props)
+const {
+  title,
+  panelKey,
+  users,
+  contributions,
+  periodMemberUserIds,
+  disabled,
+  contributionPeriodId,
+  startOpen,
+} = toRefs(props)
 
 const emit = defineEmits<{
   (e: "delete:contribution", userId: number): void

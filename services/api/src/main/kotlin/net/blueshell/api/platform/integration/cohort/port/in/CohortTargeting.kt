@@ -19,7 +19,8 @@ interface CohortTargeting {
     /**
      * Maps the subject's [system] cohort to an existing external target by
      * id. Fails with 409 when the subject already has an active mapping for
-     * [system]. No external call — the id is trusted.
+     * [system] with a target id; an existing unbound row is filled in place.
+     * No external call — the id is trusted.
      */
     fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow
 
@@ -47,12 +48,10 @@ interface CohortTargeting {
     ): CohortMappingRow
 
     /**
-     * Materialises [cohortId]'s external target: re-checks the id, and only when
-     * still missing creates it through the
-     * [net.blueshell.api.platform.integration.cohort.port.out.CohortPort]
-     * (passing the cohort's folder) and records it. Driven by the
-     * `cohort.materialize-target` job, which is deduplicated per cohort so only
-     * one create runs. Idempotent: returns the existing id when already set.
+     * Resolves [cohortId]'s external target for stale queued
+     * `cohort.materialize-target` jobs. Idempotent: returns the existing id
+     * when already set; fails terminally when missing. This path never creates
+     * provider targets.
      */
     fun materialize(cohortId: Long): CohortTargetRef
 

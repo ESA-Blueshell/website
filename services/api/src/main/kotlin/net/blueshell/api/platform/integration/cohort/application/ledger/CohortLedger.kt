@@ -4,6 +4,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
+import net.blueshell.api.shared.job.NonRetryableJobException
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
@@ -25,6 +26,7 @@ class CohortLedger(private val members: CohortMemberRepository) {
      */
     fun markPushed(cohortId: Long, userId: Long, externalUserId: String, at: LocalDateTime): Boolean {
         val row = members.findByCohortIdAndUserId(cohortId, userId) ?: return false
+        claimExternalIdForDesired(row, externalUserId)
         row.externalUserId = externalUserId
         row.syncedAt = at
         members.save(row)
@@ -37,11 +39,39 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * pushed), and records the external id + label.
      */
     fun markVerified(row: CohortMember, externalUserId: String, label: String?, at: LocalDateTime) {
+        claimExternalIdForDesired(row, externalUserId)
         row.externalUserId = externalUserId
         if (row.syncedAt == null) row.syncedAt = at
         row.verifiedAt = at
         row.label = label
         members.save(row)
+    }
+
+    /**
+     * Batch reconcile confirmation. Matching strangers are claimed and flushed
+     * once before any desired row receives an external id, avoiding live-key
+     * overlap on `uk_cohort_member_external`.
+     */
+    fun markVerified(confirmations: Collection<DesiredConfirmation>, at: LocalDateTime): Set<String> {
+        val safeConfirmations = confirmations
+            .groupBy { it.externalUserId }
+            .filterValues { it.size == 1 }
+            .values
+            .flatten()
+        safeConfirmations
+            .groupBy { it.row.cohort.id!! }
+            .forEach { (cohortId, rows) ->
+                rows.forEach { guardDesiredExternalOwner(it.row, it.externalUserId) }
+                claimMatchingStrangers(cohortId, rows.map { it.externalUserId }.toSet())
+            }
+        safeConfirmations.forEach { confirmation ->
+            confirmation.row.externalUserId = confirmation.externalUserId
+            if (confirmation.row.syncedAt == null) confirmation.row.syncedAt = at
+            confirmation.row.verifiedAt = at
+            confirmation.row.label = confirmation.label
+        }
+        members.saveAll(safeConfirmations.map { it.row })
+        return safeConfirmations.map { it.externalUserId }.toSet()
     }
 
     /**
@@ -71,6 +101,8 @@ class CohortLedger(private val members: CohortMemberRepository) {
             existing.verifiedAt = at
             existing.label = label
             members.save(existing)
+        } else if (members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(cohort.id!!, externalUserId) != null) {
+            return
         } else {
             members.save(
                 CohortMember(
@@ -102,11 +134,53 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * present, so it counts as synced + verified) and drop the stranger.
      */
     fun foldStrangerIntoDesired(desired: CohortMember, stranger: CohortMember) {
-        desired.externalUserId = stranger.externalUserId
-        desired.syncedAt = stranger.verifiedAt
-        desired.verifiedAt = stranger.verifiedAt
-        desired.label = stranger.label
-        members.save(desired)
+        val externalUserId = stranger.externalUserId
+        val verifiedAt = stranger.verifiedAt
+        val label = stranger.label
+        guardDesiredExternalOwner(desired, externalUserId)
         members.delete(stranger)
+        members.flush()
+        desired.externalUserId = externalUserId
+        desired.syncedAt = verifiedAt
+        desired.verifiedAt = verifiedAt
+        desired.label = label
+        members.save(desired)
     }
+
+    private fun claimExternalIdForDesired(row: CohortMember, externalUserId: String) {
+        guardDesiredExternalOwner(row, externalUserId)
+        claimMatchingStrangers(row.cohort.id!!, setOf(externalUserId))
+    }
+
+    private fun guardDesiredExternalOwner(row: CohortMember, externalUserId: String?) {
+        if (externalUserId.isNullOrBlank()) return
+        val cohortId = row.cohort.id!!
+        val owner = members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(cohortId, externalUserId) ?: return
+        if (owner.userId == row.userId || (owner.id != null && owner.id == row.id)) return
+        throw ExternalIdAlreadyOwnedException(cohortId, externalUserId, owner.userId, row.userId)
+    }
+
+    private fun claimMatchingStrangers(cohortId: Long, externalUserIds: Set<String>) {
+        if (externalUserIds.isEmpty()) return
+        val strangers = members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(cohortId, externalUserIds)
+        if (strangers.isEmpty()) return
+        strangers.forEach { members.delete(it) }
+        members.flush()
+    }
+
+    data class DesiredConfirmation(
+        val row: CohortMember,
+        val externalUserId: String,
+        val label: String?,
+    )
 }
+
+class ExternalIdAlreadyOwnedException(
+    cohortId: Long,
+    externalUserId: String,
+    ownerUserId: Long?,
+    requestedUserId: Long?,
+) : NonRetryableJobException(
+    "Cannot assign external user id '$externalUserId' in cohort $cohortId to user $requestedUserId; " +
+        "it is already owned by user $ownerUserId in the same cohort.",
+)

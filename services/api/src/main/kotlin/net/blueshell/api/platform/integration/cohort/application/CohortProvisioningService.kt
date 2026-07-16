@@ -2,7 +2,6 @@ package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
-import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
@@ -23,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional
 class CohortProvisioningService(
     private val subjects: CohortSubjectRepository,
     private val cohorts: CohortRepository,
+    private val strategies: TargetStrategies,
 ) {
     @Transactional
     fun provision(spec: CohortProvisioningSpec): CohortProvisioningResult {
@@ -43,18 +43,13 @@ class CohortProvisioningService(
             ?: cohorts.save(
                 Cohort(
                     system = spec.system.name,
-                    kind = kindFor(spec.system),
+                    kind = strategies.descriptor(spec.system).kind,
                     label = spec.label,
                     folder = spec.folder,
                     subjectId = subject.id,
                 ),
-            )
+        )
         return CohortProvisioningResult.Ready(cohort)
-    }
-
-    private fun kindFor(system: TargetSystem): CohortKind = when (system) {
-        TargetSystem.BREVO -> CohortKind.LIST
-        TargetSystem.GOOGLE_CALENDAR -> error("$system has no cohort target kind")
     }
 }
 

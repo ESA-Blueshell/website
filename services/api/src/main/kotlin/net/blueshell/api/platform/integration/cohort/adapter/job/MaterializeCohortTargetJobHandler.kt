@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
 /**
- * Driving adapter: invokes [CohortTargeting.materialize]. Creates one
- * cohort's external target when it has none yet, so a per-member ADD that
- * found no target id can retry once it exists. Deduplicated per cohort.
+ * Driving adapter for stale `cohort.materialize-target` rows. The use case
+ * now returns an existing target id or fails terminally; it never creates a
+ * provider target.
  */
 @Component
 class MaterializeCohortTargetJobHandler(

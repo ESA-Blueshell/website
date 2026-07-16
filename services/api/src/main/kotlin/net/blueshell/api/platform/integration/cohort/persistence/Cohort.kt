@@ -14,10 +14,8 @@ import org.hibernate.annotations.SQLRestriction
  * A named group on one external system: a defined population of users
  * sharing one or more facts. Brevo lists, Discord roles and Google
  * groups all map to one row here. The native-side id lives in
- * [externalId] (owned by `CohortTargetIds`), which is `null` until the
- * cohort has been materialised externally by the `cohort.materialize-target`
- * job. During the compatibility window `CohortTargetIds` also falls back to
- * the legacy `external_id_mapping` row with `aggregate_type='COHORT'`.
+ * [externalId] (owned by `CohortTargetIds`), which is `null` until an
+ * operator creates or links the external target.
  *
  * `system` is stored as a plain string holding a `TargetSystem.name()`;
  * the persistence layer cannot depend on the `sync.port` package per the
@@ -50,8 +48,8 @@ class Cohort(
      * Optional folder name used to group cohorts in the admin UI. Mirrors
      * the folder concept on Brevo (and later Discord category / Google
      * group org-unit) — the column carries the canonical display name and
-     * the per-target adapter is responsible for translating that into the
-     * vendor's folder id when materialising the external counterpart.
+     * explicit target creation is responsible for translating that into the
+     * vendor's folder id.
      * `null` means the cohort sits at the top level / "Other" group.
      */
     @Column(name = "folder", nullable = true, length = 64)
@@ -68,7 +66,7 @@ class Cohort(
 
     /**
      * Native id of this cohort's target on [system] (e.g. a Brevo list id).
-     * `null` until materialised. Written only through `CohortTargetIds`;
+     * `null` until explicitly created or linked. Written only through `CohortTargetIds`;
      * `1024` matches the widened `external_id_mapping.external_id` (V61).
      */
     @Column(name = "external_id", nullable = true, length = 1024)

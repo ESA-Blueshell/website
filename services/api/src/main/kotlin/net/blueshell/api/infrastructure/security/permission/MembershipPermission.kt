@@ -17,9 +17,14 @@ class MembershipPermission @Autowired constructor(service: MembershipService) :
             return false
         }
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        val isAdmin = SecurityUtils.hasAuthority(authentication, Role.ADMIN)
         if (entity == null) {
             return when (permission) {
                 "read", "write", "delete" -> isBoard
+                // Restoring a soft-deleted membership and viewing the deleted set are
+                // ADMIN-only by design (#383) — deliberately stricter than user restore,
+                // which sits at BOARD.
+                "restore", "read-deleted" -> isAdmin
                 else -> false
             }
         }

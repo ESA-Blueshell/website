@@ -12,5 +12,7 @@ data class MembershipQuery(
     var from: LocalDate? = null,
 
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    var to: LocalDate? = null
+    var to: LocalDate? = null,
+
+    var userId: Long? = null
 )

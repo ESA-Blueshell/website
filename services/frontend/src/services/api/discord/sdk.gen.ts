@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActionGuildJoinRequestData, ActionGuildJoinRequestErrors, ActionGuildJoinRequestResponses, AddGuildMemberData, AddGuildMemberErrors, AddGuildMemberResponses, AddGuildMemberRoleData, AddGuildMemberRoleErrors, AddGuildMemberRoleResponses, BanUserFromGuildData, BanUserFromGuildErrors, BanUserFromGuildResponses, BulkBanUsersFromGuildData, BulkBanUsersFromGuildErrors, BulkBanUsersFromGuildResponses, BulkUpdateGuildChannelsData, BulkUpdateGuildChannelsErrors, BulkUpdateGuildChannelsResponses, BulkUpdateGuildRolesData, BulkUpdateGuildRolesErrors, BulkUpdateGuildRolesResponses, CreateAutoModerationRuleData, CreateAutoModerationRuleErrors, CreateAutoModerationRuleResponses, CreateGuildChannelData, CreateGuildChannelErrors, CreateGuildChannelResponses, CreateGuildEmojiData, CreateGuildEmojiErrors, CreateGuildEmojiResponses, CreateGuildRoleData, CreateGuildRoleErrors, CreateGuildRoleResponses, CreateGuildScheduledEventData, CreateGuildScheduledEventErrors, CreateGuildScheduledEventResponses, CreateGuildSoundboardSoundData, CreateGuildSoundboardSoundErrors, CreateGuildSoundboardSoundResponses, CreateGuildStickerData, CreateGuildStickerErrors, CreateGuildStickerResponses, CreateGuildTemplateData, CreateGuildTemplateErrors, CreateGuildTemplateResponses, DeleteAutoModerationRuleData, DeleteAutoModerationRuleErrors, DeleteAutoModerationRuleResponses, DeleteGuildEmojiData, DeleteGuildEmojiErrors, DeleteGuildEmojiResponses, DeleteGuildIntegrationData, DeleteGuildIntegrationErrors, DeleteGuildIntegrationResponses, DeleteGuildMemberData, DeleteGuildMemberErrors, DeleteGuildMemberResponses, DeleteGuildMemberRoleData, DeleteGuildMemberRoleErrors, DeleteGuildMemberRoleResponses, DeleteGuildRoleData, DeleteGuildRoleErrors, DeleteGuildRoleResponses, DeleteGuildScheduledEventData, DeleteGuildScheduledEventErrors, DeleteGuildScheduledEventResponses, DeleteGuildSoundboardSoundData, DeleteGuildSoundboardSoundErrors, DeleteGuildSoundboardSoundResponses, DeleteGuildStickerData, DeleteGuildStickerErrors, DeleteGuildStickerResponses, DeleteGuildTemplateData, DeleteGuildTemplateErrors, DeleteGuildTemplateResponses, GetActiveGuildThreadsData, GetActiveGuildThreadsErrors, GetActiveGuildThreadsResponses, GetAutoModerationRuleData, GetAutoModerationRuleErrors, GetAutoModerationRuleResponses, GetGuildBanData, GetGuildBanErrors, GetGuildBanResponses, GetGuildData, GetGuildEmojiData, GetGuildEmojiErrors, GetGuildEmojiResponses, GetGuildErrors, GetGuildJoinRequestsData, GetGuildJoinRequestsErrors, GetGuildJoinRequestsResponses, GetGuildMemberData, GetGuildMemberErrors, GetGuildMemberResponses, GetGuildNewMemberWelcomeData, GetGuildNewMemberWelcomeErrors, GetGuildNewMemberWelcomeResponses, GetGuildPreviewData, GetGuildPreviewErrors, GetGuildPreviewResponses, GetGuildResponses, GetGuildRoleData, GetGuildRoleErrors, GetGuildRoleResponses, GetGuildScheduledEventData, GetGuildScheduledEventErrors, GetGuildScheduledEventResponses, GetGuildsOnboardingData, GetGuildsOnboardingErrors, GetGuildsOnboardingResponses, GetGuildSoundboardSoundData, GetGuildSoundboardSoundErrors, GetGuildSoundboardSoundResponses, GetGuildStickerData, GetGuildStickerErrors, GetGuildStickerResponses, GetGuildTemplateData, GetGuildTemplateErrors, GetGuildTemplateResponses, GetGuildVanityUrlData, GetGuildVanityUrlErrors, GetGuildVanityUrlResponses, GetGuildWebhooksData, GetGuildWebhooksErrors, GetGuildWebhooksResponses, GetGuildWelcomeScreenData, GetGuildWelcomeScreenErrors, GetGuildWelcomeScreenResponses, GetGuildWidgetData, GetGuildWidgetErrors, GetGuildWidgetPngData, GetGuildWidgetPngErrors, GetGuildWidgetPngResponses, GetGuildWidgetResponses, GetGuildWidgetSettingsData, GetGuildWidgetSettingsErrors, GetGuildWidgetSettingsResponses, GetSelfVoiceStateData, GetSelfVoiceStateErrors, GetSelfVoiceStateResponses, GetVoiceStateData, GetVoiceStateErrors, GetVoiceStateResponses, GuildRoleMemberCountsData, GuildRoleMemberCountsErrors, GuildRoleMemberCountsResponses, GuildSearchData, GuildSearchErrors, GuildSearchResponses, ListAutoModerationRulesData, ListAutoModerationRulesErrors, ListAutoModerationRulesResponses, ListGuildAuditLogEntriesData, ListGuildAuditLogEntriesErrors, ListGuildAuditLogEntriesResponses, ListGuildBansData, ListGuildBansErrors, ListGuildBansResponses, ListGuildChannelsData, ListGuildChannelsErrors, ListGuildChannelsResponses, ListGuildEmojisData, ListGuildEmojisErrors, ListGuildEmojisResponses, ListGuildIntegrationsData, ListGuildIntegrationsErrors, ListGuildIntegrationsResponses, ListGuildInvitesData, ListGuildInvitesErrors, ListGuildInvitesResponses, ListGuildMembersData, ListGuildMembersErrors, ListGuildMembersResponses, ListGuildRolesData, ListGuildRolesErrors, ListGuildRolesResponses, ListGuildScheduledEventsData, ListGuildScheduledEventsErrors, ListGuildScheduledEventsResponses, ListGuildScheduledEventUsersData, ListGuildScheduledEventUsersErrors, ListGuildScheduledEventUsersResponses, ListGuildSoundboardSoundsData, ListGuildSoundboardSoundsErrors, ListGuildSoundboardSoundsResponses, ListGuildStickersData, ListGuildStickersErrors, ListGuildStickersResponses, ListGuildTemplatesData, ListGuildTemplatesErrors, ListGuildTemplatesResponses, ListGuildVoiceRegionsData, ListGuildVoiceRegionsErrors, ListGuildVoiceRegionsResponses, PreviewPruneGuildData, PreviewPruneGuildErrors, PreviewPruneGuildResponses, PruneGuildData, PruneGuildErrors, PruneGuildResponses, PutGuildsOnboardingData, PutGuildsOnboardingErrors, PutGuildsOnboardingResponses, SearchGuildMembersData, SearchGuildMembersErrors, SearchGuildMembersResponses, SyncGuildTemplateData, SyncGuildTemplateErrors, SyncGuildTemplateResponses, UnbanUserFromGuildData, UnbanUserFromGuildErrors, UnbanUserFromGuildResponses, UpdateAutoModerationRuleData, UpdateAutoModerationRuleErrors, UpdateAutoModerationRuleResponses, UpdateGuildData, UpdateGuildEmojiData, UpdateGuildEmojiErrors, UpdateGuildEmojiResponses, UpdateGuildErrors, UpdateGuildMemberData, UpdateGuildMemberErrors, UpdateGuildMemberResponses, UpdateGuildResponses, UpdateGuildRoleData, UpdateGuildRoleErrors, UpdateGuildRoleResponses, UpdateGuildScheduledEventData, UpdateGuildScheduledEventErrors, UpdateGuildScheduledEventResponses, UpdateGuildSoundboardSoundData, UpdateGuildSoundboardSoundErrors, UpdateGuildSoundboardSoundResponses, UpdateGuildStickerData, UpdateGuildStickerErrors, UpdateGuildStickerResponses, UpdateGuildTemplateData, UpdateGuildTemplateErrors, UpdateGuildTemplateResponses, UpdateGuildWelcomeScreenData, UpdateGuildWelcomeScreenErrors, UpdateGuildWelcomeScreenResponses, UpdateGuildWidgetSettingsData, UpdateGuildWidgetSettingsErrors, UpdateGuildWidgetSettingsResponses, UpdateMyGuildMemberData, UpdateMyGuildMemberErrors, UpdateMyGuildMemberResponses, UpdateSelfVoiceStateData, UpdateSelfVoiceStateErrors, UpdateSelfVoiceStateResponses, UpdateVoiceStateData, UpdateVoiceStateErrors, UpdateVoiceStateResponses } from './types.gen';
+import type { ActionGuildJoinRequestData, ActionGuildJoinRequestErrors, ActionGuildJoinRequestResponses, AddGuildMemberData, AddGuildMemberErrors, AddGuildMemberResponses, AddGuildMemberRoleData, AddGuildMemberRoleErrors, AddGuildMemberRoleResponses, BanUserFromGuildData, BanUserFromGuildErrors, BanUserFromGuildResponses, BulkBanUsersFromGuildData, BulkBanUsersFromGuildErrors, BulkBanUsersFromGuildResponses, BulkUpdateGuildChannelsData, BulkUpdateGuildChannelsErrors, BulkUpdateGuildChannelsResponses, BulkUpdateGuildRolesData, BulkUpdateGuildRolesErrors, BulkUpdateGuildRolesResponses, CountGuildScheduledEventUsersData, CountGuildScheduledEventUsersErrors, CountGuildScheduledEventUsersResponses, CreateAutoModerationRuleData, CreateAutoModerationRuleErrors, CreateAutoModerationRuleResponses, CreateGuildChannelData, CreateGuildChannelErrors, CreateGuildChannelResponses, CreateGuildEmojiData, CreateGuildEmojiErrors, CreateGuildEmojiResponses, CreateGuildRoleData, CreateGuildRoleErrors, CreateGuildRoleResponses, CreateGuildScheduledEventData, CreateGuildScheduledEventErrors, CreateGuildScheduledEventExceptionData, CreateGuildScheduledEventExceptionErrors, CreateGuildScheduledEventExceptionResponses, CreateGuildScheduledEventResponses, CreateGuildSoundboardSoundData, CreateGuildSoundboardSoundErrors, CreateGuildSoundboardSoundResponses, CreateGuildStickerData, CreateGuildStickerErrors, CreateGuildStickerResponses, CreateGuildTemplateData, CreateGuildTemplateErrors, CreateGuildTemplateResponses, DeleteAutoModerationRuleData, DeleteAutoModerationRuleErrors, DeleteAutoModerationRuleResponses, DeleteGuildEmojiData, DeleteGuildEmojiErrors, DeleteGuildEmojiResponses, DeleteGuildIntegrationData, DeleteGuildIntegrationErrors, DeleteGuildIntegrationResponses, DeleteGuildMemberData, DeleteGuildMemberErrors, DeleteGuildMemberResponses, DeleteGuildMemberRoleData, DeleteGuildMemberRoleErrors, DeleteGuildMemberRoleResponses, DeleteGuildRoleData, DeleteGuildRoleErrors, DeleteGuildRoleResponses, DeleteGuildScheduledEventData, DeleteGuildScheduledEventErrors, DeleteGuildScheduledEventExceptionData, DeleteGuildScheduledEventExceptionErrors, DeleteGuildScheduledEventExceptionResponses, DeleteGuildScheduledEventResponses, DeleteGuildSoundboardSoundData, DeleteGuildSoundboardSoundErrors, DeleteGuildSoundboardSoundResponses, DeleteGuildStickerData, DeleteGuildStickerErrors, DeleteGuildStickerResponses, DeleteGuildTemplateData, DeleteGuildTemplateErrors, DeleteGuildTemplateResponses, GetActiveGuildThreadsData, GetActiveGuildThreadsErrors, GetActiveGuildThreadsResponses, GetAutoModerationRuleData, GetAutoModerationRuleErrors, GetAutoModerationRuleResponses, GetGuildBanData, GetGuildBanErrors, GetGuildBanResponses, GetGuildData, GetGuildEmojiData, GetGuildEmojiErrors, GetGuildEmojiResponses, GetGuildErrors, GetGuildJoinRequestsData, GetGuildJoinRequestsErrors, GetGuildJoinRequestsResponses, GetGuildMemberData, GetGuildMemberErrors, GetGuildMemberResponses, GetGuildNewMemberWelcomeData, GetGuildNewMemberWelcomeErrors, GetGuildNewMemberWelcomeResponses, GetGuildPreviewData, GetGuildPreviewErrors, GetGuildPreviewResponses, GetGuildResponses, GetGuildRoleData, GetGuildRoleErrors, GetGuildRoleResponses, GetGuildScheduledEventData, GetGuildScheduledEventErrors, GetGuildScheduledEventResponses, GetGuildsOnboardingData, GetGuildsOnboardingErrors, GetGuildsOnboardingResponses, GetGuildSoundboardSoundData, GetGuildSoundboardSoundErrors, GetGuildSoundboardSoundResponses, GetGuildStickerData, GetGuildStickerErrors, GetGuildStickerResponses, GetGuildTemplateData, GetGuildTemplateErrors, GetGuildTemplateResponses, GetGuildVanityUrlData, GetGuildVanityUrlErrors, GetGuildVanityUrlResponses, GetGuildWebhooksData, GetGuildWebhooksErrors, GetGuildWebhooksResponses, GetGuildWelcomeScreenData, GetGuildWelcomeScreenErrors, GetGuildWelcomeScreenResponses, GetGuildWidgetData, GetGuildWidgetErrors, GetGuildWidgetPngData, GetGuildWidgetPngErrors, GetGuildWidgetPngResponses, GetGuildWidgetResponses, GetGuildWidgetSettingsData, GetGuildWidgetSettingsErrors, GetGuildWidgetSettingsResponses, GetSelfVoiceStateData, GetSelfVoiceStateErrors, GetSelfVoiceStateResponses, GetVoiceStateData, GetVoiceStateErrors, GetVoiceStateResponses, GuildRoleMemberCountsData, GuildRoleMemberCountsErrors, GuildRoleMemberCountsResponses, GuildSearchData, GuildSearchErrors, GuildSearchResponses, ListAutoModerationRulesData, ListAutoModerationRulesErrors, ListAutoModerationRulesResponses, ListGuildAuditLogEntriesData, ListGuildAuditLogEntriesErrors, ListGuildAuditLogEntriesResponses, ListGuildBansData, ListGuildBansErrors, ListGuildBansResponses, ListGuildChannelsData, ListGuildChannelsErrors, ListGuildChannelsResponses, ListGuildEmojisData, ListGuildEmojisErrors, ListGuildEmojisResponses, ListGuildIntegrationsData, ListGuildIntegrationsErrors, ListGuildIntegrationsResponses, ListGuildInvitesData, ListGuildInvitesErrors, ListGuildInvitesResponses, ListGuildMembersData, ListGuildMembersErrors, ListGuildMembersResponses, ListGuildRolesData, ListGuildRolesErrors, ListGuildRolesResponses, ListGuildScheduledEventExceptionUsersData, ListGuildScheduledEventExceptionUsersErrors, ListGuildScheduledEventExceptionUsersResponses, ListGuildScheduledEventsData, ListGuildScheduledEventsErrors, ListGuildScheduledEventsResponses, ListGuildScheduledEventUsersData, ListGuildScheduledEventUsersErrors, ListGuildScheduledEventUsersResponses, ListGuildSoundboardSoundsData, ListGuildSoundboardSoundsErrors, ListGuildSoundboardSoundsResponses, ListGuildStickersData, ListGuildStickersErrors, ListGuildStickersResponses, ListGuildTemplatesData, ListGuildTemplatesErrors, ListGuildTemplatesResponses, ListGuildVoiceRegionsData, ListGuildVoiceRegionsErrors, ListGuildVoiceRegionsResponses, PreviewPruneGuildData, PreviewPruneGuildErrors, PreviewPruneGuildResponses, PruneGuildData, PruneGuildErrors, PruneGuildResponses, PutGuildsOnboardingData, PutGuildsOnboardingErrors, PutGuildsOnboardingResponses, SearchGuildMembersData, SearchGuildMembersErrors, SearchGuildMembersResponses, SyncGuildTemplateData, SyncGuildTemplateErrors, SyncGuildTemplateResponses, UnbanUserFromGuildData, UnbanUserFromGuildErrors, UnbanUserFromGuildResponses, UpdateAutoModerationRuleData, UpdateAutoModerationRuleErrors, UpdateAutoModerationRuleResponses, UpdateGuildData, UpdateGuildEmojiData, UpdateGuildEmojiErrors, UpdateGuildEmojiResponses, UpdateGuildErrors, UpdateGuildIncidentActionsData, UpdateGuildIncidentActionsErrors, UpdateGuildIncidentActionsResponses, UpdateGuildMemberData, UpdateGuildMemberErrors, UpdateGuildMemberResponses, UpdateGuildResponses, UpdateGuildRoleData, UpdateGuildRoleErrors, UpdateGuildRoleResponses, UpdateGuildScheduledEventData, UpdateGuildScheduledEventErrors, UpdateGuildScheduledEventExceptionData, UpdateGuildScheduledEventExceptionErrors, UpdateGuildScheduledEventExceptionResponses, UpdateGuildScheduledEventResponses, UpdateGuildSoundboardSoundData, UpdateGuildSoundboardSoundErrors, UpdateGuildSoundboardSoundResponses, UpdateGuildStickerData, UpdateGuildStickerErrors, UpdateGuildStickerResponses, UpdateGuildTemplateData, UpdateGuildTemplateErrors, UpdateGuildTemplateResponses, UpdateGuildWelcomeScreenData, UpdateGuildWelcomeScreenErrors, UpdateGuildWelcomeScreenResponses, UpdateGuildWidgetSettingsData, UpdateGuildWidgetSettingsErrors, UpdateGuildWidgetSettingsResponses, UpdateMyGuildMemberData, UpdateMyGuildMemberErrors, UpdateMyGuildMemberResponses, UpdateSelfVoiceStateData, UpdateSelfVoiceStateErrors, UpdateSelfVoiceStateResponses, UpdateVoiceStateData, UpdateVoiceStateErrors, UpdateVoiceStateResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -200,6 +200,20 @@ export const updateGuildEmoji = <ThrowOnError extends boolean = false>(options: 
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/guilds/{guild_id}/emojis/{emoji_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Modifies the incident actions of the guild
+ */
+export const updateGuildIncidentActions = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildIncidentActionsData, ThrowOnError>) => (options.client ?? client).put<UpdateGuildIncidentActionsResponses, UpdateGuildIncidentActionsErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/incident-actions',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -489,10 +503,67 @@ export const updateGuildScheduledEvent = <ThrowOnError extends boolean = false>(
     }
 });
 
+/**
+ * Create an exception to a recurring guild scheduled event
+ */
+export const createGuildScheduledEventException = <ThrowOnError extends boolean = false>(options: Options<CreateGuildScheduledEventExceptionData, ThrowOnError>) => (options.client ?? client).post<CreateGuildScheduledEventExceptionResponses, CreateGuildScheduledEventExceptionErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/exceptions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete an exception to a recurring guild scheduled event
+ */
+export const deleteGuildScheduledEventException = <ThrowOnError extends boolean = false>(options: Options<DeleteGuildScheduledEventExceptionData, ThrowOnError>) => (options.client ?? client).delete<DeleteGuildScheduledEventExceptionResponses, DeleteGuildScheduledEventExceptionErrors, ThrowOnError>({
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/exceptions/{exception_id}',
+    ...options
+});
+
+/**
+ * Modify an exception to a recurring guild scheduled event
+ */
+export const updateGuildScheduledEventException = <ThrowOnError extends boolean = false>(options: Options<UpdateGuildScheduledEventExceptionData, ThrowOnError>) => (options.client ?? client).patch<UpdateGuildScheduledEventExceptionResponses, UpdateGuildScheduledEventExceptionErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/exceptions/{exception_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
 export const listGuildScheduledEventUsers = <ThrowOnError extends boolean = false>(options: Options<ListGuildScheduledEventUsersData, ThrowOnError>) => (options.client ?? client).get<ListGuildScheduledEventUsersResponses, ListGuildScheduledEventUsersErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users',
+    ...options
+});
+
+/**
+ * Get the count of users subscribed to a guild scheduled event
+ */
+export const countGuildScheduledEventUsers = <ThrowOnError extends boolean = false>(options: Options<CountGuildScheduledEventUsersData, ThrowOnError>) => (options.client ?? client).get<CountGuildScheduledEventUsersResponses, CountGuildScheduledEventUsersErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/users/counts',
+    ...options
+});
+
+/**
+ * Get a list of users subscribed to a guild scheduled event exception
+ */
+export const listGuildScheduledEventExceptionUsers = <ThrowOnError extends boolean = false>(options: Options<ListGuildScheduledEventExceptionUsersData, ThrowOnError>) => (options.client ?? client).get<ListGuildScheduledEventExceptionUsersResponses, ListGuildScheduledEventExceptionUsersErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/guilds/{guild_id}/scheduled-events/{guild_scheduled_event_id}/{guild_scheduled_event_exception_id}/users',
     ...options
 });
 

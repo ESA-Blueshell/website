@@ -9,12 +9,16 @@ import {
   getDrift,
   linkExistingTarget,
   linkUser,
+  listCohortTargetSystems,
+  searchCohortTargets,
   switchTarget,
 } from "@/services/api"
 import type {
   CohortMapping as ApiCohortMapping,
   DriftReport as ApiDriftReport,
+  ExternalTarget as ApiExternalTarget,
   ExtraRow as ApiExtraRow,
+  TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
 
 export type TargetSystem = ApiDriftReport["system"]
@@ -133,6 +137,28 @@ export type TargetMapping = {
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
 
+export type TargetCapability = ApiTargetDescriptor["capabilities"][number]
+
+export type TargetDescriptor = {
+  system: TargetSystem
+  kind: ApiTargetDescriptor["kind"]
+  systemLabel: string
+  targetLabel: string
+  idLabel: string
+  folderLabel: string | null
+  capabilities: TargetCapability[]
+}
+
+export type ExternalTarget = {
+  system: TargetSystem
+  externalId: string
+  kind: ApiExternalTarget["kind"]
+  label: string
+  folderLabel: string | null
+  memberCount: number | null
+  linkedCohortId: number | null
+}
+
 function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
   return {
     cohortId: raw.cohortId,
@@ -192,4 +218,38 @@ export async function switchCohortTarget(
     body: { externalId, deletePrevious, reconcileNow },
   })
   return toTargetMapping(res.data!)
+}
+
+export async function fetchTargetDescriptors(): Promise<TargetDescriptor[]> {
+  const res = await listCohortTargetSystems()
+  return (res.data ?? []).map(toTargetDescriptor)
+}
+
+export async function fetchTargetOptions(system: TargetSystem): Promise<ExternalTarget[]> {
+  const res = await searchCohortTargets({ path: { system } })
+  return (res.data ?? []).map(toExternalTarget)
+}
+
+function toTargetDescriptor(raw: ApiTargetDescriptor): TargetDescriptor {
+  return {
+    system: raw.system,
+    kind: raw.kind,
+    systemLabel: raw.systemLabel,
+    targetLabel: raw.targetLabel,
+    idLabel: raw.idLabel,
+    folderLabel: raw.folderLabel ?? null,
+    capabilities: [...raw.capabilities],
+  }
+}
+
+function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
+  return {
+    system: raw.system,
+    externalId: raw.externalId,
+    kind: raw.kind,
+    label: raw.label,
+    folderLabel: raw.folderLabel ?? null,
+    memberCount: raw.memberCount ?? null,
+    linkedCohortId: raw.linkedCohortId ?? null,
+  }
 }

@@ -5,7 +5,7 @@ import QuestionField from "@/components/form/fields/QuestionField.vue"
 type QuestionModel = QuestionRequest
 type SurveyModel = SurveyRequest
 
-const model = defineModel<SurveyModel>({default: {questions: []}})
+const model = defineModel<SurveyModel>('model', {default: () => ({questions: []})})
 
 function defaultRequired(type: QuestionType): boolean {
   return type === QuestionType.OPEN || type === QuestionType.RADIO

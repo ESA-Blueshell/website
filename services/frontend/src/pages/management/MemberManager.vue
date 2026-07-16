@@ -435,7 +435,6 @@ async function confirmDeleteUser() {
                       />
                     </th>
 
-                    <th>Type / Incasso</th>
                     <th
                       class="sortable-header mm-th-multiline mm-th-period"
                       data-testid="member-manager-header-paid"
@@ -452,6 +451,7 @@ async function confirmDeleteUser() {
                         size="16"
                       />
                     </th>
+                    <th>Type / Incasso</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -512,6 +512,18 @@ async function confirmDeleteUser() {
                       </v-chip>
                     </td>
 
+                    <!-- Paid/Unpaid -->
+                    <td :data-testid="`member-manager-paid-status-${row.id}`">
+                      <v-chip
+                        :color="row.paid ? 'green' : 'red'"
+                        size="small"
+                        variant="flat"
+                        style="width: 56px; justify-content: center"
+                      >
+                        {{ row.paid ? "Paid" : "Unpaid" }}
+                      </v-chip>
+                    </td>
+
                     <!-- Type / Incasso icons (notable only) -->
                     <td :data-testid="`member-manager-type-incasso-${row.id}`">
                       <div class="d-flex align-center gap-1">
@@ -544,18 +556,6 @@ async function confirmDeleteUser() {
                           </template>
                         </v-tooltip>
                       </div>
-                    </td>
-
-                    <!-- Paid/Unpaid -->
-                    <td :data-testid="`member-manager-paid-status-${row.id}`">
-                      <v-chip
-                        :color="row.paid ? 'green' : 'red'"
-                        size="small"
-                        variant="flat"
-                        style="width: 56px; justify-content: center"
-                      >
-                        {{ row.paid ? "Paid" : "Unpaid" }}
-                      </v-chip>
                     </td>
 
                     <!-- Actions -->

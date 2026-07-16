@@ -259,7 +259,7 @@ defineExpose({
     <template v-else>
       <!-- Existing memberships -->
       <div class="mb-4">
-        <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-1">
+        <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-2">
           <v-icon
             class="mr-2"
             icon="mdi-card-account-details-outline"
@@ -267,7 +267,6 @@ defineExpose({
           />
           Memberships
         </div>
-        <v-divider class="mb-2" />
 
         <v-empty-state
           v-if="memberships.length === 0"

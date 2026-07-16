@@ -92,9 +92,6 @@ export default defineConfig({
         watch: {
             usePolling: true,
             interval: 100,
-        },
-        warmup: {
-            clientFiles: ['./src/main.ts', './src/App.vue'],
         }
     }
 })

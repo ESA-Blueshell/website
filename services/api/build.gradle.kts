@@ -6,7 +6,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
-    id("org.graalvm.buildtools.native") version "0.10.6"
+    id("org.graalvm.buildtools.native") version "1.1.1"
     `java-test-fixtures`
 
     val kotlinVersion = "2.3.21"

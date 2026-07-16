@@ -278,7 +278,7 @@ defineExpose({
         />
 
         <template
-          v-for="m in memberships"
+          v-for="(m, index) in memberships"
           :key="m.id"
         >
           <div :data-testid="`manage-membership-row-${m.id}`">
@@ -376,7 +376,7 @@ defineExpose({
               </div>
             </v-expand-transition>
 
-            <v-divider />
+            <v-divider v-if="index < memberships.length - 1" />
           </div>
         </template>
       </div>
@@ -387,6 +387,7 @@ defineExpose({
         class="mb-4"
         data-testid="manage-membership-add-pane"
       >
+        <v-divider class="mb-2" />
         <div
           class="mm-row d-flex align-center"
           :class="{ 'mm-row--open': addOpen }"
@@ -426,8 +427,6 @@ defineExpose({
             />
           </div>
         </v-expand-transition>
-
-        <v-divider />
       </div>
 
       <!-- Admin: deleted memberships -->
@@ -446,7 +445,7 @@ defineExpose({
         <v-divider class="mb-2" />
 
         <template
-          v-for="m in deletedMemberships"
+          v-for="(m, index) in deletedMemberships"
           :key="m.id"
         >
           <div
@@ -477,7 +476,7 @@ defineExpose({
               Restore
             </v-btn>
           </div>
-          <v-divider />
+          <v-divider v-if="index < deletedMemberships.length - 1" />
         </template>
       </div>
     </template>

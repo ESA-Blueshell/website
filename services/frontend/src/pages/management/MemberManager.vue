@@ -418,23 +418,6 @@ async function confirmDeleteUser() {
                       />
                     </th>
 
-                    <th>Type / Incasso</th>
-                    <th
-                      class="sortable-header"
-                      data-testid="member-manager-header-paid"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('paid')"
-                      @click="toggleSort('paid')"
-                      @keydown.enter="toggleSort('paid')"
-                      @keydown.space.prevent="toggleSort('paid')"
-                    >
-                      Paid
-                      <v-icon
-                        :icon="sortIcon('paid')"
-                        size="16"
-                      />
-                    </th>
                     <th
                       class="sortable-header mm-th-multiline mm-th-period"
                       data-testid="member-manager-header-period-member"
@@ -448,6 +431,24 @@ async function confirmDeleteUser() {
                       Member in period
                       <v-icon
                         :icon="sortIcon('wasMemberInPeriod')"
+                        size="16"
+                      />
+                    </th>
+
+                    <th>Type / Incasso</th>
+                    <th
+                      class="sortable-header mm-th-multiline mm-th-period"
+                      data-testid="member-manager-header-paid"
+                      role="button"
+                      tabindex="0"
+                      :aria-sort="ariaSort('paid')"
+                      @click="toggleSort('paid')"
+                      @keydown.enter="toggleSort('paid')"
+                      @keydown.space.prevent="toggleSort('paid')"
+                    >
+                      Paid in period
+                      <v-icon
+                        :icon="sortIcon('paid')"
                         size="16"
                       />
                     </th>
@@ -499,6 +500,18 @@ async function confirmDeleteUser() {
                       {{ row.memberSince ?? "—" }}
                     </td>
 
+                    <!-- Member in selected contribution period -->
+                    <td :data-testid="`member-manager-period-member-${row.id}`">
+                      <v-chip
+                        :color="row.wasMemberInPeriod ? 'green' : 'grey'"
+                        size="small"
+                        variant="flat"
+                        style="width: 48px; justify-content: center"
+                      >
+                        {{ row.wasMemberInPeriod ? "Yes" : "No" }}
+                      </v-chip>
+                    </td>
+
                     <!-- Type / Incasso icons (notable only) -->
                     <td :data-testid="`member-manager-type-incasso-${row.id}`">
                       <div class="d-flex align-center gap-1">
@@ -545,18 +558,6 @@ async function confirmDeleteUser() {
                       </v-chip>
                     </td>
 
-                    <!-- Member in selected contribution period -->
-                    <td :data-testid="`member-manager-period-member-${row.id}`">
-                      <v-chip
-                        :color="row.wasMemberInPeriod ? 'green' : 'grey'"
-                        size="small"
-                        variant="flat"
-                        style="width: 48px; justify-content: center"
-                      >
-                        {{ row.wasMemberInPeriod ? "Yes" : "No" }}
-                      </v-chip>
-                    </td>
-
                     <!-- Actions -->
                     <td>
                       <div class="d-flex align-center gap-1">
@@ -584,7 +585,7 @@ async function confirmDeleteUser() {
                         </v-tooltip>
 
                         <v-tooltip
-                          text="Manage membership"
+                          text="Manage memberships"
                           location="top"
                         >
                           <template #activator="{ props }">

@@ -92,6 +92,14 @@ function ariaSort(key: SortKey) {
   return sortAsc.value ? "ascending" : "descending"
 }
 
+// Members count badge: show "shown / total" when a filter/search narrows the
+// list, otherwise just the total.
+const memberCountLabel = computed(() =>
+  filteredRows.value.length === rows.value.length
+    ? `${rows.value.length}`
+    : `${filteredRows.value.length} / ${rows.value.length}`,
+)
+
 // ── Data loading ─────────────────────────────────────────────────────────────
 
 const getUsers = async () => {
@@ -242,7 +250,7 @@ async function confirmDeleteUser() {
           <v-card-text>
             <div class="d-flex align-center mb-4">
               <v-badge
-                :content="filteredRows.length"
+                :content="memberCountLabel"
                 color="primary"
               >
                 <h2 class="ma-0">
@@ -428,7 +436,7 @@ async function confirmDeleteUser() {
                       />
                     </th>
                     <th
-                      class="sortable-header mm-th-multiline"
+                      class="sortable-header mm-th-multiline mm-th-period"
                       data-testid="member-manager-header-period-member"
                       role="button"
                       tabindex="0"
@@ -865,6 +873,12 @@ async function confirmDeleteUser() {
   white-space: normal;
   max-width: 6.5rem;
   line-height: 1.15;
+}
+
+// "Member in period" is a short-value (Yes/No) column — keep it narrow so the
+// header wraps cleanly instead of reserving a wide column.
+.mm-th-period {
+  max-width: 4.5rem;
 }
 
 .member-manager-vtable {

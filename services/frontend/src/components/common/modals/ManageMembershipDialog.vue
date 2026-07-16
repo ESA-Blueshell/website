@@ -362,12 +362,9 @@ defineExpose({
             <v-expand-transition>
               <div
                 v-if="isEditing(m.id) && editModels[m.id]"
-                class="pb-3"
+                class="pt-1 pb-3"
                 data-testid="manage-membership-edit-pane"
               >
-                <div class="text-subtitle-2 font-weight-bold mb-2">
-                  Edit membership
-                </div>
                 <membership-form
                   v-model="editModels[m.id]!"
                   :user-id="userId"
@@ -522,14 +519,5 @@ defineExpose({
 
 .mm-chevron {
   opacity: 0.6;
-}
-
-// House style: form fields default to Vuetify's light "filled" overlay, which
-// reads as white against the dark modal. Recolour the fill to the house
-// wallpaper tone so the inputs sit in the dark theme (the green underline from
-// housestyle.scss is preserved).
-:deep(.v-field--variant-filled .v-field__overlay) {
-  background-color: rgb(var(--v-theme-wallpaper));
-  opacity: 1;
 }
 </style>

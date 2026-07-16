@@ -7,7 +7,12 @@ export default defineConfig({
     timeout: 15_000,
   },
   fullyParallel: true,
-  workers: process.env.CI ? 4 : undefined,
+  // The e2e suite is I/O/wait-bound (browser navigation, rendering, mocked
+  // network) rather than CPU-bound, so oversubscribing the CI runner's vCPUs
+  // cuts wall-clock time: workers mostly await the browser, leaving CPU free.
+  // 8 on the 4-vCPU runner roughly halves the ~116 test-runs' serial batches
+  // without needing multi-runner sharding. See #424.
+  workers: process.env.CI ? 8 : undefined,
   retries: 0,
   reporter: "list",
   use: {

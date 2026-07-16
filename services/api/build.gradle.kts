@@ -6,7 +6,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
-    id("org.graalvm.buildtools.native") version "0.10.6"
+    id("org.graalvm.buildtools.native") version "1.1.1"
     `java-test-fixtures`
 
     val kotlinVersion = "2.3.21"
@@ -133,6 +133,8 @@ dependencies {
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
     testImplementation("io.mockk:mockk:1.14.9")
+    // H2 in-memory database for OpenAPI spec generation (test-scoped only).
+    testImplementation("com.h2database:h2:2.3.232")
 
     // Shared test-fixture consumers expose main starter deps so factories
     // and support classes compile against Spring / JPA / Jackson / Security.
@@ -201,6 +203,11 @@ tasks.withType<Test>().configureEach {
     }
 }
 
+// Exclude openapi-gen tag from normal test task so it only runs when explicitly invoked.
+tasks.named<Test>("test") {
+    useJUnitPlatform { excludeTags("openapi-gen") }
+}
+
 // Live external-API tests — opt-in, never part of `check`.
 val brevoLiveTest by tasks.registering(Test::class) {
     description =
@@ -220,6 +227,46 @@ val discordLiveTest by tasks.registering(Test::class) {
     classpath = sourceSets["integrationTest"].runtimeClasspath
     shouldRunAfter(tasks.named("integrationTest"))
     useJUnitPlatform { includeTags("discord-live") }
+}
+
+// Generate OpenAPI spec via in-memory H2 (no MariaDB required).
+// Runs the openapi-gen-tagged test, extracts the spec from build/openapi.raw.json,
+// and normalizes it (sorts keys, minifies) into services/api/openapi.json.
+val openApiGenTest by tasks.registering(Test::class) {
+    description = "Runs the OpenAPI spec generation test tagged with @Tag(\"openapi-gen\")."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform { includeTags("openapi-gen") }
+}
+
+val dumpOpenApiSpec by tasks.registering {
+    description = "Generates OpenAPI spec via in-memory H2 without database. Normalizes and writes to services/api/openapi.json."
+    group = "verification"
+
+    dependsOn(openApiGenTest)
+
+    doLast {
+        val rawFile = File(buildDir, "openapi.raw.json")
+        val outputFile = File(projectDir, "openapi.json")
+
+        if (!rawFile.exists()) {
+            throw RuntimeException("OpenAPI raw spec not found at ${rawFile.absolutePath}")
+        }
+
+        // Normalize using jq: sort keys (-S) and compact output (-c)
+        val process = ProcessBuilder("jq", "-S", "-c", ".", rawFile.absolutePath)
+            .redirectOutput(outputFile)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+        val exitCode = process.waitFor()
+
+        if (exitCode != 0) {
+            throw RuntimeException("jq normalization failed with exit code $exitCode")
+        }
+
+        println("OpenAPI spec normalized and written to ${outputFile.absolutePath}")
+    }
 }
 
 tasks.withType<BootRun>().configureEach {

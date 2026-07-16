@@ -1,0 +1,46 @@
+# OpenAPI spec generation profile: uses in-memory H2 instead of MariaDB.
+# Disables Flyway migrations and uses Hibernate DDL auto=create-drop for minimal schema.
+# The application boots purely for spec generation from controllers/DTOs.
+
+spring:
+  flyway:
+    enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        default_schema: blueshell
+
+  datasource:
+    url: jdbc:h2:mem:openapi;MODE=LEGACY;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: openapi
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:openapi-gen-schema.sql
+
+  session:
+    store-type: none
+
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+security:
+  openapi:
+    public:
+      enabled: true

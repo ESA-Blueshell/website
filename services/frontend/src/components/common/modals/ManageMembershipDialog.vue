@@ -49,6 +49,9 @@ const memberships = ref<MembershipResponse[]>([])
 const deletedMemberships = ref<MembershipResponse[]>([])
 const isLoading = ref(false)
 
+// Add-membership pane is collapsed by default; folds out on click.
+const addOpen = ref(false)
+
 const hasActive = computed(() => memberships.value.some((m) => !m.endDate))
 
 // Create form — blank MembershipResponse model for MembershipForm in board mode
@@ -95,6 +98,7 @@ watch(
     if (val) {
       editingIds.value = new Set()
       editModels.value = {}
+      addOpen.value = false
       createModel.value = {
         id: 0,
         userId: props.userId,
@@ -223,6 +227,7 @@ defineExpose({
   memberships,
   deleteTarget,
   deleteConfirmOpen,
+  addOpen,
   // Exposed for tests
   createModel,
   editModels,
@@ -272,97 +277,95 @@ defineExpose({
           title="No memberships yet"
         />
 
-        <v-list v-else>
-          <template
-            v-for="(m, index) in memberships"
-            :key="m.id"
-          >
-            <v-list-item :data-testid="`manage-membership-row-${m.id}`">
-              <div class="d-flex align-center justify-space-between gap-2">
-                <!-- Left: date range + type as title/subtitle -->
-                <div
-                  class="flex-grow-1"
-                  style="min-width: 0"
-                >
-                  <v-list-item-title class="font-weight-medium text-truncate">
-                    {{ m.startDate }} –
-                    <span v-if="m.endDate">{{ m.endDate }}</span>
-                    <span v-else>active</span>
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
-                    <v-icon
-                      v-if="m.incasso"
-                      class="ml-1"
-                      color="teal"
-                      icon="mdi-bank-transfer"
-                      size="16"
-                    />
-                  </v-list-item-subtitle>
+        <template
+          v-for="m in memberships"
+          :key="m.id"
+        >
+          <div :data-testid="`manage-membership-row-${m.id}`">
+            <!-- Clickable summary row — folds out the edit form -->
+            <div
+              class="mm-row d-flex align-center justify-space-between gap-2"
+              :class="{ 'mm-row--open': isEditing(m.id) }"
+              role="button"
+              tabindex="0"
+              @click="toggleInlineEdit(m)"
+              @keydown.enter="toggleInlineEdit(m)"
+              @keydown.space.prevent="toggleInlineEdit(m)"
+            >
+              <div
+                class="flex-grow-1"
+                style="min-width: 0"
+              >
+                <div class="font-weight-medium text-truncate">
+                  {{ m.startDate }} –
+                  <span v-if="m.endDate">{{ m.endDate }}</span>
+                  <span v-else>active</span>
                 </div>
-
-                <!-- Right: action buttons -->
-                <div class="d-flex gap-1 flex-nowrap flex-shrink-0">
-                  <!-- Active membership actions -->
-                  <template v-if="!m.endDate">
-                    <v-btn
-                      :data-testid="`manage-membership-end-btn-${m.id}`"
-                      class="btn-tight"
-                      color="orange"
-                      size="small"
-                      variant="text"
-                      @click="onEnd(m)"
-                    >
-                      End
-                    </v-btn>
-                  </template>
-
-                  <!-- Ended membership actions -->
-                  <template v-else>
-                    <v-btn
-                      :data-testid="`manage-membership-reopen-btn-${m.id}`"
-                      :disabled="hasActive"
-                      class="btn-tight"
-                      color="green"
-                      size="small"
-                      variant="text"
-                      @click="onReopen(m)"
-                    >
-                      Resume
-                    </v-btn>
-                  </template>
-
-                  <!-- Delete is available for every membership (active or ended) -->
-                  <v-btn
-                    :data-testid="`manage-membership-delete-btn-${m.id}`"
-                    class="btn-tight"
-                    color="red"
-                    size="small"
-                    variant="text"
-                    @click="onDelete(m)"
-                  >
-                    Delete
-                  </v-btn>
-
-                  <v-btn
-                    class="btn-tight"
-                    size="small"
-                    variant="text"
-                    @click="toggleInlineEdit(m)"
-                  >
-                    {{ isEditing(m.id) ? "Cancel" : "Edit" }}
-                  </v-btn>
+                <div class="text-medium-emphasis text-body-2">
+                  <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
+                  <v-icon
+                    v-if="m.incasso"
+                    class="ml-1"
+                    color="teal"
+                    icon="mdi-bank-transfer"
+                    size="16"
+                  />
                 </div>
               </div>
 
-              <!-- Inline edit form (when editing that row) — uses MembershipForm in board mode -->
+              <div class="d-flex align-center gap-1 flex-nowrap flex-shrink-0">
+                <template v-if="!m.endDate">
+                  <v-btn
+                    :data-testid="`manage-membership-end-btn-${m.id}`"
+                    class="btn-tight"
+                    color="orange"
+                    size="small"
+                    variant="text"
+                    @click.stop="onEnd(m)"
+                  >
+                    End
+                  </v-btn>
+                </template>
+                <template v-else>
+                  <v-btn
+                    :data-testid="`manage-membership-reopen-btn-${m.id}`"
+                    :disabled="hasActive"
+                    class="btn-tight"
+                    color="green"
+                    size="small"
+                    variant="text"
+                    @click.stop="onReopen(m)"
+                  >
+                    Resume
+                  </v-btn>
+                </template>
+
+                <v-btn
+                  :data-testid="`manage-membership-delete-btn-${m.id}`"
+                  class="btn-tight"
+                  color="red"
+                  size="small"
+                  variant="text"
+                  @click.stop="onDelete(m)"
+                >
+                  Delete
+                </v-btn>
+
+                <v-icon
+                  class="mm-chevron ml-1"
+                  :icon="isEditing(m.id) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                />
+              </div>
+            </div>
+
+            <!-- Fold-out edit form (animated) — uses MembershipForm in board mode -->
+            <v-expand-transition>
               <div
                 v-if="isEditing(m.id) && editModels[m.id]"
-                class="mt-2 w-100"
+                class="pb-3"
                 data-testid="manage-membership-edit-pane"
               >
-                <v-divider class="mb-3" />
-                <div class="text-subtitle-2 font-weight-bold mb-3">
+                <div class="text-subtitle-2 font-weight-bold mb-2">
                   Edit membership
                 </div>
                 <membership-form
@@ -374,43 +377,60 @@ defineExpose({
                   @submitted="onEditSubmitted(m, $event)"
                 />
               </div>
-            </v-list-item>
+            </v-expand-transition>
 
-            <v-divider v-if="index < memberships.length - 1" />
-          </template>
-        </v-list>
+            <v-divider />
+          </div>
+        </template>
       </div>
 
-      <!-- Add membership form (only when no active membership) -->
+      <!-- Add membership (only when no active membership) — collapsed by default -->
       <div
         v-if="!hasActive"
         class="mb-4"
-        data-testid="manage-membership-create"
+        data-testid="manage-membership-add-pane"
       >
-        <v-divider
-          v-if="memberships.length"
-          class="mb-4"
-        />
-
-        <div data-testid="manage-membership-add-pane">
-          <div class="d-flex align-center text-subtitle-1 font-weight-bold mb-3">
-            <v-icon
-              class="mr-2"
-              icon="mdi-plus-circle-outline"
-              size="20"
-            />
-            Add membership
-          </div>
-
-          <membership-form
-            v-model="createModel"
-            :user-id="userId"
-            submit-test-id="manage-membership-create-btn"
-            show-submit
-            submit-text="Add membership"
-            @submitted="onCreateSubmitted"
+        <div
+          class="mm-row d-flex align-center"
+          :class="{ 'mm-row--open': addOpen }"
+          role="button"
+          tabindex="0"
+          data-testid="manage-membership-add-toggle"
+          @click="addOpen = !addOpen"
+          @keydown.enter="addOpen = !addOpen"
+          @keydown.space.prevent="addOpen = !addOpen"
+        >
+          <v-icon
+            class="mr-2"
+            icon="mdi-plus-circle-outline"
+            size="20"
+          />
+          <span class="text-subtitle-1 font-weight-bold">Add membership</span>
+          <v-spacer />
+          <v-icon
+            class="mm-chevron"
+            :icon="addOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
           />
         </div>
+
+        <v-expand-transition>
+          <div
+            v-if="addOpen"
+            class="pb-3"
+            data-testid="manage-membership-create"
+          >
+            <membership-form
+              v-model="createModel"
+              :user-id="userId"
+              submit-test-id="manage-membership-create-btn"
+              show-submit
+              submit-text="Add membership"
+              @submitted="onCreateSubmitted"
+            />
+          </div>
+        </v-expand-transition>
+
+        <v-divider />
       </div>
 
       <!-- Admin: deleted memberships -->
@@ -428,41 +448,40 @@ defineExpose({
         </div>
         <v-divider class="mb-2" />
 
-        <v-list>
-          <template
-            v-for="(m, index) in deletedMemberships"
-            :key="m.id"
+        <template
+          v-for="m in deletedMemberships"
+          :key="m.id"
+        >
+          <div
+            class="mm-row d-flex align-center justify-space-between gap-2"
+            :data-testid="`manage-membership-deleted-row-${m.id}`"
           >
-            <v-list-item :data-testid="`manage-membership-deleted-row-${m.id}`">
-              <div class="d-flex align-center justify-space-between flex-wrap gap-2">
-                <div
-                  class="flex-grow-1"
-                  style="min-width: 0"
-                >
-                  <v-list-item-title class="font-weight-medium text-truncate">
-                    {{ m.startDate }}
-                    <span v-if="m.endDate"> – {{ m.endDate }}</span>
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
-                    <span class="ml-2 text-error">(deleted)</span>
-                  </v-list-item-subtitle>
-                </div>
-                <v-btn
-                  :data-testid="`manage-membership-restore-btn-${m.id}`"
-                  class="btn-tight"
-                  color="primary"
-                  size="small"
-                  variant="text"
-                  @click="onRestore(m)"
-                >
-                  Restore
-                </v-btn>
+            <div
+              class="flex-grow-1"
+              style="min-width: 0"
+            >
+              <div class="font-weight-medium text-truncate">
+                {{ m.startDate }}
+                <span v-if="m.endDate"> – {{ m.endDate }}</span>
               </div>
-            </v-list-item>
-            <v-divider v-if="index < deletedMemberships.length - 1" />
-          </template>
-        </v-list>
+              <div class="text-medium-emphasis text-body-2">
+                <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
+                <span class="ml-2 text-error">(deleted)</span>
+              </div>
+            </div>
+            <v-btn
+              :data-testid="`manage-membership-restore-btn-${m.id}`"
+              class="btn-tight"
+              color="primary"
+              size="small"
+              variant="text"
+              @click="onRestore(m)"
+            >
+              Restore
+            </v-btn>
+          </div>
+          <v-divider />
+        </template>
       </div>
     </template>
   </base-modal>
@@ -482,5 +501,35 @@ defineExpose({
 .btn-tight {
   padding-inline: 6px !important;
   min-width: auto !important;
+}
+
+// Interactive summary rows: whole row is the fold-out toggle.
+.mm-row {
+  cursor: pointer;
+  padding: 10px 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.mm-chevron {
+  opacity: 0.6;
+}
+
+// House style: form fields default to Vuetify's light "filled" overlay, which
+// reads as white against the dark modal. Recolour the fill to the house
+// wallpaper tone so the inputs sit in the dark theme (the green underline from
+// housestyle.scss is preserved).
+:deep(.v-field--variant-filled .v-field__overlay) {
+  background-color: rgb(var(--v-theme-wallpaper));
+  opacity: 1;
 }
 </style>

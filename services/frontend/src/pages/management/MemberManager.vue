@@ -374,9 +374,9 @@ async function confirmDeleteUser() {
                       />
                     </th>
 
-                    <!-- Sortable: Status -->
+                    <!-- Sortable: Membership status -->
                     <th
-                      class="sortable-header"
+                      class="sortable-header mm-th-multiline"
                       data-testid="member-manager-header-status"
                       role="button"
                       tabindex="0"
@@ -385,7 +385,7 @@ async function confirmDeleteUser() {
                       @keydown.enter="toggleSort('status')"
                       @keydown.space.prevent="toggleSort('status')"
                     >
-                      Status
+                      <span>Membership status</span>
                       <v-icon
                         :icon="sortIcon('status')"
                         size="16"
@@ -428,7 +428,7 @@ async function confirmDeleteUser() {
                       />
                     </th>
                     <th
-                      class="sortable-header"
+                      class="sortable-header mm-th-multiline"
                       data-testid="member-manager-header-period-member"
                       role="button"
                       tabindex="0"
@@ -437,7 +437,7 @@ async function confirmDeleteUser() {
                       @keydown.enter="toggleSort('wasMemberInPeriod')"
                       @keydown.space.prevent="toggleSort('wasMemberInPeriod')"
                     >
-                      Member in period
+                      <span>Member in period</span>
                       <v-icon
                         :icon="sortIcon('wasMemberInPeriod')"
                         size="16"
@@ -852,11 +852,19 @@ async function confirmDeleteUser() {
 .sortable-header {
   cursor: pointer;
   user-select: none;
-  white-space: nowrap;
+  vertical-align: bottom;
 
   &:hover {
     background: rgba(0, 0, 0, 0.04);
   }
+}
+
+// Long column headers ("Membership status", "Member in period") wrap onto two
+// lines instead of forcing the whole table wider.
+.mm-th-multiline {
+  white-space: normal;
+  max-width: 6.5rem;
+  line-height: 1.15;
 }
 
 .member-manager-vtable {

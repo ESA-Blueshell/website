@@ -308,13 +308,22 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(false)
   })
 
-  it("add-membership section is shown when hasActive=false", async () => {
+  it("add-membership section is shown when hasActive=false, collapsed by default and folds out on toggle", async () => {
     mockFindMemberships.mockResolvedValue({data: []})
 
     const wrapper = mountDialog()
     await settle()
 
     expect((wrapper.vm as any).hasActive).toBe(false)
+    // The add-membership section (toggle) is available...
+    expect(wrapper.find("[data-testid='manage-membership-add-pane']").exists()).toBe(true)
+    // ...but the create form is collapsed by default.
+    expect((wrapper.vm as any).addOpen).toBe(false)
+    expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(false)
+
+    // Folding it out reveals the create form.
+    ;(wrapper.vm as any).addOpen = true
+    await wrapper.vm.$nextTick()
     expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(true)
   })
 

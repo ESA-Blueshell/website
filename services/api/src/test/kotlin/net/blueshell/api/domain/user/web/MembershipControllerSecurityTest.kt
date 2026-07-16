@@ -227,6 +227,85 @@ class MembershipControllerSecurityTest : UserTestSupport() {
     }
 
     @Nested
+    inner class EndMembership {
+
+        @Test
+        fun `allows BOARD to end a membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isOk)
+        }
+
+        @Test
+        fun `denies non-BOARD users from ending a membership`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId)
+                    .with(bearer(member))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+        }
+    }
+
+    @Nested
+    inner class ReopenMembership {
+
+        @Test
+        fun `allows BOARD to reopen a membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture(
+                user = createUserWithRole(Role.GUEST),
+                endDate = java.time.LocalDate.now().minusDays(1)
+            ).id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isOk)
+        }
+
+        @Test
+        fun `denies non-BOARD users from reopening a membership`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val membershipId = createMembershipFixture(
+                endDate = java.time.LocalDate.now().minusDays(1)
+            ).id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId)
+                    .with(bearer(member))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            val membershipId = createMembershipFixture(
+                endDate = java.time.LocalDate.now().minusDays(1)
+            ).id!!
+
+            mvc.perform(MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+        }
+    }
+
+    @Nested
     inner class FindMembershipById {
 
         @Test
@@ -271,6 +350,188 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             val membershipId = createMembershipFixture().id!!
 
             mvc.perform(MockMvcRequestBuilders.get("/memberships/{id}", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+        }
+    }
+
+    @Nested
+    inner class DeleteMembership {
+
+        @Test
+        fun `allows BOARD to delete a membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isNoContent)
+        }
+
+        @Test
+        fun `denies non-BOARD users from deleting a membership`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(member))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `denies GUEST from deleting a membership`() {
+            val guest = createUserWithRole(Role.GUEST)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(guest))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(MockMvcRequestBuilders.delete("/memberships/{id}", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+        }
+    }
+
+    @Nested
+    inner class RestoreMembership {
+
+        @Test
+        fun `allows ADMIN to restore a membership`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isNoContent)
+
+            mvc.perform(
+                MockMvcRequestBuilders.put("/memberships/{id}/restore", membershipId)
+                    .with(bearer(admin))
+            )
+                .andExpect(MockMvcResultMatchers.status().isOk)
+        }
+
+        @Test
+        fun `denies BOARD from restoring a membership`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isNoContent)
+
+            mvc.perform(
+                MockMvcRequestBuilders.put("/memberships/{id}/restore", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `denies MEMBER from restoring a membership`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isNoContent)
+
+            mvc.perform(
+                MockMvcRequestBuilders.put("/memberships/{id}/restore", membershipId)
+                    .with(bearer(member))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val board = createUserWithRole(Role.BOARD)
+            val membershipId = createMembershipFixture().id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isNoContent)
+
+            mvc.perform(MockMvcRequestBuilders.put("/memberships/{id}/restore", membershipId))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+        }
+    }
+
+    @Nested
+    inner class FindDeletedMemberships {
+
+        @Test
+        fun `allows ADMIN to list deleted memberships`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val membershipId = createMembershipFixture(user = user).id!!
+
+            mvc.perform(
+                MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isNoContent)
+
+            mvc.perform(
+                MockMvcRequestBuilders.get("/users/{userId}/memberships/deleted", user.id)
+                    .with(bearer(admin))
+            )
+                .andExpect(MockMvcResultMatchers.status().isOk)
+        }
+
+        @Test
+        fun `denies BOARD from listing deleted memberships`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                MockMvcRequestBuilders.get("/users/{userId}/memberships/deleted", user.id)
+                    .with(bearer(board))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `denies MEMBER from listing deleted memberships`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val user = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                MockMvcRequestBuilders.get("/users/{userId}/memberships/deleted", user.id)
+                    .with(bearer(member))
+            )
+                .andExpect(MockMvcResultMatchers.status().isForbidden)
+        }
+
+        @Test
+        fun `returns 401 when unauthenticated`() {
+            val user = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(MockMvcRequestBuilders.get("/users/{userId}/memberships/deleted", user.id))
                 .andExpect(MockMvcResultMatchers.status().isUnauthorized)
         }
     }

@@ -238,6 +238,12 @@ val openApiGenTest by tasks.registering(Test::class) {
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     useJUnitPlatform { includeTags("openapi-gen") }
+    // Disable caching so the test always runs and recreates openapi.raw.json.
+    // The raw file is not declared as a cacheable output; it's a side effect
+    // of the test used by dumpOpenApiSpec. Always running is fine since this
+    // task only runs when dumpOpenApiSpec is invoked (openapi-sync CI + local regen).
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
 }
 
 val dumpOpenApiSpec by tasks.registering {

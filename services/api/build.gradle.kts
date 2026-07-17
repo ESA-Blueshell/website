@@ -121,7 +121,10 @@ dependencies {
 
     implementation("org.commonmark:commonmark:0.28.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.28.0")
-    implementation(files("libs/snakeyaml-2.5.jar"))
+    // snakeyaml is excluded transitively above (configurations.configureEach) to
+    // pin the version; declare it explicitly so it is fetched and verified from
+    // Maven Central rather than vendored as a checked-in jar (Scorecard #476).
+    implementation("org.yaml:snakeyaml:2.5")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

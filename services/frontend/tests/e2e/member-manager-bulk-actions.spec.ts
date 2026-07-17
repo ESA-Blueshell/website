@@ -198,7 +198,17 @@ async function ensureScreenshotDir() {
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
+// Tests are chromium (desktop) project only.
+// Mobile no longer supports row selection or bulk actions menu (#454).
+// See: playwright.config.ts projects list
 test.describe("member manager bulk actions", () => {
+  test.beforeEach(async (_, testInfo) => {
+    // Skip entire suite on mobile project
+    if (testInfo.project.name === "mobile-chrome") {
+      test.skip()
+    }
+  })
+
   test("checkboxes appear in each row and header", async ({page}) => {
     await setupPage(page)
 

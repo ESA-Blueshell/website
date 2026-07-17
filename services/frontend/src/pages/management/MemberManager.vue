@@ -1,11 +1,14 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref} from "vue"
+import {computed, onMounted, onBeforeUnmount, ref} from "vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
+import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
+import BulkActionConfirmDialog from "@/components/common/modals/BulkActionConfirmDialog.vue"
+import type {BulkActionKind} from "@/components/common/modals/BulkActionConfirmDialog.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import UserForm from "@/components/form/UserForm.vue"
 
@@ -19,6 +22,7 @@ import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useMemberRows, type MemberRow} from "@/composables/useMemberRows"
 import {useMemberFilters, type SortKey} from "@/composables/useMemberFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
+import {useMemberSelection} from "@/composables/useMemberSelection"
 
 export type {MemberRow}
 
@@ -59,6 +63,10 @@ const manageDialog = ref(false)
 const manageUserId = ref<number | null>(null)
 const manageUserName = ref("")
 
+// Bulk action dialog
+const bulkDialogOpen = ref(false)
+const bulkAction = ref<BulkActionKind>("markPaid")
+
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
 }
@@ -87,6 +95,21 @@ const {
   sortIcon,
 } = useMemberFilters(rows, userSearchIndex)
 
+// Derive displayed IDs from filteredRows for the selection composable
+const displayedIds = computed(() => filteredRows.value.map((r) => r.id))
+
+const {
+  selectedIdsArray,
+  selectionCount,
+  hasSelection,
+  isSelected,
+  toggle: toggleSelection,
+  headerChecked,
+  headerIndeterminate,
+  toggleHeader,
+  clear: clearSelection,
+} = useMemberSelection(displayedIds)
+
 function ariaSort(key: SortKey) {
   if (sortKey.value !== key) return "none"
   return sortAsc.value ? "ascending" : "descending"
@@ -99,6 +122,9 @@ const memberCountLabel = computed(() =>
     ? `${rows.value.length}`
     : `${filteredRows.value.length} / ${rows.value.length}`,
 )
+
+// Whether period-relative bulk actions are disabled (no period selected)
+const noPeriodSelected = computed(() => !selectedPeriod.value)
 
 // ── Data loading ─────────────────────────────────────────────────────────────
 
@@ -203,12 +229,30 @@ async function onMembershipChanged() {
   if (r.data) updateUser(toEditableUser(r.data))
 }
 
+// ── Bulk action handlers ──────────────────────────────────────────────────────
+
+function openBulkAction(action: BulkActionKind) {
+  bulkAction.value = action
+  bulkDialogOpen.value = true
+}
+
+async function onBulkDone() {
+  clearSelection()
+  await Promise.all([getUsers(), getMemberships()])
+}
+
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
+
 onMounted(async () => {
   try {
     await Promise.all([getUsers(), getMemberships()])
   } catch (error) {
     console.error("Error fetching data:", error)
   }
+})
+
+onBeforeUnmount(() => {
+  clearSelection()
 })
 
 // ── Delete ────────────────────────────────────────────────────────────────────
@@ -257,9 +301,32 @@ async function confirmDeleteUser() {
                   Members
                 </h2>
               </v-badge>
+
+              <!-- Selection count chip + clear -->
+              <template v-if="hasSelection">
+                <v-chip
+                  class="ml-3"
+                  color="primary"
+                  data-testid="bulk-selection-count"
+                  size="small"
+                  variant="tonal"
+                >
+                  {{ selectionCount }} selected
+                </v-chip>
+                <v-btn
+                  class="ml-1"
+                  data-testid="bulk-selection-clear"
+                  density="compact"
+                  size="small"
+                  variant="text"
+                  @click="clearSelection"
+                >
+                  Clear
+                </v-btn>
+              </template>
             </div>
 
-            <!-- Toolbar: search + filters + add user. A deliberate responsive
+            <!-- Toolbar: search + filters + add user + bulk menu. A deliberate responsive
                  layout (no ragged flex-wrap): desktop = one row; mobile = search
                  on its own line, filters in equal-width rows, and a full-width
                  Add user button. -->
@@ -318,6 +385,17 @@ async function confirmDeleteUser() {
               >
                 Add user
               </v-btn>
+
+              <!-- Bulk actions triple-dot menu -->
+              <bulk-actions-menu
+                :disabled="!hasSelection"
+                :no-period="noPeriodSelected"
+                @mark-paid="openBulkAction('markPaid')"
+                @mark-unpaid="openBulkAction('markUnpaid')"
+                @send-reminder="openBulkAction('sendReminder')"
+                @send-incasso="openBulkAction('sendIncasso')"
+                @end-membership="openBulkAction('endMembership')"
+              />
             </div>
 
             <!-- Desktop table (lg and up) -->
@@ -331,6 +409,19 @@ async function confirmDeleteUser() {
               >
                 <thead>
                   <tr>
+                    <!-- Select-all header checkbox -->
+                    <th style="width: 48px; padding-right: 0">
+                      <v-checkbox
+                        :indeterminate="headerIndeterminate"
+                        :model-value="headerChecked"
+                        color="primary"
+                        data-testid="member-manager-header-checkbox"
+                        density="compact"
+                        hide-details
+                        @update:model-value="toggleHeader"
+                      />
+                    </th>
+
                     <!-- Sortable: Name -->
                     <th
                       class="sortable-header"
@@ -460,8 +551,21 @@ async function confirmDeleteUser() {
                   <tr
                     v-for="row in filteredRows"
                     :key="row.id"
+                    :class="{'mm-row--selected': isSelected(row.id)}"
                     :data-testid="`member-manager-row-${row.id}`"
                   >
+                    <!-- Row checkbox -->
+                    <td style="padding-right: 0; width: 48px">
+                      <v-checkbox
+                        :model-value="isSelected(row.id)"
+                        color="primary"
+                        :data-testid="`member-manager-checkbox-${row.id}`"
+                        density="compact"
+                        hide-details
+                        @update:model-value="toggleSelection(row.id)"
+                      />
+                    </td>
+
                     <!-- Name -->
                     <td class="font-weight-medium">
                       {{ row.fullName }}
@@ -654,7 +758,7 @@ async function confirmDeleteUser() {
 
                   <tr v-if="filteredRows.length === 0">
                     <td
-                      colspan="9"
+                      colspan="10"
                       class="text-center text-medium-emphasis py-6"
                     >
                       No users found.
@@ -681,6 +785,18 @@ async function confirmDeleteUser() {
                     class="member-manager-mobile-row"
                     :data-testid="`member-manager-mobile-row-${row.id}`"
                   >
+                    <!-- Row checkbox prepend -->
+                    <template #prepend>
+                      <v-checkbox
+                        :model-value="isSelected(row.id)"
+                        color="primary"
+                        :data-testid="`member-manager-mobile-checkbox-${row.id}`"
+                        density="compact"
+                        hide-details
+                        @update:model-value="toggleSelection(row.id)"
+                      />
+                    </template>
+
                     <!-- Line 1: Name (title) + action buttons (append slot) -->
                     <v-list-item-title class="text-truncate">
                       {{ row.fullName }}
@@ -854,6 +970,15 @@ async function confirmDeleteUser() {
       :user-name="manageUserName"
       @changed="onMembershipChanged"
     />
+
+    <!-- Bulk action confirm dialog -->
+    <bulk-action-confirm-dialog
+      v-model="bulkDialogOpen"
+      :action="bulkAction"
+      :contribution-period-id="selectedPeriod?.id ?? null"
+      :user-ids="selectedIdsArray"
+      @done="onBulkDone"
+    />
   </v-main>
 </template>
 
@@ -893,6 +1018,11 @@ async function confirmDeleteUser() {
 
 tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.02);
+}
+
+// Selected row highlight
+.mm-row--selected > td {
+  background: rgba(var(--v-theme-primary), 0.07) !important;
 }
 
 .gap-1 {

@@ -32,6 +32,7 @@ class PreviewBulkEndMembershipHandler(
                 userId = userId,
                 name = user.fullName,
                 memberType = active.firstOrNull()?.memberType,
+                memberSince = active.firstOrNull()?.startDate,
                 disposition = if (endable.isNotEmpty()) BulkRowDisposition.INCLUDED else BulkRowDisposition.SKIPPED,
                 reason = when {
                     endable.isNotEmpty() -> null

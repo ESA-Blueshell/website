@@ -40,9 +40,9 @@ class PreviewBulkContributionReminderHandler(
         val rows = command.userIds.distinct().map { userId ->
             val user = users.findById(userId)
 
-            // Get the current (active) membership; if none, we cannot resolve a fee.
+            // Get the current (active) membership; use the most recent by start date
             val activeMemberships = memberships.findByUserId(userId)
-            val activeMembership = activeMemberships.firstOrNull { it.endDate == null }
+            val activeMembership = activeMemberships.maxByOrNull { it.startDate }
 
             // Determine disposition and resolve fee
             val memberType = activeMembership?.memberType ?: MemberType.REGULAR
@@ -81,6 +81,7 @@ class PreviewBulkContributionReminderHandler(
                 userId = userId,
                 name = user.fullName,
                 memberType = memberType,
+                memberSince = activeMembership?.startDate,
                 disposition = disposition,
                 reason = reason,
                 amount = resolvedFee,
@@ -116,9 +117,9 @@ class ExecuteBulkContributionReminderHandler(
         command.userIds.distinct().forEach { userId ->
             val user = users.findById(userId)
 
-            // Get the current (active) membership
+            // Get the current (active) membership; use the most recent by start date
             val activeMemberships = memberships.findByUserId(userId)
-            val activeMembership = activeMemberships.firstOrNull { it.endDate == null }
+            val activeMembership = activeMemberships.maxByOrNull { it.startDate }
 
             // Resolve fee and check exclusion
             val memberType = activeMembership?.memberType ?: MemberType.REGULAR

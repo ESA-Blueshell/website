@@ -69,7 +69,9 @@ object EventFormHelper {
 
     fun selectCommittee(page: Page, committeeName: String) {
         openCommitteeSelect(page)
-        page.getByText(committeeName, Page.GetByTextOptions().setExact(true)).first().click()
+        val option = page.getByText(committeeName, Page.GetByTextOptions().setExact(true)).first()
+        option.waitFor()
+        option.click()
     }
 
     fun setApproved(page: Page, approved: Boolean) {

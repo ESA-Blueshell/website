@@ -1,0 +1,206 @@
+package net.blueshell.api.domain.user.web
+
+import net.blueshell.api.domain.user.persistence.repository.MemberRepository
+import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.LocalDate
+
+@SpringBootTest
+class MembershipBulkResumeControllerIT : UserTestSupport() {
+
+    @Autowired
+    private lateinit var memberRepository: MemberRepository
+
+    private fun body(userIds: List<Long>) = """{"userIds":[${userIds.joinToString(",")}]}"""
+
+    @Nested
+    inner class Preview {
+
+        @Test
+        fun `previews resume for membership ending within basis period`() {
+            val board = createUserWithRole(Role.BOARD)
+            // Basis period: today - 15d to today + 345d
+            val periodStart = LocalDate.now().minusDays(15)
+            val periodEnd = LocalDate.now().plusDays(345)
+            createContributionPeriodFixture(startDate = periodStart, endDate = periodEnd)
+
+            val member = createUserWithRole(Role.MEMBER)
+            // Membership ended within the basis period
+            createMembershipFixture(
+                user = member,
+                memberType = MemberType.REGULAR,
+                startDate = LocalDate.now().minusDays(100),
+                endDate = LocalDate.now().minusDays(5),
+            )
+
+            mvc.perform(
+                post("/memberships/bulk/resume/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id!!)))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.action").value("RESUME_MEMBERSHIP"))
+                .andExpect(jsonPath("$.counts.selected").value(1))
+                .andExpect(jsonPath("$.counts.willApply").value(1))
+                .andExpect(jsonPath("$.rows[0].reason").value("WILL_RESUME"))
+        }
+
+        @Test
+        fun `previews start-new for membership ending before basis period`() {
+            val board = createUserWithRole(Role.BOARD)
+            val periodStart = LocalDate.now().minusDays(15)
+            val periodEnd = LocalDate.now().plusDays(345)
+            createContributionPeriodFixture(startDate = periodStart, endDate = periodEnd)
+
+            val member = createUserWithRole(Role.MEMBER)
+            // Membership ended before basis period
+            createMembershipFixture(
+                user = member,
+                memberType = MemberType.ALUMNI,
+                startDate = LocalDate.now().minusDays(400),
+                endDate = LocalDate.now().minusDays(100),
+            )
+
+            mvc.perform(
+                post("/memberships/bulk/resume/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id!!)))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.counts.willApply").value(1))
+                .andExpect(jsonPath("$.rows[0].reason").value("WILL_START_NEW"))
+        }
+
+        @Test
+        fun `skips user with already-active membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val periodStart = LocalDate.now().minusDays(15)
+            val periodEnd = LocalDate.now().plusDays(345)
+            createContributionPeriodFixture(startDate = periodStart, endDate = periodEnd)
+
+            val member = createUserWithRole(Role.MEMBER)
+            createMembershipFixture(user = member, endDate = null) // active
+
+            mvc.perform(
+                post("/memberships/bulk/resume/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id!!)))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.counts.skipped").value(1))
+                .andExpect(jsonPath("$.rows[0].reason").value("ALREADY_ACTIVE"))
+        }
+    }
+
+    @Nested
+    inner class Execute {
+
+        @Test
+        fun `resumes membership by clearing endDate`() {
+            val board = createUserWithRole(Role.BOARD)
+            val periodStart = LocalDate.now().minusDays(15)
+            val periodEnd = LocalDate.now().plusDays(345)
+            createContributionPeriodFixture(startDate = periodStart, endDate = periodEnd)
+
+            val member = createUserWithRole(Role.MEMBER)
+            val membership = createMembershipFixture(
+                user = member,
+                memberType = MemberType.REGULAR,
+                startDate = LocalDate.now().minusDays(100),
+                endDate = LocalDate.now().minusDays(5), // within basis period
+            )
+
+            mvc.perform(
+                post("/memberships/bulk/resume/execute")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id!!)))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.applied").value(1))
+                .andExpect(jsonPath("$.skipped").value(0))
+
+            val resumed = memberRepository.findById(membership.id!!).orElseThrow()
+            assertThat(resumed.endDate).isNull()
+        }
+
+        @Test
+        fun `inserts new membership for user with no resumable membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val periodStart = LocalDate.now().minusDays(15)
+            val periodEnd = LocalDate.now().plusDays(345)
+            createContributionPeriodFixture(startDate = periodStart, endDate = periodEnd)
+
+            // Member has no membership at all
+            val member = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                post("/memberships/bulk/resume/execute")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id!!)))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.applied").value(1))
+
+            val newMemberships = memberRepository.findByUser_Id(member.id!!)
+            assertThat(newMemberships).hasSize(1)
+            val newMembership = newMemberships.first()
+            assertThat(newMembership.endDate).isNull()
+            assertThat(newMembership.startDate).isEqualTo(LocalDate.now())
+            assertThat(newMembership.memberType).isEqualTo(MemberType.REGULAR)
+            assertThat(newMembership.incasso).isFalse()
+        }
+
+        @Test
+        fun `skips already-active membership`() {
+            val board = createUserWithRole(Role.BOARD)
+            val periodStart = LocalDate.now().minusDays(15)
+            val periodEnd = LocalDate.now().plusDays(345)
+            createContributionPeriodFixture(startDate = periodStart, endDate = periodEnd)
+
+            val member = createUserWithRole(Role.MEMBER)
+            createMembershipFixture(user = member, endDate = null)
+
+            mvc.perform(
+                post("/memberships/bulk/resume/execute")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id!!)))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.applied").value(0))
+                .andExpect(jsonPath("$.skipped").value(1))
+        }
+    }
+
+    @Nested
+    inner class Authorization {
+
+        @Test
+        fun `non-board is forbidden`() {
+            val member = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                post("/memberships/bulk/resume/execute")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id!!)))
+            )
+                .andExpect(status().isForbidden)
+        }
+    }
+}

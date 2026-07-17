@@ -242,7 +242,11 @@ describe("MemberManager selection perf — isolated row re-render", () => {
     }
   })
 
-  it("toggling one row selection does not re-render sibling rows (mobile)", async () => {
+  // NOTE: Mobile row selection was removed in #454 (mobile-only cleanup).
+  // This test is skipped since MemberManagerMobileRow no longer supports the
+  // toggle-selection event or selection-related behavior.
+  // Desktop selection performance testing (above) remains valid.
+  it.skip("toggling one row selection does not re-render sibling rows (mobile)", async () => {
     const wrapper = await mountWithPreselect(false, MemberManagerMobileRow)
 
     const rowWrappers = wrapper.findAllComponents(MemberManagerMobileRow)

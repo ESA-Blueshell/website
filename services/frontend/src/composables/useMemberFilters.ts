@@ -1,5 +1,6 @@
 import {computed, onBeforeUnmount, ref, watch, type Ref} from "vue"
 import {type MemberRow, type MemberStatus} from "@/composables/useMemberRows"
+import {useTableSort} from "@/composables/useTableSort"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -18,9 +19,6 @@ export function useMemberFilters(
   // search is the debounced value that filteredRows depends on — unit tests set it directly.
   const searchInput = ref("")
   const search = ref("")
-  // sortKey is null when no column sort is active (natural/default order).
-  const sortKey = ref<SortKey | null>("name")
-  const sortAsc = ref(true)
 
   // Tri-state filters
   const memberFilter = ref<FilterState>("all")
@@ -50,12 +48,13 @@ export function useMemberFilters(
     clearSearchDebounce()
   })
 
-  const filteredRows = computed<MemberRow[]>(() => {
+  // Compute filtered rows (before sorting)
+  const justFiltered = computed<MemberRow[]>(() => {
     // Search against precomputed per-user haystacks — cheap on every keystroke.
     const q = search.value.trim().toLowerCase()
     const terms = q ? q.split(/\s+/) : []
 
-    return [...rows.value.filter((r) => {
+    return rows.value.filter((r) => {
       // Search filter
       if (terms.length > 0) {
         const haystack = userSearchIndex.value.get(r.id) ?? ""
@@ -74,45 +73,72 @@ export function useMemberFilters(
       if (periodMemberFilter.value === "yes" && !r.wasMemberInPeriod) return false
       if (periodMemberFilter.value === "no" && r.wasMemberInPeriod) return false
       return true
-    })].sort((a, b) => {
-      let cmp = 0
-      if (sortKey.value === "name") {
-        cmp = a.fullName.localeCompare(b.fullName)
-      } else if (sortKey.value === "username") {
-        cmp = a.username.localeCompare(b.username)
-      } else if (sortKey.value === "role") {
-        cmp = a.role.localeCompare(b.role)
-      } else if (sortKey.value === "memberSince") {
-        const aVal = a.memberSince ?? ""
-        const bVal = b.memberSince ?? ""
-        cmp = aVal.localeCompare(bVal)
-      } else if (sortKey.value === "status") {
-        cmp = statusOrder[a.status] - statusOrder[b.status]
-      } else if (sortKey.value === "paid") {
-        cmp = Number(a.paid) - Number(b.paid)
-      } else if (sortKey.value === "wasMemberInPeriod") {
-        cmp = Number(a.wasMemberInPeriod) - Number(b.wasMemberInPeriod)
-      }
-      return sortAsc.value ? cmp : -cmp
     })
   })
 
-  // Three-state cycle per column: ascending → descending → no sort (default).
+  // Define sort comparators
+  const memberRowComparators: Record<SortKey, (a: MemberRow, b: MemberRow) => number> = {
+    name: (a, b) => a.fullName.localeCompare(b.fullName),
+    username: (a, b) => a.username.localeCompare(b.username),
+    role: (a, b) => a.role.localeCompare(b.role),
+    status: (a, b) => statusOrder[a.status] - statusOrder[b.status],
+    memberSince: (a, b) => {
+      const aVal = a.memberSince ?? ""
+      const bVal = b.memberSince ?? ""
+      return aVal.localeCompare(bVal)
+    },
+    paid: (a, b) => Number(a.paid) - Number(b.paid),
+    wasMemberInPeriod: (a, b) => Number(a.wasMemberInPeriod) - Number(b.wasMemberInPeriod),
+  }
+
+  // Use the useTableSort composable
+  const {
+    sortedItems: filteredRows,
+    sortKey,
+    sortDir,
+  } = useTableSort(justFiltered, memberRowComparators)
+
+  // Initialize to sort by name ascending (matches original behavior)
+  const initialized = ref(false)
+  watch(
+    () => justFiltered.value.length,
+    () => {
+      if (!initialized.value && justFiltered.value.length > 0) {
+        sortKey.value = "name"
+        sortDir.value = "asc"
+        initialized.value = true
+      }
+    },
+    {immediate: true},
+  )
+
+  // Expose sortAsc for backward compatibility with tests/templates
+  const sortAsc = computed({
+    get: () => sortDir.value === "asc",
+    set: (val) => {
+      sortDir.value = val ? "asc" : "desc"
+    },
+  })
+
+  // Wrap toggleSort to maintain the three-state cycle pattern
   function toggleSort(key: SortKey) {
+    // If switching to a new key, reset to ascending
     if (sortKey.value !== key) {
       sortKey.value = key
-      sortAsc.value = true
-    } else if (sortAsc.value) {
-      sortAsc.value = false
+      sortDir.value = "asc"
+    } else if (sortDir.value === "asc") {
+      sortDir.value = "desc"
     } else {
+      // Third click: reset to no sort (sortKey null, sortDir none)
+      // The template will then show the original unfiltered order.
       sortKey.value = null
-      sortAsc.value = true
+      sortDir.value = "none"
     }
   }
 
   function sortIcon(key: SortKey): string {
     if (sortKey.value !== key) return "mdi-unfold-more-horizontal"
-    return sortAsc.value ? "mdi-arrow-up" : "mdi-arrow-down"
+    return sortDir.value === "asc" ? "mdi-arrow-up" : "mdi-arrow-down"
   }
 
   return {

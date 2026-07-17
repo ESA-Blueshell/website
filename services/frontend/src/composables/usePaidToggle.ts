@@ -83,6 +83,17 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     return saving.value.has(userId)
   }
 
+  /**
+   * Re-fetch contributions for the currently selected period and repopulate paidUserIds.
+   * Call this after bulk actions that modify paid status to ensure the UI reflects the changes.
+   */
+  async function reloadPaid() {
+    if (!selectedPeriod.value) return
+    const contributionsResp = await findContributionsByPeriodId({path: {periodId: selectedPeriodId.value}})
+    const ids = (contributionsResp.data ?? []).map((c) => c.userId)
+    paidUserIds.value = new Set(ids)
+  }
+
   return {
     selectedPeriodId,
     selectedPeriod,
@@ -91,5 +102,6 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     isSaving,
     togglePaid,
     contributionPeriodChanged,
+    reloadPaid,
   }
 }

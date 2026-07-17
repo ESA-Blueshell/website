@@ -4,9 +4,14 @@ export type ClientOptions = {
     baseURL: 'http://localhost:8080' | (string & {});
 };
 
+export enum ActionActorType {
+    USER = 'USER',
+    SYSTEM = 'SYSTEM'
+}
+
 export type Actor = {
     role: Role;
-    type: 'USER' | 'SYSTEM';
+    type: ActionActorType;
     userId?: number;
 };
 
@@ -158,7 +163,7 @@ export type CohortMapping = {
     /**
      * External system this mapping targets
      */
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
 };
 
 export type CohortMemberRow = {
@@ -269,6 +274,10 @@ export type CommitteeMemberResponse = {
 };
 
 export type CommitteeResponse = unknown;
+
+export enum ContactSystem {
+    BREVO = 'BREVO'
+}
 
 export type ContributionPeriodResponse = {
     alumniFee: number;
@@ -399,7 +408,7 @@ export type CreateSponsorRequest = {
 export type CreateTargetRequest = {
     folderHint?: string;
     label: string;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
 };
 
 export type CreateTelemetryRequest = {
@@ -436,14 +445,14 @@ export type DriftReport = {
     extras: Array<ExtraRow>;
     lastReconciledAt?: string;
     missing: Array<MissingRow>;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
 };
 
 export type Email = {
     attempts?: number;
     createdAt?: string;
     deliveredAt?: string;
-    deliveryStatus?: 'PENDING' | 'SENT' | 'DELIVERED' | 'OPENED' | 'BOUNCED' | 'FAILED';
+    deliveryStatus?: EmailDeliveryStatus;
     emailType?: string;
     errorReason?: string;
     errorType?: string;
@@ -457,6 +466,15 @@ export type Email = {
     subject?: string;
     updatedAt?: string;
 };
+
+export enum EmailDeliveryStatus {
+    PENDING = 'PENDING',
+    SENT = 'SENT',
+    DELIVERED = 'DELIVERED',
+    OPENED = 'OPENED',
+    BOUNCED = 'BOUNCED',
+    FAILED = 'FAILED'
+}
 
 export type EmailStats = {
     bouncedCount: number;
@@ -532,7 +550,7 @@ export type ExternalTarget = {
     label: string;
     linkedCohortId?: number;
     memberCount?: number;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
 };
 
 export type ExtraRow = {
@@ -643,7 +661,7 @@ export type JobExecution = {
     initiatedByDisplay?: string;
     initiatedByFullName?: string;
     initiatedByRole?: Role;
-    initiatedByType?: 'USER' | 'SYSTEM';
+    initiatedByType?: ActionActorType;
     initiatedByUserId?: number;
     initiatedByUsername?: string;
     jobType: string;
@@ -656,7 +674,7 @@ export type JobExecution = {
     stackTrace?: string;
     startedAt?: string;
     status: JobExecutionStatus;
-    targetSystem?: 'BREVO';
+    targetSystem?: ContactSystem;
     updatedAt?: string;
 };
 
@@ -721,18 +739,18 @@ export type JwtRequest = {
 
 export type LinkExistingTargetRequest = {
     externalId: string;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
 };
 
 export type LinkUserRequest = {
     externalUserId: string;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
     userId: number;
 };
 
 export type LinkedUser = {
     externalUserId: string;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
     userId: number;
 };
 
@@ -919,10 +937,15 @@ export type TargetDescriptor = {
     folderLabel?: string;
     idLabel: string;
     kind: CohortKind;
-    system: 'BREVO' | 'GOOGLE_CALENDAR';
+    system: TargetSystem;
     systemLabel: string;
     targetLabel: string;
 };
+
+export enum TargetSystem {
+    BREVO = 'BREVO',
+    GOOGLE_CALENDAR = 'GOOGLE_CALENDAR'
+}
 
 export type TelemetryResponse = {
     createdAt: string;
@@ -3448,7 +3471,7 @@ export type GetDriftData = {
         id: number;
     };
     query: {
-        system: 'BREVO' | 'GOOGLE_CALENDAR';
+        system: TargetSystem;
     };
     url: '/management/cohort-subjects/{id}/drift';
 };
@@ -3792,7 +3815,7 @@ export type ListCohortTargetSystemsResponse = ListCohortTargetSystemsResponses[k
 export type SearchCohortTargetsData = {
     body?: never;
     path: {
-        system: 'BREVO' | 'GOOGLE_CALENDAR';
+        system: TargetSystem;
     };
     query?: {
         query?: string;
@@ -3977,7 +4000,7 @@ export type List1Data = {
          * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
          */
         sort?: Array<string>;
-        deliveryStatus?: 'PENDING' | 'SENT' | 'DELIVERED' | 'OPENED' | 'BOUNCED' | 'FAILED';
+        deliveryStatus?: EmailDeliveryStatus;
         emailType?: string;
         search?: string;
     };
@@ -4121,7 +4144,7 @@ export type ListData = {
         status?: JobExecutionStatus;
         category?: JobExecutionCategory;
         search?: string;
-        initiatedByType?: 'USER' | 'SYSTEM';
+        initiatedByType?: ActionActorType;
         jobType?: string;
     };
     url: '/management/jobs';
@@ -4415,6 +4438,7 @@ export type FindMembershipsData = {
     query?: {
         from?: string;
         to?: string;
+        userId?: number;
     };
     url: '/memberships';
 };
@@ -4493,6 +4517,49 @@ export type CreateMembershipResponses = {
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
+
+export type DeleteMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}';
+};
+
+export type DeleteMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteMembershipError = DeleteMembershipErrors[keyof DeleteMembershipErrors];
+
+export type DeleteMembershipResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteMembershipResponse = DeleteMembershipResponses[keyof DeleteMembershipResponses];
 
 export type FindMembershipByIdData = {
     body?: never;
@@ -4579,6 +4646,135 @@ export type UpdateMembershipResponses = {
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+
+export type EndMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/end';
+};
+
+export type EndMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EndMembershipError = EndMembershipErrors[keyof EndMembershipErrors];
+
+export type EndMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type EndMembershipResponse = EndMembershipResponses[keyof EndMembershipResponses];
+
+export type ReopenMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/reopen';
+};
+
+export type ReopenMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReopenMembershipError = ReopenMembershipErrors[keyof ReopenMembershipErrors];
+
+export type ReopenMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type ReopenMembershipResponse = ReopenMembershipResponses[keyof ReopenMembershipResponses];
+
+export type RestoreMembershipData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/restore';
+};
+
+export type RestoreMembershipErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RestoreMembershipError = RestoreMembershipErrors[keyof RestoreMembershipErrors];
+
+export type RestoreMembershipResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type RestoreMembershipResponse = RestoreMembershipResponses[keyof RestoreMembershipResponses];
 
 export type ForwardAuthData = {
     body?: never;
@@ -5574,6 +5770,49 @@ export type BoardCreateMembershipResponses = {
 };
 
 export type BoardCreateMembershipResponse = BoardCreateMembershipResponses[keyof BoardCreateMembershipResponses];
+
+export type FindDeletedMembershipsData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/memberships/deleted';
+};
+
+export type FindDeletedMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDeletedMembershipsError = FindDeletedMembershipsErrors[keyof FindDeletedMembershipsErrors];
+
+export type FindDeletedMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MembershipResponse>;
+};
+
+export type FindDeletedMembershipsResponse = FindDeletedMembershipsResponses[keyof FindDeletedMembershipsResponses];
 
 export type RestoreDeletedUserByIdData = {
     body?: never;

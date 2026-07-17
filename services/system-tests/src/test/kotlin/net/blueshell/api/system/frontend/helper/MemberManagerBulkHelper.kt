@@ -138,24 +138,57 @@ object MemberManagerBulkHelper {
         TestIdLocatorHelper.textInput(page, "bulk-preview-reinclude-$userId").click()
     }
 
-    // ── Amount override ───────────────────────────────────────────────────
+    // ── Fee type selection ─────────────────────────────────────────────────
 
     /**
-     * Set the amount override for a row (for send-reminder / send-incasso
-     * actions). The amount field is only visible for INCLUDED or
-     * re-included WARNING rows.
+     * Choose a fee type in the fee-type selector for a row
+     * (for send-reminder / send-incasso actions).
+     * feeType must be one of "FULL_YEAR_FEE", "HALF_YEAR_FEE", "ALUMNI_FEE".
+     * The select is only visible for INCLUDED or re-included WARNING rows.
      */
-    fun setAmountOverride(page: Page, userId: Long, amount: String) {
-        // testid is on the Vuetify v-text-field wrapper; fill the inner <input>.
-        TestIdLocatorHelper.textInput(page, "bulk-preview-amount-$userId").fill(amount)
+    fun chooseFeeType(page: Page, userId: Long, feeType: String) {
+        // The v-select wrapper has the data-testid; click to open it, then pick the option.
+        val selector = TestIdLocatorHelper.byTestId(page, "bulk-preview-feetype-$userId")
+        selector.click()
+        // Vuetify renders list items in a portal overlay; match by displayed label
+        val label = when (feeType) {
+            "FULL_YEAR_FEE" -> "Full-year fee"
+            "HALF_YEAR_FEE" -> "Half-year fee"
+            "ALUMNI_FEE" -> "Alumni fee"
+            else -> feeType
+        }
+        // Vuetify v-select options are rendered in an overlay with role="option"
+        page.locator(".v-list-item:has-text(\"$label\")").first().click()
     }
 
     /**
-     * Read the amount shown in a row's amount field (inner <input> value).
+     * Read the currently-selected fee type label from a row's fee-type select.
+     * Returns the displayed label text (e.g. "Full-year fee").
      * Only meaningful for INCLUDED / re-included WARNING rows.
      */
+    fun selectedFeeTypeLabel(page: Page, userId: Long): String {
+        val selector = TestIdLocatorHelper.byTestId(page, "bulk-preview-feetype-$userId")
+        // The selected value label is rendered inside .v-select__selection or the input's aria-label
+        val selectionEl = selector.locator(".v-select__selection-text").first()
+        return selectionEl.textContent()?.trim() ?: selector.textContent()?.trim() ?: ""
+    }
+
+    /**
+     * Read the resolved € amount shown beside the fee-type select for a row.
+     * This is the backend-resolved amount for the recommended fee type.
+     * Kept for backward-compatibility in system tests that check displayed amounts.
+     */
     fun amountOf(page: Page, userId: Long): String {
-        return TestIdLocatorHelper.textInput(page, "bulk-preview-amount-$userId").inputValue()
+        // The resolved amount is shown as a text element next to the v-select.
+        // It is the text content of a <span class="text-caption text-medium-emphasis"> next to the select.
+        // Locate the td cell containing the feetype select and find the adjacent amount span.
+        val feeTypeSelect = TestIdLocatorHelper.byTestId(page, "bulk-preview-feetype-$userId")
+        // The amount span is a sibling of the v-select inside the same flex div
+        val parentDiv = feeTypeSelect.locator("..").locator("..")
+        val amountSpan = parentDiv.locator(".text-medium-emphasis").first()
+        val text = amountSpan.textContent()?.trim() ?: ""
+        // Strip "€ " prefix
+        return text.removePrefix("€ ").trim()
     }
 
     // ── Date inputs ────────────────────────────────────────────────────────

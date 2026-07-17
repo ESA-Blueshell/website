@@ -12,6 +12,7 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.dto.bulk.BulkActionType
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
@@ -72,6 +73,8 @@ class BulkIncassoNotificationHandlersTest {
             assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.INCLUDED)
             assertThat(result.rows[0].reason).isNull()
             assertThat(result.rows[0].amount).isEqualTo(100.0)
+            // Regular member with startDate 2023-01-01 < cutoffDate 2024-01-01 → FULL_YEAR_FEE
+            assertThat(result.rows[0].recommendedFeeType).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
         }
 
         @Test
@@ -294,12 +297,13 @@ class BulkIncassoNotificationHandlersTest {
         }
 
         @Test
-        fun `execute applies amount override`() {
+        fun `execute applies fee type override`() {
             val userId = 4L
             val periodId = 100L
             val cutoffDate = LocalDate.of(2024, 1, 1)
             val expectedIncassoDate = LocalDate.of(2024, 2, 1)
-            val overrideAmount = 75.0
+            // Regular member with incasso=true, default would be FULL_YEAR_FEE (100.0)
+            // Override to HALF_YEAR_FEE (50.0)
 
             val user = mockUser(userId, "Diana", email = "diana@example.com")
             val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
@@ -311,7 +315,7 @@ class BulkIncassoNotificationHandlersTest {
             whenever(contributionService.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(false)
 
             val capturedNotification = argumentCaptor<IncassoNotification>()
-            val savedNotification = mockNotification(userId, periodId, overrideAmount, expectedIncassoDate)
+            val savedNotification = mockNotification(userId, periodId, 50.0, expectedIncassoDate)
             whenever(notificationService.create(capturedNotification.capture())).thenReturn(savedNotification)
 
             val result = handler.handle(
@@ -320,12 +324,13 @@ class BulkIncassoNotificationHandlersTest {
                     contributionPeriodId = periodId,
                     cutoffDate = cutoffDate,
                     expectedIncassoDate = expectedIncassoDate,
-                    amountOverrides = mapOf(userId to overrideAmount),
+                    feeTypeOverrides = mapOf(userId to BulkFeeType.HALF_YEAR_FEE),
                 )
             )
 
             assertThat(result.applied).isEqualTo(1)
-            assertThat(capturedNotification.firstValue.amount).isEqualTo(overrideAmount)
+            // Half-year fee is 50.0 (from mockPeriod)
+            assertThat(capturedNotification.firstValue.amount).isEqualTo(50.0)
         }
     }
 

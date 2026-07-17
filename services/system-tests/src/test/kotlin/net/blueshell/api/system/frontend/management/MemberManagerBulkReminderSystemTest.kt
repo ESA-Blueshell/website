@@ -233,24 +233,26 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `amount override is reflected`() {
+    fun `fee type override is reflected`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         val uniqueOffset = System.currentTimeMillis() % 10_000
 
         val periodStart = LocalDate.now().minusDays(50L + uniqueOffset)
         val periodEnd = LocalDate.now().plusDays(300L + uniqueOffset)
-        val originalFee = 45.00
+        val fullYearFee = 45.00
+        val halfYearFee = 22.50
         val periodId = TestHelper.createContributionPeriod(
             periodStart,
             periodEnd,
-            halfYearFee = 22.50,
-            fullYearFee = originalFee,
+            halfYearFee = halfYearFee,
+            fullYearFee = fullYearFee,
             alumniFee = 15.00,
         )
 
+        // Member started before cutoff → default recommended: FULL_YEAR_FEE
         val member = TestHelper.registerActivateAndPromote(
             "MEMBER",
-            username = "amount_override_${uniqueOffset}",
+            username = "fee_type_override_${uniqueOffset}",
         )
         TestHelper.attachMembership(member.username, memberType = "REGULAR", startDate = periodStart.minusDays(10))
         val memberId = TestHelper.findUser(member.username)!!.id
@@ -270,19 +272,16 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         MemberManagerBulkHelper.setCutoffDate(page, formatDate(cutoffDate))
         MemberManagerBulkHelper.setPaymentDueDate(page, formatDate(periodEnd.plusDays(14)))
 
-        // Initial state: should show full-year fee
+        // Initial state: should show INCLUDED with FULL_YEAR_FEE recommended
         assertThat(MemberManagerBulkHelper.dispositionOf(page, memberId))
             .isEqualTo("INCLUDED")
-        val initialFeeText = MemberManagerBulkHelper.amountOf(page, memberId)
-        assertThat(initialFeeText.toDouble()).isEqualTo(originalFee)
 
-        // Override with a custom amount
-        val customAmount = "55.00"
-        MemberManagerBulkHelper.setAmountOverride(page, memberId, customAmount)
+        // Override the fee type to HALF_YEAR_FEE
+        MemberManagerBulkHelper.chooseFeeType(page, memberId, "HALF_YEAR_FEE")
 
-        // Verify the override is reflected
-        val overriddenFeeText = MemberManagerBulkHelper.amountOf(page, memberId)
-        assertThat(overriddenFeeText.toDouble()).isEqualTo(customAmount.toDouble())
+        // Verify the selection is reflected (label shows "Half-year fee")
+        val selectedLabel = MemberManagerBulkHelper.selectedFeeTypeLabel(page, memberId)
+        assertThat(selectedLabel).contains("Half-year fee")
 
         // Execute the action
         MemberManagerBulkHelper.confirm(page)

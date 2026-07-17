@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.contribution.domain
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import java.time.LocalDate
 
@@ -35,4 +36,42 @@ fun resolveMemberFee(
     MemberType.ALUMNI -> period.alumniFee
     MemberType.HONORARY -> null // Excluded
     MemberType.NONE -> period.fullYearFee // Fallback for no membership
+}
+
+/**
+ * Resolves the [BulkFeeType] recommended for a member based on their type and
+ * membership start date relative to the half-year cutoff. Returns null for
+ * HONORARY members (they are excluded).
+ *
+ * Rules (mirror of [resolveMemberFee]):
+ * - REGULAR started before cutoff → FULL_YEAR_FEE
+ * - REGULAR started on/after cutoff → HALF_YEAR_FEE
+ * - ALUMNI → ALUMNI_FEE
+ * - HONORARY → null (excluded)
+ */
+fun resolveFeeType(
+    memberType: MemberType,
+    membershipStartDate: LocalDate?,
+    cutoffDate: LocalDate,
+): BulkFeeType? = when (memberType) {
+    MemberType.REGULAR -> {
+        if (membershipStartDate != null && membershipStartDate >= cutoffDate) {
+            BulkFeeType.HALF_YEAR_FEE
+        } else {
+            BulkFeeType.FULL_YEAR_FEE
+        }
+    }
+    MemberType.ALUMNI -> BulkFeeType.ALUMNI_FEE
+    MemberType.HONORARY -> null // Excluded
+    MemberType.NONE -> BulkFeeType.FULL_YEAR_FEE // Fallback for no membership
+}
+
+/**
+ * Resolves the € amount for a given [BulkFeeType] from the contribution period.
+ * This is a pure function with no side effects.
+ */
+fun resolveFeeAmount(feeType: BulkFeeType, period: ContributionPeriod): Double = when (feeType) {
+    BulkFeeType.FULL_YEAR_FEE -> period.fullYearFee
+    BulkFeeType.HALF_YEAR_FEE -> period.halfYearFee
+    BulkFeeType.ALUMNI_FEE -> period.alumniFee
 }

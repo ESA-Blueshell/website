@@ -22,14 +22,21 @@ class MembershipEventListener(
         // resolves the role the same way: the user is a MEMBER iff they still have
         // an active membership.
         when (evt.changeType) {
-            MembershipChange.CREATED,
+            MembershipChange.CREATED -> {
+                if (evt.active) {
+                    log.info("Membership {} for user {}: ensuring role {}", evt.changeType, evt.userId, Role.MEMBER)
+                    users.addRole(evt.userId, Role.MEMBER)
+                }
+            }
             MembershipChange.UPDATED -> {
                 if (evt.active) {
                     log.info("Membership {} for user {}: ensuring role {}", evt.changeType, evt.userId, Role.MEMBER)
                     users.addRole(evt.userId, Role.MEMBER)
                 } else {
-                    log.info("Membership {} for user {}: removing role {}", evt.changeType, evt.userId, Role.MEMBER)
-                    users.removeRole(evt.userId, Role.MEMBER)
+                    if (!users.existsActiveMembershipByUserId(evt.userId)) {
+                        log.info("Membership {} for user {}: removing role {}", evt.changeType, evt.userId, Role.MEMBER)
+                        users.removeRole(evt.userId, Role.MEMBER)
+                    }
                 }
             }
             MembershipChange.DELETED -> {

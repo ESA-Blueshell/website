@@ -37,6 +37,8 @@ object CommitteeFormHelper {
     }
 
     fun submit(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "committee-form-submit-btn").click()
+        val submitBtn = TestIdLocatorHelper.byTestId(page, "committee-form-submit-btn")
+        submitBtn.waitFor()
+        submitBtn.click()
     }
 }

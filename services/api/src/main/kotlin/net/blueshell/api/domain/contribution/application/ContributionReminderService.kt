@@ -21,6 +21,12 @@ class ContributionReminderService @Autowired constructor(
         return repository.findByIdContributionPeriodId(contributionPeriodId)
     }
 
+    @Transactional(readOnly = true)
+    fun findLastReminderForUserAndPeriod(userId: Long, contributionPeriodId: Long): ContributionReminder? {
+        return repository.findByIdContributionPeriodId(contributionPeriodId)
+            .firstOrNull { it.userId == userId }
+    }
+
     fun sendReminder(reminder: ContributionReminder) {
         val reminderId = reminder.id
         jobs.enqueue(

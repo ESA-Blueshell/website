@@ -36,11 +36,23 @@ class EmailSenderService(
 ) {
     fun sendContributionReminderEmail(userId: Long, contributionPeriodId: Long, jobExecutionId: Long? = null) {
         val reminder = requireExists { reminders.findById(ContributionReminder.Id(userId, contributionPeriodId)) }
-        val emailContent = createContributionReminderEmail(
-            reminder.user,
-            reminder.contributionPeriod,
-            frontendUrl
-        )
+        val emailContent = if (reminder.amount != null && reminder.paymentDueDate != null) {
+            // Bulk reminder: use specific amount and due date
+            createContributionReminderEmail(
+                reminder.user,
+                reminder.contributionPeriod,
+                reminder.amount!!,
+                reminder.paymentDueDate!!,
+                frontendUrl
+            )
+        } else {
+            // Single-user reminder: use all options
+            createContributionReminderEmail(
+                reminder.user,
+                reminder.contributionPeriod,
+                frontendUrl
+            )
+        }
         deliver(emailContent, "email.contribution-reminder", jobExecutionId)
     }
 

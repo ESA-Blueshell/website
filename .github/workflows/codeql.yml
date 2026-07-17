@@ -10,7 +10,6 @@ name: CodeQL
 
 on:
   push:
-    branches: [main]
   pull_request:
     branches: [main]
   schedule:
@@ -94,8 +93,11 @@ jobs:
       # clients it depends on, which is the whole main source tree CodeQL
       # needs to trace. Tests are out of scope for these queries.
       - name: Build Kotlin sources for analysis
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g"
         run: |
           ./gradlew --no-daemon --build-cache \
+            -Pkotlin.daemon.jvmargs=-Xmx3g \
             :services:api:compileKotlin \
             :libs:kotlin-common:compileKotlin
 

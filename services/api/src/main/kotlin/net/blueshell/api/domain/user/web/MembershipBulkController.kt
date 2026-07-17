@@ -3,8 +3,11 @@ package net.blueshell.api.domain.user.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.domain.user.command.ExecuteBulkEndMembershipCommand
+import net.blueshell.api.domain.user.command.ExecuteBulkResumeMembershipCommand
 import net.blueshell.api.domain.user.command.PreviewBulkEndMembershipCommand
+import net.blueshell.api.domain.user.command.PreviewBulkResumeMembershipCommand
 import net.blueshell.api.domain.user.web.dto.request.BulkEndMembershipRequest
+import net.blueshell.api.domain.user.web.dto.request.BulkResumeMembershipRequest
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
@@ -31,4 +34,14 @@ class MembershipBulkController(private val commandBus: CommandBus) {
     @PostMapping("/memberships/bulk/end/execute")
     fun executeBulkEnd(@Valid @RequestBody request: BulkEndMembershipRequest): BulkActionResult =
         commandBus.dispatch(ExecuteBulkEndMembershipCommand(userIds = request.userIds))
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
+    @PostMapping("/memberships/bulk/resume/preview")
+    fun previewBulkResume(@Valid @RequestBody request: BulkResumeMembershipRequest): BulkPreviewResult =
+        commandBus.dispatch(PreviewBulkResumeMembershipCommand(userIds = request.userIds))
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
+    @PostMapping("/memberships/bulk/resume/execute")
+    fun executeBulkResume(@Valid @RequestBody request: BulkResumeMembershipRequest): BulkActionResult =
+        commandBus.dispatch(ExecuteBulkResumeMembershipCommand(userIds = request.userIds))
 }

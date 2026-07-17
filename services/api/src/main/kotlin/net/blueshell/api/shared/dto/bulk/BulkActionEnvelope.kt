@@ -28,6 +28,27 @@ enum class BulkRowDisposition {
     WARNING,
 }
 
+/** Machine-readable reason code for a non-INCLUDED disposition. */
+@Schema(name = "BulkRowReason")
+enum class BulkRowReason {
+    ALREADY_PAID,
+    NOT_PAID,
+    HONORARY,
+    INCASSO_MISMATCH,
+    NO_ACTIVE_MEMBERSHIP,
+    STARTED_TODAY,
+}
+
+/** Type of bulk action being performed. */
+@Schema(name = "BulkActionType")
+enum class BulkActionType {
+    MARK_PAID,
+    MARK_UNPAID,
+    CONTRIBUTION_REMINDER,
+    INCASSO_NOTIFICATION,
+    END_MEMBERSHIP,
+}
+
 @Schema(name = "BulkPreviewRow")
 data class BulkPreviewRow(
     val userId: Long,
@@ -35,8 +56,8 @@ data class BulkPreviewRow(
     val memberType: MemberType? = null,
     val memberSince: LocalDate? = null,
     val disposition: BulkRowDisposition,
-    /** Machine-readable reason code for a non-INCLUDED disposition (e.g. "ALREADY_PAID"). */
-    val reason: String? = null,
+    /** Machine-readable reason code for a non-INCLUDED disposition. */
+    val reason: BulkRowReason? = null,
     /** Resolved fee for the email actions (null for non-email actions). */
     val amount: Double? = null,
     /** When this user was last sent this email for the period (email actions only). */
@@ -64,13 +85,13 @@ data class BulkActionCounts(
 
 @Schema(name = "BulkPreviewResult")
 data class BulkPreviewResult(
-    val action: String,
+    val action: BulkActionType,
     val contributionPeriodId: Long? = null,
     val counts: BulkActionCounts,
     val rows: List<BulkPreviewRow>,
 ) {
     companion object {
-        fun of(action: String, contributionPeriodId: Long?, rows: List<BulkPreviewRow>): BulkPreviewResult =
+        fun of(action: BulkActionType, contributionPeriodId: Long?, rows: List<BulkPreviewRow>): BulkPreviewResult =
             BulkPreviewResult(action, contributionPeriodId, BulkActionCounts.of(rows), rows)
     }
 }

@@ -7,9 +7,11 @@ import net.blueshell.api.domain.user.command.ExecuteBulkEndMembershipCommand
 import net.blueshell.api.domain.user.command.PreviewBulkEndMembershipCommand
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
+import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
+import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -36,12 +38,12 @@ class PreviewBulkEndMembershipHandler(
                 disposition = if (endable.isNotEmpty()) BulkRowDisposition.INCLUDED else BulkRowDisposition.SKIPPED,
                 reason = when {
                     endable.isNotEmpty() -> null
-                    active.isNotEmpty() -> "STARTED_TODAY"
-                    else -> "NO_ACTIVE_MEMBERSHIP"
+                    active.isNotEmpty() -> BulkRowReason.STARTED_TODAY
+                    else -> BulkRowReason.NO_ACTIVE_MEMBERSHIP
                 },
             )
         }
-        return BulkPreviewResult.of("END_MEMBERSHIP", null, rows)
+        return BulkPreviewResult.of(BulkActionType.END_MEMBERSHIP, null, rows)
     }
 }
 

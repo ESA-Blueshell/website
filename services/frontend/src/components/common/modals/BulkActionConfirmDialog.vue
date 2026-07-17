@@ -16,6 +16,9 @@ import {
 import type {BulkPreviewResult, BulkPreviewRow} from "@/services/api/blueshell/types.gen"
 import {memberTypeLabel} from "@/utils/memberType"
 
+// Type alias for reason values from the generated BulkPreviewRow
+type BulkRowReason = 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY'
+
 defineOptions({name: "BulkActionConfirmDialog"})
 
 // ── Action type ────────────────────────────────────────────────────────────────
@@ -156,12 +159,15 @@ function formatMemberSince(dateStr: string | undefined): string {
   return dt.isValid ? dt.toFormat("dd/MM/yyyy") : "—"
 }
 
-function getDispositionReasonLabel(reason: string | undefined): string {
+function getDispositionReasonLabel(reason: BulkRowReason | undefined): string {
   if (!reason) return ""
-  const reasonMap: Record<string, string> = {
+  const reasonMap: Record<BulkRowReason, string> = {
     INCASSO_MISMATCH: "Not marked for incasso",
     ALREADY_PAID: "Already paid",
     HONORARY: "Honorary — no contribution needed",
+    NOT_PAID: "Not paid",
+    NO_ACTIVE_MEMBERSHIP: "No active membership",
+    STARTED_TODAY: "Started today",
   }
   return reasonMap[reason] ?? reason.replace(/_/g, " ")
 }

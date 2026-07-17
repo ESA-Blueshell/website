@@ -60,6 +60,7 @@ export default defineConfig({
             requireEnv: true,
             cypress: false,
             checkProd: false,
+            forceBuildInstrument: true,
         }),
         tsconfigPaths(),
         vue(),

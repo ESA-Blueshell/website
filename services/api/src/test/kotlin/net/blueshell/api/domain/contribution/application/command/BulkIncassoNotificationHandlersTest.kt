@@ -11,7 +11,9 @@ import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
+import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -64,7 +66,7 @@ class BulkIncassoNotificationHandlersTest {
                 )
             )
 
-            assertThat(result.action).isEqualTo("INCASSO_NOTIFICATION")
+            assertThat(result.action).isEqualTo(BulkActionType.INCASSO_NOTIFICATION)
             assertThat(result.rows).hasSize(1)
             assertThat(result.rows[0].userId).isEqualTo(userId)
             assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.INCLUDED)
@@ -96,7 +98,7 @@ class BulkIncassoNotificationHandlersTest {
 
             assertThat(result.rows).hasSize(1)
             assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.EXCLUDED)
-            assertThat(result.rows[0].reason).isEqualTo("HONORARY")
+            assertThat(result.rows[0].reason).isEqualTo(BulkRowReason.HONORARY)
             assertThat(result.rows[0].amount).isNull()
         }
 
@@ -124,7 +126,7 @@ class BulkIncassoNotificationHandlersTest {
 
             assertThat(result.rows).hasSize(1)
             assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.WARNING)
-            assertThat(result.rows[0].reason).isEqualTo("INCASSO_MISMATCH")
+            assertThat(result.rows[0].reason).isEqualTo(BulkRowReason.INCASSO_MISMATCH)
             assertThat(result.rows[0].amount).isEqualTo(100.0)
         }
 
@@ -152,7 +154,7 @@ class BulkIncassoNotificationHandlersTest {
 
             assertThat(result.rows).hasSize(1)
             assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.WARNING)
-            assertThat(result.rows[0].reason).isEqualTo("ALREADY_PAID")
+            assertThat(result.rows[0].reason).isEqualTo(BulkRowReason.ALREADY_PAID)
             assertThat(result.rows[0].amount).isEqualTo(100.0)
         }
 

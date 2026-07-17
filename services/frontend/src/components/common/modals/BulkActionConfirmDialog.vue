@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
+import {DateTime} from "luxon"
 import BaseModal from "./BaseModal.vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {
@@ -133,6 +134,24 @@ function dispositionColor(row: BulkPreviewRow): string {
   return "success"
 }
 
+// ── Formatting helpers ─────────────────────────────────────────────────────────
+
+function formatMemberSince(dateStr: string | undefined): string {
+  if (!dateStr) return "—"
+  const dt = DateTime.fromISO(dateStr)
+  return dt.isValid ? dt.toFormat("dd/MM/yyyy") : "—"
+}
+
+function getDispositionReasonLabel(reason: string | undefined): string {
+  if (!reason) return ""
+  const reasonMap: Record<string, string> = {
+    INCASSO_MISMATCH: "Not marked for incasso",
+    ALREADY_PAID: "Already paid",
+    HONORARY: "Honorary — no contribution needed",
+  }
+  return reasonMap[reason] ?? reason.replace(/_/g, " ")
+}
+
 // ── Preview loading ────────────────────────────────────────────────────────────
 
 async function loadPreview() {
@@ -239,6 +258,7 @@ const canConfirm = computed(() => {
   if (previewLoading.value || previewError.value || !preview.value) return false
   if (showPaymentDueDate.value && !paymentDueDate.value) return false
   if (showIncassoDate.value && !expectedIncassoDate.value) return false
+  if (includedUserIds.value.length === 0) return false
   return true
 })
 
@@ -334,7 +354,7 @@ const open = computed({
     :save-submit-state="submitState"
     :title="actionConfig.title"
     data-testid="bulk-action-dialog"
-    max-width="760"
+    max-width="960"
     save-testid="bulk-action-confirm-btn"
     scrollable
     show-cancel
@@ -429,7 +449,7 @@ const open = computed({
           size="small"
           variant="tonal"
         >
-          {{ preview.counts.willApply }} will apply
+          {{ includedUserIds.length }} will apply
         </v-chip>
         <v-chip
           v-if="preview.counts.warned > 0"
@@ -470,6 +490,7 @@ const open = computed({
             <th>Member</th>
             <th>Type</th>
             <th>Status</th>
+            <th>Member since</th>
             <th v-if="showPaymentDueDate || showIncassoDate">
               Amount
             </th>
@@ -502,6 +523,12 @@ const open = computed({
                 {{ dispositionLabel(row) }}
               </v-chip>
             </td>
+            <td
+              class="text-caption text-medium-emphasis"
+              :data-testid="`bulk-preview-member-since-${row.userId}`"
+            >
+              {{ formatMemberSince(row.memberSince) }}
+            </td>
             <td v-if="showPaymentDueDate || showIncassoDate">
               <v-text-field
                 v-if="row.disposition === 'INCLUDED' || (row.disposition === 'WARNING' && reincludeOverrides[row.userId])"
@@ -526,10 +553,10 @@ const open = computed({
             </td>
             <td class="text-caption">
               <span
-                v-if="row.reason"
+                v-if="getDispositionReasonLabel(row.reason)"
                 :class="row.disposition === 'EXCLUDED' ? 'text-error' : row.disposition === 'WARNING' ? 'text-warning' : ''"
               >
-                {{ row.reason }}
+                {{ getDispositionReasonLabel(row.reason) }}
               </span>
               <span
                 v-if="row.lastSentOn"

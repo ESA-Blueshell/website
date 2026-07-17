@@ -11,9 +11,11 @@ import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
+import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
+import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -57,23 +59,23 @@ class PreviewBulkIncassoNotificationHandler(
                 ?.atZone(java.time.ZoneOffset.UTC)?.toLocalDate()
 
             val disposition: BulkRowDisposition
-            val reason: String?
+            val reason: BulkRowReason?
 
             when {
                 resolvedFee == null -> {
                     // Honorary member: excluded and not overridable
                     disposition = BulkRowDisposition.EXCLUDED
-                    reason = "HONORARY"
+                    reason = BulkRowReason.HONORARY
                 }
                 !hasIncassoEnabled -> {
                     // Not marked incasso=true: excluded by default but re-includable
                     disposition = BulkRowDisposition.WARNING
-                    reason = "INCASSO_MISMATCH"
+                    reason = BulkRowReason.INCASSO_MISMATCH
                 }
                 alreadyPaid -> {
                     // Already paid: excluded by default, but may be re-included
                     disposition = BulkRowDisposition.WARNING
-                    reason = "ALREADY_PAID"
+                    reason = BulkRowReason.ALREADY_PAID
                 }
                 else -> {
                     // Include
@@ -94,7 +96,7 @@ class PreviewBulkIncassoNotificationHandler(
             )
         }
 
-        return BulkPreviewResult.of("INCASSO_NOTIFICATION", periodId, rows)
+        return BulkPreviewResult.of(BulkActionType.INCASSO_NOTIFICATION, periodId, rows)
     }
 }
 

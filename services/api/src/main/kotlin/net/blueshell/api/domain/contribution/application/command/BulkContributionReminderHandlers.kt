@@ -12,9 +12,11 @@ import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
+import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
+import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -57,18 +59,18 @@ class PreviewBulkContributionReminderHandler(
                 ?.atZone(java.time.ZoneOffset.UTC)?.toLocalDate()
 
             val disposition: BulkRowDisposition
-            val reason: String?
+            val reason: BulkRowReason?
 
             when {
                 resolvedFee == null -> {
                     // Honorary member: excluded and not sendable
                     disposition = BulkRowDisposition.EXCLUDED
-                    reason = "HONORARY"
+                    reason = BulkRowReason.HONORARY
                 }
                 alreadyPaid -> {
                     // Already paid: excluded by default, but may be re-included
                     disposition = BulkRowDisposition.WARNING
-                    reason = "ALREADY_PAID"
+                    reason = BulkRowReason.ALREADY_PAID
                 }
                 else -> {
                     // Include
@@ -89,7 +91,7 @@ class PreviewBulkContributionReminderHandler(
             )
         }
 
-        return BulkPreviewResult.of("CONTRIBUTION_REMINDER", periodId, rows)
+        return BulkPreviewResult.of(BulkActionType.CONTRIBUTION_REMINDER, periodId, rows)
     }
 }
 

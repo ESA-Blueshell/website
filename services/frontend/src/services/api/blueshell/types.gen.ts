@@ -170,7 +170,7 @@ export type BulkIncassoNotificationRequest = {
 };
 
 export type BulkPreviewResult = {
-    action: string;
+    action: 'MARK_PAID' | 'MARK_UNPAID' | 'CONTRIBUTION_REMINDER' | 'INCASSO_NOTIFICATION' | 'END_MEMBERSHIP';
     contributionPeriodId?: number;
     counts: BulkActionCounts;
     rows: Array<BulkPreviewRow>;
@@ -183,7 +183,7 @@ export type BulkPreviewRow = {
     memberSince?: string;
     memberType?: MemberType;
     name: string;
-    reason?: string;
+    reason?: 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY';
     userId: number;
 };
 

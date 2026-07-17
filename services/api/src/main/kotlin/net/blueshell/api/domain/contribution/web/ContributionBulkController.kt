@@ -3,8 +3,11 @@ package net.blueshell.api.domain.contribution.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
+import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionReminderCommand
 import net.blueshell.api.domain.contribution.command.PreviewBulkContributionCommand
+import net.blueshell.api.domain.contribution.command.PreviewBulkContributionReminderCommand
 import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionRequest
+import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionReminderRequest
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
@@ -14,17 +17,19 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * Bulk mark-paid / mark-unpaid over a set of users for a contribution period.
- * Two-phase: `preview` returns the shared envelope (who will change vs is
- * skipped); `execute` applies it in a single request. Board-only.
+ * Bulk actions over members: mark-paid/unpaid, send contribution reminders.
+ * Two-phase pattern: `preview` returns the shared envelope showing who will be acted on;
+ * `execute` applies it in a single request. Board-only.
  */
 @RestController
 @Tag(name = "Contributions")
 class ContributionBulkController(private val commandBus: CommandBus) {
 
+    // ===== Mark Paid / Unpaid =====
+
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/contributions/bulk/preview")
-    fun previewBulk(@Valid @RequestBody request: BulkContributionRequest): BulkPreviewResult =
+    fun previewBulkContribution(@Valid @RequestBody request: BulkContributionRequest): BulkPreviewResult =
         commandBus.dispatch(
             PreviewBulkContributionCommand(
                 userIds = request.userIds,
@@ -35,12 +40,40 @@ class ContributionBulkController(private val commandBus: CommandBus) {
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/contributions/bulk/execute")
-    fun executeBulk(@Valid @RequestBody request: BulkContributionRequest): BulkActionResult =
+    fun executeBulkContribution(@Valid @RequestBody request: BulkContributionRequest): BulkActionResult =
         commandBus.dispatch(
             ExecuteBulkContributionCommand(
                 userIds = request.userIds,
                 contributionPeriodId = request.contributionPeriodId,
                 operation = request.operation,
+            )
+        )
+
+    // ===== Contribution Reminders =====
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
+    @PostMapping("/contributionReminders/bulk/preview")
+    fun previewBulkReminder(@Valid @RequestBody request: BulkContributionReminderRequest): BulkPreviewResult =
+        commandBus.dispatch(
+            PreviewBulkContributionReminderCommand(
+                userIds = request.userIds,
+                contributionPeriodId = request.contributionPeriodId,
+                cutoffDate = request.cutoffDate,
+                paymentDueDate = request.paymentDueDate,
+            )
+        )
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
+    @PostMapping("/contributionReminders/bulk/execute")
+    fun executeBulkReminder(@Valid @RequestBody request: BulkContributionReminderRequest): BulkActionResult =
+        commandBus.dispatch(
+            ExecuteBulkContributionReminderCommand(
+                userIds = request.userIds,
+                contributionPeriodId = request.contributionPeriodId,
+                cutoffDate = request.cutoffDate,
+                paymentDueDate = request.paymentDueDate,
+                includedUserIds = request.includedUserIds,
+                amountOverrides = request.amountOverrides,
             )
         )
 }

@@ -5,12 +5,13 @@ import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeDetailResponse
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeMemberResponse
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeSummaryResponse
+import net.blueshell.api.domain.committee.web.dto.response.CommitteeRole
 
 fun CommitteeMember.asDto(): CommitteeMemberResponse =
     CommitteeMemberResponse(
         userId = this.userId,
         committeeId = this.committeeId,
-        role = this.role!!,
+        role = CommitteeRole.valueOf(this.role!!),
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

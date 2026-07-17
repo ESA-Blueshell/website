@@ -13,8 +13,8 @@ data class CommitteeMemberResponse(
     @field:NotNull
     var committeeId: Long,
 
-    @field:NotBlank
-    var role: String,
+    @field:NotNull
+    var role: CommitteeRole,
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant

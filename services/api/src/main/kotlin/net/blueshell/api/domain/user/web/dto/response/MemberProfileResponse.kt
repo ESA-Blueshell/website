@@ -10,7 +10,7 @@ data class MemberProfileResponse(
     var userId: Long,
     var dateOfBirth: LocalDate?,
     var studentNumber: String?,
-    var gender: String?,
+    var gender: Gender?,
     var nationality: String?,
     var bhv: Boolean,
     var ehbo: Boolean,

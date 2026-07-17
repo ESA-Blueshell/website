@@ -106,10 +106,7 @@ object MemberManagerBulkHelper {
      * column for EXCLUDED or WARNING rows.
      */
     fun reasonOf(page: Page, userId: Long): String? {
-        val row = TestIdLocatorHelper.byTestId(page, "bulk-preview-row-$userId")
-        val cells = row.locator("td")
-        // Note column is typically the 5th column (0-indexed: 4)
-        val noteCell = cells.nth(4)
+        val noteCell = TestIdLocatorHelper.byTestId(page, "bulk-preview-note-$userId")
         val text = noteCell.textContent()?.trim()
         return if (text.isNullOrEmpty()) null else text
     }

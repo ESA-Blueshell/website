@@ -165,13 +165,13 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         assertThat(MemberManagerBulkHelper.dispositionOf(page, honoraryId))
             .isEqualTo("EXCLUDED")
         val honoraryReason = MemberManagerBulkHelper.reasonOf(page, honoraryId)
-        assertThat(honoraryReason).isNotNull
+        assertThat(honoraryReason).isEqualTo("Honorary — no contribution needed")
 
         // 5. Already paid => WARNING
         assertThat(MemberManagerBulkHelper.dispositionOf(page, alreadyPaidId))
             .isEqualTo("WARNING")
         val paidReason = MemberManagerBulkHelper.reasonOf(page, alreadyPaidId)
-        assertThat(paidReason).isNotNull
+        assertThat(paidReason).isEqualTo("Already paid")
 
         // Verify bulk-action-counts: 3 included (regular before, regular after, alumni),
         // 1 excluded (honorary), 1 warning (already paid)

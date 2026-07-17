@@ -551,7 +551,10 @@ const open = computed({
                 class="text-medium-emphasis"
               >—</span>
             </td>
-            <td class="text-caption">
+            <td
+              class="text-caption"
+              :data-testid="`bulk-preview-note-${row.userId}`"
+            >
               <span
                 v-if="getDispositionReasonLabel(row.reason)"
                 :class="row.disposition === 'EXCLUDED' ? 'text-error' : row.disposition === 'WARNING' ? 'text-warning' : ''"

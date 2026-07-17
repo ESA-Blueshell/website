@@ -541,6 +541,24 @@ object TestHelper {
         }
 
     /**
+     * Find all active membership ids for a given user id.
+     */
+    fun findMembershipsForUser(userId: Long): List<Long> =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT id FROM memberships WHERE user_id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                val rs = stmt.executeQuery()
+                val membershipIds = mutableListOf<Long>()
+                while (rs.next()) {
+                    membershipIds += rs.getLong("id")
+                }
+                membershipIds
+            }
+        }
+
+    /**
      * Truncate every row from `job_executions`. The api dispatches a
      * couple of background jobs as part of `POST /users` (contact
      * sync, activation email) with `app.jobs.auto-dispatch=true`, so

@@ -42,6 +42,10 @@ class CommitteeController(
 
     @GetMapping("/committees")
     @PermitAll
+    // CodeQL java/user-controlled-bypass false positive: `principal` is injected by Spring Security
+    // from the server-validated JWT/session — it is not user-controlled input. The branch only
+    // affects response detail level (detail vs summary DTO), not data access or auth gating.
+    @Suppress("codeql[java/user-controlled-bypass]")
     fun findCommittees(
         @AuthenticationPrincipal principal: UserPrincipal?
     ): MutableList<CommitteeResponse> {
@@ -55,6 +59,10 @@ class CommitteeController(
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
+    // CodeQL java/user-controlled-bypass false positive: `principal` is injected by Spring Security
+    // from the server-validated JWT/session — it is not user-controlled input. Access is already
+    // gated by the @PreAuthorize above; the branch here only selects detail vs summary DTO.
+    @Suppress("codeql[java/user-controlled-bypass]")
     fun findCommitteeById(
         @PathVariable committeeId: Long,
         @AuthenticationPrincipal principal: UserPrincipal?

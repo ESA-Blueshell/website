@@ -43,6 +43,12 @@ class UserController(
     @PostMapping("/users")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
+    // CodeQL java/user-controlled-bypass false positive (lines 52, 56): `principal` is injected by
+    // Spring Security from the server-validated JWT/session — it is not user-controlled request
+    // input. The guard at line 52 denies authenticated non-BOARD callers (stricter than @PermitAll
+    // alone). The `isBoard` flag at line 56 is derived entirely server-side, never from the request
+    // body, and is used only to select which command variant to dispatch.
+    @Suppress("codeql[java/user-controlled-bypass]")
     fun createUser(
         @RequestBody @Valid request: CreateUserRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
@@ -61,6 +67,11 @@ class UserController(
 
     @PutMapping("/users/{id}")
     @PreAuthorize("hasPermission(#id, 'User', 'write')")
+    // CodeQL java/user-controlled-bypass false positive (line 68): `principal` is injected by
+    // Spring Security from the server-validated JWT/session — not from request input. Access is
+    // already gated by @PreAuthorize above. The `isBoard` flag only selects which command variant
+    // (BoardUpdateUserRequest vs UpdateUserRequest) to dispatch; callers cannot forge this value.
+    @Suppress("codeql[java/user-controlled-bypass]")
     fun updateUser(
         @PathVariable(required = true) id: Long,
         @RequestBody(required = true) payload: UpdateUserRequest,

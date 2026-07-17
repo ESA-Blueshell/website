@@ -55,20 +55,7 @@ configurations.configureEach {
         TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
         objects.named(TargetJvmEnvironment.STANDARD_JVM),
     )
-    // Pin snakeyaml to the version declared explicitly below. Force (rather than
-    // exclude) so the dependency stays on the classpath — a module-wide exclude
-    // would also drop the direct declaration and break YAML parsing at runtime
-    // and in tests (DatabaseSeedTool).
-    resolutionStrategy.force("org.yaml:snakeyaml:2.5")
-    // snakeyaml is only needed on the main runtime and the `test` source set
-    // (DatabaseSeedTool); those classpaths resolve its standard-jvm variant via
-    // the TargetJvmEnvironment attribute above. The testFixtures/integrationTest
-    // classpaths pull snakeyaml only transitively (via Spring starters) and don't
-    // use it in source — there its Gradle Module Metadata resolves to the
-    // non-existent `-android` variant, so exclude it from those classpaths.
-    if (name.contains("testFixtures", ignoreCase = true) || name.startsWith("integrationTest")) {
-        exclude(group = "org.yaml", module = "snakeyaml")
-    }
+    exclude(group = "org.yaml", module = "snakeyaml")
 }
 
 dependencies {
@@ -134,10 +121,7 @@ dependencies {
 
     implementation("org.commonmark:commonmark:0.28.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.28.0")
-    // Declared explicitly so snakeyaml is fetched and verified from Maven Central
-    // rather than vendored as a checked-in jar (Scorecard #476). The version is
-    // pinned via resolutionStrategy.force above.
-    implementation("org.yaml:snakeyaml:2.5")
+    implementation(files("libs/snakeyaml-2.5.jar"))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

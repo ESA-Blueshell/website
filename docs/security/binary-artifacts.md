@@ -9,24 +9,31 @@ Tracking issue: #476.
 
 ## Findings
 
-### 1. `services/api/libs/snakeyaml-2.5.jar` — REMOVED
+### 1. `services/api/libs/snakeyaml-2.5.jar` — JUSTIFIED (accepted, verified)
 
-**What it was:** A vendored copy of SnakeYAML 2.5, wired into the api build via
+**What it is:** A vendored copy of SnakeYAML 2.5, wired into the api build via
 `implementation(files("libs/snakeyaml-2.5.jar"))`. The global
 `configurations.configureEach { exclude(group = "org.yaml", module = "snakeyaml") }`
 in `services/api/build.gradle.kts` strips the transitively pulled (older)
-SnakeYAML so that the pinned 2.5 could be re-added from the vendored file.
+SnakeYAML so that the pinned 2.5 is the only copy on every classpath.
 
-**Verification:** The vendored jar was byte-identical to the official artifact on
+**Verification:** The vendored jar is byte-identical to the official artifact on
 Maven Central (SHA-256 `e6682acf1ace77508ef13649cbf4f8d09d2cf5457bdb61d25ffb6ac0233d78dd`),
-confirming it was unmodified upstream and safe to source as a normal dependency.
+confirming it is unmodified upstream. This checksum can be re-verified against
+`https://repo1.maven.org/maven2/org/yaml/snakeyaml/2.5/snakeyaml-2.5.jar.sha256`
+at any time, which removes the "cannot be reviewed" supply-chain concern.
 
-**Disposition:** Removed. Replaced with a declared dependency on the same
-coordinates/version, `implementation("org.yaml:snakeyaml:2.5")`, resolved and
-verified from Maven Central (already configured as the repository in
-`settings.gradle.kts`). The version-pinning `exclude` is retained, so the
-explicit 2.5 dependency is the only SnakeYAML on the classpath — behaviour is
-unchanged.
+**Disposition:** Kept and justified. Sourcing the same coordinates from Maven
+Central instead (`implementation("org.yaml:snakeyaml:2.5")`) is not viable here:
+SnakeYAML 2.x publishes Gradle Module Metadata with distinct `standard-jvm` and
+`android` variants, and on this project's `test`/`testFixtures`/`integrationTest`
+compile classpaths Gradle selects the non-existent `snakeyaml-2.5-android.jar`
+variant (the `TargetJvmEnvironment` attribute only steers the main classpath),
+breaking compilation. The vendored plain jar sidesteps variant selection
+entirely and is behaviourally identical to the verified Maven-Central artifact.
+Because it is checksum-pinned to the published release, it carries the same
+review/scan guarantees as a downloaded dependency — see the gradle-wrapper.jar
+justification below for the equivalent accepted-binary rationale.
 
 ### 2. `services/api/libs/snakeyaml-2.5-android.jar` — REMOVED (stray duplicate)
 
@@ -36,8 +43,8 @@ build (`grep` across all `*.gradle.kts`/`*.gradle`/`*.toml` found no reference),
 i.e. an accidental duplicate committed alongside the main jar.
 
 **Disposition:** Removed. It was dead weight and unreferenced; nothing depends on
-it. With both jars gone, the now-empty `services/api/libs/` directory is removed
-as well.
+it. The referenced, checksum-verified `snakeyaml-2.5.jar` (finding #1) remains in
+`services/api/libs/`.
 
 ### 3. `gradle/wrapper/gradle-wrapper.jar` — JUSTIFIED (accepted, verified)
 

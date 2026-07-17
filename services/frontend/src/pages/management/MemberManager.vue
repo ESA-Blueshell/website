@@ -393,20 +393,6 @@ function onRowClick(event: MouseEvent, rowId: number) {
               >
                 Add user
               </v-btn>
-
-              <!-- Bulk actions triple-dot menu. On desktop it lives on the right of
-                   the table header row; here it is shown only on mobile, which has
-                   no table header. -->
-              <bulk-actions-menu
-                v-if="!lgAndUp"
-                :disabled="!hasSelection"
-                :no-period="noPeriodSelected"
-                @mark-paid="openBulkAction('markPaid')"
-                @mark-unpaid="openBulkAction('markUnpaid')"
-                @send-reminder="openBulkAction('sendReminder')"
-                @send-incasso="openBulkAction('sendIncasso')"
-                @end-membership="openBulkAction('endMembership')"
-              />
             </div>
 
             <!-- Desktop table (lg and up) -->
@@ -619,13 +605,8 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 >
                   <member-manager-mobile-row
                     :row="row"
-                    :selected="isSelected(row.id)"
-                    :selection-active="hasSelection"
                     :toggle-disabled="toggleDisabled"
                     :is-saving="isSaving(row.id)"
-                    @toggle-selection="toggleSelection"
-                    @row-click="onRowClick"
-                    @toggle-paid="togglePaid"
                     @manage-membership="openManageMembership"
                     @edit-profile="openEditProfile"
                     @delete="(row) => openDeleteUser(users.find((u) => u.id === row.id)!)"

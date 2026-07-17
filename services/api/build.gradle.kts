@@ -60,6 +60,15 @@ configurations.configureEach {
     // would also drop the direct declaration and break YAML parsing at runtime
     // and in tests (DatabaseSeedTool).
     resolutionStrategy.force("org.yaml:snakeyaml:2.5")
+    // snakeyaml is only needed on the main runtime and the `test` source set
+    // (DatabaseSeedTool); those classpaths resolve its standard-jvm variant via
+    // the TargetJvmEnvironment attribute above. The testFixtures/integrationTest
+    // classpaths pull snakeyaml only transitively (via Spring starters) and don't
+    // use it in source — there its Gradle Module Metadata resolves to the
+    // non-existent `-android` variant, so exclude it from those classpaths.
+    if (name.contains("testFixtures", ignoreCase = true) || name.startsWith("integrationTest")) {
+        exclude(group = "org.yaml", module = "snakeyaml")
+    }
 }
 
 dependencies {

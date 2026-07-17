@@ -45,6 +45,13 @@ spring:
       host: ${VALKEY_HOST:localhost}
       port: ${VALKEY_PORT:6379}
       timeout: 500ms
+      # Valkey is used only for HTTP sessions and the cache layer, never as a
+      # Spring Data repository store. Disabling repository scanning stops the
+      # Redis module (present alongside JPA) from inspecting every JPA
+      # repository in strict mode and logging a "Could not safely identify
+      # store assignment" line for each one at startup.
+      repositories:
+        enabled: false
 
   jpa:
     hibernate:

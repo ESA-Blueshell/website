@@ -33,6 +33,7 @@ data class BulkPreviewRow(
     val userId: Long,
     val name: String,
     val memberType: MemberType? = null,
+    val memberSince: LocalDate? = null,
     val disposition: BulkRowDisposition,
     /** Machine-readable reason code for a non-INCLUDED disposition (e.g. "ALREADY_PAID"). */
     val reason: String? = null,

@@ -9,9 +9,11 @@ import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
+import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
+import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
@@ -38,12 +40,12 @@ class PreviewBulkContributionHandler(
                 disposition = if (willApply) BulkRowDisposition.INCLUDED else BulkRowDisposition.SKIPPED,
                 reason = when {
                     willApply -> null
-                    paid -> "ALREADY_PAID"
-                    else -> "NOT_PAID"
+                    paid -> BulkRowReason.ALREADY_PAID
+                    else -> BulkRowReason.NOT_PAID
                 },
             )
         }
-        return BulkPreviewResult.of(if (paid) "MARK_PAID" else "MARK_UNPAID", periodId, rows)
+        return BulkPreviewResult.of(if (paid) BulkActionType.MARK_PAID else BulkActionType.MARK_UNPAID, periodId, rows)
     }
 }
 

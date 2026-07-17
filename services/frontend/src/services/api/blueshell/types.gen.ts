@@ -180,6 +180,7 @@ export type BulkPreviewRow = {
     amount?: number;
     disposition: 'INCLUDED' | 'SKIPPED' | 'EXCLUDED' | 'WARNING';
     lastSentOn?: string;
+    memberSince?: string;
     memberType?: MemberType;
     name: string;
     reason?: string;

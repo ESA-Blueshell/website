@@ -208,7 +208,7 @@ test.describe("member manager bulk actions", () => {
     await expect(page.getByTestId("member-manager-checkbox-53")).toBeVisible()
   })
 
-  test("selecting rows updates selection count and enables bulk-actions menu", async ({page}) => {
+  test("selecting rows enables bulk-actions menu", async ({page}) => {
     await setupPage(page)
 
     // Menu button should be disabled before selection
@@ -216,8 +216,9 @@ test.describe("member manager bulk actions", () => {
 
     // Select row 51
     await page.getByTestId("member-manager-checkbox-51").click()
-    await expect(page.getByTestId("bulk-selection-count")).toBeVisible()
-    await expect(page.getByTestId("bulk-selection-count")).toContainText("1")
+    // Verify row 51 is selected via checkbox input
+    await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+    // Verify bulk-actions menu is now enabled
     await expect(page.getByTestId("bulk-actions-menu-btn")).not.toBeDisabled()
   })
 
@@ -231,17 +232,26 @@ test.describe("member manager bulk actions", () => {
     await page.getByTestId("member-manager-header-checkbox").click()
 
     // All 3 rows should be selected now
-    await expect(page.getByTestId("bulk-selection-count")).toContainText("3")
+    await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+    await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
+    await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
   })
 
-  test("clear selection button resets selection", async ({page}) => {
+  test("deselecting rows via header checkbox resets selection", async ({page}) => {
     await setupPage(page)
 
-    await page.getByTestId("member-manager-checkbox-51").click()
-    await expect(page.getByTestId("bulk-selection-count")).toBeVisible()
+    // Select all rows via header checkbox
+    await page.getByTestId("member-manager-header-checkbox").click()
+    // Verify rows are selected
+    await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
 
-    await page.getByTestId("bulk-selection-clear").click()
-    await expect(page.getByTestId("bulk-selection-count")).not.toBeVisible()
+    // Deselect all rows by clicking header checkbox again
+    await page.getByTestId("member-manager-header-checkbox").click()
+    // Verify rows are deselected
+    await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).not.toBeChecked()
+    await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).not.toBeChecked()
+    await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).not.toBeChecked()
+    // Verify bulk-actions menu is disabled
     await expect(page.getByTestId("bulk-actions-menu-btn")).toBeDisabled()
   })
 
@@ -275,7 +285,10 @@ test.describe("member manager bulk actions", () => {
 
       // Select all 3 rows
       await page.getByTestId("member-manager-header-checkbox").click()
-      await expect(page.getByTestId("bulk-selection-count")).toContainText("3")
+      // Verify all rows are selected via checkboxes
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
 
       // Open bulk actions menu
       await page.getByTestId("bulk-actions-menu-btn").click()
@@ -349,7 +362,10 @@ test.describe("member manager bulk actions", () => {
       await page.getByTestId("member-manager-checkbox-51").click()
       await page.getByTestId("member-manager-checkbox-52").click()
       await page.getByTestId("member-manager-checkbox-53").click()
-      await expect(page.getByTestId("bulk-selection-count")).toContainText("3")
+      // Verify all 3 rows are selected via checkboxes
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
 
       // Take screenshot: table with rows selected + menu open
       await page.getByTestId("bulk-actions-menu-btn").click()
@@ -386,8 +402,10 @@ test.describe("member manager bulk actions", () => {
       // Wait for close (success triggers close after 1200ms)
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
 
-      // Selection should be cleared after done
-      await expect(page.getByTestId("bulk-selection-count")).not.toBeVisible({timeout: 3_000})
+      // Selection should be cleared after done (verify via checkbox state and disabled menu)
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).not.toBeChecked({timeout: 3_000})
+      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).not.toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).not.toBeChecked()
       await expect(page.getByTestId("bulk-actions-menu-btn")).toBeDisabled()
     })
 
@@ -446,7 +464,9 @@ test.describe("member manager bulk actions", () => {
       // Select two rows
       await page.getByTestId("member-manager-checkbox-51").click()
       await page.getByTestId("member-manager-checkbox-52").click()
-      await expect(page.getByTestId("bulk-selection-count")).toContainText("2")
+      // Verify both rows are selected
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
 
       // Open bulk menu
       await page.getByTestId("bulk-actions-menu-btn").click()
@@ -473,8 +493,9 @@ test.describe("member manager bulk actions", () => {
       // Dialog closes after success
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
 
-      // Selection cleared
-      await expect(page.getByTestId("bulk-selection-count")).not.toBeVisible({timeout: 3_000})
+      // Selection cleared (verify via checkbox state)
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).not.toBeChecked({timeout: 3_000})
+      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).not.toBeChecked()
     })
 
     test("end membership: cancel closes dialog without clearing selection", async ({page}) => {
@@ -489,8 +510,8 @@ test.describe("member manager bulk actions", () => {
       await page.getByRole("button", {name: "Cancel"}).click()
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
 
-      // Selection should still be present
-      await expect(page.getByTestId("bulk-selection-count")).toContainText("1")
+      // Selection should still be present (verify via checkbox)
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
     })
   })
 
@@ -500,7 +521,10 @@ test.describe("member manager bulk actions", () => {
 
       // Select all 3 rows
       await page.getByTestId("member-manager-header-checkbox").click()
-      await expect(page.getByTestId("bulk-selection-count")).toContainText("3")
+      // Verify all rows are selected
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
 
       // Apply a search that filters to only show row 51
       await page.getByTestId("member-manager-search-input").locator("input").fill("Alice")
@@ -509,8 +533,10 @@ test.describe("member manager bulk actions", () => {
       await expect(page.getByTestId("member-manager-row-51")).toBeVisible()
       await expect(page.getByTestId("member-manager-row-52")).not.toBeVisible()
 
-      // But selection count should still be 3 (persistent across filters)
-      await expect(page.getByTestId("bulk-selection-count")).toContainText("3")
+      // But selection should still be present (persistent across filters) - row 51 still checked even though 52/53 hidden
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+      // Menu should still be enabled (selection persisted)
+      await expect(page.getByTestId("bulk-actions-menu-btn")).not.toBeDisabled()
     })
   })
 })

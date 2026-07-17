@@ -106,7 +106,6 @@ const displayedIds = computed(() => filteredRows.value.map((r) => r.id))
 
 const {
   selectedIdsArray,
-  selectionCount,
   hasSelection,
   isSelected,
   toggle: toggleSelection,
@@ -333,29 +332,6 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   Members
                 </h2>
               </v-badge>
-
-              <!-- Selection count chip + clear -->
-              <template v-if="hasSelection">
-                <v-chip
-                  class="ml-3"
-                  color="primary"
-                  data-testid="bulk-selection-count"
-                  size="small"
-                  variant="tonal"
-                >
-                  {{ selectionCount }} selected
-                </v-chip>
-                <v-btn
-                  class="ml-1"
-                  data-testid="bulk-selection-clear"
-                  density="compact"
-                  size="small"
-                  variant="text"
-                  @click="clearSelection"
-                >
-                  Clear
-                </v-btn>
-              </template>
             </div>
 
             <!-- Toolbar: search + filters + add user + bulk menu. A deliberate responsive
@@ -445,7 +421,10 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 <thead>
                   <tr>
                     <!-- Select-all header checkbox -->
-                    <th style="width: 48px; padding-right: 0">
+                    <th
+                      class="d-flex align-center justify-center"
+                      style="width: 48px; padding-right: 0"
+                    >
                       <v-checkbox
                         :indeterminate="headerIndeterminate"
                         :model-value="headerChecked"

@@ -104,7 +104,7 @@ onMounted(async () => {
 <template>
   <v-main>
     <top-banner title="Committee Manager" />
-    <div class="mx-3">
+    <v-container>
       <div
         class="mx-auto my-10"
         style="max-width: 800px"
@@ -222,7 +222,7 @@ onMounted(async () => {
           :src="$require('@/assets/noCommittees.jpg')"
         />
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

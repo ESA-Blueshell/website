@@ -213,7 +213,7 @@ onMounted(() => {
   <v-main>
     <top-banner title="Email Manager" />
 
-    <div class="mx-3">
+    <v-container>
       <div class="mx-auto my-3 email-manager-page">
         <!-- Stats panel -->
         <v-card
@@ -667,7 +667,7 @@ onMounted(() => {
           </div>
         </v-card>
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

@@ -236,7 +236,7 @@ async function confirmDeleteUser() {
   <v-main>
     <top-banner title="Member Manager" />
 
-    <div class="mx-3">
+    <v-container>
       <div
         class="mx-auto my-3"
         style="max-width: 1400px"
@@ -784,7 +784,7 @@ async function confirmDeleteUser() {
           </v-card-text>
         </v-card>
       </div>
-    </div>
+    </v-container>
 
     <!-- Delete confirmation dialog -->
     <deletion-confirmation-dialog

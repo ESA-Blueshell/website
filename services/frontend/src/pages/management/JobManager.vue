@@ -429,7 +429,7 @@ onMounted(async () => {
       @enqueued="onJobTriggered"
     />
 
-    <div class="mx-3">
+    <v-container>
       <div
         class="mx-auto my-3 job-manager-page"
       >
@@ -1011,7 +1011,7 @@ onMounted(async () => {
           </div>
         </v-card>
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

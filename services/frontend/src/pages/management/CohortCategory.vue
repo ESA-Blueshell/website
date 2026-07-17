@@ -79,7 +79,7 @@ watch(category, async (next) => {
   <v-main>
     <top-banner :title="categoryLabel" />
 
-    <div class="mx-3">
+    <v-container>
       <div class="mx-auto my-3 category-page">
         <v-btn
           class="mb-3"
@@ -140,7 +140,7 @@ watch(category, async (next) => {
           </v-list>
         </v-card>
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

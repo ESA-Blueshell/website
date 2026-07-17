@@ -202,7 +202,7 @@ a:visited.text-decoration-none {
 // the `mx-auto`/`ma-*` utilities, so any row meant to be centred was pinned
 // to the left. Dropped: the banners' centred containers line up again.
 
-@media #{map.get(settings.$display-breakpoints, 'xs')} {
+@media #{map.get(settings.$display-breakpoints, 'sm')} {
   .v-container {
     padding: 8px;
   }

@@ -129,7 +129,7 @@ onMounted(async () => {
   <v-main>
     <top-banner title="Cohorts" />
 
-    <div class="mx-3">
+    <v-container>
       <div class="mx-auto my-3 cohorts-page">
         <v-alert
           v-if="errorMessage"
@@ -232,7 +232,7 @@ onMounted(async () => {
           </v-card>
         </div>
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

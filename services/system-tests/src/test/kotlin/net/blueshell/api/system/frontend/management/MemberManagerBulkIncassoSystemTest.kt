@@ -95,6 +95,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
+        MemberManagerBulkHelper.selectPeriod(page, periodId)
 
         // Select all 4 members
         MemberManagerBulkHelper.selectUserRow(page, regularWithIncassoId)
@@ -114,9 +115,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         // 1. Regular with incasso=true => INCLUDED
         assertThat(MemberManagerBulkHelper.dispositionOf(page, regularWithIncassoId))
             .isEqualTo("INCLUDED")
-        val regularWithIncassoFee = TestIdLocatorHelper
-            .byTestId(page, "bulk-preview-amount-$regularWithIncassoId")
-            .inputValue()
+        val regularWithIncassoFee = MemberManagerBulkHelper.amountOf(page, regularWithIncassoId)
         assertThat(regularWithIncassoFee.toDouble()).isEqualTo(fullYearFee)
 
         // 2. Regular with incasso=false => WARNING with reason "Not marked for incasso"
@@ -134,9 +133,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         // 4. Alumni with incasso=true => INCLUDED with alumni fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, alumniWithIncassoId))
             .isEqualTo("INCLUDED")
-        val alumniFeeText = TestIdLocatorHelper
-            .byTestId(page, "bulk-preview-amount-$alumniWithIncassoId")
-            .inputValue()
+        val alumniFeeText = MemberManagerBulkHelper.amountOf(page, alumniWithIncassoId)
         assertThat(alumniFeeText.toDouble()).isEqualTo(alumniFee)
 
         // Verify counts: 2 included (regular+incasso, alumni), 1 warning (regular no incasso), 1 excluded (honorary)
@@ -152,7 +149,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
 
         val periodStart = LocalDate.now().minusDays(50L + uniqueOffset)
         val periodEnd = LocalDate.now().plusDays(300L + uniqueOffset)
-        TestHelper.createContributionPeriod(
+        val periodId = TestHelper.createContributionPeriod(
             periodStart,
             periodEnd,
             halfYearFee = 25.00,
@@ -177,6 +174,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
+        MemberManagerBulkHelper.selectPeriod(page, periodId)
         MemberManagerBulkHelper.selectUserRow(page, memberId)
 
         MemberManagerBulkHelper.openBulkMenu(page)

@@ -22,6 +22,16 @@ object MemberManagerBulkHelper {
         TestIdLocatorHelper.byTestId(page, "member-manager-table").waitFor()
     }
 
+    /**
+     * Select a specific contribution period in the member manager's period list.
+     * The member manager auto-selects the latest period, so period-sensitive bulk
+     * previews (paid status, reminders, incasso) must pin the period the test set
+     * up — otherwise, in parallel runs, another period is previewed.
+     */
+    fun selectPeriod(page: Page, periodId: Long) {
+        TestIdLocatorHelper.byTestId(page, "contribution-period-select-btn-$periodId").click()
+    }
+
     // ── Row selection ──────────────────────────────────────────────────────
 
     /**
@@ -123,7 +133,9 @@ object MemberManagerBulkHelper {
      * The checkbox is only visible for rows with disposition === "WARNING".
      */
     fun toggleReInclude(page: Page, userId: Long) {
-        TestIdLocatorHelper.byTestId(page, "bulk-preview-reinclude-$userId").click()
+        // The data-testid sits on the Vuetify v-checkbox wrapper; click the
+        // inner <input> so the bound model actually toggles.
+        TestIdLocatorHelper.textInput(page, "bulk-preview-reinclude-$userId").click()
     }
 
     // ── Amount override ───────────────────────────────────────────────────
@@ -134,8 +146,16 @@ object MemberManagerBulkHelper {
      * re-included WARNING rows.
      */
     fun setAmountOverride(page: Page, userId: Long, amount: String) {
-        val field = TestIdLocatorHelper.byTestId(page, "bulk-preview-amount-$userId")
-        field.fill(amount)
+        // testid is on the Vuetify v-text-field wrapper; fill the inner <input>.
+        TestIdLocatorHelper.textInput(page, "bulk-preview-amount-$userId").fill(amount)
+    }
+
+    /**
+     * Read the amount shown in a row's amount field (inner <input> value).
+     * Only meaningful for INCLUDED / re-included WARNING rows.
+     */
+    fun amountOf(page: Page, userId: Long): String {
+        return TestIdLocatorHelper.textInput(page, "bulk-preview-amount-$userId").inputValue()
     }
 
     // ── Date inputs ────────────────────────────────────────────────────────

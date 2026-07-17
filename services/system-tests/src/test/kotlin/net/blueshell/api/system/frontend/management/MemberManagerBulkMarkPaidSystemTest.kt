@@ -64,6 +64,7 @@ class MemberManagerBulkMarkPaidSystemTest : PlaywrightTestBase() {
 
         // Open member manager
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
+        MemberManagerBulkHelper.selectPeriod(page, periodId)
 
         // Select both members
         MemberManagerBulkHelper.selectUserRow(page, member1Id)
@@ -140,6 +141,7 @@ class MemberManagerBulkMarkPaidSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
+        MemberManagerBulkHelper.selectPeriod(page, periodId)
         MemberManagerBulkHelper.selectUserRow(page, memberId)
 
         MemberManagerBulkHelper.openBulkMenu(page)

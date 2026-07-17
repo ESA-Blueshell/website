@@ -114,6 +114,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
 
         // Open member manager
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
+        MemberManagerBulkHelper.selectPeriod(page, periodId)
 
         // Select all 5 members
         MemberManagerBulkHelper.selectUserRow(page, regularBeforeId)
@@ -140,25 +141,19 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         // 1. Regular before cutoff => INCLUDED with full-year fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, regularBeforeId))
             .isEqualTo("INCLUDED")
-        val regularBeforeFeeText = TestIdLocatorHelper
-            .byTestId(page, "bulk-preview-amount-$regularBeforeId")
-            .inputValue()
+        val regularBeforeFeeText = MemberManagerBulkHelper.amountOf(page, regularBeforeId)
         assertThat(regularBeforeFeeText.toDouble()).isEqualTo(fullYearFee)
 
         // 2. Regular after cutoff => INCLUDED with half-year fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, regularAfterId))
             .isEqualTo("INCLUDED")
-        val regularAfterFeeText = TestIdLocatorHelper
-            .byTestId(page, "bulk-preview-amount-$regularAfterId")
-            .inputValue()
+        val regularAfterFeeText = MemberManagerBulkHelper.amountOf(page, regularAfterId)
         assertThat(regularAfterFeeText.toDouble()).isEqualTo(halfYearFee)
 
         // 3. Alumni => INCLUDED with alumni fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, alumniId))
             .isEqualTo("INCLUDED")
-        val alumniFeeText = TestIdLocatorHelper
-            .byTestId(page, "bulk-preview-amount-$alumniId")
-            .inputValue()
+        val alumniFeeText = MemberManagerBulkHelper.amountOf(page, alumniId)
         assertThat(alumniFeeText.toDouble()).isEqualTo(alumniFee)
 
         // 4. Honorary => EXCLUDED
@@ -208,6 +203,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
+        MemberManagerBulkHelper.selectPeriod(page, periodId)
         MemberManagerBulkHelper.selectUserRow(page, memberId)
 
         MemberManagerBulkHelper.openBulkMenu(page)
@@ -263,6 +259,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
+        MemberManagerBulkHelper.selectPeriod(page, periodId)
         MemberManagerBulkHelper.selectUserRow(page, memberId)
 
         MemberManagerBulkHelper.openBulkMenu(page)
@@ -276,9 +273,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         // Initial state: should show full-year fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, memberId))
             .isEqualTo("INCLUDED")
-        val initialFeeText = TestIdLocatorHelper
-            .byTestId(page, "bulk-preview-amount-$memberId")
-            .inputValue()
+        val initialFeeText = MemberManagerBulkHelper.amountOf(page, memberId)
         assertThat(initialFeeText.toDouble()).isEqualTo(originalFee)
 
         // Override with a custom amount
@@ -286,9 +281,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         MemberManagerBulkHelper.setAmountOverride(page, memberId, customAmount)
 
         // Verify the override is reflected
-        val overriddenFeeText = TestIdLocatorHelper
-            .byTestId(page, "bulk-preview-amount-$memberId")
-            .inputValue()
+        val overriddenFeeText = MemberManagerBulkHelper.amountOf(page, memberId)
         assertThat(overriddenFeeText.toDouble()).isEqualTo(customAmount.toDouble())
 
         // Execute the action

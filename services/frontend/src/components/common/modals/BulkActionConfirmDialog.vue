@@ -3,6 +3,7 @@ import {computed, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import BaseModal from "./BaseModal.vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
+import {useTableSort} from "@/composables/useTableSort"
 import {
   previewBulkContribution,
   executeBulkContribution,
@@ -129,6 +130,40 @@ const includedUserIds = computed<number[]>(() => {
     })
     .map((row) => row.userId)
 })
+
+// ── Table sort ─────────────────────────────────────────────────────────────────
+
+type BulkSortKey = "name" | "memberType" | "disposition" | "memberSince" | "amount"
+
+const bulkRowComparators: Record<BulkSortKey, (a: BulkPreviewRow, b: BulkPreviewRow) => number> = {
+  name: (a, b) => a.name.localeCompare(b.name),
+  memberType: (a, b) => {
+    const aType = a.memberType ?? ""
+    const bType = b.memberType ?? ""
+    return aType.localeCompare(bType)
+  },
+  disposition: (a, b) => {
+    const dispositionOrder: Record<string, number> = {INCLUDED: 0, WARNING: 1, EXCLUDED: 2, SKIPPED: 3}
+    return (dispositionOrder[a.disposition] ?? 4) - (dispositionOrder[b.disposition] ?? 4)
+  },
+  memberSince: (a, b) => {
+    const aVal = a.memberSince ?? ""
+    const bVal = b.memberSince ?? ""
+    return aVal.localeCompare(bVal)
+  },
+  amount: (a, b) => {
+    const aVal = a.amount ?? 0
+    const bVal = b.amount ?? 0
+    return aVal - bVal
+  },
+}
+
+const {
+  sortedItems: sortedRows,
+  toggleSort,
+  sortIcon,
+  ariaSort,
+} = useTableSort(enrichedRows, bulkRowComparators)
 
 // ── Disposition styling ────────────────────────────────────────────────────────
 
@@ -548,10 +583,66 @@ function feeTypeChangedTooltip(row: BulkPreviewRow): string {
       >
         <thead>
           <tr>
-            <th>Member</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Member since</th>
+            <th
+              class="sortable-header"
+              role="button"
+              tabindex="0"
+              :aria-sort="ariaSort('name')"
+              @click="toggleSort('name')"
+              @keydown.enter="toggleSort('name')"
+              @keydown.space.prevent="toggleSort('name')"
+            >
+              Member
+              <v-icon
+                :icon="sortIcon('name')"
+                size="16"
+              />
+            </th>
+            <th
+              class="sortable-header"
+              role="button"
+              tabindex="0"
+              :aria-sort="ariaSort('memberType')"
+              @click="toggleSort('memberType')"
+              @keydown.enter="toggleSort('memberType')"
+              @keydown.space.prevent="toggleSort('memberType')"
+            >
+              Type
+              <v-icon
+                :icon="sortIcon('memberType')"
+                size="16"
+              />
+            </th>
+            <th
+              class="sortable-header"
+              role="button"
+              tabindex="0"
+              :aria-sort="ariaSort('disposition')"
+              @click="toggleSort('disposition')"
+              @keydown.enter="toggleSort('disposition')"
+              @keydown.space.prevent="toggleSort('disposition')"
+            >
+              Status
+              <v-icon
+                :icon="sortIcon('disposition')"
+                size="16"
+              />
+            </th>
+            <th
+              class="sortable-header"
+              role="button"
+              tabindex="0"
+              :aria-sort="ariaSort('memberSince')"
+              @click="toggleSort('memberSince')"
+              @keydown.enter="toggleSort('memberSince')"
+              @keydown.space.prevent="toggleSort('memberSince')"
+            >
+              Member since
+              <v-icon
+                :icon="sortIcon('memberSince')"
+                size="16"
+              />
+            </th>
             <th v-if="showPaymentDueDate || showIncassoDate">
               Fee type
             </th>
@@ -563,7 +654,7 @@ function feeTypeChangedTooltip(row: BulkPreviewRow): string {
         </thead>
         <tbody>
           <tr
-            v-for="row in enrichedRows"
+            v-for="row in sortedRows"
             :key="row.userId"
             :class="rowColorClass(row)"
             :data-testid="`bulk-preview-row-${row.userId}`"
@@ -680,5 +771,20 @@ function feeTypeChangedTooltip(row: BulkPreviewRow): string {
 
 .gap-3 {
   gap: 12px;
+}
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
+  }
+
+  &:focus {
+    outline: 2px solid var(--v-theme-primary);
+    outline-offset: -2px;
+  }
 }
 </style>

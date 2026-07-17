@@ -92,11 +92,18 @@ jobs:
       # compileKotlin on the api drags in the shared lib and the generated
       # clients it depends on, which is the whole main source tree CodeQL
       # needs to trace. Tests are out of scope for these queries.
+      #
+      # --rerun-tasks (not --build-cache): CodeQL build-mode manual only sees
+      # source it actually compiles. With the build cache, a push that doesn't
+      # touch api/kotlin-common serves compileKotlin from cache — nothing is
+      # compiled, so CodeQL traces nothing and fails with "didn't build any of
+      # it". Forcing the compile tasks to rerun guarantees a traced build on
+      # every push (this workflow runs on all pushes).
       - name: Build Kotlin sources for analysis
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g"
         run: |
-          ./gradlew --no-daemon --build-cache \
+          ./gradlew --no-daemon --rerun-tasks \
             -Pkotlin.daemon.jvmargs=-Xmx3g \
             :services:api:compileKotlin \
             :libs:kotlin-common:compileKotlin

@@ -72,7 +72,7 @@ class UserController(
         val user = when (payload) {
             is BoardUpdateUserRequest -> {
                 if (!isBoard) throw AccessDeniedException("Board role required")
-                commandBus.dispatch(payload.asCommand(id))
+                commandBus.dispatch(payload.asBoardCommand(id))
             }
 
             is UpdateUserRequest -> commandBus.dispatch(payload.asCommand(id))

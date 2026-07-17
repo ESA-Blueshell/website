@@ -55,7 +55,7 @@ class SecurityConfig(
             .sorted { a: Role, b: Role -> b.authorities.size - a.authorities.size }
             .map { it.name }
             .reduce { a: String, b: String -> "$a > $b" }
-            .orElse("").toString()
+            .orElse("")
         return RoleHierarchyImpl.fromHierarchy(hierarchy)
     }
 

@@ -18,6 +18,7 @@ const emit = defineEmits<{
   (e: "sendReminder"): void
   (e: "sendIncasso"): void
   (e: "endMembership"): void
+  (e: "resumeMembership"): void
 }>()
 </script>
 
@@ -76,6 +77,12 @@ const emit = defineEmits<{
         prepend-icon="mdi-account-cancel"
         title="End membership"
         @click="emit('endMembership')"
+      />
+      <v-list-item
+        data-testid="bulk-action-resume-membership"
+        prepend-icon="mdi-account-reactivate"
+        title="Resume / start membership"
+        @click="emit('resumeMembership')"
       />
     </v-list>
   </v-menu>

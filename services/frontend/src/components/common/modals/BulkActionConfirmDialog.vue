@@ -13,12 +13,14 @@ import {
   executeBulkEnd,
   previewBulkIncassoNotification,
   executeBulkIncassoNotification,
+  previewBulkResume,
+  executeBulkResume,
 } from "@/services/api/blueshell/sdk.gen"
 import type {BulkPreviewResult, BulkPreviewRow} from "@/services/api/blueshell/types.gen"
 import {memberTypeLabel} from "@/utils/memberType"
 
 // Type alias for reason values from the generated BulkPreviewRow
-type BulkRowReason = 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY'
+type BulkRowReason = 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY' | 'ALREADY_ACTIVE' | 'NO_CONTRIBUTION_PERIOD' | 'WILL_RESUME' | 'WILL_START_NEW'
 
 // Fee type enum values — mirrors the backend BulkFeeType enum
 type BulkFeeType = 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE'
@@ -46,6 +48,7 @@ export type BulkActionKind =
   | "sendReminder"
   | "sendIncasso"
   | "endMembership"
+  | "resumeMembership"
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -77,6 +80,7 @@ const actionConfig = computed(() => {
     sendReminder: {title: "Send contribution reminder", icon: "mdi-email-fast", confirmLabel: "Send reminder"},
     sendIncasso: {title: "Send incasso notification", icon: "mdi-bank-transfer", confirmLabel: "Send incasso"},
     endMembership: {title: "End membership", icon: "mdi-account-cancel", confirmLabel: "End membership"},
+    resumeMembership: {title: "Resume / start membership", icon: "mdi-account-reactivate", confirmLabel: "Resume / start"},
   }
   return configs[props.action]
 })
@@ -219,6 +223,10 @@ function getDispositionReasonLabel(reason: BulkRowReason | undefined): string {
     NOT_PAID: "Not paid",
     NO_ACTIVE_MEMBERSHIP: "No active membership",
     STARTED_TODAY: "Started today",
+    ALREADY_ACTIVE: "Already active",
+    NO_CONTRIBUTION_PERIOD: "No contribution period",
+    WILL_RESUME: "Will resume",
+    WILL_START_NEW: "Will start new",
   }
   return reasonMap[reason] ?? reason.replace(/_/g, " ")
 }
@@ -271,6 +279,14 @@ async function loadPreview() {
       else previewError.value = "Failed to load preview."
     } else if (props.action === "endMembership") {
       const resp = await previewBulkEnd({
+        body: {
+          userIds: props.userIds,
+        },
+      })
+      if (resp.data) preview.value = resp.data
+      else previewError.value = "Failed to load preview."
+    } else if (props.action === "resumeMembership") {
+      const resp = await previewBulkResume({
         body: {
           userIds: props.userIds,
         },
@@ -387,6 +403,13 @@ async function onConfirm() {
       ok = resp.data != null
     } else if (props.action === "endMembership") {
       const resp = await executeBulkEnd({
+        body: {
+          userIds: props.userIds,
+        },
+      })
+      ok = resp.data != null
+    } else if (props.action === "resumeMembership") {
+      const resp = await executeBulkResume({
         body: {
           userIds: props.userIds,
         },

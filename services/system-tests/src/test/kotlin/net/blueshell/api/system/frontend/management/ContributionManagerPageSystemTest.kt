@@ -79,6 +79,11 @@ class ContributionManagerPageSystemTest : PlaywrightTestBase() {
         page.getByText(member.username, Page.GetByTextOptions().setExact(true)).first().waitFor()
 
         ContributionManagerHelper.searchUser(page, "unpaid", member.username)
+        // Wait for the toggle button to be visible in search results before
+        // wrapping in waitForResponse. The search filter may not have rendered
+        // results yet, causing the click to timeout looking for the element
+        // before the response can be waited for.
+        TestIdLocatorHelper.byTestId(page, "contribution-user-toggle-paid-btn-$memberId").waitFor()
         val markPaidResponse = page.waitForResponse({ response ->
             response.request().method() == "POST" &&
                 response.url().contains("/contributions")
@@ -103,6 +108,11 @@ class ContributionManagerPageSystemTest : PlaywrightTestBase() {
         page.getByText(member.username, Page.GetByTextOptions().setExact(true)).first().waitFor()
 
         ContributionManagerHelper.searchUser(page, "paid", member.username)
+        // Wait for the toggle button to be visible in search results before
+        // wrapping in waitForResponse. The search filter may not have rendered
+        // results yet, causing the click to timeout looking for the element
+        // before the response can be waited for.
+        TestIdLocatorHelper.byTestId(page, "contribution-user-toggle-paid-btn-$memberId").waitFor()
         val markUnpaidResponse = page.waitForResponse({ response ->
             response.request().method() == "DELETE" &&
                 response.url().contains("/contributionPeriods/") &&

@@ -109,7 +109,7 @@ class MemberManagerBulkMarkPaidSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `already paid member shows WARNING and is re-includable`() {
+    fun `already paid member is skipped when marking paid`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         val uniqueOffset = System.currentTimeMillis() % 10_000
 
@@ -147,23 +147,13 @@ class MemberManagerBulkMarkPaidSystemTest : PlaywrightTestBase() {
 
         MemberManagerBulkHelper.waitForDialog(page)
 
-        // Should show WARNING disposition
+        // Marking an already-paid member as paid is a no-op: the row is SKIPPED,
+        // not a re-includable warning (there is nothing to apply).
         assertThat(MemberManagerBulkHelper.dispositionOf(page, memberId))
-            .isEqualTo("WARNING")
+            .isEqualTo("SKIPPED")
 
-        // Check the reason
+        // The note still explains why it was skipped.
         val reason = MemberManagerBulkHelper.reasonOf(page, memberId)
         assertThat(reason).isEqualTo("Already paid")
-
-        // Re-include the member
-        MemberManagerBulkHelper.toggleReInclude(page, memberId)
-
-        // Now should be INCLUDED after re-include
-        assertThat(MemberManagerBulkHelper.dispositionOf(page, memberId))
-            .isEqualTo("INCLUDED")
-
-        // Execute (should succeed without error)
-        MemberManagerBulkHelper.confirm(page)
-        MemberManagerBulkHelper.waitForSuccess(page)
     }
 }

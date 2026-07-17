@@ -143,7 +143,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         val regularBeforeFeeText = TestIdLocatorHelper
             .byTestId(page, "bulk-preview-amount-$regularBeforeId")
             .inputValue()
-        assertThat(regularBeforeFeeText).isEqualTo(fullYearFee.toString())
+        assertThat(regularBeforeFeeText.toDouble()).isEqualTo(fullYearFee)
 
         // 2. Regular after cutoff => INCLUDED with half-year fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, regularAfterId))
@@ -151,7 +151,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         val regularAfterFeeText = TestIdLocatorHelper
             .byTestId(page, "bulk-preview-amount-$regularAfterId")
             .inputValue()
-        assertThat(regularAfterFeeText).isEqualTo(halfYearFee.toString())
+        assertThat(regularAfterFeeText.toDouble()).isEqualTo(halfYearFee)
 
         // 3. Alumni => INCLUDED with alumni fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, alumniId))
@@ -159,7 +159,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         val alumniFeeText = TestIdLocatorHelper
             .byTestId(page, "bulk-preview-amount-$alumniId")
             .inputValue()
-        assertThat(alumniFeeText).isEqualTo(alumniFee.toString())
+        assertThat(alumniFeeText.toDouble()).isEqualTo(alumniFee)
 
         // 4. Honorary => EXCLUDED
         assertThat(MemberManagerBulkHelper.dispositionOf(page, honoraryId))
@@ -279,7 +279,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         val initialFeeText = TestIdLocatorHelper
             .byTestId(page, "bulk-preview-amount-$memberId")
             .inputValue()
-        assertThat(initialFeeText).isEqualTo(originalFee.toString())
+        assertThat(initialFeeText.toDouble()).isEqualTo(originalFee)
 
         // Override with a custom amount
         val customAmount = "55.00"
@@ -289,7 +289,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         val overriddenFeeText = TestIdLocatorHelper
             .byTestId(page, "bulk-preview-amount-$memberId")
             .inputValue()
-        assertThat(overriddenFeeText).isEqualTo(customAmount)
+        assertThat(overriddenFeeText.toDouble()).isEqualTo(customAmount.toDouble())
 
         // Execute the action
         MemberManagerBulkHelper.confirm(page)

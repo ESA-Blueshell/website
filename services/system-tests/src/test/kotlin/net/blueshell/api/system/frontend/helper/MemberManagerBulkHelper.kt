@@ -1,6 +1,8 @@
 package net.blueshell.api.system.frontend.helper
 
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.options.WaitForSelectorState
 
 /**
  * Helper for member bulk-actions harness. Drives the bulk selection UI
@@ -173,23 +175,16 @@ object MemberManagerBulkHelper {
     }
 
     /**
-     * Wait for the bulk action to complete successfully. Polls until
-     * the success indicator appears or timeout is reached.
+     * Wait for the bulk action to complete successfully. On success the confirm
+     * dialog closes, so we wait for the dialog element to become hidden. (A plain
+     * isVisible() poll never signals completion: Locator.isVisible returns false
+     * without throwing, so it can't detect the element going away.)
      */
     fun waitForSuccess(page: Page, timeoutMs: Long = 10_000) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            // After successful execution, the dialog closes and the
-            // selection is cleared. We poll for the clear button to
-            // disappear (indicating the dialog/selection state reset).
-            try {
-                TestIdLocatorHelper.byTestId(page, "bulk-selection-clear").isVisible
-                Thread.sleep(200)
-            } catch (e: Exception) {
-                // Dialog closed and selection cleared; success condition met.
-                return
-            }
-        }
-        throw AssertionError("Bulk action did not complete successfully within ${timeoutMs}ms")
+        TestIdLocatorHelper.byTestId(page, "bulk-action-dialog").waitFor(
+            Locator.WaitForOptions()
+                .setState(WaitForSelectorState.HIDDEN)
+                .setTimeout(timeoutMs.toDouble()),
+        )
     }
 }

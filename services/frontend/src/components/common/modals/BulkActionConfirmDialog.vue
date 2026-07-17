@@ -112,25 +112,38 @@ const includedUserIds = computed<number[]>(() => {
 
 // ── Disposition styling ────────────────────────────────────────────────────────
 
+/**
+ * The disposition as it applies after operator overrides: a WARNING row the
+ * operator has re-included counts as INCLUDED (it will be acted on). The
+ * original reason is still shown in the note column so the flag stays visible.
+ */
+function effectiveDisposition(row: BulkPreviewRow): string {
+  if (row.disposition === "WARNING" && reincludeOverrides.value[row.userId]) return "INCLUDED"
+  return row.disposition
+}
+
 function rowColorClass(row: BulkPreviewRow): string {
-  if (row.disposition === "EXCLUDED") return "bulk-row--excluded"
-  if (row.disposition === "WARNING") return "bulk-row--warning"
-  if (row.disposition === "SKIPPED") return "bulk-row--skipped"
+  const d = effectiveDisposition(row)
+  if (d === "EXCLUDED") return "bulk-row--excluded"
+  if (d === "WARNING") return "bulk-row--warning"
+  if (d === "SKIPPED") return "bulk-row--skipped"
   return ""
 }
 
 function dispositionLabel(row: BulkPreviewRow): string {
-  if (row.disposition === "INCLUDED") return "Included"
-  if (row.disposition === "EXCLUDED") return "Excluded"
-  if (row.disposition === "WARNING") return "Warning"
-  if (row.disposition === "SKIPPED") return "Skipped"
-  return row.disposition
+  const d = effectiveDisposition(row)
+  if (d === "INCLUDED") return "Included"
+  if (d === "EXCLUDED") return "Excluded"
+  if (d === "WARNING") return "Warning"
+  if (d === "SKIPPED") return "Skipped"
+  return d
 }
 
 function dispositionColor(row: BulkPreviewRow): string {
-  if (row.disposition === "EXCLUDED") return "error"
-  if (row.disposition === "WARNING") return "warning"
-  if (row.disposition === "SKIPPED") return "grey"
+  const d = effectiveDisposition(row)
+  if (d === "EXCLUDED") return "error"
+  if (d === "WARNING") return "warning"
+  if (d === "SKIPPED") return "grey"
   return "success"
 }
 

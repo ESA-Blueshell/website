@@ -185,8 +185,8 @@ class MemberManagerBulkSelectionSystemTest : PlaywrightTestBase() {
         rowBody1.click()
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member1Id)).isFalse
 
-        // Verify the selection count changed
-        val countsElement = TestIdLocatorHelper.byTestId(page, "bulk-selection-counts")
+        // Verify the selection count chip is present (member2 remains selected)
+        val countsElement = TestIdLocatorHelper.byTestId(page, "bulk-selection-count")
         val countsText = countsElement.textContent()
         assertThat(countsText).isNotEmpty()
     }

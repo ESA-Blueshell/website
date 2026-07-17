@@ -117,7 +117,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         val regularWithIncassoFee = TestIdLocatorHelper
             .byTestId(page, "bulk-preview-amount-$regularWithIncassoId")
             .inputValue()
-        assertThat(regularWithIncassoFee).isEqualTo(fullYearFee.toString())
+        assertThat(regularWithIncassoFee.toDouble()).isEqualTo(fullYearFee)
 
         // 2. Regular with incasso=false => WARNING with reason "Not marked for incasso"
         assertThat(MemberManagerBulkHelper.dispositionOf(page, regularNoIncassoId))
@@ -137,7 +137,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         val alumniFeeText = TestIdLocatorHelper
             .byTestId(page, "bulk-preview-amount-$alumniWithIncassoId")
             .inputValue()
-        assertThat(alumniFeeText).isEqualTo(alumniFee.toString())
+        assertThat(alumniFeeText.toDouble()).isEqualTo(alumniFee)
 
         // Verify counts: 2 included (regular+incasso, alumni), 1 warning (regular no incasso), 1 excluded (honorary)
         val countsElement = TestIdLocatorHelper.byTestId(page, "bulk-action-counts")

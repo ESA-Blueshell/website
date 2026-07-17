@@ -76,7 +76,7 @@ class ContributionBulkController(private val commandBus: CommandBus) {
                 cutoffDate = request.cutoffDate,
                 paymentDueDate = request.paymentDueDate,
                 includedUserIds = request.includedUserIds,
-                amountOverrides = request.amountOverrides,
+                feeTypeOverrides = request.feeTypeOverrides,
             )
         )
 
@@ -104,7 +104,7 @@ class ContributionBulkController(private val commandBus: CommandBus) {
                 cutoffDate = request.cutoffDate,
                 expectedIncassoDate = request.expectedIncassoDate,
                 includedUserIds = request.includedUserIds,
-                amountOverrides = request.amountOverrides,
+                feeTypeOverrides = request.feeTypeOverrides,
             )
         )
 }

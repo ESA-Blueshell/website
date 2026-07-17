@@ -6,6 +6,7 @@ import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
@@ -34,11 +35,11 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
         cutoffDate: LocalDate,
         expectedIncassoDate: LocalDate,
         includedUserIds: Set<Long> = emptySet(),
-        amountOverrides: Map<Long, Double> = emptyMap()
+        feeTypeOverrides: Map<Long, BulkFeeType> = emptyMap()
     ): String {
         val includedJson = if (includedUserIds.isEmpty()) "[]" else includedUserIds.joinToString(",", "[", "]")
-        val overridesJson = if (amountOverrides.isEmpty()) "{}" else {
-            amountOverrides.entries.joinToString(",", "{", "}") { (k, v) -> "\"$k\":$v" }
+        val overridesJson = if (feeTypeOverrides.isEmpty()) "{}" else {
+            feeTypeOverrides.entries.joinToString(",", "{", "}") { (k, v) -> "\"$k\":\"$v\"" }
         }
         return """{
             "userIds":[${userIds.joinToString(",")}],
@@ -46,7 +47,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             "cutoffDate":"$cutoffDate",
             "expectedIncassoDate":"$expectedIncassoDate",
             "includedUserIds":$includedJson,
-            "amountOverrides":$overridesJson
+            "feeTypeOverrides":$overridesJson
         }"""
     }
 
@@ -93,6 +94,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.counts.willApply").value(1))
                 .andExpect(jsonPath("$.counts.excluded").value(0))
                 .andExpect(jsonPath("$.rows[0].amount").value(period.fullYearFee))
+                .andExpect(jsonPath("$.rows[0].recommendedFeeType").value("FULL_YEAR_FEE"))
                 .andExpect(jsonPath("$.rows[0].disposition").value("INCLUDED"))
                 .andExpect(jsonPath("$.rows[0].memberType").value("REGULAR"))
         }
@@ -115,6 +117,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.rows[0].amount").value(period.halfYearFee))
+                .andExpect(jsonPath("$.rows[0].recommendedFeeType").value("HALF_YEAR_FEE"))
                 .andExpect(jsonPath("$.rows[0].disposition").value("INCLUDED"))
         }
 
@@ -136,6 +139,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.rows[0].amount").value(period.alumniFee))
+                .andExpect(jsonPath("$.rows[0].recommendedFeeType").value("ALUMNI_FEE"))
                 .andExpect(jsonPath("$.rows[0].disposition").value("INCLUDED"))
                 .andExpect(jsonPath("$.rows[0].memberType").value("ALUMNI"))
         }
@@ -335,7 +339,8 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `honors amount overrides in audit and email`() {
+        fun `honors fee type overrides in audit and email`() {
+            // Member started before cutoff → default would be FULL_YEAR_FEE; override to ALUMNI_FEE
             val board = createUserWithRole(Role.BOARD)
             val member = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
@@ -343,7 +348,6 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
             val expectedIncassoDate = LocalDate.of(2024, 12, 31)
-            val overriddenAmount = 75.50
 
             mvc.perform(
                 post("/incassoNotifications/bulk/execute")
@@ -355,7 +359,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                             period.id!!,
                             cutoffDate,
                             expectedIncassoDate,
-                            amountOverrides = mapOf(member.id!! to overriddenAmount)
+                            feeTypeOverrides = mapOf(member.id!! to BulkFeeType.ALUMNI_FEE)
                         )
                     )
             )
@@ -363,7 +367,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.applied").value(1))
                 .andExpect(jsonPath("$.queued").value(1))
 
-            // Verify audit record has overridden amount
+            // Verify audit record has the alumni fee amount (from the override)
             transactionTemplate.execute {
                 entityManager.clear()
                 val notification = entityManager.find(
@@ -371,7 +375,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                     IncassoNotification.Id(member.id, period.id)
                 )
                 assertThat(notification).isNotNull
-                assertThat(notification.amount).isEqualTo(overriddenAmount)
+                assertThat(notification.amount).isEqualTo(period.alumniFee)
             }
 
             // Verify rendered mail carries the overridden amount and formatted incasso date
@@ -382,7 +386,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             assertEmailSent(
                 toEmail = refreshed.email,
                 subject = "Membership Contribution Collection Notice - Blueshell Esports",
-                bodyContains = "%.2f".format(overriddenAmount)
+                bodyContains = "%.2f".format(period.alumniFee)
             )
             assertThat(emailTransportClient.sentEmails.first().htmlContent).contains(formatted)
         }

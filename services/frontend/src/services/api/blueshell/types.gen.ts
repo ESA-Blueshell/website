@@ -137,6 +137,17 @@ export type BulkActionResult = {
     skipped: number;
 };
 
+export type BulkContributionReminderRequest = {
+    amountOverrides: {
+        [key: string]: number;
+    };
+    contributionPeriodId: number;
+    cutoffDate: string;
+    includedUserIds: Array<number>;
+    paymentDueDate: string;
+    userIds: Array<number>;
+};
+
 export type BulkContributionRequest = {
     contributionPeriodId: number;
     operation: 'PAID' | 'UNPAID';
@@ -2563,6 +2574,88 @@ export type SendContributionReminderBatchResponses = {
 
 export type SendContributionReminderBatchResponse = SendContributionReminderBatchResponses[keyof SendContributionReminderBatchResponses];
 
+export type ExecuteBulkReminderData = {
+    body: BulkContributionReminderRequest;
+    path?: never;
+    query?: never;
+    url: '/contributionReminders/bulk/execute';
+};
+
+export type ExecuteBulkReminderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ExecuteBulkReminderError = ExecuteBulkReminderErrors[keyof ExecuteBulkReminderErrors];
+
+export type ExecuteBulkReminderResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type ExecuteBulkReminderResponse = ExecuteBulkReminderResponses[keyof ExecuteBulkReminderResponses];
+
+export type PreviewBulkReminderData = {
+    body: BulkContributionReminderRequest;
+    path?: never;
+    query?: never;
+    url: '/contributionReminders/bulk/preview';
+};
+
+export type PreviewBulkReminderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkReminderError = PreviewBulkReminderErrors[keyof PreviewBulkReminderErrors];
+
+export type PreviewBulkReminderResponses = {
+    /**
+     * OK
+     */
+    200: BulkPreviewResult;
+};
+
+export type PreviewBulkReminderResponse = PreviewBulkReminderResponses[keyof PreviewBulkReminderResponses];
+
 export type FindContributionsData = {
     body?: never;
     path?: never;
@@ -2647,14 +2740,14 @@ export type CreateContributionResponses = {
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
 
-export type ExecuteBulkData = {
+export type ExecuteBulkContributionData = {
     body: BulkContributionRequest;
     path?: never;
     query?: never;
     url: '/contributions/bulk/execute';
 };
 
-export type ExecuteBulkErrors = {
+export type ExecuteBulkContributionErrors = {
     /**
      * Validation error
      */
@@ -2677,25 +2770,25 @@ export type ExecuteBulkErrors = {
     500: ApiError;
 };
 
-export type ExecuteBulkError = ExecuteBulkErrors[keyof ExecuteBulkErrors];
+export type ExecuteBulkContributionError = ExecuteBulkContributionErrors[keyof ExecuteBulkContributionErrors];
 
-export type ExecuteBulkResponses = {
+export type ExecuteBulkContributionResponses = {
     /**
      * OK
      */
     200: BulkActionResult;
 };
 
-export type ExecuteBulkResponse = ExecuteBulkResponses[keyof ExecuteBulkResponses];
+export type ExecuteBulkContributionResponse = ExecuteBulkContributionResponses[keyof ExecuteBulkContributionResponses];
 
-export type PreviewBulkData = {
+export type PreviewBulkContributionData = {
     body: BulkContributionRequest;
     path?: never;
     query?: never;
     url: '/contributions/bulk/preview';
 };
 
-export type PreviewBulkErrors = {
+export type PreviewBulkContributionErrors = {
     /**
      * Validation error
      */
@@ -2718,16 +2811,16 @@ export type PreviewBulkErrors = {
     500: ApiError;
 };
 
-export type PreviewBulkError = PreviewBulkErrors[keyof PreviewBulkErrors];
+export type PreviewBulkContributionError = PreviewBulkContributionErrors[keyof PreviewBulkContributionErrors];
 
-export type PreviewBulkResponses = {
+export type PreviewBulkContributionResponses = {
     /**
      * OK
      */
     200: BulkPreviewResult;
 };
 
-export type PreviewBulkResponse = PreviewBulkResponses[keyof PreviewBulkResponses];
+export type PreviewBulkContributionResponse = PreviewBulkContributionResponses[keyof PreviewBulkContributionResponses];
 
 export type CsrfData = {
     body?: never;

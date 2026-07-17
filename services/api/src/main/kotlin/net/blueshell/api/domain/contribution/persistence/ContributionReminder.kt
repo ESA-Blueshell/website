@@ -7,6 +7,7 @@ import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.time.LocalDate
 
 @Entity
 @Table(
@@ -48,6 +49,12 @@ class ContributionReminder(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "contribution_period_id", nullable = false)
     var contributionPeriod: ContributionPeriod,
+
+    @Column(name = "amount", nullable = true)
+    var amount: Double? = null,
+
+    @Column(name = "payment_due_date", nullable = true)
+    var paymentDueDate: LocalDate? = null,
 ) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminder.Id> {
 
     val userId: Long

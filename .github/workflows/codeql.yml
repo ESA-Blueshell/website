@@ -7,11 +7,12 @@ name: CodeQL
 # While default setup is enabled, the analyze step fails with
 # "Code Scanning could not process the submitted SARIF: default setup
 # is enabled". The two cannot run side by side.
+#
+# CodeQL runs on every push (all branches) and weekly schedule. This
+# ensures consistent scanning including on main and feature branches.
 
 on:
   push:
-  pull_request:
-    branches: [main]
   schedule:
     # Weekly re-scan so newly published queries flag latent issues even
     # when no code changed. Monday 06:17 UTC — off the top of the hour to
@@ -60,12 +61,11 @@ jobs:
   # The backend is Kotlin-only, and CodeQL's standalone extractor cannot
   # see Kotlin without a traced build (build-mode none yields "no source
   # code seen"). Tracing the Gradle + kapt compile is slow (~20 min), so
-  # this leg is kept off the per-PR path and runs on main pushes and the
-  # weekly schedule instead — default setup never scanned Kotlin at all,
-  # so main + weekly is already a strict improvement.
+  # this runs on every push (all branches) and the weekly schedule for
+  # consistent scanning — default setup never scanned Kotlin at all,
+  # so this is a strict improvement over the baseline.
   analyze-kotlin:
     name: Analyze (java-kotlin)
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:

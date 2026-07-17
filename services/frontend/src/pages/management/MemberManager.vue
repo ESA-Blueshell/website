@@ -106,7 +106,6 @@ const displayedIds = computed(() => filteredRows.value.map((r) => r.id))
 
 const {
   selectedIdsArray,
-  selectionCount,
   hasSelection,
   isSelected,
   toggle: toggleSelection,

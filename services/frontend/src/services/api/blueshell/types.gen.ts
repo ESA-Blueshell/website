@@ -175,7 +175,7 @@ export type BulkIncassoNotificationRequest = {
 };
 
 export type BulkPreviewResult = {
-    action: 'MARK_PAID' | 'MARK_UNPAID' | 'CONTRIBUTION_REMINDER' | 'INCASSO_NOTIFICATION' | 'END_MEMBERSHIP';
+    action: 'MARK_PAID' | 'MARK_UNPAID' | 'CONTRIBUTION_REMINDER' | 'INCASSO_NOTIFICATION' | 'END_MEMBERSHIP' | 'RESUME_MEMBERSHIP';
     contributionPeriodId?: number;
     counts: BulkActionCounts;
     rows: Array<BulkPreviewRow>;
@@ -188,9 +188,13 @@ export type BulkPreviewRow = {
     memberSince?: string;
     memberType?: MemberType;
     name: string;
-    reason?: 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY';
+    reason?: 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY' | 'ALREADY_ACTIVE' | 'NO_CONTRIBUTION_PERIOD' | 'WILL_RESUME' | 'WILL_START_NEW';
     recommendedFeeType?: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
     userId: number;
+};
+
+export type BulkResumeMembershipRequest = {
+    userIds: Array<number>;
 };
 
 export type CohortDetail = {
@@ -4910,6 +4914,88 @@ export type PreviewBulkEndResponses = {
 };
 
 export type PreviewBulkEndResponse = PreviewBulkEndResponses[keyof PreviewBulkEndResponses];
+
+export type ExecuteBulkResumeData = {
+    body: BulkResumeMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/resume/execute';
+};
+
+export type ExecuteBulkResumeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ExecuteBulkResumeError = ExecuteBulkResumeErrors[keyof ExecuteBulkResumeErrors];
+
+export type ExecuteBulkResumeResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type ExecuteBulkResumeResponse = ExecuteBulkResumeResponses[keyof ExecuteBulkResumeResponses];
+
+export type PreviewBulkResumeData = {
+    body: BulkResumeMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/resume/preview';
+};
+
+export type PreviewBulkResumeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkResumeError = PreviewBulkResumeErrors[keyof PreviewBulkResumeErrors];
+
+export type PreviewBulkResumeResponses = {
+    /**
+     * OK
+     */
+    200: BulkPreviewResult;
+};
+
+export type PreviewBulkResumeResponse = PreviewBulkResumeResponses[keyof PreviewBulkResumeResponses];
 
 export type DeleteMembershipData = {
     body?: never;

@@ -556,6 +556,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                         @send-reminder="openBulkAction('sendReminder')"
                         @send-incasso="openBulkAction('sendIncasso')"
                         @end-membership="openBulkAction('endMembership')"
+                        @resume-membership="openBulkAction('resumeMembership')"
                       />
                     </th>
                   </tr>

@@ -53,6 +53,14 @@ enum class BulkRowReason {
     INCASSO_MISMATCH,
     NO_ACTIVE_MEMBERSHIP,
     STARTED_TODAY,
+    /** Resume/start-new: the user already has an active (endDate=null) membership. */
+    ALREADY_ACTIVE,
+    /** Resume/start-new: no contribution period exists at all. */
+    NO_CONTRIBUTION_PERIOD,
+    /** Preview outcome for INCLUDED rows: the most-recent membership will be resumed. */
+    WILL_RESUME,
+    /** Preview outcome for INCLUDED rows: a new membership will be inserted starting today. */
+    WILL_START_NEW,
 }
 
 /** Type of bulk action being performed. */
@@ -63,6 +71,7 @@ enum class BulkActionType {
     CONTRIBUTION_REMINDER,
     INCASSO_NOTIFICATION,
     END_MEMBERSHIP,
+    RESUME_MEMBERSHIP,
 }
 
 @Schema(name = "BulkPreviewRow")

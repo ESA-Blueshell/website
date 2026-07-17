@@ -81,6 +81,7 @@ object MemberManagerBulkHelper {
             "send-reminder" -> "bulk-action-send-reminder"
             "send-incasso" -> "bulk-action-send-incasso"
             "end-membership" -> "bulk-action-end-membership"
+            "resume-membership" -> "bulk-action-resume-membership"
             else -> error("Unknown action: $action")
         }
         TestIdLocatorHelper.byTestId(page, testId).click()

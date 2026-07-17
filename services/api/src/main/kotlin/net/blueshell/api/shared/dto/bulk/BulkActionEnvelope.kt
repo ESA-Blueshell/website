@@ -13,6 +13,22 @@ import java.time.LocalDate
  * these values stays in the per-domain command handlers; this is pure data.
  */
 
+/**
+ * Fee type used for contribution-reminder and incasso-notification bulk actions.
+ * The server resolves the € amount from the selected period's fee for the chosen type.
+ */
+@Schema(name = "BulkFeeType")
+enum class BulkFeeType {
+    /** Full-year fee — for REGULAR members who started before the half-year cutoff. */
+    FULL_YEAR_FEE,
+
+    /** Half-year fee — for REGULAR members who started on or after the half-year cutoff. */
+    HALF_YEAR_FEE,
+
+    /** Alumni fee — for ALUMNI members. */
+    ALUMNI_FEE,
+}
+
 /** How a selected user will be treated by a bulk action. */
 enum class BulkRowDisposition {
     /** Will be acted on / emailed. */
@@ -58,8 +74,17 @@ data class BulkPreviewRow(
     val disposition: BulkRowDisposition,
     /** Machine-readable reason code for a non-INCLUDED disposition. */
     val reason: BulkRowReason? = null,
-    /** Resolved fee for the email actions (null for non-email actions). */
+    /**
+     * Resolved fee (in €) for the recommended (or display) fee type.
+     * Null for non-email actions or for HONORARY (EXCLUDED) members.
+     */
     val amount: Double? = null,
+    /**
+     * The backend's recommended fee type for this member.
+     * Null for non-email actions or for HONORARY (EXCLUDED) members.
+     * The frontend defaults each row's selector to this value.
+     */
+    val recommendedFeeType: BulkFeeType? = null,
     /** When this user was last sent this email for the period (email actions only). */
     val lastSentOn: LocalDate? = null,
 )

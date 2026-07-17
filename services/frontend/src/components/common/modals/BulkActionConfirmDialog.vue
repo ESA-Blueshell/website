@@ -19,6 +19,22 @@ import {memberTypeLabel} from "@/utils/memberType"
 // Type alias for reason values from the generated BulkPreviewRow
 type BulkRowReason = 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY'
 
+// Fee type enum values — mirrors the backend BulkFeeType enum
+type BulkFeeType = 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE'
+
+// Human-readable labels for fee types
+const feeTypeLabels: Record<BulkFeeType, string> = {
+  FULL_YEAR_FEE: "Full-year fee",
+  HALF_YEAR_FEE: "Half-year fee",
+  ALUMNI_FEE: "Alumni fee",
+}
+
+const feeTypeItems: Array<{title: string; value: BulkFeeType}> = [
+  {title: feeTypeLabels.FULL_YEAR_FEE, value: "FULL_YEAR_FEE"},
+  {title: feeTypeLabels.HALF_YEAR_FEE, value: "HALF_YEAR_FEE"},
+  {title: feeTypeLabels.ALUMNI_FEE, value: "ALUMNI_FEE"},
+]
+
 defineOptions({name: "BulkActionConfirmDialog"})
 
 // ── Action type ────────────────────────────────────────────────────────────────
@@ -81,8 +97,8 @@ const previewError = ref<string | null>(null)
 
 // Per-row re-include overrides (for WARNING / EXCLUDED rows that can be opted in)
 const reincludeOverrides = ref<Record<number, boolean>>({})
-// Per-row amount overrides
-const amountOverrides = ref<Record<number, number | null>>({})
+// Per-row fee type selections (for reminder + incasso actions)
+const feeTypeSelections = ref<Record<number, BulkFeeType>>({})
 
 // ── Submit state ───────────────────────────────────────────────────────────────
 
@@ -200,7 +216,7 @@ async function loadPreview() {
           paymentDueDate: paymentDueDate.value || "2999-12-31",
           cutoffDate: cutoffDate.value || (props.halfYearCutoffDate ?? "2999-12-31"),
           includedUserIds: props.userIds,
-          amountOverrides: {},
+          feeTypeOverrides: {},
         },
       })
       if (resp.data) preview.value = resp.data
@@ -213,7 +229,7 @@ async function loadPreview() {
           expectedIncassoDate: expectedIncassoDate.value || "2999-12-31",
           cutoffDate: cutoffDate.value || (props.halfYearCutoffDate ?? "2999-12-31"),
           includedUserIds: props.userIds,
-          amountOverrides: {},
+          feeTypeOverrides: {},
         },
       })
       if (resp.data) preview.value = resp.data
@@ -230,11 +246,14 @@ async function loadPreview() {
 
     // Reset per-row state after new preview
     reincludeOverrides.value = {}
-    amountOverrides.value = {}
+    feeTypeSelections.value = {}
     if (preview.value) {
       for (const row of preview.value.rows) {
         reincludeOverrides.value[row.userId] = false
-        amountOverrides.value[row.userId] = row.amount ?? null
+        // Default each row's fee type to the backend's recommendation
+        if (row.recommendedFeeType) {
+          feeTypeSelections.value[row.userId] = row.recommendedFeeType
+        }
       }
     }
   } catch {
@@ -259,7 +278,7 @@ watch(
       preview.value = null
       previewError.value = null
       reincludeOverrides.value = {}
-      amountOverrides.value = {}
+      feeTypeSelections.value = {}
     }
   },
 )
@@ -288,9 +307,11 @@ async function onConfirm() {
   submitting.value = true
   const periodId = props.contributionPeriodId ?? 0
 
-  const resolvedAmountOverrides: Record<string, number> = {}
-  for (const [userId, amount] of Object.entries(amountOverrides.value)) {
-    if (amount != null) resolvedAmountOverrides[userId] = amount
+  // Build feeTypeOverrides map for all included users
+  const resolvedFeeTypeOverrides: Record<string, BulkFeeType> = {}
+  for (const userId of includedUserIds.value) {
+    const feeType = feeTypeSelections.value[userId]
+    if (feeType) resolvedFeeTypeOverrides[String(userId)] = feeType
   }
 
   try {
@@ -313,7 +334,7 @@ async function onConfirm() {
           paymentDueDate: paymentDueDate.value,
           cutoffDate: cutoffDate.value || (props.halfYearCutoffDate ?? ""),
           includedUserIds: includedUserIds.value,
-          amountOverrides: resolvedAmountOverrides,
+          feeTypeOverrides: resolvedFeeTypeOverrides,
         },
       })
       ok = resp.data != null
@@ -325,7 +346,7 @@ async function onConfirm() {
           expectedIncassoDate: expectedIncassoDate.value,
           cutoffDate: cutoffDate.value || (props.halfYearCutoffDate ?? ""),
           includedUserIds: includedUserIds.value,
-          amountOverrides: resolvedAmountOverrides,
+          feeTypeOverrides: resolvedFeeTypeOverrides,
         },
       })
       ok = resp.data != null
@@ -361,6 +382,26 @@ const open = computed({
   get: () => props.modelValue,
   set: (val) => emit("update:modelValue", val),
 })
+
+// ── Fee type helpers ───────────────────────────────────────────────────────────
+
+/**
+ * Returns true if the operator has changed a row's fee type away from the
+ * backend's recommendation.
+ */
+function isFeeTypeChanged(row: BulkPreviewRow): boolean {
+  if (!row.recommendedFeeType) return false
+  const selected = feeTypeSelections.value[row.userId]
+  return selected !== undefined && selected !== row.recommendedFeeType
+}
+
+/**
+ * Returns a tooltip string describing what the recommended fee type was.
+ */
+function feeTypeChangedTooltip(row: BulkPreviewRow): string {
+  if (!row.recommendedFeeType) return ""
+  return `Changed from recommended: ${feeTypeLabels[row.recommendedFeeType]}`
+}
 </script>
 
 <template>
@@ -512,7 +553,7 @@ const open = computed({
             <th>Status</th>
             <th>Member since</th>
             <th v-if="showPaymentDueDate || showIncassoDate">
-              Amount
+              Fee type
             </th>
             <th>Note</th>
             <th v-if="enrichedRows.some((r) => r.canReinclude)">
@@ -550,18 +591,36 @@ const open = computed({
               {{ formatMemberSince(row.memberSince) }}
             </td>
             <td v-if="showPaymentDueDate || showIncassoDate">
-              <v-text-field
-                v-if="row.disposition === 'INCLUDED' || (row.disposition === 'WARNING' && reincludeOverrides[row.userId])"
-                v-model.number="amountOverrides[row.userId]"
-                :data-testid="`bulk-preview-amount-${row.userId}`"
-                density="compact"
-                hide-details
-                min="0"
-                prefix="€"
-                step="0.01"
-                style="max-width: 100px"
-                type="number"
-              />
+              <template v-if="row.disposition === 'INCLUDED' || (row.disposition === 'WARNING' && reincludeOverrides[row.userId])">
+                <div class="d-flex align-center gap-2">
+                  <v-select
+                    v-model="feeTypeSelections[row.userId]"
+                    :data-testid="`bulk-preview-feetype-${row.userId}`"
+                    :items="feeTypeItems"
+                    density="compact"
+                    hide-details
+                    style="min-width: 150px; max-width: 180px"
+                  />
+                  <span
+                    v-if="row.amount != null"
+                    class="text-caption text-medium-emphasis"
+                  >€ {{ row.amount }}</span>
+                  <v-tooltip
+                    v-if="isFeeTypeChanged(row)"
+                    :text="feeTypeChangedTooltip(row)"
+                    location="top"
+                  >
+                    <template #activator="{props: tooltipProps}">
+                      <v-icon
+                        v-bind="tooltipProps"
+                        color="warning"
+                        icon="mdi-alert-circle-outline"
+                        size="small"
+                      />
+                    </template>
+                  </v-tooltip>
+                </div>
+              </template>
               <span
                 v-else-if="row.amount != null"
                 class="text-medium-emphasis"

@@ -6,6 +6,7 @@ import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
@@ -32,11 +33,11 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
         cutoffDate: LocalDate,
         paymentDueDate: LocalDate,
         includedUserIds: Set<Long> = emptySet(),
-        amountOverrides: Map<Long, Double> = emptyMap()
+        feeTypeOverrides: Map<Long, BulkFeeType> = emptyMap()
     ): String {
         val includedJson = if (includedUserIds.isEmpty()) "[]" else includedUserIds.joinToString(",", "[", "]")
-        val overridesJson = if (amountOverrides.isEmpty()) "{}" else {
-            amountOverrides.entries.joinToString(",", "{", "}") { (k, v) -> "\"$k\":$v" }
+        val overridesJson = if (feeTypeOverrides.isEmpty()) "{}" else {
+            feeTypeOverrides.entries.joinToString(",", "{", "}") { (k, v) -> "\"$k\":\"$v\"" }
         }
         return """{
             "userIds":[${userIds.joinToString(",")}],
@@ -44,7 +45,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             "cutoffDate":"$cutoffDate",
             "paymentDueDate":"$paymentDueDate",
             "includedUserIds":$includedJson,
-            "amountOverrides":$overridesJson
+            "feeTypeOverrides":$overridesJson
         }"""
     }
 
@@ -90,6 +91,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.counts.willApply").value(1))
                 .andExpect(jsonPath("$.counts.excluded").value(0))
                 .andExpect(jsonPath("$.rows[0].amount").value(period.fullYearFee))
+                .andExpect(jsonPath("$.rows[0].recommendedFeeType").value("FULL_YEAR_FEE"))
                 .andExpect(jsonPath("$.rows[0].disposition").value("INCLUDED"))
                 .andExpect(jsonPath("$.rows[0].memberType").value("REGULAR"))
         }
@@ -112,6 +114,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.rows[0].amount").value(period.halfYearFee))
+                .andExpect(jsonPath("$.rows[0].recommendedFeeType").value("HALF_YEAR_FEE"))
         }
 
         @Test
@@ -132,6 +135,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.rows[0].amount").value(period.alumniFee))
+                .andExpect(jsonPath("$.rows[0].recommendedFeeType").value("ALUMNI_FEE"))
                 .andExpect(jsonPath("$.rows[0].memberType").value("ALUMNI"))
         }
 
@@ -296,15 +300,15 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `honors amount overrides in audit and email`() {
+        fun `honors fee type overrides in audit and email`() {
             val board = createUserWithRole(Role.BOARD)
+            // Member started before cutoff → default would be FULL_YEAR_FEE; override to HALF_YEAR_FEE
             val member = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
             val paymentDueDate = LocalDate.of(2024, 12, 31)
-            val overriddenAmount = 75.50
 
             mvc.perform(
                 post("/contributionReminders/bulk/execute")
@@ -316,7 +320,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                             period.id!!,
                             cutoffDate,
                             paymentDueDate,
-                            amountOverrides = mapOf(member.id!! to overriddenAmount)
+                            feeTypeOverrides = mapOf(member.id!! to BulkFeeType.HALF_YEAR_FEE)
                         )
                     )
             )
@@ -324,7 +328,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.applied").value(1))
                 .andExpect(jsonPath("$.queued").value(1))
 
-            // Verify audit record has overridden amount
+            // Verify audit record has the half-year fee amount (from the override)
             transactionTemplate.execute {
                 entityManager.clear()
                 val reminder = entityManager.find(
@@ -332,7 +336,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                     ContributionReminder.Id(member.id, period.id)
                 )
                 assertThat(reminder).isNotNull
-                assertThat(reminder.amount).isEqualTo(overriddenAmount)
+                assertThat(reminder.amount).isEqualTo(period.halfYearFee)
             }
         }
 

@@ -108,7 +108,7 @@ export type BoardMemberResponse = {
     boardId: number;
     createdAt: string;
     endDate?: string;
-    role: string;
+    role: BoardRole;
     startDate: string;
     updatedAt: string;
     userId: number;
@@ -127,6 +127,13 @@ export type BoardResponse = {
     updatedAt: string;
     version: number;
 };
+
+export enum BoardRole {
+    CHAIR = 'CHAIR',
+    TREASURER = 'TREASURER',
+    SECRETARY = 'SECRETARY',
+    GENERAL = 'GENERAL'
+}
 
 export type CohortDetail = {
     externalId?: string;
@@ -267,13 +274,18 @@ export type CommitteeMemberRequest = {
 export type CommitteeMemberResponse = {
     committeeId: number;
     createdAt: string;
-    role: string;
+    role: CommitteeRole;
     updatedAt: string;
     userId: number;
     version: number;
 };
 
 export type CommitteeResponse = unknown;
+
+export enum CommitteeRole {
+    CHAIR = 'CHAIR',
+    MEMBER = 'MEMBER'
+}
 
 export enum ContactSystem {
     BREVO = 'BREVO'
@@ -605,6 +617,12 @@ export enum FileType {
     SPONSOR_PICTURE = 'SPONSOR_PICTURE'
 }
 
+export enum Gender {
+    M = 'M',
+    F = 'F',
+    X = 'X'
+}
+
 export type GuestResponse = {
     createdAt: string;
     discord: string;
@@ -743,7 +761,7 @@ export type MemberProfileResponse = {
     createdAt: string;
     dateOfBirth?: string;
     ehbo: boolean;
-    gender?: string;
+    gender?: Gender;
     id: number;
     nationality?: string;
     studentNumber?: string;

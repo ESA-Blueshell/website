@@ -24,7 +24,7 @@ fun BoardMember.asResponse(): BoardMemberResponse =
     BoardMemberResponse(
         userId = this.userId,
         boardId = this.boardId,
-        role = BoardRole.valueOf(this.role),
+        role = BoardRole.valueOf(this.role.uppercase()),
         startDate = this.startDate,
         endDate = this.endDate,
         version = this.version,

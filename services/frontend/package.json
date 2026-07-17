@@ -55,9 +55,9 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
-    "@hey-api/openapi-ts": "0.99.0",
+    "@hey-api/openapi-ts": "0.97.3",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "1.60.0",
     "@types/luxon": "^3.7.2",
     "@types/node": "^25.9.1",
     "@types/webfontloader": "^1.6.38",

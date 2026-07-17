@@ -412,8 +412,11 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 Add user
               </v-btn>
 
-              <!-- Bulk actions triple-dot menu -->
+              <!-- Bulk actions triple-dot menu. On desktop it lives on the right of
+                   the table header row; here it is shown only on mobile, which has
+                   no table header. -->
               <bulk-actions-menu
+                v-if="!lgAndUp"
                 :disabled="!hasSelection"
                 :no-period="noPeriodSelected"
                 @mark-paid="openBulkAction('markPaid')"
@@ -569,7 +572,21 @@ function onRowClick(event: MouseEvent, rowId: number) {
                       />
                     </th>
                     <th>Type / Incasso</th>
-                    <th>Actions</th>
+                    <th
+                      class="text-right"
+                      style="width: 64px"
+                    >
+                      <!-- Bulk actions triple-dot menu, right side of the header row. -->
+                      <bulk-actions-menu
+                        :disabled="!hasSelection"
+                        :no-period="noPeriodSelected"
+                        @mark-paid="openBulkAction('markPaid')"
+                        @mark-unpaid="openBulkAction('markUnpaid')"
+                        @send-reminder="openBulkAction('sendReminder')"
+                        @send-incasso="openBulkAction('sendIncasso')"
+                        @end-membership="openBulkAction('endMembership')"
+                      />
+                    </th>
                   </tr>
                 </thead>
 

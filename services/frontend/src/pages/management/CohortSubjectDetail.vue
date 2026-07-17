@@ -7,12 +7,12 @@ import {
   type CohortSubjectDetail,
   CohortSubjectCategory,
   CohortSubjectType,
+  TargetSystem,
   enqueue,
   findCohortSubjectById,
 } from "@/services/api"
 import CohortDriftPanel from "@/domains/cohorts/components/CohortDriftPanel.vue"
 import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"
-import type { TargetSystem } from "@/domains/cohorts/adapters/cohorts"
 import store from "@/plugins/store"
 
 defineOptions({name: "CohortSubjectDetailPage"})
@@ -29,7 +29,7 @@ const activeTab = ref<string>("")
 
 const pickerOpen = ref<boolean>(false)
 const pickerMode = ref<"add" | "switch">("add")
-const pickerSystem = ref<TargetSystem>("BREVO")
+const pickerSystem = ref<TargetSystem>(TargetSystem.BREVO)
 const pickerCohortId = ref<number | undefined>(undefined)
 
 const subjectId = computed<number | null>(() => {
@@ -99,7 +99,7 @@ const formatJoinedAt = (value: string): string => {
 
 const openAddTarget = () => {
   pickerMode.value = "add"
-  pickerSystem.value = "BREVO"
+  pickerSystem.value = TargetSystem.BREVO
   pickerCohortId.value = undefined
   pickerOpen.value = true
 }

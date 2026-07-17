@@ -73,7 +73,7 @@ if ("scrollRestoration" in globalThis.history) {
 
 // ── Composables ───────────────────────────────────────────────────────────────
 
-const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChanged, selectedPeriod} =
+const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChanged, reloadPaid, selectedPeriod} =
   usePaidToggle(paidUserIds)
 
 const {userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
@@ -238,7 +238,7 @@ function openBulkAction(action: BulkActionKind) {
 
 async function onBulkDone() {
   clearSelection()
-  await Promise.all([getUsers(), getMemberships()])
+  await Promise.all([getUsers(), getMemberships(), reloadPaid()])
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -273,6 +273,32 @@ async function confirmDeleteUser() {
   } finally {
     pendingDeleteUser.value = null
   }
+}
+
+// ── Selection mode row click handling ──────────────────────────────────────────
+
+/**
+ * Check if a click target is on an interactive control.
+ * Returns true if the click should be ignored (not passed to row selection).
+ */
+function isClickOnInteractiveTarget(target: HTMLElement): boolean {
+  return !!target.closest('button, a, input, label, .v-selection-control, [role=button]')
+}
+
+/**
+ * Handle row click for selection mode.
+ * Only toggles selection if:
+ * 1. Selection mode is active (at least one member selected)
+ * 2. Click is not on an interactive control
+ */
+function onRowClick(event: MouseEvent, rowId: number) {
+  // Only toggle if at least one member is selected (selection mode active)
+  if (selectedIdsArray.value.length === 0) return
+
+  // Ignore clicks on interactive controls
+  if (isClickOnInteractiveTarget(event.target as HTMLElement)) return
+
+  toggleSelection(rowId)
 }
 </script>
 
@@ -552,7 +578,9 @@ async function confirmDeleteUser() {
                     v-for="row in filteredRows"
                     :key="row.id"
                     :class="{'mm-row--selected': isSelected(row.id)}"
+                    :style="{cursor: selectedIdsArray.length > 0 ? 'pointer' : 'default'}"
                     :data-testid="`member-manager-row-${row.id}`"
+                    @click="onRowClick($event, row.id)"
                   >
                     <!-- Row checkbox -->
                     <td style="padding-right: 0; width: 48px">
@@ -783,7 +811,9 @@ async function confirmDeleteUser() {
                 >
                   <v-list-item
                     class="member-manager-mobile-row"
+                    :style="{cursor: selectedIdsArray.length > 0 ? 'pointer' : 'default'}"
                     :data-testid="`member-manager-mobile-row-${row.id}`"
+                    @click="onRowClick($event, row.id)"
                   >
                     <!-- Row checkbox prepend -->
                     <template #prepend>

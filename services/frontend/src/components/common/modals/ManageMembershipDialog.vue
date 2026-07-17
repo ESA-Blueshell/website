@@ -16,6 +16,7 @@ import {
 } from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import type {TypedStore} from "@/plugins/store"
+import {memberTypeLabel} from "@/utils/memberType"
 
 defineOptions({name: "ManageMembershipDialog"})
 
@@ -301,7 +302,7 @@ defineExpose({
                   <span v-else>active</span>
                 </div>
                 <div class="text-medium-emphasis text-body-2">
-                  <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
+                  <span>{{ memberTypeLabel(m.memberType) }}</span>
                   <v-icon
                     v-if="m.incasso"
                     class="ml-1"
@@ -460,7 +461,7 @@ defineExpose({
                 <span v-if="m.endDate"> – {{ m.endDate }}</span>
               </div>
               <div class="text-medium-emphasis text-body-2">
-                <span class="text-capitalize">{{ m.memberType?.toLowerCase() }}</span>
+                <span>{{ memberTypeLabel(m.memberType) }}</span>
                 <span class="ml-2 text-error">(deleted)</span>
               </div>
             </div>

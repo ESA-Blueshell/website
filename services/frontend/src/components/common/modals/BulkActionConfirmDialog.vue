@@ -14,6 +14,7 @@ import {
   executeBulkIncassoNotification,
 } from "@/services/api/blueshell/sdk.gen"
 import type {BulkPreviewResult, BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import {memberTypeLabel} from "@/utils/memberType"
 
 defineOptions({name: "BulkActionConfirmDialog"})
 
@@ -524,7 +525,7 @@ const open = computed({
               {{ row.name }}
             </td>
             <td class="text-caption text-medium-emphasis">
-              {{ row.memberType ?? "—" }}
+              {{ memberTypeLabel(row.memberType) }}
             </td>
             <td>
               <v-chip

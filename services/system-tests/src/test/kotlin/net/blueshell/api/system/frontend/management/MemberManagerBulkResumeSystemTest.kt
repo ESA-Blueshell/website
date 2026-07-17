@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * System tests for the member-manager bulk "resume / start membership" action.
@@ -113,7 +114,11 @@ class MemberManagerBulkResumeSystemTest : PlaywrightTestBase() {
         val newMembership = allMemberships
             .map { TestHelper.findMembership(it)!! }
             .first { it.endDate == null }
-        assertThat(newMembership.startDate).isEqualTo(LocalDate.now())
+        // The API container runs in Europe/Amsterdam (TZ set in docker-compose.ci.yml),
+        // so the server stamps the new membership with the Amsterdam date. Assert against
+        // that same zone rather than the test JVM's default (UTC), which otherwise diverges
+        // by a day when the run straddles midnight Amsterdam.
+        assertThat(newMembership.startDate).isEqualTo(LocalDate.now(ZoneId.of("Europe/Amsterdam")))
         assertThat(newMembership.type).isEqualTo("ALUMNI")
         assertThat(newMembership.incasso).isTrue()
     }
@@ -147,7 +152,11 @@ class MemberManagerBulkResumeSystemTest : PlaywrightTestBase() {
         val allMemberships = TestHelper.findMembershipsForUser(memberId)
         assertThat(allMemberships).hasSize(1)
         val newMembership = TestHelper.findMembership(allMemberships.first())!!
-        assertThat(newMembership.startDate).isEqualTo(LocalDate.now())
+        // The API container runs in Europe/Amsterdam (TZ set in docker-compose.ci.yml),
+        // so the server stamps the new membership with the Amsterdam date. Assert against
+        // that same zone rather than the test JVM's default (UTC), which otherwise diverges
+        // by a day when the run straddles midnight Amsterdam.
+        assertThat(newMembership.startDate).isEqualTo(LocalDate.now(ZoneId.of("Europe/Amsterdam")))
         assertThat(newMembership.type).isEqualTo("REGULAR")
         assertThat(newMembership.incasso).isFalse()
     }

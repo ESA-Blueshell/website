@@ -97,7 +97,9 @@ object MemberManagerBulkHelper {
     fun dispositionOf(page: Page, userId: Long): String {
         val chip = TestIdLocatorHelper.byTestId(page, "bulk-preview-disposition-$userId")
         chip.waitFor()
-        return chip.textContent()?.trim() ?: ""
+        // The chip renders the humanized label ("Included"/"Excluded"/"Warning"/
+        // "Skipped"); normalize to the BulkRowDisposition enum name callers assert.
+        return chip.textContent()?.trim()?.uppercase() ?: ""
     }
 
     /**

@@ -28,25 +28,21 @@ class MemberManagerBulkAuthzSystemTest : PlaywrightTestBase() {
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        // Try to navigate to member manager
+        // The member manager lives at /members/manage and loads its data from the
+        // BOARD-only list endpoint GET /api/users. A non-BOARD user reaching the page
+        // receives a 401/403 on that call, so no member data loads.
         val response = page.waitForResponse(
             Predicate { response ->
-                response.url().contains("/api/members")
+                response.url().contains("/users") && response.status() >= 400
             },
         ) {
-            page.navigate("$frontendUrl/management/members")
+            page.navigate("$frontendUrl/members/manage")
         }
-
-        // Should receive a 401 or 403
         assertThat(response.status()).isIn(401, 403)
 
-        // The page should not display the member manager table
-        val tableVisible = try {
-            TestIdLocatorHelper.byTestId(page, "member-manager-table").isVisible
-        } catch (e: Exception) {
-            false
-        }
-        assertThat(tableVisible).isFalse
+        // With the list call rejected, no member rows render.
+        val rowCount = page.locator("[data-testid^='member-manager-row-']").count()
+        assertThat(rowCount).isZero()
     }
 
     @Test
@@ -77,17 +73,19 @@ class MemberManagerBulkAuthzSystemTest : PlaywrightTestBase() {
         val nonBoardLoginStatus = AuthHelper.submitLogin(page, frontendUrl, nonBoard.username, nonBoard.password)
         assertThat(nonBoardLoginStatus).isEqualTo(200)
 
-        // Try to navigate to member manager
+        // As a non-BOARD user the member-manager list call (GET /api/users) is
+        // rejected, so the bulk actions can never be reached: no member rows load.
         val response = page.waitForResponse(
             Predicate { response ->
-                response.url().contains("/api/members") || response.url().contains("management/members")
+                response.url().contains("/users") && response.status() >= 400
             },
         ) {
-            page.navigate("$frontendUrl/management/members")
+            page.navigate("$frontendUrl/members/manage")
         }
-
-        // Should receive a 401 or 403
         assertThat(response.status()).isIn(401, 403)
+
+        val rowCount = page.locator("[data-testid^='member-manager-row-']").count()
+        assertThat(rowCount).isZero()
     }
 
     @Test

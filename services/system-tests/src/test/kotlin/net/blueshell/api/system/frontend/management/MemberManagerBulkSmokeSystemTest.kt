@@ -65,8 +65,13 @@ class MemberManagerBulkSmokeSystemTest : PlaywrightTestBase() {
 
         for (actionTestId in menuActions) {
             val actionItem = page.locator("[data-testid='$actionTestId']").first()
-            assertThat(actionItem.isVisible).isTrue
+            // waitFor() polls until the item is visible (default state), giving the
+            // menu overlay time to finish rendering. isVisible() returns immediately
+            // and flaked when the assertion ran before the overlay painted.
+            actionItem.waitFor()
+            assertThat(actionItem.isVisible)
                 .withFailMessage("Action item $actionTestId should be visible in bulk menu")
+                .isTrue
         }
     }
 }

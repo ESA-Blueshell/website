@@ -65,7 +65,7 @@ const CONTRIBUTIONS: Record<string, unknown>[] = []
 // ── Mock bulk preview responses ────────────────────────────────────────────────
 
 const REMINDER_PREVIEW = {
-  action: "SEND_CONTRIBUTION_REMINDER",
+  action: "CONTRIBUTION_REMINDER",
   contributionPeriodId: 251,
   counts: {selected: 3, willApply: 1, warned: 1, excluded: 1, skipped: 0},
   rows: [
@@ -75,6 +75,7 @@ const REMINDER_PREVIEW = {
       disposition: "INCLUDED",
       memberType: "REGULAR",
       amount: 20.0,
+      recommendedFeeType: "FULL_YEAR_FEE",
       reason: null,
       lastSentOn: null,
     },
@@ -84,6 +85,7 @@ const REMINDER_PREVIEW = {
       disposition: "EXCLUDED",
       memberType: "HONORARY",
       amount: null,
+      recommendedFeeType: null,
       reason: "Honorary member — no contribution needed",
       lastSentOn: null,
     },
@@ -93,6 +95,7 @@ const REMINDER_PREVIEW = {
       disposition: "WARNING",
       memberType: "REGULAR",
       amount: 20.0,
+      recommendedFeeType: "FULL_YEAR_FEE",
       reason: "Reminder already sent recently",
       lastSentOn: "2025-06-01",
     },

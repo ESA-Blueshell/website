@@ -5,7 +5,8 @@ import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.application.IncassoNotificationService
 import net.blueshell.api.domain.contribution.command.ExecuteBulkIncassoNotificationCommand
 import net.blueshell.api.domain.contribution.command.PreviewBulkIncassoNotificationCommand
-import net.blueshell.api.domain.contribution.domain.resolveMemberFee
+import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
+import net.blueshell.api.domain.contribution.domain.resolveFeeType
 import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
@@ -43,10 +44,10 @@ class PreviewBulkIncassoNotificationHandler(
             val activeMemberships = memberships.findByUserId(userId)
             val activeMembership = activeMemberships.maxByOrNull { it.startDate }
 
-            // Determine disposition and resolve fee
+            // Determine recommended fee type and resolve the € amount
             val memberType = activeMembership?.memberType ?: MemberType.REGULAR
             val membershipStart = activeMembership?.startDate
-            val resolvedFee = resolveMemberFee(memberType, membershipStart, cutoffDate, period)
+            val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
 
             // Check if member has incasso=true on active membership
             val hasIncassoEnabled = activeMembership?.incasso ?: false
@@ -62,7 +63,7 @@ class PreviewBulkIncassoNotificationHandler(
             val reason: BulkRowReason?
 
             when {
-                resolvedFee == null -> {
+                recommendedFeeType == null -> {
                     // Honorary member: excluded and not overridable
                     disposition = BulkRowDisposition.EXCLUDED
                     reason = BulkRowReason.HONORARY
@@ -91,7 +92,8 @@ class PreviewBulkIncassoNotificationHandler(
                 memberSince = activeMembership?.startDate,
                 disposition = disposition,
                 reason = reason,
-                amount = resolvedFee,
+                amount = recommendedFeeType?.let { resolveFeeAmount(it, period) },
+                recommendedFeeType = recommendedFeeType,
                 lastSentOn = lastSent,
             )
         }
@@ -128,12 +130,12 @@ class ExecuteBulkIncassoNotificationHandler(
             val activeMemberships = memberships.findByUserId(userId)
             val activeMembership = activeMemberships.maxByOrNull { it.startDate }
 
-            // Resolve fee and check exclusion
+            // Resolve recommended fee type and check exclusion
             val memberType = activeMembership?.memberType ?: MemberType.REGULAR
             val membershipStart = activeMembership?.startDate
-            val resolvedFee = resolveMemberFee(memberType, membershipStart, cutoffDate, period)
+            val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
 
-            if (resolvedFee == null) {
+            if (recommendedFeeType == null) {
                 // Honorary: never send, always skip
                 skipped++
                 return@forEach
@@ -163,8 +165,9 @@ class ExecuteBulkIncassoNotificationHandler(
                 return@forEach
             }
 
-            // Get the amount to send (apply override if present)
-            val amountToSend = command.amountOverrides[userId] ?: resolvedFee
+            // Resolve the € amount: use the operator's chosen fee type if overridden, else recommend
+            val effectiveFeeType = command.feeTypeOverrides[userId] ?: recommendedFeeType
+            val amountToSend = resolveFeeAmount(effectiveFeeType, period)
 
             // Create audit record with amount and expected incasso date
             val notification = notifications.create(

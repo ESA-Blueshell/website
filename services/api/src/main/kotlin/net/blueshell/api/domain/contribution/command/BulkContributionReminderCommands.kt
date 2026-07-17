@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import java.time.LocalDate
 
@@ -32,6 +33,10 @@ data class ExecuteBulkContributionReminderCommand(
     val paymentDueDate: LocalDate?,
     /** User IDs to include (re-includes those marked as already-paid by default). */
     val includedUserIds: Set<Long> = emptySet(),
-    /** Per-user amount overrides: userId -> resolved amount in euros. */
-    val amountOverrides: Map<Long, Double> = emptyMap(),
+    /**
+     * Per-user fee type overrides: userId -> BulkFeeType.
+     * The handler resolves the € from the period's fee for the chosen type.
+     * If a user has no override, their recommended fee type is used.
+     */
+    val feeTypeOverrides: Map<Long, BulkFeeType> = emptyMap(),
 ) : Command<BulkActionResult>

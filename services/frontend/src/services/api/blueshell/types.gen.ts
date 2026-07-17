@@ -143,11 +143,11 @@ export type BulkActionResult = {
 };
 
 export type BulkContributionReminderRequest = {
-    amountOverrides: {
-        [key: string]: number;
-    };
     contributionPeriodId: number;
     cutoffDate: string;
+    feeTypeOverrides: {
+        [key: string]: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+    };
     includedUserIds: Array<number>;
     paymentDueDate: string;
     userIds: Array<number>;
@@ -164,12 +164,12 @@ export type BulkEndMembershipRequest = {
 };
 
 export type BulkIncassoNotificationRequest = {
-    amountOverrides: {
-        [key: string]: number;
-    };
     contributionPeriodId: number;
     cutoffDate: string;
     expectedIncassoDate: string;
+    feeTypeOverrides: {
+        [key: string]: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+    };
     includedUserIds: Array<number>;
     userIds: Array<number>;
 };
@@ -189,6 +189,7 @@ export type BulkPreviewRow = {
     memberType?: MemberType;
     name: string;
     reason?: 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY';
+    recommendedFeeType?: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
     userId: number;
 };
 

@@ -8,7 +8,7 @@ import java.time.LocalDate
 data class BoardMemberResponse(
     var userId: Long,
     var boardId: Long,
-    var role: BoardRole,
+    var role: String,
     var startDate: LocalDate,
     var endDate: LocalDate? = null,
     var version: Long,

@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.committee.web.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import java.time.Instant
 
@@ -12,8 +13,8 @@ data class CommitteeMemberResponse(
     @field:NotNull
     var committeeId: Long,
 
-    @field:NotNull
-    var role: CommitteeRole,
+    @field:NotBlank
+    var role: String,
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant

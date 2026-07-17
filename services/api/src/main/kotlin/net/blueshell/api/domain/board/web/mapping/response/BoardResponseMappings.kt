@@ -4,7 +4,6 @@ import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.domain.board.persistence.BoardMember
 import net.blueshell.api.domain.board.web.dto.response.BoardMemberResponse
 import net.blueshell.api.domain.board.web.dto.response.BoardResponse
-import net.blueshell.api.domain.board.web.dto.response.BoardRole
 
 fun Board.asResponse(): BoardResponse =
     BoardResponse(
@@ -24,7 +23,7 @@ fun BoardMember.asResponse(): BoardMemberResponse =
     BoardMemberResponse(
         userId = this.userId,
         boardId = this.boardId,
-        role = BoardRole.valueOf(this.role.uppercase()),
+        role = this.role,
         startDate = this.startDate,
         endDate = this.endDate,
         version = this.version,

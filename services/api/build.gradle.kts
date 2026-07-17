@@ -55,7 +55,11 @@ configurations.configureEach {
         TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
         objects.named(TargetJvmEnvironment.STANDARD_JVM),
     )
-    exclude(group = "org.yaml", module = "snakeyaml")
+    // Pin snakeyaml to the version declared explicitly below. Force (rather than
+    // exclude) so the dependency stays on the classpath — a module-wide exclude
+    // would also drop the direct declaration and break YAML parsing at runtime
+    // and in tests (DatabaseSeedTool).
+    resolutionStrategy.force("org.yaml:snakeyaml:2.5")
 }
 
 dependencies {
@@ -121,9 +125,9 @@ dependencies {
 
     implementation("org.commonmark:commonmark:0.28.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.28.0")
-    // snakeyaml is excluded transitively above (configurations.configureEach) to
-    // pin the version; declare it explicitly so it is fetched and verified from
-    // Maven Central rather than vendored as a checked-in jar (Scorecard #476).
+    // Declared explicitly so snakeyaml is fetched and verified from Maven Central
+    // rather than vendored as a checked-in jar (Scorecard #476). The version is
+    // pinned via resolutionStrategy.force above.
     implementation("org.yaml:snakeyaml:2.5")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -1,4 +1,4 @@
-FROM node:25.6.1-bookworm-slim
+FROM node:25.6.1-bookworm-slim@sha256:34d76bac75fba8eea764d3b79b05be7a77fa0651d7b956b011b4a55837fdbc02
 
 WORKDIR /usr/app
 

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:25.6.1-bookworm-slim AS deps
+FROM node:25.6.1-bookworm-slim@sha256:34d76bac75fba8eea764d3b79b05be7a77fa0651d7b956b011b4a55837fdbc02 AS deps
 WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc.yml ./
@@ -25,7 +25,7 @@ ENV NODE_ENV=production \
     VITE_APP_URL=${VITE_APP_URL}
 RUN yarn build
 
-FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:dcea25a6593307a74b09e59a47f8695c4d56943750e45add532ae0bf8b24bfd6 AS runtime
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

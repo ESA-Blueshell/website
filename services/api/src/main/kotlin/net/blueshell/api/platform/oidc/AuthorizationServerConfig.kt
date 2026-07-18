@@ -67,13 +67,7 @@ class AuthorizationServerConfig {
         return http.build()
     }
 
-    // CodeQL java/user-controlled-bypass false positive: `clientId` comes from the request, but it
-    // is only used to decide whether to apply the admin-role gate — it does not bypass any check.
-    // When `clientId` is in ADMIN_ONLY_CLIENTS the filter enforces the ADMIN role via
-    // `SecurityContextHolder.getContext().authentication`, which is fully server-authoritative.
-    // A caller providing a different `client_id` simply skips the admin gate (no gate needed for
-    // non-admin clients). The auth object at line 86 is from SecurityContextHolder — not from the
-    // request — so the authority check is not user-controlled.
+    // CodeQL false positive: `clientId` only selects whether to apply the admin gate; the gate itself uses the server-authoritative SecurityContext.
     @Suppress("codeql[java/user-controlled-bypass]")
     private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
         object : OncePerRequestFilter() {

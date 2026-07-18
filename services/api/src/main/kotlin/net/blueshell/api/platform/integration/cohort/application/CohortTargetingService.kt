@@ -45,11 +45,7 @@ class CohortTargetingService(
 
     override fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow {
         resolveTarget(system, externalId)
-        return linkExistingLocal(subjectId, system, externalId)
-    }
-
-    private fun linkExistingLocal(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow =
-        writeTransaction.execute {
+        val linked = writeTransaction.execute {
             val subject = requireSubject(subjectId)
             val existing = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name)
             val cohort = if (existing == null) {
@@ -66,7 +62,11 @@ class CohortTargetingService(
             }
             targetIds.record(cohort, externalId)
             CohortMappingRow(cohort, externalId)
-        }!!
+        }
+
+        jobs.enqueue(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.cohort.id!!))
+        return linked
+    }
 
     override fun create(subjectId: Long, system: TargetSystem, label: String, folderHint: String?): CohortMappingRow {
         // Validate before touching the provider so a duplicate/missing subject

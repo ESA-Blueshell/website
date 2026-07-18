@@ -91,6 +91,13 @@ class MemberManagerBulkMarkPaidSystemTest : PlaywrightTestBase() {
         val contributions = TestHelper.findContributions(periodId)
         assertThat(contributions).containsExactlyInAnyOrder(member1Id, member2Id)
 
+        // The mark-unpaid preview is computed from the page's paidUserIds, which the host
+        // refreshes only after the mark-paid success. Wait for the rows to show "Paid"
+        // before opening the next dialog so it does not race the in-flight reload and
+        // classify everything as NOT_PAID (which would leave nothing to include).
+        MemberManagerBulkHelper.waitForPaidStatus(page, member1Id, "Paid")
+        MemberManagerBulkHelper.waitForPaidStatus(page, member2Id, "Paid")
+
         // Now mark them as unpaid
         MemberManagerBulkHelper.selectUserRow(page, member1Id)
         MemberManagerBulkHelper.selectUserRow(page, member2Id)

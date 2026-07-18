@@ -2,6 +2,7 @@ package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import com.microsoft.playwright.options.WaitForSelectorState
 
 /**
@@ -57,6 +58,22 @@ object MemberManagerBulkHelper {
         val checkbox = TestIdLocatorHelper.byTestId(page, "member-manager-checkbox-$userId")
         val isChecked = checkbox.evaluate("el => el.querySelector('input').checked") as Boolean
         return isChecked
+    }
+
+    /**
+     * Wait until the member row's paid-status chip shows the expected text ("Paid" or
+     * "Unpaid"). The mark-paid / mark-unpaid dialogs compute their preview from the page's
+     * `paidUserIds`, which the host only refreshes AFTER the previous action's success
+     * (via reloadPaid()). Polling the visible chip is the deterministic signal that the
+     * refresh landed, so a follow-up bulk action sees the up-to-date paid set rather than
+     * racing an in-flight reload. Uses Playwright's auto-retrying text matcher (no manual
+     * isVisible polling).
+     */
+    fun waitForPaidStatus(page: Page, userId: Long, expected: String) {
+        val chip = TestIdLocatorHelper.byTestId(page, "member-manager-paid-status-$userId")
+        // hasText auto-retries until the chip's (trimmed) text equals the expected value,
+        // so this deterministically waits out the host's post-action paid reload.
+        assertThat(chip).hasText(expected)
     }
 
     // ── Bulk menu ──────────────────────────────────────────────────────────

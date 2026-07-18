@@ -141,7 +141,12 @@ class MemberManagerBulkAuthzSystemTest : PlaywrightTestBase() {
 
         MemberManagerBulkHelper.waitForDialog(page)
 
-        // Set the required dates
+        // Set the required dates. The reminder preview only fires once BOTH the cutoff and
+        // payment-due dates are present; set the cutoff explicitly (within the period)
+        // rather than relying on the dialog's seeded default so the preview loads
+        // deterministically.
+        val cutoffDate = periodStart.plusDays(30)
+        MemberManagerBulkHelper.setCutoffDate(page, formatDate(cutoffDate))
         val paymentDueDate = periodEnd.plusDays(14)
         MemberManagerBulkHelper.setPaymentDueDate(page, formatDate(paymentDueDate))
 

@@ -7,8 +7,12 @@ import ContributionPeriodList from "@/components/common/lists/ContributionPeriod
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
 import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
-import BulkActionConfirmDialog from "@/components/common/modals/BulkActionConfirmDialog.vue"
-import type {BulkActionKind} from "@/components/common/modals/BulkActionConfirmDialog.vue"
+import MarkPaidDialog from "@/components/common/modals/bulk/MarkPaidDialog.vue"
+import MarkUnpaidDialog from "@/components/common/modals/bulk/MarkUnpaidDialog.vue"
+import EndMembershipDialog from "@/components/common/modals/bulk/EndMembershipDialog.vue"
+import ResumeMembershipDialog from "@/components/common/modals/bulk/ResumeMembershipDialog.vue"
+import ReminderDialog from "@/components/common/modals/bulk/ReminderDialog.vue"
+import IncassoDialog from "@/components/common/modals/bulk/IncassoDialog.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import MemberManagerRow from "@/components/common/rows/MemberManagerRow.vue"
@@ -65,9 +69,28 @@ const manageDialog = ref(false)
 const manageUserId = ref<number | null>(null)
 const manageUserName = ref("")
 
-// Bulk action dialog
+// Bulk action dialog — one per-action dialog component, chosen by the menu.
+type BulkActionKind =
+  | "markPaid"
+  | "markUnpaid"
+  | "sendReminder"
+  | "sendIncasso"
+  | "endMembership"
+  | "resumeMembership"
+
 const bulkDialogOpen = ref(false)
 const bulkAction = ref<BulkActionKind>("markPaid")
+
+const dialogFor: Record<BulkActionKind, unknown> = {
+  markPaid: MarkPaidDialog,
+  markUnpaid: MarkUnpaidDialog,
+  sendReminder: ReminderDialog,
+  sendIncasso: IncassoDialog,
+  endMembership: EndMembershipDialog,
+  resumeMembership: ResumeMembershipDialog,
+}
+
+const activeBulkDialog = computed(() => dialogFor[bulkAction.value])
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -82,8 +105,15 @@ const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChang
 // access wrapper.vm directly; they remain in scope even though the template
 // delegates rendering to MemberManagerRow / MemberManagerMobileRow.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const {userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
+const {membershipsByUserId, userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
   useMemberRows(users, memberships, paidUserIds, selectedPeriod)
+
+// userId → full name, for the per-action bulk dialogs' locally-computed preview rows.
+const namesById = computed<Record<number, string>>(() => {
+  const map: Record<number, string> = {}
+  for (const r of rows.value) map[r.id] = r.fullName
+  return map
+})
 
 const {
   searchInput,
@@ -240,6 +270,17 @@ function openBulkAction(action: BulkActionKind) {
   bulkAction.value = action
   bulkDialogOpen.value = true
 }
+
+// Props bound to whichever per-action dialog is active. Each dialog reads only the
+// subset it declares; passing the superset keeps the host free of per-action branching.
+const bulkDialogProps = computed(() => ({
+  userIds: selectedIdsArray.value,
+  contributionPeriodId: selectedPeriod.value?.id ?? null,
+  period: selectedPeriod.value,
+  namesById: namesById.value,
+  paidUserIds: paidUserIds.value,
+  membershipsByUserId: membershipsByUserId.value,
+}))
 
 async function onBulkDone() {
   clearSelection()
@@ -697,12 +738,11 @@ function onRowClick(event: MouseEvent, rowId: number) {
       @changed="onMembershipChanged"
     />
 
-    <!-- Bulk action confirm dialog -->
-    <bulk-action-confirm-dialog
+    <!-- Bulk action dialog — one per-action component, chosen by the menu. -->
+    <component
+      :is="activeBulkDialog"
       v-model="bulkDialogOpen"
-      :action="bulkAction"
-      :contribution-period-id="selectedPeriod?.id ?? null"
-      :user-ids="selectedIdsArray"
+      v-bind="bulkDialogProps"
       @done="onBulkDone"
     />
   </v-main>

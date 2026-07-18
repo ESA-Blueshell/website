@@ -90,12 +90,22 @@ object MemberManagerBulkHelper {
     // ── Dialog state ───────────────────────────────────────────────────────
 
     /**
-     * Wait for the bulk action confirmation dialog to appear and become
-     * ready (preview table loaded, no loading spinner).
+     * Wait for the bulk action confirmation dialog to appear.
+     *
+     * Note: this no longer waits for the preview table. For the FE-preview actions
+     * (mark-paid / mark-unpaid / end-membership) the table is rendered synchronously
+     * from local data, so it is present immediately anyway. For the server-preview
+     * actions (reminder / incasso) the table only appears once the required dates are
+     * entered — callers set the dates first, then read dispositions, and the per-row
+     * accessors below already wait for their target element. See
+     * docs/proposals/bulk-actions/REDESIGN.md §5.2.
      */
     fun waitForDialog(page: Page) {
         TestIdLocatorHelper.byTestId(page, "bulk-action-dialog").waitFor()
-        // Wait for the preview table to be visible (loaded)
+    }
+
+    /** Explicitly wait for the preview table (rows loaded). */
+    fun waitForPreviewTable(page: Page) {
         TestIdLocatorHelper.byTestId(page, "bulk-action-preview-table").waitFor()
     }
 

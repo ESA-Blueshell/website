@@ -16,6 +16,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
+/**
+ * Contract + authz for the execute-only mark-paid / mark-unpaid bulk endpoints. Preview
+ * for these actions is computed frontend-side, so there is no server preview endpoint to
+ * test; the redesign's regression net is the shared decide() unit tests plus the
+ * preview==execute invariants on the reminder/incasso/resume ITs.
+ * See docs/proposals/bulk-actions/REDESIGN.md §2 & §7.
+ */
 @SpringBootTest
 class ContributionBulkControllerIT : UserTestSupport() {
 
@@ -26,60 +33,8 @@ class ContributionBulkControllerIT : UserTestSupport() {
         Contribution(id = Contribution.Id(user.id, period.id), user = user, contributionPeriod = period)
     )
 
-    private fun body(userIds: List<Long>, periodId: Long, op: String) =
-        """{"userIds":[${userIds.joinToString(",")}],"contributionPeriodId":$periodId,"operation":"$op"}"""
-
-    @Nested
-    inner class Preview {
-
-        @Test
-        fun `mark-paid preview includes unpaid and skips already-paid`() {
-            val board = createUserWithRole(Role.BOARD)
-            val unpaid = createUserWithRole(Role.MEMBER)
-            val alreadyPaid = createUserWithRole(Role.MEMBER)
-            val period = createContributionPeriodFixture()
-            markPaid(alreadyPaid, period)
-
-            mvc.perform(
-                post("/contributions/bulk/preview")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(unpaid.id!!, alreadyPaid.id!!), period.id!!, "PAID"))
-            )
-                .andExpect(status().isOk)
-                .andExpect(jsonPath("$.counts.selected").value(2))
-                .andExpect(jsonPath("$.counts.willApply").value(1))
-                .andExpect(jsonPath("$.counts.skipped").value(1))
-        }
-
-        @Test
-        fun `returns not found when period is unknown`() {
-            val board = createUserWithRole(Role.BOARD)
-            val user = createUserWithRole(Role.MEMBER)
-
-            mvc.perform(
-                post("/contributions/bulk/preview")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(user.id!!), 999999, "PAID"))
-            )
-                .andExpect(status().isNotFound)
-        }
-
-        @Test
-        fun `rejects empty selection`() {
-            val board = createUserWithRole(Role.BOARD)
-            val period = createContributionPeriodFixture()
-
-            mvc.perform(
-                post("/contributions/bulk/preview")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userIds":[],"contributionPeriodId":${period.id},"operation":"PAID"}""")
-            )
-                .andExpect(status().isBadRequest)
-        }
-    }
+    private fun body(userIds: List<Long>, periodId: Long) =
+        """{"userIds":[${userIds.joinToString(",")}],"contributionPeriodId":$periodId}"""
 
     @Nested
     inner class Execute {
@@ -93,10 +48,10 @@ class ContributionBulkControllerIT : UserTestSupport() {
             markPaid(a, period)
 
             mvc.perform(
-                post("/contributions/bulk/execute")
+                post("/contributions/bulk/mark-paid")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(a.id!!, b.id!!), period.id!!, "PAID"))
+                    .content(body(listOf(a.id!!, b.id!!), period.id!!))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.applied").value(1))
@@ -119,10 +74,10 @@ class ContributionBulkControllerIT : UserTestSupport() {
             markPaid(a, period)
 
             mvc.perform(
-                post("/contributions/bulk/execute")
+                post("/contributions/bulk/mark-unpaid")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(a.id!!, b.id!!), period.id!!, "UNPAID"))
+                    .content(body(listOf(a.id!!, b.id!!), period.id!!))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.applied").value(1))
@@ -133,6 +88,34 @@ class ContributionBulkControllerIT : UserTestSupport() {
                 contributionService.existsByUserIdAndPeriodId(a.id!!, period.id!!)
             }
             assertThat(aStillPaid).isFalse()
+        }
+
+        @Test
+        fun `rejects empty selection`() {
+            val board = createUserWithRole(Role.BOARD)
+            val period = createContributionPeriodFixture()
+
+            mvc.perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"userIds":[],"contributionPeriodId":${period.id}}""")
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `returns not found when period is unknown`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(user.id!!), 999999))
+            )
+                .andExpect(status().isNotFound)
         }
     }
 
@@ -145,10 +128,10 @@ class ContributionBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
 
             mvc.perform(
-                post("/contributions/bulk/execute")
+                post("/contributions/bulk/mark-paid")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(member.id!!), period.id!!, "PAID"))
+                    .content(body(listOf(member.id!!), period.id!!))
             )
                 .andExpect(status().isForbidden)
         }

@@ -44,17 +44,17 @@ jobs:
         language: [actions, javascript-typescript]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: none
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4
         with:
           category: '/language:${{ matrix.language }}'
 
@@ -75,10 +75,10 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4
         with:
           languages: java-kotlin
           build-mode: manual
@@ -109,6 +109,6 @@ jobs:
             :libs:kotlin-common:compileKotlin
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4
         with:
           category: '/language:java-kotlin'

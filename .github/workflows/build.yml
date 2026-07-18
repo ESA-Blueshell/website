@@ -18,6 +18,9 @@ concurrency:
   group: build
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REGISTRY: ghcr.io
@@ -39,11 +42,11 @@ jobs:
       services: ${{ steps.compute.outputs.services }}
       has-matrix: ${{ steps.compute.outputs.has-matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 2
 
-      - uses: dorny/paths-filter@v4.0.2
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: filter
         with:
           base: ${{ github.event.before }}
@@ -148,15 +151,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Set image prefix (lowercase)
         run: echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -164,7 +167,7 @@ jobs:
 
       - name: Build & push by digest
         id: build
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: ${{ matrix.target.context }}
           file: ${{ matrix.target.file }}
@@ -181,7 +184,7 @@ jobs:
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: digests-${{ matrix.target.name }}-${{ matrix.target.arch }}
           path: /tmp/digests/*
@@ -215,16 +218,16 @@ jobs:
           SHA: ${{ github.sha }}
 
       - name: Download digests
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: /tmp/digests
           pattern: digests-${{ matrix.service }}-*
           merge-multiple: true
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}

@@ -90,8 +90,25 @@ vi.mock("@/components/common/modals/DeletionConfirmationDialog.vue", () => ({
 vi.mock("@/components/common/modals/ManageMembershipDialog.vue", () => ({
   default: {name: "ManageMembershipDialog", template: "<div />"},
 }))
-vi.mock("@/components/common/modals/BulkActionConfirmDialog.vue", () => ({
-  default: {name: "BulkActionConfirmDialog", template: "<div />"},
+// The six per-action bulk dialogs are stubbed — this perf test only cares about the
+// member table/selection, not the dialog internals.
+vi.mock("@/components/common/modals/bulk/MarkPaidDialog.vue", () => ({
+  default: {name: "MarkPaidDialog", template: "<div />"},
+}))
+vi.mock("@/components/common/modals/bulk/MarkUnpaidDialog.vue", () => ({
+  default: {name: "MarkUnpaidDialog", template: "<div />"},
+}))
+vi.mock("@/components/common/modals/bulk/EndMembershipDialog.vue", () => ({
+  default: {name: "EndMembershipDialog", template: "<div />"},
+}))
+vi.mock("@/components/common/modals/bulk/ResumeMembershipDialog.vue", () => ({
+  default: {name: "ResumeMembershipDialog", template: "<div />"},
+}))
+vi.mock("@/components/common/modals/bulk/ReminderDialog.vue", () => ({
+  default: {name: "ReminderDialog", template: "<div />"},
+}))
+vi.mock("@/components/common/modals/bulk/IncassoDialog.vue", () => ({
+  default: {name: "IncassoDialog", template: "<div />"},
 }))
 vi.mock("@/components/common/modals/BaseModal.vue", () => ({
   default: {name: "BaseModal", template: "<div><slot /></div>"},

@@ -104,8 +104,12 @@ const REMINDER_PREVIEW = {
 
 const REMINDER_EXECUTE_RESULT = {applied: 2, queued: 0, skipped: 1}
 
+// The end-membership preview endpoint now only supplies serverToday; the dialog
+// computes the rows locally from the loaded memberships. serverToday is pinned well
+// after every fixture startDate so all active memberships are endable.
 const END_PREVIEW = {
   action: "END_MEMBERSHIP",
+  serverToday: "2025-07-01",
   counts: {selected: 2, willApply: 2, warned: 0, excluded: 0, skipped: 0},
   rows: [
     {
@@ -170,7 +174,9 @@ async function setupPage(page: Page) {
       body: JSON.stringify(END_EXECUTE_RESULT),
     })
   })
-  await page.route(/\/contributions\/bulk\/(preview|execute)/, async (route) => {
+  // Mark-paid / mark-unpaid are execute-only now (their preview is computed FE-side),
+  // reached at action-named paths — no /contributions/bulk/preview route exists.
+  await page.route(/\/contributions\/bulk\/mark-(paid|unpaid)/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -319,27 +325,23 @@ test.describe("member manager bulk actions", () => {
     test("contribution reminder: preview dialog shows INCLUDED, EXCLUDED (red), WARNING (amber) rows", async ({page}) => {
       await setupPage(page)
 
+      // Reminder is a server-preview action, so keep the reminder preview mock (set in
+      // setupPage). Select the period so period-relative actions are enabled.
+      await page.getByTestId("contribution-period-select-btn-251").click()
+
       // Select rows 51, 52, 53
       await page.getByTestId("member-manager-checkbox-51").click()
       await page.getByTestId("member-manager-checkbox-52").click()
       await page.getByTestId("member-manager-checkbox-53").click()
 
-      // Open bulk actions menu and pick end membership (no period required)
+      // Open bulk actions menu and pick the contribution-reminder action.
       await page.getByTestId("bulk-actions-menu-btn").click()
+      await page.getByTestId("bulk-action-send-reminder").click()
 
-      // Override the end preview route with reminder preview data for this test
-      await page.route(/\/memberships\/bulk\/end\/preview/, async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(REMINDER_PREVIEW),
-        })
-      })
-
-      await page.getByTestId("bulk-action-end-membership").click()
-
-      // Wait for dialog and preview table
+      // Dialog opens; the preview loads only once both dates are set. cutoffDate defaults
+      // to the period start, so setting the payment due date triggers the server preview.
       await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
+      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
       await expect(page.getByTestId("bulk-action-preview-table")).toBeVisible({timeout: 10_000})
 
       // Check disposition chips

@@ -95,6 +95,12 @@ object CohortJobs {
             DeleteExternalTargetPayload::class.java
     }
 
+    object ApplyInboundReconcile : JobDefinition<ApplyInboundReconcilePayload> {
+        override val type: String = "cohort.inbound-reconcile-apply"
+        override val payloadType: Class<ApplyInboundReconcilePayload> =
+            ApplyInboundReconcilePayload::class.java
+    }
+
     /**
      * Stale compatibility job for cohorts that already have a target id.
      * It returns the existing id or fails terminally when missing; target
@@ -121,4 +127,14 @@ object CohortJobs {
     /** `system` holds a `TargetSystem.name()`; shared/job cannot depend on the sync.port package. */
     data class DeleteExternalTargetPayload(val system: String, val externalTargetId: String)
     data class MaterializeCohortTargetPayload(val cohortId: Long)
+    data class ApplyInboundReconcilePayload(
+        val subjectId: Long,
+        val cohortId: Long,
+        val system: String,
+        val externalTargetId: String,
+        val factKind: String,
+        val factKey: String,
+        val selected: List<InboundReconcileSelectedUser>,
+    )
+    data class InboundReconcileSelectedUser(val externalUserId: String, val userId: Long)
 }

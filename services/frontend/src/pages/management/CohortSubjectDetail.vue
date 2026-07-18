@@ -12,6 +12,7 @@ import {
   findCohortSubjectById,
 } from "@/services/api"
 import CohortDriftPanel from "@/domains/cohorts/components/CohortDriftPanel.vue"
+import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
 import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"
 import store from "@/plugins/store"
 
@@ -31,6 +32,8 @@ const pickerOpen = ref<boolean>(false)
 const pickerMode = ref<"add" | "switch">("add")
 const pickerSystem = ref<TargetSystem>(TargetSystem.BREVO)
 const pickerCohortId = ref<number | undefined>(undefined)
+const inboundOpen = ref<boolean>(false)
+const inboundCohortId = ref<number | undefined>(undefined)
 
 const subjectId = computed<number | null>(() => {
   const raw = route.params.id
@@ -114,6 +117,15 @@ const openSwitchTarget = (cohortId: number, system: string) => {
 const onTargetSaved = () => {
   successMessage.value = "External target saved."
   void load()
+}
+
+const openInboundReconcile = (cohortId: number) => {
+  inboundCohortId.value = cohortId
+  inboundOpen.value = true
+}
+
+const onInboundApplied = () => {
+  successMessage.value = "Inbound reconcile job enqueued."
 }
 
 const backToCategory = () => {
@@ -314,6 +326,17 @@ watch(subjectId, () => void load())
                     >
                       Switch target
                     </v-btn>
+                    <v-btn
+                      :data-testid="`cohort-subject-inbound-reconcile-${mapping.system.toLowerCase()}`"
+                      :disabled="!mapping.externalId"
+                      class="mt-2"
+                      prepend-icon="mdi-import"
+                      size="small"
+                      variant="outlined"
+                      @click="openInboundReconcile(mapping.cohortId)"
+                    >
+                      Inbound reconcile
+                    </v-btn>
                   </div>
                 </div>
 
@@ -426,6 +449,13 @@ watch(subjectId, () => void load())
           :subject-id="subjectId"
           :system="pickerSystem"
           @saved="onTargetSaved"
+        />
+        <inbound-reconcile-modal
+          v-if="subjectId != null && inboundCohortId != null"
+          v-model="inboundOpen"
+          :cohort-id="inboundCohortId"
+          :subject-id="subjectId"
+          @applied="onInboundApplied"
         />
       </div>
     </v-container>

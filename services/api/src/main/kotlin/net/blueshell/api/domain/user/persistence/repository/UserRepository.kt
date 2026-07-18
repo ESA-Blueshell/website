@@ -28,6 +28,16 @@ interface UserRepository : BaseRepository<User, Long> {
 
     fun existsByPhoneNumberAndIdNot(phoneNumber: String, id: Long): Boolean
 
+    @Query(
+        """
+        SELECT CASE WHEN COUNT(m) > 0 THEN true ELSE false END
+        FROM Membership m
+        WHERE m.user.id = :userId
+          AND m.endDate IS NULL
+        """,
+    )
+    fun existsActiveMembershipByUserId(@Param("userId") userId: Long): Boolean
+
     /**
      * Native query that bypasses the @SQLRestriction on User so callers can
      * tell "this user existed at some point" apart from "this id was never

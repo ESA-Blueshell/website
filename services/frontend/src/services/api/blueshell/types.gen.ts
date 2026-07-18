@@ -616,6 +616,37 @@ export type GuestResponse = {
     version: number;
 };
 
+export type InboundReconcileApplyRequest = {
+    previewToken: string;
+    selectedExternalUserIds: Array<string>;
+};
+
+export type InboundReconcileApplyResponse = {
+    acceptedCount: number;
+    jobId?: number;
+    skippedCount: number;
+};
+
+export type InboundReconcilePreview = {
+    fact: SubjectFact;
+    matched: Array<InboundReconcileRow>;
+    previewToken: string;
+    remoteCount: number;
+    skipped: Array<InboundReconcileRow>;
+    writerSupported: boolean;
+};
+
+export type InboundReconcileRow = {
+    alreadyTrue: boolean;
+    externalLabel?: string;
+    externalUserId: string;
+    reason?: 'DUPLICATE_REMOTE_ID' | 'MAPPING_CONFLICT' | 'DUPLICATE_USER_MATCH' | 'MAPPED_USER_INACTIVE' | 'UNMATCHED';
+    userEmail?: string;
+    userFullName?: string;
+    userId?: number;
+    writable: boolean;
+};
+
 export type JobExecution = {
     actor?: Actor;
     attempts: number;
@@ -875,6 +906,11 @@ export type SponsorResponse = {
     name: string;
     updatedAt: string;
     version: number;
+};
+
+export type SubjectFact = {
+    key: string;
+    kind: CohortFactKind;
 };
 
 export type SurveyRequest = {
@@ -3646,6 +3682,94 @@ export type SwitchTargetResponses = {
 };
 
 export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
+
+export type ApplyInboundReconcileData = {
+    body: InboundReconcileApplyRequest;
+    path: {
+        id: number;
+        cohortId: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/targets/{cohortId}/inbound-reconcile/apply';
+};
+
+export type ApplyInboundReconcileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApplyInboundReconcileError = ApplyInboundReconcileErrors[keyof ApplyInboundReconcileErrors];
+
+export type ApplyInboundReconcileResponses = {
+    /**
+     * OK
+     */
+    200: InboundReconcileApplyResponse;
+};
+
+export type ApplyInboundReconcileResponse = ApplyInboundReconcileResponses[keyof ApplyInboundReconcileResponses];
+
+export type PreviewInboundReconcileData = {
+    body?: never;
+    path: {
+        id: number;
+        cohortId: number;
+    };
+    query?: never;
+    url: '/management/cohort-subjects/{id}/targets/{cohortId}/inbound-reconcile/preview';
+};
+
+export type PreviewInboundReconcileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewInboundReconcileError = PreviewInboundReconcileErrors[keyof PreviewInboundReconcileErrors];
+
+export type PreviewInboundReconcileResponses = {
+    /**
+     * OK
+     */
+    200: InboundReconcilePreview;
+};
+
+export type PreviewInboundReconcileResponse = PreviewInboundReconcileResponses[keyof PreviewInboundReconcileResponses];
 
 export type ListCohortTargetSystemsData = {
     body?: never;

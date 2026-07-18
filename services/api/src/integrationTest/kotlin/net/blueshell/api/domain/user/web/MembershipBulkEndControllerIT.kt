@@ -42,6 +42,9 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.counts.selected").value(2))
                 .andExpect(jsonPath("$.counts.willApply").value(1))
                 .andExpect(jsonPath("$.counts.skipped").value(1))
+                // The end preview now also returns the server's date so the frontend can
+                // evaluate the "started today" boundary in the server's timezone.
+                .andExpect(jsonPath("$.serverToday").value(LocalDate.now().toString()))
         }
     }
 

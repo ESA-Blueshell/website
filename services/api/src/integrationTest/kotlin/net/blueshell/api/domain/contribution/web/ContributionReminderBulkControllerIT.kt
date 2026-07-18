@@ -430,6 +430,78 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class Invariant {
+
+        // The regression net for the class of bug this redesign targets: because preview
+        // and execute share decideReminder, the preview's willApply/warned/excluded counts
+        // must match execute's applied/skipped for an unchanged DB when every includable
+        // row is included. See docs/proposals/bulk-actions/REDESIGN.md §7.
+        @Test
+        fun `preview willApply equals execute applied for an all-includable selection`() {
+            val board = createUserWithRole(Role.BOARD)
+            val regular = createUserWithRole(Role.MEMBER)
+            val alumni = createUserWithRole(Role.MEMBER)
+            val honorary = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
+            createMembership(alumni, MemberType.ALUMNI)
+            createMembership(honorary, MemberType.HONORARY)
+
+            val userIds = listOf(regular.id!!, alumni.id!!, honorary.id!!)
+            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val paymentDueDate = LocalDate.of(2024, 12, 31)
+
+            // Preview: 2 includable (regular + alumni), 1 excluded (honorary).
+            mvc.perform(
+                post("/contributionReminders/bulk/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(userIds, period.id!!, cutoffDate, paymentDueDate))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.counts.willApply").value(2))
+                .andExpect(jsonPath("$.counts.excluded").value(1))
+
+            // Execute: applied must equal the preview's willApply; the excluded honorary
+            // is skipped.
+            mvc.perform(
+                post("/contributionReminders/bulk/execute")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(userIds, period.id!!, cutoffDate, paymentDueDate))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.applied").value(2))
+                .andExpect(jsonPath("$.skipped").value(1))
+        }
+
+        @Test
+        fun `execute rejects a fee override for an excluded honorary user`() {
+            val board = createUserWithRole(Role.BOARD)
+            val honorary = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            createMembership(honorary, MemberType.HONORARY)
+
+            mvc.perform(
+                post("/contributionReminders/bulk/execute")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        body(
+                            listOf(honorary.id!!),
+                            period.id!!,
+                            LocalDate.of(2024, 7, 1),
+                            LocalDate.of(2024, 12, 31),
+                            includedUserIds = setOf(honorary.id!!),
+                            feeTypeOverrides = mapOf(honorary.id!! to BulkFeeType.FULL_YEAR_FEE),
+                        )
+                    )
+            )
+                .andExpect(status().isBadRequest)
+        }
+    }
+
+    @Nested
     inner class Authorization {
 
         @Test

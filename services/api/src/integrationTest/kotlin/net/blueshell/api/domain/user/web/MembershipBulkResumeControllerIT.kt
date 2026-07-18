@@ -188,6 +188,55 @@ class MembershipBulkResumeControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class Invariant {
+
+        // preview.willApply == execute.applied for an unchanged DB — the regression net
+        // against preview/execute divergence. classifyUser is shared, so the resume +
+        // start-new rows the preview reports must all be applied by execute.
+        // See docs/proposals/bulk-actions/REDESIGN.md §7.
+        @Test
+        fun `preview willApply equals execute applied for a mixed resume selection`() {
+            val board = createUserWithRole(Role.BOARD)
+            val periodStart = LocalDate.now().minusDays(15)
+            val periodEnd = LocalDate.now().plusDays(345)
+            createContributionPeriodFixture(startDate = periodStart, endDate = periodEnd)
+
+            val resumable = createUserWithRole(Role.MEMBER)
+            createMembershipFixture(
+                user = resumable,
+                memberType = MemberType.REGULAR,
+                startDate = LocalDate.now().minusDays(100),
+                endDate = LocalDate.now().minusDays(5), // within basis period → WILL_RESUME
+            )
+            val startNew = createUserWithRole(Role.MEMBER) // no membership → WILL_START_NEW
+            val active = createUserWithRole(Role.MEMBER)
+            createMembershipFixture(user = active, endDate = null) // ALREADY_ACTIVE → skipped
+
+            val userIds = listOf(resumable.id!!, startNew.id!!, active.id!!)
+
+            mvc.perform(
+                post("/memberships/bulk/resume/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(userIds))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.counts.willApply").value(2))
+                .andExpect(jsonPath("$.counts.skipped").value(1))
+
+            mvc.perform(
+                post("/memberships/bulk/resume/execute")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(userIds))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.applied").value(2))
+                .andExpect(jsonPath("$.skipped").value(1))
+        }
+    }
+
+    @Nested
     inner class Authorization {
 
         @Test

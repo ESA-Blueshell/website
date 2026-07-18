@@ -74,6 +74,10 @@ watch(
     if (isOpen) setRows(computeRows())
     else reset()
   },
+  // The host swaps in this component via `<component :is>` with modelValue already
+  // true, so a non-immediate watch would never fire on the initial mount and the
+  // preview rows would stay empty. `immediate` guarantees the open path runs.
+  {immediate: true},
 )
 </script>
 

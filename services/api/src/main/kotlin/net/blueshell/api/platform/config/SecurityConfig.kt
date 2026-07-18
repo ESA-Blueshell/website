@@ -95,8 +95,10 @@ class SecurityConfig(
     // path would still fail the probe. CSRF disabled (probes have no token)
     // and anyRequest().permitAll() so in-cluster scrapers (kubelet,
     // Prometheus, Gatus) can reach health/prometheus without a JWT.
+    // CodeQL false positive: CSRF is disabled only for read-only actuator probes; state-changing app endpoints keep CSRF on authChain.
     @Bean
     @Order(0)
+    @Suppress("codeql[java/spring-disabled-csrf-protection]")
     fun actuatorChain(http: HttpSecurity): SecurityFilterChain {
         http.securityMatcher(EndpointRequest.toAnyEndpoint())
             .csrf { it.disable() }

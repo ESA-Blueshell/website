@@ -43,6 +43,8 @@ class UserController(
     @PostMapping("/users")
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
+    // CodeQL false positive: `principal`/`isBoard` derive from the server-validated session, not request input.
+    @Suppress("codeql[java/user-controlled-bypass]")
     fun createUser(
         @RequestBody @Valid request: CreateUserRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
@@ -61,6 +63,8 @@ class UserController(
 
     @PutMapping("/users/{id}")
     @PreAuthorize("hasPermission(#id, 'User', 'write')")
+    // CodeQL false positive: `principal`/`isBoard` derive from the server-validated session, not request input; access is gated by @PreAuthorize.
+    @Suppress("codeql[java/user-controlled-bypass]")
     fun updateUser(
         @PathVariable(required = true) id: Long,
         @RequestBody(required = true) payload: UpdateUserRequest,

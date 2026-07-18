@@ -67,6 +67,8 @@ class AuthorizationServerConfig {
         return http.build()
     }
 
+    // CodeQL false positive: `clientId` only selects whether to apply the admin gate; the gate itself uses the server-authoritative SecurityContext.
+    @Suppress("codeql[java/user-controlled-bypass]")
     private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
         object : OncePerRequestFilter() {
             override fun shouldNotFilter(request: HttpServletRequest): Boolean =

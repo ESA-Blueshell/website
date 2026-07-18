@@ -324,6 +324,7 @@ class BulkIncassoNotificationHandlersTest {
                     contributionPeriodId = periodId,
                     cutoffDate = cutoffDate,
                     expectedIncassoDate = expectedIncassoDate,
+                    includedUserIds = setOf(userId),
                     feeTypeOverrides = mapOf(userId to BulkFeeType.HALF_YEAR_FEE),
                 )
             )

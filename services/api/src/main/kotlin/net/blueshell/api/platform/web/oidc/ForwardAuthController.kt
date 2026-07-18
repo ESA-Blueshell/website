@@ -48,6 +48,9 @@ class ForwardAuthController(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    private fun sanitizeForLog(value: String): String =
+        value.replace(Regex("[\\r\\n\\t\\u0000-\\u001F\\u007F]"), " ")
+
     @GetMapping
     @PermitAll
     fun forwardAuth(
@@ -63,7 +66,7 @@ class ForwardAuthController(
             // Fail-closed: an unknown host (mis-configured IngressRoute, or
             // someone pointing forward-auth at us via Host injection) gets
             // ADMIN-required. Warn so the operator notices.
-            log.warn("forward-auth: unknown host '{}' — defaulting to ADMIN", forwardedHost)
+            log.warn("forward-auth: unknown host '{}' — defaulting to ADMIN", sanitizeForLog(forwardedHost))
             Role.ADMIN
         }
 
@@ -75,7 +78,20 @@ class ForwardAuthController(
 
         if (principal == null) {
             return if (wantsHtml) {
-                redirect("$frontendBaseUrl/login?redirect=${urlEncode(originalUrl)}")
+                // Validate the redirect target against the allowlist of known service
+                // hosts before embedding it in the login redirect. An attacker who
+                // controls the X-Forwarded-Host header must not be able to steer
+                // a victim to an arbitrary external URL (CWE-601 / CodeQL #471).
+                val safeRedirectParam = if (isSafeRedirectTarget(forwardedHost)) {
+                    "?redirect=${urlEncode(originalUrl)}"
+                } else {
+                    log.warn(
+                        "forward-auth: rejecting redirect to untrusted host '{}' — omitting redirect param",
+                        sanitizeForLog(forwardedHost),
+                    )
+                    ""
+                }
+                redirect("$frontendBaseUrl/login$safeRedirectParam")
             } else {
                 ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .header(HttpHeaders.WWW_AUTHENTICATE, """Bearer realm="$frontendBaseUrl/login"""")
@@ -97,6 +113,17 @@ class ForwardAuthController(
             )
             .build()
     }
+
+    /**
+     * Returns true only when [host] is one of the known service hostnames in
+     * [HOST_ROLE]. Comparison is case-insensitive to match the lookup above.
+     *
+     * This is the allowlist guard for the `?redirect=` parameter: we only embed
+     * a post-login redirect URL when the target host is a host we explicitly
+     * manage, preventing open-redirect exploitation via a forged X-Forwarded-Host.
+     */
+    internal fun isSafeRedirectTarget(host: String): Boolean =
+        host.lowercase() in HOST_ROLE
 
     private fun redirect(location: String): ResponseEntity<Void> =
         ResponseEntity.status(HttpStatus.FOUND).location(URI.create(location)).build()

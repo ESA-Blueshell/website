@@ -53,7 +53,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `unknown host with HTML accept falls back to ADMIN required and still redirects anonymous to login`() {
+        fun `unknown host with HTML accept redirects anonymous to login without a redirect param (open-redirect guard)`() {
             mvc.perform(
                 get("/oauth2/forward-auth")
                     .header(HttpHeaders.ACCEPT, "text/html")
@@ -61,7 +61,22 @@ class ForwardAuthControllerIT : UserTestSupport() {
                     .header("X-Forwarded-Uri", "/")
             )
                 .andExpect(status().isFound)
-                .andExpect(redirectedUrlPattern("https://esa-blueshell.nl/login?redirect=*"))
+                // The redirect param is omitted for untrusted hosts — the login page
+                // must not forward the user to an arbitrary external domain.
+                .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/login"))
+        }
+
+        @Test
+        fun `forged X-Forwarded-Host pointing to external domain does not produce an open redirect`() {
+            mvc.perform(
+                get("/oauth2/forward-auth")
+                    .header(HttpHeaders.ACCEPT, "text/html")
+                    .header("X-Forwarded-Proto", "https")
+                    .header("X-Forwarded-Host", "evil.attacker.com")
+                    .header("X-Forwarded-Uri", "/steal-session")
+            )
+                .andExpect(status().isFound)
+                .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/login"))
         }
     }
 

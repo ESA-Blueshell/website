@@ -7,7 +7,7 @@ import QuestionLabel from "@/components/form/common/QuestionLabel.vue"
 import {type AnswerRequest, type QuestionResponse, QuestionType, type SurveyResponse} from "@/services/api"
 
 const props = defineProps<{ survey?: SurveyResponse | null }>()
-const answers = defineModel<AnswerRequest[]>({default: []})
+const answers = defineModel<AnswerRequest[]>({default: () => []})
 
 const formRef = ref<FormContext | undefined>()
 const questions = computed<QuestionResponse[]>(() => props.survey?.questions ?? [])

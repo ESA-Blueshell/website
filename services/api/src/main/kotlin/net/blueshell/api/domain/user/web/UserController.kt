@@ -15,6 +15,7 @@ import net.blueshell.api.domain.user.web.dto.request.BoardUpdateUserRequest
 import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
 import net.blueshell.api.domain.user.web.dto.request.UpdateUserRequest
 import net.blueshell.api.domain.user.web.dto.response.UserDetailResponse
+import net.blueshell.api.domain.user.web.mapping.request.asBoardCommand
 import net.blueshell.api.domain.user.web.mapping.request.asCommand
 import net.blueshell.api.domain.user.web.mapping.response.asDetailResponse
 import net.blueshell.api.shared.command.CommandBus
@@ -72,7 +73,7 @@ class UserController(
         val user = when (payload) {
             is BoardUpdateUserRequest -> {
                 if (!isBoard) throw AccessDeniedException("Board role required")
-                commandBus.dispatch(payload.asCommand(id))
+                commandBus.dispatch(payload.asBoardCommand(id))
             }
 
             is UpdateUserRequest -> commandBus.dispatch(payload.asCommand(id))

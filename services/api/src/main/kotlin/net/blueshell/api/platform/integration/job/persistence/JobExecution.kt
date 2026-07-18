@@ -12,7 +12,16 @@ import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
 /**
  * Platform implementation of JobExecution with persistence and tracking capabilities.
  * Implements the shared JobExecution interface for domain layer usage.
+ *
+ * The class intentionally shares its simple name with the `shared.job.JobExecution`
+ * port it implements: this is the persistence adapter for that domain port
+ * (ports-and-adapters). The interface is imported aliased as `JobExecutionInterface`
+ * to keep the two unambiguous at the declaration below, so there is no real
+ * confusion for readers. Renaming the entity would churn ~15 call sites for a
+ * purely cosmetic gain, so the java/class-name-matches-super-class note is
+ * suppressed here rather than fixed.
  */
+// codeql[java/class-name-matches-super-class]
 @Entity
 @Table(
     name = "job_executions",
@@ -25,6 +34,7 @@ import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
         Index(name = "idx_job_executions_due_retry", columnList = "status, next_attempt_at"),
     ]
 )
+// codeql[java/class-name-matches-super-class] — intentional adapter/port name-sharing; see KDoc above.
 class JobExecution(
     @Column(name = "job_type", nullable = false)
     override var jobType: String = "",

@@ -117,7 +117,10 @@ describe("authSync plugin", () => {
     const storageHandler = storageCall![1] as (event: StorageEvent) => void
 
     mockReadJsonCookie.mockReturnValue(null)
-    storageHandler(new StorageEvent("storage", {key: "auth:ping"}))
+    // The handler only reads `event.key`, so pass a minimal stub instead of a
+    // full `new StorageEvent(...)` (whose init-dict argument trips CodeQL's
+    // js/superfluous-trailing-arguments model).
+    storageHandler({key: "auth:ping"} as unknown as StorageEvent)
 
     expect(store.commit).toHaveBeenCalledWith("setLoginState", null)
   })

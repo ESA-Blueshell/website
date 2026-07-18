@@ -25,7 +25,11 @@ fun CreateUserRequest.asCommand(isBoard: Boolean): CreateUserCommand =
         memberProfile = this.memberProfile?.asCommandData()
     )
 
-fun BoardUpdateUserRequest.asCommand(id: Long): BoardUpdateUserCommand =
+// Named distinctly from `UpdateUserRequest.asCommand` (its supertype) so the two
+// mappings are not confusable overloads: `BoardUpdateUserRequest` extends
+// `UpdateUserRequest`, and identical parameter lists on receivers in a subtype
+// relationship trip CodeQL's java/confusing-method-signature.
+fun BoardUpdateUserRequest.asBoardCommand(id: Long): BoardUpdateUserCommand =
     BoardUpdateUserCommand(
         id = id,
         username = this.username!!,

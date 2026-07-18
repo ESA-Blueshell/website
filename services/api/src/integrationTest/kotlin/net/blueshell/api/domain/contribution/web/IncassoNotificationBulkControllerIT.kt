@@ -359,6 +359,9 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                             period.id!!,
                             cutoffDate,
                             expectedIncassoDate,
+                            // The member is INCLUDED, so a real client sends them in includedUserIds
+                            // (FE set = INCLUDED ∪ re-included WARNING); overrides require membership there.
+                            includedUserIds = setOf(member.id!!),
                             feeTypeOverrides = mapOf(member.id!! to BulkFeeType.ALUMNI_FEE)
                         )
                     )

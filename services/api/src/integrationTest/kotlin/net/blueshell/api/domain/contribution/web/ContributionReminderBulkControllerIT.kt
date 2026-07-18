@@ -320,6 +320,9 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                             period.id!!,
                             cutoffDate,
                             paymentDueDate,
+                            // The member is INCLUDED, so a real client sends them in includedUserIds
+                            // (FE set = INCLUDED ∪ re-included WARNING); overrides require membership there.
+                            includedUserIds = setOf(member.id!!),
                             feeTypeOverrides = mapOf(member.id!! to BulkFeeType.HALF_YEAR_FEE)
                         )
                     )

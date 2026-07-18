@@ -139,7 +139,7 @@ watch(subjectId, () => void load())
   <v-main>
     <top-banner :title="subject?.label ?? 'Cohort'" />
 
-    <div class="mx-3">
+    <v-container>
       <div class="mx-auto my-3 subject-page">
         <v-btn
           v-if="subject"
@@ -428,7 +428,7 @@ watch(subjectId, () => void load())
           @saved="onTargetSaved"
         />
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

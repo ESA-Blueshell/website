@@ -2,7 +2,7 @@
   <v-main>
     <top-banner title="Recovery Manager" />
 
-    <div class="mx-3">
+    <v-container>
       <div
         class="mx-auto my-3"
         style="max-width: 800px"
@@ -32,7 +32,7 @@
           @action:done="reloadLists"
         />
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

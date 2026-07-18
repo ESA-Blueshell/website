@@ -2,7 +2,7 @@
   <v-main>
     <top-banner title="Contribution Manager" />
 
-    <div class="mx-3">
+    <v-container>
       <div
         class="mx-auto my-3"
         style="max-width: 800px"
@@ -35,7 +35,7 @@
           @delete:contribution="contributionDeleted"
         />
       </div>
-    </div>
+    </v-container>
   </v-main>
 </template>
 

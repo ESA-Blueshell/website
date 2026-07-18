@@ -7,12 +7,14 @@ import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionRemi
 import net.blueshell.api.domain.contribution.command.PreviewBulkContributionReminderCommand
 import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
 import net.blueshell.api.domain.contribution.domain.resolveFeeType
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkActionType
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
@@ -20,6 +22,69 @@ import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import java.time.ZoneOffset
+
+/**
+ * The single decision an email-style bulk action reaches for one user, computed once
+ * and consumed by BOTH the preview handler (which maps it to a [BulkPreviewRow]) and
+ * the execute handler (which applies the side effect). Preview and execute call the
+ * SAME [decideReminder]/[decideIncasso] function so they can no longer diverge — this
+ * is the core backend fix. See docs/proposals/bulk-actions/REDESIGN.md §3.
+ */
+data class EmailBulkDecision(
+    val userId: Long,
+    val name: String,
+    val memberType: MemberType,
+    val memberSince: LocalDate?,
+    val disposition: BulkRowDisposition,
+    val reason: BulkRowReason?,
+    val recommendedFeeType: BulkFeeType?,
+    val amount: Double?,
+    val lastSentOn: LocalDate?,
+    /** True when the user has no email; execute must skip even if operator re-includes. */
+    val emailMissing: Boolean,
+) {
+    fun toRow(): BulkPreviewRow = BulkPreviewRow(
+        userId = userId,
+        name = name,
+        memberType = memberType,
+        memberSince = memberSince,
+        disposition = disposition,
+        reason = reason,
+        amount = amount,
+        recommendedFeeType = recommendedFeeType,
+        lastSentOn = lastSentOn,
+    )
+}
+
+/**
+ * Validate operator-supplied fee-type overrides against the computed decisions.
+ * Rejects (HTTP 400) an override for a user who is EXCLUDED/HONORARY (no fee applies)
+ * or who is not in the operator's included set. Missing override → recommended type.
+ * See docs/proposals/bulk-actions/REDESIGN.md §3 (fee-override validation).
+ */
+internal fun validateFeeTypeOverrides(
+    feeTypeOverrides: Map<Long, BulkFeeType>,
+    includedUserIds: Set<Long>,
+    decisionsByUser: Map<Long, EmailBulkDecision>,
+) {
+    feeTypeOverrides.keys.forEach { userId ->
+        val decision = decisionsByUser[userId]
+        if (decision == null || decision.recommendedFeeType == null) {
+            throw org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,
+                "Fee-type override supplied for user $userId who is excluded from this action",
+            )
+        }
+        if (userId !in includedUserIds) {
+            throw org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,
+                "Fee-type override supplied for user $userId who is not included in this action",
+            )
+        }
+    }
+}
 
 @Component
 class PreviewBulkContributionReminderHandler(
@@ -38,58 +103,8 @@ class PreviewBulkContributionReminderHandler(
         val cutoffDate = command.cutoffDate!!
 
         val rows = command.userIds.distinct().map { userId ->
-            val user = users.findById(userId)
-
-            // Get the current (active) membership; use the most recent by start date
-            val activeMemberships = memberships.findByUserId(userId)
-            val activeMembership = activeMemberships.maxByOrNull { it.startDate }
-
-            // Determine recommended fee type and resolve the € amount
-            val memberType = activeMembership?.memberType ?: MemberType.REGULAR
-            val membershipStart = activeMembership?.startDate
-            val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
-
-            // Check if already paid
-            val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
-
-            // Get last sent date from audit
-            val lastSent = reminders.findLastReminderForUserAndPeriod(userId, periodId)?.createdAt
-                ?.atZone(java.time.ZoneOffset.UTC)?.toLocalDate()
-
-            val disposition: BulkRowDisposition
-            val reason: BulkRowReason?
-
-            when {
-                recommendedFeeType == null -> {
-                    // Honorary member: excluded and not sendable
-                    disposition = BulkRowDisposition.EXCLUDED
-                    reason = BulkRowReason.HONORARY
-                }
-                alreadyPaid -> {
-                    // Already paid: excluded by default, but may be re-included
-                    disposition = BulkRowDisposition.WARNING
-                    reason = BulkRowReason.ALREADY_PAID
-                }
-                else -> {
-                    // Include
-                    disposition = BulkRowDisposition.INCLUDED
-                    reason = null
-                }
-            }
-
-            BulkPreviewRow(
-                userId = userId,
-                name = user.fullName,
-                memberType = memberType,
-                memberSince = activeMembership?.startDate,
-                disposition = disposition,
-                reason = reason,
-                amount = recommendedFeeType?.let { resolveFeeAmount(it, period) },
-                recommendedFeeType = recommendedFeeType,
-                lastSentOn = lastSent,
-            )
+            decideReminder(userId, periodId, period, cutoffDate, users, memberships, contributions, reminders).toRow()
         }
-
         return BulkPreviewResult.of(BulkActionType.CONTRIBUTION_REMINDER, periodId, rows)
     }
 }
@@ -111,48 +126,32 @@ class ExecuteBulkContributionReminderHandler(
         val cutoffDate = command.cutoffDate!!
         val includedUserIds = command.includedUserIds
 
+        // Decide once for every selected user — same code path as preview.
+        val decisions = command.userIds.distinct().associateWith { userId ->
+            decideReminder(userId, periodId, period, cutoffDate, users, memberships, contributions, reminders)
+        }
+
+        validateFeeTypeOverrides(command.feeTypeOverrides, includedUserIds, decisions)
+
         var applied = 0
         var skipped = 0
         var queued = 0
 
-        command.userIds.distinct().forEach { userId ->
-            val user = users.findById(userId)
-
-            // Get the current (active) membership; use the most recent by start date
-            val activeMemberships = memberships.findByUserId(userId)
-            val activeMembership = activeMemberships.maxByOrNull { it.startDate }
-
-            // Resolve recommended fee type and check exclusion
-            val memberType = activeMembership?.memberType ?: MemberType.REGULAR
-            val membershipStart = activeMembership?.startDate
-            val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
-
-            if (recommendedFeeType == null) {
-                // Honorary: never send, always skip
-                skipped++
-                return@forEach
+        decisions.forEach { (userId, decision) ->
+            val shouldSend = when (decision.disposition) {
+                BulkRowDisposition.INCLUDED -> true
+                BulkRowDisposition.WARNING -> userId in includedUserIds
+                else -> false // EXCLUDED / SKIPPED (incl. NO_EMAIL)
             }
-
-            // Check if already paid; if included explicitly, send anyway
-            val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
-            val shouldSend = !alreadyPaid || includedUserIds.contains(userId)
-
             if (!shouldSend) {
                 skipped++
                 return@forEach
             }
 
-            // Skip if user has no email
-            if (user.email.isBlank()) {
-                skipped++
-                return@forEach
-            }
-
-            // Resolve the € amount: use the operator's chosen fee type if overridden, else recommend
-            val effectiveFeeType = command.feeTypeOverrides[userId] ?: recommendedFeeType
+            val user = users.findById(userId)
+            val effectiveFeeType = command.feeTypeOverrides[userId] ?: decision.recommendedFeeType!!
             val amountToSend = resolveFeeAmount(effectiveFeeType, period)
 
-            // Create audit record with amount and due date
             val reminder = reminders.create(
                 ContributionReminder(
                     user = user,
@@ -161,8 +160,6 @@ class ExecuteBulkContributionReminderHandler(
                     paymentDueDate = command.paymentDueDate,
                 )
             )
-
-            // Enqueue email
             reminders.sendReminder(reminder)
 
             applied++
@@ -171,4 +168,68 @@ class ExecuteBulkContributionReminderHandler(
 
         return BulkActionResult(applied = applied, skipped = skipped, queued = queued)
     }
+}
+
+/**
+ * Decision function for the contribution-reminder bulk action. Pure with respect to the
+ * DB reads it performs (no writes). Called by both preview and execute.
+ */
+internal fun decideReminder(
+    userId: Long,
+    periodId: Long,
+    period: ContributionPeriod,
+    cutoffDate: LocalDate,
+    users: UserService,
+    memberships: MembershipService,
+    contributions: ContributionService,
+    reminders: ContributionReminderService,
+): EmailBulkDecision {
+    val user = users.findById(userId)
+
+    // Current (active) membership — most recent by start date. This LATEST start is
+    // what fee resolution keys off (NOT the earliest the FE derives), which is exactly
+    // why reminder preview cannot be safely computed client-side.
+    val activeMembership = memberships.findByUserId(userId).maxByOrNull { it.startDate }
+    val memberType = activeMembership?.memberType ?: MemberType.REGULAR
+    val membershipStart = activeMembership?.startDate
+    val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
+
+    val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
+    val emailMissing = user.email.isBlank()
+    val lastSent = reminders.findLastReminderForUserAndPeriod(userId, periodId)?.createdAt
+        ?.atZone(ZoneOffset.UTC)?.toLocalDate()
+
+    val disposition: BulkRowDisposition
+    val reason: BulkRowReason?
+    when {
+        recommendedFeeType == null -> {
+            disposition = BulkRowDisposition.EXCLUDED
+            reason = BulkRowReason.HONORARY
+        }
+        emailMissing -> {
+            disposition = BulkRowDisposition.SKIPPED
+            reason = BulkRowReason.NO_EMAIL
+        }
+        alreadyPaid -> {
+            disposition = BulkRowDisposition.WARNING
+            reason = BulkRowReason.ALREADY_PAID
+        }
+        else -> {
+            disposition = BulkRowDisposition.INCLUDED
+            reason = null
+        }
+    }
+
+    return EmailBulkDecision(
+        userId = userId,
+        name = user.fullName,
+        memberType = memberType,
+        memberSince = membershipStart,
+        disposition = disposition,
+        reason = reason,
+        recommendedFeeType = recommendedFeeType,
+        amount = recommendedFeeType?.let { resolveFeeAmount(it, period) },
+        lastSentOn = lastSent,
+        emailMissing = emailMissing,
+    )
 }

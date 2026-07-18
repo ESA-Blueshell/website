@@ -4,51 +4,21 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.BulkContributionOperation
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
-import net.blueshell.api.domain.contribution.command.PreviewBulkContributionCommand
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
-import net.blueshell.api.shared.dto.bulk.BulkActionType
-import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
-import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
-import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
-import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
-@Component
-class PreviewBulkContributionHandler(
-    private val service: ContributionService,
-    private val users: UserService,
-    private val periods: ContributionPeriodService,
-) : CommandHandler<PreviewBulkContributionCommand, BulkPreviewResult> {
-    override val commandType = PreviewBulkContributionCommand::class
-
-    @Transactional(readOnly = true)
-    override fun handle(command: PreviewBulkContributionCommand): BulkPreviewResult {
-        val periodId = command.contributionPeriodId!!
-        periods.findById(periodId) // 404 if the period is unknown
-        val paid = command.operation == BulkContributionOperation.PAID
-        val rows = command.userIds.distinct().map { userId ->
-            val user = users.findById(userId)
-            val exists = service.existsByUserIdAndPeriodId(userId, periodId)
-            val willApply = if (paid) !exists else exists
-            BulkPreviewRow(
-                userId = userId,
-                name = user.fullName,
-                disposition = if (willApply) BulkRowDisposition.INCLUDED else BulkRowDisposition.SKIPPED,
-                reason = when {
-                    willApply -> null
-                    paid -> BulkRowReason.ALREADY_PAID
-                    else -> BulkRowReason.NOT_PAID
-                },
-            )
-        }
-        return BulkPreviewResult.of(if (paid) BulkActionType.MARK_PAID else BulkActionType.MARK_UNPAID, periodId, rows)
-    }
-}
-
+/**
+ * Mark-paid / mark-unpaid are now execute-only: their entire decision input
+ * (`userId ∈ paidUserIds`?) already lives in the frontend, so the preview is
+ * computed client-side and there is no server preview endpoint. Execute stays
+ * idempotent — it creates a contribution only if one does not exist (paid) or
+ * deletes only if one does (unpaid), so re-running is a no-op for settled rows.
+ * See docs/proposals/bulk-actions/REDESIGN.md §1 (preview tiering) & §2.
+ */
 @Component
 class ExecuteBulkContributionHandler(
     private val service: ContributionService,

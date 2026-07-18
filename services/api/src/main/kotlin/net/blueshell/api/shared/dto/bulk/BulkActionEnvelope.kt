@@ -53,6 +53,14 @@ enum class BulkRowReason {
     INCASSO_MISMATCH,
     NO_ACTIVE_MEMBERSHIP,
     STARTED_TODAY,
+
+    /**
+     * Email actions (reminder/incasso): the user has no email address on file, so
+     * nothing can be sent. Previously the execute handler skipped these silently and
+     * the preview never surfaced it — now it is a first-class SKIPPED reason visible
+     * in the preview. See docs/proposals/bulk-actions/REDESIGN.md §3.
+     */
+    NO_EMAIL,
     /** Resume/start-new: the user already has an active (endDate=null) membership. */
     ALREADY_ACTIVE,
     /** Resume/start-new: no contribution period exists at all. */
@@ -123,10 +131,26 @@ data class BulkPreviewResult(
     val contributionPeriodId: Long? = null,
     val counts: BulkActionCounts,
     val rows: List<BulkPreviewRow>,
+    /**
+     * The server's current date (its timezone), returned only by the end-membership
+     * preview. The frontend computes the end-membership preview rows locally from the
+     * memberships it already holds, but must use this date — not `new Date()` — to
+     * decide "started today", otherwise browser vs. server timezone drift flips the
+     * boundary. See docs/proposals/bulk-actions/REDESIGN.md §4.
+     */
+    val serverToday: LocalDate? = null,
 ) {
     companion object {
         fun of(action: BulkActionType, contributionPeriodId: Long?, rows: List<BulkPreviewRow>): BulkPreviewResult =
             BulkPreviewResult(action, contributionPeriodId, BulkActionCounts.of(rows), rows)
+
+        fun of(
+            action: BulkActionType,
+            contributionPeriodId: Long?,
+            rows: List<BulkPreviewRow>,
+            serverToday: LocalDate?,
+        ): BulkPreviewResult =
+            BulkPreviewResult(action, contributionPeriodId, BulkActionCounts.of(rows), rows, serverToday)
     }
 }
 

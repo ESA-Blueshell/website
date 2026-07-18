@@ -65,6 +65,10 @@ watch(
     if (isOpen) await load()
     else reset()
   },
+  // The host swaps in this component via `<component :is>` with modelValue already
+  // true, so a non-immediate watch would never fire on the initial mount and the
+  // server preview rows would never load. `immediate` guarantees the open path runs.
+  {immediate: true},
 )
 </script>
 

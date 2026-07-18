@@ -74,6 +74,10 @@ watch(
     if (isOpen) await load()
     else reset()
   },
+  // The host swaps in this component via `<component :is>` with modelValue already
+  // true, so a non-immediate watch would never fire on the initial mount and the
+  // server preview (serverToday + rows) would never load. `immediate` fixes that.
+  {immediate: true},
 )
 </script>
 

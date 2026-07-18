@@ -139,6 +139,10 @@ watch(
       feeTypeSelections.value = {}
     }
   },
+  // The host swaps in this component via `<component :is>` with modelValue already
+  // true, so a non-immediate watch would never fire on the initial mount and the
+  // date defaults would not seed. `immediate` guarantees the open path runs.
+  {immediate: true},
 )
 
 // Reload the server preview when the dates change (and are valid).

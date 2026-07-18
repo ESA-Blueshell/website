@@ -3,30 +3,57 @@ package net.blueshell.api.domain.contribution.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Positive
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import java.time.LocalDate
 
-@Schema(name = "BulkContributionReminderRequest")
-data class BulkContributionReminderRequest(
-    @field:NotEmpty
-    var userIds: List<Long> = emptyList(),
+/**
+ * Preview request for the contribution-reminder bulk action. Preview is immutable
+ * server truth: it does NOT carry operator overrides. Those live only in the frontend
+ * and are sent solely to execute. See docs/proposals/bulk-actions/REDESIGN.md §2.
+ */
+@Schema(name = "BulkContributionReminderPreviewRequest")
+data class BulkContributionReminderPreviewRequest(
+    @field:NotEmpty(message = "At least one user ID is required")
+    val userIds: List<@Positive Long> = emptyList(),
 
-    @field:NotNull
-    var contributionPeriodId: Long? = null,
+    @field:NotNull(message = "Contribution period ID is required")
+    @field:Positive(message = "Contribution period ID must be positive")
+    val contributionPeriodId: Long? = null,
 
     @field:NotNull(message = "Cutoff date is required")
-    var cutoffDate: LocalDate? = null,
+    val cutoffDate: LocalDate? = null,
 
     @field:NotNull(message = "Payment due date is required")
-    var paymentDueDate: LocalDate? = null,
+    val paymentDueDate: LocalDate? = null,
+)
 
-    /** User IDs to include (for execute; re-includes already-paid users). Empty for preview. */
-    var includedUserIds: Set<Long> = emptySet(),
+/**
+ * Execute request for the contribution-reminder bulk action. Carries the operator's
+ * re-include set and per-user fee-type overrides. The server re-decides against the
+ * live DB and validates the overrides (rejects excluded/non-included users).
+ */
+@Schema(name = "BulkContributionReminderExecuteRequest")
+data class BulkContributionReminderExecuteRequest(
+    @field:NotEmpty(message = "At least one user ID is required")
+    val userIds: List<@Positive Long> = emptyList(),
+
+    @field:NotNull(message = "Contribution period ID is required")
+    @field:Positive(message = "Contribution period ID must be positive")
+    val contributionPeriodId: Long? = null,
+
+    @field:NotNull(message = "Cutoff date is required")
+    val cutoffDate: LocalDate? = null,
+
+    @field:NotNull(message = "Payment due date is required")
+    val paymentDueDate: LocalDate? = null,
+
+    /** User IDs to include (re-includes already-paid WARNING rows). */
+    val includedUserIds: Set<Long> = emptySet(),
 
     /**
-     * Per-user fee type overrides for execute (userId -> BulkFeeType).
-     * The server resolves the € from the period's fee for the chosen type.
-     * If a user has no override, the server uses their recommended fee type.
+     * Per-user fee type overrides (userId -> BulkFeeType). The server resolves the €
+     * from the period's fee for the chosen type; missing → recommended type.
      */
-    var feeTypeOverrides: Map<Long, BulkFeeType> = emptyMap(),
+    val feeTypeOverrides: Map<Long, BulkFeeType> = emptyMap(),
 )

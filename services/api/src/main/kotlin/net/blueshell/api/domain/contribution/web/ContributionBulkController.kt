@@ -2,15 +2,18 @@ package net.blueshell.api.domain.contribution.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import net.blueshell.api.domain.contribution.command.BulkContributionOperation
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionReminderCommand
 import net.blueshell.api.domain.contribution.command.ExecuteBulkIncassoNotificationCommand
-import net.blueshell.api.domain.contribution.command.PreviewBulkContributionCommand
 import net.blueshell.api.domain.contribution.command.PreviewBulkContributionReminderCommand
 import net.blueshell.api.domain.contribution.command.PreviewBulkIncassoNotificationCommand
-import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionRequest
-import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionReminderRequest
-import net.blueshell.api.domain.contribution.web.dto.request.BulkIncassoNotificationRequest
+import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionReminderExecuteRequest
+import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionReminderPreviewRequest
+import net.blueshell.api.domain.contribution.web.dto.request.BulkIncassoNotificationExecuteRequest
+import net.blueshell.api.domain.contribution.web.dto.request.BulkIncassoNotificationPreviewRequest
+import net.blueshell.api.domain.contribution.web.dto.request.BulkMarkPaidRequest
+import net.blueshell.api.domain.contribution.web.dto.request.BulkMarkUnpaidRequest
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
@@ -20,35 +23,38 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * Bulk actions over members: mark-paid/unpaid, send contribution reminders, send incasso notifications.
- * Two-phase pattern: `preview` returns the shared envelope showing who will be acted on;
- * `execute` applies it in a single request. Board-only.
+ * Bulk actions over members: mark-paid/unpaid, send contribution reminders, send incasso
+ * notifications. One submit endpoint per action with action-named paths. Mark-paid/unpaid
+ * are execute-only (their preview is computed frontend-side); reminder/incasso keep a
+ * preview endpoint that returns immutable server truth (no operator overrides), and an
+ * execute endpoint that re-decides against the live DB and validates overrides. Board-only.
+ * See docs/proposals/bulk-actions/REDESIGN.md §2.
  */
 @RestController
 @Tag(name = "Contributions")
 class ContributionBulkController(private val commandBus: CommandBus) {
 
-    // ===== Mark Paid / Unpaid =====
+    // ===== Mark Paid / Unpaid (execute-only; preview is frontend-computed) =====
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
-    @PostMapping("/contributions/bulk/preview")
-    fun previewBulkContribution(@Valid @RequestBody request: BulkContributionRequest): BulkPreviewResult =
-        commandBus.dispatch(
-            PreviewBulkContributionCommand(
-                userIds = request.userIds,
-                contributionPeriodId = request.contributionPeriodId,
-                operation = request.operation,
-            )
-        )
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
-    @PostMapping("/contributions/bulk/execute")
-    fun executeBulkContribution(@Valid @RequestBody request: BulkContributionRequest): BulkActionResult =
+    @PostMapping("/contributions/bulk/mark-paid")
+    fun markPaid(@Valid @RequestBody request: BulkMarkPaidRequest): BulkActionResult =
         commandBus.dispatch(
             ExecuteBulkContributionCommand(
                 userIds = request.userIds,
                 contributionPeriodId = request.contributionPeriodId,
-                operation = request.operation,
+                operation = BulkContributionOperation.PAID,
+            )
+        )
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
+    @PostMapping("/contributions/bulk/mark-unpaid")
+    fun markUnpaid(@Valid @RequestBody request: BulkMarkUnpaidRequest): BulkActionResult =
+        commandBus.dispatch(
+            ExecuteBulkContributionCommand(
+                userIds = request.userIds,
+                contributionPeriodId = request.contributionPeriodId,
+                operation = BulkContributionOperation.UNPAID,
             )
         )
 
@@ -56,7 +62,7 @@ class ContributionBulkController(private val commandBus: CommandBus) {
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
     @PostMapping("/contributionReminders/bulk/preview")
-    fun previewBulkReminder(@Valid @RequestBody request: BulkContributionReminderRequest): BulkPreviewResult =
+    fun previewBulkReminder(@Valid @RequestBody request: BulkContributionReminderPreviewRequest): BulkPreviewResult =
         commandBus.dispatch(
             PreviewBulkContributionReminderCommand(
                 userIds = request.userIds,
@@ -68,7 +74,7 @@ class ContributionBulkController(private val commandBus: CommandBus) {
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
     @PostMapping("/contributionReminders/bulk/execute")
-    fun executeBulkReminder(@Valid @RequestBody request: BulkContributionReminderRequest): BulkActionResult =
+    fun executeBulkReminder(@Valid @RequestBody request: BulkContributionReminderExecuteRequest): BulkActionResult =
         commandBus.dispatch(
             ExecuteBulkContributionReminderCommand(
                 userIds = request.userIds,
@@ -84,7 +90,9 @@ class ContributionBulkController(private val commandBus: CommandBus) {
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/incassoNotifications/bulk/preview")
-    fun previewBulkIncassoNotification(@Valid @RequestBody request: BulkIncassoNotificationRequest): BulkPreviewResult =
+    fun previewBulkIncassoNotification(
+        @Valid @RequestBody request: BulkIncassoNotificationPreviewRequest,
+    ): BulkPreviewResult =
         commandBus.dispatch(
             PreviewBulkIncassoNotificationCommand(
                 userIds = request.userIds,
@@ -96,7 +104,9 @@ class ContributionBulkController(private val commandBus: CommandBus) {
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/incassoNotifications/bulk/execute")
-    fun executeBulkIncassoNotification(@Valid @RequestBody request: BulkIncassoNotificationRequest): BulkActionResult =
+    fun executeBulkIncassoNotification(
+        @Valid @RequestBody request: BulkIncassoNotificationExecuteRequest,
+    ): BulkActionResult =
         commandBus.dispatch(
             ExecuteBulkIncassoNotificationCommand(
                 userIds = request.userIds,

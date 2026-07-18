@@ -7,6 +7,7 @@ import net.blueshell.api.domain.contribution.command.ExecuteBulkIncassoNotificat
 import net.blueshell.api.domain.contribution.command.PreviewBulkIncassoNotificationCommand
 import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
 import net.blueshell.api.domain.contribution.domain.resolveFeeType
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
@@ -20,6 +21,8 @@ import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 @Component
 class PreviewBulkIncassoNotificationHandler(
@@ -38,66 +41,8 @@ class PreviewBulkIncassoNotificationHandler(
         val cutoffDate = command.cutoffDate!!
 
         val rows = command.userIds.distinct().map { userId ->
-            val user = users.findById(userId)
-
-            // Get the current (active) membership; use the most recent by start date
-            val activeMemberships = memberships.findByUserId(userId)
-            val activeMembership = activeMemberships.maxByOrNull { it.startDate }
-
-            // Determine recommended fee type and resolve the € amount
-            val memberType = activeMembership?.memberType ?: MemberType.REGULAR
-            val membershipStart = activeMembership?.startDate
-            val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
-
-            // Check if member has incasso=true on active membership
-            val hasIncassoEnabled = activeMembership?.incasso ?: false
-
-            // Check if already paid
-            val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
-
-            // Get last sent date from audit
-            val lastSent = notifications.findLastNotificationForUserAndPeriod(userId, periodId)?.createdAt
-                ?.atZone(java.time.ZoneOffset.UTC)?.toLocalDate()
-
-            val disposition: BulkRowDisposition
-            val reason: BulkRowReason?
-
-            when {
-                recommendedFeeType == null -> {
-                    // Honorary member: excluded and not overridable
-                    disposition = BulkRowDisposition.EXCLUDED
-                    reason = BulkRowReason.HONORARY
-                }
-                !hasIncassoEnabled -> {
-                    // Not marked incasso=true: excluded by default but re-includable
-                    disposition = BulkRowDisposition.WARNING
-                    reason = BulkRowReason.INCASSO_MISMATCH
-                }
-                alreadyPaid -> {
-                    // Already paid: excluded by default, but may be re-included
-                    disposition = BulkRowDisposition.WARNING
-                    reason = BulkRowReason.ALREADY_PAID
-                }
-                else -> {
-                    // Include
-                    disposition = BulkRowDisposition.INCLUDED
-                    reason = null
-                }
-            }
-
-            BulkPreviewRow(
-                userId = userId,
-                name = user.fullName,
-                memberType = memberType,
-                memberSince = activeMembership?.startDate,
-                disposition = disposition,
-                reason = reason,
-                amount = recommendedFeeType?.let { resolveFeeAmount(it, period) },
-                recommendedFeeType = recommendedFeeType,
-                lastSentOn = lastSent,
-            )
+            decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions, notifications).toRow()
         }
-
         return BulkPreviewResult.of(BulkActionType.INCASSO_NOTIFICATION, periodId, rows)
     }
 }
@@ -119,57 +64,31 @@ class ExecuteBulkIncassoNotificationHandler(
         val cutoffDate = command.cutoffDate!!
         val includedUserIds = command.includedUserIds
 
+        val decisions = command.userIds.distinct().associateWith { userId ->
+            decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions, notifications)
+        }
+
+        validateFeeTypeOverrides(command.feeTypeOverrides, includedUserIds, decisions)
+
         var applied = 0
         var skipped = 0
         var queued = 0
 
-        command.userIds.distinct().forEach { userId ->
+        decisions.forEach { (userId, decision) ->
+            val shouldSend = when (decision.disposition) {
+                BulkRowDisposition.INCLUDED -> true
+                BulkRowDisposition.WARNING -> userId in includedUserIds
+                else -> false // EXCLUDED / SKIPPED (incl. NO_EMAIL)
+            }
+            if (!shouldSend) {
+                skipped++
+                return@forEach
+            }
+
             val user = users.findById(userId)
-
-            // Get the current (active) membership; use the most recent by start date
-            val activeMemberships = memberships.findByUserId(userId)
-            val activeMembership = activeMemberships.maxByOrNull { it.startDate }
-
-            // Resolve recommended fee type and check exclusion
-            val memberType = activeMembership?.memberType ?: MemberType.REGULAR
-            val membershipStart = activeMembership?.startDate
-            val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
-
-            if (recommendedFeeType == null) {
-                // Honorary: never send, always skip
-                skipped++
-                return@forEach
-            }
-
-            // Check if member has incasso=true; if included explicitly, send anyway
-            val hasIncassoEnabled = activeMembership?.incasso ?: false
-            val shouldSendByIncasso = hasIncassoEnabled || includedUserIds.contains(userId)
-
-            if (!shouldSendByIncasso) {
-                skipped++
-                return@forEach
-            }
-
-            // Check if already paid; if included explicitly, send anyway
-            val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
-            val shouldSendByPaid = !alreadyPaid || includedUserIds.contains(userId)
-
-            if (!shouldSendByPaid) {
-                skipped++
-                return@forEach
-            }
-
-            // Skip if user has no email
-            if (user.email.isBlank()) {
-                skipped++
-                return@forEach
-            }
-
-            // Resolve the € amount: use the operator's chosen fee type if overridden, else recommend
-            val effectiveFeeType = command.feeTypeOverrides[userId] ?: recommendedFeeType
+            val effectiveFeeType = command.feeTypeOverrides[userId] ?: decision.recommendedFeeType!!
             val amountToSend = resolveFeeAmount(effectiveFeeType, period)
 
-            // Create audit record with amount and expected incasso date
             val notification = notifications.create(
                 IncassoNotification(
                     user = user,
@@ -178,8 +97,6 @@ class ExecuteBulkIncassoNotificationHandler(
                     expectedIncassoDate = command.expectedIncassoDate,
                 )
             )
-
-            // Enqueue email
             notifications.sendNotification(notification)
 
             applied++
@@ -188,4 +105,71 @@ class ExecuteBulkIncassoNotificationHandler(
 
         return BulkActionResult(applied = applied, skipped = skipped, queued = queued)
     }
+}
+
+/**
+ * Decision function for the incasso-notification bulk action. Mirrors [decideReminder]
+ * but adds the incasso-flag check. Called by both preview and execute.
+ * See docs/proposals/bulk-actions/REDESIGN.md §3.
+ */
+internal fun decideIncasso(
+    userId: Long,
+    periodId: Long,
+    period: ContributionPeriod,
+    cutoffDate: LocalDate,
+    users: UserService,
+    memberships: MembershipService,
+    contributions: ContributionService,
+    notifications: IncassoNotificationService,
+): EmailBulkDecision {
+    val user = users.findById(userId)
+
+    val activeMembership = memberships.findByUserId(userId).maxByOrNull { it.startDate }
+    val memberType = activeMembership?.memberType ?: MemberType.REGULAR
+    val membershipStart = activeMembership?.startDate
+    val recommendedFeeType = resolveFeeType(memberType, membershipStart, cutoffDate)
+
+    val hasIncassoEnabled = activeMembership?.incasso ?: false
+    val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
+    val emailMissing = user.email.isBlank()
+    val lastSent = notifications.findLastNotificationForUserAndPeriod(userId, periodId)?.createdAt
+        ?.atZone(ZoneOffset.UTC)?.toLocalDate()
+
+    val disposition: BulkRowDisposition
+    val reason: BulkRowReason?
+    when {
+        recommendedFeeType == null -> {
+            disposition = BulkRowDisposition.EXCLUDED
+            reason = BulkRowReason.HONORARY
+        }
+        emailMissing -> {
+            disposition = BulkRowDisposition.SKIPPED
+            reason = BulkRowReason.NO_EMAIL
+        }
+        !hasIncassoEnabled -> {
+            disposition = BulkRowDisposition.WARNING
+            reason = BulkRowReason.INCASSO_MISMATCH
+        }
+        alreadyPaid -> {
+            disposition = BulkRowDisposition.WARNING
+            reason = BulkRowReason.ALREADY_PAID
+        }
+        else -> {
+            disposition = BulkRowDisposition.INCLUDED
+            reason = null
+        }
+    }
+
+    return EmailBulkDecision(
+        userId = userId,
+        name = user.fullName,
+        memberType = memberType,
+        memberSince = membershipStart,
+        disposition = disposition,
+        reason = reason,
+        recommendedFeeType = recommendedFeeType,
+        amount = recommendedFeeType?.let { resolveFeeAmount(it, period) },
+        lastSentOn = lastSent,
+        emailMissing = emailMissing,
+    )
 }

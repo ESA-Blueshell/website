@@ -142,7 +142,7 @@ export type BulkActionResult = {
     skipped: number;
 };
 
-export type BulkContributionReminderRequest = {
+export type BulkContributionReminderExecuteRequest = {
     contributionPeriodId: number;
     cutoffDate: string;
     feeTypeOverrides: {
@@ -153,9 +153,10 @@ export type BulkContributionReminderRequest = {
     userIds: Array<number>;
 };
 
-export type BulkContributionRequest = {
+export type BulkContributionReminderPreviewRequest = {
     contributionPeriodId: number;
-    operation: 'PAID' | 'UNPAID';
+    cutoffDate: string;
+    paymentDueDate: string;
     userIds: Array<number>;
 };
 
@@ -163,7 +164,7 @@ export type BulkEndMembershipRequest = {
     userIds: Array<number>;
 };
 
-export type BulkIncassoNotificationRequest = {
+export type BulkIncassoNotificationExecuteRequest = {
     contributionPeriodId: number;
     cutoffDate: string;
     expectedIncassoDate: string;
@@ -174,11 +175,29 @@ export type BulkIncassoNotificationRequest = {
     userIds: Array<number>;
 };
 
+export type BulkIncassoNotificationPreviewRequest = {
+    contributionPeriodId: number;
+    cutoffDate: string;
+    expectedIncassoDate: string;
+    userIds: Array<number>;
+};
+
+export type BulkMarkPaidRequest = {
+    contributionPeriodId: number;
+    userIds: Array<number>;
+};
+
+export type BulkMarkUnpaidRequest = {
+    contributionPeriodId: number;
+    userIds: Array<number>;
+};
+
 export type BulkPreviewResult = {
     action: 'MARK_PAID' | 'MARK_UNPAID' | 'CONTRIBUTION_REMINDER' | 'INCASSO_NOTIFICATION' | 'END_MEMBERSHIP' | 'RESUME_MEMBERSHIP';
     contributionPeriodId?: number;
     counts: BulkActionCounts;
     rows: Array<BulkPreviewRow>;
+    serverToday?: string;
 };
 
 export type BulkPreviewRow = {
@@ -188,7 +207,7 @@ export type BulkPreviewRow = {
     memberSince?: string;
     memberType?: MemberType;
     name: string;
-    reason?: 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY' | 'ALREADY_ACTIVE' | 'NO_CONTRIBUTION_PERIOD' | 'WILL_RESUME' | 'WILL_START_NEW';
+    reason?: 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY' | 'NO_EMAIL' | 'ALREADY_ACTIVE' | 'NO_CONTRIBUTION_PERIOD' | 'WILL_RESUME' | 'WILL_START_NEW';
     recommendedFeeType?: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
     userId: number;
 };
@@ -2651,7 +2670,7 @@ export type SendContributionReminderBatchResponses = {
 export type SendContributionReminderBatchResponse = SendContributionReminderBatchResponses[keyof SendContributionReminderBatchResponses];
 
 export type ExecuteBulkReminderData = {
-    body: BulkContributionReminderRequest;
+    body: BulkContributionReminderExecuteRequest;
     path?: never;
     query?: never;
     url: '/contributionReminders/bulk/execute';
@@ -2692,7 +2711,7 @@ export type ExecuteBulkReminderResponses = {
 export type ExecuteBulkReminderResponse = ExecuteBulkReminderResponses[keyof ExecuteBulkReminderResponses];
 
 export type PreviewBulkReminderData = {
-    body: BulkContributionReminderRequest;
+    body: BulkContributionReminderPreviewRequest;
     path?: never;
     query?: never;
     url: '/contributionReminders/bulk/preview';
@@ -2816,14 +2835,14 @@ export type CreateContributionResponses = {
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
 
-export type ExecuteBulkContributionData = {
-    body: BulkContributionRequest;
+export type MarkPaidData = {
+    body: BulkMarkPaidRequest;
     path?: never;
     query?: never;
-    url: '/contributions/bulk/execute';
+    url: '/contributions/bulk/mark-paid';
 };
 
-export type ExecuteBulkContributionErrors = {
+export type MarkPaidErrors = {
     /**
      * Validation error
      */
@@ -2846,25 +2865,25 @@ export type ExecuteBulkContributionErrors = {
     500: ApiError;
 };
 
-export type ExecuteBulkContributionError = ExecuteBulkContributionErrors[keyof ExecuteBulkContributionErrors];
+export type MarkPaidError = MarkPaidErrors[keyof MarkPaidErrors];
 
-export type ExecuteBulkContributionResponses = {
+export type MarkPaidResponses = {
     /**
      * OK
      */
     200: BulkActionResult;
 };
 
-export type ExecuteBulkContributionResponse = ExecuteBulkContributionResponses[keyof ExecuteBulkContributionResponses];
+export type MarkPaidResponse = MarkPaidResponses[keyof MarkPaidResponses];
 
-export type PreviewBulkContributionData = {
-    body: BulkContributionRequest;
+export type MarkUnpaidData = {
+    body: BulkMarkUnpaidRequest;
     path?: never;
     query?: never;
-    url: '/contributions/bulk/preview';
+    url: '/contributions/bulk/mark-unpaid';
 };
 
-export type PreviewBulkContributionErrors = {
+export type MarkUnpaidErrors = {
     /**
      * Validation error
      */
@@ -2887,16 +2906,16 @@ export type PreviewBulkContributionErrors = {
     500: ApiError;
 };
 
-export type PreviewBulkContributionError = PreviewBulkContributionErrors[keyof PreviewBulkContributionErrors];
+export type MarkUnpaidError = MarkUnpaidErrors[keyof MarkUnpaidErrors];
 
-export type PreviewBulkContributionResponses = {
+export type MarkUnpaidResponses = {
     /**
      * OK
      */
-    200: BulkPreviewResult;
+    200: BulkActionResult;
 };
 
-export type PreviewBulkContributionResponse = PreviewBulkContributionResponses[keyof PreviewBulkContributionResponses];
+export type MarkUnpaidResponse = MarkUnpaidResponses[keyof MarkUnpaidResponses];
 
 export type CsrfData = {
     body?: never;
@@ -3615,7 +3634,7 @@ export type HealthCheckResponses = {
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
 
 export type ExecuteBulkIncassoNotificationData = {
-    body: BulkIncassoNotificationRequest;
+    body: BulkIncassoNotificationExecuteRequest;
     path?: never;
     query?: never;
     url: '/incassoNotifications/bulk/execute';
@@ -3656,7 +3675,7 @@ export type ExecuteBulkIncassoNotificationResponses = {
 export type ExecuteBulkIncassoNotificationResponse = ExecuteBulkIncassoNotificationResponses[keyof ExecuteBulkIncassoNotificationResponses];
 
 export type PreviewBulkIncassoNotificationData = {
-    body: BulkIncassoNotificationRequest;
+    body: BulkIncassoNotificationPreviewRequest;
     path?: never;
     query?: never;
     url: '/incassoNotifications/bulk/preview';

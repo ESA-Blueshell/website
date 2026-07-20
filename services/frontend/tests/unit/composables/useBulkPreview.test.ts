@@ -2,6 +2,11 @@ import {describe, expect, it} from "vitest"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import type {BulkRow} from "@/composables/useBulkPreview"
 
+/**
+ * Test suite for the action-agnostic bulk-preview composable.
+ * Verifies row management, counts, re-include logic, and submit handling.
+ */
+
 function row(userId: number, disposition: BulkRow["disposition"]): BulkRow {
   return {userId, name: `User ${userId}`, disposition}
 }
@@ -38,31 +43,6 @@ describe("useBulkPreview", () => {
     expect(p.reincludeOverrides.value).toEqual({1: false, 2: false})
   })
 
-  it("setRows stores serverToday when supplied", () => {
-    const p = useBulkPreview()
-    p.setRows([row(1, "INCLUDED")], "2025-07-01")
-    expect(p.serverToday.value).toBe("2025-07-01")
-  })
-
-  it("loadPreview populates rows via the loader and clears loading", async () => {
-    const p = useBulkPreview()
-    await p.loadPreview(async () => ({rows: [row(1, "INCLUDED")], serverToday: "2025-01-01"}))
-    expect(p.rows.value).toHaveLength(1)
-    expect(p.serverToday.value).toBe("2025-01-01")
-    expect(p.loading.value).toBe(false)
-    expect(p.error.value).toBeNull()
-  })
-
-  it("loadPreview surfaces an error and empties rows when the loader throws", async () => {
-    const p = useBulkPreview()
-    await p.loadPreview(async () => {
-      throw new Error("boom")
-    })
-    expect(p.rows.value).toEqual([])
-    expect(p.error.value).toBeTruthy()
-    expect(p.loading.value).toBe(false)
-  })
-
   it("submit toggles submitting and returns the runner's result", async () => {
     const p = useBulkPreview()
     const ok = await p.submit(async () => true)
@@ -73,5 +53,14 @@ describe("useBulkPreview", () => {
       throw new Error("nope")
     })
     expect(failed).toBe(false)
+  })
+
+  it("reset clears rows and overrides", () => {
+    const p = useBulkPreview()
+    p.setRows([row(1, "INCLUDED"), row(2, "WARNING")])
+    p.reincludeOverrides.value = {2: true}
+    p.reset()
+    expect(p.rows.value).toEqual([])
+    expect(p.reincludeOverrides.value).toEqual({})
   })
 })

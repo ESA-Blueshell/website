@@ -338,6 +338,13 @@ export type ContributionPeriodResponse = {
     version: number;
 };
 
+export type ContributionReminderPreviewRequest = {
+    contributionPeriodId: number;
+    feeType: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+    paymentDueDate: string;
+    userId: number;
+};
+
 export type ContributionReminderResponse = {
     contributionPeriodId: number;
     createdAt: string;
@@ -522,6 +529,11 @@ export enum EmailDeliveryStatus {
     FAILED = 'FAILED'
 }
 
+export type EmailPreviewResponse = {
+    html: string;
+    subject: string;
+};
+
 export type EmailStats = {
     bouncedCount: number;
     deliveredCount: number;
@@ -691,6 +703,13 @@ export type InboundReconcileRow = {
     userFullName?: string;
     userId?: number;
     writable: boolean;
+};
+
+export type IncassoNotificationPreviewRequest = {
+    contributionPeriodId: number;
+    expectedIncassoDate: string;
+    feeType: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+    userId: number;
 };
 
 export type JobExecution = {
@@ -2668,6 +2687,47 @@ export type ExecuteBulkReminderResponses = {
 
 export type ExecuteBulkReminderResponse = ExecuteBulkReminderResponses[keyof ExecuteBulkReminderResponses];
 
+export type PreviewReminderData = {
+    body: ContributionReminderPreviewRequest;
+    path?: never;
+    query?: never;
+    url: '/contributionReminders/preview';
+};
+
+export type PreviewReminderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewReminderError = PreviewReminderErrors[keyof PreviewReminderErrors];
+
+export type PreviewReminderResponses = {
+    /**
+     * OK
+     */
+    200: EmailPreviewResponse;
+};
+
+export type PreviewReminderResponse = PreviewReminderResponses[keyof PreviewReminderResponses];
+
 export type FindContributionsData = {
     body?: never;
     path?: never;
@@ -3590,6 +3650,47 @@ export type ExecuteBulkIncassoNotificationResponses = {
 };
 
 export type ExecuteBulkIncassoNotificationResponse = ExecuteBulkIncassoNotificationResponses[keyof ExecuteBulkIncassoNotificationResponses];
+
+export type PreviewIncassoNotificationData = {
+    body: IncassoNotificationPreviewRequest;
+    path?: never;
+    query?: never;
+    url: '/incassoNotifications/preview';
+};
+
+export type PreviewIncassoNotificationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewIncassoNotificationError = PreviewIncassoNotificationErrors[keyof PreviewIncassoNotificationErrors];
+
+export type PreviewIncassoNotificationResponses = {
+    /**
+     * OK
+     */
+    200: EmailPreviewResponse;
+};
+
+export type PreviewIncassoNotificationResponse = PreviewIncassoNotificationResponses[keyof PreviewIncassoNotificationResponses];
 
 export type FindCohortSubjectsData = {
     body?: never;

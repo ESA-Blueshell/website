@@ -14,9 +14,22 @@ import type {Page, Request} from "@playwright/test"
 //
 // The member manager auto-selects the latest contribution period on mount (the
 // ContributionPeriodList slide-group is `mandatory`), so period-relative actions
-// are enabled without an explicit period click. cutoffDate defaults to the
-// selected period's startDate (2025-01-01), which drives the half-year/full-year
-// fee split: membership startDate >= cutoff → HALF_YEAR_FEE, else FULL_YEAR_FEE.
+// are enabled without an explicit period click.
+//
+// The reminder/incasso dialogs now wrap their inputs in a validated v-form and gate
+// confirm: a payment-due / expected-incasso date STRICTLY AFTER today and a half-year
+// cutoff WITHIN the selected period are required, or clicking confirm is a no-op (no
+// execute POST). The tests therefore set a future date (FUTURE_DATE) and an explicit,
+// deterministic cutoff (CUTOFF_DATE) before confirming. The cutoff defaults to a
+// period-relative midpoint, so we override it to keep the fee-tier split stable:
+// membership startDate <= cutoff → FULL_YEAR_FEE, startDate > cutoff → HALF_YEAR_FEE.
+
+// A date safely after "today" for any realistic CI clock (the dialogs compare the
+// payment-due / expected-incasso date against the real Amsterdam "today").
+const FUTURE_DATE = "2099-12-31"
+// Explicit half-year cutoff within PERIOD. 55 (2025-07-01) falls after it → half-year;
+// 51 (2024-01-01) falls before it → full-year.
+const CUTOFF_DATE = "2025-06-01"
 
 const PERIOD = {
   id: 251,
@@ -30,7 +43,8 @@ const PERIOD = {
 const CONTRIBUTION_PERIODS = [PERIOD]
 
 const USERS = [
-  // 51 — regular, unpaid, started before cutoff → reminder/incasso INCLUDED, full-year fee
+  // 51 — regular, unpaid, incasso payer, started before cutoff → reminder WARNING(PAYS_VIA_INCASSO),
+  //      incasso INCLUDED (full-year fee)
   {id: 51, fullName: "Alice Regular", firstName: "Alice", lastName: "Regular", username: "alice-regular", email: "alice@example.com", enabled: true, roles: ["MEMBER"]},
   // 52 — honorary → mark-paid/unpaid SKIPPED(HONORARY); reminder/incasso EXCLUDED(HONORARY)
   {id: 52, fullName: "Bob Honorary", firstName: "Bob", lastName: "Honorary", username: "bob-honorary", email: "bob@example.com", enabled: true, roles: ["MEMBER"]},
@@ -38,9 +52,9 @@ const USERS = [
   {id: 53, fullName: "Carol Paid", firstName: "Carol", lastName: "Paid", username: "carol-paid", email: "carol@example.com", enabled: true, roles: ["MEMBER"]},
   // 54 — regular, NO EMAIL → reminder/incasso SKIPPED(NO_EMAIL)
   {id: 54, fullName: "Dave NoEmail", firstName: "Dave", lastName: "NoEmail", username: "dave-noemail", email: "", enabled: true, roles: ["MEMBER"]},
-  // 55 — regular, started AFTER cutoff → reminder INCLUDED with half-year fee
+  // 55 — regular WITHOUT incasso, started AFTER cutoff → reminder INCLUDED with half-year fee
   {id: 55, fullName: "Erin HalfYear", firstName: "Erin", lastName: "HalfYear", username: "erin-halfyear", email: "erin@example.com", enabled: true, roles: ["MEMBER"]},
-  // 56 — alumni → reminder/incasso INCLUDED with alumni fee
+  // 56 — alumni, incasso payer → reminder WARNING(PAYS_VIA_INCASSO); incasso INCLUDED (alumni fee)
   {id: 56, fullName: "Frank Alumni", firstName: "Frank", lastName: "Alumni", username: "frank-alumni", email: "frank@example.com", enabled: true, roles: ["MEMBER"]},
   // 57 — regular WITHOUT incasso flag → incasso WARNING(INCASSO_MISMATCH)
   {id: 57, fullName: "Gina NoIncasso", firstName: "Gina", lastName: "NoIncasso", username: "gina-noincasso", email: "gina@example.com", enabled: true, roles: ["MEMBER"]},
@@ -57,7 +71,7 @@ const MEMBERSHIPS = [
   {id: 152, userId: 52, memberType: "HONORARY", startDate: "2023-01-01", endDate: null, incasso: false},
   {id: 153, userId: 53, memberType: "REGULAR", startDate: "2024-03-01", endDate: null, incasso: true},
   {id: 154, userId: 54, memberType: "REGULAR", startDate: "2024-02-01", endDate: null, incasso: true},
-  {id: 155, userId: 55, memberType: "REGULAR", startDate: "2025-07-01", endDate: null, incasso: true},
+  {id: 155, userId: 55, memberType: "REGULAR", startDate: "2025-07-01", endDate: null, incasso: false},
   {id: 156, userId: 56, memberType: "ALUMNI", startDate: "2024-01-15", endDate: null, incasso: true},
   {id: 157, userId: 57, memberType: "REGULAR", startDate: "2024-01-10", endDate: null, incasso: false},
   {id: 158, userId: 58, memberType: "REGULAR", startDate: "2023-01-01", endDate: "2025-06-15", incasso: true},
@@ -272,12 +286,19 @@ test.describe("member manager bulk actions", () => {
   test.describe("send reminder", () => {
     test("computes dispositions, fee tiers and amounts, then posts included set to execute", async ({page}) => {
       await setupPage(page)
-      // 51 full-year INCLUDED, 52 honorary EXCLUDED, 53 already-paid WARNING,
-      // 54 no-email SKIPPED, 55 half-year INCLUDED, 56 alumni INCLUDED.
+      // 51 incasso payer → WARNING(PAYS_VIA_INCASSO), full-year; 52 honorary EXCLUDED;
+      // 53 already-paid → WARNING(ALREADY_PAID); 54 no-email SKIPPED;
+      // 55 non-incasso half-year → INCLUDED; 56 alumni incasso payer → WARNING(PAYS_VIA_INCASSO).
       await selectRows(page, [51, 52, 53, 54, 55, 56])
       await openAction(page, "bulk-action-send-reminder")
 
-      await expect(page.getByTestId("bulk-preview-disposition-51")).toContainText("Included")
+      // Pin the cutoff so the fee-tier split is deterministic (it otherwise defaults to a
+      // period-relative midpoint).
+      await page.getByTestId("bulk-action-cutoff-date").locator("input").fill(CUTOFF_DATE)
+
+      // Members who pay via incasso are now warned (off by default) on the reminder action.
+      await expect(page.getByTestId("bulk-preview-disposition-51")).toContainText("Warning")
+      await expect(page.getByTestId("bulk-preview-note-51")).toContainText("Pays via incasso")
       await expect(page.getByTestId("bulk-preview-disposition-52")).toContainText("Excluded")
       await expect(page.getByTestId("bulk-preview-note-52")).toContainText("Honorary")
       await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Warning")
@@ -285,35 +306,38 @@ test.describe("member manager bulk actions", () => {
       await expect(page.getByTestId("bulk-preview-disposition-54")).toContainText("Skipped")
       await expect(page.getByTestId("bulk-preview-note-54")).toContainText("No email")
       await expect(page.getByTestId("bulk-preview-disposition-55")).toContainText("Included")
-      await expect(page.getByTestId("bulk-preview-disposition-56")).toContainText("Included")
+      await expect(page.getByTestId("bulk-preview-disposition-56")).toContainText("Warning")
+      await expect(page.getByTestId("bulk-preview-note-56")).toContainText("Pays via incasso")
 
-      // Fee tiers (rendered as "€ N" next to the fee selector): 51 started 2024-01-01
-      // (< cutoff 2025-01-01) → full-year € 20; 55 started 2025-07-01 (>= cutoff) →
-      // half-year € 10; 56 alumni → € 5.
-      await expect(page.getByTestId("bulk-preview-row-51")).toContainText("€ 20")
-      await expect(page.getByTestId("bulk-preview-row-55")).toContainText("€ 10")
-      await expect(page.getByTestId("bulk-preview-row-56")).toContainText("€ 5")
+      // Fee tiers via the Amount column: 51 started 2024-01-01 (<= cutoff 2025-06-01) →
+      // full-year € 20; 55 started 2025-07-01 (> cutoff) → half-year € 10; 56 alumni → € 5.
+      // Amounts are computed for warned rows too (before the disposition is decided).
+      await expect(page.getByTestId("bulk-preview-amount-51")).toContainText("€ 20")
+      await expect(page.getByTestId("bulk-preview-amount-55")).toContainText("€ 10")
+      await expect(page.getByTestId("bulk-preview-amount-56")).toContainText("€ 5")
 
-      // Counts: 3 will apply (51, 55, 56), 1 with warnings (53), 1 excluded (52), 1 skipped (54).
-      await expect(page.getByTestId("bulk-action-counts")).toContainText("3 will apply")
-      await expect(page.getByTestId("bulk-action-counts")).toContainText("1 with warnings")
+      // Counts: 1 will apply (55), 3 with warnings (51, 53, 56), 1 excluded (52), 1 skipped (54).
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("1 will apply")
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("3 with warnings")
       await expect(page.getByTestId("bulk-action-counts")).toContainText("1 excluded")
       await expect(page.getByTestId("bulk-action-counts")).toContainText("1 skipped")
 
-      // The re-include checkbox is offered for the WARNING row only.
+      // Re-include ("Forcibly include") checkboxes are offered for the WARNING rows only.
+      await expect(page.getByTestId("bulk-preview-reinclude-51")).toBeVisible()
       await expect(page.getByTestId("bulk-preview-reinclude-53")).toBeVisible()
+      await expect(page.getByTestId("bulk-preview-reinclude-56")).toBeVisible()
 
-      // A payment due date is required to confirm (cutoff defaults to period start).
-      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
+      // A future payment-due date is required to confirm (past dates gate the confirm).
+      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill(FUTURE_DATE)
 
       const req = captureExecute(page, "/contributionReminders/bulk/execute")
       await page.getByTestId("bulk-action-confirm-btn").click()
       const body = (await req).postDataJSON()
-      // includedUserIds carries only the client-included set (WARNING 53 not re-included).
-      expect([...body.includedUserIds].sort((a: number, b: number) => a - b)).toEqual([51, 55, 56])
+      // includedUserIds carries only the client-included set (warned rows not re-included).
+      expect([...body.includedUserIds].sort((a: number, b: number) => a - b)).toEqual([55])
       expect(body.contributionPeriodId).toBe(251)
-      expect(body.cutoffDate).toBe("2025-01-01")
-      expect(body.paymentDueDate).toBe("2025-08-31")
+      expect(body.cutoffDate).toBe(CUTOFF_DATE)
+      expect(body.paymentDueDate).toBe(FUTURE_DATE)
 
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
     })
@@ -328,7 +352,7 @@ test.describe("member manager bulk actions", () => {
       await page.getByTestId("bulk-preview-reinclude-53").locator("input").click()
       await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Included")
 
-      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
+      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill(FUTURE_DATE)
 
       const req = captureExecute(page, "/contributionReminders/bulk/execute")
       await page.getByTestId("bulk-action-confirm-btn").click()
@@ -360,15 +384,16 @@ test.describe("member manager bulk actions", () => {
       await expect(page.getByTestId("bulk-action-counts")).toContainText("1 with warnings")
       await expect(page.getByTestId("bulk-action-counts")).toContainText("1 excluded")
 
-      // Incasso requires an expected-incasso date (cutoff defaults to period start).
-      await page.getByTestId("bulk-action-expected-incasso-date").locator("input").fill("2025-09-30")
+      // Incasso requires a future expected-incasso date (cutoff defaults to a valid
+      // in-period value). A past date would gate the confirm.
+      await page.getByTestId("bulk-action-expected-incasso-date").locator("input").fill(FUTURE_DATE)
 
       const req = captureExecute(page, "/incassoNotifications/bulk/execute")
       await page.getByTestId("bulk-action-confirm-btn").click()
       const body = (await req).postDataJSON()
       expect([...body.includedUserIds].sort((a: number, b: number) => a - b)).toEqual([51, 56])
       expect(body.contributionPeriodId).toBe(251)
-      expect(body.expectedIncassoDate).toBe("2025-09-30")
+      expect(body.expectedIncassoDate).toBe(FUTURE_DATE)
 
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
     })

@@ -113,11 +113,10 @@ function managementHrefFor(type: CohortSubjectType): string {
     case CohortSubjectType.PERIOD_PAYERS:
     case CohortSubjectType.PERIOD_MEMBERS:
     case CohortSubjectType.PERIOD_ACTIVE_MEMBERS:
-      return "/contributions/manage"
     case CohortSubjectType.NEWSLETTER_SUBSCRIBERS:
     case CohortSubjectType.CUSTOM:
     default:
-      return "/members/manage"
+      return "/user-manager"
   }
 }
 

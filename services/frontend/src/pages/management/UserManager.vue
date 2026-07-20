@@ -15,8 +15,8 @@ import ReminderDialog from "@/components/common/modals/bulk/ReminderDialog.vue"
 import IncassoDialog from "@/components/common/modals/bulk/IncassoDialog.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import UserForm from "@/components/form/UserForm.vue"
-import MemberManagerRow from "@/components/common/rows/MemberManagerRow.vue"
-import MemberManagerMobileRow from "@/components/common/rows/MemberManagerMobileRow.vue"
+import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
+import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
 
 import {
   deleteUserById,
@@ -26,15 +26,15 @@ import {
   findContributionPeriods,
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
-import {useMemberRows, type MemberRow} from "@/composables/useMemberRows"
-import {useMemberFilters, type SortKey} from "@/composables/useMemberFilters"
+import {useUserRows, type MemberRow} from "@/composables/useUserRows"
+import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
-import {useMemberSelection} from "@/composables/useMemberSelection"
+import {useUserSelection} from "@/composables/useUserSelection"
 import {computeBulkTargets, amsterdamToday, latestPeriodOf, type BulkTarget} from "@/utils/bulkTarget"
 
 export type {MemberRow}
 
-defineOptions({name: "MemberManagerPage"})
+defineOptions({name: "UserManagerPage"})
 
 // ── Display ───────────────────────────────────────────────────────────────────
 
@@ -95,10 +95,10 @@ const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChang
 
 // isNotableType, typeIcon, typeLabel, statusColor are used by unit tests that
 // access wrapper.vm directly; they remain in scope even though the template
-// delegates rendering to MemberManagerRow / MemberManagerMobileRow.
+// delegates rendering to UserManagerRow / UserManagerMobileRow.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const {membershipsByUserId, userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
-  useMemberRows(users, memberships, paidUserIds, selectedPeriod)
+  useUserRows(users, memberships, paidUserIds, selectedPeriod)
 
 const {
   searchInput,
@@ -114,7 +114,7 @@ const {
   filteredRows,
   toggleSort,
   sortIcon,
-} = useMemberFilters(rows, userSearchIndex)
+} = useUserFilters(rows, userSearchIndex)
 
 // Derive displayed IDs from filteredRows for the selection composable
 const displayedIds = computed(() => filteredRows.value.map((r) => r.id))
@@ -128,7 +128,7 @@ const {
   headerIndeterminate,
   toggleHeader,
   clear: clearSelection,
-} = useMemberSelection(displayedIds)
+} = useUserSelection(displayedIds)
 
 function ariaSort(key: SortKey) {
   if (sortKey.value !== key) return "none"
@@ -354,7 +354,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
 
 <template>
   <v-main>
-    <top-banner title="Member Manager" />
+    <top-banner title="User Manager" />
 
     <v-container>
       <div
@@ -608,7 +608,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 </thead>
 
                 <tbody>
-                  <member-manager-row
+                  <user-manager-row
                     v-for="row in filteredRows"
                     :key="row.id"
                     :row="row"
@@ -649,7 +649,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   v-for="(row, index) in filteredRows"
                   :key="row.id"
                 >
-                  <member-manager-mobile-row
+                  <user-manager-mobile-row
                     :row="row"
                     :toggle-disabled="toggleDisabled"
                     :is-saving="isSaving(row.id)"

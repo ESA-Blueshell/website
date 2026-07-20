@@ -96,7 +96,7 @@ export function halfYearCutoffDefault(
  * Build a BulkTarget for each selected user ID, pulling name, email, most-recent
  * membership, paid status, and honorary flag from the parent data.
  *
- * The host (MemberManager.vue) pre-sorts membershipsByUserId entries by startDate DESC
+ * The host (UserManager.vue) pre-sorts membershipsByUserId entries by startDate DESC
  * so [0] is always the most recent (or needs backfill if only one membership).
  */
 export function computeBulkTargets(

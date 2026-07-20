@@ -127,7 +127,7 @@ async function setupPage(page: Page) {
 
   await loginAsBoard(page.context())
   await page.setViewportSize({width: 1440, height: 900})
-  await page.goto("/members/manage")
+  await page.goto("/user-manager")
   await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
   // The list auto-selects the latest period; wait for its select button to confirm
   // periods loaded so period-relative actions are enabled.

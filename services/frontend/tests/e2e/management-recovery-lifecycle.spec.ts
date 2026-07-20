@@ -41,7 +41,7 @@ test.describe("management recovery lifecycle", () => {
     // up; below that it switches to a mobile card list with its own test ids. This
     // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/members/manage")
+    await page.goto("/user-manager")
     await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
 
     // The user row should be visible in the unified table

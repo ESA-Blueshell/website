@@ -210,7 +210,7 @@
 
 <script lang="ts" setup>
 import {onUpdated, ref} from "vue"
-import {isNotableType, typeIcon, typeLabel, statusColor, type MemberRow} from "@/composables/useMemberRows"
+import {isNotableType, typeIcon, typeLabel, statusColor, type MemberRow} from "@/composables/useUserRows"
 
 const props = defineProps<{
   row: MemberRow

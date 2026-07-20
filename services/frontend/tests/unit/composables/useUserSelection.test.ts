@@ -1,13 +1,13 @@
 import {describe, expect, it} from "vitest"
 import {ref} from "vue"
-import {useMemberSelection} from "@/composables/useMemberSelection"
+import {useUserSelection} from "@/composables/useUserSelection"
 
-describe("useMemberSelection", () => {
+describe("useUserSelection", () => {
   // ── Initial state ───────────────────────────────────────────────────────────
 
   it("starts with an empty selection", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {selectedIds, selectionCount, hasSelection} = useMemberSelection(displayed)
+    const {selectedIds, selectionCount, hasSelection} = useUserSelection(displayed)
     expect(selectedIds.value.size).toBe(0)
     expect(selectionCount.value).toBe(0)
     expect(hasSelection.value).toBe(false)
@@ -15,7 +15,7 @@ describe("useMemberSelection", () => {
 
   it("headerState is unchecked when nothing is selected", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {headerState, headerChecked, headerIndeterminate} = useMemberSelection(displayed)
+    const {headerState, headerChecked, headerIndeterminate} = useUserSelection(displayed)
     expect(headerState.value).toBe("unchecked")
     expect(headerChecked.value).toBe(false)
     expect(headerIndeterminate.value).toBe(false)
@@ -23,7 +23,7 @@ describe("useMemberSelection", () => {
 
   it("headerState is unchecked when displayed list is empty", () => {
     const displayed = ref<number[]>([])
-    const {headerState} = useMemberSelection(displayed)
+    const {headerState} = useUserSelection(displayed)
     expect(headerState.value).toBe("unchecked")
   })
 
@@ -31,7 +31,7 @@ describe("useMemberSelection", () => {
 
   it("toggle adds a user to the selection", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {isSelected, toggle, selectionCount} = useMemberSelection(displayed)
+    const {isSelected, toggle, selectionCount} = useUserSelection(displayed)
     expect(isSelected(1)).toBe(false)
     toggle(1)
     expect(isSelected(1)).toBe(true)
@@ -40,7 +40,7 @@ describe("useMemberSelection", () => {
 
   it("toggle removes a user that is already selected", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {isSelected, toggle, selectionCount} = useMemberSelection(displayed)
+    const {isSelected, toggle, selectionCount} = useUserSelection(displayed)
     toggle(1)
     toggle(1)
     expect(isSelected(1)).toBe(false)
@@ -51,7 +51,7 @@ describe("useMemberSelection", () => {
 
   it("headerState is indeterminate when some (but not all) displayed rows are selected", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {headerState, headerChecked, headerIndeterminate, toggle} = useMemberSelection(displayed)
+    const {headerState, headerChecked, headerIndeterminate, toggle} = useUserSelection(displayed)
     toggle(1)
     expect(headerState.value).toBe("indeterminate")
     expect(headerChecked.value).toBe(false)
@@ -60,7 +60,7 @@ describe("useMemberSelection", () => {
 
   it("headerState is checked when all displayed rows are selected", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {headerState, headerChecked, headerIndeterminate, toggle} = useMemberSelection(displayed)
+    const {headerState, headerChecked, headerIndeterminate, toggle} = useUserSelection(displayed)
     toggle(1)
     toggle(2)
     toggle(3)
@@ -73,7 +73,7 @@ describe("useMemberSelection", () => {
 
   it("toggleHeader selects all displayed rows when state is unchecked", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {isSelected, toggleHeader, headerState} = useMemberSelection(displayed)
+    const {isSelected, toggleHeader, headerState} = useUserSelection(displayed)
     toggleHeader()
     expect(headerState.value).toBe("checked")
     expect(isSelected(1)).toBe(true)
@@ -83,7 +83,7 @@ describe("useMemberSelection", () => {
 
   it("toggleHeader selects all displayed rows when state is indeterminate", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {isSelected, toggle, toggleHeader, headerState} = useMemberSelection(displayed)
+    const {isSelected, toggle, toggleHeader, headerState} = useUserSelection(displayed)
     toggle(1) // partial selection → indeterminate
     toggleHeader()
     expect(headerState.value).toBe("checked")
@@ -94,7 +94,7 @@ describe("useMemberSelection", () => {
 
   it("toggleHeader deselects all displayed rows when state is checked", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {isSelected, toggleHeader, headerState} = useMemberSelection(displayed)
+    const {isSelected, toggleHeader, headerState} = useUserSelection(displayed)
     toggleHeader() // select all
     toggleHeader() // deselect all
     expect(headerState.value).toBe("unchecked")
@@ -107,7 +107,7 @@ describe("useMemberSelection", () => {
 
   it("selection persists when displayed list changes (filter hides a selected user)", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {isSelected, toggle, selectedIds} = useMemberSelection(displayed)
+    const {isSelected, toggle, selectedIds} = useUserSelection(displayed)
     toggle(1)
     toggle(2)
 
@@ -121,7 +121,7 @@ describe("useMemberSelection", () => {
 
   it("header tri-state only considers displayed rows, not the full selected set", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {toggle, toggleHeader, headerState} = useMemberSelection(displayed)
+    const {toggle, toggleHeader, headerState} = useUserSelection(displayed)
     toggleHeader() // select 1, 2, 3
 
     // Filter narrows display to only user 4 (which was never selected)
@@ -133,7 +133,7 @@ describe("useMemberSelection", () => {
 
   it("toggleHeader only touches displayed rows, leaving other selections intact", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {toggle, toggleHeader, isSelected} = useMemberSelection(displayed)
+    const {toggle, toggleHeader, isSelected} = useUserSelection(displayed)
     toggle(1)
     toggle(2)
     toggle(3)
@@ -151,7 +151,7 @@ describe("useMemberSelection", () => {
 
   it("selectedIdsArray returns a plain array of selected IDs", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {toggle, selectedIdsArray} = useMemberSelection(displayed)
+    const {toggle, selectedIdsArray} = useUserSelection(displayed)
     toggle(2)
     toggle(3)
     expect(selectedIdsArray.value).toContain(2)
@@ -163,7 +163,7 @@ describe("useMemberSelection", () => {
 
   it("clear empties the entire selection set", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {toggle, clear, selectionCount, hasSelection, isSelected} = useMemberSelection(displayed)
+    const {toggle, clear, selectionCount, hasSelection, isSelected} = useUserSelection(displayed)
     toggle(1)
     toggle(2)
     toggle(3)
@@ -175,7 +175,7 @@ describe("useMemberSelection", () => {
 
   it("clear also clears users not in current display", () => {
     const displayed = ref<number[]>([1, 2, 3])
-    const {toggle, clear, selectedIds} = useMemberSelection(displayed)
+    const {toggle, clear, selectedIds} = useUserSelection(displayed)
     toggle(1)
     toggle(99) // not in display, but still selected
     clear()

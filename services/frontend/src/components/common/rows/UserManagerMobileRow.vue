@@ -81,7 +81,7 @@
 
 <script lang="ts" setup>
 import {onUpdated, ref} from "vue"
-import {type MemberRow} from "@/composables/useMemberRows"
+import {type MemberRow} from "@/composables/useUserRows"
 
 defineProps<{
   row: MemberRow

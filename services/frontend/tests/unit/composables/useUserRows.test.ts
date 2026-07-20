@@ -9,9 +9,9 @@ import {
   statusColor,
   typeIcon,
   typeLabel,
-  useMemberRows,
+  useUserRows,
   type MemberRow,
-} from "@/composables/useMemberRows"
+} from "@/composables/useUserRows"
 import type {EditableUser} from "@/utils/editableUser"
 import type {ContributionPeriodResponse, MembershipResponse} from "@/services/api"
 
@@ -153,7 +153,7 @@ describe("isNotableType / typeIcon / typeLabel / statusColor", () => {
   })
 })
 
-describe("useMemberRows", () => {
+describe("useUserRows", () => {
   it("builds membershipsByUserId map correctly", () => {
     const users = ref([makeUser(1, "Alice Smith", "alice")])
     const memberships = ref([
@@ -162,7 +162,7 @@ describe("useMemberRows", () => {
     ])
     const paidUserIds = ref(new Set<number>())
 
-    const {membershipsByUserId} = useMemberRows(users, memberships, paidUserIds)
+    const {membershipsByUserId} = useUserRows(users, memberships, paidUserIds)
     expect(membershipsByUserId.value.get(1)).toHaveLength(2)
     expect(membershipsByUserId.value.get(2)).toBeUndefined()
   })
@@ -172,7 +172,7 @@ describe("useMemberRows", () => {
     const memberships = ref<MembershipResponse[]>([])
     const paidUserIds = ref(new Set<number>())
 
-    const {userSearchIndex} = useMemberRows(users, memberships, paidUserIds)
+    const {userSearchIndex} = useUserRows(users, memberships, paidUserIds)
     const haystack = userSearchIndex.value.get(1) ?? ""
     expect(haystack).toContain("alice smith")
     expect(haystack).toContain("alice")
@@ -185,7 +185,7 @@ describe("useMemberRows", () => {
     ])
     const paidUserIds = ref(new Set<number>([1]))
 
-    const {rows} = useMemberRows(users, memberships, paidUserIds)
+    const {rows} = useUserRows(users, memberships, paidUserIds)
     expect(rows.value).toHaveLength(1)
     const row = rows.value[0]!
     expect(row.id).toBe(1)
@@ -201,7 +201,7 @@ describe("useMemberRows", () => {
     const memberships = ref<MembershipResponse[]>([])
     const paidUserIds = ref(new Set<number>())
 
-    const {rows} = useMemberRows(users, memberships, paidUserIds)
+    const {rows} = useUserRows(users, memberships, paidUserIds)
     expect(rows.value[0]!.paid).toBe(false)
 
     paidUserIds.value = new Set([1])
@@ -220,7 +220,7 @@ describe("useMemberRows", () => {
     const paidUserIds = ref(new Set<number>())
     const selectedPeriod = ref<ContributionPeriodResponse | null>(makeContributionPeriod())
 
-    const {rows} = useMemberRows(users, memberships, paidUserIds, selectedPeriod)
+    const {rows} = useUserRows(users, memberships, paidUserIds, selectedPeriod)
     expect(rows.value.find((row) => row.id === 1)?.wasMemberInPeriod).toBe(true)
     expect(rows.value.find((row) => row.id === 2)?.wasMemberInPeriod).toBe(false)
 
@@ -233,7 +233,7 @@ describe("useMemberRows", () => {
     const memberships = ref<MembershipResponse[]>([])
     const paidUserIds = ref(new Set<number>())
 
-    const {rows} = useMemberRows(users, memberships, paidUserIds)
+    const {rows} = useUserRows(users, memberships, paidUserIds)
     expect(rows.value[0]!.memberSince).toBeNull()
   })
 })

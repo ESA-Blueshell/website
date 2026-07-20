@@ -1,5 +1,5 @@
 /**
- * MemberManagerSelectionPerf.test.ts
+ * UserManagerSelectionPerf.test.ts
  *
  * Performance regression guard: toggling one row's selection must NOT cause
  * sibling rows to re-render.
@@ -8,14 +8,14 @@
  * toggle replaces the entire Set and invalidates every row's `isSelected()`
  * binding — all N rows re-patch.
  *
- * GREEN after extraction: each row is a memoized `MemberManagerRow` /
- * `MemberManagerMobileRow` child component whose `selected` prop only changes
+ * GREEN after extraction: each row is a memoized `UserManagerRow` /
+ * `UserManagerMobileRow` child component whose `selected` prop only changes
  * for the toggled row; Vue skips patching siblings whose props are unchanged.
  *
  * Detection mechanism:
  *   Each row component exposes `__updateCount` (a ref incremented in
  *   `onUpdated`). The test:
- *     1. Mounts MemberManager with 3 members.
+ *     1. Mounts UserManager with 3 members.
  *     2. Pre-selects member id=3 (Carol) so `hasSelection` / `selectionActive`
  *        is already stable at `true` before the timing window.
  *     3. Snapshots each row component's `__updateCount`.
@@ -32,9 +32,9 @@
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {mount, flushPromises} from "@vue/test-utils"
 import {nextTick} from "vue"
-import MemberManager from "@/pages/management/MemberManager.vue"
-import MemberManagerRow from "@/components/common/rows/MemberManagerRow.vue"
-import MemberManagerMobileRow from "@/components/common/rows/MemberManagerMobileRow.vue"
+import UserManager from "@/pages/management/UserManager.vue"
+import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
+import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
 import {MemberType} from "@/services/api"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ function makeMembership(id: number, userId: number) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Mount MemberManager, wait for data, and pre-select Carol (id=3) so that
+ * Mount UserManager, wait for data, and pre-select Carol (id=3) so that
  * `hasSelection` (= `selectionActive`) is already `true` before the measurement
  * window. This prevents the first real toggle from flipping `selectionActive`
  * from false→true on ALL sibling rows — that would be a legitimate prop change
@@ -168,9 +168,9 @@ function makeMembership(id: number, userId: number) {
  * waiting an extra tick so all resulting component updates settle before
  * we snapshot update-counters.
  */
-async function mountWithPreselect(lgAndUp: boolean, RowComponent: typeof MemberManagerRow | typeof MemberManagerMobileRow) {
+async function mountWithPreselect(lgAndUp: boolean, RowComponent: typeof UserManagerRow | typeof UserManagerMobileRow) {
   mockLgAndUp.value = lgAndUp
-  const wrapper = mount(MemberManager)
+  const wrapper = mount(UserManager)
   await flushPromises()
   await nextTick()
 
@@ -191,7 +191,7 @@ async function mountWithPreselect(lgAndUp: boolean, RowComponent: typeof MemberM
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("MemberManager selection perf — isolated row re-render", () => {
+describe("UserManager selection perf — isolated row re-render", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFindUsers.mockResolvedValue({
@@ -219,10 +219,10 @@ describe("MemberManager selection perf — isolated row re-render", () => {
   })
 
   it("toggling one row selection does not re-render sibling rows (desktop)", async () => {
-    const wrapper = await mountWithPreselect(true, MemberManagerRow)
+    const wrapper = await mountWithPreselect(true, UserManagerRow)
 
     // Find all desktop row component instances
-    const rowWrappers = wrapper.findAllComponents(MemberManagerRow)
+    const rowWrappers = wrapper.findAllComponents(UserManagerRow)
     expect(rowWrappers.length).toBeGreaterThanOrEqual(3)
 
     // Snapshot update counts (after pre-select stabilisation)
@@ -260,13 +260,13 @@ describe("MemberManager selection perf — isolated row re-render", () => {
   })
 
   // NOTE: Mobile row selection was removed in #454 (mobile-only cleanup).
-  // This test is skipped since MemberManagerMobileRow no longer supports the
+  // This test is skipped since UserManagerMobileRow no longer supports the
   // toggle-selection event or selection-related behavior.
   // Desktop selection performance testing (above) remains valid.
   it.skip("toggling one row selection does not re-render sibling rows (mobile)", async () => {
-    const wrapper = await mountWithPreselect(false, MemberManagerMobileRow)
+    const wrapper = await mountWithPreselect(false, UserManagerMobileRow)
 
-    const rowWrappers = wrapper.findAllComponents(MemberManagerMobileRow)
+    const rowWrappers = wrapper.findAllComponents(UserManagerMobileRow)
     expect(rowWrappers.length).toBeGreaterThanOrEqual(3)
 
     const countsBefore = rowWrappers.map((rw) => ({

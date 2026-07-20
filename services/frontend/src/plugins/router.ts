@@ -214,15 +214,9 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/events/CircuitShowdown.vue"),
   },
   {
-    path: "/members/manage",
-    name: "memberManager",
-    component: () => import("@/pages/management/MemberManager.vue"),
-    meta: {requiresAuth: true},
-  },
-  {
-    path: "/contributions/manage",
-    name: "contributionManager",
-    component: () => import("@/pages/management/ContributionManager.vue"),
+    path: "/user-manager",
+    name: "userManager",
+    component: () => import("@/pages/management/UserManager.vue"),
     meta: {requiresAuth: true},
   },
   {

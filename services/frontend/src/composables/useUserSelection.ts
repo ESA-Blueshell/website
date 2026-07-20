@@ -20,7 +20,7 @@ import {computed, ref, type Ref} from "vue"
 
 export type HeaderCheckboxState = "checked" | "indeterminate" | "unchecked"
 
-export function useMemberSelection(displayedIds: Ref<number[]>) {
+export function useUserSelection(displayedIds: Ref<number[]>) {
   /** Persistent selected set — survives filter/sort changes. */
   const selectedIds = ref<Set<number>>(new Set())
 

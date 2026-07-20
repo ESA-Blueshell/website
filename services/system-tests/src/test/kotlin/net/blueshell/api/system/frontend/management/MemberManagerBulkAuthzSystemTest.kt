@@ -28,7 +28,7 @@ class MemberManagerBulkAuthzSystemTest : PlaywrightTestBase() {
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        // The member manager lives at /members/manage and loads its data from the
+        // The user manager lives at /user-manager and loads its data from the
         // BOARD-only list endpoint GET /api/users. A non-BOARD user reaching the page
         // receives a 401/403 on that call, so no member data loads.
         val response = page.waitForResponse(
@@ -36,7 +36,7 @@ class MemberManagerBulkAuthzSystemTest : PlaywrightTestBase() {
                 response.url().contains("/users") && response.status() >= 400
             },
         ) {
-            page.navigate("$frontendUrl/members/manage")
+            page.navigate("$frontendUrl/user-manager")
         }
         assertThat(response.status()).isIn(401, 403)
 
@@ -80,7 +80,7 @@ class MemberManagerBulkAuthzSystemTest : PlaywrightTestBase() {
                 response.url().contains("/users") && response.status() >= 400
             },
         ) {
-            page.navigate("$frontendUrl/members/manage")
+            page.navigate("$frontendUrl/user-manager")
         }
         assertThat(response.status()).isIn(401, 403)
 

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 import java.util.function.Predicate
 
 @Tag("system")
-class MemberManagerPageSystemTest : PlaywrightTestBase() {
+class UserManagerPageSystemTest : PlaywrightTestBase() {
 
     // Membership lifecycle actions (start/end/period visibility) moved off the
     // manager table into the edit-membership modal (#386); those flows are

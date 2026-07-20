@@ -5,7 +5,7 @@ import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
  * Pure FE preview computations for bulk actions. Each function takes BulkTarget[]
- * (derived in MemberManager from selectedIds, membershipsByUserId, paidUserIds, and
+ * (derived in UserManager from selectedIds, membershipsByUserId, paidUserIds, and
  * usersById) and returns BulkRow[] with disposition, reason, and type-specific
  * fields (memberType, memberSince, amount, recommendedFeeType).
  * See docs/proposals/bulk-actions/REDESIGN.md §4 & §5.2.

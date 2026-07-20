@@ -9,6 +9,7 @@ import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -20,6 +21,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @SpringBootTest
 class ContributionReminderBulkControllerIT : UserTestSupport() {
@@ -48,6 +50,18 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             "feeTypeOverrides":$overridesJson
         }"""
     }
+
+    private fun previewBody(
+        userId: Long,
+        periodId: Long,
+        feeType: BulkFeeType,
+        paymentDueDate: LocalDate,
+    ): String = """{
+        "userId":$userId,
+        "contributionPeriodId":$periodId,
+        "feeType":"$feeType",
+        "paymentDueDate":"$paymentDueDate"
+    }"""
 
     private fun markPaid(user: User, period: ContributionPeriod) = persist(
         Contribution(id = Contribution.Id(user.id, period.id), user = user, contributionPeriod = period)
@@ -299,6 +313,65 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class Preview {
+
+        @Test
+        fun `returns non-empty subject and html and renders neither a reminder nor a job`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
+
+            val paymentDueDate = LocalDate.of(2024, 12, 31)
+
+            mvc.perform(
+                post("/contributionReminders/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, paymentDueDate))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.subject").value("Contribution Payment Reminder - Blueshell Esports"))
+                .andExpect(jsonPath("$.html").isNotEmpty)
+
+            // Preview must not persist a reminder …
+            transactionTemplate.execute {
+                entityManager.clear()
+                val reminder = entityManager.find(
+                    ContributionReminder::class.java,
+                    ContributionReminder.Id(member.id, period.id)
+                )
+                assertThat(reminder).isNull()
+            }
+            // … nor enqueue a send.
+            assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).isEmpty()
+        }
+
+        @Test
+        fun `honors the requested fee type and payment due date in the rendered html`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
+
+            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val formatted = paymentDueDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+
+            mvc.perform(
+                post("/contributionReminders/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.HALF_YEAR_FEE, paymentDueDate))
+            )
+                .andExpect(status().isOk)
+                .andExpect(
+                    jsonPath("$.html").value(org.hamcrest.Matchers.containsString("%.2f".format(period.halfYearFee)))
+                )
+                .andExpect(jsonPath("$.html").value(org.hamcrest.Matchers.containsString(formatted)))
+        }
+    }
+
+    @Nested
     inner class Authorization {
 
         @Test
@@ -311,6 +384,20 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now()))
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `non-board is forbidden from preview`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+
+            mvc.perform(
+                post("/contributionReminders/preview")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, LocalDate.now()))
             )
                 .andExpect(status().isForbidden)
         }

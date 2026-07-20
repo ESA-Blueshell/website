@@ -51,6 +51,18 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
         }"""
     }
 
+    private fun previewBody(
+        userId: Long,
+        periodId: Long,
+        feeType: BulkFeeType,
+        expectedIncassoDate: LocalDate,
+    ): String = """{
+        "userId":$userId,
+        "contributionPeriodId":$periodId,
+        "feeType":"$feeType",
+        "expectedIncassoDate":"$expectedIncassoDate"
+    }"""
+
     private fun markPaid(user: User, period: ContributionPeriod) = persist(
         Contribution(id = Contribution.Id(user.id, period.id), user = user, contributionPeriod = period)
     )
@@ -306,6 +318,65 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class Preview {
+
+        @Test
+        fun `returns non-empty subject and html and renders neither a notification nor a job`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
+
+            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+
+            mvc.perform(
+                post("/incassoNotifications/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, expectedIncassoDate))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.subject").value("Membership Contribution Collection Notice - Blueshell Esports"))
+                .andExpect(jsonPath("$.html").isNotEmpty)
+
+            // Preview must not persist a notification …
+            transactionTemplate.execute {
+                entityManager.clear()
+                val notification = entityManager.find(
+                    IncassoNotification::class.java,
+                    IncassoNotification.Id(member.id, period.id)
+                )
+                assertThat(notification).isNull()
+            }
+            // … nor enqueue a send.
+            assertThat(findJobsByType(EmailJobs.IncassoNotification.type)).isEmpty()
+        }
+
+        @Test
+        fun `honors the requested fee type and expected incasso date in the rendered html`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
+
+            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val formatted = expectedIncassoDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+
+            mvc.perform(
+                post("/incassoNotifications/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.ALUMNI_FEE, expectedIncassoDate))
+            )
+                .andExpect(status().isOk)
+                .andExpect(
+                    jsonPath("$.html").value(org.hamcrest.Matchers.containsString("%.2f".format(period.alumniFee)))
+                )
+                .andExpect(jsonPath("$.html").value(org.hamcrest.Matchers.containsString(formatted)))
+        }
+    }
+
+    @Nested
     inner class Authorization {
 
         @Test
@@ -318,6 +389,20 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now()))
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `non-board is forbidden from preview`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+
+            mvc.perform(
+                post("/incassoNotifications/preview")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, LocalDate.now()))
             )
                 .andExpect(status().isForbidden)
         }

@@ -91,14 +91,24 @@ class EmailSenderService(
         deliver(emailContent, "email.recovery", jobExecutionId)
     }
 
-    /** Render template, inject tracking pixel, create the outbox record, then hand off to the transport. */
-    private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
-        val htmlContent = templateService.createEmail(
+    /**
+     * Render an [EmailContent] to its final HTML body exactly as the send path does
+     * (Markdown → HTML → Thymeleaf template), WITHOUT persisting an outbox record,
+     * injecting a tracking pixel, or transmitting anything. This is the reusable render
+     * step shared by [deliver] and the email-preview endpoints, so a preview is faithful
+     * to what would actually be sent.
+     */
+    fun renderEmailHtml(emailContent: EmailContent): String =
+        templateService.createEmail(
             emailContent.recipientEmail,
             emailContent.recipientName,
             emailContent.subject,
             emailContent.markdownContent
         )
+
+    /** Render template, inject tracking pixel, create the outbox record, then hand off to the transport. */
+    private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
+        val htmlContent = renderEmailHtml(emailContent)
 
         val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
         val trackedHtml = outbox.trackingToken

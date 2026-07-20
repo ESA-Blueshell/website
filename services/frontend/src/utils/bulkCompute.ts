@@ -1,6 +1,6 @@
-import {MemberType, type ContributionPeriodResponse} from "@/services/api"
+import {type ContributionPeriodResponse} from "@/services/api"
 import type {BulkRow} from "@/utils/bulkRow"
-import {effectiveAmount} from "@/utils/feePreview"
+import {autoFeeType, effectiveAmount} from "@/utils/feePreview"
 import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
@@ -73,13 +73,21 @@ export function computeMarkUnpaidRows(targets: BulkTarget[]): BulkRow[] {
 
 /**
  * Send reminder: no membership or honorary → EXCLUDED(HONORARY); no email → SKIPPED(NO_EMAIL);
- * already paid → WARNING(ALREADY_PAID); else INCLUDED. Fee type: ALUMNI → ALUMNI_FEE;
- * startDate >= cutoffDate → HALF_YEAR_FEE; else FULL_YEAR_FEE.
+ * already paid → WARNING(ALREADY_PAID); pays via incasso → WARNING(PAYS_VIA_INCASSO); else INCLUDED.
+ *
+ * Fee type (auto-selected via autoFeeType): ALUMNI → ALUMNI_FEE;
+ * startDate <= cutoffDate → FULL_YEAR_FEE (boundary start == cutoff → FULL);
+ * startDate  > cutoffDate → HALF_YEAR_FEE.
+ *
+ * `flagIncassoPayers` (default true) marks members whose most-recent membership is on
+ * incasso as WARNING(PAYS_VIA_INCASSO), off by default. The incasso-notification action
+ * passes false so it can apply its own INCASSO_MISMATCH logic instead.
  */
 export function computeReminderRows(
   targets: BulkTarget[],
   period: ContributionPeriodResponse | null,
   cutoffDate: string,
+  flagIncassoPayers = true,
 ): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
@@ -105,22 +113,20 @@ export function computeReminderRows(
     row.memberType = target.mostRecentMembership.type
     row.memberSince = target.mostRecentMembership.startDate
 
-    // Determine fee type recommendation
-    if (target.mostRecentMembership.type === MemberType.ALUMNI) {
-      row.recommendedFeeType = "ALUMNI_FEE"
-    } else if (target.mostRecentMembership.startDate >= cutoffDate) {
-      row.recommendedFeeType = "HALF_YEAR_FEE"
-    } else {
-      row.recommendedFeeType = "FULL_YEAR_FEE"
-    }
+    // Auto-select the fee type using the locked rule.
+    row.recommendedFeeType = autoFeeType(target.mostRecentMembership, target.isHonorary, cutoffDate) ?? undefined
 
     // Set amount based on recommended fee type
     row.amount = effectiveAmount(row.recommendedFeeType, period)
 
-    // Check if already paid
+    // Disposition: already-paid and incasso-payer are both WARNINGs (off by default,
+    // operator can forcibly include). ALREADY_PAID is evaluated first.
     if (target.mostRecentContribution.paid) {
       row.disposition = "WARNING"
       row.reason = "ALREADY_PAID"
+    } else if (flagIncassoPayers && target.mostRecentMembership.incasso) {
+      row.disposition = "WARNING"
+      row.reason = "PAYS_VIA_INCASSO"
     } else {
       row.disposition = "INCLUDED"
     }
@@ -137,7 +143,9 @@ export function computeIncassoRows(
   period: ContributionPeriodResponse | null,
   cutoffDate: string,
 ): BulkRow[] {
-  const rows = computeReminderRows(targets, period, cutoffDate)
+  // The incasso action has its own incasso semantics (INCASSO_MISMATCH), so it does not
+  // want the reminder's PAYS_VIA_INCASSO flag: pass flagIncassoPayers = false.
+  const rows = computeReminderRows(targets, period, cutoffDate, false)
 
   // Apply incasso-specific logic
   for (let i = 0; i < rows.length; i++) {

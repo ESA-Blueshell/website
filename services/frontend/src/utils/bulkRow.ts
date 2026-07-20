@@ -26,6 +26,7 @@ export type BulkRowReason =
   | "WILL_START_NEW"
   | "NO_CONTRIBUTION_PERIOD"
   | "STARTED_TODAY"
+  | "PAYS_VIA_INCASSO"
 
 /** Fee type for contribution-reminder / incasso-notification bulk actions. */
 export type FeeType = "FULL_YEAR_FEE" | "HALF_YEAR_FEE" | "ALUMNI_FEE"

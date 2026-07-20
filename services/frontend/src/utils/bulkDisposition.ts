@@ -57,6 +57,7 @@ const REASON_LABELS: Record<BulkRowReason, string> = {
   NO_CONTRIBUTION_PERIOD: "No contribution period",
   WILL_RESUME: "Will resume",
   WILL_START_NEW: "Will start new",
+  PAYS_VIA_INCASSO: "Pays via incasso",
 }
 
 export function reasonLabel(reason: BulkRowReason | undefined | null): string {

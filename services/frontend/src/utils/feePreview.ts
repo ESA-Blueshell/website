@@ -1,4 +1,4 @@
-import type {ContributionPeriodResponse} from "@/services/api"
+import {MemberType, type ContributionPeriodResponse} from "@/services/api"
 import type {FeeType} from "@/utils/bulkRow"
 
 /**
@@ -41,3 +41,24 @@ export const feeTypeItems: Array<{title: string; value: FeeType}> = [
   {title: feeTypeLabels.HALF_YEAR_FEE, value: "HALF_YEAR_FEE"},
   {title: feeTypeLabels.ALUMNI_FEE, value: "ALUMNI_FEE"},
 ]
+
+/**
+ * Auto-select the fee type for a reminder/incasso row, given the membership and the
+ * half-year cutoff date. Locked rule:
+ *   - honorary member       → excluded (no fee), returns null
+ *   - membership type ALUMNI → ALUMNI_FEE
+ *   - startDate <= cutoff    → FULL_YEAR_FEE (boundary start == cutoff resolves to FULL)
+ *   - startDate  > cutoff    → HALF_YEAR_FEE
+ *
+ * Both dates are ISO (YYYY-MM-DD) so lexical comparison is date-correct.
+ */
+export function autoFeeType(
+  membership: {type: MemberType; startDate: string} | null | undefined,
+  isHonorary: boolean,
+  cutoffDate: string,
+): FeeType | null {
+  if (isHonorary || !membership) return null
+  if (membership.type === MemberType.ALUMNI) return "ALUMNI_FEE"
+  if (!cutoffDate) return "FULL_YEAR_FEE"
+  return membership.startDate > cutoffDate ? "HALF_YEAR_FEE" : "FULL_YEAR_FEE"
+}

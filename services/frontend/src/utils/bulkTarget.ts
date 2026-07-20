@@ -1,3 +1,4 @@
+import {DateTime} from "luxon"
 import {MemberType, type ContributionPeriodResponse, type MembershipResponse} from "@/services/api"
 
 /**
@@ -60,6 +61,35 @@ export function latestPeriodOf(
     (latest, p) => (p.startDate > latest.startDate ? p : latest),
     pool[0]!,
   )
+}
+
+/**
+ * Default half-year cutoff date for the reminder/incasso dialogs, derived from a period.
+ *
+ * Recipe (locked): take the midpoint of the period
+ *   midpoint = startDate + floor((endDate - startDate) / 2) days
+ * then add one month and set the day to the 1st of that month. The result is clamped
+ * to stay within [startDate, endDate]. Returns "" when the period is missing/invalid.
+ *
+ * Both bounds are ISO (YYYY-MM-DD); the return is ISO too.
+ */
+export function halfYearCutoffDefault(
+  period: Pick<ContributionPeriodResponse, "startDate" | "endDate"> | null | undefined,
+): string {
+  if (!period?.startDate || !period?.endDate) return ""
+  const start = DateTime.fromISO(period.startDate)
+  const end = DateTime.fromISO(period.endDate)
+  if (!start.isValid || !end.isValid) return ""
+
+  const spanDays = Math.floor(end.diff(start, "days").days)
+  const midpoint = start.plus({days: Math.floor(spanDays / 2)})
+  let cutoff = midpoint.plus({months: 1}).set({day: 1})
+
+  // Clamp within the period.
+  if (cutoff < start) cutoff = start
+  if (cutoff > end) cutoff = end
+
+  return cutoff.toFormat("yyyy-MM-dd")
 }
 
 /**

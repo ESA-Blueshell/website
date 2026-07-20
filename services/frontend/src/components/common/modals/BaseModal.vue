@@ -127,7 +127,7 @@ const useSaveAsSubmitButton = computed(
         <slot v-else />
       </v-card-text>
 
-      <v-card-actions class="base-modal__actions">
+      <v-card-actions>
         <v-btn
           v-if="showDelete"
           :data-testid="deleteTestid"
@@ -214,7 +214,12 @@ const useSaveAsSubmitButton = computed(
 .base-modal__text--split {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  // Vuetify 4.1's VDialog.css sets `.v-dialog--scrollable > .v-overlay__content > .v-card >
+  // .v-card-text { overflow-y: auto }` as an UNLAYERED rule, which otherwise wins over this
+  // scoped rule and turns v-card-text back into the scroller — collapsing the split-body
+  // chain (fixed header + single .base-modal__scroll-body) and unpinning the sticky thead.
+  // !important is required to beat that unlayered Vuetify rule so the split layout engages.
+  overflow: hidden !important;
 }
 
 // Fixed (non-scrolling) top region of the split body: form inputs + counts summary.

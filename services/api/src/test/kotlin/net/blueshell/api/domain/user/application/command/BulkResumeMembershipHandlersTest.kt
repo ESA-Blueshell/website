@@ -5,10 +5,8 @@ import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.command.ExecuteBulkResumeMembershipCommand
-import net.blueshell.api.domain.user.command.PreviewBulkResumeMembershipCommand
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
@@ -34,103 +32,6 @@ class BulkResumeMembershipHandlersTest {
     private val basisPeriodEnd = LocalDate.of(2024, 12, 31)
 
     private fun basisPeriod() = mockPeriod(100L, basisPeriodStart, basisPeriodEnd)
-
-    @Nested
-    inner class PreviewBulkResumeMembership {
-
-        private val handler = PreviewBulkResumeMembershipHandler(membershipService, userService, periodService)
-
-        @Test
-        fun `returns RESUME outcome when latest membership ended within basis period`() {
-            val userId = 1L
-            val user = mockUser(userId, "Alice")
-            val membership = mockMembership(
-                memberType = MemberType.REGULAR,
-                startDate = LocalDate.of(2023, 9, 1),
-                endDate = LocalDate.of(2024, 6, 30), // within basis period
-            )
-            whenever(userService.findById(userId)).thenReturn(user)
-            whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
-            whenever(periodService.findLatest()).thenReturn(basisPeriod())
-
-            val result = handler.handle(PreviewBulkResumeMembershipCommand(listOf(userId)))
-
-            assertThat(result.action).isEqualTo(BulkActionType.RESUME_MEMBERSHIP)
-            assertThat(result.rows).hasSize(1)
-            val row = result.rows[0]
-            assertThat(row.disposition).isEqualTo(BulkRowDisposition.INCLUDED)
-            assertThat(row.reason).isEqualTo(BulkRowReason.WILL_RESUME)
-            assertThat(row.memberType).isEqualTo(MemberType.REGULAR)
-        }
-
-        @Test
-        fun `returns START_NEW outcome when latest membership ended before basis period`() {
-            val userId = 2L
-            val user = mockUser(userId, "Bob")
-            val membership = mockMembership(
-                memberType = MemberType.ALUMNI,
-                startDate = LocalDate.of(2022, 1, 1),
-                endDate = LocalDate.of(2022, 12, 31), // before basis period
-                incasso = false,
-            )
-            whenever(userService.findById(userId)).thenReturn(user)
-            whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
-            whenever(periodService.findLatest()).thenReturn(basisPeriod())
-
-            val result = handler.handle(PreviewBulkResumeMembershipCommand(listOf(userId)))
-
-            val row = result.rows[0]
-            assertThat(row.disposition).isEqualTo(BulkRowDisposition.INCLUDED)
-            assertThat(row.reason).isEqualTo(BulkRowReason.WILL_START_NEW)
-            assertThat(row.memberType).isEqualTo(MemberType.ALUMNI) // copied from prior
-        }
-
-        @Test
-        fun `returns START_NEW with REGULAR when no prior membership exists`() {
-            val userId = 3L
-            val user = mockUser(userId, "Charlie")
-            whenever(userService.findById(userId)).thenReturn(user)
-            whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf())
-            whenever(periodService.findLatest()).thenReturn(basisPeriod())
-
-            val result = handler.handle(PreviewBulkResumeMembershipCommand(listOf(userId)))
-
-            val row = result.rows[0]
-            assertThat(row.disposition).isEqualTo(BulkRowDisposition.INCLUDED)
-            assertThat(row.reason).isEqualTo(BulkRowReason.WILL_START_NEW)
-            assertThat(row.memberType).isEqualTo(MemberType.REGULAR)
-        }
-
-        @Test
-        fun `skips user with already-active membership`() {
-            val userId = 4L
-            val user = mockUser(userId, "Diana")
-            val activeMembership = mockMembership(endDate = null) // active
-            whenever(userService.findById(userId)).thenReturn(user)
-            whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(activeMembership))
-            whenever(periodService.findLatest()).thenReturn(basisPeriod())
-
-            val result = handler.handle(PreviewBulkResumeMembershipCommand(listOf(userId)))
-
-            val row = result.rows[0]
-            assertThat(row.disposition).isEqualTo(BulkRowDisposition.SKIPPED)
-            assertThat(row.reason).isEqualTo(BulkRowReason.ALREADY_ACTIVE)
-        }
-
-        @Test
-        fun `skips all when no contribution period exists`() {
-            val userId = 5L
-            val user = mockUser(userId, "Eve")
-            whenever(userService.findById(userId)).thenReturn(user)
-            whenever(periodService.findLatest()).thenReturn(null)
-
-            val result = handler.handle(PreviewBulkResumeMembershipCommand(listOf(userId)))
-
-            assertThat(result.rows).hasSize(1)
-            assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.SKIPPED)
-            assertThat(result.rows[0].reason).isEqualTo(BulkRowReason.NO_CONTRIBUTION_PERIOD)
-        }
-    }
 
     @Nested
     inner class ExecuteBulkResumeMembership {

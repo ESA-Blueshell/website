@@ -4,7 +4,6 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionReminderCommand
-import net.blueshell.api.domain.contribution.command.PreviewBulkContributionReminderCommand
 import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
 import net.blueshell.api.domain.contribution.domain.resolveFeeType
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
@@ -13,10 +12,7 @@ import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
-import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
-import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
-import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
@@ -26,11 +22,10 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 
 /**
- * The single decision an email-style bulk action reaches for one user, computed once
- * and consumed by BOTH the preview handler (which maps it to a [BulkPreviewRow]) and
- * the execute handler (which applies the side effect). Preview and execute call the
- * SAME [decideReminder]/[decideIncasso] function so they can no longer diverge — this
- * is the core backend fix. See docs/proposals/bulk-actions/REDESIGN.md §3.
+ * The single decision an email-style bulk action reaches for one user.
+ * Computed by the execute handler to determine side effects.
+ * The [decideReminder]/[decideIncasso] functions are shared decision logic.
+ * See docs/proposals/bulk-actions/REDESIGN.md §3.
  */
 data class EmailBulkDecision(
     val userId: Long,
@@ -44,19 +39,7 @@ data class EmailBulkDecision(
     val lastSentOn: LocalDate?,
     /** True when the user has no email; execute must skip even if operator re-includes. */
     val emailMissing: Boolean,
-) {
-    fun toRow(): BulkPreviewRow = BulkPreviewRow(
-        userId = userId,
-        name = name,
-        memberType = memberType,
-        memberSince = memberSince,
-        disposition = disposition,
-        reason = reason,
-        amount = amount,
-        recommendedFeeType = recommendedFeeType,
-        lastSentOn = lastSentOn,
-    )
-}
+)
 
 /**
  * Validate operator-supplied fee-type overrides against the computed decisions.
@@ -83,29 +66,6 @@ internal fun validateFeeTypeOverrides(
                 "Fee-type override supplied for user $userId who is not included in this action",
             )
         }
-    }
-}
-
-@Component
-class PreviewBulkContributionReminderHandler(
-    private val users: UserService,
-    private val memberships: MembershipService,
-    private val periods: ContributionPeriodService,
-    private val contributions: ContributionService,
-    private val reminders: ContributionReminderService,
-) : CommandHandler<PreviewBulkContributionReminderCommand, BulkPreviewResult> {
-    override val commandType = PreviewBulkContributionReminderCommand::class
-
-    @Transactional(readOnly = true)
-    override fun handle(command: PreviewBulkContributionReminderCommand): BulkPreviewResult {
-        val periodId = command.contributionPeriodId!!
-        val period = periods.findById(periodId)
-        val cutoffDate = command.cutoffDate!!
-
-        val rows = command.userIds.distinct().map { userId ->
-            decideReminder(userId, periodId, period, cutoffDate, users, memberships, contributions, reminders).toRow()
-        }
-        return BulkPreviewResult.of(BulkActionType.CONTRIBUTION_REMINDER, periodId, rows)
     }
 }
 

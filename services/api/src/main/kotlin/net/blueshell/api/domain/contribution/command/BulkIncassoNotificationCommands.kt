@@ -6,20 +6,7 @@ import jakarta.validation.constraints.Positive
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
-import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import java.time.LocalDate
-
-data class PreviewBulkIncassoNotificationCommand(
-    @field:NotEmpty(message = "At least one user ID is required")
-    val userIds: List<@Positive Long>,
-    @field:NotNull(message = "Contribution period ID is required")
-    @field:Positive(message = "Contribution period ID must be positive")
-    val contributionPeriodId: Long?,
-    @field:NotNull(message = "Cutoff date is required")
-    val cutoffDate: LocalDate?,
-    @field:NotNull(message = "Expected incasso date is required")
-    val expectedIncassoDate: LocalDate?,
-) : Command<BulkPreviewResult>
 
 data class ExecuteBulkIncassoNotificationCommand(
     @field:NotEmpty(message = "At least one user ID is required")

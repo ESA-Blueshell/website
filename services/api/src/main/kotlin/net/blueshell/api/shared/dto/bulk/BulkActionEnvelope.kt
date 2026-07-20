@@ -1,8 +1,6 @@
 package net.blueshell.api.shared.dto.bulk
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.enums.MemberType
-import java.time.LocalDate
 
 /**
  * Shared preview/execute envelope for member-manager bulk actions.
@@ -82,30 +80,6 @@ enum class BulkActionType {
     RESUME_MEMBERSHIP,
 }
 
-@Schema(name = "BulkPreviewRow")
-data class BulkPreviewRow(
-    val userId: Long,
-    val name: String,
-    val memberType: MemberType? = null,
-    val memberSince: LocalDate? = null,
-    val disposition: BulkRowDisposition,
-    /** Machine-readable reason code for a non-INCLUDED disposition. */
-    val reason: BulkRowReason? = null,
-    /**
-     * Resolved fee (in €) for the recommended (or display) fee type.
-     * Null for non-email actions or for HONORARY (EXCLUDED) members.
-     */
-    val amount: Double? = null,
-    /**
-     * The backend's recommended fee type for this member.
-     * Null for non-email actions or for HONORARY (EXCLUDED) members.
-     * The frontend defaults each row's selector to this value.
-     */
-    val recommendedFeeType: BulkFeeType? = null,
-    /** When this user was last sent this email for the period (email actions only). */
-    val lastSentOn: LocalDate? = null,
-)
-
 @Schema(name = "BulkActionCounts")
 data class BulkActionCounts(
     val selected: Int,
@@ -113,46 +87,7 @@ data class BulkActionCounts(
     val skipped: Int,
     val excluded: Int,
     val warned: Int,
-) {
-    companion object {
-        fun of(rows: List<BulkPreviewRow>): BulkActionCounts = BulkActionCounts(
-            selected = rows.size,
-            willApply = rows.count { it.disposition == BulkRowDisposition.INCLUDED },
-            skipped = rows.count { it.disposition == BulkRowDisposition.SKIPPED },
-            excluded = rows.count { it.disposition == BulkRowDisposition.EXCLUDED },
-            warned = rows.count { it.disposition == BulkRowDisposition.WARNING },
-        )
-    }
-}
-
-@Schema(name = "BulkPreviewResult")
-data class BulkPreviewResult(
-    val action: BulkActionType,
-    val contributionPeriodId: Long? = null,
-    val counts: BulkActionCounts,
-    val rows: List<BulkPreviewRow>,
-    /**
-     * The server's current date (its timezone), returned only by the end-membership
-     * preview. The frontend computes the end-membership preview rows locally from the
-     * memberships it already holds, but must use this date — not `new Date()` — to
-     * decide "started today", otherwise browser vs. server timezone drift flips the
-     * boundary. See docs/proposals/bulk-actions/REDESIGN.md §4.
-     */
-    val serverToday: LocalDate? = null,
-) {
-    companion object {
-        fun of(action: BulkActionType, contributionPeriodId: Long?, rows: List<BulkPreviewRow>): BulkPreviewResult =
-            BulkPreviewResult(action, contributionPeriodId, BulkActionCounts.of(rows), rows)
-
-        fun of(
-            action: BulkActionType,
-            contributionPeriodId: Long?,
-            rows: List<BulkPreviewRow>,
-            serverToday: LocalDate?,
-        ): BulkPreviewResult =
-            BulkPreviewResult(action, contributionPeriodId, BulkActionCounts.of(rows), rows, serverToday)
-    }
-}
+)
 
 @Schema(name = "BulkActionResult")
 data class BulkActionResult(

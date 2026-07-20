@@ -6,17 +6,12 @@ import net.blueshell.api.domain.contribution.command.BulkContributionOperation
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionReminderCommand
 import net.blueshell.api.domain.contribution.command.ExecuteBulkIncassoNotificationCommand
-import net.blueshell.api.domain.contribution.command.PreviewBulkContributionReminderCommand
-import net.blueshell.api.domain.contribution.command.PreviewBulkIncassoNotificationCommand
 import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionReminderExecuteRequest
-import net.blueshell.api.domain.contribution.web.dto.request.BulkContributionReminderPreviewRequest
 import net.blueshell.api.domain.contribution.web.dto.request.BulkIncassoNotificationExecuteRequest
-import net.blueshell.api.domain.contribution.web.dto.request.BulkIncassoNotificationPreviewRequest
 import net.blueshell.api.domain.contribution.web.dto.request.BulkMarkPaidRequest
 import net.blueshell.api.domain.contribution.web.dto.request.BulkMarkUnpaidRequest
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
-import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -61,18 +56,6 @@ class ContributionBulkController(private val commandBus: CommandBus) {
     // ===== Contribution Reminders =====
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
-    @PostMapping("/contributionReminders/bulk/preview")
-    fun previewBulkReminder(@Valid @RequestBody request: BulkContributionReminderPreviewRequest): BulkPreviewResult =
-        commandBus.dispatch(
-            PreviewBulkContributionReminderCommand(
-                userIds = request.userIds,
-                contributionPeriodId = request.contributionPeriodId,
-                cutoffDate = request.cutoffDate,
-                paymentDueDate = request.paymentDueDate,
-            )
-        )
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
     @PostMapping("/contributionReminders/bulk/execute")
     fun executeBulkReminder(@Valid @RequestBody request: BulkContributionReminderExecuteRequest): BulkActionResult =
         commandBus.dispatch(
@@ -87,20 +70,6 @@ class ContributionBulkController(private val commandBus: CommandBus) {
         )
 
     // ===== Incasso Notifications =====
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
-    @PostMapping("/incassoNotifications/bulk/preview")
-    fun previewBulkIncassoNotification(
-        @Valid @RequestBody request: BulkIncassoNotificationPreviewRequest,
-    ): BulkPreviewResult =
-        commandBus.dispatch(
-            PreviewBulkIncassoNotificationCommand(
-                userIds = request.userIds,
-                contributionPeriodId = request.contributionPeriodId,
-                cutoffDate = request.cutoffDate,
-                expectedIncassoDate = request.expectedIncassoDate,
-            )
-        )
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/incassoNotifications/bulk/execute")

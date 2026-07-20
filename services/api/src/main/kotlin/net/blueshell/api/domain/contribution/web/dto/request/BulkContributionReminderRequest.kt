@@ -8,27 +8,6 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import java.time.LocalDate
 
 /**
- * Preview request for the contribution-reminder bulk action. Preview is immutable
- * server truth: it does NOT carry operator overrides. Those live only in the frontend
- * and are sent solely to execute. See docs/proposals/bulk-actions/REDESIGN.md §2.
- */
-@Schema(name = "BulkContributionReminderPreviewRequest")
-data class BulkContributionReminderPreviewRequest(
-    @field:NotEmpty(message = "At least one user ID is required")
-    val userIds: List<@Positive Long> = emptyList(),
-
-    @field:NotNull(message = "Contribution period ID is required")
-    @field:Positive(message = "Contribution period ID must be positive")
-    val contributionPeriodId: Long? = null,
-
-    @field:NotNull(message = "Cutoff date is required")
-    val cutoffDate: LocalDate? = null,
-
-    @field:NotNull(message = "Payment due date is required")
-    val paymentDueDate: LocalDate? = null,
-)
-
-/**
  * Execute request for the contribution-reminder bulk action. Carries the operator's
  * re-include set and per-user fee-type overrides. The server re-decides against the
  * live DB and validates the overrides (rejects excluded/non-included users).

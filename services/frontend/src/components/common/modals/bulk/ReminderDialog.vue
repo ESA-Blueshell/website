@@ -99,8 +99,8 @@ const columns: BulkColumn[] = [
   {key: "disposition", header: "Status", sortable: true},
   {key: "memberSince", header: "Member since", sortable: true},
   {key: "fee", header: "Fee type", width: "200px"},
-  {key: "amount", header: "Amount", align: "end", sortable: true, width: "90px"},
-  {key: "lastReminded", header: "Last reminded at", width: "130px"},
+  {key: "amount", header: "Amount", align: "center", sortable: true, width: "90px"},
+  {key: "lastReminded", header: "Last reminded at", align: "center", width: "130px"},
   {key: "note", header: "Note"},
 ]
 
@@ -301,6 +301,10 @@ watch(computedRows, (newRows) => {
 <style lang="scss" scoped>
 .bulk-date-row {
   gap: 12px;
+  // Size each date cell independently so a validation message under one field does
+  // not stretch/misalign the other; both fields use hide-details="auto" so their
+  // input boxes keep an equal height and baseline and only the offending field grows.
+  align-items: flex-start;
 
   > * {
     flex: 1 1 0;

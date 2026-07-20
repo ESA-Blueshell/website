@@ -98,19 +98,9 @@ export function useUserFilters(
     sortDir,
   } = useTableSort(justFiltered, memberRowComparators)
 
-  // Initialize to sort by name ascending (matches original behavior)
-  const initialized = ref(false)
-  watch(
-    () => justFiltered.value.length,
-    () => {
-      if (!initialized.value && justFiltered.value.length > 0) {
-        sortKey.value = "name"
-        sortDir.value = "asc"
-        initialized.value = true
-      }
-    },
-    {immediate: true},
-  )
+  // No default sort — rows load in natural API-returned order.
+  // Users can click column headers to sort manually.
+  // The tri-state cycle (ascending → descending → unsorted) is preserved.
 
   // Expose sortAsc for backward compatibility with tests/templates
   const sortAsc = computed({

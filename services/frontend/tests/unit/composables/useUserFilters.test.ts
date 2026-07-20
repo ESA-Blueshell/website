@@ -142,13 +142,14 @@ describe("useUserFilters", () => {
     expect(filteredRows.value[0]!.id).toBe(2)
   })
 
-  it("sorts by name ascending by default", () => {
+  it("returns rows in natural (API) order by default (no sort)", () => {
     const rows = ref([makeRow(1, {fullName: "Zoe Last"}), makeRow(2, {fullName: "Anna First"})])
     const index = ref(new Map([[1, "zoe last"], [2, "anna first"]]))
     const {filteredRows} = useUserFilters(rows, index)
 
-    expect(filteredRows.value[0]!.id).toBe(2)
-    expect(filteredRows.value[1]!.id).toBe(1)
+    // With no sort applied, rows should appear in their original order
+    expect(filteredRows.value[0]!.id).toBe(1)
+    expect(filteredRows.value[1]!.id).toBe(2)
   })
 
   it("toggleSort changes key and resets to ascending", () => {
@@ -156,7 +157,7 @@ describe("useUserFilters", () => {
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
     const {sortKey, sortAsc, toggleSort} = useUserFilters(rows, index)
 
-    expect(sortKey.value).toBe("name")
+    expect(sortKey.value).toBeNull()
     toggleSort("status")
     expect(sortKey.value).toBe("status")
     expect(sortAsc.value).toBe(true)
@@ -165,9 +166,14 @@ describe("useUserFilters", () => {
   it("toggleSort on same key flips sortAsc", () => {
     const rows = ref([makeRow(1)])
     const index = ref(new Map([[1, "u1"]]))
-    const {sortAsc, toggleSort} = useUserFilters(rows, index)
+    const {sortKey, sortAsc, toggleSort} = useUserFilters(rows, index)
 
+    expect(sortKey.value).toBeNull()
+    toggleSort("name")
+    expect(sortKey.value).toBe("name")
     expect(sortAsc.value).toBe(true)
+
+    // Click again to flip direction
     toggleSort("name")
     expect(sortAsc.value).toBe(false)
   })

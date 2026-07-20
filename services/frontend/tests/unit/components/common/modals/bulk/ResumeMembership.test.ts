@@ -6,7 +6,7 @@ import {MemberType, type ContributionPeriodResponse} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
 // Mock the API call
-const mockExecuteBulkResume = vi.fn()
+const {mockExecuteBulkResume} = vi.hoisted(() => ({mockExecuteBulkResume: vi.fn()}))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   executeBulkResume: mockExecuteBulkResume,
 }))

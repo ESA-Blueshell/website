@@ -42,17 +42,23 @@ export function amsterdamToday(): string {
 }
 
 /**
- * Get the period with the latest (max) startDate from a list.
- * Used for resume-membership classification (latest contribution period).
+ * Get the most-recent *already-started* contribution period (latest startDate
+ * that is not in the future). Used as the basis for resume-membership
+ * classification. Not-yet-started (future) periods are ignored so a future
+ * period does not become the resume basis — this mirrors the backend's
+ * "current period" semantics and keeps the choice deterministic when several
+ * periods exist. Falls back to the overall latest if none have started.
  */
 export function latestPeriodOf(
   periods: ContributionPeriodResponse[],
 ): ContributionPeriodResponse | null {
   if (periods.length === 0) return null
-  const first = periods[0]!
-  return periods.reduce<ContributionPeriodResponse>(
+  const today = amsterdamToday()
+  const started = periods.filter((p) => p.startDate <= today)
+  const pool = started.length > 0 ? started : periods
+  return pool.reduce<ContributionPeriodResponse>(
     (latest, p) => (p.startDate > latest.startDate ? p : latest),
-    first,
+    pool[0]!,
   )
 }
 

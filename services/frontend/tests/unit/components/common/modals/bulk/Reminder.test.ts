@@ -6,7 +6,7 @@ import {MemberType, type ContributionPeriodResponse} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
 // Mock the API call
-const mockSendReminder = vi.fn()
+const {mockSendReminder} = vi.hoisted(() => ({mockSendReminder: vi.fn()}))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   sendReminder: mockSendReminder,
 }))

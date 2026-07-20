@@ -6,7 +6,7 @@ import {MemberType} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
 // Mock the API call
-const mockMarkPaid = vi.fn()
+const {mockMarkPaid} = vi.hoisted(() => ({mockMarkPaid: vi.fn()}))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   markPaid: mockMarkPaid,
 }))

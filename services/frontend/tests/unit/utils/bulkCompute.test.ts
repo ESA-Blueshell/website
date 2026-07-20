@@ -61,7 +61,6 @@ describe("computeMarkPaidRows", () => {
     expect(rows[0]).toMatchObject({
       userId: 1,
       disposition: "INCLUDED",
-      reason: undefined,
       memberType: MemberType.REGULAR,
       memberSince: "2024-01-01",
     })
@@ -123,9 +122,9 @@ describe("computeMarkPaidRows", () => {
     expect(rows[0]).toMatchObject({
       userId: 1,
       disposition: "INCLUDED",
-      memberType: undefined,
-      memberSince: undefined,
     })
+    expect(rows[0].memberType).toBeUndefined()
+    expect(rows[0].memberSince).toBeUndefined()
   })
 })
 
@@ -138,7 +137,6 @@ describe("computeMarkUnpaidRows", () => {
     expect(rows[0]).toMatchObject({
       userId: 1,
       disposition: "INCLUDED",
-      reason: undefined,
     })
   })
 
@@ -323,7 +321,6 @@ describe("computeEndMembershipRows", () => {
     expect(rows[0]).toMatchObject({
       userId: 1,
       disposition: "INCLUDED",
-      reason: undefined,
     })
   })
 

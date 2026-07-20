@@ -19,11 +19,9 @@ import org.springframework.web.bind.annotation.RestController
 
 /**
  * Bulk actions over members: mark-paid/unpaid, send contribution reminders, send incasso
- * notifications. One submit endpoint per action with action-named paths. Mark-paid/unpaid
- * are execute-only (their preview is computed frontend-side); reminder/incasso keep a
- * preview endpoint that returns immutable server truth (no operator overrides), and an
- * execute endpoint that re-decides against the live DB and validates overrides. Board-only.
- * See docs/proposals/bulk-actions/REDESIGN.md §2.
+ * notifications. One execute endpoint per action with action-named paths. All preview
+ * computation now happens frontend-side; execute endpoints are the source of truth and
+ * re-validate against the live DB. Board-only. See docs/proposals/bulk-actions/REDESIGN.md §2.
  */
 @RestController
 @Tag(name = "Contributions")

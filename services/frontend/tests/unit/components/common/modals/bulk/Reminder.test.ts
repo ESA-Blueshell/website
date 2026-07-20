@@ -24,7 +24,7 @@ beforeEach(() => {
   mockFindContributionReminders.mockResolvedValue({data: []})
   mockExecuteBulkReminder.mockResolvedValue({data: {}})
   mockPreviewReminder.mockResolvedValue({
-    data: {subject: "Contribution Payment Reminder - Blueshell Esports", html: "<p>Reminder body</p>"},
+    data: {subject: "Please pay your Blueshell contribution (2025/2026)", html: "<p>Reminder body</p>"},
   })
 })
 
@@ -419,7 +419,7 @@ describe("ReminderDialog", () => {
     })
     // Renders the returned subject in the nested preview dialog.
     expect(wrapper.find('[data-testid="bulk-email-preview-subject"]').text())
-      .toContain("Contribution Payment Reminder - Blueshell Esports")
+      .toContain("Please pay your Blueshell contribution")
   })
 
   it("disables the preview button when nothing is included", async () => {

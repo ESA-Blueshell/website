@@ -18,7 +18,7 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
 beforeEach(() => {
   mockExecuteBulkIncassoNotification.mockResolvedValue({data: {}})
   mockPreviewIncassoNotification.mockResolvedValue({
-    data: {subject: "Membership Contribution Collection Notice - Blueshell Esports", html: "<p>Incasso body</p>"},
+    data: {subject: "Your Blueshell contribution will be collected automatically (2025/2026)", html: "<p>Incasso body</p>"},
   })
 })
 
@@ -327,7 +327,7 @@ describe("IncassoDialog", () => {
       },
     })
     expect(wrapper.find('[data-testid="bulk-email-preview-subject"]').text())
-      .toContain("Membership Contribution Collection Notice - Blueshell Esports")
+      .toContain("Your Blueshell contribution will be collected automatically")
   })
 
   it("disables the preview button when nothing is included", async () => {

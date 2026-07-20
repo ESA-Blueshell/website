@@ -109,7 +109,6 @@ const previewDisabled = computed(
           @click="dialog = false"
         />
       </v-card-title>
-      <v-divider />
       <v-card-text>
         <v-alert
           v-if="error"

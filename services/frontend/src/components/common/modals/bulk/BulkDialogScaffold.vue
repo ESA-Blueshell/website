@@ -44,11 +44,17 @@ interface Props {
   includedCount: number
   reincludeOverrides: Record<number, boolean>
   submitting?: boolean
-  canConfirm?: boolean
   submitState?: SubmitState
   showSubmitStatus?: boolean
   /** Column descriptors for the preview table. Falls back to the standard set. */
   columns?: BulkColumn[]
+  /**
+   * Live amount accessor for the "amount" sort comparator. When omitted, sorting falls back
+   * to the compute-time `row.amount`, which goes stale once the operator overrides a row's
+   * fee type. Dialogs that render a live per-row amount pass their `rowAmount()` so the sort
+   * matches the amount the cell actually shows.
+   */
+  getRowAmount?: (row: BulkRow) => number | null
   /** Label for the WARNING re-include column (e.g. "Include" or "Forcibly include"). */
   includeLabel?: string
   /** Optional help panel content rendered behind a "?" icon button in the header. */
@@ -65,10 +71,10 @@ const DEFAULT_COLUMNS: BulkColumn[] = [
 
 const props = withDefaults(defineProps<Props>(), {
   submitting: false,
-  canConfirm: true,
   submitState: "idle",
   showSubmitStatus: false,
   columns: undefined,
+  getRowAmount: undefined,
   includeLabel: "Include",
   help: undefined,
 })
@@ -97,7 +103,15 @@ const comparators: Record<string, (a: BulkRow, b: BulkRow) => number> = {
     return (order[a.disposition] ?? 4) - (order[b.disposition] ?? 4)
   },
   memberSince: (a, b) => (a.memberSince ?? "").localeCompare(b.memberSince ?? ""),
-  amount: (a, b) => (a.amount ?? 0) - (b.amount ?? 0),
+  // Sort by the LIVE amount when the dialog supplies an accessor (row.amount is the
+  // compute-time recommendation and goes stale once a fee type is overridden); otherwise
+  // fall back to the compute-time value so the comparator still works without the prop.
+  amount: (a, b) => {
+    const get = props.getRowAmount
+    const av = get ? (get(a) ?? 0) : (a.amount ?? 0)
+    const bv = get ? (get(b) ?? 0) : (b.amount ?? 0)
+    return av - bv
+  },
 }
 
 const {sortedItems: sortedRows, toggleSort, sortIcon, ariaSort} = useTableSort(rowsRef, comparators)

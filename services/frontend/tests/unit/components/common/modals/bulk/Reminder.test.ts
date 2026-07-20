@@ -275,6 +275,45 @@ describe("ReminderDialog", () => {
     expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("10")
   })
 
+  it("sorts the Amount column by the LIVE amount, not the stale compute-time amount", async () => {
+    // user1 starts after cutoff → auto HALF_YEAR_FEE (compute-time amount € 10).
+    // user2 starts on/before cutoff → auto FULL_YEAR_FEE (compute-time amount € 20).
+    const wrapper = mountDialog([
+      target(1, {
+        mostRecentMembership: {type: MemberType.REGULAR, startDate: "2025-08-15", endDate: null, incasso: false},
+      }),
+      target(2, {
+        mostRecentMembership: {type: MemberType.REGULAR, startDate: "2025-01-01", endDate: null, incasso: false},
+      }),
+    ])
+    await settle()
+    expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("10")
+    expect(wrapper.find('[data-testid="bulk-preview-amount-2"]').text()).toContain("20")
+
+    // Flip the fee types so the LIVE amounts invert relative to the compute-time amounts:
+    // user1 → FULL (live € 20), user2 → HALF (live € 10). row.amount is now stale.
+    const vm = wrapper.vm as unknown as {feeTypeSelections: Record<number, string>}
+    vm.feeTypeSelections[1] = "FULL_YEAR_FEE"
+    vm.feeTypeSelections[2] = "HALF_YEAR_FEE"
+    await settle()
+    expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("20")
+    expect(wrapper.find('[data-testid="bulk-preview-amount-2"]').text()).toContain("10")
+
+    // Click the sortable "Amount" header to sort ascending by amount.
+    const amountHeader = wrapper
+      .findAll("thead th")
+      .find((th) => th.text().includes("Amount"))
+    expect(amountHeader).toBeTruthy()
+    await amountHeader!.trigger("click")
+    await settle()
+
+    // Ascending by the LIVE amount ⇒ user2 (€ 10) before user1 (€ 20). If the comparator
+    // still used the stale row.amount it would order user1 (10) before user2 (20).
+    const rows = wrapper.findAll('[data-testid^="bulk-preview-row-"]')
+    const order = rows.map((r) => r.attributes("data-testid"))
+    expect(order.indexOf("bulk-preview-row-2")).toBeLessThan(order.indexOf("bulk-preview-row-1"))
+  })
+
   it("renders the custom columns including a Last-reminded-at column", async () => {
     const wrapper = mountDialog([regularTarget(1)])
     await settle()

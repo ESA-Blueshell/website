@@ -98,7 +98,6 @@ watch(computedRows, (newRows) => {
   <bulk-dialog-scaffold
     v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
-    :can-confirm="canConfirm"
     confirm-label="Resume membership"
     :counts="counts"
     :help="help"

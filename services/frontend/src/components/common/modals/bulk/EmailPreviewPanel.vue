@@ -188,7 +188,9 @@ const previewDisabled = computed(() => props.loading || props.users.length === 0
     flex-grow: 1;
   }
 
-  .v-btn {
+  // :deep() so the rule pierces the child v-btn component; a plain scoped `.v-btn`
+  // selector never matches the button rendered inside VBtn, so it was dead.
+  :deep(.v-btn) {
     align-self: center;
     margin-top: 0;
     margin-bottom: 0;

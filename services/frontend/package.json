@@ -59,7 +59,7 @@
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@playwright/test": "1.60.0",
     "@types/luxon": "^3.7.2",
-    "@types/node": "^25.9.1",
+    "@types/node": "^26.1.1",
     "@types/webfontloader": "^1.6.38",
     "@typescript-eslint/eslint-plugin": "^8.63.0",
     "@typescript-eslint/parser": "^8.63.0",

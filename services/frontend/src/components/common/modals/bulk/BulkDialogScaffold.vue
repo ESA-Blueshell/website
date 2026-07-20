@@ -178,30 +178,34 @@ async function onSave() {
     </template>
 
     <!--
-      Help panel — toggled from the header button. Rendered as the first thing in
-      the body so it drops down directly beneath the header band when opened.
+      Pinned top region: the help panel, the action form (dates/cutoff) with its validation
+      messages, and the counts summary stay fixed at the top of the scrollable body so the
+      operator always sees the dates and counts while only the member rows scroll below.
+      The v-form wraps only the pinned inputs — the table has no validated fields.
     -->
-    <v-expand-transition v-if="help">
-      <v-alert
-        v-if="helpOpen"
-        class="mb-4"
-        data-testid="bulk-action-help-panel"
-        density="comfortable"
-        :title="help.title"
-        type="info"
-        variant="tonal"
-      >
-        {{ help.body }}
-      </v-alert>
-    </v-expand-transition>
+    <template #body-header>
+      <v-expand-transition v-if="help">
+        <v-alert
+          v-if="helpOpen"
+          class="mb-4"
+          data-testid="bulk-action-help-panel"
+          density="comfortable"
+          :title="help.title"
+          type="info"
+          variant="tonal"
+        >
+          {{ help.body }}
+        </v-alert>
+      </v-expand-transition>
 
-    <v-form ref="formRef">
-      <!-- Action-specific form inputs (dates, cutoff, validation messages). -->
-      <slot name="form" />
+      <v-form ref="formRef">
+        <!-- Action-specific form inputs (dates, cutoff, validation messages). -->
+        <slot name="form" />
+      </v-form>
 
       <!-- Counts summary -->
       <div
-        class="bulk-counts mb-4"
+        class="bulk-counts"
         data-testid="bulk-action-counts"
       >
         <v-chip
@@ -248,118 +252,140 @@ async function onSave() {
           {{ counts.skipped }} skipped
         </v-chip>
       </div>
+    </template>
 
-      <v-table
-        density="compact"
-        data-testid="bulk-action-preview-table"
-      >
-        <thead>
-          <tr>
-            <th
-              v-for="col in columns"
-              :key="col.key"
-              :aria-sort="isSortable(col) ? ariaSort(col.key) : undefined"
-              :class="[alignClass(col), isSortable(col) ? 'sortable-header' : '']"
-              :role="isSortable(col) ? 'button' : undefined"
-              :style="col.width ? {width: col.width} : undefined"
-              :tabindex="isSortable(col) ? 0 : undefined"
-              @click="isSortable(col) && toggleSort(col.key)"
-              @keydown.enter="isSortable(col) && toggleSort(col.key)"
-              @keydown.space.prevent="isSortable(col) && toggleSort(col.key)"
-            >
-              {{ col.header }}
-              <v-icon
-                v-if="isSortable(col)"
-                :icon="sortIcon(col.key)"
-                size="16"
-              />
-            </th>
-            <th v-if="hasReincludable">
-              {{ includeLabel }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in sortedRows"
-            :key="row.userId"
-            :class="rowColorClass(effective(row))"
-            :data-testid="`bulk-preview-row-${row.userId}`"
+    <!--
+      Scrolling rows region: only the table body scrolls. The thead is position: sticky so
+      the column headers stay pinned beneath the fixed form/counts region while rows scroll.
+    -->
+    <v-table
+      class="bulk-preview-table"
+      density="compact"
+      data-testid="bulk-action-preview-table"
+    >
+      <thead>
+        <tr>
+          <th
+            v-for="col in columns"
+            :key="col.key"
+            :aria-sort="isSortable(col) ? ariaSort(col.key) : undefined"
+            :class="[alignClass(col), isSortable(col) ? 'sortable-header' : '']"
+            :role="isSortable(col) ? 'button' : undefined"
+            :style="col.width ? {width: col.width} : undefined"
+            :tabindex="isSortable(col) ? 0 : undefined"
+            @click="isSortable(col) && toggleSort(col.key)"
+            @keydown.enter="isSortable(col) && toggleSort(col.key)"
+            @keydown.space.prevent="isSortable(col) && toggleSort(col.key)"
           >
-            <td
-              v-for="col in columns"
-              :key="col.key"
-              :class="[alignClass(col), col.key === 'fee' ? 'bulk-fee-cell' : '']"
+            {{ col.header }}
+            <v-icon
+              v-if="isSortable(col)"
+              :icon="sortIcon(col.key)"
+              size="16"
+            />
+          </th>
+          <th v-if="hasReincludable">
+            {{ includeLabel }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="row in sortedRows"
+          :key="row.userId"
+          :class="rowColorClass(effective(row))"
+          :data-testid="`bulk-preview-row-${row.userId}`"
+        >
+          <td
+            v-for="col in columns"
+            :key="col.key"
+            :class="[alignClass(col), col.key === 'fee' ? 'bulk-fee-cell' : '']"
+          >
+            <!-- Dialog-supplied custom cell. -->
+            <slot
+              :name="`cell.${col.key}`"
+              :row="row"
+              :effective="effective(row)"
             >
-              <!-- Dialog-supplied custom cell. -->
-              <slot
-                :name="`cell.${col.key}`"
-                :row="row"
-                :effective="effective(row)"
-              >
-                <!-- Default renderers for the standard keys. -->
-                <template v-if="col.key === 'name'">
-                  <span class="font-weight-medium">{{ row.name }}</span>
-                </template>
-                <template v-else-if="col.key === 'memberType'">
-                  <span class="text-caption text-medium-emphasis">{{ memberTypeLabel(row.memberType) }}</span>
-                </template>
-                <template v-else-if="col.key === 'disposition'">
-                  <v-chip
-                    :color="dispositionColor(effective(row))"
-                    :data-testid="`bulk-preview-disposition-${row.userId}`"
-                    size="x-small"
-                    variant="tonal"
-                  >
-                    {{ dispositionLabel(effective(row)) }}
-                  </v-chip>
-                </template>
-                <template v-else-if="col.key === 'memberSince'">
+              <!-- Default renderers for the standard keys. -->
+              <template v-if="col.key === 'name'">
+                <span class="font-weight-medium">{{ row.name }}</span>
+              </template>
+              <template v-else-if="col.key === 'memberType'">
+                <span class="text-caption text-medium-emphasis">{{ memberTypeLabel(row.memberType) }}</span>
+              </template>
+              <template v-else-if="col.key === 'disposition'">
+                <v-chip
+                  :color="dispositionColor(effective(row))"
+                  :data-testid="`bulk-preview-disposition-${row.userId}`"
+                  size="x-small"
+                  variant="tonal"
+                >
+                  {{ dispositionLabel(effective(row)) }}
+                </v-chip>
+              </template>
+              <template v-else-if="col.key === 'memberSince'">
+                <span
+                  class="text-caption text-medium-emphasis"
+                  :data-testid="`bulk-preview-member-since-${row.userId}`"
+                >{{ formatMemberSince(row.memberSince) }}</span>
+              </template>
+              <template v-else-if="col.key === 'note'">
+                <span
+                  class="text-caption"
+                  :data-testid="`bulk-preview-note-${row.userId}`"
+                >
                   <span
-                    class="text-caption text-medium-emphasis"
-                    :data-testid="`bulk-preview-member-since-${row.userId}`"
-                  >{{ formatMemberSince(row.memberSince) }}</span>
-                </template>
-                <template v-else-if="col.key === 'note'">
-                  <span
-                    class="text-caption"
-                    :data-testid="`bulk-preview-note-${row.userId}`"
+                    v-if="reasonLabel(row.reason)"
+                    :class="row.disposition === 'EXCLUDED' ? 'text-error' : row.disposition === 'WARNING' ? 'text-warning' : ''"
                   >
-                    <span
-                      v-if="reasonLabel(row.reason)"
-                      :class="row.disposition === 'EXCLUDED' ? 'text-error' : row.disposition === 'WARNING' ? 'text-warning' : ''"
-                    >
-                      {{ reasonLabel(row.reason) }}
-                    </span>
-                    <span
-                      v-if="row.lastSentOn"
-                      class="text-medium-emphasis ml-1"
-                    >
-                      Last sent {{ row.lastSentOn }}
-                    </span>
+                    {{ reasonLabel(row.reason) }}
                   </span>
-                </template>
-              </slot>
-            </td>
-            <td v-if="hasReincludable">
-              <v-checkbox
-                v-if="row.disposition === 'WARNING'"
-                :data-testid="`bulk-preview-reinclude-${row.userId}`"
-                :model-value="reincludeOverrides[row.userId] ?? false"
-                color="primary"
-                density="compact"
-                hide-details
-                @update:model-value="(v) => setReinclude(row.userId, !!v)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </v-form>
+                  <span
+                    v-if="row.lastSentOn"
+                    class="text-medium-emphasis ml-1"
+                  >
+                    Last sent {{ row.lastSentOn }}
+                  </span>
+                </span>
+              </template>
+            </slot>
+          </td>
+          <td v-if="hasReincludable">
+            <v-checkbox
+              v-if="row.disposition === 'WARNING'"
+              :data-testid="`bulk-preview-reinclude-${row.userId}`"
+              :model-value="reincludeOverrides[row.userId] ?? false"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="(v) => setReinclude(row.userId, !!v)"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
   </base-modal>
 </template>
 
 <style lang="scss" scoped>
+// Pin the column-header row while the member rows scroll. The scroll container is the
+// modal's v-card-text; a sticky thead keeps the headers visible at the top of that scroll
+// area, just beneath the fixed form/counts region. An opaque surface background stops
+// scrolled rows from showing through the (semi-transparent) header cells.
+.bulk-preview-table {
+  :deep(thead th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: rgb(var(--v-theme-surface));
+  }
+}
+
+.bulk-counts {
+  margin-bottom: 12px;
+}
+
 .bulk-row--excluded td {
   background-color: rgba(var(--v-theme-error), 0.08);
   color: rgb(var(--v-theme-error));

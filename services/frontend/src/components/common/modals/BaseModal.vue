@@ -110,10 +110,22 @@ const useSaveAsSubmitButton = computed(
       </v-card-title>
 
       <v-card-text>
+        <!--
+          #body-header slot — a non-scrolling region pinned to the top of the scrollable
+          body. Content placed here (e.g. form inputs and a counts summary) stays visible
+          while the default slot below it scrolls. Rendered with position: sticky so it
+          also works inside the scrollable v-card-text.
+        -->
+        <div
+          v-if="$slots['body-header']"
+          class="base-modal__body-header"
+        >
+          <slot name="body-header" />
+        </div>
         <slot />
       </v-card-text>
 
-      <v-card-actions>
+      <v-card-actions class="base-modal__actions">
         <v-btn
           v-if="showDelete"
           :data-testid="deleteTestid"
@@ -194,5 +206,28 @@ const useSaveAsSubmitButton = computed(
 .base-modal__title-text {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+// Footer/actions band mirrors the header treatment: a subtle surface tint, a top divider
+// and comfortable padding visually separate the primary actions from the body. Uses theme
+// surface/border variables, no hardcoded colours.
+.base-modal__actions {
+  padding: 12px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+// Non-scrolling top region of the body: sticks to the top of the scrollable v-card-text so
+// the form inputs and counts summary stay in view while the content below scrolls. The
+// surface background keeps scrolled rows from bleeding through underneath it.
+.base-modal__body-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: rgb(var(--v-theme-surface));
+  // Cancel the v-card-text top padding so the pinned region sits flush against the header,
+  // then restore breathing room beneath it.
+  margin: -16px -24px 0;
+  padding: 16px 24px 4px;
 }
 </style>

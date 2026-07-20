@@ -12,6 +12,7 @@ import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.email.createEventSignupEmail
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailService
 import net.blueshell.api.shared.email.EmailContent
@@ -32,6 +33,7 @@ class EmailSenderService(
     private val incassoNotifications: IncassoNotificationService,
     private val eventSignUps: EventSignUpService,
     private val emailService: EmailService,
+    private val bank: BankProperties,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val appUrl: String,
     @param:Value($$"${email.from.name}") private val senderName: String,
@@ -47,14 +49,14 @@ class EmailSenderService(
                 reminder.contributionPeriod,
                 reminder.amount!!,
                 reminder.paymentDueDate!!,
-                frontendUrl
+                bank
             )
         } else {
             // Single-user reminder: use all options
             createContributionReminderEmail(
                 reminder.user,
                 reminder.contributionPeriod,
-                frontendUrl
+                bank
             )
         }
         deliver(emailContent, "email.contribution-reminder", jobExecutionId)
@@ -67,7 +69,6 @@ class EmailSenderService(
             notification.contributionPeriod,
             notification.amount!!,
             notification.expectedIncassoDate!!,
-            frontendUrl
         )
         deliver(emailContent, "email.incasso-notification", jobExecutionId)
     }

@@ -331,7 +331,12 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                     .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, paymentDueDate))
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.subject").value("Contribution Payment Reminder - Blueshell Esports"))
+                .andExpect(
+                    jsonPath("$.subject").value(
+                        org.hamcrest.Matchers.containsString("Please pay your Blueshell contribution")
+                    )
+                )
+                .andExpect(jsonPath("$.subject").isNotEmpty)
                 .andExpect(jsonPath("$.html").isNotEmpty)
 
             // Preview must not persist a reminder …

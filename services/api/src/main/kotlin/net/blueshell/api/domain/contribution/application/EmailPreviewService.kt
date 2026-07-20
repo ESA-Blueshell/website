@@ -4,10 +4,10 @@ import net.blueshell.api.domain.contribution.application.email.createContributio
 import net.blueshell.api.domain.contribution.application.email.createIncassoNotificationEmail
 import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -34,7 +34,7 @@ class EmailPreviewService(
     private val users: UserService,
     private val periods: ContributionPeriodService,
     private val emailSender: EmailSenderService,
-    @param:Value($$"${frontend.url}") private val frontendUrl: String,
+    private val bank: BankProperties,
 ) {
     /** Render the contribution-reminder email for [userId] using [paymentDueDate]. */
     @Transactional(readOnly = true)
@@ -47,7 +47,7 @@ class EmailPreviewService(
         val user = users.findById(userId)
         val period = periods.findById(contributionPeriodId)
         val amount = resolveFeeAmount(feeType, period)
-        val content = createContributionReminderEmail(user, period, amount, paymentDueDate, frontendUrl)
+        val content = createContributionReminderEmail(user, period, amount, paymentDueDate, bank)
         return render(content)
     }
 
@@ -62,7 +62,7 @@ class EmailPreviewService(
         val user = users.findById(userId)
         val period = periods.findById(contributionPeriodId)
         val amount = resolveFeeAmount(feeType, period)
-        val content = createIncassoNotificationEmail(user, period, amount, expectedIncassoDate, frontendUrl)
+        val content = createIncassoNotificationEmail(user, period, amount, expectedIncassoDate)
         return render(content)
     }
 

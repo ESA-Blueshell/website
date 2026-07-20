@@ -82,6 +82,12 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
         )
     )
 
+    private fun expectedAcademicYear(period: ContributionPeriod): String {
+        val startYear = period.startDate.year
+        val endYear = period.endDate.year
+        return if (endYear > startYear) "$startYear/$endYear" else "$startYear"
+    }
+
     @Nested
     inner class Execute {
 
@@ -174,9 +180,10 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             emailSenderService.sendIncassoNotificationEmail(member.id!!, period.id!!)
             val formatted = expectedIncassoDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
             val refreshed = refreshUser(member)
+            val academicYear = expectedAcademicYear(period)
             assertEmailSent(
                 toEmail = refreshed.email,
-                subject = "Membership Contribution Collection Notice - Blueshell Esports",
+                subject = "Your Blueshell contribution will be collected automatically ($academicYear)",
                 bodyContains = "%.2f".format(period.alumniFee)
             )
             assertThat(emailTransportClient.sentEmails.first().htmlContent).contains(formatted)
@@ -336,7 +343,12 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                     .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, expectedIncassoDate))
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.subject").value("Membership Contribution Collection Notice - Blueshell Esports"))
+                .andExpect(
+                    jsonPath("$.subject").value(
+                        org.hamcrest.Matchers.containsString("Your Blueshell contribution will be collected automatically")
+                    )
+                )
+                .andExpect(jsonPath("$.subject").isNotEmpty)
                 .andExpect(jsonPath("$.html").isNotEmpty)
 
             // Preview must not persist a notification …

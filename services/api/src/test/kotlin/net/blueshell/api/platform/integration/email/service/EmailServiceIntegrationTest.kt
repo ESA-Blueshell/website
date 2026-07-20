@@ -114,12 +114,13 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
 
             val email = emails.first()
             assertThat(email.toEmail).isEqualTo("contributor@example.com")
-            assertThat(email.subject).contains("Contribution Payment Reminder")
+            assertThat(email.subject).contains("Please pay your Blueshell contribution")
             assertThat(email.htmlContent)
                 .contains("25.0")
                 .contains("45.0")
                 .contains("10.0")
                 .contains("Treasurer")
+                .contains("NL19 INGB 0008 0964 62")
         }
     }
 

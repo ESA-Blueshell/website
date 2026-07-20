@@ -9,6 +9,7 @@ import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
 import net.blueshell.api.platform.integration.email.application.service.EmailService
@@ -42,6 +43,7 @@ class EmailServiceMissingEntityTest {
         incassoNotifications = incassoNotifications,
         eventSignUps = eventSignUps,
         emailService = emailService,
+        bank = BankProperties(),
         frontendUrl = "http://localhost:3000",
         appUrl = "http://localhost:8080",
         senderName = "Blueshell",

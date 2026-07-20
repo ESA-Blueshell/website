@@ -166,7 +166,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
             assertThat(emails.first().toEmail).isEqualTo("contributor@example.com")
-            assertThat(emails.first().subject).contains("Contribution Payment Reminder")
+            assertThat(emails.first().subject).contains("Please pay your Blueshell contribution")
         }
 
         @Test

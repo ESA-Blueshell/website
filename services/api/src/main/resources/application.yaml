@@ -128,6 +128,14 @@ app:
 frontend:
   url: ${FRONTEND_URL:http://localhost:3000}
 
+# Blueshell bank account details shown in contribution emails so members can
+# transfer their membership fee.
+blueshell:
+  bank:
+    iban: ${BLUESHELL_BANK_IBAN:NL19 INGB 0008 0964 62}
+    bic: ${BLUESHELL_BANK_BIC:INGBNL2A}
+    account-name: ${BLUESHELL_BANK_ACCOUNT_NAME:Blueshell E-Sports Vereniging}
+
 # Valkey-backed HTTP sessions. The SESSION cookie domain defaults to the same
 # value as the auth cookie so the session travels to every subdomain in prod.
 session:

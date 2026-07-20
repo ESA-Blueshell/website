@@ -2,6 +2,7 @@ package net.blueshell.api.domain.contribution.application.email
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.config.BankProperties
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -9,81 +10,105 @@ import java.time.LocalDate
 /**
  * Tests for contribution reminder email builder.
  *
- * Verifies EmailContent is created correctly with all payment options (ADR-019, ADR-022).
+ * Verifies EmailContent is created correctly and instructs members to pay by
+ * bank transfer to the Blueshell account (ADR-019, ADR-022).
  */
 class ContributionReminderEmailBuilderTest {
 
-    private val frontendUrl = "https://test-frontend.com"
+    private val bank = BankProperties(
+        iban = "NL19 INGB 0008 0964 62",
+        bic = "INGBNL2A",
+        accountName = "Blueshell E-Sports Vereniging",
+    )
 
     @Test
-    fun `createContributionReminderEmail builds correct EmailContent`() {
-        // Given: User and contribution period
+    fun `bulk reminder builds correct EmailContent with amount and due date`() {
+        // Given: User and contribution period spanning an academic year
         val user = createTestUser("john.doe", "john.doe@example.com", "John", "Doe")
         val period = createTestPeriod(
-            startDate = LocalDate.of(2024, 1, 1),
-            endDate = LocalDate.of(2024, 12, 31),
+            startDate = LocalDate.of(2025, 9, 1),
+            endDate = LocalDate.of(2026, 8, 31),
             halfYearFee = 25.0,
             fullYearFee = 45.0,
             alumniFee = 10.0
         )
 
-        // When: Building contribution reminder email
-        val emailContent = createContributionReminderEmail(user, period, frontendUrl)
+        // When: Building the bulk contribution reminder email
+        val emailContent = createContributionReminderEmail(
+            user,
+            period,
+            amount = 45.0,
+            paymentDueDate = LocalDate.of(2025, 10, 1),
+            bank = bank,
+        )
 
-        // Then: EmailContent has correct fields
+        // Then: EmailContent has correct fields and academic-year subject
         assertThat(emailContent.recipientEmail).isEqualTo(user.email)
         assertThat(emailContent.recipientName).isEqualTo(user.fullName)
-        assertThat(emailContent.subject).isEqualTo("Contribution Payment Reminder - Blueshell Esports")
-        assertThat(emailContent.senderNameOverride).isEqualTo("Treasurer of Blueshell")
+        assertThat(emailContent.subject).isEqualTo("Please pay your Blueshell contribution (2025/2026)")
+        assertThat(emailContent.senderNameOverride).isEqualTo("Secretary & Treasurer of ESA Blueshell")
         assertThat(emailContent.replyToOverride).isEqualTo("board@blueshell.utwente.nl")
 
-        // And: Body contains all payment options
+        // And: Body instructs a bank transfer with the configured details and no website payment
         assertThat(emailContent.markdownContent)
             .contains("Dear John Doe")
-            .contains("2024-01-01")
-            .contains("2024-12-31")
+            .contains("2025/2026")
+            .contains("01 October 2025")
+            .contains("Amount due: €45.00")
+            .contains("NL19 INGB 0008 0964 62")
+            .contains("INGBNL2A")
+            .contains("Blueshell E-Sports Vereniging")
+            .contains("Secretary & Treasurer of ESA Blueshell")
+            .doesNotContain("via our")
+            .doesNotContain("website")
+        assertThat(emailContent.markdownContent).doesNotContain("—") // no em-dashes
+    }
+
+    @Test
+    fun `single-user reminder lists fee options and asks for bank transfer`() {
+        // Given: User and period
+        val user = createTestUser("jane", "jane@example.com", "Jane", "Smith")
+        val period = createTestPeriod(
+            startDate = LocalDate.of(2025, 9, 1),
+            endDate = LocalDate.of(2026, 8, 31),
+            halfYearFee = 25.0,
+            fullYearFee = 45.0,
+            alumniFee = 10.0,
+        )
+
+        // When: Building the single-user email
+        val emailContent = createContributionReminderEmail(user, period, bank)
+
+        // Then: Email lists fee options and points to the bank account
+        assertThat(emailContent.subject).isEqualTo("Please pay your Blueshell contribution (2025/2026)")
+        assertThat(emailContent.markdownContent)
             .contains("Half year fee: €25.00")
             .contains("Full year fee: €45.00")
             .contains("Alumni fee: €10.00")
-            .contains(frontendUrl)
+            .contains("NL19 INGB 0008 0964 62")
+            .contains("If you have already paid, please disregard this message")
+            .contains("Kind regards")
+            .contains("Secretary & Treasurer of ESA Blueshell")
+            .doesNotContain("website")
     }
 
     @Test
-    fun `email includes friendly reminder language`() {
-        // Given: User and period
-        val user = createTestUser("jane", "jane@example.com", "Jane", "Smith")
+    fun `bulk reminder formats currency correctly`() {
+        // Given: Precise decimal amount
+        val user = createTestUser("test", "test@example.com", "Test", "User")
         val period = createTestPeriod()
 
         // When: Building email
-        val emailContent = createContributionReminderEmail(user, period, frontendUrl)
-
-        // Then: Email has friendly tone
-        assertThat(emailContent.markdownContent)
-            .contains("friendly reminder")
-            .contains("at your earliest convenience")
-            .contains("If you have already made your payment, please disregard this message")
-            .contains("Kind regards")
-            .contains("Treasurer of Blueshell Esports")
-    }
-
-    @Test
-    fun `email formats currency correctly`() {
-        // Given: Period with precise decimal amounts
-        val user = createTestUser("test", "test@example.com", "Test", "User")
-        val period = createTestPeriod(
-            halfYearFee = 12.50,
-            fullYearFee = 20.00,
-            alumniFee = 5.99
+        val emailContent = createContributionReminderEmail(
+            user,
+            period,
+            amount = 12.50,
+            paymentDueDate = LocalDate.now(),
+            bank = bank,
         )
 
-        // When: Building email
-        val emailContent = createContributionReminderEmail(user, period, frontendUrl)
-
         // Then: Currency is formatted with 2 decimals
-        assertThat(emailContent.markdownContent)
-            .contains("€12.50")
-            .contains("€20.00")
-            .contains("€5.99")
+        assertThat(emailContent.markdownContent).contains("€12.50")
     }
 
     private fun createTestUser(username: String, email: String, firstName: String, lastName: String): User {
@@ -100,8 +125,8 @@ class ContributionReminderEmailBuilderTest {
     }
 
     private fun createTestPeriod(
-        startDate: LocalDate = LocalDate.now(),
-        endDate: LocalDate = LocalDate.now().plusMonths(6),
+        startDate: LocalDate = LocalDate.of(2025, 9, 1),
+        endDate: LocalDate = LocalDate.of(2026, 8, 31),
         halfYearFee: Double = 25.0,
         fullYearFee: Double = 45.0,
         alumniFee: Double = 10.0

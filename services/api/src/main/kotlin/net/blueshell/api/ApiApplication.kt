@@ -1,5 +1,6 @@
 package net.blueshell.api
 
+import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.platform.config.StorageConfig
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -10,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.EnableScheduling
 
 @SpringBootApplication
-@EnableConfigurationProperties(StorageConfig::class, JobQueueProperties::class)
+@EnableConfigurationProperties(StorageConfig::class, JobQueueProperties::class, BankProperties::class)
 @EnableJpaAuditing
 @EnableAsync
 @EnableRetry

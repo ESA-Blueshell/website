@@ -146,7 +146,7 @@ async function onSave() {
 <template>
   <base-modal
     v-model="open"
-    :save-disabled="submitting"
+    :save-disabled="submitting || includedCount === 0"
     :save-icon="icon"
     :save-label="confirmLabel"
     :save-loading="submitting"

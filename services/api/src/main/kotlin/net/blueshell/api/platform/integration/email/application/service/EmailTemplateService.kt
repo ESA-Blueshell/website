@@ -52,6 +52,9 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
         // Prepare template variables
         val variables: MutableMap<String, Any> = HashMap()
         variables["appUrl"] = appUrl
+        // Public site origin used to build absolute URLs to email image assets
+        // (logo, watermark) served from the frontend's public/ root.
+        variables["frontendUrl"] = appUrl
         variables["emailContent"] = htmlContent
         variables["sentTo"] = recipientEmail
         variables["fullName"] = recipientName

@@ -374,6 +374,15 @@ async function onSave() {
 // area, just beneath the fixed form/counts region. An opaque surface background stops
 // scrolled rows from showing through the (semi-transparent) header cells.
 .bulk-preview-table {
+  // Vuetify wraps the table in .v-table__wrapper with overflow: auto, which makes that
+  // wrapper the containing block for the sticky thead. But the wrapper is NOT the element
+  // that scrolls (the modal's .base-modal__scroll-body is), so the header would stick to
+  // the wrapper's top and scroll away with it. Neutralise the wrapper's overflow so the
+  // sticky thead resolves against the real scroll container and stays pinned.
+  :deep(.v-table__wrapper) {
+    overflow: visible;
+  }
+
   :deep(thead th) {
     position: sticky;
     top: 0;

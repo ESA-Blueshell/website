@@ -19,14 +19,14 @@ dependencies {
     // through localhost:8080. So no project(":services:api") dep, no
     // Spring Boot starters; just an HTTP client, JDBC, Playwright, and
     // IMAP/JSON helpers for assertions.
-    testImplementation("org.springframework.security:spring-security-crypto:7.0.5")
-    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.8")
-    testImplementation("tools.jackson.module:jackson-module-kotlin:3.1.3")
+    testImplementation("org.springframework.security:spring-security-crypto:7.1.0")
+    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.9")
+    testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.1")
 
-    testImplementation("io.rest-assured:rest-assured:6.0.0")
-    testImplementation("com.microsoft.playwright:playwright:1.60.0")
+    testImplementation("io.rest-assured:rest-assured:6.0.1")
+    testImplementation("com.microsoft.playwright:playwright:1.61.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
     testImplementation("org.assertj:assertj-core:3.27.7")
 
     // IMAP access for StalwartMailClient — used by tests that need to

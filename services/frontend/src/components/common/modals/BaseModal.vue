@@ -109,20 +109,22 @@ const useSaveAsSubmitButton = computed(
         <slot name="title-append" />
       </v-card-title>
 
-      <v-card-text>
+      <v-card-text :class="{'base-modal__text--split': $slots['body-header']}">
         <!--
-          #body-header slot — a non-scrolling region pinned to the top of the scrollable
-          body. Content placed here (e.g. form inputs and a counts summary) stays visible
-          while the default slot below it scrolls. Rendered with position: sticky so it
-          also works inside the scrollable v-card-text.
+          #body-header slot — a fixed (non-scrolling) region at the top of the body. When
+          present, the body becomes a flex column: this header stays put while only the
+          default slot below it scrolls, so form inputs, the counts summary and the table
+          column headers stay visible while the member rows scroll.
         -->
-        <div
-          v-if="$slots['body-header']"
-          class="base-modal__body-header"
-        >
-          <slot name="body-header" />
-        </div>
-        <slot />
+        <template v-if="$slots['body-header']">
+          <div class="base-modal__body-header">
+            <slot name="body-header" />
+          </div>
+          <div class="base-modal__scroll-body">
+            <slot />
+          </div>
+        </template>
+        <slot v-else />
       </v-card-text>
 
       <v-card-actions class="base-modal__actions">
@@ -217,17 +219,36 @@ const useSaveAsSubmitButton = computed(
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-// Non-scrolling top region of the body: sticks to the top of the scrollable v-card-text so
-// the form inputs and counts summary stay in view while the content below scrolls. The
-// surface background keeps scrolled rows from bleeding through underneath it.
+// When a #body-header is present, make the body a flex column with a FIXED header region
+// and a single scrollable region below it. The card-text itself does not scroll; only
+// .base-modal__scroll-body does. This keeps the form/counts AND the table's (sticky) column
+// headers pinned while the rows scroll, and clips the rows so they never bleed past the
+// header or the modal edge.
+.base-modal__text--split {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// Fixed (non-scrolling) top region of the split body: form inputs + counts summary.
 .base-modal__body-header {
-  position: sticky;
-  top: 0;
+  flex: 0 0 auto;
   z-index: 2;
   background-color: rgb(var(--v-theme-surface));
-  // Cancel the v-card-text top padding so the pinned region sits flush against the header,
+  // Cancel the v-card-text top padding so the region sits flush against the header band,
   // then restore breathing room beneath it.
   margin: -16px -24px 0;
-  padding: 16px 24px 4px;
+  padding: 16px 24px 8px;
+}
+
+// The only scrolling region: the preview table (its thead is position: sticky, so the
+// column headers stay pinned at the top of this region beneath the fixed form/counts).
+.base-modal__scroll-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  // Use the full body width; cancel the v-card-text side padding for the rows region.
+  margin: 0 -24px -16px;
+  padding: 0 24px;
 }
 </style>

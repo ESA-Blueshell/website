@@ -293,7 +293,7 @@ watch(computedRows, (newRows) => {
           item-title="title"
           item-value="value"
           :items="feeTypeItems"
-          variant="outlined"
+          variant="plain"
         />
       </template>
       <!--

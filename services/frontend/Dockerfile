@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:25.6.1-bookworm-slim@sha256:34d76bac75fba8eea764d3b79b05be7a77fa0651d7b956b011b4a55837fdbc02 AS deps
+FROM node:26.4.0-bookworm-slim@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1 AS deps
 WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc.yml ./

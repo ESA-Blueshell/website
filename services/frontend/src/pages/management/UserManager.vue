@@ -135,7 +135,7 @@ function ariaSort(key: SortKey) {
   return sortAsc.value ? "ascending" : "descending"
 }
 
-// Members count badge: show "shown / total" when a filter/search narrows the
+// Users count badge: show "shown / total" when a filter/search narrows the
 // list, otherwise just the total.
 const memberCountLabel = computed(() =>
   filteredRows.value.length === rows.value.length
@@ -374,7 +374,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 color="primary"
               >
                 <h2 class="ma-0">
-                  Members
+                  Users
                 </h2>
               </v-badge>
             </div>
@@ -391,7 +391,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 data-testid="member-manager-search-input"
                 :density="toolbarDensity"
                 hide-details
-                label="Search members"
+                label="Search users"
                 prepend-inner-icon="mdi-magnify"
               />
               <div class="mm-filters">

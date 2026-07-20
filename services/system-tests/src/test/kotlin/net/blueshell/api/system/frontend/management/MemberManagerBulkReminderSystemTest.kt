@@ -259,7 +259,14 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
             "MEMBER",
             username = "fee_type_override_${uniqueOffset}",
         )
-        TestHelper.attachMembership(member.username, memberType = "REGULAR", startDate = periodStart.minusDays(10))
+        // incasso = false so this fee-override test yields a plain INCLUDED reminder row
+        // (incasso payers are now WARNING/"Pays via incasso" on the reminder action).
+        TestHelper.attachMembership(
+            member.username,
+            memberType = "REGULAR",
+            startDate = periodStart.minusDays(10),
+            incasso = false,
+        )
         val memberId = TestHelper.findUser(member.username)!!.id
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)

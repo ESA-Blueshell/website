@@ -165,7 +165,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
         assertThat(MemberManagerBulkHelper.dispositionOf(page, honoraryId))
             .isEqualTo("EXCLUDED")
         val honoraryReason = MemberManagerBulkHelper.reasonOf(page, honoraryId)
-        assertThat(honoraryReason).isEqualTo("Honorary — no contribution needed")
+        assertThat(honoraryReason).isEqualTo("Honorary (no contribution needed)")
 
         // 5. Already paid => WARNING
         assertThat(MemberManagerBulkHelper.dispositionOf(page, alreadyPaidId))

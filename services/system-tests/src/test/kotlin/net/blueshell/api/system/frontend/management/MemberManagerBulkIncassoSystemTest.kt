@@ -65,7 +65,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         )
         val regularNoIncassoId = TestHelper.findUser(regularNoIncasso.username)!!.id
 
-        // 3. Honorary member => EXCLUDED "Honorary — no contribution needed"
+        // 3. Honorary member => EXCLUDED "Honorary (no contribution needed)"
         val honoryMember = TestHelper.registerActivateAndPromote(
             "MEMBER",
             username = "incasso_honorary_${uniqueOffset}",
@@ -128,7 +128,7 @@ class MemberManagerBulkIncassoSystemTest : PlaywrightTestBase() {
         assertThat(MemberManagerBulkHelper.dispositionOf(page, honoraryId))
             .isEqualTo("EXCLUDED")
         val honoraryReason = MemberManagerBulkHelper.reasonOf(page, honoraryId)
-        assertThat(honoraryReason).isEqualTo("Honorary — no contribution needed")
+        assertThat(honoraryReason).isEqualTo("Honorary (no contribution needed)")
 
         // 4. Alumni with incasso=true => INCLUDED with alumni fee
         assertThat(MemberManagerBulkHelper.dispositionOf(page, alumniWithIncassoId))

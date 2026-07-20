@@ -48,7 +48,7 @@ export function dispositionColor(disposition: BulkDisposition): string {
 const REASON_LABELS: Record<BulkRowReason, string> = {
   INCASSO_MISMATCH: "Not marked for incasso",
   ALREADY_PAID: "Already paid",
-  HONORARY: "Honorary — no contribution needed",
+  HONORARY: "Honorary (no contribution needed)",
   NOT_PAID: "Not paid",
   NO_ACTIVE_MEMBERSHIP: "No active membership",
   STARTED_TODAY: "Started today",

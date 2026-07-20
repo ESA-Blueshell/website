@@ -80,15 +80,42 @@ class EmailPreviewService(
         var result = html
         INLINEABLE_ASSETS.forEach { (urlSuffix, dataUri) ->
             if (dataUri != null) {
-                // Match the full URL (absolute or relative) ending in the asset path, as it
-                // appears in src/background attributes and CSS url(...) values.
-                result = result.replace(Regex("""[^"'()\s]*${Regex.escape(urlSuffix)}"""), dataUri)
+                result = replaceUrlsEndingWith(result, urlSuffix, dataUri)
             }
         }
         return result
     }
 
+    /**
+     * Replace every URL ending in [suffix] (absolute or relative, as found in src /
+     * background attributes and CSS url(...) values) with [replacement].
+     *
+     * Deliberately NOT a regex: a pattern like `[^"'()\s]*suffix` backtracks
+     * quadratically once the first replacement inserts a ~180KB base64 data URI (one
+     * unbroken token), which made each preview render take minutes. This is a linear
+     * scan: find the suffix, walk back to the URL's start delimiter, splice.
+     */
+    private fun replaceUrlsEndingWith(html: String, suffix: String, replacement: String): String {
+        var searchFrom = html.indexOf(suffix)
+        if (searchFrom < 0) return html
+        val sb = StringBuilder(html.length + replacement.length)
+        var emitted = 0
+        var hit = searchFrom
+        while (hit >= 0) {
+            var start = hit
+            while (start > emitted && html[start - 1] !in URL_DELIMITERS) start--
+            sb.append(html, emitted, start).append(replacement)
+            emitted = hit + suffix.length
+            hit = html.indexOf(suffix, emitted)
+        }
+        sb.append(html, emitted, html.length)
+        return sb.toString()
+    }
+
     private companion object {
+        /** Characters that terminate a URL token when scanning backwards from the suffix. */
+        private val URL_DELIMITERS = setOf('"', '\'', '(', ')', '>', '=', ',', ' ', '\t', '\n', '\r')
+
         /** Hosted-URL suffix -> data URI (null when the classpath asset is missing). */
         private val INLINEABLE_ASSETS: Map<String, String?> by lazy {
             mapOf(

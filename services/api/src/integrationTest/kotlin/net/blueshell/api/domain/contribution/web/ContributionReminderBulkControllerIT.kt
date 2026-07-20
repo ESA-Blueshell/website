@@ -238,14 +238,15 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
     }
 
     @Nested
-    inner class Invariant {
+    inner class MixedCohort {
 
-        // The regression net for the class of bug this redesign targets: because preview
-        // and execute share decideReminder, the preview's willApply/warned/excluded counts
-        // must match execute's applied/skipped for an unchanged DB when every includable
-        // row is included. See docs/proposals/bulk-actions/REDESIGN.md §7.
+        // The preview is now computed entirely client-side (bulkCompute.ts), so there is no
+        // server preview endpoint to compare against. This test still pins execute's decision
+        // logic for the exact mixed cohort the FE preview classifies as 2 includable
+        // (regular + alumni) and 1 excluded (honorary): execute must apply 2 and skip 1.
+        // See docs/proposals/bulk-actions/REDESIGN.md §7.
         @Test
-        fun `preview willApply equals execute applied for an all-includable selection`() {
+        fun `execute applies includable members and skips the excluded honorary`() {
             val board = createUserWithRole(Role.BOARD)
             val regular = createUserWithRole(Role.MEMBER)
             val alumni = createUserWithRole(Role.MEMBER)
@@ -259,19 +260,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             val cutoffDate = LocalDate.of(2024, 7, 1)
             val paymentDueDate = LocalDate.of(2024, 12, 31)
 
-            // Preview: 2 includable (regular + alumni), 1 excluded (honorary).
-            mvc.perform(
-                post("/contributionReminders/bulk/preview")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(userIds, period.id!!, cutoffDate, paymentDueDate))
-            )
-                .andExpect(status().isOk)
-                .andExpect(jsonPath("$.counts.willApply").value(2))
-                .andExpect(jsonPath("$.counts.excluded").value(1))
-
-            // Execute: applied must equal the preview's willApply; the excluded honorary
-            // is skipped.
+            // Execute: the regular + alumni are applied, the excluded honorary is skipped.
             mvc.perform(
                 post("/contributionReminders/bulk/execute")
                     .with(bearer(board))
@@ -316,14 +305,6 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
         fun `non-board is forbidden`() {
             val member = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-
-            mvc.perform(
-                post("/contributionReminders/bulk/preview")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now()))
-            )
-                .andExpect(status().isForbidden)
 
             mvc.perform(
                 post("/contributionReminders/bulk/execute")

@@ -314,14 +314,6 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
 
             mvc.perform(
-                post("/incassoNotifications/bulk/preview")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now()))
-            )
-                .andExpect(status().isForbidden)
-
-            mvc.perform(
                 post("/incassoNotifications/bulk/execute")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)

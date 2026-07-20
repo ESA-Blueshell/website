@@ -5,6 +5,7 @@ import {useTableSort} from "@/composables/useTableSort"
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type FilterState = "all" | "yes" | "no"
+export type MembershipStatusFilter = "all" | "current" | "former" | "never"
 export type SortKey = "name" | "username" | "role" | "status" | "memberSince" | "paid" | "wasMemberInPeriod"
 
 const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
@@ -20,8 +21,9 @@ export function useUserFilters(
   const searchInput = ref("")
   const search = ref("")
 
+  // Membership status filter: all | current | former | never
+  const membershipStatusFilter = ref<MembershipStatusFilter>("all")
   // Tri-state filters
-  const memberFilter = ref<FilterState>("all")
   const paidFilter = ref<FilterState>("all")
   const incassoFilter = ref<FilterState>("all")
   const periodMemberFilter = ref<FilterState>("all")
@@ -60,10 +62,11 @@ export function useUserFilters(
         const haystack = userSearchIndex.value.get(r.id) ?? ""
         if (!terms.every((t) => haystack.includes(t))) return false
       }
-      // Membership filter: yes = status "Current", no = not "Current"
-      if (memberFilter.value === "yes" && r.status !== "Current") return false
-      if (memberFilter.value === "no" && r.status === "Current") return false
-      // Paid filter
+      // Membership status filter: current | former | never
+      if (membershipStatusFilter.value === "current" && r.status !== "Current") return false
+      if (membershipStatusFilter.value === "former" && r.status !== "Former") return false
+      if (membershipStatusFilter.value === "never" && r.status !== "Never") return false
+      // Paid-in-period filter
       if (paidFilter.value === "yes" && !r.paid) return false
       if (paidFilter.value === "no" && r.paid) return false
       // Incasso filter
@@ -136,7 +139,7 @@ export function useUserFilters(
     search,
     sortKey,
     sortAsc,
-    memberFilter,
+    membershipStatusFilter,
     paidFilter,
     incassoFilter,
     periodMemberFilter,

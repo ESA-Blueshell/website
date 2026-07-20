@@ -55,32 +55,64 @@ describe("useUserFilters", () => {
     expect(filteredRows.value[0]!.id).toBe(1)
   })
 
-  it("memberFilter=yes shows only Current members", () => {
+  // ── Membership status filter ──────────────────────────────────────────────────
+
+  it("membershipStatusFilter=all shows all users regardless of status", () => {
     const rows = ref([
       makeRow(1, {status: "Current"}),
       makeRow(2, {status: "Former"}),
       makeRow(3, {status: "Never"}),
     ])
     const index = ref(new Map([[1, "u1"], [2, "u2"], [3, "u3"]]))
-    const {filteredRows, memberFilter} = useUserFilters(rows, index)
+    const {filteredRows, membershipStatusFilter} = useUserFilters(rows, index)
 
-    memberFilter.value = "yes"
+    membershipStatusFilter.value = "all"
+    expect(filteredRows.value).toHaveLength(3)
+  })
+
+  it("membershipStatusFilter=current shows only users with an active membership", () => {
+    const rows = ref([
+      makeRow(1, {status: "Current"}),
+      makeRow(2, {status: "Former"}),
+      makeRow(3, {status: "Never"}),
+    ])
+    const index = ref(new Map([[1, "u1"], [2, "u2"], [3, "u3"]]))
+    const {filteredRows, membershipStatusFilter} = useUserFilters(rows, index)
+
+    membershipStatusFilter.value = "current"
     expect(filteredRows.value).toHaveLength(1)
     expect(filteredRows.value[0]!.id).toBe(1)
   })
 
-  it("memberFilter=no shows only non-Current members", () => {
+  it("membershipStatusFilter=former shows only users whose memberships have all ended", () => {
     const rows = ref([
       makeRow(1, {status: "Current"}),
       makeRow(2, {status: "Former"}),
+      makeRow(3, {status: "Never"}),
     ])
-    const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, memberFilter} = useUserFilters(rows, index)
+    const index = ref(new Map([[1, "u1"], [2, "u2"], [3, "u3"]]))
+    const {filteredRows, membershipStatusFilter} = useUserFilters(rows, index)
 
-    memberFilter.value = "no"
+    membershipStatusFilter.value = "former"
     expect(filteredRows.value).toHaveLength(1)
     expect(filteredRows.value[0]!.id).toBe(2)
   })
+
+  it("membershipStatusFilter=never shows only users with no memberships at all", () => {
+    const rows = ref([
+      makeRow(1, {status: "Current"}),
+      makeRow(2, {status: "Former"}),
+      makeRow(3, {status: "Never"}),
+    ])
+    const index = ref(new Map([[1, "u1"], [2, "u2"], [3, "u3"]]))
+    const {filteredRows, membershipStatusFilter} = useUserFilters(rows, index)
+
+    membershipStatusFilter.value = "never"
+    expect(filteredRows.value).toHaveLength(1)
+    expect(filteredRows.value[0]!.id).toBe(3)
+  })
+
+  // ── Paid-in-period filter ─────────────────────────────────────────────────────
 
   it("paidFilter=yes shows only paid users", () => {
     const rows = ref([makeRow(1, {paid: true}), makeRow(2, {paid: false})])
@@ -268,17 +300,17 @@ describe("useUserFilters", () => {
     expect(filteredRows.value.map((row) => row.id)).toEqual([2, 1])
   })
 
-  it("combined search + filter narrows results", () => {
+  it("combined search + membershipStatusFilter=current narrows results", () => {
     const rows = ref([
       makeRow(1, {fullName: "Alice Current", status: "Current"}),
       makeRow(2, {fullName: "Bob Current", status: "Current"}),
       makeRow(3, {fullName: "Charlie Never", status: "Never"}),
     ])
     const index = ref(new Map([[1, "alice current"], [2, "bob current"], [3, "charlie never"]]))
-    const {filteredRows, search, memberFilter} = useUserFilters(rows, index)
+    const {filteredRows, search, membershipStatusFilter} = useUserFilters(rows, index)
 
     search.value = "alice"
-    memberFilter.value = "yes"
+    membershipStatusFilter.value = "current"
 
     expect(filteredRows.value).toHaveLength(1)
     expect(filteredRows.value[0]!.id).toBe(1)

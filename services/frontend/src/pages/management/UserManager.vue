@@ -107,7 +107,7 @@ const {
   search,
   sortKey,
   sortAsc,
-  memberFilter,
+  membershipStatusFilter,
   paidFilter,
   incassoFilter,
   periodMemberFilter,
@@ -396,12 +396,12 @@ function onRowClick(event: MouseEvent, rowId: number) {
               />
               <div class="mm-filters">
                 <v-select
-                  v-model="memberFilter"
-                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                  v-model="membershipStatusFilter"
+                  :items="[{title:'All',value:'all'},{title:'Current',value:'current'},{title:'Former',value:'former'},{title:'Never',value:'never'}]"
                   data-testid="member-manager-filter-membership"
                   :density="toolbarDensity"
                   hide-details
-                  label="Membership"
+                  label="Membership status"
                 />
                 <v-select
                   v-model="paidFilter"
@@ -409,7 +409,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   data-testid="member-manager-filter-paid"
                   :density="toolbarDensity"
                   hide-details
-                  label="Paid"
+                  label="Paid in period"
                 />
                 <v-select
                   v-model="incassoFilter"

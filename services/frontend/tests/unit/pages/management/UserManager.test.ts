@@ -535,10 +535,10 @@ describe("UserManager filters", () => {
     return shallowMount(UserManager)
   }
 
-  it("memberFilter=yes shows only Current members", async () => {
+  it("membershipStatusFilter=current shows only Current members", async () => {
     const wrapper = mountWithFilterData()
     await settle()
-    ;(wrapper.vm as any).memberFilter = "yes"
+    ;(wrapper.vm as any).membershipStatusFilter = "current"
     await settle()
     const rows: MemberRow[] = (wrapper.vm as any).filteredRows
     expect(rows.every((r) => r.status === "Current")).toBe(true)
@@ -547,14 +547,28 @@ describe("UserManager filters", () => {
     expect(rows.find((r) => r.id === 3)).toBeFalsy()
   })
 
-  it("memberFilter=no shows only non-Current members", async () => {
+  it("membershipStatusFilter=former shows only Former members", async () => {
     const wrapper = mountWithFilterData()
     await settle()
-    ;(wrapper.vm as any).memberFilter = "no"
+    ;(wrapper.vm as any).membershipStatusFilter = "former"
     await settle()
     const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows.every((r) => r.status !== "Current")).toBe(true)
+    expect(rows.every((r) => r.status === "Former")).toBe(true)
+    expect(rows.find((r) => r.id === 2)).toBeTruthy()
     expect(rows.find((r) => r.id === 1)).toBeFalsy()
+    expect(rows.find((r) => r.id === 3)).toBeFalsy()
+  })
+
+  it("membershipStatusFilter=never shows only users with no memberships", async () => {
+    const wrapper = mountWithFilterData()
+    await settle()
+    ;(wrapper.vm as any).membershipStatusFilter = "never"
+    await settle()
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.every((r) => r.status === "Never")).toBe(true)
+    expect(rows.find((r) => r.id === 3)).toBeTruthy()
+    expect(rows.find((r) => r.id === 1)).toBeFalsy()
+    expect(rows.find((r) => r.id === 2)).toBeFalsy()
   })
 
   it("paidFilter=yes shows only paid users after period change", async () => {
@@ -607,11 +621,11 @@ describe("UserManager filters", () => {
     expect(rows.find((r) => r.id === 1)).toBeFalsy()
   })
 
-  it("combined search + memberFilter narrows results", async () => {
+  it("combined search + membershipStatusFilter=current narrows results", async () => {
     const wrapper = mountWithFilterData()
     await settle()
     ;(wrapper.vm as any).search = "current"
-    ;(wrapper.vm as any).memberFilter = "yes"
+    ;(wrapper.vm as any).membershipStatusFilter = "current"
     await settle()
     const rows: MemberRow[] = (wrapper.vm as any).filteredRows
     // Only "Current Paid Incasso" (id=1) matches both
@@ -622,7 +636,7 @@ describe("UserManager filters", () => {
   it("all filters default to 'all' so existing tests are unaffected", async () => {
     const wrapper = mountWithFilterData()
     await settle()
-    expect((wrapper.vm as any).memberFilter).toBe("all")
+    expect((wrapper.vm as any).membershipStatusFilter).toBe("all")
     expect((wrapper.vm as any).paidFilter).toBe("all")
     expect((wrapper.vm as any).incassoFilter).toBe("all")
     // filteredRows includes all 3 users

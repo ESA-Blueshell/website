@@ -36,7 +36,7 @@ const RAW_RUNTIME_STATE =
           ["@originjs/vite-plugin-commonjs", "npm:1.0.3"],\
           ["@playwright/test", "npm:1.60.0"],\
           ["@types/luxon", "npm:3.7.2"],\
-          ["@types/node", "npm:25.9.1"],\
+          ["@types/node", "npm:26.1.1"],\
           ["@types/webfontloader", "npm:1.6.38"],\
           ["@typescript-eslint/eslint-plugin", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.64.0"],\
           ["@typescript-eslint/parser", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.64.0"],\
@@ -1857,11 +1857,11 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["@types/node", [\
-      ["npm:25.9.1", {\
-        "packageLocation": "./.yarn/cache/@types-node-npm-25.9.1-fa3ebe64ec-9a04682842.zip/node_modules/@types/node/",\
+      ["npm:26.1.1", {\
+        "packageLocation": "./.yarn/cache/@types-node-npm-26.1.1-7a7a9f32f4-25ac509319.zip/node_modules/@types/node/",\
         "packageDependencies": [\
-          ["@types/node", "npm:25.9.1"],\
-          ["undici-types", "npm:7.24.6"]\
+          ["@types/node", "npm:26.1.1"],\
+          ["undici-types", "npm:8.3.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -3278,7 +3278,7 @@ const RAW_RUNTIME_STATE =
           ["@originjs/vite-plugin-commonjs", "npm:1.0.3"],\
           ["@playwright/test", "npm:1.60.0"],\
           ["@types/luxon", "npm:3.7.2"],\
-          ["@types/node", "npm:25.9.1"],\
+          ["@types/node", "npm:26.1.1"],\
           ["@types/webfontloader", "npm:1.6.38"],\
           ["@typescript-eslint/eslint-plugin", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.64.0"],\
           ["@typescript-eslint/parser", "virtual:47311adda5947663fefbb2862c638deb1f84441a518c80265b7af0abdf16322a3acb7567f73f342eb25d22d4eab4fd6d6ea5df1ffe3e9caffc01101df02b1cd8#npm:8.64.0"],\
@@ -7798,10 +7798,10 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["undici-types", [\
-      ["npm:7.24.6", {\
-        "packageLocation": "./.yarn/cache/undici-types-npm-7.24.6-8759b28e34-d9cd8befb6.zip/node_modules/undici-types/",\
+      ["npm:8.3.0", {\
+        "packageLocation": "./.yarn/cache/undici-types-npm-8.3.0-d34470de3e-c8aa7e2fbe.zip/node_modules/undici-types/",\
         "packageDependencies": [\
-          ["undici-types", "npm:7.24.6"]\
+          ["undici-types", "npm:8.3.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -8010,7 +8010,7 @@ const RAW_RUNTIME_STATE =
           ["@types/esbuild", null],\
           ["@types/jiti", null],\
           ["@types/less", null],\
-          ["@types/node", "npm:25.9.1"],\
+          ["@types/node", "npm:26.1.1"],\
           ["@types/sass", null],\
           ["@types/sass-embedded", null],\
           ["@types/stylus", null],\
@@ -8194,7 +8194,7 @@ const RAW_RUNTIME_STATE =
           ["@types/edge-runtime__vm", null],\
           ["@types/happy-dom", null],\
           ["@types/jsdom", null],\
-          ["@types/node", "npm:25.9.1"],\
+          ["@types/node", "npm:26.1.1"],\
           ["@types/opentelemetry__api", null],\
           ["@types/vite", null],\
           ["@types/vitest__browser-playwright", null],\

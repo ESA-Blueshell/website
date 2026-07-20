@@ -1,15 +1,32 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:v="urn:schemas-microsoft-com:vml">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
     <meta charset="utf-8">
     <meta name="format-detection" content="telephone=no">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
-    <meta name="supported-color-schemes" content="dark">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="color-scheme" content="dark light">
+    <meta name="supported-color-schemes" content="dark light">
     <title>Blueshell Esports</title>
 
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+                <o:AllowPNG/>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+
     <style>
-        /* Webfont — blocked by some clients; system font fallback below covers those */
+        /*
+         * Progressive-enhancement stylesheet only.
+         * Gmail strips <style>; anything critical is also inlined below.
+         * Webfonts are blocked by many clients — the web-safe fallbacks in the
+         * font stacks below (and the mso block) cover those cases.
+         */
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fugaz+One&display=swap');
 
         /* ── Reset ─────────────────────────────────────────── */
@@ -24,61 +41,63 @@
         body {
             margin: 0 !important;
             padding: 0 !important;
-            background-color: #121212 !important;
+            width: 100% !important;
+            background-color: #0F1115 !important;
         }
 
-        /* ── Headings ───────────────────────────────────────── */
+        table { border-collapse: collapse; }
+
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* ── Headings (inside the Markdown content) ─────────── */
         h1 {
             font-family: "Fugaz One", "Arial Black", Arial, sans-serif !important;
-            font-size: 26px !important;
+            font-size: 30px !important;
             font-weight: 400 !important;
-            line-height: 1.2 !important;
-            margin: 0 !important;
+            line-height: 1.15 !important;
+            margin: 0 0 14px 0 !important;
             color: #3387FA !important;
-            text-transform: uppercase !important;
-            text-align: center !important;
-            letter-spacing: 1px !important;
+            letter-spacing: 0.5px !important;
         }
 
         h2 {
             font-family: "Fugaz One", "Arial Black", Arial, sans-serif !important;
-            font-size: 20px !important;
+            font-size: 22px !important;
             font-weight: 400 !important;
-            line-height: 1.3 !important;
-            margin: 20px 0 10px 0 !important;
-            color: #FAFAFA !important;
-            text-transform: uppercase !important;
+            line-height: 1.25 !important;
+            margin: 26px 0 10px 0 !important;
+            color: #FFFFFF !important;
         }
 
         h3 {
             font-family: "Barlow Semi Condensed", Arial, sans-serif !important;
-            font-size: 17px !important;
+            font-size: 18px !important;
             font-weight: 600 !important;
             line-height: 1.3 !important;
-            margin: 18px 0 8px 0 !important;
-            color: #FAFAFA !important;
+            margin: 20px 0 8px 0 !important;
+            color: #FFFFFF !important;
         }
 
         h4, h5, h6 {
             font-family: "Barlow Semi Condensed", Arial, sans-serif !important;
-            font-size: 15px !important;
+            font-size: 16px !important;
             font-weight: 600 !important;
             line-height: 1.3 !important;
-            margin: 14px 0 6px 0 !important;
-            color: #E0E0E0 !important;
+            margin: 16px 0 6px 0 !important;
+            color: #E6E9EE !important;
         }
 
         /* ── Body text ──────────────────────────────────────── */
         p {
             margin: 0 0 16px 0 !important;
-            color: #E0E0E0 !important;
+            color: #D7DCE3 !important;
             line-height: 1.65 !important;
-            font-size: 15px !important;
+            font-size: 16px !important;
         }
 
         /* ── Links ──────────────────────────────────────────── */
         a {
-            color: #3387FA !important;
+            color: #01A4C6 !important;
             text-decoration: underline !important;
         }
 
@@ -89,26 +108,26 @@
         }
 
         li {
-            margin: 5px 0 !important;
-            color: #E0E0E0 !important;
-            font-size: 15px !important;
+            margin: 6px 0 !important;
+            color: #D7DCE3 !important;
+            font-size: 16px !important;
             line-height: 1.65 !important;
         }
 
         /* ── Inline code ────────────────────────────────────── */
         code {
             font-family: "Courier New", Courier, monospace !important;
-            background-color: #2A2A2A !important;
-            color: #A8FF00 !important;
+            background-color: #1B1F27 !important;
+            color: #7FE0F2 !important;
             padding: 2px 6px !important;
             border-radius: 4px !important;
-            font-size: 13px !important;
+            font-size: 14px !important;
         }
 
         /* ── Code blocks ────────────────────────────────────── */
         pre {
-            background-color: #242424 !important;
-            border: 1px solid #333333 !important;
+            background-color: #161A21 !important;
+            border: 1px solid #262C36 !important;
             border-left: 3px solid #3387FA !important;
             padding: 14px 16px !important;
             border-radius: 6px !important;
@@ -120,19 +139,19 @@
 
         pre code {
             background-color: transparent !important;
-            color: #E0E0E0 !important;
+            color: #D7DCE3 !important;
             padding: 0 !important;
             border-radius: 0 !important;
-            font-size: 13px !important;
+            font-size: 14px !important;
         }
 
         /* ── Blockquote ─────────────────────────────────────── */
         blockquote {
             border-left: 3px solid #3387FA !important;
-            background-color: #212B3A !important;
-            padding: 10px 16px !important;
+            background-color: #171C24 !important;
+            padding: 12px 18px !important;
             margin: 0 0 16px 0 !important;
-            color: #AAAAAA !important;
+            color: #AEB6C1 !important;
             font-style: italic !important;
             border-radius: 0 4px 4px 0 !important;
         }
@@ -140,11 +159,11 @@
         /* ── Horizontal rule (markdown content) ─────────────── */
         hr {
             border: 0 !important;
-            border-top: 1px solid #262626 !important;
+            border-top: 1px solid #262C36 !important;
             height: 1px !important;
-            background-color: #262626 !important;
-            color: #262626 !important;
-            margin: 20px 0 !important;
+            background-color: #262C36 !important;
+            color: #262C36 !important;
+            margin: 24px 0 !important;
         }
 
         /* ── Markdown tables ────────────────────────────────── */
@@ -156,44 +175,45 @@
             width: 100% !important;
             border-collapse: collapse !important;
             margin: 0 0 16px 0 !important;
-            font-size: 14px !important;
+            font-size: 15px !important;
         }
 
         .email-content table th {
-            background-color: #242424 !important;
-            color: #FAFAFA !important;
+            background-color: #1B2129 !important;
+            color: #FFFFFF !important;
             font-weight: 600 !important;
             text-align: left !important;
             padding: 10px 12px !important;
-            border: 1px solid #333333 !important;
+            border: 1px solid #2C333E !important;
         }
 
         .email-content table td {
-            color: #E0E0E0 !important;
+            color: #D7DCE3 !important;
             padding: 8px 12px !important;
-            border: 1px solid #2E2E2E !important;
+            border: 1px solid #262C36 !important;
             vertical-align: top !important;
         }
 
         .email-content table tr:nth-child(even) td {
-            background-color: #222222 !important;
+            background-color: #171C24 !important;
         }
 
         /* ── Strong / emphasis ──────────────────────────────── */
         strong, b {
-            color: #FAFAFA !important;
+            color: #FFFFFF !important;
             font-weight: 700 !important;
         }
 
         em, i {
-            color: #C0C0C0 !important;
+            color: #C1C6CC !important;
         }
 
         /* ── Responsive ─────────────────────────────────────── */
         @media only screen and (max-width: 620px) {
-            .email-body-cell {
-                padding: 20px 18px 24px !important;
-            }
+            .email-container { width: 100% !important; }
+            .email-body-cell { padding: 24px 20px 28px !important; }
+            .email-header-cell { padding: 30px 20px 24px !important; }
+            .email-hero-title { font-size: 30px !important; }
         }
     </style>
 
@@ -203,240 +223,224 @@
         h1, h2, h3, h4, h5, h6 {
             font-family: Arial, Helvetica, sans-serif !important;
         }
-        h1, h2 { text-transform: uppercase !important; }
     </style>
     <![endif]-->
 </head>
 
-<body style="margin:0; padding:0; background-color:#121212;">
+<body style="margin:0; padding:0; width:100%; background-color:#0F1115;">
 
-<!--[if mso]>
-<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:100%;height:100%;">
-    <v:fill type="tile" src="cid:bg" color="#121212"/>
-    <v:textbox inset="0,0,0,0">
-<![endif]-->
+<!-- Preheader: hidden preview text. Falls back to the title; harmless when empty. -->
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#0F1115; opacity:0;">
+    <span th:text="${mainTitle ?: 'Blueshell Esports'}">Blueshell Esports</span>
+</div>
 
-<!--
-    Background image wrapper.
-    cid:bg provides a tiled texture; solid #121212 is the fallback.
-    Outlook uses the VML block above instead.
--->
-<div style="background-color:#121212; background-image:url('cid:bg'); background-repeat:repeat; background-position:top left;">
+<!-- ── Outer full-width background ──────────────────────────── -->
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%"
+       style="width:100%; background-color:#0F1115;" bgcolor="#0F1115">
+    <tr>
+        <td align="center" style="padding:32px 16px;">
 
-    <!-- ── Outer centering wrapper ─────────────────────────────── -->
-    <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
-        <tr>
-            <td align="center" style="padding:32px 16px;" bgcolor="#121212">
+            <!--[if mso]>
+            <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="600" align="center"><tr><td>
+            <![endif]-->
 
+            <!--
+                Card container.
+                width="600" fixes Outlook ignoring max-width.
+                border-radius degrades gracefully to square corners in Outlook.
+            -->
+            <table border="0" cellpadding="0" cellspacing="0" role="presentation"
+                   class="email-container"
+                   width="600" style="width:100%; max-width:600px; background-color:#12161C; border-radius:12px;">
+
+                <!-- ╔══ Top accent bar (blue) ══════════════════════╗ -->
+                <tr>
+                    <td height="4" bgcolor="#3387FA"
+                        style="height:4px; background-color:#3387FA; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+
+                <!-- ╠══ Hero / header ══════════════════════════════╣ -->
                 <!--
-                    Card container.
-                    width="600" fixes Outlook ignoring max-width.
-                    border-radius degrades gracefully to square corners in Outlook.
-                    overflow:hidden is intentionally omitted — unsupported in Outlook.
+                    Dark hero panel with centered logo + title, echoing the reference
+                    email's centered 300px logo and large Fugaz One heading.
+                    Solid #0C0F14 stands in for the reference's tiled hero texture —
+                    linear-gradients/background-size are unreliable across clients.
                 -->
-                <table border="0" cellpadding="0" cellspacing="0" role="presentation"
-                       width="600" style="width:100%; max-width:600px; background-color:#1E1E1E; border-radius:10px;">
-
-                    <!-- ╔══ Top accent bar (3 px) ══════════════════════╗ -->
-                    <tr>
-                        <td height="3" bgcolor="#A8FF00"
-                            style="height:3px; background-color:#A8FF00; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
-
-                    <!-- ╠══ Logo / header ══════════════════════════════╣ -->
-                    <tr>
-                        <!--
-                            No linear-gradient — unsupported in Outlook and most clients.
-                            Solid #1A1A1A provides the same dark header feel.
-                        -->
-                        <td align="center" bgcolor="#1A1A1A"
-                            style="background-color:#1A1A1A; padding:32px 32px 28px;">
-                            <img
-                                alt="Blueshell Esports"
-                                src="cid:logo"
-                                th:src="'cid:logo'"
-                                width="210"
-                                style="width:210px; max-width:100%; height:auto; display:block; margin:0 auto; border:0;"
-                            >
-                        </td>
-                    </tr>
-
-                    <!-- ╠══ Green accent line under logo (1 px) ═══════╣ -->
-                    <tr>
-                        <td height="1" bgcolor="#A8FF00"
-                            style="height:1px; background-color:#A8FF00; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
-
-                    <!-- ╠══ Title (conditional) ════════════════════════╣ -->
-                    <tr th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}">
-                        <td align="center" bgcolor="#1E1E1E"
-                            style="background-color:#1E1E1E; padding:28px 32px 8px;">
-                            <h1 style="font-family:'Fugaz One','Arial Black',Arial,sans-serif;
-                                       font-size:26px; font-weight:400; color:#3387FA;
-                                       text-transform:uppercase; margin:0; letter-spacing:1px;
-                                       text-align:center; line-height:1.2;"
+                <tr>
+                    <td class="email-header-cell" align="center" bgcolor="#0C0F14"
+                        style="background-color:#0C0F14; padding:36px 32px 30px; border-radius:12px 12px 0 0;">
+                        <img
+                            alt="Blueshell Esports"
+                            src="cid:logo"
+                            th:src="'cid:logo'"
+                            width="240"
+                            style="width:240px; max-width:80%; height:auto; display:block; margin:0 auto 0; border:0;"
+                        >
+                        <!-- Title (conditional) -->
+                        <div th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}"
+                             style="margin-top:22px;">
+                            <h1 class="email-hero-title"
+                                style="font-family:'Fugaz One','Arial Black',Arial,sans-serif;
+                                       font-size:34px; font-weight:400; color:#3387FA;
+                                       margin:0; letter-spacing:0.5px;
+                                       text-align:center; line-height:1.15;"
                                 th:text="${mainTitle}">
                                 MAIN TITLE
                             </h1>
-                        </td>
-                    </tr>
+                        </div>
+                    </td>
+                </tr>
 
-                    <!-- ╠══ Divider under title (conditional, 1 px) ═══╣ -->
-                    <tr th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}">
-                        <td bgcolor="#1E1E1E" style="background-color:#1E1E1E; padding:0 32px;">
-                            <div style="height:1px; background-color:#262626; font-size:0; line-height:0;">&nbsp;</div>
-                        </td>
-                    </tr>
+                <!-- ╠══ Accent line under hero (blue, 1 px) ═══════╣ -->
+                <tr>
+                    <td height="1" bgcolor="#3387FA"
+                        style="height:1px; background-color:#3387FA; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
 
-                    <!-- ╠══ Email body content ══════════════════════════╣ -->
-                    <tr>
-                        <td class="email-body-cell" bgcolor="#1E1E1E"
-                            style="background-color:#1E1E1E; padding:28px 32px 32px;">
-                            <div class="email-content"
-                                 th:utext="${emailContent ?: 'No content provided.'}">
-                                <p style="margin:0 0 16px 0; color:#E0E0E0; font-size:15px; line-height:1.65;">
-                                    This is the default content area where your email content will be displayed.
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <!-- ╠══ Separator: body → social ═══════════════════╣ -->
-                    <tr>
-                        <td height="1" bgcolor="#252525"
-                            style="height:1px; background-color:#252525; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
-
-                    <!-- ╠══ Social / "Follow us" section ═══════════════╣ -->
-                    <tr>
-                        <td align="center" bgcolor="#191919"
-                            style="background-color:#191919; padding:8px 24px 8px;">
-                            <!-- Label: inline !important overrides the stylesheet's p { margin !important } reset -->
-                            <p style="margin:0 0 8px 0 !important; color:#555555; font-size:10px; font-weight:600;
-                                      letter-spacing:2px; text-transform:uppercase; text-align:center;
-                                      line-height:1 !important;">
-                                Follow us
+                <!-- ╠══ Email body content ══════════════════════════╣ -->
+                <tr>
+                    <td class="email-body-cell" bgcolor="#12161C"
+                        style="background-color:#12161C; padding:30px 34px 34px;">
+                        <div class="email-content"
+                             th:utext="${emailContent ?: 'No content provided.'}">
+                            <p style="margin:0 0 16px 0; color:#D7DCE3; font-size:16px; line-height:1.65;">
+                                This is the default content area where your email content will be displayed.
                             </p>
-                            <!-- Icon row: no website icon — CSS filter not cross-client compatible -->
-                            <table border="0" cellpadding="0" cellspacing="0" role="presentation">
-                                <tr>
-                                    <td width="38" align="center" style="padding:0 5px;">
-                                        <a href="https://discord.gg/dFam2yqXu7" target="_blank"
-                                           style="text-decoration:none; color:#FAFAFA;">
-                                            <img alt="Discord"
-                                                 src="https://cdn-icons-png.flaticon.com/32/2111/2111370.png"
-                                                 width="26" height="26"
-                                                 style="width:26px; height:26px; display:block; border:0;">
-                                        </a>
-                                    </td>
-                                    <td width="38" align="center" style="padding:0 5px;">
-                                        <a href="https://www.facebook.com/BlueshellEsports" target="_blank"
-                                           style="text-decoration:none; color:#FAFAFA;">
-                                            <img alt="Facebook"
-                                                 src="https://cdn-icons-png.flaticon.com/32/733/733547.png"
-                                                 width="26" height="26"
-                                                 style="width:26px; height:26px; display:block; border:0;">
-                                        </a>
-                                    </td>
-                                    <td width="38" align="center" style="padding:0 5px;">
-                                        <a href="https://www.instagram.com/esablueshell/" target="_blank"
-                                           style="text-decoration:none; color:#FAFAFA;">
-                                            <img alt="Instagram"
-                                                 src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png"
-                                                 width="26" height="26"
-                                                 style="width:26px; height:26px; display:block; border:0;">
-                                        </a>
-                                    </td>
-                                    <td width="38" align="center" style="padding:0 5px;">
-                                        <a href="https://twitter.com/BlueshellESA" target="_blank"
-                                           style="text-decoration:none; color:#FAFAFA;">
-                                            <img alt="Twitter / X"
-                                                 src="https://cdn-icons-png.flaticon.com/32/733/733579.png"
-                                                 width="26" height="26"
-                                                 style="width:26px; height:26px; display:block; border:0;">
-                                        </a>
-                                    </td>
-                                    <td width="38" align="center" style="padding:0 5px;">
-                                        <a href="https://www.twitch.tv/blueshellesports" target="_blank"
-                                           style="text-decoration:none; color:#FAFAFA;">
-                                            <img alt="Twitch"
-                                                 src="https://cdn-icons-png.flaticon.com/32/5968/5968819.png"
-                                                 width="26" height="26"
-                                                 style="width:26px; height:26px; display:block; border:0;">
-                                        </a>
-                                    </td>
-                                    <!--
-                                        Website icon: the flaticon globe is dark-coloured.
-                                        CSS filter (invert) is unsupported in Outlook/Gmail.
-                                        Solution: white pill background behind the icon makes it
-                                        visible on any dark surface without CSS filter tricks.
-                                    -->
-                                    <td width="38" align="center" style="padding:0 5px;">
-                                        <a href="https://esa-blueshell.nl/" target="_blank"
-                                           style="text-decoration:none;">
-                                            <table border="0" cellpadding="0" cellspacing="0" role="presentation">
-                                                <tr>
-                                                    <td bgcolor="#FFFFFF" width="26" height="26" align="center"
-                                                        style="background-color:#FFFFFF; width:26px; height:26px;
-                                                               border-radius:4px; padding:0;">
-                                                        <img alt="Website"
-                                                             src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png"
-                                                             width="22" height="22"
-                                                             style="width:22px; height:22px; display:block; border:0;
-                                                                    margin:2px auto 0;">
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
+                        </div>
+                    </td>
+                </tr>
 
-                    <!-- ╠══ Separator: social → send info ═════════════╣ -->
-                    <tr>
-                        <td height="1" bgcolor="#1E1E1E"
-                            style="height:1px; background-color:#1E1E1E; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
+                <!-- ╠══ Separator: body → social ═══════════════════╣ -->
+                <tr>
+                    <td height="1" bgcolor="#1B2129"
+                        style="height:1px; background-color:#1B2129; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
 
-                    <!-- ╠══ Send info section ═══════════════════════════╣ -->
-                    <tr>
-                        <td align="center" bgcolor="#111111"
-                            style="background-color:#111111; padding:12px 32px 18px;">
-                            <p style="margin:0; color:#606060; font-size:11px; line-height:1.7; text-align:center;">
-                                This email was sent to
-                                <strong style="color:#909090;" th:text="${sentTo}">[recipient-email]</strong>
-                                &nbsp;&middot;&nbsp;
-                                <span th:text="${#dates.format(#dates.createNow(), 'MMM dd, yyyy HH:mm')}">Date and Time</span>
-                                <br>
-                                Need help? Visit
-                                <a href="https://esa-blueshell.nl/"
-                                   style="color:#4A90D9 !important; text-decoration:none !important;">esa-blueshell.nl</a>
-                            </p>
-                        </td>
-                    </tr>
+                <!-- ╠══ Social / "Follow us" section ═══════════════╣ -->
+                <tr>
+                    <td align="center" bgcolor="#0F1319"
+                        style="background-color:#0F1319; padding:18px 24px 14px;">
+                        <!-- Label: inline !important overrides the stylesheet's p { margin !important } reset -->
+                        <p style="margin:0 0 10px 0 !important; color:#5B6672; font-size:10px; font-weight:600;
+                                  letter-spacing:2px; text-transform:uppercase; text-align:center;
+                                  line-height:1 !important;">
+                            Follow us
+                        </p>
+                        <!-- Icon row -->
+                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" align="center">
+                            <tr>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://discord.gg/dFam2yqXu7" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Discord"
+                                             src="https://cdn-icons-png.flaticon.com/32/2111/2111370.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://www.facebook.com/BlueshellEsports" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Facebook"
+                                             src="https://cdn-icons-png.flaticon.com/32/733/733547.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://www.instagram.com/esablueshell/" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Instagram"
+                                             src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://twitter.com/BlueshellESA" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Twitter / X"
+                                             src="https://cdn-icons-png.flaticon.com/32/733/733579.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://www.twitch.tv/blueshellesports" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Twitch"
+                                             src="https://cdn-icons-png.flaticon.com/32/5968/5968819.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <!--
+                                    Website icon: the flaticon globe is dark-coloured.
+                                    CSS filter (invert) is unsupported in Outlook/Gmail, so a
+                                    white pill background keeps it visible on the dark surface.
+                                -->
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://esa-blueshell.nl/" target="_blank"
+                                       style="text-decoration:none;">
+                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                            <tr>
+                                                <td bgcolor="#FFFFFF" width="26" height="26" align="center"
+                                                    style="background-color:#FFFFFF; width:26px; height:26px;
+                                                           border-radius:4px; padding:0;">
+                                                    <img alt="Website"
+                                                         src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png"
+                                                         width="22" height="22"
+                                                         style="width:22px; height:22px; display:block; border:0;
+                                                                margin:2px auto 0;">
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
 
-                    <!-- ╚══ Bottom accent bar (3 px) ══════════════════╝ -->
-                    <tr>
-                        <td height="3" bgcolor="#A8FF00"
-                            style="height:3px; background-color:#A8FF00; font-size:0; line-height:0;">&nbsp;</td>
-                    </tr>
+                <!-- ╠══ Separator: social → send info ═════════════╣ -->
+                <tr>
+                    <td height="1" bgcolor="#12161C"
+                        style="height:1px; background-color:#12161C; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
 
-                </table>
-                <!-- /Card container -->
+                <!-- ╠══ Send info / footer section ═════════════════╣ -->
+                <tr>
+                    <td align="center" bgcolor="#0A0C10"
+                        style="background-color:#0A0C10; padding:16px 32px 20px; border-radius:0 0 12px 12px;">
+                        <p style="margin:0; color:#7A828E; font-size:12px; line-height:1.7; text-align:center;">
+                            This email was sent to
+                            <strong style="color:#AEB6C1;" th:text="${sentTo}">[recipient-email]</strong>
+                            &nbsp;&middot;&nbsp;
+                            <span th:text="${#dates.format(#dates.createNow(), 'MMM dd, yyyy HH:mm')}">Date and Time</span>
+                            <br>
+                            Need help? Visit
+                            <a href="https://esa-blueshell.nl/"
+                               style="color:#01A4C6 !important; text-decoration:none !important;">esa-blueshell.nl</a>
+                        </p>
+                    </td>
+                </tr>
 
-            </td>
-        </tr>
-    </table>
+                <!-- ╚══ Bottom accent bar (blue) ══════════════════╝ -->
+                <tr>
+                    <td height="4" bgcolor="#3387FA"
+                        style="height:4px; background-color:#3387FA; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
 
-</div>
-<!-- /Background image wrapper -->
+            </table>
+            <!-- /Card container -->
 
-<!--[if mso]>
-    </v:textbox>
-</v:rect>
-<![endif]-->
+            <!--[if mso]>
+            </td></tr></table>
+            <![endif]-->
+
+        </td>
+    </tr>
+</table>
 
 </body>
 </html>

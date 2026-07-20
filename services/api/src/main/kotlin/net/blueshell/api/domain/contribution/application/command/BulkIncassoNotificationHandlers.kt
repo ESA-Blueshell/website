@@ -4,7 +4,6 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.application.IncassoNotificationService
 import net.blueshell.api.domain.contribution.command.ExecuteBulkIncassoNotificationCommand
-import net.blueshell.api.domain.contribution.command.PreviewBulkIncassoNotificationCommand
 import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
 import net.blueshell.api.domain.contribution.domain.resolveFeeType
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
@@ -13,9 +12,6 @@ import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
-import net.blueshell.api.shared.dto.bulk.BulkActionType
-import net.blueshell.api.shared.dto.bulk.BulkPreviewResult
-import net.blueshell.api.shared.dto.bulk.BulkPreviewRow
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
@@ -23,29 +19,6 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.ZoneOffset
-
-@Component
-class PreviewBulkIncassoNotificationHandler(
-    private val users: UserService,
-    private val memberships: MembershipService,
-    private val periods: ContributionPeriodService,
-    private val contributions: ContributionService,
-    private val notifications: IncassoNotificationService,
-) : CommandHandler<PreviewBulkIncassoNotificationCommand, BulkPreviewResult> {
-    override val commandType = PreviewBulkIncassoNotificationCommand::class
-
-    @Transactional(readOnly = true)
-    override fun handle(command: PreviewBulkIncassoNotificationCommand): BulkPreviewResult {
-        val periodId = command.contributionPeriodId!!
-        val period = periods.findById(periodId)
-        val cutoffDate = command.cutoffDate!!
-
-        val rows = command.userIds.distinct().map { userId ->
-            decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions, notifications).toRow()
-        }
-        return BulkPreviewResult.of(BulkActionType.INCASSO_NOTIFICATION, periodId, rows)
-    }
-}
 
 @Component
 class ExecuteBulkIncassoNotificationHandler(

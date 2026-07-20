@@ -4,14 +4,12 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.application.IncassoNotificationService
 import net.blueshell.api.domain.contribution.command.ExecuteBulkIncassoNotificationCommand
-import net.blueshell.api.domain.contribution.command.PreviewBulkIncassoNotificationCommand
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.dto.bulk.BulkActionType
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
@@ -33,150 +31,6 @@ class BulkIncassoNotificationHandlersTest {
     private val periodService = mock<ContributionPeriodService>()
     private val contributionService = mock<ContributionService>()
     private val notificationService = mock<IncassoNotificationService>()
-
-    @Nested
-    inner class PreviewBulkIncassoNotification {
-
-        private val handler = PreviewBulkIncassoNotificationHandler(
-            userService,
-            membershipService,
-            periodService,
-            contributionService,
-            notificationService,
-        )
-
-        @Test
-        fun `preview includes users with incasso=true and no existing contribution`() {
-            val userId = 1L
-            val periodId = 100L
-            val cutoffDate = LocalDate.of(2024, 1, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 2, 1)
-
-            val user = mockUser(userId, "Alice")
-            val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
-            val membership = mockMembership(incasso = true)
-
-            setupMocks(user, membership, period, userId, periodId, false, null)
-
-            val result = handler.handle(
-                PreviewBulkIncassoNotificationCommand(
-                    userIds = listOf(userId),
-                    contributionPeriodId = periodId,
-                    cutoffDate = cutoffDate,
-                    expectedIncassoDate = expectedIncassoDate,
-                )
-            )
-
-            assertThat(result.action).isEqualTo(BulkActionType.INCASSO_NOTIFICATION)
-            assertThat(result.rows).hasSize(1)
-            assertThat(result.rows[0].userId).isEqualTo(userId)
-            assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.INCLUDED)
-            assertThat(result.rows[0].reason).isNull()
-            assertThat(result.rows[0].amount).isEqualTo(100.0)
-            // Regular member with startDate 2023-01-01 < cutoffDate 2024-01-01 → FULL_YEAR_FEE
-            assertThat(result.rows[0].recommendedFeeType).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
-        }
-
-        @Test
-        fun `preview excludes honorary members`() {
-            val userId = 2L
-            val periodId = 100L
-            val cutoffDate = LocalDate.of(2024, 1, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 2, 1)
-
-            val user = mockUser(userId, "Bob")
-            val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
-            val membership = mockMembership(memberType = MemberType.HONORARY)
-
-            setupMocks(user, membership, period, userId, periodId, false, null)
-
-            val result = handler.handle(
-                PreviewBulkIncassoNotificationCommand(
-                    userIds = listOf(userId),
-                    contributionPeriodId = periodId,
-                    cutoffDate = cutoffDate,
-                    expectedIncassoDate = expectedIncassoDate,
-                )
-            )
-
-            assertThat(result.rows).hasSize(1)
-            assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.EXCLUDED)
-            assertThat(result.rows[0].reason).isEqualTo(BulkRowReason.HONORARY)
-            assertThat(result.rows[0].amount).isNull()
-        }
-
-        @Test
-        fun `preview warns for users without incasso=true`() {
-            val userId = 3L
-            val periodId = 100L
-            val cutoffDate = LocalDate.of(2024, 1, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 2, 1)
-
-            val user = mockUser(userId, "Charlie")
-            val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
-            val membership = mockMembership(incasso = false)
-
-            setupMocks(user, membership, period, userId, periodId, false, null)
-
-            val result = handler.handle(
-                PreviewBulkIncassoNotificationCommand(
-                    userIds = listOf(userId),
-                    contributionPeriodId = periodId,
-                    cutoffDate = cutoffDate,
-                    expectedIncassoDate = expectedIncassoDate,
-                )
-            )
-
-            assertThat(result.rows).hasSize(1)
-            assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.WARNING)
-            assertThat(result.rows[0].reason).isEqualTo(BulkRowReason.INCASSO_MISMATCH)
-            assertThat(result.rows[0].amount).isEqualTo(100.0)
-        }
-
-        @Test
-        fun `preview warns for users who already paid`() {
-            val userId = 4L
-            val periodId = 100L
-            val cutoffDate = LocalDate.of(2024, 1, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 2, 1)
-
-            val user = mockUser(userId, "Diana")
-            val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
-            val membership = mockMembership(incasso = true)
-
-            setupMocks(user, membership, period, userId, periodId, true, null)
-
-            val result = handler.handle(
-                PreviewBulkIncassoNotificationCommand(
-                    userIds = listOf(userId),
-                    contributionPeriodId = periodId,
-                    cutoffDate = cutoffDate,
-                    expectedIncassoDate = expectedIncassoDate,
-                )
-            )
-
-            assertThat(result.rows).hasSize(1)
-            assertThat(result.rows[0].disposition).isEqualTo(BulkRowDisposition.WARNING)
-            assertThat(result.rows[0].reason).isEqualTo(BulkRowReason.ALREADY_PAID)
-            assertThat(result.rows[0].amount).isEqualTo(100.0)
-        }
-
-        private fun setupMocks(
-            user: User,
-            membership: Membership,
-            period: ContributionPeriod,
-            userId: Long,
-            periodId: Long,
-            alreadyPaid: Boolean,
-            lastSent: Instant?
-        ) {
-            whenever(userService.findById(userId)).thenReturn(user)
-            whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
-            whenever(periodService.findById(periodId)).thenReturn(period)
-            whenever(contributionService.existsByUserIdAndPeriodId(userId, periodId)).thenReturn(alreadyPaid)
-            whenever(notificationService.findLastNotificationForUserAndPeriod(userId, periodId)).thenReturn(null)
-        }
-    }
 
     @Nested
     inner class ExecuteBulkIncassoNotification {

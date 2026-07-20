@@ -23,32 +23,6 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
     private fun body(userIds: List<Long>) = """{"userIds":[${userIds.joinToString(",")}]}"""
 
     @Nested
-    inner class Preview {
-
-        @Test
-        fun `includes users with an active membership and skips those without`() {
-            val board = createUserWithRole(Role.BOARD)
-            val withMembership = createUserWithRole(Role.MEMBER)
-            createMembershipFixture(user = withMembership)
-            val without = createUserWithRole(Role.MEMBER)
-
-            mvc.perform(
-                post("/memberships/bulk/end/preview")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(withMembership.id!!, without.id!!)))
-            )
-                .andExpect(status().isOk)
-                .andExpect(jsonPath("$.counts.selected").value(2))
-                .andExpect(jsonPath("$.counts.willApply").value(1))
-                .andExpect(jsonPath("$.counts.skipped").value(1))
-                // The end preview now also returns the server's date so the frontend can
-                // evaluate the "started today" boundary in the server's timezone.
-                .andExpect(jsonPath("$.serverToday").value(LocalDate.now().toString()))
-        }
-    }
-
-    @Nested
     inner class Execute {
 
         @Test

@@ -1,7 +1,6 @@
 package net.blueshell.api.domain.user.application.command
 
 import net.blueshell.api.domain.user.application.MembershipService
-import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.query.MembershipQuery
 import net.blueshell.api.domain.user.command.ExecuteBulkEndMembershipCommand
 import net.blueshell.api.domain.user.persistence.Membership
@@ -12,10 +11,10 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 /**
- * Shared decision for end-membership: a user's active (endDate=null) memberships that
- * started before [actionDate] are endable. Both preview and execute filter with the
- * same predicate and the same single [actionDate] so they cannot diverge across the
- * midnight boundary within a request. See docs/proposals/bulk-actions/REDESIGN.md §3.
+ * Decision for end-membership: a user's active (endDate=null) memberships that
+ * started before [actionDate] are endable. Execute filters with this predicate and a
+ * single [actionDate] so all users in one request share the same midnight boundary.
+ * See docs/proposals/bulk-actions/REDESIGN.md §3.
  */
 private fun endableMemberships(
     memberships: MembershipService,

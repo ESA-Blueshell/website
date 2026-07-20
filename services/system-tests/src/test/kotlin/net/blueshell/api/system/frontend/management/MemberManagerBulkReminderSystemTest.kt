@@ -55,6 +55,9 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
             regularBeforeCutoff.username,
             memberType = "REGULAR",
             startDate = periodStart.minusDays(30),
+            // Non-incasso: on the reminder action, incasso payers are warned by default, so an
+            // INCLUDED expectation requires a member who does not pay via incasso.
+            incasso = false,
         )
         val regularBeforeId = TestHelper.findUser(regularBeforeCutoff.username)!!.id
 
@@ -67,6 +70,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
             regularAfterCutoff.username,
             memberType = "REGULAR",
             startDate = cutoffDate.plusDays(5),
+            incasso = false,
         )
         val regularAfterId = TestHelper.findUser(regularAfterCutoff.username)!!.id
 
@@ -79,6 +83,7 @@ class MemberManagerBulkReminderSystemTest : PlaywrightTestBase() {
             alumniMember.username,
             memberType = "ALUMNI",
             startDate = periodStart.minusDays(10),
+            incasso = false,
         )
         val alumniId = TestHelper.findUser(alumniMember.username)!!.id
 

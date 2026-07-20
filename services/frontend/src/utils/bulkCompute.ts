@@ -22,6 +22,13 @@ export function computeMarkPaidRows(targets: BulkTarget[]): BulkRow[] {
       name: target.name,
     }
 
+    // Populate membership info for every row regardless of disposition, so even
+    // skipped rows show Type + Member-since (only "—" when there is no membership).
+    if (target.mostRecentMembership) {
+      row.memberType = target.mostRecentMembership.type
+      row.memberSince = target.mostRecentMembership.startDate
+    }
+
     if (target.isHonorary) {
       row.disposition = "SKIPPED"
       row.reason = "HONORARY"
@@ -30,11 +37,6 @@ export function computeMarkPaidRows(targets: BulkTarget[]): BulkRow[] {
       row.reason = "ALREADY_PAID"
     } else {
       row.disposition = "INCLUDED"
-    }
-
-    if (target.mostRecentMembership) {
-      row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.mostRecentMembership.startDate
     }
 
     return row
@@ -52,6 +54,13 @@ export function computeMarkUnpaidRows(targets: BulkTarget[]): BulkRow[] {
       name: target.name,
     }
 
+    // Populate membership info for every row regardless of disposition, so even
+    // skipped rows show Type + Member-since (only "—" when there is no membership).
+    if (target.mostRecentMembership) {
+      row.memberType = target.mostRecentMembership.type
+      row.memberSince = target.mostRecentMembership.startDate
+    }
+
     if (target.isHonorary) {
       row.disposition = "SKIPPED"
       row.reason = "HONORARY"
@@ -60,11 +69,6 @@ export function computeMarkUnpaidRows(targets: BulkTarget[]): BulkRow[] {
       row.reason = "NOT_PAID"
     } else {
       row.disposition = "INCLUDED"
-    }
-
-    if (target.mostRecentMembership) {
-      row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.mostRecentMembership.startDate
     }
 
     return row
@@ -96,6 +100,13 @@ export function computeReminderRows(
       name: target.name,
     }
 
+    // Populate membership info for every row regardless of disposition, so even
+    // excluded/skipped rows show Type + Member-since (only "—" when there is no membership).
+    if (target.mostRecentMembership) {
+      row.memberType = target.mostRecentMembership.type
+      row.memberSince = target.mostRecentMembership.startDate
+    }
+
     // Check preconditions
     if (!target.mostRecentMembership || target.isHonorary) {
       row.disposition = "EXCLUDED"
@@ -108,10 +119,6 @@ export function computeReminderRows(
       row.reason = "NO_EMAIL"
       return row
     }
-
-    // Populate membership info
-    row.memberType = target.mostRecentMembership.type
-    row.memberSince = target.mostRecentMembership.startDate
 
     // Auto-select the fee type using the locked rule.
     row.recommendedFeeType = autoFeeType(target.mostRecentMembership, target.isHonorary, cutoffDate) ?? undefined
@@ -178,16 +185,18 @@ export function computeEndMembershipRows(targets: BulkTarget[], _today: string):
       name: target.name,
     }
 
+    // Populate membership info for every row regardless of disposition, so even
+    // skipped rows show Type + Member-since (only "—" when there is no membership).
+    if (target.mostRecentMembership) {
+      row.memberType = target.mostRecentMembership.type
+      row.memberSince = target.mostRecentMembership.startDate
+    }
+
     if (!target.mostRecentMembership || target.mostRecentMembership.endDate !== null) {
       row.disposition = "SKIPPED"
       row.reason = "NO_ACTIVE_MEMBERSHIP"
     } else {
       row.disposition = "INCLUDED"
-    }
-
-    if (target.mostRecentMembership) {
-      row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.mostRecentMembership.startDate
     }
 
     return row
@@ -208,6 +217,14 @@ export function computeResumeMembershipRows(
       disposition: "INCLUDED",
       userId: target.userId,
       name: target.name,
+    }
+
+    // Populate membership info for every row regardless of disposition, so even
+    // skipped (already-active) rows show Type + Member-since (only "—" when there
+    // is no membership at all).
+    if (target.mostRecentMembership) {
+      row.memberType = target.mostRecentMembership.type
+      row.memberSince = target.mostRecentMembership.startDate
     }
 
     // If already active (no endDate), skip
@@ -236,11 +253,6 @@ export function computeResumeMembershipRows(
       row.reason = "WILL_RESUME"
     } else {
       row.reason = "WILL_START_NEW"
-    }
-
-    if (target.mostRecentMembership) {
-      row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.mostRecentMembership.startDate
     }
 
     return row

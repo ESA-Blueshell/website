@@ -53,7 +53,7 @@ const REASON_LABELS: Record<BulkRowReason, string> = {
   NO_ACTIVE_MEMBERSHIP: "No active membership",
   STARTED_TODAY: "Started today",
   NO_EMAIL: "No email address on file",
-  ALREADY_ACTIVE: "Already active",
+  ALREADY_ACTIVE: "Already has an active membership",
   NO_CONTRIBUTION_PERIOD: "No contribution period",
   WILL_RESUME: "Will resume",
   WILL_START_NEW: "Will start new",

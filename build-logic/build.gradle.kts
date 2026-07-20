@@ -20,7 +20,7 @@ dependencies {
     // detekt + ktlint are available as convention plugins but not applied
     // anywhere in this PR — they are opt-in per service to avoid a wall of
     // style failures on the existing tree. Introduce per service later.
-    implementation("dev.detekt:detekt-gradle-plugin:2.0.0-alpha.3")
+    implementation("dev.detekt:detekt-gradle-plugin:2.0.0-alpha.5")
     implementation("org.jlleitschuh.gradle:ktlint-gradle:14.2.0")
     implementation("org.openapitools:openapi-generator-gradle-plugin:7.22.0")
 }

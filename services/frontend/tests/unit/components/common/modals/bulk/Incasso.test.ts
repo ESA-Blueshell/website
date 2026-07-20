@@ -3,7 +3,7 @@ import {mount} from "@vue/test-utils"
 import IncassoDialog from "@/components/common/modals/bulk/IncassoDialog.vue"
 import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType, type ContributionPeriodResponse} from "@/services/api"
-import {settle} from "../../../helpers/testUtils"
+import {settle} from "../../../../helpers/testUtils"
 
 // Mock the API call
 const mockSendIncasso = vi.fn()

@@ -3,7 +3,7 @@ import {mount} from "@vue/test-utils"
 import MarkUnpaidDialog from "@/components/common/modals/bulk/MarkUnpaidDialog.vue"
 import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType} from "@/services/api"
-import {settle} from "../../../helpers/testUtils"
+import {settle} from "../../../../helpers/testUtils"
 
 // Mock the API call
 const mockMarkUnpaid = vi.fn()

@@ -3,7 +3,7 @@ import {mount} from "@vue/test-utils"
 import ResumeMembershipDialog from "@/components/common/modals/bulk/ResumeMembershipDialog.vue"
 import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType, type ContributionPeriodResponse} from "@/services/api"
-import {settle} from "../../../helpers/testUtils"
+import {settle} from "../../../../helpers/testUtils"
 
 // Mock the API call
 const mockExecuteBulkResume = vi.fn()

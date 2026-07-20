@@ -65,34 +65,35 @@ const previewDisabled = computed(() => props.loading || props.users.length === 0
 </script>
 
 <template>
-  <div class="bulk-email-preview-container mb-4">
-    <div class="text-overline bulk-email-preview-container__label">Preview email</div>
-    <div class="d-flex align-center gap-3 bulk-email-preview">
-      <v-select
-        v-model="selectedUser"
-        class="bulk-email-preview__user"
-        data-testid="bulk-email-preview-user-select"
-        density="comfortable"
-        :disabled="users.length === 0"
-        hide-details
-        item-title="title"
-        item-value="value"
-        :items="users"
-        label="Preview recipient"
-        prepend-inner-icon="mdi-account"
-      />
-      <v-btn
-        data-testid="bulk-email-preview-btn"
-        :disabled="previewDisabled"
-        :loading="loading"
-        prepend-icon="mdi-email-search-outline"
-        variant="tonal"
-        @click="emit('preview')"
-      >
-        Preview email
-      </v-btn>
-    </div>
-  </div>
+  <!--
+    Inline controls: rendered as plain flex children so the parent dialog places them on
+    the SAME row as its date inputs (no box, no section label; a divider below the row
+    separates it from the counts).
+  -->
+  <v-select
+    v-model="selectedUser"
+    class="bulk-email-preview__user"
+    data-testid="bulk-email-preview-user-select"
+    density="comfortable"
+    :disabled="users.length === 0"
+    hide-details
+    item-title="title"
+    item-value="value"
+    :items="users"
+    label="Preview recipient"
+    prepend-inner-icon="mdi-account"
+  />
+  <v-btn
+    class="bulk-email-preview__btn"
+    data-testid="bulk-email-preview-btn"
+    :disabled="previewDisabled"
+    :loading="loading"
+    prepend-icon="mdi-email-search-outline"
+    variant="tonal"
+    @click="emit('preview')"
+  >
+    Preview email
+  </v-btn>
 
   <v-dialog
     v-model="dialog"
@@ -130,12 +131,14 @@ const previewDisabled = computed(() => props.loading || props.users.length === 0
           <v-progress-circular indeterminate />
         </div>
         <template v-else>
-          <div class="mb-2">
-            <span class="text-caption text-medium-emphasis">Subject</span>
-            <div
+          <!-- Single-pane layout: subject line + borderless dark iframe blend into one
+               surface (no nested outlined boxes). -->
+          <div class="mb-3">
+            <span class="text-caption text-medium-emphasis">Subject&nbsp;&nbsp;</span>
+            <span
               class="font-weight-medium"
               data-testid="bulk-email-preview-subject"
-            >{{ subject }}</div>
+            >{{ subject }}</span>
           </div>
           <!--
             Render the server-produced email HTML inside a sandboxed iframe via srcdoc so
@@ -158,50 +161,28 @@ const previewDisabled = computed(() => props.loading || props.users.length === 0
 </template>
 
 <style lang="scss" scoped>
-// Container for the preview email section: a subtle boxed area with a tonal
-// background and a label, separate from the date filter row above it. Matches the
-// app's existing subtle surface-tint pattern (rgba border + minimal background)
-// rather than heavy dividers that were removed for being over-styled.
-.bulk-email-preview-container {
-  border-radius: 4px;
-  padding: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-
-  &__label {
-    display: block;
-    margin-bottom: 8px;
-    color: rgba(var(--v-theme-on-surface), 0.7);
-  }
+// Inline controls (rendered inside the parent dialog's date row): the recipient select
+// stays compact so the dates keep room; the button centres on the shared row axis.
+.bulk-email-preview__user {
+  flex: 0 1 260px;
+  min-width: 200px;
 }
 
-.bulk-email-preview {
-  // Keep the recipient select and the Preview button centred on the same horizontal
-  // axis. The comfortable-density select is taller than the button, so without an
-  // explicit centre the button drifts off-axis; align-items:center on the flex row plus
-  // resetting any stray vertical margins keeps them aligned regardless of the select's
-  // hide-details height.
-  align-items: center;
-
-  &__user {
-    max-width: 320px;
-    flex-grow: 1;
-  }
-
-  // :deep() so the rule pierces the child v-btn component; a plain scoped `.v-btn`
-  // selector never matches the button rendered inside VBtn, so it was dead.
-  :deep(.v-btn) {
-    align-self: center;
-    margin-top: 0;
-    margin-bottom: 0;
-  }
+.bulk-email-preview__btn {
+  // Sit on the input-box axis (the row is top-aligned so validation messages under one
+  // field don't shift the others; a small offset centres the button on the input line).
+  align-self: flex-start;
+  margin-top: 6px;
+  flex: 0 0 auto;
 }
 
+// Borderless dark frame: matches the email's own canvas so the preview dialog reads as
+// ONE pane (no nested outlined boxes).
 .bulk-email-preview__frame {
   width: 100%;
-  min-height: 60vh;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 4px;
-  background: #fff;
+  min-height: 65vh;
+  border: 0;
+  display: block;
+  background: #1e1e1e;
 }
 </style>

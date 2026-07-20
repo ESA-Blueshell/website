@@ -334,18 +334,19 @@ watch(computedRows, (newRows) => {
           :rules="cutoffRules"
           type="date"
         />
+        <email-preview-panel
+          v-model="preview.selectedUserId.value"
+          v-model:dialog-open="preview.dialogOpen.value"
+          :error="preview.error.value"
+          :html="preview.html.value"
+          :inputs-ready="previewInputsReady"
+          :loading="preview.loading.value"
+          :subject="preview.subject.value"
+          :users="previewUserOptions"
+          @preview="onPreview"
+        />
       </div>
-      <email-preview-panel
-        v-model="preview.selectedUserId.value"
-        v-model:dialog-open="preview.dialogOpen.value"
-        :error="preview.error.value"
-        :html="preview.html.value"
-        :inputs-ready="previewInputsReady"
-        :loading="preview.loading.value"
-        :subject="preview.subject.value"
-        :users="previewUserOptions"
-        @preview="onPreview"
-      />
+      <v-divider class="mb-4" />
     </template>
 
     <template #cell.fee="{row}">
@@ -403,13 +404,17 @@ watch(computedRows, (newRows) => {
 <style lang="scss" scoped>
 .bulk-date-row {
   gap: 12px;
-  // Size each date cell independently so a validation message under one field does
-  // not stretch/misalign the other; both fields use hide-details="auto" so their
-  // input boxes keep an equal height and baseline and only the offending field grows.
+  // One left-to-right row: dates, then the preview recipient + button. Each cell sizes
+  // independently so a validation message under one field does not stretch/misalign the
+  // others (hide-details="auto" keeps the input boxes on an equal baseline). Wraps
+  // gracefully on narrow widths.
   align-items: flex-start;
+  flex-wrap: wrap;
 
-  > * {
-    flex: 1 1 0;
+  // The date fields flex; the preview select/button (which carry their own flex rules
+  // in EmailPreviewPanel's styles) keep their natural size.
+  > .v-text-field {
+    flex: 1 1 220px;
   }
 }
 

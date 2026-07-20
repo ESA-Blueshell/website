@@ -8,9 +8,11 @@ import com.microsoft.playwright.options.WaitForSelectorState
 /**
  * Helper for member bulk-actions harness. Drives the bulk selection UI
  * (checkboxes, select-all), the bulk actions menu (mark paid / unpaid /
- * send reminder / send incasso / end membership), the bulk action confirm
- * dialog (disposition cells, re-include toggles, amount overrides, date
- * inputs, confirm button), and waits for success.
+ * send reminder / send incasso / end membership / resume membership), and each
+ * per-action confirm dialog (disposition cells, re-include toggles, fee-type
+ * overrides, date inputs, confirm button), and waits for success. Every dialog
+ * computes its preview rows client-side; the helper never waits on a preview
+ * network response, only on the target DOM elements.
  */
 object MemberManagerBulkHelper {
     // ── Navigation ─────────────────────────────────────────────────────────
@@ -89,7 +91,7 @@ object MemberManagerBulkHelper {
     /**
      * Choose a bulk action from the menu. The menu must already be open.
      * action is one of: "mark-paid", "mark-unpaid", "send-reminder",
-     * "send-incasso", "end-membership".
+     * "send-incasso", "end-membership", "resume-membership".
      */
     fun chooseAction(page: Page, action: String) {
         val testId = when (action) {
@@ -109,13 +111,14 @@ object MemberManagerBulkHelper {
     /**
      * Wait for the bulk action confirmation dialog to appear.
      *
-     * Note: this no longer waits for the preview table. For the FE-preview actions
-     * (mark-paid / mark-unpaid / end-membership) the table is rendered synchronously
-     * from local data, so it is present immediately anyway. For the server-preview
-     * actions (reminder / incasso) the table only appears once the required dates are
-     * entered — callers set the dates first, then read dispositions, and the per-row
-     * accessors below already wait for their target element. See
-     * docs/proposals/bulk-actions/REDESIGN.md §5.2.
+     * Note: every per-action dialog now computes its rows entirely client-side from
+     * the data the page already loaded (users, memberships, contribution periods,
+     * paid set) — there are no server preview calls for any action. The preview table
+     * is therefore rendered synchronously as soon as the dialog mounts, so this only
+     * waits for the dialog shell; the per-row accessors below each wait for their own
+     * target element (never a bare isVisible). Reminder / incasso still require the
+     * operator to enter dates before the confirm button enables, but the rows and
+     * dispositions are visible immediately. See docs/proposals/bulk-actions/REDESIGN.md §5.2.
      */
     fun waitForDialog(page: Page) {
         TestIdLocatorHelper.byTestId(page, "bulk-action-dialog").waitFor()
@@ -202,9 +205,10 @@ object MemberManagerBulkHelper {
     }
 
     /**
-     * Read the resolved € amount shown beside the fee-type select for a row.
-     * This is the backend-resolved amount for the recommended fee type.
-     * Kept for backward-compatibility in system tests that check displayed amounts.
+     * Read the € amount shown beside the fee-type select for a row. This is the
+     * client-resolved amount for the row's currently-selected fee type (looked up
+     * from the selected period's fees by bulkCompute / feePreview), shown next to
+     * the fee selector for INCLUDED / re-included rows.
      */
     fun amountOf(page: Page, userId: Long): String {
         // The resolved amount is shown as a text element next to the v-select.

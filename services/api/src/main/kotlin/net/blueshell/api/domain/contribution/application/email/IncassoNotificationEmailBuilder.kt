@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.contribution.application.email
 
-import net.blueshell.api.domain.contribution.domain.feeReason
+import net.blueshell.api.domain.contribution.domain.service.feeReason
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.dto.bulk.BulkFeeType

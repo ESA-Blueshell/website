@@ -2,7 +2,7 @@ package net.blueshell.api.domain.contribution.application
 
 import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
 import net.blueshell.api.domain.contribution.application.email.createIncassoNotificationEmail
-import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
+import net.blueshell.api.domain.contribution.domain.service.resolveFeeAmount
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.platform.integration.email.application.service.EmailSenderService

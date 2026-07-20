@@ -4,8 +4,8 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionReminderCommand
-import net.blueshell.api.domain.contribution.domain.resolveFeeAmount
-import net.blueshell.api.domain.contribution.domain.resolveFeeType
+import net.blueshell.api.domain.contribution.domain.service.resolveFeeAmount
+import net.blueshell.api.domain.contribution.domain.service.resolveFeeType
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.user.application.MembershipService

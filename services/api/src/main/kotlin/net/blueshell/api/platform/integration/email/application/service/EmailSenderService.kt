@@ -7,7 +7,7 @@ import net.blueshell.api.domain.contribution.application.ContributionReminderSer
 import net.blueshell.api.domain.contribution.application.IncassoNotificationService
 import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
 import net.blueshell.api.domain.contribution.application.email.createIncassoNotificationEmail
-import net.blueshell.api.domain.contribution.domain.resolveFeeTypeFromAmount
+import net.blueshell.api.domain.contribution.domain.service.resolveFeeTypeFromAmount
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.event.application.EventSignUpService

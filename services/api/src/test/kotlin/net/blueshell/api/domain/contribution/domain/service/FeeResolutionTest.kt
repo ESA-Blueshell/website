@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.contribution.domain
+package net.blueshell.api.domain.contribution.domain.service
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.enums.MemberType

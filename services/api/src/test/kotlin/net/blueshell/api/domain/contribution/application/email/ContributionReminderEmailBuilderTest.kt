@@ -62,8 +62,10 @@ class ContributionReminderEmailBuilderTest {
             .contains("INGBNL2A")
             .contains("Blueshell E-Sports Vereniging")
             .contains("Secretary & Treasurer of ESA Blueshell")
+            // The old copy asked members to pay "via our [website](...)" — that link must be
+            // gone. ("website" alone appears legitimately in the role-revocation sentence.)
             .doesNotContain("via our")
-            .doesNotContain("website")
+            .doesNotContain("[website]")
         assertThat(emailContent.markdownContent).doesNotContain("—") // no em-dashes
         assertNoLeadingWhitespace(emailContent.markdownContent)
     }
@@ -93,7 +95,9 @@ class ContributionReminderEmailBuilderTest {
             .contains("If you have already paid, please disregard this message")
             .contains("Kind regards")
             .contains("Secretary & Treasurer of ESA Blueshell")
-            .doesNotContain("website")
+            // No pay-via-website link ("website" alone may appear in the revocation copy).
+            .doesNotContain("via our")
+            .doesNotContain("[website]")
         assertNoLeadingWhitespace(emailContent.markdownContent)
     }
 

@@ -52,6 +52,8 @@ const feeTypeSelections = ref<Record<number, FeeType>>({})
 // userId -> most-recent reminder date (ISO), fetched on open.
 const lastRemindedAt = ref<Record<number, string>>({})
 
+const scaffold = ref<{validate: () => Promise<boolean>} | null>(null)
+
 const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
@@ -172,6 +174,10 @@ watch(
 const previewInputsReady = computed(() => !!props.period && !!paymentDueDate.value)
 
 async function onPreview() {
+  // The preview button is always clickable; validate the pinned form first so invalid
+  // dates surface inline (red fields + messages) and abort before hitting the API.
+  const valid = (await scaffold.value?.validate()) ?? true
+  if (!valid) return
   const periodId = props.period?.id
   if (periodId == null || !paymentDueDate.value) return
   await preview.runPreview(async (userId) => {
@@ -285,6 +291,7 @@ watch(computedRows, (newRows) => {
 
 <template>
   <bulk-dialog-scaffold
+    ref="scaffold"
     v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
     :can-confirm="canConfirm"
@@ -331,7 +338,6 @@ watch(computedRows, (newRows) => {
       <email-preview-panel
         v-model="preview.selectedUserId.value"
         v-model:dialog-open="preview.dialogOpen.value"
-        class="mb-4"
         :error="preview.error.value"
         :html="preview.html.value"
         :inputs-ready="previewInputsReady"

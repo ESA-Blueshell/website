@@ -365,7 +365,9 @@ describe("UserManager row model", () => {
     expect(rows[0].username).toBe("salpha")
   })
 
-  it("sorts by name (default, ascending)", async () => {
+  it("renders rows in natural (API) order by default (no sort)", async () => {
+    // The table no longer applies a default name sort: with no column selected it renders
+    // rows in the order the API returned them (see useUserFilters: default sortKey is null).
     const wrapper = mountWithData(
       [
         {id: 20, fullName: "Zoe Last", username: "zlast", roles: ["MEMBER"]},
@@ -376,8 +378,8 @@ describe("UserManager row model", () => {
     await settle()
 
     const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows[0].fullName).toBe("Anna First")
-    expect(rows[1].fullName).toBe("Zoe Last")
+    expect(rows[0].fullName).toBe("Zoe Last")
+    expect(rows[1].fullName).toBe("Anna First")
   })
 
   it("sorts by status: Current before Former before Never", async () => {

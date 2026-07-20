@@ -430,7 +430,22 @@ describe("ReminderDialog", () => {
     vm.paymentDueDate = "2025-09-01"
     await settle()
     const btn = wrapper.find('[data-testid="bulk-email-preview-btn"]')
-    expect(btn.attributes("disabled")).toBeDefined()
+    expect(btn.attributes("disabled")).toBe("true")
+    expect(mockPreviewReminder).not.toHaveBeenCalled()
+  })
+
+  it("keeps the preview button clickable when the date is missing (validates on click instead)", async () => {
+    // There is an included recipient but no payment-due date: the button must NOT be
+    // disabled for invalid/missing inputs; clicking it runs form validation, and with the
+    // date still empty the request is aborted (no API call).
+    const wrapper = mountDialog([regularTarget(1)])
+    await settle()
+    const btn = wrapper.find('[data-testid="bulk-email-preview-btn"]')
+    // Bound :disabled resolves to false (enabled) despite the missing date.
+    expect(btn.attributes("disabled")).toBe("false")
+
+    await btn.trigger("click")
+    await settle()
     expect(mockPreviewReminder).not.toHaveBeenCalled()
   })
 })

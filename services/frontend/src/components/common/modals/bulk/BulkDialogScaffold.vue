@@ -130,17 +130,32 @@ const helpOpen = ref(false)
 // The confirm button is ALWAYS clickable (only disabled while submitting); on save we
 // validate the wrapped form and only emit `confirm` when it reports valid. Dialogs
 // attach :rules to their fields so missing/invalid inputs surface inline.
-const formRef = ref<{validate: () => Promise<{valid: boolean}> | {valid: boolean}} | null>(null)
+const formRef = ref<{validate?: () => Promise<{valid: boolean}> | {valid: boolean}} | null>(null)
+
+// Validate the wrapped v-form, tolerating environments where the form ref is stubbed and
+// exposes no validate() (e.g. shallow component tests): treat those as valid so the guard
+// never blocks on a missing implementation.
+async function runFormValidation(): Promise<boolean> {
+  const form = formRef.value
+  if (!form || typeof form.validate !== "function") return true
+  const result = await form.validate()
+  return !!result?.valid
+}
 
 async function onSave() {
   if (props.submitting) return
-  const form = formRef.value
-  if (form) {
-    const result = await form.validate()
-    if (!result?.valid) return
-  }
+  if (!(await runFormValidation())) return
   emit("confirm")
 }
+
+// Expose the wrapped form's validation so dialogs can reuse the same validate-on-click
+// pattern the Confirm button uses (e.g. the email-preview button validates the pinned
+// form before requesting a preview and surfaces inline messages on invalid fields).
+async function validate(): Promise<boolean> {
+  return runFormValidation()
+}
+
+defineExpose({validate})
 </script>
 
 <template>

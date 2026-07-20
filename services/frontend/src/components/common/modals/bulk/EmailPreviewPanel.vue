@@ -56,15 +56,16 @@ const dialog = computed({
   set: (v) => emit("update:dialogOpen", v),
 })
 
-// The button is disabled when there is no included user selected or the required inputs
-// (the date field) are missing.
-const previewDisabled = computed(
-  () => props.users.length === 0 || selectedUser.value == null || !props.inputsReady || props.loading,
-)
+// The Preview button stays clickable even when the form/dates are invalid: clicking it
+// then triggers the normal validation display (offending fields go red with inline
+// messages) via the dialog's validate-on-click wiring, and the request is aborted when
+// invalid. It is only disabled while a preview request is in flight, or when there are no
+// possible recipients to preview at all.
+const previewDisabled = computed(() => props.loading || props.users.length === 0)
 </script>
 
 <template>
-  <div class="bulk-email-preview-container">
+  <div class="bulk-email-preview-container mb-4">
     <div class="text-overline bulk-email-preview-container__label">Preview email</div>
     <div class="d-flex align-center gap-3 bulk-email-preview">
       <v-select
@@ -175,9 +176,22 @@ const previewDisabled = computed(
 }
 
 .bulk-email-preview {
+  // Keep the recipient select and the Preview button centred on the same horizontal
+  // axis. The comfortable-density select is taller than the button, so without an
+  // explicit centre the button drifts off-axis; align-items:center on the flex row plus
+  // resetting any stray vertical margins keeps them aligned regardless of the select's
+  // hide-details height.
+  align-items: center;
+
   &__user {
     max-width: 320px;
     flex-grow: 1;
+  }
+
+  .v-btn {
+    align-self: center;
+    margin-top: 0;
+    margin-bottom: 0;
   }
 }
 

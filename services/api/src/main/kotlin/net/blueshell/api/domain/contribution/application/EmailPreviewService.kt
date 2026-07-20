@@ -47,7 +47,7 @@ class EmailPreviewService(
         val user = users.findById(userId)
         val period = periods.findById(contributionPeriodId)
         val amount = resolveFeeAmount(feeType, period)
-        val content = createContributionReminderEmail(user, period, amount, paymentDueDate, bank)
+        val content = createContributionReminderEmail(user, period, amount, paymentDueDate, bank, feeType)
         return render(content)
     }
 
@@ -62,7 +62,7 @@ class EmailPreviewService(
         val user = users.findById(userId)
         val period = periods.findById(contributionPeriodId)
         val amount = resolveFeeAmount(feeType, period)
-        val content = createIncassoNotificationEmail(user, period, amount, expectedIncassoDate)
+        val content = createIncassoNotificationEmail(user, period, amount, expectedIncassoDate, feeType)
         return render(content)
     }
 

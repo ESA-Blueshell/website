@@ -373,6 +373,13 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                     jsonPath("$.html").value(org.hamcrest.Matchers.containsString("%.2f".format(period.halfYearFee)))
                 )
                 .andExpect(jsonPath("$.html").value(org.hamcrest.Matchers.containsString(formatted)))
+                .andExpect(
+                    jsonPath("$.html").value(
+                        org.hamcrest.Matchers.containsString(
+                            "the half-year fee, as your membership started during the second half of the year"
+                        )
+                    )
+                )
         }
     }
 

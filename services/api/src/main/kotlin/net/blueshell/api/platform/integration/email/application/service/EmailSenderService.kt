@@ -7,6 +7,7 @@ import net.blueshell.api.domain.contribution.application.ContributionReminderSer
 import net.blueshell.api.domain.contribution.application.IncassoNotificationService
 import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
 import net.blueshell.api.domain.contribution.application.email.createIncassoNotificationEmail
+import net.blueshell.api.domain.contribution.domain.resolveFeeTypeFromAmount
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.event.application.EventSignUpService
@@ -43,13 +44,15 @@ class EmailSenderService(
     fun sendContributionReminderEmail(userId: Long, contributionPeriodId: Long, jobExecutionId: Long? = null) {
         val reminder = requireExists { reminders.findById(ContributionReminder.Id(userId, contributionPeriodId)) }
         val emailContent = if (reminder.amount != null && reminder.paymentDueDate != null) {
-            // Bulk reminder: use specific amount and due date
+            // Bulk reminder: use specific amount and due date. The fee type is not
+            // persisted, so recover it from the resolved amount to state the reason.
             createContributionReminderEmail(
                 reminder.user,
                 reminder.contributionPeriod,
                 reminder.amount!!,
                 reminder.paymentDueDate!!,
-                bank
+                bank,
+                resolveFeeTypeFromAmount(reminder.amount!!, reminder.contributionPeriod)
             )
         } else {
             // Single-user reminder: use all options
@@ -69,6 +72,7 @@ class EmailSenderService(
             notification.contributionPeriod,
             notification.amount!!,
             notification.expectedIncassoDate!!,
+            resolveFeeTypeFromAmount(notification.amount!!, notification.contributionPeriod),
         )
         deliver(emailContent, "email.incasso-notification", jobExecutionId)
     }

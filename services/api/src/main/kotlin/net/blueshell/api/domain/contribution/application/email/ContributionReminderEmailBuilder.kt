@@ -1,8 +1,10 @@
 package net.blueshell.api.domain.contribution.application.email
 
+import net.blueshell.api.domain.contribution.domain.feeReason
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.config.BankProperties
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -49,6 +51,7 @@ fun createContributionReminderEmail(
     amount: Double,
     paymentDueDate: LocalDate,
     bank: BankProperties,
+    feeType: BulkFeeType,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val markdownContent = """
@@ -58,7 +61,7 @@ fun createContributionReminderEmail(
 
         The contribution may be paid by transferring the fee directly to the Blueshell bank account. Details are given below.
 
-        **Amount due: €${"%.2f".format(amount)}**
+        **Amount due: €${"%.2f".format(amount)}** (${feeReason(feeType)})
 
         ${bankTransferDetails(bank)}
 

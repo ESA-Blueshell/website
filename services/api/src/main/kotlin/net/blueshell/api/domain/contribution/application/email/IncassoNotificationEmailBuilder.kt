@@ -1,10 +1,13 @@
 package net.blueshell.api.domain.contribution.application.email
 
+import net.blueshell.api.domain.contribution.domain.feeReason
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Email builder for incasso notification (bulk collection notice).
@@ -14,28 +17,30 @@ import java.time.format.DateTimeFormatter
  *
  * Incasso members are collected by DIRECT DEBIT (SEPA incasso), so this email
  * does NOT ask them to transfer any money. It notifies them that the fee will be
- * debited automatically and that no action is required on their part.
+ * debited automatically. We know the applied fee, so a single amount is stated
+ * together with the reason it applies, rather than listing every fee option.
  */
 
-private val INCASSO_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")
+private val INCASSO_DATE_FORMATTER: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", Locale.ENGLISH)
 
 fun createIncassoNotificationEmail(
     recipient: User,
     contributionPeriod: ContributionPeriod,
     amount: Double,
     expectedIncassoDate: LocalDate,
+    feeType: BulkFeeType,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
+    val formattedDate = expectedIncassoDate.format(INCASSO_DATE_FORMATTER)
     val markdownContent = """
         Dear ${recipient.fullName},
 
-        This is a notice about your Blueshell membership contribution for $academicYear. You are registered for automatic collection (SEPA direct debit), so there is no need to transfer any money yourself.
+        Your membership fee for your $academicYear membership of ESA Blueshell will be automatically subtracted from your bank account on or around **$formattedDate**. Please make sure there are sufficient funds in your account on that date.
 
-        The amount below will be debited automatically from your bank account on or around **${expectedIncassoDate.format(INCASSO_DATE_FORMATTER)}**. Please make sure that there are sufficient funds in your account on that date.
+        **Amount to be collected: €${"%.2f".format(amount)}** (${feeReason(feeType)})
 
-        **Amount to be collected: €${"%.2f".format(amount)}**
-
-        No action is required on your part. If any of your details have changed, or if you have questions about this collection, please contact us.
+        If you wish to terminate your membership, please respond to this email before $formattedDate so we can remove you from the incasso list.
 
         Kind regards,
         Secretary & Treasurer of ESA Blueshell

@@ -178,7 +178,9 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             // Verify rendered mail carries the overridden amount and formatted incasso date
             emailTransportClient.reset()
             emailSenderService.sendIncassoNotificationEmail(member.id!!, period.id!!)
-            val formatted = expectedIncassoDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+            val formatted = expectedIncassoDate.format(
+                DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", java.util.Locale.ENGLISH)
+            )
             val refreshed = refreshUser(member)
             val academicYear = expectedAcademicYear(period)
             assertEmailSent(
@@ -372,7 +374,9 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
 
             val expectedIncassoDate = LocalDate.of(2024, 12, 31)
-            val formatted = expectedIncassoDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+            val formatted = expectedIncassoDate.format(
+                DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", java.util.Locale.ENGLISH)
+            )
 
             mvc.perform(
                 post("/incassoNotifications/preview")
@@ -385,6 +389,11 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                     jsonPath("$.html").value(org.hamcrest.Matchers.containsString("%.2f".format(period.alumniFee)))
                 )
                 .andExpect(jsonPath("$.html").value(org.hamcrest.Matchers.containsString(formatted)))
+                .andExpect(
+                    jsonPath("$.html").value(
+                        org.hamcrest.Matchers.containsString("the alumni fee, as you are an alumni member")
+                    )
+                )
         }
     }
 

@@ -3,6 +3,7 @@ package net.blueshell.api.domain.contribution.application.email
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.config.BankProperties
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -40,6 +41,7 @@ class ContributionReminderEmailBuilderTest {
             amount = 45.0,
             paymentDueDate = LocalDate.of(2025, 10, 1),
             bank = bank,
+            feeType = BulkFeeType.FULL_YEAR_FEE,
         )
 
         // Then: EmailContent has correct fields and academic-year subject
@@ -55,6 +57,7 @@ class ContributionReminderEmailBuilderTest {
             .contains("2025/2026")
             .contains("01 October 2025")
             .contains("Amount due: €45.00")
+            .contains("(the full-year fee)")
             .contains("NL19 INGB 0008 0964 62")
             .contains("INGBNL2A")
             .contains("Blueshell E-Sports Vereniging")
@@ -105,6 +108,7 @@ class ContributionReminderEmailBuilderTest {
             amount = 12.50,
             paymentDueDate = LocalDate.now(),
             bank = bank,
+            feeType = BulkFeeType.HALF_YEAR_FEE,
         )
 
         // Then: Currency is formatted with 2 decimals

@@ -50,20 +50,22 @@
         img { -ms-interpolation-mode: bicubic; }
 
         /* ── Headings (inside the Markdown content) ─────────── */
+        /* Upright bold, matching the official mails ("Please stay with us!") —
+           not the slanted Fugaz display face. */
         h1 {
-            font-family: "Fugaz One", "Arial Black", Arial, sans-serif !important;
+            font-family: "Barlow Semi Condensed", "Segoe UI", Arial, sans-serif !important;
             font-size: 30px !important;
-            font-weight: 400 !important;
+            font-weight: 700 !important;
             line-height: 1.15 !important;
             margin: 0 0 14px 0 !important;
             color: #3387FA !important;
-            letter-spacing: 0.5px !important;
+            letter-spacing: 0.3px !important;
         }
 
         h2 {
-            font-family: "Fugaz One", "Arial Black", Arial, sans-serif !important;
+            font-family: "Barlow Semi Condensed", "Segoe UI", Arial, sans-serif !important;
             font-size: 22px !important;
-            font-weight: 400 !important;
+            font-weight: 700 !important;
             line-height: 1.25 !important;
             margin: 26px 0 10px 0 !important;
             color: #FFFFFF !important;
@@ -283,10 +285,10 @@
                 <tr th:if="${mainTitle != null and !#strings.isEmpty(mainTitle)}">
                     <td align="center" style="padding:6px 32px 6px;">
                         <h1 class="email-hero-title"
-                            style="font-family:'Fugaz One','Arial Black',Arial,sans-serif;
-                                   font-size:36px; font-weight:400; color:#3387FA;
-                                   margin:0; letter-spacing:0.5px;
-                                   text-align:center; line-height:1.15;"
+                            style="font-family:'Barlow Semi Condensed','Segoe UI',Arial,sans-serif;
+                                   font-size:38px; font-weight:700; color:#3387FA;
+                                   margin:0; letter-spacing:0.3px;
+                                   text-align:center; line-height:1.2;"
                             th:text="${mainTitle}">
                             MAIN TITLE
                         </h1>
@@ -306,9 +308,100 @@
                     </td>
                 </tr>
 
+                <!-- ── Divider: body → social ──────────────────── -->
+                <tr>
+                    <td style="padding:0 40px;">
+                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                            <tr>
+                                <td height="1" bgcolor="#3A3A3A"
+                                    style="height:1px; background-color:#3A3A3A; font-size:0; line-height:0;">&nbsp;</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ── Social / "Follow us" (flat, on the canvas) ─ -->
+                <tr>
+                    <td align="center" style="padding:20px 24px 6px;">
+                        <p style="margin:0 0 12px 0 !important; color:#8A939E; font-size:11px; font-weight:600;
+                                  letter-spacing:2px; text-transform:uppercase; text-align:center;
+                                  line-height:1 !important;">
+                            Follow us
+                        </p>
+                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" align="center">
+                            <tr>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://discord.gg/dFam2yqXu7" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Discord"
+                                             src="https://cdn-icons-png.flaticon.com/32/2111/2111370.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://www.facebook.com/BlueshellEsports" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Facebook"
+                                             src="https://cdn-icons-png.flaticon.com/32/733/733547.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://www.instagram.com/esablueshell/" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Instagram"
+                                             src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://twitter.com/BlueshellESA" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Twitter / X"
+                                             src="https://cdn-icons-png.flaticon.com/32/733/733579.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://www.twitch.tv/blueshellesports" target="_blank"
+                                       style="text-decoration:none; color:#FBFAFA;">
+                                        <img alt="Twitch"
+                                             src="https://cdn-icons-png.flaticon.com/32/5968/5968819.png"
+                                             width="26" height="26"
+                                             style="width:26px; height:26px; display:block; border:0;">
+                                    </a>
+                                </td>
+                                <!-- Website globe: white pill keeps the dark icon visible (filters unsupported in mail clients) -->
+                                <td width="38" align="center" style="padding:0 5px;">
+                                    <a href="https://esa-blueshell.nl/" target="_blank"
+                                       style="text-decoration:none;">
+                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                            <tr>
+                                                <td bgcolor="#FFFFFF" width="26" height="26" align="center"
+                                                    style="background-color:#FFFFFF; width:26px; height:26px;
+                                                           border-radius:4px; padding:0;">
+                                                    <img alt="Website"
+                                                         src="https://cdn-icons-png.flaticon.com/32/1006/1006771.png"
+                                                         width="22" height="22"
+                                                         style="width:22px; height:22px; display:block; border:0;
+                                                                margin:2px auto 0;">
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
                 <!-- ── Simple flat footer ──────────────────────── -->
                 <tr>
-                    <td align="center" style="padding:8px 32px 36px;">
+                    <td align="center" style="padding:14px 32px 36px;">
                         <p style="margin:0; color:#B7B7B7; font-size:13px; line-height:1.7; text-align:center;">
                             This email was sent to
                             <strong style="color:#E7E7E7;" th:text="${sentTo}">[recipient-email]</strong>

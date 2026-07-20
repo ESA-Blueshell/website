@@ -178,6 +178,29 @@ describe("ReminderDialog", () => {
     expect(counts).toContain("1 with warnings")
   })
 
+  it("strikes through the fee type and amount for an incasso-payer until re-included", async () => {
+    const wrapper = mountDialog([incassoPayerTarget(5)])
+    await settle()
+    // Excluded-by-default: the fee type is shown struck through (not the "—" placeholder),
+    // and no editable fee-type select is rendered.
+    const struckFee = wrapper.find('[data-testid="bulk-preview-feetype-struck-5"]')
+    expect(struckFee.exists()).toBe(true)
+    expect(struckFee.classes()).toContain("bulk-struck")
+    expect(wrapper.find('[data-testid="bulk-preview-feetype-5"]').exists()).toBe(false)
+    // The amount is rendered struck through too.
+    const amount = wrapper.find('[data-testid="bulk-preview-amount-5"]')
+    expect(amount.exists()).toBe(true)
+    expect(amount.classes()).toContain("bulk-struck")
+
+    // Forcibly include → strikethrough is dropped and the editable select takes over.
+    const scaffold = wrapper.findComponent({name: "BulkDialogScaffold"})
+    scaffold.vm.$emit("update:reinclude-overrides", {5: true})
+    await settle()
+    expect(wrapper.find('[data-testid="bulk-preview-feetype-struck-5"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="bulk-preview-feetype-5"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="bulk-preview-amount-5"]').classes()).not.toContain("bulk-struck")
+  })
+
   it("labels the WARNING re-include column as 'Forcibly include' and can include an incasso-payer", async () => {
     const wrapper = mountDialog([incassoPayerTarget(5)])
     await settle()

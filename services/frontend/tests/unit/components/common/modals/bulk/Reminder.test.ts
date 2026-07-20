@@ -1,15 +1,29 @@
-import {describe, expect, it, vi} from "vitest"
+import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import ReminderDialog from "@/components/common/modals/bulk/ReminderDialog.vue"
 import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType, type ContributionPeriodResponse} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
-// Mock the API call
-const {mockSendReminder} = vi.hoisted(() => ({mockSendReminder: vi.fn()}))
-vi.mock("@/services/api/blueshell/sdk.gen", () => ({
-  sendReminder: mockSendReminder,
+// Mock the API calls the dialog uses: the bulk executor and the reminder lookup
+// (fetched on open to fill the "Last reminded at" column).
+const {mockExecuteBulkReminder, mockFindContributionReminders} = vi.hoisted(() => ({
+  mockExecuteBulkReminder: vi.fn(),
+  mockFindContributionReminders: vi.fn(),
 }))
+vi.mock("@/services/api/blueshell/sdk.gen", () => ({
+  executeBulkReminder: mockExecuteBulkReminder,
+  findContributionReminders: mockFindContributionReminders,
+}))
+
+// Vitest resets mock implementations between tests (mockReset: true), so restore the
+// safe default before each test.
+beforeEach(() => {
+  mockFindContributionReminders.mockResolvedValue({data: []})
+  mockExecuteBulkReminder.mockResolvedValue({data: {}})
+})
+
+const SERVER_TODAY = "2025-05-01"
 
 function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
   return {
@@ -20,7 +34,7 @@ function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
-      incasso: true,
+      incasso: false,
     },
     mostRecentContribution: {
       paid: false,
@@ -44,7 +58,12 @@ function period(): ContributionPeriodResponse {
   }
 }
 
+// A plain regular member: unpaid, NOT on incasso → INCLUDED.
 function regularTarget(userId: number): BulkTarget {
+  return target(userId)
+}
+
+function incassoPayerTarget(userId: number): BulkTarget {
   return target(userId, {
     mostRecentMembership: {
       type: MemberType.REGULAR,
@@ -62,7 +81,7 @@ function noEmailTarget(userId: number): BulkTarget {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
-      incasso: true,
+      incasso: false,
     },
   })
 }
@@ -86,7 +105,7 @@ function alreadyPaidTarget(userId: number): BulkTarget {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
-      incasso: true,
+      incasso: false,
     },
   })
 }
@@ -102,177 +121,164 @@ function alumniTarget(userId: number): BulkTarget {
   })
 }
 
+function mountDialog(targets: BulkTarget[]) {
+  return mount(ReminderDialog, {
+    props: {
+      modelValue: true,
+      targets,
+      period: period(),
+      serverToday: SERVER_TODAY,
+      latestPeriod: period(),
+    },
+  })
+}
+
 describe("ReminderDialog", () => {
   it("renders the dialog with title and confirm button", () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [regularTarget(1)],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+    const wrapper = mountDialog([regularTarget(1)])
     expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
   })
 
-  it("marks regular unpaid member with email as INCLUDED", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [regularTarget(1)],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+  it("marks regular unpaid non-incasso member with email as INCLUDED", async () => {
+    const wrapper = mountDialog([regularTarget(1)])
     await settle()
-
     const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-1"]')
     expect(dispositionChip.text()).toContain("Included")
   })
 
   it("marks member with no email as SKIPPED with NO_EMAIL reason", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [noEmailTarget(2)],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+    const wrapper = mountDialog([noEmailTarget(2)])
     await settle()
-
-    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-2"]')
-    expect(dispositionChip.text()).toContain("Skipped")
-
-    const noteCell = wrapper.find('[data-testid="bulk-preview-note-2"]')
-    expect(noteCell.text()).toContain("No email")
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-2"]').text()).toContain("Skipped")
+    expect(wrapper.find('[data-testid="bulk-preview-note-2"]').text()).toContain("No email")
   })
 
   it("marks honorary member as EXCLUDED with HONORARY reason", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [honoraryTarget(3)],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+    const wrapper = mountDialog([honoraryTarget(3)])
     await settle()
-
-    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-3"]')
-    expect(dispositionChip.text()).toContain("Excluded")
-
-    const noteCell = wrapper.find('[data-testid="bulk-preview-note-3"]')
-    expect(noteCell.text()).toContain("Honorary")
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-3"]').text()).toContain("Excluded")
+    expect(wrapper.find('[data-testid="bulk-preview-note-3"]').text()).toContain("Honorary")
   })
 
   it("marks already-paid member as WARNING with ALREADY_PAID reason", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [alreadyPaidTarget(4)],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+    const wrapper = mountDialog([alreadyPaidTarget(4)])
     await settle()
-
-    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-4"]')
-    expect(dispositionChip.text()).toContain("Warning")
-
-    const noteCell = wrapper.find('[data-testid="bulk-preview-note-4"]')
-    expect(noteCell.text()).toContain("Already paid")
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-4"]').text()).toContain("Warning")
+    expect(wrapper.find('[data-testid="bulk-preview-note-4"]').text()).toContain("Already paid")
   })
 
-  it("displays FULL_YEAR_FEE for member starting before cutoff", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [
-          target(1, {
-            mostRecentMembership: {
-              type: MemberType.REGULAR,
-              startDate: "2024-12-01",
-              endDate: null,
-              incasso: true,
-            },
-          }),
-        ],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+  it("marks an incasso-payer as WARNING(PAYS_VIA_INCASSO), off by default", async () => {
+    const wrapper = mountDialog([incassoPayerTarget(5)])
     await settle()
-
-    const text = wrapper.text()
-    expect(text).toContain("20")
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-5"]').text()).toContain("Warning")
+    expect(wrapper.find('[data-testid="bulk-preview-note-5"]').text()).toContain("Pays via incasso")
+    // Off by default: nobody will apply until the operator forcibly includes.
+    const counts = wrapper.find('[data-testid="bulk-action-counts"]').text()
+    expect(counts).toContain("0 will apply")
+    expect(counts).toContain("1 with warnings")
   })
 
-  it("displays HALF_YEAR_FEE for member starting on or after cutoff", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [
-          target(1, {
-            mostRecentMembership: {
-              type: MemberType.REGULAR,
-              startDate: "2025-06-15",
-              endDate: null,
-              incasso: true,
-            },
-          }),
-        ],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+  it("labels the WARNING re-include column as 'Forcibly include' and can include an incasso-payer", async () => {
+    const wrapper = mountDialog([incassoPayerTarget(5)])
     await settle()
-
-    const text = wrapper.text()
-    expect(text).toContain("10")
+    // The include-column header reads "Forcibly include" for reminders.
+    expect(wrapper.find('[data-testid="bulk-action-preview-table"]').text()).toContain("Forcibly include")
+    // The re-include checkbox for the WARNING row is rendered.
+    expect(wrapper.find('[data-testid="bulk-preview-reinclude-5"]').exists()).toBe(true)
+    // Forcibly include via the reinclude-overrides v-model (what the checkbox drives).
+    const scaffold = wrapper.findComponent({name: "BulkDialogScaffold"})
+    scaffold.vm.$emit("update:reinclude-overrides", {5: true})
+    await settle()
+    // Once forcibly included, the row applies and the disposition reads Included.
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-5"]').text()).toContain("Included")
+    expect(wrapper.find('[data-testid="bulk-action-counts"]').text()).toContain("1 will apply")
   })
 
-  it("displays ALUMNI_FEE for alumni member", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [alumniTarget(1)],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+  it("auto-selects FULL_YEAR_FEE and shows its amount for a member starting on/before cutoff", async () => {
+    const wrapper = mountDialog([
+      target(1, {
+        mostRecentMembership: {
+          type: MemberType.REGULAR,
+          startDate: "2025-01-01",
+          endDate: null,
+          incasso: false,
+        },
+      }),
+    ])
     await settle()
+    // Default cutoff (mid-period +1 month) is after this start → FULL_YEAR_FEE (€ 20).
+    expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("20")
+  })
 
-    const text = wrapper.text()
-    expect(text).toContain("Alumni")
-    expect(text).toContain("5")
+  it("auto-selects HALF_YEAR_FEE for a member starting strictly after cutoff", async () => {
+    // Latest period midpoint (2025) +1 month, day 1 → 2025-07-01. A member starting
+    // after that resolves to the half-year fee (€ 10).
+    const wrapper = mountDialog([
+      target(1, {
+        mostRecentMembership: {
+          type: MemberType.REGULAR,
+          startDate: "2025-08-15",
+          endDate: null,
+          incasso: false,
+        },
+      }),
+    ])
+    await settle()
+    expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("10")
+  })
+
+  it("auto-selects ALUMNI_FEE and shows the alumni amount", async () => {
+    const wrapper = mountDialog([alumniTarget(1)])
+    await settle()
+    expect(wrapper.text()).toContain("Alumni")
+    expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("5")
+  })
+
+  it("updates the amount when the operator changes a row's fee type", async () => {
+    const wrapper = mountDialog([regularTarget(1)])
+    await settle()
+    // Starts at the full-year fee (€ 20).
+    expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("20")
+    // Switch the row to the half-year fee (what the fee-type v-select drives); the amount
+    // re-derives to € 10.
+    const vm = wrapper.vm as unknown as {feeTypeSelections: Record<number, string>}
+    vm.feeTypeSelections[1] = "HALF_YEAR_FEE"
+    await settle()
+    expect(wrapper.find('[data-testid="bulk-preview-amount-1"]').text()).toContain("10")
+  })
+
+  it("renders the custom columns including a Last-reminded-at column", async () => {
+    const wrapper = mountDialog([regularTarget(1)])
+    await settle()
+    const tableText = wrapper.find('[data-testid="bulk-action-preview-table"]').text()
+    expect(tableText).toContain("Fee type")
+    expect(tableText).toContain("Amount")
+    expect(tableText).toContain("Last reminded at")
+    // No reminders on file → "Never" placeholder (never an em-dash).
+    expect(wrapper.find('[data-testid="bulk-preview-last-reminded-1"]').text()).toContain("Never")
+  })
+
+  it("shows the most-recent reminder date per user in the Last-reminded-at column", async () => {
+    mockFindContributionReminders.mockResolvedValueOnce({
+      data: [
+        {contributionPeriodId: 1, userId: 1, remindedAt: "2025-02-01", createdAt: "2025-02-01", updatedAt: "2025-02-01", version: 0},
+        {contributionPeriodId: 1, userId: 1, remindedAt: "2025-03-15", createdAt: "2025-03-15", updatedAt: "2025-03-15", version: 0},
+      ],
+    })
+    const wrapper = mountDialog([regularTarget(1)])
+    await settle()
+    // Reduced to the most recent, formatted dd/MM/yyyy.
+    expect(wrapper.find('[data-testid="bulk-preview-last-reminded-1"]').text()).toContain("15/03/2025")
   })
 
   it("shows counts summary with included, warned, and excluded", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [
-          regularTarget(1),
-          noEmailTarget(2),
-          honoraryTarget(3),
-          alreadyPaidTarget(4),
-        ],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+    const wrapper = mountDialog([
+      regularTarget(1),
+      noEmailTarget(2),
+      honoraryTarget(3),
+      alreadyPaidTarget(4),
+    ])
     await settle()
-
     const countsText = wrapper.find('[data-testid="bulk-action-counts"]').text()
     expect(countsText).toContain("4 selected")
     expect(countsText).toContain("1 will apply")
@@ -281,56 +287,82 @@ describe("ReminderDialog", () => {
     expect(countsText).toContain("1 skipped")
   })
 
-  it("handles edge case: no email and already paid", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [
-          target(1, {
-            email: null,
-            mostRecentMembership: {
-              type: MemberType.REGULAR,
-              startDate: "2024-01-01",
-              endDate: null,
-              incasso: true,
-            },
-          }),
-        ],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+  it("opens a help panel from the ? button", async () => {
+    const wrapper = mountDialog([regularTarget(1)])
     await settle()
-
-    // NO_EMAIL takes precedence
-    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-1"]')
-    expect(dispositionChip.text()).toContain("Skipped")
-
-    const noteCell = wrapper.find('[data-testid="bulk-preview-note-1"]')
-    expect(noteCell.text()).toContain("No email")
+    expect(wrapper.find('[data-testid="bulk-action-help-panel"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="bulk-action-help-btn"]').trigger("click")
+    await settle()
+    const panel = wrapper.find('[data-testid="bulk-action-help-panel"]')
+    expect(panel.exists()).toBe(true)
+    // Help text must not contain em-dashes.
+    expect(panel.text()).not.toContain("—")
   })
 
-  it("handles edge case: no membership", async () => {
-    const wrapper = mount(ReminderDialog, {
-      props: {
-        modelValue: true,
-        targets: [
-          target(1, {
-            mostRecentMembership: null,
-          }),
-        ],
-        period: period(),
-        cutoffDate: "2025-06-01",
-      },
-    })
-
+  it("blocks submit when the payment-due date is missing or the cutoff is out of range", async () => {
+    const wrapper = mountDialog([regularTarget(1)])
     await settle()
+    const scaffold = wrapper.findComponent({name: "BulkDialogScaffold"})
+    const vm = wrapper.vm as unknown as {paymentDueDate: string; cutoffDate: string}
 
-    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-1"]')
-    expect(dispositionChip.text()).toContain("Excluded")
+    // Payment due date is empty and the default cutoff is valid: confirming does nothing.
+    scaffold.vm.$emit("confirm")
+    await settle()
+    expect(mockExecuteBulkReminder).not.toHaveBeenCalled()
 
-    const noteCell = wrapper.find('[data-testid="bulk-preview-note-1"]')
-    expect(noteCell.text()).toContain("Honorary")
+    // Provide a valid payment-due date but push the cutoff outside the period.
+    vm.paymentDueDate = "2025-09-01"
+    vm.cutoffDate = "2030-01-01"
+    await settle()
+    scaffold.vm.$emit("confirm")
+    await settle()
+    expect(mockExecuteBulkReminder).not.toHaveBeenCalled()
+
+    // With a valid payment-due date AND an in-range cutoff, the submit goes through.
+    vm.cutoffDate = "2025-08-01"
+    await settle()
+    scaffold.vm.$emit("confirm")
+    await settle()
+    expect(mockExecuteBulkReminder).toHaveBeenCalledTimes(1)
+  })
+
+  it("exposes the validation rules with clear messages", async () => {
+    const wrapper = mountDialog([regularTarget(1)])
+    await settle()
+    const vm = wrapper.vm as unknown as {
+      paymentDueRules: Array<(v: string) => true | string>
+      cutoffRules: Array<(v: string) => true | string>
+    }
+    // Required + must-be-after-today for the payment due date.
+    expect(vm.paymentDueRules[0]!("")).toContain("required")
+    expect(vm.paymentDueRules[1]!("2025-01-01")).toContain("after today")
+    // Required + within-period for the cutoff.
+    expect(vm.cutoffRules[0]!("")).toContain("required")
+    expect(vm.cutoffRules[1]!("2030-01-01")).toContain("within the selected contribution period")
+  })
+
+  it("handles edge case: no email and already paid → NO_EMAIL precedence", async () => {
+    const wrapper = mountDialog([
+      target(1, {
+        email: null,
+        mostRecentContribution: {paid: true},
+        mostRecentMembership: {
+          type: MemberType.REGULAR,
+          startDate: "2024-01-01",
+          endDate: null,
+          incasso: false,
+        },
+      }),
+    ])
+    await settle()
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-1"]').text()).toContain("Skipped")
+    expect(wrapper.find('[data-testid="bulk-preview-note-1"]').text()).toContain("No email")
+  })
+
+  it("handles edge case: no membership → EXCLUDED(HONORARY)", async () => {
+    const wrapper = mountDialog([target(1, {mostRecentMembership: null})])
+    await settle()
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-1"]').text()).toContain("Excluded")
+    expect(wrapper.find('[data-testid="bulk-preview-note-1"]').text()).toContain("Honorary")
   })
 })

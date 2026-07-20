@@ -208,10 +208,10 @@ describe("computeReminderRows", () => {
     })
   })
 
-  it("sets HALF_YEAR_FEE for a member starting on or after cutoff", () => {
+  it("sets HALF_YEAR_FEE for a member starting strictly after cutoff", () => {
     const targets = [bulkTarget(1, {mostRecentMembership: {
       type: MemberType.REGULAR,
-      startDate: "2025-06-01",
+      startDate: "2025-06-02",
       endDate: null,
       incasso: false,
     }})]
@@ -220,6 +220,46 @@ describe("computeReminderRows", () => {
       recommendedFeeType: "HALF_YEAR_FEE",
       amount: 10.0,
     })
+  })
+
+  it("resolves the boundary start == cutoff to FULL_YEAR_FEE", () => {
+    const targets = [bulkTarget(1, {mostRecentMembership: {
+      type: MemberType.REGULAR,
+      startDate: "2025-06-01",
+      endDate: null,
+      incasso: false,
+    }})]
+    const rows = computeReminderRows(targets, period(), "2025-06-01")
+    expect(rows[0]).toMatchObject({
+      recommendedFeeType: "FULL_YEAR_FEE",
+      amount: 20.0,
+    })
+  })
+
+  it("flags an incasso-payer as WARNING(PAYS_VIA_INCASSO), off by default", () => {
+    const targets = [bulkTarget(1, {mostRecentMembership: {
+      type: MemberType.REGULAR,
+      startDate: "2024-01-01",
+      endDate: null,
+      incasso: true,
+    }})]
+    const rows = computeReminderRows(targets, period(), "2025-01-01")
+    expect(rows[0]).toMatchObject({
+      disposition: "WARNING",
+      reason: "PAYS_VIA_INCASSO",
+    })
+  })
+
+  it("does not flag incasso-payers when flagIncassoPayers is false", () => {
+    const targets = [bulkTarget(1, {mostRecentMembership: {
+      type: MemberType.REGULAR,
+      startDate: "2024-01-01",
+      endDate: null,
+      incasso: true,
+    }})]
+    const rows = computeReminderRows(targets, period(), "2025-01-01", false)
+    expect(rows[0]).toMatchObject({disposition: "INCLUDED"})
+    expect(rows[0]?.reason).toBeUndefined()
   })
 
   it("sets ALUMNI_FEE for an alumni member", () => {

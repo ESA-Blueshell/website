@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, ref} from "vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {useTableSort} from "@/composables/useTableSort"
 import type {SubmitState} from "@/composables/formUtils"
@@ -16,13 +16,23 @@ import {
 
 /**
  * Shared modal shell for every per-action bulk dialog. Renders the title/confirm chrome
- * (via BaseModal), the counts summary bar, and a sortable preview table. It knows nothing
- * about action type: the dialog hands it rows + state, and supplies extra columns via the
- * `#extra-head` / `#extra-cell` slots (fee selector) and drives re-include through the
- * `reincludeOverrides` v-model. See docs/proposals/bulk-actions/REDESIGN.md §5.1.
+ * (via BaseModal), an optional help panel, the counts summary bar, and a sortable,
+ * column-driven preview table. It knows nothing about action type: the dialog hands it
+ * rows + a `columns` descriptor and supplies custom cell content via `#cell.<key>` slots
+ * (falling back to a built-in renderer for the standard keys). Re-include is driven via
+ * the `reincludeOverrides` v-model. See docs/proposals/bulk-actions/REDESIGN.md §5.1.
  */
 
 defineOptions({name: "BulkDialogScaffold"})
+
+/** A single column descriptor for the preview table. */
+export interface BulkColumn {
+  key: string
+  header: string
+  align?: "start" | "end" | "center"
+  sortable?: boolean
+  width?: string
+}
 
 interface Props {
   modelValue: boolean
@@ -37,16 +47,30 @@ interface Props {
   canConfirm?: boolean
   submitState?: SubmitState
   showSubmitStatus?: boolean
-  /** Whether to render the fee-type column (reminder / incasso only). */
-  showFeeColumn?: boolean
+  /** Column descriptors for the preview table. Falls back to the standard set. */
+  columns?: BulkColumn[]
+  /** Label for the WARNING re-include column (e.g. "Include" or "Forcibly include"). */
+  includeLabel?: string
+  /** Optional help panel content rendered behind a "?" icon button in the header. */
+  help?: {title: string; body: string}
 }
+
+const DEFAULT_COLUMNS: BulkColumn[] = [
+  {key: "name", header: "Member", sortable: true},
+  {key: "memberType", header: "Type", sortable: true},
+  {key: "disposition", header: "Status", sortable: true},
+  {key: "memberSince", header: "Member since", sortable: true},
+  {key: "note", header: "Note"},
+]
 
 const props = withDefaults(defineProps<Props>(), {
   submitting: false,
   canConfirm: true,
   submitState: "idle",
   showSubmitStatus: false,
-  showFeeColumn: false,
+  columns: undefined,
+  includeLabel: "Include",
+  help: undefined,
 })
 
 const emit = defineEmits<{
@@ -61,11 +85,11 @@ const open = computed({
   set: (val) => emit("update:modelValue", val),
 })
 
+const columns = computed<BulkColumn[]>(() => props.columns ?? DEFAULT_COLUMNS)
+
 const rowsRef = computed(() => props.rows)
 
-type BulkSortKey = "name" | "memberType" | "disposition" | "memberSince" | "amount"
-
-const comparators: Record<BulkSortKey, (a: BulkRow, b: BulkRow) => number> = {
+const comparators: Record<string, (a: BulkRow, b: BulkRow) => number> = {
   name: (a, b) => a.name.localeCompare(b.name),
   memberType: (a, b) => (a.memberType ?? "").localeCompare(b.memberType ?? ""),
   disposition: (a, b) => {
@@ -80,6 +104,17 @@ const {sortedItems: sortedRows, toggleSort, sortIcon, ariaSort} = useTableSort(r
 
 const hasReincludable = computed(() => props.rows.some((r) => r.disposition === "WARNING"))
 
+/** A column is sortable only if flagged AND a comparator exists for its key. */
+function isSortable(col: BulkColumn): boolean {
+  return !!col.sortable && !!comparators[col.key]
+}
+
+function alignClass(col: BulkColumn): string {
+  if (col.align === "end") return "text-end"
+  if (col.align === "center") return "text-center"
+  return ""
+}
+
 function effective(row: BulkRow) {
   return effectiveDisposition(row, props.reincludeOverrides)
 }
@@ -87,12 +122,31 @@ function effective(row: BulkRow) {
 function setReinclude(userId: number, value: boolean) {
   emit("update:reincludeOverrides", {...props.reincludeOverrides, [userId]: value})
 }
+
+// ── Help panel ────────────────────────────────────────────────────────────────
+const helpOpen = ref(false)
+
+// ── Validation ──────────────────────────────────────────────────────────────
+// The confirm button is ALWAYS clickable (only disabled while submitting); on save we
+// validate the wrapped form and only emit `confirm` when it reports valid. Dialogs
+// attach :rules to their fields so missing/invalid inputs surface inline.
+const formRef = ref<{validate: () => Promise<{valid: boolean}> | {valid: boolean}} | null>(null)
+
+async function onSave() {
+  if (props.submitting) return
+  const form = formRef.value
+  if (form) {
+    const result = await form.validate()
+    if (!result?.valid) return
+  }
+  emit("confirm")
+}
 </script>
 
 <template>
   <base-modal
     v-model="open"
-    :save-disabled="!canConfirm || submitting"
+    :save-disabled="submitting"
     :save-icon="icon"
     :save-label="confirmLabel"
     :save-loading="submitting"
@@ -100,18 +154,49 @@ function setReinclude(userId: number, value: boolean) {
     :save-submit-state="submitState"
     :title="title"
     data-testid="bulk-action-dialog"
-    max-width="960"
+    max-width="1200"
     save-testid="bulk-action-confirm-btn"
     scrollable
     show-cancel
     show-save
     @cancel="emit('cancel')"
-    @save="emit('confirm')"
+    @save="onSave"
   >
-    <!-- Action-specific form inputs (dates, cutoff, validation messages). -->
-    <slot name="form" />
+    <template
+      v-if="help"
+      #actions-append
+    >
+      <v-btn
+        aria-label="Help"
+        class="ml-2"
+        data-testid="bulk-action-help-btn"
+        icon="mdi-help-circle-outline"
+        size="small"
+        variant="text"
+        @click="helpOpen = !helpOpen"
+      />
+    </template>
 
-    <!-- Counts summary -->
+    <v-form ref="formRef">
+      <!-- Optional help panel -->
+      <v-expand-transition v-if="help">
+        <v-alert
+          v-if="helpOpen"
+          class="mb-4"
+          data-testid="bulk-action-help-panel"
+          density="comfortable"
+          :title="help.title"
+          type="info"
+          variant="tonal"
+        >
+          {{ help.body }}
+        </v-alert>
+      </v-expand-transition>
+
+      <!-- Action-specific form inputs (dates, cutoff, validation messages). -->
+      <slot name="form" />
+
+      <!-- Counts summary -->
       <div
         class="bulk-counts mb-4"
         data-testid="bulk-action-counts"
@@ -168,71 +253,26 @@ function setReinclude(userId: number, value: boolean) {
         <thead>
           <tr>
             <th
-              class="sortable-header"
-              role="button"
-              tabindex="0"
-              :aria-sort="ariaSort('name')"
-              @click="toggleSort('name')"
-              @keydown.enter="toggleSort('name')"
-              @keydown.space.prevent="toggleSort('name')"
+              v-for="col in columns"
+              :key="col.key"
+              :aria-sort="isSortable(col) ? ariaSort(col.key) : undefined"
+              :class="[alignClass(col), isSortable(col) ? 'sortable-header' : '']"
+              :role="isSortable(col) ? 'button' : undefined"
+              :style="col.width ? {width: col.width} : undefined"
+              :tabindex="isSortable(col) ? 0 : undefined"
+              @click="isSortable(col) && toggleSort(col.key)"
+              @keydown.enter="isSortable(col) && toggleSort(col.key)"
+              @keydown.space.prevent="isSortable(col) && toggleSort(col.key)"
             >
-              Member
+              {{ col.header }}
               <v-icon
-                :icon="sortIcon('name')"
+                v-if="isSortable(col)"
+                :icon="sortIcon(col.key)"
                 size="16"
               />
             </th>
-            <th
-              class="sortable-header"
-              role="button"
-              tabindex="0"
-              :aria-sort="ariaSort('memberType')"
-              @click="toggleSort('memberType')"
-              @keydown.enter="toggleSort('memberType')"
-              @keydown.space.prevent="toggleSort('memberType')"
-            >
-              Type
-              <v-icon
-                :icon="sortIcon('memberType')"
-                size="16"
-              />
-            </th>
-            <th
-              class="sortable-header"
-              role="button"
-              tabindex="0"
-              :aria-sort="ariaSort('disposition')"
-              @click="toggleSort('disposition')"
-              @keydown.enter="toggleSort('disposition')"
-              @keydown.space.prevent="toggleSort('disposition')"
-            >
-              Status
-              <v-icon
-                :icon="sortIcon('disposition')"
-                size="16"
-              />
-            </th>
-            <th
-              class="sortable-header"
-              role="button"
-              tabindex="0"
-              :aria-sort="ariaSort('memberSince')"
-              @click="toggleSort('memberSince')"
-              @keydown.enter="toggleSort('memberSince')"
-              @keydown.space.prevent="toggleSort('memberSince')"
-            >
-              Member since
-              <v-icon
-                :icon="sortIcon('memberSince')"
-                size="16"
-              />
-            </th>
-            <th v-if="showFeeColumn">
-              Fee type
-            </th>
-            <th>Note</th>
             <th v-if="hasReincludable">
-              Include
+              {{ includeLabel }}
             </th>
           </tr>
         </thead>
@@ -243,50 +283,60 @@ function setReinclude(userId: number, value: boolean) {
             :class="rowColorClass(effective(row))"
             :data-testid="`bulk-preview-row-${row.userId}`"
           >
-            <td class="font-weight-medium">
-              {{ row.name }}
-            </td>
-            <td class="text-caption text-medium-emphasis">
-              {{ memberTypeLabel(row.memberType) }}
-            </td>
-            <td>
-              <v-chip
-                :color="dispositionColor(effective(row))"
-                :data-testid="`bulk-preview-disposition-${row.userId}`"
-                size="x-small"
-                variant="tonal"
-              >
-                {{ dispositionLabel(effective(row)) }}
-              </v-chip>
-            </td>
             <td
-              class="text-caption text-medium-emphasis"
-              :data-testid="`bulk-preview-member-since-${row.userId}`"
+              v-for="col in columns"
+              :key="col.key"
+              :class="[alignClass(col), col.key === 'fee' ? 'bulk-fee-cell' : '']"
             >
-              {{ formatMemberSince(row.memberSince) }}
-            </td>
-            <td v-if="showFeeColumn">
+              <!-- Dialog-supplied custom cell. -->
               <slot
-                name="fee-cell"
+                :name="`cell.${col.key}`"
                 :row="row"
-              />
-            </td>
-            <td
-              class="text-caption"
-              :data-testid="`bulk-preview-note-${row.userId}`"
-            >
-              <span
-                v-if="reasonLabel(row.reason)"
-                :class="row.disposition === 'EXCLUDED' ? 'text-error' : row.disposition === 'WARNING' ? 'text-warning' : ''"
+                :effective="effective(row)"
               >
-                {{ reasonLabel(row.reason) }}
-              </span>
-              <span
-                v-if="row.lastSentOn"
-                class="text-medium-emphasis ml-1"
-              >
-                Last sent {{ row.lastSentOn }}
-              </span>
+                <!-- Default renderers for the standard keys. -->
+                <template v-if="col.key === 'name'">
+                  <span class="font-weight-medium">{{ row.name }}</span>
+                </template>
+                <template v-else-if="col.key === 'memberType'">
+                  <span class="text-caption text-medium-emphasis">{{ memberTypeLabel(row.memberType) }}</span>
+                </template>
+                <template v-else-if="col.key === 'disposition'">
+                  <v-chip
+                    :color="dispositionColor(effective(row))"
+                    :data-testid="`bulk-preview-disposition-${row.userId}`"
+                    size="x-small"
+                    variant="tonal"
+                  >
+                    {{ dispositionLabel(effective(row)) }}
+                  </v-chip>
+                </template>
+                <template v-else-if="col.key === 'memberSince'">
+                  <span
+                    class="text-caption text-medium-emphasis"
+                    :data-testid="`bulk-preview-member-since-${row.userId}`"
+                  >{{ formatMemberSince(row.memberSince) }}</span>
+                </template>
+                <template v-else-if="col.key === 'note'">
+                  <span
+                    class="text-caption"
+                    :data-testid="`bulk-preview-note-${row.userId}`"
+                  >
+                    <span
+                      v-if="reasonLabel(row.reason)"
+                      :class="row.disposition === 'EXCLUDED' ? 'text-error' : row.disposition === 'WARNING' ? 'text-warning' : ''"
+                    >
+                      {{ reasonLabel(row.reason) }}
+                    </span>
+                    <span
+                      v-if="row.lastSentOn"
+                      class="text-medium-emphasis ml-1"
+                    >
+                      Last sent {{ row.lastSentOn }}
+                    </span>
+                  </span>
+                </template>
+              </slot>
             </td>
             <td v-if="hasReincludable">
               <v-checkbox
@@ -295,12 +345,14 @@ function setReinclude(userId: number, value: boolean) {
                 :model-value="reincludeOverrides[row.userId] ?? false"
                 color="primary"
                 density="compact"
+                hide-details
                 @update:model-value="(v) => setReinclude(row.userId, !!v)"
               />
             </td>
           </tr>
         </tbody>
       </v-table>
+    </v-form>
   </base-modal>
 </template>
 
@@ -316,6 +368,13 @@ function setReinclude(userId: number, value: boolean) {
 
 .bulk-row--skipped td {
   opacity: 0.55;
+}
+
+// Give the fee-type select cells a little vertical breathing room so the grouped
+// selects are not cramped against each other.
+.bulk-fee-cell {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
 }
 
 .sortable-header {

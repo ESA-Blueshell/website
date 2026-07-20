@@ -42,6 +42,15 @@ const computedRows = computed(() => computeMarkPaidRows(props.targets))
 
 const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
+const help = {
+  title: "Mark as paid",
+  body:
+    "Records a paid contribution for every included member for the selected contribution "
+    + "period. Members who are already paid are skipped, and honorary members (who owe no "
+    + "contribution) are skipped too. This only updates the paid status; it does not send "
+    + "any email. The action is idempotent, so re-running it is safe.",
+}
+
 async function onConfirm() {
   if (!canConfirm.value || props.contributionPeriodId == null) return
   const ok = await submit(async () => {
@@ -87,6 +96,7 @@ watch(computedRows, (newRows) => {
     :can-confirm="canConfirm"
     confirm-label="Mark paid"
     :counts="counts"
+    :help="help"
     icon="mdi-cash-check"
     :included-count="includedUserIds.length"
     :rows="rows"

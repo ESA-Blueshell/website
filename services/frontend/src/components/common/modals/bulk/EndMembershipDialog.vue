@@ -41,6 +41,15 @@ const computedRows = computed(() => computeEndMembershipRows(props.targets, prop
 
 const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
+const help = {
+  title: "End membership",
+  body:
+    "Ends the active membership of every included member as of today. Members without an "
+    + "active membership (no membership, or one that already has an end date) are skipped. "
+    + "Ending a membership stops it going forward; it does not delete the member or their "
+    + "history, and a membership can be resumed later.",
+}
+
 async function onConfirm() {
   if (!canConfirm.value) return
   const ok = await submit(async () => {
@@ -89,6 +98,7 @@ watch(computedRows, (newRows) => {
     :can-confirm="canConfirm"
     confirm-label="End membership"
     :counts="counts"
+    :help="help"
     icon="mdi-account-remove"
     :included-count="includedUserIds.length"
     :rows="rows"

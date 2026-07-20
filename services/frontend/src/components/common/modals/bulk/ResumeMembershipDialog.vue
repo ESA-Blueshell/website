@@ -43,6 +43,16 @@ const computedRows = computed(() => computeResumeMembershipRows(props.targets, p
 
 const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
+const help = {
+  title: "Resume membership",
+  body:
+    "Reactivates membership for every included member against the latest contribution "
+    + "period. Members whose most recent membership ended within the latest period are "
+    + "resumed; others start a new membership. Members who are already active are skipped, "
+    + "and nobody can be resumed when there is no contribution period. This does not send "
+    + "any email.",
+}
+
 async function onConfirm() {
   if (!canConfirm.value) return
   const ok = await submit(async () => {
@@ -91,6 +101,7 @@ watch(computedRows, (newRows) => {
     :can-confirm="canConfirm"
     confirm-label="Resume membership"
     :counts="counts"
+    :help="help"
     icon="mdi-account-convert"
     :included-count="includedUserIds.length"
     :rows="rows"

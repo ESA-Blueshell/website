@@ -453,7 +453,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   <tr>
                     <!-- Select-all header checkbox -->
                     <th
-                      class="d-flex align-center justify-center"
+                      class="mm-th-checkbox"
                       style="width: 48px; padding-right: 0"
                     >
                       <v-checkbox
@@ -764,6 +764,8 @@ function onRowClick(event: MouseEvent, rowId: number) {
       v-model="bulkDialogOpen"
       :targets="bulkTargets"
       :period="selectedPeriod"
+      :server-today="serverToday"
+      :latest-period="latestPeriod"
       @done="onBulkDone"
     />
 
@@ -772,6 +774,8 @@ function onRowClick(event: MouseEvent, rowId: number) {
       v-model="bulkDialogOpen"
       :targets="bulkTargets"
       :period="selectedPeriod"
+      :server-today="serverToday"
+      :latest-period="latestPeriod"
       @done="onBulkDone"
     />
 
@@ -801,6 +805,24 @@ function onRowClick(event: MouseEvent, rowId: number) {
 
   &:hover {
     background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+// Select-all header cell: a normal table cell (not flex) so its bottom border stays
+// continuous with the label headers, bottom-aligned like them, and the checkbox
+// centered so the header and body checkbox columns line up. The checkbox's own
+// dense margins are removed so it sits on the header label line rather than above it.
+.mm-th-checkbox {
+  vertical-align: bottom;
+  text-align: center;
+
+  :deep(.v-selection-control) {
+    justify-content: center;
+    min-height: 0;
+  }
+
+  :deep(.v-input__details) {
+    display: none;
   }
 }
 

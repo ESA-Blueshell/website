@@ -19,7 +19,7 @@ export interface BulkTarget {
   } | null
   mostRecentContribution: {
     paid: boolean
-  } | null
+  }
   isHonorary: boolean
 }
 

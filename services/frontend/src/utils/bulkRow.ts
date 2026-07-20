@@ -47,7 +47,7 @@ export interface BulkRow {
   reason?: BulkRowReason
   memberType?: MemberType
   memberSince?: string
-  amount?: number
+  amount?: number | null
   recommendedFeeType?: FeeType
   /** Email actions only: when the last reminder/incasso was sent, if known. */
   lastSentOn?: string

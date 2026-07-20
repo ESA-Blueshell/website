@@ -100,8 +100,13 @@ const useSaveAsSubmitButton = computed(
     :scrollable="scrollable"
   >
     <v-card>
-      <v-card-title class="text-h5">
-        {{ title }}
+      <v-card-title class="base-modal__title text-h5 d-flex align-center">
+        <span class="base-modal__title-text">{{ title }}</span>
+        <!--
+          #title-append slot — render extra affordances (e.g. a help button)
+          inline in the header band, to the right of the title.
+        -->
+        <slot name="title-append" />
       </v-card-title>
 
       <v-card-text>
@@ -174,3 +179,20 @@ const useSaveAsSubmitButton = computed(
     </v-card>
   </v-dialog>
 </template>
+
+<style lang="scss" scoped>
+// Distinct, comfortably padded header band shared by every BaseModal usage: a subtle
+// surface tint plus a bottom divider separate the title (and any #title-append
+// affordance) from the body. Uses theme surface variables, no hardcoded colours.
+.base-modal__title {
+  gap: 8px;
+  padding: 16px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.base-modal__title-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+</style>

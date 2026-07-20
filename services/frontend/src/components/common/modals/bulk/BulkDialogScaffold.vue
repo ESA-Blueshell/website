@@ -162,13 +162,13 @@ async function onSave() {
     @cancel="emit('cancel')"
     @save="onSave"
   >
+    <!-- Help affordance lives in the header band, next to the title. -->
     <template
       v-if="help"
-      #actions-append
+      #title-append
     >
       <v-btn
         aria-label="Help"
-        class="ml-2"
         data-testid="bulk-action-help-btn"
         icon="mdi-help-circle-outline"
         size="small"
@@ -177,22 +177,25 @@ async function onSave() {
       />
     </template>
 
-    <v-form ref="formRef">
-      <!-- Optional help panel -->
-      <v-expand-transition v-if="help">
-        <v-alert
-          v-if="helpOpen"
-          class="mb-4"
-          data-testid="bulk-action-help-panel"
-          density="comfortable"
-          :title="help.title"
-          type="info"
-          variant="tonal"
-        >
-          {{ help.body }}
-        </v-alert>
-      </v-expand-transition>
+    <!--
+      Help panel — toggled from the header button. Rendered as the first thing in
+      the body so it drops down directly beneath the header band when opened.
+    -->
+    <v-expand-transition v-if="help">
+      <v-alert
+        v-if="helpOpen"
+        class="mb-4"
+        data-testid="bulk-action-help-panel"
+        density="comfortable"
+        :title="help.title"
+        type="info"
+        variant="tonal"
+      >
+        {{ help.body }}
+      </v-alert>
+    </v-expand-transition>
 
+    <v-form ref="formRef">
       <!-- Action-specific form inputs (dates, cutoff, validation messages). -->
       <slot name="form" />
 

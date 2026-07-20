@@ -49,8 +49,14 @@ const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, s
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-// The period used for cutoff defaulting and validation bounds.
-const boundsPeriod = computed(() => props.latestPeriod ?? props.period)
+// The period used for cutoff defaulting and validation bounds. This MUST be the period
+// the operator is acting on (the selected period), not the globally-latest period: the
+// cutoff and its validation are meaningful only relative to the period being processed.
+// Using the global latest broke parallel runs, where an unrelated newer period became the
+// bound and the (valid, in-selected-period) cutoff was rejected, so confirm silently
+// no-opped and the dialog never closed. Fall back to latestPeriod only when nothing is
+// selected.
+const boundsPeriod = computed(() => props.period ?? props.latestPeriod ?? null)
 
 // ── Validation rules ──────────────────────────────────────────────────────────
 const incassoDateRules = [
@@ -229,13 +235,14 @@ watch(computedRows, (newRows) => {
       <template v-if="row.disposition === 'INCLUDED' || (row.disposition === 'WARNING' && reincludeOverrides[row.userId])">
         <v-select
           v-model="feeTypeSelections[row.userId]"
+          class="bulk-feetype-select"
           :data-testid="`bulk-preview-feetype-${row.userId}`"
           density="compact"
           hide-details
           item-title="title"
           item-value="value"
           :items="feeTypeItems"
-          style="min-width: 150px; max-width: 190px"
+          variant="outlined"
         />
       </template>
       <span
@@ -269,5 +276,13 @@ watch(computedRows, (newRows) => {
   > * {
     flex: 1 1 0;
   }
+}
+
+// Cleaner fee-type selector: an outlined, compact select reads as an intentional field in
+// the table cell rather than the default underlined input. Constrain the width so it sits
+// tidily in the Fee-type column.
+.bulk-feetype-select {
+  min-width: 150px;
+  max-width: 190px;
 }
 </style>

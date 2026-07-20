@@ -8,7 +8,7 @@ import {executeBulkReminder, findContributionReminders} from "@/services/api/blu
 import {computeReminderRows} from "@/utils/bulkCompute"
 import type {BulkRow} from "@/utils/bulkRow"
 import type {ContributionPeriodResponse} from "@/services/api"
-import {effectiveAmount, feeTypeItems, type FeeType} from "@/utils/feePreview"
+import {effectiveAmount, feeTypeItems, feeTypeLabels, type FeeType} from "@/utils/feePreview"
 import {halfYearCutoffDefault, type BulkTarget} from "@/utils/bulkTarget"
 
 /**
@@ -54,8 +54,14 @@ const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, s
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-// The period used for cutoff defaulting and validation bounds.
-const boundsPeriod = computed(() => props.latestPeriod ?? props.period)
+// The period used for cutoff defaulting and validation bounds. This MUST be the period
+// the operator is acting on (the selected period), not the globally-latest period: the
+// cutoff and its validation are meaningful only relative to the period being processed.
+// Using the global latest broke parallel runs, where an unrelated newer period became the
+// bound and the (valid, in-selected-period) cutoff was rejected, so confirm silently
+// no-opped and the dialog never closed. Fall back to latestPeriod only when nothing is
+// selected.
+const boundsPeriod = computed(() => props.period ?? props.latestPeriod ?? null)
 
 // ── Validation rules ──────────────────────────────────────────────────────────
 const paymentDueRules = [
@@ -84,6 +90,24 @@ const computedRows = computed(() =>
 function rowAmount(row: BulkRow): number | null {
   const selected = feeTypeSelections.value[row.userId] ?? row.recommendedFeeType
   return effectiveAmount(selected, props.period)
+}
+
+// Whether a row is currently editable (shows the fee-type select): INCLUDED, or a WARNING
+// the operator has forcibly re-included.
+function isEditable(row: BulkRow): boolean {
+  return row.disposition === "INCLUDED" || (row.disposition === "WARNING" && !!reincludeOverrides.value[row.userId])
+}
+
+// Incasso payers are excluded-by-default from the reminder. When NOT forcibly included,
+// their fee type and amount are shown struck through to signal "won't be billed". Once
+// re-included the strikethrough is dropped and the editable fee-type select takes over.
+function isStruck(row: BulkRow): boolean {
+  return row.reason === "PAYS_VIA_INCASSO" && !reincludeOverrides.value[row.userId]
+}
+
+// The read-only fee-type label for a non-editable row (its recommended type).
+function feeLabel(row: BulkRow): string {
+  return row.recommendedFeeType ? feeTypeLabels[row.recommendedFeeType] : ""
 }
 
 function lastRemindedLabel(userId: number): string {
@@ -259,18 +283,29 @@ watch(computedRows, (newRows) => {
     </template>
 
     <template #cell.fee="{row}">
-      <template v-if="row.disposition === 'INCLUDED' || (row.disposition === 'WARNING' && reincludeOverrides[row.userId])">
+      <template v-if="isEditable(row)">
         <v-select
           v-model="feeTypeSelections[row.userId]"
+          class="bulk-feetype-select"
           :data-testid="`bulk-preview-feetype-${row.userId}`"
           density="compact"
           hide-details
           item-title="title"
           item-value="value"
           :items="feeTypeItems"
-          style="min-width: 150px; max-width: 190px"
+          variant="outlined"
         />
       </template>
+      <!--
+        Incasso payers are struck through: they pay via direct debit and are left out of
+        the reminder by default, so their recommended fee type is shown for context but
+        crossed out and muted.
+      -->
+      <span
+        v-else-if="isStruck(row)"
+        class="text-caption bulk-struck"
+        :data-testid="`bulk-preview-feetype-struck-${row.userId}`"
+      >{{ feeLabel(row) }}</span>
       <span
         v-else
         class="text-medium-emphasis"
@@ -282,6 +317,7 @@ watch(computedRows, (newRows) => {
         v-if="rowAmount(row) != null"
         :data-testid="`bulk-preview-amount-${row.userId}`"
         class="text-caption"
+        :class="{'bulk-struck': isStruck(row)}"
       >€ {{ rowAmount(row) }}</span>
       <span
         v-else
@@ -309,5 +345,21 @@ watch(computedRows, (newRows) => {
   > * {
     flex: 1 1 0;
   }
+}
+
+// Incasso-payer rows are excluded-by-default: their fee type and amount are shown struck
+// through and muted so the operator sees what they *would* be billed while it's clear the
+// reminder skips them.
+.bulk-struck {
+  text-decoration: line-through;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+}
+
+// Cleaner fee-type selector: an outlined, compact select reads as an intentional field in
+// the table cell rather than the default underlined input. Constrain the width so it sits
+// tidily in the Fee-type column.
+.bulk-feetype-select {
+  min-width: 150px;
+  max-width: 190px;
 }
 </style>

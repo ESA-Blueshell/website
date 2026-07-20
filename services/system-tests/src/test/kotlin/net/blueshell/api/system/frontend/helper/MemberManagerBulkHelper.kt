@@ -211,13 +211,13 @@ object MemberManagerBulkHelper {
      * the fee selector for INCLUDED / re-included rows.
      */
     fun amountOf(page: Page, userId: Long): String {
-        // The resolved amount is shown as a text element next to the v-select.
-        // It is the text content of a <span class="text-caption text-medium-emphasis"> next to the select.
-        // Locate the td cell containing the feetype select and find the adjacent amount span.
-        val feeTypeSelect = TestIdLocatorHelper.byTestId(page, "bulk-preview-feetype-$userId")
-        // The amount span is a sibling of the v-select inside the same flex div
-        val parentDiv = feeTypeSelect.locator("..").locator("..")
-        val amountSpan = parentDiv.locator(".text-medium-emphasis").first()
+        // The resolved amount lives in its own Amount column, rendered as
+        // <span data-testid="bulk-preview-amount-{userId}">€ N</span>. Read it directly by
+        // testid — do NOT walk up from the fee-type select, since the fee and amount cells
+        // are now separate <td>s and a relative climb catches the wrong cell (e.g. the
+        // member-type "Regular"), yielding a NumberFormatException.
+        val amountSpan = TestIdLocatorHelper.byTestId(page, "bulk-preview-amount-$userId")
+        amountSpan.waitFor()
         val text = amountSpan.textContent()?.trim() ?: ""
         // Strip "€ " prefix
         return text.removePrefix("€ ").trim()

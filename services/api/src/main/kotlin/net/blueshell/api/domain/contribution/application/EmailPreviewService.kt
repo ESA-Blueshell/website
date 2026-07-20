@@ -67,5 +67,39 @@ class EmailPreviewService(
     }
 
     private fun render(content: EmailContent): RenderedEmailPreview =
-        RenderedEmailPreview(subject = content.subject, html = emailSender.renderEmailHtml(content))
+        RenderedEmailPreview(subject = content.subject, html = inlineEmailAssets(emailSender.renderEmailHtml(content)))
+
+    /**
+     * Preview-only: replace the hosted email-asset URLs with base64 data URIs read from
+     * the classpath, so the preview iframe always shows the logo/watermark regardless of
+     * whether the configured frontend URL is reachable from the operator's browser
+     * (e.g. docker-internal hostnames in dev, or assets not yet deployed). The real send
+     * path is untouched, so mail clients keep the hosted URLs.
+     */
+    private fun inlineEmailAssets(html: String): String {
+        var result = html
+        INLINEABLE_ASSETS.forEach { (urlSuffix, dataUri) ->
+            if (dataUri != null) {
+                // Match the full URL (absolute or relative) ending in the asset path, as it
+                // appears in src/background attributes and CSS url(...) values.
+                result = result.replace(Regex("""[^"'()\s]*${Regex.escape(urlSuffix)}"""), dataUri)
+            }
+        }
+        return result
+    }
+
+    private companion object {
+        /** Hosted-URL suffix -> data URI (null when the classpath asset is missing). */
+        private val INLINEABLE_ASSETS: Map<String, String?> by lazy {
+            mapOf(
+                "/img/email/blueshell-logo.png" to classpathDataUri("templates/assets/BSLOGO.png"),
+                "/img/email/watermark.png" to classpathDataUri("templates/assets/BackdropBlack.png"),
+            )
+        }
+
+        private fun classpathDataUri(path: String): String? =
+            EmailPreviewService::class.java.classLoader.getResourceAsStream(path)?.use {
+                "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(it.readBytes())
+            }
+    }
 }

@@ -338,6 +338,13 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                 )
                 .andExpect(jsonPath("$.subject").isNotEmpty)
                 .andExpect(jsonPath("$.html").isNotEmpty)
+                // Preview is self-contained: template images (logo/watermark) are inlined
+                // as data URIs so the iframe shows them regardless of hosting.
+                .andExpect(
+                    jsonPath("$.html").value(
+                        org.hamcrest.Matchers.containsString("data:image/png;base64,")
+                    )
+                )
 
             // Preview must not persist a reminder …
             transactionTemplate.execute {

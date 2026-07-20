@@ -64,31 +64,33 @@ const previewDisabled = computed(
 </script>
 
 <template>
-  <div class="d-flex align-center bulk-email-preview">
-    <v-select
-      v-model="selectedUser"
-      class="bulk-email-preview__user"
-      data-testid="bulk-email-preview-user-select"
-      density="comfortable"
-      :disabled="users.length === 0"
-      hide-details
-      item-title="title"
-      item-value="value"
-      :items="users"
-      label="Preview recipient"
-      prepend-inner-icon="mdi-account"
-    />
-    <v-btn
-      class="ml-3"
-      data-testid="bulk-email-preview-btn"
-      :disabled="previewDisabled"
-      :loading="loading"
-      prepend-icon="mdi-email-search-outline"
-      variant="tonal"
-      @click="emit('preview')"
-    >
-      Preview email
-    </v-btn>
+  <div class="bulk-email-preview-container">
+    <div class="text-overline bulk-email-preview-container__label">Preview email</div>
+    <div class="d-flex align-center gap-3 bulk-email-preview">
+      <v-select
+        v-model="selectedUser"
+        class="bulk-email-preview__user"
+        data-testid="bulk-email-preview-user-select"
+        density="comfortable"
+        :disabled="users.length === 0"
+        hide-details
+        item-title="title"
+        item-value="value"
+        :items="users"
+        label="Preview recipient"
+        prepend-inner-icon="mdi-account"
+      />
+      <v-btn
+        data-testid="bulk-email-preview-btn"
+        :disabled="previewDisabled"
+        :loading="loading"
+        prepend-icon="mdi-email-search-outline"
+        variant="tonal"
+        @click="emit('preview')"
+      >
+        Preview email
+      </v-btn>
+    </div>
   </div>
 
   <v-dialog
@@ -155,9 +157,27 @@ const previewDisabled = computed(
 </template>
 
 <style lang="scss" scoped>
+// Container for the preview email section: a subtle boxed area with a tonal
+// background and a label, separate from the date filter row above it. Matches the
+// app's existing subtle surface-tint pattern (rgba border + minimal background)
+// rather than heavy dividers that were removed for being over-styled.
+.bulk-email-preview-container {
+  border-radius: 4px;
+  padding: 12px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+
+  &__label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(var(--v-theme-on-surface), 0.7);
+  }
+}
+
 .bulk-email-preview {
   &__user {
     max-width: 320px;
+    flex-grow: 1;
   }
 }
 

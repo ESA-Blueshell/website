@@ -2,9 +2,11 @@
 import {computed, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import BulkDialogScaffold, {type BulkColumn} from "./BulkDialogScaffold.vue"
+import EmailPreviewPanel from "./EmailPreviewPanel.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
+import {useEmailPreview} from "@/composables/useEmailPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {executeBulkReminder, findContributionReminders} from "@/services/api/blueshell/sdk.gen"
+import {executeBulkReminder, findContributionReminders, previewReminder} from "@/services/api/blueshell/sdk.gen"
 import {computeReminderRows} from "@/utils/bulkCompute"
 import type {BulkRow} from "@/utils/bulkRow"
 import type {ContributionPeriodResponse} from "@/services/api"
@@ -53,6 +55,7 @@ const lastRemindedAt = ref<Record<number, string>>({})
 const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
+const preview = useEmailPreview()
 
 // The period used for cutoff defaulting and validation bounds. This MUST be the period
 // the operator is acting on (the selected period), not the globally-latest period: the
@@ -141,6 +144,50 @@ const help = {
 
 const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
+// ── Email preview ─────────────────────────────────────────────────────────────
+// Selectable preview recipients: the currently-included users (INCLUDED ∪ re-included
+// WARNING), shown by name. Preview is faithful to what each included user would receive.
+const previewUserOptions = computed(() => {
+  const included = new Set(includedUserIds.value)
+  return rows.value
+    .filter((r) => included.has(r.userId))
+    .map((r) => ({value: r.userId, title: r.name}))
+})
+
+// Default the preview recipient to the first included user; keep it valid as rows change.
+watch(
+  previewUserOptions,
+  (options) => {
+    const current = preview.selectedUserId.value
+    if (options.length === 0) {
+      preview.selectedUserId.value = null
+    } else if (current == null || !options.some((o) => o.value === current)) {
+      preview.selectedUserId.value = options[0]!.value
+    }
+  },
+  {immediate: true},
+)
+
+// A preview needs a period and a payment-due date to render faithfully.
+const previewInputsReady = computed(() => !!props.period && !!paymentDueDate.value)
+
+async function onPreview() {
+  const periodId = props.period?.id
+  if (periodId == null || !paymentDueDate.value) return
+  await preview.runPreview(async (userId) => {
+    const feeType = feeTypeSelections.value[userId] ?? "FULL_YEAR_FEE"
+    const resp = await previewReminder({
+      body: {
+        userId,
+        contributionPeriodId: periodId,
+        feeType,
+        paymentDueDate: paymentDueDate.value,
+      },
+    })
+    return resp.data ?? null
+  })
+}
+
 // Whether the date inputs satisfy the same rules the v-form enforces. Used as a
 // defence-in-depth guard in onConfirm so an invalid submit never reaches the API even
 // though the confirm button stays clickable.
@@ -219,6 +266,7 @@ watch(
       void loadReminders()
     } else {
       reset()
+      preview.reset()
       feeTypeSelections.value = {}
       lastRemindedAt.value = {}
     }
@@ -280,6 +328,18 @@ watch(computedRows, (newRows) => {
           type="date"
         />
       </div>
+      <email-preview-panel
+        v-model="preview.selectedUserId.value"
+        v-model:dialog-open="preview.dialogOpen.value"
+        class="mb-4"
+        :error="preview.error.value"
+        :html="preview.html.value"
+        :inputs-ready="previewInputsReady"
+        :loading="preview.loading.value"
+        :subject="preview.subject.value"
+        :users="previewUserOptions"
+        @preview="onPreview"
+      />
     </template>
 
     <template #cell.fee="{row}">

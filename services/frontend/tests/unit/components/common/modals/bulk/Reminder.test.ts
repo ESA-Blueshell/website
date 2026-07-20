@@ -7,13 +7,15 @@ import {settle} from "../../../../helpers/testUtils"
 
 // Mock the API calls the dialog uses: the bulk executor and the reminder lookup
 // (fetched on open to fill the "Last reminded at" column).
-const {mockExecuteBulkReminder, mockFindContributionReminders} = vi.hoisted(() => ({
+const {mockExecuteBulkReminder, mockFindContributionReminders, mockPreviewReminder} = vi.hoisted(() => ({
   mockExecuteBulkReminder: vi.fn(),
   mockFindContributionReminders: vi.fn(),
+  mockPreviewReminder: vi.fn(),
 }))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   executeBulkReminder: mockExecuteBulkReminder,
   findContributionReminders: mockFindContributionReminders,
+  previewReminder: mockPreviewReminder,
 }))
 
 // Vitest resets mock implementations between tests (mockReset: true), so restore the
@@ -21,6 +23,9 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
 beforeEach(() => {
   mockFindContributionReminders.mockResolvedValue({data: []})
   mockExecuteBulkReminder.mockResolvedValue({data: {}})
+  mockPreviewReminder.mockResolvedValue({
+    data: {subject: "Contribution Payment Reminder - Blueshell Esports", html: "<p>Reminder body</p>"},
+  })
 })
 
 const SERVER_TODAY = "2025-05-01"
@@ -387,5 +392,45 @@ describe("ReminderDialog", () => {
     await settle()
     expect(wrapper.find('[data-testid="bulk-preview-disposition-1"]').text()).toContain("Excluded")
     expect(wrapper.find('[data-testid="bulk-preview-note-1"]').text()).toContain("Honorary")
+  })
+
+  it("previews the email for the selected included user with the right body and renders the subject", async () => {
+    const wrapper = mountDialog([regularTarget(1)])
+    await settle()
+    // Fill the payment-due date so the preview inputs are ready.
+    const vm = wrapper.vm as unknown as {paymentDueDate: string}
+    vm.paymentDueDate = "2025-09-01"
+    await settle()
+
+    const btn = wrapper.find('[data-testid="bulk-email-preview-btn"]')
+    expect(btn.exists()).toBe(true)
+    await btn.trigger("click")
+    await settle()
+
+    // Calls previewReminder with the selected user, period, fee type and due date.
+    expect(mockPreviewReminder).toHaveBeenCalledTimes(1)
+    expect(mockPreviewReminder).toHaveBeenCalledWith({
+      body: {
+        userId: 1,
+        contributionPeriodId: 1,
+        feeType: "FULL_YEAR_FEE",
+        paymentDueDate: "2025-09-01",
+      },
+    })
+    // Renders the returned subject in the nested preview dialog.
+    expect(wrapper.find('[data-testid="bulk-email-preview-subject"]').text())
+      .toContain("Contribution Payment Reminder - Blueshell Esports")
+  })
+
+  it("disables the preview button when nothing is included", async () => {
+    // A single incasso-payer is a WARNING excluded by default → nobody included.
+    const wrapper = mountDialog([incassoPayerTarget(5)])
+    await settle()
+    const vm = wrapper.vm as unknown as {paymentDueDate: string}
+    vm.paymentDueDate = "2025-09-01"
+    await settle()
+    const btn = wrapper.find('[data-testid="bulk-email-preview-btn"]')
+    expect(btn.attributes("disabled")).toBeDefined()
+    expect(mockPreviewReminder).not.toHaveBeenCalled()
   })
 })

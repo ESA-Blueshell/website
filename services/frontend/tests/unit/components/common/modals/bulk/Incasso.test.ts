@@ -5,16 +5,21 @@ import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType, type ContributionPeriodResponse} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
-// Mock the bulk executor the dialog calls on confirm.
-const {mockExecuteBulkIncassoNotification} = vi.hoisted(() => ({
+// Mock the bulk executor the dialog calls on confirm and the email-preview endpoint.
+const {mockExecuteBulkIncassoNotification, mockPreviewIncassoNotification} = vi.hoisted(() => ({
   mockExecuteBulkIncassoNotification: vi.fn(),
+  mockPreviewIncassoNotification: vi.fn(),
 }))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   executeBulkIncassoNotification: mockExecuteBulkIncassoNotification,
+  previewIncassoNotification: mockPreviewIncassoNotification,
 }))
 
 beforeEach(() => {
   mockExecuteBulkIncassoNotification.mockResolvedValue({data: {}})
+  mockPreviewIncassoNotification.mockResolvedValue({
+    data: {subject: "Membership Contribution Collection Notice - Blueshell Esports", html: "<p>Incasso body</p>"},
+  })
 })
 
 const SERVER_TODAY = "2025-05-01"
@@ -296,5 +301,44 @@ describe("IncassoDialog", () => {
     await settle()
     expect(wrapper.find('[data-testid="bulk-preview-disposition-1"]').text()).toContain("Included")
     expect(wrapper.find('[data-testid="bulk-preview-disposition-2"]').text()).toContain("Warning")
+  })
+
+  it("previews the email for the selected included user with the right body and renders the subject", async () => {
+    const wrapper = mountDialog([withIncassoTarget(1)])
+    await settle()
+    // Fill the expected-incasso date so the preview inputs are ready.
+    const vm = wrapper.vm as unknown as {expectedIncassoDate: string}
+    vm.expectedIncassoDate = "2025-09-01"
+    await settle()
+
+    const btn = wrapper.find('[data-testid="bulk-email-preview-btn"]')
+    expect(btn.exists()).toBe(true)
+    await btn.trigger("click")
+    await settle()
+
+    // Calls previewIncassoNotification with the selected user, period, fee type and date.
+    expect(mockPreviewIncassoNotification).toHaveBeenCalledTimes(1)
+    expect(mockPreviewIncassoNotification).toHaveBeenCalledWith({
+      body: {
+        userId: 1,
+        contributionPeriodId: 1,
+        feeType: "FULL_YEAR_FEE",
+        expectedIncassoDate: "2025-09-01",
+      },
+    })
+    expect(wrapper.find('[data-testid="bulk-email-preview-subject"]').text())
+      .toContain("Membership Contribution Collection Notice - Blueshell Esports")
+  })
+
+  it("disables the preview button when nothing is included", async () => {
+    // A single incasso-mismatch is a WARNING excluded by default → nobody included.
+    const wrapper = mountDialog([noIncassoTarget(2)])
+    await settle()
+    const vm = wrapper.vm as unknown as {expectedIncassoDate: string}
+    vm.expectedIncassoDate = "2025-09-01"
+    await settle()
+    const btn = wrapper.find('[data-testid="bulk-email-preview-btn"]')
+    expect(btn.attributes("disabled")).toBeDefined()
+    expect(mockPreviewIncassoNotification).not.toHaveBeenCalled()
   })
 })

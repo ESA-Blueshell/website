@@ -111,8 +111,7 @@ function setReinclude(userId: number, value: boolean) {
     <!-- Action-specific form inputs (dates, cutoff, validation messages). -->
     <slot name="form" />
 
-    <template>
-      <!-- Counts summary -->
+    <!-- Counts summary -->
       <div
         class="bulk-counts mb-4"
         data-testid="bulk-action-counts"
@@ -302,7 +301,6 @@ function setReinclude(userId: number, value: boolean) {
           </tr>
         </tbody>
       </v-table>
-    </template>
   </base-modal>
 </template>
 

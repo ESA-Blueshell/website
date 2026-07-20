@@ -162,7 +162,7 @@ export function computeIncassoRows(
 /**
  * End membership: no active membership or endDate != null → SKIPPED(NO_ACTIVE_MEMBERSHIP); else INCLUDED.
  */
-export function computeEndMembershipRows(targets: BulkTarget[], today: string): BulkRow[] {
+export function computeEndMembershipRows(targets: BulkTarget[], _today: string): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
       disposition: "INCLUDED",

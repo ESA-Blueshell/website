@@ -90,18 +90,6 @@ function noEmailTarget(userId: number): BulkTarget {
   })
 }
 
-function alreadyPaidTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentContribution: {paid: true},
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: true,
-    },
-  })
-}
-
 describe("IncassoDialog", () => {
   it("renders the dialog with title and confirm button", () => {
     const wrapper = mount(IncassoDialog, {

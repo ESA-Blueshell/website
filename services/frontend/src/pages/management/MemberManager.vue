@@ -100,13 +100,6 @@ const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChang
 const {membershipsByUserId, userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
   useMemberRows(users, memberships, paidUserIds, selectedPeriod)
 
-// userId → full name, for the per-action bulk dialogs' locally-computed preview rows.
-const namesById = computed<Record<number, string>>(() => {
-  const map: Record<number, string> = {}
-  for (const r of rows.value) map[r.id] = r.fullName
-  return map
-})
-
 const {
   searchInput,
   // search is accessed by unit tests via wrapper.vm; keep it in scope.

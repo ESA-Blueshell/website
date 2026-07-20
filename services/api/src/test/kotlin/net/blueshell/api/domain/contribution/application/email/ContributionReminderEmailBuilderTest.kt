@@ -65,6 +65,7 @@ class ContributionReminderEmailBuilderTest {
             .doesNotContain("via our")
             .doesNotContain("website")
         assertThat(emailContent.markdownContent).doesNotContain("—") // no em-dashes
+        assertNoLeadingWhitespace(emailContent.markdownContent)
     }
 
     @Test
@@ -93,6 +94,7 @@ class ContributionReminderEmailBuilderTest {
             .contains("Kind regards")
             .contains("Secretary & Treasurer of ESA Blueshell")
             .doesNotContain("website")
+        assertNoLeadingWhitespace(emailContent.markdownContent)
     }
 
     @Test
@@ -113,6 +115,18 @@ class ContributionReminderEmailBuilderTest {
 
         // Then: Currency is formatted with 2 decimals
         assertThat(emailContent.markdownContent).contains("€12.50")
+    }
+
+    /**
+     * Guards against the "email renders as a code block" regression: any line
+     * reaching the Markdown converter with leading whitespace is parsed as an
+     * indented code block, so every line of the body must start at column 0.
+     */
+    private fun assertNoLeadingWhitespace(markdown: String) {
+        val offending = markdown.lines().filter { it.isNotEmpty() && it.first().isWhitespace() }
+        assertThat(offending)
+            .withFailMessage("Markdown lines must not start with whitespace, found: %s", offending)
+            .isEmpty()
     }
 
     private fun createTestUser(username: String, email: String, firstName: String, lastName: String): User {

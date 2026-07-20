@@ -18,6 +18,14 @@ import java.time.format.DateTimeFormatter
  * Members pay their membership contribution by BANK TRANSFER to the Blueshell
  * account, not via the website. The bank details come from configuration
  * (see BankProperties / blueshell.bank.*).
+ *
+ * The Markdown body is assembled from a list of column-0 lines joined with
+ * newlines rather than a `trimIndent()`-ed raw string. Interpolating a
+ * multi-line value (the bank-transfer block) into an indented raw string
+ * defeats `trimIndent()`: the interpolated lines carry no indentation, so the
+ * common indent computed by `trimIndent()` collapses to 0 and every other line
+ * keeps its 8-space source indentation. Markdown then renders the whole body as
+ * an indented code block. Joining unindented lines is immune to that.
  */
 
 private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")
@@ -33,11 +41,12 @@ internal fun academicYearLabel(period: ContributionPeriod): String {
     return if (endYear > startYear) "$startYear/$endYear" else "$startYear"
 }
 
-private fun bankTransferDetails(bank: BankProperties): String = """
-        **Bank transfer**
-        Account: ${bank.iban}, in the name of ${bank.accountName}.
-        For foreign bank accounts, the BIC code is ${bank.bic}.
-""".trimIndent()
+/** Bank-transfer block as unindented Markdown lines (no leading whitespace). */
+private fun bankTransferLines(bank: BankProperties): List<String> = listOf(
+    "**Bank transfer**",
+    "Account: ${bank.iban}, in the name of ${bank.accountName}.",
+    "For foreign bank accounts, the BIC code is ${bank.bic}.",
+)
 
 private const val SIGN_OFF = "Secretary & Treasurer of ESA Blueshell"
 
@@ -54,22 +63,30 @@ fun createContributionReminderEmail(
     feeType: BulkFeeType,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
-    val markdownContent = """
-        Dear ${recipient.fullName},
-
-        In order to retain your membership you will need to pay the contribution fee for $academicYear. This fee must be paid before **${paymentDueDate.format(DATE_FORMATTER)}**. If the payment is not received before this time, your membership role in our Discord and on the website will be revoked.
-
-        The contribution may be paid by transferring the fee directly to the Blueshell bank account. Details are given below.
-
-        **Amount due: €${"%.2f".format(amount)}** (${feeReason(feeType)})
-
-        ${bankTransferDetails(bank)}
-
-        If you have already paid, please disregard this message.
-
-        Kind regards,
-        $SIGN_OFF
-    """.trimIndent()
+    val markdownContent = buildList {
+        add("Dear ${recipient.fullName},")
+        add("")
+        add(
+            "In order to retain your membership you will need to pay the contribution fee for " +
+                "$academicYear. This fee must be paid before **${paymentDueDate.format(DATE_FORMATTER)}**. " +
+                "If the payment is not received before this time, your membership role in our Discord and " +
+                "on the website will be revoked."
+        )
+        add("")
+        add(
+            "The contribution may be paid by transferring the fee directly to the Blueshell bank account. " +
+                "Details are given below."
+        )
+        add("")
+        add("**Amount due: €${"%.2f".format(amount)}** (${feeReason(feeType)})")
+        add("")
+        addAll(bankTransferLines(bank))
+        add("")
+        add("If you have already paid, please disregard this message.")
+        add("")
+        add("Kind regards,")
+        add(SIGN_OFF)
+    }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,
@@ -92,25 +109,32 @@ fun createContributionReminderEmail(
     bank: BankProperties,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
-    val markdownContent = """
-        Dear ${recipient.fullName},
-
-        In order to retain your membership you will need to pay the contribution fee for $academicYear. If the payment is not received in time, your membership role in our Discord and on the website will be revoked.
-
-        The contribution may be paid by transferring the fee directly to the Blueshell bank account. The fee that applies to you is one of the following.
-
-        **Fee options**
-        - Half year fee: €${"%.2f".format(contributionPeriod.halfYearFee)}
-        - Full year fee: €${"%.2f".format(contributionPeriod.fullYearFee)}
-        - Alumni fee: €${"%.2f".format(contributionPeriod.alumniFee)}
-
-        ${bankTransferDetails(bank)}
-
-        If you have already paid, please disregard this message.
-
-        Kind regards,
-        $SIGN_OFF
-    """.trimIndent()
+    val markdownContent = buildList {
+        add("Dear ${recipient.fullName},")
+        add("")
+        add(
+            "In order to retain your membership you will need to pay the contribution fee for " +
+                "$academicYear. If the payment is not received in time, your membership role in our Discord " +
+                "and on the website will be revoked."
+        )
+        add("")
+        add(
+            "The contribution may be paid by transferring the fee directly to the Blueshell bank account. " +
+                "The fee that applies to you is one of the following."
+        )
+        add("")
+        add("**Fee options**")
+        add("- Half year fee: €${"%.2f".format(contributionPeriod.halfYearFee)}")
+        add("- Full year fee: €${"%.2f".format(contributionPeriod.fullYearFee)}")
+        add("- Alumni fee: €${"%.2f".format(contributionPeriod.alumniFee)}")
+        add("")
+        addAll(bankTransferLines(bank))
+        add("")
+        add("If you have already paid, please disregard this message.")
+        add("")
+        add("Kind regards,")
+        add(SIGN_OFF)
+    }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,

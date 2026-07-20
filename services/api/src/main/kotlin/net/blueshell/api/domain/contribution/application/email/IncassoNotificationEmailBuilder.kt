@@ -33,18 +33,28 @@ fun createIncassoNotificationEmail(
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val formattedDate = expectedIncassoDate.format(INCASSO_DATE_FORMATTER)
-    val markdownContent = """
-        Dear ${recipient.fullName},
-
-        Your membership fee for your $academicYear membership of ESA Blueshell will be automatically subtracted from your bank account on or around **$formattedDate**. Please make sure there are sufficient funds in your account on that date.
-
-        **Amount to be collected: €${"%.2f".format(amount)}** (${feeReason(feeType)})
-
-        If you wish to terminate your membership, please respond to this email before $formattedDate so we can remove you from the incasso list.
-
-        Kind regards,
-        Secretary & Treasurer of ESA Blueshell
-    """.trimIndent()
+    // Assembled from column-0 lines (not a trimIndent()-ed raw string) so no line
+    // ever reaches the Markdown converter with leading whitespace, which would be
+    // rendered as an indented code block.
+    val markdownContent = buildList {
+        add("Dear ${recipient.fullName},")
+        add("")
+        add(
+            "Your membership fee for your $academicYear membership of ESA Blueshell will be automatically " +
+                "subtracted from your bank account on or around **$formattedDate**. Please make sure there " +
+                "are sufficient funds in your account on that date."
+        )
+        add("")
+        add("**Amount to be collected: €${"%.2f".format(amount)}** (${feeReason(feeType)})")
+        add("")
+        add(
+            "If you wish to terminate your membership, please respond to this email before $formattedDate " +
+                "so we can remove you from the incasso list."
+        )
+        add("")
+        add("Kind regards,")
+        add("Secretary & Treasurer of ESA Blueshell")
+    }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,

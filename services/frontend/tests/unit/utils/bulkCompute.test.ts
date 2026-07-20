@@ -126,6 +126,27 @@ describe("computeMarkPaidRows", () => {
     expect(rows[0].memberType).toBeUndefined()
     expect(rows[0].memberSince).toBeUndefined()
   })
+
+  it("still populates memberType/memberSince on a SKIPPED (already-paid) row", () => {
+    const targets = [
+      bulkTarget(1, {
+        mostRecentContribution: {paid: true},
+        mostRecentMembership: {
+          type: MemberType.ALUMNI,
+          startDate: "2023-03-04",
+          endDate: null,
+          incasso: false,
+        },
+      }),
+    ]
+    const rows = computeMarkPaidRows(targets)
+    expect(rows[0]).toMatchObject({
+      disposition: "SKIPPED",
+      reason: "ALREADY_PAID",
+      memberType: MemberType.ALUMNI,
+      memberSince: "2023-03-04",
+    })
+  })
 })
 
 // ── Mark as Unpaid tests ───────────────────────────────────────────────
@@ -191,6 +212,25 @@ describe("computeReminderRows", () => {
       userId: 1,
       disposition: "EXCLUDED",
       reason: "HONORARY",
+    })
+  })
+
+  it("still populates memberType/memberSince on a SKIPPED (no-email) row", () => {
+    const targets = [bulkTarget(1, {
+      email: null,
+      mostRecentMembership: {
+        type: MemberType.ALUMNI,
+        startDate: "2022-09-09",
+        endDate: null,
+        incasso: false,
+      },
+    })]
+    const rows = computeReminderRows(targets, period(), "2025-01-01")
+    expect(rows[0]).toMatchObject({
+      disposition: "SKIPPED",
+      reason: "NO_EMAIL",
+      memberType: MemberType.ALUMNI,
+      memberSince: "2022-09-09",
     })
   })
 
@@ -413,6 +453,22 @@ describe("computeResumeMembershipRows", () => {
     expect(rows[0]).toMatchObject({
       disposition: "SKIPPED",
       reason: "ALREADY_ACTIVE",
+    })
+  })
+
+  it("still populates memberType/memberSince on a SKIPPED (already-active) row", () => {
+    const targets = [bulkTarget(1, {mostRecentMembership: {
+      type: MemberType.REGULAR,
+      startDate: "2021-02-03",
+      endDate: null,
+      incasso: false,
+    }})]
+    const rows = computeResumeMembershipRows(targets, period())
+    expect(rows[0]).toMatchObject({
+      disposition: "SKIPPED",
+      reason: "ALREADY_ACTIVE",
+      memberType: MemberType.REGULAR,
+      memberSince: "2021-02-03",
     })
   })
 

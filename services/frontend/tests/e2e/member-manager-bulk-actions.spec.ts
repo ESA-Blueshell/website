@@ -452,7 +452,7 @@ test.describe("member manager bulk actions", () => {
       await expect(page.getByTestId("bulk-preview-disposition-59")).toContainText("Included")
       await expect(page.getByTestId("bulk-preview-note-59")).toContainText("Will start new")
       await expect(page.getByTestId("bulk-preview-disposition-60")).toContainText("Skipped")
-      await expect(page.getByTestId("bulk-preview-note-60")).toContainText("Already active")
+      await expect(page.getByTestId("bulk-preview-note-60")).toContainText("Already has an active membership")
 
       await expect(page.getByTestId("bulk-action-counts")).toContainText("2 will apply")
 

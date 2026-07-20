@@ -128,14 +128,6 @@ export type BoardResponse = {
     version: number;
 };
 
-export type BulkActionCounts = {
-    excluded: number;
-    selected: number;
-    skipped: number;
-    warned: number;
-    willApply: number;
-};
-
 export type BulkActionResult = {
     applied: number;
     queued: number;
@@ -149,13 +141,6 @@ export type BulkContributionReminderExecuteRequest = {
         [key: string]: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
     };
     includedUserIds: Array<number>;
-    paymentDueDate: string;
-    userIds: Array<number>;
-};
-
-export type BulkContributionReminderPreviewRequest = {
-    contributionPeriodId: number;
-    cutoffDate: string;
     paymentDueDate: string;
     userIds: Array<number>;
 };
@@ -175,13 +160,6 @@ export type BulkIncassoNotificationExecuteRequest = {
     userIds: Array<number>;
 };
 
-export type BulkIncassoNotificationPreviewRequest = {
-    contributionPeriodId: number;
-    cutoffDate: string;
-    expectedIncassoDate: string;
-    userIds: Array<number>;
-};
-
 export type BulkMarkPaidRequest = {
     contributionPeriodId: number;
     userIds: Array<number>;
@@ -190,26 +168,6 @@ export type BulkMarkPaidRequest = {
 export type BulkMarkUnpaidRequest = {
     contributionPeriodId: number;
     userIds: Array<number>;
-};
-
-export type BulkPreviewResult = {
-    action: 'MARK_PAID' | 'MARK_UNPAID' | 'CONTRIBUTION_REMINDER' | 'INCASSO_NOTIFICATION' | 'END_MEMBERSHIP' | 'RESUME_MEMBERSHIP';
-    contributionPeriodId?: number;
-    counts: BulkActionCounts;
-    rows: Array<BulkPreviewRow>;
-    serverToday?: string;
-};
-
-export type BulkPreviewRow = {
-    amount?: number;
-    disposition: 'INCLUDED' | 'SKIPPED' | 'EXCLUDED' | 'WARNING';
-    lastSentOn?: string;
-    memberSince?: string;
-    memberType?: MemberType;
-    name: string;
-    reason?: 'ALREADY_PAID' | 'NOT_PAID' | 'HONORARY' | 'INCASSO_MISMATCH' | 'NO_ACTIVE_MEMBERSHIP' | 'STARTED_TODAY' | 'NO_EMAIL' | 'ALREADY_ACTIVE' | 'NO_CONTRIBUTION_PERIOD' | 'WILL_RESUME' | 'WILL_START_NEW';
-    recommendedFeeType?: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
-    userId: number;
 };
 
 export type BulkResumeMembershipRequest = {
@@ -2710,47 +2668,6 @@ export type ExecuteBulkReminderResponses = {
 
 export type ExecuteBulkReminderResponse = ExecuteBulkReminderResponses[keyof ExecuteBulkReminderResponses];
 
-export type PreviewBulkReminderData = {
-    body: BulkContributionReminderPreviewRequest;
-    path?: never;
-    query?: never;
-    url: '/contributionReminders/bulk/preview';
-};
-
-export type PreviewBulkReminderErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PreviewBulkReminderError = PreviewBulkReminderErrors[keyof PreviewBulkReminderErrors];
-
-export type PreviewBulkReminderResponses = {
-    /**
-     * OK
-     */
-    200: BulkPreviewResult;
-};
-
-export type PreviewBulkReminderResponse = PreviewBulkReminderResponses[keyof PreviewBulkReminderResponses];
-
 export type FindContributionsData = {
     body?: never;
     path?: never;
@@ -3673,47 +3590,6 @@ export type ExecuteBulkIncassoNotificationResponses = {
 };
 
 export type ExecuteBulkIncassoNotificationResponse = ExecuteBulkIncassoNotificationResponses[keyof ExecuteBulkIncassoNotificationResponses];
-
-export type PreviewBulkIncassoNotificationData = {
-    body: BulkIncassoNotificationPreviewRequest;
-    path?: never;
-    query?: never;
-    url: '/incassoNotifications/bulk/preview';
-};
-
-export type PreviewBulkIncassoNotificationErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PreviewBulkIncassoNotificationError = PreviewBulkIncassoNotificationErrors[keyof PreviewBulkIncassoNotificationErrors];
-
-export type PreviewBulkIncassoNotificationResponses = {
-    /**
-     * OK
-     */
-    200: BulkPreviewResult;
-};
-
-export type PreviewBulkIncassoNotificationResponse = PreviewBulkIncassoNotificationResponses[keyof PreviewBulkIncassoNotificationResponses];
 
 export type FindCohortSubjectsData = {
     body?: never;
@@ -4893,47 +4769,6 @@ export type ExecuteBulkEndResponses = {
 
 export type ExecuteBulkEndResponse = ExecuteBulkEndResponses[keyof ExecuteBulkEndResponses];
 
-export type PreviewBulkEndData = {
-    body: BulkEndMembershipRequest;
-    path?: never;
-    query?: never;
-    url: '/memberships/bulk/end/preview';
-};
-
-export type PreviewBulkEndErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PreviewBulkEndError = PreviewBulkEndErrors[keyof PreviewBulkEndErrors];
-
-export type PreviewBulkEndResponses = {
-    /**
-     * OK
-     */
-    200: BulkPreviewResult;
-};
-
-export type PreviewBulkEndResponse = PreviewBulkEndResponses[keyof PreviewBulkEndResponses];
-
 export type ExecuteBulkResumeData = {
     body: BulkResumeMembershipRequest;
     path?: never;
@@ -4974,47 +4809,6 @@ export type ExecuteBulkResumeResponses = {
 };
 
 export type ExecuteBulkResumeResponse = ExecuteBulkResumeResponses[keyof ExecuteBulkResumeResponses];
-
-export type PreviewBulkResumeData = {
-    body: BulkResumeMembershipRequest;
-    path?: never;
-    query?: never;
-    url: '/memberships/bulk/resume/preview';
-};
-
-export type PreviewBulkResumeErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PreviewBulkResumeError = PreviewBulkResumeErrors[keyof PreviewBulkResumeErrors];
-
-export type PreviewBulkResumeResponses = {
-    /**
-     * OK
-     */
-    200: BulkPreviewResult;
-};
-
-export type PreviewBulkResumeResponse = PreviewBulkResumeResponses[keyof PreviewBulkResumeResponses];
 
 export type DeleteMembershipData = {
     body?: never;

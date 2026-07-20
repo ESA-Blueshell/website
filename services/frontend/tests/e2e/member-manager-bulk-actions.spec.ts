@@ -1,141 +1,106 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
-import type {Page} from "@playwright/test"
-import fs from "node:fs"
-import path from "node:path"
-import process from "node:process"
+import type {Page, Request} from "@playwright/test"
 
 // ── Fixture data ───────────────────────────────────────────────────────────────
+//
+// The bulk-action preview is now computed entirely client-side (see
+// src/utils/bulkCompute.ts): the dialogs derive each row's disposition, reason,
+// fee tier, and amount from the data the page already loaded — users, memberships,
+// contribution periods, and the paid set — and only ever POST to the execute
+// endpoints. So these tests mock ONLY that loaded data plus the execute endpoints;
+// there are no preview route mocks, and every disposition asserted below is the
+// result of real client computation.
+//
+// The member manager auto-selects the latest contribution period on mount (the
+// ContributionPeriodList slide-group is `mandatory`), so period-relative actions
+// are enabled without an explicit period click. cutoffDate defaults to the
+// selected period's startDate (2025-01-01), which drives the half-year/full-year
+// fee split: membership startDate >= cutoff → HALF_YEAR_FEE, else FULL_YEAR_FEE.
+
+const PERIOD = {
+  id: 251,
+  startDate: "2025-01-01",
+  endDate: "2025-12-31",
+  halfYearFee: 10,
+  fullYearFee: 20,
+  alumniFee: 5,
+}
+
+const CONTRIBUTION_PERIODS = [PERIOD]
 
 const USERS = [
-  {
-    id: 51,
-    fullName: "Alice Regular",
-    firstName: "Alice",
-    lastName: "Regular",
-    username: "alice-regular",
-    email: "alice@example.com",
-    discord: "alice#1234",
-    enabled: true,
-    roles: ["MEMBER"],
-  },
-  {
-    id: 52,
-    fullName: "Bob Honorary",
-    firstName: "Bob",
-    lastName: "Honorary",
-    username: "bob-honorary",
-    email: "bob@example.com",
-    discord: "bob#5678",
-    enabled: true,
-    roles: ["MEMBER"],
-  },
-  {
-    id: 53,
-    fullName: "Carol Warning",
-    firstName: "Carol",
-    lastName: "Warning",
-    username: "carol-warning",
-    email: "carol@example.com",
-    discord: "carol#9012",
-    enabled: true,
-    roles: ["MEMBER"],
-  },
+  // 51 — regular, unpaid, started before cutoff → reminder/incasso INCLUDED, full-year fee
+  {id: 51, fullName: "Alice Regular", firstName: "Alice", lastName: "Regular", username: "alice-regular", email: "alice@example.com", enabled: true, roles: ["MEMBER"]},
+  // 52 — honorary → mark-paid/unpaid SKIPPED(HONORARY); reminder/incasso EXCLUDED(HONORARY)
+  {id: 52, fullName: "Bob Honorary", firstName: "Bob", lastName: "Honorary", username: "bob-honorary", email: "bob@example.com", enabled: true, roles: ["MEMBER"]},
+  // 53 — regular, ALREADY PAID → mark-paid SKIPPED(ALREADY_PAID); reminder WARNING(ALREADY_PAID)
+  {id: 53, fullName: "Carol Paid", firstName: "Carol", lastName: "Paid", username: "carol-paid", email: "carol@example.com", enabled: true, roles: ["MEMBER"]},
+  // 54 — regular, NO EMAIL → reminder/incasso SKIPPED(NO_EMAIL)
+  {id: 54, fullName: "Dave NoEmail", firstName: "Dave", lastName: "NoEmail", username: "dave-noemail", email: "", enabled: true, roles: ["MEMBER"]},
+  // 55 — regular, started AFTER cutoff → reminder INCLUDED with half-year fee
+  {id: 55, fullName: "Erin HalfYear", firstName: "Erin", lastName: "HalfYear", username: "erin-halfyear", email: "erin@example.com", enabled: true, roles: ["MEMBER"]},
+  // 56 — alumni → reminder/incasso INCLUDED with alumni fee
+  {id: 56, fullName: "Frank Alumni", firstName: "Frank", lastName: "Alumni", username: "frank-alumni", email: "frank@example.com", enabled: true, roles: ["MEMBER"]},
+  // 57 — regular WITHOUT incasso flag → incasso WARNING(INCASSO_MISMATCH)
+  {id: 57, fullName: "Gina NoIncasso", firstName: "Gina", lastName: "NoIncasso", username: "gina-noincasso", email: "gina@example.com", enabled: true, roles: ["MEMBER"]},
+  // 58 — membership ended WITHIN latest period → resume INCLUDED(WILL_RESUME)
+  {id: 58, fullName: "Hank Resumable", firstName: "Hank", lastName: "Resumable", username: "hank-resumable", email: "hank@example.com", enabled: true, roles: ["MEMBER"]},
+  // 59 — membership ended BEFORE latest period → resume INCLUDED(WILL_START_NEW)
+  {id: 59, fullName: "Ivy StartNew", firstName: "Ivy", lastName: "StartNew", username: "ivy-startnew", email: "ivy@example.com", enabled: true, roles: ["MEMBER"]},
+  // 60 — active membership (no endDate) → resume SKIPPED(ALREADY_ACTIVE); end INCLUDED
+  {id: 60, fullName: "Jack Active", firstName: "Jack", lastName: "Active", username: "jack-active", email: "jack@example.com", enabled: true, roles: ["MEMBER"]},
 ]
 
 const MEMBERSHIPS = [
-  {id: 151, userId: 51, memberType: "REGULAR", startDate: "2024-01-01"},
-  {id: 152, userId: 52, memberType: "HONORARY", startDate: "2023-01-01"},
-  {id: 153, userId: 53, memberType: "REGULAR", startDate: "2024-07-01"},
+  {id: 151, userId: 51, memberType: "REGULAR", startDate: "2024-01-01", endDate: null, incasso: true},
+  {id: 152, userId: 52, memberType: "HONORARY", startDate: "2023-01-01", endDate: null, incasso: false},
+  {id: 153, userId: 53, memberType: "REGULAR", startDate: "2024-03-01", endDate: null, incasso: true},
+  {id: 154, userId: 54, memberType: "REGULAR", startDate: "2024-02-01", endDate: null, incasso: true},
+  {id: 155, userId: 55, memberType: "REGULAR", startDate: "2025-07-01", endDate: null, incasso: true},
+  {id: 156, userId: 56, memberType: "ALUMNI", startDate: "2024-01-15", endDate: null, incasso: true},
+  {id: 157, userId: 57, memberType: "REGULAR", startDate: "2024-01-10", endDate: null, incasso: false},
+  {id: 158, userId: 58, memberType: "REGULAR", startDate: "2023-01-01", endDate: "2025-06-15", incasso: true},
+  {id: 159, userId: 59, memberType: "ALUMNI", startDate: "2020-01-01", endDate: "2021-06-15", incasso: true},
+  {id: 160, userId: 60, memberType: "REGULAR", startDate: "2024-01-01", endDate: null, incasso: true},
 ]
 
-const CONTRIBUTION_PERIODS = [
-  {
-    id: 251,
-    startDate: "2025-01-01",
-    endDate: "2025-12-31",
-    halfYearFee: 10,
-    fullYearFee: 20,
-    alumniFee: 5,
-  },
-]
-
-const CONTRIBUTIONS: Record<string, unknown>[] = []
-
-// ── Mock bulk preview responses ────────────────────────────────────────────────
-
-const REMINDER_PREVIEW = {
-  action: "CONTRIBUTION_REMINDER",
-  contributionPeriodId: 251,
-  counts: {selected: 3, willApply: 1, warned: 1, excluded: 1, skipped: 0},
-  rows: [
-    {
-      userId: 51,
-      name: "Alice Regular",
-      disposition: "INCLUDED",
-      memberType: "REGULAR",
-      amount: 20.0,
-      recommendedFeeType: "FULL_YEAR_FEE",
-      reason: null,
-      lastSentOn: null,
-    },
-    {
-      userId: 52,
-      name: "Bob Honorary",
-      disposition: "EXCLUDED",
-      memberType: "HONORARY",
-      amount: null,
-      recommendedFeeType: null,
-      reason: "Honorary member — no contribution needed",
-      lastSentOn: null,
-    },
-    {
-      userId: 53,
-      name: "Carol Warning",
-      disposition: "WARNING",
-      memberType: "REGULAR",
-      amount: 20.0,
-      recommendedFeeType: "FULL_YEAR_FEE",
-      reason: "Reminder already sent recently",
-      lastSentOn: "2025-06-01",
-    },
-  ],
-}
-
-const REMINDER_EXECUTE_RESULT = {applied: 2, queued: 0, skipped: 1}
-
-// The end-membership preview endpoint now only supplies serverToday; the dialog
-// computes the rows locally from the loaded memberships. serverToday is pinned well
-// after every fixture startDate so all active memberships are endable.
-const END_PREVIEW = {
-  action: "END_MEMBERSHIP",
-  serverToday: "2025-07-01",
-  counts: {selected: 2, willApply: 2, warned: 0, excluded: 0, skipped: 0},
-  rows: [
-    {
-      userId: 51,
-      name: "Alice Regular",
-      disposition: "INCLUDED",
-      memberType: "REGULAR",
-      amount: null,
-      reason: null,
-      lastSentOn: null,
-    },
-    {
-      userId: 52,
-      name: "Bob Honorary",
-      disposition: "INCLUDED",
-      memberType: "HONORARY",
-      amount: null,
-      reason: null,
-      lastSentOn: null,
-    },
-  ],
-}
-
-const END_EXECUTE_RESULT = {applied: 2, queued: 0, skipped: 0}
+// Carol (53) is already paid for the selected period; everyone else is unpaid.
+const CONTRIBUTIONS = [{id: 300, userId: 53, contributionPeriodId: 251}]
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+/** Execute-endpoint fulfilment shared by every action (the FE only needs a 200 with
+ *  a non-null body to treat the action as applied and close the dialog). */
+async function stubExecuteEndpoints(page: Page) {
+  const executeGlobs: RegExp[] = [
+    /\/contributions\/bulk\/mark-paid$/,
+    /\/contributions\/bulk\/mark-unpaid$/,
+    /\/contributionReminders\/bulk\/execute$/,
+    /\/incassoNotifications\/bulk\/execute$/,
+    /\/memberships\/bulk\/end\/execute$/,
+    /\/memberships\/bulk\/resume\/execute$/,
+  ]
+  for (const glob of executeGlobs) {
+    await page.route(glob, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({applied: 1, queued: 0, skipped: 0}),
+      })
+    })
+  }
+}
+
+/**
+ * Arm a listener that resolves with the first POST request to a path matching the
+ * given fragment. Must be installed BEFORE the confirm click.
+ */
+function captureExecute(page: Page, pathFragment: string): Promise<Request> {
+  return page.waitForRequest(
+    (req) => req.method() === "POST" && req.url().includes(pathFragment),
+  )
+}
 
 async function setupPage(page: Page) {
   await installApiMocks(page, {
@@ -144,81 +109,46 @@ async function setupPage(page: Page) {
     contributionPeriods: CONTRIBUTION_PERIODS,
     contributions: CONTRIBUTIONS,
   })
-
-  // Mock bulk preview/execute endpoints
-  await page.route(/\/contributionReminders\/bulk\/preview/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(REMINDER_PREVIEW),
-    })
-  })
-  await page.route(/\/contributionReminders\/bulk\/execute/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(REMINDER_EXECUTE_RESULT),
-    })
-  })
-  await page.route(/\/memberships\/bulk\/end\/preview/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(END_PREVIEW),
-    })
-  })
-  await page.route(/\/memberships\/bulk\/end\/execute/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(END_EXECUTE_RESULT),
-    })
-  })
-  // Mark-paid / mark-unpaid are execute-only now (their preview is computed FE-side),
-  // reached at action-named paths — no /contributions/bulk/preview route exists.
-  await page.route(/\/contributions\/bulk\/mark-(paid|unpaid)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({applied: 2, queued: 0, skipped: 0}),
-    })
-  })
-  await page.route(/\/incassoNotifications\/bulk\/(preview|execute)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({applied: 2, queued: 0, skipped: 0}),
-    })
-  })
+  await stubExecuteEndpoints(page)
 
   await loginAsBoard(page.context())
   await page.setViewportSize({width: 1440, height: 900})
   await page.goto("/members/manage")
   await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
+  // The list auto-selects the latest period; wait for its select button to confirm
+  // periods loaded so period-relative actions are enabled.
+  await expect(page.getByTestId("contribution-period-select-btn-251")).toBeVisible({timeout: 10_000})
 }
 
-async function ensureScreenshotDir() {
-  const dir = path.join(process.cwd(), "pr4-screenshots")
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, {recursive: true})
+async function selectRows(page: Page, ids: number[]) {
+  for (const id of ids) {
+    await page.getByTestId(`member-manager-checkbox-${id}`).click()
+    await expect(page.getByTestId(`member-manager-checkbox-${id}`).locator("input")).toBeChecked()
   }
-  return dir
+}
+
+async function openAction(page: Page, actionTestId: string) {
+  await page.getByTestId("bulk-actions-menu-btn").click()
+  await expect(page.getByTestId("bulk-actions-menu")).toBeVisible()
+  await page.getByTestId(actionTestId).click()
+  await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
+  await expect(page.getByTestId("bulk-action-preview-table")).toBeVisible({timeout: 10_000})
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
+//
+// Desktop (chromium) project only. Mobile no longer supports selection / bulk
+// actions (#454); see playwright.config.ts.
 
-// Tests are chromium (desktop) project only.
-// Mobile no longer supports row selection or bulk actions menu (#454).
-// See: playwright.config.ts projects list
 test.describe("member manager bulk actions", () => {
-  // Playwright requires the first hook arg to be a fixtures destructure; we need none here.
   // eslint-disable-next-line no-empty-pattern
   test.beforeEach(async ({}, testInfo) => {
-    // Skip entire suite on mobile project (mobile no longer supports selection/bulk actions, #454)
     if (testInfo.project.name === "mobile-chrome") {
       test.skip()
     }
   })
+
+  // ── Selection chrome (no dialog) ──────────────────────────────────────────────
 
   test("checkboxes appear in each row and header", async ({page}) => {
     await setupPage(page)
@@ -229,331 +159,284 @@ test.describe("member manager bulk actions", () => {
     await expect(page.getByTestId("member-manager-checkbox-53")).toBeVisible()
   })
 
-  test("selecting rows enables bulk-actions menu", async ({page}) => {
+  test("selecting rows enables the bulk-actions menu", async ({page}) => {
     await setupPage(page)
 
-    // Menu button should be disabled before selection
     await expect(page.getByTestId("bulk-actions-menu-btn")).toBeDisabled()
-
-    // Select row 51
     await page.getByTestId("member-manager-checkbox-51").click()
-    // Verify row 51 is selected via checkbox input
     await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
-    // Verify bulk-actions menu is now enabled
     await expect(page.getByTestId("bulk-actions-menu-btn")).not.toBeDisabled()
   })
 
-  test("header checkbox selects all visible rows (indeterminate → checked)", async ({page}) => {
+  test("header checkbox selects then deselects all visible rows", async ({page}) => {
     await setupPage(page)
 
-    // Select one row to make header indeterminate
-    await page.getByTestId("member-manager-checkbox-51").click()
-
-    // Header should now be in indeterminate state, but let's just click it to select all
     await page.getByTestId("member-manager-header-checkbox").click()
-
-    // All 3 rows should be selected now
     await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
     await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
-    await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
-  })
 
-  test("deselecting rows via header checkbox resets selection", async ({page}) => {
-    await setupPage(page)
-
-    // Select all rows via header checkbox
     await page.getByTestId("member-manager-header-checkbox").click()
-    // Verify rows are selected
-    await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
-
-    // Deselect all rows by clicking header checkbox again
-    await page.getByTestId("member-manager-header-checkbox").click()
-    // Verify rows are deselected
     await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).not.toBeChecked()
     await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).not.toBeChecked()
-    await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).not.toBeChecked()
-    // Verify bulk-actions menu is disabled
     await expect(page.getByTestId("bulk-actions-menu-btn")).toBeDisabled()
   })
 
-  test("bulk actions menu shows all 5 actions", async ({page}) => {
+  test("bulk actions menu shows all six actions", async ({page}) => {
     await setupPage(page)
 
-    // Need to select a period first to enable period-relative actions
-    // For now just check that the menu opens and shows all items
     await page.getByTestId("member-manager-checkbox-51").click()
     await page.getByTestId("bulk-actions-menu-btn").click()
 
-    const menu = page.getByTestId("bulk-actions-menu")
-    await expect(menu).toBeVisible()
+    await expect(page.getByTestId("bulk-actions-menu")).toBeVisible()
     await expect(page.getByTestId("bulk-action-mark-paid")).toBeVisible()
     await expect(page.getByTestId("bulk-action-mark-unpaid")).toBeVisible()
     await expect(page.getByTestId("bulk-action-send-reminder")).toBeVisible()
     await expect(page.getByTestId("bulk-action-send-incasso")).toBeVisible()
     await expect(page.getByTestId("bulk-action-end-membership")).toBeVisible()
+    await expect(page.getByTestId("bulk-action-resume-membership")).toBeVisible()
   })
 
-  test.describe("contribution reminder flow", () => {
-    test("opens preview dialog with correct dispositions", async ({page}) => {
+  test("selected rows persist when a search filter is applied", async ({page}) => {
+    await setupPage(page)
+
+    await page.getByTestId("member-manager-header-checkbox").click()
+    await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+
+    await page.getByTestId("member-manager-search-input").locator("input").fill("Alice")
+    await expect(page.getByTestId("member-manager-row-51")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-52")).not.toBeVisible()
+
+    // Selection persists across filtering.
+    await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+    await expect(page.getByTestId("bulk-actions-menu-btn")).not.toBeDisabled()
+  })
+
+  // ── Mark paid (client-side: honorary skip, already-paid skip) ─────────────────
+
+  test.describe("mark paid", () => {
+    test("computes SKIPPED for honorary and already-paid, INCLUDED otherwise, and posts to execute", async ({page}) => {
       await setupPage(page)
+      await selectRows(page, [51, 52, 53])
+      await openAction(page, "bulk-action-mark-paid")
 
-      // Select a contribution period first
-      // The contribution period list uses the period data we set up
-      const periodSelect = page.getByText("2025-01-01")
-      if (await periodSelect.isVisible()) {
-        await periodSelect.click()
-      }
-
-      // Select all 3 rows
-      await page.getByTestId("member-manager-header-checkbox").click()
-      // Verify all rows are selected via checkboxes
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
-
-      // Open bulk actions menu
-      await page.getByTestId("bulk-actions-menu-btn").click()
-      await expect(page.getByTestId("bulk-actions-menu")).toBeVisible()
-
-      // Click send reminder (works even with noPeriod since we mock the endpoint)
-      await page.getByTestId("bulk-action-end-membership").click()
-
-      // Dialog should open
-      await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
-    })
-
-    test("contribution reminder: preview dialog shows INCLUDED, EXCLUDED (red), WARNING (amber) rows", async ({page}) => {
-      await setupPage(page)
-
-      // Reminder is a server-preview action, so keep the reminder preview mock (set in
-      // setupPage). Select the period so period-relative actions are enabled.
-      await page.getByTestId("contribution-period-select-btn-251").click()
-
-      // Select rows 51, 52, 53
-      await page.getByTestId("member-manager-checkbox-51").click()
-      await page.getByTestId("member-manager-checkbox-52").click()
-      await page.getByTestId("member-manager-checkbox-53").click()
-
-      // Open bulk actions menu and pick the contribution-reminder action.
-      await page.getByTestId("bulk-actions-menu-btn").click()
-      await page.getByTestId("bulk-action-send-reminder").click()
-
-      // Dialog opens; the preview loads only once both dates are set. cutoffDate defaults
-      // to the period start, so setting the payment due date triggers the server preview.
-      await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
-      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
-      await expect(page.getByTestId("bulk-action-preview-table")).toBeVisible({timeout: 10_000})
-
-      // Check disposition chips
+      // 51 regular unpaid → INCLUDED; 52 honorary → SKIPPED; 53 already paid → SKIPPED.
       await expect(page.getByTestId("bulk-preview-disposition-51")).toContainText("Included")
-      await expect(page.getByTestId("bulk-preview-disposition-52")).toContainText("Excluded")
-      await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Warning")
+      await expect(page.getByTestId("bulk-preview-disposition-52")).toContainText("Skipped")
+      await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Skipped")
+      await expect(page.getByTestId("bulk-preview-note-52")).toContainText("Honorary")
+      await expect(page.getByTestId("bulk-preview-note-53")).toContainText("Already paid")
 
-      // Check counts summary
+      // Counts: 3 selected, 1 will apply, 2 skipped.
       await expect(page.getByTestId("bulk-action-counts")).toContainText("3 selected")
       await expect(page.getByTestId("bulk-action-counts")).toContainText("1 will apply")
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("2 skipped")
+
+      const req = captureExecute(page, "/contributions/bulk/mark-paid")
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      const body = (await req).postDataJSON()
+      expect(body.userIds).toEqual([51])
+      expect(body.contributionPeriodId).toBe(251)
+
+      await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
+    })
+  })
+
+  // ── Mark unpaid (client-side: only the already-paid row is includable) ────────
+
+  test.describe("mark unpaid", () => {
+    test("computes INCLUDED only for the already-paid row and posts to execute", async ({page}) => {
+      await setupPage(page)
+      await selectRows(page, [51, 53])
+      await openAction(page, "bulk-action-mark-unpaid")
+
+      // 51 unpaid → SKIPPED(NOT_PAID); 53 paid → INCLUDED.
+      await expect(page.getByTestId("bulk-preview-disposition-51")).toContainText("Skipped")
+      await expect(page.getByTestId("bulk-preview-note-51")).toContainText("Not paid")
+      await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Included")
+
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("1 will apply")
+
+      const req = captureExecute(page, "/contributions/bulk/mark-unpaid")
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      const body = (await req).postDataJSON()
+      expect(body.userIds).toEqual([53])
+      expect(body.contributionPeriodId).toBe(251)
+
+      await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
+    })
+  })
+
+  // ── Reminder (client-side: exclude honorary, skip no-email, warn already-paid,
+  //    fee tiers by cutoff) ──────────────────────────────────────────────────────
+
+  test.describe("send reminder", () => {
+    test("computes dispositions, fee tiers and amounts, then posts included set to execute", async ({page}) => {
+      await setupPage(page)
+      // 51 full-year INCLUDED, 52 honorary EXCLUDED, 53 already-paid WARNING,
+      // 54 no-email SKIPPED, 55 half-year INCLUDED, 56 alumni INCLUDED.
+      await selectRows(page, [51, 52, 53, 54, 55, 56])
+      await openAction(page, "bulk-action-send-reminder")
+
+      await expect(page.getByTestId("bulk-preview-disposition-51")).toContainText("Included")
+      await expect(page.getByTestId("bulk-preview-disposition-52")).toContainText("Excluded")
+      await expect(page.getByTestId("bulk-preview-note-52")).toContainText("Honorary")
+      await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Warning")
+      await expect(page.getByTestId("bulk-preview-note-53")).toContainText("Already paid")
+      await expect(page.getByTestId("bulk-preview-disposition-54")).toContainText("Skipped")
+      await expect(page.getByTestId("bulk-preview-note-54")).toContainText("No email")
+      await expect(page.getByTestId("bulk-preview-disposition-55")).toContainText("Included")
+      await expect(page.getByTestId("bulk-preview-disposition-56")).toContainText("Included")
+
+      // Fee tiers (rendered as "€ N" next to the fee selector): 51 started 2024-01-01
+      // (< cutoff 2025-01-01) → full-year € 20; 55 started 2025-07-01 (>= cutoff) →
+      // half-year € 10; 56 alumni → € 5.
+      await expect(page.getByTestId("bulk-preview-row-51")).toContainText("€ 20")
+      await expect(page.getByTestId("bulk-preview-row-55")).toContainText("€ 10")
+      await expect(page.getByTestId("bulk-preview-row-56")).toContainText("€ 5")
+
+      // Counts: 3 will apply (51, 55, 56), 1 with warnings (53), 1 excluded (52), 1 skipped (54).
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("3 will apply")
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("1 with warnings")
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("1 excluded")
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("1 skipped")
+
+      // The re-include checkbox is offered for the WARNING row only.
+      await expect(page.getByTestId("bulk-preview-reinclude-53")).toBeVisible()
+
+      // A payment due date is required to confirm (cutoff defaults to period start).
+      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
+
+      const req = captureExecute(page, "/contributionReminders/bulk/execute")
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      const body = (await req).postDataJSON()
+      // includedUserIds carries only the client-included set (WARNING 53 not re-included).
+      expect([...body.includedUserIds].sort((a: number, b: number) => a - b)).toEqual([51, 55, 56])
+      expect(body.contributionPeriodId).toBe(251)
+      expect(body.cutoffDate).toBe("2025-01-01")
+      expect(body.paymentDueDate).toBe("2025-08-31")
+
+      await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
+    })
+
+    test("re-including the already-paid warning row promotes it to INCLUDED and sends it", async ({page}) => {
+      await setupPage(page)
+      await selectRows(page, [53])
+      await openAction(page, "bulk-action-send-reminder")
+
+      await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Warning")
+      // Re-include: click the inner input of the WARNING row's checkbox.
+      await page.getByTestId("bulk-preview-reinclude-53").locator("input").click()
+      await expect(page.getByTestId("bulk-preview-disposition-53")).toContainText("Included")
+
+      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
+
+      const req = captureExecute(page, "/contributionReminders/bulk/execute")
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      const body = (await req).postDataJSON()
+      expect([...body.includedUserIds]).toContain(53)
+
+      await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
+    })
+  })
+
+  // ── Incasso (client-side: as reminder + incasso-mismatch warning) ─────────────
+
+  test.describe("send incasso", () => {
+    test("warns on incasso mismatch, keeps other reminder rules, and posts to execute", async ({page}) => {
+      await setupPage(page)
+      // 51 incasso=true INCLUDED, 57 incasso=false WARNING(INCASSO_MISMATCH),
+      // 52 honorary EXCLUDED, 56 alumni incasso=true INCLUDED.
+      await selectRows(page, [51, 57, 52, 56])
+      await openAction(page, "bulk-action-send-incasso")
+
+      await expect(page.getByTestId("bulk-preview-disposition-51")).toContainText("Included")
+      await expect(page.getByTestId("bulk-preview-disposition-57")).toContainText("Warning")
+      await expect(page.getByTestId("bulk-preview-note-57")).toContainText("Not marked for incasso")
+      await expect(page.getByTestId("bulk-preview-disposition-52")).toContainText("Excluded")
+      await expect(page.getByTestId("bulk-preview-disposition-56")).toContainText("Included")
+
+      // Counts: 2 will apply (51, 56), 1 with warnings (57), 1 excluded (52).
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("2 will apply")
       await expect(page.getByTestId("bulk-action-counts")).toContainText("1 with warnings")
       await expect(page.getByTestId("bulk-action-counts")).toContainText("1 excluded")
 
-      // Check re-include checkbox for warning row
-      await expect(page.getByTestId("bulk-preview-reinclude-53")).toBeVisible()
-    })
+      // Incasso requires an expected-incasso date (cutoff defaults to period start).
+      await page.getByTestId("bulk-action-expected-incasso-date").locator("input").fill("2025-09-30")
 
-    test("contribution reminder full flow: select period → select rows → open reminder dialog → set date → execute → selection cleared", async ({page}) => {
-      await setupPage(page)
-
-      // Re-mock the preview to the reminder specific one
-      await page.route(/\/contributionReminders\/bulk\/preview/, async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(REMINDER_PREVIEW),
-        })
-      })
-
-      // Select the contribution period to enable period-relative actions
-      await page.getByTestId("contribution-period-select-btn-251").click()
-      await expect(page.getByTestId("contribution-period-select-btn-251")).toBeVisible({timeout: 5_000})
-
-      // Select rows
-      await page.getByTestId("member-manager-checkbox-51").click()
-      await page.getByTestId("member-manager-checkbox-52").click()
-      await page.getByTestId("member-manager-checkbox-53").click()
-      // Verify all 3 rows are selected via checkboxes
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
-
-      // Take screenshot: table with rows selected + menu open
-      await page.getByTestId("bulk-actions-menu-btn").click()
-      await expect(page.getByTestId("bulk-actions-menu")).toBeVisible()
-
-      const screenshotDir = await ensureScreenshotDir()
-      await page.screenshot({
-        path: path.join(screenshotDir, "01-table-selected-menu-open-light.png"),
-        fullPage: false,
-      })
-
-      // Click send contribution reminder
-      await page.getByTestId("bulk-action-send-reminder").click()
-
-      // Wait for dialog
-      await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
-      await expect(page.getByTestId("bulk-action-preview-table")).toBeVisible({timeout: 15_000})
-
-      // Set the required payment due date
-      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
-
-      // Take screenshot: dialog open with mix of dispositions, date input set
-      await page.screenshot({
-        path: path.join(screenshotDir, "02-reminder-dialog-light.png"),
-        fullPage: false,
-      })
-
-      // Check that warn row has re-include checkbox
-      await expect(page.getByTestId("bulk-preview-reinclude-53")).toBeVisible()
-
-      // Click confirm
+      const req = captureExecute(page, "/incassoNotifications/bulk/execute")
       await page.getByTestId("bulk-action-confirm-btn").click()
+      const body = (await req).postDataJSON()
+      expect([...body.includedUserIds].sort((a: number, b: number) => a - b)).toEqual([51, 56])
+      expect(body.contributionPeriodId).toBe(251)
+      expect(body.expectedIncassoDate).toBe("2025-09-30")
 
-      // Wait for close (success triggers close after 1200ms)
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
-
-      // Selection should be cleared after done (verify via checkbox state and disabled menu)
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).not.toBeChecked({timeout: 3_000})
-      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).not.toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).not.toBeChecked()
-      await expect(page.getByTestId("bulk-actions-menu-btn")).toBeDisabled()
-    })
-
-    test("contribution reminder flow in dark mode — capture screenshots", async ({page}) => {
-      // Enable dark mode
-      await page.addInitScript(() => {
-        localStorage.setItem("esa-blueshell.nl:darkMode", "true")
-      })
-
-      await setupPage(page)
-
-      await page.route(/\/contributionReminders\/bulk\/preview/, async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(REMINDER_PREVIEW),
-        })
-      })
-
-      // Select the contribution period to enable period-relative actions
-      await page.getByTestId("contribution-period-select-btn-251").click()
-
-      // Select rows
-      await page.getByTestId("member-manager-checkbox-51").click()
-      await page.getByTestId("member-manager-checkbox-52").click()
-      await page.getByTestId("member-manager-checkbox-53").click()
-
-      // Take screenshot with menu open (dark)
-      await page.getByTestId("bulk-actions-menu-btn").click()
-      await expect(page.getByTestId("bulk-actions-menu")).toBeVisible()
-
-      const screenshotDir = await ensureScreenshotDir()
-      await page.screenshot({
-        path: path.join(screenshotDir, "01-table-selected-menu-open-dark.png"),
-        fullPage: false,
-      })
-
-      // Open reminder dialog
-      await page.getByTestId("bulk-action-send-reminder").click()
-      await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
-      await expect(page.getByTestId("bulk-action-preview-table")).toBeVisible({timeout: 15_000})
-
-      await page.getByTestId("bulk-action-payment-due-date").locator("input").fill("2025-08-31")
-
-      await page.screenshot({
-        path: path.join(screenshotDir, "02-reminder-dialog-dark.png"),
-        fullPage: false,
-      })
     })
   })
 
-  test.describe("end membership flow", () => {
-    test("end membership: opens dialog with preview, confirm executes and clears selection", async ({page}) => {
+  // ── End membership (client-side: skip already-ended) ──────────────────────────
+
+  test.describe("end membership", () => {
+    test("includes active memberships, skips already-ended, and posts included set to execute", async ({page}) => {
       await setupPage(page)
+      // 60 active → INCLUDED; 58 ended → SKIPPED(NO_ACTIVE_MEMBERSHIP).
+      await selectRows(page, [60, 58])
+      await openAction(page, "bulk-action-end-membership")
 
-      // Select two rows
-      await page.getByTestId("member-manager-checkbox-51").click()
-      await page.getByTestId("member-manager-checkbox-52").click()
-      // Verify both rows are selected
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
+      await expect(page.getByTestId("bulk-preview-disposition-60")).toContainText("Included")
+      await expect(page.getByTestId("bulk-preview-disposition-58")).toContainText("Skipped")
+      await expect(page.getByTestId("bulk-preview-note-58")).toContainText("No active membership")
 
-      // Open bulk menu
-      await page.getByTestId("bulk-actions-menu-btn").click()
-      await expect(page.getByTestId("bulk-actions-menu")).toBeVisible()
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("1 will apply")
 
-      // Click end membership
-      await page.getByTestId("bulk-action-end-membership").click()
-
-      // Dialog opens
-      await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
-      await expect(page.getByTestId("bulk-action-preview-table")).toBeVisible({timeout: 15_000})
-
-      // Both users should be INCLUDED
-      await expect(page.getByTestId("bulk-preview-disposition-51")).toContainText("Included")
-      await expect(page.getByTestId("bulk-preview-disposition-52")).toContainText("Included")
-
-      // Counts
-      await expect(page.getByTestId("bulk-action-counts")).toContainText("2 selected")
-      await expect(page.getByTestId("bulk-action-counts")).toContainText("2 will apply")
-
-      // Confirm
+      const req = captureExecute(page, "/memberships/bulk/end/execute")
       await page.getByTestId("bulk-action-confirm-btn").click()
+      const body = (await req).postDataJSON()
+      expect(body.userIds).toEqual([60])
 
-      // Dialog closes after success
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
-
-      // Selection cleared (verify via checkbox state)
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).not.toBeChecked({timeout: 3_000})
-      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).not.toBeChecked()
     })
 
-    test("end membership: cancel closes dialog without clearing selection", async ({page}) => {
+    test("cancel closes the dialog without clearing the selection", async ({page}) => {
       await setupPage(page)
-
-      await page.getByTestId("member-manager-checkbox-51").click()
+      await selectRows(page, [60])
       await page.getByTestId("bulk-actions-menu-btn").click()
       await page.getByTestId("bulk-action-end-membership").click()
       await expect(page.getByTestId("bulk-action-dialog")).toBeVisible({timeout: 10_000})
 
-      // Cancel
       await page.getByRole("button", {name: "Cancel"}).click()
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
 
-      // Selection should still be present (verify via checkbox)
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+      await expect(page.getByTestId("member-manager-checkbox-60").locator("input")).toBeChecked()
     })
   })
 
-  test.describe("selection persistence", () => {
-    test("selected rows persist when search filter is applied", async ({page}) => {
+  // ── Resume membership (client-side: WILL_RESUME / WILL_START_NEW / ALREADY_ACTIVE) ─
+
+  test.describe("resume membership", () => {
+    test("classifies resume outcomes client-side and posts included set to execute", async ({page}) => {
       await setupPage(page)
+      // 58 ended within latest period → WILL_RESUME (INCLUDED);
+      // 59 ended before latest period → WILL_START_NEW (INCLUDED);
+      // 60 active → ALREADY_ACTIVE (SKIPPED).
+      await selectRows(page, [58, 59, 60])
+      await openAction(page, "bulk-action-resume-membership")
 
-      // Select all 3 rows
-      await page.getByTestId("member-manager-header-checkbox").click()
-      // Verify all rows are selected
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-52").locator("input")).toBeChecked()
-      await expect(page.getByTestId("member-manager-checkbox-53").locator("input")).toBeChecked()
+      await expect(page.getByTestId("bulk-preview-disposition-58")).toContainText("Included")
+      await expect(page.getByTestId("bulk-preview-note-58")).toContainText("Will resume")
+      await expect(page.getByTestId("bulk-preview-disposition-59")).toContainText("Included")
+      await expect(page.getByTestId("bulk-preview-note-59")).toContainText("Will start new")
+      await expect(page.getByTestId("bulk-preview-disposition-60")).toContainText("Skipped")
+      await expect(page.getByTestId("bulk-preview-note-60")).toContainText("Already active")
 
-      // Apply a search that filters to only show row 51
-      await page.getByTestId("member-manager-search-input").locator("input").fill("Alice")
+      await expect(page.getByTestId("bulk-action-counts")).toContainText("2 will apply")
 
-      // Row 51 should be visible, rows 52 and 53 should not
-      await expect(page.getByTestId("member-manager-row-51")).toBeVisible()
-      await expect(page.getByTestId("member-manager-row-52")).not.toBeVisible()
+      const req = captureExecute(page, "/memberships/bulk/resume/execute")
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      const body = (await req).postDataJSON()
+      expect([...body.userIds].sort((a: number, b: number) => a - b)).toEqual([58, 59])
 
-      // But selection should still be present (persistent across filters) - row 51 still checked even though 52/53 hidden
-      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
-      // Menu should still be enabled (selection persisted)
-      await expect(page.getByTestId("bulk-actions-menu-btn")).not.toBeDisabled()
+      await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
     })
   })
 })

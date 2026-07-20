@@ -3,7 +3,7 @@ import {computed} from "vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {useTableSort} from "@/composables/useTableSort"
 import type {SubmitState} from "@/composables/formUtils"
-import type {BulkActionCounts, BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import type {BulkActionCounts, BulkRow} from "@/utils/bulkRow"
 import {memberTypeLabel} from "@/utils/memberType"
 import {
   dispositionColor,
@@ -29,12 +29,10 @@ interface Props {
   title: string
   icon: string
   confirmLabel: string
-  rows: BulkPreviewRow[]
+  rows: BulkRow[]
   counts: BulkActionCounts
   includedCount: number
   reincludeOverrides: Record<number, boolean>
-  loading?: boolean
-  error?: string | null
   submitting?: boolean
   canConfirm?: boolean
   submitState?: SubmitState
@@ -44,8 +42,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  loading: false,
-  error: null,
   submitting: false,
   canConfirm: true,
   submitState: "idle",
@@ -69,7 +65,7 @@ const rowsRef = computed(() => props.rows)
 
 type BulkSortKey = "name" | "memberType" | "disposition" | "memberSince" | "amount"
 
-const comparators: Record<BulkSortKey, (a: BulkPreviewRow, b: BulkPreviewRow) => number> = {
+const comparators: Record<BulkSortKey, (a: BulkRow, b: BulkRow) => number> = {
   name: (a, b) => a.name.localeCompare(b.name),
   memberType: (a, b) => (a.memberType ?? "").localeCompare(b.memberType ?? ""),
   disposition: (a, b) => {
@@ -84,7 +80,7 @@ const {sortedItems: sortedRows, toggleSort, sortIcon, ariaSort} = useTableSort(r
 
 const hasReincludable = computed(() => props.rows.some((r) => r.disposition === "WARNING"))
 
-function effective(row: BulkPreviewRow) {
+function effective(row: BulkRow) {
   return effectiveDisposition(row, props.reincludeOverrides)
 }
 
@@ -115,26 +111,7 @@ function setReinclude(userId: number, value: boolean) {
     <!-- Action-specific form inputs (dates, cutoff, validation messages). -->
     <slot name="form" />
 
-    <div
-      v-if="loading"
-      class="d-flex align-center justify-center py-8"
-    >
-      <v-progress-circular
-        color="primary"
-        indeterminate
-        size="40"
-      />
-      <span class="ml-3 text-medium-emphasis">Loading preview…</span>
-    </div>
-
-    <v-alert
-      v-else-if="error"
-      :text="error"
-      class="mb-4"
-      type="error"
-    />
-
-    <template v-else>
+    <template>
       <!-- Counts summary -->
       <div
         class="bulk-counts mb-4"
@@ -319,7 +296,6 @@ function setReinclude(userId: number, value: boolean) {
                 :model-value="reincludeOverrides[row.userId] ?? false"
                 color="primary"
                 density="compact"
-                hide-details
                 @update:model-value="(v) => setReinclude(row.userId, !!v)"
               />
             </td>

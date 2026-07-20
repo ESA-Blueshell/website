@@ -3,21 +3,24 @@ import {computed, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {previewBulkResume, executeBulkResume} from "@/services/api/blueshell/sdk.gen"
+import {executeBulkResume} from "@/services/api/blueshell/sdk.gen"
+import {computeResumeMembershipRows} from "@/utils/bulkCompute"
+import type {ContributionPeriodResponse} from "@/services/api"
+import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
- * Resume / start-membership per-action dialog. SERVER preview: the classification depends
- * on the globally most-recent contribution period (periods.findLatest) and per-user
- * membership history that the frontend does not load, so it cannot be computed locally.
- * Rows are read-only (no re-include / fee columns). Execute re-classifies against the
- * live DB. See docs/proposals/bulk-actions/REDESIGN.md §5.2.
+ * Resume membership per-action dialog. FE preview: computed from targets and
+ * the latest contribution period. No server preview call. Execute resumes or
+ * creates new memberships.
+ * See docs/proposals/bulk-actions/REDESIGN.md §5.2.
  */
 
-defineOptions({name: "ResumeMembershipDialog"})
+defineOptions({name: "ResumeMembershipDialog", inheritAttrs: false})
 
 interface Props {
   modelValue: boolean
-  userIds: number[]
+  targets: BulkTarget[]
+  latestPeriod: ContributionPeriodResponse | null
 }
 
 const props = defineProps<Props>()
@@ -31,23 +34,25 @@ const open = computed({
   set: (v) => emit("update:modelValue", v),
 })
 
-const {rows, counts, includedUserIds, reincludeOverrides, loading, error, submitting, loadPreview, submit, reset} =
+const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-async function load() {
-  await loadPreview(async () => {
-    const resp = await previewBulkResume({body: {userIds: props.userIds}})
-    return {rows: resp.data?.rows ?? []}
-  })
-}
+// Compute rows reactively from targets and latestPeriod
+const computedRows = computed(() => computeResumeMembershipRows(props.targets, props.latestPeriod))
 
-const canConfirm = computed(() => !loading.value && !error.value && includedUserIds.value.length > 0 && !submitting.value)
+const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
 async function onConfirm() {
   if (!canConfirm.value) return
   const ok = await submit(async () => {
-    const resp = await executeBulkResume({body: {userIds: props.userIds}})
+    const resp = await executeBulkResume({
+      body: {
+        // Only the operator-included users are resumed; the backend resume request
+        // takes the final userIds directly (no separate include set).
+        userIds: includedUserIds.value,
+      },
+    })
     return resp.data != null
   })
   setSubmitResult(ok)
@@ -59,17 +64,24 @@ async function onConfirm() {
   }
 }
 
+// Update rows when targets or dialog state changes
 watch(
   () => props.modelValue,
-  async (isOpen) => {
-    if (isOpen) await load()
-    else reset()
+  (isOpen) => {
+    if (isOpen) {
+      setRows(computedRows.value)
+    } else {
+      reset()
+    }
   },
-  // The host swaps in this component via `<component :is>` with modelValue already
-  // true, so a non-immediate watch would never fire on the initial mount and the
-  // server preview rows would never load. `immediate` guarantees the open path runs.
   {immediate: true},
 )
+
+watch(computedRows, (newRows) => {
+  if (open.value) {
+    setRows(newRows)
+  }
+})
 </script>
 
 <template>
@@ -77,17 +89,15 @@ watch(
     v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
     :can-confirm="canConfirm"
-    confirm-label="Resume / start"
+    confirm-label="Resume membership"
     :counts="counts"
-    :error="error"
-    icon="mdi-account-reactivate"
+    icon="mdi-account-convert"
     :included-count="includedUserIds.length"
-    :loading="loading"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
     :submitting="submitting"
-    title="Resume / start membership"
+    title="Resume membership"
     @cancel="emit('update:modelValue', false)"
     @confirm="onConfirm"
   />

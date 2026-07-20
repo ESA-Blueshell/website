@@ -23,12 +23,14 @@ import {
   findMemberships,
   findUserById,
   findUsers,
+  findContributionPeriods,
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useMemberRows, type MemberRow} from "@/composables/useMemberRows"
 import {useMemberFilters, type SortKey} from "@/composables/useMemberFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
 import {useMemberSelection} from "@/composables/useMemberSelection"
+import {computeBulkTargets, amsterdamToday, latestPeriodOf, type BulkTarget} from "@/utils/bulkTarget"
 
 export type {MemberRow}
 
@@ -80,17 +82,7 @@ type BulkActionKind =
 
 const bulkDialogOpen = ref(false)
 const bulkAction = ref<BulkActionKind>("markPaid")
-
-const dialogFor: Record<BulkActionKind, unknown> = {
-  markPaid: MarkPaidDialog,
-  markUnpaid: MarkUnpaidDialog,
-  sendReminder: ReminderDialog,
-  sendIncasso: IncassoDialog,
-  endMembership: EndMembershipDialog,
-  resumeMembership: ResumeMembershipDialog,
-}
-
-const activeBulkDialog = computed(() => dialogFor[bulkAction.value])
+const allPeriods = ref<import("@/services/api").ContributionPeriodResponse[]>([])
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -161,6 +153,31 @@ const memberCountLabel = computed(() =>
 // Whether period-relative bulk actions are disabled (no period selected)
 const noPeriodSelected = computed(() => !selectedPeriod.value)
 
+// Build a map of users for BulkTarget computation
+const usersById = computed<Map<number, EditableUser>>(() => {
+  const map = new Map<number, EditableUser>()
+  for (const u of users.value) {
+    if (u.id != null) map.set(u.id, u)
+  }
+  return map
+})
+
+// Compute bulk targets from selected IDs
+const bulkTargets = computed<BulkTarget[]>(() =>
+  computeBulkTargets(
+    selectedIdsArray.value,
+    membershipsByUserId.value,
+    paidUserIds.value,
+    usersById.value,
+  ),
+)
+
+// Get today's date in Amsterdam timezone
+const serverToday = computed(() => amsterdamToday())
+
+// Get the latest period for resume-membership classification
+const latestPeriod = computed(() => latestPeriodOf(allPeriods.value))
+
 // ── Data loading ─────────────────────────────────────────────────────────────
 
 const getUsers = async () => {
@@ -175,6 +192,11 @@ const getUsers = async () => {
 const getMemberships = async () => {
   const response = await findMemberships()
   memberships.value = response.data ?? []
+}
+
+const getContributionPeriods = async () => {
+  const response = await findContributionPeriods()
+  allPeriods.value = response.data ?? []
 }
 
 const updateUser = (user: EditableUser) => {
@@ -271,17 +293,6 @@ function openBulkAction(action: BulkActionKind) {
   bulkDialogOpen.value = true
 }
 
-// Props bound to whichever per-action dialog is active. Each dialog reads only the
-// subset it declares; passing the superset keeps the host free of per-action branching.
-const bulkDialogProps = computed(() => ({
-  userIds: selectedIdsArray.value,
-  contributionPeriodId: selectedPeriod.value?.id ?? null,
-  period: selectedPeriod.value,
-  namesById: namesById.value,
-  paidUserIds: paidUserIds.value,
-  membershipsByUserId: membershipsByUserId.value,
-}))
-
 async function onBulkDone() {
   clearSelection()
   await Promise.all([getUsers(), getMemberships(), reloadPaid()])
@@ -291,7 +302,7 @@ async function onBulkDone() {
 
 onMounted(async () => {
   try {
-    await Promise.all([getUsers(), getMemberships()])
+    await Promise.all([getUsers(), getMemberships(), getContributionPeriods()])
   } catch (error) {
     console.error("Error fetching data:", error)
   }
@@ -738,11 +749,52 @@ function onRowClick(event: MouseEvent, rowId: number) {
       @changed="onMembershipChanged"
     />
 
-    <!-- Bulk action dialog — one per-action component, chosen by the menu. -->
-    <component
-      :is="activeBulkDialog"
+    <!-- Bulk action dialogs — mounted only when their action is active AND open. -->
+    <mark-paid-dialog
+      v-if="bulkAction === 'markPaid' && bulkDialogOpen"
       v-model="bulkDialogOpen"
-      v-bind="bulkDialogProps"
+      :targets="bulkTargets"
+      :contribution-period-id="selectedPeriod?.id ?? null"
+      @done="onBulkDone"
+    />
+
+    <mark-unpaid-dialog
+      v-if="bulkAction === 'markUnpaid' && bulkDialogOpen"
+      v-model="bulkDialogOpen"
+      :targets="bulkTargets"
+      :contribution-period-id="selectedPeriod?.id ?? null"
+      @done="onBulkDone"
+    />
+
+    <reminder-dialog
+      v-if="bulkAction === 'sendReminder' && bulkDialogOpen"
+      v-model="bulkDialogOpen"
+      :targets="bulkTargets"
+      :period="selectedPeriod"
+      @done="onBulkDone"
+    />
+
+    <incasso-dialog
+      v-if="bulkAction === 'sendIncasso' && bulkDialogOpen"
+      v-model="bulkDialogOpen"
+      :targets="bulkTargets"
+      :period="selectedPeriod"
+      @done="onBulkDone"
+    />
+
+    <end-membership-dialog
+      v-if="bulkAction === 'endMembership' && bulkDialogOpen"
+      v-model="bulkDialogOpen"
+      :targets="bulkTargets"
+      :server-today="serverToday"
+      @done="onBulkDone"
+    />
+
+    <resume-membership-dialog
+      v-if="bulkAction === 'resumeMembership' && bulkDialogOpen"
+      v-model="bulkDialogOpen"
+      :targets="bulkTargets"
+      :latest-period="latestPeriod"
       @done="onBulkDone"
     />
   </v-main>

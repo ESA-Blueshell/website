@@ -4,22 +4,21 @@ import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {markUnpaid} from "@/services/api/blueshell/sdk.gen"
-import type {BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import {computeMarkUnpaidRows} from "@/utils/bulkCompute"
+import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
- * Mark-as-unpaid per-action dialog. Mirror of MarkPaidDialog: a paid row is INCLUDED
- * (it will be unmarked), an unpaid row is SKIPPED (NOT_PAID). FE-preview, no server call.
- * See docs/proposals/bulk-actions/REDESIGN.md §5.2.
+ * Mark-as-unpaid per-action dialog. FE-preview: the decision is purely
+ * `userId ∉ paidUserIds` — a row that is not paid is SKIPPED (NOT_PAID),
+ * everything else is INCLUDED. No server preview call. Execute is idempotent.
  */
 
-defineOptions({name: "MarkUnpaidDialog"})
+defineOptions({name: "MarkUnpaidDialog", inheritAttrs: false})
 
 interface Props {
   modelValue: boolean
-  userIds: number[]
+  targets: BulkTarget[]
   contributionPeriodId: number | null
-  namesById: Record<number, string>
-  paidUserIds: Set<number>
 }
 
 const props = defineProps<Props>()
@@ -37,17 +36,8 @@ const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, s
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-function computeRows(): BulkPreviewRow[] {
-  return props.userIds.map((userId) => {
-    const isPaid = props.paidUserIds.has(userId)
-    return {
-      userId,
-      name: props.namesById[userId] ?? String(userId),
-      disposition: isPaid ? "INCLUDED" : "SKIPPED",
-      reason: isPaid ? undefined : "NOT_PAID",
-    }
-  })
-}
+// Compute rows reactively from targets
+const computedRows = computed(() => computeMarkUnpaidRows(props.targets))
 
 const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
@@ -55,7 +45,7 @@ async function onConfirm() {
   if (!canConfirm.value || props.contributionPeriodId == null) return
   const ok = await submit(async () => {
     const resp = await markUnpaid({
-      body: {userIds: props.userIds, contributionPeriodId: props.contributionPeriodId as number},
+      body: {userIds: includedUserIds.value, contributionPeriodId: props.contributionPeriodId as number},
     })
     return resp.data != null
   })
@@ -68,17 +58,25 @@ async function onConfirm() {
   }
 }
 
+// Update rows when dialog state changes
 watch(
   () => props.modelValue,
   (isOpen) => {
-    if (isOpen) setRows(computeRows())
-    else reset()
+    if (isOpen) {
+      setRows(computedRows.value)
+    } else {
+      reset()
+    }
   },
-  // The host swaps in this component via `<component :is>` with modelValue already
-  // true, so a non-immediate watch would never fire on the initial mount and the
-  // preview rows would stay empty. `immediate` guarantees the open path runs.
   {immediate: true},
 )
+
+// Also update when targets change
+watch(computedRows, (newRows) => {
+  if (props.modelValue) {
+    setRows(newRows)
+  }
+})
 </script>
 
 <template>

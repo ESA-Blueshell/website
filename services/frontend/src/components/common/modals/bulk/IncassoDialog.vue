@@ -3,24 +3,25 @@ import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {previewBulkIncassoNotification, executeBulkIncassoNotification} from "@/services/api/blueshell/sdk.gen"
-import type {BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import {executeBulkIncassoNotification} from "@/services/api/blueshell/sdk.gen"
+import {computeIncassoRows} from "@/utils/bulkCompute"
+import type {BulkRow} from "@/utils/bulkRow"
 import type {ContributionPeriodResponse} from "@/services/api"
 import {effectiveAmount, feeTypeItems, type FeeType} from "@/utils/feePreview"
+import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
- * Incasso-notification per-action dialog. Same shape as ReminderDialog but with an
- * expected-incasso date and the INCASSO_MISMATCH warning rows (members not marked for
- * incasso, re-includable by the operator). SERVER preview; immutable preview / operator-
- * driven execute. See docs/proposals/bulk-actions/REDESIGN.md §5.2.
+ * Incasso-notification per-action dialog. FE preview: as reminder plus incasso checks.
+ * The operator can re-include WARNING rows and override each included row's fee type.
+ * No server preview call.
+ * See docs/proposals/bulk-actions/REDESIGN.md §5.2.
  */
 
-defineOptions({name: "IncassoDialog"})
+defineOptions({name: "IncassoDialog", inheritAttrs: false})
 
 interface Props {
   modelValue: boolean
-  userIds: number[]
-  contributionPeriodId: number | null
+  targets: BulkTarget[]
   period: ContributionPeriodResponse | null
 }
 
@@ -37,12 +38,15 @@ const open = computed({
 
 const expectedIncassoDate = ref("")
 const cutoffDate = ref("")
+
+// Per-row fee-type selections, defaulting to the server's recommendation per row.
 const feeTypeSelections = ref<Record<number, FeeType>>({})
 
-const {rows, counts, includedUserIds, reincludeOverrides, loading, error, submitting, loadPreview, submit, reset} =
+const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
+/** Client-side validation: cutoff must fall within the selected period. */
 const cutoffError = computed<string | null>(() => {
   if (!cutoffDate.value || !props.period) return null
   if (cutoffDate.value < props.period.startDate || cutoffDate.value > props.period.endDate) {
@@ -51,38 +55,18 @@ const cutoffError = computed<string | null>(() => {
   return null
 })
 
-async function load() {
-  if (props.contributionPeriodId == null || !expectedIncassoDate.value || !cutoffDate.value || cutoffError.value) {
-    return
-  }
-  await loadPreview(async () => {
-    const resp = await previewBulkIncassoNotification({
-      body: {
-        userIds: props.userIds,
-        contributionPeriodId: props.contributionPeriodId as number,
-        cutoffDate: cutoffDate.value,
-        expectedIncassoDate: expectedIncassoDate.value,
-      },
-    })
-    return {rows: resp.data?.rows ?? []}
-  })
-  const selections: Record<number, FeeType> = {}
-  for (const row of rows.value) {
-    if (row.recommendedFeeType) selections[row.userId] = row.recommendedFeeType
-  }
-  feeTypeSelections.value = selections
-}
+// Compute rows reactively from targets, period, and cutoffDate
+const computedRows = computed(() => computeIncassoRows(props.targets, props.period, cutoffDate.value))
 
-function rowAmount(row: BulkPreviewRow): number | null {
+function rowAmount(row: BulkRow): number | null {
   const selected = feeTypeSelections.value[row.userId] ?? row.recommendedFeeType
   return effectiveAmount(selected, props.period)
 }
 
 const canConfirm = computed(
   () =>
-    !loading.value
-    && !error.value
-    && !cutoffError.value
+    !cutoffError.value
+    && !!props.period
     && !!expectedIncassoDate.value
     && !!cutoffDate.value
     && includedUserIds.value.length > 0
@@ -90,7 +74,8 @@ const canConfirm = computed(
 )
 
 async function onConfirm() {
-  if (!canConfirm.value || props.contributionPeriodId == null) return
+  if (!canConfirm.value || !props.period) return
+  // Build overrides for all included users
   const overrides: Record<string, FeeType> = {}
   for (const userId of includedUserIds.value) {
     const feeType = feeTypeSelections.value[userId]
@@ -99,11 +84,11 @@ async function onConfirm() {
   const ok = await submit(async () => {
     const resp = await executeBulkIncassoNotification({
       body: {
-        userIds: props.userIds,
-        contributionPeriodId: props.contributionPeriodId as number,
+        userIds: props.targets.map((t) => t.userId),
+        contributionPeriodId: props.period!.id,
+        includedUserIds: includedUserIds.value,
         cutoffDate: cutoffDate.value,
         expectedIncassoDate: expectedIncassoDate.value,
-        includedUserIds: includedUserIds.value,
         feeTypeOverrides: overrides,
       },
     })
@@ -118,27 +103,33 @@ async function onConfirm() {
   }
 }
 
+// Initialize dates when dialog opens, compute rows reactively
 watch(
   () => props.modelValue,
-  async (isOpen) => {
+  (isOpen) => {
     if (isOpen) {
       expectedIncassoDate.value = ""
       cutoffDate.value = props.period?.startDate ?? ""
       feeTypeSelections.value = {}
-      reset()
+      setRows(computedRows.value)
     } else {
       reset()
       feeTypeSelections.value = {}
     }
   },
-  // The host swaps in this component via `<component :is>` with modelValue already
-  // true, so a non-immediate watch would never fire on the initial mount and the
-  // date defaults would not seed. `immediate` guarantees the open path runs.
   {immediate: true},
 )
 
-watch([expectedIncassoDate, cutoffDate], async () => {
-  if (props.modelValue) await load()
+// Seed fee selections from computed rows' recommended types
+watch(computedRows, (newRows) => {
+  if (open.value) {
+    const selections: Record<number, FeeType> = {}
+    for (const row of newRows) {
+      if (row.recommendedFeeType) selections[row.userId] = row.recommendedFeeType
+    }
+    feeTypeSelections.value = selections
+    setRows(newRows)
+  }
 })
 </script>
 
@@ -149,10 +140,8 @@ watch([expectedIncassoDate, cutoffDate], async () => {
     :can-confirm="canConfirm"
     confirm-label="Send incasso"
     :counts="counts"
-    :error="error"
     icon="mdi-bank-transfer"
     :included-count="includedUserIds.length"
-    :loading="loading"
     :rows="rows"
     :show-fee-column="true"
     :show-submit-status="showSubmitStatus"

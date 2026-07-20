@@ -3,24 +3,22 @@ import {computed, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {previewBulkEnd, executeBulkEnd} from "@/services/api/blueshell/sdk.gen"
+import {executeBulkEnd} from "@/services/api/blueshell/sdk.gen"
 import {computeEndMembershipRows} from "@/utils/bulkCompute"
-import type {MembershipResponse} from "@/services/api"
+import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
- * End-membership per-action dialog. Calls the end-preview endpoint ONCE only to obtain
- * the server's `today`, then computes the rows locally from the memberships the page
- * already holds — using serverToday (not new Date()) so the "started today" boundary is
- * evaluated in the server's timezone. See docs/proposals/bulk-actions/REDESIGN.md §4.
+ * End membership per-action dialog. FE preview: purely computed from targets and today.
+ * No server preview call. Execute ends active memberships.
+ * See docs/proposals/bulk-actions/REDESIGN.md §5.2.
  */
 
-defineOptions({name: "EndMembershipDialog"})
+defineOptions({name: "EndMembershipDialog", inheritAttrs: false})
 
 interface Props {
   modelValue: boolean
-  userIds: number[]
-  namesById: Record<number, string>
-  membershipsByUserId: Map<number, MembershipResponse[]>
+  targets: BulkTarget[]
+  serverToday: string
 }
 
 const props = defineProps<Props>()
@@ -34,29 +32,25 @@ const open = computed({
   set: (v) => emit("update:modelValue", v),
 })
 
-const {rows, counts, includedUserIds, reincludeOverrides, loading, error, submitting, loadPreview, submit, reset} =
+const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-async function load() {
-  await loadPreview(async () => {
-    const resp = await previewBulkEnd({body: {userIds: props.userIds}})
-    // Prefer the server date; fall back defensively to the browser date only if the
-    // server omitted it (should not happen given the extended envelope).
-    const serverToday = resp.data?.serverToday ?? new Date().toISOString().slice(0, 10)
-    return {
-      rows: computeEndMembershipRows(props.userIds, props.membershipsByUserId, props.namesById, serverToday),
-      serverToday,
-    }
-  })
-}
+// Compute rows reactively from targets and today
+const computedRows = computed(() => computeEndMembershipRows(props.targets, props.serverToday))
 
-const canConfirm = computed(() => !loading.value && !error.value && includedUserIds.value.length > 0 && !submitting.value)
+const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
 async function onConfirm() {
   if (!canConfirm.value) return
   const ok = await submit(async () => {
-    const resp = await executeBulkEnd({body: {userIds: props.userIds}})
+    const resp = await executeBulkEnd({
+      body: {
+        // Only the operator-included users are ended; the backend end request
+        // takes the final userIds directly (no separate include set).
+        userIds: includedUserIds.value,
+      },
+    })
     return resp.data != null
   })
   setSubmitResult(ok)
@@ -68,17 +62,24 @@ async function onConfirm() {
   }
 }
 
+// Update rows when targets or dialog state changes
 watch(
   () => props.modelValue,
-  async (isOpen) => {
-    if (isOpen) await load()
-    else reset()
+  (isOpen) => {
+    if (isOpen) {
+      setRows(computedRows.value)
+    } else {
+      reset()
+    }
   },
-  // The host swaps in this component via `<component :is>` with modelValue already
-  // true, so a non-immediate watch would never fire on the initial mount and the
-  // server preview (serverToday + rows) would never load. `immediate` fixes that.
   {immediate: true},
 )
+
+watch(computedRows, (newRows) => {
+  if (open.value) {
+    setRows(newRows)
+  }
+})
 </script>
 
 <template>
@@ -88,10 +89,8 @@ watch(
     :can-confirm="canConfirm"
     confirm-label="End membership"
     :counts="counts"
-    :error="error"
-    icon="mdi-account-cancel"
+    icon="mdi-account-remove"
     :included-count="includedUserIds.length"
-    :loading="loading"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"

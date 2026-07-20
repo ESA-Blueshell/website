@@ -1,5 +1,5 @@
 import {DateTime} from "luxon"
-import type {BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import type {BulkDisposition, BulkRow, BulkRowReason} from "@/utils/bulkRow"
 
 /**
  * Pure display helpers for bulk-action preview rows, lifted verbatim out of the old
@@ -7,8 +7,8 @@ import type {BulkPreviewRow} from "@/services/api/blueshell/types.gen"
  * See docs/proposals/bulk-actions/REDESIGN.md §5.1.
  */
 
-export type BulkDisposition = BulkPreviewRow["disposition"]
-export type BulkRowReason = NonNullable<BulkPreviewRow["reason"]>
+// Re-exported for existing importers that pulled these off bulkDisposition.
+export type {BulkDisposition, BulkRowReason}
 
 /**
  * The disposition as it applies after operator overrides: a WARNING row the operator
@@ -16,7 +16,7 @@ export type BulkRowReason = NonNullable<BulkPreviewRow["reason"]>
  * column so the flag stays visible.
  */
 export function effectiveDisposition(
-  row: Pick<BulkPreviewRow, "disposition" | "userId">,
+  row: Pick<BulkRow, "disposition" | "userId">,
   reincludeOverrides: Record<number, boolean>,
 ): BulkDisposition {
   if (row.disposition === "WARNING" && reincludeOverrides[row.userId]) return "INCLUDED"

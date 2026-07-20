@@ -78,7 +78,8 @@ export function useMemberRows(
   paidUserIds: Ref<Set<number>>,
   selectedPeriod: Ref<ContributionPeriodResponse | null> = ref(null),
 ) {
-  // Precomputed map: userId → their memberships (O(memberships) once instead of O(users*memberships))
+  // Precomputed map: userId → their memberships, sorted by startDate DESC (most recent first).
+  // This ensures [0] is always the latest membership, enabling O(1) access in BulkTarget computation.
   const membershipsByUserId = computed<Map<number, MembershipResponse[]>>(() => {
     const map = new Map<number, MembershipResponse[]>()
     for (const m of memberships.value) {
@@ -88,6 +89,10 @@ export function useMemberRows(
       } else {
         map.set(m.userId, [m])
       }
+    }
+    // Sort each user's array by startDate DESC (most recent first)
+    for (const list of map.values()) {
+      list.sort((a, b) => b.startDate.localeCompare(a.startDate))
     }
     return map
   })

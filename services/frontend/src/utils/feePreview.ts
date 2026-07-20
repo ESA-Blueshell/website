@@ -1,5 +1,5 @@
 import type {ContributionPeriodResponse} from "@/services/api"
-import type {BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import type {FeeType} from "@/utils/bulkRow"
 
 /**
  * Minimal fee helper: maps a KNOWN fee type to its € amount from the selected period's
@@ -10,7 +10,8 @@ import type {BulkPreviewRow} from "@/services/api/blueshell/types.gen"
  * not have (it derives the EARLIEST). See docs/proposals/bulk-actions/REDESIGN.md §5.1.
  */
 
-export type FeeType = NonNullable<BulkPreviewRow["recommendedFeeType"]>
+// Re-exported for existing importers that pulled FeeType off feePreview.
+export type {FeeType}
 
 export function effectiveAmount(
   feeType: FeeType | null | undefined,

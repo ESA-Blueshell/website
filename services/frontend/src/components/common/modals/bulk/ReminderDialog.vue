@@ -3,26 +3,25 @@ import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {previewBulkReminder, executeBulkReminder} from "@/services/api/blueshell/sdk.gen"
-import type {BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import {executeBulkReminder} from "@/services/api/blueshell/sdk.gen"
+import {computeReminderRows} from "@/utils/bulkCompute"
+import type {BulkRow} from "@/utils/bulkRow"
 import type {ContributionPeriodResponse} from "@/services/api"
 import {effectiveAmount, feeTypeItems, type FeeType} from "@/utils/feePreview"
+import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
- * Contribution-reminder per-action dialog. SERVER preview (fee tier needs the latest
- * membership start, alreadyPaid, and lastSentOn from audit — none reliably in the FE).
- * The operator can re-include already-paid WARNING rows and override each included row's
- * fee type; the € shown updates live via feePreview.effectiveAmount (no extra preview
- * round-trip). Only includedUserIds + feeTypeOverrides are sent to execute — preview is
- * immutable server truth. See docs/proposals/bulk-actions/REDESIGN.md §3 & §5.2.
+ * Contribution-reminder per-action dialog. FE preview: computed from targets,
+ * period, and cutoffDate. The operator can re-include already-paid WARNING rows
+ * and override each included row's fee type. No server preview call.
+ * See docs/proposals/bulk-actions/REDESIGN.md §5.2.
  */
 
-defineOptions({name: "ReminderDialog"})
+defineOptions({name: "ReminderDialog", inheritAttrs: false})
 
 interface Props {
   modelValue: boolean
-  userIds: number[]
-  contributionPeriodId: number | null
+  targets: BulkTarget[]
   period: ContributionPeriodResponse | null
 }
 
@@ -43,7 +42,7 @@ const cutoffDate = ref("")
 // Per-row fee-type selections, defaulting to the server's recommendation per row.
 const feeTypeSelections = ref<Record<number, FeeType>>({})
 
-const {rows, counts, includedUserIds, reincludeOverrides, loading, error, submitting, loadPreview, submit, reset} =
+const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
@@ -56,39 +55,18 @@ const cutoffError = computed<string | null>(() => {
   return null
 })
 
-async function load() {
-  if (props.contributionPeriodId == null || !paymentDueDate.value || !cutoffDate.value || cutoffError.value) {
-    return
-  }
-  await loadPreview(async () => {
-    const resp = await previewBulkReminder({
-      body: {
-        userIds: props.userIds,
-        contributionPeriodId: props.contributionPeriodId as number,
-        cutoffDate: cutoffDate.value,
-        paymentDueDate: paymentDueDate.value,
-      },
-    })
-    return {rows: resp.data?.rows ?? []}
-  })
-  // Seed fee selections from each row's recommended type.
-  const selections: Record<number, FeeType> = {}
-  for (const row of rows.value) {
-    if (row.recommendedFeeType) selections[row.userId] = row.recommendedFeeType
-  }
-  feeTypeSelections.value = selections
-}
+// Compute rows reactively from targets, period, and cutoffDate
+const computedRows = computed(() => computeReminderRows(props.targets, props.period, cutoffDate.value))
 
-function rowAmount(row: BulkPreviewRow): number | null {
+function rowAmount(row: BulkRow): number | null {
   const selected = feeTypeSelections.value[row.userId] ?? row.recommendedFeeType
   return effectiveAmount(selected, props.period)
 }
 
 const canConfirm = computed(
   () =>
-    !loading.value
-    && !error.value
-    && !cutoffError.value
+    !cutoffError.value
+    && !!props.period
     && !!paymentDueDate.value
     && !!cutoffDate.value
     && includedUserIds.value.length > 0
@@ -96,9 +74,8 @@ const canConfirm = computed(
 )
 
 async function onConfirm() {
-  if (!canConfirm.value || props.contributionPeriodId == null) return
-  // Build overrides only for included users whose selection differs is not required —
-  // send the selection for every included user so execute records the operator's choice.
+  if (!canConfirm.value || !props.period) return
+  // Build overrides for all included users
   const overrides: Record<string, FeeType> = {}
   for (const userId of includedUserIds.value) {
     const feeType = feeTypeSelections.value[userId]
@@ -107,11 +84,11 @@ async function onConfirm() {
   const ok = await submit(async () => {
     const resp = await executeBulkReminder({
       body: {
-        userIds: props.userIds,
-        contributionPeriodId: props.contributionPeriodId as number,
+        userIds: props.targets.map((t) => t.userId),
+        contributionPeriodId: props.period!.id,
+        includedUserIds: includedUserIds.value,
         cutoffDate: cutoffDate.value,
         paymentDueDate: paymentDueDate.value,
-        includedUserIds: includedUserIds.value,
         feeTypeOverrides: overrides,
       },
     })
@@ -126,28 +103,33 @@ async function onConfirm() {
   }
 }
 
+// Initialize dates when dialog opens, compute rows reactively
 watch(
   () => props.modelValue,
-  async (isOpen) => {
+  (isOpen) => {
     if (isOpen) {
       paymentDueDate.value = ""
       cutoffDate.value = props.period?.startDate ?? ""
       feeTypeSelections.value = {}
-      reset()
+      setRows(computedRows.value)
     } else {
       reset()
       feeTypeSelections.value = {}
     }
   },
-  // The host swaps in this component via `<component :is>` with modelValue already
-  // true, so a non-immediate watch would never fire on the initial mount and the
-  // date defaults would not seed. `immediate` guarantees the open path runs.
   {immediate: true},
 )
 
-// Reload the server preview when the dates change (and are valid).
-watch([paymentDueDate, cutoffDate], async () => {
-  if (props.modelValue) await load()
+// Seed fee selections from computed rows' recommended types
+watch(computedRows, (newRows) => {
+  if (open.value) {
+    const selections: Record<number, FeeType> = {}
+    for (const row of newRows) {
+      if (row.recommendedFeeType) selections[row.userId] = row.recommendedFeeType
+    }
+    feeTypeSelections.value = selections
+    setRows(newRows)
+  }
 })
 </script>
 
@@ -158,10 +140,8 @@ watch([paymentDueDate, cutoffDate], async () => {
     :can-confirm="canConfirm"
     confirm-label="Send reminder"
     :counts="counts"
-    :error="error"
     icon="mdi-email-fast"
     :included-count="includedUserIds.length"
-    :loading="loading"
     :rows="rows"
     :show-fee-column="true"
     :show-submit-status="showSubmitStatus"

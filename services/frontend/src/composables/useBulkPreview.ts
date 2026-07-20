@@ -1,5 +1,5 @@
 import {computed, ref} from "vue"
-import type {BulkActionCounts, BulkPreviewRow} from "@/services/api/blueshell/types.gen"
+import type {BulkActionCounts, BulkRow} from "@/utils/bulkRow"
 
 /**
  * Action-agnostic bulk-preview composable. Holds the preview rows (populated either by a
@@ -9,29 +9,34 @@ import type {BulkActionCounts, BulkPreviewRow} from "@/services/api/blueshell/ty
  * action type; the per-action differences are the loadPreview / onSubmit closures each
  * dialog supplies. See docs/proposals/bulk-actions/REDESIGN.md §5.1.
  */
-export type BulkRow = BulkPreviewRow
+// Re-exported for existing importers that pulled BulkRow off this composable.
+export type {BulkRow}
 
 export function useBulkPreview() {
   const rows = ref<BulkRow[]>([])
-  const serverToday = ref<string | null>(null)
-
-  const loading = ref(false)
-  const error = ref<string | null>(null)
 
   // Per-row re-include overrides (for WARNING rows the operator can opt back in).
   const reincludeOverrides = ref<Record<number, boolean>>({})
 
   const submitting = ref(false)
 
-  // Derived counts — the single source of truth for the summary bar (no reliance on a
-  // server-supplied counts object, so FE-computed previews get identical treatment).
-  const counts = computed<BulkActionCounts>(() => ({
-    selected: rows.value.length,
-    willApply: rows.value.filter((r) => r.disposition === "INCLUDED").length,
-    skipped: rows.value.filter((r) => r.disposition === "SKIPPED").length,
-    excluded: rows.value.filter((r) => r.disposition === "EXCLUDED").length,
-    warned: rows.value.filter((r) => r.disposition === "WARNING").length,
-  }))
+  // Derived counts — the single source of truth for the summary bar.
+  // Computed from rows and reincludeOverrides to include re-included WARNING rows.
+  const counts = computed<BulkActionCounts>(() => {
+    const included = rows.value.filter((r) => {
+      if (r.disposition === "INCLUDED") return true
+      if (r.disposition === "WARNING" && reincludeOverrides.value[r.userId]) return true
+      return false
+    }).length
+
+    return {
+      selected: rows.value.length,
+      willApply: included,
+      skipped: rows.value.filter((r) => r.disposition === "SKIPPED").length,
+      excluded: rows.value.filter((r) => r.disposition === "EXCLUDED").length,
+      warned: rows.value.filter((r) => r.disposition === "WARNING").length,
+    }
+  })
 
   const includedUserIds = computed<number[]>(() =>
     rows.value
@@ -44,32 +49,11 @@ export function useBulkPreview() {
   )
 
   /** Replace the current rows and reset per-row override state. */
-  function setRows(next: BulkRow[], today: string | null = null) {
+  function setRows(next: BulkRow[]) {
     rows.value = next
-    serverToday.value = today
     const overrides: Record<number, boolean> = {}
     for (const row of next) overrides[row.userId] = false
     reincludeOverrides.value = overrides
-  }
-
-  /**
-   * Populate rows via a loader. The loader returns the rows (and optional serverToday);
-   * this handles the loading / error flags uniformly for both FE and server previews.
-   */
-  async function loadPreview(
-    loader: () => Promise<{rows: BulkRow[]; serverToday?: string | null}>,
-  ): Promise<void> {
-    loading.value = true
-    error.value = null
-    try {
-      const result = await loader()
-      setRows(result.rows, result.serverToday ?? null)
-    } catch {
-      error.value = "An error occurred loading the preview."
-      rows.value = []
-    } finally {
-      loading.value = false
-    }
   }
 
   /**
@@ -88,22 +72,16 @@ export function useBulkPreview() {
 
   function reset() {
     rows.value = []
-    serverToday.value = null
-    error.value = null
     reincludeOverrides.value = {}
   }
 
   return {
     rows,
-    serverToday,
-    loading,
-    error,
     reincludeOverrides,
     submitting,
     counts,
     includedUserIds,
     setRows,
-    loadPreview,
     submit,
     reset,
   }

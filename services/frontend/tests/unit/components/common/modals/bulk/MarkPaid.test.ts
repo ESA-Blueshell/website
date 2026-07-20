@@ -130,7 +130,7 @@ describe("MarkPaidDialog", () => {
         targets: [
           target(1, {
             mostRecentMembership: {
-              type: MemberType.STUDENT,
+              type: MemberType.ALUMNI,
               startDate: "2024-09-15",
               endDate: null,
               incasso: true,
@@ -143,11 +143,13 @@ describe("MarkPaidDialog", () => {
 
     await settle()
 
+    // Member type renders via memberTypeLabel (label, not the raw enum).
     const typeCell = wrapper.text()
-    expect(typeCell).toContain("Student")
+    expect(typeCell).toContain("Alumni")
 
     const memberSinceCell = wrapper.find('[data-testid="bulk-preview-member-since-1"]')
-    expect(memberSinceCell.text()).toContain("2024-09-15")
+    // Member-since renders formatted dd/MM/yyyy.
+    expect(memberSinceCell.text()).toContain("15/09/2024")
   })
 
   it("shows counts summary with included and skipped", async () => {
@@ -180,13 +182,14 @@ describe("MarkPaidDialog", () => {
       },
     })
 
-    expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
+    // While open, the preview row for the target is rendered.
+    expect(wrapper.find('[data-testid="bulk-preview-row-1"]').exists()).toBe(true)
 
     await wrapper.setProps({modelValue: false})
     await settle()
 
-    // The dialog should emit update:modelValue when closed
-    expect(wrapper.emitted("update:modelValue")).toBeTruthy()
+    // Once closed, the dialog body (and its preview rows) is no longer rendered.
+    expect(wrapper.find('[data-testid="bulk-preview-row-1"]').exists()).toBe(false)
   })
 
   it("updates preview rows when targets prop changes", async () => {
@@ -243,6 +246,7 @@ describe("MarkPaidDialog", () => {
     await settle()
 
     const memberSinceCell = wrapper.find('[data-testid="bulk-preview-member-since-1"]')
-    expect(memberSinceCell.text()).toBe("–")
+    // formatMemberSince renders an em-dash placeholder when there is no date.
+    expect(memberSinceCell.text()).toBe("—")
   })
 })

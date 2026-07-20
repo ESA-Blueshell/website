@@ -164,7 +164,8 @@ describe("MarkUnpaidDialog", () => {
     expect(typeText).toContain("Alumni")
 
     const memberSinceCell = wrapper.find('[data-testid="bulk-preview-member-since-1"]')
-    expect(memberSinceCell.text()).toContain("2023-06-01")
+    // Member-since renders formatted dd/MM/yyyy.
+    expect(memberSinceCell.text()).toContain("01/06/2023")
   })
 
   it("handles mixed roster: paid, unpaid, honorary", async () => {

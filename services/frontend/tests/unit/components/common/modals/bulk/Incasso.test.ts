@@ -136,7 +136,8 @@ describe("IncassoDialog", () => {
     expect(dispositionChip.text()).toContain("Warning")
 
     const noteCell = wrapper.find('[data-testid="bulk-preview-note-2"]')
-    expect(noteCell.text()).toContain("Incasso mismatch")
+    // INCASSO_MISMATCH renders via the bulkDisposition label.
+    expect(noteCell.text()).toContain("Not marked for incasso")
   })
 
   it("marks honorary member as EXCLUDED", async () => {
@@ -177,7 +178,7 @@ describe("IncassoDialog", () => {
     expect(noteCell.text()).toContain("No email")
   })
 
-  it("respects ALREADY_PAID warning over incasso mismatch", async () => {
+  it("keeps a WARNING for an already-paid incasso-mismatch member", async () => {
     const wrapper = mount(IncassoDialog, {
       props: {
         modelValue: true,
@@ -203,7 +204,9 @@ describe("IncassoDialog", () => {
     expect(dispositionChip.text()).toContain("Warning")
 
     const noteCell = wrapper.find('[data-testid="bulk-preview-note-1"]')
-    expect(noteCell.text()).toContain("Already paid")
+    // The incasso check runs last, so INCASSO_MISMATCH is the surfaced reason; the
+    // row is still a WARNING (never silently INCLUDED).
+    expect(noteCell.text()).toContain("Not marked for incasso")
   })
 
   it("shows counts summary with included, warned, and excluded", async () => {

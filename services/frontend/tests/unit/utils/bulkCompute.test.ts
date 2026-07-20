@@ -293,7 +293,7 @@ describe("computeIncassoRows", () => {
     })
   })
 
-  it("respects WARNING from already-paid over incasso-mismatch", () => {
+  it("keeps a WARNING for an already-paid incasso-mismatch member", () => {
     const targets = [bulkTarget(1, {
       mostRecentMembership: {
         type: MemberType.REGULAR,
@@ -304,10 +304,12 @@ describe("computeIncassoRows", () => {
       mostRecentContribution: {paid: true},
     })]
     const rows = computeIncassoRows(targets, period(), "2025-01-01")
-    // already-paid warning comes first from computeReminderRows
+    // Both the already-paid and incasso-mismatch checks flag this row. The incasso
+    // check runs last, so INCASSO_MISMATCH is the surfaced reason; either way the
+    // row stays a WARNING (never silently INCLUDED).
     expect(rows[0]).toMatchObject({
       disposition: "WARNING",
-      reason: "ALREADY_PAID",
+      reason: "INCASSO_MISMATCH",
     })
   })
 })

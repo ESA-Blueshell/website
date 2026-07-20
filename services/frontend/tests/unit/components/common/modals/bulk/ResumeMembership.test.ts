@@ -126,8 +126,8 @@ describe("ResumeMembershipDialog", () => {
 
     await settle()
 
-    // Verify disposition is SKIPPED with reason ALREADY_ACTIVE
-    const row = wrapper.find('[data-testid="bulk-row-1"]')
+    // Verify the row rendered (SKIPPED with reason ALREADY_ACTIVE)
+    const row = wrapper.find('[data-testid="bulk-preview-row-1"]')
     expect(row.exists()).toBe(true)
   })
 
@@ -186,8 +186,10 @@ describe("ResumeMembershipDialog", () => {
     // The preview should show member type and start date
     const previewTable = wrapper.find('[data-testid="bulk-action-preview-table"]')
     expect(previewTable.exists()).toBe(true)
-    expect(previewTable.text()).toContain("ALUMNI")
-    expect(previewTable.text()).toContain("2023-06-15")
+    // Member type renders via memberTypeLabel (label, not the raw enum).
+    expect(previewTable.text()).toContain("Alumni")
+    // Member-since renders formatted dd/MM/yyyy.
+    expect(previewTable.text()).toContain("15/06/2023")
   })
 
   it("handles mixed targets: active, ended, and no-membership", async () => {
@@ -206,7 +208,7 @@ describe("ResumeMembershipDialog", () => {
     await settle()
 
     // Preview should have 3 rows
-    const rows = wrapper.findAll('[data-testid^="bulk-row-"]')
+    const rows = wrapper.findAll('[data-testid^="bulk-preview-row-"]')
     expect(rows.length).toBe(3)
   })
 })

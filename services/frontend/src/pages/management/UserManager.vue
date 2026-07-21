@@ -804,7 +804,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
   vertical-align: bottom;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: linear-gradient(rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.04)), rgb(var(--v-theme-surface));
   }
 }
 

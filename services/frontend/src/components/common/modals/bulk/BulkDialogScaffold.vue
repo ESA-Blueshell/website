@@ -459,7 +459,7 @@ defineExpose({validate})
   white-space: nowrap;
 
   &:hover {
-    background-color: rgba(var(--v-theme-on-surface), 0.04);
+    background: linear-gradient(rgba(var(--v-theme-on-surface), 0.06), rgba(var(--v-theme-on-surface), 0.06)), rgb(var(--v-theme-surface));
   }
 
   &:focus {

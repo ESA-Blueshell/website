@@ -254,7 +254,7 @@ defineExpose({validate})
           v-if="$slots['info-box']"
           class="bulk-info-box"
         >
-          <div class="bulk-info-box__label text-overline">{{ infoBoxLabel }}</div>
+          <div class="bulk-info-box__label">{{ infoBoxLabel }}</div>
           <slot name="info-box" />
         </div>
 
@@ -262,7 +262,7 @@ defineExpose({validate})
           class="bulk-info-box"
           data-testid="bulk-action-counts"
         >
-          <div class="bulk-info-box__label text-overline">Summary</div>
+          <div class="bulk-info-box__label">Summary</div>
           <div class="d-flex flex-wrap ga-2 align-center">
             <v-chip
               color="primary"
@@ -462,9 +462,15 @@ defineExpose({validate})
   background: rgba(var(--v-theme-on-surface), 0.04);
   border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 
+  // Self-contained overline-style label: Vuetify 4 (MD3) removed the
+  // .text-overline utility class, so the small-caps treatment lives here.
   &__label {
     display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     line-height: 1.4;
+    text-transform: uppercase;
     margin-bottom: 6px;
     color: rgba(var(--v-theme-on-surface), 0.7);
   }

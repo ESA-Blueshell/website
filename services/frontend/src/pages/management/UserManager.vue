@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onMounted, onBeforeUnmount, ref} from "vue"
+import {computed, onMounted, onBeforeUnmount, ref, shallowRef} from "vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
@@ -45,7 +45,9 @@ const toolbarDensity = computed(() => (lgAndUp.value ? "comfortable" : "compact"
 
 const users = ref<EditableUser[]>([])
 const memberships = ref<import("@/services/api").MembershipResponse[]>([])
-const paidUserIds = ref<Set<number>>(new Set())
+// shallowRef: usePaidToggle always reassigns a fresh Set (never mutates in
+// place), so deep-proxying every Set read is pure overhead on the row hot path.
+const paidUserIds = shallowRef<Set<number>>(new Set())
 
 const deleteDialog = ref(false)
 const pendingDeleteUser = ref<EditableUser | null>(null)
@@ -313,6 +315,15 @@ onBeforeUnmount(() => {
 function openDeleteUser(user: EditableUser) {
   pendingDeleteUser.value = user
   deleteDialog.value = true
+}
+
+// Row-level delete: resolve the user via the usersById map. The rows' @delete
+// binding is re-created for every row entering the virtual render window, so
+// it must be a stable reference doing an O(1) lookup — an inline
+// `users.find(...)` closure here costs O(N) per visible row per scroll step.
+function onDeleteRow(row: MemberRow) {
+  const user = usersById.value.get(row.id)
+  if (user) openDeleteUser(user)
 }
 
 async function confirmDeleteUser() {
@@ -613,11 +624,14 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 </tr>
               </template>
 
-              <!-- Virtual item row slot — renders existing UserManagerRow unchanged. -->
+              <!-- Virtual item row slot — renders existing UserManagerRow unchanged.
+                   This slot re-evaluates for every row entering the render window
+                   while scrolling, so bindings must stay allocation-light: no
+                   inline closures doing O(N) lookups per row. -->
               <template #item="{item, index}">
                 <user-manager-row
                   :key="(item as MemberRow).id"
-                  :class="['mm-data-row', index % 2 === 0 ? 'mm-row--odd' : '']"
+                  :class="index % 2 === 0 ? 'mm-data-row mm-row--odd' : 'mm-data-row'"
                   :row="item as MemberRow"
                   :selected="isSelected((item as MemberRow).id)"
                   :selection-active="hasSelection"
@@ -628,7 +642,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   @toggle-paid="togglePaid"
                   @manage-membership="openManageMembership"
                   @edit-profile="openEditProfile"
-                  @delete="(row) => openDeleteUser(users.find((u) => u.id === row.id)!)"
+                  @delete="onDeleteRow"
                 />
               </template>
 
@@ -657,7 +671,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                     :is-saving="isSaving(row.id)"
                     @manage-membership="openManageMembership"
                     @edit-profile="openEditProfile"
-                    @delete="(row) => openDeleteUser(users.find((u) => u.id === row.id)!)"
+                    @delete="onDeleteRow"
                   />
                   <v-divider v-if="index < filteredRows.length - 1" />
                 </template>

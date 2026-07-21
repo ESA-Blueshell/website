@@ -38,10 +38,40 @@ object MemberManagerBulkHelper {
     // ── Row selection ──────────────────────────────────────────────────────
 
     /**
+     * Bring a member row into the virtualized table's render window.
+     *
+     * The member table is virtualized (v-data-table-virtual): rows outside the
+     * scroll viewport are NOT in the DOM at all, so a locator for an off-screen
+     * row never resolves and Playwright cannot auto-scroll to it. Scroll the
+     * table's internal scroller from the top downward until the row's element
+     * exists (or the scroller bottoms out and the final waitFor reports the
+     * genuinely-missing row).
+     */
+    fun scrollRowIntoView(page: Page, userId: Long) {
+        val row = TestIdLocatorHelper.byTestId(page, "member-manager-row-$userId")
+        if (row.count() > 0) return
+        val scroller = page
+            .locator("[data-testid='member-manager-table'] .v-table__wrapper")
+            .first()
+        scroller.evaluate("el => { el.scrollTop = 0 }")
+        var lastTop = -1.0
+        while (row.count() == 0) {
+            val top = (scroller.evaluate("el => { el.scrollBy(0, 300); return el.scrollTop }") as Number).toDouble()
+            if (top == lastTop) break // bottomed out; let the waitFor below fail loudly
+            lastTop = top
+            // Give the virtualizer a frame to render the shifted window.
+            page.waitForTimeout(50.0)
+        }
+        row.waitFor()
+    }
+
+    /**
      * Click the checkbox on a single member row identified by userId.
-     * Toggle the row's selection state.
+     * Toggle the row's selection state. Scrolls the virtualized table until
+     * the row is rendered first.
      */
     fun selectUserRow(page: Page, userId: Long) {
+        scrollRowIntoView(page, userId)
         TestIdLocatorHelper.byTestId(page, "member-manager-checkbox-$userId").click()
     }
 
@@ -55,8 +85,10 @@ object MemberManagerBulkHelper {
 
     /**
      * Check whether the row identified by userId is currently selected.
+     * Scrolls the virtualized table until the row is rendered first.
      */
     fun isRowSelected(page: Page, userId: Long): Boolean {
+        scrollRowIntoView(page, userId)
         val checkbox = TestIdLocatorHelper.byTestId(page, "member-manager-checkbox-$userId")
         val isChecked = checkbox.evaluate("el => el.querySelector('input').checked") as Boolean
         return isChecked
@@ -72,6 +104,7 @@ object MemberManagerBulkHelper {
      * isVisible polling).
      */
     fun waitForPaidStatus(page: Page, userId: Long, expected: String) {
+        scrollRowIntoView(page, userId)
         val chip = TestIdLocatorHelper.byTestId(page, "member-manager-paid-status-$userId")
         // hasText auto-retries until the chip's (trimmed) text equals the expected value,
         // so this deterministically waits out the host's post-action paid reload.

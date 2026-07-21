@@ -167,7 +167,10 @@ class MemberManagerBulkSelectionSystemTest : PlaywrightTestBase() {
 
         MemberManagerBulkHelper.openMemberManager(page, frontendUrl)
 
-        // With no selection, row-body click should be a no-op
+        // With no selection, row-body click should be a no-op.
+        // The table is virtualized: scroll each row into the render window
+        // before clicking, since off-screen rows are not in the DOM.
+        MemberManagerBulkHelper.scrollRowIntoView(page, member1Id)
         val rowBody1 = TestIdLocatorHelper.byTestId(page, "member-manager-row-$member1Id")
         rowBody1.click()
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member1Id)).isFalse
@@ -177,11 +180,13 @@ class MemberManagerBulkSelectionSystemTest : PlaywrightTestBase() {
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member1Id)).isTrue
 
         // Row-body click on member2 should toggle selection
+        MemberManagerBulkHelper.scrollRowIntoView(page, member2Id)
         val rowBody2 = TestIdLocatorHelper.byTestId(page, "member-manager-row-$member2Id")
         rowBody2.click()
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member2Id)).isTrue
 
         // Row-body click on member1 should deselect
+        MemberManagerBulkHelper.scrollRowIntoView(page, member1Id)
         rowBody1.click()
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member1Id)).isFalse
 
@@ -210,7 +215,8 @@ class MemberManagerBulkSelectionSystemTest : PlaywrightTestBase() {
         // No selection active
         assertThat(MemberManagerBulkHelper.isRowSelected(page, memberId)).isFalse
 
-        // Click row body
+        // Click row body (scroll the virtualized table until the row exists)
+        MemberManagerBulkHelper.scrollRowIntoView(page, memberId)
         val rowBody = TestIdLocatorHelper.byTestId(page, "member-manager-row-$memberId")
         rowBody.click()
 

@@ -82,130 +82,97 @@
       </v-chip>
     </td>
 
-    <!-- Type / Incasso icons (notable only) -->
+    <!-- Type / Incasso icons (notable only).
+         Native title tooltips throughout this row: each v-tooltip mounts overlay +
+         positioning machinery PER INSTANCE, which made virtualized rows expensive
+         to mount and caused visible pop-in while scrolling. -->
     <td :data-testid="`member-manager-type-incasso-${row.id}`">
       <div class="d-flex align-center gap-1">
-        <v-tooltip
+        <v-icon
           v-if="isNotableType(row)"
-          :text="typeLabel(row)"
-          location="top"
-        >
-          <template #activator="{ props: activatorProps }">
-            <v-icon
-              v-bind="activatorProps"
-              :icon="typeIcon(row)"
-              size="18"
-              color="primary"
-            />
-          </template>
-        </v-tooltip>
-        <v-tooltip
+          :aria-label="typeLabel(row)"
+          :icon="typeIcon(row)"
+          :title="typeLabel(row)"
+          size="18"
+          color="primary"
+        />
+        <v-icon
           v-if="row.latestIncasso"
-          text="Incasso active"
-          location="top"
-        >
-          <template #activator="{ props: activatorProps }">
-            <v-icon
-              v-bind="activatorProps"
-              icon="mdi-bank-transfer"
-              size="18"
-              color="teal"
-            />
-          </template>
-        </v-tooltip>
+          aria-label="Incasso active"
+          icon="mdi-bank-transfer"
+          size="18"
+          color="teal"
+          title="Incasso active"
+        />
       </div>
     </td>
 
     <!-- Actions -->
     <td>
       <div class="d-flex align-center gap-1">
-        <v-tooltip
-          :text="row.paid ? 'Mark unpaid' : 'Mark paid'"
-          location="top"
+        <v-btn
+          :aria-label="row.paid ? 'Mark unpaid' : 'Mark paid'"
+          :data-testid="`member-manager-toggle-paid-btn-${row.id}`"
+          :disabled="toggleDisabled"
+          :loading="isSaving"
+          :title="row.paid ? 'Mark unpaid' : 'Mark paid'"
+          icon
+          size="small"
+          variant="text"
+          @click="emit('toggle-paid', row.id)"
         >
-          <template #activator="{ props: activatorProps }">
-            <v-btn
-              v-bind="activatorProps"
-              :data-testid="`member-manager-toggle-paid-btn-${row.id}`"
-              :disabled="toggleDisabled"
-              :loading="isSaving"
-              icon
-              size="small"
-              variant="text"
-              @click="emit('toggle-paid', row.id)"
-            >
-              <v-icon
-                :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
-                size="18"
-              />
-            </v-btn>
-          </template>
-        </v-tooltip>
+          <v-icon
+            :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
+            size="18"
+          />
+        </v-btn>
 
-        <v-tooltip
-          text="Manage memberships"
-          location="top"
+        <v-btn
+          :data-testid="`member-manager-manage-membership-btn-${row.id}`"
+          aria-label="Manage memberships"
+          icon
+          size="small"
+          title="Manage memberships"
+          variant="text"
+          @click="emit('manage-membership', row)"
         >
-          <template #activator="{ props: activatorProps }">
-            <v-btn
-              v-bind="activatorProps"
-              :data-testid="`member-manager-manage-membership-btn-${row.id}`"
-              icon
-              size="small"
-              variant="text"
-              @click="emit('manage-membership', row)"
-            >
-              <v-icon
-                icon="mdi-card-account-details"
-                size="18"
-              />
-            </v-btn>
-          </template>
-        </v-tooltip>
+          <v-icon
+            icon="mdi-card-account-details"
+            size="18"
+          />
+        </v-btn>
 
-        <v-tooltip
-          text="Edit profile"
-          location="top"
+        <v-btn
+          :data-testid="`member-manager-edit-profile-btn-${row.id}`"
+          aria-label="Edit profile"
+          icon
+          size="small"
+          title="Edit profile"
+          variant="text"
+          @click="emit('edit-profile', row)"
         >
-          <template #activator="{ props: activatorProps }">
-            <v-btn
-              v-bind="activatorProps"
-              :data-testid="`member-manager-edit-profile-btn-${row.id}`"
-              icon
-              size="small"
-              variant="text"
-              @click="emit('edit-profile', row)"
-            >
-              <v-icon
-                icon="mdi-pencil"
-                size="18"
-              />
-            </v-btn>
-          </template>
-        </v-tooltip>
+          <v-icon
+            icon="mdi-pencil"
+            size="18"
+          />
+        </v-btn>
 
-        <v-tooltip
-          text="Delete user"
-          location="top"
+        <v-btn
+          :data-testid="`member-manager-delete-btn-${row.id}`"
+          :disabled="row.role === 'admin'"
+          aria-label="Delete user"
+          color="red"
+          icon
+          size="small"
+          title="Delete user"
+          variant="text"
+          @click="emit('delete', row)"
         >
-          <template #activator="{ props: activatorProps }">
-            <v-btn
-              v-bind="activatorProps"
-              :data-testid="`member-manager-delete-btn-${row.id}`"
-              :disabled="row.role === 'admin'"
-              color="red"
-              icon
-              size="small"
-              variant="text"
-              @click="emit('delete', row)"
-            >
-              <v-icon
-                icon="mdi-delete"
-                size="18"
-              />
-            </v-btn>
-          </template>
-        </v-tooltip>
+          <v-icon
+            icon="mdi-delete"
+            size="18"
+          />
+        </v-btn>
       </div>
     </td>
   </tr>
@@ -255,8 +222,29 @@ function onRowClick(event: MouseEvent) {
 <style lang="scss" scoped>
 // Fixed height matching density="compact" --v-table-row-height (36px) for clean virtualization.
 // The parent v-data-table-virtual uses :item-height="36" to match.
+//
+// The cap below is load-bearing: the virtualizer measures every rendered row with a
+// ResizeObserver, and ANY row measuring taller than the declared item-height triggers
+// a full offsets recalculation and window shift (visible jump/flicker while scrolling).
+// Cells must therefore never stretch the row: cap the content boxes (checkbox,
+// icon buttons) so the measured height is exactly 36px.
 tr {
   height: 36px;
+
+  > td {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  :deep(.v-selection-control) {
+    min-height: 0;
+    height: 36px;
+  }
+
+  :deep(.v-btn--icon.v-btn--size-small) {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 // Centre the row checkbox in its 48px cell exactly like the header's select-all

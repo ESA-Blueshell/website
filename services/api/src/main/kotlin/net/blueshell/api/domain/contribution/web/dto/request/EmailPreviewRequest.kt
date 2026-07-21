@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.contribution.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
@@ -24,6 +25,7 @@ data class ContributionReminderPreviewRequest(
     val feeType: BulkFeeType? = null,
 
     @field:NotNull(message = "Payment due date is required")
+    @field:Future(message = "Payment due date must be in the future")
     val paymentDueDate: LocalDate? = null,
 )
 
@@ -45,5 +47,6 @@ data class IncassoNotificationPreviewRequest(
     val feeType: BulkFeeType? = null,
 
     @field:NotNull(message = "Expected incasso date is required")
+    @field:Future(message = "Expected incasso date must be in the future")
     val expectedIncassoDate: LocalDate? = null,
 )

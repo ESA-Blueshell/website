@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 
 /**
  * Execute-only request for the mark-paid bulk action. The operation is implied by the
@@ -14,6 +15,7 @@ import jakarta.validation.constraints.Positive
 @Schema(name = "BulkMarkPaidRequest")
 data class BulkMarkPaidRequest(
     @field:NotEmpty(message = "At least one user ID is required")
+    @field:Size(min = 1, max = 1000, message = "userIds must contain between 1 and 1000 entries")
     val userIds: List<@Positive Long> = emptyList(),
 
     @field:NotNull(message = "Contribution period ID is required")
@@ -28,6 +30,7 @@ data class BulkMarkPaidRequest(
 @Schema(name = "BulkMarkUnpaidRequest")
 data class BulkMarkUnpaidRequest(
     @field:NotEmpty(message = "At least one user ID is required")
+    @field:Size(min = 1, max = 1000, message = "userIds must contain between 1 and 1000 entries")
     val userIds: List<@Positive Long> = emptyList(),
 
     @field:NotNull(message = "Contribution period ID is required")

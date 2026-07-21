@@ -407,7 +407,7 @@ describe("ReminderDialog", () => {
     expect(vm.paymentDueRules[1]!("2025-01-01")).toContain("after today")
     // Required + within-period for the cutoff.
     expect(vm.cutoffRules[0]!("")).toContain("required")
-    expect(vm.cutoffRules[1]!("2030-01-01")).toContain("within the selected contribution period")
+    expect(vm.cutoffRules[1]!("2030-01-01")).toContain("within the contribution period")
   })
 
   it("handles edge case: no email and already paid → NO_EMAIL precedence", async () => {

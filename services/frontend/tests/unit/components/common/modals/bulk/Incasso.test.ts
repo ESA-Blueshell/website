@@ -295,7 +295,7 @@ describe("IncassoDialog", () => {
     expect(vm.incassoDateRules[0]!("")).toContain("required")
     expect(vm.incassoDateRules[1]!("2025-01-01")).toContain("after today")
     expect(vm.cutoffRules[0]!("")).toContain("required")
-    expect(vm.cutoffRules[1]!("2030-01-01")).toContain("within the selected contribution period")
+    expect(vm.cutoffRules[1]!("2030-01-01")).toContain("within the contribution period")
   })
 
   it("handles edge case: mixed incasso flag", async () => {

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
+import {DateTime} from "luxon"
 import BulkDialogScaffold, {type BulkColumn} from "./BulkDialogScaffold.vue"
 import EmailPreviewPanel from "./EmailPreviewPanel.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
@@ -76,11 +77,31 @@ const cutoffRules = [
     const p = boundsPeriod.value
     if (!v || !p) return true
     if (v < p.startDate || v > p.endDate) {
-      return "Cutoff date must fall within the selected contribution period."
+      return `Cutoff date must fall within the contribution period (${fmtDate(p.startDate)} to ${fmtDate(p.endDate)}).`
     }
     return true
   },
 ]
+
+// ── Contribution-period summary shown on the modal ────────────────────────────
+function fmtDate(iso: string): string {
+  const dt = DateTime.fromISO(iso)
+  return dt.isValid ? dt.toFormat("dd/MM/yyyy") : iso
+}
+
+function fmtFee(amount: number): string {
+  return `€${amount.toFixed(2)}`
+}
+
+/** One-line summary of the period the action applies to (bounds + fees). */
+const periodInfo = computed(() => {
+  const p = boundsPeriod.value
+  if (!p) return null
+  return `Period ${fmtDate(p.startDate)} to ${fmtDate(p.endDate)}`
+    + ` · Full year ${fmtFee(p.fullYearFee)}`
+    + ` · Half year ${fmtFee(p.halfYearFee)}`
+    + ` · Alumni ${fmtFee(p.alumniFee)}`
+})
 
 // Compute rows reactively from targets, period, and cutoffDate
 const computedRows = computed(() =>
@@ -283,6 +304,14 @@ watch(computedRows, (newRows) => {
           :rules="cutoffRules"
           type="date"
         />
+      </div>
+      <!-- Contribution-period summary: the bounds the cutoff must fall within + the fees. -->
+      <div
+        v-if="periodInfo"
+        class="text-caption text-medium-emphasis mb-4"
+        data-testid="bulk-period-info"
+      >
+        {{ periodInfo }}
       </div>
     </template>
 

@@ -50,7 +50,7 @@ internal fun requireCutoffWithinPeriod(cutoffDate: LocalDate, period: Contributi
     if (cutoffDate.isBefore(period.startDate) || cutoffDate.isAfter(period.endDate)) {
         throw org.springframework.web.server.ResponseStatusException(
             org.springframework.http.HttpStatus.BAD_REQUEST,
-            "cutoffDate must fall within the contribution period [start, end]",
+            "cutoffDate must fall within the contribution period [${period.startDate}, ${period.endDate}]",
         )
     }
 }

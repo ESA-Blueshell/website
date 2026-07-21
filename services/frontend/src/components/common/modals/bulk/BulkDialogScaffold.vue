@@ -59,6 +59,8 @@ interface Props {
   includeLabel?: string
   /** Optional help panel content rendered behind a "?" icon button in the header. */
   help?: {title: string; body: string}
+  /** Label for the optional #info-box slot's labelled box (e.g. "Contribution period"). */
+  infoBoxLabel?: string
 }
 
 const DEFAULT_COLUMNS: BulkColumn[] = [
@@ -77,6 +79,7 @@ const props = withDefaults(defineProps<Props>(), {
   getRowAmount: undefined,
   includeLabel: "Include",
   help: undefined,
+  infoBoxLabel: "Info",
 })
 
 const emit = defineEmits<{
@@ -241,54 +244,66 @@ defineExpose({validate})
         <slot name="form" />
       </v-form>
 
-      <!-- Counts summary -->
-      <div
-        class="bulk-counts"
-        data-testid="bulk-action-counts"
-      >
-        <v-chip
-          class="mr-2"
-          color="primary"
-          size="small"
-          variant="tonal"
+      <!--
+        Info row: an optional action-specific info box (e.g. the reminder/incasso
+        "Contribution period" box) sits beside the Summary box with the counts.
+        Both share the same subtle labelled-box treatment; they wrap on narrow widths.
+      -->
+      <div class="bulk-info-row">
+        <div
+          v-if="$slots['info-box']"
+          class="bulk-info-box"
         >
-          {{ counts.selected }} selected
-        </v-chip>
-        <v-chip
-          class="mr-2"
-          color="success"
-          size="small"
-          variant="tonal"
+          <div class="bulk-info-box__label text-overline">{{ infoBoxLabel }}</div>
+          <slot name="info-box" />
+        </div>
+
+        <div
+          class="bulk-info-box"
+          data-testid="bulk-action-counts"
         >
-          {{ includedCount }} will apply
-        </v-chip>
-        <v-chip
-          v-if="counts.warned > 0"
-          class="mr-2"
-          color="warning"
-          size="small"
-          variant="tonal"
-        >
-          {{ counts.warned }} with warnings
-        </v-chip>
-        <v-chip
-          v-if="counts.excluded > 0"
-          class="mr-2"
-          color="error"
-          size="small"
-          variant="tonal"
-        >
-          {{ counts.excluded }} excluded
-        </v-chip>
-        <v-chip
-          v-if="counts.skipped > 0"
-          class="mr-2"
-          color="grey"
-          size="small"
-          variant="tonal"
-        >
-          {{ counts.skipped }} skipped
-        </v-chip>
+          <div class="bulk-info-box__label text-overline">Summary</div>
+          <div class="d-flex flex-wrap ga-2 align-center">
+            <v-chip
+              color="primary"
+              size="small"
+              variant="tonal"
+            >
+              {{ counts.selected }} selected
+            </v-chip>
+            <v-chip
+              color="success"
+              size="small"
+              variant="tonal"
+            >
+              {{ includedCount }} will apply
+            </v-chip>
+            <v-chip
+              v-if="counts.warned > 0"
+              color="warning"
+              size="small"
+              variant="tonal"
+            >
+              {{ counts.warned }} with warnings
+            </v-chip>
+            <v-chip
+              v-if="counts.excluded > 0"
+              color="error"
+              size="small"
+              variant="tonal"
+            >
+              {{ counts.excluded }} excluded
+            </v-chip>
+            <v-chip
+              v-if="counts.skipped > 0"
+              color="grey"
+              size="small"
+              variant="tonal"
+            >
+              {{ counts.skipped }} skipped
+            </v-chip>
+          </div>
+        </div>
       </div>
     </template>
 
@@ -429,8 +444,30 @@ defineExpose({validate})
   }
 }
 
-.bulk-counts {
+// Info row: the action-specific info box (e.g. "Contribution period") and the
+// Summary (counts) box side by side, wrapping on narrow widths.
+.bulk-info-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+// Shared labelled-box treatment (matches the app's subtle surface-tint pattern).
+.bulk-info-box {
+  flex: 1 1 320px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+
+  &__label {
+    display: block;
+    line-height: 1.4;
+    margin-bottom: 6px;
+    color: rgba(var(--v-theme-on-surface), 0.7);
+  }
 }
 
 .bulk-row--excluded td {

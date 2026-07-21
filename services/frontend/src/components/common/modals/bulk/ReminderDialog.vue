@@ -326,6 +326,7 @@ watch(computedRows, (newRows) => {
     icon="mdi-email-fast"
     include-label="Forcibly include"
     :included-count="includedUserIds.length"
+    info-box-label="Contribution period"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
@@ -359,10 +360,16 @@ watch(computedRows, (newRows) => {
           type="date"
         />
       </div>
-      <!-- Contribution-period summary: the bounds the cutoff must fall within + the fees. -->
+    </template>
+
+    <!-- Contribution-period box: the bounds the cutoff must fall within + the fees,
+         rendered beside the Summary (counts) box in the scaffold's info row. -->
+    <template
+      v-if="periodInfo"
+      #info-box
+    >
       <div
-        v-if="periodInfo"
-        class="d-flex flex-wrap ga-2 mb-4 align-center"
+        class="d-flex flex-wrap ga-2 align-center"
         data-testid="bulk-period-info"
       >
         <v-chip

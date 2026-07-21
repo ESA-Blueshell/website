@@ -247,22 +247,28 @@ defineExpose({validate})
       <!--
         Info row: an optional action-specific info box (e.g. the reminder/incasso
         "Contribution period" box) sits beside the Summary box with the counts.
-        Both share the same subtle labelled-box treatment; they wrap on narrow widths.
+        Both use the elevated-card treatment (slightly lifted surface + drop
+        shadow, like the contribution-periods widget on the manager page)
+        rather than a border; they wrap on narrow widths.
       -->
       <div class="bulk-info-row">
         <div
           v-if="$slots['info-box']"
-          class="bulk-info-box"
+          class="bulk-info-box elevation-2"
         >
-          <div class="bulk-info-box__label">{{ infoBoxLabel }}</div>
+          <div class="bulk-info-box__label">
+            {{ infoBoxLabel }}
+          </div>
           <slot name="info-box" />
         </div>
 
         <div
-          class="bulk-info-box"
+          class="bulk-info-box elevation-2"
           data-testid="bulk-action-counts"
         >
-          <div class="bulk-info-box__label">Summary</div>
+          <div class="bulk-info-box__label">
+            Summary
+          </div>
           <div class="d-flex flex-wrap ga-2 align-center">
             <v-chip
               color="primary"
@@ -455,12 +461,15 @@ defineExpose({validate})
 
 // Shared labelled-box treatment (matches the app's subtle surface-tint pattern).
 .bulk-info-box {
+  // Elevated-card look, matching the contribution-periods widget on the manager
+  // page: a slightly lifted surface + the elevation-2 drop shadow (set in the
+  // template), instead of a border. The tint keeps the lift visible inside the
+  // dialog, whose body is already the card surface colour.
   flex: 1 1 320px;
   min-width: 0;
   padding: 10px 14px;
   border-radius: 6px;
   background: rgba(var(--v-theme-on-surface), 0.04);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 
   // Self-contained overline-style label: Vuetify 4 (MD3) removed the
   // .text-overline utility class, so the small-caps treatment lives here.

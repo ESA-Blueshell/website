@@ -188,6 +188,7 @@
 <script lang="ts" setup>
 import {onUpdated, ref} from "vue"
 import {isNotableType, typeIcon, typeLabel, statusColor, type MemberRow} from "@/composables/useUserRows"
+import {isClickOnInteractiveTarget} from "@/utils/rowInteraction"
 
 const props = defineProps<{
   row: MemberRow
@@ -215,10 +216,6 @@ defineExpose({__updateCount})
 
 // ── Row click handler ─────────────────────────────────────────────────────────
 
-function isClickOnInteractiveTarget(target: HTMLElement): boolean {
-  return !!target.closest("button, a, input, label, .v-selection-control, [role=button]")
-}
-
 function onRowClick(event: MouseEvent) {
   if (!props.selectionActive) return
   if (isClickOnInteractiveTarget(event.target as HTMLElement)) return
@@ -227,18 +224,11 @@ function onRowClick(event: MouseEvent) {
 </script>
 
 <style lang="scss" scoped>
-// Fixed height matching density="compact" --v-table-row-height (36px) for clean virtualization.
-// The parent v-data-table-virtual uses :item-height="36" to match.
-//
-// The cap below is load-bearing: the virtualizer measures every rendered row with a
-// ResizeObserver, and ANY row measuring taller than the declared item-height triggers
-// a full offsets recalculation and window shift (visible jump/flicker while scrolling).
-// Cells must therefore never stretch the row: cap the content boxes (checkbox,
-// icon buttons) so the measured height is exactly 36px.
-//
-// With table-layout: fixed in the parent, overflow content is truncated instead of
-// causing cells to grow. Add text overflow handling (ellipsis + nowrap) to td cells
-// so long text (names, usernames) doesn't wrap and break the fixed height constraint.
+/**
+ * Row height 36px (density="compact" contract). ResizeObserver contract is load-bearing:
+ * any row > 36px triggers full recalculation + window shift (visible flicker). Cells must
+ * not stretch the row. With table-layout:fixed, text needs ellipsis+nowrap to maintain height.
+ */
 tr {
   height: 36px;
 
@@ -261,10 +251,7 @@ tr {
   }
 }
 
-// Centre the row checkbox in its 48px cell exactly like the header's select-all
-// (.mm-th-checkbox centres its control), so the header and every row's checkbox share
-// the same horizontal position instead of the control left-anchoring against the
-// cell's default padding.
+// Align checkbox center in cell to match header; prevent left-anchor against cell padding.
 .mm-td-checkbox {
   padding-right: 0;
   text-align: center;

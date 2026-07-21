@@ -85,8 +85,6 @@ import {type MemberRow} from "@/composables/useUserRows"
 
 defineProps<{
   row: MemberRow
-  toggleDisabled: boolean
-  isSaving: boolean
 }>()
 
 const emit = defineEmits<{

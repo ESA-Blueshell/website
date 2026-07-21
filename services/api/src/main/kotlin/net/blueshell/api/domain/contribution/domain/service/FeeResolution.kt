@@ -10,7 +10,7 @@ import java.time.LocalDate
  * accounting for member type and membership start date relative to cutoff.
  *
  * Rules:
- * - REGULAR: half-year fee if membership started on/after cutoff, else full-year
+ * - REGULAR: half-year fee if membership started AFTER the cutoff, else full-year (boundary start == cutoff pays full year, matching the frontend rule)
  * - ALUMNI: alumni fee
  * - HONORARY: excluded (returns null)
  *
@@ -27,7 +27,7 @@ fun resolveMemberFee(
     period: ContributionPeriod,
 ): Double? = when (memberType) {
     MemberType.REGULAR -> {
-        if (membershipStartDate != null && membershipStartDate >= cutoffDate) {
+        if (membershipStartDate != null && membershipStartDate > cutoffDate) {
             period.halfYearFee
         } else {
             period.fullYearFee
@@ -44,8 +44,8 @@ fun resolveMemberFee(
  * HONORARY members (they are excluded).
  *
  * Rules (mirror of [resolveMemberFee]):
- * - REGULAR started before cutoff → FULL_YEAR_FEE
- * - REGULAR started on/after cutoff → HALF_YEAR_FEE
+ * - REGULAR started on or before cutoff → FULL_YEAR_FEE
+ * - REGULAR started after cutoff → HALF_YEAR_FEE
  * - ALUMNI → ALUMNI_FEE
  * - HONORARY → null (excluded)
  */
@@ -55,7 +55,7 @@ fun resolveFeeType(
     cutoffDate: LocalDate,
 ): BulkFeeType? = when (memberType) {
     MemberType.REGULAR -> {
-        if (membershipStartDate != null && membershipStartDate >= cutoffDate) {
+        if (membershipStartDate != null && membershipStartDate > cutoffDate) {
             BulkFeeType.HALF_YEAR_FEE
         } else {
             BulkFeeType.FULL_YEAR_FEE

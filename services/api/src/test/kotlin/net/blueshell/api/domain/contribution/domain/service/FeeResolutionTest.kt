@@ -30,10 +30,10 @@ class FeeResolutionTest {
         }
 
         @Test
-        fun `regular member starting exactly on cutoff pays half year fee`() {
+        fun `regular member starting exactly on cutoff pays full year fee (boundary matches the frontend rule)`() {
             val startDate = LocalDate.of(2024, 7, 1)
             val resolved = resolveMemberFee(MemberType.REGULAR, startDate, cutoffDate, period)
-            assertThat(resolved).isEqualTo(50.0)
+            assertThat(resolved).isEqualTo(100.0)
         }
 
         @Test

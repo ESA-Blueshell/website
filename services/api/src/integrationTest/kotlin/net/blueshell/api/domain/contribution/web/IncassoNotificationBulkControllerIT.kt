@@ -98,7 +98,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
@@ -140,7 +140,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
@@ -198,7 +198,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(honorary, MemberType.HONORARY, incasso = true)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
@@ -222,7 +222,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = false)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             // Execute without re-including: should skip
@@ -265,7 +265,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             createMembership(member, MemberType.REGULAR, incasso = true)
             markPaid(member, period)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             // Execute without re-including: should skip
@@ -310,7 +310,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(noEmail, MemberType.REGULAR, incasso = true)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(

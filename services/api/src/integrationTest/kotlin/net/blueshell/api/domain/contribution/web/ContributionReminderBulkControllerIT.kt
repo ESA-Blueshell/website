@@ -91,7 +91,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
@@ -126,7 +126,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
@@ -169,7 +169,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(honorary, MemberType.HONORARY)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
@@ -192,7 +192,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             createMembership(member, MemberType.REGULAR)
             markPaid(member, period)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val paymentDueDate = LocalDate.now().plusDays(30)
 
             // Execute without re-including: should skip
@@ -236,7 +236,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(noEmail, MemberType.REGULAR)
 
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
@@ -271,7 +271,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             createMembership(honorary, MemberType.HONORARY)
 
             val userIds = listOf(regular.id!!, alumni.id!!, honorary.id!!)
-            val cutoffDate = LocalDate.of(2024, 7, 1)
+            val cutoffDate = LocalDate.now()
             val paymentDueDate = LocalDate.now().plusDays(30)
 
             // Execute: the regular + alumni are applied, the excluded honorary is skipped.

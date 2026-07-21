@@ -97,14 +97,18 @@ function fmtFee(amount: number): string {
   return `€${amount.toFixed(2)}`
 }
 
-/** One-line summary of the period the action applies to (bounds + fees). */
+/** Chip-row summary of the period the action applies to (bounds + fees). */
 const periodInfo = computed(() => {
   const p = boundsPeriod.value
   if (!p) return null
-  return `Period ${fmtDate(p.startDate)} to ${fmtDate(p.endDate)}`
-    + ` · Full year ${fmtFee(p.fullYearFee)}`
-    + ` · Half year ${fmtFee(p.halfYearFee)}`
-    + ` · Alumni ${fmtFee(p.alumniFee)}`
+  return {
+    range: `${fmtDate(p.startDate)} – ${fmtDate(p.endDate)}`,
+    fees: [
+      {label: `Full year ${fmtFee(p.fullYearFee)}`, icon: "mdi-account"},
+      {label: `Half year ${fmtFee(p.halfYearFee)}`, icon: "mdi-account-clock"},
+      {label: `Alumni ${fmtFee(p.alumniFee)}`, icon: "mdi-school"},
+    ],
+  }
 })
 
 // Compute rows reactively from targets, period, and cutoffDate
@@ -358,10 +362,26 @@ watch(computedRows, (newRows) => {
       <!-- Contribution-period summary: the bounds the cutoff must fall within + the fees. -->
       <div
         v-if="periodInfo"
-        class="text-caption text-medium-emphasis mb-4"
+        class="d-flex flex-wrap ga-2 mb-4 align-center"
         data-testid="bulk-period-info"
       >
-        {{ periodInfo }}
+        <v-chip
+          color="primary"
+          prepend-icon="mdi-calendar-range"
+          size="small"
+          variant="tonal"
+        >
+          {{ periodInfo.range }}
+        </v-chip>
+        <v-chip
+          v-for="fee in periodInfo.fees"
+          :key="fee.label"
+          :prepend-icon="fee.icon"
+          size="small"
+          variant="tonal"
+        >
+          {{ fee.label }}
+        </v-chip>
       </div>
     </template>
 

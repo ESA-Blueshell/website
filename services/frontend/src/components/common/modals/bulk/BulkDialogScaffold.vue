@@ -3,7 +3,7 @@ import {computed, ref} from "vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {useTableSort} from "@/composables/useTableSort"
 import type {SubmitState} from "@/composables/formUtils"
-import type {BulkActionCounts, BulkRow} from "@/utils/bulkRow"
+import type {BulkActionCounts, BulkDisposition, BulkRow} from "@/utils/bulkRow"
 import {memberTypeLabel} from "@/utils/memberType"
 import {
   dispositionColor,
@@ -24,6 +24,18 @@ import {
  */
 
 defineOptions({name: "BulkDialogScaffold"})
+
+defineSlots<{
+  /** Custom cell renderer for column <key>; receives the row and its effective disposition. */
+  [key: `cell.${string}`]: (props: {row: BulkRow; effective: BulkDisposition}) => unknown
+  /** Action-specific form inputs (dates, cutoff, validation messages). */
+  form(props: Record<string, never>): unknown
+  /** Optional action-specific info box (e.g. "Contribution period"). */
+  "info-box"(props: Record<string, never>): unknown
+  /** Secondary action(s) next to Cancel/confirm buttons (e.g. "Preview email"). */
+  "footer-actions"(props: Record<string, never>): unknown
+}>()
+
 
 /** A single column descriptor for the preview table. */
 export interface BulkColumn {

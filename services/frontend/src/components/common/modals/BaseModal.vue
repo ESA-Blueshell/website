@@ -6,6 +6,23 @@ import type {SubmitState} from "@/composables/formUtils"
 
 defineOptions({name: "BaseModal"})
 
+defineSlots<{
+  /** Default slot for the modal body. */
+  default(props: Record<string, never>): unknown
+  /** Render extra affordances (e.g. a help button) inline in the header, to the right of the title. */
+  "title-append"(props: Record<string, never>): unknown
+  /** Fixed (non-scrolling) region at the top of the body; only the default slot below it scrolls. */
+  "body-header"(props: Record<string, never>): unknown
+  /** Full override of the entire footer contents; replaces all action buttons. */
+  actions(props: Record<string, never>): unknown
+  /** Secondary action(s) between Cancel and the primary Save button. */
+  "actions-prepend"(props: Record<string, never>): unknown
+  /** Override just the primary save button; falls back to SubmitButton or v-btn. */
+  save(props: Record<string, never>): unknown
+  /** Optional action(s) after the primary Save button. */
+  "actions-append"(props: Record<string, never>): unknown
+}>()
+
 interface Props {
   modelValue: boolean
   title: string

@@ -76,6 +76,13 @@ class ExecuteBulkResumeMembershipHandler(
         var skipped = 0
 
         command.userIds.distinct().forEach { userId ->
+            // Poisoned-batch guard: an unknown userId must not abort the whole batch
+            // (the StartNew branch calls users.findById, which throws 404). Treat it as
+            // skipped and continue.
+            if (!users.existsById(userId)) {
+                skipped++
+                return@forEach
+            }
             val userMemberships = memberships.findByUserId(userId)
             val outcome = classifyUser(userMemberships, basisPeriod.startDate, basisPeriod.endDate)
 

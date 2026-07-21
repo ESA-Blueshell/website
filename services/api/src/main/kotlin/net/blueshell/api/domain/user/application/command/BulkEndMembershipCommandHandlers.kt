@@ -40,6 +40,12 @@ class ExecuteBulkEndMembershipHandler(
         var applied = 0
         var skipped = 0
         command.userIds.distinct().forEach { userId ->
+            // Poisoned-batch guard: an unknown userId must not abort the whole batch
+            // (users.findById throws 404). Treat it as skipped and continue.
+            if (!users.existsById(userId)) {
+                skipped++
+                return@forEach
+            }
             // Server-side mirror of the client preview's protection rules: users with a
             // role above Member (committee/board/treasurer/admin) and honorary members
             // keep their membership. The FE shows these rows as EXCLUDED; execute

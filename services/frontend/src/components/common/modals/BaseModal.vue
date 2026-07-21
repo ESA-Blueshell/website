@@ -127,7 +127,7 @@ const useSaveAsSubmitButton = computed(
         <slot v-else />
       </v-card-text>
 
-      <v-card-actions>
+      <v-card-actions class="base-modal__actions">
         <v-btn
           v-if="showDelete"
           :data-testid="deleteTestid"
@@ -201,15 +201,28 @@ const useSaveAsSubmitButton = computed(
 </template>
 
 <style lang="scss" scoped>
-// Plain title row, matching the app's other modals: no tint, no divider. The gap keeps
-// the title text spaced from any #title-append affordance (e.g. a help button).
+// Distinct, comfortably padded header band shared by every BaseModal usage: a subtle
+// surface tint plus a bottom divider separate the title (and any #title-append
+// affordance) from the body. Uses theme surface variables, no hardcoded colours.
 .base-modal__title {
   gap: 8px;
+  padding: 16px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .base-modal__title-text {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+// Footer/actions band mirrors the header treatment: a subtle surface tint, a top divider
+// and comfortable padding visually separate the primary actions from the body. Uses theme
+// surface/border variables, no hardcoded colours.
+.base-modal__actions {
+  padding: 12px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 // When a #body-header is present, make the body a flex column with a FIXED header region

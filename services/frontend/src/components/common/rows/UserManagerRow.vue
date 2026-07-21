@@ -20,13 +20,20 @@
       />
     </td>
 
-    <!-- Name -->
-    <td class="font-weight-medium">
+    <!-- Name. The fixed table layout truncates long values with an ellipsis;
+         the title attribute reveals the full value on hover. -->
+    <td
+      :title="row.fullName"
+      class="font-weight-medium"
+    >
       {{ row.fullName }}
     </td>
 
     <!-- Username -->
-    <td class="font-mono text-medium-emphasis">
+    <td
+      :title="row.username"
+      class="font-mono text-medium-emphasis"
+    >
       {{ row.username }}
     </td>
 
@@ -228,12 +235,19 @@ function onRowClick(event: MouseEvent) {
 // a full offsets recalculation and window shift (visible jump/flicker while scrolling).
 // Cells must therefore never stretch the row: cap the content boxes (checkbox,
 // icon buttons) so the measured height is exactly 36px.
+//
+// With table-layout: fixed in the parent, overflow content is truncated instead of
+// causing cells to grow. Add text overflow handling (ellipsis + nowrap) to td cells
+// so long text (names, usernames) doesn't wrap and break the fixed height constraint.
 tr {
   height: 36px;
 
   > td {
     padding-top: 0;
     padding-bottom: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   :deep(.v-selection-control) {

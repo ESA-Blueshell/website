@@ -487,6 +487,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   <!-- Sortable: Name -->
                   <th
                     class="sortable-header"
+                    style="width: 19%"
                     data-testid="member-manager-header-name"
                     role="button"
                     tabindex="0"
@@ -504,6 +505,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
 
                   <th
                     class="sortable-header"
+                    style="width: 15%"
                     data-testid="member-manager-header-username"
                     role="button"
                     tabindex="0"
@@ -520,6 +522,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   </th>
                   <th
                     class="sortable-header text-right"
+                    style="width: 8%"
                     data-testid="member-manager-header-role"
                     role="button"
                     tabindex="0"
@@ -538,6 +541,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   <!-- Sortable: Membership status -->
                   <th
                     class="sortable-header mm-th-multiline"
+                    style="width: 10%"
                     data-testid="member-manager-header-status"
                     role="button"
                     tabindex="0"
@@ -556,6 +560,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
                   <!-- Sortable: Member since -->
                   <th
                     class="sortable-header"
+                    style="width: 10%"
                     data-testid="member-manager-header-member-since"
                     role="button"
                     tabindex="0"
@@ -573,6 +578,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
 
                   <th
                     class="sortable-header mm-th-multiline mm-th-period"
+                    style="width: 8%"
                     data-testid="member-manager-header-period-member"
                     role="button"
                     tabindex="0"
@@ -590,6 +596,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
 
                   <th
                     class="sortable-header mm-th-multiline mm-th-period"
+                    style="width: 8%"
                     data-testid="member-manager-header-paid"
                     role="button"
                     tabindex="0"
@@ -604,10 +611,15 @@ function onRowClick(event: MouseEvent, rowId: number) {
                       size="16"
                     />
                   </th>
-                  <th>Type / Incasso</th>
+                  <th style="width: 7%">
+                    Type / Incasso
+                  </th>
+                  <!-- Actions column: under table-layout: fixed this width is ENFORCED
+                       (auto layout used to stretch it to fit content). Four 32px icon
+                       buttons + gaps + cell padding need ~160px or they get clipped. -->
                   <th
                     class="text-right"
-                    style="width: 64px"
+                    style="width: 160px"
                   >
                     <!-- Bulk actions triple-dot menu, right side of the header row. -->
                     <bulk-actions-menu
@@ -859,7 +871,14 @@ function onRowClick(event: MouseEvent, rowId: number) {
 // v-data-table-virtual uses fixed-header which handles sticky thead via its own
 // .v-table--fixed-header CSS. The surface background on th ensures header stays
 // opaque even when rows scroll underneath it.
+// table-layout: fixed ensures columns maintain consistent widths derived from
+// the first row (headers), not from rendered row content. This prevents visible
+// width jumping as content enters/leaves the virtual render window.
 .member-manager-vtable {
+  :deep(table) {
+    table-layout: fixed;
+  }
+
   :deep(thead th) {
     background: rgb(var(--v-theme-surface));
   }

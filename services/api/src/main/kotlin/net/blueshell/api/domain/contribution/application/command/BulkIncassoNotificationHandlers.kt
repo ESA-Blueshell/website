@@ -35,16 +35,23 @@ class ExecuteBulkIncassoNotificationHandler(
         val periodId = command.contributionPeriodId!!
         val period = periods.findById(periodId)
         val cutoffDate = command.cutoffDate!!
+        requireCutoffWithinPeriod(cutoffDate, period)
         val includedUserIds = command.includedUserIds
 
-        val decisions = command.userIds.distinct().associateWith { userId ->
-            decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions, notifications)
-        }
+        val requestedUserIds = command.userIds.distinct()
+
+        // A userId with no user is dropped here (poisoned-batch guard) so one bad id can
+        // never abort the batch mid-transaction; it is counted as skipped below.
+        val decisions = requestedUserIds.mapNotNull { userId ->
+            if (!users.existsById(userId)) return@mapNotNull null
+            userId to decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions, notifications)
+        }.toMap()
 
         validateFeeTypeOverrides(command.feeTypeOverrides, includedUserIds, decisions)
 
         var applied = 0
-        var skipped = 0
+        // Unknown ids (dropped above) are skips too.
+        var skipped = requestedUserIds.size - decisions.size
         var queued = 0
 
         decisions.forEach { (userId, decision) ->

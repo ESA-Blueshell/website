@@ -5,9 +5,11 @@ import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.command.BulkContributionOperation
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
 import net.blueshell.api.domain.contribution.persistence.Contribution
+import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
+import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional
 class ExecuteBulkContributionHandler(
     private val service: ContributionService,
     private val users: UserService,
+    private val memberships: MembershipService,
     private val periods: ContributionPeriodService,
 ) : CommandHandler<ExecuteBulkContributionCommand, BulkActionResult> {
     override val commandType = ExecuteBulkContributionCommand::class
@@ -35,6 +38,19 @@ class ExecuteBulkContributionHandler(
         var applied = 0
         var skipped = 0
         command.userIds.distinct().forEach { userId ->
+            // Poisoned-batch guard: a userId with no user must not abort the whole batch
+            // (users.findById throws 404). Treat unknown ids as skipped and continue.
+            if (!users.existsById(userId)) {
+                skipped++
+                return@forEach
+            }
+            // Honorary members are never marked paid/unpaid — mirror of the FE's
+            // SKIPPED(HONORARY). Resolve the most-recent membership by start date.
+            val activeMembership = memberships.findByUserId(userId).maxByOrNull { it.startDate }
+            if (activeMembership?.memberType == MemberType.HONORARY) {
+                skipped++
+                return@forEach
+            }
             val exists = service.existsByUserIdAndPeriodId(userId, periodId)
             when {
                 paid && !exists -> {

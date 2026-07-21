@@ -42,6 +42,20 @@ data class EmailBulkDecision(
 )
 
 /**
+ * Guard: the cutoff date must fall within the contribution period's [startDate, endDate]
+ * (inclusive). Mirrors the frontend rule so a direct API call cannot pick a cutoff outside
+ * the period and skew fee-type resolution. See docs/proposals/bulk-actions/REDESIGN.md §3.
+ */
+internal fun requireCutoffWithinPeriod(cutoffDate: LocalDate, period: ContributionPeriod) {
+    if (cutoffDate.isBefore(period.startDate) || cutoffDate.isAfter(period.endDate)) {
+        throw org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST,
+            "cutoffDate must fall within the contribution period [start, end]",
+        )
+    }
+}
+
+/**
  * Validate operator-supplied fee-type overrides against the computed decisions.
  * Rejects (HTTP 400) an override for a user who is EXCLUDED/HONORARY (no fee applies)
  * or who is not in the operator's included set. Missing override → recommended type.
@@ -84,17 +98,24 @@ class ExecuteBulkContributionReminderHandler(
         val periodId = command.contributionPeriodId!!
         val period = periods.findById(periodId)
         val cutoffDate = command.cutoffDate!!
+        requireCutoffWithinPeriod(cutoffDate, period)
         val includedUserIds = command.includedUserIds
 
-        // Decide once for every selected user — same code path as preview.
-        val decisions = command.userIds.distinct().associateWith { userId ->
-            decideReminder(userId, periodId, period, cutoffDate, users, memberships, contributions, reminders)
-        }
+        val requestedUserIds = command.userIds.distinct()
+
+        // Decide once for every selected user — same code path as preview. A userId with
+        // no user is dropped here (poisoned-batch guard) so one bad id can never abort the
+        // batch mid-transaction; it is counted as skipped below.
+        val decisions = requestedUserIds.mapNotNull { userId ->
+            if (!users.existsById(userId)) return@mapNotNull null
+            userId to decideReminder(userId, periodId, period, cutoffDate, users, memberships, contributions, reminders)
+        }.toMap()
 
         validateFeeTypeOverrides(command.feeTypeOverrides, includedUserIds, decisions)
 
         var applied = 0
-        var skipped = 0
+        // Unknown ids (dropped above) are skips too.
+        var skipped = requestedUserIds.size - decisions.size
         var queued = 0
 
         decisions.forEach { (userId, decision) ->

@@ -99,7 +99,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/incassoNotifications/bulk/execute")
@@ -141,7 +141,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/incassoNotifications/bulk/execute")
@@ -199,7 +199,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             createMembership(honorary, MemberType.HONORARY, incasso = true)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/incassoNotifications/bulk/execute")
@@ -223,7 +223,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = false)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             // Execute without re-including: should skip
             mvc.perform(
@@ -266,7 +266,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             markPaid(member, period)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             // Execute without re-including: should skip
             mvc.perform(
@@ -311,7 +311,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             createMembership(noEmail, MemberType.REGULAR, incasso = true)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/incassoNotifications/bulk/execute")
@@ -336,7 +336,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
 
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/incassoNotifications/preview")
@@ -373,7 +373,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = true)
 
-            val expectedIncassoDate = LocalDate.of(2024, 12, 31)
+            val expectedIncassoDate = LocalDate.now().plusDays(30)
             val formatted = expectedIncassoDate.format(
                 DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", java.util.Locale.ENGLISH)
             )
@@ -409,7 +409,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                 post("/incassoNotifications/bulk/execute")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now()))
+                    .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now().plusDays(30)))
             )
                 .andExpect(status().isForbidden)
         }
@@ -423,7 +423,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                 post("/incassoNotifications/preview")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, LocalDate.now()))
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, LocalDate.now().plusDays(30)))
             )
                 .andExpect(status().isForbidden)
         }

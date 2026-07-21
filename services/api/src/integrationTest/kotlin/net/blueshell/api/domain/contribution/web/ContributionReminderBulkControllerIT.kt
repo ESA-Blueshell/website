@@ -92,7 +92,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/contributionReminders/bulk/execute")
@@ -127,7 +127,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/contributionReminders/bulk/execute")
@@ -170,7 +170,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             createMembership(honorary, MemberType.HONORARY)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/contributionReminders/bulk/execute")
@@ -193,7 +193,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             markPaid(member, period)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
 
             // Execute without re-including: should skip
             mvc.perform(
@@ -237,7 +237,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             createMembership(noEmail, MemberType.REGULAR)
 
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/contributionReminders/bulk/execute")
@@ -272,7 +272,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
 
             val userIds = listOf(regular.id!!, alumni.id!!, honorary.id!!)
             val cutoffDate = LocalDate.of(2024, 7, 1)
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
 
             // Execute: the regular + alumni are applied, the excluded honorary is skipped.
             mvc.perform(
@@ -302,7 +302,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                             listOf(honorary.id!!),
                             period.id!!,
                             LocalDate.of(2024, 7, 1),
-                            LocalDate.of(2024, 12, 31),
+                            LocalDate.now().plusDays(30),
                             includedUserIds = setOf(honorary.id!!),
                             feeTypeOverrides = mapOf(honorary.id!! to BulkFeeType.FULL_YEAR_FEE),
                         )
@@ -322,7 +322,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
 
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
                 post("/contributionReminders/preview")
@@ -366,7 +366,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1))
 
-            val paymentDueDate = LocalDate.of(2024, 12, 31)
+            val paymentDueDate = LocalDate.now().plusDays(30)
             val formatted = paymentDueDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
 
             mvc.perform(
@@ -402,7 +402,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                 post("/contributionReminders/bulk/execute")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now()))
+                    .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now().plusDays(30)))
             )
                 .andExpect(status().isForbidden)
         }
@@ -416,7 +416,7 @@ class ContributionReminderBulkControllerIT : UserTestSupport() {
                 post("/contributionReminders/preview")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, LocalDate.now()))
+                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, LocalDate.now().plusDays(30)))
             )
                 .andExpect(status().isForbidden)
         }

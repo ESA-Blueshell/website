@@ -47,6 +47,7 @@ class BulkResumeMembershipHandlersTest {
                 startDate = LocalDate.of(2023, 9, 1),
                 endDate = LocalDate.of(2024, 6, 30), // within basis period
             )
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
             whenever(periodService.findLatest()).thenReturn(basisPeriod())
@@ -70,6 +71,7 @@ class BulkResumeMembershipHandlersTest {
                 endDate = LocalDate.of(2022, 12, 31),
                 incasso = true,
             )
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(priorMembership))
             whenever(periodService.findLatest()).thenReturn(basisPeriod())
@@ -90,6 +92,7 @@ class BulkResumeMembershipHandlersTest {
         fun `inserts REGULAR non-incasso membership when no prior membership`() {
             val userId = 3L
             val user = mockUser(userId, "Charlie")
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf())
             whenever(periodService.findLatest()).thenReturn(basisPeriod())
@@ -109,6 +112,7 @@ class BulkResumeMembershipHandlersTest {
             val userId = 4L
             val user = mockUser(userId, "Diana")
             val activeMembership = mockMembership(endDate = null)
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(activeMembership))
             whenever(periodService.findLatest()).thenReturn(basisPeriod())
@@ -119,6 +123,25 @@ class BulkResumeMembershipHandlersTest {
             assertThat(result.skipped).isEqualTo(1)
             verify(membershipService, never()).update(org.mockito.kotlin.any())
             verify(membershipService, never()).create(org.mockito.kotlin.any())
+        }
+
+        @Test
+        fun `skips an unknown user id without aborting the batch`() {
+            val validId = 6L
+            val unknownId = 999999L
+            val user = mockUser(validId, "Eve")
+            // Valid user has no prior membership -> StartNew branch (which calls findById).
+            whenever(userService.existsById(validId)).thenReturn(true)
+            whenever(userService.existsById(unknownId)).thenReturn(false)
+            whenever(userService.findById(validId)).thenReturn(user)
+            whenever(membershipService.findByUserId(validId)).thenReturn(mutableListOf())
+            whenever(periodService.findLatest()).thenReturn(basisPeriod())
+
+            val result = handler.handle(ExecuteBulkResumeMembershipCommand(listOf(validId, unknownId)))
+
+            assertThat(result.applied).isEqualTo(1)
+            assertThat(result.skipped).isEqualTo(1)
+            verify(membershipService).create(org.mockito.kotlin.any())
         }
 
         @Test

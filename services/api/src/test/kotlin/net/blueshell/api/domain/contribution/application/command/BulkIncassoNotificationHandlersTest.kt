@@ -54,6 +54,7 @@ class BulkIncassoNotificationHandlersTest {
             val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
             val membership = mockMembership(incasso = true)
 
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
             whenever(periodService.findById(periodId)).thenReturn(period)
@@ -95,6 +96,7 @@ class BulkIncassoNotificationHandlersTest {
             val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
             val membership = mockMembership(memberType = MemberType.HONORARY)
 
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
             whenever(periodService.findById(periodId)).thenReturn(period)
@@ -125,6 +127,7 @@ class BulkIncassoNotificationHandlersTest {
             val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
             val membership = mockMembership(incasso = false)
 
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
             whenever(periodService.findById(periodId)).thenReturn(period)
@@ -163,6 +166,7 @@ class BulkIncassoNotificationHandlersTest {
             val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
             val membership = mockMembership(incasso = true)
 
+            whenever(userService.existsById(userId)).thenReturn(true)
             whenever(userService.findById(userId)).thenReturn(user)
             whenever(membershipService.findByUserId(userId)).thenReturn(mutableListOf(membership))
             whenever(periodService.findById(periodId)).thenReturn(period)
@@ -186,6 +190,65 @@ class BulkIncassoNotificationHandlersTest {
             assertThat(result.applied).isEqualTo(1)
             // Half-year fee is 50.0 (from mockPeriod)
             assertThat(capturedNotification.firstValue.amount).isEqualTo(50.0)
+        }
+
+        @Test
+        fun `execute rejects a cutoff date outside the contribution period`() {
+            val userId = 5L
+            val periodId = 100L
+            // Period is 2024-01-01..2024-12-31; this cutoff is a day too late.
+            val cutoffDate = LocalDate.of(2025, 1, 1)
+            val expectedIncassoDate = LocalDate.of(2024, 2, 1)
+
+            val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
+            whenever(periodService.findById(periodId)).thenReturn(period)
+
+            val ex = org.junit.jupiter.api.assertThrows<org.springframework.web.server.ResponseStatusException> {
+                handler.handle(
+                    ExecuteBulkIncassoNotificationCommand(
+                        userIds = listOf(userId),
+                        contributionPeriodId = periodId,
+                        cutoffDate = cutoffDate,
+                        expectedIncassoDate = expectedIncassoDate,
+                    )
+                )
+            }
+            assertThat(ex.statusCode.value()).isEqualTo(400)
+        }
+
+        @Test
+        fun `execute skips an unknown user id without aborting the batch`() {
+            val validId = 1L
+            val unknownId = 999999L
+            val periodId = 100L
+            val cutoffDate = LocalDate.of(2024, 1, 1)
+            val expectedIncassoDate = LocalDate.of(2024, 2, 1)
+
+            val user = mockUser(validId, "Alice", email = "alice@example.com")
+            val period = mockPeriod(periodId, 50.0, 100.0, 25.0)
+            val membership = mockMembership(incasso = true)
+
+            whenever(userService.existsById(validId)).thenReturn(true)
+            whenever(userService.existsById(unknownId)).thenReturn(false)
+            whenever(userService.findById(validId)).thenReturn(user)
+            whenever(membershipService.findByUserId(validId)).thenReturn(mutableListOf(membership))
+            whenever(periodService.findById(periodId)).thenReturn(period)
+            whenever(contributionService.existsByUserIdAndPeriodId(validId, periodId)).thenReturn(false)
+
+            val savedNotification = mockNotification(validId, periodId, 100.0, expectedIncassoDate)
+            whenever(notificationService.create(org.mockito.kotlin.any())).thenReturn(savedNotification)
+
+            val result = handler.handle(
+                ExecuteBulkIncassoNotificationCommand(
+                    userIds = listOf(validId, unknownId),
+                    contributionPeriodId = periodId,
+                    cutoffDate = cutoffDate,
+                    expectedIncassoDate = expectedIncassoDate,
+                )
+            )
+
+            assertThat(result.applied).isEqualTo(1)
+            assertThat(result.skipped).isEqualTo(1)
         }
     }
 

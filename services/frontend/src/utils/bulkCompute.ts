@@ -179,7 +179,7 @@ export function computeIncassoRows(
  * cannot have their membership ended → EXCLUDED with a specific reason; no active
  * membership or endDate != null → SKIPPED(NO_ACTIVE_MEMBERSHIP); else INCLUDED.
  */
-export function computeEndMembershipRows(targets: BulkTarget[], _today: string): BulkRow[] {
+export function computeEndMembershipRows(targets: BulkTarget[], today: string): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
       disposition: "INCLUDED",
@@ -212,6 +212,12 @@ export function computeEndMembershipRows(targets: BulkTarget[], _today: string):
     } else if (!target.mostRecentMembership || target.mostRecentMembership.endDate !== null) {
       row.disposition = "SKIPPED"
       row.reason = "NO_ACTIVE_MEMBERSHIP"
+    } else if (target.mostRecentMembership.startDate >= today) {
+      // The backend only ends memberships that started strictly before today, so a
+      // membership started today (or later) is skipped rather than ended. Mirror of the
+      // handler's startDate.isBefore(today) predicate.
+      row.disposition = "SKIPPED"
+      row.reason = "STARTED_TODAY"
     } else {
       row.disposition = "INCLUDED"
     }

@@ -497,6 +497,45 @@ describe("computeEndMembershipRows", () => {
     const rows = computeEndMembershipRows(targets, "2025-07-01")
     expect(rows[0]).toMatchObject({disposition: "INCLUDED"})
   })
+
+  it("SKIPS an active membership that started today with STARTED_TODAY", () => {
+    const targets = [bulkTarget(1, {mostRecentMembership: {
+      type: MemberType.REGULAR,
+      startDate: "2025-07-01",
+      endDate: null,
+      incasso: false,
+    }})]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({
+      disposition: "SKIPPED",
+      reason: "STARTED_TODAY",
+    })
+  })
+
+  it("SKIPS an active membership that starts after today with STARTED_TODAY", () => {
+    const targets = [bulkTarget(1, {mostRecentMembership: {
+      type: MemberType.REGULAR,
+      startDate: "2025-07-02",
+      endDate: null,
+      incasso: false,
+    }})]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({
+      disposition: "SKIPPED",
+      reason: "STARTED_TODAY",
+    })
+  })
+
+  it("INCLUDES an active membership that started before today", () => {
+    const targets = [bulkTarget(1, {mostRecentMembership: {
+      type: MemberType.REGULAR,
+      startDate: "2025-06-30",
+      endDate: null,
+      incasso: false,
+    }})]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({disposition: "INCLUDED"})
+  })
 })
 
 // ── Resume Membership tests ────────────────────────────────────────────

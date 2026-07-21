@@ -2,9 +2,18 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import ReminderDialog from "@/components/common/modals/bulk/ReminderDialog.vue"
 import type {BulkScaffoldInstance} from "@/composables/useBulkEmailAction"
-import type {BulkTarget} from "@/utils/bulkTarget"
-import {MemberType, type ContributionPeriodResponse} from "@/services/api"
+import {MemberType} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
+import {
+  alreadyPaidTarget,
+  alumniTarget,
+  honoraryTarget,
+  incassoPayerTarget,
+  noEmailTarget,
+  period,
+  regularTarget,
+  target,
+} from "../../../../helpers/bulkFixtures"
 
 // Mock the API calls the dialog uses: the bulk executor and the reminder lookup
 // (fetched on open to fill the "Last reminded at" column).
@@ -31,105 +40,7 @@ beforeEach(() => {
 
 const SERVER_TODAY = "2025-05-01"
 
-function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
-  return {
-    userId,
-    name: `User ${userId}`,
-    email: `user${userId}@example.com`,
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
-    },
-    mostRecentContribution: {
-      paid: false,
-    },
-    isHonorary: false,
-    highestRole: null,
-    ...overrides,
-  }
-}
-
-function period(): ContributionPeriodResponse {
-  return {
-    id: 1,
-    startDate: "2025-01-01",
-    endDate: "2025-12-31",
-    fullYearFee: 20.0,
-    halfYearFee: 10.0,
-    alumniFee: 5.0,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-    version: 0,
-  }
-}
-
-// A plain regular member: unpaid, NOT on incasso → INCLUDED.
-function regularTarget(userId: number): BulkTarget {
-  return target(userId)
-}
-
-function incassoPayerTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: true,
-    },
-  })
-}
-
-function noEmailTarget(userId: number): BulkTarget {
-  return target(userId, {
-    email: null,
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
-    },
-  })
-}
-
-function honoraryTarget(userId: number): BulkTarget {
-  return target(userId, {
-    isHonorary: true,
-    highestRole: null,
-    mostRecentMembership: {
-      type: MemberType.HONORARY,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
-    },
-  })
-}
-
-function alreadyPaidTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentContribution: {paid: true},
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
-    },
-  })
-}
-
-function alumniTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.ALUMNI,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
-    },
-  })
-}
-
-function mountDialog(targets: BulkTarget[]) {
+function mountDialog(targets: ReturnType<typeof regularTarget>[]) {
   return mount(ReminderDialog, {
     props: {
       modelValue: true,

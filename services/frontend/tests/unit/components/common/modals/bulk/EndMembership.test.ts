@@ -1,9 +1,13 @@
 import {describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import EndMembershipDialog from "@/components/common/modals/bulk/EndMembershipDialog.vue"
-import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
+import {
+  endedMemberTarget,
+  noMembershipTarget,
+  target,
+} from "../../../../helpers/bulkFixtures"
 
 // Mock the API call
 const {mockExecuteBulkEnd} = vi.hoisted(() => ({mockExecuteBulkEnd: vi.fn()}))
@@ -12,49 +16,17 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
 }))
 
 /**
- * Create a minimal BulkTarget with sensible defaults.
+ * Active member with incasso: true — this test file's roster is active incasso members
+ * (the original local factory defaulted to incasso: true / no endDate).
  */
-function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
-  return {
-    userId,
-    name: `User ${userId}`,
-    email: `user${userId}@example.com`,
+function activeMemberTarget(userId: number) {
+  return target(userId, {
     mostRecentMembership: {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
       incasso: true,
     },
-    mostRecentContribution: {
-      paid: false,
-    },
-    isHonorary: false,
-    highestRole: null,
-    ...overrides,
-  }
-}
-
-/**
- * Create realistic BulkTarget fixtures for end-membership action.
- */
-function activeMemberTarget(userId: number): BulkTarget {
-  return target(userId)
-}
-
-function endedMemberTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: "2024-12-31",
-      incasso: false,
-    },
-  })
-}
-
-function noMembershipTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: null,
   })
 }
 

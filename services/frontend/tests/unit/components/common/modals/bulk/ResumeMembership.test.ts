@@ -1,9 +1,15 @@
 import {describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import ResumeMembershipDialog from "@/components/common/modals/bulk/ResumeMembershipDialog.vue"
-import type {BulkTarget} from "@/utils/bulkTarget"
-import {MemberType, type ContributionPeriodResponse} from "@/services/api"
+import {MemberType} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
+import {
+  endedMemberTarget,
+  noMembershipTarget,
+  period,
+  recentlyEndedTarget,
+  target,
+} from "../../../../helpers/bulkFixtures"
 
 // Mock the API call
 const {mockExecuteBulkResume} = vi.hoisted(() => ({mockExecuteBulkResume: vi.fn()}))
@@ -11,37 +17,8 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   executeBulkResume: mockExecuteBulkResume,
 }))
 
-/**
- * Create a minimal BulkTarget with sensible defaults.
- */
-function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
-  return {
-    userId,
-    name: `User ${userId}`,
-    email: `user${userId}@example.com`,
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: "2024-12-31",
-      incasso: true,
-    },
-    mostRecentContribution: {
-      paid: false,
-    },
-    isHonorary: false,
-    highestRole: null,
-    ...overrides,
-  }
-}
-
-/**
- * Create realistic BulkTarget fixtures for resume-membership action.
- */
-function endedMemberTarget(userId: number): BulkTarget {
-  return target(userId)
-}
-
-function activeMemberTarget(userId: number): BulkTarget {
+/** Active member — SKIPPED(ALREADY_ACTIVE) in resume action. */
+function activeMemberTarget(userId: number) {
   return target(userId, {
     mostRecentMembership: {
       type: MemberType.REGULAR,
@@ -50,37 +27,6 @@ function activeMemberTarget(userId: number): BulkTarget {
       incasso: false,
     },
   })
-}
-
-function noMembershipTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: null,
-  })
-}
-
-function recentlyEndedTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentMembership: {
-      type: MemberType.REGULAR,
-      startDate: "2024-01-01",
-      endDate: "2025-06-15", // Within a period that starts at 2025-01-01
-      incasso: false,
-    },
-  })
-}
-
-/**
- * Create a mock contribution period.
- */
-function period(): ContributionPeriodResponse {
-  return {
-    id: 1,
-    startDate: "2025-01-01",
-    endDate: "2025-12-31",
-    fullYearFee: 20.0,
-    halfYearFee: 10.0,
-    alumniFee: 5.0,
-  } as ContributionPeriodResponse
 }
 
 describe("ResumeMembershipDialog", () => {

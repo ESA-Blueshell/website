@@ -1,9 +1,13 @@
 import {describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
-import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
+import {
+  alreadyPaidTarget,
+  honoraryTarget,
+  target,
+} from "../../../../helpers/bulkFixtures"
 
 // Mock the API calls
 const {mockMarkPaid, mockMarkUnpaid} = vi.hoisted(() => ({
@@ -15,45 +19,14 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   markUnpaid: mockMarkUnpaid,
 }))
 
-function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
-  return {
-    userId,
-    name: `User ${userId}`,
-    email: `user${userId}@example.com`,
+/** Unpaid regular member (incasso: true mirrors the original local fixture default). */
+function unpaidRegularTarget(userId: number) {
+  return target(userId, {
     mostRecentMembership: {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
       incasso: true,
-    },
-    mostRecentContribution: {
-      paid: false,
-    },
-    isHonorary: false,
-    highestRole: null,
-    ...overrides,
-  }
-}
-
-function unpaidRegularTarget(userId: number): BulkTarget {
-  return target(userId)
-}
-
-function alreadyPaidTarget(userId: number): BulkTarget {
-  return target(userId, {
-    mostRecentContribution: {paid: true},
-  })
-}
-
-function honoraryTarget(userId: number): BulkTarget {
-  return target(userId, {
-    isHonorary: true,
-    highestRole: null,
-    mostRecentMembership: {
-      type: MemberType.HONORARY,
-      startDate: "2024-01-01",
-      endDate: null,
-      incasso: false,
     },
   })
 }

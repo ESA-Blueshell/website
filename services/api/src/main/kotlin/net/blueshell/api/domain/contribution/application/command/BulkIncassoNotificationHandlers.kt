@@ -19,6 +19,9 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.ZoneOffset
+import net.blueshell.api.domain.contribution.application.command.EmailBulkDecision
+import net.blueshell.api.domain.contribution.application.command.requireCutoffWithinPeriod
+import net.blueshell.api.domain.contribution.application.command.validateFeeTypeOverrides
 
 @Component
 class ExecuteBulkIncassoNotificationHandler(
@@ -40,8 +43,7 @@ class ExecuteBulkIncassoNotificationHandler(
 
         val requestedUserIds = command.userIds.distinct()
 
-        // A userId with no user is dropped here (poisoned-batch guard) so one bad id can
-        // never abort the batch mid-transaction; it is counted as skipped below.
+        // Decide once per user (same as preview); poisoned-batch guard prevents one bad id aborting mid-transaction.
         val decisions = requestedUserIds.mapNotNull { userId ->
             if (!users.existsById(userId)) return@mapNotNull null
             userId to decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions, notifications)

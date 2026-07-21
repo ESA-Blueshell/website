@@ -1,6 +1,5 @@
 package net.blueshell.api.domain.contribution.web
 
-import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.IncassoNotification
 import net.blueshell.api.domain.user.persistence.Membership
@@ -10,12 +9,10 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -23,73 +20,25 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@SpringBootTest
-class IncassoNotificationBulkControllerIT : UserTestSupport() {
+class IncassoNotificationBulkControllerIT :
+    BulkEmailControllerITBase(
+        executeEndpoint = "/incassoNotifications/bulk/execute",
+        previewEndpoint = "/incassoNotifications/preview",
+        dateParamName = "expectedIncassoDate",
+    ) {
 
     @Autowired
     private lateinit var emailSenderService: EmailSenderService
 
-    private fun body(
-        userIds: List<Long>,
-        periodId: Long,
-        cutoffDate: LocalDate,
-        expectedIncassoDate: LocalDate,
-        includedUserIds: Set<Long> = emptySet(),
-        feeTypeOverrides: Map<Long, BulkFeeType> = emptyMap()
-    ): String {
-        val includedJson = if (includedUserIds.isEmpty()) "[]" else includedUserIds.joinToString(",", "[", "]")
-        val overridesJson = if (feeTypeOverrides.isEmpty()) "{}" else {
-            feeTypeOverrides.entries.joinToString(",", "{", "}") { (k, v) -> "\"$k\":\"$v\"" }
-        }
-        return """{
-            "userIds":[${userIds.joinToString(",")}],
-            "contributionPeriodId":$periodId,
-            "cutoffDate":"$cutoffDate",
-            "expectedIncassoDate":"$expectedIncassoDate",
-            "includedUserIds":$includedJson,
-            "feeTypeOverrides":$overridesJson
-        }"""
-    }
-
-    private fun previewBody(
-        userId: Long,
-        periodId: Long,
-        feeType: BulkFeeType,
-        expectedIncassoDate: LocalDate,
-    ): String = """{
-        "userId":$userId,
-        "contributionPeriodId":$periodId,
-        "feeType":"$feeType",
-        "expectedIncassoDate":"$expectedIncassoDate"
-    }"""
-
-    private fun markPaid(user: User, period: ContributionPeriod) = persist(
-        Contribution(id = Contribution.Id(user.id, period.id), user = user, contributionPeriod = period)
-    )
-
-    private fun createMembership(
-        user: User,
-        memberType: MemberType,
-        startDate: LocalDate = LocalDate.of(2024, 1, 1),
-        incasso: Boolean = true
-    ): Membership = persist(
-        Membership(
-            user = user,
-            memberType = memberType,
-            startDate = startDate,
-            endDate = null,
-            incasso = incasso
-        )
-    )
-
-    private fun expectedAcademicYear(period: ContributionPeriod): String {
+    private fun expectedAcademicYear(periodId: Long): String {
+        val period = entityManager.find(ContributionPeriod::class.java, periodId)
         val startYear = period.startDate.year
         val endYear = period.endDate.year
         return if (endYear > startYear) "$startYear/$endYear" else "$startYear"
     }
 
     @Nested
-    inner class Execute {
+    inner class IncassoExecute {
 
         @Test
         fun `sends notification, writes audit row and enqueues email`() {
@@ -102,7 +51,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(regular.id!!), period.id!!, cutoffDate, expectedIncassoDate))
@@ -144,7 +93,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
@@ -182,7 +131,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                 DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", java.util.Locale.ENGLISH)
             )
             val refreshed = refreshUser(member)
-            val academicYear = expectedAcademicYear(period)
+            val academicYear = expectedAcademicYear(period.id!!)
             assertEmailSent(
                 toEmail = refreshed.email,
                 subject = "Your Blueshell contribution will be collected automatically ($academicYear)",
@@ -202,7 +151,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(honorary.id!!), period.id!!, cutoffDate, expectedIncassoDate))
@@ -227,7 +176,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
 
             // Execute without re-including: should skip
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id!!), period.id!!, cutoffDate, expectedIncassoDate))
@@ -238,7 +187,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
 
             // Execute with re-including: should send
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
@@ -270,7 +219,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
 
             // Execute without re-including: should skip
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id!!), period.id!!, cutoffDate, expectedIncassoDate))
@@ -281,7 +230,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
 
             // Execute with re-including: should send
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
@@ -304,7 +253,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
         fun `skips members without email`() {
             val board = createUserWithRole(Role.BOARD)
             val noEmail = createUserWithRole(Role.MEMBER)
-            noEmail.email = "" // Clear email
+            noEmail.email = ""
             persist(noEmail)
 
             val period = createContributionPeriodFixture()
@@ -314,7 +263,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
-                post("/incassoNotifications/bulk/execute")
+                post(executeEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(noEmail.id!!), period.id!!, cutoffDate, expectedIncassoDate))
@@ -327,7 +276,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
     }
 
     @Nested
-    inner class Preview {
+    inner class IncassoPreview {
 
         @Test
         fun `returns non-empty subject and html and renders neither a notification nor a job`() {
@@ -339,7 +288,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             val expectedIncassoDate = LocalDate.now().plusDays(30)
 
             mvc.perform(
-                post("/incassoNotifications/preview")
+                post(previewEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, expectedIncassoDate))
@@ -379,7 +328,7 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
             )
 
             mvc.perform(
-                post("/incassoNotifications/preview")
+                post(previewEndpoint)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(previewBody(member.id!!, period.id!!, BulkFeeType.ALUMNI_FEE, expectedIncassoDate))
@@ -394,38 +343,6 @@ class IncassoNotificationBulkControllerIT : UserTestSupport() {
                         org.hamcrest.Matchers.containsString("the alumni fee, as you are an alumni member")
                     )
                 )
-        }
-    }
-
-    @Nested
-    inner class Authorization {
-
-        @Test
-        fun `non-board is forbidden`() {
-            val member = createUserWithRole(Role.MEMBER)
-            val period = createContributionPeriodFixture()
-
-            mvc.perform(
-                post("/incassoNotifications/bulk/execute")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body(listOf(member.id!!), period.id!!, LocalDate.now(), LocalDate.now().plusDays(30)))
-            )
-                .andExpect(status().isForbidden)
-        }
-
-        @Test
-        fun `non-board is forbidden from preview`() {
-            val member = createUserWithRole(Role.MEMBER)
-            val period = createContributionPeriodFixture()
-
-            mvc.perform(
-                post("/incassoNotifications/preview")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(previewBody(member.id!!, period.id!!, BulkFeeType.FULL_YEAR_FEE, LocalDate.now().plusDays(30)))
-            )
-                .andExpect(status().isForbidden)
         }
     }
 }

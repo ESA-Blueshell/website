@@ -1,19 +1,20 @@
 import {describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import MarkPaidDialog from "@/components/common/modals/bulk/MarkPaidDialog.vue"
+import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
 import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
-// Mock the API call
-const {mockMarkPaid} = vi.hoisted(() => ({mockMarkPaid: vi.fn()}))
+// Mock the API calls
+const {mockMarkPaid, mockMarkUnpaid} = vi.hoisted(() => ({
+  mockMarkPaid: vi.fn(),
+  mockMarkUnpaid: vi.fn(),
+}))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   markPaid: mockMarkPaid,
+  markUnpaid: mockMarkUnpaid,
 }))
 
-/**
- * Create a minimal BulkTarget with sensible defaults.
- */
 function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
   return {
     userId,
@@ -34,9 +35,6 @@ function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
   }
 }
 
-/**
- * Create a set of realistic BulkTarget fixtures.
- */
 function unpaidRegularTarget(userId: number): BulkTarget {
   return target(userId)
 }
@@ -60,23 +58,26 @@ function honoraryTarget(userId: number): BulkTarget {
   })
 }
 
-describe("MarkPaidDialog", () => {
-  it("renders the dialog with title and confirm button", () => {
-    const wrapper = mount(MarkPaidDialog, {
+describe("PaidStatusDialog (Mark as paid)", () => {
+  it("renders the dialog with paid title and confirm button", () => {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [unpaidRegularTarget(1)],
         contributionPeriodId: 1,
       },
     })
 
     expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain("Mark as paid")
   })
 
   it("shows preview table with single unpaid member marked INCLUDED", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [unpaidRegularTarget(1)],
         contributionPeriodId: 1,
       },
@@ -90,9 +91,10 @@ describe("MarkPaidDialog", () => {
   })
 
   it("marks already-paid member as SKIPPED with ALREADY_PAID note", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [alreadyPaidTarget(2)],
         contributionPeriodId: 1,
       },
@@ -108,9 +110,10 @@ describe("MarkPaidDialog", () => {
   })
 
   it("marks honorary member as SKIPPED with HONORARY note", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [honoraryTarget(3)],
         contributionPeriodId: 1,
       },
@@ -126,9 +129,10 @@ describe("MarkPaidDialog", () => {
   })
 
   it("displays member type and member-since date in preview", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [
           target(1, {
             mostRecentMembership: {
@@ -145,19 +149,18 @@ describe("MarkPaidDialog", () => {
 
     await settle()
 
-    // Member type renders via memberTypeLabel (label, not the raw enum).
     const typeCell = wrapper.text()
     expect(typeCell).toContain("Alumni")
 
     const memberSinceCell = wrapper.find('[data-testid="bulk-preview-member-since-1"]')
-    // Member-since renders formatted dd/MM/yyyy.
     expect(memberSinceCell.text()).toContain("15/09/2024")
   })
 
   it("shows counts summary with included and skipped", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [
           unpaidRegularTarget(1),
           alreadyPaidTarget(2),
@@ -176,28 +179,28 @@ describe("MarkPaidDialog", () => {
   })
 
   it("closes dialog when modelValue becomes false", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [unpaidRegularTarget(1)],
         contributionPeriodId: 1,
       },
     })
 
-    // While open, the preview row for the target is rendered.
     expect(wrapper.find('[data-testid="bulk-preview-row-1"]').exists()).toBe(true)
 
     await wrapper.setProps({modelValue: false})
     await settle()
 
-    // Once closed, the dialog body (and its preview rows) is no longer rendered.
     expect(wrapper.find('[data-testid="bulk-preview-row-1"]').exists()).toBe(false)
   })
 
   it("updates preview rows when targets prop changes", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [unpaidRegularTarget(1)],
         contributionPeriodId: 1,
       },
@@ -205,22 +208,21 @@ describe("MarkPaidDialog", () => {
 
     await settle()
 
-    // Change targets to include a paid user
     await wrapper.setProps({
       targets: [unpaidRegularTarget(1), alreadyPaidTarget(2)],
     })
 
     await settle()
 
-    // Both users should be visible in the table
     expect(wrapper.find('[data-testid="bulk-preview-row-1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="bulk-preview-row-2"]').exists()).toBe(true)
   })
 
   it("handles edge case: empty targets list", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [],
         contributionPeriodId: 1,
       },
@@ -233,9 +235,10 @@ describe("MarkPaidDialog", () => {
   })
 
   it("handles edge case: user with no membership", async () => {
-    const wrapper = mount(MarkPaidDialog, {
+    const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
+        targetState: "paid",
         targets: [
           target(1, {
             mostRecentMembership: null,
@@ -248,7 +251,148 @@ describe("MarkPaidDialog", () => {
     await settle()
 
     const memberSinceCell = wrapper.find('[data-testid="bulk-preview-member-since-1"]')
-    // formatMemberSince renders an em-dash placeholder when there is no date.
     expect(memberSinceCell.text()).toBe("—")
+  })
+})
+
+describe("PaidStatusDialog (Mark as unpaid)", () => {
+  it("renders the dialog with unpaid title and confirm button", () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "unpaid",
+        targets: [alreadyPaidTarget(1)],
+        contributionPeriodId: 1,
+      },
+    })
+
+    expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain("Mark as unpaid")
+  })
+
+  it("marks paid member as INCLUDED", async () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "unpaid",
+        targets: [alreadyPaidTarget(1)],
+        contributionPeriodId: 1,
+      },
+    })
+
+    await settle()
+
+    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-1"]')
+    expect(dispositionChip.text()).toContain("Included")
+  })
+
+  it("marks unpaid member as SKIPPED with NOT_PAID note", async () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "unpaid",
+        targets: [unpaidRegularTarget(2)],
+        contributionPeriodId: 1,
+      },
+    })
+
+    await settle()
+
+    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-2"]')
+    expect(dispositionChip.text()).toContain("Skipped")
+
+    const noteCell = wrapper.find('[data-testid="bulk-preview-note-2"]')
+    expect(noteCell.text()).toContain("Not paid")
+  })
+
+  it("marks honorary member as SKIPPED with HONORARY note", async () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "unpaid",
+        targets: [honoraryTarget(3)],
+        contributionPeriodId: 1,
+      },
+    })
+
+    await settle()
+
+    const dispositionChip = wrapper.find('[data-testid="bulk-preview-disposition-3"]')
+    expect(dispositionChip.text()).toContain("Skipped")
+
+    const noteCell = wrapper.find('[data-testid="bulk-preview-note-3"]')
+    expect(noteCell.text()).toContain("Honorary")
+  })
+
+  it("displays counts summary with paid and unpaid", async () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "unpaid",
+        targets: [
+          alreadyPaidTarget(1),
+          unpaidRegularTarget(2),
+          honoraryTarget(3),
+        ],
+        contributionPeriodId: 1,
+      },
+    })
+
+    await settle()
+
+    const countsText = wrapper.find('[data-testid="bulk-action-counts"]').text()
+    expect(countsText).toContain("3 selected")
+    expect(countsText).toContain("1 will apply")
+    expect(countsText).toContain("2 skipped")
+  })
+
+  it("populates member type and member-since", async () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "unpaid",
+        targets: [
+          target(1, {
+            mostRecentMembership: {
+              type: MemberType.ALUMNI,
+              startDate: "2023-06-01",
+              endDate: null,
+              incasso: false,
+            },
+            mostRecentContribution: {paid: true},
+          }),
+        ],
+        contributionPeriodId: 1,
+      },
+    })
+
+    await settle()
+
+    const typeText = wrapper.text()
+    expect(typeText).toContain("Alumni")
+
+    const memberSinceCell = wrapper.find('[data-testid="bulk-preview-member-since-1"]')
+    expect(memberSinceCell.text()).toContain("01/06/2023")
+  })
+
+  it("handles mixed roster: paid, unpaid, honorary", async () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "unpaid",
+        targets: [
+          alreadyPaidTarget(1),
+          unpaidRegularTarget(2),
+          honoraryTarget(3),
+        ],
+        contributionPeriodId: 1,
+      },
+    })
+
+    await settle()
+
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-1"]').text()).toContain("Included")
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-2"]').text()).toContain("Skipped")
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-3"]').text()).toContain("Skipped")
   })
 })

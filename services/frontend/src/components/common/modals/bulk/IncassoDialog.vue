@@ -1,26 +1,21 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
-import {DateTime} from "luxon"
+import {computed, ref} from "vue"
 import BulkDialogScaffold, {type BulkColumn} from "./BulkDialogScaffold.vue"
 import EmailPreviewPanel from "./EmailPreviewPanel.vue"
-import {useBulkPreview} from "@/composables/useBulkPreview"
-import {useEmailPreview} from "@/composables/useEmailPreview"
-import {useSubmitFeedback} from "@/composables/formUtils"
+import {useBulkEmailAction, type BulkEmailActionConfig, type BulkScaffoldInstance} from "@/composables/useBulkEmailAction"
 import {executeBulkIncassoNotification, previewIncassoNotification} from "@/services/api/blueshell/sdk.gen"
+import type {BulkIncassoNotificationExecuteRequest, IncassoNotificationPreviewRequest} from "@/services/api/blueshell/types.gen"
 import {computeIncassoRows} from "@/utils/bulkCompute"
-import type {BulkRow} from "@/utils/bulkRow"
 import type {ContributionPeriodResponse} from "@/services/api"
-import {effectiveAmount, feeTypeItems, type FeeType} from "@/utils/feePreview"
-import {halfYearCutoffDefault, type BulkTarget} from "@/utils/bulkTarget"
+import {feeTypeItems} from "@/utils/feePreview"
+import type {BulkTarget} from "@/utils/bulkTarget"
 
 /**
  * Incasso-notification per-action dialog. FE preview: as reminder plus incasso checks
  * (INCASSO_MISMATCH for members not marked for incasso). The operator can forcibly
  * include WARNING rows and override each included row's fee type. A dedicated Amount
- * column shows the € for the selected fee type. No server preview call.
- * See docs/proposals/bulk-actions/REDESIGN.md §5.2.
+ * column shows the € for the selected fee type.
  */
-
 defineOptions({name: "IncassoDialog", inheritAttrs: false})
 
 interface Props {
@@ -37,86 +32,17 @@ const emit = defineEmits<{
   (e: "done"): void
 }>()
 
-const open = computed({
-  get: () => props.modelValue,
-  set: (v) => emit("update:modelValue", v),
-})
-
 const expectedIncassoDate = ref("")
-const cutoffDate = ref("")
 
-// Per-row fee-type selections, defaulting to the auto-selected recommendation per row.
-const feeTypeSelections = ref<Record<number, FeeType>>({})
-
-const scaffold = ref<{validate: () => Promise<boolean>} | null>(null)
-
-const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
-  useBulkPreview()
-const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
-const preview = useEmailPreview()
-
-// The period used for cutoff defaulting and validation bounds. This MUST be the period
-// the operator is acting on (the selected period), not the globally-latest period: the
-// cutoff and its validation are meaningful only relative to the period being processed.
-// Using the global latest broke parallel runs, where an unrelated newer period became the
-// bound and the (valid, in-selected-period) cutoff was rejected, so confirm silently
-// no-opped and the dialog never closed. Fall back to latestPeriod only when nothing is
-// selected.
-const boundsPeriod = computed(() => props.period ?? props.latestPeriod ?? null)
-
-// ── Validation rules ──────────────────────────────────────────────────────────
-const incassoDateRules = [
-  (v: string) => !!v || "Expected incasso date is required.",
-  (v: string) =>
-    !v || !props.serverToday || v > props.serverToday || "Expected incasso date must be after today.",
-]
-
-const cutoffRules = [
-  (v: string) => !!v || "Half-year cutoff date is required.",
-  (v: string) => {
-    const p = boundsPeriod.value
-    if (!v || !p) return true
-    if (v < p.startDate || v > p.endDate) {
-      return `Cutoff date must fall within the contribution period (${fmtDate(p.startDate)} to ${fmtDate(p.endDate)}).`
-    }
-    return true
-  },
-]
-
-// ── Contribution-period summary shown on the modal ────────────────────────────
-function fmtDate(iso: string): string {
-  const dt = DateTime.fromISO(iso)
-  return dt.isValid ? dt.toFormat("dd/MM/yyyy") : iso
+// Template ref for the BulkDialogScaffold instance. We use a named function (not an inline
+// arrow) to avoid Vue re-creating the callback on every render, which would cause Vue to
+// unmount and re-mount the ref each render cycle.
+const scaffoldRef = ref<BulkScaffoldInstance | null>(null)
+function onScaffoldRef(el: unknown) {
+  scaffoldRef.value = (el ?? null) as BulkScaffoldInstance | null
 }
 
-function fmtFee(amount: number): string {
-  return `€${amount.toFixed(2)}`
-}
-
-/** Chip-row summary of the period the action applies to (bounds + fees). */
-const periodInfo = computed(() => {
-  const p = boundsPeriod.value
-  if (!p) return null
-  return {
-    range: `${fmtDate(p.startDate)} – ${fmtDate(p.endDate)}`,
-    fees: [
-      {label: `Full year ${fmtFee(p.fullYearFee)}`, icon: "mdi-account"},
-      {label: `Half year ${fmtFee(p.halfYearFee)}`, icon: "mdi-account-clock"},
-      {label: `Alumni ${fmtFee(p.alumniFee)}`, icon: "mdi-school"},
-    ],
-  }
-})
-
-// Compute rows reactively from targets, period, and cutoffDate
-const computedRows = computed(() =>
-  computeIncassoRows(props.targets, props.period, cutoffDate.value),
-)
-
-function rowAmount(row: BulkRow): number | null {
-  const selected = feeTypeSelections.value[row.userId] ?? row.recommendedFeeType
-  return effectiveAmount(selected, props.period)
-}
-
+// Columns for incasso dialog (no lastReminded column)
 const columns: BulkColumn[] = [
   {key: "name", header: "Member", sortable: true},
   {key: "memberType", header: "Type", sortable: true},
@@ -127,107 +53,40 @@ const columns: BulkColumn[] = [
   {key: "note", header: "Note"},
 ]
 
-const help = {
-  title: "Send incasso notification",
-  body:
-    "Emails an incasso (direct-debit) notification to every included member for the selected "
-    + "contribution period, announcing the amount and the expected incasso date. Members who are "
-    + "not marked for incasso are warned and left out by default (tick Forcibly include to send "
-    + "anyway). Honorary members and members without an email are never sent. The fee type is "
-    + "auto-selected from the half-year cutoff date and can be changed per member; the Amount "
-    + "column shows what each member will be debited. Confirming sends the emails immediately "
-    + "(this cannot be undone).",
-}
-
-const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
-
-// ── Email preview ─────────────────────────────────────────────────────────────
-// Selectable preview recipients: the currently-included users (INCLUDED ∪ re-included
-// WARNING), shown by name. Preview is faithful to what each included user would receive.
-const previewUserOptions = computed(() => {
-  const included = new Set(includedUserIds.value)
-  return rows.value
-    .filter((r) => included.has(r.userId))
-    .map((r) => ({value: r.userId, title: r.name}))
-})
-
-// Default the preview recipient to the first included user; keep it valid as rows change.
-watch(
-  previewUserOptions,
-  (options) => {
-    const current = preview.selectedUserId.value
-    if (options.length === 0) {
-      preview.selectedUserId.value = null
-    } else if (current == null || !options.some((o) => o.value === current)) {
-      preview.selectedUserId.value = options[0]!.value
-    }
+// Config for the bulk email action (incasso-specific)
+const actionConfig: BulkEmailActionConfig = {
+  dateFieldName: "expectedIncassoDate",
+  dateLabel: "Expected incasso date",
+  dateTestid: "bulk-action-expected-incasso-date",
+  dateValidationRule: (v, serverToday) =>
+    !v || !serverToday || v > serverToday || "Expected incasso date must be after today.",
+  computeRows: computeIncassoRows,
+  executeApi: (body) => executeBulkIncassoNotification({body: body as BulkIncassoNotificationExecuteRequest}),
+  previewApi: (body) => previewIncassoNotification({body: body as IncassoNotificationPreviewRequest}),
+  columns,
+  help: {
+    title: "Send incasso notification",
+    body:
+      "Emails an incasso (direct-debit) notification to every included member for the selected "
+      + "contribution period, announcing the amount and the expected incasso date. Members who are "
+      + "not marked for incasso are warned and left out by default (tick Forcibly include to send "
+      + "anyway). Honorary members and members without an email are never sent. The fee type is "
+      + "auto-selected from the half-year cutoff date and can be changed per member; the Amount "
+      + "column shows what each member will be debited. Confirming sends the emails immediately "
+      + "(this cannot be undone).",
   },
-  {immediate: true},
-)
-
-// A preview needs a period and an expected incasso date to render faithfully.
-const previewInputsReady = computed(() => !!props.period && !!expectedIncassoDate.value)
-
-async function onPreview() {
-  // The preview button is always clickable; validate the pinned form first so invalid
-  // dates surface inline (red fields + messages) and abort before hitting the API.
-  const valid = (await scaffold.value?.validate()) ?? true
-  if (!valid) return
-  const periodId = props.period?.id
-  if (periodId == null || !expectedIncassoDate.value) return
-  await preview.runPreview(async (userId) => {
-    const feeType = feeTypeSelections.value[userId] ?? "FULL_YEAR_FEE"
-    const resp = await previewIncassoNotification({
-      body: {
-        userId,
-        contributionPeriodId: periodId,
-        feeType,
-        expectedIncassoDate: expectedIncassoDate.value,
-      },
-    })
-    return resp.data ?? null
-  })
 }
 
-// Defence-in-depth guard mirroring the v-form rules, so an invalid submit never reaches
-// the API even though the confirm button stays clickable.
-const datesValid = computed(() => {
-  if (!expectedIncassoDate.value || !cutoffDate.value) return false
-  if (props.serverToday && expectedIncassoDate.value <= props.serverToday) return false
-  const p = boundsPeriod.value
-  if (p && (cutoffDate.value < p.startDate || cutoffDate.value > p.endDate)) return false
-  return true
+const action = useBulkEmailAction(expectedIncassoDate, props, actionConfig, scaffoldRef)
+
+const open = computed({
+  get: () => props.modelValue,
+  set: (v) => emit("update:modelValue", v),
 })
 
-function seedFeeSelections(newRows: BulkRow[]) {
-  const selections: Record<number, FeeType> = {}
-  for (const row of newRows) {
-    if (row.recommendedFeeType) selections[row.userId] = row.recommendedFeeType
-  }
-  feeTypeSelections.value = selections
-}
-
-async function onConfirm() {
-  if (!canConfirm.value || !datesValid.value || !props.period) return
-  const overrides: Record<string, FeeType> = {}
-  for (const userId of includedUserIds.value) {
-    const feeType = feeTypeSelections.value[userId]
-    if (feeType) overrides[String(userId)] = feeType
-  }
-  const ok = await submit(async () => {
-    const resp = await executeBulkIncassoNotification({
-      body: {
-        userIds: props.targets.map((t) => t.userId),
-        contributionPeriodId: props.period!.id,
-        includedUserIds: includedUserIds.value,
-        cutoffDate: cutoffDate.value,
-        expectedIncassoDate: expectedIncassoDate.value,
-        feeTypeOverrides: overrides,
-      },
-    })
-    return resp.data != null
-  })
-  setSubmitResult(ok)
+// Wrap onConfirm to emit done after success
+async function handleConfirm() {
+  const ok = await action.onConfirm()
   if (ok) {
     setTimeout(() => {
       emit("update:modelValue", false)
@@ -236,54 +95,40 @@ async function onConfirm() {
   }
 }
 
-// Initialize dates when dialog opens, compute rows reactively
-watch(
-  () => props.modelValue,
-  (isOpen) => {
-    if (isOpen) {
-      expectedIncassoDate.value = ""
-      cutoffDate.value = halfYearCutoffDefault(boundsPeriod.value)
-      seedFeeSelections(computedRows.value)
-      setRows(computedRows.value)
-    } else {
-      reset()
-      preview.reset()
-      feeTypeSelections.value = {}
-    }
-  },
-  {immediate: true},
-)
-
-// Recompute rows and re-seed fee selections whenever the cutoff (or targets) change.
-watch(computedRows, (newRows) => {
-  if (open.value) {
-    seedFeeSelections(newRows)
-    setRows(newRows)
-  }
+// Expose for testing
+defineExpose({
+  expectedIncassoDate,
+  feeTypeSelections: action.feeTypeSelections,
+  cutoffDate: action.cutoffDate,
+  incassoDateRules: action.dateRules,
+  cutoffRules: action.cutoffRules,
+  // Expose scaffoldRef so tests can assert the scaffold is wired and spy on validate()
+  scaffoldRef,
 })
 </script>
 
 <template>
   <bulk-dialog-scaffold
-    ref="scaffold"
+    :ref="onScaffoldRef"
     v-model="open"
-    v-model:reinclude-overrides="reincludeOverrides"
+    :reinclude-overrides="action.reincludeOverrides.value"
     :columns="columns"
     confirm-label="Send incasso notification"
-    :counts="counts"
-    :get-row-amount="rowAmount"
-    :help="help"
+    :counts="action.counts.value"
+    :get-row-amount="action.rowAmount"
+    :help="actionConfig.help"
     icon="mdi-bank-transfer"
     include-label="Forcibly include"
-    :included-count="includedUserIds.length"
+    :included-count="action.includedUserIds.value.length"
     info-box-label="Contribution period"
-    :rows="rows"
-    :show-submit-status="showSubmitStatus"
-    :submit-state="submitState"
-    :submitting="submitting"
+    :rows="action.rows.value"
+    :show-submit-status="action.showSubmitStatus.value"
+    :submit-state="action.submitState.value"
+    :submitting="action.submitting.value"
     title="Send incasso notification"
     @cancel="emit('update:modelValue', false)"
-    @confirm="onConfirm"
+    @confirm="handleConfirm"
+    @update:reinclude-overrides="(v) => (action.reincludeOverrides.value = v)"
   >
     <template #form>
       <div class="mb-4 d-flex bulk-date-row">
@@ -295,27 +140,25 @@ watch(computedRows, (newRows) => {
           label="Expected incasso date"
           placeholder="YYYY-MM-DD"
           prepend-inner-icon="mdi-calendar"
-          :rules="incassoDateRules"
+          :rules="action.dateRules.value"
           type="date"
         />
         <v-text-field
-          v-model="cutoffDate"
+          v-model="action.cutoffDate.value"
           data-testid="bulk-action-cutoff-date"
           density="comfortable"
           hide-details="auto"
           label="Half-year cutoff date"
           placeholder="YYYY-MM-DD"
           prepend-inner-icon="mdi-calendar-end"
-          :rules="cutoffRules"
+          :rules="action.cutoffRules.value"
           type="date"
         />
       </div>
     </template>
 
-    <!-- Contribution-period box: the bounds the cutoff must fall within + the fees,
-         rendered beside the Summary (counts) box in the scaffold's info row. -->
     <template
-      v-if="periodInfo"
+      v-if="action.periodInfo.value"
       #info-box
     >
       <div
@@ -328,10 +171,10 @@ watch(computedRows, (newRows) => {
           size="small"
           variant="tonal"
         >
-          {{ periodInfo.range }}
+          {{ action.periodInfo.value.range }}
         </v-chip>
         <v-chip
-          v-for="fee in periodInfo.fees"
+          v-for="fee in action.periodInfo.value.fees"
           :key="fee.label"
           :prepend-icon="fee.icon"
           size="small"
@@ -342,26 +185,24 @@ watch(computedRows, (newRows) => {
       </div>
     </template>
 
-    <!-- Preview trigger sits in the footer, next to the send button; the recipient
-         select lives inside the preview modal itself. -->
     <template #footer-actions>
       <email-preview-panel
-        v-model="preview.selectedUserId.value"
-        v-model:dialog-open="preview.dialogOpen.value"
-        :error="preview.error.value"
-        :html="preview.html.value"
-        :inputs-ready="previewInputsReady"
-        :loading="preview.loading.value"
-        :subject="preview.subject.value"
-        :users="previewUserOptions"
-        @preview="onPreview"
+        v-model="action.emailPreview.selectedUserId.value"
+        v-model:dialog-open="action.emailPreview.dialogOpen.value"
+        :error="action.emailPreview.error.value"
+        :html="action.emailPreview.html.value"
+        :inputs-ready="action.previewInputsReady.value"
+        :loading="action.emailPreview.loading.value"
+        :subject="action.emailPreview.subject.value"
+        :users="action.previewUserOptions.value"
+        @preview="action.onPreview"
       />
     </template>
 
     <template #cell.fee="{row}">
-      <template v-if="row.disposition === 'INCLUDED' || (row.disposition === 'WARNING' && reincludeOverrides[row.userId])">
+      <template v-if="action.isEditable(row)">
         <v-select
-          v-model="feeTypeSelections[row.userId]"
+          v-model="action.feeTypeSelections.value[row.userId]"
           class="bulk-feetype-select"
           :data-testid="`bulk-preview-feetype-${row.userId}`"
           density="compact"
@@ -380,10 +221,10 @@ watch(computedRows, (newRows) => {
 
     <template #cell.amount="{row}">
       <span
-        v-if="rowAmount(row) != null"
+        v-if="action.rowAmount(row) != null"
         :data-testid="`bulk-preview-amount-${row.userId}`"
         class="text-caption"
-      >€ {{ rowAmount(row) }}</span>
+      >€ {{ action.rowAmount(row) }}</span>
       <span
         v-else
         class="text-medium-emphasis"
@@ -395,23 +236,14 @@ watch(computedRows, (newRows) => {
 <style lang="scss" scoped>
 .bulk-date-row {
   gap: 12px;
-  // One left-to-right row: dates, then the preview recipient + button. Each cell sizes
-  // independently so a validation message under one field does not stretch/misalign the
-  // others (hide-details="auto" keeps the input boxes on an equal baseline). Wraps
-  // gracefully on narrow widths.
   align-items: flex-start;
   flex-wrap: wrap;
 
-  // The date fields flex; the preview select/button (which carry their own flex rules
-  // in EmailPreviewPanel's styles) keep their natural size.
   > .v-text-field {
     flex: 1 1 220px;
   }
 }
 
-// Cleaner fee-type selector: an outlined, compact select reads as an intentional field in
-// the table cell rather than the default underlined input. Constrain the width so it sits
-// tidily in the Fee-type column.
 .bulk-feetype-select {
   min-width: 150px;
   max-width: 190px;

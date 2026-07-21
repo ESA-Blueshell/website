@@ -92,11 +92,8 @@ vi.mock("@/components/common/modals/ManageMembershipDialog.vue", () => ({
 }))
 // The six per-action bulk dialogs are stubbed — this perf test only cares about the
 // member table/selection, not the dialog internals.
-vi.mock("@/components/common/modals/bulk/MarkPaidDialog.vue", () => ({
-  default: {name: "MarkPaidDialog", template: "<div />"},
-}))
-vi.mock("@/components/common/modals/bulk/MarkUnpaidDialog.vue", () => ({
-  default: {name: "MarkUnpaidDialog", template: "<div />"},
+vi.mock("@/components/common/modals/bulk/PaidStatusDialog.vue", () => ({
+  default: {name: "PaidStatusDialog", template: "<div />"},
 }))
 vi.mock("@/components/common/modals/bulk/EndMembershipDialog.vue", () => ({
   default: {name: "EndMembershipDialog", template: "<div />"},

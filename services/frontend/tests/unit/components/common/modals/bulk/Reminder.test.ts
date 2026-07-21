@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import ReminderDialog from "@/components/common/modals/bulk/ReminderDialog.vue"
+import type {BulkScaffoldInstance} from "@/composables/useBulkEmailAction"
 import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType, type ContributionPeriodResponse} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
@@ -487,6 +488,63 @@ describe("ReminderDialog", () => {
 
     await btn.trigger("click")
     await settle()
+    expect(mockPreviewReminder).not.toHaveBeenCalled()
+  })
+
+  it("regression: scaffold validate() is actually wired — overriding validate to return false blocks preview", async () => {
+    // This test guards against the BLOCKER regression where `ref="action.scaffold"` was a
+    // string ref that never populated the composable's scaffoldRef, causing validate() to
+    // always return `null` (undefined) and `!undefined` being truthy → early return (which
+    // silently blocks the preview; the old fallback `?? true` would have let it through).
+    // The correct fix: scaffoldRef uses useTemplateRef('scaffold') + ref="scaffold" in the
+    // template, so the mounted BulkDialogScaffold instance is automatically bound.
+    //
+    // Strategy: mount the dialog, wait for the scaffold to be bound to scaffoldRef, then
+    // spy on the live instance's validate() method to return false (simulating form-invalid).
+    // With valid dates and a non-empty included set, validate() being called AND returning
+    // false must result in the preview API NOT being called.
+    const wrapper = mountDialog([regularTarget(1)])
+    await settle()
+
+    // Provide valid dates so the datesValid/previewInputsReady guards do not block by themselves.
+    // defineExpose({scaffoldRef}) in Vue 3 auto-unwraps the ref when accessed via wrapper.vm,
+    // so vm.scaffoldRef is the unwrapped BulkScaffoldInstance (not the Ref wrapper).
+    const vm = wrapper.vm as unknown as {
+      paymentDueDate: string
+      cutoffDate: string
+      scaffoldRef: {validate: () => Promise<boolean>} | null
+    }
+    vm.paymentDueDate = "2025-09-01"
+    vm.cutoffDate = "2025-08-01"
+    await settle()
+
+    // The template ref must now be populated with the real BulkDialogScaffold instance.
+    // If null, the ref wiring is broken (regression).
+    // In Vue 3, when a ref is exposed via defineExpose(), it is auto-unwrapped when accessed
+    // through wrapper.vm. So vm.scaffoldRef gives the BulkScaffoldInstance directly (not the
+    // Ref wrapper), meaning we access vm.scaffoldRef (not vm.scaffoldRef.value).
+    const scaffoldInstance = vm.scaffoldRef as BulkScaffoldInstance | null
+    expect(scaffoldInstance).not.toBeNull()
+
+    // Spy on and override validate() on the live instance to simulate a form-invalid state.
+    // Mutating the instance method (not replacing the ref) survives re-renders.
+    const validateSpy = vi.fn().mockResolvedValue(false)
+    scaffoldInstance!.validate = validateSpy
+
+    // Attempt preview — with valid dates and an included user, the only thing that should
+    // block the API call is validate() returning false.
+    const previewBtn = wrapper.find('[data-testid="bulk-email-preview-btn"]')
+    await previewBtn.trigger("click")
+    await settle()
+
+    // validate() must have been called: proves the scaffoldRef is wired and the composable
+    // actually invokes it (not null-guarded away or bypassed via a broken ref binding).
+    expect(validateSpy).toHaveBeenCalled()
+    // The preview API must NOT have been called — invalid form blocked execution.
+    // In the old broken code (ref="action.scaffold"), scaffoldRef.value was always null,
+    // so `!undefined` → return early, which by coincidence also blocks the call.
+    // In the new fixed code (callback ref → scaffoldRef.value = component instance),
+    // validate() IS called with the real instance and its return value matters.
     expect(mockPreviewReminder).not.toHaveBeenCalled()
   })
 })

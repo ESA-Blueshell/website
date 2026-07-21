@@ -7,8 +7,7 @@ import ContributionPeriodList from "@/components/common/lists/ContributionPeriod
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
 import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
-import MarkPaidDialog from "@/components/common/modals/bulk/MarkPaidDialog.vue"
-import MarkUnpaidDialog from "@/components/common/modals/bulk/MarkUnpaidDialog.vue"
+import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
 import EndMembershipDialog from "@/components/common/modals/bulk/EndMembershipDialog.vue"
 import ResumeMembershipDialog from "@/components/common/modals/bulk/ResumeMembershipDialog.vue"
 import ReminderDialog from "@/components/common/modals/bulk/ReminderDialog.vue"
@@ -31,6 +30,7 @@ import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {computeBulkTargets, amsterdamToday, latestPeriodOf, type BulkTarget} from "@/utils/bulkTarget"
+import {isClickOnInteractiveTarget} from "@/utils/rowInteraction"
 
 export type {MemberRow}
 
@@ -134,6 +134,25 @@ const {
 
 // Vuetify v-data-table-virtual density="compact" → --v-table-row-height: 36px
 const ROW_HEIGHT = 36
+
+// Sortable header columns configuration
+interface HeaderColumn {
+  label: string
+  sortKey: SortKey | null
+  testid: string
+  width: string
+  thClass?: string
+}
+
+const HEADER_COLUMNS: HeaderColumn[] = [
+  {label: "Name", sortKey: "name", testid: "member-manager-header-name", width: "19%"},
+  {label: "Username", sortKey: "username", testid: "member-manager-header-username", width: "15%"},
+  {label: "Role", sortKey: "role", testid: "member-manager-header-role", width: "8%", thClass: "text-right"},
+  {label: "Membership status", sortKey: "status", testid: "member-manager-header-status", width: "10%", thClass: "mm-th-multiline"},
+  {label: "Member since", sortKey: "memberSince", testid: "member-manager-header-member-since", width: "10%"},
+  {label: "Member in period", sortKey: "wasMemberInPeriod", testid: "member-manager-header-period-member", width: "8%", thClass: "mm-th-multiline mm-th-period"},
+  {label: "Paid in period", sortKey: "paid", testid: "member-manager-header-paid", width: "8%", thClass: "mm-th-multiline mm-th-period"},
+]
 
 function ariaSort(key: SortKey) {
   if (sortKey.value !== key) return "none"
@@ -342,14 +361,6 @@ async function confirmDeleteUser() {
 // ── Selection mode row click handling ──────────────────────────────────────────
 
 /**
- * Check if a click target is on an interactive control.
- * Returns true if the click should be ignored (not passed to row selection).
- */
-function isClickOnInteractiveTarget(target: HTMLElement): boolean {
-  return !!target.closest('button, a, input, label, .v-selection-control, [role=button]')
-}
-
-/**
  * Handle row click for selection mode.
  * Only toggles selection if:
  * 1. Selection mode is active (at least one member selected)
@@ -484,136 +495,33 @@ function onRowClick(event: MouseEvent, rowId: number) {
                     />
                   </th>
 
-                  <!-- Sortable: Name -->
+                  <!-- Sortable headers (v-for) -->
                   <th
-                    class="sortable-header"
-                    style="width: 19%"
-                    data-testid="member-manager-header-name"
+                    v-for="col in HEADER_COLUMNS"
+                    :key="col.testid"
+                    :class="['sortable-header', col.thClass]"
+                    :style="`width: ${col.width}`"
+                    :data-testid="col.testid"
                     role="button"
                     tabindex="0"
-                    :aria-sort="ariaSort('name')"
-                    @click="toggleSort('name')"
-                    @keydown.enter="toggleSort('name')"
-                    @keydown.space.prevent="toggleSort('name')"
+                    :aria-sort="col.sortKey ? ariaSort(col.sortKey) : 'none'"
+                    @click="col.sortKey && toggleSort(col.sortKey)"
+                    @keydown.enter="col.sortKey && toggleSort(col.sortKey)"
+                    @keydown.space.prevent="col.sortKey && toggleSort(col.sortKey)"
                   >
-                    Name
+                    {{ col.label }}
                     <v-icon
-                      :icon="sortIcon('name')"
+                      v-if="col.sortKey"
+                      :icon="sortIcon(col.sortKey)"
                       size="16"
                     />
                   </th>
 
-                  <th
-                    class="sortable-header"
-                    style="width: 15%"
-                    data-testid="member-manager-header-username"
-                    role="button"
-                    tabindex="0"
-                    :aria-sort="ariaSort('username')"
-                    @click="toggleSort('username')"
-                    @keydown.enter="toggleSort('username')"
-                    @keydown.space.prevent="toggleSort('username')"
-                  >
-                    Username
-                    <v-icon
-                      :icon="sortIcon('username')"
-                      size="16"
-                    />
-                  </th>
-                  <th
-                    class="sortable-header text-right"
-                    style="width: 8%"
-                    data-testid="member-manager-header-role"
-                    role="button"
-                    tabindex="0"
-                    :aria-sort="ariaSort('role')"
-                    @click="toggleSort('role')"
-                    @keydown.enter="toggleSort('role')"
-                    @keydown.space.prevent="toggleSort('role')"
-                  >
-                    Role
-                    <v-icon
-                      :icon="sortIcon('role')"
-                      size="16"
-                    />
-                  </th>
-
-                  <!-- Sortable: Membership status -->
-                  <th
-                    class="sortable-header mm-th-multiline"
-                    style="width: 10%"
-                    data-testid="member-manager-header-status"
-                    role="button"
-                    tabindex="0"
-                    :aria-sort="ariaSort('status')"
-                    @click="toggleSort('status')"
-                    @keydown.enter="toggleSort('status')"
-                    @keydown.space.prevent="toggleSort('status')"
-                  >
-                    Membership status
-                    <v-icon
-                      :icon="sortIcon('status')"
-                      size="16"
-                    />
-                  </th>
-
-                  <!-- Sortable: Member since -->
-                  <th
-                    class="sortable-header"
-                    style="width: 10%"
-                    data-testid="member-manager-header-member-since"
-                    role="button"
-                    tabindex="0"
-                    :aria-sort="ariaSort('memberSince')"
-                    @click="toggleSort('memberSince')"
-                    @keydown.enter="toggleSort('memberSince')"
-                    @keydown.space.prevent="toggleSort('memberSince')"
-                  >
-                    Member since
-                    <v-icon
-                      :icon="sortIcon('memberSince')"
-                      size="16"
-                    />
-                  </th>
-
-                  <th
-                    class="sortable-header mm-th-multiline mm-th-period"
-                    style="width: 8%"
-                    data-testid="member-manager-header-period-member"
-                    role="button"
-                    tabindex="0"
-                    :aria-sort="ariaSort('wasMemberInPeriod')"
-                    @click="toggleSort('wasMemberInPeriod')"
-                    @keydown.enter="toggleSort('wasMemberInPeriod')"
-                    @keydown.space.prevent="toggleSort('wasMemberInPeriod')"
-                  >
-                    Member in period
-                    <v-icon
-                      :icon="sortIcon('wasMemberInPeriod')"
-                      size="16"
-                    />
-                  </th>
-
-                  <th
-                    class="sortable-header mm-th-multiline mm-th-period"
-                    style="width: 8%"
-                    data-testid="member-manager-header-paid"
-                    role="button"
-                    tabindex="0"
-                    :aria-sort="ariaSort('paid')"
-                    @click="toggleSort('paid')"
-                    @keydown.enter="toggleSort('paid')"
-                    @keydown.space.prevent="toggleSort('paid')"
-                  >
-                    Paid in period
-                    <v-icon
-                      :icon="sortIcon('paid')"
-                      size="16"
-                    />
-                  </th>
+                  <!-- Type / Incasso (non-sortable) -->
                   <th style="width: 7%">
                     Type / Incasso
                   </th>
+
                   <!-- Actions column: under table-layout: fixed this width is ENFORCED
                        (auto layout used to stretch it to fit content). Four 32px icon
                        buttons + gaps + cell padding need ~160px or they get clipped. -->
@@ -679,8 +587,6 @@ function onRowClick(event: MouseEvent, rowId: number) {
                 >
                   <user-manager-mobile-row
                     :row="row"
-                    :toggle-disabled="toggleDisabled"
-                    :is-saving="isSaving(row.id)"
                     @manage-membership="openManageMembership"
                     @edit-profile="openEditProfile"
                     @delete="onDeleteRow"
@@ -771,17 +677,10 @@ function onRowClick(event: MouseEvent, rowId: number) {
     />
 
     <!-- Bulk action dialogs — mounted only when their action is active AND open. -->
-    <mark-paid-dialog
-      v-if="bulkAction === 'markPaid' && bulkDialogOpen"
+    <paid-status-dialog
+      v-if="(bulkAction === 'markPaid' || bulkAction === 'markUnpaid') && bulkDialogOpen"
       v-model="bulkDialogOpen"
-      :targets="bulkTargets"
-      :contribution-period-id="selectedPeriod?.id ?? null"
-      @done="onBulkDone"
-    />
-
-    <mark-unpaid-dialog
-      v-if="bulkAction === 'markUnpaid' && bulkDialogOpen"
-      v-model="bulkDialogOpen"
+      :target-state="bulkAction === 'markPaid' ? 'paid' : 'unpaid'"
       :targets="bulkTargets"
       :contribution-period-id="selectedPeriod?.id ?? null"
       @done="onBulkDone"
@@ -836,10 +735,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
   }
 }
 
-// Select-all header cell: a normal table cell (not flex) so its bottom border stays
-// continuous with the label headers, bottom-aligned like them, and the checkbox
-// centered so the header and body checkbox columns line up. The checkbox's own
-// dense margins are removed so it sits on the header label line rather than above it.
+// Align checkbox center in cell; remove dense margins so it lines up with header label baseline.
 .mm-th-checkbox {
   vertical-align: bottom;
   text-align: center;

@@ -206,6 +206,15 @@ defineExpose({validate})
       />
     </template>
 
+    <!-- Footer passthrough: secondary action(s) next to the Cancel/confirm buttons
+         (e.g. the reminder/incasso dialogs' "Preview email" button). -->
+    <template
+      v-if="$slots['footer-actions']"
+      #actions-prepend
+    >
+      <slot name="footer-actions" />
+    </template>
+
     <!--
       Pinned top region: the help panel, the action form (dates/cutoff) with its validation
       messages, and the counts summary stay fixed at the top of the scrollable body so the

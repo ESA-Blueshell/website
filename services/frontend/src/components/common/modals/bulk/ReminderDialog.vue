@@ -334,19 +334,23 @@ watch(computedRows, (newRows) => {
           :rules="cutoffRules"
           type="date"
         />
-        <email-preview-panel
-          v-model="preview.selectedUserId.value"
-          v-model:dialog-open="preview.dialogOpen.value"
-          :error="preview.error.value"
-          :html="preview.html.value"
-          :inputs-ready="previewInputsReady"
-          :loading="preview.loading.value"
-          :subject="preview.subject.value"
-          :users="previewUserOptions"
-          @preview="onPreview"
-        />
       </div>
-      <v-divider class="mb-4" />
+    </template>
+
+    <!-- Preview trigger sits in the footer, next to the send button; the recipient
+         select lives inside the preview modal itself. -->
+    <template #footer-actions>
+      <email-preview-panel
+        v-model="preview.selectedUserId.value"
+        v-model:dialog-open="preview.dialogOpen.value"
+        :error="preview.error.value"
+        :html="preview.html.value"
+        :inputs-ready="previewInputsReady"
+        :loading="preview.loading.value"
+        :subject="preview.subject.value"
+        :users="previewUserOptions"
+        @preview="onPreview"
+      />
     </template>
 
     <template #cell.fee="{row}">

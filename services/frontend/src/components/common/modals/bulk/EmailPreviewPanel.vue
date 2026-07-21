@@ -66,23 +66,10 @@ const previewDisabled = computed(() => props.loading || props.users.length === 0
 
 <template>
   <!--
-    Inline controls: rendered as plain flex children so the parent dialog places them on
-    the SAME row as its date inputs (no box, no section label; a divider below the row
-    separates it from the counts).
+    Footer trigger: rendered in the parent dialog's actions row, next to the confirm
+    (send) button. Always clickable while idle — clicking with invalid inputs shows the
+    normal inline validation via the parent's validate-on-click wiring.
   -->
-  <v-select
-    v-model="selectedUser"
-    class="bulk-email-preview__user"
-    data-testid="bulk-email-preview-user-select"
-    density="comfortable"
-    :disabled="users.length === 0"
-    hide-details
-    item-title="title"
-    item-value="value"
-    :items="users"
-    label="Preview recipient"
-    prepend-inner-icon="mdi-account"
-  />
   <v-btn
     class="bulk-email-preview__btn"
     data-testid="bulk-email-preview-btn"
@@ -114,6 +101,21 @@ const previewDisabled = computed(() => props.loading || props.users.length === 0
         />
       </v-card-title>
       <v-card-text>
+        <!-- Recipient lives inside the preview modal; changing it re-renders the email. -->
+        <v-select
+          v-model="selectedUser"
+          class="bulk-email-preview__user mb-3"
+          data-testid="bulk-email-preview-user-select"
+          density="comfortable"
+          :disabled="users.length === 0 || loading"
+          hide-details
+          item-title="title"
+          item-value="value"
+          :items="users"
+          label="Preview recipient"
+          prepend-inner-icon="mdi-account"
+          @update:model-value="emit('preview')"
+        />
         <v-alert
           v-if="error"
           data-testid="bulk-email-preview-error"
@@ -163,17 +165,9 @@ const previewDisabled = computed(() => props.loading || props.users.length === 0
 <style lang="scss" scoped>
 // Inline controls (rendered inside the parent dialog's date row): the recipient select
 // stays compact so the dates keep room; the button centres on the shared row axis.
+// Recipient select inside the preview modal: compact, not full-width.
 .bulk-email-preview__user {
-  flex: 0 1 260px;
-  min-width: 200px;
-}
-
-.bulk-email-preview__btn {
-  // Sit on the input-box axis (the row is top-aligned so validation messages under one
-  // field don't shift the others; a small offset centres the button on the input line).
-  align-self: flex-start;
-  margin-top: 6px;
-  flex: 0 0 auto;
+  max-width: 320px;
 }
 
 // Borderless dark frame: matches the email's own canvas so the preview dialog reads as

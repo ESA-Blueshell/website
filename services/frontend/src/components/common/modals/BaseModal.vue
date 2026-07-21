@@ -145,12 +145,6 @@ const useSaveAsSubmitButton = computed(
           Use this when you need a completely custom set of action buttons.
         -->
         <slot name="actions">
-          <!--
-            #actions-prepend slot — secondary action(s) rendered before Cancel/Save
-            (e.g. a "Preview email" button next to the primary send action).
-          -->
-          <slot name="actions-prepend" />
-
           <v-btn
             v-if="showCancel"
             :data-testid="cancelTestid"
@@ -158,6 +152,12 @@ const useSaveAsSubmitButton = computed(
           >
             {{ cancelLabel }}
           </v-btn>
+
+          <!--
+            #actions-prepend slot — secondary action(s) rendered between Cancel and the
+            primary Save action (e.g. a "Preview email" button next to Send).
+          -->
+          <slot name="actions-prepend" />
 
           <!--
             #save slot — override just the primary save button.

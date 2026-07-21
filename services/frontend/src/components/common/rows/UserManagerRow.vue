@@ -6,7 +6,10 @@
     @click="onRowClick"
   >
     <!-- Row checkbox -->
-    <td style="padding-right: 0; width: 48px">
+    <td
+      class="mm-td-checkbox"
+      style="width: 48px"
+    >
       <v-checkbox
         :model-value="selected"
         color="primary"
@@ -250,6 +253,19 @@ function onRowClick(event: MouseEvent) {
 </script>
 
 <style lang="scss" scoped>
+// Centre the row checkbox in its 48px cell exactly like the header's select-all
+// (.mm-th-checkbox centres its control), so the header and every row's checkbox share
+// the same horizontal position instead of the control left-anchoring against the
+// cell's default padding.
+.mm-td-checkbox {
+  padding-right: 0;
+  text-align: center;
+
+  :deep(.v-selection-control) {
+    justify-content: center;
+  }
+}
+
 // Selected row highlight (mirrors parent's .mm-row--selected)
 .mm-row--selected > td {
   background: rgba(var(--v-theme-primary), 0.07) !important;

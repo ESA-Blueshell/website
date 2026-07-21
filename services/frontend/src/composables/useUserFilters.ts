@@ -1,4 +1,4 @@
-import {computed, onBeforeUnmount, ref, watch, type Ref} from "vue"
+import {computed, ref, type Ref} from "vue"
 import {type MemberRow, type MemberStatus} from "@/composables/useUserRows"
 import {useTableSort} from "@/composables/useTableSort"
 
@@ -16,10 +16,10 @@ export function useUserFilters(
   rows: Ref<MemberRow[]>,
   userSearchIndex: Ref<Map<number, string>>,
 ) {
-  // searchInput is bound to the v-text-field (instant typing feedback).
-  // search is the debounced value that filteredRows depends on — unit tests set it directly.
-  const searchInput = ref("")
+  // searchInput and search are now the same ref (debounce removed; filtering is O(visible) after windowing).
+  // The template binds v-model="searchInput", unit tests set search directly — both work because they are the same object.
   const search = ref("")
+  const searchInput = search
 
   // Membership status filter: all | current | former | never
   const membershipStatusFilter = ref<MembershipStatusFilter>("all")
@@ -27,28 +27,6 @@ export function useUserFilters(
   const paidFilter = ref<FilterState>("all")
   const incassoFilter = ref<FilterState>("all")
   const periodMemberFilter = ref<FilterState>("all")
-
-  // Debounce search: copies searchInput → search after 200ms idle
-  let searchDebounceHandle: ReturnType<typeof setTimeout> | undefined
-
-  const clearSearchDebounce = () => {
-    if (searchDebounceHandle) {
-      clearTimeout(searchDebounceHandle)
-      searchDebounceHandle = undefined
-    }
-  }
-
-  watch(searchInput, () => {
-    clearSearchDebounce()
-    searchDebounceHandle = setTimeout(() => {
-      searchDebounceHandle = undefined
-      search.value = searchInput.value
-    }, 200)
-  })
-
-  onBeforeUnmount(() => {
-    clearSearchDebounce()
-  })
 
   // Compute filtered rows (before sorting)
   const justFiltered = computed<MemberRow[]>(() => {
@@ -146,6 +124,5 @@ export function useUserFilters(
     filteredRows,
     toggleSort,
     sortIcon,
-    clearSearchDebounce,
   }
 }

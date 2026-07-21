@@ -253,6 +253,12 @@ function onRowClick(event: MouseEvent) {
 </script>
 
 <style lang="scss" scoped>
+// Fixed height matching density="compact" --v-table-row-height (36px) for clean virtualization.
+// The parent v-data-table-virtual uses :item-height="36" to match.
+tr {
+  height: 36px;
+}
+
 // Centre the row checkbox in its 48px cell exactly like the header's select-all
 // (.mm-th-checkbox centres its control), so the header and every row's checkbox share
 // the same horizontal position instead of the control left-anchoring against the

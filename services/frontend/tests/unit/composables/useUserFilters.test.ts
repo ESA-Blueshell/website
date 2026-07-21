@@ -1,15 +1,7 @@
-import {describe, expect, it, vi} from "vitest"
+import {describe, expect, it} from "vitest"
 import {ref} from "vue"
 import {useUserFilters} from "@/composables/useUserFilters"
 import {type MemberRow, type MemberStatus} from "@/composables/useUserRows"
-
-vi.mock("vue", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vue")>()
-  return {
-    ...(actual as Record<string, unknown>),
-    onBeforeUnmount: vi.fn(),
-  }
-})
 
 function makeRow(id: number, overrides: Partial<MemberRow> = {}): MemberRow {
   return {

@@ -130,6 +130,9 @@ const {
   clear: clearSelection,
 } = useUserSelection(displayedIds)
 
+// Vuetify v-data-table-virtual density="compact" → --v-table-row-height: 36px
+const ROW_HEIGHT = 36
+
 function ariaSort(key: SortKey) {
   if (sortKey.value !== key) return "none"
   return sortAsc.value ? "ascending" : "descending"
@@ -440,201 +443,200 @@ function onRowClick(event: MouseEvent, rowId: number) {
               </v-btn>
             </div>
 
-            <!-- Desktop table (lg and up) -->
-            <div
+            <!-- Desktop table (lg and up) — v-data-table-virtual for row virtualization -->
+            <v-data-table-virtual
               v-if="lgAndUp"
-              style="overflow-x: auto"
+              :items="filteredRows"
+              :item-height="ROW_HEIGHT"
+              :height="600"
+              density="compact"
+              fixed-header
+              :disable-sort="true"
+              class="member-manager-vtable"
             >
-              <v-table
-                density="comfortable"
-                class="member-manager-vtable"
-              >
-                <thead>
-                  <tr>
-                    <!-- Select-all header checkbox -->
-                    <th
-                      class="mm-th-checkbox"
-                      style="width: 48px; padding-right: 0"
-                    >
-                      <v-checkbox
-                        :indeterminate="headerIndeterminate"
-                        :model-value="headerChecked"
-                        color="primary"
-                        data-testid="member-manager-header-checkbox"
-                        density="compact"
-                        hide-details
-                        @update:model-value="toggleHeader"
-                      />
-                    </th>
+              <!-- Fully-custom header row: sortable ths, select-all checkbox, bulk-actions menu. -->
+              <template #headers>
+                <tr>
+                  <!-- Select-all header checkbox -->
+                  <th
+                    class="mm-th-checkbox"
+                    style="width: 48px; padding-right: 0"
+                  >
+                    <v-checkbox
+                      :indeterminate="headerIndeterminate"
+                      :model-value="headerChecked"
+                      color="primary"
+                      data-testid="member-manager-header-checkbox"
+                      density="compact"
+                      hide-details
+                      @update:model-value="toggleHeader"
+                    />
+                  </th>
 
-                    <!-- Sortable: Name -->
-                    <th
-                      class="sortable-header"
-                      data-testid="member-manager-header-name"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('name')"
-                      @click="toggleSort('name')"
-                      @keydown.enter="toggleSort('name')"
-                      @keydown.space.prevent="toggleSort('name')"
-                    >
-                      Name
-                      <v-icon
-                        :icon="sortIcon('name')"
-                        size="16"
-                      />
-                    </th>
+                  <!-- Sortable: Name -->
+                  <th
+                    class="sortable-header"
+                    data-testid="member-manager-header-name"
+                    role="button"
+                    tabindex="0"
+                    :aria-sort="ariaSort('name')"
+                    @click="toggleSort('name')"
+                    @keydown.enter="toggleSort('name')"
+                    @keydown.space.prevent="toggleSort('name')"
+                  >
+                    Name
+                    <v-icon
+                      :icon="sortIcon('name')"
+                      size="16"
+                    />
+                  </th>
 
-                    <th
-                      class="sortable-header"
-                      data-testid="member-manager-header-username"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('username')"
-                      @click="toggleSort('username')"
-                      @keydown.enter="toggleSort('username')"
-                      @keydown.space.prevent="toggleSort('username')"
-                    >
-                      Username
-                      <v-icon
-                        :icon="sortIcon('username')"
-                        size="16"
-                      />
-                    </th>
-                    <th
-                      class="sortable-header text-right"
-                      data-testid="member-manager-header-role"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('role')"
-                      @click="toggleSort('role')"
-                      @keydown.enter="toggleSort('role')"
-                      @keydown.space.prevent="toggleSort('role')"
-                    >
-                      Role
-                      <v-icon
-                        :icon="sortIcon('role')"
-                        size="16"
-                      />
-                    </th>
+                  <th
+                    class="sortable-header"
+                    data-testid="member-manager-header-username"
+                    role="button"
+                    tabindex="0"
+                    :aria-sort="ariaSort('username')"
+                    @click="toggleSort('username')"
+                    @keydown.enter="toggleSort('username')"
+                    @keydown.space.prevent="toggleSort('username')"
+                  >
+                    Username
+                    <v-icon
+                      :icon="sortIcon('username')"
+                      size="16"
+                    />
+                  </th>
+                  <th
+                    class="sortable-header text-right"
+                    data-testid="member-manager-header-role"
+                    role="button"
+                    tabindex="0"
+                    :aria-sort="ariaSort('role')"
+                    @click="toggleSort('role')"
+                    @keydown.enter="toggleSort('role')"
+                    @keydown.space.prevent="toggleSort('role')"
+                  >
+                    Role
+                    <v-icon
+                      :icon="sortIcon('role')"
+                      size="16"
+                    />
+                  </th>
 
-                    <!-- Sortable: Membership status -->
-                    <th
-                      class="sortable-header mm-th-multiline"
-                      data-testid="member-manager-header-status"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('status')"
-                      @click="toggleSort('status')"
-                      @keydown.enter="toggleSort('status')"
-                      @keydown.space.prevent="toggleSort('status')"
-                    >
-                      Membership status
-                      <v-icon
-                        :icon="sortIcon('status')"
-                        size="16"
-                      />
-                    </th>
+                  <!-- Sortable: Membership status -->
+                  <th
+                    class="sortable-header mm-th-multiline"
+                    data-testid="member-manager-header-status"
+                    role="button"
+                    tabindex="0"
+                    :aria-sort="ariaSort('status')"
+                    @click="toggleSort('status')"
+                    @keydown.enter="toggleSort('status')"
+                    @keydown.space.prevent="toggleSort('status')"
+                  >
+                    Membership status
+                    <v-icon
+                      :icon="sortIcon('status')"
+                      size="16"
+                    />
+                  </th>
 
-                    <!-- Sortable: Member since -->
-                    <th
-                      class="sortable-header"
-                      data-testid="member-manager-header-member-since"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('memberSince')"
-                      @click="toggleSort('memberSince')"
-                      @keydown.enter="toggleSort('memberSince')"
-                      @keydown.space.prevent="toggleSort('memberSince')"
-                    >
-                      Member since
-                      <v-icon
-                        :icon="sortIcon('memberSince')"
-                        size="16"
-                      />
-                    </th>
+                  <!-- Sortable: Member since -->
+                  <th
+                    class="sortable-header"
+                    data-testid="member-manager-header-member-since"
+                    role="button"
+                    tabindex="0"
+                    :aria-sort="ariaSort('memberSince')"
+                    @click="toggleSort('memberSince')"
+                    @keydown.enter="toggleSort('memberSince')"
+                    @keydown.space.prevent="toggleSort('memberSince')"
+                  >
+                    Member since
+                    <v-icon
+                      :icon="sortIcon('memberSince')"
+                      size="16"
+                    />
+                  </th>
 
-                    <th
-                      class="sortable-header mm-th-multiline mm-th-period"
-                      data-testid="member-manager-header-period-member"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('wasMemberInPeriod')"
-                      @click="toggleSort('wasMemberInPeriod')"
-                      @keydown.enter="toggleSort('wasMemberInPeriod')"
-                      @keydown.space.prevent="toggleSort('wasMemberInPeriod')"
-                    >
-                      Member in period
-                      <v-icon
-                        :icon="sortIcon('wasMemberInPeriod')"
-                        size="16"
-                      />
-                    </th>
+                  <th
+                    class="sortable-header mm-th-multiline mm-th-period"
+                    data-testid="member-manager-header-period-member"
+                    role="button"
+                    tabindex="0"
+                    :aria-sort="ariaSort('wasMemberInPeriod')"
+                    @click="toggleSort('wasMemberInPeriod')"
+                    @keydown.enter="toggleSort('wasMemberInPeriod')"
+                    @keydown.space.prevent="toggleSort('wasMemberInPeriod')"
+                  >
+                    Member in period
+                    <v-icon
+                      :icon="sortIcon('wasMemberInPeriod')"
+                      size="16"
+                    />
+                  </th>
 
-                    <th
-                      class="sortable-header mm-th-multiline mm-th-period"
-                      data-testid="member-manager-header-paid"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('paid')"
-                      @click="toggleSort('paid')"
-                      @keydown.enter="toggleSort('paid')"
-                      @keydown.space.prevent="toggleSort('paid')"
-                    >
-                      Paid in period
-                      <v-icon
-                        :icon="sortIcon('paid')"
-                        size="16"
-                      />
-                    </th>
-                    <th>Type / Incasso</th>
-                    <th
-                      class="text-right"
-                      style="width: 64px"
-                    >
-                      <!-- Bulk actions triple-dot menu, right side of the header row. -->
-                      <bulk-actions-menu
-                        :disabled="!hasSelection"
-                        :no-period="noPeriodSelected"
-                        @mark-paid="openBulkAction('markPaid')"
-                        @mark-unpaid="openBulkAction('markUnpaid')"
-                        @send-reminder="openBulkAction('sendReminder')"
-                        @send-incasso="openBulkAction('sendIncasso')"
-                        @end-membership="openBulkAction('endMembership')"
-                        @resume-membership="openBulkAction('resumeMembership')"
-                      />
-                    </th>
-                  </tr>
-                </thead>
+                  <th
+                    class="sortable-header mm-th-multiline mm-th-period"
+                    data-testid="member-manager-header-paid"
+                    role="button"
+                    tabindex="0"
+                    :aria-sort="ariaSort('paid')"
+                    @click="toggleSort('paid')"
+                    @keydown.enter="toggleSort('paid')"
+                    @keydown.space.prevent="toggleSort('paid')"
+                  >
+                    Paid in period
+                    <v-icon
+                      :icon="sortIcon('paid')"
+                      size="16"
+                    />
+                  </th>
+                  <th>Type / Incasso</th>
+                  <th
+                    class="text-right"
+                    style="width: 64px"
+                  >
+                    <!-- Bulk actions triple-dot menu, right side of the header row. -->
+                    <bulk-actions-menu
+                      :disabled="!hasSelection"
+                      :no-period="noPeriodSelected"
+                      @mark-paid="openBulkAction('markPaid')"
+                      @mark-unpaid="openBulkAction('markUnpaid')"
+                      @send-reminder="openBulkAction('sendReminder')"
+                      @send-incasso="openBulkAction('sendIncasso')"
+                      @end-membership="openBulkAction('endMembership')"
+                      @resume-membership="openBulkAction('resumeMembership')"
+                    />
+                  </th>
+                </tr>
+              </template>
 
-                <tbody>
-                  <user-manager-row
-                    v-for="row in filteredRows"
-                    :key="row.id"
-                    :row="row"
-                    :selected="isSelected(row.id)"
-                    :selection-active="hasSelection"
-                    :toggle-disabled="toggleDisabled"
-                    :is-saving="isSaving(row.id)"
-                    @toggle-selection="toggleSelection"
-                    @row-click="onRowClick"
-                    @toggle-paid="togglePaid"
-                    @manage-membership="openManageMembership"
-                    @edit-profile="openEditProfile"
-                    @delete="(row) => openDeleteUser(users.find((u) => u.id === row.id)!)"
-                  />
+              <!-- Virtual item row slot — renders existing UserManagerRow unchanged. -->
+              <template #item="{item, index}">
+                <user-manager-row
+                  :key="(item as MemberRow).id"
+                  :class="['mm-data-row', index % 2 === 0 ? 'mm-row--odd' : '']"
+                  :row="item as MemberRow"
+                  :selected="isSelected((item as MemberRow).id)"
+                  :selection-active="hasSelection"
+                  :toggle-disabled="toggleDisabled"
+                  :is-saving="isSaving((item as MemberRow).id)"
+                  @toggle-selection="toggleSelection"
+                  @row-click="onRowClick"
+                  @toggle-paid="togglePaid"
+                  @manage-membership="openManageMembership"
+                  @edit-profile="openEditProfile"
+                  @delete="(row) => openDeleteUser(users.find((u) => u.id === row.id)!)"
+                />
+              </template>
 
-                  <tr v-if="filteredRows.length === 0">
-                    <td
-                      colspan="10"
-                      class="text-center text-medium-emphasis py-6"
-                    >
-                      No users found.
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </div>
+              <!-- Empty state -->
+              <template #no-data>
+                <span class="text-medium-emphasis">No users found.</span>
+              </template>
+            </v-data-table-virtual>
 
             <!-- Mobile list (below lg) — list idiom matching Address/Recovery/Contribution managers -->
             <div
@@ -840,17 +842,23 @@ function onRowClick(event: MouseEvent, rowId: number) {
   max-width: 4.5rem;
 }
 
+// v-data-table-virtual uses fixed-header which handles sticky thead via its own
+// .v-table--fixed-header CSS. The surface background on th ensures header stays
+// opaque even when rows scroll underneath it.
 .member-manager-vtable {
-  thead th {
-    position: sticky;
-    top: 0;
+  :deep(thead th) {
     background: rgb(var(--v-theme-surface));
-    z-index: 2;
   }
 }
 
-tbody tr:nth-child(odd) {
+// Explicit class-based striping — index-based so recycled virtual rows keep correct parity.
+tbody tr.mm-row--odd {
   background: rgba(0, 0, 0, 0.02);
+}
+
+// Fixed height matches density="compact" --v-table-row-height: 36px.
+tbody tr.mm-data-row {
+  height: 36px;
 }
 
 // Selected row highlight

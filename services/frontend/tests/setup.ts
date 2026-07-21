@@ -17,6 +17,34 @@ config.global.stubs = {
   },
 }
 
+// The unit suite runs WITHOUT the Vuetify plugin: v-* tags render as unknown
+// elements whose children pass through, which is enough for most components.
+// VDataTableVirtual is the exception — its content lives in named slots
+// (#headers / #item / #no-data) that an unknown element never invokes, so
+// full-mount tests would see zero rows. Register a slot-rendering stand-in
+// that renders ALL items (unit tests assert behavior, not virtualization;
+// virtualization itself is covered by VirtualizedFilterPerf.test.ts).
+config.global.components = {
+  VDataTableVirtual: {
+    props: {
+      items: {type: Array, default: () => []},
+    },
+    template: `
+      <div class="v-data-table-virtual-stub">
+        <table>
+          <thead><slot name="headers" /></thead>
+          <tbody>
+            <template v-for="(item, index) in items" :key="index">
+              <slot name="item" :item="item" :index="index" />
+            </template>
+            <tr v-if="items.length === 0"><td><slot name="no-data" /></td></tr>
+          </tbody>
+        </table>
+      </div>
+    `,
+  },
+}
+
 config.global.mocks = {
   $vuetify: {
     display: {

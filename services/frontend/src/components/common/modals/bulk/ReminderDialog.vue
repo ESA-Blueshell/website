@@ -267,23 +267,8 @@ defineExpose({
 </template>
 
 <style lang="scss" scoped>
-.bulk-date-row {
-  gap: 12px;
-  align-items: flex-start;
-  flex-wrap: wrap;
-
-  > .v-text-field {
-    flex: 1 1 220px;
-  }
-}
-
 .bulk-struck {
   text-decoration: line-through;
   color: rgba(var(--v-theme-on-surface), 0.5);
-}
-
-.bulk-feetype-select {
-  min-width: 150px;
-  max-width: 190px;
 }
 </style>

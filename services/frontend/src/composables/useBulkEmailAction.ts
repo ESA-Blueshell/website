@@ -299,10 +299,17 @@ export function useBulkEmailAction(
   // Build the API request body and submit; handles fee-type overrides for included users
   async function onConfirm() {
     if (!canConfirm.value || !datesValid.value || !props.period) return
-    const overrides: Record<string, FeeType> = {}
+    // Collect number-keyed overrides internally, then convert to string keys for the API
+    // (generated API types declare string keys as the JSON-boundary type).
+    const numberKeyedOverrides: Record<number, FeeType> = {}
     for (const userId of bulkPreview.includedUserIds.value) {
       const feeType = feeTypeSelections.value[userId]
-      if (feeType) overrides[String(userId)] = feeType
+      if (feeType) numberKeyedOverrides[userId] = feeType
+    }
+    // Convert number keys to string keys for the API request
+    const overrides: Record<string, FeeType> = {}
+    for (const [userIdStr, feeType] of Object.entries(numberKeyedOverrides)) {
+      overrides[userIdStr] = feeType
     }
     const body = {
       userIds: props.targets.map((t) => t.userId),

@@ -58,6 +58,10 @@ const REASON_LABELS: Record<BulkRowReason, string> = {
   WILL_RESUME: "Will resume",
   WILL_START_NEW: "Will start new",
   PAYS_VIA_INCASSO: "Pays via incasso",
+  CANNOT_END_COMMITTEE: "It is not possible to end the membership of a committee member",
+  CANNOT_END_BOARD: "It is not possible to end the membership of a board member",
+  CANNOT_END_ADMIN: "It is not possible to end the membership of an administrator",
+  CANNOT_END_HONORARY: "It is not possible to end the membership of an honorary member",
 }
 
 export function reasonLabel(reason: BulkRowReason | undefined | null): string {

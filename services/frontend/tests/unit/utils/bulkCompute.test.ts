@@ -36,6 +36,7 @@ function bulkTarget(
       paid: false,
     },
     isHonorary: false,
+    highestRole: null,
     ...overrides,
   }
 }
@@ -84,6 +85,7 @@ describe("computeMarkPaidRows", () => {
     const targets = [
       bulkTarget(1, {
         isHonorary: true,
+        highestRole: null,
         mostRecentMembership: {
           type: MemberType.HONORARY,
           startDate: "2023-01-01",
@@ -441,6 +443,59 @@ describe("computeEndMembershipRows", () => {
       memberType: MemberType.ALUMNI,
       memberSince: "2023-06-15",
     })
+  })
+
+  it("EXCLUDES committee members (membership cannot be ended)", () => {
+    const targets = [bulkTarget(1, {highestRole: "COMMITTEE"})]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({
+      disposition: "EXCLUDED",
+      reason: "CANNOT_END_COMMITTEE",
+    })
+  })
+
+  it("EXCLUDES board members and treasurers with the board reason", () => {
+    const targets = [
+      bulkTarget(1, {highestRole: "BOARD"}),
+      bulkTarget(2, {highestRole: "TREASURER"}),
+    ]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({disposition: "EXCLUDED", reason: "CANNOT_END_BOARD"})
+    expect(rows[1]).toMatchObject({disposition: "EXCLUDED", reason: "CANNOT_END_BOARD"})
+  })
+
+  it("EXCLUDES administrators with the administrator reason", () => {
+    const targets = [bulkTarget(1, {highestRole: "ADMIN"})]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({
+      disposition: "EXCLUDED",
+      reason: "CANNOT_END_ADMIN",
+    })
+  })
+
+  it("EXCLUDES honorary members with an active membership", () => {
+    const targets = [
+      bulkTarget(1, {
+        isHonorary: true,
+        mostRecentMembership: {
+          type: MemberType.HONORARY,
+          startDate: "2020-01-01",
+          endDate: null,
+          incasso: false,
+        },
+      }),
+    ]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({
+      disposition: "EXCLUDED",
+      reason: "CANNOT_END_HONORARY",
+    })
+  })
+
+  it("still INCLUDES a plain member with an active membership", () => {
+    const targets = [bulkTarget(1, {highestRole: null})]
+    const rows = computeEndMembershipRows(targets, "2025-07-01")
+    expect(rows[0]).toMatchObject({disposition: "INCLUDED"})
   })
 })
 

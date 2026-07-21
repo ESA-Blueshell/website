@@ -39,6 +39,7 @@ function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
       paid: false,
     },
     isHonorary: false,
+    highestRole: null,
     ...overrides,
   }
 }
@@ -82,6 +83,7 @@ function noIncassoTarget(userId: number): BulkTarget {
 function honoraryTarget(userId: number): BulkTarget {
   return target(userId, {
     isHonorary: true,
+    highestRole: null,
     mostRecentMembership: {
       type: MemberType.HONORARY,
       startDate: "2024-01-01",

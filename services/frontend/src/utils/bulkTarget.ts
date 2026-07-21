@@ -22,6 +22,22 @@ export interface BulkTarget {
     paid: boolean
   }
   isHonorary: boolean
+  /**
+   * The user's highest above-member role (ADMIN > TREASURER > BOARD > COMMITTEE),
+   * or null for plain members/guests. Used by end-membership to refuse ending the
+   * membership of committee/board members and administrators.
+   */
+  highestRole: "ADMIN" | "TREASURER" | "BOARD" | "COMMITTEE" | null
+}
+
+/** Above-member roles by descending precedence (treasurer is a board function). */
+const ROLE_PRECEDENCE = ["ADMIN", "TREASURER", "BOARD", "COMMITTEE"] as const
+
+/** Pick the highest above-member role from a raw roles list (order-independent). */
+export function highestRoleOf(roles: readonly string[] | null | undefined): BulkTarget["highestRole"] {
+  if (!roles || roles.length === 0) return null
+  const owned = new Set(roles.map((r) => r.toUpperCase()))
+  return ROLE_PRECEDENCE.find((r) => owned.has(r)) ?? null
 }
 
 /**
@@ -105,7 +121,7 @@ export function computeBulkTargets(
   paidUserIds: Set<number>,
   usersById: Map<
     number,
-    {fullName?: string | null; email?: string | null; [key: string]: unknown}
+    {fullName?: string | null; email?: string | null; roles?: readonly string[] | null; [key: string]: unknown}
   >,
 ): BulkTarget[] {
   return selectedIds.map((userId) => {
@@ -129,6 +145,7 @@ export function computeBulkTargets(
         paid: paidUserIds.has(userId),
       },
       isHonorary: latest?.memberType === MemberType.HONORARY,
+      highestRole: highestRoleOf(user?.roles),
     }
   })
 }

@@ -175,7 +175,9 @@ export function computeIncassoRows(
 }
 
 /**
- * End membership: no active membership or endDate != null → SKIPPED(NO_ACTIVE_MEMBERSHIP); else INCLUDED.
+ * End membership: roles above Member (committee/board/admin) and honorary members
+ * cannot have their membership ended → EXCLUDED with a specific reason; no active
+ * membership or endDate != null → SKIPPED(NO_ACTIVE_MEMBERSHIP); else INCLUDED.
  */
 export function computeEndMembershipRows(targets: BulkTarget[], _today: string): BulkRow[] {
   return targets.map((target) => {
@@ -192,7 +194,22 @@ export function computeEndMembershipRows(targets: BulkTarget[], _today: string):
       row.memberSince = target.mostRecentMembership.startDate
     }
 
-    if (!target.mostRecentMembership || target.mostRecentMembership.endDate !== null) {
+    // Users with a role above Member keep their membership: it cannot be ended
+    // while they are an administrator, a board member (incl. treasurer) or a
+    // committee member. Honorary members are equally protected.
+    if (target.highestRole === "ADMIN") {
+      row.disposition = "EXCLUDED"
+      row.reason = "CANNOT_END_ADMIN"
+    } else if (target.highestRole === "BOARD" || target.highestRole === "TREASURER") {
+      row.disposition = "EXCLUDED"
+      row.reason = "CANNOT_END_BOARD"
+    } else if (target.highestRole === "COMMITTEE") {
+      row.disposition = "EXCLUDED"
+      row.reason = "CANNOT_END_COMMITTEE"
+    } else if (target.isHonorary && target.mostRecentMembership?.endDate === null) {
+      row.disposition = "EXCLUDED"
+      row.reason = "CANNOT_END_HONORARY"
+    } else if (!target.mostRecentMembership || target.mostRecentMembership.endDate !== null) {
       row.disposition = "SKIPPED"
       row.reason = "NO_ACTIVE_MEMBERSHIP"
     } else {

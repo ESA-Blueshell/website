@@ -29,6 +29,7 @@ function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
       paid: false,
     },
     isHonorary: false,
+    highestRole: null,
     ...overrides,
   }
 }

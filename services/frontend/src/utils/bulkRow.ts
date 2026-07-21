@@ -27,6 +27,10 @@ export type BulkRowReason =
   | "NO_CONTRIBUTION_PERIOD"
   | "STARTED_TODAY"
   | "PAYS_VIA_INCASSO"
+  | "CANNOT_END_COMMITTEE"
+  | "CANNOT_END_BOARD"
+  | "CANNOT_END_ADMIN"
+  | "CANNOT_END_HONORARY"
 
 /** Fee type for contribution-reminder / incasso-notification bulk actions. */
 export type FeeType = "FULL_YEAR_FEE" | "HALF_YEAR_FEE" | "ALUMNI_FEE"

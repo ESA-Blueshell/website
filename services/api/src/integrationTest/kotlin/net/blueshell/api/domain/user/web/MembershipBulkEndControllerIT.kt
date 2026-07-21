@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.user.web
 
 import net.blueshell.api.domain.user.persistence.repository.MemberRepository
+import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -44,6 +45,36 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
 
             val ended = memberRepository.findById(membership.id!!).orElseThrow()
             assertThat(ended.endDate).isEqualTo(LocalDate.now())
+        }
+
+        @Test
+        fun `protected users keep their membership - committee, board, admin and honorary are skipped`() {
+            val board = createUserWithRole(Role.BOARD)
+
+            val committee = createUserWithRole(Role.COMMITTEE)
+            val committeeMembership = createMembershipFixture(user = committee)
+            val boardUser = createUserWithRole(Role.BOARD)
+            val boardMembership = createMembershipFixture(user = boardUser)
+            val admin = createUserWithRole(Role.ADMIN)
+            val adminMembership = createMembershipFixture(user = admin)
+            val honorary = createUserWithRole(Role.MEMBER)
+            val honoraryMembership = createMembershipFixture(user = honorary, memberType = MemberType.HONORARY)
+
+            mvc.perform(
+                post("/memberships/bulk/end/execute")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(committee.id!!, boardUser.id!!, admin.id!!, honorary.id!!)))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.applied").value(0))
+                .andExpect(jsonPath("$.skipped").value(4))
+
+            // None of the protected memberships were ended.
+            listOf(committeeMembership, boardMembership, adminMembership, honoraryMembership).forEach {
+                val reloaded = memberRepository.findById(it.id!!).orElseThrow()
+                assertThat(reloaded.endDate).isNull()
+            }
         }
     }
 

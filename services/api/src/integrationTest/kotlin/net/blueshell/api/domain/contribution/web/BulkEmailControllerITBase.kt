@@ -30,6 +30,8 @@ abstract class BulkEmailControllerITBase(
     val executeEndpoint: String,
     val previewEndpoint: String,
     val dateParamName: String,  // "paymentDueDate" or "expectedIncassoDate"
+    /** Incasso flag the shared tests put on fixture memberships: the incasso endpoint only applies to incasso members. */
+    val defaultIncasso: Boolean = false,
 ) : UserTestSupport() {
 
     @Autowired
@@ -104,7 +106,7 @@ abstract class BulkEmailControllerITBase(
             val board = createUserWithRole(Role.BOARD)
             val regular = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = false)
+            createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = defaultIncasso)
 
             val cutoffDate = LocalDate.now()
             val dateParam = LocalDate.now().plusDays(30)
@@ -126,7 +128,7 @@ abstract class BulkEmailControllerITBase(
             val board = createUserWithRole(Role.BOARD)
             val member = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = false)
+            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = defaultIncasso)
 
             val cutoffDate = LocalDate.now()
             val dateParam = LocalDate.now().plusDays(30)
@@ -156,7 +158,7 @@ abstract class BulkEmailControllerITBase(
             val board = createUserWithRole(Role.BOARD)
             val honorary = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(honorary, MemberType.HONORARY, incasso = false)
+            createMembership(honorary, MemberType.HONORARY, incasso = defaultIncasso)
 
             val cutoffDate = LocalDate.now()
             val dateParam = LocalDate.now().plusDays(30)
@@ -178,7 +180,7 @@ abstract class BulkEmailControllerITBase(
             val board = createUserWithRole(Role.BOARD)
             val member = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(member, MemberType.REGULAR, incasso = false)
+            createMembership(member, MemberType.REGULAR, incasso = defaultIncasso)
             markPaid(member, period)
 
             val cutoffDate = LocalDate.now()
@@ -221,7 +223,7 @@ abstract class BulkEmailControllerITBase(
             persist(noEmail)
 
             val period = createContributionPeriodFixture()
-            createMembership(noEmail, MemberType.REGULAR, incasso = false)
+            createMembership(noEmail, MemberType.REGULAR, incasso = defaultIncasso)
 
             val cutoffDate = LocalDate.now()
             val dateParam = LocalDate.now().plusDays(30)
@@ -249,9 +251,9 @@ abstract class BulkEmailControllerITBase(
             val alumni = createUserWithRole(Role.MEMBER)
             val honorary = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = false)
-            createMembership(alumni, MemberType.ALUMNI, incasso = false)
-            createMembership(honorary, MemberType.HONORARY, incasso = false)
+            createMembership(regular, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = defaultIncasso)
+            createMembership(alumni, MemberType.ALUMNI, incasso = defaultIncasso)
+            createMembership(honorary, MemberType.HONORARY, incasso = defaultIncasso)
 
             val userIds = listOf(regular.id!!, alumni.id!!, honorary.id!!)
             val cutoffDate = LocalDate.now()
@@ -273,7 +275,7 @@ abstract class BulkEmailControllerITBase(
             val board = createUserWithRole(Role.BOARD)
             val honorary = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(honorary, MemberType.HONORARY, incasso = false)
+            createMembership(honorary, MemberType.HONORARY, incasso = defaultIncasso)
 
             mvc.perform(
                 post(executeEndpoint)
@@ -302,7 +304,7 @@ abstract class BulkEmailControllerITBase(
             val board = createUserWithRole(Role.BOARD)
             val member = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = false)
+            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = defaultIncasso)
 
             val dateParam = LocalDate.now().plusDays(30)
 
@@ -328,7 +330,7 @@ abstract class BulkEmailControllerITBase(
             val board = createUserWithRole(Role.BOARD)
             val member = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
-            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = false)
+            createMembership(member, MemberType.REGULAR, LocalDate.of(2024, 1, 1), incasso = defaultIncasso)
 
             val dateParam = LocalDate.now().plusDays(30)
 

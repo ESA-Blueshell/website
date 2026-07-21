@@ -25,6 +25,9 @@ class IncassoNotificationBulkControllerIT :
         executeEndpoint = "/incassoNotifications/bulk/execute",
         previewEndpoint = "/incassoNotifications/preview",
         dateParamName = "expectedIncassoDate",
+        // The incasso handler only applies to members with incasso enabled; the
+        // inherited shared tests must create their fixture memberships accordingly.
+        defaultIncasso = true,
     ) {
 
     @Autowired

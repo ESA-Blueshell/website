@@ -6,10 +6,10 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
-    id("org.graalvm.buildtools.native") version "1.1.1"
+    id("org.graalvm.buildtools.native") version "1.1.6"
     `java-test-fixtures`
 
-    val kotlinVersion = "2.3.21"
+    val kotlinVersion = "2.4.10"
     kotlin("plugin.jpa") version kotlinVersion
     kotlin("plugin.allopen") version kotlinVersion
     kotlin("plugin.noarg") version kotlinVersion
@@ -67,9 +67,9 @@ dependencies {
     // is the default client pulled in by spring-boot-starter-data-redis.
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.session:spring-session-data-redis")
-    implementation(platform("org.springframework.modulith:spring-modulith-bom:2.0.6"))
+    implementation(platform("org.springframework.modulith:spring-modulith-bom:2.1.0"))
     implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
-    implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.1")
+    implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.2")
     implementation(project(":libs:kotlin-common"))
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
@@ -77,16 +77,16 @@ dependencies {
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-    implementation("com.nimbusds:nimbus-jose-jwt:10.9")
+    implementation("com.nimbusds:nimbus-jose-jwt:10.9.1")
     // Nimbus RSAKey.parseFromPEMEncodedObjects needs JcaPEMKeyConverter (bcpkix); bcprov alone is insufficient.
-    runtimeOnly("org.bouncycastle:bcpkix-jdk18on:1.84")
+    runtimeOnly("org.bouncycastle:bcpkix-jdk18on:1.85")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20251207-2.0.0")
     implementation("com.google.apis:google-api-services-groupssettings:v1-rev20220614-2.0.0")
-    implementation("com.google.auth:google-auth-library-oauth2-http:1.47.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.49.0")
 
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation("jakarta.validation:jakarta.validation-api")
@@ -96,31 +96,31 @@ dependencies {
     implementation("jakarta.persistence:jakarta.persistence-api")
 
     implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
-    implementation("org.apache.tika:tika-core:3.3.1")
-    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.31")
+    implementation("org.apache.tika:tika-core:3.3.2")
+    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.35")
     implementation("com.github.scribejava:scribejava-apis:8.3.3")
-    implementation("org.springframework.retry:spring-retry:2.0.12")
+    implementation("org.springframework.retry:spring-retry:2.0.13")
     implementation("org.springframework:spring-aop")
     implementation("org.aspectj:aspectjweaver")
 
     implementation("org.flywaydb:flyway-mysql:12.6.2")
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.9")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("tools.jackson.module:jackson-module-kotlin")
     // Jackson 2.x Kotlin module — required for SpringDoc/swagger-core schema
     // generation, which uses its own com.fasterxml.jackson ObjectMapper
     // independently of our tools.jackson mapper.
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.3")
-    implementation("org.openapitools:jackson-databind-nullable:0.2.10")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.1")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.11")
 
     implementation(project(":services:api:clients:brevo"))
     implementation(project(":services:api:clients:discord"))
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
-    implementation("org.commonmark:commonmark:0.28.0")
-    implementation("org.commonmark:commonmark-ext-gfm-tables:0.28.0")
+    implementation("org.commonmark:commonmark:0.29.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.29.0")
     implementation(files("libs/snakeyaml-2.5.jar"))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -129,12 +129,12 @@ dependencies {
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.5")
-    testImplementation("io.rest-assured:spring-mock-mvc:6.0.0")
+    testImplementation("io.rest-assured:spring-mock-mvc:6.0.1")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.2")
     testImplementation("io.github.classgraph:classgraph:4.8.184")
-    testImplementation("io.mockk:mockk:1.14.9")
+    testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).
-    testImplementation("com.h2database:h2:2.3.232")
+    testImplementation("com.h2database:h2:2.4.240")
 
     // Shared test-fixture consumers expose main starter deps so factories
     // and support classes compile against Spring / JPA / Jackson / Security.

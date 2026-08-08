@@ -50,11 +50,11 @@ class EmailTrackingController(
                     EmailDeliveryStatus.DELIVERED -> emailService.markOpened(outbox)
                     else -> { /* already opened, bounced, or failed — no state change */ }
                 }
-                log.debug("Tracking pixel fired for outbox id={} token={}", outbox.id, token)
+                log.debug("Tracking pixel fired for outbox id={}", outbox.id)
             } else {
-                log.warn("Tracking pixel fired for unknown token={}", token)
+                log.warn("Tracking pixel fired for unknown token (not found in outbox)")
             }
-        }.onFailure { log.warn("Error recording email open for token={}", token, it) }
+        }.onFailure { log.warn("Error recording email open", it) }
 
         val headers = HttpHeaders()
         headers.contentType = MediaType.IMAGE_GIF

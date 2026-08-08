@@ -89,7 +89,8 @@ class FileService @Autowired constructor(
             val path = type.directory + "/" + hashedFilename
             val fullPath = rootLocation.resolve(path).normalize()
 
-            log.info("Storing {} at {}", multipart.originalFilename, fullPath)
+            val safeFilename = (multipart.originalFilename ?: "<null>").replace('\r', '_').replace('\n', '_')
+            log.info("Storing {} at {}", safeFilename, fullPath)
 
             if (Files.exists(fullPath)) {
                 Files.deleteIfExists(tmp)

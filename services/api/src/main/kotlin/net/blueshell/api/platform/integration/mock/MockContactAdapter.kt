@@ -49,7 +49,8 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
             isMember = data.isMember,
             attributes = data.attributes.toMutableMap()
         )
-        log.info("Mock: Created contact id={} for {}", contactId, data.email)
+        val safeEmail = data.email.replace('\r', '_').replace('\n', '_')
+        log.info("Mock: Created contact id={} for {}", contactId, safeEmail)
         return contactId
     }
 
@@ -73,7 +74,8 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
         val removed = contacts.remove(externalId)
             ?: throw ContactServiceException("Mock: Contact not found: $externalId")
         memberships.keys.removeIf { (contactId, _) -> contactId == externalId }
-        log.info("Mock: Deleted contact id={} ({})", externalId, removed.email)
+        val safeEmail = removed.email.replace('\r', '_').replace('\n', '_')
+        log.info("Mock: Deleted contact id={} ({})", externalId, safeEmail)
     }
 
     // ── ListSyncAdapter ───────────────────────────────────────────────────────
@@ -81,7 +83,8 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
     override fun createList(name: String, folderName: String?): Long {
         val listId = listIdSequence.getAndIncrement()
         lists[listId] = MockList(listId = listId, listName = name, folderName = folderName)
-        log.info("Mock: Created list id={} name='{}'", listId, name)
+        val safeName = name.replace('\r', '_').replace('\n', '_')
+        log.info("Mock: Created list id={} name='{}'", listId, safeName)
         return listId
     }
 

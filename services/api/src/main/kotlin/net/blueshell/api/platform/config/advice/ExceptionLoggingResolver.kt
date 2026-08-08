@@ -38,12 +38,15 @@ class ExceptionLoggingResolver : HandlerExceptionResolver {
         handler: Any?,
         ex: Exception,
     ): ModelAndView? {
+        // Strip CR/LF from the request URI and exception message before logging (log-injection, #464).
+        val safeUri = request.requestURI.replace('\r', '_').replace('\n', '_')
+        val safeMessage = (ex.message ?: "<null>").replace('\r', '_').replace('\n', '_')
         log.error(
             "{} {} -> {}: {}",
             request.method,
-            request.requestURI,
+            safeUri,
             ex.javaClass.simpleName,
-            ex.message,
+            safeMessage,
             ex,
         )
         return null

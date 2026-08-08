@@ -48,6 +48,9 @@ class ForwardAuthController(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    private fun sanitizeForLog(value: String?): String =
+        value.orEmpty().replace('\r', '_').replace('\n', '_')
+
     @GetMapping
     @PermitAll
     fun forwardAuth(
@@ -56,7 +59,7 @@ class ForwardAuthController(
     ): ResponseEntity<Void> {
         val forwardedHost = request.getHeader("X-Forwarded-Host").orEmpty()
         // CR/LF-stripped copy of the attacker-controllable host header for logging (log-injection, #464).
-        val safeHost = forwardedHost.replace('\r', '_').replace('\n', '_')
+        val safeHost = sanitizeForLog(forwardedHost)
         val forwardedUri = request.getHeader("X-Forwarded-Uri").orEmpty().ifEmpty { "/" }
         val forwardedProto = request.getHeader("X-Forwarded-Proto").orEmpty().ifEmpty { "https" }
         val originalUrl = "$forwardedProto://$forwardedHost$forwardedUri"

@@ -48,8 +48,7 @@ class BrevoListAdapter(
     override val system = ContactSystem.BREVO
 
     override fun createList(name: String, folderName: String?): Long {
-        // Strip CR/LF from the user-supplied name before logging (log-injection, #464).
-        val safeName = name.replace('\r', '_').replace('\n', '_')
+        val safeName = sanitizeForLog(name)
         log.info("Creating Brevo list '{}'", safeName)
         return try {
             val req = CreateListRequest()
@@ -63,6 +62,8 @@ class BrevoListAdapter(
             throw ContactServiceException("Failed to create list", e)
         }
     }
+
+    private fun sanitizeForLog(value: String): String = value.replace(Regex("[\\r\\n\\u0000-\\u001F\\u007F]"), "_")
 
     override fun addToList(externalUserId: Long, externalListId: Long) {
         log.info("Adding Brevo contact {} to list {}", externalUserId, externalListId)

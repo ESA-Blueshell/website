@@ -63,7 +63,9 @@ class BrevoListAdapter(
         }
     }
 
-    private fun sanitizeForLog(value: String): String = value.replace(Regex("[\\r\\n\\u0000-\\u001F\\u007F]"), "_")
+    private fun sanitizeForLog(value: String): String = value
+        .replace('\r', '_')
+        .replace('\n', '_')
 
     override fun addToList(externalUserId: Long, externalListId: Long) {
         log.info("Adding Brevo contact {} to list {}", externalUserId, externalListId)

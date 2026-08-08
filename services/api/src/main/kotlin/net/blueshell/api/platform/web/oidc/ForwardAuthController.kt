@@ -49,7 +49,7 @@ class ForwardAuthController(
     private val log = LoggerFactory.getLogger(javaClass)
 
     private fun sanitizeForLog(value: String?): String =
-        value.orEmpty().replace('\r', '_').replace('\n', '_')
+        value.orEmpty().replace(Regex("\\p{Cntrl}"), "_")
 
     @GetMapping
     @PermitAll

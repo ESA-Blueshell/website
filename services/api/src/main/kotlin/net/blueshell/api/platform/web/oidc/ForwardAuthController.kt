@@ -48,8 +48,8 @@ class ForwardAuthController(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    private fun sanitizeForLog(value: String): String =
-        value.replace(Regex("[\\r\\n\\t\\u0000-\\u001F\\u007F]"), " ")
+    private fun sanitizeForLog(value: String?): String =
+        value.orEmpty().replace(Regex("\\p{Cntrl}"), "_")
 
     @GetMapping
     @PermitAll
@@ -58,6 +58,8 @@ class ForwardAuthController(
         request: HttpServletRequest,
     ): ResponseEntity<Void> {
         val forwardedHost = request.getHeader("X-Forwarded-Host").orEmpty()
+        // CR/LF-stripped copy of the attacker-controllable host header for logging (log-injection, #464).
+        val safeHost = sanitizeForLog(forwardedHost)
         val forwardedUri = request.getHeader("X-Forwarded-Uri").orEmpty().ifEmpty { "/" }
         val forwardedProto = request.getHeader("X-Forwarded-Proto").orEmpty().ifEmpty { "https" }
         val originalUrl = "$forwardedProto://$forwardedHost$forwardedUri"
@@ -66,7 +68,7 @@ class ForwardAuthController(
             // Fail-closed: an unknown host (mis-configured IngressRoute, or
             // someone pointing forward-auth at us via Host injection) gets
             // ADMIN-required. Warn so the operator notices.
-            log.warn("forward-auth: unknown host '{}' — defaulting to ADMIN", sanitizeForLog(forwardedHost))
+            log.warn("forward-auth: unknown host '{}' — defaulting to ADMIN", safeHost)
             Role.ADMIN
         }
 
@@ -87,7 +89,7 @@ class ForwardAuthController(
                 } else {
                     log.warn(
                         "forward-auth: rejecting redirect to untrusted host '{}' — omitting redirect param",
-                        sanitizeForLog(forwardedHost),
+                        safeHost,
                     )
                     ""
                 }

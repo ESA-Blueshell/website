@@ -35,6 +35,9 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
     private val contactIdSequence = AtomicLong(1000)
     private val listIdSequence = AtomicLong(2000)
 
+    private fun sanitizeForLog(value: String): String =
+        value.map { ch -> if (ch == '\r' || ch == '\n' || ch.isISOControl()) '_' else ch }.joinToString("")
+
     // ── ContactSyncAdapter ────────────────────────────────────────────────────
 
     override fun createContact(data: ContactData): Long {
@@ -49,7 +52,8 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
             isMember = data.isMember,
             attributes = data.attributes.toMutableMap()
         )
-        log.info("Mock: Created contact id={} for {}", contactId, data.email)
+        val safeEmail = sanitizeForLog(data.email)
+        log.info("Mock: Created contact id={} for {}", contactId, safeEmail)
         return contactId
     }
 
@@ -73,7 +77,8 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
         val removed = contacts.remove(externalId)
             ?: throw ContactServiceException("Mock: Contact not found: $externalId")
         memberships.keys.removeIf { (contactId, _) -> contactId == externalId }
-        log.info("Mock: Deleted contact id={} ({})", externalId, removed.email)
+        val safeEmail = sanitizeForLog(removed.email)
+        log.info("Mock: Deleted contact id={} ({})", externalId, safeEmail)
     }
 
     // ── ListSyncAdapter ───────────────────────────────────────────────────────
@@ -81,7 +86,8 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
     override fun createList(name: String, folderName: String?): Long {
         val listId = listIdSequence.getAndIncrement()
         lists[listId] = MockList(listId = listId, listName = name, folderName = folderName)
-        log.info("Mock: Created list id={} name='{}'", listId, name)
+        val safeName = sanitizeForLog(name)
+        log.info("Mock: Created list id={} name='{}'", listId, safeName)
         return listId
     }
 

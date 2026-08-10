@@ -48,12 +48,11 @@ updates:
 
   # ── JVM modules (Gradle) ─────────────────────────────────────────────────
   - package-ecosystem: gradle
+    # `/` covers the whole multi-project build; `/build-logic` is a separate
+    # `includeBuild` composite the root scan does not reach.
     directories:
       - /
       - /build-logic
-      - /libs/kotlin-common
-      - /services/api
-      - /services/system-tests
     schedule:
       interval: weekly
     cooldown:

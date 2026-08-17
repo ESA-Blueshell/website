@@ -1,15 +1,10 @@
 name: PR diff stats
 
-# Renders a per-service, per-category breakdown of the diff into the bottom of
-# the pull request body.
+# Renders a per-service diff breakdown into the bottom of the pull request body.
 #
-# `pull_request_target` rather than `pull_request`: the latter hands out a
-# read-only token for dependabot and fork pull requests, which is most of this
-# repo's volume, and the body cannot be written with it. The elevated token is
-# safe here only because the job never checks out or executes head-ref code —
-# the diff is read from the pulls/{n}/files API, which also gives merge-base
-# semantics and pre-resolved renames for free. Do not add a `ref:` to the
-# checkout step below.
+# `pull_request_target` because `pull_request` gives dependabot and fork pull
+# requests a read-only token. Safe only because no head-ref code is checked out
+# or run, so do not add a `ref:` to the checkout below.
 
 on:
   pull_request_target:
@@ -27,16 +22,13 @@ jobs:
     name: Annotate PR body with diff breakdown
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Stops this job's own body edit from retriggering on `edited`. Dependabot
-    # pull requests are included: separating a hand-written fix from lockfile
-    # churn is exactly what the generated split is for. Their token stays
-    # read/write because the base ref is not itself Dependabot-authored.
+    # Stops this job's own body edit from retriggering on `edited`.
     if: github.event.sender.login != 'github-actions[bot]'
     permissions:
       contents: read
       pull-requests: write
     steps:
-      # No `ref:` — this must stay on the trusted base ref. See the note above.
+      # No `ref:` — must stay on the trusted base ref.
       - name: Check out the base ref
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

@@ -46,6 +46,10 @@ private
 backups
 .kotlin
 *.md
+# release-please maintains the changelog, and a contributor editing it would
+# otherwise have the change silently dropped by `git add`.
+!CHANGELOG.md
+!docs/changelogs/*.md
 .idea
 *dump.sql*
 

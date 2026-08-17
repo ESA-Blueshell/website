@@ -1,0 +1,170 @@
+# Taxonomy for the PR diff breakdown rendered by .github/scripts/pr_diff_stats.py.
+#
+# Rules are ORDERED and the first match wins, so narrow rules go above broad
+# ones. Adding a service or a test type is one new entry.
+#
+# Glob syntax: `*` matches within a path segment, `**` spans segments, and a
+# trailing `/**` also matches the directory itself. Paths are repo-relative and
+# always the NEW path for a rename.
+#
+# Categories drive the rollups at the bottom of the block:
+#   prod                                     -> "production"
+#   unit, integration, e2e, system, fixtures -> "tests"
+#   generated                                -> excluded from every total
+#   build, infra, docs, other                -> counted in the total only
+#
+# Parsed by a strict reader that accepts this shape only: a top-level sequence
+# of mappings with the three scalar keys below, plus `#` comments and blank
+# lines. Keep it that way and it stays valid YAML for any other reader.
+
+# --- generated and vendored: must stay first so they win over the src rules ---
+- glob: "services/frontend/src/services/api/**"
+  service: frontend
+  category: generated
+
+- glob: "services/frontend/**/*.gen.ts"
+  service: frontend
+  category: generated
+
+- glob: "services/frontend/yarn.lock"
+  service: frontend
+  category: generated
+
+- glob: "services/frontend/.pnp.cjs"
+  service: frontend
+  category: generated
+
+- glob: "services/frontend/.pnp.loader.mjs"
+  service: frontend
+  category: generated
+
+- glob: "services/frontend/.yarn/**"
+  service: frontend
+  category: generated
+
+- glob: "services/api/openapi.json"
+  service: api
+  category: generated
+
+- glob: "**/gradle.lockfile"
+  service: api
+  category: generated
+
+- glob: "libs/openapi-specs/**"
+  service: libs
+  category: generated
+
+# --- api ---
+- glob: "services/api/src/integrationTest/**"
+  service: api
+  category: integration
+
+- glob: "services/api/src/testFixtures/**"
+  service: api
+  category: fixtures
+
+- glob: "services/api/src/test/**"
+  service: api
+  category: unit
+
+- glob: "services/api/src/main/**"
+  service: api
+  category: prod
+
+- glob: "services/api/clients/**"
+  service: api
+  category: prod
+
+- glob: "services/api/**"
+  service: api
+  category: build
+
+# --- frontend ---
+- glob: "services/frontend/tests/e2e/**"
+  service: frontend
+  category: e2e
+
+- glob: "services/frontend/tests/**"
+  service: frontend
+  category: unit
+
+- glob: "services/frontend/src/**"
+  service: frontend
+  category: prod
+
+- glob: "services/frontend/public/**"
+  service: frontend
+  category: prod
+
+- glob: "services/frontend/**"
+  service: frontend
+  category: build
+
+# --- system tests ---
+- glob: "services/system-tests/**"
+  service: system-tests
+  category: system
+
+# --- libs ---
+- glob: "libs/**"
+  service: libs
+  category: prod
+
+# --- platform and infrastructure ---
+- glob: "platform/**"
+  service: platform
+  category: infra
+
+- glob: "infra/**"
+  service: platform
+  category: infra
+
+- glob: "services/stalwart/**"
+  service: platform
+  category: infra
+
+- glob: "services/vault/**"
+  service: platform
+  category: infra
+
+- glob: "docker-compose*.yml"
+  service: platform
+  category: infra
+
+# --- build and CI ---
+- glob: "build-logic/**"
+  service: ci
+  category: build
+
+- glob: ".github/**"
+  service: ci
+  category: build
+
+- glob: "scripts/**"
+  service: ci
+  category: build
+
+- glob: "gradle/**"
+  service: ci
+  category: build
+
+- glob: "gradlew*"
+  service: ci
+  category: build
+
+- glob: "*.gradle.kts"
+  service: ci
+  category: build
+
+# --- docs ---
+- glob: "docs/**"
+  service: docs
+  category: docs
+
+- glob: "specs/**"
+  service: docs
+  category: docs
+
+- glob: "**/*.md"
+  service: docs
+  category: docs

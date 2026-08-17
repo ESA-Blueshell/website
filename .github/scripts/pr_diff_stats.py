@@ -100,10 +100,58 @@ def glob_to_regex(pattern: str) -> re.Pattern[str]:
     return re.compile("^" + "".join(out) + "$")
 
 
+RULE_KEYS = ("glob", "service", "category")
+
+
+def _scalar(value: str, where: str) -> str:
+    value = value.strip()
+    if value[:1] in ("'", '"'):
+        if len(value) < 2 or value[-1] != value[0]:
+            raise ValueError(f"{where}: unterminated quoted value")
+        return value[1:-1]
+    if "#" in value:
+        raise ValueError(f"{where}: quote any value containing '#'")
+    return value
+
+
+def parse_rules(text: str, source: str = "<rules>") -> list[dict[str, str]]:
+    """Read the documented subset: a sequence of mappings with three scalar keys.
+
+    Deliberately not PyYAML, which is absent from the runner image; pip
+    installing it would put a network dependency inside a privileged workflow.
+    Anything outside the documented shape raises rather than being skipped.
+    """
+    entries: list[dict[str, str]] = []
+    for lineno, raw in enumerate(text.splitlines(), start=1):
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        where = f"{source}:{lineno}"
+        if stripped.startswith("- "):
+            entries.append({})
+            stripped = stripped[2:]
+        elif not entries:
+            raise ValueError(f"{where}: mapping before any '-' entry")
+        key, sep, value = stripped.partition(":")
+        key = key.strip()
+        if not sep or key not in RULE_KEYS:
+            raise ValueError(f"{where}: expected one of {RULE_KEYS}, got {key!r}")
+        if key in entries[-1]:
+            raise ValueError(f"{where}: duplicate key {key!r}")
+        entries[-1][key] = _scalar(value, where)
+
+    for index, entry in enumerate(entries, start=1):
+        missing = [k for k in RULE_KEYS if k not in entry]
+        if missing:
+            raise ValueError(f"{source}: entry {index} is missing {missing}")
+    if not entries:
+        raise ValueError(f"{source}: no rules defined")
+    return entries
+
+
 def load_rules(path: Path) -> list[tuple[re.Pattern[str], str, str]]:
-    lines = [ln for ln in path.read_text(encoding="utf-8").splitlines() if not ln.lstrip().startswith("//")]
-    raw = json.loads("\n".join(lines))
-    return [(glob_to_regex(pat), service, category) for pat, service, category in raw]
+    entries = parse_rules(path.read_text(encoding="utf-8"), path.name)
+    return [(glob_to_regex(e["glob"]), e["service"], e["category"]) for e in entries]
 
 
 def classify(path: str, rules) -> tuple[str, str]:
@@ -240,7 +288,7 @@ def main() -> int:
         print("REPO and PR_NUMBER are required", file=sys.stderr)
         return 1
 
-    rules = load_rules(Path(__file__).resolve().parents[1] / "diff-stats.json")
+    rules = load_rules(Path(__file__).resolve().parents[1] / "diff-stats.yml")
     files = fetch_files(repo, pr)
     if not files:
         print("No changed files; leaving the body alone.")

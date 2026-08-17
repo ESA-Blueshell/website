@@ -4,6 +4,13 @@
 
 $accent: rgb(var(--v-theme-accent));
 
+// Subpixel AA fringes saturated text on dark backgrounds; grayscale AA also
+// keeps composited (scrolling/sticky) regions consistent with the rest.
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 // Don't force the house border-radius onto rounded/pill/icon buttons —
 // Vuetify 4 applies `rounded="pill"` as the `.rounded-pill` utility (not
 // `.v-btn--rounded`), and an unlayered rule here would otherwise flatten it

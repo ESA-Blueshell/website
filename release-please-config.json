@@ -7,7 +7,6 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "package-name": "website",
       "changelog-path": "docs/changelogs/08-2026-automated-releases.md",
       "extra-files": [
         { "type": "json", "path": "services/frontend/package.json", "jsonpath": "$.version" },

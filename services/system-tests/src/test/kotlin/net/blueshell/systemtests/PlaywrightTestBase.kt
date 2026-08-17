@@ -49,7 +49,11 @@ abstract class PlaywrightTestBase {
     @BeforeEach
     fun createContext() {
         context = browser.newContext(
-            Browser.NewContextOptions().setIgnoreHTTPSErrors(true),
+            Browser.NewContextOptions()
+                .setIgnoreHTTPSErrors(true)
+                // Playwright's 1280 default sits exactly on Vuetify's lgAndUp
+                // breakpoint, so a scrollbar tips layouts to their mobile variant.
+                .setViewportSize(1600, 900),
         )
         context.setDefaultTimeout(DEFAULT_TIMEOUT_MS)
         context.setDefaultNavigationTimeout(DEFAULT_TIMEOUT_MS)

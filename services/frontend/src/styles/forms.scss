@@ -1,19 +1,16 @@
-// Vuetify 4's grid replaced negative-margin gutters with a flexbox `gap`
-// (defaulting to 24px) AND spaces consecutive rows with
-// `.v-row + .v-row { margin-top: var(--v-col-gap-y) }` (also 24px). Both blew
-// out form spacing; pull them back tight — the app's rows were always compact.
-.v-row {
-  row-gap: 2px;
-  column-gap: 16px;
+// Vuetify 4 spaces grids with `gap: var(--v-col-gap-y) var(--v-col-gap-x)` AND uses the
+// same variables in each column's flex-basis calc, so widths always account for the gap.
+// Tighten form spacing through those variables — overriding the gap PROPERTY directly
+// desynchronizes it from the width math: a no-gutters row then sizes its columns for a
+// 0px gap while an unlayered 16px gap still applies, overflowing 100% and wrapping the
+// last column onto its own line (this stacked the board-page member text under the photo).
+.v-row:not(.v-row--no-gutters) {
+  --v-col-gap-y: 2px;
+  --v-col-gap-x: 16px;
 }
 
 // The real culprit behind "too much space between form rows": the inter-row
 // top margin. Override it (unlayered beats Vuetify's layered rule).
 .v-row + .v-row {
   margin-top: 4px;
-}
-
-.v-row > .v-col {
-  padding-top: 0;
-  padding-bottom: 0;
 }

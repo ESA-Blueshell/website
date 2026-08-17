@@ -48,17 +48,24 @@ class BrevoListAdapter(
     override val system = ContactSystem.BREVO
 
     override fun createList(name: String, folderName: String?): Long {
-        log.info("Creating Brevo list '{}'", name)
+        val safeName = sanitizeForLog(name)
+        log.info("Creating Brevo list '{}'", safeName)
         return try {
             val req = CreateListRequest()
             req.name = name
             req.folderId = contributionPeriodsFolder
             val response = contactsApi.createList(req)
-            log.info("Created Brevo list '{}' id={}", name, response.id)
+            log.info("Created Brevo list '{}' id={}", safeName, response.id)
             response.id
         } catch (e: RestClientResponseException) {
-            log.error("Failed to create Brevo list '{}'", name, e)
+            log.error("Failed to create Brevo list '{}'", safeName, e)
             throw ContactServiceException("Failed to create list", e)
+        }
+    }
+
+    private fun sanitizeForLog(value: String): String = buildString(value.length) {
+        value.forEach { ch ->
+            append(if (ch.isISOControl()) '_' else ch)
         }
     }
 

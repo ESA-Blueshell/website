@@ -18,10 +18,6 @@ import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.ZoneOffset
-import net.blueshell.api.domain.contribution.application.command.EmailBulkDecision
-import net.blueshell.api.domain.contribution.application.command.requireCutoffWithinPeriod
-import net.blueshell.api.domain.contribution.application.command.validateFeeTypeOverrides
 
 @Component
 class ExecuteBulkIncassoNotificationHandler(
@@ -46,7 +42,7 @@ class ExecuteBulkIncassoNotificationHandler(
         // Decide once per user (same as preview); poisoned-batch guard prevents one bad id aborting mid-transaction.
         val decisions = requestedUserIds.mapNotNull { userId ->
             if (!users.existsById(userId)) return@mapNotNull null
-            userId to decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions, notifications)
+            userId to decideIncasso(userId, periodId, period, cutoffDate, users, memberships, contributions)
         }.toMap()
 
         validateFeeTypeOverrides(command.feeTypeOverrides, includedUserIds, decisions)
@@ -102,7 +98,6 @@ internal fun decideIncasso(
     users: UserService,
     memberships: MembershipService,
     contributions: ContributionService,
-    notifications: IncassoNotificationService,
 ): EmailBulkDecision {
     val user = users.findById(userId)
 
@@ -114,8 +109,6 @@ internal fun decideIncasso(
     val hasIncassoEnabled = activeMembership?.incasso ?: false
     val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
     val emailMissing = user.email.isBlank()
-    val lastSent = notifications.findLastNotificationForUserAndPeriod(userId, periodId)?.createdAt
-        ?.atZone(ZoneOffset.UTC)?.toLocalDate()
 
     val disposition: BulkRowDisposition
     val reason: BulkRowReason?
@@ -151,7 +144,6 @@ internal fun decideIncasso(
         reason = reason,
         recommendedFeeType = recommendedFeeType,
         amount = recommendedFeeType?.let { resolveFeeAmount(it, period) },
-        lastSentOn = lastSent,
         emailMissing = emailMissing,
     )
 }

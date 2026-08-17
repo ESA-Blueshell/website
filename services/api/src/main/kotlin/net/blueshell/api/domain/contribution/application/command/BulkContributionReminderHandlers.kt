@@ -19,7 +19,6 @@ import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.ZoneOffset
 
 @Component
 class ExecuteBulkContributionReminderHandler(
@@ -44,7 +43,7 @@ class ExecuteBulkContributionReminderHandler(
         // Decide once per user (same as preview); poisoned-batch guard prevents one bad id aborting mid-transaction.
         val decisions = requestedUserIds.mapNotNull { userId ->
             if (!users.existsById(userId)) return@mapNotNull null
-            userId to decideReminder(userId, periodId, period, cutoffDate, users, memberships, contributions, reminders)
+            userId to decideReminder(userId, periodId, period, cutoffDate, users, memberships, contributions)
         }.toMap()
 
         validateFeeTypeOverrides(command.feeTypeOverrides, includedUserIds, decisions)
@@ -99,7 +98,6 @@ internal fun decideReminder(
     users: UserService,
     memberships: MembershipService,
     contributions: ContributionService,
-    reminders: ContributionReminderService,
 ): EmailBulkDecision {
     val user = users.findById(userId)
 
@@ -113,8 +111,6 @@ internal fun decideReminder(
 
     val alreadyPaid = contributions.existsByUserIdAndPeriodId(userId, periodId)
     val emailMissing = user.email.isBlank()
-    val lastSent = reminders.findLastReminderForUserAndPeriod(userId, periodId)?.createdAt
-        ?.atZone(ZoneOffset.UTC)?.toLocalDate()
 
     val disposition: BulkRowDisposition
     val reason: BulkRowReason?
@@ -146,7 +142,6 @@ internal fun decideReminder(
         reason = reason,
         recommendedFeeType = recommendedFeeType,
         amount = recommendedFeeType?.let { resolveFeeAmount(it, period) },
-        lastSentOn = lastSent,
         emailMissing = emailMissing,
     )
 }

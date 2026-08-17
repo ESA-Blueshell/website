@@ -21,12 +21,6 @@ class IncassoNotificationService @Autowired constructor(
         return repository.findByIdContributionPeriodId(contributionPeriodId)
     }
 
-    @Transactional(readOnly = true)
-    fun findLastNotificationForUserAndPeriod(userId: Long, contributionPeriodId: Long): IncassoNotification? {
-        return repository.findByIdContributionPeriodId(contributionPeriodId)
-            .firstOrNull { it.userId == userId }
-    }
-
     fun sendNotification(notification: IncassoNotification) {
         val notificationId = notification.id
         jobs.enqueue(

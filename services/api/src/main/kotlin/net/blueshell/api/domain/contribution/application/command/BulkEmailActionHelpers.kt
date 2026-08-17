@@ -1,7 +1,6 @@
 package net.blueshell.api.domain.contribution.application.command
 
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
@@ -25,7 +24,6 @@ data class EmailBulkDecision(
     val reason: BulkRowReason?,
     val recommendedFeeType: BulkFeeType?,
     val amount: Double?,
-    val lastSentOn: LocalDate?,
     /** True when the user has no email; execute must skip even if operator re-includes. */
     val emailMissing: Boolean,
 )

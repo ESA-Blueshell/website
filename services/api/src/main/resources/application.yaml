@@ -45,6 +45,9 @@ spring:
       host: ${VALKEY_HOST:localhost}
       port: ${VALKEY_PORT:6379}
       timeout: 500ms
+      # Valkey backs sessions and the cache only, never Spring Data repositories.
+      repositories:
+        enabled: false
 
   jpa:
     hibernate:

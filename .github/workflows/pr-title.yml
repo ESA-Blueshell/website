@@ -1,0 +1,35 @@
+name: PR title
+
+# The squash-merge subject is taken from the pull request title, so the title
+# is what lands in history and what a release tool reads to decide a version.
+#
+# `synchronize` is included even though a push cannot change the title: a
+# required check is recorded against the head commit, so without it a new push
+# would leave this check absent rather than green.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  conventional-title:
+    name: Conventional Commits title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check the title
+        env:
+          # Through the environment, never interpolated into the shell: the
+          # title is author-controlled text.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: python3 .github/scripts/check_pr_title.py

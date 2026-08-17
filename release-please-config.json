@@ -3,6 +3,7 @@
   "bootstrap-sha": "c0a61a507906bb692fd0a4fce24bd31ba7ac7257",
   "include-component-in-tag": false,
   "separate-pull-requests": false,
+  "pull-request-title-pattern": "chore: release ${version}",
   "packages": {
     ".": {
       "release-type": "simple",

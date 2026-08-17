@@ -6,10 +6,10 @@ name: Build
 # into a manifest list, so neither arch waits on QEMU emulation and each gets
 # its own GHA cache scope.
 #
-# main tags :sha-<short> only. release-please calls this with release-tag set,
+# main tags :sha-<short> only. release.yml calls this with release-tag set,
 # which also moves :latest — the tag Keel polls — so only releases reach
-# production. It is called rather than triggered because a release cut with
-# GITHUB_TOKEN raises no event.
+# production. It is called rather than triggered by `release: published`
+# because a release cut with GITHUB_TOKEN raises no event.
 on:
   push:
     branches: [main]

@@ -16,13 +16,13 @@ import {
   findUsers,
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
-import {useMemberRows, type MemberRow} from "@/composables/useMemberRows"
-import {useMemberFilters, type SortKey} from "@/composables/useMemberFilters"
+import {useUserRows, type MemberRow} from "@/composables/useUserRows"
+import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
 
 export type {MemberRow}
 
-defineOptions({name: "MemberManagerPage"})
+defineOptions({name: "UserManagerPage"})
 
 // ── Display ───────────────────────────────────────────────────────────────────
 
@@ -69,7 +69,7 @@ const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChang
   usePaidToggle(paidUserIds)
 
 const {userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
-  useMemberRows(users, memberships, paidUserIds, selectedPeriod)
+  useUserRows(users, memberships, paidUserIds, selectedPeriod)
 
 const {
   searchInput,
@@ -85,7 +85,7 @@ const {
   filteredRows,
   toggleSort,
   sortIcon,
-} = useMemberFilters(rows, userSearchIndex)
+} = useUserFilters(rows, userSearchIndex)
 
 function ariaSort(key: SortKey) {
   if (sortKey.value !== key) return "none"

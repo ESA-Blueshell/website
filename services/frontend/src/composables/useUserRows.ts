@@ -72,7 +72,7 @@ export function overlapsContributionPeriod(
 
 // ── Composable ─────────────────────────────────────────────────────────────────
 
-export function useMemberRows(
+export function useUserRows(
   users: Ref<EditableUser[]>,
   memberships: Ref<MembershipResponse[]>,
   paidUserIds: Ref<Set<number>>,

@@ -211,15 +211,9 @@
             </v-list-item>
             <v-list-item
               v-if="isBoard"
-              to="/contributions/manage"
+              to="/user-manager"
             >
-              Manage contributions
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard"
-              to="/members/manage"
-            >
-              Manage members
+              Manage users
             </v-list-item>
             <v-list-item
               v-if="isAdmin"

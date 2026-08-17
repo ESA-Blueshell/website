@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest"
 import {ref} from "vue"
-import {useMemberFilters} from "@/composables/useMemberFilters"
-import {type MemberRow, type MemberStatus} from "@/composables/useMemberRows"
+import {useUserFilters} from "@/composables/useUserFilters"
+import {type MemberRow, type MemberStatus} from "@/composables/useUserRows"
 
 vi.mock("vue", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue")>()
@@ -27,18 +27,18 @@ function makeRow(id: number, overrides: Partial<MemberRow> = {}): MemberRow {
   }
 }
 
-describe("useMemberFilters", () => {
+describe("useUserFilters", () => {
   it("returns all rows when no filters active", () => {
     const rows = ref([makeRow(1), makeRow(2), makeRow(3)])
     const index = ref(new Map([[1, "user 1"], [2, "user 2"], [3, "user 3"]]))
-    const {filteredRows} = useMemberFilters(rows, index)
+    const {filteredRows} = useUserFilters(rows, index)
     expect(filteredRows.value).toHaveLength(3)
   })
 
   it("filters by search term using the userSearchIndex haystack", () => {
     const rows = ref([makeRow(1, {fullName: "Alice Smith", username: "alice"}), makeRow(2, {fullName: "Bob Jones", username: "bob"})])
     const index = ref(new Map([[1, "alice smith alice"], [2, "bob jones bob"]]))
-    const {filteredRows, search} = useMemberFilters(rows, index)
+    const {filteredRows, search} = useUserFilters(rows, index)
 
     search.value = "alice"
     expect(filteredRows.value).toHaveLength(1)
@@ -48,7 +48,7 @@ describe("useMemberFilters", () => {
   it("multi-word search requires all terms to match", () => {
     const rows = ref([makeRow(1, {fullName: "Alice Smith"}), makeRow(2, {fullName: "Alice Jones"})])
     const index = ref(new Map([[1, "alice smith"], [2, "alice jones"]]))
-    const {filteredRows, search} = useMemberFilters(rows, index)
+    const {filteredRows, search} = useUserFilters(rows, index)
 
     search.value = "alice smith"
     expect(filteredRows.value).toHaveLength(1)
@@ -62,7 +62,7 @@ describe("useMemberFilters", () => {
       makeRow(3, {status: "Never"}),
     ])
     const index = ref(new Map([[1, "u1"], [2, "u2"], [3, "u3"]]))
-    const {filteredRows, memberFilter} = useMemberFilters(rows, index)
+    const {filteredRows, memberFilter} = useUserFilters(rows, index)
 
     memberFilter.value = "yes"
     expect(filteredRows.value).toHaveLength(1)
@@ -75,7 +75,7 @@ describe("useMemberFilters", () => {
       makeRow(2, {status: "Former"}),
     ])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, memberFilter} = useMemberFilters(rows, index)
+    const {filteredRows, memberFilter} = useUserFilters(rows, index)
 
     memberFilter.value = "no"
     expect(filteredRows.value).toHaveLength(1)
@@ -85,7 +85,7 @@ describe("useMemberFilters", () => {
   it("paidFilter=yes shows only paid users", () => {
     const rows = ref([makeRow(1, {paid: true}), makeRow(2, {paid: false})])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, paidFilter} = useMemberFilters(rows, index)
+    const {filteredRows, paidFilter} = useUserFilters(rows, index)
 
     paidFilter.value = "yes"
     expect(filteredRows.value).toHaveLength(1)
@@ -95,7 +95,7 @@ describe("useMemberFilters", () => {
   it("paidFilter=no shows only unpaid users", () => {
     const rows = ref([makeRow(1, {paid: true}), makeRow(2, {paid: false})])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, paidFilter} = useMemberFilters(rows, index)
+    const {filteredRows, paidFilter} = useUserFilters(rows, index)
 
     paidFilter.value = "no"
     expect(filteredRows.value).toHaveLength(1)
@@ -105,7 +105,7 @@ describe("useMemberFilters", () => {
   it("incassoFilter=yes shows only users with incasso", () => {
     const rows = ref([makeRow(1, {latestIncasso: true}), makeRow(2, {latestIncasso: false})])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, incassoFilter} = useMemberFilters(rows, index)
+    const {filteredRows, incassoFilter} = useUserFilters(rows, index)
 
     incassoFilter.value = "yes"
     expect(filteredRows.value).toHaveLength(1)
@@ -115,7 +115,7 @@ describe("useMemberFilters", () => {
   it("incassoFilter=no shows only users without incasso", () => {
     const rows = ref([makeRow(1, {latestIncasso: true}), makeRow(2, {latestIncasso: false})])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, incassoFilter} = useMemberFilters(rows, index)
+    const {filteredRows, incassoFilter} = useUserFilters(rows, index)
 
     incassoFilter.value = "no"
     expect(filteredRows.value).toHaveLength(1)
@@ -125,7 +125,7 @@ describe("useMemberFilters", () => {
   it("periodMemberFilter=yes shows only members in the selected period", () => {
     const rows = ref([makeRow(1, {wasMemberInPeriod: true}), makeRow(2, {wasMemberInPeriod: false})])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, periodMemberFilter} = useMemberFilters(rows, index)
+    const {filteredRows, periodMemberFilter} = useUserFilters(rows, index)
 
     periodMemberFilter.value = "yes"
     expect(filteredRows.value).toHaveLength(1)
@@ -135,7 +135,7 @@ describe("useMemberFilters", () => {
   it("periodMemberFilter=no shows only users outside the selected period", () => {
     const rows = ref([makeRow(1, {wasMemberInPeriod: true}), makeRow(2, {wasMemberInPeriod: false})])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, periodMemberFilter} = useMemberFilters(rows, index)
+    const {filteredRows, periodMemberFilter} = useUserFilters(rows, index)
 
     periodMemberFilter.value = "no"
     expect(filteredRows.value).toHaveLength(1)
@@ -145,7 +145,7 @@ describe("useMemberFilters", () => {
   it("sorts by name ascending by default", () => {
     const rows = ref([makeRow(1, {fullName: "Zoe Last"}), makeRow(2, {fullName: "Anna First"})])
     const index = ref(new Map([[1, "zoe last"], [2, "anna first"]]))
-    const {filteredRows} = useMemberFilters(rows, index)
+    const {filteredRows} = useUserFilters(rows, index)
 
     expect(filteredRows.value[0]!.id).toBe(2)
     expect(filteredRows.value[1]!.id).toBe(1)
@@ -154,7 +154,7 @@ describe("useMemberFilters", () => {
   it("toggleSort changes key and resets to ascending", () => {
     const rows = ref([makeRow(1), makeRow(2)])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {sortKey, sortAsc, toggleSort} = useMemberFilters(rows, index)
+    const {sortKey, sortAsc, toggleSort} = useUserFilters(rows, index)
 
     expect(sortKey.value).toBe("name")
     toggleSort("status")
@@ -165,7 +165,7 @@ describe("useMemberFilters", () => {
   it("toggleSort on same key flips sortAsc", () => {
     const rows = ref([makeRow(1)])
     const index = ref(new Map([[1, "u1"]]))
-    const {sortAsc, toggleSort} = useMemberFilters(rows, index)
+    const {sortAsc, toggleSort} = useUserFilters(rows, index)
 
     expect(sortAsc.value).toBe(true)
     toggleSort("name")
@@ -175,7 +175,7 @@ describe("useMemberFilters", () => {
   it("toggleSort cycles ascending → descending → no sort on the third click", () => {
     const rows = ref([makeRow(1), makeRow(2)])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {sortKey, sortAsc, toggleSort} = useMemberFilters(rows, index)
+    const {sortKey, sortAsc, toggleSort} = useUserFilters(rows, index)
 
     toggleSort("status")
     expect(sortKey.value).toBe("status")
@@ -193,7 +193,7 @@ describe("useMemberFilters", () => {
   it("sortIcon returns correct icons", () => {
     const rows = ref([makeRow(1)])
     const index = ref(new Map([[1, "u1"]]))
-    const {sortAsc, sortKey, sortIcon} = useMemberFilters(rows, index)
+    const {sortAsc, sortKey, sortIcon} = useUserFilters(rows, index)
 
     // non-active key
     expect(sortIcon("status")).toBe("mdi-unfold-more-horizontal")
@@ -215,7 +215,7 @@ describe("useMemberFilters", () => {
       makeRow(1, {status: "Current"}),
     ])
     const index = ref(new Map([[1, "u1"], [2, "u2"], [3, "u3"]]))
-    const {filteredRows, sortKey, sortAsc} = useMemberFilters(rows, index)
+    const {filteredRows, sortKey, sortAsc} = useUserFilters(rows, index)
 
     sortKey.value = "status"
     sortAsc.value = true
@@ -231,7 +231,7 @@ describe("useMemberFilters", () => {
       makeRow(2, {memberSince: "2020-01-01"}),
     ])
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
-    const {filteredRows, sortKey, sortAsc} = useMemberFilters(rows, index)
+    const {filteredRows, sortKey, sortAsc} = useUserFilters(rows, index)
 
     sortKey.value = "memberSince"
     sortAsc.value = true
@@ -246,7 +246,7 @@ describe("useMemberFilters", () => {
       makeRow(2, {username: "anna", role: "admin", paid: false, wasMemberInPeriod: false}),
     ])
     const index = ref(new Map([[1, "zoe"], [2, "anna"]]))
-    const {filteredRows, sortKey, sortAsc} = useMemberFilters(rows, index)
+    const {filteredRows, sortKey, sortAsc} = useUserFilters(rows, index)
 
     sortAsc.value = true
     sortKey.value = "username"
@@ -269,7 +269,7 @@ describe("useMemberFilters", () => {
       makeRow(3, {fullName: "Charlie Never", status: "Never"}),
     ])
     const index = ref(new Map([[1, "alice current"], [2, "bob current"], [3, "charlie never"]]))
-    const {filteredRows, search, memberFilter} = useMemberFilters(rows, index)
+    const {filteredRows, search, memberFilter} = useUserFilters(rows, index)
 
     search.value = "alice"
     memberFilter.value = "yes"

@@ -1,5 +1,5 @@
 import {computed, onBeforeUnmount, ref, watch, type Ref} from "vue"
-import {type MemberRow, type MemberStatus} from "@/composables/useMemberRows"
+import {type MemberRow, type MemberStatus} from "@/composables/useUserRows"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -10,7 +10,7 @@ const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never:
 
 // ── Composable ─────────────────────────────────────────────────────────────────
 
-export function useMemberFilters(
+export function useUserFilters(
   rows: Ref<MemberRow[]>,
   userSearchIndex: Ref<Map<number, string>>,
 ) {

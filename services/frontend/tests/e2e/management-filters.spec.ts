@@ -84,7 +84,7 @@ test.describe("management filters", () => {
     // up; below that it switches to a mobile card list with its own test ids. This
     // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
-    await page.goto("/members/manage")
+    await page.goto("/user-manager")
     await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
 
     // All users visible before filtering
@@ -191,93 +191,6 @@ test.describe("management filters", () => {
     await searchInput(page, "address-user-list-search-without-address").fill("NoAddressTarget no.address.target@test.com")
     await expect(withoutAddressCard.getByText(exactText("no-address-target"))).toBeVisible()
     await expect(withoutAddressCard.getByText(exactText("no-address-other"))).toHaveCount(0)
-  })
-
-  test("contribution manager filters unpaid and paid users by multiple fields", async ({page}) => {
-    await installApiMocks(page, {
-      users: [
-        {
-          id: 11,
-          fullName: "Unpaid Filter Target",
-          firstName: "UnpaidTarget",
-          username: "unpaid-target",
-          discord: "unpaid-discord",
-          enabled: true,
-          roles: ["MEMBER"],
-        },
-        {
-          id: 12,
-          fullName: "Unpaid Filter Other",
-          firstName: "UnpaidOther",
-          username: "unpaid-other",
-          discord: "unpaid-other-discord",
-          enabled: true,
-          roles: ["MEMBER"],
-        },
-        {
-          id: 13,
-          fullName: "Paid Filter Target",
-          firstName: "PaidTarget",
-          username: "paid-target",
-          discord: "paid-discord",
-          enabled: true,
-          roles: ["MEMBER"],
-        },
-        {
-          id: 14,
-          fullName: "Paid Filter Other",
-          firstName: "PaidOther",
-          username: "paid-other",
-          discord: "paid-other-discord",
-          enabled: true,
-          roles: ["MEMBER"],
-        },
-      ],
-      memberships: [
-        {id: 101, userId: 11, startDate: "2025-01-01"},
-        {id: 102, userId: 12, startDate: "2025-01-01"},
-        {id: 103, userId: 13, startDate: "2025-01-01"},
-        {id: 104, userId: 14, startDate: "2025-01-01"},
-      ],
-      contributionPeriods: [
-        {id: 201, startDate: "2025-01-01", endDate: "2025-12-31", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
-      ],
-      contributions: [
-        {id: 301, userId: 13, contributionPeriodId: 201},
-        {id: 302, userId: 14, contributionPeriodId: 201},
-      ],
-    })
-    await loginAsBoard(page.context())
-
-    await page.goto("/contributions/manage")
-    await expect(page.getByTestId("contribution-user-list-unpaid")).toBeVisible({timeout: 30_000})
-
-    const unpaidCard = await ensureListOpen(
-      page,
-      "contribution-user-list-unpaid",
-      "contribution-user-list-toggle-unpaid",
-      "contribution-user-list-search-unpaid",
-    )
-    await expect(unpaidCard.getByText(exactText("unpaid-target"))).toBeVisible()
-    await expect(unpaidCard.getByText(exactText("unpaid-other"))).toBeVisible()
-
-    await searchInput(page, "contribution-user-list-search-unpaid").fill("UnpaidTarget unpaid-discord")
-    await expect(unpaidCard.getByText(exactText("unpaid-target"))).toBeVisible()
-    await expect(unpaidCard.getByText(exactText("unpaid-other"))).toHaveCount(0)
-
-    await searchInput(page, "contribution-user-list-search-unpaid").fill("")
-    const paidCard = await ensureListOpen(
-      page,
-      "contribution-user-list-paid",
-      "contribution-user-list-toggle-paid",
-      "contribution-user-list-search-paid",
-    )
-    await expect(paidCard.getByText(exactText("paid-target"))).toBeVisible()
-    await expect(paidCard.getByText(exactText("paid-other"))).toBeVisible()
-
-    await searchInput(page, "contribution-user-list-search-paid").fill("PaidTarget paid-discord")
-    await expect(paidCard.getByText(exactText("paid-target"))).toBeVisible()
-    await expect(paidCard.getByText(exactText("paid-other"))).toHaveCount(0)
   })
 
   test("recovery manager filters inactive and active users by multiple fields", async ({page}) => {

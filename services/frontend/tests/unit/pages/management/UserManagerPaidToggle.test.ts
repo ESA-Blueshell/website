@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
-import MemberManager from "@/pages/management/MemberManager.vue"
+import UserManager from "@/pages/management/UserManager.vue"
 import {MemberType} from "@/services/api"
 import {settle} from "../helpers"
 
@@ -66,7 +66,7 @@ vi.mock("@/components/form/UserForm.vue", () => ({
   default: {name: "UserForm", template: "<div />"},
 }))
 
-describe("MemberManager paid toggle", () => {
+describe("UserManager paid toggle", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFindUsers.mockResolvedValue({
@@ -94,7 +94,7 @@ describe("MemberManager paid toggle", () => {
   })
 
   it("togglePaid is disabled when no period selected (isDisabled=true)", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     // No period selected → isDisabled should be true
@@ -102,7 +102,7 @@ describe("MemberManager paid toggle", () => {
   })
 
   it("togglePaid becomes enabled after period is selected", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -110,7 +110,7 @@ describe("MemberManager paid toggle", () => {
   })
 
   it("togglePaid calls createContribution for unpaid user and updates paidUserIds", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -124,7 +124,7 @@ describe("MemberManager paid toggle", () => {
   it("togglePaid calls deleteContribution for paid user and removes from paidUserIds", async () => {
     // Seed user 1 as paid
     mockFindContributionsByPeriodId.mockResolvedValue({data: [{userId: 1, contributionPeriodId: 5}]})
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -136,7 +136,7 @@ describe("MemberManager paid toggle", () => {
   })
 
   it("isSaving returns false when not toggling", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     expect((wrapper.vm as any).isSaving(1)).toBe(false)

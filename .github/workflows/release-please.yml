@@ -2,7 +2,7 @@ name: Release Please
 
 # Maintains a release pull request and computes the next version from the
 # Conventional Commits merged since the last release. Merging it tags the
-# release, which is what promotes images to :latest in build.yml.
+# release and, in the same run, publishes the images Keel rolls out.
 
 on:
   push:
@@ -23,7 +23,34 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
+    outputs:
+      released: ${{ steps.release.outputs.releases_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      # The release branch push raises no event, and the pull request's own
+      # checks sit behind an approval prompt. workflow_dispatch is the one
+      # trigger GITHUB_TOKEN may fire, so validation runs unattended.
+      - name: Validate the release branch
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run validate.yml --repo "$GITHUB_REPOSITORY" --ref release-please--branches--main
+
+  publish-release-images:
+    # Called rather than triggered by `release: published`: a release cut with
+    # GITHUB_TOKEN raises no event, so nothing would listen.
+    name: Publish release images
+    needs: release-please
+    if: needs.release-please.outputs.released == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      release-tag: ${{ needs.release-please.outputs.tag }}
+    permissions:
+      contents: read
+      packages: write

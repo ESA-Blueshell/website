@@ -2,10 +2,10 @@ package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Page
 
-object MemberManagerHelper {
+object UserManagerHelper {
     fun open(page: Page, frontendUrl: String) {
-        page.navigate("$frontendUrl/members/manage")
-        page.waitForURL("**/members/manage**")
+        page.navigate("$frontendUrl/user-manager")
+        page.waitForURL("**/user-manager**")
     }
 
     fun search(page: Page, query: String) {

@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
-import MemberManager, {type MemberRow} from "@/pages/management/MemberManager.vue"
+import UserManager, {type MemberRow} from "@/pages/management/UserManager.vue"
 import {MemberType} from "@/services/api"
 import {settle} from "../helpers"
 
@@ -97,7 +97,7 @@ function makeMembership(overrides: {
   }
 }
 
-describe("MemberManager page", () => {
+describe("UserManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFindUsers.mockResolvedValue({
@@ -122,14 +122,14 @@ describe("MemberManager page", () => {
   })
 
   it("fetches all users and memberships on mount", async () => {
-    shallowMount(MemberManager)
+    shallowMount(UserManager)
     await settle()
     expect(mockFindUsers).toHaveBeenCalled()
     expect(mockFindMemberships).toHaveBeenCalledWith()
   })
 
   it("does NOT call findMemberships with period query on mount", async () => {
-    shallowMount(MemberManager)
+    shallowMount(UserManager)
     await settle()
     // Must be called with no arguments (empty query = all memberships)
     expect(mockFindMemberships).toHaveBeenCalledWith()
@@ -138,7 +138,7 @@ describe("MemberManager page", () => {
   })
 
   it("upserts users and refreshes user after membership change", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     ;(wrapper.vm as any).updateUser({id: 1, username: "alice-updated", fullName: "Alice Updated", roles: ["MEMBER"]})
@@ -152,7 +152,7 @@ describe("MemberManager page", () => {
   })
 
   it("openAddUser sets addDialog true", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     ;(wrapper.vm as any).openAddUser()
@@ -160,7 +160,7 @@ describe("MemberManager page", () => {
   })
 
   it("openEditProfile calls findUserById and opens edit dialog", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     const row = (wrapper.vm as any).rows[0]
@@ -170,7 +170,7 @@ describe("MemberManager page", () => {
   })
 
   it("openManageMembership opens manage dialog with correct userId", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     const row = (wrapper.vm as any).rows[0]
@@ -180,7 +180,7 @@ describe("MemberManager page", () => {
   })
 
   it("resets paidUserIds and fetches contributions on period change", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 8, startDate: "2026-01-01", endDate: "2026-12-31"})
@@ -194,7 +194,7 @@ describe("MemberManager page", () => {
   })
 
   it("clears paidUserIds when period is undefined", async () => {
-    const wrapper = shallowMount(MemberManager)
+    const wrapper = shallowMount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 8, startDate: "2026-01-01", endDate: "2026-12-31"})
@@ -205,7 +205,7 @@ describe("MemberManager page", () => {
   })
 })
 
-describe("MemberManager row model", () => {
+describe("UserManager row model", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockDeleteUserById.mockResolvedValue({})
@@ -240,7 +240,7 @@ describe("MemberManager row model", () => {
     mockFindContributionsByPeriodId.mockResolvedValue({
       data: paidIds.map((uid, idx) => ({id: 900 + idx, userId: uid, contributionPeriodId: 1})),
     })
-    return shallowMount(MemberManager)
+    return shallowMount(UserManager)
   }
 
   it("derives status: Current when user has active membership (endDate null)", async () => {
@@ -502,7 +502,7 @@ describe("MemberManager row model", () => {
   })
 })
 
-describe("MemberManager filters", () => {
+describe("UserManager filters", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockDeleteUserById.mockResolvedValue({})
@@ -530,7 +530,7 @@ describe("MemberManager filters", () => {
         // user 3: no memberships (handled by empty filter)
       ],
     })
-    return shallowMount(MemberManager)
+    return shallowMount(UserManager)
   }
 
   it("memberFilter=yes shows only Current members", async () => {

@@ -26,8 +26,7 @@ const navbarPaths = [
   "/addresses/manage",
   "/recovery/manage",
   "/committees/manage",
-  "/contributions/manage",
-  "/members/manage",
+  "/user-manager",
   "/management/jobs",
 ]
 

@@ -6,13 +6,8 @@ name: Build
 # into a manifest list, so neither arch waits on QEMU emulation and each gets
 # its own GHA cache scope.
 #
-# Two triggers, two outcomes:
-#   push to main       rebuilds only the services that changed and tags them
-#                      :sha-<short>. Nothing moves :latest, so the cluster
-#                      does not roll.
-#   release published  rebuilds every service from the release tag and adds
-#                      :<tag> and :latest. :latest is what Keel polls, so a
-#                      release is the only thing that reaches production.
+# main tags :sha-<short> only; a published release also moves :latest, which is
+# the tag Keel polls, so only releases reach production.
 on:
   push:
     branches: [main]
@@ -55,8 +50,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Skipped on a release, which rebuilds everything: the tag must carry a
-      # complete set of images, not only the services that changed last.
+      # Skipped on a release: the tag needs a complete set of images.
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         if: github.event_name != 'release'
@@ -103,8 +97,7 @@ jobs:
           API_SHARED=$(any "$FILTER_WORKFLOW" "$FILTER_BUILD_LOGIC" "$FILTER_LIBS" "$FILTER_GRADLE_CONFIG")
           FRONTEND_SHARED=$(any "$FILTER_WORKFLOW")
 
-          # A release publishes a complete set of images for the tag, so every
-          # service rebuilds regardless of what changed in the tagged commit.
+          # A release rebuilds everything, not just what changed in the tag commit.
           if [[ "$IS_RELEASE" == "true" ]]; then
             API_SHARED=true
             FRONTEND_SHARED=true
@@ -268,9 +261,7 @@ jobs:
             sources+=("${IMAGE}@sha256:${digest}")
           done
 
-          # Every build gets an immutable :sha-<short>. Only a release adds
-          # :<tag> and moves :latest, which is the tag Keel polls, so merging
-          # to main publishes an artefact without rolling the cluster.
+          # Only a release moves :latest, so merging to main publishes without rolling.
           tags=(-t "${IMAGE}:sha-${SHORT}")
           if [[ -n "$RELEASE_TAG" ]]; then
             tags+=(-t "${IMAGE}:${RELEASE_TAG}" -t "${IMAGE}:latest")

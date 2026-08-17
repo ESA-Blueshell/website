@@ -1,9 +1,8 @@
 name: Release Please
 
-# Maintains a release pull request that accumulates every Conventional Commits
-# subject merged since the last release, and computes the next version from
-# them. Merging that pull request tags the release, which is what promotes
-# images to :latest in build.yml and therefore what Keel rolls out.
+# Maintains a release pull request and computes the next version from the
+# Conventional Commits merged since the last release. Merging it tags the
+# release, which is what promotes images to :latest in build.yml.
 
 on:
   push:

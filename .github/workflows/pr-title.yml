@@ -1,7 +1,7 @@
 name: PR title
 
 # The squash-merge subject is taken from the pull request title, so the title
-# is what lands in history and what a release tool reads to decide a version.
+# is what lands in history and what release-please reads to decide a version.
 #
 # `synchronize` is included even though a push cannot change the title: a
 # required check is recorded against the head commit, so without it a new push
@@ -23,13 +23,17 @@ jobs:
     name: Conventional Commits title
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      pull-requests: read
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Check the title
+      # Types are left at the action's default, which is the standard
+      # conventional-commit-types set. Scopes are unrestricted on purpose:
+      # this repo uses compound scopes such as `api,frontend` and `cohort+jobs`.
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
-          # Through the environment, never interpolated into the shell: the
-          # title is author-controlled text.
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: python3 .github/scripts/check_pr_title.py
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # On a single-commit pull request GitHub offers that commit's message
+          # as the squash subject, so the commit has to hold up as well as the
+          # title. Most pull requests here are single-commit.
+          validateSingleCommit: true

@@ -1,0 +1,30 @@
+name: Release Please
+
+# Maintains a release pull request that accumulates every Conventional Commits
+# subject merged since the last release, and computes the next version from
+# them. Merging that pull request tags the release, which is what promotes
+# images to :latest in build.yml and therefore what Keel rolls out.
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    name: Maintain the release pull request
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

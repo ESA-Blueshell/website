@@ -4,11 +4,8 @@
 
 $accent: rgb(var(--v-theme-accent));
 
-// Grayscale antialiasing: on the dark theme, the browser's default subpixel
-// antialiasing fringes saturated text (e.g. red exclusion notes) with RGB
-// artifacts that read as blurry/"low resolution". Grayscale AA renders all
-// text crisply on dark backgrounds and keeps composited (scrolling/sticky)
-// regions consistent with the rest of the page.
+// Subpixel AA fringes saturated text on dark backgrounds; grayscale AA also
+// keeps composited (scrolling/sticky) regions consistent with the rest.
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

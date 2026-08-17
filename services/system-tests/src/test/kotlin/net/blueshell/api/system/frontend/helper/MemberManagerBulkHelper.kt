@@ -21,7 +21,7 @@ object MemberManagerBulkHelper {
      * Navigate to the member manager and wait for the members table to load.
      */
     fun openMemberManager(page: Page, frontendUrl: String) {
-        MemberManagerHelper.open(page, frontendUrl)
+        UserManagerHelper.open(page, frontendUrl)
         TestIdLocatorHelper.byTestId(page, "member-manager-table").waitFor()
     }
 

@@ -2,7 +2,7 @@ package net.blueshell.api.system.frontend.management
 
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.MemberManagerBulkHelper
-import net.blueshell.api.system.frontend.helper.MemberManagerHelper
+import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.api.system.frontend.helper.TestIdLocatorHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
@@ -48,19 +48,19 @@ class MemberManagerBulkSelectionSystemTest : PlaywrightTestBase() {
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member1Id)).isTrue
 
         // Search for member 1's name (should still show as selected)
-        MemberManagerHelper.search(page, "alice")
+        UserManagerHelper.search(page, "alice")
         Thread.sleep(500) // Wait for filter to apply
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member1Id)).isTrue
 
         // Clear search and select member 2
-        MemberManagerHelper.search(page, "")
+        UserManagerHelper.search(page, "")
         Thread.sleep(500)
         MemberManagerBulkHelper.selectUserRow(page, member2Id)
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member1Id)).isTrue
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member2Id)).isTrue
 
         // Search again (both should remain selected)
-        MemberManagerHelper.search(page, "bob")
+        UserManagerHelper.search(page, "bob")
         Thread.sleep(500)
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member2Id)).isTrue
         // member1 is filtered out but selection should persist
@@ -105,7 +105,7 @@ class MemberManagerBulkSelectionSystemTest : PlaywrightTestBase() {
         assertThat(MemberManagerBulkHelper.isRowSelected(page, member3Id)).isTrue
 
         // Search to filter down to one member
-        MemberManagerHelper.search(page, "emma")
+        UserManagerHelper.search(page, "emma")
         Thread.sleep(500)
 
         // Click select-all again to deselect all visible rows

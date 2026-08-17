@@ -1,14 +1,24 @@
 name: Build
 
-# Builds and pushes the images Keel polls (:latest) on every main commit.
-# Validation lives in validate.yml and is gated by the PR; main is purely
-# the artefact-publish boundary. Multi-arch images are produced by
-# building each platform on a native runner and merging the digests into
-# a manifest list, so neither arch waits on QEMU emulation and each gets
+# Publishes service images. Validation lives in validate.yml and is gated by
+# the PR; main is purely the artefact-publish boundary. Multi-arch images are
+# produced by building each platform on a native runner and merging the digests
+# into a manifest list, so neither arch waits on QEMU emulation and each gets
 # its own GHA cache scope.
+#
+# main tags :sha-<short> only. release.yml calls this with release-tag set,
+# which also moves :latest — the tag Keel polls — so only releases reach
+# production. It is called rather than triggered by `release: published`
+# because a release cut with GITHUB_TOKEN raises no event.
 on:
   push:
     branches: [main]
+  workflow_call:
+    inputs:
+      release-tag:
+        description: Tag to publish, e.g. v1.2.0. Empty means an ordinary main build.
+        type: string
+        default: ''
   workflow_dispatch:
 
 # Sequential: two consecutive main commits build one after the other.
@@ -46,8 +56,10 @@ jobs:
         with:
           fetch-depth: 2
 
+      # Skipped on a release: the tag needs a complete set of images.
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
+        if: inputs.release-tag == ''
         with:
           base: ${{ github.event.before }}
           filters: |
@@ -80,6 +92,7 @@ jobs:
           FILTER_BUILD_LOGIC: ${{ steps.filter.outputs.build-logic }}
           FILTER_LIBS: ${{ steps.filter.outputs.libs }}
           FILTER_GRADLE_CONFIG: ${{ steps.filter.outputs.gradle-config }}
+          IS_RELEASE: ${{ inputs.release-tag != '' }}
         run: |
           set -euo pipefail
           any() { for v in "$@"; do [[ "$v" == "true" ]] && echo "true" && return; done; echo "false"; }
@@ -89,6 +102,13 @@ jobs:
           # invalidate the api and vice versa beyond shared gradle config.
           API_SHARED=$(any "$FILTER_WORKFLOW" "$FILTER_BUILD_LOGIC" "$FILTER_LIBS" "$FILTER_GRADLE_CONFIG")
           FRONTEND_SHARED=$(any "$FILTER_WORKFLOW")
+
+          # A release rebuilds everything, not just what changed in the tag commit.
+          if [[ "$IS_RELEASE" == "true" ]]; then
+            API_SHARED=true
+            FRONTEND_SHARED=true
+            FILTER_STALWART_TOOLS=true
+          fi
 
           MATRIX="[]"
           SERVICES="[]"
@@ -193,8 +213,8 @@ jobs:
 
   merge:
     # One run per service. Pulls every digest the build job published for
-    # that service and assembles a single manifest list under the
-    # :sha-<short> and :latest tags Keel polls.
+    # that service and assembles a single manifest list, tagged :sha-<short>
+    # always and :<tag> plus :latest only on a release.
     name: Push manifest for ${{ matrix.service }}
     needs: [detect-changes, build]
     if: needs.detect-changes.outputs.has-matrix == 'true'
@@ -238,14 +258,20 @@ jobs:
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
           SHORT: ${{ steps.sha.outputs.short }}
+          # Empty unless release-please called this workflow for a release.
+          RELEASE_TAG: ${{ inputs.release-tag }}
         run: |
           set -euo pipefail
           sources=()
           for digest in *; do
             sources+=("${IMAGE}@sha256:${digest}")
           done
-          docker buildx imagetools create \
-            -t "${IMAGE}:sha-${SHORT}" \
-            -t "${IMAGE}:latest" \
-            "${sources[@]}"
+
+          # Only a release moves :latest, so merging to main publishes without rolling.
+          tags=(-t "${IMAGE}:sha-${SHORT}")
+          if [[ -n "$RELEASE_TAG" ]]; then
+            tags+=(-t "${IMAGE}:${RELEASE_TAG}" -t "${IMAGE}:latest")
+          fi
+
+          docker buildx imagetools create "${tags[@]}" "${sources[@]}"
           docker buildx imagetools inspect "${IMAGE}:sha-${SHORT}"

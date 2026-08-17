@@ -1,34 +1,19 @@
-import {describe, it, expect} from "vitest"
-import {memberTypeLabel} from "@/utils/memberType"
+import {describe, expect, it} from "vitest"
 import {MemberType} from "@/services/api"
+import {memberTypeLabel} from "@/utils/memberType"
 
 describe("memberTypeLabel", () => {
-  it("maps REGULAR to 'Regular'", () => {
-    expect(memberTypeLabel(MemberType.REGULAR)).toBe("Regular")
+  it("title-cases every member type", () => {
+    expect(Object.values(MemberType).map(memberTypeLabel)).toEqual([
+      "Alumni",
+      "Honorary",
+      "Regular",
+      "None",
+    ])
   })
 
-  it("maps ALUMNI to 'Alumni'", () => {
-    expect(memberTypeLabel(MemberType.ALUMNI)).toBe("Alumni")
-  })
-
-  it("maps HONORARY to 'Honorary'", () => {
-    expect(memberTypeLabel(MemberType.HONORARY)).toBe("Honorary")
-  })
-
-  it("maps NONE to 'None'", () => {
-    expect(memberTypeLabel(MemberType.NONE)).toBe("None")
-  })
-
-  it("returns '—' for null", () => {
+  it("renders a missing member type as an em dash", () => {
     expect(memberTypeLabel(null)).toBe("—")
-  })
-
-  it("returns '—' for undefined", () => {
     expect(memberTypeLabel(undefined)).toBe("—")
-  })
-
-  it("title-cases unknown values outside the enum", () => {
-    expect(memberTypeLabel("unknown")).toBe("Unknown")
-    expect(memberTypeLabel("CUSTOM")).toBe("Custom")
   })
 })

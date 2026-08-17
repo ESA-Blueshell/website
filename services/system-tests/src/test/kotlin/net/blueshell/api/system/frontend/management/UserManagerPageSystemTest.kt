@@ -1,7 +1,7 @@
 package net.blueshell.api.system.frontend.management
 
 import net.blueshell.api.system.frontend.helper.AuthHelper
-import net.blueshell.api.system.frontend.helper.MemberManagerHelper
+import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
@@ -26,8 +26,8 @@ class UserManagerPageSystemTest : PlaywrightTestBase() {
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        MemberManagerHelper.open(page, frontendUrl)
-        MemberManagerHelper.search(page, target.username)
+        UserManagerHelper.open(page, frontendUrl)
+        UserManagerHelper.search(page, target.username)
         page.locator("[data-testid='member-manager-row-$targetId']").first().waitFor()
 
         val deleteResponse = page.waitForResponse(
@@ -36,12 +36,12 @@ class UserManagerPageSystemTest : PlaywrightTestBase() {
                     response.url().contains("/users/$targetId")
             },
         ) {
-            MemberManagerHelper.clickDeleteUser(page, targetId)
-            MemberManagerHelper.confirmDelete(page)
+            UserManagerHelper.clickDeleteUser(page, targetId)
+            UserManagerHelper.confirmDelete(page)
         }
         assertThat(deleteResponse.status()).isEqualTo(204)
 
-        MemberManagerHelper.open(page, frontendUrl)
+        UserManagerHelper.open(page, frontendUrl)
 
         // Deletion anonymizes the user (username scrubbed to a placeholder), so the
         // still-present row is located by id among all rows, not by the old username.

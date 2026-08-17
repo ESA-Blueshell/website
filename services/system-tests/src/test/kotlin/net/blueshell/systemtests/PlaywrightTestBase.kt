@@ -51,15 +51,8 @@ abstract class PlaywrightTestBase {
         context = browser.newContext(
             Browser.NewContextOptions()
                 .setIgnoreHTTPSErrors(true)
-                // Pin a comfortable desktop viewport. The member manager only renders the
-                // selectable desktop table (with the per-row bulk checkboxes) when Vuetify's
-                // `lgAndUp` is true, which is the `>= 1280px` breakpoint. Playwright's default
-                // 1280x720 sits exactly on that boundary, so once a long member list adds a
-                // vertical scrollbar the layout width dips just below 1280, flips the manager
-                // to the mobile list (which has no bulk checkboxes), and `selectUserRow` then
-                // times out clicking a checkbox that is no longer laid out. A width safely above
-                // the breakpoint (matching the e2e suite's 1440x900) keeps the desktop table and
-                // its checkboxes rendered regardless of scrollbar width.
+                // Playwright's 1280 default sits exactly on Vuetify's lgAndUp
+                // breakpoint, so a scrollbar tips layouts to their mobile variant.
                 .setViewportSize(1600, 900),
         )
         context.setDefaultTimeout(DEFAULT_TIMEOUT_MS)

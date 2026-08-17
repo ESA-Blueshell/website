@@ -11,12 +11,15 @@ github, which is its current state.
 - [2024 Membership, Brevo, and Contributions](docs/changelogs/04-2024-membership-brevo-contributions.md)
 - [2025 Consolidation to 1.0.0](docs/changelogs/05-2025-consolidation-to-1-0.md)
 - [2026 1.1.0 Modernization](docs/changelogs/06-2026-1-1-modernization.md)
+- [2026 1.1.1 Privacy, Retention, and Consent](docs/changelogs/07-2026-1-1-1-privacy-retention-and-consent.md)
+- [2026 Automated Releases](docs/changelogs/08-2026-automated-releases.md)
 
 ## Version Path Summary
 - Pre-versioning era: 2019 through most of 2025.
 - `1.0.0`: formal stable baseline at the end of the 2025 consolidation period.
 - `1.1.0` Kotlin + RabbitMQ + retry + test/coverage/security/DDD modernization period.
 - `1.1.1` Privacy and consent policy updates.
+- `1.1.2` onward: computed by release-please from Conventional Commits subjects.
 
 ## Repository Lineage
 - Legacy GitLab org projects: https://gitlab.com/blueshell-esports

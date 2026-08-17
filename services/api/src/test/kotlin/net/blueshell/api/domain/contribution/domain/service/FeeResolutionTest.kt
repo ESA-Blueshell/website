@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.contribution.domain.service
 
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.enums.MemberType
 import org.assertj.core.api.Assertions.assertThat
@@ -19,34 +20,38 @@ class FeeResolutionTest {
 
     private val cutoffDate = LocalDate.of(2024, 7, 1)
 
+    private fun feeFor(memberType: MemberType, startDate: LocalDate?): Double? =
+        resolveFeeType(memberType, startDate, cutoffDate)?.let { resolveFeeAmount(it, period) }
+
     @Nested
     inner class RegularMembers {
 
         @Test
-        fun `regular member starting before cutoff pays full year fee`() {
-            val startDate = LocalDate.of(2024, 1, 1)
-            val resolved = resolveMemberFee(MemberType.REGULAR, startDate, cutoffDate, period)
-            assertThat(resolved).isEqualTo(100.0)
+        fun `starting before the cutoff pays the full year fee`() {
+            assertThat(resolveFeeType(MemberType.REGULAR, LocalDate.of(2024, 1, 1), cutoffDate))
+                .isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+            assertThat(feeFor(MemberType.REGULAR, LocalDate.of(2024, 1, 1))).isEqualTo(100.0)
         }
 
         @Test
-        fun `regular member starting exactly on cutoff pays full year fee (boundary matches the frontend rule)`() {
-            val startDate = LocalDate.of(2024, 7, 1)
-            val resolved = resolveMemberFee(MemberType.REGULAR, startDate, cutoffDate, period)
-            assertThat(resolved).isEqualTo(100.0)
+        fun `starting exactly on the cutoff pays the full year fee`() {
+            assertThat(resolveFeeType(MemberType.REGULAR, cutoffDate, cutoffDate))
+                .isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+            assertThat(feeFor(MemberType.REGULAR, cutoffDate)).isEqualTo(100.0)
         }
 
         @Test
-        fun `regular member starting after cutoff pays half year fee`() {
-            val startDate = LocalDate.of(2024, 8, 15)
-            val resolved = resolveMemberFee(MemberType.REGULAR, startDate, cutoffDate, period)
-            assertThat(resolved).isEqualTo(50.0)
+        fun `starting after the cutoff pays the half year fee`() {
+            assertThat(resolveFeeType(MemberType.REGULAR, LocalDate.of(2024, 8, 15), cutoffDate))
+                .isEqualTo(BulkFeeType.HALF_YEAR_FEE)
+            assertThat(feeFor(MemberType.REGULAR, LocalDate.of(2024, 8, 15))).isEqualTo(50.0)
         }
 
         @Test
-        fun `regular member with null start date pays full year fee`() {
-            val resolved = resolveMemberFee(MemberType.REGULAR, null, cutoffDate, period)
-            assertThat(resolved).isEqualTo(100.0)
+        fun `an unresolvable start date pays the full year fee`() {
+            assertThat(resolveFeeType(MemberType.REGULAR, null, cutoffDate))
+                .isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+            assertThat(feeFor(MemberType.REGULAR, null)).isEqualTo(100.0)
         }
     }
 
@@ -54,14 +59,12 @@ class FeeResolutionTest {
     inner class AlumniMembers {
 
         @Test
-        fun `alumni member pays alumni fee regardless of start date`() {
-            val resolved1 = resolveMemberFee(MemberType.ALUMNI, LocalDate.of(2023, 1, 1), cutoffDate, period)
-            val resolved2 = resolveMemberFee(MemberType.ALUMNI, LocalDate.of(2024, 8, 1), cutoffDate, period)
-            val resolved3 = resolveMemberFee(MemberType.ALUMNI, null, cutoffDate, period)
-
-            assertThat(resolved1).isEqualTo(30.0)
-            assertThat(resolved2).isEqualTo(30.0)
-            assertThat(resolved3).isEqualTo(30.0)
+        fun `pay the alumni fee regardless of start date`() {
+            listOf(LocalDate.of(2023, 1, 1), LocalDate.of(2024, 8, 1), null).forEach { startDate ->
+                assertThat(resolveFeeType(MemberType.ALUMNI, startDate, cutoffDate))
+                    .isEqualTo(BulkFeeType.ALUMNI_FEE)
+                assertThat(feeFor(MemberType.ALUMNI, startDate)).isEqualTo(30.0)
+            }
         }
     }
 
@@ -69,14 +72,35 @@ class FeeResolutionTest {
     inner class HonoraryMembers {
 
         @Test
-        fun `honorary member is excluded regardless of start date`() {
-            val resolved1 = resolveMemberFee(MemberType.HONORARY, LocalDate.of(2023, 1, 1), cutoffDate, period)
-            val resolved2 = resolveMemberFee(MemberType.HONORARY, LocalDate.of(2024, 8, 1), cutoffDate, period)
-            val resolved3 = resolveMemberFee(MemberType.HONORARY, null, cutoffDate, period)
+        fun `are excluded regardless of start date`() {
+            listOf(LocalDate.of(2023, 1, 1), LocalDate.of(2024, 8, 1), null).forEach { startDate ->
+                assertThat(resolveFeeType(MemberType.HONORARY, startDate, cutoffDate)).isNull()
+            }
+        }
+    }
 
-            assertThat(resolved1).isNull()
-            assertThat(resolved2).isNull()
-            assertThat(resolved3).isNull()
+    @Nested
+    inner class AmountRecovery {
+
+        @Test
+        fun `each fee option recovers its own type`() {
+            assertThat(resolveFeeTypeFromAmount(50.0, period)).isEqualTo(BulkFeeType.HALF_YEAR_FEE)
+            assertThat(resolveFeeTypeFromAmount(30.0, period)).isEqualTo(BulkFeeType.ALUMNI_FEE)
+            assertThat(resolveFeeTypeFromAmount(100.0, period)).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+        }
+
+        @Test
+        fun `an amount matching no fee option falls back to the full year fee`() {
+            assertThat(resolveFeeTypeFromAmount(12.34, period)).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+        }
+    }
+
+    @Nested
+    inner class Reasons {
+
+        @Test
+        fun `every fee type states a reason`() {
+            BulkFeeType.entries.forEach { assertThat(feeReason(it)).isNotBlank() }
         }
     }
 }

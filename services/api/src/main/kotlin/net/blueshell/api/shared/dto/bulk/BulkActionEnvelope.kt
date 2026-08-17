@@ -69,26 +69,6 @@ enum class BulkRowReason {
     WILL_START_NEW,
 }
 
-/** Type of bulk action being performed. */
-@Schema(name = "BulkActionType")
-enum class BulkActionType {
-    MARK_PAID,
-    MARK_UNPAID,
-    CONTRIBUTION_REMINDER,
-    INCASSO_NOTIFICATION,
-    END_MEMBERSHIP,
-    RESUME_MEMBERSHIP,
-}
-
-@Schema(name = "BulkActionCounts")
-data class BulkActionCounts(
-    val selected: Int,
-    val willApply: Int,
-    val skipped: Int,
-    val excluded: Int,
-    val warned: Int,
-)
-
 @Schema(name = "BulkActionResult")
 data class BulkActionResult(
     /** Rows changed (contributions created/deleted, memberships ended). */

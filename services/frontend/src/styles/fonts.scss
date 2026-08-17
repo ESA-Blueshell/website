@@ -4,8 +4,7 @@
   font-display: swap;
 }
 
-// Weight ranges cover every weight the app requests with a REAL face, so the
-// browser never synthesizes (faux-bold smears text, reading as "low resolution").
+// Every requested weight maps to a real face, so the browser never synthesizes.
 @font-face {
   font-family: 'Barlow Semi Condensed';
   src: url('@/assets/fonts/BarlowSemiCondensed-Light.ttf') format('truetype');

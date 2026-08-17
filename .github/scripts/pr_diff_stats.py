@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 """Render a per-service, per-category diff breakdown into a pull request body.
 
-File counts and line counts come from the GitHub pulls/{n}/files API, which
-already reports the three-dot (merge-base) diff and pre-resolves renames, so
-no checkout of the head ref is needed.
-
-Environment:
-    GH_TOKEN    token for `gh` (required unless --dry-run)
-    REPO        owner/name (required)
-    PR_NUMBER   pull request number (required)
-
-Usage:
-    pr_diff_stats.py             fetch, render, splice into the PR body
-    pr_diff_stats.py --dry-run   fetch and render to stdout, write nothing
+Counts come from the pulls/{n}/files API, which is already a merge-base diff with
+renames resolved, so no head checkout is needed. Reads GH_TOKEN, REPO, PR_NUMBER.
+Pass --dry-run to render to stdout and write nothing.
 """
 
 from __future__ import annotations
@@ -41,7 +32,7 @@ DEL_GLYPH = "░"  # light shade
 
 BODY_LIMIT = 65000
 
-SERVICE_ORDER = ["api", "frontend", "system-tests", "libs", "platform", "ci", "docs"]
+SERVICE_ORDER = ["api", "frontend", "system-tests", "libs", "platform", "ci", "repo", "docs"]
 CATEGORY_ORDER = [
     "prod",
     "unit",
@@ -115,11 +106,10 @@ def _scalar(value: str, where: str) -> str:
 
 
 def parse_rules(text: str, source: str = "<rules>") -> list[dict[str, str]]:
-    """Read the documented subset: a sequence of mappings with three scalar keys.
+    """Read a sequence of mappings with three scalar keys, raising on anything else.
 
-    Deliberately not PyYAML, which is absent from the runner image; pip
-    installing it would put a network dependency inside a privileged workflow.
-    Anything outside the documented shape raises rather than being skipped.
+    Not PyYAML: it is absent from the runner, and pip installing it would put a
+    network dependency inside a privileged workflow.
     """
     entries: list[dict[str, str]] = []
     for lineno, raw in enumerate(text.splitlines(), start=1):
@@ -173,11 +163,10 @@ def fetch_files(repo: str, pr: str) -> list[dict]:
 
 
 def bar(add: int, dele: int, scale: int) -> str:
-    """Bar length encodes churn against `scale`; its split encodes added vs removed.
+    """Length encodes churn against `scale`, the split encodes added vs removed.
 
-    A generated row can exceed `scale`, since the scale covers hand-written rows
-    only. Such a row is clamped to full width, and the split is taken from the
-    row's own ratio so clamping cannot misreport it.
+    A generated row can exceed `scale` and is clamped to full width; the split
+    comes from the row's own ratio so clamping cannot misreport it.
     """
     total = add + dele
     if scale <= 0 or total <= 0:
@@ -229,9 +218,8 @@ def render(files: list[dict], rules) -> str:
     def category_key(name: str) -> tuple[int, str]:
         return (CATEGORY_ORDER.index(name), "") if name in CATEGORY_ORDER else (len(CATEGORY_ORDER), name)
 
-    # Hand-written rows set the scale so generated churn cannot dwarf them. A
-    # dependency bump may have no hand-written rows at all; fall back to the
-    # generated ones so the bars still say something.
+    # Hand-written rows set the scale so generated churn cannot dwarf them, but a
+    # dependency bump has none, so fall back to generated rather than draw nothing.
     scale = max((c["add"] + c["del"] for (_, cat), c in buckets.items() if cat not in EXCLUDED), default=0)
     if scale == 0:
         scale = max((c["add"] + c["del"] for c in buckets.values()), default=0)

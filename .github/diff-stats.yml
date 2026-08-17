@@ -1,21 +1,7 @@
-# Taxonomy for the PR diff breakdown rendered by .github/scripts/pr_diff_stats.py.
-#
-# Rules are ORDERED and the first match wins, so narrow rules go above broad
-# ones. Adding a service or a test type is one new entry.
-#
-# Glob syntax: `*` matches within a path segment, `**` spans segments, and a
-# trailing `/**` also matches the directory itself. Paths are repo-relative and
-# always the NEW path for a rename.
-#
-# Categories drive the rollups at the bottom of the block:
-#   prod                                     -> "production"
-#   unit, integration, e2e, system, fixtures -> "tests"
-#   generated                                -> excluded from every total
-#   build, infra, docs, other                -> counted in the total only
-#
-# Parsed by a strict reader that accepts this shape only: a top-level sequence
-# of mappings with the three scalar keys below, plus `#` comments and blank
-# lines. Keep it that way and it stays valid YAML for any other reader.
+# Taxonomy for the diff breakdown. Ordered: first match wins.
+# `*` stops at a path separator, `**` spans them, a trailing `/**` also matches the dir.
+# `prod` and the test kinds roll up at the bottom of the block; `generated` is
+# excluded from every total.
 
 # --- generated and vendored: must stay first so they win over the src rules ---
 - glob: "services/frontend/src/services/api/**"
@@ -154,6 +140,28 @@
 
 - glob: "*.gradle.kts"
   service: ci
+  category: build
+
+# --- repo tooling: below everything path-specific, so a service keeps its own dotfiles ---
+- glob: ".idea/**"
+  service: repo
+  category: build
+
+# Only files sitting directly under services/, e.g. the shared .dockerignore.
+- glob: "services/*"
+  service: repo
+  category: build
+
+- glob: ".*"
+  service: repo
+  category: build
+
+- glob: "*.json"
+  service: repo
+  category: build
+
+- glob: "*.sh"
+  service: repo
   category: build
 
 # --- docs ---

@@ -26,4 +26,7 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Anything GITHUB_TOKEN does raises no events, so with it the published
+          # release never reaches build.yml and :latest never moves. Falls back
+          # only so the workflow still runs if the secret is absent.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}

@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * Fee type used for contribution-reminder and incasso-notification bulk actions.
  * The server resolves the € amount from the selected period's fee for the chosen type.
  */
-@Schema(name = "BulkFeeType")
+@Schema(name = "BulkFeeType", enumAsRef = true)
 enum class BulkFeeType {
     /** Full-year fee — for REGULAR members who started before the half-year cutoff. */
     FULL_YEAR_FEE,
@@ -28,6 +28,7 @@ enum class BulkFeeType {
 }
 
 /** How a selected user will be treated by a bulk action. */
+@Schema(name = "BulkRowDisposition", enumAsRef = true)
 enum class BulkRowDisposition {
     /** Will be acted on / emailed. */
     INCLUDED,
@@ -43,7 +44,7 @@ enum class BulkRowDisposition {
 }
 
 /** Machine-readable reason code for a non-INCLUDED disposition. */
-@Schema(name = "BulkRowReason")
+@Schema(name = "BulkRowReason", enumAsRef = true)
 enum class BulkRowReason {
     ALREADY_PAID,
     NOT_PAID,
@@ -67,6 +68,17 @@ enum class BulkRowReason {
     WILL_RESUME,
     /** Preview outcome for INCLUDED rows: a new membership will be inserted starting today. */
     WILL_START_NEW,
+
+    /** Incasso: the member pays by direct debit, so a payment request would double-charge. */
+    PAYS_VIA_INCASSO,
+
+    // End-membership protections. The handler skips these rows; the codes say which rule
+    // applied, so the operator sees a reason rather than an unexplained skip. TREASURER
+    // reports as CANNOT_END_BOARD.
+    CANNOT_END_COMMITTEE,
+    CANNOT_END_BOARD,
+    CANNOT_END_ADMIN,
+    CANNOT_END_HONORARY,
 }
 
 @Schema(name = "BulkActionResult")

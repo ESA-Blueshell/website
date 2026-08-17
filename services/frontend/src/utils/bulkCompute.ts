@@ -1,5 +1,6 @@
 import {type ContributionPeriodResponse} from "@/services/api"
 import type {BulkRow} from "@/utils/bulkRow"
+import {BulkRowDisposition, BulkRowReason} from "@/utils/bulkRow"
 import {autoFeeType, effectiveAmount} from "@/utils/feePreview"
 import type {BulkTarget} from "@/utils/bulkTarget"
 
@@ -17,7 +18,7 @@ import type {BulkTarget} from "@/utils/bulkTarget"
 export function computeMarkPaidRows(targets: BulkTarget[]): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
-      disposition: "INCLUDED",
+      disposition: BulkRowDisposition.INCLUDED,
       userId: target.userId,
       name: target.name,
     }
@@ -30,13 +31,13 @@ export function computeMarkPaidRows(targets: BulkTarget[]): BulkRow[] {
     }
 
     if (target.isHonorary) {
-      row.disposition = "SKIPPED"
-      row.reason = "HONORARY"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.HONORARY
     } else if (target.mostRecentContribution.paid) {
-      row.disposition = "SKIPPED"
-      row.reason = "ALREADY_PAID"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.ALREADY_PAID
     } else {
-      row.disposition = "INCLUDED"
+      row.disposition = BulkRowDisposition.INCLUDED
     }
 
     return row
@@ -49,7 +50,7 @@ export function computeMarkPaidRows(targets: BulkTarget[]): BulkRow[] {
 export function computeMarkUnpaidRows(targets: BulkTarget[]): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
-      disposition: "INCLUDED",
+      disposition: BulkRowDisposition.INCLUDED,
       userId: target.userId,
       name: target.name,
     }
@@ -62,13 +63,13 @@ export function computeMarkUnpaidRows(targets: BulkTarget[]): BulkRow[] {
     }
 
     if (target.isHonorary) {
-      row.disposition = "SKIPPED"
-      row.reason = "HONORARY"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.HONORARY
     } else if (!target.mostRecentContribution.paid) {
-      row.disposition = "SKIPPED"
-      row.reason = "NOT_PAID"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.NOT_PAID
     } else {
-      row.disposition = "INCLUDED"
+      row.disposition = BulkRowDisposition.INCLUDED
     }
 
     return row
@@ -95,7 +96,7 @@ export function computeReminderRows(
 ): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
-      disposition: "INCLUDED",
+      disposition: BulkRowDisposition.INCLUDED,
       userId: target.userId,
       name: target.name,
     }
@@ -109,14 +110,14 @@ export function computeReminderRows(
 
     // Check preconditions
     if (!target.mostRecentMembership || target.isHonorary) {
-      row.disposition = "EXCLUDED"
-      row.reason = "HONORARY"
+      row.disposition = BulkRowDisposition.EXCLUDED
+      row.reason = BulkRowReason.HONORARY
       return row
     }
 
     if (!target.email) {
-      row.disposition = "SKIPPED"
-      row.reason = "NO_EMAIL"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.NO_EMAIL
       return row
     }
 
@@ -129,13 +130,13 @@ export function computeReminderRows(
     // Disposition: already-paid and incasso-payer are both WARNINGs (off by default,
     // operator can forcibly include). ALREADY_PAID is evaluated first.
     if (target.mostRecentContribution.paid) {
-      row.disposition = "WARNING"
-      row.reason = "ALREADY_PAID"
+      row.disposition = BulkRowDisposition.WARNING
+      row.reason = BulkRowReason.ALREADY_PAID
     } else if (flagIncassoPayers && target.mostRecentMembership.incasso) {
-      row.disposition = "WARNING"
-      row.reason = "PAYS_VIA_INCASSO"
+      row.disposition = BulkRowDisposition.WARNING
+      row.reason = BulkRowReason.PAYS_VIA_INCASSO
     } else {
-      row.disposition = "INCLUDED"
+      row.disposition = BulkRowDisposition.INCLUDED
     }
 
     return row
@@ -166,8 +167,8 @@ export function computeIncassoRows(
 
     // Check if most-recent membership is not marked for incasso
     if (target.mostRecentMembership && !target.mostRecentMembership.incasso) {
-      row.disposition = "WARNING"
-      row.reason = "INCASSO_MISMATCH"
+      row.disposition = BulkRowDisposition.WARNING
+      row.reason = BulkRowReason.INCASSO_MISMATCH
     }
   }
 
@@ -182,7 +183,7 @@ export function computeIncassoRows(
 export function computeEndMembershipRows(targets: BulkTarget[], today: string): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
-      disposition: "INCLUDED",
+      disposition: BulkRowDisposition.INCLUDED,
       userId: target.userId,
       name: target.name,
     }
@@ -198,28 +199,28 @@ export function computeEndMembershipRows(targets: BulkTarget[], today: string): 
     // while they are an administrator, a board member (incl. treasurer) or a
     // committee member. Honorary members are equally protected.
     if (target.highestRole === "ADMIN") {
-      row.disposition = "EXCLUDED"
-      row.reason = "CANNOT_END_ADMIN"
+      row.disposition = BulkRowDisposition.EXCLUDED
+      row.reason = BulkRowReason.CANNOT_END_ADMIN
     } else if (target.highestRole === "BOARD" || target.highestRole === "TREASURER") {
-      row.disposition = "EXCLUDED"
-      row.reason = "CANNOT_END_BOARD"
+      row.disposition = BulkRowDisposition.EXCLUDED
+      row.reason = BulkRowReason.CANNOT_END_BOARD
     } else if (target.highestRole === "COMMITTEE") {
-      row.disposition = "EXCLUDED"
-      row.reason = "CANNOT_END_COMMITTEE"
+      row.disposition = BulkRowDisposition.EXCLUDED
+      row.reason = BulkRowReason.CANNOT_END_COMMITTEE
     } else if (target.isHonorary && target.mostRecentMembership?.endDate === null) {
-      row.disposition = "EXCLUDED"
-      row.reason = "CANNOT_END_HONORARY"
+      row.disposition = BulkRowDisposition.EXCLUDED
+      row.reason = BulkRowReason.CANNOT_END_HONORARY
     } else if (!target.mostRecentMembership || target.mostRecentMembership.endDate !== null) {
-      row.disposition = "SKIPPED"
-      row.reason = "NO_ACTIVE_MEMBERSHIP"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.NO_ACTIVE_MEMBERSHIP
     } else if (target.mostRecentMembership.startDate >= today) {
       // The backend only ends memberships that started strictly before today, so a
       // membership started today (or later) is skipped rather than ended. Mirror of the
       // handler's startDate.isBefore(today) predicate.
-      row.disposition = "SKIPPED"
-      row.reason = "STARTED_TODAY"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.STARTED_TODAY
     } else {
-      row.disposition = "INCLUDED"
+      row.disposition = BulkRowDisposition.INCLUDED
     }
 
     return row
@@ -237,7 +238,7 @@ export function computeResumeMembershipRows(
 ): BulkRow[] {
   return targets.map((target) => {
     const row: BulkRow = {
-      disposition: "INCLUDED",
+      disposition: BulkRowDisposition.INCLUDED,
       userId: target.userId,
       name: target.name,
     }
@@ -252,19 +253,19 @@ export function computeResumeMembershipRows(
 
     // If already active (no endDate), skip
     if (target.mostRecentMembership && !target.mostRecentMembership.endDate) {
-      row.disposition = "SKIPPED"
-      row.reason = "ALREADY_ACTIVE"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.ALREADY_ACTIVE
       return row
     }
 
     // If no contribution period, can't resume
     if (!latestPeriod) {
-      row.disposition = "SKIPPED"
-      row.reason = "NO_CONTRIBUTION_PERIOD"
+      row.disposition = BulkRowDisposition.SKIPPED
+      row.reason = BulkRowReason.NO_CONTRIBUTION_PERIOD
       return row
     }
 
-    row.disposition = "INCLUDED"
+    row.disposition = BulkRowDisposition.INCLUDED
 
     // Determine the specific reason: WILL_RESUME or WILL_START_NEW
     if (
@@ -273,9 +274,9 @@ export function computeResumeMembershipRows(
       && target.mostRecentMembership.endDate >= latestPeriod.startDate
       && target.mostRecentMembership.endDate <= latestPeriod.endDate
     ) {
-      row.reason = "WILL_RESUME"
+      row.reason = BulkRowReason.WILL_RESUME
     } else {
-      row.reason = "WILL_START_NEW"
+      row.reason = BulkRowReason.WILL_START_NEW
     }
 
     return row

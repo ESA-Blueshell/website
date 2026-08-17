@@ -138,7 +138,7 @@ export type BulkContributionReminderExecuteRequest = {
     contributionPeriodId: number;
     cutoffDate: string;
     feeTypeOverrides: {
-        [key: string]: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+        [key: string]: BulkFeeType;
     };
     includedUserIds: Array<number>;
     paymentDueDate: string;
@@ -149,12 +149,18 @@ export type BulkEndMembershipRequest = {
     userIds: Array<number>;
 };
 
+export enum BulkFeeType {
+    FULL_YEAR_FEE = 'FULL_YEAR_FEE',
+    HALF_YEAR_FEE = 'HALF_YEAR_FEE',
+    ALUMNI_FEE = 'ALUMNI_FEE'
+}
+
 export type BulkIncassoNotificationExecuteRequest = {
     contributionPeriodId: number;
     cutoffDate: string;
     expectedIncassoDate: string;
     feeTypeOverrides: {
-        [key: string]: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+        [key: string]: BulkFeeType;
     };
     includedUserIds: Array<number>;
     userIds: Array<number>;
@@ -172,6 +178,41 @@ export type BulkMarkUnpaidRequest = {
 
 export type BulkResumeMembershipRequest = {
     userIds: Array<number>;
+};
+
+export enum BulkRowDisposition {
+    INCLUDED = 'INCLUDED',
+    SKIPPED = 'SKIPPED',
+    EXCLUDED = 'EXCLUDED',
+    WARNING = 'WARNING'
+}
+
+export enum BulkRowReason {
+    ALREADY_PAID = 'ALREADY_PAID',
+    NOT_PAID = 'NOT_PAID',
+    HONORARY = 'HONORARY',
+    INCASSO_MISMATCH = 'INCASSO_MISMATCH',
+    NO_ACTIVE_MEMBERSHIP = 'NO_ACTIVE_MEMBERSHIP',
+    STARTED_TODAY = 'STARTED_TODAY',
+    NO_EMAIL = 'NO_EMAIL',
+    ALREADY_ACTIVE = 'ALREADY_ACTIVE',
+    NO_CONTRIBUTION_PERIOD = 'NO_CONTRIBUTION_PERIOD',
+    WILL_RESUME = 'WILL_RESUME',
+    WILL_START_NEW = 'WILL_START_NEW',
+    PAYS_VIA_INCASSO = 'PAYS_VIA_INCASSO',
+    CANNOT_END_COMMITTEE = 'CANNOT_END_COMMITTEE',
+    CANNOT_END_BOARD = 'CANNOT_END_BOARD',
+    CANNOT_END_ADMIN = 'CANNOT_END_ADMIN',
+    CANNOT_END_HONORARY = 'CANNOT_END_HONORARY'
+}
+
+/**
+ * Contract-only holder that publishes the bulk-action enums. Not returned by any endpoint.
+ */
+export type BulkRowVocabulary = {
+    disposition: BulkRowDisposition;
+    feeType: BulkFeeType;
+    reason: BulkRowReason;
 };
 
 export type CohortDetail = {
@@ -340,7 +381,7 @@ export type ContributionPeriodResponse = {
 
 export type ContributionReminderPreviewRequest = {
     contributionPeriodId: number;
-    feeType: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+    feeType: BulkFeeType;
     paymentDueDate: string;
     userId: number;
 };
@@ -708,7 +749,7 @@ export type InboundReconcileRow = {
 export type IncassoNotificationPreviewRequest = {
     contributionPeriodId: number;
     expectedIncassoDate: string;
-    feeType: 'FULL_YEAR_FEE' | 'HALF_YEAR_FEE' | 'ALUMNI_FEE';
+    feeType: BulkFeeType;
     userId: number;
 };
 

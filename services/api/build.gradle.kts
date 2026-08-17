@@ -19,7 +19,7 @@ plugins {
 }
 
 group = "net.blueshell"
-version = "1.1.1" // x-release-please-version
+version = "1.2.0" // x-release-please-version
 
 description = "The API for the Blueshell Esports website"
 

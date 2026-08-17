@@ -27,11 +27,11 @@ jobs:
     name: Annotate PR body with diff breakdown
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Dependabot pull requests are almost entirely lockfile churn, and the
-    # sender guard stops this job's own body edit from retriggering `edited`.
-    if: >-
-      github.event.pull_request.user.login != 'dependabot[bot]' &&
-      github.event.sender.login != 'github-actions[bot]'
+    # Stops this job's own body edit from retriggering on `edited`. Dependabot
+    # pull requests are included: separating a hand-written fix from lockfile
+    # churn is exactly what the generated split is for. Their token stays
+    # read/write because the base ref is not itself Dependabot-authored.
+    if: github.event.sender.login != 'github-actions[bot]'
     permissions:
       contents: read
       pull-requests: write

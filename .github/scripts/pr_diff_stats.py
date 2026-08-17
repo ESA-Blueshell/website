@@ -173,15 +173,27 @@ def fetch_files(repo: str, pr: str) -> list[dict]:
 
 
 def bar(add: int, dele: int, scale: int) -> str:
-    if scale <= 0:
+    """Bar length encodes churn against `scale`; its split encodes added vs removed.
+
+    A generated row can exceed `scale`, since the scale covers hand-written rows
+    only. Such a row is clamped to full width, and the split is taken from the
+    row's own ratio so clamping cannot misreport it.
+    """
+    total = add + dele
+    if scale <= 0 or total <= 0:
         return ""
-    cells = lambda v: max(1, round(v / scale * BAR_WIDTH)) if v > 0 else 0  # noqa: E731
-    a, d = cells(add), cells(dele)
-    if a + d > BAR_WIDTH:
-        # Clamp overflow (generated rows share the hand-written scale).
-        keep = BAR_WIDTH - min(d, BAR_WIDTH - 1) if d else BAR_WIDTH
-        a, d = max(0, keep), min(d, BAR_WIDTH - max(0, keep))
-    return ADD_GLYPH * a + DEL_GLYPH * d
+    floor = 2 if add > 0 and dele > 0 else 1  # both glyphs need somewhere to go
+    width = min(BAR_WIDTH, max(floor, round(total / scale * BAR_WIDTH)))
+    added = round(width * add / total)
+    if add > 0 and added == 0:
+        added = 1
+    if dele > 0 and added == width:
+        added = width - 1
+    return ADD_GLYPH * added + DEL_GLYPH * (width - added)
+
+
+def plural(count: int, noun: str) -> str:
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
 
 
 def row(label: str, bar_text: str, add: int, dele: int, files: int, marker: str = "") -> str:
@@ -217,10 +229,12 @@ def render(files: list[dict], rules) -> str:
     def category_key(name: str) -> tuple[int, str]:
         return (CATEGORY_ORDER.index(name), "") if name in CATEGORY_ORDER else (len(CATEGORY_ORDER), name)
 
-    scale = max(
-        (c["add"] + c["del"] for (_, cat), c in buckets.items() if cat not in EXCLUDED),
-        default=0,
-    )
+    # Hand-written rows set the scale so generated churn cannot dwarf them. A
+    # dependency bump may have no hand-written rows at all; fall back to the
+    # generated ones so the bars still say something.
+    scale = max((c["add"] + c["del"] for (_, cat), c in buckets.items() if cat not in EXCLUDED), default=0)
+    if scale == 0:
+        scale = max((c["add"] + c["del"] for c in buckets.values()), default=0)
 
     lines: list[str] = []
     for service in sorted({s for s, _ in buckets}, key=service_key):
@@ -260,12 +274,14 @@ def render(files: list[dict], rules) -> str:
         return (line + ("  " + note if note else "")).rstrip()
 
     lines.append("─" * TOTAL_WIDTH)
-    lines.append(summary("production", prod["add"], prod["del"]))
-    ratio = f"{test['add'] / prod['add']:.2f} test lines per prod line" if prod["add"] else ""
-    lines.append(summary("tests", test["add"], test["del"], ratio))
-    lines.append(summary("total (hand-written)", kept["add"], kept["del"], f"{kept['files']} files"))
+    # A dependency bump touches neither, and two zero rows say less than no rows.
+    if prod["add"] or prod["del"] or test["add"] or test["del"]:
+        lines.append(summary("production", prod["add"], prod["del"]))
+        ratio = f"{test['add'] / prod['add']:.2f} test lines per prod line" if prod["add"] else ""
+        lines.append(summary("tests", test["add"], test["del"], ratio))
+    lines.append(summary("total (hand-written)", kept["add"], kept["del"], plural(kept["files"], "file")))
     if gen["files"]:
-        lines.append(summary("~ generated (excluded)", gen["add"], gen["del"], f"{gen['files']} files"))
+        lines.append(summary("~ generated (excluded)", gen["add"], gen["del"], plural(gen["files"], "file")))
 
     table = "\n".join(lines).rstrip()
     return (

@@ -2,7 +2,6 @@
 import {computed, onMounted, onBeforeUnmount, ref, shallowRef} from "vue"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {useDisplay} from "vuetify"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
@@ -379,8 +378,6 @@ function onRowClick(event: MouseEvent, rowId: number) {
 
 <template>
   <v-main>
-    <top-banner title="User Manager" />
-
     <v-container>
       <div
         class="mx-auto my-3"

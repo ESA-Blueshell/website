@@ -15,7 +15,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
     private val templateEngine: TemplateEngine
 
     @Value($$"${frontend.url}")
-    private lateinit var appUrl: String
+    private lateinit var frontendUrl: String
 
     init {
         val extensions = listOf(TablesExtension.create())
@@ -51,7 +51,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
 
         // Prepare template variables
         val variables: MutableMap<String, Any> = HashMap()
-        variables["appUrl"] = appUrl
+        variables["frontendUrl"] = frontendUrl
         variables["emailContent"] = htmlContent
         variables["sentTo"] = recipientEmail
         variables["fullName"] = recipientName

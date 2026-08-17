@@ -1,0 +1,56 @@
+name: Release
+
+# Owns the release path: computes the next version from the Conventional
+# Commits merged since the last release, and once that release is cut,
+# publishes the images Keel rolls out.
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Maintain the release pull request
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    outputs:
+      released: ${{ steps.release.outputs.releases_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Dispatched, not called: a reusable workflow would run at this run's ref
+      # (main) rather than the release branch. GITHUB_TOKEN may fire
+      # workflow_dispatch, so this needs no approval.
+      - name: Validate the release branch
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run validate.yml --repo "$GITHUB_REPOSITORY" --ref release-please--branches--main
+
+  publish:
+    # Called rather than triggered by `release: published`: a release cut with
+    # GITHUB_TOKEN raises no event, so nothing would listen.
+    name: Publish release images
+    needs: version
+    if: needs.version.outputs.released == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      release-tag: ${{ needs.version.outputs.tag }}
+    permissions:
+      contents: read
+      packages: write

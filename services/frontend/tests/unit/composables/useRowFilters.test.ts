@@ -61,7 +61,8 @@ describe("useRowFilters", () => {
     // permanently active and reject every row on first render.
     const tagFilter = filter<string[]>({
       initial: [],
-      unset: (value) => value.length === 0,
+      unset: [],
+      isUnset: (value) => value.length === 0,
       match: (value) => (row) => value.some((t) => row.tags.includes(t)),
     })
     const {filteredRows, activeKeys} = useRowFilters(rows, {tags: tagFilter})
@@ -108,7 +109,7 @@ describe("useRowFilters", () => {
     expect(filteredRows.value.map((r) => r.id)).toEqual([2])
   })
 
-  it("shows all rows and logs when a filter throws instead of blanking", () => {
+  it("shows no rows and logs when a filter throws, rather than more than asked for", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {})
     const broken = filter<boolean>({
       initial: false,
@@ -119,7 +120,7 @@ describe("useRowFilters", () => {
     })
     const {state, filteredRows} = useRowFilters(rows, {broken})
     state.broken = true
-    expect(filteredRows.value).toHaveLength(3)
+    expect(filteredRows.value).toEqual([])
     expect(error).toHaveBeenCalled()
     error.mockRestore()
   })
@@ -145,5 +146,50 @@ describe("useRowFilters", () => {
     const source = ref<Row[] | undefined>(undefined)
     const {filteredRows} = useRowFilters(source, {state: stateFilter})
     expect(filteredRows.value).toEqual([])
+  })
+
+  it("clear resets a filter whose unset is detected by a test", () => {
+    const tagFilter = filter<string[]>({
+      initial: [],
+      unset: [],
+      isUnset: (value) => value.length === 0,
+      match: (value) => (row) => value.some((t) => row.tags.includes(t)),
+    })
+    const {state, clear, activeKeys} = useRowFilters(rows, {tags: tagFilter})
+    state.tags = ["red"]
+    expect(activeKeys.value).toEqual(["tags"])
+    clear()
+    expect(state.tags).toEqual([])
+    expect(activeKeys.value).toEqual([])
+  })
+
+  it("does not let a filter value alias its own initial", () => {
+    const tagFilter = filter<string[]>({
+      initial: [],
+      unset: [],
+      isUnset: (value) => value.length === 0,
+      match: (value) => (row) => value.some((t) => row.tags.includes(t)),
+    })
+    const {state, reset, activeKeys} = useRowFilters(rows, {tags: tagFilter})
+    state.tags.push("red")
+    reset()
+    // Would still hold "red" if the ref shared the definition's array.
+    expect(state.tags).toEqual([])
+    expect(activeKeys.value).toEqual([])
+  })
+
+  it("survives a value its own unset test cannot read", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {})
+    const fragile = filter<string | null>({
+      initial: "",
+      unset: "",
+      isUnset: (value) => (value as string).trim() === "",
+      match: (value) => (row) => row.name.includes(String(value)),
+    })
+    const {state, filteredRows} = useRowFilters(rows, {fragile})
+    state.fragile = null
+    expect(() => filteredRows.value).not.toThrow()
+    expect(error).toHaveBeenCalled()
+    error.mockRestore()
   })
 })

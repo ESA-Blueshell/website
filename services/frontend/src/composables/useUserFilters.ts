@@ -11,6 +11,14 @@ export type SortKey = "name" | "username" | "role" | "status" | "memberSince" | 
 
 const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
 
+// Exhaustive, so a new MembershipStatusFilter value fails the typecheck rather than
+// silently falling through to "Never". "all" never reaches here; it reads as unset.
+const STATUS_BY_FILTER: Record<Exclude<MembershipStatusFilter, "all">, MemberStatus> = {
+  current: "Current",
+  former: "Former",
+  never: "Never",
+}
+
 // ── Composable ─────────────────────────────────────────────────────────────────
 
 export function useUserFilters(
@@ -26,7 +34,9 @@ export function useUserFilters(
       initial: "all",
       unset: "all",
       match: (value) => {
-        const wanted: MemberStatus = value === "current" ? "Current" : value === "former" ? "Former" : "Never"
+        // Unreachable in practice: "all" reads as unset, so match is not called for it.
+        if (value === "all") return () => true
+        const wanted = STATUS_BY_FILTER[value]
         return (row) => row.status === wanted
       },
     }),
@@ -38,20 +48,22 @@ export function useUserFilters(
     incassoFilter: filter<FilterState>({
       initial: "all",
       unset: "all",
-      match: (value) => (row) => Boolean(row.latestIncasso) === (value === "yes"),
+      match: (value) => (row) => row.latestIncasso === (value === "yes"),
     }),
     periodMemberFilter: filter<FilterState>({
       initial: "all",
       unset: "all",
       match: (value) => (row) => row.wasMemberInPeriod === (value === "yes"),
     }),
-    search: filter<string>({
+    search: filter<string | null>({
       initial: "",
-      unset: (value) => value.trim() === "",
+      unset: "",
+      // `clearable` on the search field writes null, not "".
+      isUnset: (value) => (value ?? "").trim() === "",
       // Reading the index here rather than per row keeps it a tracked dependency
       // even when the dropdowns above have already excluded every row.
       match: (value) => {
-        const terms = value.trim().toLowerCase().split(/\s+/)
+        const terms = (value ?? "").trim().toLowerCase().split(/\s+/)
         const index = userSearchIndex.value
         return (row) => {
           const haystack = index.get(row.id) ?? ""

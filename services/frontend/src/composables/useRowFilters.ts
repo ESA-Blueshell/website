@@ -7,21 +7,24 @@ import {computed, reactive, toValue, type MaybeRefOrGetter} from "vue"
 export interface Filter<T, V> {
   /** Value the filter holds on first render. */
   initial: V
+  /** The value meaning "not filtering". `clear()` writes this. */
+  unset: V
   /**
-   * The value meaning "not filtering", or a test for it. A plain value is compared
-   * with `Object.is`, so array and object values need the test form — `[] === []` is
-   * false and such a filter would read as permanently active.
+   * Whether a value counts as not filtering. Defaults to `Object.is(value, unset)`,
+   * which is wrong for arrays and objects — `[] === []` is false, so such a filter
+   * would read as permanently active and reject every row on first render.
    */
-  unset: V | ((value: V) => boolean)
+  isUnset?: (value: V) => boolean
   /**
    * Returns the row test for a given value. Called once per value rather than per
    * row, so per-value work is hoisted, and reactive reads here are tracked even
-   * when no row reaches the returned test.
+   * when no row reaches the returned test — with a per-row predicate such a read is
+   * only tracked in runs where some row gets that far, so results can go stale.
    */
   match: (value: V) => (row: T) => boolean
 }
 
-/** Pins the row type so each filter only states its own value type. */
+/** Pins the row type so each filter states only its own value type. Identity at runtime. */
 export function filtersFor<T>() {
   return <V>(filter: Filter<T, V>): Filter<T, V> => filter
 }
@@ -33,10 +36,20 @@ type AnyFilter<T> = Filter<T, any>
 type ValueOf<T, F> = F extends Filter<T, infer V> ? V : never
 type StateOf<T, F> = {[K in keyof F]: ValueOf<T, F[K]>}
 
+/** Copied so a filter holding an array or object cannot alias its own `initial`. */
+function seed(value: unknown): unknown {
+  if (Array.isArray(value)) return [...value]
+  if (value !== null && typeof value === "object") return {...value}
+  return value
+}
+
 /**
- * Filters rows through a record of named filters. A filter sitting at its unset
- * value is skipped rather than run, so an untouched filter costs nothing per row.
- * Filters run in declaration order, so declare cheap ones before expensive ones.
+ * Filters rows through a record of named filters. A filter sitting at its unset value
+ * is skipped rather than run, so an untouched filter costs nothing per row. Filters
+ * run in declaration order, so declare cheap ones before expensive ones.
+ *
+ * A filter that throws yields no rows rather than all of them: showing more rows than
+ * were asked for is the more dangerous failure when the result drives a bulk action.
  */
 export function useRowFilters<T, F extends Record<string, AnyFilter<T>>>(
   rows: MaybeRefOrGetter<readonly T[] | undefined>,
@@ -45,18 +58,21 @@ export function useRowFilters<T, F extends Record<string, AnyFilter<T>>>(
   const entries = Object.entries(filters) as [string, Filter<T, unknown>][]
   const values = reactive({} as Record<string, unknown>)
 
-  for (const [key, filter] of entries) {
-    values[key] = filter.initial
+  for (const [key, filter] of entries) values[key] = seed(filter.initial)
+
+  function isActive(key: string, filter: Filter<T, unknown>): boolean {
+    const value = values[key]
+    try {
+      return filter.isUnset ? !filter.isUnset(value) : !Object.is(value, filter.unset)
+    } catch (error) {
+      // Treat an unreadable value as filtering, so the match below decides the
+      // outcome rather than the row silently passing.
+      console.error(`[useRowFilters] filter "${key}" could not test its value`, error)
+      return true
+    }
   }
 
-  function isUnset(key: string, filter: Filter<T, unknown>): boolean {
-    const {unset} = filter
-    return typeof unset === "function"
-      ? (unset as (value: unknown) => boolean)(values[key])
-      : Object.is(values[key], unset)
-  }
-
-  const activeKeys = computed(() => entries.filter(([k, f]) => !isUnset(k, f)).map(([k]) => k))
+  const activeKeys = computed(() => entries.filter(([k, f]) => isActive(k, f)).map(([k]) => k))
 
   const filteredRows = computed<T[]>(() => {
     const source = toValue(rows) ?? []
@@ -65,11 +81,12 @@ export function useRowFilters<T, F extends Record<string, AnyFilter<T>>>(
     // whether or not any row reaches the returned test.
     const tests: ((row: T) => boolean)[] = []
     for (const [key, filter] of entries) {
-      if (isUnset(key, filter)) continue
+      if (!isActive(key, filter)) continue
       try {
         tests.push(filter.match(values[key]))
       } catch (error) {
-        console.error(`[useRowFilters] filter "${key}" could not be built; ignoring it`, error)
+        console.error(`[useRowFilters] filter "${key}" could not be built`, error)
+        return []
       }
     }
 
@@ -77,24 +94,22 @@ export function useRowFilters<T, F extends Record<string, AnyFilter<T>>>(
     try {
       return source.filter((row) => tests.every((test) => test(row)))
     } catch (error) {
-      // This runs during render, so a throw would escape to the app error handler
-      // and blank the table. Degrade to unfiltered, loudly, instead.
-      console.error("[useRowFilters] a filter threw while matching; showing all rows", error)
-      return [...source]
+      console.error("[useRowFilters] a filter threw while matching; showing no rows", error)
+      return []
     }
   })
 
-  /** Sets filters to their unset value. Filters that define unset as a test are skipped. */
+  /** Sets filters to their unset value. */
   function clear(key?: keyof F & string) {
     for (const [k, filter] of entries) {
       if (key !== undefined && k !== key) continue
-      if (typeof filter.unset !== "function") values[k] = filter.unset
+      values[k] = seed(filter.unset)
     }
   }
 
   /** Sets filters back to the value they started with, which may itself be filtering. */
   function reset() {
-    for (const [key, filter] of entries) values[key] = filter.initial
+    for (const [key, filter] of entries) values[key] = seed(filter.initial)
   }
 
   return {

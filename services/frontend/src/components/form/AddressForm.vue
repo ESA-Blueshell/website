@@ -8,6 +8,7 @@ import {
   type AddressResponse,
   type CreateAddressRequest,
   createAddress,
+  saveAddress,
   type UpdateAddressRequest,
   updateAddress,
 } from "@/services/api"
@@ -15,10 +16,12 @@ import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/com
 
 type AddressModel = Partial<Omit<CreateAddressRequest, "userId">> & Partial<AddressResponse>
 
-const {showSubmit = false, submitText = "Submit", userId = 0} = defineProps<{
+const {showSubmit = false, submitText = "Submit", userId = 0, signupToken = undefined} = defineProps<{
   showSubmit?: boolean
   submitText?: string
   userId?: number
+  /** Present during a signup: the address is saved on the token's own account. */
+  signupToken?: string
 }>()
 
 const emit = defineEmits<{
@@ -49,6 +52,14 @@ const toCreateAddressRequest = (): CreateAddressRequest => ({
   zipCode: address.value.zipCode ?? "",
 })
 
+const toSignupAddressRequest = () => ({
+  city: address.value.city ?? "",
+  country: address.value.country ?? "NL",
+  houseNumber: address.value.houseNumber ?? "",
+  street: address.value.street ?? "",
+  zipCode: address.value.zipCode ?? "",
+})
+
 const toUpdateAddressRequest = (): UpdateAddressRequest => ({
   city: address.value.city ?? "",
   country: address.value.country ?? "NL",
@@ -65,6 +76,18 @@ const save = async (): Promise<AddressModel | null> => {
     return null
   }
   try {
+    if (signupToken) {
+      // The signup route answers 204 and upserts, so there is no id to track and
+      // going back a step to correct the address just posts again.
+      await withSaving(async () => await saveAddress({
+        headers: {"X-Signup-Token": signupToken},
+        body: toSignupAddressRequest(),
+        throwOnError: true,
+      }))
+      emit("submitted", true)
+      setSubmitResult(true)
+      return address.value
+    }
     const resp = await withSaving(async () => {
       const hasId = Boolean(address.value?.id)
       return hasId

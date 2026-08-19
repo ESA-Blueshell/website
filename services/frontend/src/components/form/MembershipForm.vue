@@ -4,6 +4,7 @@ import DocumentTable from "@/components/base/DocumentTable.vue"
 import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
 import {defineRule, Form} from "vee-validate"
 import {
+  apply,
   boardCreateMembership,
   createMembership,
   type MembershipResponse,
@@ -29,11 +30,14 @@ const props = withDefaults(defineProps<{
   userId?: number
   /** data-testid forwarded to the SubmitButton (for testid preservation across consumers) */
   submitTestId?: string
+  /** Present during a signup: the application is submitted on the token's account. */
+  signupToken?: string
 }>(), {
   showSubmit: false,
   submitText: "Submit",
   userId: undefined,
   submitTestId: "membership-form-submit-btn",
+  signupToken: undefined,
 })
 
 const emit = defineEmits<{ (e: "submitted", ok: boolean): void }>()
@@ -54,8 +58,19 @@ const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null
     return null
   }
   try {
-    // Self-service answers with the signup outcome rather than a membership: the
-    // application may be complete without the membership having started yet.
+    // A new applicant submits on their signup token; both routes answer with the
+    // outcome rather than a membership, because the application may be complete
+    // without the membership having started yet.
+    if (props.signupToken) {
+      const resp = await withSaving(async () => await apply({
+        headers: {"X-Signup-Token": props.signupToken!},
+        body: {conditionsAccepted: consented.value},
+        throwOnError: true,
+      }))
+      emit("submitted", true)
+      setSubmitResult(true)
+      return resp.data!
+    }
     if (!membership.value?.id && props.userId === undefined) {
       const resp = await withSaving(async () => await createMembership({
         body: {conditionsAccepted: consented.value},

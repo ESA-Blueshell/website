@@ -6,11 +6,14 @@ import {MemberType} from "@/services/api"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
-const {mockBoardCreateMembership, mockCreateMembership, mockUpdateMembership} = vi.hoisted(() => ({
-  mockBoardCreateMembership: vi.fn(),
-  mockCreateMembership: vi.fn(),
-  mockUpdateMembership: vi.fn(),
-}))
+const {mockBoardCreateMembership, mockCreateMembership, mockUpdateMembership, mockApply, mockValidate} =
+  vi.hoisted(() => ({
+    mockBoardCreateMembership: vi.fn(),
+    mockCreateMembership: vi.fn(),
+    mockUpdateMembership: vi.fn(),
+    mockApply: vi.fn(),
+    mockValidate: vi.fn(),
+  }))
 
 vi.mock("@/services/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api")>()
@@ -19,17 +22,18 @@ vi.mock("@/services/api", async (importOriginal) => {
     boardCreateMembership: mockBoardCreateMembership,
     createMembership: mockCreateMembership,
     updateMembership: mockUpdateMembership,
+    apply: mockApply,
   }
 })
 
-// Mock useVeeForm so validate() always passes in tests
+// validate() is driven per test: it passes by default, and one test flips it.
 vi.mock("@/composables/formUtils", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/composables/formUtils")>()
   return {
     ...actual,
     useVeeForm: () => ({
       formRef: {value: {validate: vi.fn().mockResolvedValue({valid: true})}},
-      validate: vi.fn().mockResolvedValue(true),
+      validate: mockValidate,
     }),
   }
 })
@@ -43,6 +47,12 @@ const vvFieldStub = {
   template: "<div class='vv-field-stub' :data-name='name' :data-rules='rules' />",
 }
 const formStub = {template: "<div><slot v-bind='{ meta: { valid: true } }' /></div>"}
+const emittingStub = (name: string) => ({
+  name,
+  props: ["modelValue"],
+  emits: ["update:modelValue"],
+  template: "<div />",
+})
 const submitButtonStub = {
   name: "SubmitButton",
   props: ["text", "loading", "disabled"],
@@ -86,7 +96,16 @@ function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
 describe("MembershipForm", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockValidate.mockResolvedValue(true)
   })
+
+  function fieldNamed(wrapper: ReturnType<typeof shallowMount>, name: string) {
+    const field = wrapper
+      .findAllComponents({name: "VvField"})
+      .find((candidate) => candidate.props("name") === name)
+    if (!field) throw new Error(`No VvField named ${name}`)
+    return field
+  }
 
   // ── Self-service mode ──────────────────────────────────────────────────────
 
@@ -184,6 +203,102 @@ describe("MembershipForm", () => {
     expect(mockCreateMembership).toHaveBeenCalled()
     expect(mockBoardCreateMembership).not.toHaveBeenCalled()
     expect(wrapper.emitted("submitted")).toEqual([[true]])
+  })
+
+  it("signup: save() submits on the token and returns the outcome", async () => {
+    mockApply.mockResolvedValue({data: {emailConfirmed: false, membershipStarted: false}})
+
+    const wrapper = shallowMount(MembershipForm, {
+      props: {showSubmit: true, signupToken: "sel.ver"},
+      attrs: {"onUpdate:modelValue": vi.fn()},
+      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+    })
+
+    const outcome = await (wrapper.vm as any).save()
+
+    expect(mockApply).toHaveBeenCalledWith({
+      headers: {"X-Signup-Token": "sel.ver"},
+      body: {conditionsAccepted: false},
+      throwOnError: true,
+    })
+    // A new applicant must not go through the signed-in route.
+    expect(mockCreateMembership).not.toHaveBeenCalled()
+    expect(outcome).toEqual({emailConfirmed: false, membershipStarted: false})
+    expect(wrapper.emitted("submitted")).toEqual([[true]])
+  })
+
+  it("signup: a refused application surfaces as a failed submit", async () => {
+    mockApply.mockRejectedValue(new Error("refused"))
+
+    const wrapper = shallowMount(MembershipForm, {
+      props: {showSubmit: true, signupToken: "sel.ver"},
+      attrs: {"onUpdate:modelValue": vi.fn()},
+      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+    })
+
+    expect(await (wrapper.vm as any).save()).toBeNull()
+    expect(wrapper.emitted("submitted")).toEqual([[false]])
+  })
+
+  it("an invalid form is not submitted anywhere", async () => {
+    mockValidate.mockResolvedValue(false)
+
+    const wrapper = shallowMount(MembershipForm, {
+      props: {showSubmit: true, signupToken: "sel.ver"},
+      attrs: {"onUpdate:modelValue": vi.fn()},
+      global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
+    })
+
+    expect(await (wrapper.vm as any).save()).toBeNull()
+    expect(mockApply).not.toHaveBeenCalled()
+    expect(mockCreateMembership).not.toHaveBeenCalled()
+    expect(wrapper.emitted("submitted")).toEqual([[false]])
+  })
+
+  it("board mode writes every field edit back to the membership", async () => {
+    const membership = makeNewMembership()
+    const wrapper = shallowMount(MembershipForm, {
+      props: {userId: 42},
+      attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
+      global: {stubs: {Form: formStub, VvField: vvFieldStub, VCheckbox: emittingStub("VCheckbox")}},
+    })
+
+    await fieldNamed(wrapper, "startDate").vm.$emit("update:modelValue", "2026-03-01")
+    await fieldNamed(wrapper, "endDate").vm.$emit("update:modelValue", "2026-09-01")
+    await fieldNamed(wrapper, "memberType").vm.$emit("update:modelValue", MemberType.ALUMNI)
+    await wrapper.findComponent({name: "VCheckbox"}).vm.$emit("update:modelValue", true)
+
+    expect(membership).toMatchObject({
+      startDate: "2026-03-01",
+      endDate: "2026-09-01",
+      memberType: MemberType.ALUMNI,
+      incasso: true,
+    })
+  })
+
+  it("self-service records the acceptance and the chosen member type", async () => {
+    const membership = makeNewMembership()
+    const wrapper = shallowMount(MembershipForm, {
+      attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
+      global: {
+        stubs: {
+          Form: formStub,
+          VvField: vvFieldStub,
+          ContributionPeriod: emittingStub("ContributionPeriod"),
+        },
+      },
+    })
+
+    await fieldNamed(wrapper, "consented").vm.$emit("update:modelValue", true)
+    await wrapper.findComponent({name: "ContributionPeriod"}).vm.$emit("update:modelValue", MemberType.HONORARY)
+
+    mockCreateMembership.mockResolvedValue({data: makeExistingMembership()})
+    await (wrapper.vm as any).save()
+
+    expect(mockCreateMembership).toHaveBeenCalledWith(
+      expect.objectContaining({body: {conditionsAccepted: true}}),
+    )
+    expect(membership.memberType).toBe(MemberType.HONORARY)
   })
 
   it("submitTestId is forwarded to SubmitButton as data-testid", () => {

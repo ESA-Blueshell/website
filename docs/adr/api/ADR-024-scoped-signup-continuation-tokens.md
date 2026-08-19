@@ -1,7 +1,7 @@
 # ADR-024: Scoped Signup Continuation Tokens
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 

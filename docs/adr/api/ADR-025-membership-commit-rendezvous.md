@@ -1,7 +1,7 @@
 # ADR-025: Membership Commit Rendezvous
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 

@@ -89,6 +89,7 @@ steps/MembershipSteps.kt        the application, its preconditions, what is held
 steps/EmailSteps.kt             what was delivered
 steps/SignupSessionSteps.kt     the token-carried steps
 steps/EmailCorrectionSteps.kt   correcting a mistyped address
+steps/HarnessSelfCheckSteps.kt  the self-check that proves the harness runs
 AcceptanceWorld.kt              per-scenario state and the cleanup registry
 AcceptanceApi.kt                the only file that knows this is HTTP
 Hooks.kt                        per-scenario cleanup

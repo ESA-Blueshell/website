@@ -1,11 +1,5 @@
 # Membership Signup
 
-> **Status: Proposed.** This describes the signup flow defined by
-> [ADR-024](../../adr/api/ADR-024-scoped-signup-continuation-tokens.md) and
-> [ADR-025](../../adr/api/ADR-025-membership-commit-rendezvous.md). It becomes an
-> account of working code when the signup rework lands; until then treat it as the
-> specification the implementation is measured against.
-
 A prospective member fills in one form and ends up with an enabled account and an
 active membership. Nothing in the middle of the form requires them to leave the site.
 
@@ -78,8 +72,10 @@ Other entry points into the same account lifecycle:
 | Prospective account holder | `/account/create` | Enabled account, no membership |
 | A new applicant, from their inbox | `/account/activate/user#token=…` | Email address confirmed |
 
-Both `/membership/signup` and `/account/create` are reachable without authentication.
-An authenticated non-board user cannot create a *new* account through either.
+Both `/membership/signup` and `/account/create` are reachable without authentication
+and both register through `POST /signup`. A board member creating an account on
+somebody else's behalf uses `POST /users`, a different endpoint under a different
+permission.
 
 ## States
 
@@ -296,15 +292,21 @@ neither.
 | `TokenPurpose` | `SIGNUP_CONTINUATION` | `USER_ACTIVATION` |
 | Sent out of band | Never — returned in the `POST /signup` response body | Yes, by email |
 | Client holds it | `sessionStorage`, one tab, never placed in a URL | URL fragment, then `sessionStorage`, then discarded |
-| TTL | 2 hours | 24 hours |
+| TTL | 2 hours | 1 hour |
 | Uses | Many, within the TTL | Exactly one |
 | Authorises | Save address · submit application · correct email — on its own account only | Enable the account |
 | Retired by | The membership starting, or expiry | Consumption, or expiry |
 
 Both are `selector.verifier` records in `recovery_tokens`: a 128-bit selector
 identifies the row, a 256-bit verifier is stored BCrypt-hashed and compared on
-presentation. Issuing a token deletes any unconsumed token of the same purpose for
-that user, so there is at most one of each live at a time.
+presentation.
+
+Correcting the email address consumes every outstanding `USER_ACTIVATION` token for
+the account before issuing the replacement, so the link already delivered to the
+mistyped address stops working. That matters because a mistyped address may be
+somebody else's inbox, and a link that still enables the account would hand them
+the account. Resending to the address already on file does not need the same
+treatment: both links point at the same inbox.
 
 ```mermaid
 stateDiagram-v2
@@ -333,8 +335,8 @@ again, and all must work.
 | Method | Path | Authorisation | Notes |
 |--------|------|---------------|-------|
 | `POST` | `/signup` | `@PermitAll` | Body `CreateUserRequest`. Returns `SignupSessionResponse { userId, email, signupToken, expiresAt }`. 10/min per client. |
-| `POST` | `/signup/address` | `X-Signup-Token` | Body `SignupAddressRequest` — no `userId`; the account comes from the token. Returns `AddressResponse`. 10/min. |
-| `POST` | `/signup/apply` | `X-Signup-Token` | No body. Records the acceptance, runs `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. Idempotent. 10/min. |
+| `POST` | `/signup/address` | `X-Signup-Token` | Body `SignupAddressRequest` — no `userId`; the account comes from the token. `204`, upsert. 10/min. |
+| `POST` | `/signup/apply` | `X-Signup-Token` | Body `{ conditionsAccepted }`. Records the acceptance, runs `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. Idempotent. 10/min. |
 | `PATCH` | `/signup/email` | `X-Signup-Token` | Body `{ email }`. Re-issues the activation token and resends. Refused once the account is enabled. 3/10min. |
 | `POST` | `/recovery/user/activate` | `@PermitAll` | Body `{ token }`. Enables the account, runs `completeIfReady`. Returns `{ membershipStarted }`. 10/10min. |
 | `POST` | `/recovery/user/activate/resend/{username}` | `@PermitAll` | Resends to the address on file. 5/10min. |
@@ -362,9 +364,11 @@ unfinished step, and `POST /memberships` runs the same completion check. This is
 the signed-in path is a first-class route rather than a fallback — recovering from a
 lost tab is the same code path as joining years after making an account.
 
-**Wrong email address.** `PATCH /signup/email` while the account is unconfirmed.
-Once the account is enabled the address is changed through the normal account
-settings, under a session.
+**Wrong email address.** `PATCH /signup/email` while the account is unconfirmed. It
+changes the address, invalidates the link that went to the wrong one, and sends a
+fresh one. The address and the recorded acceptance are untouched, so a typo does not
+cost the applicant the form. Once the account is enabled the address is changed
+through the normal account settings, under a session.
 
 **Application submitted twice.** `completeIfReady` returns without acting when an
 active membership already exists.
@@ -393,12 +397,17 @@ the member list. There is no automatic cleanup of abandoned signups.
 
 | Concern | Location |
 |---------|----------|
-| The stepper | `src/pages/membership/MembershipSignUp.vue` |
+| The stepper, the confirmation step and the correction form | `src/pages/membership/MembershipSignUp.vue` |
 | Plain account creation | `src/pages/login/CreateAccount.vue` |
 | Email confirmation landing page | `src/pages/activate/ActivateUser.vue` |
-| Step forms | `src/components/form/{UserForm,AddressForm,MembershipForm}.vue` |
+| Step forms, each taking an optional `signupToken` | `src/components/form/{UserForm,AddressForm,MembershipForm}.vue` |
 | Token extraction from a URL | `src/plugins/recoveryToken.ts` |
 | API client | `src/services/api/blueshell/` — generated, never hand-edited |
+
+The continuation token is held in `sessionStorage` under
+`signup:continuation:token` and dropped the moment the membership starts. Which
+step the applicant is on is internal state, not a URL parameter: a step cannot be
+reached by typing an address, so no step needs to guard itself.
 
 ## Testing
 
@@ -411,14 +420,13 @@ that drift:
 | [`account-registration.feature`](../../../services/system-tests/src/test/resources/features/account-registration.feature) | An account is unusable until its address is confirmed, and confirming is not joining |
 | [`membership-join-with-account.feature`](../../../services/system-tests/src/test/resources/features/membership-join-with-account.feature) | The signed-in path: no token, no confirmation email, membership on submission |
 | [`membership-eligibility.feature`](../../../services/system-tests/src/test/resources/features/membership-eligibility.feature) | The preconditions, as an `Examples` table, plus submit-twice idempotency |
-| [`membership-join-new-applicant.feature`](../../../services/system-tests/src/test/resources/features/membership-join-new-applicant.feature) | The new-applicant path and both arrival orders — `@pending` |
-| [`signup-session-scope.feature`](../../../services/system-tests/src/test/resources/features/signup-session-scope.feature) | What a signup session may and may not do — `@pending` |
+| [`membership-join-new-applicant.feature`](../../../services/system-tests/src/test/resources/features/membership-join-new-applicant.feature) | The new-applicant path, both arrival orders, and correcting a mistyped address |
+| [`signup-session-scope.feature`](../../../services/system-tests/src/test/resources/features/signup-session-scope.feature) | What a signup session may and may not do |
+| [`zz-harness-selfcheck.feature`](../../../services/system-tests/src/test/resources/features/zz-harness-selfcheck.feature) | That the suite ran at all, so a green job cannot mean an empty one |
 
 Run them with `./gradlew :services:system-tests:acceptanceTest` against a running
 stack. They are their own CI job (`acceptance-features`) and carry no browser, so
-the suite is fast. Scenarios for behaviour that is specified but not yet built are
-tagged `@pending` and skipped by default; `-PcucumberTags="@pending"` lists what is
-still outstanding.
+the suite is fast. Every scenario runs; nothing is tagged `@pending`.
 
 Conventions for writing them are in
 [the features README](../../../services/system-tests/src/test/resources/features/README.md).
@@ -429,9 +437,11 @@ pages render and the steps are reachable by clicking:
 
 | Suite | Location | Covers |
 |-------|----------|--------|
-| Browser system tests | `services/system-tests/src/test/kotlin/.../frontend/membership/` | The stepper as a user drives it |
-| Unit (Vue) | `services/frontend/tests/unit/pages/membership/MembershipSignUp.test.ts` | Step progression, the two endings of step 4 |
+| Browser system tests | `services/system-tests/src/test/kotlin/.../frontend/membership/` | The stepper as a user drives it, both applicant types, the correction form |
+| Frontend e2e | `services/frontend/tests/e2e/membership-signup.spec.ts` | Validation gates and that each write carries the token header |
+| Unit (Vue) | `services/frontend/tests/unit/pages/membership/MembershipSignUp.test.ts` | Step progression and both endings of the flow |
 | API unit | `services/api/src/test/.../auth/application/` | `completeIfReady` branches, token scope and expiry |
+| API integration | `services/api/src/integrationTest/.../auth/web/` | The endpoints end to end, including the correction path |
 
 ## Related documentation
 

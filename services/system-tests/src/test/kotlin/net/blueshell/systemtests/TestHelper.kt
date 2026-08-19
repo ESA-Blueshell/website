@@ -541,6 +541,22 @@ object TestHelper {
         }
 
     /**
+     * Count active membership rows for a user. Distinguishes "is a member" from
+     * "was made a member twice" — the acceptance suite asserts a repeated
+     * application does not add a second row.
+     */
+    fun membershipCountForUser(userId: Long): Int =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT COUNT(*) FROM memberships WHERE user_id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) rs.getInt(1) else 0
+            }
+        }
+
+    /**
      * Truncate every row from `job_executions`. The api dispatches a
      * couple of background jobs as part of `POST /users` (contact
      * sync, activation email) with `app.jobs.auto-dispatch=true`, so
@@ -687,7 +703,7 @@ object TestHelper {
      * the activation / password-reset flows can plant a known
      * plaintext token without going through the in-process factory.
      *
-     * `type` accepts the `ResetType` enum names:
+     * `type` accepts the `TokenPurpose` enum names:
      * `USER_ACTIVATION`, `MEMBER_ACTIVATION`, `PASSWORD_RESET`.
      */
     fun mintRecoveryToken(

@@ -357,6 +357,62 @@ jobs:
             services/system-tests/build/reports/tests/test
           if-no-files-found: warn
 
+  acceptance-features:
+    # Cucumber acceptance features: business-readable specifications for the
+    # account and membership flows, driven against the compose stack over HTTP.
+    # No browser, so this is a single fast job rather than a sharded matrix.
+    #
+    # Scenarios for behaviour that is specified but not yet built are tagged
+    # `@pending` and skipped by the default filter, so this step stays green
+    # while the specification runs ahead of the implementation. Run
+    # `-PcucumberTags="@pending"` locally to list what is still outstanding.
+    name: Acceptance features
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [ api-static, fe-static, build-images ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Load CI-built images
+        uses: ./.github/actions/prepare-ci-host
+
+      - name: Start docker compose stack
+        run: bash .github/scripts/start-system-test-stack.sh
+
+      - name: Run acceptance features
+        run: |
+          ./gradlew --no-daemon :services:system-tests:acceptanceTest \
+            -Dtest.frontend.url=http://localhost:3000 \
+            -Dtest.api.url=http://localhost:8080 \
+            -Dtest.db.url="jdbc:mariadb://localhost:3307/blueshell" \
+            -Dtest.db.user="$MYSQL_USER" \
+            -Dtest.db.password=ci-blueshell
+
+      - name: Dump compose diagnostics
+        if: failure()
+        run: bash .github/scripts/dump-compose-ci-diagnostics.sh
+
+      - name: Stop containers
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v --remove-orphans || true
+
+      - name: Upload acceptance report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: acceptance-feature-report
+          path: |
+            services/system-tests/build/reports/cucumber
+            services/system-tests/build/test-results/acceptanceTest
+          if-no-files-found: warn
+
   fe-unit:
     name: Frontend unit tests with coverage
     needs: fe-static

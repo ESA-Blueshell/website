@@ -11,6 +11,9 @@ class AcceptanceWorld {
     /** Erased by the @After hook. */
     val createdUsernames: MutableList<String> = mutableListOf()
 
+    /** Raw continuation token from POST /signup, for the token-scoped steps. */
+    var signupToken: String? = null
+
     var lastStatusCode: Int? = null
 
     var lastResponseBody: String? = null
@@ -34,6 +37,9 @@ class AcceptanceWorld {
         lastStatusCode = statusCode
         lastResponseBody = body
     }
+
+    fun signupTokenOrFail(): String =
+        signupToken ?: error("This scenario has no signup session — begin a signup first.")
 
     fun lastStatusCodeOrFail(): Int =
         lastStatusCode ?: error("No request has been made in this scenario yet.")

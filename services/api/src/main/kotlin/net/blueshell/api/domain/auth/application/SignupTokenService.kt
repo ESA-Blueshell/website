@@ -3,6 +3,7 @@ package net.blueshell.api.domain.auth.application
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.domain.auth.domain.service.RecoveryTokenValidator
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import org.springframework.stereotype.Service
@@ -19,6 +20,7 @@ import java.time.Instant
 class SignupTokenService(
     private val tokenFactory: RecoveryTokenFactory,
     private val tokenValidator: RecoveryTokenValidator,
+    private val users: UserService,
 ) {
 
     @Transactional
@@ -32,10 +34,17 @@ class SignupTokenService(
         )
     }
 
-    /** Asking only for SIGNUP_CONTINUATION is what stops an activation or reset token opening this door. */
+    /**
+     * Asking only for SIGNUP_CONTINUATION is what stops an activation or reset token
+     * opening this door. Loads the account rather than returning the token's lazy
+     * association, so a caller can attach new entities to it.
+     */
     @Transactional(readOnly = true)
-    fun resolveUser(rawToken: String): User =
-        tokenValidator.verify(rawToken, TokenPurpose.SIGNUP_CONTINUATION).user
+    fun resolveAccount(rawToken: String): SignupAccount {
+        val token = tokenValidator.verify(rawToken, TokenPurpose.SIGNUP_CONTINUATION)
+        val userId = requireNotNull(token.user.id) { "Signup token has no owner" }
+        return SignupAccount(id = userId, user = users.findById(userId))
+    }
 
     /**
      * Called when the membership starts, never on email confirmation — an applicant

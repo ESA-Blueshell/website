@@ -151,6 +151,62 @@ object TestHelper {
     }
 
     /**
+     * Begin a membership signup: POST /signup with a member profile, returning the
+     * account plus the raw continuation token from the response body.
+     */
+    fun beginSignup(
+        username: String = "sys_${UUID.randomUUID().toString().take(8)}",
+        password: String = DEFAULT_PASSWORD,
+        email: String = "$username@systemtest.example.com",
+    ): SignupHandle {
+        val discord = "$username#0001"
+        val phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}"
+        val response = retryOnConnectionFailure {
+            givenCsrfApi()
+                .baseUri(apiBaseUrl)
+                .contentType(ContentType.JSON)
+                .body(
+                    """
+                    {
+                      "username": "$username",
+                      "email": "$email",
+                      "initials": "TU",
+                      "firstName": "Test",
+                      "lastName": "User",
+                      "discord": "$discord",
+                      "phoneNumber": "$phoneNumber",
+                      "newsletter": false,
+                      "consentPrivacy": true,
+                      "photoConsent": false,
+                      "password": "$password",
+                      "memberProfile": {
+                        "dateOfBirth": "2000-01-01",
+                        "nationality": "NL",
+                        "bhv": false,
+                        "ehbo": false
+                      }
+                    }
+                    """.trimIndent(),
+                ).`when`()
+                .post("/signup")
+        }
+        require(response.statusCode == 201) {
+            "POST /signup returned ${response.statusCode}: ${response.asString()}"
+        }
+        return SignupHandle(
+            user = RegisteredUser(
+                username = username,
+                email = email,
+                password = password,
+                discord = discord,
+                phoneNumber = phoneNumber,
+            ),
+            userId = response.jsonPath().getLong("userId"),
+            signupToken = response.jsonPath().getString("signupToken"),
+        )
+    }
+
+    /**
      * Convenience: register + flip `enabled = true`. Standard setup
      * for any test that wants a user it can immediately log in as.
      */
@@ -1333,6 +1389,12 @@ object TestHelper {
     ) {
         val fullName: String get() = "$firstName $lastName"
     }
+
+    data class SignupHandle(
+        val user: RegisteredUser,
+        val userId: Long,
+        val signupToken: String,
+    )
 
     data class SentEmail(
         val toEmail: String,

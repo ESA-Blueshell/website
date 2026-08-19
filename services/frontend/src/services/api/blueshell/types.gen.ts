@@ -908,6 +908,18 @@ export type ServiceEntry = {
     url: string;
 };
 
+export type SignupAddressRequest = {
+    city: string;
+    country: string;
+    houseNumber: string;
+    street: string;
+    zipCode: string;
+};
+
+export type SignupApplicationRequest = {
+    conditionsAccepted?: boolean;
+};
+
 export type SignupOutcomeResponse = {
     emailConfirmed: boolean;
     membershipStarted: boolean;
@@ -5128,6 +5140,94 @@ export type SignUpResponses = {
 };
 
 export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
+
+export type SaveAddressData = {
+    body: SignupAddressRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/address';
+};
+
+export type SaveAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SaveAddressError = SaveAddressErrors[keyof SaveAddressErrors];
+
+export type SaveAddressResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SaveAddressResponse = SaveAddressResponses[keyof SaveAddressResponses];
+
+export type ApplyData = {
+    body: SignupApplicationRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/apply';
+};
+
+export type ApplyErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApplyError = ApplyErrors[keyof ApplyErrors];
+
+export type ApplyResponses = {
+    /**
+     * OK
+     */
+    200: SignupOutcomeResponse;
+};
+
+export type ApplyResponse = ApplyResponses[keyof ApplyResponses];
 
 export type FindSponsorsData = {
     body?: never;

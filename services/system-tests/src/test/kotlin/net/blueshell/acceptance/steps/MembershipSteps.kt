@@ -52,9 +52,11 @@ class MembershipSteps(private val world: AcceptanceWorld) {
 
     @Then("they are a member")
     fun theyAreAMember() {
+        // Both submission routes answer 200 with the outcome; the membership itself
+        // is what the scenario is about, so that is what gets asserted.
         assertThat(world.lastStatusCodeOrFail())
             .describedAs("membership application response: ${world.lastResponseBody}")
-            .isEqualTo(201)
+            .isLessThan(400)
         assertThat(TestHelper.hasActiveMembership(world.applicant().username))
             .describedAs("active membership for ${world.applicant().username}")
             .isTrue()
@@ -71,7 +73,7 @@ class MembershipSteps(private val world: AcceptanceWorld) {
     fun theirApplicationIsRefused() {
         assertThat(world.lastStatusCodeOrFail())
             .describedAs("membership application should have been refused, body: ${world.lastResponseBody}")
-            .isNotEqualTo(201)
+            .isGreaterThanOrEqualTo(400)
     }
 
     @Then("they hold the MEMBER role")

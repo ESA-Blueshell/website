@@ -28,16 +28,61 @@ object AcceptanceApi {
             .`when`()
             .post("/recovery/user/activate")
 
-    fun submitMembershipApplication(cookies: TestHelper.LoginCookies): Response =
+    fun submitMembershipApplication(cookies: TestHelper.LoginCookies, accepted: Boolean = true): Response =
         TestHelper.givenCsrfApi()
             .baseUri(TestEnvironment.apiUrl)
             .cookie(TestEnvironment.authCookieName, cookies.auth)
             .contentType(ContentType.JSON)
+            .body("""{"conditionsAccepted":$accepted}""")
             .`when`()
             .post("/memberships")
+
+    fun saveSignupAddress(signupToken: String, houseNumber: String = "5"): Response =
+        TestHelper.givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .header(SIGNUP_TOKEN_HEADER, signupToken)
+            .contentType(ContentType.JSON)
+            .body(
+                """
+                {"country":"NL","city":"Enschede","street":"Drienerlolaan",
+                 "houseNumber":"$houseNumber","zipCode":"7522NB"}
+                """.trimIndent(),
+            )
+            .`when`()
+            .post("/signup/address")
+
+    fun submitSignupApplication(signupToken: String, accepted: Boolean = true): Response =
+        TestHelper.givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .header(SIGNUP_TOKEN_HEADER, signupToken)
+            .contentType(ContentType.JSON)
+            .body("""{"conditionsAccepted":$accepted}""")
+            .`when`()
+            .post("/signup/apply")
+
+    /** Used by the scope scenarios: every attempt outside the token's remit. */
+    fun attemptWithSignupToken(signupToken: String, attempt: String, otherUserId: Long?): Response {
+        val spec = TestHelper.givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .header(SIGNUP_TOKEN_HEADER, signupToken)
+            .contentType(ContentType.JSON)
+        return when (attempt) {
+            "change the password on that account" ->
+                spec.body("""{"token":"$signupToken","password":"Hijacked1!"}""")
+                    .`when`().post("/recovery/password")
+            "read that account's details back" ->
+                spec.`when`().get("/users/$otherUserId")
+            "submit an application through the signed-in route" ->
+                spec.body("""{"conditionsAccepted":true}""").`when`().post("/memberships")
+            "sign up for an event" ->
+                spec.body("""{}""").`when`().post("/events/1/signups")
+            else -> error("Unknown attempt \"$attempt\" — add it to AcceptanceApi.attemptWithSignupToken.")
+        }
+    }
 
     fun confirmationEmailCount(email: String): Int =
         TestHelper.findEmails(recipient = email, subject = CONFIRMATION_SUBJECT).size
 
     const val CONFIRMATION_SUBJECT: String = "Activate your Account"
+    const val SIGNUP_TOKEN_HEADER: String = "X-Signup-Token"
 }

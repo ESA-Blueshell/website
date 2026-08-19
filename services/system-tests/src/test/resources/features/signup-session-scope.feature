@@ -1,4 +1,4 @@
-@system @security @pending
+@system @security
 Feature: What a signup session may do
 
   A signup session lets somebody who is not signed in finish their own
@@ -17,12 +17,11 @@ Feature: What a signup session may do
     Then the request is refused
 
     Examples:
-      | attempt                                       |
-      | change the password on their own account      |
-      | read their own account details back           |
-      | save an address against another account       |
-      | accept the membership conditions for another account |
-      | sign up for an event                          |
+      | attempt                                          |
+      | change the password on that account              |
+      | read that account's details back                 |
+      | submit an application through the signed-in route |
+      | sign up for an event                             |
 
   Scenario: A retired signup session is refused
     Given they have saved their address during signup
@@ -31,6 +30,7 @@ Feature: What a signup session may do
     When they save their address during signup
     Then the request is refused
 
+  @pending
   Scenario: The email address cannot be changed once it is confirmed
     Given they have confirmed their email address
     When they correct their email address

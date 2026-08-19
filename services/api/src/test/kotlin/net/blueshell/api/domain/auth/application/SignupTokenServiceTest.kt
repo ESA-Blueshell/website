@@ -27,7 +27,8 @@ class SignupTokenServiceTest {
 
     private val tokenFactory = mock<RecoveryTokenFactory>()
     private val tokenValidator = mock<RecoveryTokenValidator>()
-    private val service = SignupTokenService(tokenFactory, tokenValidator)
+    private val users = mock<net.blueshell.api.domain.user.application.UserService>()
+    private val service = SignupTokenService(tokenFactory, tokenValidator, users)
 
     private fun user(id: Long? = 7L, email: String = "lena@example.com"): User {
         val user = mock<User>()
@@ -92,21 +93,24 @@ class SignupTokenServiceTest {
     // ── resolveUser: the account comes from the token, never the request ─────
 
     @Test
-    fun `resolveUser returns the account the token belongs to`() {
+    fun `resolveAccount returns the account the token belongs to`() {
         val owner = user(id = 42L)
         // Built before the outer stub — Mockito rejects nested stubbing.
         val ownedToken = token(owner = owner)
         whenever(tokenValidator.verify("sel.ver", TokenPurpose.SIGNUP_CONTINUATION)).thenReturn(ownedToken)
+        whenever(users.findById(42L)).thenReturn(owner)
 
-        assertThat(service.resolveUser("sel.ver")).isSameAs(owner)
+        assertThat(service.resolveAccount("sel.ver").user).isSameAs(owner)
     }
 
     @Test
-    fun `resolveUser only ever asks for the signup purpose`() {
-        val signupToken = token()
+    fun `resolveAccount only ever asks for the signup purpose`() {
+        val owner = user()
+        val signupToken = token(owner = owner)
         whenever(tokenValidator.verify("sel.ver", TokenPurpose.SIGNUP_CONTINUATION)).thenReturn(signupToken)
+        whenever(users.findById(7L)).thenReturn(owner)
 
-        service.resolveUser("sel.ver")
+        service.resolveAccount("sel.ver")
 
         verify(tokenValidator).verify("sel.ver", TokenPurpose.SIGNUP_CONTINUATION)
         verify(tokenValidator, never()).verify("sel.ver", TokenPurpose.USER_ACTIVATION)
@@ -115,33 +119,44 @@ class SignupTokenServiceTest {
     }
 
     @Test
-    fun `resolveUser propagates a malformed token`() =
+    fun `resolveAccount refuses a token whose owner has no id`() {
+        val orphan = user(id = null)
+        val orphanToken = token(owner = orphan)
+        whenever(tokenValidator.verify("sel.ver", TokenPurpose.SIGNUP_CONTINUATION)).thenReturn(orphanToken)
+
+        assertThatThrownBy { service.resolveAccount("sel.ver") }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("no owner")
+    }
+
+    @Test
+    fun `resolveAccount propagates a malformed token`() =
         assertResolveRejects(MalformedRecoveryTokenException("no separator"))
 
     @Test
-    fun `resolveUser propagates an unknown selector`() =
+    fun `resolveAccount propagates an unknown selector`() =
         assertResolveRejects(InvalidRecoveryTokenException("not found"))
 
     @Test
-    fun `resolveUser propagates a token minted for another purpose`() =
+    fun `resolveAccount propagates a token minted for another purpose`() =
         assertResolveRejects(InvalidTokenTypeException("wrong purpose"))
 
     @Test
-    fun `resolveUser propagates an expired token`() =
+    fun `resolveAccount propagates an expired token`() =
         assertResolveRejects(ExpiredRecoveryTokenException("expired"))
 
     @Test
-    fun `resolveUser propagates a retired token`() =
+    fun `resolveAccount propagates a retired token`() =
         assertResolveRejects(ConsumedRecoveryTokenException("already used"))
 
     @Test
-    fun `resolveUser propagates a token whose verifier does not match`() =
+    fun `resolveAccount propagates a token whose verifier does not match`() =
         assertResolveRejects(TokenVerificationFailedException("bad verifier"))
 
     private fun assertResolveRejects(failure: RuntimeException) {
         whenever(tokenValidator.verify("sel.ver", TokenPurpose.SIGNUP_CONTINUATION)).thenThrow(failure)
 
-        assertThatThrownBy { service.resolveUser("sel.ver") }.isSameAs(failure)
+        assertThatThrownBy { service.resolveAccount("sel.ver") }.isSameAs(failure)
     }
 
     // ── retire ───────────────────────────────────────────────────────────────

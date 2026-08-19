@@ -211,6 +211,7 @@ val signupCoverageIncludes = listOf(
     "net.blueshell.api.domain.auth.application.Signup*",
     "net.blueshell.api.domain.auth.application.command.Signup*",
     "net.blueshell.api.domain.auth.web.Signup*",
+    "net.blueshell.api.domain.user.application.command.*Signup*",
 )
 
 fun JacocoCoverageVerification.requireSignupCoverage() {

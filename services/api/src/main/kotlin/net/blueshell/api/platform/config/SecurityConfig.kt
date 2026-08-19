@@ -140,6 +140,7 @@ class SecurityConfig(
                 "/recovery/**",
                 // POST /users is board-only now; public registration is /signup.
                 "/signup",
+                "/signup/**",
                 "/users/guest",
                 "/events/*/signups"
             ).permitAll()

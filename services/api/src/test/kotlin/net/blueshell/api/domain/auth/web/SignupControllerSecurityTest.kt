@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -109,6 +111,30 @@ class SignupControllerSecurityTest : UserTestSupport() {
                     .with(bearer(board))
             )
                 .andExpect(status().isCreated)
+        }
+    }
+
+    // The signup routes are only reachable from a browser if the preflight admits
+    // the header that carries the session. Same-origin production hides a mistake
+    // here; every cross-origin deployment breaks outright.
+    @Nested
+    inner class Preflight {
+
+        @Test
+        fun `admits the signup token header`() {
+            mvc.perform(
+                options("/signup/address")
+                    .header("Origin", "http://localhost:3000")
+                    .header("Access-Control-Request-Method", "POST")
+                    .header("Access-Control-Request-Headers", SignupController.SIGNUP_TOKEN_HEADER)
+            )
+                .andExpect(status().isOk)
+                .andExpect(
+                    header().string(
+                        "Access-Control-Allow-Headers",
+                        org.hamcrest.Matchers.containsStringIgnoringCase(SignupController.SIGNUP_TOKEN_HEADER)
+                    )
+                )
         }
     }
 }

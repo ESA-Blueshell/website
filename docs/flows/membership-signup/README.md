@@ -326,6 +326,11 @@ stateDiagram-v2
 Saving an address, submitting the application, correcting the email address and
 confirming the email address all leave the token in `live`.
 
+`X-Signup-Token` is listed in the CORS allowed headers in `SecurityConfig`. Apex
+production serves the frontend and the api on one origin so no preflight happens
+there, but every dev and CI stack splits them across ports, and a preflight that
+refuses the header stops the browser from ever sending the request.
+
 The token is single-**purpose**, not single-**use**. Going back a step, retrying
 after a dropped connection and double-clicking submit all present the same token
 again, and all must work.

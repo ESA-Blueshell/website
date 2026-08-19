@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.config
 
+import net.blueshell.api.domain.auth.web.SignupController
 import net.blueshell.api.infrastructure.security.JwtAuthFilter
 import net.blueshell.api.infrastructure.security.JwtAuthenticationEntryPoint
 import net.blueshell.api.infrastructure.security.PublicAuthRateLimitFilter
@@ -68,7 +69,13 @@ class SecurityConfig(
             .distinct()
             .toMutableList()
         cfg.allowedMethods = mutableListOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-        cfg.allowedHeaders = mutableListOf("Authorization", "Content-Type", "X-Guest-Access-Token", "X-XSRF-TOKEN")
+        cfg.allowedHeaders = mutableListOf(
+            "Authorization",
+            "Content-Type",
+            "X-Guest-Access-Token",
+            SignupController.SIGNUP_TOKEN_HEADER,
+            "X-XSRF-TOKEN",
+        )
         cfg.exposedHeaders = mutableListOf("X-Guest-Access-Token")
         cfg.allowCredentials = true
         cfg.maxAge = 3600

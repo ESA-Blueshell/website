@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.auth.application
+package net.blueshell.api.shared.model
 
 import java.time.Instant
 

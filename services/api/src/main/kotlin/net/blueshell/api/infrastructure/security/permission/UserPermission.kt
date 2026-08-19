@@ -19,6 +19,8 @@ class UserPermission @Autowired constructor(service: UserService) :
         if (entity == null) {
             return when (permission) {
                 "read" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
+                // Creating a user has no target to own; only the board may.
+                "write" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
                 "roles" -> SecurityUtils.hasAuthority(authentication, Role.ADMIN)
                 "delete" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
                 else -> false

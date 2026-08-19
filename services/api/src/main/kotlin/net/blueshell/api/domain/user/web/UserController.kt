@@ -41,23 +41,10 @@ class UserController(
     service
 ) {
     @PostMapping("/users")
-    @PermitAll
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
-    // CodeQL false positive: `principal`/`isBoard` derive from the server-validated session, not request input.
-    @Suppress("codeql[java/user-controlled-bypass]")
-    fun createUser(
-        @RequestBody @Valid request: CreateUserRequest,
-        @AuthenticationPrincipal principal: UserPrincipal?
-    ): UserDetailResponse {
-        // Block non-BOARD authenticated users from creating accounts
-        // Allows: anonymous users (principal == null) and BOARD users
-        // Denies: MEMBER, GUEST, COMMITTEE, etc.
-        if (principal != null && !principal.hasAuthority(Role.BOARD)) {
-            throw AccessDeniedException("Only anonymous users or BOARD members can create users")
-        }
-
-        val isBoard = principal?.hasAuthority(Role.BOARD) == true
-        val user = commandBus.dispatch(request.asCommand(isBoard))
+    fun createUser(@RequestBody @Valid request: CreateUserRequest): UserDetailResponse {
+        val user = commandBus.dispatch(request.asCommand(isBoard = true))
         return user.asDetailResponse()
     }
 

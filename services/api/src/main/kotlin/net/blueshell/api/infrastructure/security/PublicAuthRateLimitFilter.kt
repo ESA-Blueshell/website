@@ -55,6 +55,7 @@ class PublicAuthRateLimitFilter(
     private val rules = listOf(
         Rule(HttpMethod.POST.name(), "/auth", maxRequests = 10, window = Duration.ofMinutes(1)),
         Rule(HttpMethod.POST.name(), "/users", maxRequests = 10, window = Duration.ofMinutes(1)),
+        Rule(HttpMethod.POST.name(), "/signup", maxRequests = 10, window = Duration.ofMinutes(1)),
         Rule(HttpMethod.POST.name(), "/recovery/password", maxRequests = 10, window = Duration.ofMinutes(10)),
         Rule(HttpMethod.POST.name(), "/recovery/user/activate", maxRequests = 10, window = Duration.ofMinutes(10)),
         Rule(HttpMethod.POST.name(), "/recovery/member/activate", maxRequests = 10, window = Duration.ofMinutes(10)),

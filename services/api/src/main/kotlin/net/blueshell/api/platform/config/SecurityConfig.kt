@@ -138,7 +138,8 @@ class SecurityConfig(
                 "/auth",
                 "/auth/logout",
                 "/recovery/**",
-                "/users",
+                // POST /users is board-only now; public registration is /signup.
+                "/signup",
                 "/users/guest",
                 "/events/*/signups"
             ).permitAll()

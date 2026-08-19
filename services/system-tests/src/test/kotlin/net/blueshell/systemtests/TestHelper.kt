@@ -133,10 +133,10 @@ object TestHelper {
                     }
                     """.trimIndent(),
                 ).`when`()
-                .post("/users")
+                .post("/signup")
         }
         require(response.statusCode == 201) {
-            "POST /users returned ${response.statusCode}: ${response.asString()}"
+            "POST /signup returned ${response.statusCode}: ${response.asString()}"
         }
 
         return RegisteredUser(

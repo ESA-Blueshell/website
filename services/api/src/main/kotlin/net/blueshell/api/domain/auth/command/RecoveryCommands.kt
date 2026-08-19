@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.auth.command
 
+import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.user.application.validation.UniqueUsername
 import net.blueshell.api.domain.user.persistence.User
@@ -56,3 +57,7 @@ data class ResendUserActivationCommand(
 data class ResendMemberActivationEmailCommand(
     val userId: Long
 ) : Command<Unit>
+
+data class IssueSignupSessionCommand(
+    val userId: Long
+) : Command<SignupSession>

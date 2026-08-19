@@ -815,7 +815,7 @@ async function confirmDeleteUser() {
         ref="addFormRef"
         v-model="addModel"
         :show-password="true"
-        :options="{includeMemberProfile: true, updateKind: 'board'}"
+        :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
         @submitted="onUserSaved"
       />
     </base-modal>
@@ -841,7 +841,7 @@ async function confirmDeleteUser() {
       <user-form
         ref="editFormRef"
         v-model="editModel"
-        :options="{includeMemberProfile: true, updateKind: 'board'}"
+        :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
         @submitted="onProfileSaved"
       />
     </base-modal>

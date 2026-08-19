@@ -34,7 +34,9 @@
             mdi-check-circle
           </v-icon>
           <p class="text-subtitle-1">
-            Account activated! You will be redirected to the login page.
+            {{ membershipStarted
+              ? "Account confirmed and your membership has started. You will be redirected to the login page."
+              : "Account confirmed! You will be redirected to the login page." }}
           </p>
         </div>
 
@@ -68,6 +70,7 @@ const router = useRouter()
 
 const loading = ref(true)
 const succeeded = ref(false)
+const membershipStarted = ref(false)
 const errorMessage = ref<string | null>(null)
 const defaultErrorMessage =
   "We couldn’t verify your activation link. It may be invalid, expired, or already used."
@@ -92,11 +95,8 @@ onMounted(async () => {
     const resp = await userActivate({body: {token}, throwOnError: true})
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
-    const redirect = resp.data!.path
-    window.setTimeout(
-      () => router.push({name: "login", query: {redirect}}),
-      1500,
-    )
+    membershipStarted.value = resp.data!.membershipStarted
+    window.setTimeout(() => router.push({name: "login"}), 1500)
   } catch (e: unknown) {
     $handleNetworkError(e)
     errorMessage.value = defaultErrorMessage

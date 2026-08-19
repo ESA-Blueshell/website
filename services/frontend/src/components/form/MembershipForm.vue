@@ -3,7 +3,13 @@ import {computed, ref} from "vue"
 import DocumentTable from "@/components/base/DocumentTable.vue"
 import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
 import {defineRule, Form} from "vee-validate"
-import {boardCreateMembership, createMembership, type MembershipResponse, updateMembership} from "@/services/api"
+import {
+  boardCreateMembership,
+  createMembership,
+  type MembershipResponse,
+  type SignupOutcomeResponse,
+  updateMembership,
+} from "@/services/api"
 import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import {VCheckbox} from "vuetify/components"
@@ -41,24 +47,31 @@ const consented = ref(false)
 const isCreating = computed<boolean>(() => !membership.value?.id)
 const isBoardMode = computed<boolean>(() => props.userId !== undefined)
 
-const save = async (): Promise<MembershipResponse | null> => {
+const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)
     return null
   }
   try {
+    // Self-service answers with the signup outcome rather than a membership: the
+    // application may be complete without the membership having started yet.
+    if (!membership.value?.id && props.userId === undefined) {
+      const resp = await withSaving(async () => await createMembership({
+        body: {conditionsAccepted: consented.value},
+        throwOnError: true,
+      }))
+      emit("submitted", true)
+      setSubmitResult(true)
+      return resp.data!
+    }
     const resp = await withSaving(async () => {
       if (membership.value?.id) {
         // Updating an existing membership — board or self-service both use updateMembership
         return await updateMembership({path: {id: membership.value.id}, body: membership.value!, throwOnError: true})
       }
-      if (props.userId !== undefined) {
-        // Board creating a membership for a target user
-        return await boardCreateMembership({path: {userId: props.userId}, body: membership.value!, throwOnError: true})
-      }
-      // Self-service: create own membership
-      return await createMembership({throwOnError: true})
+      // Board creating a membership for a target user
+      return await boardCreateMembership({path: {userId: props.userId!}, body: membership.value!, throwOnError: true})
     })
     membership.value = resp.data!
     emit("submitted", true)

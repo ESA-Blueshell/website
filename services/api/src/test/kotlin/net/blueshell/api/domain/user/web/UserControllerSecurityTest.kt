@@ -26,13 +26,14 @@ class UserControllerSecurityTest : UserTestSupport() {
     @Nested
     inner class CreateUser {
         @Test
-        fun `allows anonymous user to create user`() {
+        fun `denies anonymous user from creating a user`() {
+            // Public registration is POST /signup; this endpoint is board-only.
             mvc.perform(
                 post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createUserPayload("guestuser1", "guest@test.com"))
             )
-                .andExpect(status().isCreated)
+                .andExpect(status().isUnauthorized)
         }
 
         @Test

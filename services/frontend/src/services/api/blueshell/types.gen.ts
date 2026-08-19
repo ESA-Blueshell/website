@@ -9,6 +9,10 @@ export enum ActionActorType {
     SYSTEM = 'SYSTEM'
 }
 
+export type ActivationResponse = {
+    membershipStarted: boolean;
+};
+
 export type Actor = {
     role: Role;
     type: ActionActorType;
@@ -771,6 +775,7 @@ export type MemberActivationRequest = {
 
 export type MemberProfileResponse = {
     bhv: boolean;
+    conditionsAcceptedAt?: string;
     createdAt: string;
     dateOfBirth?: string;
     ehbo: boolean;
@@ -789,6 +794,10 @@ export enum MemberType {
     REGULAR = 'REGULAR',
     NONE = 'NONE'
 }
+
+export type MembershipApplicationRequest = {
+    conditionsAccepted?: boolean;
+};
 
 export type MembershipResponse = {
     createdAt: string;
@@ -897,6 +906,18 @@ export type ServiceEntry = {
     id: string;
     name: string;
     url: string;
+};
+
+export type SignupOutcomeResponse = {
+    emailConfirmed: boolean;
+    membershipStarted: boolean;
+};
+
+export type SignupSessionResponse = {
+    email: string;
+    expiresAt: string;
+    signupToken: string;
+    userId: number;
 };
 
 export type SponsorResponse = {
@@ -4478,7 +4499,7 @@ export type FindMembershipsResponses = {
 export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
 
 export type CreateMembershipData = {
-    body?: never;
+    body: MembershipApplicationRequest;
     path?: never;
     query?: never;
     url: '/memberships';
@@ -4511,9 +4532,9 @@ export type CreateMembershipError = CreateMembershipErrors[keyof CreateMembershi
 
 export type CreateMembershipResponses = {
     /**
-     * Created
+     * OK
      */
-    201: MembershipResponse;
+    200: SignupOutcomeResponse;
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
@@ -4976,7 +4997,7 @@ export type UserActivateResponses = {
     /**
      * OK
      */
-    200: RedirectResponse;
+    200: ActivationResponse;
 };
 
 export type UserActivateResponse = UserActivateResponses[keyof UserActivateResponses];
@@ -5066,6 +5087,47 @@ export type ResendMemberActivationEmailResponses = {
 };
 
 export type ResendMemberActivationEmailResponse = ResendMemberActivationEmailResponses[keyof ResendMemberActivationEmailResponses];
+
+export type SignUpData = {
+    body: CreateUserRequest;
+    path?: never;
+    query?: never;
+    url: '/signup';
+};
+
+export type SignUpErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SignUpError = SignUpErrors[keyof SignUpErrors];
+
+export type SignUpResponses = {
+    /**
+     * Created
+     */
+    201: SignupSessionResponse;
+};
+
+export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
 
 export type FindSponsorsData = {
     body?: never;

@@ -1,5 +1,8 @@
 package net.blueshell.api.domain.auth.application.command
 
+import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.auth.application.SignupTokenService
+import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.domain.auth.application.PasswordRecoveryService
 import net.blueshell.api.domain.auth.application.SignupCompletionService
 import net.blueshell.api.shared.model.SignupOutcome
@@ -100,4 +103,15 @@ class ResendMemberActivationEmailHandler(
             )
         }
     }
+}
+
+@Component
+class IssueSignupSessionHandler(
+    private val users: UserService,
+    private val signupTokens: SignupTokenService
+) : CommandHandler<IssueSignupSessionCommand, SignupSession> {
+    override val commandType = IssueSignupSessionCommand::class
+
+    override fun handle(command: IssueSignupSessionCommand): SignupSession =
+        signupTokens.issue(users.findById(command.userId))
 }

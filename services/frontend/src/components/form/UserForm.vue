@@ -2,12 +2,15 @@
 import {computed, ref, watch} from "vue"
 import {
   createUser,
+  findUserById,
+  signUp,
   findMemberProfileByUserId,
   type CreateUserRequest,
   type MemberProfileResponse,
   type UpdateUserRequest,
   type UpsertMemberProfileRequest,
   updateUser,
+  type SignupSessionResponse,
   type UserDetailResponse,
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
@@ -44,6 +47,8 @@ const props = withDefaults(defineProps<{
   options?: {
     includeMemberProfile?: boolean
     updateKind?: "auto" | "user" | "board"
+    /** Public registration goes through POST /signup; POST /users is board-only. */
+    createVia?: "signup" | "board"
   }
 }>(), {
   showPassword: false,
@@ -52,6 +57,7 @@ const props = withDefaults(defineProps<{
   options: () => ({
     includeMemberProfile: false,
     updateKind: "auto",
+    createVia: "signup",
   }),
 })
 
@@ -86,6 +92,7 @@ const effectiveUpdateKind = computed<"user" | "board">(() => {
   }
   return configuredUpdateKind.value
 })
+const createVia = computed<"signup" | "board">(() => props.options?.createVia ?? "signup")
 const canEditIdentity = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
 const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effectiveUpdateKind.value !== "board")
 
@@ -94,6 +101,8 @@ const {isSaving, withSaving} = useSaving()
 const {formRef, validate} = useVeeForm()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 const confirmPassword = ref<string>("")
+// Set by a public registration; the stepper reads it to carry the applicant on.
+const signupSession = ref<SignupSessionResponse>()
 const {passwordFieldProps} = usePasswordToggle()
 
 const defaultMemberProfile = (): UpsertMemberProfileRequest => ({
@@ -230,17 +239,27 @@ const save = async (): Promise<EditableUser | null> => {
   }
   try {
     const resp = await withSaving(async () => {
-      const hasId = Boolean(user.value?.id)
-      return hasId
-        ? await updateUser({
+      if (user.value?.id) {
+        return await updateUser({
           path: {id: user.value.id!},
           body: toUpdateUserRequest(user.value),
           throwOnError: true,
         })
-        : await createUser({
+      }
+      if (createVia.value === "board") {
+        return await createUser({
           body: toCreateUserRequest(user.value),
           throwOnError: true,
         })
+      }
+      const session = await signUp({
+        body: toCreateUserRequest(user.value),
+        throwOnError: true,
+      })
+      signupSession.value = session.data!
+      // POST /signup answers with the session, not the user, so read the account
+      // back the same way every other consumer of this form does.
+      return await findUserById({path: {userId: session.data!.userId}, throwOnError: true})
     })
 
     const updated = fromUserDetail(resp.data!, user.value)
@@ -266,7 +285,7 @@ const save = async (): Promise<EditableUser | null> => {
   }
 }
 
-defineExpose({validate, save})
+defineExpose({validate, save, signupSession})
 </script>
 
 <template>

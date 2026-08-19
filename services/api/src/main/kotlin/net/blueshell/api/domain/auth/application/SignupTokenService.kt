@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.auth.application
 
+import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.domain.auth.domain.service.RecoveryTokenValidator
 import net.blueshell.api.domain.user.persistence.User

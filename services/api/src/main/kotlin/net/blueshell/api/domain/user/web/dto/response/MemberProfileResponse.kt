@@ -14,6 +14,7 @@ data class MemberProfileResponse(
     var nationality: String?,
     var bhv: Boolean,
     var ehbo: Boolean,
+    var conditionsAcceptedAt: Instant?,
     var version: Long,
     val createdAt: Instant,
     val updatedAt: Instant

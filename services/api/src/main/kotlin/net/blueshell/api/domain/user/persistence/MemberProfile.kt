@@ -5,6 +5,7 @@ import net.blueshell.api.shared.model.AuditedCustomIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.sql.Date
+import java.time.Instant
 
 @Entity
 @Table(
@@ -36,6 +37,9 @@ class MemberProfile(
 
     @Column(name = "ehbo", nullable = false)
     var ehbo: Boolean,
+
+    @Column(name = "conditions_accepted_at")
+    var conditionsAcceptedAt: Instant? = null,
 
 ) : AuditedCustomIdEntity<Long>() {
     val userId: Long?

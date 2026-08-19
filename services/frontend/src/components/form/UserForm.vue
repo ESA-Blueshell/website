@@ -2,7 +2,6 @@
 import {computed, ref, watch} from "vue"
 import {
   createUser,
-  findUserById,
   signUp,
   findMemberProfileByUserId,
   type CreateUserRequest,
@@ -238,6 +237,20 @@ const save = async (): Promise<EditableUser | null> => {
     return null
   }
   try {
+    if (!user.value?.id && createVia.value === "signup") {
+      const session = await withSaving(async () => await signUp({
+        body: toCreateUserRequest(user.value),
+        throwOnError: true,
+      }))
+      signupSession.value = session.data!
+      // Nothing authorises an anonymous applicant to read the account back, so the
+      // form keeps what was typed and takes the id from the session.
+      user.value = {...user.value, id: session.data!.userId, email: session.data!.email, password: ""}
+      emit("submitted", true)
+      setSubmitResult(true)
+      return user.value
+    }
+
     const resp = await withSaving(async () => {
       if (user.value?.id) {
         return await updateUser({
@@ -246,20 +259,10 @@ const save = async (): Promise<EditableUser | null> => {
           throwOnError: true,
         })
       }
-      if (createVia.value === "board") {
-        return await createUser({
-          body: toCreateUserRequest(user.value),
-          throwOnError: true,
-        })
-      }
-      const session = await signUp({
+      return await createUser({
         body: toCreateUserRequest(user.value),
         throwOnError: true,
       })
-      signupSession.value = session.data!
-      // POST /signup answers with the session, not the user, so read the account
-      // back the same way every other consumer of this form does.
-      return await findUserById({path: {userId: session.data!.userId}, throwOnError: true})
     })
 
     const updated = fromUserDetail(resp.data!, user.value)

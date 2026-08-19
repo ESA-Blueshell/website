@@ -6,6 +6,10 @@ import UserForm from "@/components/form/UserForm.vue"
 const {
   mockStore,
   mockFindMemberProfileByUserId,
+  mockSignUp,
+  mockCreateUser,
+  mockFindUserById,
+  mockValidate,
 } = vi.hoisted(() => ({
   mockStore: {
     getters: {
@@ -14,6 +18,10 @@ const {
     },
   },
   mockFindMemberProfileByUserId: vi.fn(),
+  mockSignUp: vi.fn(),
+  mockCreateUser: vi.fn(),
+  mockFindUserById: vi.fn(),
+  mockValidate: vi.fn(),
 }))
 
 vi.mock("vuex", async (importOriginal) => {
@@ -28,10 +36,23 @@ vi.mock("v-phone-input/styles", () => ({}))
 vi.mock("v-phone-input", () => ({}))
 
 vi.mock("@/services/api", () => ({
-  createUser: vi.fn(),
+  createUser: mockCreateUser,
   updateUser: vi.fn(),
+  signUp: mockSignUp,
+  findUserById: mockFindUserById,
   findMemberProfileByUserId: mockFindMemberProfileByUserId,
 }))
+
+vi.mock("@/composables/formUtils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/composables/formUtils")>()
+  return {
+    ...actual,
+    useVeeForm: () => ({
+      formRef: {value: {validate: vi.fn().mockResolvedValue({valid: true})}},
+      validate: mockValidate,
+    }),
+  }
+})
 
 const capturedProps: Record<string, unknown>[] = []
 const vvFieldStub = {
@@ -78,6 +99,73 @@ describe("UserForm", () => {
     mockStore.getters.isLoggedIn = false
     mockStore.getters.isBoard = false
     mockFindMemberProfileByUserId.mockResolvedValue({status: 404, data: null})
+    mockValidate.mockResolvedValue(true)
+  })
+
+  describe("registering a new applicant", () => {
+    const session = {
+      userId: 4242,
+      email: "applicant@example.com",
+      signupToken: "sel.ver",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    }
+
+    function mountForRegistration() {
+      return shallowMount(UserForm, {
+        props: {
+          showPassword: true,
+          modelValue: baseModel({email: "applicant@example.com"}),
+          options: {includeMemberProfile: true, createVia: "signup"},
+        },
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+    }
+
+    it("registers through the public signup route and keeps the session", async () => {
+      mockSignUp.mockResolvedValue({data: session})
+      const wrapper = mountForRegistration()
+
+      const saved = await (wrapper.vm as any).save()
+
+      expect(mockSignUp).toHaveBeenCalled()
+      expect(mockCreateUser).not.toHaveBeenCalled()
+      expect(saved.id).toBe(session.userId)
+      expect((wrapper.vm as any).signupSession).toMatchObject({signupToken: "sel.ver"})
+    })
+
+    it("never reads the account back, because nothing authorises that yet", async () => {
+      mockSignUp.mockResolvedValue({data: session})
+      const wrapper = mountForRegistration()
+
+      await (wrapper.vm as any).save()
+
+      expect(mockFindUserById).not.toHaveBeenCalled()
+    })
+
+    it("reports a refused registration as a failed submit", async () => {
+      mockSignUp.mockRejectedValue(new Error("taken"))
+      const wrapper = mountForRegistration()
+
+      expect(await (wrapper.vm as any).save()).toBeNull()
+      expect(wrapper.emitted("submitted")).toEqual([[false]])
+    })
+
+    it("uses the board route when the form is opened by the board", async () => {
+      mockCreateUser.mockResolvedValue({data: {id: 7, email: "b@example.com", roles: [], version: 0}})
+      const wrapper = shallowMount(UserForm, {
+        props: {
+          showPassword: true,
+          modelValue: baseModel(),
+          options: {includeMemberProfile: false, createVia: "board"},
+        },
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+
+      await (wrapper.vm as any).save()
+
+      expect(mockCreateUser).toHaveBeenCalled()
+      expect(mockSignUp).not.toHaveBeenCalled()
+    })
   })
 
   it("requires identity/contact fields for create flow and includes password rules", () => {

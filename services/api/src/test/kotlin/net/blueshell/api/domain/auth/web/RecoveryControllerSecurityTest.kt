@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.auth.web
 
 import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Nested
@@ -63,7 +63,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows anyone to set password with valid token`() {
             val user = createUserWithRole(Role.MEMBER)
-            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofHours(1))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofHours(1))
             mvc.perform(
                 post("/recovery/password")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -75,7 +75,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows authenticated user to set password`() {
             val user = createUserWithRole(Role.MEMBER)
-            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofHours(1))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofHours(1))
 
             mvc.perform(
                 post("/recovery/password")
@@ -93,7 +93,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows anyone to activate user account`() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
-            val token = recoveryTokenFactory.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
             mvc.perform(
                 post("/recovery/user/activate")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -106,7 +106,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
         fun `allows authenticated user to activate account`() {
             val requester = createUserWithRole(Role.MEMBER)
             val userToActivate = createUserWithRole(Role.MEMBER, enabled = false)
-            val token = recoveryTokenFactory.issue(userToActivate, ResetType.USER_ACTIVATION, Duration.ofHours(1))
+            val token = recoveryTokenFactory.issue(userToActivate, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
             mvc.perform(
                 post("/recovery/user/activate")
@@ -124,7 +124,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
         @Test
         fun `allows anyone to activate member account`() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
-            val token = recoveryTokenFactory.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
             mvc.perform(
                 post("/recovery/member/activate")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -137,7 +137,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
         fun `allows authenticated user to activate as member`() {
             val requester = createUserWithRole(Role.MEMBER)
             val userToActivate = createUserWithRole(Role.MEMBER, enabled = false)
-            val token = recoveryTokenFactory.issue(userToActivate, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+            val token = recoveryTokenFactory.issue(userToActivate, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
 
             mvc.perform(
                 post("/recovery/member/activate")

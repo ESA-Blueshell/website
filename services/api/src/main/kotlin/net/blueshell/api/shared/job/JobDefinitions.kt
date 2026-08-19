@@ -1,6 +1,6 @@
 package net.blueshell.api.shared.job
 
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 
 
 object EmailJobs {
@@ -25,7 +25,7 @@ object EmailJobs {
     data class RecoveryPayload(
         val userId: Long,
         val token: String,
-        val resetType: ResetType
+        val tokenPurpose: TokenPurpose
     )
 
     data class EventSignupPayload(

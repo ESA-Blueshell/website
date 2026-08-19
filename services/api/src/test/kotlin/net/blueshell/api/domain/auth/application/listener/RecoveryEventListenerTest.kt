@@ -45,7 +45,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         assertThat(jobPayload)
             .describedAs("Job payload should contain userId")
             .contains("\"userId\":${user.id}")
-            .contains("\"resetType\":\"USER_ACTIVATION\"")
+            .contains("\"tokenPurpose\":\"USER_ACTIVATION\"")
     }
 
     @Test
@@ -67,7 +67,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         assertThat(jobPayload)
             .describedAs("Job payload should contain userId")
             .contains("\"userId\":${user.id}")
-            .contains("\"resetType\":\"MEMBER_ACTIVATION\"")
+            .contains("\"tokenPurpose\":\"MEMBER_ACTIVATION\"")
     }
 
     private fun createAndSaveUser(username: String, email: String, enabled: Boolean): User {

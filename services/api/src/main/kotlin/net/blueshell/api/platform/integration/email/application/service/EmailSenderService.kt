@@ -12,7 +12,7 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailService
 import net.blueshell.api.shared.email.EmailContent
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -50,14 +50,18 @@ class EmailSenderService(
         deliver(emailContent, "email.event-signup", jobExecutionId)
     }
 
-    fun sendUserResetEmail(userId: Long, token: String, resetType: ResetType, jobExecutionId: Long? = null) {
+    fun sendUserResetEmail(userId: Long, token: String, tokenPurpose: TokenPurpose, jobExecutionId: Long? = null) {
         val user = requireExists { users.findById(userId) }
-        log.info("Sending {} email for user={}", resetType, userId)
+        log.info("Sending {} email for user={}", tokenPurpose, userId)
 
-        val emailContent = when (resetType) {
-            ResetType.MEMBER_ACTIVATION -> createMemberActivationEmail(user, token, frontendUrl)
-            ResetType.USER_ACTIVATION -> createUserActivationEmail(user, token, frontendUrl)
-            ResetType.PASSWORD_RESET -> createPasswordResetEmail(user, token, frontendUrl)
+        val emailContent = when (tokenPurpose) {
+            TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(user, token, frontendUrl)
+            TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(user, token, frontendUrl)
+            TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(user, token, frontendUrl)
+            // Never emailed by design (ADR-024) — fail loudly rather than leak it.
+            TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
+                "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",
+            )
         }
 
         deliver(emailContent, "email.recovery", jobExecutionId)

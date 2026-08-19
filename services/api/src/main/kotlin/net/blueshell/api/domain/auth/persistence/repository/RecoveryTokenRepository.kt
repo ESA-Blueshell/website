@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.auth.persistence.repository
 
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
 import java.util.*
@@ -26,5 +26,5 @@ interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
         and rt.consumedAt is null
     """
     )
-    fun findAllUnconsumedByTypeAndUserId(userId: Long, type: ResetType): MutableList<RecoveryToken>
+    fun findAllUnconsumedByTypeAndUserId(userId: Long, type: TokenPurpose): MutableList<RecoveryToken>
 }

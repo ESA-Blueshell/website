@@ -2,7 +2,7 @@ package net.blueshell.api.domain.auth.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -28,7 +28,7 @@ class RecoveryToken(
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
-    var type: ResetType,
+    var type: TokenPurpose,
 
     @Column(name = "selector", nullable = false, length = 64)
     var selector: String,

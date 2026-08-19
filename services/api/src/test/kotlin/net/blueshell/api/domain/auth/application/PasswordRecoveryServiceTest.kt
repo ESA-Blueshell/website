@@ -6,7 +6,7 @@ import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.exception.UserNotFoundException
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -34,7 +34,7 @@ class PasswordRecoveryServiceTest {
     fun `requestPasswordReset returns dispatch when user exists`() {
         val user = user(id = 5L, username = "john")
         whenever(users.findByUsername("john")).thenReturn(user)
-        whenever(tokenFactory.issue(eq(user), eq(ResetType.PASSWORD_RESET), any<Duration>()))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.PASSWORD_RESET), any<Duration>()))
             .thenReturn("sel.ver")
 
         val result = service.requestPasswordReset("john")
@@ -42,7 +42,7 @@ class PasswordRecoveryServiceTest {
         assertThat(result).isNotNull
         assertThat(result!!.userId).isEqualTo(5L)
         assertThat(result.rawToken).isEqualTo("sel.ver")
-        assertThat(result.type).isEqualTo(ResetType.PASSWORD_RESET)
+        assertThat(result.type).isEqualTo(TokenPurpose.PASSWORD_RESET)
     }
 
     @Test
@@ -59,7 +59,7 @@ class PasswordRecoveryServiceTest {
         val user = user(id = 10L)
         val token = mock<RecoveryToken>()
         whenever(token.user).thenReturn(user)
-        whenever(tokenValidator.verify("sel.ver", ResetType.PASSWORD_RESET)).thenReturn(token)
+        whenever(tokenValidator.verify("sel.ver", TokenPurpose.PASSWORD_RESET)).thenReturn(token)
 
         service.setPassword("sel.ver", "NewPass123!")
 
@@ -71,7 +71,7 @@ class PasswordRecoveryServiceTest {
         val user = user(id = 10L)
         val token = mock<RecoveryToken>()
         whenever(token.user).thenReturn(user)
-        whenever(tokenValidator.verify("sel.ver", ResetType.PASSWORD_RESET)).thenReturn(token)
+        whenever(tokenValidator.verify("sel.ver", TokenPurpose.PASSWORD_RESET)).thenReturn(token)
 
         service.setPassword("sel.ver", "NewPass123!")
 

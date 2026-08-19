@@ -14,7 +14,7 @@ import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
@@ -67,7 +67,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val payload = EmailJobs.RecoveryPayload(
                 userId = user.id!!,
                 token = "reset-token-123",
-                resetType = ResetType.PASSWORD_RESET
+                tokenPurpose = TokenPurpose.PASSWORD_RESET
             )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
@@ -85,7 +85,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val payload = EmailJobs.RecoveryPayload(
                 userId = user.id!!,
                 token = "activation-token-456",
-                resetType = ResetType.USER_ACTIVATION
+                tokenPurpose = TokenPurpose.USER_ACTIVATION
             )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
@@ -102,7 +102,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val payload = EmailJobs.RecoveryPayload(
                 userId = user.id!!,
                 token = "member-token-789",
-                resetType = ResetType.MEMBER_ACTIVATION
+                tokenPurpose = TokenPurpose.MEMBER_ACTIVATION
             )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
@@ -186,7 +186,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 {
                     "userId": ${user.id},
                     "token": "test-token",
-                    "resetType": "PASSWORD_RESET"
+                    "tokenPurpose": "PASSWORD_RESET"
                 }
             """.trimIndent()
             val jobExecution = JobExecution().apply {

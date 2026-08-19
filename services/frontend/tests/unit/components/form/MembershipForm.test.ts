@@ -276,29 +276,22 @@ describe("MembershipForm", () => {
     })
   })
 
-  it("self-service records the acceptance and the chosen member type", async () => {
+  it("self-service sends the acceptance and nothing else", async () => {
     const membership = makeNewMembership()
     const wrapper = shallowMount(MembershipForm, {
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {
-        stubs: {
-          Form: formStub,
-          VvField: vvFieldStub,
-          ContributionPeriod: emittingStub("ContributionPeriod"),
-        },
-      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
     })
 
     await fieldNamed(wrapper, "consented").vm.$emit("update:modelValue", true)
-    await wrapper.findComponent({name: "ContributionPeriod"}).vm.$emit("update:modelValue", MemberType.HONORARY)
 
     mockCreateMembership.mockResolvedValue({data: makeExistingMembership()})
     await (wrapper.vm as any).save()
 
+    // The member type is the association's call, not the applicant's.
     expect(mockCreateMembership).toHaveBeenCalledWith(
       expect.objectContaining({body: {conditionsAccepted: true}}),
     )
-    expect(membership.memberType).toBe(MemberType.HONORARY)
   })
 
   it("submitTestId is forwarded to SubmitButton as data-testid", () => {

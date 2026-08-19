@@ -181,10 +181,7 @@ defineExpose({validate, save})
         <document-table />
         <br>
 
-        <contribution-period
-          v-model="membership.memberType"
-          is-form
-        />
+        <contribution-period is-form />
 
         <div class="checkbox-row">
           <VvField

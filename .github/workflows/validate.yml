@@ -184,25 +184,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Wait for database service
-        run: |
-          sudo apt-get update && sudo apt-get install -y default-mysql-client
-          for i in {1..30}; do
-            if mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1;" >/dev/null 2>&1; then
-              echo "Database is ready!"
-              exit 0
-            fi
-            echo "Waiting for database... ($i/30)"
-            sleep 2
-          done
-          echo "Database did not become ready in time."
-          exit 1
-
       - name: Prepare test database schema
         run: |
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE $MYSQL_DATABASE; SHOW TABLES;"
+          # The runner blocks steps until the service reports healthy, and the
+          # image ships its own client, so there is nothing to poll and nothing
+          # to install. Reaching a package mirror here bought a network
+          # dependency whose only effect was to hang the job.
+          db=$(docker ps --filter "ancestor=mariadb:10.11.10" --format '{{.ID}}' | head -1)
+          if [ -z "$db" ]; then
+            echo "No mariadb service container is running." >&2
+            exit 1
+          fi
+          docker exec -i "$db" mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" < services/api/0_init.sql
+          docker exec "$db" mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
+          docker exec "$db" mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" -e "USE \`$MYSQL_DATABASE\`; SHOW TABLES;"
 
       - name: Set up Java + Gradle
         uses: ./.github/actions/setup-java-gradle

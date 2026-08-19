@@ -45,6 +45,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 |---|-------|--------|---------|
 | [005](ADR-005-factory-pattern-for-entity-creation.md) | Factory Pattern for Entity Creation | Accepted | Factories for complex object creation workflows |
 | [006](ADR-006-event-driven-architecture.md) | Event-Driven Architecture | Accepted | Event-based cross-domain coordination |
+| [025](ADR-025-membership-commit-rendezvous.md) | Membership Commit Rendezvous | Proposed | Membership commits when the last of email confirmation and application submission lands |
 
 ### Security and API
 
@@ -54,6 +55,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [009](ADR-009-jwt-authentication-strategy.md) | JWT Authentication Strategy | Accepted | Stateless JWT-based authentication |
 | [012](ADR-012-api-documentation-with-openapi.md) | API Documentation with OpenAPI | Accepted | OpenAPI-first API documentation workflow |
 | [014](ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Accepted | Permission evaluators and authorization design |
+| [024](ADR-024-scoped-signup-continuation-tokens.md) | Scoped Signup Continuation Tokens | Proposed | Header-borne capability for unauthenticated signup writes, deliberately not a JWT or a principal |
 
 ### Job System
 
@@ -68,6 +70,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [011](ADR-011-testing-strategy.md) | Testing Strategy | Accepted | Test pyramid including architecture, unit, and integration coverage |
 
 ## Related Documentation
+- [Flow documentation](../../flows/README.md)
 - [ADR umbrella index](../ADR-INDEX.md)
 - [Frontend ADR index](../frontend/ADR-INDEX.md)
 - [CLAUDE.md](../../../CLAUDE.md)

@@ -30,7 +30,6 @@ Feature: What a signup session may do
     When they save their address during signup
     Then the request is refused
 
-  @pending
   Scenario: The email address cannot be changed once it is confirmed
     Given they have confirmed their email address
     When they correct their email address

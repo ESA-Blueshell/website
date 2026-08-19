@@ -1,5 +1,10 @@
 package net.blueshell.api.domain.auth.application.command
 
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.http.HttpStatus
+import org.springframework.security.access.AccessDeniedException
+import net.blueshell.api.domain.auth.command.CorrectSignupEmailCommand
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.auth.application.SignupTokenService
 import net.blueshell.api.shared.model.SignupSession
@@ -114,4 +119,42 @@ class IssueSignupSessionHandler(
 
     override fun handle(command: IssueSignupSessionCommand): SignupSession =
         signupTokens.issue(users.findById(command.userId))
+}
+
+@Component
+class CorrectSignupEmailHandler(
+    private val signupTokens: SignupTokenService,
+    private val users: UserService,
+    private val activation: UserActivationService,
+    private val jobs: TrackedJobDispatcher
+) : CommandHandler<CorrectSignupEmailCommand, Unit> {
+    override val commandType = CorrectSignupEmailCommand::class
+
+    @Transactional
+    override fun handle(command: CorrectSignupEmailCommand) {
+        val account = signupTokens.resolveAccount(command.signupToken)
+        if (account.user.enabled) {
+            throw AccessDeniedException("A confirmed email address is changed through account settings")
+        }
+        if (users.existsByEmailAndIdNot(command.email, account.id)) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "That email address is already in use")
+        }
+
+        account.user.email = command.email
+        users.update(account.user)
+
+        // Explicitly retire every outstanding confirmation link before issuing the
+        // next one. The mistyped address may be somebody else's inbox, so a link
+        // already delivered there must stop working — and issuing a replacement is
+        // not on its own enough to guarantee that.
+        activation.revokeOutstandingActivations(account.id)
+
+        val dispatch = requireNotNull(activation.requestUserActivation(account.user.username)) {
+            "Expected an activation dispatch for the unconfirmed account ${account.id}"
+        }
+        jobs.enqueue(
+            EmailJobs.Recovery,
+            EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
+        )
+    }
 }

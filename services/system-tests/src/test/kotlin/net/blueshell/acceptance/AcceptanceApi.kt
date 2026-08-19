@@ -60,6 +60,15 @@ object AcceptanceApi {
             .`when`()
             .post("/signup/apply")
 
+    fun correctSignupEmail(signupToken: String, email: String): Response =
+        TestHelper.givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .header(SIGNUP_TOKEN_HEADER, signupToken)
+            .contentType(ContentType.JSON)
+            .body("""{"email":"$email"}""")
+            .`when`()
+            .patch("/signup/email")
+
     /** Used by the scope scenarios: every attempt outside the token's remit. */
     fun attemptWithSignupToken(signupToken: String, attempt: String, otherUserId: Long?): Response {
         val spec = TestHelper.givenCsrfApi()

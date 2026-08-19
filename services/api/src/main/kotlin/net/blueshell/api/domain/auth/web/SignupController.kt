@@ -1,5 +1,8 @@
 package net.blueshell.api.domain.auth.web
 
+import org.springframework.web.bind.annotation.PatchMapping
+import net.blueshell.api.domain.auth.web.dto.request.SignupEmailRequest
+import net.blueshell.api.domain.auth.command.CorrectSignupEmailCommand
 import org.springframework.web.bind.annotation.RequestHeader
 import net.blueshell.api.domain.user.web.dto.response.SignupOutcomeResponse
 import net.blueshell.api.domain.user.command.SubmitSignupApplicationCommand
@@ -80,6 +83,18 @@ class SignupController(
             )
         )
         return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted)
+    }
+
+    @PatchMapping("/email")
+    @PermitAll
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun correctEmail(
+        @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
+        @Valid @RequestBody request: SignupEmailRequest
+    ) {
+        commandBus.dispatch(
+            CorrectSignupEmailCommand(signupToken = signupToken, email = request.email!!)
+        )
     }
 
     companion object {

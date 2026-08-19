@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Duration
@@ -177,5 +178,31 @@ class UserActivationServiceTest {
         assertThat(result.type).isEqualTo(TokenPurpose.USER_ACTIVATION)
         assertThat(result.rawToken).isEqualTo("self.token")
         verify(tokenFactory).issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+    }
+
+    @Test
+    fun `revokeOutstandingActivations consumes only confirmation links`() {
+        val activation = recoveryToken(type = TokenPurpose.USER_ACTIVATION)
+        val signupSession = recoveryToken(type = TokenPurpose.SIGNUP_CONTINUATION)
+        val reset = recoveryToken(type = TokenPurpose.PASSWORD_RESET)
+        whenever(tokenValidator.findUnconsumedByUserId(9L))
+            .thenReturn(listOf(activation, signupSession, reset))
+
+        service.revokeOutstandingActivations(9L)
+
+        // Correcting the address must not end the signup session the applicant is
+        // still using, nor a password reset they may have asked for.
+        verify(tokenFactory).consume(activation)
+        verify(tokenFactory, never()).consume(signupSession)
+        verify(tokenFactory, never()).consume(reset)
+    }
+
+    @Test
+    fun `revokeOutstandingActivations is a no-op when nothing is outstanding`() {
+        whenever(tokenValidator.findUnconsumedByUserId(9L)).thenReturn(emptyList())
+
+        service.revokeOutstandingActivations(9L)
+
+        verify(tokenFactory, never()).consume(any())
     }
 }

@@ -14,6 +14,9 @@ class AcceptanceWorld {
     /** Raw continuation token from POST /signup, for the token-scoped steps. */
     var signupToken: String? = null
 
+    /** Set when a scenario corrects the address, so the Then can name it. */
+    var correctedEmail: String? = null
+
     var lastStatusCode: Int? = null
 
     var lastResponseBody: String? = null

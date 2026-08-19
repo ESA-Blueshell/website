@@ -601,6 +601,18 @@ object TestHelper {
      * "was made a member twice" — the acceptance suite asserts a repeated
      * application does not add a second row.
      */
+    /** The recorded acceptance of the membership conditions, or null when unset. */
+    fun conditionsAcceptedAt(userId: Long): java.time.Instant? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT conditions_accepted_at FROM member_profiles WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) rs.getTimestamp("conditions_accepted_at")?.toInstant() else null
+            }
+        }
+
     fun membershipCountForUser(userId: Long): Int =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(

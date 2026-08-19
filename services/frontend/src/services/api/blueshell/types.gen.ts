@@ -920,6 +920,10 @@ export type SignupApplicationRequest = {
     conditionsAccepted?: boolean;
 };
 
+export type SignupEmailRequest = {
+    email: string;
+};
+
 export type SignupOutcomeResponse = {
     emailConfirmed: boolean;
     membershipStarted: boolean;
@@ -5228,6 +5232,50 @@ export type ApplyResponses = {
 };
 
 export type ApplyResponse = ApplyResponses[keyof ApplyResponses];
+
+export type CorrectEmailData = {
+    body: SignupEmailRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/email';
+};
+
+export type CorrectEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CorrectEmailError = CorrectEmailErrors[keyof CorrectEmailErrors];
+
+export type CorrectEmailResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type CorrectEmailResponse = CorrectEmailResponses[keyof CorrectEmailResponses];
 
 export type FindSponsorsData = {
     body?: never;

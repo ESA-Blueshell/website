@@ -34,6 +34,17 @@ class UserActivationService(
     }
 
     /**
+     * Consume every outstanding confirmation link for a user, so links already
+     * delivered stop working. Used when the address itself changes.
+     */
+    @Transactional
+    fun revokeOutstandingActivations(userId: Long) {
+        tokenValidator.findUnconsumedByUserId(userId)
+            .filter { it.type == TokenPurpose.USER_ACTIVATION }
+            .forEach { tokenFactory.consume(it) }
+    }
+
+    /**
      * Resend user activation link by username. Returns null if user not found or already enabled.
      */
     @Transactional

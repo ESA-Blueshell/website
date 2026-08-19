@@ -145,6 +145,7 @@ class SecurityConfig(
                 "/events/*/signups"
             ).permitAll()
             auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
+            auth.requestMatchers(HttpMethod.PATCH, "/signup/**").permitAll()
             auth.requestMatchers(
                 HttpMethod.GET,
                 "/csrf",

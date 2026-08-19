@@ -168,6 +168,21 @@ class SignupScopeSecurityTest : UserTestSupport() {
         }
 
         @Test
+        fun `a token minted for activation cannot correct the email address`() {
+            val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
+            val activation = tokenFactory.issue(applicant, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/email")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"email":"hijack@example.com"}""")
+            )
+                .andExpect(status().is4xxClientError)
+        }
+
+        @Test
         fun `the token cannot read the account back`() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
             val signupToken = signupTokenFor(applicant)

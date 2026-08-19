@@ -49,7 +49,6 @@ Feature: Joining without an account yet
     Then they are a member
     And their signup session is retired
 
-  @pending
   Scenario: A mistyped email address can be corrected before confirming
     Given they have begun a membership signup
     And they have saved their address during signup

@@ -7,9 +7,6 @@ by Cucumber against the running compose stack.
 # against a running stack (see .github/scripts/start-system-test-stack.sh)
 ./gradlew :services:system-tests:acceptanceTest
 
-# what is specified but not built yet
-./gradlew :services:system-tests:acceptanceTest -PcucumberTags="@pending"
-
 # one area
 ./gradlew :services:system-tests:acceptanceTest -PcucumberTags="@membership"
 ```
@@ -74,13 +71,11 @@ would make the suite order-dependent the moment it runs in parallel.
 | `@account` | Account existence and confirmation |
 | `@membership` | Applying for and holding a membership |
 | `@security` | What a credential may and may not do |
-| `@pending` | Specified but not built yet — skipped by default |
 | `@harness` | The self-check that proves the harness itself runs |
 
-`@pending` is how the specification is allowed to run ahead of the code. As an
-endpoint lands, implement its step in `steps/PendingSignupSteps.kt` for real and
-drop the tag from the scenarios it unblocks. The suite is finished when that class
-is empty and deleted.
+A `@pending` tag is how a specification is allowed to run ahead of the code: bind
+the step so the feature reads as finished, throw `PendingException`, and exclude the
+tag from the default filter. Drop it as the behaviour lands. Nothing is pending now.
 
 `@harness` exists so a green job cannot be mistaken for a job that ran nothing: if
 every other feature were filtered out, the self-check would still have to pass.
@@ -92,7 +87,8 @@ features/                       the specifications
 steps/AccountSteps.kt           registering, confirming, signing in
 steps/MembershipSteps.kt        the application, its preconditions, what is held after
 steps/EmailSteps.kt             what was delivered
-steps/PendingSignupSteps.kt     not-yet-built behaviour, reports as pending
+steps/SignupSessionSteps.kt     the token-carried steps
+steps/EmailCorrectionSteps.kt   correcting a mistyped address
 AcceptanceWorld.kt              per-scenario state and the cleanup registry
 AcceptanceApi.kt                the only file that knows this is HTTP
 Hooks.kt                        per-scenario cleanup

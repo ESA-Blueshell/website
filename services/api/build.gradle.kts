@@ -204,6 +204,43 @@ tasks.withType<Test>().configureEach {
 }
 
 // Exclude openapi-gen tag from normal test task so it only runs when explicitly invoked.
+// The shared convention's project-wide 40% floor cannot fail because of one new
+// package, so the signup classes get their own gate. CLASS element rather than
+// PACKAGE so it picks up new Signup* classes without dragging in existing ones.
+val signupCoverageIncludes = listOf(
+    "net.blueshell.api.domain.auth.application.Signup*",
+    "net.blueshell.api.domain.auth.application.command.Signup*",
+    "net.blueshell.api.domain.auth.web.Signup*",
+)
+
+fun JacocoCoverageVerification.requireSignupCoverage() {
+    violationRules {
+        rule {
+            element = "CLASS"
+            includes = signupCoverageIncludes
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.90".toBigDecimal()
+            }
+        }
+        rule {
+            element = "CLASS"
+            includes = signupCoverageIncludes
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.85".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.jacocoTestCoverageVerification { requireSignupCoverage() }
+tasks.named<JacocoCoverageVerification>("jacocoIntegrationTestCoverageVerification") {
+    requireSignupCoverage()
+}
+
 tasks.named<Test>("test") {
     useJUnitPlatform { excludeTags("openapi-gen") }
 }

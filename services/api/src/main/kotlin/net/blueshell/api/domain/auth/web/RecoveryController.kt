@@ -8,6 +8,7 @@ import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
 import net.blueshell.api.domain.auth.web.mapping.request.asCommand
+import net.blueshell.api.domain.auth.web.dto.response.ActivationResponse
 import net.blueshell.api.domain.telemetry.web.dto.response.RedirectResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
@@ -36,13 +37,9 @@ class RecoveryController(
 
     @PostMapping("/user/activate")
     @PermitAll
-    fun userActivate(@Valid @RequestBody request: UserActivationRequest): RedirectResponse {
-        val user = commandBus.dispatch(request.asCommand())
-        return if (user.memberProfile != null) {
-            RedirectResponse("/membership/signUp?step=2")
-        } else {
-            RedirectResponse("/")
-        }
+    fun userActivate(@Valid @RequestBody request: UserActivationRequest): ActivationResponse {
+        val outcome = commandBus.dispatch(request.asCommand())
+        return ActivationResponse(outcome.membershipStarted)
     }
 
     @PostMapping("/member/activate")

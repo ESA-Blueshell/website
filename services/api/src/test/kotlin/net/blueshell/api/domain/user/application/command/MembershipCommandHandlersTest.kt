@@ -8,7 +8,11 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.query.MembershipQuery
 import net.blueshell.api.domain.user.command.BoardCreateMembershipCommand
 import net.blueshell.api.domain.user.command.CorrectMembershipCommand
-import net.blueshell.api.domain.user.command.CreateMembershipCommand
+import net.blueshell.api.domain.auth.application.SignupCompletionService
+import net.blueshell.api.shared.model.SignupOutcome
+import net.blueshell.api.domain.user.application.MemberProfileService
+import net.blueshell.api.domain.user.command.SubmitMembershipApplicationCommand
+import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.domain.user.command.EndMembershipCommand
 import net.blueshell.api.domain.user.command.FindMembershipByIdCommand
 import net.blueshell.api.domain.user.command.FindMembershipsCommand
@@ -61,72 +65,52 @@ class MembershipCommandHandlersTest {
     }
 
     @Nested
-    inner class CreateMembership {
+    inner class SubmitMembershipApplication {
 
-        private val handler = CreateMembershipHandler(membershipService, userService)
+        private val memberProfiles = mock<MemberProfileService>()
+        private val completion = mock<SignupCompletionService>()
+        private val handler = SubmitMembershipApplicationHandler(userService, memberProfiles, completion)
 
-        @Test
-        fun `creates membership when user is eligible`() {
+        private fun applicantWithProfile(): MemberProfile {
             val user = testUser("john")
+            val profile = MemberProfile(user = user, bhv = false, ehbo = false)
+            user.replaceMemberProfile(profile)
             whenever(userService.findById(1L)).thenReturn(user)
-            whenever(membershipService.create(any())).thenAnswer { it.getArgument<Membership>(0) }
-
-            val result = handler.handle(
-                CreateMembershipCommand(
-                    userId = 1L,
-                    isMember = false,
-                    hasAddress = true,
-                    hasMemberProfile = true
-                )
-            )
-
-            verify(membershipService).create(result)
-            assertThat(result.user).isSameAs(user)
+            return profile
         }
 
         @Test
-        fun `throws when user already has active membership`() {
-            assertThatThrownBy {
-                handler.handle(
-                    CreateMembershipCommand(
-                        userId = 1L,
-                        isMember = true,
-                        hasAddress = true,
-                        hasMemberProfile = true
-                    )
-                )
-            }.isInstanceOf(AccessDeniedException::class.java)
-                .hasMessage("User already has an active membership")
+        fun `stamps the acceptance and returns the outcome`() {
+            val profile = applicantWithProfile()
+            whenever(completion.completeIfReady(1L))
+                .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
+
+            val outcome = handler.handle(SubmitMembershipApplicationCommand(1L, conditionsAccepted = true))
+
+            assertThat(profile.conditionsAcceptedAt).isNotNull()
+            verify(memberProfiles).update(profile)
+            assertThat(outcome.membershipStarted).isTrue()
         }
 
         @Test
-        fun `throws when user has no address`() {
+        fun `refuses an application the completion rule cannot commit`() {
+            applicantWithProfile()
+            whenever(completion.completeIfReady(1L))
+                .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = false))
+
             assertThatThrownBy {
-                handler.handle(
-                    CreateMembershipCommand(
-                        userId = 1L,
-                        isMember = false,
-                        hasAddress = false,
-                        hasMemberProfile = true
-                    )
-                )
+                handler.handle(SubmitMembershipApplicationCommand(1L, conditionsAccepted = true))
             }.isInstanceOf(AccessDeniedException::class.java)
-                .hasMessage("User must have an address")
         }
 
         @Test
-        fun `throws when user has no member profile`() {
+        fun `refuses an account with no member profile`() {
+            whenever(userService.findById(1L)).thenReturn(testUser("john"))
+
             assertThatThrownBy {
-                handler.handle(
-                    CreateMembershipCommand(
-                        userId = 1L,
-                        isMember = false,
-                        hasAddress = true,
-                        hasMemberProfile = false
-                    )
-                )
+                handler.handle(SubmitMembershipApplicationCommand(1L, conditionsAccepted = true))
             }.isInstanceOf(AccessDeniedException::class.java)
-                .hasMessage("Complete profile is required before applying for membership")
+                .hasMessageContaining("Complete profile is required")
         }
     }
 

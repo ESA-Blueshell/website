@@ -7,7 +7,10 @@ import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.exception.MembershipNotFoundException
 import net.blueshell.api.domain.user.command.BoardCreateMembershipCommand
 import net.blueshell.api.domain.user.command.CorrectMembershipCommand
-import net.blueshell.api.domain.user.command.CreateMembershipCommand
+import net.blueshell.api.domain.auth.application.SignupCompletionService
+import net.blueshell.api.shared.model.SignupOutcome
+import net.blueshell.api.domain.user.application.MemberProfileService
+import net.blueshell.api.domain.user.command.SubmitMembershipApplicationCommand
 import net.blueshell.api.domain.user.command.DeleteMembershipCommand
 import net.blueshell.api.domain.user.command.EndMembershipCommand
 import net.blueshell.api.domain.user.command.FindDeletedMembershipsCommand
@@ -19,6 +22,7 @@ import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Component
+import java.time.Instant
 import java.time.LocalDate
 
 @Component
@@ -33,27 +37,26 @@ class FindMembershipsHandler(
 }
 
 @Component
-class CreateMembershipHandler(
-    private val service: MembershipService,
-    private val users: UserService
-) : CommandHandler<CreateMembershipCommand, Membership> {
-    override val commandType = CreateMembershipCommand::class
+class SubmitMembershipApplicationHandler(
+    private val users: UserService,
+    private val memberProfiles: MemberProfileService,
+    private val completion: SignupCompletionService
+) : CommandHandler<SubmitMembershipApplicationCommand, SignupOutcome> {
+    override val commandType = SubmitMembershipApplicationCommand::class
 
-    override fun handle(command: CreateMembershipCommand): Membership {
-        if (command.isMember!!) {
-            throw AccessDeniedException("User already has an active membership")
+    override fun handle(command: SubmitMembershipApplicationCommand): SignupOutcome {
+        val profile = users.findById(command.userId).memberProfile
+            ?: throw AccessDeniedException("Complete profile is required before applying for membership")
+        profile.conditionsAcceptedAt = Instant.now()
+        memberProfiles.update(profile)
+
+        val outcome = completion.completeIfReady(command.userId)
+        // An explicit application that cannot commit is a refusal, unlike the same
+        // call from email confirmation, where not-yet-ready is the normal case.
+        if (!outcome.membershipStarted) {
+            throw AccessDeniedException("Membership application is not complete")
         }
-        if (!command.hasAddress!!) {
-            throw AccessDeniedException("User must have an address")
-        }
-        if (!command.hasMemberProfile!!) {
-            throw AccessDeniedException("Complete profile is required before applying for membership")
-        }
-        val membership = Membership(
-            user = users.findById(command.userId),
-            startDate = LocalDate.now(),
-        )
-        return service.create(membership)
+        return outcome
     }
 }
 

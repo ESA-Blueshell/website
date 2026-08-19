@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.auth.command
 
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.user.application.validation.UniqueUsername
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.Command
@@ -28,7 +29,7 @@ data class SetPasswordCommand(
 data class UserActivateCommand(
     @field:NotBlank(message = "Token is required")
     val token: String
-) : Command<User>
+) : Command<SignupOutcome>
 
 data class MemberActivateCommand(
     @field:NotBlank(message = "Token is required")

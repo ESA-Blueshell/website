@@ -91,52 +91,72 @@ class MembershipControllerIT : UserTestSupport() {
     @Nested
     inner class CreateMembership {
 
-        @Test
-        fun `creates membership for eligible user`() {
-            val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
+        private val acceptedConditions = """{"conditionsAccepted":true}"""
 
+        private fun apply(user: net.blueshell.api.domain.user.persistence.User) =
             mvc.perform(
                 post("/memberships")
-                    .with(bearer(guest))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(acceptedConditions)
+                    .with(bearer(user))
             )
-                .andExpect(status().isCreated)
-                .andExpect(jsonPath("$.userId").value(guest.id))
-                .andExpect(jsonPath("$.memberType").value("REGULAR"))
+
+        @Test
+        fun `starts a membership for an applicant whose account is complete`() {
+            val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
+
+            apply(guest)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.emailConfirmed").value(true))
+                .andExpect(jsonPath("$.membershipStarted").value(true))
 
             assertThat(membershipRepository.existsByUser_Id(guest.id!!)).isTrue()
         }
 
         @Test
-        fun `returns forbidden when user already has member role`() {
+        fun `records the acceptance of the conditions`() {
+            val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
+
+            apply(guest).andExpect(status().isOk)
+
+            assertThat(refreshUser(guest).memberProfile!!.conditionsAcceptedAt).isNotNull()
+        }
+
+        @Test
+        fun `refuses somebody who is already a member`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/memberships")
-                    .with(bearer(member))
-            )
-                .andExpect(status().isForbidden)
+            apply(member).andExpect(status().is4xxClientError)
         }
 
         @Test
-        fun `returns forbidden when address is missing`() {
+        fun `refuses an application with no address`() {
             val guest = assignMemberProfile(createUserWithRole(Role.GUEST))
 
-            mvc.perform(
-                post("/memberships")
-                    .with(bearer(guest))
-            )
-                .andExpect(status().isForbidden)
+            apply(guest).andExpect(status().is4xxClientError)
+            assertThat(membershipRepository.existsByUser_Id(guest.id!!)).isFalse()
         }
 
         @Test
-        fun `returns forbidden when member profile is missing`() {
+        fun `refuses an application with no member profile`() {
             val guest = assignAddress(createUserWithRole(Role.GUEST))
+
+            apply(guest).andExpect(status().is4xxClientError)
+            assertThat(membershipRepository.existsByUser_Id(guest.id!!)).isFalse()
+        }
+
+        @Test
+        fun `refuses an application that does not accept the conditions`() {
+            val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
 
             mvc.perform(
                 post("/memberships")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"conditionsAccepted":false}""")
                     .with(bearer(guest))
-            )
-                .andExpect(status().isForbidden)
+            ).andExpect(status().is4xxClientError)
+
+            assertThat(membershipRepository.existsByUser_Id(guest.id!!)).isFalse()
         }
     }
 

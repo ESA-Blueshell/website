@@ -1,6 +1,8 @@
 package net.blueshell.api.domain.auth.application.command
 
 import net.blueshell.api.domain.auth.application.PasswordRecoveryService
+import net.blueshell.api.domain.auth.application.SignupCompletionService
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
@@ -40,12 +42,16 @@ class SetPasswordHandler(
 
 @Component
 class UserActivateHandler(
-    private val activationService: UserActivationService
-) : CommandHandler<UserActivateCommand, User> {
+    private val activationService: UserActivationService,
+    private val completion: SignupCompletionService
+) : CommandHandler<UserActivateCommand, SignupOutcome> {
     override val commandType = UserActivateCommand::class
 
-    override fun handle(command: UserActivateCommand): User {
-        return activationService.activateUser(command.token)
+    override fun handle(command: UserActivateCommand): SignupOutcome {
+        val user = activationService.activateUser(command.token)
+        // The other half of the rendezvous may already be in place, in which case
+        // this is the write that starts the membership (ADR-025).
+        return completion.completeIfReady(user.id!!)
     }
 }
 

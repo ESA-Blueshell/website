@@ -115,7 +115,7 @@ class RecoveryControllerIT : UserTestSupport() {
     @Nested
     inner class UserActivate {
         @Test
-        fun `activates user and redirects to home for guest flow`() {
+        fun `activates an account that has no application to complete`() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
             val token = recoveryTokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
@@ -125,13 +125,13 @@ class RecoveryControllerIT : UserTestSupport() {
                     .content(authRequestFactory.userActivationPayload(token))
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.path").value("/"))
+                .andExpect(jsonPath("$.membershipStarted").value(false))
 
             assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isTrue()
         }
 
         @Test
-        fun `activates user and redirects to membership step for member profile flow`() {
+        fun `activating does not start a membership while the application is incomplete`() {
             val user = assignMemberProfile(createUserWithRole(Role.MEMBER, enabled = false))
             val token = recoveryTokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
@@ -141,7 +141,9 @@ class RecoveryControllerIT : UserTestSupport() {
                     .content(authRequestFactory.userActivationPayload(token))
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.path").value("/membership/signUp?step=2"))
+                .andExpect(jsonPath("$.membershipStarted").value(false))
+
+            assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isTrue()
         }
     }
 

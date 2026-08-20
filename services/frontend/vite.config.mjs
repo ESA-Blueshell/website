@@ -2,13 +2,17 @@ import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 import {defineConfig} from 'vite'
 import {fileURLToPath} from 'node:url'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import svgLoader from 'vite-svg-loader'
 import istanbul from 'vite-plugin-istanbul'
 
 export default defineConfig({
     build: {
         target: "esnext",
+        // forceBuildInstrument keeps istanbul active in every build, so the
+        // system tests can collect coverage from the built image. The plugin
+        // turns sourcemaps on regardless and announces it on every run;
+        // declaring it is what stops the announcement.
+        sourcemap: true,
         // vuetify (~500 kB) and country-data (~615 kB) are legitimately
         // above Vite's 500 kB default; lift the threshold above the floor.
         chunkSizeWarningLimit: 700,
@@ -62,7 +66,6 @@ export default defineConfig({
             checkProd: false,
             forceBuildInstrument: true,
         }),
-        tsconfigPaths(),
         vue(),
         vuetify({
             autoImport: true,

@@ -613,6 +613,50 @@ object TestHelper {
             }
         }
 
+    /**
+     * Push a token's expiry into the past, in the frame the api reads the column
+     * in. Hibernate writes these timestamps as UTC while the server clock is
+     * local, so `NOW()` here would land the expiry in the api's future.
+     */
+    fun expireRecoveryToken(username: String, type: String) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "UPDATE recovery_tokens SET expires_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 HOUR) " +
+                    "WHERE user_id = ? AND type = ? AND consumed_at IS NULL AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.setString(2, type)
+                val updated = stmt.executeUpdate()
+                require(updated > 0) { "No live $type token for $username to expire" }
+            }
+        }
+    }
+
+    fun outstandingConfirmationLinks(username: String): Int =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "SELECT COUNT(*) FROM recovery_tokens WHERE user_id = ? AND type = 'USER_ACTIVATION' " +
+                    "AND consumed_at IS NULL AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) rs.getInt(1) else 0
+            }
+        }
+
+    fun firstNameOf(username: String): String? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT first_name FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setString(1, username)
+                val rs = stmt.executeQuery()
+                if (rs.next()) rs.getString("first_name") else null
+            }
+        }
+
     fun membershipCountForUser(userId: Long): Int =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
@@ -797,16 +841,23 @@ object TestHelper {
                 stmt.setString(2, type)
                 stmt.executeUpdate()
             }
+            // expires_at is derived from UTC_TIMESTAMP() rather than a JVM
+            // Timestamp: the api writes these columns through Hibernate in UTC
+            // while the server clock is local, so a driver-converted timestamp
+            // lands hours away from what the api reads back. That is invisible
+            // while a token is meant to be valid and fatal when it is meant to
+            // have expired.
             conn.prepareStatement(
                 "INSERT INTO recovery_tokens " +
                     "(user_id, type, selector, verifier_hash, expires_at, created_at, updated_at, version) " +
-                    "VALUES (?, ?, ?, ?, ?, NOW(), NOW(), 0)",
+                    "VALUES (?, ?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? SECOND), " +
+                    "UTC_TIMESTAMP(), UTC_TIMESTAMP(), 0)",
             ).use { stmt ->
                 stmt.setLong(1, userId)
                 stmt.setString(2, type)
                 stmt.setString(3, selector)
                 stmt.setString(4, verifierHash)
-                stmt.setTimestamp(5, java.sql.Timestamp.from(java.time.Instant.now().plus(ttl)))
+                stmt.setLong(5, ttl.seconds)
                 stmt.executeUpdate()
             }
         }

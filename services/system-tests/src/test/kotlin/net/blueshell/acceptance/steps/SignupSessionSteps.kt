@@ -41,12 +41,10 @@ class SignupSessionSteps(private val world: AcceptanceWorld) {
 
     @Given("their signup session has expired")
     fun theirSignupSessionHasExpired() {
-        // Mint one that is already past its expiry rather than waiting two hours.
-        world.signupToken = TestHelper.mintRecoveryToken(
-            username = world.applicant().username,
-            type = "SIGNUP_CONTINUATION",
-            ttl = java.time.Duration.ofSeconds(-1),
-        )
+        // Age the session out with the database's clock rather than waiting two
+        // hours, and rather than writing a JVM timestamp whose meaning depends on
+        // how the driver converts zones.
+        TestHelper.expireRecoveryToken(world.applicant().username, "SIGNUP_CONTINUATION")
     }
 
     @When("they use their signup session to {string}")
@@ -78,6 +76,23 @@ class SignupSessionSteps(private val world: AcceptanceWorld) {
         assertThat(world.lastStatusCodeOrFail())
             .describedAs("expected a refusal, body: ${world.lastResponseBody}")
             .isGreaterThanOrEqualTo(400)
+    }
+
+    @When("they change their first name to {string}")
+    fun theyChangeTheirFirstNameTo(firstName: String) {
+        val response = AcceptanceApi.updateSignupDetails(
+            world.signupTokenOrFail(),
+            firstName,
+            world.applicant(),
+        )
+        world.recordResponse(response.statusCode, response.asString())
+    }
+
+    @Then("their first name is {string}")
+    fun theirFirstNameIs(firstName: String) {
+        assertThat(TestHelper.firstNameOf(world.applicant().username))
+            .describedAs("the corrected first name reaches the account")
+            .isEqualTo(firstName)
     }
 
     @Then("their address is on file")

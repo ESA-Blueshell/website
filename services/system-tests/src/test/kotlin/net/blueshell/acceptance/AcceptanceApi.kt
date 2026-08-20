@@ -60,6 +60,32 @@ object AcceptanceApi {
             .`when`()
             .post("/signup/apply")
 
+    fun updateSignupDetails(signupToken: String, firstName: String, user: TestHelper.RegisteredUser): Response =
+        TestHelper.givenCsrfApi()
+            .baseUri(TestHelper.apiBaseUrl)
+            .header(SIGNUP_TOKEN_HEADER, signupToken)
+            .contentType("application/json")
+            .body(
+                mapOf(
+                    "username" to user.username,
+                    "initials" to "AC",
+                    "firstName" to firstName,
+                    "lastName" to "Applicant",
+                    "discord" to user.discord,
+                    "phoneNumber" to user.phoneNumber,
+                    "newsletter" to false,
+                    "photoConsent" to false,
+                )
+            )
+            .`when`()
+            .patch("/signup/details")
+
+    fun resendConfirmation(username: String): Response =
+        TestHelper.givenCsrfApi()
+            .baseUri(TestHelper.apiBaseUrl)
+            .`when`()
+            .post("/recovery/user/activate/resend/{username}", username)
+
     fun correctSignupEmail(signupToken: String, email: String): Response =
         TestHelper.givenCsrfApi()
             .baseUri(TestEnvironment.apiUrl)

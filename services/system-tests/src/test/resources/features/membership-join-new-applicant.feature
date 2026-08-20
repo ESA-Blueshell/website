@@ -62,3 +62,22 @@ Feature: Joining without an account yet
     And their signup session has expired
     When they save their address during signup
     Then the request is refused
+
+  Scenario: Details stay correctable after the application is in
+    Given an applicant who is not signed in
+    And they have begun a membership signup
+    And they have saved their address during signup
+    And they have accepted the membership conditions during signup
+    When they change their first name to "Corrected"
+    Then their first name is "Corrected"
+    And their address is on file
+    And they are not a member
+
+  Scenario: The agreement stands once the application is in
+    Given an applicant who is not signed in
+    And they have begun a membership signup
+    And they have saved their address during signup
+    And they have accepted the membership conditions during signup
+    When they confirm their email address
+    Then they are a member
+    And they have exactly one membership

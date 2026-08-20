@@ -68,7 +68,8 @@ would make the suite order-dependent the moment it runs in parallel.
 | Tag | Meaning |
 |-----|---------|
 | `@system` | Every feature carries it; required by the project-wide JUnit tag filter |
-| `@account` | Account existence and confirmation |
+| `@account` | Creating an account and confirming its address |
+| `@signin` | What the sign-in gate answers, and what it refuses to reveal |
 | `@membership` | Applying for and holding a membership |
 | `@security` | What a credential may and may not do |
 | `@harness` | The self-check that proves the harness itself runs |
@@ -84,7 +85,8 @@ every other feature were filtered out, the self-check would still have to pass.
 
 ```
 features/                       the specifications
-steps/AccountSteps.kt           registering, confirming, signing in
+steps/AccountSteps.kt           registering and confirming
+steps/SignInSteps.kt            the sign-in gate
 steps/MembershipSteps.kt        the application, its preconditions, what is held after
 steps/EmailSteps.kt             what was delivered
 steps/SignupSessionSteps.kt     the token-carried steps

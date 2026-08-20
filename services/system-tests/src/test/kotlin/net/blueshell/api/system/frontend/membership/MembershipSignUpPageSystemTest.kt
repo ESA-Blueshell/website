@@ -101,6 +101,77 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
+    fun `details can still be corrected after the application is in`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
+
+        val credentials = createAccountThroughUi(page)
+        val user = pollForUser(credentials.username)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+
+        MembershipSignUpHelper.changeDetailsButton(page).click()
+        val field = UserFormHelper.firstNameInput(page)
+        assertPw(field).isVisible()
+        field.fill("Corrected")
+        val response = page.waitForResponse(
+            Predicate { it.request().method() == "PATCH" && it.url().endsWith("/signup/details") },
+        ) {
+            MembershipSignUpHelper.detailsNextButton(page).click()
+        }
+        assertThat(response.status()).isEqualTo(204)
+
+        pollFor("the corrected name reaches the account") {
+            TestHelper.firstNameOf(credentials.username) == "Corrected"
+        }
+        // Editing is not re-applying: the acceptance and the address stay as they were.
+        assertThat(TestHelper.conditionsAcceptedAt(user.id)).isNotNull()
+        assertThat(TestHelper.findAddress(credentials.username)).isNotNull()
+    }
+
+    @Test
+    fun `the agreement cannot be withdrawn once the application is in`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
+
+        createAccountThroughUi(page)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+
+        MembershipSignUpHelper.changeAddressButton(page).click()
+        assertPw(MembershipSignUpHelper.addressNextButton(page)).isVisible()
+        MembershipSignUpHelper.addressNextButton(page).click()
+
+        assertPw(MembershipSignUpHelper.conditionsAccepted(page)).isVisible()
+        assertPw(MembershipSignUpHelper.conditionsSubmitButton(page)).isHidden()
+        MembershipSignUpHelper.conditionsContinueButton(page).click()
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+    }
+
+    @Test
+    fun `the confirmation email can be sent again`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
+
+        val credentials = createAccountThroughUi(page)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+
+        val response = page.waitForResponse(
+            Predicate { it.request().method() == "POST" && it.url().contains("/recovery/user/activate/resend/") },
+        ) {
+            MembershipSignUpHelper.resendButton(page).click()
+        }
+        assertThat(response.status()).isEqualTo(204)
+
+        pollFor("a second confirmation email is delivered", timeoutMs = 10_000) {
+            TestHelper.findEmails(recipient = credentials.email, subject = CONFIRMATION_SUBJECT).size >= 2
+        }
+    }
+
+    @Test
     fun `a signed-in applicant becomes a member without a confirmation step`() {
         givenAContributionPeriod()
 

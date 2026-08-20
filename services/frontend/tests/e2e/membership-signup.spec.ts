@@ -92,6 +92,36 @@ test.describe("membership signup", () => {
     await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
   })
 
+  test("keeps every answer when the applicant walks back and forward again", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+
+    await page.goto("/membership/signup")
+    await fillPersonalInformationStep(page, suffix, true)
+    await page.getByTestId("membership-details-next-btn").click()
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+    await fillAddressStep(page)
+    await page.getByTestId("membership-address-next-btn").click()
+    await expect(page.getByTestId("membership-conditions-submit-btn")).toBeVisible()
+
+    // All the way back to the first step, then forward again without retyping.
+    // A stepper mounts only the active step, so this is where anything a form
+    // held privately rather than on the page goes missing.
+    await page.getByTestId("membership-conditions-back-btn").click()
+    await expect(page.getByLabel("Street").first()).toHaveValue("Drienerlolaan")
+    await page.getByTestId("membership-address-back-btn").click()
+    await expect(inputByTestId(page, "user-form-date-of-birth-field")).toHaveValue("2000-01-01")
+    await expect(inputByTestId(page, "user-form-student-number-field")).toHaveValue(`s${suffix}`)
+
+    // The account exists by now, so there is no password to set and nothing
+    // stopping the step from advancing.
+    await expect(page.getByTestId("user-form-password-field")).toHaveCount(0)
+    await page.getByTestId("membership-details-next-btn").click()
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+    await page.getByTestId("membership-address-next-btn").click()
+    await expect(page.getByTestId("membership-conditions-submit-btn")).toBeVisible()
+  })
+
   test("asks a new applicant to confirm their address once the application is in", async ({page}) => {
     await installApiMocks(page)
     const suffix = String(Date.now()).slice(-6)

@@ -105,6 +105,12 @@ const canEditIdentity = computed<boolean>(
   () => isCreating.value || Boolean(props.signupToken) || effectiveUpdateKind.value === "board",
 )
 const canEditEmail = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
+
+// A password is only ever set while the account is being created. Every update
+// path leaves it alone — board, self-service, and a signup correction alike — so
+// asking for it again would present an empty required field that blocks the form
+// and could not be saved even when filled in.
+const canSetPassword = computed<boolean>(() => props.showPassword && isCreating.value)
 const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effectiveUpdateKind.value !== "board")
 
 const {country, onCountryUpdate} = useCountry("NL")
@@ -465,7 +471,7 @@ defineExpose({validate, save, signupSession})
         </v-col>
       </v-row>
 
-      <v-row v-if="showPassword">
+      <v-row v-if="canSetPassword">
         <v-col
           cols="12"
           sm="6"

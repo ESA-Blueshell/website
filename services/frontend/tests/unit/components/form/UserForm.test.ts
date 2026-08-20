@@ -421,6 +421,57 @@ describe("UserForm", () => {
     expect(rules.studentNumber).toBeUndefined()
   })
 
+  describe("setting a password", () => {
+    function fieldNames(wrapper: ReturnType<typeof shallowMount>) {
+      return wrapper.findAll(".vv-field-stub").map((f) => String(f.attributes("data-name")))
+    }
+
+    it("asks for one while the account is being created", () => {
+      const wrapper = shallowMount(UserForm, {
+        props: {showPassword: true, modelValue: baseModel()},
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+
+      expect(fieldNames(wrapper)).toContain("password")
+      expect(fieldNames(wrapper)).toContain("confirmPassword")
+    })
+
+    it("never asks for one once the account exists", () => {
+      // Every update path leaves the password alone, so an empty required field
+      // here would block a form that has nothing wrong with it.
+      const wrapper = shallowMount(UserForm, {
+        props: {showPassword: true, modelValue: baseModel({id: 12})},
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+
+      expect(fieldNames(wrapper)).not.toContain("password")
+      expect(fieldNames(wrapper)).not.toContain("confirmPassword")
+    })
+
+    it("never asks for one when an applicant returns on a signup token", () => {
+      const wrapper = shallowMount(UserForm, {
+        props: {showPassword: true, modelValue: baseModel({id: 12}), signupToken: "sel.ver"},
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+
+      expect(fieldNames(wrapper)).not.toContain("password")
+    })
+
+    it("still lets that applicant fix their own name and username", () => {
+      const wrapper = shallowMount(UserForm, {
+        props: {showPassword: true, modelValue: baseModel({id: 12}), signupToken: "sel.ver"},
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+      const rules = rulesByName(wrapper)
+
+      expect(rules.firstName).toBe("required")
+      expect(rules.username).toBe("required|alphaNum")
+      // The address is the exception: it moves the confirmation link, so it
+      // changes on the confirmation step instead.
+      expect(rules.email).toBe("")
+    })
+  })
+
   it("uses the globally registered VPhoneInput component for the phone field", () => {
     shallowMount(UserForm, {
       props: {

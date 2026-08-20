@@ -188,6 +188,35 @@ describe("MembershipSignUp page", () => {
       expect(vm.currentStep).toBe(2)
     })
 
+    it("keeps what the address step saved, so going back does not lose it", async () => {
+      const wrapper = await mountPage()
+      installRefs(wrapper, {addressSave: {id: 2, city: "Enschede", street: "Drienerlolaan"}})
+      const vm = wrapper.vm as unknown as {
+        currentStep: number
+        saveAddressStep: () => Promise<void>
+        address: {city?: string} | undefined
+      }
+      vm.currentStep = 2
+
+      await vm.saveAddressStep()
+
+      // The stepper unmounts the step it leaves, so the page has to hold this.
+      expect(vm.address?.city).toBe("Enschede")
+    })
+
+    it("keeps what the details step saved", async () => {
+      const wrapper = await mountPage()
+      installRefs(wrapper, {userSave: {id: 1, email: "lena@example.com", firstName: "Lena"}})
+      const vm = wrapper.vm as unknown as {
+        saveDetails: () => Promise<void>
+        user: {firstName?: string} | undefined
+      }
+
+      await vm.saveDetails()
+
+      expect(vm.user?.firstName).toBe("Lena")
+    })
+
     it("advances to the membership step once the address is saved", async () => {
       const wrapper = await mountPage()
       installRefs(wrapper, {})

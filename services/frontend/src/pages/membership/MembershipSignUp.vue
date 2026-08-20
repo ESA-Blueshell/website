@@ -20,7 +20,7 @@
               ref="userRef"
               v-model="user"
               :options="{ includeMemberProfile: true, createVia: 'signup' }"
-              :show-password="isNewApplicant && !applicationSubmitted"
+              :show-password="isNewApplicant"
               :signup-token="signupToken"
             />
             <v-row align="center">
@@ -255,16 +255,31 @@ async function withSubmitting(action: () => Promise<void>) {
   }
 }
 
+// Each step keeps what it saved on this page rather than in the step component.
+// A stepper renders only the active step, so anything a form holds privately is
+// gone the moment the applicant moves on — and `defineModel`'s own default lives
+// in the child, which means nested edits never reach a parent that started out
+// undefined. Adopting what save() hands back is what makes going back and forth
+// keep the details and the address.
 const saveDetails = () => withSubmitting(async () => {
   const saved = await userRef.value?.save()
   if (!saved) return
   const session = userRef.value?.signupSession
   if (session) rememberToken(session.signupToken)
+  // The account's identity comes from the session rather than from the form's
+  // model. A step that is about to be unmounted is the wrong place to keep the
+  // fact that an account now exists, and it is that fact which decides whether
+  // the form asks for a password again.
+  user.value = session
+    ? {...saved, id: session.userId, email: session.email}
+    : saved
   currentStep.value = Steps.Address
 })
 
 const saveAddressStep = () => withSubmitting(async () => {
-  if (!await addressRef.value?.save()) return
+  const saved = await addressRef.value?.save()
+  if (!saved) return
+  address.value = saved as AddressResponse
   currentStep.value = Steps.Membership
 })
 

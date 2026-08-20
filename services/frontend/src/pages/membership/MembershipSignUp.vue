@@ -20,7 +20,8 @@
               ref="userRef"
               v-model="user"
               :options="{ includeMemberProfile: true, createVia: 'signup' }"
-              :show-password="isNewApplicant"
+              :show-password="isNewApplicant && !applicationSubmitted"
+              :signup-token="signupToken"
             />
             <v-row align="center">
               <v-spacer />
@@ -75,7 +76,19 @@
         <!-- Step 3: the application itself -->
         <template #[`item.3`]>
           <v-card class="pa-4">
+            <v-alert
+              v-if="applicationSubmitted"
+              border="start"
+              class="mb-4"
+              color="success"
+              data-testid="membership-conditions-accepted"
+              variant="tonal"
+            >
+              Your application is in and you agreed to the membership conditions.
+              Details and address can still be changed; the agreement stands.
+            </v-alert>
             <membership-form
+              v-else
               ref="membershipRef"
               v-model="membership"
               :signup-token="signupToken"
@@ -93,6 +106,15 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
+                  v-if="applicationSubmitted"
+                  color="primary"
+                  data-testid="membership-conditions-continue-btn"
+                  @click="currentStep = Steps.ConfirmEmail"
+                >
+                  Continue
+                </v-btn>
+                <v-btn
+                  v-else
                   :loading="submitting"
                   color="primary"
                   data-testid="membership-conditions-submit-btn"
@@ -107,93 +129,16 @@
 
         <!-- Step 4: confirm the email address. New applicants only. -->
         <template #[`item.4`]>
-          <v-card
-            class="pa-6"
-            data-testid="membership-confirm-email-step"
-          >
-            <div class="d-flex align-center mb-2">
-              <v-icon
-                class="mr-2"
-                color="primary"
-                size="28"
-              >
-                mdi-email-fast-outline
-              </v-icon>
-              <span class="text-h6 font-weight-medium">Confirm your email address</span>
-            </div>
-
-            <v-alert
-              border="start"
-              class="mb-4"
-              color="primary"
-              variant="tonal"
-            >
-              Open the link we sent to <strong>{{ user?.email }}</strong> to confirm your
-              address. Your membership starts as soon as you do.
-            </v-alert>
-
-            <v-form
-              v-if="correcting"
-              data-testid="membership-correct-email-form"
-              @submit.prevent="correctEmailAddress"
-            >
-              <v-text-field
-                v-model="correctedEmail"
-                data-testid="membership-corrected-email-field"
-                label="Email address"
-                type="email"
-              />
-              <v-row
-                align="center"
-                justify="end"
-              >
-                <v-col cols="auto">
-                  <v-btn
-                    variant="text"
-                    @click="correcting = false"
-                  >
-                    Cancel
-                  </v-btn>
-                </v-col>
-                <v-col cols="auto">
-                  <v-btn
-                    :loading="submitting"
-                    color="primary"
-                    data-testid="membership-corrected-email-submit-btn"
-                    type="submit"
-                  >
-                    Send to this address
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
-
-            <v-row
-              v-else
-              align="center"
-            >
-              <v-col cols="auto">
-                <v-btn
-                  data-testid="membership-correct-email-btn"
-                  variant="outlined"
-                  @click="startCorrectingEmail"
-                >
-                  Wrong address?
-                </v-btn>
-              </v-col>
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  color="primary"
-                  data-testid="membership-sign-in-btn"
-                  prepend-icon="mdi-login"
-                  @click="$goto('/login')"
-                >
-                  Sign in
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
+          <email-confirmation-panel
+            :email="user?.email ?? ''"
+            :username="user?.username ?? ''"
+            :continuation-token="signupToken"
+            can-change-address
+            confirmation-consequence="Your membership starts as soon as you do."
+            @change-address="currentStep = Steps.Address"
+            @change-details="currentStep = Steps.Details"
+            @email-corrected="onEmailCorrected"
+          />
         </template>
       </v-stepper>
 
@@ -234,9 +179,9 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
+import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 import {
   type AddressResponse,
-  correctEmail,
   findAddressById,
   findUserById,
   type MembershipResponse,
@@ -256,8 +201,7 @@ const SIGNUP_TOKEN_STORAGE_KEY = "signup:continuation:token"
 const currentStep = ref<number>(Steps.Details)
 const submitting = ref(false)
 const finished = ref(false)
-const correcting = ref(false)
-const correctedEmail = ref("")
+const applicationSubmitted = ref(false)
 
 const user = ref<EditableUser>()
 const address = ref<AddressResponse>()
@@ -340,30 +284,15 @@ function settleOutcome(outcome: SignupOutcomeResponse) {
     finished.value = true
     return
   }
+  // The agreement is not retractable, so the conditions step becomes a record of
+  // it while details and address stay open for edits.
+  applicationSubmitted.value = true
   currentStep.value = Steps.ConfirmEmail
 }
 
-function startCorrectingEmail() {
-  correctedEmail.value = user.value?.email ?? ""
-  correcting.value = true
+function onEmailCorrected(email: string) {
+  if (user.value) user.value.email = email
 }
-
-const correctEmailAddress = () => withSubmitting(async () => {
-  const token = signupToken.value
-  if (!token || !correctedEmail.value) return
-  try {
-    await correctEmail({
-      headers: {"X-Signup-Token": token},
-      body: {email: correctedEmail.value},
-      throwOnError: true,
-    })
-    if (user.value) user.value.email = correctedEmail.value
-    correcting.value = false
-    store.commit("setStatusSnackbarMessage", `Confirmation sent to ${correctedEmail.value}`)
-  } catch (e) {
-    $handleNetworkError(e)
-  }
-})
 
 async function loadSignedInApplicant() {
   const userId = login.value?.userId

@@ -45,6 +45,8 @@ export default defineConfig({
         "src/pages/membership/MembershipSignUp.vue": { lines: 90, branches: 85, functions: 90 },
         "src/components/form/MembershipForm.vue": { lines: 90, branches: 85, functions: 90 },
         "src/components/form/AddressForm.vue": { lines: 79, branches: 45, functions: 60 },
+        "src/components/form/EmailConfirmationPanel.vue": { lines: 90, branches: 90, functions: 90 },
+        "src/pages/login/CreateAccount.vue": { lines: 90, branches: 85, functions: 85 },
       },
     },
   },

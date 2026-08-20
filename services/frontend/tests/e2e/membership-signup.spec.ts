@@ -115,11 +115,81 @@ test.describe("membership signup", () => {
     // The application travels on the signup token, never on a session.
     expect((await applyRequest).headers()["x-signup-token"]).toBe("e2e-selector.e2e-verifier")
 
-    const confirmStep = page.getByTestId("membership-confirm-email-step")
+    const confirmStep = page.getByTestId("email-confirm-step")
     await expect(confirmStep).toBeVisible()
     await expect(confirmStep).toContainText(applicantEmail)
-    await expect(page.getByTestId("membership-sign-in-btn")).toBeVisible()
+    await expect(page.getByTestId("email-confirm-sign-in-btn")).toBeVisible()
     await expect(page.getByTestId("membership-complete-panel")).toHaveCount(0)
+  })
+
+  test("lets an applicant go back and change their details after applying", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+
+    await page.goto("/membership/signup")
+    await fillPersonalInformationStep(page, suffix, true)
+    await page.getByTestId("membership-details-next-btn").click()
+    await fillAddressStep(page)
+    await page.getByTestId("membership-address-next-btn").click()
+    await acceptConditions(page)
+    await page.getByTestId("membership-conditions-submit-btn").click()
+    await expect(page.getByTestId("email-confirm-step")).toBeVisible()
+
+    await page.getByTestId("email-confirm-change-details-btn").click()
+
+    // The account exists now, so the details step saves an edit on the token.
+    const edit = page.waitForRequest(
+      (request) => request.method() === "PATCH" && request.url().endsWith("/signup/details"),
+    )
+    await inputByTestId(page, "user-form-first-name-field").fill("Corrected")
+    await page.getByTestId("membership-details-next-btn").click()
+
+    expect((await edit).headers()["x-signup-token"]).toBe("e2e-selector.e2e-verifier")
+  })
+
+  test("keeps the agreement once the application is in", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+
+    await page.goto("/membership/signup")
+    await fillPersonalInformationStep(page, suffix, true)
+    await page.getByTestId("membership-details-next-btn").click()
+    await fillAddressStep(page)
+    await page.getByTestId("membership-address-next-btn").click()
+    await acceptConditions(page)
+    await page.getByTestId("membership-conditions-submit-btn").click()
+    await expect(page.getByTestId("email-confirm-step")).toBeVisible()
+
+    await page.getByTestId("email-confirm-change-address-btn").click()
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+    await page.getByTestId("membership-address-next-btn").click()
+
+    // Back on the conditions step there is a record of the agreement and no way
+    // to withdraw it.
+    await expect(page.getByTestId("membership-conditions-accepted")).toBeVisible()
+    await expect(page.getByTestId("membership-conditions-submit-btn")).toHaveCount(0)
+    await page.getByTestId("membership-conditions-continue-btn").click()
+    await expect(page.getByTestId("email-confirm-step")).toBeVisible()
+  })
+
+  test("can ask for the confirmation email again", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+
+    await page.goto("/membership/signup")
+    await fillPersonalInformationStep(page, suffix, true)
+    await page.getByTestId("membership-details-next-btn").click()
+    await fillAddressStep(page)
+    await page.getByTestId("membership-address-next-btn").click()
+    await acceptConditions(page)
+    await page.getByTestId("membership-conditions-submit-btn").click()
+
+    const resend = page.waitForRequest(
+      (request) => request.method() === "POST" && request.url().includes("/recovery/user/activate/resend/"),
+    )
+    await page.getByTestId("email-confirm-resend-btn").click()
+
+    expect((await resend).url()).toContain(`member${suffix}`)
   })
 
   test("lets an applicant correct a mistyped address from the confirmation step", async ({page}) => {
@@ -134,19 +204,19 @@ test.describe("membership signup", () => {
     await acceptConditions(page)
     await page.getByTestId("membership-conditions-submit-btn").click()
 
-    await expect(page.getByTestId("membership-confirm-email-step")).toBeVisible()
-    await page.getByTestId("membership-correct-email-btn").click()
+    await expect(page.getByTestId("email-confirm-step")).toBeVisible()
+    await page.getByTestId("email-confirm-correct-btn").click()
 
-    const correctedField = page.getByTestId("membership-corrected-email-field").locator("input").first()
+    const correctedField = page.getByTestId("email-confirm-address-field").locator("input").first()
     await expect(correctedField).toHaveValue(`member${suffix}@example.com`)
     await correctedField.fill(`corrected${suffix}@example.com`)
 
     const correction = page.waitForRequest(
       (request) => request.method() === "PATCH" && request.url().endsWith("/signup/email"),
     )
-    await page.getByTestId("membership-corrected-email-submit-btn").click()
+    await page.getByTestId("email-confirm-address-submit-btn").click()
 
     expect((await correction).headers()["x-signup-token"]).toBe("e2e-selector.e2e-verifier")
-    await expect(page.getByTestId("membership-confirm-email-step")).toContainText(`corrected${suffix}@example.com`)
+    await expect(page.getByTestId("email-confirm-step")).toContainText(`corrected${suffix}@example.com`)
   })
 })

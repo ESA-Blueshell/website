@@ -614,6 +614,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "POST" && path === "/signup/apply") {
       return fulfillJson(route, {emailConfirmed: false, membershipStarted: false})
     }
+    if (method === "PATCH" && path === "/signup/details") {
+      return fulfillJson(route, {}, 204)
+    }
     if (method === "PATCH" && path === "/signup/email") {
       return fulfillJson(route, {}, 204)
     }

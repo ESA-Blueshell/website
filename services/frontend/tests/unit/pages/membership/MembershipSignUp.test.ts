@@ -47,6 +47,20 @@ vi.mock("@/components/form/AddressForm.vue", () => ({
 vi.mock("@/components/form/MembershipForm.vue", () => ({
   default: {name: "MembershipForm", template: "<div />"},
 }))
+vi.mock("@/components/form/EmailConfirmationPanel.vue", () => ({
+  default: {
+    name: "EmailConfirmationPanel",
+    props: {
+      email: String,
+      username: String,
+      continuationToken: String,
+      canChangeAddress: Boolean,
+      confirmationConsequence: String,
+    },
+    emits: ["email-corrected", "change-details", "change-address"],
+    template: "<div data-testid='email-confirm-step' />",
+  },
+}))
 vi.mock("@/components/common/banners/TopBanner.vue", () => ({
   default: {name: "TopBanner", template: "<div />"},
 }))
@@ -231,42 +245,67 @@ describe("MembershipSignUp page", () => {
       expect(vm.finished).toBe(false)
     })
 
-    it("sends the confirmation to a corrected address", async () => {
-      const wrapper = await mountPage()
-      sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
+    /** Puts the page in the state it reaches once the application has been sent. */
+    const afterSubmitting = async () => {
+      const wrapper = await mountWithStepBodies()
       const vm = wrapper.vm as unknown as {
+        applicationSubmitted: boolean
         signupToken: string | undefined
-        correctedEmail: string
-        correctEmailAddress: () => Promise<void>
-        correcting: boolean
+        currentStep: number
+        user: {email: string; username: string} | undefined
       }
+      vm.applicationSubmitted = true
       vm.signupToken = "sel.ver"
-      vm.correctedEmail = "corrected@example.com"
+      vm.user = {email: "lena@example.com", username: "lena"}
+      await settle()
+      return {wrapper, vm}
+    }
 
-      await vm.correctEmailAddress()
+    it("hands the confirmation panel the address and the token it must use", async () => {
+      const {wrapper} = await afterSubmitting()
 
-      expect(mockCorrectEmail).toHaveBeenCalledWith({
-        headers: {"X-Signup-Token": "sel.ver"},
-        body: {email: "corrected@example.com"},
-        throwOnError: true,
-      })
-      expect(vm.correcting).toBe(false)
+      const panel = wrapper.findComponent({name: "EmailConfirmationPanel"})
+      expect(panel.props("continuationToken")).toBe("sel.ver")
+      expect(panel.props("email")).toBe("lena@example.com")
+      expect(panel.props("username")).toBe("lena")
+      expect(panel.props("canChangeAddress")).toBe(true)
     })
 
-    it("surfaces a rejected correction", async () => {
-      mockCorrectEmail.mockRejectedValue(new Error("taken"))
-      const wrapper = await mountPage()
-      const vm = wrapper.vm as unknown as {
-        signupToken: string | undefined
-        correctedEmail: string
-        correctEmailAddress: () => Promise<void>
-      }
-      vm.signupToken = "sel.ver"
-      vm.correctedEmail = "taken@example.com"
+    it("keeps the corrected address the panel reports", async () => {
+      const {wrapper, vm} = await afterSubmitting()
 
-      await vm.correctEmailAddress()
+      await wrapper.findComponent({name: "EmailConfirmationPanel"})
+        .vm.$emit("email-corrected", "corrected@example.com")
 
-      expect(mockHandleNetworkError).toHaveBeenCalled()
+      expect(vm.user?.email).toBe("corrected@example.com")
+    })
+
+    it("locks the agreement once the application is in", async () => {
+      const {wrapper} = await afterSubmitting()
+
+      // The applicant may still edit, but not un-agree: the form gives way to a
+      // record of the agreement, and the submit button to a way onward.
+      expect(wrapper.find('[data-testid="membership-conditions-accepted"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="membership-conditions-submit-btn"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="membership-conditions-continue-btn"]').exists()).toBe(true)
+    })
+
+    it("returns to the details and the address on the panel's request", async () => {
+      const {wrapper, vm} = await afterSubmitting()
+      const panel = wrapper.findComponent({name: "EmailConfirmationPanel"})
+
+      await panel.vm.$emit("change-details")
+      expect(vm.currentStep).toBe(1)
+
+      await panel.vm.$emit("change-address")
+      expect(vm.currentStep).toBe(2)
+    })
+
+    it("still offers the conditions form before anything is submitted", async () => {
+      const wrapper = await mountWithStepBodies()
+
+      expect(wrapper.find('[data-testid="membership-conditions-submit-btn"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="membership-conditions-accepted"]').exists()).toBe(false)
     })
   })
 
@@ -322,32 +361,10 @@ describe("MembershipSignUp page", () => {
   })
 
   describe("what the applicant can see and press", () => {
-    it("offers the confirmation step with the address it was sent to", async () => {
+    it("shows the confirmation panel on the last step", async () => {
       const wrapper = await mountWithStepBodies()
-      const vm = wrapper.vm as unknown as {user: unknown; currentStep: number}
-      vm.user = {email: "lena@example.com"}
-      await settle()
 
-      expect(wrapper.find('[data-testid="membership-confirm-email-step"]').exists()).toBe(true)
-      expect(wrapper.text()).toContain("lena@example.com")
-      expect(wrapper.find('[data-testid="membership-sign-in-btn"]').exists()).toBe(true)
-    })
-
-    it("reveals the correction field behind the wrong-address button", async () => {
-      const wrapper = await mountWithStepBodies()
-      const vm = wrapper.vm as unknown as {user: unknown; startCorrectingEmail: () => void}
-      vm.user = {email: "lena@exmaple.com"}
-      await settle()
-
-      expect(wrapper.find('[data-testid="membership-correct-email-form"]').exists()).toBe(false)
-
-      vm.startCorrectingEmail()
-      await settle()
-
-      expect(wrapper.find('[data-testid="membership-correct-email-form"]').exists()).toBe(true)
-      // Prefilled with the typo so the applicant edits rather than retypes.
-      expect((wrapper.vm as unknown as {correctedEmail: string}).correctedEmail)
-        .toBe("lena@exmaple.com")
+      expect(wrapper.findComponent({name: "EmailConfirmationPanel"}).exists()).toBe(true)
     })
 
     it("shows the step navigation buttons for the address and membership steps", async () => {
@@ -429,14 +446,6 @@ describe("MembershipSignUp page", () => {
   })
 
   describe("leaving the page", () => {
-    it("sends the applicant to sign in", async () => {
-      const wrapper = await mountWithStepBodies()
-
-      await wrapper.find('[data-testid="membership-sign-in-btn"]').trigger("click")
-
-      expect(mockGoto).toHaveBeenCalledWith("/login")
-    })
-
     it("sends a new member to the homepage", async () => {
       const wrapper = await mountWithStepBodies()
       ;(wrapper.vm as unknown as {finished: boolean}).finished = true
@@ -447,34 +456,5 @@ describe("MembershipSignUp page", () => {
       expect(mockGoto).toHaveBeenCalledWith("/")
     })
 
-    it("ignores a correction with nothing typed", async () => {
-      const wrapper = await mountPage()
-      const vm = wrapper.vm as unknown as {
-        signupToken: string | undefined
-        correctedEmail: string
-        correctEmailAddress: () => Promise<void>
-      }
-      vm.signupToken = "sel.ver"
-      vm.correctedEmail = ""
-
-      await vm.correctEmailAddress()
-
-      expect(mockCorrectEmail).not.toHaveBeenCalled()
-    })
-
-    it("ignores a correction with no signup session", async () => {
-      const wrapper = await mountPage()
-      const vm = wrapper.vm as unknown as {
-        signupToken: string | undefined
-        correctedEmail: string
-        correctEmailAddress: () => Promise<void>
-      }
-      vm.signupToken = undefined
-      vm.correctedEmail = "x@y.z"
-
-      await vm.correctEmailAddress()
-
-      expect(mockCorrectEmail).not.toHaveBeenCalled()
-    })
   })
 })

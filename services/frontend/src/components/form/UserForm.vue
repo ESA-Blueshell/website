@@ -3,6 +3,8 @@ import {computed, ref, watch} from "vue"
 import {
   createUser,
   signUp,
+  type SignupDetailsRequest,
+  updateDetails,
   findMemberProfileByUserId,
   type CreateUserRequest,
   type MemberProfileResponse,
@@ -49,10 +51,13 @@ const props = withDefaults(defineProps<{
     /** Public registration goes through POST /signup; POST /users is board-only. */
     createVia?: "signup" | "board"
   }
+  /** Present during a signup: corrections travel on the token, not a session. */
+  signupToken?: string
 }>(), {
   showPassword: false,
   showSubmit: false,
   submitText: "Submit",
+  signupToken: undefined,
   options: () => ({
     includeMemberProfile: false,
     updateKind: "auto",
@@ -92,7 +97,14 @@ const effectiveUpdateKind = computed<"user" | "board">(() => {
   return configuredUpdateKind.value
 })
 const createVia = computed<"signup" | "board">(() => props.options?.createVia ?? "signup")
-const canEditIdentity = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
+// An applicant holding a signup token is correcting an account nobody has been
+// able to use yet, so their own name and username are still theirs to fix. The
+// email address is not: changing it invalidates the confirmation link, so it goes
+// through the confirmation step instead.
+const canEditIdentity = computed<boolean>(
+  () => isCreating.value || Boolean(props.signupToken) || effectiveUpdateKind.value === "board",
+)
+const canEditEmail = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
 const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effectiveUpdateKind.value !== "board")
 
 const {country, onCountryUpdate} = useCountry("NL")
@@ -160,6 +172,13 @@ watch(
 
     ensureMemberProfile()
 
+    // Mid-signup the client is the only one who knows the profile: nothing
+    // authorises an unconfirmed applicant to read their account back, so asking
+    // would answer 401 and overwrite what they typed with an empty profile.
+    // signupSession covers the moment registration sets the id, which lands
+    // before the parent has had a chance to pass the token back down.
+    if (props.signupToken || signupSession.value) return
+
     if (!userId || loadedMemberProfileUserId === userId) {
       return
     }
@@ -190,6 +209,22 @@ const toCreateUserRequest = (model: EditableUser): CreateUserRequest => ({
   discord: model.discord,
   phoneNumber: model.phoneNumber,
   password: model.password,
+  memberProfile: toMemberProfileRequest(model.memberProfile),
+})
+
+// The signup route takes everything the first step collects except the email,
+// which is changed through PATCH /signup/email so the confirmation link is
+// reissued with it, and the password, which is not editable mid-signup.
+const toSignupDetailsRequest = (model: EditableUser): SignupDetailsRequest => ({
+  username: model.username,
+  initials: model.initials,
+  firstName: model.firstName,
+  prefix: model.prefix,
+  lastName: model.lastName,
+  discord: model.discord,
+  phoneNumber: model.phoneNumber,
+  newsletter: model.newsletter,
+  photoConsent: model.photoConsent,
   memberProfile: toMemberProfileRequest(model.memberProfile),
 })
 
@@ -237,6 +272,19 @@ const save = async (): Promise<EditableUser | null> => {
     return null
   }
   try {
+    // An applicant who came back to fix a typo has an account but no session, so
+    // the correction travels on the signup token.
+    if (user.value?.id && props.signupToken) {
+      await withSaving(async () => await updateDetails({
+        headers: {"X-Signup-Token": props.signupToken!},
+        body: toSignupDetailsRequest(user.value!),
+        throwOnError: true,
+      }))
+      emit("submitted", true)
+      setSubmitResult(true)
+      return user.value
+    }
+
     if (!user.value?.id && createVia.value === "signup") {
       const session = await withSaving(async () => await signUp({
         body: toCreateUserRequest(user.value),
@@ -390,8 +438,8 @@ defineExpose({validate, save, signupSession})
           <VvField
             v-model="user.email"
             test-id="user-form-email-field"
-            :disabled="isReadonly || !canEditIdentity"
-            :rules="canEditIdentity ? 'required|email|noStudentEmail' : ''"
+            :disabled="isReadonly || !canEditEmail"
+            :rules="canEditEmail ? 'required|email|noStudentEmail' : ''"
             label="E-mail*"
             name="email"
           />

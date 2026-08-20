@@ -46,12 +46,17 @@ class UserActivationService(
 
     /**
      * Resend user activation link by username. Returns null if user not found or already enabled.
+     *
+     * Retires whatever was outstanding first, so the address holds one live link
+     * at a time however often the applicant asks for another. Otherwise every
+     * press of "resend" leaves another working link behind.
      */
     @Transactional
     fun requestUserActivation(username: String): RecoveryDispatch? {
         return try {
             val user = users.findByUsername(username)
             if (user.enabled) return null
+            revokeOutstandingActivations(user.id!!)
             val rawToken = tokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
             RecoveryDispatch(user.id!!, rawToken, TokenPurpose.USER_ACTIVATION)
         } catch (ignored: UserNotFoundException) {

@@ -143,12 +143,9 @@ class CorrectSignupEmailHandler(
         account.user.email = command.email
         users.update(account.user)
 
-        // Explicitly retire every outstanding confirmation link before issuing the
-        // next one. The mistyped address may be somebody else's inbox, so a link
-        // already delivered there must stop working — and issuing a replacement is
-        // not on its own enough to guarantee that.
-        activation.revokeOutstandingActivations(account.id)
-
+        // requestUserActivation retires whatever was outstanding before issuing the
+        // replacement. That matters most here: the mistyped address may be somebody
+        // else's inbox, so a link already delivered there has to stop working.
         val dispatch = requireNotNull(activation.requestUserActivation(account.user.username)) {
             "Expected an activation dispatch for the unconfirmed account ${account.id}"
         }

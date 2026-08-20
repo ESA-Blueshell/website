@@ -131,6 +131,41 @@ class SignupEmailCorrectionIT : UserTestSupport() {
     }
 
     @Test
+    fun `resending leaves one live link however often it is asked for`() {
+        val user = applicant()
+
+        // The confirmation step offers a resend button, so pressing it repeatedly
+        // must not accumulate working links behind the applicant.
+        repeat(3) {
+            mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
+                .andExpect(status().isNoContent)
+        }
+
+        val live = recoveryTokens.findAllUnconsumedByUserId(user.id!!)
+            .filter { it.type == TokenPurpose.USER_ACTIVATION }
+        assertThat(live)
+            .describedAs("only the most recent confirmation link stays live")
+            .hasSize(1)
+    }
+
+    @Test
+    fun `an earlier link stops working once a fresh one is sent`() {
+        val user = applicant()
+        val first = tokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+
+        mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
+            .andExpect(status().isNoContent)
+
+        mvc.perform(
+            post("/recovery/user/activate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"token":"$first"}""")
+        ).andExpect(status().is4xxClientError)
+
+        assertThat(refreshUser(user).enabled).isFalse()
+    }
+
+    @Test
     fun `the corrected address is the one that can confirm the account`() {
         val user = applicant()
         correct(signupToken(user), "corrected5@example.com").andExpect(status().isNoContent)

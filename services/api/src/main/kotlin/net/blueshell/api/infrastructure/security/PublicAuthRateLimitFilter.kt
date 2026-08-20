@@ -59,6 +59,7 @@ class PublicAuthRateLimitFilter(
         Rule(HttpMethod.POST.name(), "/signup/address", maxRequests = 10, window = Duration.ofMinutes(1)),
         Rule(HttpMethod.POST.name(), "/signup/apply", maxRequests = 10, window = Duration.ofMinutes(1)),
         // Sends mail, so it is limited like the other resend paths rather than the writes.
+        Rule(HttpMethod.PATCH.name(), "/signup/details", maxRequests = 10, window = Duration.ofMinutes(1)),
         Rule(HttpMethod.PATCH.name(), "/signup/email", maxRequests = 3, window = Duration.ofMinutes(10)),
         Rule(HttpMethod.POST.name(), "/recovery/password", maxRequests = 10, window = Duration.ofMinutes(10)),
         Rule(HttpMethod.POST.name(), "/recovery/user/activate", maxRequests = 10, window = Duration.ofMinutes(10)),

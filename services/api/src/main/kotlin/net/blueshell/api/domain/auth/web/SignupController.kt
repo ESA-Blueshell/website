@@ -1,12 +1,14 @@
 package net.blueshell.api.domain.auth.web
 
 import org.springframework.web.bind.annotation.PatchMapping
+import net.blueshell.api.domain.auth.web.dto.request.SignupDetailsRequest
 import net.blueshell.api.domain.auth.web.dto.request.SignupEmailRequest
 import net.blueshell.api.domain.auth.command.CorrectSignupEmailCommand
 import org.springframework.web.bind.annotation.RequestHeader
 import net.blueshell.api.domain.user.web.dto.response.SignupOutcomeResponse
 import net.blueshell.api.domain.user.command.SubmitSignupApplicationCommand
 import net.blueshell.api.domain.user.command.SaveSignupAddressCommand
+import net.blueshell.api.domain.user.command.UpdateSignupDetailsCommand
 import net.blueshell.api.domain.auth.web.dto.request.SignupApplicationRequest
 import net.blueshell.api.domain.auth.web.dto.request.SignupAddressRequest
 import net.blueshell.api.shared.model.SignupSession
@@ -17,6 +19,7 @@ import net.blueshell.api.domain.auth.command.IssueSignupSessionCommand
 import net.blueshell.api.domain.auth.web.dto.response.SignupSessionResponse
 import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
 import net.blueshell.api.domain.user.web.mapping.request.asCommand
+import net.blueshell.api.domain.user.web.mapping.request.asCommandData
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
@@ -83,6 +86,30 @@ class SignupController(
             )
         )
         return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted)
+    }
+
+    @PatchMapping("/details")
+    @PermitAll
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun updateDetails(
+        @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
+        @Valid @RequestBody request: SignupDetailsRequest
+    ) {
+        commandBus.dispatch(
+            UpdateSignupDetailsCommand(
+                signupToken = signupToken,
+                username = request.username!!,
+                initials = request.initials!!,
+                firstName = request.firstName!!,
+                prefix = request.prefix,
+                lastName = request.lastName!!,
+                discord = request.discord!!,
+                phoneNumber = request.phoneNumber!!,
+                newsletter = request.newsletter!!,
+                photoConsent = request.photoConsent == true,
+                memberProfile = request.memberProfile?.asCommandData(),
+            )
+        )
     }
 
     @PatchMapping("/email")

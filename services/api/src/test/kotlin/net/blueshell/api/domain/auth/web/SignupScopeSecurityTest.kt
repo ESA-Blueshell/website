@@ -4,6 +4,7 @@ import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -41,6 +42,26 @@ class SignupScopeSecurityTest : UserTestSupport() {
                     .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(address)
+            )
+                .andExpect(status().isNoContent)
+        }
+
+        @Test
+        fun `corrects the details on the token's own account`() {
+            val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
+
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/details")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"username":"${applicant.username}","initials":"SC","firstName":"Scoped",
+                         "lastName":"Applicant","discord":"${applicant.discord}",
+                         "phoneNumber":"${applicant.phoneNumber}","newsletter":false}
+                        """.trimIndent()
+                    )
             )
                 .andExpect(status().isNoContent)
         }
@@ -178,6 +199,34 @@ class SignupScopeSecurityTest : UserTestSupport() {
                     .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"email":"hijack@example.com"}""")
+            )
+                .andExpect(status().is4xxClientError)
+        }
+
+        @Test
+        fun `a token minted for activation cannot correct the details`() {
+            val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
+            val activation = tokenFactory.issue(applicant, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/details")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"hijacked","initials":"HJ","firstName":"H","lastName":"J","discord":"h#1","phoneNumber":"0612345678","newsletter":false}""")
+            )
+                .andExpect(status().is4xxClientError)
+
+            assertThat(refreshUser(applicant).username).isNotEqualTo("hijacked")
+        }
+
+        @Test
+        fun `a missing token header is refused on the details route`() {
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/details")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"nobody","initials":"NB","firstName":"N","lastName":"B","discord":"n#1","phoneNumber":"0612345678","newsletter":false}""")
             )
                 .andExpect(status().is4xxClientError)
         }

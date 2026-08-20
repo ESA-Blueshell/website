@@ -95,6 +95,26 @@ data class UpdateUserCommand(
     override val email: String? = null
 }
 
+/**
+ * Correcting what was typed at the first signup step, while the address is still
+ * unconfirmed. Keyed by the signup token rather than an id, so it can only reach
+ * the account the token was minted for. The email address is absent on purpose:
+ * changing it invalidates the confirmation link, so it travels on its own route.
+ */
+data class UpdateSignupDetailsCommand(
+    val signupToken: String,
+    val username: String,
+    val initials: String,
+    val firstName: String,
+    val prefix: String?,
+    val lastName: String,
+    val discord: String,
+    val phoneNumber: String,
+    val newsletter: Boolean,
+    val photoConsent: Boolean,
+    val memberProfile: UpsertMemberProfileData? = null
+) : Command<Unit>
+
 data class FindUsersCommand(
     val filter: UserQuery,
     val pageable: Pageable

@@ -920,6 +920,19 @@ export type SignupApplicationRequest = {
     conditionsAccepted?: boolean;
 };
 
+export type SignupDetailsRequest = {
+    discord: string;
+    firstName: string;
+    initials: string;
+    lastName: string;
+    memberProfile?: UpsertMemberProfileRequest;
+    newsletter: boolean;
+    phoneNumber: string;
+    photoConsent?: boolean;
+    prefix?: string;
+    username: string;
+};
+
 export type SignupEmailRequest = {
     email: string;
 };
@@ -5232,6 +5245,50 @@ export type ApplyResponses = {
 };
 
 export type ApplyResponse = ApplyResponses[keyof ApplyResponses];
+
+export type UpdateDetailsData = {
+    body: SignupDetailsRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/details';
+};
+
+export type UpdateDetailsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateDetailsError = UpdateDetailsErrors[keyof UpdateDetailsErrors];
+
+export type UpdateDetailsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateDetailsResponse = UpdateDetailsResponses[keyof UpdateDetailsResponses];
 
 export type CorrectEmailData = {
     body: SignupEmailRequest;

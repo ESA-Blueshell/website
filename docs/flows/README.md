@@ -12,7 +12,12 @@ tells you what the process is supposed to guarantee.
 
 | Flow | Summary |
 |------|---------|
-| [Membership signup](membership-signup/README.md) | Public signup for association membership, carried by a scoped continuation token, committing on email confirmation |
+| [Account creation](account-creation/README.md) | How anybody gets a guest account; everything correctable until the address is confirmed |
+| [Signing in](sign-in/README.md) | The gate: who gets a session, and what a refusal gives away |
+| [Membership signup](membership-signup/README.md) | Account creation plus an application; the membership commits on whichever fact lands last |
+
+Account creation is the base flow and membership signup builds on it, so the two
+are read in that order and neither restates the other.
 
 ## What a flow doc is, and is not
 

@@ -13,8 +13,11 @@ Covers public self-service signup at `/membership/signup`, the account it create
 the address and membership application attached to it, and the email confirmation
 that activates both.
 
-Also covers plain account creation at `/account/create`, which is the same flow
-without a member profile and therefore without a membership at the end.
+The account half of this flow — creating the account, confirming the address,
+correcting details, correcting the address, asking for the email again — belongs to
+[account creation](../account-creation/README.md) and is described there. This doc
+covers what joining adds on top: the member profile, the address, the application,
+the agreement, and the rendezvous that turns the two into a membership.
 
 Does **not** cover:
 
@@ -133,11 +136,11 @@ the [acceptance features](../../../services/system-tests/src/test/resources/feat
    commit time; none is trusted from a token or a JWT claim.
 3. **At most one membership per signup.** Submitting the application twice, or
    confirming an email twice, cannot produce two memberships.
-4. **A signup token authorises three writes against one account.** It can save an
-   address, submit that account's application, and correct that account's email
-   address while the account is unconfirmed. It cannot read the account back,
-   change a password, act on a different account, or satisfy any `@PreAuthorize`
-   guard elsewhere in the API.
+4. **A signup token authorises four writes against one account.** It can correct
+   that account's details, save an address, submit that account's application, and
+   correct that account's email address, all while the account is unconfirmed. It
+   cannot read the account back, change a password, act on a different account, or
+   satisfy any `@PreAuthorize` guard elsewhere in the API.
 5. **Confirming an email address never blocks finishing the application.** The
    signup token outlives confirmation.
 6. **A signed-in applicant is never asked to confirm an email address.** Signing in
@@ -145,6 +148,9 @@ the [acceptance features](../../../services/system-tests/src/test/resources/feat
    issued and no confirmation email is sent for that path.
 7. **Nobody applies for a membership they already hold.** A signed-in applicant who is
    already a member is redirected away from the form.
+8. **An agreement to the membership conditions is never withdrawn.** Details and
+   address stay editable after the application is submitted; the acceptance does
+   not. The conditions step becomes a record of it.
 
 ## The journey
 
@@ -181,11 +187,47 @@ flowchart TD
 3. **Membership conditions.** `POST /signup/apply` records the acceptance, then
    runs the completion check.
 4. **Confirm your email address.** Names the address the email went to, offers to
-   correct it, and hands off to sign-in. If the address was already confirmed
-   during steps 2–3, this page says the membership has started instead.
+   correct it, to send it again, and to go back into the details or the address.
+   If the address was already confirmed during steps 2–3, this page says the
+   membership has started instead.
 
 Opening the confirmation link enables the account and runs the same completion
 check. Whichever of the two runs last is the one that creates the membership.
+
+## Going back
+
+Every step except the agreement stays open for as long as the signup session
+lives, including after the application has been submitted. Waiting on an email is
+exactly when somebody notices a typo, so the confirmation step is a hub rather
+than a dead end.
+
+```mermaid
+flowchart TD
+    P["Step 4 · confirm your email address"] --> D["Your details"]
+    P --> A["Your address"]
+    P --> C["Wrong address?"]
+    P --> R["Send it again"]
+    D --> D1["PATCH /signup/details"]
+    A --> A1["POST /signup/address"]
+    C --> C1["PATCH /signup/email"]
+    R --> R1["POST /recovery/user/activate/resend"]
+    D1 --> L["Step 3 · agreement on record"]
+    A1 --> L
+    L --> P
+```
+
+Returning through the conditions step meets a record of the agreement rather than
+the form: the checkbox and the submit button are gone, and a Continue button leads
+back to the confirmation step. `POST /signup/apply` stays idempotent regardless,
+so a repeat submission is harmless — the page simply never offers one.
+
+Editing is not re-applying. The address already saved stays saved, the recorded
+acceptance keeps its original timestamp, and the membership does not start until
+the address is confirmed.
+
+The email address is the one field the details step will not change, because
+changing it has to retire the outstanding confirmation link. It is shown but not
+editable there, and "Wrong address?" on the confirmation step is what changes it.
 
 ## Alternative orderings
 
@@ -278,8 +320,9 @@ flowchart TD
     RL --> REV["retire the signup token"]
 ```
 
-A missing member profile is the plain-account case: `/account/create` never creates
-one, so those accounts confirm their email and stop, which is the intended ending.
+A missing member profile is the plain-account case: the
+[account creation](../account-creation/README.md) flow never creates one, so those
+accounts confirm their address and stop, which is the intended ending.
 
 ## Credentials
 
@@ -294,12 +337,13 @@ neither.
 | Client holds it | `sessionStorage`, one tab, never placed in a URL | URL fragment, then `sessionStorage`, then discarded |
 | TTL | 2 hours | 1 hour |
 | Uses | Many, within the TTL | Exactly one |
-| Authorises | Save address · submit application · correct email — on its own account only | Enable the account |
+| Authorises | Correct details · save address · submit application · correct email — on its own account only | Enable the account |
 | Retired by | The membership starting, or expiry | Consumption, or expiry |
 
-Both are `selector.verifier` records in `recovery_tokens`: a 128-bit selector
-identifies the row, a 256-bit verifier is stored BCrypt-hashed and compared on
-presentation.
+Both are `selector.verifier` records in `recovery_tokens`, described in full under
+[account creation](../account-creation/README.md#credentials). Repeated here is
+only what membership adds: the continuation token authorises the application as
+well, and the membership starting is what retires it.
 
 Correcting the email address consumes every outstanding `USER_ACTIVATION` token for
 the account before issuing the replacement, so the link already delivered to the
@@ -340,11 +384,12 @@ again, and all must work.
 | Method | Path | Authorisation | Notes |
 |--------|------|---------------|-------|
 | `POST` | `/signup` | `@PermitAll` | Body `CreateUserRequest`. Returns `SignupSessionResponse { userId, email, signupToken, expiresAt }`. 10/min per client. |
+| `PATCH` | `/signup/details` | `X-Signup-Token` | Everything the first step collects except email and password. `204`. Refused once confirmed; `409` on a username, Discord name or phone number somebody else holds. 10/min. |
 | `POST` | `/signup/address` | `X-Signup-Token` | Body `SignupAddressRequest` — no `userId`; the account comes from the token. `204`, upsert. 10/min. |
 | `POST` | `/signup/apply` | `X-Signup-Token` | Body `{ conditionsAccepted }`. Records the acceptance, runs `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. Idempotent. 10/min. |
 | `PATCH` | `/signup/email` | `X-Signup-Token` | Body `{ email }`. Re-issues the activation token and resends. Refused once the account is enabled. 3/10min. |
 | `POST` | `/recovery/user/activate` | `@PermitAll` | Body `{ token }`. Enables the account, runs `completeIfReady`. Returns `{ membershipStarted }`. 10/10min. |
-| `POST` | `/recovery/user/activate/resend/{username}` | `@PermitAll` | Resends to the address on file. 5/10min. |
+| `POST` | `/recovery/user/activate/resend/{username}` | `@PermitAll` | Retires the outstanding link and resends to the address on file. 5/10min. |
 | `POST` | `/users` | `hasPermission('__NO_TARGET__', 'User', 'write')` | Board-only account creation. |
 | `POST` | `/memberships` | `hasPermission(#principal.id, 'User', 'write')` | The signed-in applicant's submission. Body `{ conditionsAccepted }`; stamps the acceptance, then runs the same `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. |
 | `PUT` | `/users/{id}` | `hasPermission(#id, 'User', 'write')` | The signed-in applicant's step 1: fills in the member profile on an existing account. |
@@ -389,6 +434,7 @@ the member list. There is no automatic cleanup of abandoned signups.
 | Concern | Location |
 |---------|----------|
 | Signup endpoints | `domain/auth/web/SignupController.kt` |
+| Details correction | `domain/user/application/command/UserCommandHandlers.kt` (`UpdateSignupDetailsHandler`) |
 | Token issue, verify, retire | `domain/auth/application/SignupTokenService.kt` |
 | The completion rule | `domain/auth/application/SignupCompletionService.kt` |
 | Activation | `domain/auth/application/UserActivationService.kt`, `domain/auth/web/RecoveryController.kt` |
@@ -402,7 +448,8 @@ the member list. There is no automatic cleanup of abandoned signups.
 
 | Concern | Location |
 |---------|----------|
-| The stepper, the confirmation step and the correction form | `src/pages/membership/MembershipSignUp.vue` |
+| The stepper and the agreement record | `src/pages/membership/MembershipSignUp.vue` |
+| The confirmation step, shared with account creation | `src/components/form/EmailConfirmationPanel.vue` |
 | Plain account creation | `src/pages/login/CreateAccount.vue` |
 | Email confirmation landing page | `src/pages/activate/ActivateUser.vue` |
 | Step forms, each taking an optional `signupToken` | `src/components/form/{UserForm,AddressForm,MembershipForm}.vue` |
@@ -428,6 +475,10 @@ that drift:
 | [`membership-join-new-applicant.feature`](../../../services/system-tests/src/test/resources/features/membership-join-new-applicant.feature) | The new-applicant path, both arrival orders, and correcting a mistyped address |
 | [`signup-session-scope.feature`](../../../services/system-tests/src/test/resources/features/signup-session-scope.feature) | What a signup session may and may not do |
 | [`zz-harness-selfcheck.feature`](../../../services/system-tests/src/test/resources/features/zz-harness-selfcheck.feature) | That the suite ran at all, so a green job cannot mean an empty one |
+
+Two adjacent flows have their own features:
+[`account-creation.feature`](../../../services/system-tests/src/test/resources/features/account-creation.feature)
+and [`sign-in.feature`](../../../services/system-tests/src/test/resources/features/sign-in.feature).
 
 Run them with `./gradlew :services:system-tests:acceptanceTest` against a running
 stack. They are their own CI job (`acceptance-features`) and carry no browser, so

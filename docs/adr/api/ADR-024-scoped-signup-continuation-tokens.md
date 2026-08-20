@@ -99,28 +99,44 @@ Three properties carry the safety of the design:
 
 ### Accepting endpoints
 
-Exactly three, all `@PermitAll`, all in `SignupController`:
+Exactly four, all `@PermitAll`, all in `SignupController`:
 
 | Method | Path | Authorises |
 |--------|------|------------|
+| `PATCH` | `/signup/details` | Correct that account's own details while it is unconfirmed |
 | `POST` | `/signup/address` | Save the address on the token's own account |
 | `POST` | `/signup/apply` | Submit that account's membership application |
 | `PATCH` | `/signup/email` | Correct that account's email address while it is unconfirmed |
 
-Adding a fourth is an amendment to this ADR, not a routine change. That is the point
+Adding a fifth is an amendment to this ADR, not a routine change. That is the point
 of enumerating them.
+
+`/signup/details` was the fourth, added so an applicant waiting on a confirmation
+email can fix what they typed rather than abandon the form. It carries two
+deliberate exclusions. The email address is not among the fields, because changing
+it has to retire the outstanding confirmation link, and that belongs to the one
+route that already does it. The password is not either: nobody can sign in to an
+unconfirmed account, so a mistyped password costs nothing until the account works,
+at which point password reset is the route.
+
+Uniqueness for that route is checked inside the handler rather than by the
+`@UniqueUserCommand` validator the other write commands use. The validator needs
+the subject's id to exclude the account from its own uniqueness check, and the id
+is only known once the token resolves — which happens in the handler, after
+validation has run. Left to the validator, an applicant re-submitting the form
+without edits would be told their own username was taken.
 
 ### What the token cannot do
 
-It cannot read the account back — the three endpoints write and acknowledge, and the
+It cannot read the account back — the four endpoints write and acknowledge, and the
 only state they return is the two booleans describing what just happened. It cannot
 change a password, act on another account, or satisfy any `@PreAuthorize` expression,
 because it never reaches the security context.
 
 ### Rate limits
 
-All three paths are declared in `PublicAuthRateLimitFilter` alongside the existing
-public auth paths: 10/min for the two writes, 3/10min for the email correction,
+All four paths are declared in `PublicAuthRateLimitFilter` alongside the existing
+public auth paths: 10/min for the three writes, 3/10min for the email correction,
 which sends mail.
 
 ### Who gets a token, and who does not

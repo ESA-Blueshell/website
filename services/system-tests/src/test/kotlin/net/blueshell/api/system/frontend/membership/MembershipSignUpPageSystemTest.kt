@@ -39,7 +39,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         submitApplicationThroughUi(page)
 
         assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
-        assertPw(MembershipSignUpHelper.signInButton(page)).isVisible()
+        assertPw(MembershipSignUpHelper.resendButton(page)).isVisible()
 
         pollFor("the acceptance is recorded once the application is submitted") {
             TestHelper.conditionsAcceptedAt(user.id) != null

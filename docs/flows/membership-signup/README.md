@@ -187,8 +187,9 @@ flowchart TD
 3. **Membership conditions.** `POST /signup/apply` records the acceptance, then
    runs the completion check.
 4. **Confirm your email address.** Names the address the email went to, offers to
-   correct it, to send it again, and to go back into the details or the address.
-   If the address was already confirmed during steps 2–3, this page says the
+   correct it, to send it again, and Previous to reach the earlier steps. It does
+   not offer to sign in, because signing in is what confirming makes possible. If
+   the address was already confirmed during steps 2–3, this page says the
    membership has started instead.
 
 Opening the confirmation link enables the account and runs the same completion
@@ -213,8 +214,8 @@ flowchart LR
 
 Going back is the stepper's own navigation, one step at a time, which is how the
 details and the address are reached again. The confirmation step itself carries
-only what belongs to confirming an address: correcting it, asking for the email
-again, and signing in.
+only what belongs to confirming an address: correcting it and asking for the email
+again.
 
 Returning through the conditions step meets a record of the agreement rather than
 the form: the checkbox and the submit button are gone, and a Continue button leads

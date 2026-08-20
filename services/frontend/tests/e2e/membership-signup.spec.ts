@@ -148,7 +148,9 @@ test.describe("membership signup", () => {
     const confirmStep = page.getByTestId("email-confirm-step")
     await expect(confirmStep).toBeVisible()
     await expect(confirmStep).toContainText(applicantEmail)
-    await expect(page.getByTestId("email-confirm-sign-in-btn")).toBeVisible()
+    // Confirming is what makes signing in possible, so this page does not offer it.
+    await expect(page.getByTestId("email-confirm-sign-in-btn")).toHaveCount(0)
+    await expect(page.getByTestId("email-confirm-resend-btn")).toBeVisible()
     await expect(page.getByTestId("membership-complete-panel")).toHaveCount(0)
   })
 

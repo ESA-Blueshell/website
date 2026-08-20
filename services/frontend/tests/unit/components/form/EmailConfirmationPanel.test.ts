@@ -2,12 +2,11 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 
-const {mockCorrectEmail, mockResend, mockStore, mockHandleNetworkError, mockGoto} = vi.hoisted(() => ({
+const {mockCorrectEmail, mockResend, mockStore, mockHandleNetworkError} = vi.hoisted(() => ({
   mockCorrectEmail: vi.fn(),
   mockResend: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {}},
   mockHandleNetworkError: vi.fn(),
-  mockGoto: vi.fn(),
 }))
 
 vi.mock("@/services/api", () => ({
@@ -16,7 +15,6 @@ vi.mock("@/services/api", () => ({
 }))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
-vi.mock("@/plugins/goto", () => ({$goto: mockGoto}))
 
 const mountPanel = (props: Record<string, unknown> = {}) =>
   shallowMount(EmailConfirmationPanel, {
@@ -145,14 +143,6 @@ describe("EmailConfirmationPanel", () => {
       await wrapper.find('[data-testid="email-confirm-back-btn"]').trigger("click")
 
       expect(wrapper.emitted("back")).toHaveLength(1)
-    })
-
-    it("sends the applicant to sign in", async () => {
-      const wrapper = mountPanel()
-
-      await wrapper.find('[data-testid="email-confirm-sign-in-btn"]').trigger("click")
-
-      expect(mockGoto).toHaveBeenCalledWith("/login")
     })
 
     it("shows only the correction form while an address is being typed", async () => {

@@ -13,7 +13,6 @@ object MembershipSignUpHelper {
     private const val CORRECT_EMAIL_BUTTON_TEST_ID = "email-confirm-correct-btn"
     private const val CORRECTED_EMAIL_FIELD_TEST_ID = "email-confirm-address-field"
     private const val CORRECTED_EMAIL_SUBMIT_TEST_ID = "email-confirm-address-submit-btn"
-    private const val SIGN_IN_BUTTON_TEST_ID = "email-confirm-sign-in-btn"
     private const val COMPLETE_PANEL_TEST_ID = "membership-complete-panel"
     private const val RESEND_BUTTON_TEST_ID = "email-confirm-resend-btn"
     private const val CONFIRM_BACK_BUTTON_TEST_ID = "email-confirm-back-btn"
@@ -46,8 +45,6 @@ object MembershipSignUpHelper {
 
     fun correctedEmailSubmitButton(page: Page): Locator =
         TestIdLocatorHelper.byTestId(page, CORRECTED_EMAIL_SUBMIT_TEST_ID)
-
-    fun signInButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, SIGN_IN_BUTTON_TEST_ID)
 
     fun completePanel(page: Page): Locator = TestIdLocatorHelper.byTestId(page, COMPLETE_PANEL_TEST_ID)
 

@@ -93,16 +93,6 @@
           Send it again
         </v-btn>
       </v-col>
-      <v-col cols="auto">
-        <v-btn
-          color="primary"
-          data-testid="email-confirm-sign-in-btn"
-          prepend-icon="mdi-login"
-          @click="$goto('/login')"
-        >
-          Sign in
-        </v-btn>
-      </v-col>
     </v-row>
   </v-card>
 </template>
@@ -112,7 +102,6 @@ import {ref} from "vue"
 import {correctEmail, resendUserActivation} from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {$goto} from "@/plugins/goto"
 
 const {
   email,

@@ -101,8 +101,9 @@ flowchart TD
    `SIGNUP_CONTINUATION` session in the response body, and sends a
    `USER_ACTIVATION` token by email.
 2. **Confirm your email address.** Names the address the email went to and offers
-   three things: correct the address, send the email again, or go back into the
-   form and change any other detail.
+   three things: correct the address, send the email again, or step back into the
+   form and change any other detail. It does not offer to sign in — the account
+   cannot be signed in to until the link is opened.
 3. **The link.** Opening it enables the account. Signing in is then possible.
 
 ## What the confirmation step offers
@@ -112,7 +113,6 @@ flowchart TD
     P["Confirm your email address"] --> C["Wrong address?"]
     P --> R["Send it again"]
     P --> B["Previous"]
-    P --> S["Sign in"]
     C --> C1["PATCH /signup/email"]
     C1 --> C2["old link retired, new one sent"]
     R --> R1["POST /recovery/user/activate/resend"]

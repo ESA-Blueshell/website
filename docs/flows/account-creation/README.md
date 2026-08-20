@@ -111,20 +111,21 @@ flowchart TD
 flowchart TD
     P["Confirm your email address"] --> C["Wrong address?"]
     P --> R["Send it again"]
-    P --> D["Your details"]
+    P --> B["Previous"]
     P --> S["Sign in"]
     C --> C1["PATCH /signup/email"]
     C1 --> C2["old link retired, new one sent"]
     R --> R1["POST /recovery/user/activate/resend"]
     R1 --> R2["old link retired, same address"]
-    D --> D1["back to the form"]
-    D1 --> D2["PATCH /signup/details"]
-    D2 --> P
+    B --> B1["back to the form"]
+    B1 --> B2["PATCH /signup/details"]
+    B2 --> P
 ```
 
-Correcting the address and resending both leave exactly one live link. Going back
-into the form is an edit, not a re-registration: the account keeps its id, and
-saving returns to the confirmation step.
+Correcting the address and resending both leave exactly one live link. Previous
+returns to the form, which is an edit rather than a re-registration: the account
+keeps its id, no password is asked for again, and saving returns to the
+confirmation step.
 
 ## Credentials
 

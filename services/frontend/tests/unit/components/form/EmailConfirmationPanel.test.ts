@@ -139,21 +139,12 @@ describe("EmailConfirmationPanel", () => {
       expect(wrapper.text()).toContain("Your membership starts as soon as you do.")
     })
 
-    it("offers a way back to the details", async () => {
+    it("offers a way back, the same as every other step", async () => {
       const wrapper = mountPanel()
 
-      await wrapper.find('[data-testid="email-confirm-change-details-btn"]').trigger("click")
+      await wrapper.find('[data-testid="email-confirm-back-btn"]').trigger("click")
 
-      expect(wrapper.emitted("change-details")).toHaveLength(1)
-    })
-
-    it("offers a way back to the address only when there is one", async () => {
-      const withAddress = mountPanel({canChangeAddress: true})
-      await withAddress.find('[data-testid="email-confirm-change-address-btn"]').trigger("click")
-      expect(withAddress.emitted("change-address")).toHaveLength(1)
-
-      const without = mountPanel()
-      expect(without.find('[data-testid="email-confirm-change-address-btn"]').exists()).toBe(false)
+      expect(wrapper.emitted("back")).toHaveLength(1)
     })
 
     it("sends the applicant to sign in", async () => {
@@ -164,12 +155,13 @@ describe("EmailConfirmationPanel", () => {
       expect(mockGoto).toHaveBeenCalledWith("/login")
     })
 
-    it("hides the edit links while a correction is being typed", async () => {
+    it("shows only the correction form while an address is being typed", async () => {
       const wrapper = mountPanel()
       ;(wrapper.vm as unknown as Panel).startCorrecting()
       await wrapper.vm.$nextTick()
 
-      expect(wrapper.find('[data-testid="email-confirm-change-details-btn"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="email-confirm-back-btn"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="email-confirm-resend-btn"]').exists()).toBe(false)
       expect(wrapper.find('[data-testid="email-confirm-correct-form"]').exists()).toBe(true)
     })
   })

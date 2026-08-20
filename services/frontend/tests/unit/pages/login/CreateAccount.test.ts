@@ -21,8 +21,8 @@ vi.mock("@/components/form/UserForm.vue", () => ({
 vi.mock("@/components/form/EmailConfirmationPanel.vue", () => ({
   default: {
     name: "EmailConfirmationPanel",
-    props: {email: String, username: String, continuationToken: String, canChangeAddress: Boolean},
-    emits: ["email-corrected", "change-details", "change-address"],
+    props: {email: String, username: String, continuationToken: String},
+    emits: ["email-corrected", "back"],
     template: "<div data-test='panel' />",
   },
 }))
@@ -55,19 +55,11 @@ describe("CreateAccount page", () => {
     expect(wrapper.findComponent({name: "EmailConfirmationPanel"}).props("continuationToken")).toBe("sel.ver")
   })
 
-  it("has no address to offer, so it does not advertise one", async () => {
-    const wrapper = mountPage()
-
-    await submit(wrapper)
-
-    expect(wrapper.findComponent({name: "EmailConfirmationPanel"}).props("canChangeAddress")).toBe(false)
-  })
-
-  it("returns to the form when the applicant wants to change their details", async () => {
+  it("returns to the form when the applicant steps back", async () => {
     const wrapper = mountPage()
     await submit(wrapper)
 
-    await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("change-details")
+    await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("back")
 
     expect(wrapper.find("[data-testid='create-account-form-state']").exists()).toBe(true)
     // The account already exists, so the form is now an edit, and it says so.
@@ -77,7 +69,7 @@ describe("CreateAccount page", () => {
   it("carries the token into the form so the edit is authorised", async () => {
     const wrapper = mountPage()
     await submit(wrapper)
-    await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("change-details")
+    await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("back")
 
     expect(wrapper.findComponent({name: "UserForm"}).props("signupToken")).toBe("sel.ver")
   })
@@ -85,7 +77,7 @@ describe("CreateAccount page", () => {
   it("goes back to the confirmation once the edit is saved", async () => {
     const wrapper = mountPage()
     await submit(wrapper)
-    await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("change-details")
+    await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("back")
 
     await submit(wrapper)
 

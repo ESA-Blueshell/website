@@ -111,7 +111,12 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         submitApplicationThroughUi(page)
         assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
 
-        MembershipSignUpHelper.changeDetailsButton(page).click()
+        // Previous, step by step, back to the details.
+        MembershipSignUpHelper.confirmBackButton(page).click()
+        assertPw(MembershipSignUpHelper.conditionsAccepted(page)).isVisible()
+        MembershipSignUpHelper.conditionsBackButton(page).click()
+        assertPw(MembershipSignUpHelper.addressNextButton(page)).isVisible()
+        MembershipSignUpHelper.addressBackButton(page).click()
         val field = UserFormHelper.firstNameInput(page)
         assertPw(field).isVisible()
         field.fill("Corrected")
@@ -139,9 +144,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         saveAddressThroughUi(page)
         submitApplicationThroughUi(page)
 
-        MembershipSignUpHelper.changeAddressButton(page).click()
-        assertPw(MembershipSignUpHelper.addressNextButton(page)).isVisible()
-        MembershipSignUpHelper.addressNextButton(page).click()
+        MembershipSignUpHelper.confirmBackButton(page).click()
 
         assertPw(MembershipSignUpHelper.conditionsAccepted(page)).isVisible()
         assertPw(MembershipSignUpHelper.conditionsSubmitButton(page)).isHidden()

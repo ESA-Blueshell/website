@@ -31,7 +31,7 @@
         :username="user?.username ?? ''"
         :continuation-token="session.signupToken"
         confirmation-consequence="Your account works as soon as you do."
-        @change-details="editing = true"
+        @back="editing = true"
         @email-corrected="onEmailCorrected"
       />
     </div>

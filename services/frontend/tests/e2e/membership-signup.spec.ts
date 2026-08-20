@@ -165,7 +165,13 @@ test.describe("membership signup", () => {
     await page.getByTestId("membership-conditions-submit-btn").click()
     await expect(page.getByTestId("email-confirm-step")).toBeVisible()
 
-    await page.getByTestId("email-confirm-change-details-btn").click()
+    // Previous, three times, the same way every other step goes back.
+    await page.getByTestId("email-confirm-back-btn").click()
+    await expect(page.getByTestId("membership-conditions-accepted")).toBeVisible()
+    await page.getByTestId("membership-conditions-back-btn").click()
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+    await page.getByTestId("membership-address-back-btn").click()
+    await expect(page.getByTestId("membership-details-next-btn")).toBeVisible()
 
     // The account exists now, so the details step saves an edit on the token.
     const edit = page.waitForRequest(
@@ -190,9 +196,7 @@ test.describe("membership signup", () => {
     await page.getByTestId("membership-conditions-submit-btn").click()
     await expect(page.getByTestId("email-confirm-step")).toBeVisible()
 
-    await page.getByTestId("email-confirm-change-address-btn").click()
-    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
-    await page.getByTestId("membership-address-next-btn").click()
+    await page.getByTestId("email-confirm-back-btn").click()
 
     // Back on the conditions step there is a record of the agreement and no way
     // to withdraw it.

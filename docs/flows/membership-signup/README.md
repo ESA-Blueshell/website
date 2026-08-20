@@ -198,23 +198,23 @@ check. Whichever of the two runs last is the one that creates the membership.
 
 Every step except the agreement stays open for as long as the signup session
 lives, including after the application has been submitted. Waiting on an email is
-exactly when somebody notices a typo, so the confirmation step is a hub rather
-than a dead end.
+exactly when somebody notices a typo, so the confirmation step has a Previous
+button like every other step rather than being a dead end.
 
 ```mermaid
-flowchart TD
-    P["Step 4 · confirm your email address"] --> D["Your details"]
-    P --> A["Your address"]
-    P --> C["Wrong address?"]
-    P --> R["Send it again"]
-    D --> D1["PATCH /signup/details"]
-    A --> A1["POST /signup/address"]
-    C --> C1["PATCH /signup/email"]
-    R --> R1["POST /recovery/user/activate/resend"]
-    D1 --> L["Step 3 · agreement on record"]
-    A1 --> L
-    L --> P
+flowchart LR
+    S1["Step 1 · details"] --> S2["Step 2 · address"]
+    S2 --> S3["Step 3 · agreement on record"]
+    S3 --> S4["Step 4 · confirm your email address"]
+    S4 -->|Previous| S3
+    S3 -->|Previous| S2
+    S2 -->|Previous| S1
 ```
+
+Going back is the stepper's own navigation, one step at a time, which is how the
+details and the address are reached again. The confirmation step itself carries
+only what belongs to confirming an address: correcting it, asking for the email
+again, and signing in.
 
 Returning through the conditions step meets a record of the agreement rather than
 the form: the checkbox and the submit button are gone, and a Continue button leads

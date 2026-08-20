@@ -66,6 +66,16 @@
     >
       <v-col cols="auto">
         <v-btn
+          data-testid="email-confirm-back-btn"
+          variant="outlined"
+          @click="emit('back')"
+        >
+          Previous
+        </v-btn>
+      </v-col>
+      <v-spacer />
+      <v-col cols="auto">
+        <v-btn
           data-testid="email-confirm-correct-btn"
           variant="outlined"
           @click="startCorrecting"
@@ -83,7 +93,6 @@
           Send it again
         </v-btn>
       </v-col>
-      <v-spacer />
       <v-col cols="auto">
         <v-btn
           color="primary"
@@ -95,30 +104,6 @@
         </v-btn>
       </v-col>
     </v-row>
-
-    <template v-if="!correcting">
-      <v-divider class="my-4" />
-      <div class="d-flex flex-wrap align-center">
-        <span class="text-body-2 text-medium-emphasis mr-2">Something else to change?</span>
-        <v-btn
-          data-testid="email-confirm-change-details-btn"
-          size="small"
-          variant="text"
-          @click="emit('change-details')"
-        >
-          Your details
-        </v-btn>
-        <v-btn
-          v-if="canChangeAddress"
-          data-testid="email-confirm-change-address-btn"
-          size="small"
-          variant="text"
-          @click="emit('change-address')"
-        >
-          Your address
-        </v-btn>
-      </div>
-    </template>
   </v-card>
 </template>
 
@@ -133,7 +118,6 @@ const {
   email,
   username,
   continuationToken = undefined,
-  canChangeAddress = false,
   confirmationConsequence = "",
 } = defineProps<{
   email: string
@@ -143,15 +127,13 @@ const {
    * address is confirmed, which is when corrections stop.
    */
   continuationToken?: string
-  canChangeAddress?: boolean
   /** What confirming brings about, which differs per flow. */
   confirmationConsequence?: string
 }>()
 
 const emit = defineEmits<{
   (e: "email-corrected", email: string): void
-  (e: "change-details"): void
-  (e: "change-address"): void
+  (e: "back"): void
 }>()
 
 const correcting = ref(false)

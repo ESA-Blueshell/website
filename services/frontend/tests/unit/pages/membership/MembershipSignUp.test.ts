@@ -54,10 +54,9 @@ vi.mock("@/components/form/EmailConfirmationPanel.vue", () => ({
       email: String,
       username: String,
       continuationToken: String,
-      canChangeAddress: Boolean,
       confirmationConsequence: String,
     },
-    emits: ["email-corrected", "change-details", "change-address"],
+    emits: ["email-corrected", "back"],
     template: "<div data-testid='email-confirm-step' />",
   },
 }))
@@ -297,7 +296,6 @@ describe("MembershipSignUp page", () => {
       expect(panel.props("continuationToken")).toBe("sel.ver")
       expect(panel.props("email")).toBe("lena@example.com")
       expect(panel.props("username")).toBe("lena")
-      expect(panel.props("canChangeAddress")).toBe(true)
     })
 
     it("keeps the corrected address the panel reports", async () => {
@@ -319,15 +317,14 @@ describe("MembershipSignUp page", () => {
       expect(wrapper.find('[data-testid="membership-conditions-continue-btn"]').exists()).toBe(true)
     })
 
-    it("returns to the details and the address on the panel's request", async () => {
+    it("steps back from the confirmation step like any other step", async () => {
       const {wrapper, vm} = await afterSubmitting()
-      const panel = wrapper.findComponent({name: "EmailConfirmationPanel"})
 
-      await panel.vm.$emit("change-details")
-      expect(vm.currentStep).toBe(1)
+      await wrapper.findComponent({name: "EmailConfirmationPanel"}).vm.$emit("back")
 
-      await panel.vm.$emit("change-address")
-      expect(vm.currentStep).toBe(2)
+      // One step back, to the agreement, from where Previous reaches the address
+      // and the details in turn.
+      expect(vm.currentStep).toBe(3)
     })
 
     it("still offers the conditions form before anything is submitted", async () => {

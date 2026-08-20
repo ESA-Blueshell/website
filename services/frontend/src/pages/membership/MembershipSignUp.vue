@@ -133,10 +133,8 @@
             :email="user?.email ?? ''"
             :username="user?.username ?? ''"
             :continuation-token="signupToken"
-            can-change-address
             confirmation-consequence="Your membership starts as soon as you do."
-            @change-address="currentStep = Steps.Address"
-            @change-details="currentStep = Steps.Details"
+            @back="currentStep = Steps.Membership"
             @email-corrected="onEmailCorrected"
           />
         </template>

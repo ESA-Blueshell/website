@@ -50,6 +50,11 @@ backups
 # otherwise have the change silently dropped by `git add`.
 !CHANGELOG.md
 !docs/changelogs/*.md
+# docs/ is tracked prose — ADRs and flow docs. Without this, adding a new one is
+# silently dropped by `git add` and only noticed when the file is missing from
+# the PR. Proposals stay ignored: they are working documents, not repo record.
+!docs/**/*.md
+docs/proposals/**
 .idea
 *dump.sql*
 

@@ -18,5 +18,6 @@ Architectural decisions are split into separate sets for API and frontend.
 - **Superseded**: Replaced by another ADR
 
 ## Related Documentation
+- [Flow documentation](../flows/README.md)
 - [CLAUDE.md](../../CLAUDE.md)
 - [AGENTS.md](../../AGENTS.md)

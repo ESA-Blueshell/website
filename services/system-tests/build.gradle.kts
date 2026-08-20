@@ -11,6 +11,8 @@ plugins {
 group = "net.blueshell"
 version = "1.1.1"
 
+val cucumberVersion = "7.29.0"
+
 description = "End-to-end system tests that drive the full stack through Playwright."
 
 dependencies {
@@ -36,6 +38,14 @@ dependencies {
     // JUnit 6 does not automatically put the platform launcher on the
     // runtime classpath; Gradle 9's test-engine selection needs it.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // Cucumber acceptance layer. Features live in src/test/resources/features
+    // and are executed by the `acceptanceTest` task, not by `test`.
+    // picocontainer supplies the per-scenario dependency injection that keeps
+    // step-definition classes free of static shared state.
+    testImplementation("io.cucumber:cucumber-java:$cucumberVersion")
+    testImplementation("io.cucumber:cucumber-picocontainer:$cucumberVersion")
+    testImplementation("io.cucumber:cucumber-junit-platform-engine:$cucumberVersion")
 }
 
 tasks.withType<Test>().configureEach {
@@ -97,6 +107,63 @@ tasks.withType<Test>().configureEach {
                 }
             }
         }
+    }
+}
+
+// The default `test` task owns the JUnit-based system tests. Cucumber features
+// are a separate CI step with their own report, so the engine is excluded here
+// to stop the same behaviour being exercised twice per pipeline.
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        includeTags("system")
+        excludeEngines("cucumber")
+    }
+}
+
+// Cucumber acceptance features. Business-readable specifications for the
+// account and membership flows, driven against the running compose stack over
+// HTTP. No browser, so the whole suite is fast enough to be its own CI step.
+//
+// Scenarios describing behaviour that is specified but not yet built are tagged
+// `@pending` and skipped by default; `-PcucumberTags` overrides the filter, so
+// `-PcucumberTags="@pending"` shows exactly what is still outstanding.
+val acceptanceTest by tasks.registering(Test::class) {
+    description = "Runs the Cucumber acceptance features against a running stack."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    shouldRunAfter(tasks.test)
+
+    useJUnitPlatform {
+        // Undo the project-wide includeTags("system") applied by
+        // tasks.withType<Test>().configureEach — Gherkin tags are filtered by
+        // cucumber.filter.tags below, not by the JUnit tag expression.
+        includeTags.clear()
+        includeEngines("cucumber")
+    }
+
+    systemProperty("cucumber.glue", "net.blueshell.acceptance")
+    systemProperty("cucumber.features", "classpath:features")
+    systemProperty("cucumber.junit-platform.naming-strategy", "long")
+    systemProperty("cucumber.publish.quiet", "true")
+    // Fail the build on a scenario whose steps are not all implemented, rather
+    // than reporting it as skipped and letting a gap pass for a pass.
+    systemProperty("cucumber.execution.strict", "true")
+    systemProperty(
+        "cucumber.plugin",
+        "pretty," +
+            "html:build/reports/cucumber/acceptance.html," +
+            "junit:build/test-results/acceptanceTest/cucumber.xml",
+    )
+    systemProperty(
+        "cucumber.filter.tags",
+        (project.findProperty("cucumberTags") as String? ?: "not @pending"),
+    )
+
+    testLogging {
+        events(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED)
+        exceptionFormat = TestExceptionFormat.FULL
+        showStackTraces = true
     }
 }
 

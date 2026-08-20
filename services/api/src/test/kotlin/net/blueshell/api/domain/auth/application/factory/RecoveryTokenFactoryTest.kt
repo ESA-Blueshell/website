@@ -3,7 +3,7 @@ package net.blueshell.api.domain.auth.application.factory
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.auth.persistence.repository.RecoveryTokenRepository
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -30,12 +30,12 @@ class RecoveryTokenFactoryTest {
     @Test
     fun `issue deletes existing unconsumed tokens of same type for the user`() {
         val existingToken = mock<RecoveryToken>()
-        whenever(repository.findAllUnconsumedByTypeAndUserId(1L, ResetType.PASSWORD_RESET))
+        whenever(repository.findAllUnconsumedByTypeAndUserId(1L, TokenPurpose.PASSWORD_RESET))
             .thenReturn(mutableListOf(existingToken))
         whenever(encoder.encode(any())).thenReturn("hashed-verifier")
         whenever(repository.save(any<RecoveryToken>())).thenAnswer { it.arguments[0] }
 
-        factory.issue(user(), ResetType.PASSWORD_RESET, Duration.ofHours(24))
+        factory.issue(user(), TokenPurpose.PASSWORD_RESET, Duration.ofHours(24))
 
         verify(repository).delete(existingToken)
     }
@@ -50,11 +50,11 @@ class RecoveryTokenFactoryTest {
         val ttl = Duration.ofHours(24)
         val beforeIssue = Instant.now()
 
-        factory.issue(user(), ResetType.PASSWORD_RESET, ttl)
+        factory.issue(user(), TokenPurpose.PASSWORD_RESET, ttl)
 
         verify(repository).save(argThat<RecoveryToken> { token ->
             token.verifierHash == "hashed-verifier" &&
-                token.type == ResetType.PASSWORD_RESET &&
+                token.type == TokenPurpose.PASSWORD_RESET &&
                 token.expiresAt.isAfter(beforeIssue.plus(ttl).minusSeconds(5))
         })
     }
@@ -66,7 +66,7 @@ class RecoveryTokenFactoryTest {
         whenever(encoder.encode(any())).thenReturn("hashed")
         whenever(repository.save(any<RecoveryToken>())).thenAnswer { it.arguments[0] }
 
-        val rawToken = factory.issue(user(), ResetType.PASSWORD_RESET, Duration.ofHours(1))
+        val rawToken = factory.issue(user(), TokenPurpose.PASSWORD_RESET, Duration.ofHours(1))
 
         assertThat(rawToken).contains(".")
         val parts = rawToken.split(".")
@@ -79,7 +79,7 @@ class RecoveryTokenFactoryTest {
     fun `consume sets consumedAt timestamp on the token`() {
         val token = RecoveryToken(
             user = user(),
-            type = ResetType.PASSWORD_RESET,
+            type = TokenPurpose.PASSWORD_RESET,
             selector = "sel",
             verifierHash = "hash",
             expiresAt = Instant.now().plusSeconds(3600),

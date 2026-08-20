@@ -2,12 +2,16 @@
 import {computed, ref, watch} from "vue"
 import {
   createUser,
+  signUp,
+  type SignupDetailsRequest,
+  updateDetails,
   findMemberProfileByUserId,
   type CreateUserRequest,
   type MemberProfileResponse,
   type UpdateUserRequest,
   type UpsertMemberProfileRequest,
   updateUser,
+  type SignupSessionResponse,
   type UserDetailResponse,
 } from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
@@ -44,14 +48,20 @@ const props = withDefaults(defineProps<{
   options?: {
     includeMemberProfile?: boolean
     updateKind?: "auto" | "user" | "board"
+    /** Public registration goes through POST /signup; POST /users is board-only. */
+    createVia?: "signup" | "board"
   }
+  /** Present during a signup: corrections travel on the token, not a session. */
+  signupToken?: string
 }>(), {
   showPassword: false,
   showSubmit: false,
   submitText: "Submit",
+  signupToken: undefined,
   options: () => ({
     includeMemberProfile: false,
     updateKind: "auto",
+    createVia: "signup",
   }),
 })
 
@@ -86,7 +96,21 @@ const effectiveUpdateKind = computed<"user" | "board">(() => {
   }
   return configuredUpdateKind.value
 })
-const canEditIdentity = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
+const createVia = computed<"signup" | "board">(() => props.options?.createVia ?? "signup")
+// An applicant holding a signup token is correcting an account nobody has been
+// able to use yet, so their own name and username are still theirs to fix. The
+// email address is not: changing it invalidates the confirmation link, so it goes
+// through the confirmation step instead.
+const canEditIdentity = computed<boolean>(
+  () => isCreating.value || Boolean(props.signupToken) || effectiveUpdateKind.value === "board",
+)
+const canEditEmail = computed<boolean>(() => isCreating.value || effectiveUpdateKind.value === "board")
+
+// A password is only ever set while the account is being created. Every update
+// path leaves it alone — board, self-service, and a signup correction alike — so
+// asking for it again would present an empty required field that blocks the form
+// and could not be saved even when filled in.
+const canSetPassword = computed<boolean>(() => props.showPassword && isCreating.value)
 const requiresPrivacyConsent = computed<boolean>(() => isCreating.value && effectiveUpdateKind.value !== "board")
 
 const {country, onCountryUpdate} = useCountry("NL")
@@ -94,6 +118,8 @@ const {isSaving, withSaving} = useSaving()
 const {formRef, validate} = useVeeForm()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 const confirmPassword = ref<string>("")
+// Set by a public registration; the stepper reads it to carry the applicant on.
+const signupSession = ref<SignupSessionResponse>()
 const {passwordFieldProps} = usePasswordToggle()
 
 const defaultMemberProfile = (): UpsertMemberProfileRequest => ({
@@ -152,6 +178,13 @@ watch(
 
     ensureMemberProfile()
 
+    // Mid-signup the client is the only one who knows the profile: nothing
+    // authorises an unconfirmed applicant to read their account back, so asking
+    // would answer 401 and overwrite what they typed with an empty profile.
+    // signupSession covers the moment registration sets the id, which lands
+    // before the parent has had a chance to pass the token back down.
+    if (props.signupToken || signupSession.value) return
+
     if (!userId || loadedMemberProfileUserId === userId) {
       return
     }
@@ -182,6 +215,22 @@ const toCreateUserRequest = (model: EditableUser): CreateUserRequest => ({
   discord: model.discord,
   phoneNumber: model.phoneNumber,
   password: model.password,
+  memberProfile: toMemberProfileRequest(model.memberProfile),
+})
+
+// The signup route takes everything the first step collects except the email,
+// which is changed through PATCH /signup/email so the confirmation link is
+// reissued with it, and the password, which is not editable mid-signup.
+const toSignupDetailsRequest = (model: EditableUser): SignupDetailsRequest => ({
+  username: model.username,
+  initials: model.initials,
+  firstName: model.firstName,
+  prefix: model.prefix,
+  lastName: model.lastName,
+  discord: model.discord,
+  phoneNumber: model.phoneNumber,
+  newsletter: model.newsletter,
+  photoConsent: model.photoConsent,
   memberProfile: toMemberProfileRequest(model.memberProfile),
 })
 
@@ -229,18 +278,45 @@ const save = async (): Promise<EditableUser | null> => {
     return null
   }
   try {
+    // An applicant who came back to fix a typo has an account but no session, so
+    // the correction travels on the signup token.
+    if (user.value?.id && props.signupToken) {
+      await withSaving(async () => await updateDetails({
+        headers: {"X-Signup-Token": props.signupToken!},
+        body: toSignupDetailsRequest(user.value!),
+        throwOnError: true,
+      }))
+      emit("submitted", true)
+      setSubmitResult(true)
+      return user.value
+    }
+
+    if (!user.value?.id && createVia.value === "signup") {
+      const session = await withSaving(async () => await signUp({
+        body: toCreateUserRequest(user.value),
+        throwOnError: true,
+      }))
+      signupSession.value = session.data!
+      // Nothing authorises an anonymous applicant to read the account back, so the
+      // form keeps what was typed and takes the id from the session.
+      user.value = {...user.value, id: session.data!.userId, email: session.data!.email, password: ""}
+      emit("submitted", true)
+      setSubmitResult(true)
+      return user.value
+    }
+
     const resp = await withSaving(async () => {
-      const hasId = Boolean(user.value?.id)
-      return hasId
-        ? await updateUser({
+      if (user.value?.id) {
+        return await updateUser({
           path: {id: user.value.id!},
           body: toUpdateUserRequest(user.value),
           throwOnError: true,
         })
-        : await createUser({
-          body: toCreateUserRequest(user.value),
-          throwOnError: true,
-        })
+      }
+      return await createUser({
+        body: toCreateUserRequest(user.value),
+        throwOnError: true,
+      })
     })
 
     const updated = fromUserDetail(resp.data!, user.value)
@@ -266,7 +342,7 @@ const save = async (): Promise<EditableUser | null> => {
   }
 }
 
-defineExpose({validate, save})
+defineExpose({validate, save, signupSession})
 </script>
 
 <template>
@@ -368,8 +444,8 @@ defineExpose({validate, save})
           <VvField
             v-model="user.email"
             test-id="user-form-email-field"
-            :disabled="isReadonly || !canEditIdentity"
-            :rules="canEditIdentity ? 'required|email|noStudentEmail' : ''"
+            :disabled="isReadonly || !canEditEmail"
+            :rules="canEditEmail ? 'required|email|noStudentEmail' : ''"
             label="E-mail*"
             name="email"
           />
@@ -395,7 +471,7 @@ defineExpose({validate, save})
         </v-col>
       </v-row>
 
-      <v-row v-if="showPassword">
+      <v-row v-if="canSetPassword">
         <v-col
           cols="12"
           sm="6"

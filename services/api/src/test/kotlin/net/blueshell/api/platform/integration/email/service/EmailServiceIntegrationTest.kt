@@ -9,7 +9,7 @@ import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -53,7 +53,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             val user = createAndSaveUser("john.doe", "john@example.com")
             val token = "reset-token-123"
 
-            emailService.sendUserResetEmail(user.id!!, token, ResetType.PASSWORD_RESET)
+            emailService.sendUserResetEmail(user.id!!, token, TokenPurpose.PASSWORD_RESET)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -71,7 +71,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             val user = createAndSaveUser("jane.smith", "jane@example.com")
             val token = "activation-token-456"
 
-            emailService.sendUserResetEmail(user.id!!, token, ResetType.USER_ACTIVATION)
+            emailService.sendUserResetEmail(user.id!!, token, TokenPurpose.USER_ACTIVATION)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -87,7 +87,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             val user = createAndSaveUser("board.member", "board@example.com")
             val token = "member-token-789"
 
-            emailService.sendUserResetEmail(user.id!!, token, ResetType.MEMBER_ACTIVATION)
+            emailService.sendUserResetEmail(user.id!!, token, TokenPurpose.MEMBER_ACTIVATION)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -155,7 +155,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         fun `emails are sent with correct sender information`() {
             val user = createAndSaveUser("test", "test@example.com")
 
-            emailService.sendUserResetEmail(user.id!!, "token", ResetType.PASSWORD_RESET)
+            emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
 
             val email = emailClient.sentEmails.first()
             assertThat(email.subject).isNotBlank()
@@ -166,7 +166,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         fun `emails contain HTML content`() {
             val user = createAndSaveUser("html.test", "html@example.com")
 
-            emailService.sendUserResetEmail(user.id!!, "token", ResetType.PASSWORD_RESET)
+            emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
 
             val email = emailClient.sentEmails.first()
             assertThat(email.htmlContent)
@@ -180,7 +180,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         fun `emails contain styled content`() {
             val user = createAndSaveUser("style.test", "style@example.com")
 
-            emailService.sendUserResetEmail(user.id!!, "token", ResetType.PASSWORD_RESET)
+            emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
 
             val email = emailClient.sentEmails.first()
             assertThat(email.htmlContent)
@@ -197,7 +197,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             emailClient.simulateSendFailure()
             try {
                 assertThatThrownBy {
-                    emailService.sendUserResetEmail(user.id!!, "token", ResetType.PASSWORD_RESET)
+                    emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
                 }
                     .isInstanceOf(RuntimeException::class.java)
                     .isNotInstanceOf(NonRetryableJobException::class.java)

@@ -9,6 +9,10 @@ export enum ActionActorType {
     SYSTEM = 'SYSTEM'
 }
 
+export type ActivationResponse = {
+    membershipStarted: boolean;
+};
+
 export type Actor = {
     role: Role;
     type: ActionActorType;
@@ -771,6 +775,7 @@ export type MemberActivationRequest = {
 
 export type MemberProfileResponse = {
     bhv: boolean;
+    conditionsAcceptedAt?: string;
     createdAt: string;
     dateOfBirth?: string;
     ehbo: boolean;
@@ -789,6 +794,10 @@ export enum MemberType {
     REGULAR = 'REGULAR',
     NONE = 'NONE'
 }
+
+export type MembershipApplicationRequest = {
+    conditionsAccepted?: boolean;
+};
 
 export type MembershipResponse = {
     createdAt: string;
@@ -897,6 +906,47 @@ export type ServiceEntry = {
     id: string;
     name: string;
     url: string;
+};
+
+export type SignupAddressRequest = {
+    city: string;
+    country: string;
+    houseNumber: string;
+    street: string;
+    zipCode: string;
+};
+
+export type SignupApplicationRequest = {
+    conditionsAccepted?: boolean;
+};
+
+export type SignupDetailsRequest = {
+    discord: string;
+    firstName: string;
+    initials: string;
+    lastName: string;
+    memberProfile?: UpsertMemberProfileRequest;
+    newsletter: boolean;
+    phoneNumber: string;
+    photoConsent?: boolean;
+    prefix?: string;
+    username: string;
+};
+
+export type SignupEmailRequest = {
+    email: string;
+};
+
+export type SignupOutcomeResponse = {
+    emailConfirmed: boolean;
+    membershipStarted: boolean;
+};
+
+export type SignupSessionResponse = {
+    email: string;
+    expiresAt: string;
+    signupToken: string;
+    userId: number;
 };
 
 export type SponsorResponse = {
@@ -4478,7 +4528,7 @@ export type FindMembershipsResponses = {
 export type FindMembershipsResponse = FindMembershipsResponses[keyof FindMembershipsResponses];
 
 export type CreateMembershipData = {
-    body?: never;
+    body: MembershipApplicationRequest;
     path?: never;
     query?: never;
     url: '/memberships';
@@ -4511,9 +4561,9 @@ export type CreateMembershipError = CreateMembershipErrors[keyof CreateMembershi
 
 export type CreateMembershipResponses = {
     /**
-     * Created
+     * OK
      */
-    201: MembershipResponse;
+    200: SignupOutcomeResponse;
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
@@ -4976,7 +5026,7 @@ export type UserActivateResponses = {
     /**
      * OK
      */
-    200: RedirectResponse;
+    200: ActivationResponse;
 };
 
 export type UserActivateResponse = UserActivateResponses[keyof UserActivateResponses];
@@ -5066,6 +5116,223 @@ export type ResendMemberActivationEmailResponses = {
 };
 
 export type ResendMemberActivationEmailResponse = ResendMemberActivationEmailResponses[keyof ResendMemberActivationEmailResponses];
+
+export type SignUpData = {
+    body: CreateUserRequest;
+    path?: never;
+    query?: never;
+    url: '/signup';
+};
+
+export type SignUpErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SignUpError = SignUpErrors[keyof SignUpErrors];
+
+export type SignUpResponses = {
+    /**
+     * Created
+     */
+    201: SignupSessionResponse;
+};
+
+export type SignUpResponse = SignUpResponses[keyof SignUpResponses];
+
+export type SaveAddressData = {
+    body: SignupAddressRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/address';
+};
+
+export type SaveAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SaveAddressError = SaveAddressErrors[keyof SaveAddressErrors];
+
+export type SaveAddressResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SaveAddressResponse = SaveAddressResponses[keyof SaveAddressResponses];
+
+export type ApplyData = {
+    body: SignupApplicationRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/apply';
+};
+
+export type ApplyErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApplyError = ApplyErrors[keyof ApplyErrors];
+
+export type ApplyResponses = {
+    /**
+     * OK
+     */
+    200: SignupOutcomeResponse;
+};
+
+export type ApplyResponse = ApplyResponses[keyof ApplyResponses];
+
+export type UpdateDetailsData = {
+    body: SignupDetailsRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/details';
+};
+
+export type UpdateDetailsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateDetailsError = UpdateDetailsErrors[keyof UpdateDetailsErrors];
+
+export type UpdateDetailsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateDetailsResponse = UpdateDetailsResponses[keyof UpdateDetailsResponses];
+
+export type CorrectEmailData = {
+    body: SignupEmailRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/email';
+};
+
+export type CorrectEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CorrectEmailError = CorrectEmailErrors[keyof CorrectEmailErrors];
+
+export type CorrectEmailResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type CorrectEmailResponse = CorrectEmailResponses[keyof CorrectEmailResponses];
 
 export type FindSponsorsData = {
     body?: never;

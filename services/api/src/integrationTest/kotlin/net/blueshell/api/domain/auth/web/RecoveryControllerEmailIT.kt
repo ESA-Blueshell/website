@@ -2,7 +2,7 @@ package net.blueshell.api.domain.auth.web
 
 import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
@@ -60,7 +60,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job should contain user ID and reset type")
                 .contains("\"userId\":${user.id}")
-                .contains("\"resetType\":\"PASSWORD_RESET\"")
+                .contains("\"tokenPurpose\":\"PASSWORD_RESET\"")
         }
 
         @Test
@@ -99,7 +99,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job should contain user ID and activation reset type")
                 .contains("\"userId\":${user.id}")
-                .contains("\"resetType\":\"USER_ACTIVATION\"")
+                .contains("\"tokenPurpose\":\"USER_ACTIVATION\"")
         }
 
         @Test
@@ -129,7 +129,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
 
             // And: Recovery token exists
-            recoveryTokenFactory.issue(disabledUser, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+            recoveryTokenFactory.issue(disabledUser, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
 
             // When: Board resends activation
             mvc.perform(
@@ -148,7 +148,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job should contain user ID and member activation reset type")
                 .contains("\"userId\":${disabledUser.id}")
-                .contains("\"resetType\":\"MEMBER_ACTIVATION\"")
+                .contains("\"tokenPurpose\":\"MEMBER_ACTIVATION\"")
         }
 
         @Test
@@ -194,7 +194,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job payload should contain user ID")
                 .contains("\"userId\":${user.id}")
-                .contains("\"resetType\":\"PASSWORD_RESET\"")
+                .contains("\"tokenPurpose\":\"PASSWORD_RESET\"")
                 .contains("\"token\"")
         }
     }

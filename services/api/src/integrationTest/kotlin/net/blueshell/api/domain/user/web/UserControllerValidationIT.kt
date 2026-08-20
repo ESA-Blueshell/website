@@ -30,7 +30,7 @@ class UserControllerValidationIT : UserTestSupport() {
                 """{"username":"$username","initials":"NP","firstName":"No","lastName":"Password","newsletter":false,"email":"$username@example.com","discord":"nopass#1234","phoneNumber":"+31699990000"}"""
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(payload)
             )
@@ -45,7 +45,7 @@ class UserControllerValidationIT : UserTestSupport() {
                 """{"username":"$username","initials":"NC","firstName":"No","lastName":"Consent","newsletter":false,"password":"Password123!","email":"$username@example.com","discord":"noconsent#1234","phoneNumber":"+31699990001"}"""
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(payload)
             )
@@ -58,7 +58,7 @@ class UserControllerValidationIT : UserTestSupport() {
             val username = "falseconsent_${System.currentTimeMillis()}"
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.createUserPayload(
@@ -79,7 +79,7 @@ class UserControllerValidationIT : UserTestSupport() {
             val weakPassword = "WeakPass12"
 
             val result = mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.createUserPayload(
@@ -103,7 +103,7 @@ class UserControllerValidationIT : UserTestSupport() {
             val existing = createUserWithRole(Role.GUEST)
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.createUserPayload(
@@ -124,7 +124,7 @@ class UserControllerValidationIT : UserTestSupport() {
             val existing = createUserWithRole(Role.GUEST)
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.createUserPayload(
@@ -145,7 +145,7 @@ class UserControllerValidationIT : UserTestSupport() {
             val existing = createUserWithRole(Role.GUEST)
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.createUserPayload(
@@ -166,7 +166,7 @@ class UserControllerValidationIT : UserTestSupport() {
             val existing = createUserWithRole(Role.GUEST)
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         userRequestFactory.createUserPayload(

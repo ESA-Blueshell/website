@@ -9,7 +9,7 @@ import net.blueshell.api.domain.auth.application.exception.TokenVerificationFail
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.auth.persistence.repository.RecoveryTokenRepository
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -28,7 +28,7 @@ class RecoveryTokenValidatorTest {
     @Test
     fun `throws malformed exception for invalid raw token format`() {
         assertThrows<MalformedRecoveryTokenException> {
-            validator.verify("invalid-token", ResetType.PASSWORD_RESET)
+            validator.verify("invalid-token", TokenPurpose.PASSWORD_RESET)
         }
     }
 
@@ -37,17 +37,17 @@ class RecoveryTokenValidatorTest {
         whenever(repository.findBySelector("selector")).thenReturn(Optional.empty())
 
         assertThrows<InvalidRecoveryTokenException> {
-            validator.verify("selector.verifier", ResetType.PASSWORD_RESET)
+            validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
         }
     }
 
     @Test
     fun `throws when token type does not match expected`() {
-        val token = token(type = ResetType.USER_ACTIVATION)
+        val token = token(type = TokenPurpose.USER_ACTIVATION)
         whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))
 
         assertThrows<InvalidTokenTypeException> {
-            validator.verify("selector.verifier", ResetType.PASSWORD_RESET)
+            validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
         }
     }
 
@@ -57,7 +57,7 @@ class RecoveryTokenValidatorTest {
         whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))
 
         assertThrows<ExpiredRecoveryTokenException> {
-            validator.verify("selector.verifier", ResetType.PASSWORD_RESET)
+            validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
         }
     }
 
@@ -67,7 +67,7 @@ class RecoveryTokenValidatorTest {
         whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))
 
         assertThrows<ConsumedRecoveryTokenException> {
-            validator.verify("selector.verifier", ResetType.PASSWORD_RESET)
+            validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
         }
     }
 
@@ -78,7 +78,7 @@ class RecoveryTokenValidatorTest {
         whenever(encoder.matches("verifier", "hash")).thenReturn(false)
 
         assertThrows<TokenVerificationFailedException> {
-            validator.verify("selector.verifier", ResetType.PASSWORD_RESET)
+            validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
         }
     }
 
@@ -88,7 +88,7 @@ class RecoveryTokenValidatorTest {
         whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))
         whenever(encoder.matches("verifier", "hash")).thenReturn(true)
 
-        val result = validator.verify("selector.verifier", ResetType.PASSWORD_RESET)
+        val result = validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
 
         assertThat(result).isSameAs(token)
     }
@@ -105,7 +105,7 @@ class RecoveryTokenValidatorTest {
 
     private fun token(
         selector: String = "selector",
-        type: ResetType = ResetType.PASSWORD_RESET,
+        type: TokenPurpose = TokenPurpose.PASSWORD_RESET,
         expiresAt: Instant = Instant.now().plusSeconds(3600),
         consumedAt: Instant? = null
     ): RecoveryToken {

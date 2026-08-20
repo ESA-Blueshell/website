@@ -6,11 +6,16 @@ import net.blueshell.api.domain.user.command.*
 import net.blueshell.api.domain.user.persistence.DeletedUser
 import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.domain.auth.application.SignupTokenService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
+import org.springframework.http.HttpStatus
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Component
 class CreateUserHandler(
@@ -94,6 +99,52 @@ class UpdateUserHandler(
         }
         user = service.update(user)
         return user
+    }
+}
+
+@Component
+class UpdateSignupDetailsHandler(
+    private val users: UserService,
+    private val signupTokens: SignupTokenService
+) : CommandHandler<UpdateSignupDetailsCommand, Unit> {
+    override val commandType = UpdateSignupDetailsCommand::class
+
+    // Transactional so the account resolved from the token stays managed.
+    @Transactional
+    override fun handle(command: UpdateSignupDetailsCommand) {
+        val account = signupTokens.resolveAccount(command.signupToken)
+        if (account.user.enabled) {
+            throw AccessDeniedException("A confirmed account changes its details under a session")
+        }
+
+        // Uniqueness is checked here rather than through @UniqueUserCommand: the
+        // account is only known once the token resolves, and until then the
+        // applicant's own username reads as a conflict with itself.
+        refuseIfTaken(users.existsByUsernameAndIdNot(command.username, account.id), "That username is already in use")
+        refuseIfTaken(users.existsByDiscordAndIdNot(command.discord, account.id), "That Discord name is already in use")
+        refuseIfTaken(
+            users.existsByPhoneNumberAndIdNot(command.phoneNumber, account.id),
+            "That phone number is already in use"
+        )
+
+        users.update(
+            account.user.apply {
+                username = command.username
+                initials = command.initials
+                firstName = command.firstName
+                prefix = command.prefix
+                lastName = command.lastName
+                discord = command.discord
+                phoneNumber = command.phoneNumber
+                newsletter = command.newsletter
+                photoConsent = command.photoConsent
+                command.memberProfile?.upsertInto(this)
+            }
+        )
+    }
+
+    private fun refuseIfTaken(taken: Boolean, message: String) {
+        if (taken) throw ResponseStatusException(HttpStatus.CONFLICT, message)
     }
 }
 
@@ -187,5 +238,8 @@ private fun UpsertMemberProfileData.upsertInto(user: User) {
     existing.nationality = nationality
     existing.bhv = bhv
     existing.ehbo = ehbo
-    existing.version = version!!
+    // The board and self-service payloads both require a version, so this only
+    // skips the optimistic check for the signup routes, where the token holder is
+    // the only writer. Force-unwrapping here would answer them with a 500.
+    version?.let { existing.version = it }
 }

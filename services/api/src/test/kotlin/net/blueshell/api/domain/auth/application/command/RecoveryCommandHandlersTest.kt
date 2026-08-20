@@ -2,6 +2,8 @@ package net.blueshell.api.domain.auth.application.command
 
 import net.blueshell.api.domain.auth.application.PasswordRecoveryService
 import net.blueshell.api.domain.auth.application.RecoveryDispatch
+import net.blueshell.api.domain.auth.application.SignupCompletionService
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.MemberActivateCommand
 import net.blueshell.api.domain.auth.command.ResendMemberActivationEmailCommand
@@ -10,7 +12,7 @@ import net.blueshell.api.domain.auth.command.ResetPasswordCommand
 import net.blueshell.api.domain.auth.command.SetPasswordCommand
 import net.blueshell.api.domain.auth.command.UserActivateCommand
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.assertj.core.api.Assertions.assertThat
@@ -24,6 +26,8 @@ import org.mockito.kotlin.whenever
 
 class RecoveryCommandHandlersTest {
 
+    private val completion = mock<SignupCompletionService>()
+
     private val passwordRecoveryService = mock<PasswordRecoveryService>()
     private val activationService = mock<UserActivationService>()
     private val jobs = mock<TrackedJobDispatcher>()
@@ -35,7 +39,7 @@ class RecoveryCommandHandlersTest {
 
         @Test
         fun `enqueues recovery email when reset dispatch is returned`() {
-            val dispatch = RecoveryDispatch(7L, "token-1", ResetType.PASSWORD_RESET)
+            val dispatch = RecoveryDispatch(7L, "token-1", TokenPurpose.PASSWORD_RESET)
             whenever(passwordRecoveryService.requestPasswordReset("john")).thenReturn(dispatch)
 
             handler.handle(ResetPasswordCommand("john"))
@@ -43,7 +47,7 @@ class RecoveryCommandHandlersTest {
             verify(passwordRecoveryService).requestPasswordReset("john")
             verify(jobs).enqueue(
                 eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(7L, "token-1", ResetType.PASSWORD_RESET))
+                eq(EmailJobs.RecoveryPayload(7L, "token-1", TokenPurpose.PASSWORD_RESET))
             )
         }
 
@@ -74,17 +78,19 @@ class RecoveryCommandHandlersTest {
     @Nested
     inner class UserActivate {
 
-        private val handler = UserActivateHandler(activationService)
+        private val handler = UserActivateHandler(activationService, completion)
 
         @Test
-        fun `returns activated user`() {
-            val activated = mock<User>()
-            whenever(activationService.activateUser("token-3")).thenReturn(activated)
+        fun `activates the account and reports whether the membership started`() {
+            val user = mock<User>()
+            whenever(user.id).thenReturn(4L)
+            whenever(activationService.activateUser("sel.ver")).thenReturn(user)
+            whenever(completion.completeIfReady(4L))
+                .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
 
-            val result = handler.handle(UserActivateCommand("token-3"))
+            val outcome = handler.handle(UserActivateCommand("sel.ver"))
 
-            assertThat(result).isSameAs(activated)
-            verify(activationService).activateUser("token-3")
+            assertThat(outcome.membershipStarted).isTrue()
         }
     }
 
@@ -108,7 +114,7 @@ class RecoveryCommandHandlersTest {
 
         @Test
         fun `enqueues activation email when dispatch exists`() {
-            val dispatch = RecoveryDispatch(8L, "token-5", ResetType.USER_ACTIVATION)
+            val dispatch = RecoveryDispatch(8L, "token-5", TokenPurpose.USER_ACTIVATION)
             whenever(activationService.requestUserActivation("john")).thenReturn(dispatch)
 
             handler.handle(ResendUserActivationCommand("john"))
@@ -116,7 +122,7 @@ class RecoveryCommandHandlersTest {
             verify(activationService).requestUserActivation("john")
             verify(jobs).enqueue(
                 eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(8L, "token-5", ResetType.USER_ACTIVATION))
+                eq(EmailJobs.RecoveryPayload(8L, "token-5", TokenPurpose.USER_ACTIVATION))
             )
         }
 
@@ -138,7 +144,7 @@ class RecoveryCommandHandlersTest {
 
         @Test
         fun `enqueues member activation email when dispatch exists`() {
-            val dispatch = RecoveryDispatch(9L, "token-6", ResetType.MEMBER_ACTIVATION)
+            val dispatch = RecoveryDispatch(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)
             whenever(activationService.requestActivationEmail(9L)).thenReturn(dispatch)
 
             handler.handle(ResendMemberActivationEmailCommand(9L))
@@ -146,7 +152,7 @@ class RecoveryCommandHandlersTest {
             verify(activationService).requestActivationEmail(9L)
             verify(jobs).enqueue(
                 eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(9L, "token-6", ResetType.MEMBER_ACTIVATION))
+                eq(EmailJobs.RecoveryPayload(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION))
             )
         }
 

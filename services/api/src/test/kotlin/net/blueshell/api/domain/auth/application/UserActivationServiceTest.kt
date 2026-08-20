@@ -6,12 +6,13 @@ import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.exception.UserNotFoundException
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Duration
@@ -32,7 +33,7 @@ class UserActivationServiceTest {
 
     private fun recoveryToken(
         user: User = user(),
-        type: ResetType = ResetType.USER_ACTIVATION,
+        type: TokenPurpose = TokenPurpose.USER_ACTIVATION,
     ): RecoveryToken {
         val token = mock<RecoveryToken>()
         whenever(token.user).thenReturn(user)
@@ -44,7 +45,7 @@ class UserActivationServiceTest {
     fun `activateUser enables user and consumes token`() {
         val user = user(id = 5L)
         val token = recoveryToken(user = user)
-        whenever(tokenValidator.verify("sel.ver", ResetType.USER_ACTIVATION)).thenReturn(token)
+        whenever(tokenValidator.verify("sel.ver", TokenPurpose.USER_ACTIVATION)).thenReturn(token)
 
         val result = service.activateUser("sel.ver")
 
@@ -56,8 +57,8 @@ class UserActivationServiceTest {
     @Test
     fun `activateMember sets username, password, enables user, and consumes token`() {
         val user = user(id = 7L)
-        val token = recoveryToken(user = user, type = ResetType.MEMBER_ACTIVATION)
-        whenever(tokenValidator.verify("sel.ver", ResetType.MEMBER_ACTIVATION)).thenReturn(token)
+        val token = recoveryToken(user = user, type = TokenPurpose.MEMBER_ACTIVATION)
+        whenever(tokenValidator.verify("sel.ver", TokenPurpose.MEMBER_ACTIVATION)).thenReturn(token)
 
         service.activateMember("sel.ver", "newuser", "Pass123!")
 
@@ -80,7 +81,7 @@ class UserActivationServiceTest {
     fun `requestUserActivation issues token when user exists and is disabled`() {
         val user = user(id = 4L, enabled = false)
         whenever(users.findByUsername("disabled")).thenReturn(user)
-        whenever(tokenFactory.issue(eq(user), eq(ResetType.USER_ACTIVATION), any<Duration>()))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.USER_ACTIVATION), any<Duration>()))
             .thenReturn("sel.ver")
 
         val result = service.requestUserActivation("disabled")
@@ -88,7 +89,7 @@ class UserActivationServiceTest {
         assertThat(result).isNotNull
         assertThat(result!!.userId).isEqualTo(4L)
         assertThat(result.rawToken).isEqualTo("sel.ver")
-        assertThat(result.type).isEqualTo(ResetType.USER_ACTIVATION)
+        assertThat(result.type).isEqualTo(TokenPurpose.USER_ACTIVATION)
     }
 
     @Test
@@ -114,30 +115,30 @@ class UserActivationServiceTest {
     fun `requestActivationEmail uses MEMBER_ACTIVATION type when unconsumed member token exists`() {
         val user = user(id = 9L, enabled = false)
         whenever(users.findById(9L)).thenReturn(user)
-        val memberToken = recoveryToken(user = user, type = ResetType.MEMBER_ACTIVATION)
+        val memberToken = recoveryToken(user = user, type = TokenPurpose.MEMBER_ACTIVATION)
         whenever(tokenValidator.findUnconsumedByUserId(9L)).thenReturn(listOf(memberToken))
-        whenever(tokenFactory.issue(eq(user), eq(ResetType.MEMBER_ACTIVATION), any<Duration>()))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.MEMBER_ACTIVATION), any<Duration>()))
             .thenReturn("member.token")
 
         val result = service.requestActivationEmail(9L)
 
         assertThat(result).isNotNull
-        assertThat(result!!.type).isEqualTo(ResetType.MEMBER_ACTIVATION)
+        assertThat(result!!.type).isEqualTo(TokenPurpose.MEMBER_ACTIVATION)
     }
 
     @Test
     fun `requestActivationEmail uses USER_ACTIVATION type when only user activation token exists`() {
         val user = user(id = 11L, enabled = false)
         whenever(users.findById(11L)).thenReturn(user)
-        val userToken = recoveryToken(user = user, type = ResetType.USER_ACTIVATION)
+        val userToken = recoveryToken(user = user, type = TokenPurpose.USER_ACTIVATION)
         whenever(tokenValidator.findUnconsumedByUserId(11L)).thenReturn(listOf(userToken))
-        whenever(tokenFactory.issue(eq(user), eq(ResetType.USER_ACTIVATION), any<Duration>()))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.USER_ACTIVATION), any<Duration>()))
             .thenReturn("user.token")
 
         val result = service.requestActivationEmail(11L)
 
         assertThat(result).isNotNull
-        assertThat(result!!.type).isEqualTo(ResetType.USER_ACTIVATION)
+        assertThat(result!!.type).isEqualTo(TokenPurpose.USER_ACTIVATION)
     }
 
     @Test
@@ -155,27 +156,53 @@ class UserActivationServiceTest {
     fun `issueActivationForNewUser uses 7-day TTL and MEMBER_ACTIVATION for board-created users`() {
         val user = user(id = 20L)
         whenever(users.findById(20L)).thenReturn(user)
-        whenever(tokenFactory.issue(eq(user), eq(ResetType.MEMBER_ACTIVATION), eq(Duration.ofDays(7))))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.MEMBER_ACTIVATION), eq(Duration.ofDays(7))))
             .thenReturn("board.token")
 
         val result = service.issueActivationForNewUser(20L, createdByBoard = true)
 
-        assertThat(result.type).isEqualTo(ResetType.MEMBER_ACTIVATION)
+        assertThat(result.type).isEqualTo(TokenPurpose.MEMBER_ACTIVATION)
         assertThat(result.rawToken).isEqualTo("board.token")
-        verify(tokenFactory).issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+        verify(tokenFactory).issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
     }
 
     @Test
     fun `issueActivationForNewUser uses 1-hour TTL and USER_ACTIVATION for self-registered users`() {
         val user = user(id = 21L)
         whenever(users.findById(21L)).thenReturn(user)
-        whenever(tokenFactory.issue(eq(user), eq(ResetType.USER_ACTIVATION), eq(Duration.ofHours(1))))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.USER_ACTIVATION), eq(Duration.ofHours(1))))
             .thenReturn("self.token")
 
         val result = service.issueActivationForNewUser(21L, createdByBoard = false)
 
-        assertThat(result.type).isEqualTo(ResetType.USER_ACTIVATION)
+        assertThat(result.type).isEqualTo(TokenPurpose.USER_ACTIVATION)
         assertThat(result.rawToken).isEqualTo("self.token")
-        verify(tokenFactory).issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
+        verify(tokenFactory).issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+    }
+
+    @Test
+    fun `revokeOutstandingActivations consumes only confirmation links`() {
+        val activation = recoveryToken(type = TokenPurpose.USER_ACTIVATION)
+        val signupSession = recoveryToken(type = TokenPurpose.SIGNUP_CONTINUATION)
+        val reset = recoveryToken(type = TokenPurpose.PASSWORD_RESET)
+        whenever(tokenValidator.findUnconsumedByUserId(9L))
+            .thenReturn(listOf(activation, signupSession, reset))
+
+        service.revokeOutstandingActivations(9L)
+
+        // Correcting the address must not end the signup session the applicant is
+        // still using, nor a password reset they may have asked for.
+        verify(tokenFactory).consume(activation)
+        verify(tokenFactory, never()).consume(signupSession)
+        verify(tokenFactory, never()).consume(reset)
+    }
+
+    @Test
+    fun `revokeOutstandingActivations is a no-op when nothing is outstanding`() {
+        whenever(tokenValidator.findUnconsumedByUserId(9L)).thenReturn(emptyList())
+
+        service.revokeOutstandingActivations(9L)
+
+        verify(tokenFactory, never()).consume(any())
     }
 }

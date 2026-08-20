@@ -17,6 +17,6 @@ class RecoveryEmailJob(
     override val jobType: String = EmailJobs.Recovery.type
 
     override fun handlePayload(payload: EmailJobs.RecoveryPayload) {
-        emails.sendUserResetEmail(payload.userId, payload.token, payload.resetType, currentExecutionId)
+        emails.sendUserResetEmail(payload.userId, payload.token, payload.tokenPurpose, currentExecutionId)
     }
 }

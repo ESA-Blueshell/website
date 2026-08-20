@@ -4,7 +4,7 @@ import net.blueshell.api.domain.auth.application.exception.*
 import net.blueshell.api.domain.auth.domain.model.RecoveryTokenValidation
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.auth.persistence.repository.RecoveryTokenRepository
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -33,7 +33,7 @@ class RecoveryTokenValidator(
      * @throws TokenVerificationFailedException if verifier doesn't match
      */
     @Transactional(readOnly = true)
-    fun verify(rawToken: String, expectedType: ResetType): RecoveryToken {
+    fun verify(rawToken: String, expectedType: TokenPurpose): RecoveryToken {
         // Parse and validate token format
         val validation = try {
             RecoveryTokenValidation.fromRawToken(rawToken, expectedType)

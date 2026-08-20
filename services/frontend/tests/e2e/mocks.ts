@@ -585,6 +585,41 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       baseEmails.splice(index, 1, retried)
       return fulfillJson(route, retried)
     }
+    if (method === "POST" && path === "/signup") {
+      const payload = route.request().postDataJSON() as Record<string, unknown> | null
+      const applicant = {
+        id: 9999,
+        username: String(payload?.username ?? "new-applicant"),
+        email: String(payload?.email ?? "applicant@example.com"),
+        discord: "",
+        phoneNumber: "",
+        newsletter: true,
+        consentPrivacy: true,
+        photoConsent: false,
+        roles: ["GUEST"],
+        enabled: false,
+        version: 0,
+      }
+      baseUsers.push(applicant)
+      return fulfillJson(route, {
+        userId: applicant.id,
+        email: applicant.email,
+        signupToken: "e2e-selector.e2e-verifier",
+        expiresAt: "2099-01-01T00:00:00.000Z",
+      }, 201)
+    }
+    if (method === "POST" && path === "/signup/address") {
+      return fulfillJson(route, {}, 204)
+    }
+    if (method === "POST" && path === "/signup/apply") {
+      return fulfillJson(route, {emailConfirmed: false, membershipStarted: false})
+    }
+    if (method === "PATCH" && path === "/signup/details") {
+      return fulfillJson(route, {}, 204)
+    }
+    if (method === "PATCH" && path === "/signup/email") {
+      return fulfillJson(route, {}, 204)
+    }
     if (method === "POST" && path === "/users") {
       return fulfillJson(route, {id: 999, username: "new-user", email: "new@example.com", discord: "", phoneNumber: "", newsletter: true, consentPrivacy: true, photoConsent: false, roles: ["USER"], enabled: false, version: 0})
     }

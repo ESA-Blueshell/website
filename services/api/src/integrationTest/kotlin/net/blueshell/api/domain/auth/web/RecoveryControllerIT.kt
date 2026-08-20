@@ -2,7 +2,7 @@ package net.blueshell.api.domain.auth.web
 
 import net.blueshell.api.domain.auth.application.factory.RecoveryTokenFactory
 import net.blueshell.api.factory.auth.web.request.AuthRequestFactory
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
@@ -43,7 +43,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
-                    assertThat(it.payload).contains("\"resetType\":\"PASSWORD_RESET\"")
+                    assertThat(it.payload).contains("\"tokenPurpose\":\"PASSWORD_RESET\"")
                 }
         }
 
@@ -59,7 +59,7 @@ class RecoveryControllerIT : UserTestSupport() {
         @Test
         fun `sets password with recovery token`() {
             val user = createUserWithRole(Role.MEMBER)
-            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofMinutes(30))
             val newPassword = "NewPassword123!"
 
             mvc.perform(
@@ -76,7 +76,7 @@ class RecoveryControllerIT : UserTestSupport() {
         @Test
         fun `returns bad request for invalid password format`() {
             val user = createUserWithRole(Role.MEMBER)
-            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofMinutes(30))
             val weakPassword = "WeakPass12"
 
             val result = mvc.perform(
@@ -96,7 +96,7 @@ class RecoveryControllerIT : UserTestSupport() {
         @MethodSource("net.blueshell.api.domain.auth.web.RecoveryControllerIT#invalidPasswords")
         fun `validates various invalid passwords`(invalidPassword: String) {
             val user = createUserWithRole(Role.MEMBER)
-            val token = recoveryTokenFactory.issue(user, ResetType.PASSWORD_RESET, Duration.ofMinutes(30))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofMinutes(30))
 
             val result = mvc.perform(
                 post("/recovery/password")
@@ -115,9 +115,9 @@ class RecoveryControllerIT : UserTestSupport() {
     @Nested
     inner class UserActivate {
         @Test
-        fun `activates user and redirects to home for guest flow`() {
+        fun `activates an account that has no application to complete`() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
-            val token = recoveryTokenFactory.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
             mvc.perform(
                 post("/recovery/user/activate")
@@ -125,15 +125,15 @@ class RecoveryControllerIT : UserTestSupport() {
                     .content(authRequestFactory.userActivationPayload(token))
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.path").value("/"))
+                .andExpect(jsonPath("$.membershipStarted").value(false))
 
             assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isTrue()
         }
 
         @Test
-        fun `activates user and redirects to membership step for member profile flow`() {
+        fun `activating does not start a membership while the application is incomplete`() {
             val user = assignMemberProfile(createUserWithRole(Role.MEMBER, enabled = false))
-            val token = recoveryTokenFactory.issue(user, ResetType.USER_ACTIVATION, Duration.ofHours(1))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
             mvc.perform(
                 post("/recovery/user/activate")
@@ -141,7 +141,9 @@ class RecoveryControllerIT : UserTestSupport() {
                     .content(authRequestFactory.userActivationPayload(token))
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.path").value("/membership/signUp?step=2"))
+                .andExpect(jsonPath("$.membershipStarted").value(false))
+
+            assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isTrue()
         }
     }
 
@@ -150,7 +152,7 @@ class RecoveryControllerIT : UserTestSupport() {
         @Test
         fun `activates member with username and password`() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
-            val token = recoveryTokenFactory.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+            val token = recoveryTokenFactory.issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
             val username = "activated_${System.currentTimeMillis()}"
             val password = "ChangedPass123!"
 
@@ -183,7 +185,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
-                    assertThat(it.payload).contains("\"resetType\":\"USER_ACTIVATION\"")
+                    assertThat(it.payload).contains("\"tokenPurpose\":\"USER_ACTIVATION\"")
                 }
         }
     }
@@ -194,7 +196,7 @@ class RecoveryControllerIT : UserTestSupport() {
         fun `board resends member activation email by user id`() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER, enabled = false)
-            recoveryTokenFactory.issue(user, ResetType.MEMBER_ACTIVATION, Duration.ofDays(7))
+            recoveryTokenFactory.issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
 
             mvc.perform(
                 post("/recovery/users/{userId}/resend/recovery", user.id)
@@ -207,7 +209,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
-                    assertThat(it.payload).contains("\"resetType\":\"MEMBER_ACTIVATION\"")
+                    assertThat(it.payload).contains("\"tokenPurpose\":\"MEMBER_ACTIVATION\"")
                 }
         }
     }

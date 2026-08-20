@@ -10,7 +10,7 @@ import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
 import net.blueshell.api.platform.integration.email.application.service.EmailService
 import net.blueshell.api.platform.integration.email.application.service.EmailTemplateService
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -48,7 +48,7 @@ class EmailServiceMissingEntityTest {
     fun `sendUserResetEmail throws NonRetryableJobException when user not found`() {
         every { users.findById(99L) } throws ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")
 
-        assertThatThrownBy { emailSenderService.sendUserResetEmail(99L, "token", ResetType.PASSWORD_RESET) }
+        assertThatThrownBy { emailSenderService.sendUserResetEmail(99L, "token", TokenPurpose.PASSWORD_RESET) }
             .isInstanceOf(NonRetryableJobException::class.java)
     }
 
@@ -70,10 +70,21 @@ class EmailServiceMissingEntityTest {
     }
 
     @Test
+    fun `sendUserResetEmail refuses to email a signup continuation token`() {
+        val applicant = mockk<net.blueshell.api.domain.user.persistence.User>(relaxed = true)
+        every { users.findById(7L) } returns applicant
+
+        assertThatThrownBy {
+            emailSenderService.sendUserResetEmail(7L, "selector.verifier", TokenPurpose.SIGNUP_CONTINUATION)
+        }.isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("must never be emailed")
+    }
+
+    @Test
     fun `non-404 ResponseStatusException is not wrapped and remains retryable`() {
         every { users.findById(99L) } throws ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Server error")
 
-        assertThatThrownBy { emailSenderService.sendUserResetEmail(99L, "token", ResetType.PASSWORD_RESET) }
+        assertThatThrownBy { emailSenderService.sendUserResetEmail(99L, "token", TokenPurpose.PASSWORD_RESET) }
             .isInstanceOf(ResponseStatusException::class.java)
             .isNotInstanceOf(NonRetryableJobException::class.java)
     }

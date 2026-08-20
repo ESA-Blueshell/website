@@ -1,9 +1,12 @@
 package net.blueshell.api.domain.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.query.MembershipQuery
-import net.blueshell.api.domain.user.command.CreateMembershipCommand
+import net.blueshell.api.domain.user.command.SubmitMembershipApplicationCommand
+import net.blueshell.api.domain.user.web.dto.request.MembershipApplicationRequest
+import net.blueshell.api.domain.user.web.dto.response.SignupOutcomeResponse
 import net.blueshell.api.domain.user.command.DeleteMembershipCommand
 import net.blueshell.api.domain.user.command.EndMembershipCommand
 import net.blueshell.api.domain.user.command.FindDeletedMembershipsCommand
@@ -43,23 +46,17 @@ class MembershipController(
 
     @PreAuthorize("hasPermission(#principal.id, 'User', 'write')")
     @PostMapping("/memberships")
-    @ResponseStatus(HttpStatus.CREATED)
     fun createMembership(
+        @Valid @RequestBody request: MembershipApplicationRequest,
         @AuthenticationPrincipal principal: UserPrincipal?
-    ): MembershipResponse? {
-        val principalId = principal!!.id
-        val isMember = principal.hasAuthority(Role.MEMBER)
-        val hasAddress = principal.addressId != null
-        val hasMemberProfile = principal.personDetailsId != null
-        val membership = commandBus.dispatch(
-            CreateMembershipCommand(
-                userId = principalId,
-                isMember = isMember,
-                hasAddress = hasAddress,
-                hasMemberProfile = hasMemberProfile,
+    ): SignupOutcomeResponse {
+        val outcome = commandBus.dispatch(
+            SubmitMembershipApplicationCommand(
+                userId = principal!!.id,
+                conditionsAccepted = request.conditionsAccepted,
             )
         )
-        return membership.asResponse()
+        return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted)
     }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")

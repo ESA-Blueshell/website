@@ -63,14 +63,14 @@ class UserControllerIT : UserTestSupport() {
             val guestEmail = "$guestUsername@example.com"
 
             mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(userRequestFactory.createUserPayload(guestUsername, guestEmail))
             )
                 .andExpect(status().isCreated)
-                .andExpect(jsonPath("$.id").isNotEmpty)
-                .andExpect(jsonPath("$.username").value(guestUsername))
+                .andExpect(jsonPath("$.userId").isNumber)
                 .andExpect(jsonPath("$.email").value(guestEmail))
+                .andExpect(jsonPath("$.signupToken").isString)
 
             userRepository.findByUsername(guestUsername).orElseThrow()
         }
@@ -80,7 +80,7 @@ class UserControllerIT : UserTestSupport() {
             val username = "guest_with_profile_${System.currentTimeMillis()}"
             val email = "$username@example.com"
             val result = mvc.perform(
-                post("/users")
+                post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"NL","bhv":true,"ehbo":false}}"""
@@ -89,7 +89,7 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(status().isCreated)
                 .andReturn()
 
-            val userId = mapper.readTree(result.response.contentAsByteArray).path("id").asLong()
+            val userId = mapper.readTree(result.response.contentAsByteArray).path("userId").asLong()
             val profile = memberProfileRepository.findById(userId).orElseThrow()
 
             assertThat(profile.userId).isEqualTo(userId)

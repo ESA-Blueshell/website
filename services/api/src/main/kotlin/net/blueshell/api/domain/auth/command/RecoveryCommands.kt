@@ -1,8 +1,11 @@
 package net.blueshell.api.domain.auth.command
 
+import net.blueshell.api.shared.model.SignupSession
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.user.application.validation.UniqueUsername
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.command.Command
+import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
@@ -28,7 +31,7 @@ data class SetPasswordCommand(
 data class UserActivateCommand(
     @field:NotBlank(message = "Token is required")
     val token: String
-) : Command<User>
+) : Command<SignupOutcome>
 
 data class MemberActivateCommand(
     @field:NotBlank(message = "Token is required")
@@ -54,4 +57,16 @@ data class ResendUserActivationCommand(
 
 data class ResendMemberActivationEmailCommand(
     val userId: Long
+) : Command<Unit>
+
+data class IssueSignupSessionCommand(
+    val userId: Long
+) : Command<SignupSession>
+
+data class CorrectSignupEmailCommand(
+    @field:NotBlank(message = "A signup token is required")
+    val signupToken: String,
+    @field:NotBlank(message = "An email address is required")
+    @field:Email(message = "A valid email address is required")
+    val email: String
 ) : Command<Unit>

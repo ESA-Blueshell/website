@@ -37,6 +37,17 @@ export default defineConfig({
         "src/services/api/**",
         "src/main.ts",
       ],
+      // Per-file, because there is no global gate and a project-wide number could
+      // not fail for one new page anyway. Never lower a floor to make a build pass.
+      thresholds: {
+        perFile: true,
+        "src/pages/activate/ActivateUser.vue": { lines: 90, branches: 90, functions: 100 },
+        "src/pages/membership/MembershipSignUp.vue": { lines: 90, branches: 85, functions: 90 },
+        "src/components/form/MembershipForm.vue": { lines: 90, branches: 85, functions: 90 },
+        "src/components/form/AddressForm.vue": { lines: 79, branches: 45, functions: 60 },
+        "src/components/form/EmailConfirmationPanel.vue": { lines: 90, branches: 90, functions: 90 },
+        "src/pages/login/CreateAccount.vue": { lines: 90, branches: 85, functions: 85 },
+      },
     },
   },
 })

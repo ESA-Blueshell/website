@@ -44,10 +44,10 @@ describe("ActivateUser page", () => {
     sessionStorage.clear()
     mockRoute.query = {}
     mockRoute.hash = "#token=user-token"
-    mockUserActivate.mockResolvedValue({data: {path: "/membership/signup?step=2"}})
+    mockUserActivate.mockResolvedValue({data: {membershipStarted: false}})
   })
 
-  it("activates account and redirects with path from backend", async () => {
+  it("confirms the account and sends the applicant to sign in", async () => {
     shallowMount(ActivateUser)
     await settle()
 
@@ -57,10 +57,16 @@ describe("ActivateUser page", () => {
     })
 
     vi.advanceTimersByTime(1500)
-    expect(mockRouterPush).toHaveBeenCalledWith({
-      name: "login",
-      query: {redirect: "/membership/signup?step=2"},
-    })
+    expect(mockRouterPush).toHaveBeenCalledWith({name: "login"})
+  })
+
+  it("says the membership has started when confirmation completed it", async () => {
+    mockUserActivate.mockResolvedValue({data: {membershipStarted: true}})
+
+    const wrapper = shallowMount(ActivateUser)
+    await settle()
+
+    expect(wrapper.text()).toContain("your membership has started")
   })
 
   it("redirects to login on missing token", async () => {

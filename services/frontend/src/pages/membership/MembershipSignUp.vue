@@ -7,19 +7,21 @@
       style="max-width: 800px"
     >
       <v-stepper
+        v-if="!finished"
         v-model="currentStep"
         data-testid="membership-signup-stepper"
         :items="stepItems"
         hide-actions
       >
-        <!-- Step 1: Personal information -->
+        <!-- Step 1: who they are -->
         <template #[`item.1`]>
           <v-card class="pa-4">
             <user-form
               ref="userRef"
               v-model="user"
-              :options="{ includeMemberProfile: true }"
-              :show-password="!user?.id"
+              :options="{ includeMemberProfile: true, createVia: 'signup' }"
+              :show-password="isNewApplicant"
+              :signup-token="signupToken"
             />
             <v-row align="center">
               <v-spacer />
@@ -27,8 +29,8 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
-                  data-testid="membership-step1-next-btn"
-                  @click="nextStep"
+                  data-testid="membership-details-next-btn"
+                  @click="saveDetails"
                 >
                   Next
                 </v-btn>
@@ -37,98 +39,21 @@
           </v-card>
         </template>
 
-        <!-- Step 2: Email confirmation -->
+        <!-- Step 2: where they live -->
         <template #[`item.2`]>
-          <v-card class="pa-6">
-            <v-row>
-              <v-col cols="12">
-                <div class="d-flex align-center mb-2">
-                  <v-icon
-                    class="mr-2"
-                    color="primary"
-                    size="28"
-                  >
-                    mdi-email-fast-outline
-                  </v-icon>
-                  <span class="text-h6 font-weight-medium">Check your inbox</span>
-                </div>
-
-                <v-alert
-                  border="start"
-                  class="mb-4"
-                  color="primary"
-                  variant="tonal"
-                >
-                  We’ve emailed <strong>{{ infoEmail }}</strong> a link to
-                  <strong>activate your account</strong>.
-                </v-alert>
-
-                <div class="text-body-2 text-medium-emphasis">
-                  <p class="mb-1">
-                    After activating, you’ll be redirected to the sign-in page.
-                  </p>
-                  <p class="mb-0">
-                    Once you sign in, we’ll bring you back here and move on to your address.
-                  </p>
-                </div>
-              </v-col>
-            </v-row>
-
-            <v-row align="center">
-              <v-col cols="auto">
-                <v-btn
-                  data-testid="membership-step2-previous-btn"
-                  variant="outlined"
-                  @click="previousStep"
-                >
-                  Previous
-                </v-btn>
-              </v-col>
-
-              <v-spacer />
-
-              <v-col
-                class="d-flex"
-                cols="auto"
-              >
-                <v-btn
-                  :loading="resendBusy"
-                  class="mr-2"
-                  data-testid="membership-step2-resend-btn"
-                  prepend-icon="mdi-email-arrow-right-outline"
-                  variant="outlined"
-                  @click="resendActivation"
-                >
-                  Resend email
-                </v-btn>
-
-                <v-btn
-                  color="primary"
-                  data-testid="membership-step2-signin-btn"
-                  prepend-icon="mdi-check-circle-outline"
-                  @click="handleVerified"
-                >
-                  I’ve activated — Sign in
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
-        </template>
-
-        <!-- Step 3: Address -->
-        <template #[`item.3`]>
           <v-card class="pa-4">
             <address-form
               ref="addressRef"
               v-model="address"
               :user-id="user?.id"
+              :signup-token="signupToken"
             />
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
-                  data-testid="membership-step3-previous-btn"
+                  data-testid="membership-address-back-btn"
                   variant="outlined"
-                  @click="previousStep"
+                  @click="currentStep = Steps.Details"
                 >
                   Previous
                 </v-btn>
@@ -138,8 +63,8 @@
                 <v-btn
                   :loading="submitting"
                   color="primary"
-                  data-testid="membership-step3-next-btn"
-                  @click="nextStep"
+                  data-testid="membership-address-next-btn"
+                  @click="saveAddressStep"
                 >
                   Next
                 </v-btn>
@@ -148,19 +73,32 @@
           </v-card>
         </template>
 
-        <!-- Step 4: Membership Information -->
-        <template #[`item.4`]>
+        <!-- Step 3: the application itself -->
+        <template #[`item.3`]>
           <v-card class="pa-4">
+            <v-alert
+              v-if="applicationSubmitted"
+              border="start"
+              class="mb-4"
+              color="success"
+              data-testid="membership-conditions-accepted"
+              variant="tonal"
+            >
+              Your application is in and you agreed to the membership conditions.
+              Details and address can still be changed; the agreement stands.
+            </v-alert>
             <membership-form
+              v-else
               ref="membershipRef"
               v-model="membership"
+              :signup-token="signupToken"
             />
             <v-row align="center">
               <v-col cols="auto">
                 <v-btn
-                  data-testid="membership-step4-previous-btn"
+                  data-testid="membership-conditions-back-btn"
                   variant="outlined"
-                  @click="previousStep"
+                  @click="currentStep = Steps.Address"
                 >
                   Previous
                 </v-btn>
@@ -168,10 +106,19 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
+                  v-if="applicationSubmitted"
+                  color="primary"
+                  data-testid="membership-conditions-continue-btn"
+                  @click="currentStep = Steps.ConfirmEmail"
+                >
+                  Continue
+                </v-btn>
+                <v-btn
+                  v-else
                   :loading="submitting"
                   color="primary"
-                  data-testid="membership-step4-complete-btn"
-                  @click="nextStep"
+                  data-testid="membership-conditions-submit-btn"
+                  @click="submitApplication"
                 >
                   Complete Membership
                 </v-btn>
@@ -179,50 +126,65 @@
             </v-row>
           </v-card>
         </template>
+
+        <!-- Step 4: confirm the email address. New applicants only. -->
+        <template #[`item.4`]>
+          <email-confirmation-panel
+            :email="user?.email ?? ''"
+            :username="user?.username ?? ''"
+            :continuation-token="signupToken"
+            confirmation-consequence="Your membership starts as soon as you do."
+            @back="currentStep = Steps.Membership"
+            @email-corrected="onEmailCorrected"
+          />
+        </template>
       </v-stepper>
 
-      <div v-if="currentStep === 5">
-        <v-card class="pa-6 text-center">
-          <v-icon
-            class="mb-4"
-            color="success"
-            size="64"
-          >
-            mdi-check-circle
-          </v-icon>
-          <p class="text-h6 font-weight-medium mb-2">
-            Membership Complete!
-          </p>
-          <p class="text-body-1 text-medium-emphasis">
-            Your membership form has been successfully submitted. Welcome to Blueshell!
-          </p>
-          <v-btn
-            class="mt-4"
-            color="primary"
-            @click="$goto('/')"
-          >
-            Go to Homepage
-          </v-btn>
-        </v-card>
-      </div>
+      <v-card
+        v-else
+        class="pa-6 text-center"
+        data-testid="membership-complete-panel"
+      >
+        <v-icon
+          class="mb-4"
+          color="success"
+          size="64"
+        >
+          mdi-check-circle
+        </v-icon>
+        <p class="text-h6 font-weight-medium mb-2">
+          You're a member
+        </p>
+        <p class="text-body-1 text-medium-emphasis">
+          Welcome to Blueshell. Your membership starts today.
+        </p>
+        <v-btn
+          class="mt-4"
+          color="primary"
+          data-testid="membership-home-btn"
+          @click="$goto('/')"
+        >
+          Go to Homepage
+        </v-btn>
+      </v-card>
     </div>
   </v-main>
 </template>
 
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
-import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
+import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 import {
   type AddressResponse,
   findAddressById,
   findUserById,
   type MembershipResponse,
-  resendUserActivation,
   Role,
+  type SignupOutcomeResponse,
 } from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -230,17 +192,19 @@ import {$goto} from "@/plugins/goto"
 import router from "@/plugins/router.ts"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 
-const route = useRoute()
+const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
 
-const Steps = {Personal: 1, ConfirmEmail: 2, Address: 3, Membership: 4, Done: 5} as const
+const SIGNUP_TOKEN_STORAGE_KEY = "signup:continuation:token"
 
-const currentStep = ref<number>(Steps.Personal)
+const currentStep = ref<number>(Steps.Details)
 const submitting = ref(false)
-const resendBusy = ref(false)
+const finished = ref(false)
+const applicationSubmitted = ref(false)
 
 const user = ref<EditableUser>()
 const address = ref<AddressResponse>()
 const membership = ref<MembershipResponse>()
+const signupToken = ref<string | undefined>(readStoredToken())
 
 const userRef = ref<InstanceType<typeof UserForm>>()
 const addressRef = ref<InstanceType<typeof AddressForm>>()
@@ -249,236 +213,130 @@ const membershipRef = ref<InstanceType<typeof MembershipForm>>()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed(() => store.getters.getLogin)
 
-const stepItems = computed(() => [
-  {title: "Personal Information", value: Steps.Personal},
-  {title: "Confirm Email", value: Steps.ConfirmEmail},
-  {title: "Address", value: Steps.Address},
-  {title: "Confirm Membership", value: Steps.Membership},
-])
+// A signed-in applicant confirmed their address when they activated the account,
+// so they never see the confirmation step.
+const isNewApplicant = computed<boolean>(() => !isLoggedIn.value)
 
-const infoEmail = computed(() => user.value?.email ?? "")
+const stepItems = computed<Array<{title: string; value: number}>>(() => {
+  const items = [
+    {title: "Your details", value: Steps.Details as number},
+    {title: "Address", value: Steps.Address as number},
+    {title: "Membership", value: Steps.Membership as number},
+  ]
+  if (isNewApplicant.value) {
+    items.push({title: "Confirm email", value: Steps.ConfirmEmail})
+  }
+  return items
+})
 
-function parseStepQuery(rawStep: unknown): number {
-  const rawValue = Array.isArray(rawStep) ? rawStep[0] : rawStep
-  const parsed = Number(rawValue ?? Steps.Personal)
-  return Number.isFinite(parsed) ? parsed : Steps.Personal
+function readStoredToken(): string | undefined {
+  if (typeof window === "undefined") return undefined
+  return sessionStorage.getItem(SIGNUP_TOKEN_STORAGE_KEY) ?? undefined
 }
 
-function resolveStep(desiredStep: number): number {
-  if (desiredStep >= Steps.Done) return Steps.Done
-
-  let step = Math.max(Steps.Personal, Math.min(desiredStep, Steps.Membership))
-  const hasUser = Boolean(user.value?.id)
-  const hasAddress = Boolean(login.value?.addressId || address.value?.id)
-
-  if (step === Steps.Membership && (!isLoggedIn.value || !hasUser || !hasAddress)) {
-    step = Steps.Address
-  }
-
-  if (step === Steps.Address && (!isLoggedIn.value || !hasUser)) {
-    step = Steps.ConfirmEmail
-  }
-
-  if (step === Steps.ConfirmEmail) {
-    if (isLoggedIn.value && hasUser) {
-      step = Steps.Address
-    } else if (!hasUser) {
-      step = Steps.Personal
-    }
-  }
-
-  return step
+function rememberToken(token: string) {
+  signupToken.value = token
+  if (typeof window !== "undefined") sessionStorage.setItem(SIGNUP_TOKEN_STORAGE_KEY, token)
 }
 
-function buildQueryForStep(step: number) {
-  const nextQuery = {...route.query}
-  if (step <= Steps.Personal || step >= Steps.Done) {
-    delete nextQuery.step
-  } else {
-    nextQuery.step = String(step)
-  }
-  return nextQuery
+function forgetToken() {
+  signupToken.value = undefined
+  if (typeof window !== "undefined") sessionStorage.removeItem(SIGNUP_TOKEN_STORAGE_KEY)
 }
 
-async function syncStep(desiredStep = currentStep.value) {
-  const resolvedStep = resolveStep(desiredStep)
-  const stepNeedsUpdate = currentStep.value !== resolvedStep
-
-  if (resolvedStep >= Steps.Done) {
-    if (stepNeedsUpdate) currentStep.value = resolvedStep
-    return
-  }
-
-  const currentHasStep = route.query.step != null
-  const targetHasStep = resolvedStep > Steps.Personal
-  const currentQueryStep = parseStepQuery(route.query.step)
-  const queryNeedsUpdate = targetHasStep !== currentHasStep || (targetHasStep && currentQueryStep !== resolvedStep)
-
-  if (queryNeedsUpdate) {
-    await router.replace({query: buildQueryForStep(resolvedStep)})
-  }
-  if (stepNeedsUpdate) {
-    currentStep.value = resolvedStep
-  }
-}
-
-async function handleVerified() {
-  await router.push({name: "login", query: {redirect: "/membership/signup?step=2"}})
-}
-
-async function fetchUser() {
-  const userId = login.value?.userId
-  if (!userId) return
-  try {
-    const {data} = await findUserById({path: {userId}, throwOnError: true})
-    if (data) {
-      user.value = toEditableUser(data)
-    }
-  } catch (e) {
-    $handleNetworkError(e)
-  }
-}
-
-async function resendActivation() {
-  const username = user.value?.username
-  if (!username) return
-  try {
-    resendBusy.value = true
-    await resendUserActivation({path: {username}})
-  } finally {
-    resendBusy.value = false
-  }
-}
-
-const nextStep = async () => {
+async function withSubmitting(action: () => Promise<void>) {
   try {
     submitting.value = true
-    switch (currentStep.value) {
-      case Steps.Personal: {
-        const savedUser = await userRef.value?.save()
-        if (!savedUser) break
-        await syncStep(isLoggedIn.value ? Steps.Address : Steps.ConfirmEmail)
-        break
-      }
-      case Steps.ConfirmEmail: {
-        if (!isLoggedIn.value) break
-        await fetchUser()
-        await syncStep(Steps.Address)
-        break
-      }
-      case Steps.Address: {
-        const savedAddress = await addressRef.value?.save()
-        if (!savedAddress) break
-        await syncStep(Steps.Membership)
-        break
-      }
-      case Steps.Membership: {
-        const savedMembership = await membershipRef.value?.save()
-        if (savedMembership) {
-          await router.replace({query: buildQueryForStep(Steps.Done)})
-          currentStep.value = Steps.Done
-        }
-        break
-      }
-    }
+    await action()
   } finally {
     submitting.value = false
   }
 }
 
-const previousStep = () => {
-  if (currentStep.value <= Steps.Personal) return
-  const target = currentStep.value - 1
-  const desiredStep = target === Steps.ConfirmEmail && isLoggedIn.value ? Steps.Personal : target
-  void syncStep(desiredStep)
+// Each step keeps what it saved on this page rather than in the step component.
+// A stepper renders only the active step, so anything a form holds privately is
+// gone the moment the applicant moves on — and `defineModel`'s own default lives
+// in the child, which means nested edits never reach a parent that started out
+// undefined. Adopting what save() hands back is what makes going back and forth
+// keep the details and the address.
+const saveDetails = () => withSubmitting(async () => {
+  const saved = await userRef.value?.save()
+  if (!saved) return
+  const session = userRef.value?.signupSession
+  if (session) rememberToken(session.signupToken)
+  // The account's identity comes from the session rather than from the form's
+  // model. A step that is about to be unmounted is the wrong place to keep the
+  // fact that an account now exists, and it is that fact which decides whether
+  // the form asks for a password again.
+  user.value = session
+    ? {...saved, id: session.userId, email: session.email}
+    : saved
+  currentStep.value = Steps.Address
+})
+
+const saveAddressStep = () => withSubmitting(async () => {
+  const saved = await addressRef.value?.save()
+  if (!saved) return
+  address.value = saved as AddressResponse
+  currentStep.value = Steps.Membership
+})
+
+const submitApplication = () => withSubmitting(async () => {
+  const result = await membershipRef.value?.save()
+  if (!result) return
+  settleOutcome(result as SignupOutcomeResponse)
+})
+
+/**
+ * Whichever of the two facts lands second starts the membership, so the ending is
+ * read from the response rather than assumed from which step we are on.
+ */
+function settleOutcome(outcome: SignupOutcomeResponse) {
+  if (outcome.membershipStarted) {
+    forgetToken()
+    finished.value = true
+    return
+  }
+  // The agreement is not retractable, so the conditions step becomes a record of
+  // it while details and address stay open for edits.
+  applicationSubmitted.value = true
+  currentStep.value = Steps.ConfirmEmail
 }
 
-async function fetchAddress() {
-  const addressId = login.value?.addressId || address.value?.id
+function onEmailCorrected(email: string) {
+  if (user.value) user.value.email = email
+}
+
+async function loadSignedInApplicant() {
+  const userId = login.value?.userId
+  if (!userId) return
+  try {
+    const {data} = await findUserById({path: {userId}, throwOnError: true})
+    if (data) user.value = toEditableUser(data)
+  } catch (e) {
+    $handleNetworkError(e)
+    return
+  }
+  const addressId = login.value?.addressId
   if (!addressId) return
   try {
     const {data} = await findAddressById({path: {id: addressId}})
-    address.value = data!
+    if (data) address.value = data
   } catch (e) {
     $handleNetworkError(e)
   }
 }
 
-watch(currentStep, async (step) => {
-  await syncStep(step)
-})
-
-watch(
-  () => route.query.step,
-  async () => {
-    await syncStep(parseStepQuery(route.query.step))
-  }
-)
-
-watch(
-  () => login.value?.userId,
-  async (userId, previousUserId) => {
-    if (!userId) {
-      await syncStep(currentStep.value)
-      return
-    }
-
-    if (userId !== previousUserId || !user.value?.id) {
-      await fetchUser()
-    }
-
-    if (login.value?.addressId && !address.value?.id) {
-      await fetchAddress()
-    }
-
-    if (currentStep.value === Steps.ConfirmEmail) {
-      await syncStep(Steps.Address)
-      return
-    }
-
-    await syncStep(currentStep.value)
-  }
-)
-
-// If a user is already a member, then redirect them to a different page.
+// Somebody who is already a member has nothing to apply for.
 watch(user, async (val) => {
   if (!val?.roles?.includes(Role.MEMBER)) return
-
   store.commit("setStatusSnackbarMessage", "you are already a member")
-  const rawBackTarget = (window.history.state && window.history.state.back) as string | undefined
-  let normalizedBackTarget: string | null = null
-
-  if (rawBackTarget) {
-    try {
-      const parsed = new URL(rawBackTarget, window.location.origin)
-      normalizedBackTarget = `${parsed.pathname}${parsed.search}${parsed.hash}`
-    } catch {
-      normalizedBackTarget = rawBackTarget.startsWith("/") ? rawBackTarget : null
-    }
-  }
-
-  const shouldUseBackTarget = Boolean(
-    normalizedBackTarget &&
-      normalizedBackTarget !== route.fullPath &&
-      !normalizedBackTarget.startsWith("/membership/signup")
-  )
-
-  await router.replace(shouldUseBackTarget ? normalizedBackTarget! : "/")
+  await router.replace("/")
 })
-
-async function fetchData() {
-  if (!login.value?.userId) return
-  await fetchUser()
-
-  if (!login.value?.addressId && !address.value?.id) return
-  await fetchAddress()
-}
 
 onMounted(async () => {
-  await fetchData()
-  await syncStep(parseStepQuery(route.query.step))
+  if (isLoggedIn.value) await loadSignedInApplicant()
 })
-
 </script>
 
 <style lang="scss" scoped>

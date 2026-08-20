@@ -1,5 +1,7 @@
 package net.blueshell.api.domain.user.command
 
+import jakarta.validation.constraints.AssertTrue
+import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Positive
@@ -7,6 +9,7 @@ import net.blueshell.api.domain.user.application.query.MembershipQuery
 import net.blueshell.api.domain.user.application.validation.MembershipIntervalCandidate
 import net.blueshell.api.domain.user.application.validation.ValidMembership
 import net.blueshell.api.domain.user.persistence.Membership
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.shared.command.Command
 import net.blueshell.api.shared.enums.MemberType
 import java.time.LocalDate
@@ -16,18 +19,13 @@ data class FindMembershipsCommand(
 ) : Command<MutableList<Membership>>
 
 @ValidMembership
-data class CreateMembershipCommand(
+data class SubmitMembershipApplicationCommand(
     val userId: Long,
-    @field:NotNull(message = "isMember flag is required")
-    val isMember: Boolean?,
-    @field:NotNull(message = "hasAddress flag is required")
-    val hasAddress: Boolean?,
-    @field:NotNull(message = "hasMemberProfile flag is required")
-    val hasMemberProfile: Boolean?
-) : Command<Membership>, MembershipIntervalCandidate {
+    @field:AssertTrue(message = "The membership conditions must be accepted")
+    val conditionsAccepted: Boolean?
+) : Command<SignupOutcome>, MembershipIntervalCandidate {
     override val candidateUserId: Long get() = userId
     override val candidateMembershipId: Long? get() = null
-    // Self-signup always creates a new active membership starting today.
     override val candidateStartDate: LocalDate get() = LocalDate.now()
     override val candidateEndDate: LocalDate? get() = null
 }
@@ -109,3 +107,24 @@ data class FindDeletedMembershipsCommand(
     @field:Positive(message = "User ID must be positive")
     val userId: Long?
 ) : Command<MutableList<Membership>>
+
+// No @ValidMembership: the interval check needs the account, which only the handler
+// can resolve from the token. A signup token exists only for a freshly created
+// account, so there is no prior membership to overlap; completeIfReady covers the
+// already-a-member case.
+data class SubmitSignupApplicationCommand(
+    @field:NotBlank(message = "A signup token is required")
+    val signupToken: String,
+    @field:AssertTrue(message = "The membership conditions must be accepted")
+    val conditionsAccepted: Boolean?
+) : Command<SignupOutcome>
+
+data class SaveSignupAddressCommand(
+    @field:NotBlank(message = "A signup token is required")
+    val signupToken: String,
+    @field:NotBlank val country: String,
+    @field:NotBlank val city: String,
+    @field:NotBlank val street: String,
+    @field:NotBlank val houseNumber: String,
+    @field:NotBlank val zipCode: String
+) : Command<Unit>

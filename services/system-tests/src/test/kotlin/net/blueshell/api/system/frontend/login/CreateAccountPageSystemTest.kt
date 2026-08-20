@@ -69,12 +69,11 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
             }
         }
 
-        // Wait for the POST /users response before returning so the
-        // user is fully persisted by the time the caller chains the
-        // next action (login attempt, navigation away, …).
+        // Wait for the registration response before returning so the user is
+        // fully persisted by the time the caller chains the next action.
         page.waitForResponse(
             { response ->
-                response.request().method() == "POST" && response.url().contains("/users")
+                response.request().method() == "POST" && response.url().endsWith("/signup")
             },
         ) {
             page.getByRole(

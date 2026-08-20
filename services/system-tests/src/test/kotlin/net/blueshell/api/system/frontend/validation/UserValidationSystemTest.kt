@@ -39,7 +39,7 @@ class UserValidationSystemTest : PlaywrightTestBase() {
         UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
         val createResponse = page.waitForResponse({ response ->
-            response.request().method() == "POST" && response.url().contains("/users")
+            response.request().method() == "POST" && response.url().endsWith("/signup")
         }) {
             UserFormHelper.submitButton(page).click()
         }
@@ -77,7 +77,7 @@ class UserValidationSystemTest : PlaywrightTestBase() {
         UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
         val createResponse = page.waitForResponse({ response ->
-            response.request().method() == "POST" && response.url().contains("/users")
+            response.request().method() == "POST" && response.url().endsWith("/signup")
         }) {
             UserFormHelper.submitButton(page).click()
         }

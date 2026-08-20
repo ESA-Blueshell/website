@@ -67,7 +67,7 @@ class ActivationPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `user activation enables account and returns membership step redirect path`() {
+    fun `user activation enables the account and reports whether the membership started`() {
         // Enable briefly so `attachMemberProfile` can POST via a real
         // login, then flip back to disabled so the activation flow has
         // work to do.
@@ -86,7 +86,8 @@ class ActivationPageSystemTest : PlaywrightTestBase() {
             page.navigate("$frontendUrl/account/activate/user#token=$encodedToken")
         }
         assertThat(response.status()).isEqualTo(200)
-        assertThat(response.text()).contains("/membership/signUp?step=2")
+        // Confirming an address is not an application, so no membership starts here.
+        assertThat(response.text()).contains("\"membershipStarted\":false")
         page.locator("[data-testid='activate-user-success-state']").first().waitFor()
 
         pollFor("user ${user.username} enabled after activation") {

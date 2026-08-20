@@ -1,6 +1,16 @@
 package net.blueshell.api.domain.auth.application.command
 
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.http.HttpStatus
+import org.springframework.security.access.AccessDeniedException
+import net.blueshell.api.domain.auth.command.CorrectSignupEmailCommand
+import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.auth.application.SignupTokenService
+import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.domain.auth.application.PasswordRecoveryService
+import net.blueshell.api.domain.auth.application.SignupCompletionService
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
@@ -40,12 +50,16 @@ class SetPasswordHandler(
 
 @Component
 class UserActivateHandler(
-    private val activationService: UserActivationService
-) : CommandHandler<UserActivateCommand, User> {
+    private val activationService: UserActivationService,
+    private val completion: SignupCompletionService
+) : CommandHandler<UserActivateCommand, SignupOutcome> {
     override val commandType = UserActivateCommand::class
 
-    override fun handle(command: UserActivateCommand): User {
-        return activationService.activateUser(command.token)
+    override fun handle(command: UserActivateCommand): SignupOutcome {
+        val user = activationService.activateUser(command.token)
+        // The other half of the rendezvous may already be in place, in which case
+        // this is the write that starts the membership (ADR-025).
+        return completion.completeIfReady(user.id!!)
     }
 }
 
@@ -93,5 +107,51 @@ class ResendMemberActivationEmailHandler(
                 EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
             )
         }
+    }
+}
+
+@Component
+class IssueSignupSessionHandler(
+    private val users: UserService,
+    private val signupTokens: SignupTokenService
+) : CommandHandler<IssueSignupSessionCommand, SignupSession> {
+    override val commandType = IssueSignupSessionCommand::class
+
+    override fun handle(command: IssueSignupSessionCommand): SignupSession =
+        signupTokens.issue(users.findById(command.userId))
+}
+
+@Component
+class CorrectSignupEmailHandler(
+    private val signupTokens: SignupTokenService,
+    private val users: UserService,
+    private val activation: UserActivationService,
+    private val jobs: TrackedJobDispatcher
+) : CommandHandler<CorrectSignupEmailCommand, Unit> {
+    override val commandType = CorrectSignupEmailCommand::class
+
+    @Transactional
+    override fun handle(command: CorrectSignupEmailCommand) {
+        val account = signupTokens.resolveAccount(command.signupToken)
+        if (account.user.enabled) {
+            throw AccessDeniedException("A confirmed email address is changed through account settings")
+        }
+        if (users.existsByEmailAndIdNot(command.email, account.id)) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "That email address is already in use")
+        }
+
+        account.user.email = command.email
+        users.update(account.user)
+
+        // requestUserActivation retires whatever was outstanding before issuing the
+        // replacement. That matters most here: the mistyped address may be somebody
+        // else's inbox, so a link already delivered there has to stop working.
+        val dispatch = requireNotNull(activation.requestUserActivation(account.user.username)) {
+            "Expected an activation dispatch for the unconfirmed account ${account.id}"
+        }
+        jobs.enqueue(
+            EmailJobs.Recovery,
+            EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
+        )
     }
 }

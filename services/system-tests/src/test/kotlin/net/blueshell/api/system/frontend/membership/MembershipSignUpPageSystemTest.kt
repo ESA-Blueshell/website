@@ -11,6 +11,8 @@ import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.util.function.Predicate
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
@@ -19,117 +21,216 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
 class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
     @Test
-    fun `step 1 can create a user with personal info and continues to step 2`() {
+    fun `a new applicant is asked to confirm their email once the application is in`() {
+        givenAContributionPeriod()
         MembershipSignUpHelper.open(page, frontendUrl)
 
-        pollFor("step 1 of membership signup after initial navigation") {
-            page.url().contains("/membership/signup") && !page.url().contains("step=")
-        }
-
-        val credentials = createAccountThroughUi(page)
-
-        page.waitForURL("**/membership/signup?step=2")
-        assertThat(page.url()).contains("/membership/signup")
-        assertThat(page.url()).contains("step=2")
-
-        val persisted = pollForUser(credentials.username)
-        assertThat(persisted.email).isEqualTo(credentials.email)
-        assertThat(persisted.enabled).isFalse()
-        assertThat(TestHelper.findRoles(credentials.username)).contains("GUEST")
-        assertThat(TestHelper.hasMemberProfile(persisted.id)).isTrue()
-
-        TestHelper.assertEmailSent(credentials.email, "Activate your Account")
-    }
-
-    @Test
-    fun `step 2 can resend the activation email`() {
-        MembershipSignUpHelper.open(page, frontendUrl)
-
-        val credentials = createAccountThroughUi(page)
-
-        val resendResponse = page.waitForResponse("**/recovery/user/activate/resend/**") {
-            MembershipSignUpHelper.clickStepTwoResend(page)
-        }
-        assertThat(resendResponse.status()).isEqualTo(204)
-
-        val persisted = pollForUser(credentials.username)
-        assertThat(persisted.enabled).isFalse()
-    }
-
-    @Test
-    fun `step 3 saves the address`() {
-        TestHelper.createContributionPeriod(
-            LocalDate.now().minusDays(15),
-            LocalDate.now().plusDays(345),
-        )
-
-        MembershipSignUpHelper.open(page, frontendUrl)
         val credentials = createAccountThroughUi(page)
         val user = pollForUser(credentials.username)
-        TestHelper.setEnabled(user.username, true)
 
-        val loginStatus = AuthHelper.submitLogin(
-            page,
-            frontendUrl,
-            credentials.username,
-            credentials.password,
-        )
-        assertThat(loginStatus).isEqualTo(200)
+        // The account exists but is unconfirmed, and the link is already on its way.
+        assertThat(user.email).isEqualTo(credentials.email)
+        assertThat(user.enabled).isFalse()
+        assertThat(TestHelper.findRoles(credentials.username)).contains("GUEST")
+        assertThat(TestHelper.hasMemberProfile(user.id)).isTrue()
+        TestHelper.assertEmailSent(credentials.email, CONFIRMATION_SUBJECT)
 
-        page.navigate("$frontendUrl/membership/signup?step=3")
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
 
-        pollFor("membership flow opens at address step for logged-in user", timeoutMs = 8_000) {
-            page.url().contains("step=3")
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+        assertPw(MembershipSignUpHelper.resendButton(page)).isVisible()
+
+        pollFor("the acceptance is recorded once the application is submitted") {
+            TestHelper.conditionsAcceptedAt(user.id) != null
         }
+        assertThat(TestHelper.membershipCountForUser(user.id))
+            .describedAs("an unconfirmed address must not yield a membership")
+            .isZero()
+        assertThat(TestHelper.findRoles(credentials.username)).doesNotContain("MEMBER")
+    }
 
-        fillAddressAndContinue(page)
+    @Test
+    fun `confirming the address after applying starts the membership`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
 
-        pollFor("address persisted from membership step 3", timeoutMs = 10_000) {
-            TestHelper.findAddress(user.username) != null
+        val credentials = createAccountThroughUi(page)
+        val user = pollForUser(credentials.username)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+
+        confirmAddressThroughUi(page, credentials.username)
+
+        pollFor("membership starts when the second fact arrives", timeoutMs = 10_000) {
+            TestHelper.hasActiveMembership(credentials.username)
+        }
+        assertThat(refreshedUser(credentials.username).enabled).isTrue()
+        assertThat(TestHelper.findRoles(credentials.username)).contains("MEMBER")
+        assertThat(TestHelper.membershipCountForUser(user.id))
+            .describedAs("the rendezvous may only produce one membership")
+            .isEqualTo(1)
+    }
+
+    @Test
+    fun `a mistyped address can be corrected from the confirmation step`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
+
+        val credentials = createAccountThroughUi(page)
+        pollForUser(credentials.username)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+
+        val corrected = "corrected-${credentials.username}@example.com"
+        MembershipSignUpHelper.correctEmailButton(page).click()
+        val field = MembershipSignUpHelper.correctedEmailField(page)
+        assertPw(field).isVisible()
+        field.fill(corrected)
+        val response = page.waitForResponse(
+            Predicate { it.request().method() == "PATCH" && it.url().endsWith("/signup/email") },
+        ) {
+            MembershipSignUpHelper.correctedEmailSubmitButton(page).click()
+        }
+        assertThat(response.status()).isEqualTo(204)
+
+        TestHelper.assertEmailSent(corrected, CONFIRMATION_SUBJECT)
+        assertThat(refreshedUser(credentials.username).email).isEqualTo(corrected)
+    }
+
+    @Test
+    fun `details can still be corrected after the application is in`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
+
+        val credentials = createAccountThroughUi(page)
+        val user = pollForUser(credentials.username)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+
+        // Previous, step by step, back to the details.
+        MembershipSignUpHelper.confirmBackButton(page).click()
+        assertPw(MembershipSignUpHelper.conditionsAccepted(page)).isVisible()
+        MembershipSignUpHelper.conditionsBackButton(page).click()
+        assertPw(MembershipSignUpHelper.addressNextButton(page)).isVisible()
+        MembershipSignUpHelper.addressBackButton(page).click()
+        val field = UserFormHelper.firstNameInput(page)
+        assertPw(field).isVisible()
+        field.fill("Corrected")
+        val response = page.waitForResponse(
+            Predicate { it.request().method() == "PATCH" && it.url().endsWith("/signup/details") },
+        ) {
+            MembershipSignUpHelper.detailsNextButton(page).click()
+        }
+        assertThat(response.status()).isEqualTo(204)
+
+        pollFor("the corrected name reaches the account") {
+            TestHelper.firstNameOf(credentials.username) == "Corrected"
+        }
+        // Editing is not re-applying: the acceptance and the address stay as they were.
+        assertThat(TestHelper.conditionsAcceptedAt(user.id)).isNotNull()
+        assertThat(TestHelper.findAddress(credentials.username)).isNotNull()
+    }
+
+    @Test
+    fun `the agreement cannot be withdrawn once the application is in`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
+
+        createAccountThroughUi(page)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+
+        MembershipSignUpHelper.confirmBackButton(page).click()
+
+        assertPw(MembershipSignUpHelper.conditionsAccepted(page)).isVisible()
+        assertPw(MembershipSignUpHelper.conditionsSubmitButton(page)).isHidden()
+        MembershipSignUpHelper.conditionsContinueButton(page).click()
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+    }
+
+    @Test
+    fun `the confirmation email can be sent again`() {
+        givenAContributionPeriod()
+        MembershipSignUpHelper.open(page, frontendUrl)
+
+        val credentials = createAccountThroughUi(page)
+        saveAddressThroughUi(page)
+        submitApplicationThroughUi(page)
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
+
+        val response = page.waitForResponse(
+            Predicate { it.request().method() == "POST" && it.url().contains("/recovery/user/activate/resend/") },
+        ) {
+            MembershipSignUpHelper.resendButton(page).click()
+        }
+        assertThat(response.status()).isEqualTo(204)
+
+        pollFor("a second confirmation email is delivered", timeoutMs = 10_000) {
+            TestHelper.findEmails(recipient = credentials.email, subject = CONFIRMATION_SUBJECT).size >= 2
         }
     }
 
     @Test
-    fun `step 4 completes a membership`() {
-        TestHelper.createContributionPeriod(
-            LocalDate.now().minusDays(15),
-            LocalDate.now().plusDays(345),
-        )
+    fun `a signed-in applicant becomes a member without a confirmation step`() {
+        givenAContributionPeriod()
 
-        val seededUser = TestHelper.registerActivateAndPromote("GUEST")
-        TestHelper.attachMemberProfile(seededUser)
+        val seeded = TestHelper.registerActivateAndPromote("GUEST")
+        TestHelper.attachMemberProfile(seeded)
         TestHelper.attachAddress(
-            user = seededUser,
+            user = seeded,
             city = "Enschede",
             street = "System Test Street",
             houseNumber = "42A",
             zipCode = "7521AB",
         )
-        val seededId = TestHelper.findUser(seededUser.username)!!.id
+        val seededId = TestHelper.findUser(seeded.username)!!.id
 
-        val loginStatus = AuthHelper.submitLogin(
-            page,
-            frontendUrl,
-            seededUser.username,
-            seededUser.password,
-        )
-        assertThat(loginStatus).isEqualTo(200)
+        assertThat(AuthHelper.submitLogin(page, frontendUrl, seeded.username, seeded.password)).isEqualTo(200)
+        MembershipSignUpHelper.open(page, frontendUrl)
 
-        page.navigate("$frontendUrl/membership/signup?step=4")
-        assertStepFourVisible(page)
+        // Already confirmed, so the details step leads straight on and the flow
+        // ends on the membership itself rather than on a confirmation prompt.
+        page.waitForResponse(
+            Predicate { it.request().method() == "PUT" && it.url().contains("/users/") },
+        ) {
+            MembershipSignUpHelper.detailsNextButton(page).click()
+        }
+        saveAddressThroughUi(page, signup = false)
+        val outcome = page.waitForResponse(
+            Predicate { it.request().method() == "POST" && it.url().endsWith("/memberships") },
+        ) {
+            acceptConditions(page)
+            MembershipSignUpHelper.conditionsSubmitButton(page).click()
+        }
+        assertThat(outcome.status()).isEqualTo(200)
 
-        completeMembershipAtStepFour(page)
-        assertMembershipPersisted(seededUser.username, seededId)
+        assertPw(MembershipSignUpHelper.completePanel(page)).isVisible()
+        assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isHidden()
+        pollFor("membership exists for a confirmed applicant", timeoutMs = 10_000) {
+            TestHelper.hasActiveMembership(seeded.username)
+        }
+        assertThat(TestHelper.findRoles(seeded.username)).contains("MEMBER")
+        assertThat(TestHelper.conditionsAcceptedAt(seededId)).isNotNull()
     }
 
     private data class Credentials(val username: String, val email: String, val password: String)
+
+    private fun givenAContributionPeriod() {
+        TestHelper.createContributionPeriod(
+            LocalDate.now().minusDays(15),
+            LocalDate.now().plusDays(345),
+        )
+    }
 
     private fun createAccountThroughUi(page: Page): Credentials {
         val suffix = System.currentTimeMillis().toString().takeLast(8)
         val username = "sysuser$suffix"
         val email = "sysuser$suffix@example.com"
         val password = "Passw0rd!$suffix"
-        val phoneNumber = "+3161${suffix.takeLast(7)}"
 
         UserFormHelper.fill(
             page = page,
@@ -140,7 +241,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
                 username = username,
                 discord = "sysuser$suffix",
                 email = email,
-                phoneNumber = phoneNumber,
+                phoneNumber = "+3161${suffix.takeLast(7)}",
                 password = password,
                 repeatedPassword = password,
                 dateOfBirth = "1999-04-12",
@@ -155,18 +256,17 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
             }
         }
 
-        page.waitForResponse(
-            { response ->
-                response.request().method() == "POST" && response.url().contains("/users")
-            },
+        val response = page.waitForResponse(
+            Predicate { it.request().method() == "POST" && it.url().endsWith("/signup") },
         ) {
-            page.locator("[data-testid='membership-step1-next-btn']").first().click()
+            MembershipSignUpHelper.detailsNextButton(page).click()
         }
+        assertThat(response.status()).isEqualTo(201)
 
         return Credentials(username, email, password)
     }
 
-    private fun fillAddressAndContinue(page: Page) {
+    private fun saveAddressThroughUi(page: Page, signup: Boolean = true) {
         val suffix = System.currentTimeMillis().toString().takeLast(8)
         AddressFormHelper.fill(
             page,
@@ -177,44 +277,41 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
                 city = "Enschede$suffix",
             ),
         )
-        val addressSaveResponse = page.waitForResponse(
-            Predicate { response ->
-                (response.request().method() == "POST" || response.request().method() == "PUT") &&
-                    response.url().contains("/addresses")
-            },
+        val path = if (signup) "/signup/address" else "/addresses"
+        val response = page.waitForResponse(
+            Predicate { it.request().method() in setOf("POST", "PUT") && it.url().contains(path) },
         ) {
-            MembershipSignUpHelper.clickStepThreeNext(page)
+            MembershipSignUpHelper.addressNextButton(page).click()
         }
-        assertThat(addressSaveResponse.status()).isBetween(200, 299)
+        assertThat(response.status()).isBetween(200, 299)
     }
 
-    private fun assertStepFourVisible(page: Page) {
-        pollFor("membership step 4 visible for pre-seeded user", timeoutMs = 8_000) {
-            page.url().contains("step=4")
+    private fun submitApplicationThroughUi(page: Page) {
+        acceptConditions(page)
+        val response = page.waitForResponse(
+            Predicate { it.request().method() == "POST" && it.url().endsWith("/signup/apply") },
+        ) {
+            MembershipSignUpHelper.conditionsSubmitButton(page).click()
         }
-
-        assertPw(membershipConsentCheckbox(page)).isVisible()
-        assertPw(MembershipSignUpHelper.stepFourCompleteButton(page)).isVisible()
+        assertThat(response.status()).isEqualTo(200)
     }
 
-    private fun completeMembershipAtStepFour(page: Page) {
-        val consentCheckbox = membershipConsentCheckbox(page)
-        assertPw(consentCheckbox).isVisible()
-        if (!consentCheckbox.isChecked) {
-            consentCheckbox.check()
-        }
-        pollFor("membership consent checkbox checked before completion", timeoutMs = 5_000) {
-            consentCheckbox.isChecked
-        }
+    private fun acceptConditions(page: Page) {
+        val checkbox = membershipConsentCheckbox(page)
+        assertPw(checkbox).isVisible()
+        if (!checkbox.isChecked) checkbox.check()
+        pollFor("membership consent checkbox checked", timeoutMs = 5_000) { checkbox.isChecked }
+    }
 
-        val membershipResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "POST" && response.url().contains("/memberships")
-            },
-        ) {
-            MembershipSignUpHelper.clickStepFourComplete(page)
+    private fun confirmAddressThroughUi(page: Page, username: String) {
+        val token = URLEncoder.encode(
+            TestHelper.mintRecoveryToken(username, "USER_ACTIVATION"),
+            StandardCharsets.UTF_8,
+        )
+        val response = page.waitForResponse("**/recovery/user/activate") {
+            page.navigate("$frontendUrl/account/activate/user#token=$token")
         }
-        assertThat(membershipResponse.status()).isEqualTo(201)
+        assertThat(response.status()).isEqualTo(200)
     }
 
     private fun membershipConsentCheckbox(page: Page) = page.getByRole(
@@ -224,14 +321,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
             .setExact(false),
     )
 
-    private fun assertMembershipPersisted(username: String, userId: Long) {
-        pollFor("active membership exists after completing step 4", timeoutMs = 10_000) {
-            TestHelper.hasActiveMembership(username)
-        }
-        assertThat(TestHelper.findAddress(username)).isNotNull()
-        assertThat(TestHelper.findRoles(username)).contains("MEMBER")
-        assertThat(TestHelper.hasMemberProfile(userId)).isTrue()
-    }
+    private fun refreshedUser(username: String) = requireNotNull(TestHelper.findUser(username))
 
     private fun pollForUser(username: String): TestHelper.RegisteredUserRow {
         val deadline = System.currentTimeMillis() + 10_000
@@ -254,5 +344,6 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
     private companion object {
         const val MEMBERSHIP_CONSENT_LABEL_PREFIX = "I confirm that I have read and agree to the membership terms above"
+        const val CONFIRMATION_SUBJECT = "Activate your Account"
     }
 }

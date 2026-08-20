@@ -69,11 +69,26 @@ class MembershipControllerSecurityTest : UserTestSupport() {
     inner class CreateMembership {
 
         @Test
+        fun `refuses an application that does not accept the conditions`() {
+            val guest = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST)))
+
+            mvc.perform(
+                MockMvcRequestBuilders.post("/memberships")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"conditionsAccepted":false}""")
+                    .with(bearer(guest))
+            )
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError)
+        }
+
+        @Test
         fun `denies MEMBER from creating a membership for self`() {
             val member = assignAddress(createUserWithRole(Role.MEMBER))
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(ACCEPTED_CONDITIONS)
                     .with(bearer(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
@@ -85,9 +100,12 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(ACCEPTED_CONDITIONS)
                     .with(bearer(guest))
             )
-                .andExpect(MockMvcResultMatchers.status().isCreated)
+                .andExpect(MockMvcResultMatchers.status().isOk)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.membershipStarted").value(true))
         }
 
         @Test
@@ -96,6 +114,8 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(ACCEPTED_CONDITIONS)
                     .with(bearer(guest))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
@@ -560,5 +580,9 @@ class MembershipControllerSecurityTest : UserTestSupport() {
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
+    }
+
+    private companion object {
+        const val ACCEPTED_CONDITIONS = """{"conditionsAccepted":true}"""
     }
 }

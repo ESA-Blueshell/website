@@ -3,7 +3,7 @@ package net.blueshell.api.domain.auth.application.factory
 import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.auth.persistence.repository.RecoveryTokenRepository
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.enums.ResetType
+import net.blueshell.api.shared.enums.TokenPurpose
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -32,7 +32,7 @@ class RecoveryTokenFactory(
      * @return The raw token string in format "selector.verifier"
      */
     @Transactional
-    fun issue(user: User, type: ResetType, ttl: Duration): String {
+    fun issue(user: User, type: TokenPurpose, ttl: Duration): String {
         // Delete any existing unconsumed tokens of this type
         repository.findAllUnconsumedByTypeAndUserId(user.id!!, type)
             .forEach { repository.delete(it) }

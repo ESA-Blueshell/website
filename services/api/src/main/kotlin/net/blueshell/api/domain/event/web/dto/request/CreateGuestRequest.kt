@@ -6,13 +6,13 @@ import jakarta.validation.constraints.NotBlank
 @Schema(name = "CreateGuestRequest")
 data class CreateGuestRequest(
     @field:NotBlank(message = "Guest name cannot be empty.")
-    var name: String? = null,
+    var name: String,
 
     @field:NotBlank(message = "Guest discord cannot be empty.")
-    var discord: String? = null,
+    var discord: String,
 
     @field:NotBlank(message = "Guest email cannot be empty.")
-    var email: String? = null,
+    var email: String,
 
     var phoneNumber: String? = null,
 

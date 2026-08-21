@@ -2,7 +2,6 @@ package net.blueshell.api.domain.board.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
 
@@ -10,13 +9,12 @@ import java.time.LocalDate
 data class CreateBoardRequest(
     @field:NotBlank(message = "Board name is required")
     @field:Size(min = 1, max = 100, message = "Board name must be between 1 and 100 characters")
-    var name: String? = null,
+    var name: String,
 
     @field:NotBlank(message = "Candidate name is required")
-    var candidate: String? = null,
+    var candidate: String,
 
-    @field:NotNull(message = "Start date is required")
-    var startDate: LocalDate? = null,
+    var startDate: LocalDate,
 
     var endDate: LocalDate? = null,
 

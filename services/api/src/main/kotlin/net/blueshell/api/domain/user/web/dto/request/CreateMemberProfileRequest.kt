@@ -2,27 +2,22 @@ package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import java.time.LocalDate
 
 @Schema(name = "CreateMemberProfileRequest")
 data class CreateMemberProfileRequest(
-    @field:NotNull
-    var userId: Long? = null,
+    var userId: Long,
 
-    @field:NotNull
-    var dateOfBirth: LocalDate? = null,
+    var dateOfBirth: LocalDate,
 
     var studentNumber: String? = null,
 
     var gender: String? = null,
 
     @field:NotBlank
-    var nationality: String? = null,
+    var nationality: String,
 
-    @field:NotNull
-    var bhv: Boolean? = null,
+    var bhv: Boolean,
 
-    @field:NotNull
-    var ehbo: Boolean? = null
+    var ehbo: Boolean
 )

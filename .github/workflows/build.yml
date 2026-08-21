@@ -278,7 +278,22 @@ jobs:
           fi
 
           docker buildx imagetools create "${tags[@]}" "${sources[@]}"
-          docker buildx imagetools inspect "${IMAGE}:sha-${SHORT}"
+
+          # Same read-after-write as the promote job: the manifest list was
+          # written a moment ago, so let the registry settle rather than failing
+          # the publish over a tag that is about to be there.
+          read_back=false
+          for attempt in 1 2 3 4 5; do
+            if docker buildx imagetools inspect "${IMAGE}:sha-${SHORT}"; then
+              read_back=true
+              break
+            fi
+            sleep "$(( attempt * 2 ))"
+          done
+          if [[ "$read_back" != true ]]; then
+            echo "::error::${IMAGE}:sha-${SHORT} did not read back after 5 attempts"
+            exit 1
+          fi
 
   promote:
     # Moves :latest, the tag Keel polls, for every service in this release —
@@ -331,8 +346,23 @@ jobs:
             exit 0
           fi
 
+          # A tag read back moments after it was written can come back missing
+          # or error outright while the registry settles — ghcr answered a
+          # `:latest` created 1.3s earlier with exit 255, which under
+          # `pipefail` killed the step before the comparison below could say
+          # anything. One read is not an answer, so give the registry a few.
           digest_of() {
-            docker buildx imagetools inspect "$1" | awk '/^Digest:/ { print $2; exit }'
+            local reference="$1" attempt digest
+            for attempt in 1 2 3 4 5; do
+              if digest="$(docker buildx imagetools inspect "$reference" |
+                    awk '/^Digest:/ { print $2; exit }')" && [[ -n "$digest" ]]; then
+                printf '%s\n' "$digest"
+                return 0
+              fi
+              sleep "$(( attempt * 2 ))"
+            done
+            echo "::error::could not read a digest for ${reference} after 5 attempts" >&2
+            return 1
           }
 
           # Re-tagging from the release tag rather than from the digests keeps

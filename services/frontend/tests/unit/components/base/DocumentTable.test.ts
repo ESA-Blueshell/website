@@ -1,7 +1,10 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import DocumentTable from "@/components/base/DocumentTable.vue"
-import {ACTIVE_COOKIE_POLICY_PATHS} from "@/config/policies"
+import {
+  ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES,
+  ACTIVE_COOKIE_POLICY_PATHS,
+} from "@/config/policies"
 
 const {mockRequire} = vi.hoisted(() => ({
   mockRequire: vi.fn((path: string) => `https://assets.example.test/${encodeURIComponent(path)}`),
@@ -11,112 +14,87 @@ vi.mock("@/plugins/require.ts", () => ({
   $require: mockRequire,
 }))
 
-function findButton(wrapper: ReturnType<typeof shallowMount>, label: string) {
-  const button = wrapper.findAll("button").find((node) => node.text().trim() === label)
-  if (!button) {
-    throw new Error(`Expected button with label '${label}'`)
-  }
-  return button
+function assetUrl(path: string) {
+  return `https://assets.example.test/${encodeURIComponent(path)}`
+}
+
+function mountTable() {
+  return shallowMount(DocumentTable, {
+    global: {
+      stubs: {
+        VSheet: {template: "<div><slot /></div>"},
+        VRow: {template: "<div><slot /></div>"},
+        VCol: {template: "<div><slot /></div>"},
+        VDivider: {template: "<hr />"},
+        VBtn: {template: "<a><slot /></a>"},
+      },
+    },
+  })
+}
+
+function documentLinks(wrapper: ReturnType<typeof mountTable>) {
+  return wrapper.findAll("a").map((node) => ({
+    label: node.text().trim(),
+    href: node.attributes("href"),
+    download: node.attributes("download"),
+  }))
 }
 
 describe("DocumentTable", () => {
-  const createdLinks: HTMLAnchorElement[] = []
-
   beforeEach(() => {
     vi.clearAllMocks()
-    createdLinks.length = 0
-
-    const createElement = document.createElement.bind(document)
-    vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
-      const element = createElement(tagName)
-      if (tagName.toLowerCase() === "a") {
-        createdLinks.push(element as HTMLAnchorElement)
-        vi.spyOn(element as HTMLAnchorElement, "click").mockImplementation(() => {})
-      }
-      return element
-    })
   })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
+  it("renders a Dutch and English link for every document", () => {
+    const wrapper = mountTable()
+
+    for (const title of [
+      "Statutes",
+      "Domestic Regulations",
+      "Privacy Policy",
+      "Code of Conduct",
+      "Cookie Policy",
+    ]) {
+      expect(wrapper.text()).toContain(title)
+    }
+
+    const links = documentLinks(wrapper)
+    expect(links).toHaveLength(10)
+    expect(links.map((link) => link.label)).toEqual(Array(5).fill(["Dutch", "English"]).flat())
   })
 
-  it("renders statutes language actions", () => {
-    const wrapper = shallowMount(DocumentTable, {
-      global: {
-        stubs: {
-          VSheet: {template: "<div><slot /></div>"},
-          VRow: {template: "<div><slot /></div>"},
-          VCol: {template: "<div><slot /></div>"},
-          VDivider: {template: "<hr />"},
-          VBtn: {
-            template: "<button @click=\"$emit('click')\"><slot /></button>",
-            emits: ["click"],
-          },
-        },
-      },
-    })
+  it("links the statutes to their bundled assets with a download filename", () => {
+    const dutchPath = "@/assets/documents/20171212 - ESA Blueshell Statuten.pdf"
+    const englishPath = "@/assets/documents/20171212 - ESA Blueshell Statutes.pdf"
 
-    expect(wrapper.text()).toContain("Statutes")
-    expect(findButton(wrapper, "Dutch").exists()).toBe(true)
-    expect(findButton(wrapper, "English").exists()).toBe(true)
+    const links = documentLinks(mountTable())
+
+    expect(links[0]).toEqual({
+      label: "Dutch",
+      href: assetUrl(dutchPath),
+      download: "ESA Blueshell - Statuten.pdf",
+    })
+    expect(links[1]).toEqual({
+      label: "English",
+      href: assetUrl(englishPath),
+      download: "ESA Blueshell - Statutes.pdf",
+    })
+    expect(mockRequire).toHaveBeenCalledWith(dutchPath)
+    expect(mockRequire).toHaveBeenCalledWith(englishPath)
   })
 
-  it("downloads dutch and english statutes with expected filenames", async () => {
-    const appendSpy = vi.spyOn(document.body, "appendChild")
-    const removeSpy = vi.spyOn(document.body, "removeChild")
-    const wrapper = shallowMount(DocumentTable, {
-      global: {
-        stubs: {
-          VSheet: {template: "<div><slot /></div>"},
-          VRow: {template: "<div><slot /></div>"},
-          VCol: {template: "<div><slot /></div>"},
-          VDivider: {template: "<hr />"},
-          VBtn: {
-            template: "<button @click=\"$emit('click')\"><slot /></button>",
-            emits: ["click"],
-          },
-        },
-      },
+  it("links the cookie policy from the active policy metadata", () => {
+    const links = documentLinks(mountTable())
+
+    expect(links.at(-2)).toEqual({
+      label: "Dutch",
+      href: assetUrl(ACTIVE_COOKIE_POLICY_PATHS.dutch),
+      download: ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.dutch,
     })
-
-    await findButton(wrapper, "Dutch").trigger("click")
-    await findButton(wrapper, "English").trigger("click")
-
-    expect(createdLinks).toHaveLength(2)
-    expect(createdLinks[0].download).toBe("ESA Blueshell - Statuten.pdf")
-    expect(createdLinks[1].download).toBe("ESA Blueshell - Statutes.pdf")
-    expect(mockRequire).toHaveBeenCalledWith("@/assets/documents/20171212 - ESA Blueshell Statuten.pdf")
-    expect(mockRequire).toHaveBeenCalledWith("@/assets/documents/20171212 - ESA Blueshell Statutes.pdf")
-    expect(createdLinks[0].click).toHaveBeenCalledTimes(1)
-    expect(createdLinks[1].click).toHaveBeenCalledTimes(1)
-    expect(appendSpy).toHaveBeenCalledTimes(2)
-    expect(removeSpy).toHaveBeenCalledTimes(2)
-  })
-
-  it("downloads cookie policy files from active policy metadata", async () => {
-    const wrapper = shallowMount(DocumentTable, {
-      global: {
-        stubs: {
-          VSheet: {template: "<div><slot /></div>"},
-          VRow: {template: "<div><slot /></div>"},
-          VCol: {template: "<div><slot /></div>"},
-          VDivider: {template: "<hr />"},
-          VBtn: {
-            template: "<button @click=\"$emit('click')\"><slot /></button>",
-            emits: ["click"],
-          },
-        },
-      },
+    expect(links.at(-1)).toEqual({
+      label: "English",
+      href: assetUrl(ACTIVE_COOKIE_POLICY_PATHS.english),
+      download: ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.english,
     })
-
-    const buttons = wrapper.findAll("button")
-    await buttons.at(-2)?.trigger("click")
-    await buttons.at(-1)?.trigger("click")
-
-    expect(mockRequire).toHaveBeenCalledWith(ACTIVE_COOKIE_POLICY_PATHS.dutch)
-    expect(mockRequire).toHaveBeenCalledWith(ACTIVE_COOKIE_POLICY_PATHS.english)
-    expect(createdLinks.at(-2)?.download).toBe("ESA Blueshell - Cookiebeleid.pdf")
-    expect(createdLinks.at(-1)?.download).toBe("ESA Blueshell - Cookie Policy.pdf")
   })
 })

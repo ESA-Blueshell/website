@@ -7,6 +7,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -108,13 +109,8 @@ class AddressPageSystemTest : PlaywrightTestBase() {
     private fun pollForAddress(
         username: String,
         predicate: (TestHelper.AddressRow) -> Boolean = { true },
-    ): TestHelper.AddressRow {
-        val deadline = System.currentTimeMillis() + 6_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findAddress(username)
-            if (row != null && predicate(row)) return row
-            Thread.sleep(200)
+    ): TestHelper.AddressRow =
+        pollForValue("an address row matching the predicate for $username") {
+            TestHelper.findAddress(username)?.takeIf(predicate)
         }
-        throw AssertionError("No address row matching predicate for $username within 6s")
-    }
 }

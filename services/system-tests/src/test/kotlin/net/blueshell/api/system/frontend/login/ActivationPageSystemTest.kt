@@ -5,12 +5,14 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
 class ActivationPageSystemTest : PlaywrightTestBase() {
@@ -112,15 +114,9 @@ class ActivationPageSystemTest : PlaywrightTestBase() {
 
     private fun submitMemberActivationForm(page: Page, username: String, password: String) {
         LoginDomainHelper.fillActivateMemberForm(page, username, password)
+        // Tabbing out runs the repeat-password rule; the enabled submit button is
+        // the signal that it passed and the form is ready to be sent.
         LoginDomainHelper.activateMemberRepeatPasswordInput(page).press("Tab")
-    }
-
-    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected '$description' within ${timeoutMs}ms")
+        assertPw(LoginDomainHelper.activateMemberSubmitButton(page)).isEnabled()
     }
 }

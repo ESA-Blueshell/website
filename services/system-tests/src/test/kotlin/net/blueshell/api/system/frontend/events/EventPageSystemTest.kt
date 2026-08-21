@@ -6,6 +6,8 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventPageHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -395,28 +397,5 @@ class EventPageSystemTest : PlaywrightTestBase() {
         page.getByLabel("Discord username*", Page.GetByLabelOptions().setExact(true)).fill(discord)
         page.getByLabel("Email*", Page.GetByLabelOptions().setExact(true)).fill(email)
         page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill(phoneNumber)
-    }
-
-    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected $description within ${timeoutMs}ms")
-    }
-
-    private fun <T : Any> pollForValue(
-        description: String,
-        timeoutMs: Long = 10_000,
-        producer: () -> T?,
-    ): T {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val value = producer()
-            if (value != null) return value
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected $description within ${timeoutMs}ms")
     }
 }

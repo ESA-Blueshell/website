@@ -4,12 +4,14 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
 class PasswordRecoveryPageSystemTest : PlaywrightTestBase() {
@@ -30,7 +32,9 @@ class PasswordRecoveryPageSystemTest : PlaywrightTestBase() {
         LoginDomainHelper.resetPasswordRepeatInput(page).press("Tab")
 
         val resetPasswordButton = LoginDomainHelper.resetPasswordSubmitButton(page)
-        pollFor("reset-password submit enabled") { !resetPasswordButton.isDisabled }
+        // The button stays disabled until the repeat-password rule passes, so an
+        // enabled button is the signal that the form will submit.
+        assertPw(resetPasswordButton).isEnabled()
 
         page.waitForResponse("**/recovery/password") {
             resetPasswordButton.click()
@@ -40,14 +44,5 @@ class PasswordRecoveryPageSystemTest : PlaywrightTestBase() {
 
         val status = AuthHelper.submitLogin(page, frontendUrl, user.username, newPassword)
         assertThat(status).isEqualTo(200)
-    }
-
-    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected '$description' within ${timeoutMs}ms")
     }
 }

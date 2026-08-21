@@ -4,6 +4,7 @@ import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -276,16 +277,6 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         return (1 until totalsCells.count())
             .map { idx -> totalsCells.nth(idx).innerText().trim() }
     }
-
-    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected $description within ${timeoutMs}ms")
-    }
-
     private data class SeededSignUpsData(
         val eventId: Long,
         val viewer: TestHelper.RegisteredUser,

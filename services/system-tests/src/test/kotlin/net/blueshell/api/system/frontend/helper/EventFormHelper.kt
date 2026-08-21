@@ -4,6 +4,8 @@ import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
 import java.nio.file.Paths
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
+import net.blueshell.systemtests.pollFor
 
 object EventFormHelper {
     private const val TITLE_FIELD_TEST_ID = "event-form-title-field"
@@ -18,21 +20,29 @@ object EventFormHelper {
     private const val SUBMIT_BUTTON_TEST_ID = "event-form-submit-btn"
 
     fun openCreatePage(page: Page, frontendUrl: String) {
-        // Wait for the committee list the form loads on mount, so the committee
-        // select is populated (and enabled) before any interaction.
-        page.waitForResponse("**/committees") {
-            page.navigate("$frontendUrl/events/create")
-        }
+        page.navigate("$frontendUrl/events/create")
         page.waitForURL("**/events/create**")
-        TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
+        waitForFormReady(page)
     }
 
     fun openEditPage(page: Page, frontendUrl: String, eventId: Long) {
-        page.waitForResponse("**/committees") {
-            page.navigate("$frontendUrl/events/edit/$eventId")
-        }
+        page.navigate("$frontendUrl/events/edit/$eventId")
         page.waitForURL("**/events/edit/$eventId**")
+        waitForFormReady(page)
+    }
+
+    /**
+     * The form renders its committee select disabled until the committees it
+     * requests on mount are in the model, so an enabled select is the signal
+     * that the form will accept input. The response landing is not: it arrives
+     * a render before the DOM reflects it, and a form filled in that gap keeps
+     * an empty `committeeId`, fails its own `required` rule, and swallows the
+     * submit — which surfaces as a request that never happens rather than as a
+     * validation error.
+     */
+    fun waitForFormReady(page: Page) {
         TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
+        assertPw(committeeInput(page)).isEnabled()
     }
 
     fun fillRequiredFields(
@@ -53,26 +63,43 @@ object EventFormHelper {
     }
 
     fun openCommitteeSelect(page: Page) {
-        val committeeField = TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
-        val combo = committeeField.getByRole(AriaRole.COMBOBOX).first()
-        val listbox = page.getByRole(AriaRole.LISTBOX).first()
-        combo.waitFor()
-        // Clicking the select before its list has loaded is a no-op, so retry
-        // opening until the options menu actually appears.
-        page.waitForCondition {
-            if (!listbox.isVisible()) {
-                combo.click(Locator.ClickOptions().setForce(true))
-            }
-            listbox.isVisible()
-        }
+        assertPw(committeeInput(page)).isEnabled()
+        committeeField(page).getByRole(AriaRole.COMBOBOX).first().click()
+        assertPw(page.getByRole(AriaRole.LISTBOX).first()).isVisible()
     }
 
     fun selectCommittee(page: Page, committeeName: String) {
         openCommitteeSelect(page)
-        val option = page.getByText(committeeName, Page.GetByTextOptions().setExact(true)).first()
-        option.waitFor()
-        option.click()
+        val listbox = page.getByRole(AriaRole.LISTBOX).first()
+        // The menu is a virtual scroller: it only keeps a window of the
+        // committees in the DOM, so an option further down does not exist to be
+        // clicked (or waited for) until the list has been scrolled to it. The
+        // option is matched inside the menu rather than page-wide, since the
+        // name also lands in the select's own selection slot once picked.
+        val option = listbox.getByText(committeeName, Locator.GetByTextOptions().setExact(true))
+        pollFor("committee '$committeeName' to be rendered in the menu") {
+            if (option.count() > 0) {
+                true
+            } else {
+                listbox.evaluate("element => element.scrollBy(0, element.clientHeight)")
+                false
+            }
+        }
+        option.first().click()
+        // The menu overlays the rest of the form while it closes, and the model
+        // holds the committee only once its name is rendered in the select. Both
+        // have to settle before the caller fills another field or submits — and
+        // asserting the name here turns a mis-clicked option into a failure at
+        // the select instead of a submit that silently never fires.
+        assertPw(listbox).not().isVisible()
+        assertPw(committeeField(page)).containsText(committeeName)
     }
+
+    private fun committeeField(page: Page): Locator =
+        TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
+
+    private fun committeeInput(page: Page): Locator =
+        TestIdLocatorHelper.textInput(page, COMMITTEE_FIELD_TEST_ID)
 
     fun setApproved(page: Page, approved: Boolean) {
         val checkbox = TestIdLocatorHelper.byTestId(page, APPROVED_FIELD_TEST_ID).locator("input[type='checkbox']").first()
@@ -109,8 +136,10 @@ object EventFormHelper {
     fun setSignUpLimit(page: Page, limit: Int) {
         val input = signUpLimitInput(page)
         input.fill(limit.toString())
-        // Force blur so Vuetify + vee-validate commit the value before submit.
+        // Tabbing out is what a user does, and it is what makes vee-validate run
+        // the field's rules; the assertion is what proves the value stuck.
         input.press("Tab")
+        assertPw(input).hasValue(limit.toString())
     }
 
     fun submit(page: Page) {

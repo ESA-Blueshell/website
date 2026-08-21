@@ -6,6 +6,8 @@ import net.blueshell.api.system.frontend.helper.AddressManagerHelper
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -118,22 +120,10 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
         page.locator("[data-testid='address-user-row-$guestId']").first().waitFor()
     }
 
-    private fun pollForAddress(username: String): TestHelper.AddressRow {
-        val deadline = System.currentTimeMillis() + 6_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findAddress(username)
-            if (row != null) return row
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected an address row for $username within 6s")
-    }
+    private fun pollForAddress(username: String): TestHelper.AddressRow =
+        pollForValue("an address row for $username") { TestHelper.findAddress(username) }
 
     private fun waitFor(description: String, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected condition '$description' to hold within 10s")
+        pollFor("condition '$description' to hold", predicate = predicate)
     }
 }

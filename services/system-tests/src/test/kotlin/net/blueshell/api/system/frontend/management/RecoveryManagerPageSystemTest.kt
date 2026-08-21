@@ -5,6 +5,7 @@ import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.api.system.frontend.helper.RecoveryManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -169,14 +170,5 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         pollFor("deleted user $targetId visible in inactive pane as anonymized row") {
             RecoveryManagerHelper.rowCount(page, "inactive", targetId) > 0
         }
-    }
-
-    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected $description within ${timeoutMs}ms")
     }
 }

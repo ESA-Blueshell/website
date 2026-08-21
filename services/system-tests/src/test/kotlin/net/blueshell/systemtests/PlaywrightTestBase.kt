@@ -60,6 +60,17 @@ abstract class PlaywrightTestBase {
         page = context.newPage()
         page.setDefaultTimeout(DEFAULT_TIMEOUT_MS)
         page.setDefaultNavigationTimeout(DEFAULT_TIMEOUT_MS)
+        HttpFailureLog.clear()
+        page.onRequest { request ->
+            if (!request.url().contains("/assets/") && !request.url().endsWith(".js")) {
+                HttpFailureLog.recordRequest(request.method(), request.url())
+            }
+        }
+        page.onResponse { response ->
+            if (response.status() >= 400) {
+                HttpFailureLog.record(response.status(), response.request().method(), response.url())
+            }
+        }
     }
 
     @AfterEach

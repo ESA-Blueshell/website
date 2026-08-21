@@ -2,10 +2,14 @@ package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.Response
+import com.microsoft.playwright.TimeoutError
 import com.microsoft.playwright.options.AriaRole
 import java.nio.file.Paths
+import java.util.function.Predicate
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import net.blueshell.systemtests.pollFor
+import net.blueshell.systemtests.HttpFailureLog
 
 object EventFormHelper {
     private const val TITLE_FIELD_TEST_ID = "event-form-title-field"
@@ -123,4 +127,34 @@ object EventFormHelper {
     fun submit(page: Page) {
         TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID).click()
     }
+
+    /**
+     * Submits and returns the request the form is expected to make.
+     *
+     * A form that fails its own client-side rules sends nothing, and the click
+     * reports nothing either: the caller waits out its budget on a response
+     * that was never going to come. Reading the messages the form is showing —
+     * on the failure path, where no navigation is in flight to race — names the
+     * field that blocked it.
+     */
+    fun submitExpecting(page: Page, description: String, predicate: (Response) -> Boolean): Response =
+        try {
+            page.waitForResponse(Predicate { response -> predicate(response) }) { submit(page) }
+        } catch (e: TimeoutError) {
+            // Only non-waiting reads here: if the submit did land, the form is
+            // already gone and anything that auto-waits would time out instead
+            // of reporting what happened.
+            val messages = page.locator(".v-messages__message").let { locator ->
+                if (locator.count() == 0) emptyList() else locator.allTextContents().filter { it.isNotBlank() }
+            }
+            val submitPresent = TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID).count()
+            val titlePresent = TestIdLocatorHelper.byTestId(page, TITLE_FIELD_TEST_ID).count()
+            throw AssertionError(
+                "Submitting the event form produced no $description. " +
+                    "url=${page.url()} submitButtons=$submitPresent titleFields=$titlePresent " +
+                    "messages=$messages failed=${HttpFailureLog.recent()} requests=${HttpFailureLog.recentRequests()}",
+                e,
+            )
+        }
+
 }

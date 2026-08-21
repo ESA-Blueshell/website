@@ -33,10 +33,8 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
         EventFormHelper.openEditPage(page, frontendUrl, eventId)
         EventFormHelper.fillRequiredFields(page, updatedTitle, updatedLocation, updatedDescription)
 
-        val response = page.waitForResponse(
-            Predicate { r -> r.request().method() == "PUT" && r.url().contains("/events/$eventId") },
-        ) {
-            EventFormHelper.submit(page)
+        val response = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
         }
         assertThat(response.status()).isEqualTo(200)
 
@@ -69,10 +67,8 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
             description = "Updated by committee member",
         )
 
-        val response = page.waitForResponse(
-            Predicate { r -> r.request().method() == "PUT" && r.url().contains("/events/$eventId") },
-        ) {
-            EventFormHelper.submit(page)
+        val response = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
         }
         assertThat(response.status()).isEqualTo(200)
 
@@ -97,10 +93,8 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
         EventFormHelper.openEditPage(page, frontendUrl, eventId)
         EventFormHelper.setApproved(page, approved = true)
 
-        val response = page.waitForResponse(
-            Predicate { r -> r.request().method() == "PUT" && r.url().contains("/events/$eventId") },
-        ) {
-            EventFormHelper.submit(page)
+        val response = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
         }
         assertThat(response.status()).isEqualTo(200)
 
@@ -124,10 +118,8 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
         EventFormHelper.openEditPage(page, frontendUrl, eventId)
         EventFormHelper.uploadBanner(page, EVENT_BANNER_PATH)
 
-        val updateResponse = page.waitForResponse(
-            Predicate { r -> r.request().method() == "PUT" && r.url().contains("/events/$eventId") },
-        ) {
-            EventFormHelper.submit(page)
+        val updateResponse = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
         }
         assertThat(updateResponse.status()).isEqualTo(200)
 

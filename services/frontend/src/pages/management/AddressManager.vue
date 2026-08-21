@@ -43,8 +43,8 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AddressUserList from "@/components/common/lists/AddressUserList.vue"
 import {type AddressResponse, findAllAddresses, findUsers, type UserDetailResponse} from "@/services/api"
 
-type ManagedUser = UserDetailResponse & { addressId?: number }
-type ManagedAddress = AddressResponse & { userId?: number }
+type ManagedUser = UserDetailResponse & { addressId?: number | null }
+type ManagedAddress = AddressResponse & { userId?: number | null }
 
 const users = ref<ManagedUser[]>([])
 const addresses = ref<ManagedAddress[]>([])

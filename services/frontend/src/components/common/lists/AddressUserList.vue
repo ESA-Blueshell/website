@@ -93,8 +93,8 @@ import AddressUserRow from "../rows/AddressUserRow.vue"
 import type {AddressResponse, UserDetailResponse} from "@/services/api"
 import {filterUsers} from "@/plugins/userFilter"
 
-type ManagedUser = UserDetailResponse & { addressId?: number }
-type ManagedAddress = AddressResponse & { userId?: number }
+type ManagedUser = UserDetailResponse & { addressId?: number | null }
+type ManagedAddress = AddressResponse & { userId?: number | null }
 
 const props = withDefaults(defineProps<{
   title: string

@@ -126,7 +126,7 @@ type JobListQuery = {
   size: number
   sort: string[]
   category?: JobExecutionCategory
-  status?: JobExecution["status"]
+  status?: JobExecutionStatus
   search?: string
 }
 
@@ -345,7 +345,7 @@ const refresh = async () => {
       size: PAGE_SIZE,
       sort: ["updatedAt,desc", "id,desc"],
       ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
-      ...(selectedStatus.value !== "all" ? {status: selectedStatus.value as JobExecution["status"]} : {}),
+      ...(selectedStatus.value !== "all" ? {status: selectedStatus.value as JobExecutionStatus} : {}),
       ...(normalizedSearch ? {search: normalizedSearch} : {}),
     }
 

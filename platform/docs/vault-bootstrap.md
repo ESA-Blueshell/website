@@ -270,23 +270,15 @@ vault kv put secret/platform/alerting \
   discord.webhook_url=https://discord.com/api/webhooks/<id>/<token>
 ```
 
-Create the webhook in Discord under *Server Settings → Integrations →
-Webhooks*; the channel it targets is where every alert and rollout
-message lands. Anyone holding the URL can post to that channel, so it
-is a credential and never belongs in git.
+Create the webhook under *Server Settings → Integrations → Webhooks*;
+the channel it targets receives both alerts and rollout messages.
 
-Both consumers tolerate the path being absent: the Gatus Deployment
-marks its `secretKeyRef` optional and logs the discord provider as
-misconfigured while continuing to serve the status page, and the Keel
-HelmRelease patches its chart-rendered `envFrom` to `optional: true` so
-image auto-updates keep running with notifications off. Seeding the
-path and letting VSO sync (≤1 h, or force a reconcile) turns both on;
-the Gatus Deployment is restarted automatically because the
-VaultStaticSecret lists it under `rolloutRestartTargets`.
-
-Rotate by re-running the same `kv put`. Keel reads the env var per
-notification and needs no restart; Gatus reads it once at config load,
-which the rollout-restart target handles.
+The path is optional: both consumers mark their Secret reference
+`optional`, so an unseeded Vault costs notifications but neither the
+status page nor image auto-updates. Seeding it turns both on within one
+refresh cycle (1 h, or force a reconcile). Rotate with the same
+`kv put` — Gatus is restarted by the `rolloutRestartTargets` entry on
+the VaultStaticSecret, Keel needs no restart.
 
 ## 5. Confirm VSO sync
 

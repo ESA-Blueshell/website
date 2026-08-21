@@ -1,28 +1,21 @@
 package net.blueshell.api.domain.contribution.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.constraints.NotNull
 import java.time.LocalDate
 
 @Schema(name = "UpdateContributionPeriodRequest")
 data class UpdateContributionPeriodRequest(
-    @field:NotNull
-    var startDate: LocalDate? = null,
+    var startDate: LocalDate,
 
-    @field:NotNull
-    var endDate: LocalDate? = null,
+    var endDate: LocalDate,
 
-    @field:NotNull
-    var halfYearFee: Double? = null,
+    var halfYearFee: Double,
 
-    @field:NotNull
-    var fullYearFee: Double? = null,
+    var fullYearFee: Double,
 
-    @field:NotNull
-    var alumniFee: Double? = null,
+    var alumniFee: Double,
 
     var contactListId: Long? = null,
 
-    @field:NotNull
-    var version: Long? = null
+    var version: Long
 )

@@ -86,8 +86,8 @@ import AddressForm from "@/components/form/AddressForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import {type AddressResponse, deleteAddressById, type UserDetailResponse} from "@/services/api"
 
-type ManagedUser = UserDetailResponse & { addressId?: number }
-type ManagedAddress = AddressResponse & { userId?: number }
+type ManagedUser = UserDetailResponse & { addressId?: number | null }
+type ManagedAddress = AddressResponse & { userId?: number | null }
 
 interface Props {
   user: ManagedUser

@@ -36,14 +36,14 @@ const emit = defineEmits<{
 
 type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
 type EventModel = Omit<CreateEventRequest, "committeeId" | "banner" | "signUpForm"> & {
-  committeeId?: number;
+  committeeId?: number | null;
   id?: number;
   version?: number;
-  banner?: EventBannerRequest;
-  signUpForm?: SurveyRequest;
+  banner?: EventBannerRequest | null;
+  signUpForm?: SurveyRequest | null;
   signUpCount?: number;
-  signUpDeadline?: string;
-  signUpLimit?: number;
+  signUpDeadline?: string | null;
+  signUpLimit?: number | null;
 }
 
 function defaultEvent(): EventModel {
@@ -266,7 +266,8 @@ const save = async () => {
         })
         : await createEvent({body: bodyBase, throwOnError: true})
 
-      event.value = resp.data!
+      const saved = resp.data!
+      event.value = {...saved, description: saved.description ?? ""}
       emit("update:modelValue", event.value)
       emit("submitted", true)
       setSubmitResult(true)

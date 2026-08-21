@@ -1,18 +1,15 @@
 package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDate
 
 @Schema(name = "BoardCreateMembershipRequest")
 data class BoardCreateMembershipRequest(
-    @field:NotNull
-    var userId: Long? = null,
+    var userId: Long,
 
-    @field:NotNull
-    var memberType: MemberType? = null,
+    var memberType: MemberType,
 
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var startDate: LocalDate? = null,
@@ -20,6 +17,5 @@ data class BoardCreateMembershipRequest(
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var endDate: LocalDate? = null,
 
-    @field:NotNull
-    var incasso: Boolean? = null
+    var incasso: Boolean
 )

@@ -8,10 +8,10 @@ import jakarta.validation.constraints.Size
 @Schema(name = "MemberActivationRequest")
 data class MemberActivationRequest(
     @field:NotBlank
-    var token: String? = null,
+    var token: String,
 
     @field:NotBlank
-    var username: String? = null,
+    var username: String,
 
     @field:Size(min = 8, max = 100, message = "Password must be at least 8 characters")
     @field:Pattern(
@@ -19,5 +19,5 @@ data class MemberActivationRequest(
         message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)"
     )
     @field:NotBlank
-    var password: String? = null
+    var password: String
 )

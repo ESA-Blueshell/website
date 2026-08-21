@@ -16,41 +16,41 @@ export type ActivationResponse = {
 export type Actor = {
     role: Role;
     type: ActionActorType;
-    userId?: number;
+    userId?: number | null;
 };
 
 export type AddBoardMemberRequest = {
-    endDate?: string;
+    endDate?: string | null;
     role: string;
     startDate: string;
     userId: number;
 };
 
 export type AddressResponse = {
-    city?: string;
-    country?: string;
+    city?: string | null;
+    country?: string | null;
     createdAt: string;
-    houseNumber?: string;
+    houseNumber?: string | null;
     id: number;
-    street?: string;
+    street?: string | null;
     updatedAt: string;
-    userId?: number;
+    userId?: number | null;
     version: number;
-    zipCode?: string;
+    zipCode?: string | null;
 };
 
 export type AnswerRequest = {
-    optionSelections?: Array<boolean>;
+    optionSelections?: Array<boolean> | null;
     questionId: number;
-    textResponse?: string;
+    textResponse?: string | null;
 };
 
 export type AnswerResponse = {
     createdAt: string;
     id: number;
-    optionSelections?: Array<boolean>;
+    optionSelections?: Array<boolean> | null;
     questionId: number;
-    textResponse?: string;
+    textResponse?: string | null;
     updatedAt: string;
     version: number;
 };
@@ -101,17 +101,17 @@ export type BlogResponse = {
 };
 
 export type BoardCreateMembershipRequest = {
-    endDate?: string;
+    endDate?: string | null;
     incasso: boolean;
     memberType: MemberType;
-    startDate?: string;
+    startDate?: string | null;
     userId: number;
 };
 
 export type BoardMemberResponse = {
     boardId: number;
     createdAt: string;
-    endDate?: string;
+    endDate?: string | null;
     role: string;
     startDate: string;
     updatedAt: string;
@@ -122,19 +122,19 @@ export type BoardMemberResponse = {
 export type BoardResponse = {
     candidate: string;
     createdAt: string;
-    endDate?: string;
+    endDate?: string | null;
     id: number;
     members: Array<BoardMemberResponse>;
     name: string;
-    pictureId?: number;
+    pictureId?: number | null;
     startDate: string;
     updatedAt: string;
     version: number;
 };
 
 export type CohortDetail = {
-    externalId?: string;
-    folder?: string;
+    externalId?: string | null;
+    folder?: string | null;
     id: number;
     kind: CohortKind;
     label: string;
@@ -161,7 +161,7 @@ export enum CohortKind {
 
 export type CohortMapping = {
     cohortId: number;
-    externalId?: string;
+    externalId?: string | null;
     kind: CohortKind;
     label: string;
     /**
@@ -174,8 +174,8 @@ export type CohortMemberRow = {
     cohortMemberId: number;
     isUserDeleted: boolean;
     joinedAt: string;
-    userEmail?: string;
-    userFullName?: string;
+    userEmail?: string | null;
+    userFullName?: string | null;
     userId: number;
 };
 
@@ -200,7 +200,7 @@ export enum CohortSubjectCategory {
 
 export type CohortSubjectDetail = {
     category: CohortSubjectCategory;
-    description?: string;
+    description?: string | null;
     id: number;
     label: string;
     mappings: Array<CohortMapping>;
@@ -213,8 +213,8 @@ export type CohortSubjectMember = {
     cohortMemberId: number;
     isUserDeleted: boolean;
     joinedAt: string;
-    userEmail?: string;
-    userFullName?: string;
+    userEmail?: string | null;
+    userFullName?: string | null;
     userId: number;
 };
 
@@ -244,8 +244,8 @@ export enum CohortSubjectType {
 }
 
 export type CohortSummary = {
-    externalId?: string;
-    folder?: string;
+    externalId?: string | null;
+    folder?: string | null;
     id: number;
     kind: CohortKind;
     label: string;
@@ -285,7 +285,7 @@ export enum ContactSystem {
 
 export type ContributionPeriodResponse = {
     alumniFee: number;
-    contactListId?: number;
+    contactListId?: number | null;
     createdAt: string;
     endDate: string;
     fullYearFee: number;
@@ -299,7 +299,7 @@ export type ContributionPeriodResponse = {
 export type ContributionReminderResponse = {
     contributionPeriodId: number;
     createdAt: string;
-    remindedAt?: string;
+    remindedAt?: string | null;
     updatedAt: string;
     userId: number;
     version: number;
@@ -308,7 +308,7 @@ export type ContributionReminderResponse = {
 export type ContributionResponse = {
     contributionPeriodId: number;
     createdAt: string;
-    remindedAt?: string;
+    remindedAt?: string | null;
     updatedAt: string;
     userId: number;
     version: number;
@@ -331,9 +331,9 @@ export type CreateBlogRequest = {
 
 export type CreateBoardRequest = {
     candidate: string;
-    endDate?: string;
+    endDate?: string | null;
     name: string;
-    pictureId?: number;
+    pictureId?: number | null;
     startDate: string;
 };
 
@@ -345,7 +345,7 @@ export type CreateCommitteeRequest = {
 
 export type CreateContributionPeriodRequest = {
     alumniFee: number;
-    contactListId?: number;
+    contactListId?: number | null;
     endDate: string;
     fullYearFee: number;
     halfYearFee: number;
@@ -364,43 +364,43 @@ export type CreateContributionRequest = {
 
 export type CreateEventRequest = {
     approved: boolean;
-    banner?: EventBannerRequest;
+    banner?: EventBannerRequest | null;
     committeeId: number;
     description: string;
     endTime: string;
-    location?: string;
-    memberPrice?: number;
+    location?: string | null;
+    memberPrice?: number | null;
     membersOnly: boolean;
-    publicPrice?: number;
+    publicPrice?: number | null;
     signUp: boolean;
-    signUpDeadline?: string;
-    signUpForm?: SurveyRequest;
-    signUpLimit?: number;
+    signUpDeadline?: string | null;
+    signUpForm?: SurveyRequest | null;
+    signUpLimit?: number | null;
     startTime: string;
     title: string;
 };
 
 export type CreateEventSignUpRequest = {
-    answers?: Array<AnswerRequest>;
-    guest?: CreateGuestRequest;
-    userId?: number;
+    answers?: Array<AnswerRequest> | null;
+    guest?: CreateGuestRequest | null;
+    userId?: number | null;
 };
 
 export type CreateGuestRequest = {
     discord: string;
     email: string;
     name: string;
-    phoneNumber?: string;
-    version?: number;
+    phoneNumber?: string | null;
+    version?: number | null;
 };
 
 export type CreateMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender?: string;
+    gender?: string | null;
     nationality: string;
-    studentNumber?: string;
+    studentNumber?: string | null;
     userId: number;
 };
 
@@ -410,7 +410,7 @@ export type CreateSponsorRequest = {
 };
 
 export type CreateTargetRequest = {
-    folderHint?: string;
+    folderHint?: string | null;
     label: string;
     system: TargetSystem;
 };
@@ -421,19 +421,19 @@ export type CreateTelemetryRequest = {
 };
 
 export type CreateUserRequest = {
-    consentPrivacy?: boolean;
+    consentPrivacy?: boolean | null;
     discord: string;
     email: string;
     firstName: string;
-    fullName?: string;
+    fullName?: string | null;
     initials: string;
     lastName: string;
-    memberProfile?: UpsertMemberProfileRequest;
+    memberProfile?: UpsertMemberProfileRequest | null;
     newsletter: boolean;
-    password?: string;
+    password?: string | null;
     phoneNumber: string;
-    photoConsent?: boolean;
-    prefix?: string;
+    photoConsent?: boolean | null;
+    prefix?: string | null;
     username: string;
 };
 
@@ -445,30 +445,30 @@ export type CsrfToken = {
 
 export type DriftReport = {
     cohortId: number;
-    externalCohortId?: string;
+    externalCohortId?: string | null;
     extras: Array<ExtraRow>;
-    lastReconciledAt?: string;
+    lastReconciledAt?: string | null;
     missing: Array<MissingRow>;
     system: TargetSystem;
 };
 
 export type Email = {
-    attempts?: number;
-    createdAt?: string;
-    deliveredAt?: string;
-    deliveryStatus?: EmailDeliveryStatus;
-    emailType?: string;
-    errorReason?: string;
-    errorType?: string;
-    id?: number;
-    jobExecutionId?: number;
-    messageId?: string;
-    openedAt?: string;
-    recipientEmail?: string;
-    recipientName?: string;
-    sentAt?: string;
-    subject?: string;
-    updatedAt?: string;
+    attempts?: number | null;
+    createdAt?: string | null;
+    deliveredAt?: string | null;
+    deliveryStatus?: EmailDeliveryStatus | null;
+    emailType?: string | null;
+    errorReason?: string | null;
+    errorType?: string | null;
+    id?: number | null;
+    jobExecutionId?: number | null;
+    messageId?: string | null;
+    openedAt?: string | null;
+    recipientEmail?: string | null;
+    recipientName?: string | null;
+    sentAt?: string | null;
+    subject?: string | null;
+    updatedAt?: string | null;
 };
 
 export enum EmailDeliveryStatus {
@@ -497,12 +497,12 @@ export type EnqueueJobRequest = {
      */
     payload?: {
         [key: string]: unknown;
-    };
+    } | null;
 };
 
 export type EventBannerRequest = {
     fileId: number;
-    version?: number;
+    version?: number | null;
 };
 
 export type EventBannerResponse = {
@@ -515,21 +515,21 @@ export type EventBannerResponse = {
 
 export type EventResponse = {
     approved: boolean;
-    banner?: EventBannerResponse;
-    committeeId?: number;
+    banner?: EventBannerResponse | null;
+    committeeId?: number | null;
     createdAt: string;
-    description: string;
+    description?: string | null;
     endTime: string;
     id: number;
-    location?: string;
-    memberPrice?: number;
+    location?: string | null;
+    memberPrice?: number | null;
     membersOnly: boolean;
-    publicPrice?: number;
+    publicPrice?: number | null;
     signUp: boolean;
     signUpCount: number;
-    signUpDeadline?: string;
-    signUpForm?: SurveyResponse;
-    signUpLimit?: number;
+    signUpDeadline?: string | null;
+    signUpForm?: SurveyResponse | null;
+    signUpLimit?: number | null;
     startTime: string;
     title: string;
     updatedAt: string;
@@ -540,31 +540,31 @@ export type EventSignUpResponse = {
     answers: Array<AnswerResponse>;
     createdAt: string;
     eventId: number;
-    guest?: GuestResponse;
+    guest?: GuestResponse | null;
     id: number;
     updatedAt: string;
-    user?: UserSummaryResponse;
+    user?: UserSummaryResponse | null;
     version: number;
 };
 
 export type ExternalTarget = {
     externalId: string;
-    folderLabel?: string;
+    folderLabel?: string | null;
     kind: CohortKind;
     label: string;
-    linkedCohortId?: number;
-    memberCount?: number;
+    linkedCohortId?: number | null;
+    memberCount?: number | null;
     system: TargetSystem;
 };
 
 export type ExtraRow = {
-    email?: string;
+    email?: string | null;
     externalUserId: string;
-    fullName?: string;
+    fullName?: string | null;
     kind: 'KNOWN_LOCAL_USER' | 'UNKNOWN_EXTERNAL';
-    label?: string;
-    softDeleted?: boolean;
-    userId?: number;
+    label?: string | null;
+    softDeleted?: boolean | null;
+    userId?: number | null;
 };
 
 /**
@@ -595,7 +595,7 @@ export type FileResponse = {
     mediaType: string;
     name: string;
     path: string;
-    size?: number;
+    size?: number | null;
     type: FileType;
     updatedAt: string;
     version: number;
@@ -615,7 +615,7 @@ export type GuestResponse = {
     email: string;
     id: number;
     name: string;
-    phoneNumber?: string;
+    phoneNumber?: string | null;
     updatedAt: string;
     version: number;
 };
@@ -627,7 +627,7 @@ export type InboundReconcileApplyRequest = {
 
 export type InboundReconcileApplyResponse = {
     acceptedCount: number;
-    jobId?: number;
+    jobId?: number | null;
     skippedCount: number;
 };
 
@@ -642,44 +642,44 @@ export type InboundReconcilePreview = {
 
 export type InboundReconcileRow = {
     alreadyTrue: boolean;
-    externalLabel?: string;
+    externalLabel?: string | null;
     externalUserId: string;
     reason?: 'DUPLICATE_REMOTE_ID' | 'MAPPING_CONFLICT' | 'DUPLICATE_USER_MATCH' | 'MAPPED_USER_INACTIVE' | 'UNMATCHED';
-    userEmail?: string;
-    userFullName?: string;
-    userId?: number;
+    userEmail?: string | null;
+    userFullName?: string | null;
+    userId?: number | null;
     writable: boolean;
 };
 
 export type JobExecution = {
-    actor?: Actor;
-    attempts: number;
-    category?: JobExecutionCategory;
-    createdAt?: string;
-    dedupKey?: string;
-    errorMessage?: string;
-    errorReason?: string;
-    errorType?: string;
-    finishedAt?: string;
-    id?: number;
-    initiatedByDisplay?: string;
-    initiatedByFullName?: string;
-    initiatedByRole?: Role;
-    initiatedByType?: ActionActorType;
-    initiatedByUserId?: number;
-    initiatedByUsername?: string;
-    jobType: string;
-    nextAttemptAt?: string;
+    actor?: Actor | null;
+    attempts: number | null;
+    category?: JobExecutionCategory | null;
+    createdAt?: string | null;
+    dedupKey?: string | null;
+    errorMessage?: string | null;
+    errorReason?: string | null;
+    errorType?: string | null;
+    finishedAt?: string | null;
+    id?: number | null;
+    initiatedByDisplay?: string | null;
+    initiatedByFullName?: string | null;
+    initiatedByRole?: Role | null;
+    initiatedByType?: ActionActorType | null;
+    initiatedByUserId?: number | null;
+    initiatedByUsername?: string | null;
+    jobType: string | null;
+    nextAttemptAt?: string | null;
     payload?: {
         [key: string]: unknown;
-    };
-    queuedAt?: string;
+    } | null;
+    queuedAt?: string | null;
     relatedEntities: Array<JobExecutionRelatedEntity>;
-    stackTrace?: string;
-    startedAt?: string;
-    status: JobExecutionStatus;
-    targetSystem?: ContactSystem;
-    updatedAt?: string;
+    stackTrace?: string | null;
+    startedAt?: string | null;
+    status: JobExecutionStatus | null;
+    targetSystem?: ContactSystem | null;
+    updatedAt?: string | null;
 };
 
 export enum JobExecutionCategory {
@@ -691,7 +691,7 @@ export enum JobExecutionCategory {
 }
 
 export type JobExecutionRelatedEntity = {
-    id?: number;
+    id?: number | null;
     label: string;
     type: string;
 };
@@ -705,7 +705,7 @@ export enum JobExecutionStatus {
 }
 
 export type JobPayloadField = {
-    enumValues?: Array<string>;
+    enumValues?: Array<string> | null;
     kind: JobPayloadFieldKind;
     name: string;
     required: boolean;
@@ -759,7 +759,7 @@ export type LinkedUser = {
 };
 
 export type LoginResponse = {
-    addressId?: number;
+    addressId?: number | null;
     expiration: number;
     roles: Array<Role>;
     token: string;
@@ -796,12 +796,12 @@ export enum MemberType {
 }
 
 export type MembershipApplicationRequest = {
-    conditionsAccepted?: boolean;
+    conditionsAccepted?: boolean | null;
 };
 
 export type MembershipResponse = {
     createdAt: string;
-    endDate?: string;
+    endDate?: string | null;
     id: number;
     incasso: boolean;
     memberType: MemberType;
@@ -856,20 +856,20 @@ export enum PlatformType {
 }
 
 export type QuestionRequest = {
-    choiceLabels?: Array<string>;
+    choiceLabels?: Array<string> | null;
     idx: number;
     label: string;
-    required?: boolean;
+    required?: boolean | null;
     type: QuestionType;
 };
 
 export type QuestionResponse = {
-    choiceLabels?: Array<string>;
+    choiceLabels?: Array<string> | null;
     createdAt: string;
     id: number;
     idx: number;
     label: string;
-    required?: boolean;
+    required?: boolean | null;
     surveyId: number;
     type: QuestionType;
     updatedAt: string;
@@ -917,7 +917,7 @@ export type SignupAddressRequest = {
 };
 
 export type SignupApplicationRequest = {
-    conditionsAccepted?: boolean;
+    conditionsAccepted?: boolean | null;
 };
 
 export type SignupDetailsRequest = {
@@ -925,11 +925,11 @@ export type SignupDetailsRequest = {
     firstName: string;
     initials: string;
     lastName: string;
-    memberProfile?: UpsertMemberProfileRequest;
+    memberProfile?: UpsertMemberProfileRequest | null;
     newsletter: boolean;
     phoneNumber: string;
-    photoConsent?: boolean;
-    prefix?: string;
+    photoConsent?: boolean | null;
+    prefix?: string | null;
     username: string;
 };
 
@@ -984,7 +984,7 @@ export type SwitchTargetRequest = {
 
 export type TargetDescriptor = {
     capabilities: Array<'CATALOG' | 'CREATE' | 'READ_MEMBERS' | 'WRITE_MEMBERS' | 'DELETE'>;
-    folderLabel?: string;
+    folderLabel?: string | null;
     idLabel: string;
     kind: CohortKind;
     system: TargetSystem;
@@ -1024,9 +1024,9 @@ export type UpdateBlogRequest = {
 
 export type UpdateBoardRequest = {
     candidate: string;
-    endDate?: string;
+    endDate?: string | null;
     name: string;
-    pictureId?: number;
+    pictureId?: number | null;
     startDate: string;
     version: number;
 };
@@ -1040,7 +1040,7 @@ export type UpdateCommitteeRequest = {
 
 export type UpdateContributionPeriodRequest = {
     alumniFee: number;
-    contactListId?: number;
+    contactListId?: number | null;
     endDate: string;
     fullYearFee: number;
     halfYearFee: number;
@@ -1050,46 +1050,46 @@ export type UpdateContributionPeriodRequest = {
 
 export type UpdateEventRequest = {
     approved: boolean;
-    banner?: EventBannerRequest;
+    banner?: EventBannerRequest | null;
     committeeId: number;
     description: string;
     endTime: string;
-    location?: string;
-    memberPrice?: number;
+    location?: string | null;
+    memberPrice?: number | null;
     membersOnly: boolean;
-    publicPrice?: number;
-    removeExistingSignUps?: boolean;
+    publicPrice?: number | null;
+    removeExistingSignUps?: boolean | null;
     signUp: boolean;
-    signUpDeadline?: string;
-    signUpForm?: SurveyRequest;
-    signUpLimit?: number;
+    signUpDeadline?: string | null;
+    signUpForm?: SurveyRequest | null;
+    signUpLimit?: number | null;
     startTime: string;
     title: string;
     version: number;
 };
 
 export type UpdateEventSignUpRequest = {
-    answers?: Array<AnswerRequest>;
-    guest?: CreateGuestRequest;
-    userId?: number;
-    version?: number;
+    answers?: Array<AnswerRequest> | null;
+    guest?: CreateGuestRequest | null;
+    userId?: number | null;
+    version?: number | null;
 };
 
 export type UpdateMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender?: string;
+    gender?: string | null;
     nationality: string;
-    studentNumber?: string;
+    studentNumber?: string | null;
     version: number;
 };
 
 export type UpdateMembershipRequest = {
-    endDate?: string;
-    incasso?: boolean;
-    memberType?: MemberType;
-    startDate?: string;
+    endDate?: string | null;
+    incasso?: boolean | null;
+    memberType?: MemberType | null;
+    startDate?: string | null;
     userId: number;
     version: number;
 };
@@ -1102,10 +1102,10 @@ export type UpdateSponsorRequest = {
 
 export type UpdateUserRequest = {
     discord: string;
-    memberProfile?: UpsertMemberProfileRequest;
+    memberProfile?: UpsertMemberProfileRequest | null;
     newsletter: boolean;
     phoneNumber: string;
-    photoConsent?: boolean;
+    photoConsent?: boolean | null;
     version: number;
 };
 
@@ -1113,10 +1113,10 @@ export type UpsertMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
     ehbo: boolean;
-    gender?: string;
+    gender?: string | null;
     nationality: string;
-    studentNumber?: string;
-    version?: number;
+    studentNumber?: string | null;
+    version?: number | null;
 };
 
 export type UserActivationRequest = {
@@ -1124,9 +1124,9 @@ export type UserActivationRequest = {
 };
 
 export type UserDetailResponse = {
-    addressId?: number;
+    addressId?: number | null;
     createdAt: string;
-    discord?: string;
+    discord?: string | null;
     email: string;
     enabled: boolean;
     firstName: string;
@@ -1135,10 +1135,10 @@ export type UserDetailResponse = {
     initials: string;
     lastName: string;
     newsletter: boolean;
-    phoneNumber?: string;
+    phoneNumber?: string | null;
     photoConsent: boolean;
-    prefix?: string;
-    restoreUntilAt?: string;
+    prefix?: string | null;
+    restoreUntilAt?: string | null;
     roles: Array<Role>;
     updatedAt: string;
     username: string;
@@ -1147,11 +1147,11 @@ export type UserDetailResponse = {
 
 export type UserSummaryResponse = {
     createdAt: string;
-    discord?: string;
+    discord?: string | null;
     email: string;
     fullName: string;
     id: number;
-    phoneNumber?: string;
+    phoneNumber?: string | null;
     updatedAt: string;
     version: number;
 };

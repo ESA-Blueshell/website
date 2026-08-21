@@ -7,9 +7,9 @@ import jakarta.validation.constraints.NotBlank
 // tamper with and no equality check to forget (ADR-024).
 @Schema(name = "SignupAddressRequest")
 data class SignupAddressRequest(
-    @field:NotBlank var country: String? = null,
-    @field:NotBlank var city: String? = null,
-    @field:NotBlank var street: String? = null,
-    @field:NotBlank var houseNumber: String? = null,
-    @field:NotBlank var zipCode: String? = null
+    @field:NotBlank var country: String,
+    @field:NotBlank var city: String,
+    @field:NotBlank var street: String,
+    @field:NotBlank var houseNumber: String,
+    @field:NotBlank var zipCode: String
 )

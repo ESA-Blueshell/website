@@ -132,7 +132,7 @@ const defaultMemberProfile = (): UpsertMemberProfileRequest => ({
 })
 
 const toMemberProfileRequest = (
-  profile: UpsertMemberProfileRequest | undefined,
+  profile: UpsertMemberProfileRequest | null | undefined,
 ): UpsertMemberProfileRequest | undefined => {
   if (!includeMemberProfile.value) return undefined
   return {

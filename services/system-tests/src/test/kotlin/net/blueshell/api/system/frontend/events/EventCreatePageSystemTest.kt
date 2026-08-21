@@ -58,17 +58,9 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
             description = "Committee created event",
         )
         EventFormHelper.selectCommittee(page, committeeName)
-
-        val response = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "POST" &&
-                    r.url().contains("/events") &&
-                    !r.url().contains("/events/banners")
-            },
-        ) {
-            EventFormHelper.submit(page)
+        EventFormHelper.submitExpecting(page, "POST /events") { r ->
+            r.method() == "POST" && r.url().contains("/events") && !r.url().contains("/events/banners")
         }
-        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.approved).isFalse()
@@ -96,17 +88,9 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         )
         EventFormHelper.selectCommittee(page, nameB)
         EventFormHelper.setApproved(page, approved = true)
-
-        val response = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "POST" &&
-                    r.url().contains("/events") &&
-                    !r.url().contains("/events/banners")
-            },
-        ) {
-            EventFormHelper.submit(page)
+        EventFormHelper.submitExpecting(page, "POST /events") { r ->
+            r.method() == "POST" && r.url().contains("/events") && !r.url().contains("/events/banners")
         }
-        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.approved).isTrue()
@@ -134,17 +118,9 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         )
         EventFormHelper.selectCommittee(page, committeeName)
         EventFormHelper.uploadBanner(page, EVENT_BANNER_PATH)
-
-        val createResponse = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "POST" &&
-                    r.url().contains("/events") &&
-                    !r.url().contains("/events/banners")
-            },
-        ) {
-            EventFormHelper.submit(page)
+        EventFormHelper.submitExpecting(page, "POST /events") { r ->
+            r.method() == "POST" && r.url().contains("/events") && !r.url().contains("/events/banners")
         }
-        assertThat(createResponse.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
 
@@ -203,7 +179,6 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
             // wrong event id.
             page.locator("[data-testid='event-approve-btn-$eventId']").click()
         }
-        assertThat(response.status()).isEqualTo(200)
 
         waitForEventState(eventId) { it.approved }
     }
@@ -263,17 +238,9 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         EventFormHelper.enableSignUp(page)
         EventFormHelper.signUpDeadlineInput(page).waitFor()
         EventFormHelper.setSignUpLimit(page, 42)
-
-        val response = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "POST" &&
-                    r.url().contains("/events") &&
-                    !r.url().contains("/events/banners")
-            },
-        ) {
-            EventFormHelper.submit(page)
+        EventFormHelper.submitExpecting(page, "POST /events") { r ->
+            r.method() == "POST" && r.url().contains("/events") && !r.url().contains("/events/banners")
         }
-        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.signUpLimit).isEqualTo(42)
@@ -300,17 +267,9 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         )
         EventFormHelper.selectCommittee(page, committeeName)
         EventFormHelper.enableSignUp(page)
-
-        val response = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "POST" &&
-                    r.url().contains("/events") &&
-                    !r.url().contains("/events/banners")
-            },
-        ) {
-            EventFormHelper.submit(page)
+        EventFormHelper.submitExpecting(page, "POST /events") { r ->
+            r.method() == "POST" && r.url().contains("/events") && !r.url().contains("/events/banners")
         }
-        assertThat(response.status()).isEqualTo(201)
 
         val created = waitForEventByTitle(eventTitle)
         assertThat(created.signUp).isTrue()

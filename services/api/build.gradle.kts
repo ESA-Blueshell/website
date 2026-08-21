@@ -6,7 +6,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
-    id("org.graalvm.buildtools.native") version "1.1.8"
+    id("org.graalvm.buildtools.native") version "1.1.9"
     `java-test-fixtures`
 
     val kotlinVersion = "2.4.10"
@@ -97,13 +97,13 @@ dependencies {
 
     implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
     implementation("org.apache.tika:tika-core:3.3.2")
-    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.36")
+    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.37")
     implementation("com.github.scribejava:scribejava-apis:8.3.3")
     implementation("org.springframework.retry:spring-retry:2.0.13")
     implementation("org.springframework:spring-aop")
     implementation("org.aspectj:aspectjweaver")
 
-    implementation("org.flywaydb:flyway-mysql:13.2.0")
+    implementation("org.flywaydb:flyway-mysql:13.3.0")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -131,7 +131,7 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.5")
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.1")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
-    testImplementation("io.github.classgraph:classgraph:4.8.189")
+    testImplementation("io.github.classgraph:classgraph:4.8.192")
     testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).
     testImplementation("com.h2database:h2:2.4.240")
@@ -145,7 +145,7 @@ dependencies {
     testFixturesApi("org.springframework.boot:spring-boot-starter-data-jpa")
     testFixturesApi("org.springframework.boot:spring-boot-starter-web")
     testFixturesApi("org.springframework.boot:spring-boot-starter-flyway")
-    testFixturesApi("org.flywaydb:flyway-mysql:13.2.0")
+    testFixturesApi("org.flywaydb:flyway-mysql:13.3.0")
     testFixturesApi("com.github.javafaker:javafaker:1.0.2")
     // Shared test base boots a throwaway Valkey via @ServiceConnection so the
     // Redis-backed HTTP session path is exercised under the real prod config.

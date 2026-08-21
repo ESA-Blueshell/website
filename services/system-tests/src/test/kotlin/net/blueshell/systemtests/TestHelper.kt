@@ -76,6 +76,20 @@ object TestHelper {
      */
     const val DEFAULT_PASSWORD: String = "Password123!"
 
+    /**
+     * Unique Dutch mobile number for created test users. The clock still
+     * supplies the entropy, but the digit right after the `06` prefix is
+     * folded into 1-5: libphonenumber only accepts `06` followed by 1-5 or 8,
+     * and taken from the timestamp raw that digit spends roughly a third of
+     * every 27-hour cycle on numbers the details form rejects — which reads
+     * as a flaky UI test rather than an invalid fixture.
+     */
+    fun uniquePhoneNumber(): String {
+        val suffix = System.currentTimeMillis().toString().takeLast(8)
+        val subscriberPrefix = '1' + (suffix[0] - '0') % 5
+        return "06$subscriberPrefix${suffix.substring(1)}"
+    }
+
     private fun <T> retryOnConnectionFailure(action: () -> T): T {
         var lastException: Exception? = null
         repeat(API_RETRY_ATTEMPTS) { attempt ->
@@ -107,7 +121,7 @@ object TestHelper {
         password: String = DEFAULT_PASSWORD,
         email: String = "$username@systemtest.example.com",
         discord: String = "$username#0001",
-        phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
+        phoneNumber: String = uniquePhoneNumber(),
         firstName: String = "Test",
         lastName: String = "User",
         initials: String = "TU",
@@ -160,7 +174,7 @@ object TestHelper {
         email: String = "$username@systemtest.example.com",
     ): SignupHandle {
         val discord = "$username#0001"
-        val phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}"
+        val phoneNumber = uniquePhoneNumber()
         val response = retryOnConnectionFailure {
             givenCsrfApi()
                 .baseUri(apiBaseUrl)
@@ -215,7 +229,7 @@ object TestHelper {
         password: String = DEFAULT_PASSWORD,
         email: String = "$username@systemtest.example.com",
         discord: String = "$username#0001",
-        phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
+        phoneNumber: String = uniquePhoneNumber(),
         firstName: String = "Test",
         lastName: String = "User",
     ): RegisteredUser {
@@ -235,7 +249,7 @@ object TestHelper {
         password: String = DEFAULT_PASSWORD,
         email: String = "$username@systemtest.example.com",
         discord: String = "$username#0001",
-        phoneNumber: String = "06${System.currentTimeMillis().toString().takeLast(8)}",
+        phoneNumber: String = uniquePhoneNumber(),
         firstName: String = "Test",
         lastName: String = "User",
     ): RegisteredUser {

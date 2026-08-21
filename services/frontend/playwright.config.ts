@@ -4,7 +4,9 @@ export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 60_000,
   expect: {
-    timeout: 15_000,
+    // Every wait in this suite is capped at 5s. A step that needs longer is
+    // waiting on the wrong signal — fix the signal, do not raise the cap.
+    timeout: 5_000,
   },
   fullyParallel: true,
   // The e2e suite is I/O/wait-bound (browser navigation, rendering, mocked
@@ -19,7 +21,8 @@ export default defineConfig({
   reporter: "list",
   use: {
     trace: "on-first-retry",
-    navigationTimeout: 60_000,
+    actionTimeout: 5_000,
+    navigationTimeout: 5_000,
     reducedMotion: "reduce",
   },
   webServer: [

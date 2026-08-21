@@ -7,7 +7,7 @@ test.describe("job manager trigger modal", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/jobs")
 
-    await expect(page.getByTestId("job-manager-trigger-btn")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("job-manager-trigger-btn")).toBeVisible()
     await page.getByTestId("job-manager-trigger-btn").click()
 
     const dialog = page.getByTestId("job-trigger-dialog")

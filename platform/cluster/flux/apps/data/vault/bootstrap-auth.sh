@@ -153,6 +153,10 @@ path "secret/data/platform/ghcr" {
 path "secret/data/platform/mariadb" {
   capabilities = ["read"]
 }
+
+path "secret/data/platform/alerting" {
+  capabilities = ["read"]
+}
 EOF
 
 vault policy write api /tmp/api.hcl
@@ -176,7 +180,7 @@ vault write auth/kubernetes/role/stalwart \
 
 vault write auth/kubernetes/role/vso \
   bound_service_account_names="vault-secrets-operator" \
-  bound_service_account_namespaces="vso-system,cert-manager,external-dns,default,mail-system,data-system" \
+  bound_service_account_namespaces="vso-system,cert-manager,external-dns,default,mail-system,data-system,utility-system" \
   policies="vso" \
   ttl="1h"
 

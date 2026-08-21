@@ -35,6 +35,18 @@ spec:
           env:
             - name: GATUS_CONFIG_PATH
               value: /config
+            # Interpolated into `alerting.discord.webhook-url` when Gatus
+            # reads its config. Marked optional on purpose: a monitoring
+            # service that refuses to start because its alert channel is
+            # unseeded is worse than one that serves the status page and
+            # logs the misconfigured provider. VSO fills the Secret in
+            # from `secret/platform/alerting` and restarts this Deployment.
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: alerting-discord
+                  key: DISCORD_WEBHOOK_URL
+                  optional: true
           ports:
             - containerPort: 8080
               name: http

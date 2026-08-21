@@ -1,0 +1,57 @@
+# Gatus (uptime alerts) and Keel (image rollout notifications) post to the
+# same Discord incoming webhook. The URL is a credential — anyone holding
+# it can post as the bot — so it lives in Vault at
+# `secret/platform/alerting:discord.webhook_url` and VSO renders it into
+# one Secret shared by both consumers in this namespace.
+#
+# The Secret exposes exactly one key, `DISCORD_WEBHOOK_URL`, because
+# Keel's chart mounts the whole Secret with `envFrom.secretRef` and reads
+# the env var under that name. Gatus takes the same key as an explicit
+# env var and interpolates `${DISCORD_WEBHOOK_URL}` out of its config.
+#
+# The CR sits in apps-utility-system rather than apps-vso-secrets: the
+# `utility-system` Namespace and both consumers are created by this same
+# Kustomization, so a single reconcile brings namespace, Secret and
+# consumers up in order. The VaultStaticSecret CRD is installed by the
+# VSO HelmRelease in apps-core, which this Kustomization dependsOn with
+# `wait: true`, so the CRD is always established before this applies.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  # VSO authenticates each VaultStaticSecret with the ServiceAccount named
+  # by the VaultAuth (vso-system/default → `vault-secrets-operator`) in the
+  # CR's own namespace. Without it VSO reports "ServiceAccount
+  # vault-secrets-operator not found" and never reaches Vault.
+  name: vault-secrets-operator
+  namespace: utility-system
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: alerting-discord
+  namespace: utility-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/alerting
+  destination:
+    name: alerting-discord
+    create: true
+    transformation:
+      # Keel consumes this Secret wholesale via `envFrom`, so every key in
+      # it becomes an env var. `discord.webhook_url` is not a legal env var
+      # name and `_raw` would hand Keel the entire JSON payload, so both are
+      # dropped and only the template below survives.
+      excludes:
+        - '.*'
+      excludeRaw: true
+      templates:
+        DISCORD_WEBHOOK_URL:
+          text: '{{- get .Secrets "discord.webhook_url" -}}'
+  refreshAfter: 1h
+  rolloutRestartTargets:
+    # Gatus reads the webhook URL once, at config load, so a rotated URL
+    # only takes effect after a restart.
+    - kind: Deployment
+      name: gatus

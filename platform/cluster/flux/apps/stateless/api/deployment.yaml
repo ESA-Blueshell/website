@@ -18,6 +18,11 @@ metadata:
     keel.sh/match-tag: 'true'
     keel.sh/trigger: poll
     keel.sh/pollSchedule: '@every 2m'
+    # Appended to Keel's rollout notification as "Release notes: <url>".
+    # The tag on this Deployment is the moving :latest, so the notification
+    # can only name the old and new digest — this link is what turns that
+    # into something a reader can act on.
+    keel.sh/releaseNotes: https://github.com/ESA-Blueshell/website/releases
 spec:
   replicas: 1
   # Zero-downtime rollout: bring a second pod up first (maxSurge=1) and only

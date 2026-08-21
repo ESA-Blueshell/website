@@ -78,6 +78,9 @@ of them blocks at least one downstream Secret.
   to `read:packages` on `ESA-Blueshell` (private api/frontend images).
 - **Stalwart admin user/password** + base64-encoded RSA-2048 DKIM
   private key + bounce mailbox `bounce@esa-blueshell.nl` credentials.
+- **Discord incoming webhook URL** for the channel that receives Gatus
+  uptime alerts and Keel rollout notifications. Optional at day 0 —
+  both consumers start without it.
 - **One-shot generated values** (only if missing from the legacy env):
   - `JWT_SECRET` — `openssl rand -base64 64`.
   - `vault-oidc-client-secret` — `openssl rand -hex 32`.
@@ -254,6 +257,36 @@ access to `ESA-Blueshell`, permission `Packages: read-only`). Rotate by
 re-running the same `kv put` with a new token — VSO re-renders the
 dockerconfigjson within one refresh cycle (1 h) and pods pick up the
 new auth on their next pull.
+
+### Alerting webhook (Gatus + Keel)
+
+Gatus posts uptime alerts and Keel posts image-rollout notifications to
+the same Discord incoming webhook. VSO materialises
+`utility-system/alerting-discord` with a single key,
+`DISCORD_WEBHOOK_URL`, from this path.
+
+```bash
+vault kv put secret/platform/alerting \
+  discord.webhook_url=https://discord.com/api/webhooks/<id>/<token>
+```
+
+Create the webhook in Discord under *Server Settings → Integrations →
+Webhooks*; the channel it targets is where every alert and rollout
+message lands. Anyone holding the URL can post to that channel, so it
+is a credential and never belongs in git.
+
+Both consumers tolerate the path being absent: the Gatus Deployment
+marks its `secretKeyRef` optional and logs the discord provider as
+misconfigured while continuing to serve the status page, and the Keel
+HelmRelease patches its chart-rendered `envFrom` to `optional: true` so
+image auto-updates keep running with notifications off. Seeding the
+path and letting VSO sync (≤1 h, or force a reconcile) turns both on;
+the Gatus Deployment is restarted automatically because the
+VaultStaticSecret lists it under `rolloutRestartTargets`.
+
+Rotate by re-running the same `kv put`. Keel reads the env var per
+notification and needs no restart; Gatus reads it once at config load,
+which the rollout-restart target handles.
 
 ## 5. Confirm VSO sync
 

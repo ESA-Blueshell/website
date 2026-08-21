@@ -12,12 +12,29 @@ spec:
         kind: HelmRepository
         name: keel
         namespace: utility-system
+  # The chart renders `envFrom.secretRef` without `optional`, so a missing
+  # alerting-discord Secret would hold the pod in
+  # CreateContainerConfigError and silently stop image auto-updates. Keel
+  # treats an absent DISCORD_WEBHOOK_URL as "discord sender disabled", so
+  # marking the reference optional degrades to no notifications instead of
+  # no deployments.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: keel
+            patch: |
+              - op: add
+                path: /spec/template/spec/containers/0/envFrom/0/secretRef/optional
+                value: true
   values:
     # Keel polls registries for new image tags and triggers rolling
     # restarts on Deployments that opt in via `keel.sh/*` annotations.
-    # We only want the polling path: no webhook server, no Slack /
-    # Hipchat / Mattermost integrations, no Helm provider, no approvals
-    # UI. Keel itself is in-cluster and has no public ingress.
+    # We only want the polling path plus outbound Discord notifications:
+    # no webhook server, no Slack / Hipchat / Mattermost integrations, no
+    # Helm provider, no approvals UI. Keel itself is in-cluster and has
+    # no public ingress.
     replicaCount: 1
     service:
       enabled: false
@@ -52,6 +69,21 @@ spec:
       enabled: false
     mattermost:
       enabled: false
+    # Discord notifications come from the Vault-backed Secret rather than
+    # this block: the chart only reads `discord.webhookUrl` when it renders
+    # its own Secret, which would put the webhook URL in git in plaintext.
+    # With `secret.create: false` the chart skips that Secret and points
+    # `envFrom` at ours instead, so Keel picks DISCORD_WEBHOOK_URL up from
+    # the VSO-synced alerting-discord Secret.
+    discord:
+      enabled: false
+    secret:
+      create: false
+      name: alerting-discord
+    # Keel emits the "preparing to update" event at debug and the
+    # completed rollout at success, so `info` yields exactly one message
+    # per rollout plus failures — no chatter while it polls.
+    notificationLevel: info
     debug: false
     resources:
       requests:

@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - alerting-vss.yaml
   - headlamp
   - keel
   - gatus

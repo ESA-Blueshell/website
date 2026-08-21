@@ -8,6 +8,8 @@ metadata:
     keel.sh/match-tag: 'true'
     keel.sh/trigger: poll
     keel.sh/pollSchedule: '@every 2m'
+    # Appended to Keel's rollout notification as "Release notes: <url>".
+    keel.sh/releaseNotes: https://github.com/ESA-Blueshell/website/releases
 spec:
   replicas: 1
   # Single replica, but replaced with zero downtime: surge a second pod and

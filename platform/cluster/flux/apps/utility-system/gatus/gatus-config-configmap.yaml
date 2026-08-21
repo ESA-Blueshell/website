@@ -12,3 +12,26 @@ data:
       title: Blueshell Esports status
       description: Uptime for the esa-blueshell.nl stack.
       header: Blueshell Esports
+    alerting:
+      discord:
+        # Gatus expands ${VAR} from its own environment when it reads the
+        # config file. DISCORD_WEBHOOK_URL comes from the alerting-discord
+        # Secret (Vault `secret/platform/alerting:discord.webhook_url`) and
+        # is marked optional on the Deployment, so an unseeded Vault leaves
+        # the URL empty: Gatus logs that the provider is misconfigured,
+        # ignores every discord alert, and keeps serving the status page.
+        webhook-url: "${DISCORD_WEBHOOK_URL}"
+        title: "Blueshell Esports status"
+        # Endpoints opt in with `alerts: - type: discord`; the defaults
+        # below fill in the thresholds so each endpoint carries only the
+        # one line. Gatus merges a provider's default-alert into alerts an
+        # endpoint already declares — it never adds an alert on its own.
+        default-alert:
+          enabled: true
+          # Endpoints are probed every 60s (mail ports every 120s), so an
+          # alert fires after ~3 consecutive failures and resolves after 2
+          # successes. Tolerates a single flaky probe without going quiet
+          # about a real outage for long.
+          failure-threshold: 3
+          success-threshold: 2
+          send-on-resolved: true

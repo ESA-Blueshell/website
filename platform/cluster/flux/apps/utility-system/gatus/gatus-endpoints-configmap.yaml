@@ -32,6 +32,8 @@ data:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 2000"
       - "[CERTIFICATE_EXPIRATION] > 168h"
+      alerts:
+      - type: discord
     - name: "Blueshell API"
       group: "public"
       # Same-origin /api/health routes via the apex PathPrefix(/api)
@@ -43,6 +45,8 @@ data:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 2000"
       - "[CERTIFICATE_EXPIRATION] > 168h"
+      alerts:
+      - type: discord
 
     # ---------- Internal application checks ----------
     # OIDC discovery is consumed by Vault + Headlamp across the
@@ -57,6 +61,8 @@ data:
       - "[STATUS] == 200"
       - "[BODY].issuer == https://esa-blueshell.nl/api"
       - "[RESPONSE_TIME] < 500"
+      alerts:
+      - type: discord
 
     # ---------- Admin services (forward-auth) ----------
     # All four sit behind the `forward-auth` Middleware at the edge —
@@ -69,6 +75,8 @@ data:
       conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 500"
+      alerts:
+      - type: discord
     - name: "Stalwart Admin"
       group: "admin"
       # Stalwart v0.16 serves the webadmin at /admin/ and 404s the root.
@@ -80,6 +88,8 @@ data:
       conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 500"
+      alerts:
+      - type: discord
     - name: "Vault Admin"
       group: "admin"
       url: "http://vault.data-system.svc.cluster.local:8200/v1/sys/health?standbyok=true"
@@ -87,6 +97,8 @@ data:
       conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 500"
+      alerts:
+      - type: discord
     - name: "Traefik Dashboard"
       group: "admin"
       # /ping is the chart's healthcheck endpoint on the `traefik`
@@ -102,6 +114,8 @@ data:
       conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 500"
+      alerts:
+      - type: discord
 
     # ---------- Data plane ----------
     - name: "MariaDB"
@@ -110,6 +124,8 @@ data:
       interval: "60s"
       conditions:
       - "[CONNECTED] == true"
+      alerts:
+      - type: discord
     - name: "Valkey"
       group: "data"
       # Backs HTTP sessions + the api's user-lookup cache. A TCP connect
@@ -120,6 +136,8 @@ data:
       interval: "60s"
       conditions:
       - "[CONNECTED] == true"
+      alerts:
+      - type: discord
     # ---------- Mail ports ----------
     # TCP connect from inside the cluster proves stalwart is listening
     # on each port; a real end-to-end SMTP/IMAP handshake from outside
@@ -130,6 +148,8 @@ data:
       interval: "120s"
       conditions:
       - "[CONNECTED] == true"
+      alerts:
+      - type: discord
     - name: "Stalwart STARTTLS"
       group: "mail"
       # RFC 6409 submission port — clients upgrade with STARTTLS after
@@ -138,6 +158,8 @@ data:
       interval: "120s"
       conditions:
       - "[CONNECTED] == true"
+      alerts:
+      - type: discord
     - name: "Stalwart SMTPS"
       group: "mail"
       # Implicit-TLS submission.
@@ -145,6 +167,8 @@ data:
       interval: "120s"
       conditions:
       - "[CONNECTED] == true"
+      alerts:
+      - type: discord
     - name: "Stalwart IMAP"
       group: "mail"
       # IMAP-over-TLS (993). Plain IMAP on 143 is not exposed.
@@ -152,3 +176,5 @@ data:
       interval: "120s"
       conditions:
       - "[CONNECTED] == true"
+      alerts:
+      - type: discord

@@ -11,7 +11,7 @@ plugins {
 group = "net.blueshell"
 version = "1.1.1"
 
-val cucumberVersion = "7.29.0"
+val cucumberVersion = "7.34.6"
 
 description = "End-to-end system tests that drive the full stack through Playwright."
 

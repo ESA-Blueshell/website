@@ -4,153 +4,44 @@
     color="grey-darken-4"
     rounded="lg"
   >
-    <!-- Statutes -->
-    <v-row class="text-center py-4">
-      <v-col
-        class="text-h6"
-        cols="4"
-      >
-        Statutes
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20171212 - ESA Blueshell Statuten.pdf', 'ESA Blueshell - Statuten.pdf')"
-        >
-          Dutch
-        </v-btn>
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20171212 - ESA Blueshell Statutes.pdf', 'ESA Blueshell - Statutes.pdf')"
-        >
-          English
-        </v-btn>
-      </v-col>
-    </v-row>
+    <template
+      v-for="(document, index) in documents"
+      :key="document.title"
+    >
+      <v-divider
+        v-if="index > 0"
+        class="my-2"
+      />
 
-    <v-divider class="my-2" />
-
-    <!-- Domestic Regulations -->
-    <v-row class="text-center py-4">
-      <v-col
-        class="text-h6"
-        cols="4"
-      >
-        Domestic Regulations
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20180109 - ESA Blueshell Huishoudelijk Reglement.pdf', 'ESA Blueshell - Huishoudelijk Reglement.pdf')"
+      <v-row class="text-center py-4">
+        <v-col
+          class="text-h6"
+          cols="4"
         >
-          Dutch
-        </v-btn>
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20180109 - ESA Blueshell Domestic Regulations.pdf', 'ESA Blueshell - Domestic Regulations.pdf')"
-        >
-          English
-        </v-btn>
-      </v-col>
-    </v-row>
-
-    <v-divider class="my-2" />
-
-    <!-- Privacy Policy -->
-    <v-row class="text-center py-4">
-      <v-col
-        class="text-h6"
-        cols="4"
-      >
-        Privacy Policy
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20260223 - ESA Blueshell Privacybeleid.pdf', 'ESA Blueshell - Privacybeleid.pdf')"
-        >
-          Dutch
-        </v-btn>
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20260223 - ESA Blueshell Privacy Policy.pdf', 'ESA Blueshell - Privacy Policy.pdf')"
-        >
-          English
-        </v-btn>
-      </v-col>
-    </v-row>
-
-    <v-divider class="my-2" />
-
-    <!-- Code of Conduct -->
-    <v-row class="text-center py-4">
-      <v-col
-        class="text-h6"
-        cols="4"
-      >
-        Code of Conduct
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20210324 - ESA Blueshell Gedragscode.pdf', 'ESA Blueshell - Gedragscode.pdf')"
-        >
-          Dutch
-        </v-btn>
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile('@/assets/documents/20210324 - ESA Blueshell Code of Conduct.pdf', 'ESA Blueshell - Code of Conduct.pdf')"
-        >
-          English
-        </v-btn>
-      </v-col>
-    </v-row>
-
-    <v-divider class="my-2" />
-
-    <!-- Cookie Policy -->
-    <v-row class="text-center py-4">
-      <v-col
-        class="text-h6"
-        cols="4"
-      >
-        Cookie Policy
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile(ACTIVE_COOKIE_POLICY_PATHS.dutch, ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.dutch)"
-        >
-          Dutch
-        </v-btn>
-      </v-col>
-      <v-col cols="4">
-        <v-btn
-          class="w-100"
-          color="primary"
-          @click="downloadFile(ACTIVE_COOKIE_POLICY_PATHS.english, ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.english)"
-        >
-          English
-        </v-btn>
-      </v-col>
-    </v-row>
+          {{ document.title }}
+        </v-col>
+        <v-col cols="4">
+          <v-btn
+            :download="document.dutch.fileName"
+            :href="documentUrl(document.dutch.path)"
+            class="w-100"
+            color="primary"
+          >
+            Dutch
+          </v-btn>
+        </v-col>
+        <v-col cols="4">
+          <v-btn
+            :download="document.english.fileName"
+            :href="documentUrl(document.english.path)"
+            class="w-100"
+            color="primary"
+          >
+            English
+          </v-btn>
+        </v-col>
+      </v-row>
+    </template>
   </v-sheet>
 </template>
 
@@ -161,13 +52,65 @@ import {
   ACTIVE_COOKIE_POLICY_PATHS,
 } from "@/config/policies"
 
-function downloadFile(path: string, fileName: string) {
-  const url = path.startsWith("http") ? path : $require(path)
-  const link = document.createElement("a")
-  link.href = url
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+const documents = [
+  {
+    title: "Statutes",
+    dutch: {
+      path: "@/assets/documents/20171212 - ESA Blueshell Statuten.pdf",
+      fileName: "ESA Blueshell - Statuten.pdf",
+    },
+    english: {
+      path: "@/assets/documents/20171212 - ESA Blueshell Statutes.pdf",
+      fileName: "ESA Blueshell - Statutes.pdf",
+    },
+  },
+  {
+    title: "Domestic Regulations",
+    dutch: {
+      path: "@/assets/documents/20180109 - ESA Blueshell Huishoudelijk Reglement.pdf",
+      fileName: "ESA Blueshell - Huishoudelijk Reglement.pdf",
+    },
+    english: {
+      path: "@/assets/documents/20180109 - ESA Blueshell Domestic Regulations.pdf",
+      fileName: "ESA Blueshell - Domestic Regulations.pdf",
+    },
+  },
+  {
+    title: "Privacy Policy",
+    dutch: {
+      path: "@/assets/documents/20260223 - ESA Blueshell Privacybeleid.pdf",
+      fileName: "ESA Blueshell - Privacybeleid.pdf",
+    },
+    english: {
+      path: "@/assets/documents/20260223 - ESA Blueshell Privacy Policy.pdf",
+      fileName: "ESA Blueshell - Privacy Policy.pdf",
+    },
+  },
+  {
+    title: "Code of Conduct",
+    dutch: {
+      path: "@/assets/documents/20210324 - ESA Blueshell Gedragscode.pdf",
+      fileName: "ESA Blueshell - Gedragscode.pdf",
+    },
+    english: {
+      path: "@/assets/documents/20210324 - ESA Blueshell Code of Conduct.pdf",
+      fileName: "ESA Blueshell - Code of Conduct.pdf",
+    },
+  },
+  {
+    title: "Cookie Policy",
+    dutch: {
+      path: ACTIVE_COOKIE_POLICY_PATHS.dutch,
+      fileName: ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.dutch,
+    },
+    english: {
+      path: ACTIVE_COOKIE_POLICY_PATHS.english,
+      fileName: ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES.english,
+    },
+  },
+]
+
+function documentUrl(path: string): string {
+  return path.startsWith("http") ? path : $require(path)
 }
 </script>

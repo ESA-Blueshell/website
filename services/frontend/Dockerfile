@@ -25,7 +25,7 @@ ENV NODE_ENV=production \
     VITE_APP_URL=${VITE_APP_URL}
 RUN yarn build
 
-FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:dcea25a6593307a74b09e59a47f8695c4d56943750e45add532ae0bf8b24bfd6 AS runtime
+FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:44e36330f74d4f3a1d4e222acca9e23b401fb87811a7597024502bb759c4dd49 AS runtime
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

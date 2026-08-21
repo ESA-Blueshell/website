@@ -57,7 +57,7 @@
     "@eslint/js": "^10.0.1",
     "@hey-api/openapi-ts": "0.99.0",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
-    "@playwright/test": "1.62.1",
+    "@playwright/test": "1.60.0",
     "@types/luxon": "^3.7.4",
     "@types/node": "^26.2.0",
     "@types/webfontloader": "^1.6.38",

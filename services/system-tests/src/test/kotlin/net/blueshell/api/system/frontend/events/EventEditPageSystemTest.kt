@@ -4,6 +4,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -149,15 +150,8 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
         }
     }
 
-    private fun waitForEvent(eventId: Long, predicate: (TestHelper.EventRow) -> Boolean): TestHelper.EventRow {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findEvent(eventId)
-            if (row != null && predicate(row)) return row
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected event $eventId to satisfy predicate within 10s")
-    }
+    private fun waitForEvent(eventId: Long, predicate: (TestHelper.EventRow) -> Boolean): TestHelper.EventRow =
+        pollForValue("event $eventId to satisfy the predicate") { TestHelper.findEvent(eventId)?.takeIf(predicate) }
 
     private companion object {
         const val EVENT_BANNER_PATH = "../frontend/public/favicon.png"

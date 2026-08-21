@@ -5,6 +5,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -48,14 +49,10 @@ class AccountPageSystemTest : PlaywrightTestBase() {
         username: String,
         predicate: (TestHelper.RegisteredUserRow) -> Boolean,
     ) {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findUser(username)
-            if (row != null && predicate(row)) return
-            Thread.sleep(200)
+        try {
+            pollForValue("user $username to satisfy the predicate") { TestHelper.findUser(username)?.takeIf(predicate) }
+        } catch (e: AssertionError) {
+            throw AssertionError("${e.message}; last row=${TestHelper.findUser(username)}", e)
         }
-        throw AssertionError(
-            "Expected user $username to satisfy predicate within 10s; last row=${TestHelper.findUser(username)}",
-        )
     }
 }

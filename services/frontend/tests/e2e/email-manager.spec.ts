@@ -72,7 +72,7 @@ test.describe("email manager — access control", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/management/emails")
-    await expect(page).toHaveURL(/\/$/, {timeout: 10_000})
+    await expect(page).toHaveURL(/\/$/)
   })
 
   test("admin can access the email manager", async ({page}) => {
@@ -80,7 +80,7 @@ test.describe("email manager — access control", () => {
     await loginAsAdmin(page.context())
 
     await page.goto("/management/emails")
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
   })
 })
 
@@ -98,7 +98,7 @@ test.describe("email manager — stats panel", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-stats-total")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-stats-total")).toBeVisible()
     await expect(page.getByTestId("email-stats-total")).toContainText("5")
     await expect(page.getByTestId("email-stats-sent")).toContainText("1")
     await expect(page.getByTestId("email-stats-delivered")).toContainText("2")
@@ -119,7 +119,7 @@ test.describe("email manager — stats panel", () => {
     await page.goto("/management/emails")
 
     // 2 delivered out of 4 total = 50%
-    await expect(page.getByTestId("email-stats-delivered")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-stats-delivered")).toBeVisible()
     await expect(page.getByTestId("email-stats-delivered")).toContainText("50%")
   })
 
@@ -136,7 +136,7 @@ test.describe("email manager — stats panel", () => {
     await page.goto("/management/emails")
 
     // 1 opened out of 4 total = 25%
-    await expect(page.getByTestId("email-stats-opened")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-stats-opened")).toBeVisible()
     await expect(page.getByTestId("email-stats-opened")).toContainText("25%")
   })
 })
@@ -147,7 +147,7 @@ test.describe("email manager — email list", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[1].id}`)).toBeVisible()
     await expect(page.getByTestId(`email-row-${BASE_EMAILS[2].id}`)).toBeVisible()
@@ -158,7 +158,7 @@ test.describe("email manager — email list", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByText("No emails found.")).toBeVisible({timeout: 30_000})
+    await expect(page.getByText("No emails found.")).toBeVisible()
   })
 
   test("displays status chip for each email row", async ({page}) => {
@@ -166,7 +166,7 @@ test.describe("email manager — email list", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
     const deliveredRow = page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)
     await expect(deliveredRow).toContainText("DELIVERED")
 
@@ -181,7 +181,7 @@ test.describe("email manager — filtering", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
     // Select FAILED status filter
     await page.getByTestId("email-filter-status").click()
@@ -197,7 +197,7 @@ test.describe("email manager — filtering", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
     const searchInput = page.getByTestId("email-filter-search").locator("input").first()
     await searchInput.fill("alice")
@@ -211,7 +211,7 @@ test.describe("email manager — filtering", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
     const searchInput = page.getByTestId("email-filter-search").locator("input").first()
     await searchInput.fill("Contribution")
@@ -225,7 +225,7 @@ test.describe("email manager — filtering", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-refresh-btn")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-refresh-btn")).toBeVisible()
     await page.getByTestId("email-manager-refresh-btn").click()
 
     // After refresh the list should still be visible
@@ -239,7 +239,7 @@ test.describe("email manager — expanded details", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
     await expect(page.getByTestId(`email-detail-${BASE_EMAILS[0].id}`)).not.toBeVisible()
 
     await page.getByTestId(`email-row-${BASE_EMAILS[0].id}`).click()
@@ -252,7 +252,7 @@ test.describe("email manager — expanded details", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
     await page.getByTestId(`email-row-${BASE_EMAILS[0].id}`).click()
 
     const detail = page.getByTestId(`email-detail-${BASE_EMAILS[0].id}`)
@@ -265,7 +265,7 @@ test.describe("email manager — expanded details", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId(`email-row-${BASE_EMAILS[1].id}`)).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId(`email-row-${BASE_EMAILS[1].id}`)).toBeVisible()
     await page.getByTestId(`email-row-${BASE_EMAILS[1].id}`).click()
 
     const detail = page.getByTestId(`email-detail-${BASE_EMAILS[1].id}`)
@@ -278,7 +278,7 @@ test.describe("email manager — expanded details", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId(`email-row-${BASE_EMAILS[0].id}`)).toBeVisible()
     await page.getByTestId(`email-row-${BASE_EMAILS[0].id}`).click()
     await expect(page.getByTestId(`email-detail-${BASE_EMAILS[0].id}`)).toBeVisible()
 
@@ -293,7 +293,7 @@ test.describe("email manager — retry", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
 
     // FAILED email with jobExecutionId — retry button should appear in the append slot
     const failedRow = page.getByTestId(`email-row-${BASE_EMAILS[1].id}`)
@@ -312,12 +312,12 @@ test.describe("email manager — retry", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId(`email-retry-btn-${BASE_EMAILS[1].id}`)).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId(`email-retry-btn-${BASE_EMAILS[1].id}`)).toBeVisible()
     await page.getByTestId(`email-retry-btn-${BASE_EMAILS[1].id}`).click()
 
     // After retry the mock returns status SENT, list should refresh and row shows SENT
     const failedRow = page.getByTestId(`email-row-${BASE_EMAILS[1].id}`)
-    await expect(failedRow).toContainText("SENT", {timeout: 10_000})
+    await expect(failedRow).toContainText("SENT")
   })
 })
 
@@ -327,7 +327,7 @@ test.describe("email manager — pagination", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/emails")
 
-    await expect(page.getByTestId("email-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
     await expect(page.getByTestId("email-manager-pagination")).toBeVisible()
   })
 })

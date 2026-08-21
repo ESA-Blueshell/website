@@ -5,6 +5,7 @@ import io.cucumber.java.en.When
 import net.blueshell.acceptance.AcceptanceApi
 import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 
 // Delivery is async, so "was sent" polls and "no further mail" compares against a
@@ -28,12 +29,9 @@ class EmailSteps(private val world: AcceptanceWorld) {
     fun anotherConfirmationEmailIsSentToThem() {
         val applicant = world.applicant()
         val before = world.confirmationEmailsBeforeAction ?: 0
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            if (AcceptanceApi.confirmationEmailCount(applicant.email) > before) return
-            Thread.sleep(200)
+        pollFor("another confirmation email for ${applicant.email} beyond the $before already sent") {
+            AcceptanceApi.confirmationEmailCount(applicant.email) > before
         }
-        throw AssertionError("Expected another confirmation email for ${applicant.email} beyond the $before already sent")
     }
 
     @Then("only the most recent confirmation link works")

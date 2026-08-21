@@ -42,7 +42,7 @@ test.describe("management recovery lifecycle", () => {
     // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
     await page.goto("/user-manager")
-    await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("member-manager-table")).toBeVisible()
 
     // The user row should be visible in the unified table
     await expect(page.getByTestId(`member-manager-row-${targetId}`)).toBeVisible()
@@ -57,7 +57,7 @@ test.describe("management recovery lifecycle", () => {
 
     // Navigate to recovery manager and restore the deleted user
     await page.goto("/recovery/manage")
-    await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("recovery-user-list-deleted")).toBeVisible()
 
     const deletedToggle = page.getByTestId("recovery-user-list-toggle-deleted").first()
     await ensureExpanded(deletedToggle)

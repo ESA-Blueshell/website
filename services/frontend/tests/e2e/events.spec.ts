@@ -9,7 +9,7 @@ test.describe("events page", () => {
 
     await page.goto("/events")
 
-    await expect(page.getByText("Upcoming Events", {exact: true}).first()).toBeVisible({timeout: 30_000})
+    await expect(page.getByText("Upcoming Events", {exact: true}).first()).toBeVisible()
     await expect(page.getByText("Mock Event").first()).toBeVisible()
     await expect(page.getByText("Events Committee").first()).toBeVisible()
 
@@ -77,7 +77,7 @@ test.describe("events page", () => {
 
     await page.goto("/events/signups/500")
     const exportButton = page.getByTestId("export-csv-btn")
-    await expect(exportButton).toBeEnabled({timeout: 30_000})
+    await expect(exportButton).toBeEnabled()
 
     const downloadPromise = page.waitForEvent("download")
     await exportButton.click()

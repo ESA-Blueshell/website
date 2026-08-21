@@ -4,6 +4,8 @@ import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
 import java.nio.file.Paths
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
+import net.blueshell.systemtests.pollFor
 
 object EventFormHelper {
     private const val TITLE_FIELD_TEST_ID = "event-form-title-field"
@@ -18,21 +20,29 @@ object EventFormHelper {
     private const val SUBMIT_BUTTON_TEST_ID = "event-form-submit-btn"
 
     fun openCreatePage(page: Page, frontendUrl: String) {
-        // Wait for the committee list the form loads on mount, so the committee
-        // select is populated (and enabled) before any interaction.
-        page.waitForResponse("**/committees") {
-            page.navigate("$frontendUrl/events/create")
-        }
+        page.navigate("$frontendUrl/events/create")
         page.waitForURL("**/events/create**")
-        TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
+        waitForFormReady(page)
     }
 
     fun openEditPage(page: Page, frontendUrl: String, eventId: Long) {
-        page.waitForResponse("**/committees") {
-            page.navigate("$frontendUrl/events/edit/$eventId")
-        }
+        page.navigate("$frontendUrl/events/edit/$eventId")
         page.waitForURL("**/events/edit/$eventId**")
+        waitForFormReady(page)
+    }
+
+    /**
+     * The form renders its committee select disabled until the committees it
+     * requests on mount are in the model, so an enabled select is the signal
+     * that the form will accept input. The response landing is not: it arrives
+     * a render before the DOM reflects it, and a form filled in that gap keeps
+     * an empty `committeeId`, fails its own `required` rule, and swallows the
+     * submit — which surfaces as a request that never happens rather than as a
+     * validation error.
+     */
+    fun waitForFormReady(page: Page) {
         TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).waitFor()
+        assertPw(committeeInput(page)).isEnabled()
     }
 
     fun fillRequiredFields(
@@ -52,27 +62,22 @@ object EventFormHelper {
         }
     }
 
-    fun openCommitteeSelect(page: Page) {
-        val committeeField = TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
-        val combo = committeeField.getByRole(AriaRole.COMBOBOX).first()
-        val listbox = page.getByRole(AriaRole.LISTBOX).first()
-        combo.waitFor()
-        // Clicking the select before its list has loaded is a no-op, so retry
-        // opening until the options menu actually appears.
-        page.waitForCondition {
-            if (!listbox.isVisible()) {
-                combo.click(Locator.ClickOptions().setForce(true))
-            }
-            listbox.isVisible()
-        }
+    fun filterCommittees(page: Page, text: String) {
+        SelectHelper.filterBy(page, COMMITTEE_FIELD_TEST_ID, text)
     }
 
+    fun committeeOption(page: Page, committeeName: String): Locator =
+        SelectHelper.option(page, committeeName)
+
     fun selectCommittee(page: Page, committeeName: String) {
-        openCommitteeSelect(page)
-        val option = page.getByText(committeeName, Page.GetByTextOptions().setExact(true)).first()
-        option.waitFor()
-        option.click()
+        SelectHelper.pickByTyping(page, COMMITTEE_FIELD_TEST_ID, committeeName)
     }
+
+    private fun committeeField(page: Page): Locator =
+        TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
+
+    private fun committeeInput(page: Page): Locator =
+        TestIdLocatorHelper.textInput(page, COMMITTEE_FIELD_TEST_ID)
 
     fun setApproved(page: Page, approved: Boolean) {
         val checkbox = TestIdLocatorHelper.byTestId(page, APPROVED_FIELD_TEST_ID).locator("input[type='checkbox']").first()
@@ -109,8 +114,10 @@ object EventFormHelper {
     fun setSignUpLimit(page: Page, limit: Int) {
         val input = signUpLimitInput(page)
         input.fill(limit.toString())
-        // Force blur so Vuetify + vee-validate commit the value before submit.
+        // Tabbing out is what a user does, and it is what makes vee-validate run
+        // the field's rules; the assertion is what proves the value stuck.
         input.press("Tab")
+        assertPw(input).hasValue(limit.toString())
     }
 
     fun submit(page: Page) {

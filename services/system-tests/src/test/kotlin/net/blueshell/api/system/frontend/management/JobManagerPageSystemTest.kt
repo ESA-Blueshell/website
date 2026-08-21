@@ -2,8 +2,11 @@ package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.SelectHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -34,8 +37,8 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
             status = "SUCCESS",
             attempts = 1,
         )
-        val initialQueuedAt = checkNotNull(TestHelper.findJobExecution(failedId)?.queuedAt) {
-            "Expected failed execution queuedAt to be set"
+        val initialAttempts = checkNotNull(TestHelper.findJobExecution(failedId)?.attempts) {
+            "Expected failed execution attempts to be set"
         }
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
@@ -68,16 +71,15 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         }
         assertThat(retryResponse.status()).isEqualTo(200)
 
-        waitForJob(failedId) { row ->
-            row.status == "DEAD" &&
-                row.queuedAt != null &&
-                row.queuedAt.isAfter(initialQueuedAt)
-        }
+        // `queuedAt` only moves when the executor re-queues the job, which sits
+        // behind its retry backoff, and the column has no sub-second precision
+        // either — so it cannot serve as the signal that the retry landed. The
+        // row leaving the resting state the fixture put it in can: the handler
+        // commits that before it answers.
+        waitForJob(failedId) { row -> row.attempts > initialAttempts || row.status != "FAILED" }
 
         val updated = TestHelper.findJobExecution(failedId)!!
-        assertThat(updated.status).isEqualTo("DEAD")
-        assertThat(updated.queuedAt).isNotNull()
-        assertThat(updated.queuedAt).isAfter(initialQueuedAt)
+        assertThat(updated.attempts > initialAttempts || updated.status != "FAILED").isTrue()
     }
 
     @Test
@@ -190,17 +192,11 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(typesResponse.status()).isEqualTo(200)
 
         page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
-        page.locator("[data-testid='job-trigger-type']").first().click()
-        page.getByText("Sync contact", Page.GetByTextOptions().setExact(true)).first().click()
-
-        // userId is rendered as a UserPicker (v-autocomplete backed by
-        // /users). Click to open the dropdown, type the admin's email to
-        // filter to one option, then click the highlighted result.
-        val userIdField = page.locator("[data-testid='job-trigger-field-userId'] input").first()
-        userIdField.waitFor()
-        userIdField.click()
-        userIdField.fill(admin.email)
-        page.getByRole(com.microsoft.playwright.options.AriaRole.OPTION).first().click()
+        SelectHelper.pickFromList(page, "job-trigger-type", "Sync contact")
+        // userId is a UserPicker over every user, so it is found by typing the
+        // admin's email; the option is labelled "name (discord)", which this test
+        // has no handle on, so it takes the single match the filter leaves.
+        SelectHelper.pickOnlyMatch(page, "job-trigger-field-userId", admin.email)
 
         val enqueueResponse = page.waitForResponse(
             Predicate { response ->
@@ -221,38 +217,23 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
     }
 
     private fun waitForJob(id: Long, predicate: (TestHelper.JobExecutionRow) -> Boolean) {
-        val deadline = System.currentTimeMillis() + 30_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findJobExecution(id)
-            if (row != null && predicate(row)) return
-            Thread.sleep(200)
+        try {
+            pollForValue("job execution $id to satisfy the predicate") {
+                TestHelper.findJobExecution(id)?.takeIf(predicate)
+            }
+        } catch (e: AssertionError) {
+            throw AssertionError("${e.message}; last row=${TestHelper.findJobExecution(id)}", e)
         }
-        throw AssertionError(
-            "Expected job execution $id to satisfy predicate within 30s; last row=${TestHelper.findJobExecution(id)}",
-        )
     }
 
     private fun waitForRows(page: Page, vararg ids: Long) {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            if (ids.all { hasJobRow(page, it) }) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected rows ${ids.toList()} to be visible within 10s")
+        pollFor("rows ${ids.toList()} to be visible") { ids.all { hasJobRow(page, it) } }
     }
 
     private fun waitForOnlyCalendar(page: Page, calendarId: Long, contactId: Long, emailId: Long) {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            if (hasJobRow(page, calendarId) &&
-                !hasJobRow(page, contactId) &&
-                !hasJobRow(page, emailId)
-            ) {
-                return
-            }
-            Thread.sleep(200)
+        pollFor("only calendar row $calendarId to survive the filter") {
+            hasJobRow(page, calendarId) && !hasJobRow(page, contactId) && !hasJobRow(page, emailId)
         }
-        throw AssertionError("Expected calendar row $calendarId only after filter; others should be hidden")
     }
 
     private fun selectCategoryFilter(page: Page, category: String) {

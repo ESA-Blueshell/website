@@ -5,6 +5,8 @@ import net.blueshell.api.system.frontend.helper.CommitteeFormHelper
 import net.blueshell.api.system.frontend.helper.CommitteeManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -119,12 +121,12 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
             .isEqualTo(200)
 
         val addedId = TestHelper.findUser(addedMember.username)!!.id
-        pollFor("committee membership updated", timeoutMs = 12_000) {
+        pollFor("committee membership updated") {
             val members = TestHelper.findCommitteeMembers(committeeId)
             members.size == 1 && members.first().userId == addedId
         }
 
-        pollFor("committee roles synced", timeoutMs = 12_000) {
+        pollFor("committee roles synced") {
             val removedRoles = TestHelper.findRoles(removedMember.username)
             val addedRoles = TestHelper.findRoles(addedMember.username)
             "COMMITTEE" !in removedRoles && "COMMITTEE" in addedRoles
@@ -168,25 +170,8 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
             refreshed != null && refreshed.name == updatedName && refreshed.description == updatedDescription
         }
     }
-
-    private fun pollFor(description: String, timeoutMs: Long = 10_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected '$description' within ${timeoutMs}ms")
-    }
-
-    private fun pollForCommitteeByName(name: String, timeoutMs: Long = 10_000): TestHelper.CommitteeRow {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            val row = findCommitteeByName(name)
-            if (row != null) return row
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected committee '$name' within ${timeoutMs}ms")
-    }
+    private fun pollForCommitteeByName(name: String): TestHelper.CommitteeRow =
+        pollForValue("committee '$name'") { findCommitteeByName(name) }
 
     private fun findCommitteeByName(name: String): TestHelper.CommitteeRow? {
         // Inline SQL — `TestHelper` exposes by-id; this scoped lookup is

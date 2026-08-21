@@ -85,7 +85,7 @@ test.describe("management filters", () => {
     // test exercises the desktop table, so it pins a desktop viewport.
     await page.setViewportSize({width: 1440, height: 900})
     await page.goto("/user-manager")
-    await expect(page.getByTestId("member-manager-table")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("member-manager-table")).toBeVisible()
 
     // All users visible before filtering
     await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
@@ -163,7 +163,7 @@ test.describe("management filters", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/addresses/manage")
-    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("address-user-list-with-address")).toBeVisible()
 
     const withAddressCard = await ensureListOpen(
       page,
@@ -237,7 +237,7 @@ test.describe("management filters", () => {
     await loginAsBoard(page.context())
 
     await page.goto("/recovery/manage")
-    await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("recovery-user-list-inactive")).toBeVisible()
 
     const inactiveCard = await ensureListOpen(
       page,

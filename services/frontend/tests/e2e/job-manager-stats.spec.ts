@@ -14,7 +14,7 @@ test.describe("job manager stats panel", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/jobs")
 
-    await expect(page.getByTestId("job-stats-total")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("job-stats-total")).toBeVisible()
     await expect(page.getByTestId("job-stats-total")).toContainText("4")
     await expect(page.getByTestId("job-stats-success")).toContainText("2")
     await expect(page.getByTestId("job-stats-failed")).toContainText("1")
@@ -33,7 +33,7 @@ test.describe("job manager stats panel", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/jobs")
 
-    await expect(page.getByTestId("job-stats-success")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("job-stats-success")).toBeVisible()
     await expect(page.getByTestId("job-stats-success")).toContainText("75%")
   })
 
@@ -42,7 +42,7 @@ test.describe("job manager stats panel", () => {
     await loginAsAdmin(page.context())
     await page.goto("/management/jobs")
 
-    await expect(page.getByTestId("job-stats-runtime")).toBeVisible({timeout: 30_000})
+    await expect(page.getByTestId("job-stats-runtime")).toBeVisible()
     await expect(page.getByTestId("job-stats-runtime")).toContainText("Since last startup")
   })
 

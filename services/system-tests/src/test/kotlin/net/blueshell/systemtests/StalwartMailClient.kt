@@ -76,7 +76,7 @@ class StalwartMailClient(
     fun assertEmailSent(
         recipient: String,
         subject: String,
-        timeoutMs: Long = 10_000,
+        timeoutMs: Long = POLL_TIMEOUT_MS,
         pollIntervalMs: Long = 250,
     ): DeliveredEmail {
         val deadline = System.currentTimeMillis() + timeoutMs

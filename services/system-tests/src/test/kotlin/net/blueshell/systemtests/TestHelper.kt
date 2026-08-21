@@ -807,7 +807,7 @@ object TestHelper {
     fun assertEmailSent(
         recipient: String,
         subject: String,
-        timeoutMs: Long = 10_000,
+        timeoutMs: Long = POLL_TIMEOUT_MS,
     ): SentEmail {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {

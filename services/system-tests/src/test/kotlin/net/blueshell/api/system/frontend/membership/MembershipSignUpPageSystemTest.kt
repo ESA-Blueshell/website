@@ -8,6 +8,8 @@ import net.blueshell.api.system.frontend.helper.MembershipSignUpHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -63,7 +65,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
         confirmAddressThroughUi(page, credentials.username)
 
-        pollFor("membership starts when the second fact arrives", timeoutMs = 10_000) {
+        pollFor("membership starts when the second fact arrives") {
             TestHelper.hasActiveMembership(credentials.username)
         }
         assertThat(refreshedUser(credentials.username).enabled).isTrue()
@@ -169,7 +171,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         }
         assertThat(response.status()).isEqualTo(204)
 
-        pollFor("a second confirmation email is delivered", timeoutMs = 10_000) {
+        pollFor("a second confirmation email is delivered") {
             TestHelper.findEmails(recipient = credentials.email, subject = CONFIRMATION_SUBJECT).size >= 2
         }
     }
@@ -210,7 +212,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
         assertPw(MembershipSignUpHelper.completePanel(page)).isVisible()
         assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isHidden()
-        pollFor("membership exists for a confirmed applicant", timeoutMs = 10_000) {
+        pollFor("membership exists for a confirmed applicant") {
             TestHelper.hasActiveMembership(seeded.username)
         }
         assertThat(TestHelper.findRoles(seeded.username)).contains("MEMBER")
@@ -251,7 +253,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         )
 
         if (UserFormHelper.acceptPrivacyConsentIfVisible(page)) {
-            pollFor("privacy consent checkbox checked", timeoutMs = 5_000) {
+            pollFor("privacy consent checkbox checked") {
                 UserFormHelper.privacyConsentCheckbox(page).isChecked
             }
         }
@@ -300,7 +302,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         val checkbox = membershipConsentCheckbox(page)
         assertPw(checkbox).isVisible()
         if (!checkbox.isChecked) checkbox.check()
-        pollFor("membership consent checkbox checked", timeoutMs = 5_000) { checkbox.isChecked }
+        pollFor("membership consent checkbox checked") { checkbox.isChecked }
     }
 
     private fun confirmAddressThroughUi(page: Page, username: String) {
@@ -323,25 +325,8 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
     private fun refreshedUser(username: String) = requireNotNull(TestHelper.findUser(username))
 
-    private fun pollForUser(username: String): TestHelper.RegisteredUserRow {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findUser(username)
-            if (row != null) return row
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected user '$username' to be persisted within 10s")
-    }
-
-    private fun pollFor(description: String, timeoutMs: Long = 6_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected $description within ${timeoutMs}ms")
-    }
-
+    private fun pollForUser(username: String): TestHelper.RegisteredUserRow =
+        pollForValue("user '$username' to be persisted") { TestHelper.findUser(username) }
     private companion object {
         const val MEMBERSHIP_CONSENT_LABEL_PREFIX = "I confirm that I have read and agree to the membership terms above"
         const val CONFIRMATION_SUBJECT = "Activate your Account"

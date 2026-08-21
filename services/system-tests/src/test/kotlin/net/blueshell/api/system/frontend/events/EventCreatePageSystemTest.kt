@@ -1,10 +1,12 @@
 package net.blueshell.api.system.frontend.events
 
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -26,10 +28,15 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         EventFormHelper.openCreatePage(page, frontendUrl)
-        EventFormHelper.openCommitteeSelect(page)
 
-        assertThat(page.getByText(ownName, Page.GetByTextOptions().setExact(true)).count()).isGreaterThan(0)
-        assertThat(page.getByText(otherName, Page.GetByTextOptions().setExact(true)).count()).isEqualTo(0)
+        // Asked for by name rather than read off the open menu: the menu only
+        // keeps a window of the options in the DOM, so absence from it proves
+        // nothing until the list has been narrowed to the name in question.
+        EventFormHelper.filterCommittees(page, ownName)
+        assertPw(EventFormHelper.committeeOption(page, ownName).first()).isVisible()
+
+        EventFormHelper.filterCommittees(page, otherName)
+        assertPw(EventFormHelper.committeeOption(page, otherName)).hasCount(0)
     }
 
     @Test
@@ -310,24 +317,11 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         assertThat(created.signUpLimit).isNull()
     }
 
-    private fun waitForEventByTitle(title: String): TestHelper.EventRow {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findEventByTitle(title)
-            if (row != null) return row
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected event with title '$title' within 10s")
-    }
+    private fun waitForEventByTitle(title: String): TestHelper.EventRow =
+        pollForValue("event with title '$title'") { TestHelper.findEventByTitle(title) }
 
     private fun waitForEventState(eventId: Long, predicate: (TestHelper.EventRow) -> Boolean) {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findEvent(eventId)
-            if (row != null && predicate(row)) return
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected event $eventId to satisfy predicate within 10s")
+        pollForValue("event $eventId to satisfy the predicate") { TestHelper.findEvent(eventId)?.takeIf(predicate) }
     }
 
     private companion object {

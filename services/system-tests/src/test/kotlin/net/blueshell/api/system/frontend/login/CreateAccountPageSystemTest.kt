@@ -6,6 +6,8 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.pollFor
+import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -85,22 +87,6 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
         return Credentials(username, email, password)
     }
 
-    private fun pollForUser(username: String): TestHelper.RegisteredUserRow {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
-            val row = TestHelper.findUser(username)
-            if (row != null) return row
-            Thread.sleep(200)
-        }
-        throw AssertionError("Expected user '$username' to be persisted within 10s")
-    }
-
-    private fun pollFor(description: String, timeoutMs: Long = 5_000, predicate: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (predicate()) return
-            Thread.sleep(100)
-        }
-        throw AssertionError("Expected '$description' within ${timeoutMs}ms")
-    }
+    private fun pollForUser(username: String): TestHelper.RegisteredUserRow =
+        pollForValue("user '$username' to be persisted") { TestHelper.findUser(username) }
 }

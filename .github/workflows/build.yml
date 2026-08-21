@@ -7,9 +7,11 @@ name: Build
 # its own GHA cache scope.
 #
 # main tags :sha-<short> only. release.yml calls this with release-tag set,
-# which also moves :latest — the tag Keel polls — so only releases reach
-# production. It is called rather than triggered by `release: published`
-# because a release cut with GITHUB_TOKEN raises no event.
+# which additionally publishes :<tag> and then, in a single promote job, moves
+# :latest — the tag Keel polls — for every service at once, so only releases
+# reach production and no service reaches it alone. It is called rather than
+# triggered by `release: published` because a release cut with GITHUB_TOKEN
+# raises no event.
 on:
   push:
     branches: [main]
@@ -213,8 +215,9 @@ jobs:
 
   merge:
     # One run per service. Pulls every digest the build job published for
-    # that service and assembles a single manifest list, tagged :sha-<short>
-    # always and :<tag> plus :latest only on a release.
+    # that service and assembles a single manifest list under immutable tags:
+    # :sha-<short> always and :<tag> on a release. Moving :latest is the
+    # promote job's business, so that every service flips together.
     name: Push manifest for ${{ matrix.service }}
     needs: [detect-changes, build]
     if: needs.detect-changes.outputs.has-matrix == 'true'
@@ -267,11 +270,90 @@ jobs:
             sources+=("${IMAGE}@sha256:${digest}")
           done
 
-          # Only a release moves :latest, so merging to main publishes without rolling.
+          # Immutable tags only. :latest moves in promote, once every service
+          # has one of these to be promoted from.
           tags=(-t "${IMAGE}:sha-${SHORT}")
           if [[ -n "$RELEASE_TAG" ]]; then
-            tags+=(-t "${IMAGE}:${RELEASE_TAG}" -t "${IMAGE}:latest")
+            tags+=(-t "${IMAGE}:${RELEASE_TAG}")
           fi
 
           docker buildx imagetools create "${tags[@]}" "${sources[@]}"
           docker buildx imagetools inspect "${IMAGE}:sha-${SHORT}"
+
+  promote:
+    # Moves :latest, the tag Keel polls, for every service in this release —
+    # in one job, one after the other, and only once every image exists under
+    # its release tag.
+    #
+    # A matrix would publish each service's :latest in its own job, and Keel
+    # polling in the gap between two of them would roll one Deployment against
+    # the previous version of another. The gap is seconds and the poll is every
+    # two minutes, which makes it the kind of race that shows up in production
+    # rather than in a pipeline.
+    #
+    # Skew is narrowed rather than eliminated: Keel still rolls each Deployment
+    # separately and they come up at different speeds, so an api and a frontend
+    # from adjacent releases can still meet briefly. One release of backward
+    # compatibility remains the contract.
+    name: Promote release to :latest
+    needs: [detect-changes, merge]
+    if: needs.detect-changes.outputs.has-matrix == 'true' && inputs.release-tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Set image prefix (lowercase)
+        run: echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Point :latest at the release tag
+        env:
+          SERVICES: ${{ needs.detect-changes.outputs.services }}
+          RELEASE_TAG: ${{ inputs.release-tag }}
+        run: |
+          set -euo pipefail
+
+          # Belt and braces against the job condition: an ordinary main build
+          # has no tag to promote, and promoting an empty one would be worse
+          # than doing nothing.
+          if [[ -z "$RELEASE_TAG" ]]; then
+            echo "No release tag — nothing to promote."
+            exit 0
+          fi
+
+          digest_of() {
+            docker buildx imagetools inspect "$1" | awk '/^Digest:/ { print $2; exit }'
+          }
+
+          # Re-tagging from the release tag rather than from the digests keeps
+          # this a pointer move: :latest and :<tag> name the same manifest list.
+          mapfile -t services < <(jq -r '.[]' <<< "$SERVICES")
+          for service in "${services[@]}"; do
+            image="${REGISTRY}/${IMAGE_PREFIX}/${service}"
+            echo "::group::${service}"
+            docker buildx imagetools create -t "${image}:latest" "${image}:${RELEASE_TAG}"
+            echo "::endgroup::"
+          done
+
+          # Verified after the fact so a partial promote is visible in the log
+          # rather than inferred from a rollout that never happened.
+          for service in "${services[@]}"; do
+            image="${REGISTRY}/${IMAGE_PREFIX}/${service}"
+            promoted="$(digest_of "${image}:latest")"
+            released="$(digest_of "${image}:${RELEASE_TAG}")"
+            if [[ -z "$promoted" || "$promoted" != "$released" ]]; then
+              echo "::error::${service}: :latest is ${promoted}, expected ${released}"
+              exit 1
+            fi
+            echo "${service}: :latest -> ${promoted}"
+          done

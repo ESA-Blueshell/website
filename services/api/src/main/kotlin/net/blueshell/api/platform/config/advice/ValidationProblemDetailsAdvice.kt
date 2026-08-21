@@ -8,10 +8,13 @@ import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import tools.jackson.databind.exc.InvalidNullException
+import tools.jackson.databind.exc.MismatchedInputException
 import java.net.URI
 
 @RestControllerAdvice
@@ -36,6 +39,50 @@ class ValidationProblemDetailsAdvice {
                 )
             }
             .toList()
+
+        pd.setProperty("errors", errors)
+        val traceId = MDC.get("traceId")
+        if (traceId != null) pd.setProperty("traceId", traceId)
+
+        return pd
+    }
+
+    /**
+     * Request DTOs declare mandatory fields as non-nullable Kotlin types, so a
+     * body that omits one fails during deserialization instead of reaching bean
+     * validation. Jackson names the offending property, which is enough to
+     * report it in the same `errors` shape the validation handlers above use —
+     * without it the client would get a bare 400 and lose the field mapping.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleUnreadableBody(
+        ex: HttpMessageNotReadableException,
+        request: HttpServletRequest
+    ): ProblemDetail {
+        val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
+        pd.instance = URI.create(request.requestURI)
+
+        val errors = when (val cause = ex.cause) {
+            is InvalidNullException -> listOf(
+                errorMap(
+                    cause.targetType?.simpleName,
+                    cause.propertyName.simpleName,
+                    "must not be null",
+                    "NotNull"
+                )
+            )
+
+            is MismatchedInputException -> listOf(
+                errorMap(
+                    cause.targetType?.simpleName,
+                    cause.path.lastOrNull()?.propertyName,
+                    "has an unexpected value",
+                    "TypeMismatch"
+                )
+            )
+
+            else -> emptyList()
+        }
 
         pd.setProperty("errors", errors)
         val traceId = MDC.get("traceId")

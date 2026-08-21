@@ -1,15 +1,13 @@
 package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.format.annotation.DateTimeFormat
 import java.time.LocalDate
 
 @Schema(name = "UpdateMembershipRequest")
 data class UpdateMembershipRequest(
-    @field:NotNull
-    var userId: Long? = null,
+    var userId: Long,
 
     var memberType: MemberType? = null,
 
@@ -21,6 +19,5 @@ data class UpdateMembershipRequest(
 
     var incasso: Boolean? = null,
 
-    @field:NotNull
-    var version: Long? = null
+    var version: Long
 )

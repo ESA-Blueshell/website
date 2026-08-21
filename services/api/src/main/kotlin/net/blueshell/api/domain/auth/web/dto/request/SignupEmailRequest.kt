@@ -8,5 +8,5 @@ import jakarta.validation.constraints.NotBlank
 data class SignupEmailRequest(
     @field:NotBlank
     @field:Email
-    var email: String? = null
+    var email: String
 )

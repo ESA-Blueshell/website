@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import net.blueshell.api.domain.event.web.validation.HasSignUpDeadline
 import net.blueshell.api.domain.event.web.validation.ValidSignUpDeadline
@@ -14,36 +13,30 @@ import java.time.Instant
 @Schema(name = "CreateEventRequest")
 @ValidSignUpDeadline
 data class CreateEventRequest(
-    @field:NotNull
-    var committeeId: Long? = null,
+    var committeeId: Long,
 
     @field:NotBlank(message = "Event title cannot be empty.")
     @field:Size(max = 255, message = "Event title cannot exceed 255 characters.")
-    var title: String? = null,
+    var title: String,
 
     @field:NotBlank(message = "Event description cannot be empty.")
     @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
-    var description: String? = null,
+    var description: String,
 
     var location: String? = null,
 
-    @field:NotNull
-    var startTime: Instant? = null,
+    var startTime: Instant,
 
-    @field:NotNull
-    override var endTime: Instant? = null,
+    override var endTime: Instant,
 
     var memberPrice: Double? = null,
     var publicPrice: Double? = null,
 
-    @field:NotNull
-    var approved: Boolean? = null,
+    var approved: Boolean,
 
-    @field:NotNull
-    var membersOnly: Boolean? = null,
+    var membersOnly: Boolean,
 
-    @field:NotNull
-    var signUp: Boolean? = null,
+    var signUp: Boolean,
 
     override var signUpDeadline: Instant? = null,
 

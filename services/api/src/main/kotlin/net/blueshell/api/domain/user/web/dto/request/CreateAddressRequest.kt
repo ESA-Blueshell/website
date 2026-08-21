@@ -2,27 +2,25 @@ package net.blueshell.api.domain.user.web.dto.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
-import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.user.web.validation.ValidCountryCode
 
 @Schema(name = "CreateAddressRequest")
 data class CreateAddressRequest(
-    @field:NotNull
-    var userId: Long? = null,
+    var userId: Long,
 
     @field:NotEmpty
     @field:ValidCountryCode
-    var country: String? = null,
+    var country: String,
 
     @field:NotEmpty
-    var city: String? = null,
+    var city: String,
 
     @field:NotEmpty
-    var street: String? = null,
+    var street: String,
 
     @field:NotEmpty
-    var houseNumber: String? = null,
+    var houseNumber: String,
 
     @field:NotEmpty
-    var zipCode: String? = null
+    var zipCode: String
 )

@@ -6,19 +6,38 @@ import jakarta.validation.constraints.NotBlank
 @Schema(name = "BoardUpdateUserRequest")
 class BoardUpdateUserRequest(
     @field:NotBlank
-    var username: String? = null,
+    var username: String,
 
     @field:NotBlank
-    var initials: String? = null,
+    var initials: String,
 
     @field:NotBlank
-    var firstName: String? = null,
+    var firstName: String,
 
     var prefix: String? = null,
 
     @field:NotBlank
-    var lastName: String? = null,
+    var lastName: String,
 
     @field:NotBlank
-    var email: String? = null,
-) : UpdateUserRequest()
+    var email: String,
+
+    newsletter: Boolean,
+
+    discord: String,
+
+    phoneNumber: String,
+
+    version: Long,
+
+    photoConsent: Boolean? = null,
+
+    memberProfile: UpsertMemberProfileRequest? = null,
+) : UpdateUserRequest(
+    newsletter = newsletter,
+    photoConsent = photoConsent,
+    discord = discord,
+    phoneNumber = phoneNumber,
+    memberProfile = memberProfile,
+    version = version,
+)

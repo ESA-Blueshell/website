@@ -3,7 +3,6 @@ package net.blueshell.api.domain.user.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.validation.group.Creation
@@ -11,36 +10,35 @@ import net.blueshell.api.shared.validation.group.Creation
 @Schema(name = "CreateUserRequest")
 class CreateUserRequest(
     @field:NotBlank
-    var username: String? = null,
+    var username: String,
 
     @field:NotBlank
-    var initials: String? = null,
+    var initials: String,
 
     @field:NotBlank
-    var firstName: String? = null,
+    var firstName: String,
 
     var prefix: String? = null,
 
     @field:NotBlank
-    var lastName: String? = null,
+    var lastName: String,
 
     var fullName: String? = null,
 
-    @field:NotNull
-    var newsletter: Boolean? = null,
+    var newsletter: Boolean,
 
     var consentPrivacy: Boolean? = null,
 
     var photoConsent: Boolean? = null,
 
     @field:NotBlank
-    var email: String? = null,
+    var email: String,
 
     @field:NotBlank
-    var discord: String? = null,
+    var discord: String,
 
     @field:NotBlank
-    var phoneNumber: String? = null,
+    var phoneNumber: String,
 
     @field:Valid
     var memberProfile: UpsertMemberProfileRequest? = null,

@@ -3,7 +3,6 @@ package net.blueshell.api.domain.auth.web.dto.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.user.web.dto.request.UpsertMemberProfileRequest
 
 /**
@@ -14,27 +13,26 @@ import net.blueshell.api.domain.user.web.dto.request.UpsertMemberProfileRequest
 @Schema(name = "SignupDetailsRequest")
 class SignupDetailsRequest(
     @field:NotBlank
-    var username: String? = null,
+    var username: String,
 
     @field:NotBlank
-    var initials: String? = null,
+    var initials: String,
 
     @field:NotBlank
-    var firstName: String? = null,
+    var firstName: String,
 
     var prefix: String? = null,
 
     @field:NotBlank
-    var lastName: String? = null,
+    var lastName: String,
 
     @field:NotBlank
-    var discord: String? = null,
+    var discord: String,
 
     @field:NotBlank
-    var phoneNumber: String? = null,
+    var phoneNumber: String,
 
-    @field:NotNull
-    var newsletter: Boolean? = null,
+    var newsletter: Boolean,
 
     var photoConsent: Boolean? = null,
 

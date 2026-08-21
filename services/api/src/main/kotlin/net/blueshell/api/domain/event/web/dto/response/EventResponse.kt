@@ -21,8 +21,8 @@ data class EventResponse(
     @field:Size(max = 255, message = "Event title cannot exceed 255 characters.")
     var title: String,
 
-    @field:NotBlank(message = "Event description cannot be empty.")
-    @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
+    // Nullable for the same reason the column is: older event rows predate the
+    // create-time description requirement.
     var description: String?,
 
     var location: String? = null,

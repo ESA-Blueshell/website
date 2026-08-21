@@ -19,9 +19,9 @@ const signUps = ref<EventSignUpResponse[]>([])
 
 type PersonInfo = {
   fullName: string;
-  discord?: string;
-  email?: string;
-  phoneNumber?: string;
+  discord?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
 }
 
 export type Response = {
@@ -73,7 +73,7 @@ onMounted(async () => {
 })
 
 const sortedQuestions = computed<QuestionResponse[]>(() => {
-  const sf: SurveyResponse | undefined = event.value?.signUpForm
+  const sf: SurveyResponse | null | undefined = event.value?.signUpForm
   if (!sf?.questions?.length) return []
   return [...sf.questions].sort((a: QuestionResponse, b: QuestionResponse) => a.idx - b.idx)
 })

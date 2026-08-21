@@ -13,8 +13,9 @@ import {
   updateAddress,
 } from "@/services/api"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+import type {PartialNullable} from "@/types/api"
 
-type AddressModel = Partial<Omit<CreateAddressRequest, "userId">> & Partial<AddressResponse>
+type AddressModel = PartialNullable<Omit<CreateAddressRequest, "userId"> & AddressResponse>
 
 const {showSubmit = false, submitText = "Submit", userId = 0, signupToken = undefined} = defineProps<{
   showSubmit?: boolean

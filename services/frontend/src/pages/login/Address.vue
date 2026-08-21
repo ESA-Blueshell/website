@@ -32,8 +32,9 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {type AddressResponse, type CreateAddressRequest, findAddressById} from "@/services/api"
 import AddressForm from "@/components/form/AddressForm.vue"
+import type {PartialNullable} from "@/types/api"
 
-type AddressModel = Partial<CreateAddressRequest> & Partial<AddressResponse>
+type AddressModel = PartialNullable<CreateAddressRequest & AddressResponse>
 
 const address = ref<AddressModel>({
   country: "NL",

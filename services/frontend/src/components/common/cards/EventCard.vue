@@ -168,8 +168,8 @@ function downloadIcs() {
   createIcsEvent(
     {
       title: event.value.title,
-      description: event.value.description,
-      location: event.value.location,
+      description: event.value.description ?? undefined,
+      location: event.value.location ?? undefined,
       start: [start.year, start.month, start.day, start.hour, start.minute],
       end: [end.year, end.month, end.day, end.hour, end.minute],
     },

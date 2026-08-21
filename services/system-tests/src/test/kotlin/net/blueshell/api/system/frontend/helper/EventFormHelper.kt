@@ -62,37 +62,35 @@ object EventFormHelper {
         }
     }
 
-    fun openCommitteeSelect(page: Page) {
-        assertPw(committeeInput(page)).isEnabled()
-        committeeField(page).getByRole(AriaRole.COMBOBOX).first().click()
-        assertPw(page.getByRole(AriaRole.LISTBOX).first()).isVisible()
+    /**
+     * Narrows the committee menu to `text`. The menu is a virtual scroller, so
+     * an option further down is not in the DOM until the list is filtered to it
+     * — typing is how a user finds one, and how a test should.
+     */
+    fun filterCommittees(page: Page, text: String) {
+        val input = committeeInput(page)
+        // The field is disabled until the committees it requests on mount are in
+        // the model, so an enabled field — not the response landing — is the
+        // signal that it will take input.
+        assertPw(input).isEnabled()
+        input.fill(text)
     }
 
+    /** The option for `committeeName`, scoped to the open menu. */
+    fun committeeOption(page: Page, committeeName: String): Locator =
+        page.getByRole(AriaRole.LISTBOX)
+            .first()
+            .getByText(committeeName, Locator.GetByTextOptions().setExact(true))
+
     fun selectCommittee(page: Page, committeeName: String) {
-        openCommitteeSelect(page)
-        val listbox = page.getByRole(AriaRole.LISTBOX).first()
-        // The menu is a virtual scroller: it only keeps a window of the
-        // committees in the DOM, so an option further down does not exist to be
-        // clicked (or waited for) until the list has been scrolled to it. The
-        // option is matched inside the menu rather than page-wide, since the
-        // name also lands in the select's own selection slot once picked.
-        val option = listbox.getByText(committeeName, Locator.GetByTextOptions().setExact(true))
-        pollFor("committee '$committeeName' to be rendered in the menu") {
-            if (option.count() > 0) {
-                true
-            } else {
-                listbox.evaluate("element => element.scrollBy(0, element.clientHeight)")
-                false
-            }
-        }
-        option.first().click()
+        filterCommittees(page, committeeName)
+        committeeOption(page, committeeName).first().click()
         // The menu overlays the rest of the form while it closes, and the model
-        // holds the committee only once its name is rendered in the select. Both
-        // have to settle before the caller fills another field or submits — and
-        // asserting the name here turns a mis-clicked option into a failure at
-        // the select instead of a submit that silently never fires.
-        assertPw(listbox).not().isVisible()
-        assertPw(committeeField(page)).containsText(committeeName)
+        // holds the committee only once its name is rendered in the field — and
+        // asserting the name turns a mis-picked option into a failure at the
+        // select instead of a submit that silently never fires.
+        assertPw(page.getByRole(AriaRole.LISTBOX).first()).not().isVisible()
+        assertPw(committeeInput(page)).hasValue(committeeName)
     }
 
     private fun committeeField(page: Page): Locator =

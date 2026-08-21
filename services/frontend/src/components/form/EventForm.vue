@@ -7,7 +7,7 @@ import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
 import {apply, type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
-import {VCheckbox, VFileInput, VSelect} from "vuetify/components"
+import {VAutocomplete, VCheckbox, VFileInput} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
   type CommitteeDetailResponse,
@@ -401,12 +401,14 @@ defineExpose({validate, save})
           <VvField
             v-model="event.committeeId"
             test-id="event-form-committee-field"
-            :component="VSelect"
+            :component="VAutocomplete"
             :component-props="{
               items: committees,
               'item-title': 'name',
               'item-value': 'id',
               'prepend-icon': 'mdi-account-group',
+              'auto-select-first': true,
+              'hide-no-data': true,
               disabled: !committees.length
             }"
             label="Representative committee"

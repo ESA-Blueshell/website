@@ -1,5 +1,6 @@
 package net.blueshell.api.system.frontend.events
 
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
@@ -27,10 +28,15 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         assertThat(loginStatus).isEqualTo(200)
 
         EventFormHelper.openCreatePage(page, frontendUrl)
-        EventFormHelper.openCommitteeSelect(page)
 
-        assertThat(page.getByText(ownName, Page.GetByTextOptions().setExact(true)).count()).isGreaterThan(0)
-        assertThat(page.getByText(otherName, Page.GetByTextOptions().setExact(true)).count()).isEqualTo(0)
+        // Asked for by name rather than read off the open menu: the menu only
+        // keeps a window of the options in the DOM, so absence from it proves
+        // nothing until the list has been narrowed to the name in question.
+        EventFormHelper.filterCommittees(page, ownName)
+        assertPw(EventFormHelper.committeeOption(page, ownName).first()).isVisible()
+
+        EventFormHelper.filterCommittees(page, otherName)
+        assertPw(EventFormHelper.committeeOption(page, otherName)).hasCount(0)
     }
 
     @Test

@@ -2,7 +2,7 @@ package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.Response
+import com.microsoft.playwright.Request
 import com.microsoft.playwright.TimeoutError
 import com.microsoft.playwright.options.AriaRole
 import java.nio.file.Paths
@@ -125,21 +125,29 @@ object EventFormHelper {
     }
 
     fun submit(page: Page) {
-        TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID).click()
+        val button = TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID)
+        HttpFailureLog.mark("submit click, buttons=${button.count()}")
+        button.click()
     }
 
     /**
      * Submits and returns the request the form is expected to make.
      *
-     * A form that fails its own client-side rules sends nothing, and the click
-     * reports nothing either: the caller waits out its budget on a response
-     * that was never going to come. Reading the messages the form is showing —
-     * on the failure path, where no navigation is in flight to race — names the
-     * field that blocked it.
+     * Waits for the request rather than the response: a create or update that
+     * succeeds navigates away from the form, and the response event races that
+     * teardown — the request has gone out, the server has answered it, and the
+     * waiter still times out because the frame it belonged to is gone. The
+     * request is delivered before any of that, and what the server made of it
+     * is proved by the row the caller goes on to assert.
+     *
+     * A form that fails its own client-side rules sends nothing at all, and the
+     * click reports nothing either, so the failure path reports the page url,
+     * whether the form is still mounted, the messages it is showing, and the
+     * traffic it produced.
      */
-    fun submitExpecting(page: Page, description: String, predicate: (Response) -> Boolean): Response =
+    fun submitExpecting(page: Page, description: String, predicate: (Request) -> Boolean): Request =
         try {
-            page.waitForResponse(Predicate { response -> predicate(response) }) { submit(page) }
+            page.waitForRequest(Predicate { request -> predicate(request) }) { submit(page) }
         } catch (e: TimeoutError) {
             // Only non-waiting reads here: if the submit did land, the form is
             // already gone and anything that auto-waits would time out instead
@@ -152,7 +160,8 @@ object EventFormHelper {
             throw AssertionError(
                 "Submitting the event form produced no $description. " +
                     "url=${page.url()} submitButtons=$submitPresent titleFields=$titlePresent " +
-                    "messages=$messages failed=${HttpFailureLog.recent()} requests=${HttpFailureLog.recentRequests()}",
+                    "messages=$messages failed=${HttpFailureLog.recent()} " +
+                    "requests=${HttpFailureLog.recentRequests()}",
                 e,
             )
         }

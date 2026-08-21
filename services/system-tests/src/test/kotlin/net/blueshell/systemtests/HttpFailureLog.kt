@@ -25,8 +25,17 @@ object HttpFailureLog {
     private val requests: MutableList<String> = Collections.synchronizedList(mutableListOf())
 
     fun recordRequest(method: String, url: String) {
-        requests += "$method $url"
+        requests += "+${sinceStart()}ms $method $url"
     }
+
+    /** Marks a step in the same timeline as the requests, for ordering. */
+    fun mark(what: String) {
+        requests += "+${sinceStart()}ms [$what]"
+    }
+
+    private val start = System.currentTimeMillis()
+
+    private fun sinceStart(): Long = System.currentTimeMillis() - start
 
     fun recentRequests(limit: Int = 12): List<String> = synchronized(requests) { requests.takeLast(limit) }
 

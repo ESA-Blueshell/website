@@ -32,11 +32,9 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
 
         EventFormHelper.openEditPage(page, frontendUrl, eventId)
         EventFormHelper.fillRequiredFields(page, updatedTitle, updatedLocation, updatedDescription)
-
-        val response = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
-            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
+        EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.method() == "PUT" && r.url().contains("/events/$eventId")
         }
-        assertThat(response.status()).isEqualTo(200)
 
         val updated = waitForEvent(eventId) { it.title == updatedTitle }
         assertThat(updated.title).isEqualTo(updatedTitle)
@@ -66,11 +64,9 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
             location = "Campus",
             description = "Updated by committee member",
         )
-
-        val response = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
-            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
+        EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.method() == "PUT" && r.url().contains("/events/$eventId")
         }
-        assertThat(response.status()).isEqualTo(200)
 
         val updated = waitForEvent(eventId) { it.description == "Updated by committee member" }
         assertThat(updated.approved).isFalse()
@@ -92,11 +88,9 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
 
         EventFormHelper.openEditPage(page, frontendUrl, eventId)
         EventFormHelper.setApproved(page, approved = true)
-
-        val response = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
-            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
+        EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.method() == "PUT" && r.url().contains("/events/$eventId")
         }
-        assertThat(response.status()).isEqualTo(200)
 
         assertThat(waitForEvent(eventId) { it.approved }.approved).isTrue()
     }
@@ -117,11 +111,9 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
 
         EventFormHelper.openEditPage(page, frontendUrl, eventId)
         EventFormHelper.uploadBanner(page, EVENT_BANNER_PATH)
-
-        val updateResponse = EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
-            r.request().method() == "PUT" && r.url().contains("/events/$eventId")
+        EventFormHelper.submitExpecting(page, "PUT /events/$eventId") { r ->
+            r.method() == "PUT" && r.url().contains("/events/$eventId")
         }
-        assertThat(updateResponse.status()).isEqualTo(200)
 
         // Open the events page in a fresh page so the banner-fetch
         // response is observable without cache interference.

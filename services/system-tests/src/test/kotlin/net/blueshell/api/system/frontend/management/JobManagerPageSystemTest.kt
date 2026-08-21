@@ -2,6 +2,7 @@ package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.SelectHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import net.blueshell.systemtests.pollFor
@@ -191,17 +192,11 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(typesResponse.status()).isEqualTo(200)
 
         page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
-        page.locator("[data-testid='job-trigger-type']").first().click()
-        page.getByText("Sync contact", Page.GetByTextOptions().setExact(true)).first().click()
-
-        // userId is rendered as a UserPicker (v-autocomplete backed by
-        // /users). Click to open the dropdown, type the admin's email to
-        // filter to one option, then click the highlighted result.
-        val userIdField = page.locator("[data-testid='job-trigger-field-userId'] input").first()
-        userIdField.waitFor()
-        userIdField.click()
-        userIdField.fill(admin.email)
-        page.getByRole(com.microsoft.playwright.options.AriaRole.OPTION).first().click()
+        SelectHelper.pickFromList(page, "job-trigger-type", "Sync contact")
+        // userId is a UserPicker over every user, so it is found by typing the
+        // admin's email; the option is labelled "name (discord)", which this test
+        // has no handle on, so it takes the single match the filter leaves.
+        SelectHelper.pickOnlyMatch(page, "job-trigger-field-userId", admin.email)
 
         val enqueueResponse = page.waitForResponse(
             Predicate { response ->

@@ -62,35 +62,15 @@ object EventFormHelper {
         }
     }
 
-    /**
-     * Narrows the committee menu to `text`. The menu is a virtual scroller, so
-     * an option further down is not in the DOM until the list is filtered to it
-     * — typing is how a user finds one, and how a test should.
-     */
     fun filterCommittees(page: Page, text: String) {
-        val input = committeeInput(page)
-        // The field is disabled until the committees it requests on mount are in
-        // the model, so an enabled field — not the response landing — is the
-        // signal that it will take input.
-        assertPw(input).isEnabled()
-        input.fill(text)
+        SelectHelper.filterBy(page, COMMITTEE_FIELD_TEST_ID, text)
     }
 
-    /** The option for `committeeName`, scoped to the open menu. */
     fun committeeOption(page: Page, committeeName: String): Locator =
-        page.getByRole(AriaRole.LISTBOX)
-            .first()
-            .getByText(committeeName, Locator.GetByTextOptions().setExact(true))
+        SelectHelper.option(page, committeeName)
 
     fun selectCommittee(page: Page, committeeName: String) {
-        filterCommittees(page, committeeName)
-        committeeOption(page, committeeName).first().click()
-        // The menu overlays the rest of the form while it closes, and the model
-        // holds the committee only once its name is rendered in the field — and
-        // asserting the name turns a mis-picked option into a failure at the
-        // select instead of a submit that silently never fires.
-        assertPw(page.getByRole(AriaRole.LISTBOX).first()).not().isVisible()
-        assertPw(committeeInput(page)).hasValue(committeeName)
+        SelectHelper.pickByTyping(page, COMMITTEE_FIELD_TEST_ID, committeeName)
     }
 
     private fun committeeField(page: Page): Locator =

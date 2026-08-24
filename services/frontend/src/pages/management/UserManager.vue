@@ -314,6 +314,11 @@ async function onBulkDone() {
   await Promise.all([getUsers(), getMemberships(), reloadPaid()])
 }
 
+// A refused selection wrote nothing, so the selection stays put while the data refreshes.
+async function onBulkStale() {
+  await Promise.all([getUsers(), getMemberships(), reloadPaid()])
+}
+
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
@@ -681,6 +686,7 @@ function onRowClick(event: MouseEvent, rowId: number) {
       :targets="bulkTargets"
       :contribution-period-id="selectedPeriod?.id ?? null"
       @done="onBulkDone"
+      @stale="onBulkStale"
     />
 
     <reminder-dialog

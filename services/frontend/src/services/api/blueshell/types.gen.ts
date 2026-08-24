@@ -682,6 +682,10 @@ export type FieldValidationError = {
      * Object (target) name that failed validation.
      */
     objectName?: string;
+    /**
+     * Identifiers the error refers to, when the failing field carries a collection. Lets a client name the offending rows and reload them rather than restate the whole request.
+     */
+    values?: Array<number>;
 };
 
 export type FileResponse = {

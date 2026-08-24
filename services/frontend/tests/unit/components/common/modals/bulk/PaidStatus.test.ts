@@ -369,3 +369,94 @@ describe("PaidStatusDialog (Mark as unpaid)", () => {
     expect(wrapper.find('[data-testid="bulk-preview-disposition-3"]').text()).toContain("Skipped")
   })
 })
+
+describe("PaidStatusDialog (a refused selection)", () => {
+  const refusal = (errors: unknown[]) => ({
+    data: undefined,
+    response: {status: 409},
+    error: {status: 409, detail: "The selection no longer matches the current data.", errors},
+  })
+
+  async function confirmWith(response: unknown) {
+    mockMarkPaid.mockResolvedValue(response)
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "paid",
+        targets: [unpaidRegularTarget(1)],
+        contributionPeriodId: 1,
+      },
+    })
+    await settle()
+    await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
+    await settle()
+    return wrapper
+  }
+
+  it("shows the reason and states that nothing was changed", async () => {
+    const wrapper = await confirmWith(
+      refusal([
+        {
+          field: "userIds",
+          code: "DeletedUserIds",
+          message: "1 of the selected users have been deleted.",
+          values: [1],
+        },
+      ]),
+    )
+
+    const alert = wrapper.find('[data-testid="bulk-paid-rejection"]')
+    expect(alert.exists()).toBe(true)
+    expect(alert.text()).toContain("Nothing was changed")
+    expect(alert.text()).toContain("have been deleted")
+  })
+
+  it("names the refused rows rather than only their ids", async () => {
+    const wrapper = await confirmWith(
+      refusal([{field: "userIds", code: "HonoraryUserIds", message: "Honorary.", values: [1]}]),
+    )
+
+    const text = wrapper.find('[data-testid="bulk-paid-rejection"]').text()
+    expect(text).toContain("User 1")
+    expect(text).not.toContain("#1")
+  })
+
+  it("asks the page to reload when the table is out of date", async () => {
+    const wrapper = await confirmWith(
+      refusal([{field: "userIds", code: "UnknownUserIds", message: "Gone.", values: [1]}]),
+    )
+
+    expect(wrapper.emitted("stale")).toHaveLength(1)
+  })
+
+  it("does not ask for a reload when only the choice was wrong", async () => {
+    const wrapper = await confirmWith(
+      refusal([{field: "userIds", code: "HonoraryUserIds", message: "Honorary.", values: [1]}]),
+    )
+
+    expect(wrapper.emitted("stale")).toBeUndefined()
+  })
+
+  it("stays open and does not report success", async () => {
+    const wrapper = await confirmWith(
+      refusal([{field: "userIds", code: "DeletedUserIds", message: "Gone.", values: [1]}]),
+    )
+
+    expect(wrapper.emitted("done")).toBeUndefined()
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined()
+  })
+
+  it("clears the reason when the dialog is reopened", async () => {
+    const wrapper = await confirmWith(
+      refusal([{field: "userIds", code: "DeletedUserIds", message: "Gone.", values: [1]}]),
+    )
+    expect(wrapper.find('[data-testid="bulk-paid-rejection"]').exists()).toBe(true)
+
+    await wrapper.setProps({modelValue: false})
+    await settle()
+    await wrapper.setProps({modelValue: true})
+    await settle()
+
+    expect(wrapper.find('[data-testid="bulk-paid-rejection"]').exists()).toBe(false)
+  })
+})

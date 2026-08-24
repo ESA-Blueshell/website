@@ -116,6 +116,40 @@ function captureExecute(page: Page, pathFragment: string): Promise<Request> {
   )
 }
 
+/**
+ * Re-route an execute endpoint to refuse the selection with the api's 409 contract:
+ * an RFC 7807 ProblemDetail whose field errors name the offending user ids. Playwright
+ * matches routes newest-first, so this overrides the 200 stub for the rest of the test.
+ */
+async function refuseExecute(
+  page: Page,
+  glob: RegExp,
+  errors: Array<{code: string; message: string; values: number[]}>,
+) {
+  await page.route(glob, async (route) => {
+    await route.fulfill({
+      status: 409,
+      contentType: "application/problem+json",
+      body: JSON.stringify({
+        type: "about:blank",
+        title: "Conflict",
+        status: 409,
+        detail: "The selection no longer matches the current data.",
+        errors: errors.map((e) => ({objectName: "bulkContribution", field: "userIds", ...e})),
+      }),
+    })
+  })
+}
+
+/** Count GET /users calls, so a reload of the table can be asserted (or ruled out). */
+function countUserReloads(page: Page): () => number {
+  let calls = 0
+  page.on("request", (req) => {
+    if (req.method() === "GET" && new URL(req.url()).pathname.endsWith("/users")) calls += 1
+  })
+  return () => calls
+}
+
 async function setupPage(page: Page) {
   await installApiMocks(page, {
     users: USERS,
@@ -464,4 +498,105 @@ test.describe("member manager bulk actions", () => {
       await expect(page.getByTestId("bulk-action-dialog")).not.toBeVisible({timeout: 5_000})
     })
   })
+
+  // ── A refused selection (the api's 409 contract) ──────────────────────────────
+  //
+  // The bulk endpoints never apply a selection partly: a 409 means nothing was
+  // written and the offending rows are named in each field error's `values`. These
+  // tests drive the real dialog against that response — the happy paths above only
+  // ever see a 200, so this is the only coverage of the refusal branch.
+
+  test.describe("a refused selection", () => {
+    const MARK_PAID = /\/contributions\/bulk\/mark-paid$/
+
+    test("names the refused rows and states that nothing was changed", async ({page}) => {
+      await setupPage(page)
+      await refuseExecute(page, MARK_PAID, [
+        {code: "DeletedUserIds", message: "1 of the selected users have been deleted.", values: [51]},
+      ])
+      await selectRows(page, [51])
+      await openAction(page, "bulk-action-mark-paid")
+
+      await page.getByTestId("bulk-action-confirm-btn").click()
+
+      const alert = page.getByTestId("bulk-paid-rejection")
+      await expect(alert).toBeVisible({timeout: 10_000})
+      await expect(alert).toContainText("Nothing was changed")
+      await expect(alert).toContainText("have been deleted")
+      // Named by row, not by raw id, so the operator can find the row in the table.
+      await expect(alert).toContainText("Alice Regular")
+    })
+
+    test("keeps the dialog open and does not report success", async ({page}) => {
+      await setupPage(page)
+      await refuseExecute(page, MARK_PAID, [
+        {code: "DeletedUserIds", message: "Deleted.", values: [51]},
+      ])
+      await selectRows(page, [51])
+      await openAction(page, "bulk-action-mark-paid")
+
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      await expect(page.getByTestId("bulk-paid-rejection")).toBeVisible({timeout: 10_000})
+
+      // The happy path closes the dialog after ~1.2s; a refusal must not.
+      await page.waitForTimeout(2_000)
+      await expect(page.getByTestId("bulk-action-dialog")).toBeVisible()
+      await expect(page.getByTestId("bulk-action-preview-table")).toBeVisible()
+    })
+
+    test("reloads the table but leaves the selection intact when the data is stale", async ({page}) => {
+      await setupPage(page)
+      const reloads = countUserReloads(page)
+      await refuseExecute(page, MARK_PAID, [
+        {code: "UnknownUserIds", message: "1 of the selected ids is not a user.", values: [51]},
+      ])
+      await selectRows(page, [51])
+      await openAction(page, "bulk-action-mark-paid")
+
+      const before = reloads()
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      await expect(page.getByTestId("bulk-paid-rejection")).toBeVisible({timeout: 10_000})
+      await expect.poll(() => reloads(), {timeout: 10_000}).toBeGreaterThan(before)
+
+      // Reloading must not cost the operator the selection they just built.
+      await expect(page.getByTestId("member-manager-checkbox-51").locator("input")).toBeChecked()
+    })
+
+    test("does not reload when only the choice was wrong", async ({page}) => {
+      await setupPage(page)
+      const reloads = countUserReloads(page)
+      await refuseExecute(page, MARK_PAID, [
+        {code: "HonoraryUserIds", message: "Honorary members owe no contribution.", values: [51]},
+      ])
+      await selectRows(page, [51])
+      await openAction(page, "bulk-action-mark-paid")
+
+      const before = reloads()
+      await page.getByTestId("bulk-action-confirm-btn").click()
+      await expect(page.getByTestId("bulk-paid-rejection")).toBeVisible({timeout: 10_000})
+
+      // Honorary status is not a staleness signal, so the table is left alone.
+      await page.waitForTimeout(1_000)
+      expect(reloads()).toBe(before)
+    })
+
+    test("lists every reason when the api returns more than one", async ({page}) => {
+      await setupPage(page)
+      await refuseExecute(page, MARK_PAID, [
+        {code: "DeletedUserIds", message: "Deleted users in the selection.", values: [51]},
+        {code: "HonoraryUserIds", message: "Honorary members in the selection.", values: [53]},
+      ])
+      await selectRows(page, [51, 53])
+      await openAction(page, "bulk-action-mark-paid")
+
+      await page.getByTestId("bulk-action-confirm-btn").click()
+
+      const alert = page.getByTestId("bulk-paid-rejection")
+      await expect(alert).toContainText("Deleted users in the selection.")
+      await expect(alert).toContainText("Honorary members in the selection.")
+      await expect(alert).toContainText("Alice Regular")
+      await expect(alert).toContainText("Carol Paid")
+    })
+  })
+
 })

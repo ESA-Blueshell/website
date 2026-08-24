@@ -48,6 +48,24 @@ vi.mock("@/plugins/handleNetworkError.js", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
+// jsdom's location.assign is non-configurable, so swap the whole object for
+// the two properties Login.vue reads.
+function stubLocation(origin: string) {
+  const original = globalThis.location
+  const assign = vi.fn()
+  Object.defineProperty(globalThis, "location", {
+    configurable: true,
+    value: {origin, assign},
+  })
+  return {
+    assign,
+    restore: () => Object.defineProperty(globalThis, "location", {
+      configurable: true,
+      value: original,
+    }),
+  }
+}
+
 describe("Login page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -82,6 +100,54 @@ describe("Login page", () => {
     })
     expect(mockStore.commit).toHaveBeenCalledWith("setLogin", expect.objectContaining({username: "alice"}))
     expect(mockRouterPush).toHaveBeenCalledWith("/events")
+  })
+
+  it.each([
+    ["an off-origin absolute url", "https://evil.com/phish"],
+    ["a protocol-relative url", "//evil.com/phish"],
+    ["a javascript uri", "javascript:alert(document.domain)"],
+  ])("ignores %s in the redirect and stays on the SPA", async (_label, redirect) => {
+    const location = stubLocation("https://esa-blueshell.nl")
+    mockAuthenticate.mockResolvedValue({
+      status: 200,
+      data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
+    })
+
+    const wrapper = shallowMount(Login)
+    await settle()
+
+    ;(wrapper.vm as any).username = "alice"
+    ;(wrapper.vm as any).password = "Secret123!"
+    ;(wrapper.vm as any).form = {validate: vi.fn(async () => ({valid: true}))}
+    mockRoute.query = {redirect}
+
+    await (wrapper.vm as any).login()
+
+    expect(location.assign).not.toHaveBeenCalled()
+    expect(mockRouterPush).toHaveBeenCalledWith("/")
+    location.restore()
+  })
+
+  it("does a full navigation to a trusted admin host", async () => {
+    const location = stubLocation("https://esa-blueshell.nl")
+    mockAuthenticate.mockResolvedValue({
+      status: 200,
+      data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
+    })
+
+    const wrapper = shallowMount(Login)
+    await settle()
+
+    ;(wrapper.vm as any).username = "alice"
+    ;(wrapper.vm as any).password = "Secret123!"
+    ;(wrapper.vm as any).form = {validate: vi.fn(async () => ({valid: true}))}
+    mockRoute.query = {redirect: "https://vault.esa-blueshell.nl/ui/vault"}
+
+    await (wrapper.vm as any).login()
+
+    expect(location.assign).toHaveBeenCalledWith("https://vault.esa-blueshell.nl/ui/vault")
+    expect(mockRouterPush).not.toHaveBeenCalled()
+    location.restore()
   })
 
   it("redirects straight to account if token is not expired", async () => {

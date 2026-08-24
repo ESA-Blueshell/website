@@ -2135,9 +2135,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/language-core@npm:3.3.9":
-  version: 3.3.9
-  resolution: "@vue/language-core@npm:3.3.9"
+"@vue/language-core@npm:3.3.10":
+  version: 3.3.10
+  resolution: "@vue/language-core@npm:3.3.10"
   dependencies:
     "@volar/language-core": "npm:2.4.28"
     "@vue/compiler-dom": "npm:^3.5.0"
@@ -2146,7 +2146,7 @@ __metadata:
     muggle-string: "npm:^0.4.1"
     path-browserify: "npm:^1.0.1"
     picomatch: "npm:^4.0.4"
-  checksum: 10c0/bff339e8ce218d32b8db7a372c1f958db52950e74bbedff527e928b68e52fad30c14e0652dc2626673a579cab15b47d8106eac0deefc7898f370da7889122bba
+  checksum: 10c0/4ce3f64d9c549a7e96023594cbe5a3b5b883e7af0660e8db347c877968a829889aca6a59537192c3b307b2e0e778d66aadd71675d713f750395f24affe78e869
   languageName: node
   linkType: hard
 
@@ -2338,16 +2338,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/typescript-plugin@npm:^3.3.9":
-  version: 3.3.9
-  resolution: "@vue/typescript-plugin@npm:3.3.9"
+"@vue/typescript-plugin@npm:^3.3.10":
+  version: 3.3.10
+  resolution: "@vue/typescript-plugin@npm:3.3.10"
   dependencies:
     "@volar/typescript": "npm:2.4.28"
-    "@vue/language-core": "npm:3.3.9"
+    "@vue/language-core": "npm:3.3.10"
     "@vue/shared": "npm:^3.5.0"
     path-browserify: "npm:^1.0.1"
-    vue-component-meta: "npm:3.3.9"
-  checksum: 10c0/86d3f8dbb76a5be87f43d437e6882e306d4bfcf3b85503a1e39de58b0bad973737de45db4bde7ab413ae0a1645a3737c3437c2052773924de5a58337a5f5569d
+    vue-component-meta: "npm:3.3.10"
+  checksum: 10c0/f97329425ee71643c9ee7f146064f1372cd530c484600e49b9f651aba3ce20aba3128ee2db10d77d8d75a9b79be3c168983ca26d7510d22db26d58a3c2671d44
   languageName: node
   linkType: hard
 
@@ -2675,7 +2675,7 @@ __metadata:
     "@vue/server-renderer": "npm:3.5.41"
     "@vue/test-utils": "npm:^2.4.11"
     "@vue/tsconfig": "npm:^0.9.1"
-    "@vue/typescript-plugin": "npm:^3.3.9"
+    "@vue/typescript-plugin": "npm:^3.3.10"
     axios: "npm:^1.19.0"
     core-js: "npm:^3.50.0"
     countries-list: "npm:^3.4.0"
@@ -2683,7 +2683,7 @@ __metadata:
     eslint: "npm:^10.8.1"
     eslint-plugin-vue: "npm:^10.10.0"
     eslint-plugin-vuetify: "npm:^2.7.2"
-    fast-xml-parser: "npm:^5.9.3"
+    fast-xml-parser: "npm:^5.11.0"
     flag-icons: "npm:^7.5.0"
     globals: "npm:^17.11.0"
     i18n-nationality: "npm:^1.4.0"
@@ -2692,7 +2692,7 @@ __metadata:
     istanbul-lib-report: "npm:^3.0.1"
     istanbul-reports: "npm:^3.2.0"
     jsdom: "npm:^30.0.1"
-    libphonenumber-js: "npm:^1.13.10"
+    libphonenumber-js: "npm:^1.13.11"
     luxon: "npm:^3.7.2"
     marked: "npm:^18.0.9"
     node-emoji: "npm:^2.2.0"
@@ -2715,7 +2715,7 @@ __metadata:
     vue-marquee-text-component: "npm:^2.0.1"
     vue-router: "npm:^5.2.0"
     vue-signature-pad: "npm:^3.0.2"
-    vue-tsc: "npm:^3.3.9"
+    vue-tsc: "npm:^3.3.10"
     vuetify: "npm:^4.1.9"
     vuex: "npm:^4.1.0"
     webfontloader: "npm:^1.6.28"
@@ -4058,19 +4058,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:^5.9.3":
-  version: 5.10.1
-  resolution: "fast-xml-parser@npm:5.10.1"
+"fast-xml-parser@npm:^5.11.0":
+  version: 5.11.0
+  resolution: "fast-xml-parser@npm:5.11.0"
   dependencies:
     "@nodable/entities": "npm:^3.0.0"
     fast-xml-builder: "npm:^1.2.0"
     is-unsafe: "npm:^2.0.0"
     path-expression-matcher: "npm:^1.6.2"
-    strnum: "npm:^2.4.1"
+    strnum: "npm:^2.4.2"
     xml-naming: "npm:^0.3.0"
   bin:
     fxparser: src/cli/cli.js
-  checksum: 10c0/a7ef867ede5366b52efc8d490a5d39fa0afcdcb9d66e1f19296bea23dd304d167de0e61dbabb7138638fbbb099514b89e31710fd4ddc32559513ce1bdc776034
+  checksum: 10c0/bf3821c123f057283dd413f79c043af830e8b3bff3c0a6d02f97a8c5677c205379c156b735620c981ebe504d4992e9cf7f435512d2e77d845ac25f8045c53c5f
   languageName: node
   linkType: hard
 
@@ -4923,10 +4923,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"libphonenumber-js@npm:^1.13.10":
-  version: 1.13.10
-  resolution: "libphonenumber-js@npm:1.13.10"
-  checksum: 10c0/52f41019234baca302f2b378d2930de208801ab62b2198fd9d7918085549e0ce8645c42ce3a2dc57775845a8548ca3d20f7ccc2cc923a51f2c073898cc6432e6
+"libphonenumber-js@npm:^1.13.11":
+  version: 1.13.11
+  resolution: "libphonenumber-js@npm:1.13.11"
+  checksum: 10c0/1de958a7b78d281aa357a1b89be173bb5e7034b302b3921174f190e88bec611e19c891cadbf935facda261254e250bc32de00560765e689fb68a39db286765ff
   languageName: node
   linkType: hard
 
@@ -6701,12 +6701,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"strnum@npm:^2.4.1":
-  version: 2.4.1
-  resolution: "strnum@npm:2.4.1"
+"strnum@npm:^2.4.2":
+  version: 2.4.2
+  resolution: "strnum@npm:2.4.2"
   dependencies:
     anynum: "npm:^1.0.1"
-  checksum: 10c0/0d6a42bf8a1ad74b0a6c048ecf3bea50757383bcf304877ebe6e62acca5574bc088ce71bfb4de4b89b2ab44c618834c76be5894da04b67c673ff6677788b2638
+  checksum: 10c0/71a94dcc12cf3187e10089ed2ddcf7c289fed168ce4a33ee393bbd009a9199c237e3ef71597f3c91fac4203dd1e675c090eb4131226fd70af6fa2a31b0175de2
   languageName: node
   linkType: hard
 
@@ -7395,19 +7395,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-meta@npm:3.3.9":
-  version: 3.3.9
-  resolution: "vue-component-meta@npm:3.3.9"
+"vue-component-meta@npm:3.3.10":
+  version: 3.3.10
+  resolution: "vue-component-meta@npm:3.3.10"
   dependencies:
     "@volar/typescript": "npm:2.4.28"
-    "@vue/language-core": "npm:3.3.9"
+    "@vue/language-core": "npm:3.3.10"
     path-browserify: "npm:^1.0.1"
   peerDependencies:
     typescript: "*"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/9164add9aa1e13dd089f2958bd926e7a6dba6cf952619e6a99281c86c7f481f6e7f17991631236e7396c52df7994fa69b5ca69ee5becc13ae81040511256dc86
+  checksum: 10c0/dc018c50b592399bcce4bdf64189c3dd62f468fc12a20f26afd56191d989b8b7224c9312e928d8e8632cf41618c0364326a649a7e3e03f78d641d8f3f51511bb
   languageName: node
   linkType: hard
 
@@ -7525,17 +7525,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-tsc@npm:^3.3.9":
-  version: 3.3.9
-  resolution: "vue-tsc@npm:3.3.9"
+"vue-tsc@npm:^3.3.10":
+  version: 3.3.10
+  resolution: "vue-tsc@npm:3.3.10"
   dependencies:
     "@volar/typescript": "npm:2.4.28"
-    "@vue/language-core": "npm:3.3.9"
+    "@vue/language-core": "npm:3.3.10"
   peerDependencies:
     typescript: ">=5.0.0"
   bin:
     vue-tsc: bin/vue-tsc.js
-  checksum: 10c0/582ab81a0c5bb53a589e7f0ff2710cfaf32df1c180acaac5f65cbdfec8bd52a647aea0926a9fbef664799260d2df08a9f15cc9405759a6365169c73be16066c4
+  checksum: 10c0/313136a9866b2b3ae14a0871343632f933c9dbb45acc96c9916c31e498babf5a831b791cf69fe5aadae9aebad33f492c0946d384d849187d01ab0b4860aec259
   languageName: node
   linkType: hard
 

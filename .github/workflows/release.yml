@@ -2,7 +2,11 @@ name: Release
 
 # Owns the release path: computes the next version from the Conventional
 # Commits merged since the last release, and once that release is cut,
-# publishes the images Keel rolls out.
+# publishes the images Keel rolls out and announces it on Discord.
+#
+# The announcement needs a `DISCORD_RELEASE_WEBHOOK` secret holding a channel
+# webhook URL. Without it the release still completes and the announcement step
+# warns and exits, so a fork or an unconfigured repo is not broken by its absence.
 
 on:
   push:
@@ -27,6 +31,8 @@ jobs:
     outputs:
       released: ${{ steps.release.outputs.releases_created }}
       tag: ${{ steps.release.outputs.tag_name }}
+      notes: ${{ steps.release.outputs.body }}
+      url: ${{ steps.release.outputs.html_url }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
@@ -54,3 +60,30 @@ jobs:
     permissions:
       contents: read
       packages: write
+
+  announce:
+    # After `publish`, so the announcement never points at a release whose images
+    # are missing. Skipped along with it if publishing fails.
+    name: Announce the release on Discord
+    needs: [version, publish]
+    if: needs.version.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Post the release notes
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+          RELEASE_NOTES: ${{ needs.version.outputs.notes }}
+          RELEASE_URL: ${{ needs.version.outputs.url }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "::warning::DISCORD_RELEASE_WEBHOOK is unset; skipping the announcement."
+            exit 0
+          fi
+          python3 .github/scripts/discord_release_announce.py

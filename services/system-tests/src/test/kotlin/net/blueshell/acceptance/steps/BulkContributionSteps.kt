@@ -83,6 +83,11 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
         selection += id
     }
 
+    @Given("an id in the selection that was never a user")
+    fun anIdThatWasNeverAUser() {
+        selection += 9_999_999L
+    }
+
     @Given("the contribution period has since been deleted")
     fun thePeriodWasDeleted() {
         TestHelper.deleteContributionPeriod(requireNotNull(periodId))

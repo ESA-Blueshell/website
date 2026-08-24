@@ -8,6 +8,7 @@ import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
@@ -29,7 +30,9 @@ class BulkContributionCommandHandlersTest {
     private val users = mock<UserService>()
     private val memberships = mock<MembershipService>()
     private val periods = mock<ContributionPeriodService>()
-    private val handler = ExecuteBulkContributionHandler(contributions, users, memberships, periods)
+    private val deletedUsers = mock<DeletedUserRepository>()
+    private val handler =
+        ExecuteBulkContributionHandler(contributions, users, memberships, periods, deletedUsers)
 
     private val periodId = 100L
 
@@ -86,6 +89,24 @@ class BulkContributionCommandHandlersTest {
             }
 
         // Nothing is written for the users that did resolve.
+        verify(contributions, never()).create(any())
+    }
+
+    @Test
+    fun `refuses a selection naming a deleted user, naming the ids`() {
+        // Deletion anonymises the account and keeps the row, so the id still resolves.
+        knownPeriod()
+        knownUser(1L)
+        knownUser(7L)
+        whenever(deletedUsers.existsById(7L)).thenReturn(true)
+
+        assertThatThrownBy { handler.handle(command(listOf(1L, 7L), BulkContributionOperation.PAID)) }
+            .isInstanceOfSatisfying(BulkSelectionRejected::class.java) { rejected ->
+                val violation = rejected.violations.single()
+                assertThat(violation.code).isEqualTo(BulkSelectionRejected.DELETED_USERS)
+                assertThat(violation.values).containsExactly(7L)
+            }
+
         verify(contributions, never()).create(any())
     }
 

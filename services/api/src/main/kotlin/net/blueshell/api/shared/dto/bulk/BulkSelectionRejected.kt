@@ -34,6 +34,13 @@ class BulkSelectionRejected(
         /** The selection names users that no longer exist; the client's list is stale. */
         const val UNKNOWN_USERS: String = "UnknownUserIds"
 
+        /**
+         * The selection names users that have been deleted. Deletion anonymises the
+         * account and keeps the row for a restore window, so such a user still resolves
+         * by id while no longer being someone a contribution can be recorded against.
+         */
+        const val DELETED_USERS: String = "DeletedUserIds"
+
         /** The selection names honorary members, who owe no contribution. */
         const val HONORARY_USERS: String = "HonoraryUserIds"
 

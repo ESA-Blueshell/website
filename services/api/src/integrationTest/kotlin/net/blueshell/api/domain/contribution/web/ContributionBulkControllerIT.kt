@@ -88,7 +88,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `a selection naming a deleted user is refused with that id`() {
+    fun `a selection naming an id that was never a user is refused`() {
         val board = userFactory.createUserWithRole(Role.BOARD)
         val period = contributionFactory.createPeriod()
         val member = memberWith(MemberType.REGULAR)

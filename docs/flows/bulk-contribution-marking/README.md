@@ -44,8 +44,11 @@ Each of these is defended by a scenario in
 
 - A selection is never partly applied. If any selected user cannot be acted on, no
   contribution is created or removed for any of them.
-- A user that no longer exists cannot be silently dropped from a selection. The
-  request is refused and their id is returned.
+- A user that can no longer be acted on cannot be silently dropped from a selection.
+  The request is refused and their id is returned.
+- A deleted user never gains a contribution. Deletion anonymises the account and keeps
+  the row for a restore window, so such an id still resolves; the deleted-user snapshot
+  is what marks it unusable.
 - An honorary member never gains a contribution record.
 - Re-sending the same request never produces a second contribution row, and never
   reports the same row as applied twice.
@@ -60,8 +63,8 @@ flowchart TD
     C --> D{period exists?}
     D -- no --> R[409 · UnknownContributionPeriodId]
     D -- yes --> E{every user exists?}
-    E -- no --> S[409 · UnknownUserIds with ids]
-    E -- yes --> F{any honorary?}
+    E -- no --> S[409 · Unknown or Deleted user ids]
+    E -- yes --> F{any honorary or deleted?}
     F -- yes --> T[409 · HonoraryUserIds with ids]
     F -- no --> G[write contributions for users lacking one]
     G --> H[200 · applied and unchanged counts]
@@ -73,7 +76,8 @@ flowchart TD
 2. The frontend posts the selected ids and the period id.
 3. The period is checked first, because a missing period makes every other check
    meaningless.
-4. Every selected id is resolved. Unknown ids are collected rather than skipped.
+4. Every selected id is resolved, and ids carrying a deleted-user snapshot are
+   separated from ids that were never users. Both are collected rather than skipped.
 5. Users that resolve are checked for honorary membership.
 6. If anything was collected in steps 4 or 5, the request is refused whole with one
    error per reason, each carrying its ids.
@@ -89,7 +93,7 @@ database. A selection is built from a snapshot, and rows can change underneath i
 flowchart TD
     A[table loaded · user 42 present] --> B[user 42 deleted elsewhere]
     B --> C[board member submits selection including 42]
-    C --> D[409 · UnknownUserIds contains 42]
+    C --> D[409 · DeletedUserIds contains 42]
     D --> E[frontend reloads the user list]
     E --> F[42 is gone from the table]
     F --> G[board member resubmits without 42]
@@ -120,7 +124,7 @@ carry. No token is minted, transmitted out of band, or retired here.
 `POST /contributions/bulk/mark-unpaid` is identical in shape; `skipped` counts users
 who had no contribution to remove.
 
-The 409 codes are `UnknownUserIds`, `HonoraryUserIds` and
+The 409 codes are `UnknownUserIds`, `DeletedUserIds`, `HonoraryUserIds` and
 `UnknownContributionPeriodId`. The `values` array carries the offending ids so the
 caller can name the rows and reload them. 409 rather than 400 because the request is
 well formed — the mismatch is between the caller's view and the database, which is a
@@ -128,7 +132,9 @@ reason to reload rather than to correct a form.
 
 ## Failure and recovery
 
-**A user in the selection was deleted.** 409 with `UnknownUserIds`. The frontend
+**A user in the selection was deleted.** 409 with `DeletedUserIds`. Deletion
+anonymises the account rather than removing the row, so the id still resolves and the
+snapshot is what identifies it. The frontend
 reloads the user list for the period, which removes the row, and the operator
 resubmits. Nothing was written, so there is no partial state to unpick.
 

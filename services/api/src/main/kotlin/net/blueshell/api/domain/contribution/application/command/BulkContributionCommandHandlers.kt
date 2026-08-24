@@ -6,6 +6,7 @@ import net.blueshell.api.domain.contribution.command.BulkContributionOperation
 import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.MembershipService
+import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.command.CommandHandler
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
@@ -33,6 +34,7 @@ class ExecuteBulkContributionHandler(
     private val users: UserService,
     private val memberships: MembershipService,
     private val periods: ContributionPeriodService,
+    private val deletedUsers: DeletedUserRepository,
 ) : CommandHandler<ExecuteBulkContributionCommand, BulkActionResult> {
     override val commandType = ExecuteBulkContributionCommand::class
 
@@ -61,8 +63,11 @@ class ExecuteBulkContributionHandler(
         }
 
         val unknown = userIds.filterNot { users.existsById(it) }
-        // Only ids that resolve are inspected; an unknown id has no membership to read.
-        val honorary = userIds.filterNot { it in unknown }.filter { userId ->
+        // Deletion anonymises the account and keeps the row for a restore window, so a
+        // deleted user still resolves by id. The snapshot is what distinguishes them.
+        val deleted = userIds.filterNot { it in unknown }.filter { deletedUsers.existsById(it) }
+        // Only actionable ids are inspected; the others have no membership worth reading.
+        val honorary = userIds.filterNot { it in unknown || it in deleted }.filter { userId ->
             memberships.findByUserId(userId).maxByOrNull { it.startDate }?.memberType == MemberType.HONORARY
         }
 
@@ -74,6 +79,16 @@ class ExecuteBulkContributionHandler(
                         code = BulkSelectionRejected.UNKNOWN_USERS,
                         values = unknown,
                         message = "${unknown.size} of the selected users no longer exist.",
+                    ),
+                )
+            }
+            if (deleted.isNotEmpty()) {
+                add(
+                    BulkSelectionRejected.Violation(
+                        field = "userIds",
+                        code = BulkSelectionRejected.DELETED_USERS,
+                        values = deleted,
+                        message = "${deleted.size} of the selected users have been deleted.",
                     ),
                 )
             }

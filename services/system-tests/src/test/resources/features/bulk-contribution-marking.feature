@@ -43,7 +43,7 @@ Feature: Bulk contribution marking
     And a user in the selection who has since been deleted
     When they mark the selection paid
     Then the request is refused as a conflict
-    And the refusal reports "UnknownUserIds" against "userIds"
+    And the refusal reports "DeletedUserIds" against "userIds"
     And the refusal names the deleted user
     And the remaining member has no contribution for the period
 
@@ -60,7 +60,13 @@ Feature: Bulk contribution marking
     And a user in the selection who has since been deleted
     When they mark the selection paid
     Then the request is refused as a conflict
-    And the refusal reports both "UnknownUserIds" and "HonoraryUserIds"
+    And the refusal reports both "DeletedUserIds" and "HonoraryUserIds"
+
+  Scenario: A selection naming an id that was never a user is refused
+    Given an id in the selection that was never a user
+    When they mark the selection paid
+    Then the request is refused as a conflict
+    And the refusal reports "UnknownUserIds" against "userIds"
 
   Scenario: A selection naming a period that no longer exists is refused
     Given a member with no contribution for the period

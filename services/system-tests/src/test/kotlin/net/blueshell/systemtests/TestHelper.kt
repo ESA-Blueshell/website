@@ -932,6 +932,16 @@ object TestHelper {
      * Mark a user as paid for a contribution period. Inserts a row in
      * `contributions` keyed on (user_id, contribution_period_id).
      */
+    /** Soft-deletes a contribution period, so a stale selection can name a period that has gone. */
+    fun deleteContributionPeriod(periodId: Long) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement("UPDATE contribution_periods SET deleted_at = NOW() WHERE id = ?").use { stmt ->
+                stmt.setLong(1, periodId)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
     fun createContribution(periodId: Long, username: String) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)

@@ -132,6 +132,22 @@ export type BoardResponse = {
     version: number;
 };
 
+export type BulkActionResult = {
+    applied: number;
+    queued: number;
+    skipped: number;
+};
+
+export type BulkMarkPaidRequest = {
+    contributionPeriodId: number | null;
+    userIds: Array<number>;
+};
+
+export type BulkMarkUnpaidRequest = {
+    contributionPeriodId: number | null;
+    userIds: Array<number>;
+};
+
 export type CohortDetail = {
     externalId?: string | null;
     folder?: string | null;
@@ -2714,6 +2730,88 @@ export type CreateContributionResponses = {
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
+
+export type MarkPaidData = {
+    body: BulkMarkPaidRequest;
+    path?: never;
+    query?: never;
+    url: '/contributions/bulk/mark-paid';
+};
+
+export type MarkPaidErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MarkPaidError = MarkPaidErrors[keyof MarkPaidErrors];
+
+export type MarkPaidResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type MarkPaidResponse = MarkPaidResponses[keyof MarkPaidResponses];
+
+export type MarkUnpaidData = {
+    body: BulkMarkUnpaidRequest;
+    path?: never;
+    query?: never;
+    url: '/contributions/bulk/mark-unpaid';
+};
+
+export type MarkUnpaidErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MarkUnpaidError = MarkUnpaidErrors[keyof MarkUnpaidErrors];
+
+export type MarkUnpaidResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type MarkUnpaidResponse = MarkUnpaidResponses[keyof MarkUnpaidResponses];
 
 export type CsrfData = {
     body?: never;

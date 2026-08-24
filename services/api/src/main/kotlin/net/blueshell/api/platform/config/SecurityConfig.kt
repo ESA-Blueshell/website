@@ -96,20 +96,14 @@ class SecurityConfig(
         return tokenRepository
     }
 
-    // Dedicated chain for Spring Boot actuator endpoints. Lives at @Order(0)
-    // so it runs before the @Order(3) authChain that calls redirectToHttps —
-    // kubelet probes speak plain HTTP, and a 302 to https from a permitAll
-    // path would still fail the probe. anyRequest().permitAll() so in-cluster
-    // scrapers (kubelet, Prometheus, Gatus) can reach health/prometheus
-    // without a JWT.
-    //
-    // CSRF stays on. CsrfFilter never challenges GET/HEAD/OPTIONS/TRACE, so
-    // the probes are unaffected, and an endpoint added to the exposure list
-    // that does accept writes is covered rather than silently unprotected.
     @Bean
     @Order(0)
-    fun actuatorChain(http: HttpSecurity): SecurityFilterChain {
+    fun actuatorChain(
+        http: HttpSecurity,
+        csrfTokenRepository: CookieCsrfTokenRepository
+    ): SecurityFilterChain {
         http.securityMatcher(EndpointRequest.toAnyEndpoint())
+            .csrf { it.csrfTokenRepository(csrfTokenRepository) }
             .authorizeHttpRequests { it.anyRequest().permitAll() }
         return http.build()
     }
@@ -132,9 +126,6 @@ class SecurityConfig(
 
         http.securityMatcher("/**")
             .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout") }
-            // IF_REQUIRED (not STATELESS) so the SecurityContext JwtAuthFilter
-            // saves is persisted to the Valkey-backed session, keeping the user
-            // signed in after the JWT expires.
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
@@ -146,7 +137,6 @@ class SecurityConfig(
                 "/auth",
                 "/auth/logout",
                 "/recovery/**",
-                // POST /users is board-only now; public registration is /signup.
                 "/signup",
                 "/signup/**",
                 "/users/guest",

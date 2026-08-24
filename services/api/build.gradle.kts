@@ -111,7 +111,7 @@ dependencies {
     // Jackson 2.x Kotlin module — required for SpringDoc/swagger-core schema
     // generation, which uses its own com.fasterxml.jackson ObjectMapper
     // independently of our tools.jackson mapper.
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2")
     implementation("org.openapitools:jackson-databind-nullable:0.2.11")
 
     implementation(project(":services:api:clients:brevo"))

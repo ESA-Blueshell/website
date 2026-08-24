@@ -9,6 +9,8 @@ import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
 import net.blueshell.api.domain.auth.web.mapping.request.asCommand
 import net.blueshell.api.domain.auth.web.dto.response.ActivationResponse
+import net.blueshell.api.domain.auth.web.dto.response.RecoveryEmailPreviewResponse
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.domain.telemetry.web.dto.response.RedirectResponse
 import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
@@ -61,5 +63,27 @@ class RecoveryController(
     @PreAuthorize("hasPermission(#userId, 'User', 'email')")
     fun resendMemberActivationEmail(@PathVariable userId: Long) {
         commandBus.dispatch(ResendMemberActivationEmailCommand(userId))
+    }
+
+    /**
+     * Renders what a recovery email would look like for this user, without issuing the
+     * token that would make its link work. Gated on the same permission as sending one:
+     * the rendered email carries the recipient's name and address.
+     */
+    @GetMapping("/users/{userId}/email-preview")
+    @PreAuthorize("hasPermission(#userId, 'User', 'email')")
+    fun previewRecoveryEmail(
+        @PathVariable userId: Long,
+        @RequestParam purpose: TokenPurpose,
+    ): RecoveryEmailPreviewResponse {
+        val preview = commandBus.dispatch(PreviewRecoveryEmailCommand(userId, purpose))
+        return RecoveryEmailPreviewResponse(
+            purpose = preview.purpose,
+            subject = preview.subject,
+            html = preview.html,
+            recipientEmail = preview.recipientEmail,
+            recipientName = preview.recipientName,
+            linkPlaceholder = preview.linkPlaceholder,
+        )
     }
 }

@@ -1,8 +1,7 @@
 package net.blueshell.api.platform.integration.email.application.service
 
-import net.blueshell.api.domain.auth.application.email.createMemberActivationEmail
-import net.blueshell.api.domain.auth.application.email.createPasswordResetEmail
-import net.blueshell.api.domain.auth.application.email.createUserActivationEmail
+import net.blueshell.api.domain.auth.application.email.PREVIEW_TOKEN_PLACEHOLDER
+import net.blueshell.api.domain.auth.application.email.buildRecoveryEmail
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
@@ -14,6 +13,7 @@ import net.blueshell.api.platform.integration.email.application.service.EmailSer
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.shared.model.RecoveryEmailPreview
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -54,17 +54,31 @@ class EmailSenderService(
         val user = requireExists { users.findById(userId) }
         log.info("Sending {} email for user={}", tokenPurpose, userId)
 
-        val emailContent = when (tokenPurpose) {
-            TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(user, token, frontendUrl)
-            TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(user, token, frontendUrl)
-            TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(user, token, frontendUrl)
-            // Never emailed by design (ADR-024) — fail loudly rather than leak it.
-            TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
-                "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",
-            )
-        }
+        deliver(buildRecoveryEmail(tokenPurpose, user, token, frontendUrl), "email.recovery", jobExecutionId)
+    }
 
-        deliver(emailContent, "email.recovery", jobExecutionId)
+    /**
+     * Renders a recovery email for inspection. Goes through the same builder and template
+     * as a send, and stops short of everything that would make it one: no token is issued,
+     * no outbox row is written, no tracking pixel is injected and nothing is handed to the
+     * transport.
+     */
+    fun previewRecoveryEmail(userId: Long, purpose: TokenPurpose): RecoveryEmailPreview {
+        val user = requireExists { users.findById(userId) }
+        val content = buildRecoveryEmail(purpose, user, PREVIEW_TOKEN_PLACEHOLDER, frontendUrl)
+        return RecoveryEmailPreview(
+            purpose = purpose,
+            subject = content.subject,
+            html = templateService.createEmail(
+                content.recipientEmail,
+                content.recipientName,
+                content.subject,
+                content.markdownContent,
+            ),
+            recipientEmail = content.recipientEmail,
+            recipientName = content.recipientName,
+            linkPlaceholder = PREVIEW_TOKEN_PLACEHOLDER,
+        )
     }
 
     /**

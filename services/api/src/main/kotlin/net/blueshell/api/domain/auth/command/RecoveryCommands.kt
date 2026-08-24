@@ -1,5 +1,7 @@
 package net.blueshell.api.domain.auth.command
 
+import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.shared.model.RecoveryEmailPreview
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.user.application.validation.UniqueUsername
@@ -58,6 +60,11 @@ data class ResendUserActivationCommand(
 data class ResendMemberActivationEmailCommand(
     val userId: Long
 ) : Command<Unit>
+
+data class PreviewRecoveryEmailCommand(
+    val userId: Long,
+    val purpose: TokenPurpose
+) : Command<RecoveryEmailPreview>
 
 data class IssueSignupSessionCommand(
     val userId: Long

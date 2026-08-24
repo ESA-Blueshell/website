@@ -903,6 +903,36 @@ export enum QuestionType {
     DESCRIPTION = 'DESCRIPTION'
 }
 
+/**
+ * A recovery email rendered for inspection. No token was issued to produce it.
+ */
+export type RecoveryEmailPreviewResponse = {
+    /**
+     * The rendered email, as delivered but for the inert recovery link.
+     */
+    html: string;
+    /**
+     * What the recovery link carries in place of a token, so the preview can say the link is inert.
+     */
+    linkPlaceholder: string;
+    /**
+     * Which recovery email this is.
+     */
+    purpose: TokenPurpose;
+    /**
+     * Address the email would be sent to.
+     */
+    recipientEmail: string;
+    /**
+     * Name the email addresses the recipient by.
+     */
+    recipientName: string;
+    /**
+     * Subject line the recipient would see.
+     */
+    subject: string;
+};
+
 export type RedirectResponse = {
     path: string;
 };
@@ -1025,6 +1055,13 @@ export type TelemetryResponse = {
     url: string;
     version: number;
 };
+
+export enum TokenPurpose {
+    USER_ACTIVATION = 'USER_ACTIVATION',
+    MEMBER_ACTIVATION = 'MEMBER_ACTIVATION',
+    PASSWORD_RESET = 'PASSWORD_RESET',
+    SIGNUP_CONTINUATION = 'SIGNUP_CONTINUATION'
+}
 
 export type UpdateAddressRequest = {
     city: string;
@@ -5175,6 +5212,51 @@ export type ResendUserActivationResponses = {
 };
 
 export type ResendUserActivationResponse = ResendUserActivationResponses[keyof ResendUserActivationResponses];
+
+export type PreviewRecoveryEmailData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query: {
+        purpose: TokenPurpose;
+    };
+    url: '/recovery/users/{userId}/email-preview';
+};
+
+export type PreviewRecoveryEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewRecoveryEmailError = PreviewRecoveryEmailErrors[keyof PreviewRecoveryEmailErrors];
+
+export type PreviewRecoveryEmailResponses = {
+    /**
+     * OK
+     */
+    200: RecoveryEmailPreviewResponse;
+};
+
+export type PreviewRecoveryEmailResponse = PreviewRecoveryEmailResponses[keyof PreviewRecoveryEmailResponses];
 
 export type ResendMemberActivationEmailData = {
     body?: never;

@@ -26,6 +26,17 @@
           </v-chip>
 
           <v-btn
+            v-if="previewPurpose"
+            :data-testid="`recovery-user-preview-btn-${user.id}`"
+            class="btn-tight"
+            icon="mdi-email-search-outline"
+            size="small"
+            :title="`Preview the ${actionType === 'activation' ? 'activation' : 'password reset'} email`"
+            variant="text"
+            @click.stop="openPreview"
+          />
+
+          <v-btn
             :disabled="loading"
             :data-testid="`recovery-user-action-btn-${actionType}-${user.id}`"
             :loading="loading"
@@ -38,6 +49,18 @@
         </div>
       </div>
     </v-list-item>
+
+    <email-preview-dialog
+      v-model="previewOpen"
+      :error="previewError"
+      :html="preview?.html"
+      :link-placeholder="preview?.linkPlaceholder"
+      :loading="previewLoading"
+      :recipient-email="preview?.recipientEmail"
+      :recipient-name="preview?.recipientName"
+      :subject="preview?.subject"
+      title="Email preview"
+    />
   </div>
 </template>
 
@@ -45,8 +68,10 @@
 import {computed, ref} from "vue"
 import {DateTime} from "luxon"
 import type {UserDetailResponse} from "@/services/api"
-import {resendUserActivation, resetPassword, restoreDeletedUserById} from "@/services/api"
+import {resendUserActivation, resetPassword, restoreDeletedUserById, TokenPurpose} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
+import {useRecoveryEmailPreview} from "@/composables/useRecoveryEmailPreview"
 
 const props = defineProps<{
   user: UserDetailResponse
@@ -58,6 +83,25 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
+
+const {
+  open: previewOpen,
+  loading: previewLoading,
+  error: previewError,
+  preview,
+  show: showPreview,
+} = useRecoveryEmailPreview()
+
+// Restoring a user sends nothing, so there is nothing to preview for it.
+const previewPurpose = computed(() => {
+  if (props.actionType === "activation") return TokenPurpose.USER_ACTIVATION
+  if (props.actionType === "password") return TokenPurpose.PASSWORD_RESET
+  return null
+})
+
+const openPreview = () => {
+  if (previewPurpose.value) showPreview(props.user.id, previewPurpose.value)
+}
 
 const buttonLabel = computed(() => {
   if (props.actionType === "activation") return "Resend Activation Email"

@@ -67,14 +67,21 @@ class EmailSenderService(
         deliver(emailContent, "email.recovery", jobExecutionId)
     }
 
-    /** Render template, inject tracking pixel, create the outbox record, then hand off to the transport. */
-    private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
-        val htmlContent = templateService.createEmail(
+    /**
+     * Render an email to the HTML a recipient would receive, without delivering it. The
+     * send path renders through here too, so a preview cannot show something else.
+     */
+    fun renderEmailHtml(emailContent: EmailContent): String =
+        templateService.createEmail(
             emailContent.recipientEmail,
             emailContent.recipientName,
             emailContent.subject,
-            emailContent.markdownContent
+            emailContent.markdownContent,
         )
+
+    /** Render template, inject tracking pixel, create the outbox record, then hand off to the transport. */
+    private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
+        val htmlContent = renderEmailHtml(emailContent)
 
         val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
         val trackedHtml = outbox.trackingToken

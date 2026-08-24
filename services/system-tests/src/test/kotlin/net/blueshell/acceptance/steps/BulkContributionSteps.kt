@@ -142,8 +142,17 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
 
     @Then("the refusal names the deleted user")
     fun refusalNamesDeletedUser() {
-        val values = errors().single { it["code"] == "UnknownUserIds" }["values"]
-        assertThat(values.toString()).contains(requireNotNull(deletedUserId).toString())
+        assertThat(namedIds()).contains(requireNotNull(deletedUserId))
+    }
+
+    @Then("the refusal names the honorary member")
+    fun refusalNamesHonoraryMember() {
+        assertThat(namedIds()).contains(requireNotNull(honoraryUserId))
+    }
+
+    @Then("the refusal names the id that was never a user")
+    fun refusalNamesUnknownId() {
+        assertThat(namedIds()).contains(9_999_999L)
     }
 
     @Then("both members have a contribution for the period")
@@ -205,6 +214,10 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
 
     private fun errors(): List<Map<String, Any?>> =
         body().getList<Map<String, Any?>>("errors")
+
+    /** Every id the refusal named, across all reasons; which code carries one is asserted separately. */
+    private fun namedIds(): List<Long> =
+        errors().flatMap { (it["values"] as? List<*>).orEmpty() }.mapNotNull { (it as? Number)?.toLong() }
 
     private fun paidUserIds(): List<Long> = TestHelper.findContributions(requireNotNull(periodId))
 }

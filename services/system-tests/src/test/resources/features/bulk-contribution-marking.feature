@@ -53,6 +53,7 @@ Feature: Bulk contribution marking
     When they mark the selection paid
     Then the request is refused as a conflict
     And the refusal reports "HonoraryUserIds" against "userIds"
+    And the refusal names the honorary member
     And the remaining member has no contribution for the period
 
   Scenario: Every reason a selection was refused is reported together
@@ -67,6 +68,7 @@ Feature: Bulk contribution marking
     When they mark the selection paid
     Then the request is refused as a conflict
     And the refusal reports "UnknownUserIds" against "userIds"
+    And the refusal names the id that was never a user
 
   Scenario: A selection naming a period that no longer exists is refused
     Given a member with no contribution for the period

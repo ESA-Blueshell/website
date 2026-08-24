@@ -99,16 +99,17 @@ class SecurityConfig(
     // Dedicated chain for Spring Boot actuator endpoints. Lives at @Order(0)
     // so it runs before the @Order(3) authChain that calls redirectToHttps —
     // kubelet probes speak plain HTTP, and a 302 to https from a permitAll
-    // path would still fail the probe. CSRF disabled (probes have no token)
-    // and anyRequest().permitAll() so in-cluster scrapers (kubelet,
-    // Prometheus, Gatus) can reach health/prometheus without a JWT.
-    // CodeQL false positive: CSRF is disabled only for read-only actuator probes; state-changing app endpoints keep CSRF on authChain.
+    // path would still fail the probe. anyRequest().permitAll() so in-cluster
+    // scrapers (kubelet, Prometheus, Gatus) can reach health/prometheus
+    // without a JWT.
+    //
+    // CSRF stays on. CsrfFilter never challenges GET/HEAD/OPTIONS/TRACE, so
+    // the probes are unaffected, and an endpoint added to the exposure list
+    // that does accept writes is covered rather than silently unprotected.
     @Bean
     @Order(0)
-    @Suppress("codeql[java/spring-disabled-csrf-protection]")
     fun actuatorChain(http: HttpSecurity): SecurityFilterChain {
         http.securityMatcher(EndpointRequest.toAnyEndpoint())
-            .csrf { it.disable() }
             .authorizeHttpRequests { it.anyRequest().permitAll() }
         return http.build()
     }

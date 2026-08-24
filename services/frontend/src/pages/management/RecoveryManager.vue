@@ -12,6 +12,7 @@
           :users="inactiveUsers"
           action-type="activation"
           title="Inactive accounts"
+          @action:done="reloadLists"
         />
 
         <recovery-user-list

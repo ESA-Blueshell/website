@@ -3,13 +3,13 @@ import {mount} from "@vue/test-utils"
 import RecoveryUserRow from "@/components/common/rows/RecoveryUserRow.vue"
 
 const {
-  mockResendUserActivation,
+  mockResendRecoveryEmail,
   mockResetPassword,
   mockRestoreDeletedUserById,
   mockHandleNetworkError,
   mockPreviewRecoveryEmail,
 } = vi.hoisted(() => ({
-  mockResendUserActivation: vi.fn(),
+  mockResendRecoveryEmail: vi.fn(),
   mockResetPassword: vi.fn(),
   mockRestoreDeletedUserById: vi.fn(),
   mockHandleNetworkError: vi.fn(),
@@ -17,11 +17,11 @@ const {
 }))
 
 vi.mock("@/services/api", () => ({
-  resendUserActivation: mockResendUserActivation,
+  resendRecoveryEmail: mockResendRecoveryEmail,
   resetPassword: mockResetPassword,
   restoreDeletedUserById: mockRestoreDeletedUserById,
   previewRecoveryEmail: mockPreviewRecoveryEmail,
-  // The row picks the preview purpose from the generated enum, so the mock carries it.
+  // The row picks purposes off the generated enum rather than restating the strings.
   TokenPurpose: {
     USER_ACTIVATION: "USER_ACTIVATION",
     MEMBER_ACTIVATION: "MEMBER_ACTIVATION",
@@ -34,10 +34,16 @@ vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
+const emma = {id: 1, fullName: "Emma", username: "emma", enabled: false}
+
+function row(actionType: "activation" | "password" | "restore", user = emma) {
+  return mount(RecoveryUserRow, {props: {user, actionType}})
+}
+
 describe("RecoveryUserRow", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockResendUserActivation.mockResolvedValue({})
+    mockResendRecoveryEmail.mockResolvedValue({})
     mockResetPassword.mockResolvedValue({})
     mockRestoreDeletedUserById.mockResolvedValue({})
     mockPreviewRecoveryEmail.mockResolvedValue({data: {
@@ -50,115 +56,119 @@ describe("RecoveryUserRow", () => {
     }})
   })
 
-  it("dispatches activation and password recovery actions", async () => {
-    const activation = mount(RecoveryUserRow, {
-      props: {
-        user: {id: 1, fullName: "Emma", username: "emma", enabled: false},
-        actionType: "activation",
-      },
+  describe("an inactive account", () => {
+    it("offers both activation emails, because the list cannot tell which applies", () => {
+      const wrapper = row("activation")
+
+      expect(wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="recovery-user-send-btn-MEMBER_ACTIVATION-1"]').exists()).toBe(true)
     })
 
-    await (activation.vm as any).handleAction()
-    expect(mockResendUserActivation).toHaveBeenCalledWith({
-      path: {username: "emma"},
-      throwOnError: true,
-    })
+    it("sends the member activation when that is the one asked for", async () => {
+      const wrapper = row("activation")
 
-    const password = mount(RecoveryUserRow, {
-      props: {
-        user: {id: 2, fullName: "Viktor", username: "viktor", enabled: true},
-        actionType: "password",
-      },
-    })
+      await wrapper.find('[data-testid="recovery-user-send-btn-MEMBER_ACTIVATION-1"]').trigger("click")
 
-    await (password.vm as any).handleAction()
-    expect(mockResetPassword).toHaveBeenCalledWith({
-      path: {username: "viktor"},
-      throwOnError: true,
-    })
-
-    const restore = mount(RecoveryUserRow, {
-      props: {
-        user: {id: 3, fullName: "Rest Ored", username: "restored", enabled: false},
-        actionType: "restore",
-      },
-    })
-
-    await (restore.vm as any).handleAction()
-    expect(mockRestoreDeletedUserById).toHaveBeenCalledWith({
-      path: {userId: 3},
-      throwOnError: true,
-    })
-  })
-
-  it("forwards errors to network error handler", async () => {
-    mockResendUserActivation.mockRejectedValueOnce(new Error("network"))
-
-    const wrapper = mount(RecoveryUserRow, {
-      props: {
-        user: {id: 1, fullName: "Emma", username: "emma", enabled: false},
-        actionType: "activation",
-      },
-    })
-
-    await (wrapper.vm as any).handleAction()
-    expect(mockHandleNetworkError).toHaveBeenCalled()
-  })
-
-  it("offers a preview for the two actions that send an email", () => {
-    const purposeFor = {activation: "USER_ACTIVATION", password: "PASSWORD_RESET"} as const
-
-    for (const [actionType, purpose] of Object.entries(purposeFor)) {
-      const wrapper = mount(RecoveryUserRow, {
-        props: {
-          user: {id: 4, fullName: "Emma", username: "emma", enabled: false},
-          actionType: actionType as "activation" | "password",
-        },
+      expect(mockResendRecoveryEmail).toHaveBeenCalledWith({
+        path: {userId: 1},
+        query: {purpose: "MEMBER_ACTIVATION"},
+        throwOnError: true,
       })
+    })
 
-      expect(wrapper.find('[data-testid="recovery-user-preview-btn-4"]').exists()).toBe(true)
-      expect((wrapper.vm as any).previewPurpose).toBe(purpose)
-    }
+    it("sends the user activation when that is the one asked for", async () => {
+      const wrapper = row("activation")
+
+      await wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').trigger("click")
+
+      expect(mockResendRecoveryEmail).toHaveBeenCalledWith({
+        path: {userId: 1},
+        query: {purpose: "USER_ACTIVATION"},
+        throwOnError: true,
+      })
+    })
+
+    it("previews either one without sending it", async () => {
+      const wrapper = row("activation")
+
+      await wrapper.find('[data-testid="recovery-user-preview-btn-MEMBER_ACTIVATION-1"]').trigger("click")
+
+      expect(mockPreviewRecoveryEmail).toHaveBeenCalledWith({
+        path: {userId: 1},
+        query: {purpose: "MEMBER_ACTIVATION"},
+      })
+      expect(mockResendRecoveryEmail).not.toHaveBeenCalled()
+    })
+
+    it("reports the send upwards so the lists reload", async () => {
+      const wrapper = row("activation")
+
+      await wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').trigger("click")
+      await Promise.resolve()
+
+      expect(wrapper.emitted("action:done")).toHaveLength(1)
+    })
   })
 
-  it("offers no preview for restoring a user, which sends nothing", () => {
-    const wrapper = mount(RecoveryUserRow, {
-      props: {
-        user: {id: 5, fullName: "Emma", username: "emma", enabled: false},
-        actionType: "restore",
-      },
+  describe("an active account", () => {
+    it("offers only the password reset, and previews it", async () => {
+      const wrapper = row("password")
+
+      expect(wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').exists()).toBe(false)
+      await wrapper.find('[data-testid="recovery-user-preview-btn-PASSWORD_RESET-1"]').trigger("click")
+
+      expect(mockPreviewRecoveryEmail).toHaveBeenCalledWith({
+        path: {userId: 1},
+        query: {purpose: "PASSWORD_RESET"},
+      })
     })
 
-    expect(wrapper.find('[data-testid="recovery-user-preview-btn-5"]').exists()).toBe(false)
-  })
+    it("sends the reset by username, which needs no elevated permission", async () => {
+      const wrapper = row("password")
 
-  it("asks for the preview of the purpose its button stands for", async () => {
-    const wrapper = mount(RecoveryUserRow, {
-      props: {
-        user: {id: 6, fullName: "Emma", username: "emma", enabled: false},
-        actionType: "password",
-      },
-    })
+      await wrapper.find('[data-testid="recovery-user-send-btn-PASSWORD_RESET-1"]').trigger("click")
 
-    await wrapper.find('[data-testid="recovery-user-preview-btn-6"]').trigger("click")
-
-    expect(mockPreviewRecoveryEmail).toHaveBeenCalledWith({
-      path: {userId: 6},
-      query: {purpose: "PASSWORD_RESET"},
+      expect(mockResetPassword).toHaveBeenCalledWith({path: {username: "emma"}, throwOnError: true})
+      expect(mockResendRecoveryEmail).not.toHaveBeenCalled()
     })
   })
 
-  it("previewing does not send anything", async () => {
-    const wrapper = mount(RecoveryUserRow, {
-      props: {
-        user: {id: 7, fullName: "Emma", username: "emma", enabled: false},
-        actionType: "activation",
-      },
+  describe("a deleted user", () => {
+    it("offers restore and no email at all, because restoring sends none", () => {
+      const wrapper = row("restore")
+
+      expect(wrapper.find('[data-testid="recovery-user-action-btn-restore-1"]').exists()).toBe(true)
+      expect(wrapper.findAll('[data-testid^="recovery-user-preview-btn-"]')).toHaveLength(0)
+      expect(wrapper.findAll('[data-testid^="recovery-user-send-btn-"]')).toHaveLength(0)
     })
 
-    await wrapper.find('[data-testid="recovery-user-preview-btn-7"]').trigger("click")
+    it("restores the user", async () => {
+      const wrapper = row("restore")
 
-    expect(mockResendUserActivation).not.toHaveBeenCalled()
-    expect(mockResetPassword).not.toHaveBeenCalled()
+      await wrapper.find('[data-testid="recovery-user-action-btn-restore-1"]').trigger("click")
+
+      expect(mockRestoreDeletedUserById).toHaveBeenCalledWith({path: {userId: 1}, throwOnError: true})
+    })
+  })
+
+  it("forwards a failed send to the network error handler", async () => {
+    mockResendRecoveryEmail.mockRejectedValue(new Error("boom"))
+    const wrapper = row("activation")
+
+    await wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').trigger("click")
+    await Promise.resolve()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect(wrapper.emitted("action:done")).toBeUndefined()
+  })
+
+  it("forwards a failed restore to the network error handler", async () => {
+    mockRestoreDeletedUserById.mockRejectedValue(new Error("boom"))
+    const wrapper = row("restore")
+
+    await wrapper.find('[data-testid="recovery-user-action-btn-restore-1"]').trigger("click")
+    await Promise.resolve()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
   })
 })

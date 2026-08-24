@@ -12,7 +12,7 @@
         </div>
 
         <div
-          class="d-flex align-center gap-2"
+          class="d-flex align-center flex-wrap justify-end gap-2"
           style="flex-shrink: 0;"
         >
           <v-chip
@@ -25,26 +25,44 @@
             {{ restoreWindowLabel }}
           </v-chip>
 
-          <v-btn
-            v-if="previewPurpose"
-            :data-testid="`recovery-user-preview-btn-${user.id}`"
-            class="btn-tight"
-            icon="mdi-email-search-outline"
-            size="small"
-            :title="`Preview the ${actionType === 'activation' ? 'activation' : 'password reset'} email`"
-            variant="text"
-            @click.stop="openPreview"
-          />
+          <!-- One pair per email this account can be sent: read it, then send it. -->
+          <div
+            v-for="email in mailableEmails"
+            :key="email.purpose"
+            class="d-flex align-center"
+          >
+            <v-btn
+              :data-testid="`recovery-user-preview-btn-${email.purpose}-${user.id}`"
+              class="btn-tight"
+              icon="mdi-email-search-outline"
+              size="small"
+              :title="`Preview the ${email.noun}`"
+              variant="text"
+              @click.stop="showPreview(user.id, email.purpose)"
+            />
+
+            <v-btn
+              :data-testid="`recovery-user-send-btn-${email.purpose}-${user.id}`"
+              :disabled="sending !== null"
+              :loading="sending === email.purpose"
+              class="btn-tight"
+              variant="text"
+              @click.stop="send(email.purpose)"
+            >
+              {{ email.label }}
+            </v-btn>
+          </div>
 
           <v-btn
-            :disabled="loading"
-            :data-testid="`recovery-user-action-btn-${actionType}-${user.id}`"
-            :loading="loading"
+            v-if="actionType === 'restore'"
+            :disabled="restoring"
+            :data-testid="`recovery-user-action-btn-restore-${user.id}`"
+            :loading="restoring"
             class="btn-tight"
             variant="text"
-            @click.stop="handleAction"
+            @click.stop="restore"
           >
-            {{ buttonLabel }}
+            Restore User
           </v-btn>
         </div>
       </div>
@@ -68,7 +86,7 @@
 import {computed, ref} from "vue"
 import {DateTime} from "luxon"
 import type {UserDetailResponse} from "@/services/api"
-import {resendUserActivation, resetPassword, restoreDeletedUserById, TokenPurpose} from "@/services/api"
+import {resendRecoveryEmail, resetPassword, restoreDeletedUserById, TokenPurpose} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 import {useRecoveryEmailPreview} from "@/composables/useRecoveryEmailPreview"
@@ -82,7 +100,8 @@ const emit = defineEmits<{
   (e: "action:done"): void
 }>()
 
-const loading = ref(false)
+const sending = ref<TokenPurpose | null>(null)
+const restoring = ref(false)
 
 const {
   open: previewOpen,
@@ -92,21 +111,28 @@ const {
   show: showPreview,
 } = useRecoveryEmailPreview()
 
-// Restoring a user sends nothing, so there is nothing to preview for it.
-const previewPurpose = computed(() => {
-  if (props.actionType === "activation") return TokenPurpose.USER_ACTIVATION
-  if (props.actionType === "password") return TokenPurpose.PASSWORD_RESET
-  return null
-})
-
-const openPreview = () => {
-  if (previewPurpose.value) showPreview(props.user.id, previewPurpose.value)
-}
-
-const buttonLabel = computed(() => {
-  if (props.actionType === "activation") return "Resend Activation Email"
-  if (props.actionType === "password") return "Send Password Reset Email"
-  return "Restore User"
+/**
+ * The recovery emails this row can send. An account created by the board activates
+ * through a different email than one that signed itself up, and which of the two applies
+ * is not something the list can tell, so both are offered rather than guessed at.
+ */
+const mailableEmails = computed(() => {
+  if (props.actionType === "activation") {
+    return [
+      {purpose: TokenPurpose.USER_ACTIVATION, label: "Resend Activation", noun: "activation email"},
+      {
+        purpose: TokenPurpose.MEMBER_ACTIVATION,
+        label: "Resend Member Activation",
+        noun: "member activation email",
+      },
+    ]
+  }
+  if (props.actionType === "password") {
+    return [
+      {purpose: TokenPurpose.PASSWORD_RESET, label: "Send Password Reset", noun: "password reset email"},
+    ]
+  }
+  return []
 })
 
 const restoreWindowUrgent = computed(() => {
@@ -120,22 +146,34 @@ const restoreWindowLabel = computed(() => {
   return `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
 })
 
-const handleAction = async () => {
-  if (loading.value) return
-  loading.value = true
+const send = async (purpose: TokenPurpose) => {
+  if (sending.value !== null) return
+  sending.value = purpose
   try {
-    if (props.actionType === "activation") {
-      await resendUserActivation({path: {username: props.user.username}, throwOnError: true})
-    } else if (props.actionType === "password") {
+    if (purpose === TokenPurpose.PASSWORD_RESET) {
       await resetPassword({path: {username: props.user.username}, throwOnError: true})
     } else {
-      await restoreDeletedUserById({path: {userId: props.user.id}, throwOnError: true})
+      // Purpose-driven, so a board-created account stays reachable once its link expired.
+      await resendRecoveryEmail({path: {userId: props.user.id}, query: {purpose}, throwOnError: true})
     }
     emit("action:done")
   } catch (e: unknown) {
     $handleNetworkError(e)
   } finally {
-    loading.value = false
+    sending.value = null
+  }
+}
+
+const restore = async () => {
+  if (restoring.value) return
+  restoring.value = true
+  try {
+    await restoreDeletedUserById({path: {userId: props.user.id}, throwOnError: true})
+    emit("action:done")
+  } catch (e: unknown) {
+    $handleNetworkError(e)
+  } finally {
+    restoring.value = false
   }
 }
 </script>

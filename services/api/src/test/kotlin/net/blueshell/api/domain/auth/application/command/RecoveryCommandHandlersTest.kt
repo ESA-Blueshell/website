@@ -6,7 +6,7 @@ import net.blueshell.api.domain.auth.application.SignupCompletionService
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.MemberActivateCommand
-import net.blueshell.api.domain.auth.command.ResendMemberActivationEmailCommand
+import net.blueshell.api.domain.auth.command.ResendRecoveryEmailCommand
 import net.blueshell.api.domain.auth.command.ResendUserActivationCommand
 import net.blueshell.api.domain.auth.command.ResetPasswordCommand
 import net.blueshell.api.domain.auth.command.SetPasswordCommand
@@ -22,6 +22,8 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.any
+import org.mockito.kotlin.never
 import org.mockito.kotlin.whenever
 
 class RecoveryCommandHandlersTest {
@@ -138,16 +140,16 @@ class RecoveryCommandHandlersTest {
     }
 
     @Nested
-    inner class ResendMemberActivationEmail {
+    inner class ResendRecoveryEmail {
 
-        private val handler = ResendMemberActivationEmailHandler(activationService, jobs)
+        private val handler = ResendRecoveryEmailHandler(activationService, jobs)
 
         @Test
         fun `enqueues member activation email when dispatch exists`() {
             val dispatch = RecoveryDispatch(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)
             whenever(activationService.requestActivationEmail(9L)).thenReturn(dispatch)
 
-            handler.handle(ResendMemberActivationEmailCommand(9L))
+            handler.handle(ResendRecoveryEmailCommand(9L))
 
             verify(activationService).requestActivationEmail(9L)
             verify(jobs).enqueue(
@@ -160,9 +162,33 @@ class RecoveryCommandHandlersTest {
         fun `does not enqueue member activation email when dispatch is null`() {
             whenever(activationService.requestActivationEmail(9L)).thenReturn(null)
 
-            handler.handle(ResendMemberActivationEmailCommand(9L))
+            handler.handle(ResendRecoveryEmailCommand(9L))
 
             verify(activationService).requestActivationEmail(9L)
+            verifyNoInteractions(jobs)
+        }
+
+        @Test
+        fun `a named purpose is sent rather than whatever is outstanding`() {
+            val dispatch = RecoveryDispatch(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION)
+            whenever(activationService.requestActivation(9L, TokenPurpose.MEMBER_ACTIVATION)).thenReturn(dispatch)
+
+            handler.handle(ResendRecoveryEmailCommand(9L, TokenPurpose.MEMBER_ACTIVATION))
+
+            verify(activationService).requestActivation(9L, TokenPurpose.MEMBER_ACTIVATION)
+            verify(activationService, never()).requestActivationEmail(any())
+            verify(jobs).enqueue(
+                eq(EmailJobs.Recovery),
+                eq(EmailJobs.RecoveryPayload(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION))
+            )
+        }
+
+        @Test
+        fun `a named purpose for an already active account sends nothing`() {
+            whenever(activationService.requestActivation(9L, TokenPurpose.USER_ACTIVATION)).thenReturn(null)
+
+            handler.handle(ResendRecoveryEmailCommand(9L, TokenPurpose.USER_ACTIVATION))
+
             verifyNoInteractions(jobs)
         }
     }

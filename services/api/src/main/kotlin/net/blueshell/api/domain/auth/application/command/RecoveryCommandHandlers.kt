@@ -95,14 +95,16 @@ class ResendUserActivationHandler(
 }
 
 @Component
-class ResendMemberActivationEmailHandler(
+class ResendRecoveryEmailHandler(
     private val activationService: UserActivationService,
     private val jobs: TrackedJobDispatcher
-) : CommandHandler<ResendMemberActivationEmailCommand, Unit> {
-    override val commandType = ResendMemberActivationEmailCommand::class
+) : CommandHandler<ResendRecoveryEmailCommand, Unit> {
+    override val commandType = ResendRecoveryEmailCommand::class
 
-    override fun handle(command: ResendMemberActivationEmailCommand) {
-        val dispatch = activationService.requestActivationEmail(command.userId)
+    override fun handle(command: ResendRecoveryEmailCommand) {
+        val dispatch = command.purpose
+            ?.let { activationService.requestActivation(command.userId, it) }
+            ?: activationService.requestActivationEmail(command.userId)
         if (dispatch != null) {
             jobs.enqueue(
                 EmailJobs.Recovery,

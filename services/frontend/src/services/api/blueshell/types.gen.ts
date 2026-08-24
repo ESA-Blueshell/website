@@ -5258,16 +5258,18 @@ export type PreviewRecoveryEmailResponses = {
 
 export type PreviewRecoveryEmailResponse = PreviewRecoveryEmailResponses[keyof PreviewRecoveryEmailResponses];
 
-export type ResendMemberActivationEmailData = {
+export type ResendRecoveryEmailData = {
     body?: never;
     path: {
         userId: number;
     };
-    query?: never;
+    query?: {
+        purpose?: TokenPurpose;
+    };
     url: '/recovery/users/{userId}/resend/recovery';
 };
 
-export type ResendMemberActivationEmailErrors = {
+export type ResendRecoveryEmailErrors = {
     /**
      * Validation error
      */
@@ -5290,16 +5292,16 @@ export type ResendMemberActivationEmailErrors = {
     500: ApiError;
 };
 
-export type ResendMemberActivationEmailError = ResendMemberActivationEmailErrors[keyof ResendMemberActivationEmailErrors];
+export type ResendRecoveryEmailError = ResendRecoveryEmailErrors[keyof ResendRecoveryEmailErrors];
 
-export type ResendMemberActivationEmailResponses = {
+export type ResendRecoveryEmailResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type ResendMemberActivationEmailResponse = ResendMemberActivationEmailResponses[keyof ResendMemberActivationEmailResponses];
+export type ResendRecoveryEmailResponse = ResendRecoveryEmailResponses[keyof ResendRecoveryEmailResponses];
 
 export type SignUpData = {
     body: CreateUserRequest;

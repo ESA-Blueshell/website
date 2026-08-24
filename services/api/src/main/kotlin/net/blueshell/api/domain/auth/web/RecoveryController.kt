@@ -58,11 +58,18 @@ class RecoveryController(
         commandBus.dispatch(ResendUserActivationCommand(username))
     }
 
+    /**
+     * Resends a recovery email. `purpose` names which one to send; omitted, the outstanding
+     * activation decides, which does nothing when none is outstanding.
+     */
     @PostMapping("/users/{userId}/resend/recovery")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasPermission(#userId, 'User', 'email')")
-    fun resendMemberActivationEmail(@PathVariable userId: Long) {
-        commandBus.dispatch(ResendMemberActivationEmailCommand(userId))
+    fun resendRecoveryEmail(
+        @PathVariable userId: Long,
+        @RequestParam(required = false) purpose: TokenPurpose?,
+    ) {
+        commandBus.dispatch(ResendRecoveryEmailCommand(userId, purpose))
     }
 
     /**

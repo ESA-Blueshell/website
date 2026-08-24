@@ -21,5 +21,13 @@ data class FieldValidationErrorDTO(
 
     @JvmField
     @field:Schema(description = "Validation code / constraint key.", example = "Email")
-    var code: String? = null
+    var code: String? = null,
+
+    @JvmField
+    @field:Schema(
+        description = "Identifiers the error refers to, when the failing field carries a collection. " +
+            "Lets a client name the offending rows and reload them rather than restate the whole request.",
+        example = "[42, 57]",
+    )
+    var values: List<Long>? = null
 )

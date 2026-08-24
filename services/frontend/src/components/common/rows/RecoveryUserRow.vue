@@ -38,7 +38,7 @@
               size="small"
               :title="`Preview the ${email.noun}`"
               variant="text"
-              @click.stop="showPreview(user.id, email.purpose)"
+              @click.stop="previewEmail(email.purpose)"
             />
 
             <v-btn
@@ -71,12 +71,8 @@
     <email-preview-dialog
       v-model="previewOpen"
       :error="previewError"
-      :html="preview?.html"
-      :link-placeholder="preview?.linkPlaceholder"
       :loading="previewLoading"
-      :recipient-email="preview?.recipientEmail"
-      :recipient-name="preview?.recipientName"
-      :subject="preview?.subject"
+      :preview="preview"
       title="Email preview"
     />
   </div>
@@ -86,10 +82,10 @@
 import {computed, ref} from "vue"
 import {DateTime} from "luxon"
 import type {UserDetailResponse} from "@/services/api"
-import {resendRecoveryEmail, resetPassword, restoreDeletedUserById, TokenPurpose} from "@/services/api"
+import {previewRecoveryEmail, resendRecoveryEmail, resetPassword, restoreDeletedUserById, TokenPurpose} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
-import {useRecoveryEmailPreview} from "@/composables/useRecoveryEmailPreview"
+import {useEmailPreview} from "@/composables/useEmailPreview"
 
 const props = defineProps<{
   user: UserDetailResponse
@@ -109,7 +105,14 @@ const {
   error: previewError,
   preview,
   show: showPreview,
-} = useRecoveryEmailPreview()
+} = useEmailPreview()
+
+/** The row supplies the fetch; the composable owns only the state around it. */
+const previewEmail = (purpose: TokenPurpose) =>
+  showPreview(async () => {
+    const {data} = await previewRecoveryEmail({path: {userId: props.user.id}, query: {purpose}})
+    return data ?? null
+  })
 
 /**
  * The recovery emails this row can send. An account created by the board activates

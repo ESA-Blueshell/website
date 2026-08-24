@@ -2,13 +2,17 @@ package net.blueshell.api.platform.config
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.web.FilterChainProxy
+import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.csrf.CsrfFilter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -26,6 +30,10 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
 
     @Autowired
     private lateinit var springSecurityFilterChain: FilterChainProxy
+
+    @Autowired
+    @Qualifier("actuatorChain")
+    private lateinit var actuatorChain: SecurityFilterChain
 
     private lateinit var rawMvc: MockMvc
 
@@ -66,6 +74,13 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
                 .content("""{"username":"${user.username}","password":"Password123!"}""")
         )
             .andExpect(status().isForbidden)
+    }
+
+    // actuatorChain used to disable CSRF outright. CsrfFilter waves GET
+    // through, so keeping it costs the probes nothing.
+    @Test
+    fun `actuator chain keeps the csrf filter`() {
+        assertThat(actuatorChain.getFilters()).anyMatch { it is CsrfFilter }
     }
 
     @Test

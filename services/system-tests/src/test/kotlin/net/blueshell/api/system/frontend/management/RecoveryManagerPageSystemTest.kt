@@ -31,8 +31,9 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
         }
 
-        val response = page.waitForResponse("**/recovery/user/activate/resend/**") {
-            RecoveryManagerHelper.clickAction(page, "activation", inactiveId)
+        // The row names the email it sends, so the request carries the purpose.
+        val response = page.waitForResponse("**/recovery/users/*/resend/recovery**") {
+            RecoveryManagerHelper.clickSend(page, "USER_ACTIVATION", inactiveId)
         }
         assertThat(response.status()).isEqualTo(204)
 
@@ -57,7 +58,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         }
 
         val response = page.waitForResponse("**/recovery/password/reset/**") {
-            RecoveryManagerHelper.clickAction(page, "password", activeId)
+            RecoveryManagerHelper.clickSend(page, "PASSWORD_RESET", activeId)
         }
         assertThat(response.status()).isEqualTo(204)
 
@@ -170,5 +171,45 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         pollFor("deleted user $targetId visible in inactive pane as anonymized row") {
             RecoveryManagerHelper.rowCount(page, "inactive", targetId) > 0
         }
+    }
+
+    @Test
+    fun `recovery manager previews an activation email without sending it`() {
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val inactiveUser = TestHelper.register()
+        val inactiveId = TestHelper.findUser(inactiveUser.username)!!.id
+        val linksBefore = TestHelper.outstandingRecoveryLinks(inactiveUser.username, "MEMBER_ACTIVATION")
+        val emailsBefore = TestHelper.findEmails(recipient = inactiveUser.email).size
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        RecoveryManagerHelper.open(page, frontendUrl)
+        RecoveryManagerHelper.openSection(page, "inactive")
+        RecoveryManagerHelper.searchUser(page, "inactive", inactiveUser.username)
+
+        pollFor("inactive user ${inactiveUser.username} visible") {
+            RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
+        }
+
+        val response = page.waitForResponse("**/recovery/users/*/email-preview**") {
+            RecoveryManagerHelper.clickPreview(page, "MEMBER_ACTIVATION", inactiveId)
+        }
+        assertThat(response.status()).isEqualTo(200)
+
+        val subject = page.locator("[data-testid='email-preview-subject']")
+        subject.waitFor()
+        assertThat(subject.textContent()).isEqualTo("Activate your Account")
+        // The reader is told the link does not work, because it carries no token.
+        assertThat(page.locator("[data-testid='email-preview-placeholder-notice']").isVisible).isTrue()
+        assertThat(page.locator("[data-testid='email-preview-frame']").getAttribute("sandbox")).isEmpty()
+
+        // Reading the email left the account exactly as it was.
+        assertThat(TestHelper.outstandingRecoveryLinks(inactiveUser.username, "MEMBER_ACTIVATION"))
+            .describedAs("outstanding member activation links after a preview")
+            .isEqualTo(linksBefore)
+        assertThat(TestHelper.findEmails(recipient = inactiveUser.email).size)
+            .describedAs("emails to ${inactiveUser.email} after a preview")
+            .isEqualTo(emailsBefore)
     }
 }

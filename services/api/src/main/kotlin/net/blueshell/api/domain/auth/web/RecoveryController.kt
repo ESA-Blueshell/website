@@ -16,6 +16,7 @@ import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @Tag(name = "Recovery")
@@ -69,6 +70,11 @@ class RecoveryController(
         @PathVariable userId: Long,
         @RequestParam(required = false) purpose: TokenPurpose?,
     ) {
+        // The purpose is client input here, so a value this endpoint cannot send is a bad
+        // request rather than a fault; the domain guard behind it stays an invariant.
+        if (purpose != null && !purpose.isActivation) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$purpose is not an activation")
+        }
         commandBus.dispatch(ResendRecoveryEmailCommand(userId, purpose))
     }
 
@@ -83,6 +89,9 @@ class RecoveryController(
         @PathVariable userId: Long,
         @RequestParam purpose: TokenPurpose,
     ): RecoveryEmailPreviewResponse {
+        if (!purpose.isMailable) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A $purpose token is never emailed")
+        }
         val preview = commandBus.dispatch(PreviewRecoveryEmailCommand(userId, purpose))
         return RecoveryEmailPreviewResponse(
             purpose = preview.purpose,

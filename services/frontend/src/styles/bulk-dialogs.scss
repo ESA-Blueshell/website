@@ -1,0 +1,17 @@
+// Shared styles for bulk-action dialogs (Reminder and Incasso).
+// Classes are sufficiently namespaced to be safe unscoped.
+
+.bulk-date-row {
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+
+  > .v-text-field {
+    flex: 1 1 220px;
+  }
+}
+
+.bulk-feetype-select {
+  min-width: 150px;
+  max-width: 190px;
+}

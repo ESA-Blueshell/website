@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.6.0](https://github.com/ESA-Blueshell/website/compare/v1.5.0...v1.6.0) (2026-08-25)
+
+
+### Features
+
+* **cohorts:** let an existing folder be searched when creating a target ([#584](https://github.com/ESA-Blueshell/website/issues/584)) ([2448173](https://github.com/ESA-Blueshell/website/commit/2448173d7712e4336d081f89df7b707d512bcba1))
+* **cohorts:** show every Brevo target and the folder it sits in ([#596](https://github.com/ESA-Blueshell/website/issues/596)) ([b792170](https://github.com/ESA-Blueshell/website/commit/b792170ea836210c4d3a544565dd52f775f40466))
+* **user-manager:** select users and mark their contributions paid or unpaid ([#595](https://github.com/ESA-Blueshell/website/issues/595)) ([16075ff](https://github.com/ESA-Blueshell/website/commit/16075ff315bba3ca9472b5710743b53adee8d67e))
+
+
+### Bug Fixes
+
+* **cohorts:** label the target fields for what they hold ([#583](https://github.com/ESA-Blueshell/website/issues/583)) ([d2406af](https://github.com/ESA-Blueshell/website/commit/d2406af70fbeee2ad20aee36ec8a1e909bac1ddd))
+* **cohorts:** make the target picker hand back an id, not the item it came from ([#582](https://github.com/ESA-Blueshell/website/issues/582)) ([c4d8c26](https://github.com/ESA-Blueshell/website/commit/c4d8c26a11215f428a42bdb11190c2442a759389))
+* **recovery:** offer an activation email only where one applies ([#581](https://github.com/ESA-Blueshell/website/issues/581)) ([dd6d452](https://github.com/ESA-Blueshell/website/commit/dd6d452efd3e24fefd018b12d1abe80804c85d91))
+
+
+### Refactoring
+
+* **management:** give the shared card one definition ([#592](https://github.com/ESA-Blueshell/website/issues/592)) ([233dfd6](https://github.com/ESA-Blueshell/website/commit/233dfd65c6b2bf1feb6b36f35e1828d811cbe835))
+
 ## [1.5.0](https://github.com/ESA-Blueshell/website/compare/v1.4.0...v1.5.0) (2026-08-25)
 
 

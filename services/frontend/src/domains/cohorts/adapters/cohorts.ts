@@ -10,7 +10,9 @@ import {
   getDrift,
   linkExistingTarget,
   linkUser,
+  listCohortTargetFolders,
   listCohortTargetSystems,
+  moveCohortTarget,
   previewInboundReconcile,
   searchCohortTargets,
   switchTarget,
@@ -235,6 +237,22 @@ export async function fetchTargetDescriptors(): Promise<TargetDescriptor[]> {
 export async function fetchTargetOptions(system: TargetSystem): Promise<ExternalTarget[]> {
   const res = await searchCohortTargets({ path: { system } })
   return (res.data ?? []).map(toExternalTarget)
+}
+
+/** Every folder the system has, including the ones holding nothing. */
+export async function fetchTargetFolders(system: TargetSystem): Promise<string[]> {
+  const res = await listCohortTargetFolders({path: {system}})
+  return res.data ?? []
+}
+
+/** File a target under another folder; answers with where it ended up. */
+export async function moveTargetToFolder(
+  system: TargetSystem,
+  externalId: string,
+  folder: string,
+): Promise<ExternalTarget> {
+  const res = await moveCohortTarget({path: {system, externalId}, body: {folder}, throwOnError: true})
+  return toExternalTarget(res.data)
 }
 
 function toTargetDescriptor(raw: ApiTargetDescriptor): TargetDescriptor {

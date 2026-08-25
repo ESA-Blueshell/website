@@ -39,12 +39,13 @@ class BrevoTargetStrategy(
             TargetCapability.READ_MEMBERS,
             TargetCapability.WRITE_MEMBERS,
             TargetCapability.DELETE,
+            TargetCapability.MOVE,
         ),
     )
 
     override fun catalog(query: String?): List<ExternalTarget> {
         val q = query?.trim()?.lowercase().orEmpty()
-        return listTargets(folders())
+        return listTargets(folderNames())
             .filter { it.matches(q) }
             .sortedWith(compareBy({ it.folderLabel.orEmpty() }, { it.label }))
     }
@@ -76,11 +77,26 @@ class BrevoTargetStrategy(
         )
     }
 
+    /** Brevo's own folders, including the ones holding nothing. */
+    override fun folders(): List<String> = lists.listFolders().values.sorted()
+
+    override fun move(target: ExternalTarget, folder: String): ExternalTarget {
+        // Brevo files by folder id, so a name has to name a folder that exists. Refusing an
+        // unknown one beats silently creating a near-duplicate of a folder already there.
+        val folderId = lists.listFolders().entries
+            .firstOrNull { it.value.equals(folder, ignoreCase = true) }
+            ?.key
+            ?: throw IllegalArgumentException("No folder named '$folder'")
+
+        lists.moveList(target.externalId.toBrevoId("externalId", "move"), folderId)
+        return target.copy(folderLabel = folder)
+    }
+
     override fun delete(target: ExternalTarget) {
         lists.deleteList(target.externalId.toBrevoId("externalId", "delete"))
     }
 
-    private fun folders(): Map<String, String> =
+    private fun folderNames(): Map<String, String> =
         page("folders") { limit, offset ->
             contactsApi.getFolders(limit, offset, GetProcessesSortParameter.ASC).let { page ->
                 Page(page.count, page.folders.orEmpty().associate { it.id.toString() to it.name }.entries.toList())

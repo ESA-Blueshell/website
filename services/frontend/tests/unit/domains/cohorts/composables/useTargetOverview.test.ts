@@ -2,14 +2,22 @@ import {describe, expect, it, vi} from "vitest"
 import {useTargetOverview} from "@/domains/cohorts/composables/useTargetOverview"
 import {
   fetchTargetDescriptors,
+  fetchTargetFolders,
   fetchTargetOptions,
+  moveTargetToFolder,
   type ExternalTarget,
   type TargetDescriptor,
 } from "@/domains/cohorts/adapters/cohorts"
 
 vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/domains/cohorts/adapters/cohorts")>()
-  return {...actual, fetchTargetDescriptors: vi.fn(), fetchTargetOptions: vi.fn()}
+  return {
+    ...actual,
+    fetchTargetDescriptors: vi.fn(),
+    fetchTargetOptions: vi.fn(),
+    fetchTargetFolders: vi.fn(),
+    moveTargetToFolder: vi.fn(),
+  }
 })
 
 const brevo: TargetDescriptor = {
@@ -40,13 +48,16 @@ function target(
   }
 }
 
-async function loaded(targets: ExternalTarget[]) {
-  vi.mocked(fetchTargetDescriptors).mockResolvedValue([brevo])
+async function loaded(targets: ExternalTarget[], descriptor = brevo) {
+  vi.mocked(fetchTargetDescriptors).mockResolvedValue([descriptor])
   vi.mocked(fetchTargetOptions).mockResolvedValue(targets)
+  vi.mocked(fetchTargetFolders).mockResolvedValue(["Contributions", "Newsletter"])
   const overview = useTargetOverview()
   await overview.load("BREVO")
   return overview
 }
+
+const movable = {...brevo, capabilities: ["CATALOG", "MOVE"] as typeof brevo.capabilities}
 
 describe("useTargetOverview", () => {
   it("groups targets under their folder, in name order", async () => {
@@ -123,5 +134,51 @@ describe("useTargetOverview", () => {
 
     expect(o.errorMessage.value).toBe("boom")
     expect(o.loading.value).toBe(false)
+  })
+
+  describe("moving a target to another folder", () => {
+    it("says so only when the system can move one", async () => {
+      const withoutMove = await loaded([target("1", "A", "Newsletter")])
+      expect(withoutMove.canMove.value).toBe(false)
+
+      const withMove = await loaded([target("1", "A", "Newsletter")], movable)
+      expect(withMove.canMove.value).toBe(true)
+    })
+
+    it("reads the folders from the system rather than from the targets", async () => {
+      const o = await loaded([target("1", "A", "Newsletter")], movable)
+
+      // "Contributions" holds no targets here, and is still a place a target can go.
+      expect(o.folderNames.value).toEqual(["Contributions", "Newsletter"])
+    })
+
+    it("asks for no folders from a system that cannot move", async () => {
+      await loaded([target("1", "A", "Newsletter")])
+
+      expect(fetchTargetFolders).not.toHaveBeenCalled()
+    })
+
+    it("takes the row from what the api answered, not from what was asked", async () => {
+      const o = await loaded([target("1", "A", "Newsletter")], movable)
+      vi.mocked(moveTargetToFolder).mockResolvedValue(target("1", "A", "Contributions"))
+
+      const ok = await o.move("BREVO", o.targets.value[0]!, "Contributions")
+
+      expect(ok).toBe(true)
+      expect(o.targets.value[0]!.folderLabel).toBe("Contributions")
+      expect(o.folders.value.map((f) => f.label)).toEqual(["Contributions"])
+    })
+
+    it("reports a refusal and leaves the row where it was", async () => {
+      const o = await loaded([target("1", "A", "Newsletter")], movable)
+      vi.mocked(moveTargetToFolder).mockRejectedValue(new Error("No folder named 'Nowhere'"))
+
+      const ok = await o.move("BREVO", o.targets.value[0]!, "Nowhere")
+
+      expect(ok).toBe(false)
+      expect(o.errorMessage.value).toContain("No folder named")
+      expect(o.targets.value[0]!.folderLabel).toBe("Newsletter")
+      expect(o.moving.value).toBeNull()
+    })
   })
 })

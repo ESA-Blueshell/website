@@ -8,8 +8,13 @@
 // Loaded once from main.scss. Do not move these into housestyle.scss: that file is injected
 // into every single-file component, so rules placed there are emitted once per component.
 
+// A hairline rather than a shadow. The light theme paints both the page and the card
+// `#FFFFFF`, so a card with `box-shadow: none` and nothing else had no edge at all and a page
+// of them read as one undifferentiated column. Vuetify's own border tokens, so the line follows
+// the theme instead of being a grey picked for one of them.
 .manager-card {
-  background: rgba(var(--v-theme-surface), 0.92);
+  background: rgb(var(--v-theme-surface));
+  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   box-shadow: none;
 }
 

@@ -23,6 +23,7 @@ const {
   conflict,
   descriptor,
   filteredOptions,
+  folderOptions,
   hasCatalog,
   canCreate,
   form,
@@ -147,12 +148,19 @@ const submit = async () => {
                 data-testid="target-picker-label"
                 :label="targetLabel"
               />
-              <v-text-field
+              <!--
+                A combobox, not a select: an existing folder can be searched for, and a
+                folder that does not exist yet can be typed. return-object is pinned
+                because a combobox otherwise hands back the item rather than its value.
+              -->
+              <v-combobox
                 v-if="folderLabel"
                 v-model="form.folderHint"
                 class="mt-2"
                 data-testid="target-picker-folder"
+                :items="folderOptions"
                 :label="`${folderLabel} (optional)`"
+                :return-object="false"
               />
             </v-window-item>
           </v-window>

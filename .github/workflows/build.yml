@@ -21,7 +21,18 @@ on:
         description: Tag to publish, e.g. v1.2.0. Empty means an ordinary main build.
         type: string
         default: ''
+  # Same input as workflow_call, so a release that half-finished can be promoted again
+  # by hand without cutting another one. `inputs.release-tag` reads the same under both
+  # triggers, and is empty on a push, so nothing downstream needs to know which fired.
   workflow_dispatch:
+    inputs:
+      release-tag:
+        description: >-
+          Tag to publish and point :latest at, e.g. v1.2.0. Empty builds and pushes
+          images without moving :latest. Naming an older tag moves :latest backwards and
+          Keel will roll it out, so that is a rollback rather than a retry.
+        type: string
+        default: ''
 
 # Sequential: two consecutive main commits build one after the other.
 # cancel-in-progress: false so a fast follow-up doesn't kill an in-flight

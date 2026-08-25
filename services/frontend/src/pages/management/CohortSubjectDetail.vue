@@ -12,6 +12,14 @@ import {
   findCohortSubjectById,
 } from "@/services/api"
 import CohortDriftPanel from "@/domains/cohorts/components/CohortDriftPanel.vue"
+import ManagerCard from "@/components/common/cards/ManagerCard.vue"
+import {cohortTypeLabel} from "@/domains/cohorts/cohortTypeLabels"
+import {
+  membersSummary,
+  rulesSummary,
+  subjectCounts,
+  targetsSummary,
+} from "@/domains/cohorts/cohortSubjectSummaries"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
 import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"
 import store from "@/plugins/store"
@@ -47,6 +55,15 @@ const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
   [CohortSubjectCategory.MEMBERS]: "Members",
   [CohortSubjectCategory.OTHER]: "Other",
 }
+
+const identityCounts = computed<string>(() =>
+  subject.value == null ? "" : subjectCounts(subject.value))
+
+const rulesSubtitle = computed<string>(() => rulesSummary(subject.value?.rules ?? []))
+
+const targetsSubtitle = computed<string>(() => targetsSummary(subject.value?.mappings ?? []))
+
+const membersSubtitle = computed<string>(() => membersSummary(subject.value?.members ?? []))
 
 const SYSTEM_LABELS: Record<string, string> = {
   BREVO: "Brevo",
@@ -184,16 +201,16 @@ watch(subjectId, () => void load())
           {{ successMessage }}
         </v-alert>
 
-        <v-card
+        <!-- Identity: four lines, so it takes the header slot rather than title + subtitle. -->
+        <manager-card
           v-if="subject"
-          class="manager-card mb-3"
-          rounded="lg"
-          variant="flat"
+          spaced
+          testid="cohort-subject-identity"
         >
-          <div class="manager-card__header">
-            <div>
-              <p class="text-overline mb-0">
-                {{ CATEGORY_LABELS[subject.category] }} · {{ subject.type.replace(/_/g, " ").toLowerCase() }}
+          <template #header>
+            <div class="manager-card__heading">
+              <p class="text-overline mb-1">
+                {{ CATEGORY_LABELS[subject.category] }} · {{ cohortTypeLabel(subject.type as CohortSubjectType) }}
               </p>
               <h2 class="subject-label">
                 {{ subject.label }}
@@ -205,24 +222,21 @@ watch(subjectId, () => void load())
                 {{ subject.description }}
               </p>
               <p class="text-caption text-medium-emphasis mb-0">
-                {{ subject.members.length }} members · {{ subject.mappings.length }} sync target{{ subject.mappings.length === 1 ? "" : "s" }}
+                {{ identityCounts }}
               </p>
             </div>
-          </div>
-        </v-card>
+          </template>
+        </manager-card>
 
         <!-- Rules: why people are in this cohort -->
-        <v-card
+        <manager-card
           v-if="subject && subject.rules.length"
-          class="manager-card mb-3"
-          rounded="lg"
-          variant="flat"
+          eyebrow="Rules"
+          flush
+          spaced
+          :subtitle="rulesSubtitle"
+          testid="cohort-subject-rules"
         >
-          <div class="manager-card__header">
-            <p class="text-overline mb-0">
-              Rules
-            </p>
-          </div>
           <v-list density="comfortable">
             <v-list-item
               v-for="rule in subject.rules"
@@ -238,19 +252,18 @@ watch(subjectId, () => void load())
               </v-list-item-subtitle>
             </v-list-item>
           </v-list>
-        </v-card>
+        </manager-card>
 
         <!-- Sync target tabs: one per external system mapping. -->
-        <v-card
+        <manager-card
           v-if="subject"
-          class="manager-card mb-3"
-          rounded="lg"
-          variant="flat"
+          eyebrow="Sync targets"
+          flush
+          spaced
+          :subtitle="targetsSubtitle"
+          testid="cohort-subject-targets"
         >
-          <div class="manager-card__header d-flex align-center justify-space-between">
-            <p class="text-overline mb-0">
-              Sync targets
-            </p>
+          <template #actions>
             <v-btn
               data-testid="cohort-subject-add-target"
               prepend-icon="mdi-plus"
@@ -260,7 +273,7 @@ watch(subjectId, () => void load())
             >
               Add target
             </v-btn>
-          </div>
+          </template>
 
           <v-tabs
             v-model="activeTab"
@@ -370,20 +383,16 @@ watch(subjectId, () => void load())
               Add target
             </v-btn>
           </div>
-        </v-card>
+        </manager-card>
 
         <!-- Members: shared across all mappings (membership is subject-level). -->
-        <v-card
+        <manager-card
           v-if="subject"
-          class="manager-card"
-          rounded="lg"
-          variant="flat"
+          eyebrow="Members"
+          flush
+          :subtitle="membersSubtitle"
+          testid="cohort-subject-members"
         >
-          <div class="manager-card__header">
-            <p class="text-overline mb-0">
-              Members ({{ subject.members.length }})
-            </p>
-          </div>
           <v-list
             data-testid="cohort-subject-member-list"
             density="compact"
@@ -434,7 +443,7 @@ watch(subjectId, () => void load())
               </template>
             </v-list-item>
           </v-list>
-        </v-card>
+        </manager-card>
 
         <v-progress-linear
           v-if="loading"

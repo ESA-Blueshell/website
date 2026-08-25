@@ -4,6 +4,8 @@ import {useSubmitFeedback} from "@/composables/formUtils"
 import {useDisplay} from "vuetify"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
+import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
+import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
@@ -72,8 +74,9 @@ if ("scrollRestoration" in globalThis.history) {
 const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChanged, selectedPeriod} =
   usePaidToggle(paidUserIds)
 
-const {userSearchIndex, rows, isNotableType, typeIcon, typeLabel, statusColor} =
-  useUserRows(users, memberships, paidUserIds, selectedPeriod)
+// The row display helpers moved to the row components, which import them directly — they are
+// pure functions of a row and never needed the page's state.
+const {userSearchIndex, rows} = useUserRows(users, memberships, paidUserIds, selectedPeriod)
 
 const {
   searchInput,
@@ -283,6 +286,18 @@ onMounted(async () => {
 function openDeleteUser(user: EditableUser) {
   pendingDeleteUser.value = user
   deleteDialog.value = true
+}
+
+/**
+ * The row a delete button belongs to, resolved against the loaded users.
+ *
+ * Both row components emit the row rather than the user, because the user list lives here.
+ * The markup used to write `users.find(...)!` inline, which would have thrown on a row whose
+ * user had gone; there is nothing to confirm in that case, so it does nothing instead.
+ */
+function deleteUserRow(row: MemberRow) {
+  const user = users.value.find((candidate) => candidate.id === row.id)
+  if (user) openDeleteUser(user)
 }
 
 async function confirmDeleteUser() {
@@ -553,209 +568,19 @@ async function confirmDeleteUser() {
                 </thead>
 
                 <tbody>
-                  <tr
+                  <user-manager-row
                     v-for="row in filteredRows"
                     :key="row.id"
-                    :data-testid="`member-manager-row-${row.id}`"
-                  >
-                    <td class="mm-select-cell">
-                      <v-checkbox-btn
-                        :data-testid="`member-manager-checkbox-${row.id}`"
-                        density="compact"
-                        :model-value="isSelected(row.id)"
-                        @update:model-value="toggleSelected(row.id)"
-                      />
-                    </td>
-
-                    <!-- Name -->
-                    <td class="font-weight-medium">
-                      {{ row.fullName }}
-                    </td>
-
-                    <!-- Username -->
-                    <td class="font-mono text-medium-emphasis">
-                      {{ row.username }}
-                    </td>
-
-                    <!-- Role -->
-                    <td class="text-right">
-                      <v-chip
-                        v-if="row.role"
-                        size="small"
-                        variant="flat"
-                        class="text-capitalize"
-                      >
-                        {{ row.role }}
-                      </v-chip>
-                    </td>
-
-                    <!-- Status -->
-                    <td :data-testid="`member-manager-status-${row.id}`">
-                      <v-chip
-                        :color="statusColor(row.status)"
-                        size="small"
-                        variant="flat"
-                      >
-                        {{ row.status }}
-                      </v-chip>
-                    </td>
-
-                    <!-- Member since -->
-                    <td :data-testid="`member-manager-member-since-${row.id}`">
-                      {{ row.memberSince ?? "—" }}
-                    </td>
-
-                    <!-- Member in selected contribution period -->
-                    <td :data-testid="`member-manager-period-member-${row.id}`">
-                      <v-chip
-                        :color="row.wasMemberInPeriod ? 'green' : 'grey'"
-                        size="small"
-                        variant="flat"
-                        style="width: 48px; justify-content: center"
-                      >
-                        {{ row.wasMemberInPeriod ? "Yes" : "No" }}
-                      </v-chip>
-                    </td>
-
-                    <!-- Paid/Unpaid -->
-                    <td :data-testid="`member-manager-paid-status-${row.id}`">
-                      <v-chip
-                        :color="row.paid ? 'green' : 'red'"
-                        size="small"
-                        variant="flat"
-                        style="width: 56px; justify-content: center"
-                      >
-                        {{ row.paid ? "Paid" : "Unpaid" }}
-                      </v-chip>
-                    </td>
-
-                    <!-- Type / Incasso icons (notable only) -->
-                    <td :data-testid="`member-manager-type-incasso-${row.id}`">
-                      <div class="d-flex align-center gap-1">
-                        <v-tooltip
-                          v-if="isNotableType(row)"
-                          :text="typeLabel(row)"
-                          location="top"
-                        >
-                          <template #activator="{ props }">
-                            <v-icon
-                              v-bind="props"
-                              :icon="typeIcon(row)"
-                              size="18"
-                              color="primary"
-                            />
-                          </template>
-                        </v-tooltip>
-                        <v-tooltip
-                          v-if="row.latestIncasso"
-                          text="Incasso active"
-                          location="top"
-                        >
-                          <template #activator="{ props }">
-                            <v-icon
-                              v-bind="props"
-                              icon="mdi-bank-transfer"
-                              size="18"
-                              color="teal"
-                            />
-                          </template>
-                        </v-tooltip>
-                      </div>
-                    </td>
-
-                    <!-- Actions -->
-                    <td>
-                      <div class="d-flex align-center gap-1">
-                        <v-tooltip
-                          :text="row.paid ? 'Mark unpaid' : 'Mark paid'"
-                          location="top"
-                        >
-                          <template #activator="{ props }">
-                            <v-btn
-                              v-bind="props"
-                              :data-testid="`member-manager-toggle-paid-btn-${row.id}`"
-                              :disabled="toggleDisabled"
-                              :loading="isSaving(row.id)"
-                              icon
-                              size="small"
-                              variant="text"
-                              @click="togglePaid(row.id)"
-                            >
-                              <v-icon
-                                :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
-                                size="18"
-                              />
-                            </v-btn>
-                          </template>
-                        </v-tooltip>
-
-                        <v-tooltip
-                          text="Manage memberships"
-                          location="top"
-                        >
-                          <template #activator="{ props }">
-                            <v-btn
-                              v-bind="props"
-                              :data-testid="`member-manager-manage-membership-btn-${row.id}`"
-                              icon
-                              size="small"
-                              variant="text"
-                              @click="openManageMembership(row)"
-                            >
-                              <v-icon
-                                icon="mdi-card-account-details"
-                                size="18"
-                              />
-                            </v-btn>
-                          </template>
-                        </v-tooltip>
-
-                        <v-tooltip
-                          text="Edit profile"
-                          location="top"
-                        >
-                          <template #activator="{ props }">
-                            <v-btn
-                              v-bind="props"
-                              :data-testid="`member-manager-edit-profile-btn-${row.id}`"
-                              icon
-                              size="small"
-                              variant="text"
-                              @click="openEditProfile(row)"
-                            >
-                              <v-icon
-                                icon="mdi-pencil"
-                                size="18"
-                              />
-                            </v-btn>
-                          </template>
-                        </v-tooltip>
-
-                        <v-tooltip
-                          text="Delete user"
-                          location="top"
-                        >
-                          <template #activator="{ props }">
-                            <v-btn
-                              v-bind="props"
-                              :data-testid="`member-manager-delete-btn-${row.id}`"
-                              :disabled="row.role === 'admin'"
-                              color="red"
-                              icon
-                              size="small"
-                              variant="text"
-                              @click="openDeleteUser(users.find((u) => u.id === row.id)!)"
-                            >
-                              <v-icon
-                                icon="mdi-delete"
-                                size="18"
-                              />
-                            </v-btn>
-                          </template>
-                        </v-tooltip>
-                      </div>
-                    </td>
-                  </tr>
+                    :row="row"
+                    :saving="isSaving(row.id)"
+                    :selected="isSelected(row.id)"
+                    :toggle-disabled="toggleDisabled"
+                    @delete-user="deleteUserRow"
+                    @edit-profile="openEditProfile"
+                    @manage-membership="openManageMembership"
+                    @toggle-paid="togglePaid"
+                    @toggle-selected="toggleSelected"
+                  />
 
                   <tr v-if="filteredRows.length === 0">
                     <td
@@ -782,99 +607,15 @@ async function confirmDeleteUser() {
                   v-for="(row, index) in filteredRows"
                   :key="row.id"
                 >
-                  <v-list-item
-                    class="member-manager-mobile-row"
-                    :data-testid="`member-manager-mobile-row-${row.id}`"
-                  >
-                    <!-- Line 1: Name (title) + action buttons (append slot) -->
-                    <v-list-item-title class="text-truncate">
-                      {{ row.fullName }}
-                    </v-list-item-title>
-
-                    <template #append>
-                      <div class="d-flex align-center flex-shrink-0">
-                        <v-btn
-                          :data-testid="`member-manager-mobile-toggle-paid-btn-${row.id}`"
-                          :disabled="toggleDisabled"
-                          :loading="isSaving(row.id)"
-                          class="btn-tight"
-                          icon
-                          size="small"
-                          variant="text"
-                          @click="togglePaid(row.id)"
-                        >
-                          <v-icon
-                            :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
-                            size="18"
-                          />
-                        </v-btn>
-                        <v-btn
-                          :data-testid="`member-manager-mobile-manage-membership-btn-${row.id}`"
-                          class="btn-tight"
-                          icon
-                          size="small"
-                          variant="text"
-                          @click="openManageMembership(row)"
-                        >
-                          <v-icon
-                            icon="mdi-card-account-details"
-                            size="18"
-                          />
-                        </v-btn>
-                        <v-btn
-                          :data-testid="`member-manager-mobile-edit-profile-btn-${row.id}`"
-                          class="btn-tight"
-                          icon
-                          size="small"
-                          variant="text"
-                          @click="openEditProfile(row)"
-                        >
-                          <v-icon
-                            icon="mdi-pencil"
-                            size="18"
-                          />
-                        </v-btn>
-                        <v-btn
-                          :data-testid="`member-manager-mobile-delete-btn-${row.id}`"
-                          :disabled="row.role === 'admin'"
-                          class="btn-tight"
-                          color="red"
-                          icon
-                          size="small"
-                          variant="text"
-                          @click="openDeleteUser(users.find((u) => u.id === row.id)!)"
-                        >
-                          <v-icon
-                            icon="mdi-delete"
-                            size="18"
-                          />
-                        </v-btn>
-                      </div>
-                    </template>
-
-                    <!-- Line 2: Username + role chip -->
-                    <v-list-item-subtitle class="d-flex align-center gap-2">
-                      <span
-                        class="font-mono text-medium-emphasis text-truncate flex-grow-1"
-                        style="min-width: 0"
-                      >{{ row.username }}</span>
-                      <v-chip
-                        v-if="row.role"
-                        class="text-capitalize flex-shrink-0"
-                        size="x-small"
-                        variant="flat"
-                      >
-                        {{ row.role }}
-                      </v-chip>
-                      <v-chip
-                        :color="row.wasMemberInPeriod ? 'green' : 'grey'"
-                        size="x-small"
-                        variant="flat"
-                      >
-                        {{ row.wasMemberInPeriod ? "In period" : "Not in period" }}
-                      </v-chip>
-                    </v-list-item-subtitle>
-                  </v-list-item>
+                  <user-manager-mobile-row
+                    :row="row"
+                    :saving="isSaving(row.id)"
+                    :toggle-disabled="toggleDisabled"
+                    @delete-user="deleteUserRow"
+                    @edit-profile="openEditProfile"
+                    @manage-membership="openManageMembership"
+                    @toggle-paid="togglePaid"
+                  />
                   <v-divider v-if="index < filteredRows.length - 1" />
                 </template>
               </v-list>
@@ -1008,10 +749,6 @@ tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.02);
 }
 
-.gap-1 {
-  gap: 4px;
-}
-
 .gap-3 {
   gap: 12px;
 }
@@ -1068,21 +805,11 @@ tbody tr:nth-child(odd) {
 }
 
 // Compact, single-line mobile rows (table-like, not tall).
-.member-manager-mobile-row {
-  min-height: 40px;
-
-  .mm-username {
-    min-width: 0;
-  }
-}
-
-.btn-tight {
-  padding-inline: 6px !important;
-  min-width: auto !important;
-}
-
 // The checkbox column carries no label and should not take room from the ones that do.
-.mm-select-cell {
+// The header cell is here and the body cell is in UserManagerRow. They have to agree on the
+// width, so one rule reaches both rather than each keeping a copy to drift from.
+.mm-select-cell,
+:deep(.mm-select-cell) {
   width: 44px;
   padding-inline: 4px !important;
 }

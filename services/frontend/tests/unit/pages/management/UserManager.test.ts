@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import UserManager, {type MemberRow} from "@/pages/management/UserManager.vue"
+import {isNotableType, typeIcon} from "@/composables/useUserRows"
 import {MemberType} from "@/services/api"
 import {settle} from "../helpers"
 
@@ -444,14 +445,15 @@ describe("UserManager row model", () => {
     const alumRow = rows.find((r) => r.id === 51)!
     const regRow = rows.find((r) => r.id === 52)!
 
-    const isNotableType = (wrapper.vm as any).isNotableType
+    // Imported rather than read off the page: these are pure functions of a row, and the row
+    // components that render them import them the same way.
     expect(isNotableType(honRow)).toBe(true)
     expect(isNotableType(alumRow)).toBe(true)
     expect(isNotableType(regRow)).toBe(false)
 
-    expect((wrapper.vm as any).typeIcon(honRow)).toBe("mdi-crown")
-    expect((wrapper.vm as any).typeIcon(alumRow)).toBe("mdi-school")
-    expect((wrapper.vm as any).typeIcon(regRow)).toBe("")
+    expect(typeIcon(honRow)).toBe("mdi-crown")
+    expect(typeIcon(alumRow)).toBe("mdi-school")
+    expect(typeIcon(regRow)).toBe("")
   })
 
   it("incasso icon is notable only when incasso=true", async () => {

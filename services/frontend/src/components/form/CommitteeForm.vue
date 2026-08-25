@@ -186,7 +186,7 @@ defineExpose({validate, save})
                 :disabled="isReadonly"
                 :name="`members[${i}].role`"
                 label="Role"
-                rules="maxChars:120"
+                rules="maxChars:50"
               />
             </v-col>
 

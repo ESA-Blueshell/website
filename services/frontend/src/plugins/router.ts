@@ -250,6 +250,12 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresAdmin: true},
   },
   {
+    path: "/management/cohorts/targets",
+    name: "cohortTargets",
+    component: () => import("@/pages/management/CohortTargets.vue"),
+    meta: {requiresAuth: true, requiresAdmin: true},
+  },
+  {
     path: "/management/cohorts/subjects/:id",
     name: "cohortSubjectDetail",
     component: () => import("@/pages/management/CohortSubjectDetail.vue"),

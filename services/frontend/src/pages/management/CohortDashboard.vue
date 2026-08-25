@@ -174,6 +174,14 @@ onMounted(async () => {
             Re-evaluate all users
           </v-btn>
           <v-btn
+            data-testid="cohort-targets-link"
+            size="small"
+            :to="{name: 'cohortTargets'}"
+            variant="outlined"
+          >
+            Brevo targets
+          </v-btn>
+          <v-btn
             :disabled="loading"
             data-testid="cohort-refresh-btn"
             size="small"

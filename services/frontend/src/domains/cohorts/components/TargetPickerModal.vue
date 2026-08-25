@@ -130,6 +130,7 @@ const submit = async () => {
                 item-title="title"
                 item-value="externalId"
                 no-filter
+                :return-object="false"
               />
               <v-text-field
                 v-else
@@ -171,6 +172,7 @@ const submit = async () => {
             item-title="title"
             item-value="externalId"
             no-filter
+            :return-object="false"
           />
           <v-text-field
             v-else

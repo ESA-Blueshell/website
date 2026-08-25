@@ -1,6 +1,7 @@
-import {computed, ref, type Ref} from "vue"
+import {computed, toRefs, type Ref} from "vue"
 import {type MemberRow, type MemberStatus} from "@/composables/useUserRows"
 import {useTableSort} from "@/composables/useTableSort"
+import {filtersFor, useRowFilters} from "@/composables/useRowFilters"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -10,52 +11,71 @@ export type SortKey = "name" | "username" | "role" | "status" | "memberSince" | 
 
 const statusOrder: Record<MemberStatus, number> = {Current: 0, Former: 1, Never: 2}
 
+// Exhaustive, so a new MembershipStatusFilter value fails the typecheck rather than
+// silently falling through to "Never". "all" never reaches here; it reads as unset.
+const STATUS_BY_FILTER: Record<Exclude<MembershipStatusFilter, "all">, MemberStatus> = {
+  current: "Current",
+  former: "Former",
+  never: "Never",
+}
+
 // ── Composable ─────────────────────────────────────────────────────────────────
 
 export function useUserFilters(
   rows: Ref<MemberRow[]>,
   userSearchIndex: Ref<Map<number, string>>,
 ) {
-  // searchInput and search are now the same ref (debounce removed; filtering is O(visible) after windowing).
-  // The template binds v-model="searchInput", unit tests set search directly — both work because they are the same object.
-  const search = ref("")
-  const searchInput = search
+  const filter = filtersFor<MemberRow>()
 
-  // Membership status filter: all | current | former | never
-  const membershipStatusFilter = ref<MembershipStatusFilter>("all")
-  // Tri-state filters
-  const paidFilter = ref<FilterState>("all")
-  const incassoFilter = ref<FilterState>("all")
-  const periodMemberFilter = ref<FilterState>("all")
-
-  // Compute filtered rows (before sorting)
-  const justFiltered = computed<MemberRow[]>(() => {
-    // Search against precomputed per-user haystacks — cheap on every keystroke.
-    const q = search.value.trim().toLowerCase()
-    const terms = q ? q.split(/\s+/) : []
-
-    return rows.value.filter((r) => {
-      // Search filter
-      if (terms.length > 0) {
-        const haystack = userSearchIndex.value.get(r.id) ?? ""
-        if (!terms.every((t) => haystack.includes(t))) return false
-      }
-      // Membership status filter: current | former | never
-      if (membershipStatusFilter.value === "current" && r.status !== "Current") return false
-      if (membershipStatusFilter.value === "former" && r.status !== "Former") return false
-      if (membershipStatusFilter.value === "never" && r.status !== "Never") return false
-      // Paid-in-period filter
-      if (paidFilter.value === "yes" && !r.paid) return false
-      if (paidFilter.value === "no" && r.paid) return false
-      // Incasso filter
-      if (incassoFilter.value === "yes" && !r.latestIncasso) return false
-      if (incassoFilter.value === "no" && r.latestIncasso) return false
-      // Selected contribution period membership filter
-      if (periodMemberFilter.value === "yes" && !r.wasMemberInPeriod) return false
-      if (periodMemberFilter.value === "no" && r.wasMemberInPeriod) return false
-      return true
-    })
+  // Declared cheapest-first: the dropdowns are O(1) per row and eliminate most of
+  // them before the search filter has to touch the haystack.
+  const {state, filteredRows: justFiltered} = useRowFilters(rows, {
+    membershipStatusFilter: filter<MembershipStatusFilter>({
+      initial: "all",
+      unset: "all",
+      match: (value) => {
+        // Unreachable in practice: "all" reads as unset, so match is not called for it.
+        if (value === "all") return () => true
+        const wanted = STATUS_BY_FILTER[value]
+        return (row) => row.status === wanted
+      },
+    }),
+    paidFilter: filter<FilterState>({
+      initial: "all",
+      unset: "all",
+      match: (value) => (row) => row.paid === (value === "yes"),
+    }),
+    incassoFilter: filter<FilterState>({
+      initial: "all",
+      unset: "all",
+      match: (value) => (row) => row.latestIncasso === (value === "yes"),
+    }),
+    periodMemberFilter: filter<FilterState>({
+      initial: "all",
+      unset: "all",
+      match: (value) => (row) => row.wasMemberInPeriod === (value === "yes"),
+    }),
+    search: filter<string | null>({
+      initial: "",
+      unset: "",
+      // `clearable` on the search field writes null, not "".
+      isUnset: (value) => (value ?? "").trim() === "",
+      // Reading the index here rather than per row keeps it a tracked dependency
+      // even when the dropdowns above have already excluded every row.
+      match: (value) => {
+        const terms = (value ?? "").trim().toLowerCase().split(/\s+/)
+        const index = userSearchIndex.value
+        return (row) => {
+          const haystack = index.get(row.id) ?? ""
+          return terms.every((term) => haystack.includes(term))
+        }
+      },
+    }),
   })
+
+  const {search, membershipStatusFilter, paidFilter, incassoFilter, periodMemberFilter} = toRefs(state)
+  // The template binds searchInput; tests set search. They are the same ref.
+  const searchInput = search
 
   // Define sort comparators
   const memberRowComparators: Record<SortKey, (a: MemberRow, b: MemberRow) => number> = {

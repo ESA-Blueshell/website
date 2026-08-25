@@ -6,8 +6,9 @@ services:
       - "3307:3306"
     volumes:
       - data:/var/lib/mysql
+      # Schema only. The dev database is filled by DevFixtureSeeder, so every developer
+      # starts from the same named accounts rather than from a dump nobody else has.
       - "./0_init.sql:/docker-entrypoint-initdb.d/0_init.sql"
-      - "./1_dump.sql:/docker-entrypoint-initdb.d/1_dump.sql"
     networks:
       - global_network
     restart: unless-stopped

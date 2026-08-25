@@ -57,6 +57,26 @@ const props = withDefaults(defineProps<Props>(), {
   cancelTestid: undefined,
 })
 
+defineSlots<{
+  /** The modal body. Scrolls on its own unless `body-header` splits it. */
+  default?: () => unknown
+  /**
+   * Rendered inline in the header band, beside the title. The title does not grow, so
+   * appended content sits next to it; lead with a `<v-spacer />` to push it to the edge.
+   */
+  "title-append"?: () => unknown
+  /** A region at the top of the body that stays put while only the body below it scrolls. */
+  "body-header"?: () => unknown
+  /** Replaces the entire footer, buttons and all. */
+  actions?: () => unknown
+  /** Secondary action(s) between Cancel and the primary action. */
+  "actions-prepend"?: () => unknown
+  /** Replaces just the primary action button. */
+  save?: () => unknown
+  /** Action(s) after the primary action. */
+  "actions-append"?: () => unknown
+}>()
+
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void
   (e: "save"): void
@@ -100,15 +120,32 @@ const useSaveAsSubmitButton = computed(
     :scrollable="scrollable"
   >
     <v-card>
-      <v-card-title class="text-h5">
-        {{ title }}
+      <v-card-title class="base-modal__title text-h5 d-flex align-center">
+        <span class="base-modal__title-text">{{ title }}</span>
+        <!--
+          #title-append slot — extra affordances rendered inline in the header band,
+          to the right of the title.
+        -->
+        <slot name="title-append" />
       </v-card-title>
 
-      <v-card-text>
-        <slot />
+      <v-card-text :class="{'base-modal__text--split': $slots['body-header']}">
+        <!--
+          #body-header — a region that stays put while the body scrolls beneath it. Without
+          it the body scrolls whole, which is what most dialogs want.
+        -->
+        <template v-if="$slots['body-header']">
+          <div class="base-modal__body-header">
+            <slot name="body-header" />
+          </div>
+          <div class="base-modal__scroll-body">
+            <slot />
+          </div>
+        </template>
+        <slot v-else />
       </v-card-text>
 
-      <v-card-actions>
+      <v-card-actions class="base-modal__actions">
         <v-btn
           v-if="showDelete"
           :data-testid="deleteTestid"
@@ -133,6 +170,12 @@ const useSaveAsSubmitButton = computed(
           >
             {{ cancelLabel }}
           </v-btn>
+
+          <!--
+            #actions-prepend — secondary action(s) between Cancel and the primary action,
+            so a dialog can offer a lesser choice without displacing the main one.
+          -->
+          <slot name="actions-prepend" />
 
           <!--
             #save slot — override just the primary save button.
@@ -174,3 +217,60 @@ const useSaveAsSubmitButton = computed(
     </v-card>
   </v-dialog>
 </template>
+
+<style lang="scss" scoped>
+// Distinct, comfortably padded header band shared by every BaseModal usage: a subtle
+// surface tint plus a bottom divider separate the title, and anything appended beside it,
+// from the body. Theme variables only, so it follows light and dark.
+.base-modal__title {
+  gap: 12px;
+  padding: 16px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+// Shrinks but does not grow, so appended content sits beside the title rather than being
+// pushed to the far edge. A caller that wants it at the edge leads with a spacer.
+.base-modal__title-text {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+// The footer mirrors the header, so the primary actions read as their own band rather than
+// as content that happens to be last.
+.base-modal__actions {
+  padding: 12px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+// With a #body-header the body becomes a flex column: a fixed region on top and exactly one
+// scrolling region below, so a form, a summary or a table's sticky column headers stay in
+// view while the rows move.
+.base-modal__text--split {
+  display: flex;
+  flex-direction: column;
+  // Vuetify's `.v-dialog--scrollable ... > .v-card-text { overflow-y: auto }` is unlayered,
+  // so it beats this scoped rule and turns the card text back into the scroller — which
+  // collapses the split and unpins anything sticky. !important is what wins that.
+  overflow: hidden !important;
+}
+
+.base-modal__body-header {
+  flex: 0 0 auto;
+  z-index: 2;
+  background-color: rgb(var(--v-theme-surface));
+  // Sit flush against the header band, then restore breathing room beneath.
+  margin: -16px -24px 0;
+  padding: 16px 24px 8px;
+}
+
+.base-modal__scroll-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  // Full body width; the side padding is restored inside.
+  margin: 0 -24px -16px;
+  padding: 0 24px;
+}
+</style>

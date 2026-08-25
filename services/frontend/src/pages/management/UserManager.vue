@@ -19,6 +19,10 @@ import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useUserRows, type MemberRow} from "@/composables/useUserRows"
 import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
+import {useUserSelection} from "@/composables/useUserSelection"
+import {computeBulkTargets} from "@/utils/bulkTarget"
+import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
+import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
 
 export type {MemberRow}
 
@@ -86,6 +90,69 @@ const {
   toggleSort,
   sortIcon,
 } = useUserFilters(rows, userSearchIndex)
+
+// ── Bulk actions ──────────────────────────────────────────────────────────────
+
+// Selection follows the rows on screen, so the header checkbox means "these" rather than
+// "everyone", and a filter change never silently drops somebody from the set.
+const displayedIds = computed(() => filteredRows.value.map((row) => row.id))
+const {
+  selectedIdsArray,
+  isSelected,
+  toggle: toggleSelected,
+  toggleHeader,
+  headerChecked,
+  headerIndeterminate,
+  selectionCount,
+  hasSelection,
+  clear: clearSelection,
+} = useUserSelection(displayedIds)
+
+const bulkAction = ref<"paid" | "unpaid" | null>(null)
+const bulkDialogOpen = ref(false)
+
+const membershipsByUserId = computed(() => {
+  const byUser = new Map<number, typeof memberships.value>()
+  for (const membership of memberships.value) {
+    const list = byUser.get(membership.userId) ?? []
+    list.push(membership)
+    byUser.set(membership.userId, list)
+  }
+  return byUser
+})
+
+const usersById = computed(
+  () => new Map(users.value.filter((user) => user.id != null).map((user) => [user.id as number, user])),
+)
+
+const bulkTargets = computed(() =>
+  computeBulkTargets(selectedIdsArray.value, membershipsByUserId.value, paidUserIds.value, usersById.value),
+)
+
+function openBulkAction(action: "paid" | "unpaid") {
+  bulkAction.value = action
+  bulkDialogOpen.value = true
+}
+
+/** The action applied, so the rows it touched are refetched and the selection is spent. */
+async function onBulkDone() {
+  clearSelection()
+  await refreshAfterBulk()
+}
+
+/** The api refused the selection because the table was stale: refresh, keep the selection. */
+async function onBulkStale() {
+  await refreshAfterBulk()
+}
+
+/** Reloading the period is what repopulates the paid set, so it stands in for a paid refetch. */
+async function refreshAfterBulk() {
+  await Promise.all([
+    getUsers(),
+    getMemberships(),
+    contributionPeriodChanged(selectedPeriod.value ?? undefined),
+  ])
+}
 
 function ariaSort(key: SortKey) {
   if (sortKey.value !== key) return "none"
@@ -308,6 +375,24 @@ async function confirmDeleteUser() {
                   label="Member in period"
                 />
               </div>
+              <v-chip
+                v-if="hasSelection"
+                closable
+                data-testid="member-manager-selection-chip"
+                size="small"
+                variant="tonal"
+                @click:close="clearSelection"
+              >
+                {{ selectionCount }} selected
+              </v-chip>
+
+              <bulk-actions-menu
+                :disabled="!hasSelection"
+                :no-period="!selectedPeriod"
+                @mark-paid="openBulkAction('paid')"
+                @mark-unpaid="openBulkAction('unpaid')"
+              />
+
               <v-btn
                 class="mm-add"
                 color="primary"
@@ -331,6 +416,17 @@ async function confirmDeleteUser() {
               >
                 <thead>
                   <tr>
+                    <!-- Selects the rows on screen, so a filter never hides part of the selection. -->
+                    <th class="mm-select-cell">
+                      <v-checkbox-btn
+                        data-testid="member-manager-header-checkbox"
+                        density="compact"
+                        :indeterminate="headerIndeterminate"
+                        :model-value="headerChecked"
+                        @update:model-value="toggleHeader"
+                      />
+                    </th>
+
                     <!-- Sortable: Name -->
                     <th
                       class="sortable-header"
@@ -462,6 +558,15 @@ async function confirmDeleteUser() {
                     :key="row.id"
                     :data-testid="`member-manager-row-${row.id}`"
                   >
+                    <td class="mm-select-cell">
+                      <v-checkbox-btn
+                        :data-testid="`member-manager-checkbox-${row.id}`"
+                        density="compact"
+                        :model-value="isSelected(row.id)"
+                        @update:model-value="toggleSelected(row.id)"
+                      />
+                    </td>
+
                     <!-- Name -->
                     <td class="font-weight-medium">
                       {{ row.fullName }}
@@ -854,6 +959,14 @@ async function confirmDeleteUser() {
       :user-name="manageUserName"
       @changed="onMembershipChanged"
     />
+    <paid-status-dialog
+      v-model="bulkDialogOpen"
+      :contribution-period-id="selectedPeriod?.id ?? null"
+      :target-state="bulkAction ?? 'paid'"
+      :targets="bulkTargets"
+      @done="onBulkDone"
+      @stale="onBulkStale"
+    />
   </v-main>
 </template>
 
@@ -966,5 +1079,11 @@ tbody tr:nth-child(odd) {
 .btn-tight {
   padding-inline: 6px !important;
   min-width: auto !important;
+}
+
+// The checkbox column carries no label and should not take room from the ones that do.
+.mm-select-cell {
+  width: 44px;
+  padding-inline: 4px !important;
 }
 </style>

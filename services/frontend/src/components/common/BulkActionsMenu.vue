@@ -1,0 +1,57 @@
+<script lang="ts" setup>
+defineOptions({name: "BulkActionsMenu"})
+
+interface Props {
+  disabled?: boolean
+  /** True when no contribution period is selected (period-relative actions are disabled). */
+  noPeriod?: boolean
+}
+
+withDefaults(defineProps<Props>(), {
+  disabled: false,
+  noPeriod: false,
+})
+
+const emit = defineEmits<{
+  (e: "markPaid"): void
+  (e: "markUnpaid"): void
+}>()
+</script>
+
+<template>
+  <v-menu location="bottom end">
+    <template #activator="{ props: menuProps }">
+      <v-btn
+        v-bind="menuProps"
+        :disabled="disabled"
+        data-testid="bulk-actions-menu-btn"
+        icon
+        size="small"
+        variant="text"
+      >
+        <v-icon icon="mdi-dots-vertical" />
+      </v-btn>
+    </template>
+
+    <v-list
+      data-testid="bulk-actions-menu"
+      density="compact"
+      min-width="220"
+    >
+      <v-list-item
+        :disabled="noPeriod"
+        data-testid="bulk-action-mark-paid"
+        prepend-icon="mdi-cash-check"
+        title="Mark as paid"
+        @click="emit('markPaid')"
+      />
+      <v-list-item
+        :disabled="noPeriod"
+        data-testid="bulk-action-mark-unpaid"
+        prepend-icon="mdi-cash-remove"
+        title="Mark as unpaid"
+        @click="emit('markUnpaid')"
+      />
+    </v-list>
+  </v-menu>
+</template>

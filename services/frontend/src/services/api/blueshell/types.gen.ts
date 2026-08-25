@@ -138,6 +138,12 @@ export type BulkActionResult = {
     skipped: number;
 };
 
+export enum BulkFeeType {
+    FULL_YEAR_FEE = 'FULL_YEAR_FEE',
+    HALF_YEAR_FEE = 'HALF_YEAR_FEE',
+    ALUMNI_FEE = 'ALUMNI_FEE'
+}
+
 export type BulkMarkPaidRequest = {
     contributionPeriodId: number | null;
     userIds: Array<number>;
@@ -146,6 +152,36 @@ export type BulkMarkPaidRequest = {
 export type BulkMarkUnpaidRequest = {
     contributionPeriodId: number | null;
     userIds: Array<number>;
+};
+
+export enum BulkRowDisposition {
+    INCLUDED = 'INCLUDED',
+    SKIPPED = 'SKIPPED',
+    EXCLUDED = 'EXCLUDED',
+    WARNING = 'WARNING'
+}
+
+export enum BulkRowReason {
+    ALREADY_PAID = 'ALREADY_PAID',
+    NOT_PAID = 'NOT_PAID',
+    HONORARY = 'HONORARY',
+    INCASSO_MISMATCH = 'INCASSO_MISMATCH',
+    NO_ACTIVE_MEMBERSHIP = 'NO_ACTIVE_MEMBERSHIP',
+    STARTED_TODAY = 'STARTED_TODAY',
+    NO_EMAIL = 'NO_EMAIL',
+    ALREADY_ACTIVE = 'ALREADY_ACTIVE',
+    NO_CONTRIBUTION_PERIOD = 'NO_CONTRIBUTION_PERIOD',
+    WILL_RESUME = 'WILL_RESUME',
+    WILL_START_NEW = 'WILL_START_NEW'
+}
+
+/**
+ * Contract-only holder that publishes the bulk-action enums. Not returned by any endpoint.
+ */
+export type BulkRowVocabulary = {
+    disposition: BulkRowDisposition;
+    feeType: BulkFeeType;
+    reason: BulkRowReason;
 };
 
 export type CohortDetail = {

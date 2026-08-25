@@ -87,10 +87,12 @@ describe("RecoveryUserRow", () => {
       expect(wrapper.find('[data-testid="recovery-user-send-btn-MEMBER_ACTIVATION-1"]').exists()).toBe(false)
     })
 
-    it("falls back to the ordinary activation when the server named none", () => {
+    it("offers nothing when the server names no activation", () => {
+      // The inactive panel also lists deleted accounts, which the server leaves out of the
+      // map on purpose. Guessing the ordinary activation put a send button on those.
       const wrapper = row("activation", null)
 
-      expect(wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').exists()).toBe(true)
+      expect(wrapper.findAll('[data-testid^="recovery-user-send-btn-"]')).toHaveLength(0)
     })
 
     it("offers only the password reset on an active account", () => {

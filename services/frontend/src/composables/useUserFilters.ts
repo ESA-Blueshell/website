@@ -74,12 +74,12 @@ export function useUserFilters(
 
   const {search, memberFilter, paidFilter, incassoFilter, periodMemberFilter} = toRefs(state)
 
+  // No column sort until one is asked for, which is where the sort composable starts: the
+  // rows arrive in the order the api defines (creation order) and the table keeps it.
+  // Opening on "name" also made the tri-state cycle dishonest — unsorted was a state the
+  // header could reach but never started in.
   const {sortedItems: filteredRows, sortKey, sortDir, toggleSort, sortIcon} =
     useTableSort<MemberRow, SortKey>(matchingRows, comparators)
-
-  // The table opens sorted by name; the sort composable itself starts in natural order.
-  sortKey.value = "name"
-  sortDir.value = "asc"
 
   // The template and the sort headers speak of a direction; the tri-state cycle underneath
   // also has an "unsorted" state, which reads here as not ascending.

@@ -20,6 +20,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -188,9 +189,23 @@ class UserService @Autowired constructor(
         }
     }
 
+    /**
+     * Users matching a query, in a defined order.
+     *
+     * Without a sort the database returns rows in whatever order its plan happens to produce,
+     * which is stable enough to look correct locally and free to change when the predicates or
+     * the indexes do. A caller that asks for an order gets it; one that does not gets the order
+     * the accounts were created in, so the listing is at least reproducible.
+     */
     fun findByQuery(query: UserQuery, pageable: Pageable): Page<User> {
         val spec = UserSpecifications.fromQuery(query, currentUserProvider.currentUser())
-        return repository.findAll(spec, pageable)
+        return repository.findAll(spec, withDefaultOrder(pageable))
+    }
+
+    private fun withDefaultOrder(pageable: Pageable): Pageable = when {
+        pageable.sort.isSorted -> pageable
+        pageable.isPaged -> PageRequest.of(pageable.pageNumber, pageable.pageSize, DEFAULT_USER_ORDER)
+        else -> Pageable.unpaged(DEFAULT_USER_ORDER)
     }
 
     @Transactional
@@ -223,5 +238,10 @@ class UserService @Autowired constructor(
     private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
         val inherited = user.roles.flatMap { it.allInheritedRoles }
         return inherited.any { it.matchesRole(role) }
+    }
+
+    private companion object {
+        /** Creation order: the newest accounts land at the end, where they can be found. */
+        val DEFAULT_USER_ORDER: Sort = Sort.by(Sort.Direction.ASC, "id")
     }
 }

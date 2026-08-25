@@ -367,7 +367,7 @@ describe("UserManager row model", () => {
     expect(rows[0].username).toBe("salpha")
   })
 
-  it("sorts by name (default, ascending)", async () => {
+  it("shows the rows in the order the api returned them", async () => {
     const wrapper = mountWithData(
       [
         {id: 20, fullName: "Zoe Last", username: "zlast", roles: ["MEMBER"]},
@@ -377,9 +377,25 @@ describe("UserManager row model", () => {
     )
     await settle()
 
+    // The api orders by id, so the page keeps that until a column is chosen.
     const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows[0].fullName).toBe("Anna First")
-    expect(rows[1].fullName).toBe("Zoe Last")
+    expect(rows.map((row) => row.fullName)).toEqual(["Zoe Last", "Anna First"])
+  })
+
+  it("sorts by name once the name column is chosen", async () => {
+    const wrapper = mountWithData(
+      [
+        {id: 20, fullName: "Zoe Last", username: "zlast", roles: ["MEMBER"]},
+        {id: 21, fullName: "Anna First", username: "afirst", roles: ["MEMBER"]},
+      ],
+      [],
+    )
+    await settle()
+    ;(wrapper.vm as any).toggleSort("name")
+    await settle()
+
+    const rows: MemberRow[] = (wrapper.vm as any).filteredRows
+    expect(rows.map((row) => row.fullName)).toEqual(["Anna First", "Zoe Last"])
   })
 
   it("sorts by status: Current before Former before Never", async () => {

@@ -54,12 +54,18 @@ const paidActionLabel = () => (props.row.paid ? "Mark unpaid" : "Mark paid")
     </td>
 
     <!-- Name -->
-    <td class="font-weight-medium">
+    <td
+      class="font-weight-medium"
+      :title="row.fullName"
+    >
       {{ row.fullName }}
     </td>
 
     <!-- Username -->
-    <td class="font-mono text-medium-emphasis">
+    <td
+      class="font-mono text-medium-emphasis"
+      :title="row.username"
+    >
       {{ row.username }}
     </td>
 
@@ -211,6 +217,20 @@ const paidActionLabel = () => (props.row.paid ? "Mark unpaid" : "Mark paid")
 </template>
 
 <style lang="scss" scoped>
+// The virtual scroller positions rows by multiplying this height by an index, so a row that
+// grows — a name wrapping onto a second line under the fixed table layout — would put every
+// row below it in the wrong place. Cells truncate instead, and carry a title with the full
+// value.
+tr {
+  height: 44px;
+
+  > td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 // The cells belong to this component, so the rules that reach them live here: a page-level
 // scoped rule carries the page's scope id and would only match this row's root element.
 .mm-row--selected > td {

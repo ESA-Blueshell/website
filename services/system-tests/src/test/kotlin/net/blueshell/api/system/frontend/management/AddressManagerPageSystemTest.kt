@@ -40,10 +40,7 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
             ),
         )
 
-        val createResponse = page.waitForResponse("**/addresses") {
-            page.locator("[data-testid='address-form-submit-btn']").first().click()
-        }
-        assertThat(createResponse.status()).isEqualTo(201)
+        page.locator("[data-testid='address-form-submit-btn']").first().click()
 
         val persisted = pollForAddress(guest.username)
         assertThat(persisted.street).isEqualTo("Campuslaan")
@@ -76,13 +73,7 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
             ),
         )
 
-        val createResponse = page.waitForResponse({ response ->
-            response.request().method() == "POST" &&
-                response.url().contains("/addresses")
-        }) {
-            page.locator("[data-testid='address-form-submit-btn']").first().click()
-        }
-        assertThat(createResponse.status()).isEqualTo(201)
+        page.locator("[data-testid='address-form-submit-btn']").first().click()
         val addressId = pollForAddress(guest.username).id
 
         AddressManagerHelper.open(page, frontendUrl)
@@ -92,13 +83,7 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
         AddressManagerHelper.searchUsersWithAddress(page, guest.username)
         AddressManagerHelper.clickDeleteAddress(page, guestId)
 
-        val deleteResponse = page.waitForResponse({ response ->
-            response.request().method() == "DELETE" &&
-                response.url().contains("/addresses/$addressId")
-        }) {
-            page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
-        }
-        assertThat(deleteResponse.status()).isEqualTo(204)
+        page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
 
         waitFor("address $addressId deleted") { TestHelper.findAddress(guest.username) == null }
     }

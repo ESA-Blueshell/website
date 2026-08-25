@@ -11,6 +11,7 @@ import {
   findCohortSubjects,
 } from "@/services/api"
 import {COHORT_TYPE_ORDER, cohortTypeLabel} from "@/domains/cohorts/cohortTypeLabels"
+import {countLabel} from "@/domains/cohorts/cohortSubjectSummaries"
 import store from "@/plugins/store"
 
 defineOptions({name: "CohortCategoryPage"})
@@ -115,7 +116,7 @@ watch(category, async (next) => {
 
         <manager-card
           :eyebrow="categoryLabel"
-          :subtitle="`${visibleSubjects.length} cohort${visibleSubjects.length === 1 ? '' : 's'}`"
+          :subtitle="countLabel(visibleSubjects.length, 'cohort')"
         >
           <v-list
             data-testid="cohort-subject-list"
@@ -131,7 +132,7 @@ watch(category, async (next) => {
               :key="group.type"
             >
               <v-list-subheader :data-testid="`cohort-type-group-${group.type}`">
-                {{ group.label }} · {{ group.subjects.length }} · {{ group.memberCount }} members
+                {{ group.label }} · {{ countLabel(group.subjects.length, "cohort") }} · {{ countLabel(group.memberCount, "member") }}
               </v-list-subheader>
               <v-list-item
                 v-for="subject in group.subjects"
@@ -147,7 +148,7 @@ watch(category, async (next) => {
                   {{ subject.label }}
                 </v-list-item-title>
                 <v-list-item-subtitle>
-                  {{ subject.memberCount }} members · {{ subject.mappingCount }} sync target{{ subject.mappingCount === 1 ? "" : "s" }}
+                  {{ countLabel(subject.memberCount, "member") }} · {{ countLabel(subject.mappingCount, "sync target") }}
                 </v-list-item-subtitle>
                 <template #append>
                   <v-icon icon="mdi-chevron-right" />

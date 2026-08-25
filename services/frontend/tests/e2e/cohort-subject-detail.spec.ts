@@ -55,6 +55,19 @@ test.describe("cohort subject detail", () => {
     await expect(targets.getByTestId("cohort-subject-add-target")).toBeVisible()
   })
 
+  test("counts read as English on the category page that links here", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+
+    await page.goto("/management/cohorts/committees")
+
+    const group = page.getByTestId("cohort-type-group-COMMITTEE_MEMBERS")
+    // Was `Committee members · 1 · 1 members`: a bare number, then a plural for one thing.
+    await expect(group).toContainText("Committee members · 1 cohort · 1 member")
+    await expect(page.getByTestId("cohort-subject-row-102"))
+      .toContainText("1 member · 1 sync target")
+  })
+
   test("goes back to the category the cohort belongs to", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())

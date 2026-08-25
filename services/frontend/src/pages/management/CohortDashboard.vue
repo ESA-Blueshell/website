@@ -11,6 +11,7 @@ import {
 } from "@/services/api"
 import store from "@/plugins/store"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
+import {countLabel, nounFor} from "@/domains/cohorts/cohortSubjectSummaries"
 
 defineOptions({name: "CohortDashboardPage"})
 
@@ -159,7 +160,7 @@ onMounted(async () => {
         <manager-card
           eyebrow="Cohort engine"
           spaced
-          :subtitle="`${totalSubjects} cohorts across ${CARDS.length} categories · ${totalMembers} memberships`"
+          :subtitle="`${countLabel(totalSubjects, 'cohort')} across ${countLabel(CARDS.length, 'category', 'categories')} · ${countLabel(totalMembers, 'membership')}`"
           testid="cohort-dashboard-summary"
           title="Reconciliation"
         >
@@ -229,10 +230,10 @@ onMounted(async () => {
               <template #append>
                 <div class="d-flex align-center category-counts">
                   <span class="text-body-2">
-                    <strong>{{ countsByCategory[card.category].subjects }}</strong> cohorts
+                    <strong>{{ countsByCategory[card.category].subjects }}</strong> {{ nounFor(countsByCategory[card.category].subjects, "cohort") }}
                   </span>
                   <span class="text-body-2 text-medium-emphasis">
-                    <strong>{{ countsByCategory[card.category].members }}</strong> members
+                    <strong>{{ countsByCategory[card.category].members }}</strong> {{ nounFor(countsByCategory[card.category].members, "member") }}
                   </span>
                   <v-icon
                     icon="mdi-chevron-right"

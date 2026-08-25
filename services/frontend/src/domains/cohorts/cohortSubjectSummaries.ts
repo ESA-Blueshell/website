@@ -9,9 +9,17 @@ import type {CohortSubjectDetail} from "@/services/api"
  * whether the subject has loaded or not.
  */
 
-/** `1 member`, `2 members` — every noun counted here is regular. */
-export function countLabel(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? "" : "s"}`
+/**
+ * The noun on its own, for the places that bold the number and so cannot take a whole phrase.
+ * `category` is why the plural is overridable rather than always the singular plus an `s`.
+ */
+export function nounFor(count: number, singular: string, plural = `${singular}s`): string {
+  return count === 1 ? singular : plural
+}
+
+/** `1 member`, `2 members`, `0 members`. */
+export function countLabel(count: number, singular: string, plural?: string): string {
+  return `${count} ${nounFor(count, singular, plural)}`
 }
 
 /** The line under a subject's name: how many people, in how many places. */

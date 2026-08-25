@@ -1020,23 +1020,6 @@ onMounted(async () => {
   max-width: 980px;
 }
 
-.manager-card {
-  background: rgba(var(--v-theme-surface), 0.92);
-  box-shadow: none;
-}
-
-.manager-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 14px 8px;
-}
-
-.manager-card__body {
-  padding: 8px 14px 12px;
-}
-
 .stats-label {
   font-size: 10px;
   line-height: 1.1;

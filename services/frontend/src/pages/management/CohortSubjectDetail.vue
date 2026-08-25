@@ -467,15 +467,6 @@ watch(subjectId, () => void load())
   max-width: 980px;
 }
 
-.manager-card {
-  background: rgba(var(--v-theme-surface), 0.92);
-  box-shadow: none;
-}
-
-.manager-card__header {
-  padding: 10px 14px 8px;
-}
-
 .subject-label {
   margin: 0;
   font-size: 22px;

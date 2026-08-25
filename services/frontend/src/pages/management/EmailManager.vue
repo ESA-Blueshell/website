@@ -676,23 +676,6 @@ onMounted(() => {
   max-width: 980px;
 }
 
-.manager-card {
-  background: rgba(var(--v-theme-surface), 0.92);
-  box-shadow: none;
-}
-
-.manager-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 18px 18px 14px;
-}
-
-.manager-card__body {
-  padding: 14px 18px 18px;
-}
-
 .manager-filters {
   row-gap: 6px;
 }

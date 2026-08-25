@@ -1,7 +1,9 @@
 import {computed, ref} from "vue"
 import {
   fetchTargetDescriptors,
+  fetchTargetFolders,
   fetchTargetOptions,
+  moveTargetToFolder,
   type ExternalTarget,
   type TargetDescriptor,
   type TargetSystem,
@@ -29,6 +31,14 @@ export function useTargetOverview() {
   const descriptor = ref<TargetDescriptor | null>(null)
   const targets = ref<ExternalTarget[]>([])
   const search = ref("")
+  /**
+   * Read from the system rather than inferred from the targets. A folder holding nothing is
+   * invisible to the catalogue, and an empty folder is exactly where a target is headed.
+   */
+  const folderNames = ref<string[]>([])
+  const moving = ref<string | null>(null)
+
+  const canMove = computed(() => descriptor.value?.capabilities.includes("MOVE") ?? false)
 
   const matching = computed(() => {
     const query = search.value.trim().toLowerCase()
@@ -72,8 +82,10 @@ export function useTargetOverview() {
     try {
       const descriptors = await fetchTargetDescriptors()
       descriptor.value = descriptors.find((item) => item.system === system) ?? null
-      targets.value = descriptor.value?.capabilities.includes("CATALOG")
-        ? await fetchTargetOptions(system)
+      const hasCatalog = descriptor.value?.capabilities.includes("CATALOG") ?? false
+      targets.value = hasCatalog ? await fetchTargetOptions(system) : []
+      folderNames.value = descriptor.value?.capabilities.includes("MOVE")
+        ? await fetchTargetFolders(system)
         : []
     } catch (err: unknown) {
       errorMessage.value = (err as Error)?.message ?? "Could not load the targets."
@@ -82,5 +94,38 @@ export function useTargetOverview() {
     }
   }
 
-  return {loading, errorMessage, descriptor, targets, search, matching, folders, unlinkedCount, load}
+  /**
+   * File one target elsewhere. The row is updated from what the api answers rather than from
+   * what was asked for, so the page shows where the target actually ended up.
+   */
+  async function move(system: TargetSystem, target: ExternalTarget, folder: string): Promise<boolean> {
+    moving.value = target.externalId
+    errorMessage.value = null
+    try {
+      const moved = await moveTargetToFolder(system, target.externalId, folder)
+      targets.value = targets.value.map((t) => (t.externalId === moved.externalId ? moved : t))
+      return true
+    } catch (err: unknown) {
+      errorMessage.value = (err as Error)?.message ?? "Could not move the target."
+      return false
+    } finally {
+      moving.value = null
+    }
+  }
+
+  return {
+    loading,
+    errorMessage,
+    descriptor,
+    targets,
+    search,
+    matching,
+    folders,
+    folderNames,
+    unlinkedCount,
+    canMove,
+    moving,
+    load,
+    move,
+  }
 }

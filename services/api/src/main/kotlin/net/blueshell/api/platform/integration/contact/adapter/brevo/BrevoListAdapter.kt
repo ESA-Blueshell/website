@@ -8,6 +8,8 @@ import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateListRequest
+import net.blueshell.clients.brevo.model.UpdateListRequest
+import net.blueshell.clients.brevo.model.GetProcessesSortParameter
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -46,6 +48,29 @@ class BrevoListAdapter(
 ) : ContactListAdapter {
 
     override val system = ContactSystem.BREVO
+
+    override fun moveList(externalListId: Long, folderId: Long) {
+        log.info("Moving Brevo list {} to folder {}", externalListId, folderId)
+        try {
+            // Brevo accepts a name or a folder in one call but not both, so this only moves.
+            val req = UpdateListRequest()
+            req.folderId = folderId
+            contactsApi.updateList(externalListId, req)
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to move Brevo list {} to folder {}", externalListId, folderId, e)
+            throw ContactServiceException("Failed to move list", e)
+        }
+    }
+
+    override fun listFolders(): Map<Long, String> =
+        try {
+            contactsApi.getFolders(FOLDER_PAGE_LIMIT, 0, GetProcessesSortParameter.ASC)
+                .folders.orEmpty()
+                .associate { it.id to it.name }
+        } catch (e: RestClientResponseException) {
+            log.error("Failed to read Brevo folders", e)
+            throw ContactServiceException("Failed to read folders", e)
+        }
 
     override fun createList(name: String, folderName: String?): Long {
         val safeName = sanitizeForLog(name)
@@ -200,6 +225,8 @@ class BrevoListAdapter(
     }
 
     companion object {
+        /** Folders are few; one page covers any real account. */
+        private const val FOLDER_PAGE_LIMIT = 50L
         private val log = LoggerFactory.getLogger(BrevoListAdapter::class.java)
     }
 }

@@ -875,6 +875,16 @@ export type MissingRow = {
     userId: number;
 };
 
+/**
+ * Where to file a target.
+ */
+export type MoveTargetRequest = {
+    /**
+     * The folder to move the target into. Must already exist in the system.
+     */
+    folder: string;
+};
+
 export type PageMetadata = {
     number?: number;
     size?: number;
@@ -1093,7 +1103,7 @@ export type SwitchTargetRequest = {
 };
 
 export type TargetDescriptor = {
-    capabilities: Array<'CATALOG' | 'CREATE' | 'READ_MEMBERS' | 'WRITE_MEMBERS' | 'DELETE'>;
+    capabilities: Array<'CATALOG' | 'CREATE' | 'READ_MEMBERS' | 'WRITE_MEMBERS' | 'DELETE' | 'MOVE'>;
     folderLabel?: string | null;
     idLabel: string;
     kind: CohortKind;
@@ -4105,6 +4115,93 @@ export type SearchCohortTargetsResponses = {
 };
 
 export type SearchCohortTargetsResponse = SearchCohortTargetsResponses[keyof SearchCohortTargetsResponses];
+
+export type ListCohortTargetFoldersData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders';
+};
+
+export type ListCohortTargetFoldersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListCohortTargetFoldersError = ListCohortTargetFoldersErrors[keyof ListCohortTargetFoldersErrors];
+
+export type ListCohortTargetFoldersResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type ListCohortTargetFoldersResponse = ListCohortTargetFoldersResponses[keyof ListCohortTargetFoldersResponses];
+
+export type MoveCohortTargetData = {
+    body: MoveTargetRequest;
+    path: {
+        system: TargetSystem;
+        externalId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/{externalId}/folder';
+};
+
+export type MoveCohortTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MoveCohortTargetError = MoveCohortTargetErrors[keyof MoveCohortTargetErrors];
+
+export type MoveCohortTargetResponses = {
+    /**
+     * OK
+     */
+    200: ExternalTarget;
+};
+
+export type MoveCohortTargetResponse = MoveCohortTargetResponses[keyof MoveCohortTargetResponses];
 
 export type FindCohortsData = {
     body?: never;

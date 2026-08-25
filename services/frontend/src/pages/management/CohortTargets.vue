@@ -1,14 +1,43 @@
 <script lang="ts" setup>
-import {onMounted} from "vue"
+import {onMounted, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import {useTargetOverview} from "@/domains/cohorts/composables/useTargetOverview"
 import {TargetSystem} from "@/services/api"
+import type {ExternalTarget} from "@/domains/cohorts/adapters/cohorts"
+import BaseModal from "@/components/common/modals/BaseModal.vue"
 
 defineOptions({name: "CohortTargets"})
 
-const {loading, errorMessage, descriptor, targets, search, folders, unlinkedCount, load} =
-  useTargetOverview()
+const {
+  loading,
+  errorMessage,
+  descriptor,
+  targets,
+  search,
+  folders,
+  folderNames,
+  unlinkedCount,
+  canMove,
+  moving,
+  load,
+  move,
+} = useTargetOverview()
+
+/** The target being filed elsewhere, and where to. */
+const movingTarget = ref<ExternalTarget | null>(null)
+const destination = ref<string | null>(null)
+
+function openMove(target: ExternalTarget) {
+  movingTarget.value = target
+  destination.value = target.folderLabel ?? null
+}
+
+async function confirmMove() {
+  const target = movingTarget.value
+  if (!target || !destination.value) return
+  if (await move(TargetSystem.BREVO, target, destination.value)) movingTarget.value = null
+}
 
 onMounted(() => void load(TargetSystem.BREVO))
 </script>
@@ -89,6 +118,16 @@ onMounted(() => void load(TargetSystem.BREVO))
                     {{ target.memberCount ?? "—" }} contacts
                   </span>
                   <!-- A target nothing points at is either finished with or a mistake. -->
+                  <v-btn
+                    v-if="canMove"
+                    :data-testid="`cohort-target-move-${target.externalId}`"
+                    :loading="moving === target.externalId"
+                    size="small"
+                    variant="text"
+                    @click="openMove(target)"
+                  >
+                    Move
+                  </v-btn>
                   <v-chip
                     :color="target.linkedCohortId == null ? undefined : 'primary'"
                     :data-testid="`cohort-target-link-${target.externalId}`"
@@ -109,6 +148,28 @@ onMounted(() => void load(TargetSystem.BREVO))
           :subtitle="search ? 'Nothing matches that search.' : 'This system reports no targets.'"
           testid="cohort-targets-empty"
         />
+        <base-modal
+          :model-value="movingTarget !== null"
+          :save-disabled="!destination || destination === movingTarget?.folderLabel"
+          :save-loading="moving !== null"
+          save-label="Move"
+          save-testid="cohort-target-move-confirm"
+          show-save
+          testid="cohort-target-move-dialog"
+          :title="`Move ${movingTarget?.label ?? ''}`"
+          @cancel="movingTarget = null"
+          @save="confirmMove"
+          @update:model-value="(open) => { if (!open) movingTarget = null }"
+        >
+          <!-- Only folders the system actually has: a name that is not one of these would
+               be refused, so it is not offered. -->
+          <v-select
+            v-model="destination"
+            data-testid="cohort-target-move-folder"
+            :items="folderNames"
+            label="Folder"
+          />
+        </base-modal>
       </div>
     </v-container>
   </v-main>

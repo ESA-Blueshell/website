@@ -25,6 +25,29 @@ class TargetCatalog(
         }
     }
 
+    /** Every folder the system has, so a destination can be chosen rather than typed. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun folders(system: TargetSystem): List<String> = strategies.require(system).folders()
+
+    /**
+     * File a target under another folder.
+     *
+     * A system that cannot move one says so through its capabilities, and asking anyway is a
+     * bad request rather than a fault.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun move(system: TargetSystem, externalId: String, folder: String): ExternalTarget {
+        val strategy = strategies.require(system)
+        require(strategy.descriptor.supports(TargetCapability.MOVE)) {
+            "$system cannot move a target between folders"
+        }
+        val target = strategy.resolve(externalId)
+            ?: throw IllegalArgumentException("No target $externalId in $system")
+
+        val moved = strategy.move(target, folder)
+        return moved.copy(linkedCohortId = linkedCohorts(system)[moved.externalId])
+    }
+
     fun descriptors(): List<TargetDescriptor> = strategies.descriptors()
 
     private fun linkedCohorts(system: TargetSystem): Map<String, Long> =

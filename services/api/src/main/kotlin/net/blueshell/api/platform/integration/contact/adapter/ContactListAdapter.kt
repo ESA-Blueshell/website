@@ -21,6 +21,16 @@ interface ContactListAdapter {
     fun removeFromList(externalUserId: Long, externalListId: Long)
     fun deleteList(externalListId: Long)
 
+    /**
+     * Move a list into a folder. Brevo takes a name or a folder in one call but not both,
+     * so this only ever moves.
+     */
+    fun moveList(externalListId: Long, folderId: Long): Unit =
+        throw UnsupportedOperationException("This adapter cannot move a list between folders")
+
+    /** Every folder, as id to name. */
+    fun listFolders(): Map<Long, String> = emptyMap()
+
     /** Lists all members currently present in the given external list. */
     fun listMembers(externalListId: Long): List<ContactListMember>
 }

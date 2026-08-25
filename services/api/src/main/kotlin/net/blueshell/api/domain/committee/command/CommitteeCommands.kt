@@ -12,9 +12,9 @@ data class CommitteeMemberData(
     @field:NotNull(message = "User ID is required")
     var userId: Long,
 
-    @field:NotBlank(message = "Role is required")
-    @field:Size(min = 1, max = 50, message = "Role must be 1-50 characters")
-    var role: String
+    // Absent for a member who simply sits on the committee. Size tolerates null.
+    @field:Size(max = 50, message = "Role must be at most 50 characters")
+    var role: String?
 )
 
 data class FindCommitteesForCurrentUserCommand(

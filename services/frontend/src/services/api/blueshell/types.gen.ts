@@ -316,7 +316,10 @@ export type CommitteeDetailResponse = {
 };
 
 export type CommitteeMemberRequest = {
-    role: string;
+    /**
+     * What this member does on the committee. Omitted for a member who simply sits on it, which is most of them.
+     */
+    role?: string | null;
     userId: number;
 };
 

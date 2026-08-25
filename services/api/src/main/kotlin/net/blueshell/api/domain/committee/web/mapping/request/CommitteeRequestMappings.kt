@@ -10,7 +10,9 @@ import net.blueshell.api.domain.committee.web.dto.request.UpdateCommitteeRequest
 private fun CommitteeMemberRequest.asData(): CommitteeMemberData =
     CommitteeMemberData(
         userId = this.userId!!,
-        role = this.role!!,
+        // Blank and absent are the same thing, and the column already holds null for it,
+        // so they collapse to one representation here rather than two in the data.
+        role = this.role?.takeIf { it.isNotBlank() },
     )
 
 fun CreateCommitteeRequest.asCommand(): CreateCommitteeCommand =

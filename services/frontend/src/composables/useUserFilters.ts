@@ -16,8 +16,9 @@ export function useUserFilters(
 ) {
   // searchInput is bound to the v-text-field (instant typing feedback).
   // search is the debounced value that filteredRows depends on — unit tests set it directly.
-  const searchInput = ref("")
-  const search = ref("")
+  // Both are nullable: the field is `clearable`, and its clear button writes null.
+  const searchInput = ref<string | null>("")
+  const search = ref<string | null>("")
   // sortKey is null when no column sort is active (natural/default order).
   const sortKey = ref<SortKey | null>("name")
   const sortAsc = ref(true)
@@ -52,7 +53,7 @@ export function useUserFilters(
 
   const filteredRows = computed<MemberRow[]>(() => {
     // Search against precomputed per-user haystacks — cheap on every keystroke.
-    const q = search.value.trim().toLowerCase()
+    const q = (search.value ?? "").trim().toLowerCase()
     const terms = q ? q.split(/\s+/) : []
 
     return [...rows.value.filter((r) => {

@@ -45,6 +45,18 @@ describe("useUserFilters", () => {
     expect(filteredRows.value[0]!.id).toBe(1)
   })
 
+  it("treats the null written by the field's clear button as no search", () => {
+    const rows = ref([makeRow(1, {fullName: "Alice Smith"}), makeRow(2, {fullName: "Bob Jones"})])
+    const index = ref(new Map([[1, "alice smith"], [2, "bob jones"]]))
+    const {filteredRows, search} = useUserFilters(rows, index)
+
+    search.value = "alice"
+    expect(filteredRows.value).toHaveLength(1)
+
+    search.value = null
+    expect(filteredRows.value).toHaveLength(2)
+  })
+
   it("multi-word search requires all terms to match", () => {
     const rows = ref([makeRow(1, {fullName: "Alice Smith"}), makeRow(2, {fullName: "Alice Jones"})])
     const index = ref(new Map([[1, "alice smith"], [2, "alice jones"]]))

@@ -1,0 +1,39 @@
+// Furniture shared by the management pages.
+//
+// Each of these pages used to carry its own copy of the card below, and the copies had
+// drifted: identical background and shadow everywhere, but a header padded `18px 18px 14px`
+// on one page and `10px 14px 8px` on three others. Same intent, no home — so this is the
+// home, and the roomier spacing won because it matches the dialog chrome.
+//
+// Loaded once from main.scss. Do not move these into housestyle.scss: that file is injected
+// into every single-file component, so rules placed there are emitted once per component.
+
+.manager-card {
+  background: rgba(var(--v-theme-surface), 0.92);
+  box-shadow: none;
+}
+
+// The heading takes the room and the actions keep their size, so a page no longer lays this
+// out inline and no two pages do it differently.
+.manager-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 18px 14px;
+}
+
+.manager-card__heading {
+  min-width: 0;
+}
+
+.manager-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.manager-card__body {
+  padding: 14px 18px 18px;
+}

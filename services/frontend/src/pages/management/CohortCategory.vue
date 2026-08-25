@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
+import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
@@ -92,22 +93,10 @@ watch(category, async (next) => {
           All categories
         </v-btn>
 
-        <v-card
-          class="manager-card"
-          rounded="lg"
-          variant="flat"
+        <manager-card
+          :eyebrow="categoryLabel"
+          :subtitle="`${visibleSubjects.length} cohort${visibleSubjects.length === 1 ? '' : 's'}`"
         >
-          <div class="manager-card__header">
-            <div>
-              <p class="text-overline mb-0">
-                {{ categoryLabel }}
-              </p>
-              <p class="text-caption text-medium-emphasis mb-0">
-                {{ visibleSubjects.length }} cohort{{ visibleSubjects.length === 1 ? "" : "s" }}
-              </p>
-            </div>
-          </div>
-
           <v-list
             data-testid="cohort-subject-list"
             density="comfortable"
@@ -138,7 +127,7 @@ watch(category, async (next) => {
               </template>
             </v-list-item>
           </v-list>
-        </v-card>
+        </manager-card>
       </div>
     </v-container>
   </v-main>
@@ -147,15 +136,6 @@ watch(category, async (next) => {
 <style lang="scss" scoped>
 .category-page {
   max-width: 980px;
-}
-
-.manager-card {
-  background: rgba(var(--v-theme-surface), 0.92);
-  box-shadow: none;
-}
-
-.manager-card__header {
-  padding: 10px 14px 8px;
 }
 
 .subject-title {

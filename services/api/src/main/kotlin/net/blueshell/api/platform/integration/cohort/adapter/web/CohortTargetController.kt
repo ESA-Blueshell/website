@@ -8,7 +8,9 @@ import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.security.access.prepost.PreAuthorize
 import jakarta.validation.Valid
+import net.blueshell.api.platform.integration.cohort.adapter.web.dto.BulkMoveTargetsRequest
 import net.blueshell.api.platform.integration.cohort.adapter.web.dto.MoveTargetRequest
+import net.blueshell.api.platform.integration.cohort.application.BulkTargetMoveResult
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -46,4 +48,11 @@ class CohortTargetController(
         @PathVariable externalId: String,
         @Valid @RequestBody request: MoveTargetRequest,
     ): ExternalTarget = catalog.move(system, externalId, request.folder)
+
+    @PutMapping("/{system}/folder")
+    @Operation(operationId = "moveCohortTargets")
+    fun moveAll(
+        @PathVariable system: TargetSystem,
+        @Valid @RequestBody request: BulkMoveTargetsRequest,
+    ): BulkTargetMoveResult = catalog.moveAll(system, request.externalIds, request.folder)
 }

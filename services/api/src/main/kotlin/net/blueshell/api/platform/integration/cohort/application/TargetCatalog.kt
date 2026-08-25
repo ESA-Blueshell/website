@@ -4,6 +4,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
 import net.blueshell.api.platform.integration.cohort.port.out.TargetCapability
 import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
+import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -46,6 +47,69 @@ class TargetCatalog(
 
         val moved = strategy.move(target, folder)
         return moved.copy(linkedCohortId = linkedCohorts(system)[moved.externalId])
+    }
+
+    /**
+     * File several targets under one folder.
+     *
+     * The whole selection is checked first — the folder has to exist and every id has to
+     * resolve — and a selection that fails is refused with nothing sent, which is the contract
+     * the bulk contribution actions use. Past that the moves are one call each to a system with
+     * no transaction behind it, so a later failure leaves the earlier moves standing; the result
+     * names both halves rather than picking one to report.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun moveAll(system: TargetSystem, externalIds: List<String>, folder: String): BulkTargetMoveResult {
+        val strategy = strategies.require(system)
+        require(strategy.descriptor.supports(TargetCapability.MOVE)) {
+            "$system cannot move a target between folders"
+        }
+
+        val ids = externalIds.distinct()
+        val resolved = ids.associateWith { strategy.resolve(it) }
+        val missing = ids.filter { resolved[it] == null }
+        val known = strategy.folders()
+        val destination = known.firstOrNull { it.equals(folder, ignoreCase = true) }
+
+        val violations = buildList {
+            if (destination == null) {
+                add(
+                    BulkSelectionRejected.Violation(
+                        field = "folder",
+                        code = BulkSelectionRejected.UNKNOWN_FOLDER,
+                        message = "There is no folder called \"$folder\" in $system.",
+                        refs = listOf(folder),
+                    ),
+                )
+            }
+            if (missing.isNotEmpty()) {
+                add(
+                    BulkSelectionRejected.Violation(
+                        field = "externalIds",
+                        code = BulkSelectionRejected.UNKNOWN_TARGETS,
+                        message = "${missing.size} of the selected targets no longer exist in $system.",
+                        refs = missing,
+                    ),
+                )
+            }
+        }
+        if (violations.isNotEmpty()) throw BulkSelectionRejected("BulkMoveTargetsRequest", violations)
+
+        val linked = linkedCohorts(system)
+        val moved = mutableListOf<ExternalTarget>()
+        val failed = mutableListOf<FailedTargetMove>()
+        for (id in ids) {
+            val target = resolved.getValue(id)!!
+            try {
+                val result = strategy.move(target, destination!!)
+                moved += result.copy(linkedCohortId = linked[result.externalId])
+            } catch (ex: RuntimeException) {
+                // The system refused this one. The moves already made stand, so the id is
+                // reported rather than the whole call failing and hiding them.
+                failed += FailedTargetMove(id, target.label, ex.message ?: "The system refused the move.")
+            }
+        }
+        return BulkTargetMoveResult(moved = moved, failed = failed)
     }
 
     fun descriptors(): List<TargetDescriptor> = strategies.descriptors()

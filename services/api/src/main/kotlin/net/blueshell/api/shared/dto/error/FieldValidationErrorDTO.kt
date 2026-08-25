@@ -29,5 +29,14 @@ data class FieldValidationErrorDTO(
             "Lets a client name the offending rows and reload them rather than restate the whole request.",
         example = "[42, 57]",
     )
-    var values: List<Long>? = null
+    var values: List<Long>? = null,
+
+    @JvmField
+    @field:Schema(
+        description = "Identifiers the error refers to when they are not numeric — an external " +
+            "system's own ids, for instance. The counterpart of `values`; an error carries one or " +
+            "the other, never both.",
+        example = "[\"7\", \"33\"]",
+    )
+    var refs: List<String>? = null
 )

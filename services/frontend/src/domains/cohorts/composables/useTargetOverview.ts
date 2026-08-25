@@ -4,10 +4,13 @@ import {
   fetchTargetFolders,
   fetchTargetOptions,
   moveTargetToFolder,
+  moveTargetsToFolder,
+  type BulkTargetMoveResult,
   type ExternalTarget,
   type TargetDescriptor,
   type TargetSystem,
 } from "@/domains/cohorts/adapters/cohorts"
+import type {BulkRejection} from "@/utils/bulkRejection"
 
 /** A folder and the targets filed under it. */
 export interface TargetFolder {
@@ -37,6 +40,17 @@ export function useTargetOverview() {
    */
   const folderNames = ref<string[]>([])
   const moving = ref<string | null>(null)
+
+  /** The external ids ticked for a move. A Set, because the page asks it per row. */
+  const selection = ref<Set<string>>(new Set())
+  const movingSelection = ref(false)
+  /** The api refused the whole selection; nothing was sent. */
+  const rejection = ref<BulkRejection | null>(null)
+  /** The selection was valid but the system would not move these. */
+  const failedMoves = ref<BulkTargetMoveResult["failed"]>([])
+
+  const selectedIds = computed(() => [...selection.value])
+  const selectedCount = computed(() => selection.value.size)
 
   const canMove = computed(() => descriptor.value?.capabilities.includes("MOVE") ?? false)
 
@@ -72,6 +86,35 @@ export function useTargetOverview() {
         linkedCount: group.filter((t) => t.linkedCohortId != null).length,
       }))
   })
+
+  /** Whether every target the search currently shows is ticked. */
+  const allMatchingSelected = computed(() =>
+    matching.value.length > 0 && matching.value.every((target) => selection.value.has(target.externalId)))
+
+  function isSelected(externalId: string): boolean {
+    return selection.value.has(externalId)
+  }
+
+  function toggleSelection(externalId: string): void {
+    // Replaced rather than mutated: a Set mutated in place is the same object, and the
+    // computeds reading it would not re-run.
+    const next = new Set(selection.value)
+    if (!next.delete(externalId)) next.add(externalId)
+    selection.value = next
+  }
+
+  /** Ticks every target the search shows, or clears them if they are already all ticked. */
+  function toggleAllMatching(): void {
+    selection.value = allMatchingSelected.value
+      ? new Set()
+      : new Set(matching.value.map((target) => target.externalId))
+  }
+
+  function clearSelection(): void {
+    selection.value = new Set()
+    rejection.value = null
+    failedMoves.value = []
+  }
 
   /** Targets nothing points at: either finished with, or made by mistake. */
   const unlinkedCount = computed(() => targets.value.filter((t) => t.linkedCohortId == null).length)
@@ -113,6 +156,40 @@ export function useTargetOverview() {
     }
   }
 
+  /**
+   * File everything ticked under one folder.
+   *
+   * A refused selection is kept as such rather than reported as an error: nothing was sent, so
+   * the ticks stay where they were and the reasons name what is wrong with them. A selection
+   * that was accepted clears, minus anything the system would not move — those keep their ticks
+   * so a retry does not need them found again.
+   */
+  async function moveSelected(system: TargetSystem, folder: string): Promise<boolean> {
+    if (selection.value.size === 0) return false
+    movingSelection.value = true
+    errorMessage.value = null
+    rejection.value = null
+    failedMoves.value = []
+    try {
+      const outcome = await moveTargetsToFolder(system, selectedIds.value, folder)
+      if (outcome.status === "refused") {
+        rejection.value = outcome.rejection
+        return false
+      }
+      const {moved, failed} = outcome.result
+      const byId = new Map(moved.map((target) => [target.externalId, target]))
+      targets.value = targets.value.map((target) => byId.get(target.externalId) ?? target)
+      failedMoves.value = failed
+      selection.value = new Set(failed.map((row) => row.externalId))
+      return failed.length === 0
+    } catch (err: unknown) {
+      errorMessage.value = (err as Error)?.message ?? "Could not move the targets."
+      return false
+    } finally {
+      movingSelection.value = false
+    }
+  }
+
   return {
     loading,
     errorMessage,
@@ -125,7 +202,19 @@ export function useTargetOverview() {
     unlinkedCount,
     canMove,
     moving,
+    selection,
+    selectedIds,
+    selectedCount,
+    allMatchingSelected,
+    movingSelection,
+    rejection,
+    failedMoves,
+    isSelected,
+    toggleSelection,
+    toggleAllMatching,
+    clearSelection,
     load,
     move,
+    moveSelected,
   }
 }

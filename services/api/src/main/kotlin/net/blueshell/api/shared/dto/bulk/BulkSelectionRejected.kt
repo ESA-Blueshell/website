@@ -26,8 +26,14 @@ class BulkSelectionRejected(
     data class Violation(
         val field: String,
         val code: String,
-        val values: List<Long>,
         val message: String,
+        val values: List<Long> = emptyList(),
+        /**
+         * The offending identifiers when they are not numeric. A user is a `Long`; a list in
+         * an external system is whatever that system calls it, which for Brevo is a numeric
+         * string and for Google Workspace is an address. One or the other is populated.
+         */
+        val refs: List<String> = emptyList(),
     )
 
     companion object {
@@ -46,5 +52,14 @@ class BulkSelectionRejected(
 
         /** The selection names a contribution period that no longer exists. */
         const val UNKNOWN_PERIOD: String = "UnknownContributionPeriodId"
+
+        /** The selection names targets the external system does not have. */
+        const val UNKNOWN_TARGETS: String = "UnknownTargetIds"
+
+        /**
+         * The destination folder is not one the system has. Refused rather than created,
+         * so a typo cannot leave a near-duplicate of a folder already there.
+         */
+        const val UNKNOWN_FOLDER: String = "UnknownFolder"
     }
 }

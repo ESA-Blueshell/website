@@ -5,6 +5,7 @@ import {
   fetchTargetFolders,
   fetchTargetOptions,
   moveTargetToFolder,
+  moveTargetsToFolder,
   type ExternalTarget,
   type TargetDescriptor,
 } from "@/domains/cohorts/adapters/cohorts"
@@ -17,6 +18,7 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
     fetchTargetOptions: vi.fn(),
     fetchTargetFolders: vi.fn(),
     moveTargetToFolder: vi.fn(),
+    moveTargetsToFolder: vi.fn(),
   }
 })
 
@@ -179,6 +181,133 @@ describe("useTargetOverview", () => {
       expect(o.errorMessage.value).toContain("No folder named")
       expect(o.targets.value[0]!.folderLabel).toBe("Newsletter")
       expect(o.moving.value).toBeNull()
+    })
+  })
+
+  describe("moving a selection", () => {
+    const three = [
+      target("1", "A", "Newsletter"),
+      target("2", "B", "Newsletter"),
+      target("3", "C", "Contributions"),
+    ]
+
+    it("ticks and unticks a target", async () => {
+      const o = await loaded(three, movable)
+
+      o.toggleSelection("2")
+      expect(o.isSelected("2")).toBe(true)
+      expect(o.selectedCount.value).toBe(1)
+
+      o.toggleSelection("2")
+      expect(o.isSelected("2")).toBe(false)
+    })
+
+    it("selects everything the search currently shows, not everything there is", async () => {
+      const o = await loaded(three, movable)
+      o.search.value = "Newsletter"
+
+      o.toggleAllMatching()
+
+      expect(o.selectedIds.value.sort()).toEqual(["1", "2"])
+      expect(o.allMatchingSelected.value).toBe(true)
+    })
+
+    it("clears the ticks when they are all already ticked", async () => {
+      const o = await loaded(three, movable)
+      o.toggleAllMatching()
+      o.toggleAllMatching()
+
+      expect(o.selectedCount.value).toBe(0)
+    })
+
+    it("moves the ticked targets and takes each row from the api's answer", async () => {
+      const o = await loaded(three, movable)
+      o.toggleSelection("1")
+      o.toggleSelection("2")
+      vi.mocked(moveTargetsToFolder).mockResolvedValue({
+        status: "moved",
+        result: {
+          moved: [target("1", "A", "Contributions"), target("2", "B", "Contributions")],
+          failed: [],
+        },
+      })
+
+      const ok = await o.moveSelected("BREVO", "Contributions")
+
+      expect(ok).toBe(true)
+      expect(moveTargetsToFolder).toHaveBeenCalledWith("BREVO", ["1", "2"], "Contributions")
+      expect(o.targets.value.map((t) => t.folderLabel)).toEqual([
+        "Contributions", "Contributions", "Contributions",
+      ])
+      // Nothing left to retry, so the ticks go.
+      expect(o.selectedCount.value).toBe(0)
+    })
+
+    it("keeps the ticks and the reasons when the api refuses the selection whole", async () => {
+      const o = await loaded(three, movable)
+      o.toggleSelection("1")
+      vi.mocked(moveTargetsToFolder).mockResolvedValue({
+        status: "refused",
+        rejection: {
+          reasons: [{
+            code: "UnknownTargetIds",
+            field: "externalIds",
+            message: "1 of the selected targets no longer exist.",
+            userIds: [],
+            refs: ["1"],
+          }],
+          namedUserIds: [],
+          namedRefs: ["1"],
+          requiresReload: true,
+        },
+      })
+
+      const ok = await o.moveSelected("BREVO", "Contributions")
+
+      expect(ok).toBe(false)
+      expect(o.rejection.value?.requiresReload).toBe(true)
+      expect(o.rejection.value?.namedRefs).toEqual(["1"])
+      // Nothing was sent, so the row is untouched and the tick stays for a correction.
+      expect(o.targets.value[0]!.folderLabel).toBe("Newsletter")
+      expect(o.isSelected("1")).toBe(true)
+    })
+
+    it("keeps only the failures ticked when the system moved some but not all", async () => {
+      const o = await loaded(three, movable)
+      o.toggleAllMatching()
+      vi.mocked(moveTargetsToFolder).mockResolvedValue({
+        status: "moved",
+        result: {
+          moved: [target("1", "A", "Contributions")],
+          failed: [{externalId: "2", label: "B", message: "Brevo said no"}],
+        },
+      })
+
+      const ok = await o.moveSelected("BREVO", "Contributions")
+
+      expect(ok).toBe(false)
+      // The move that worked stands — there is no undo for it.
+      expect(o.targets.value[0]!.folderLabel).toBe("Contributions")
+      expect(o.failedMoves.value).toHaveLength(1)
+      // Only the one to try again, so a retry does not have to be reassembled by hand.
+      expect(o.selectedIds.value).toEqual(["2"])
+    })
+
+    it("sends nothing when nothing is ticked", async () => {
+      const o = await loaded(three, movable)
+
+      expect(await o.moveSelected("BREVO", "Contributions")).toBe(false)
+      expect(moveTargetsToFolder).not.toHaveBeenCalled()
+    })
+
+    it("clearing drops the ticks and the reasons together", async () => {
+      const o = await loaded(three, movable)
+      o.toggleSelection("1")
+      o.clearSelection()
+
+      expect(o.selectedCount.value).toBe(0)
+      expect(o.rejection.value).toBeNull()
+      expect(o.failedMoves.value).toEqual([])
     })
   })
 })

@@ -49,8 +49,8 @@ class BulkSelectionProblemDetailsAdviceTest {
     @Test
     fun `each reason carries its code, field and the ids it refers to`() {
         val detail = refusal(
-            BulkSelectionRejected.Violation("userIds", BulkSelectionRejected.DELETED_USERS, listOf(42L), "Deleted."),
-            BulkSelectionRejected.Violation("userIds", BulkSelectionRejected.HONORARY_USERS, listOf(57L, 58L), "Honorary."),
+            BulkSelectionRejected.Violation(field = "userIds", code = BulkSelectionRejected.DELETED_USERS, message = "Deleted.", values = listOf(42L)),
+            BulkSelectionRejected.Violation(field = "userIds", code = BulkSelectionRejected.HONORARY_USERS, message = "Honorary.", values = listOf(57L, 58L)),
         )
 
         val errors = errorsOf(detail)
@@ -65,7 +65,7 @@ class BulkSelectionProblemDetailsAdviceTest {
     @Test
     fun `the ids survive serialisation as numbers rather than a rendered string`() {
         val detail = refusal(
-            BulkSelectionRejected.Violation("userIds", BulkSelectionRejected.UNKNOWN_USERS, listOf(9_999_999L), "Gone."),
+            BulkSelectionRejected.Violation(field = "userIds", code = BulkSelectionRejected.UNKNOWN_USERS, message = "Gone.", values = listOf(9_999_999L)),
         )
 
         val values = errorsOf(detail)[0].get("values")

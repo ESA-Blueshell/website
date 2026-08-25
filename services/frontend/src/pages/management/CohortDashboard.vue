@@ -63,6 +63,10 @@ const CARDS: Card[] = [
   },
 ]
 
+/** What the engine holds in total, which is what the header claims. */
+const totalSubjects = computed(() => subjects.value.length)
+const totalMembers = computed(() => subjects.value.reduce((sum, s) => sum + s.memberCount, 0))
+
 const countsByCategory = computed<Record<CohortSubjectCategory, {subjects: number; members: number}>>(() => {
   const counts: Record<CohortSubjectCategory, {subjects: number; members: number}> = {
     [CohortSubjectCategory.COMMITTEES]: {subjects: 0, members: 0},
@@ -150,95 +154,95 @@ onMounted(async () => {
           {{ successMessage }}
         </v-alert>
 
-        <div class="dashboard-actions mb-3">
-          <v-btn
-            :disabled="!!triggering"
-            :loading="triggering === 'cohort.reconcile-contribution-periods'"
-            color="primary"
-            data-testid="cohort-action-reconcile-periods"
-            size="small"
-            variant="flat"
-            @click="reconcilePeriods"
-          >
-            Reconcile periods
-          </v-btn>
-          <v-btn
-            :disabled="!!triggering"
-            :loading="triggering === 'cohort.reconcile-all-users'"
-            color="primary"
-            data-testid="cohort-action-reconcile-users"
-            size="small"
-            variant="flat"
-            @click="reconcileAllUsers"
-          >
-            Re-evaluate all users
-          </v-btn>
-          <v-btn
-            data-testid="cohort-targets-link"
-            size="small"
-            :to="{name: 'cohortTargets'}"
-            variant="outlined"
-          >
-            Brevo targets
-          </v-btn>
-          <v-btn
-            :disabled="loading"
-            data-testid="cohort-refresh-btn"
-            size="small"
-            variant="outlined"
-            @click="refresh"
-          >
-            Refresh
-          </v-btn>
-        </div>
+        <!-- The engine's own state and the operations on it, where every other management
+             page puts them: in the header of the card that describes the thing. -->
+        <manager-card
+          eyebrow="Cohort engine"
+          spaced
+          :subtitle="`${totalSubjects} cohorts across ${CARDS.length} categories · ${totalMembers} memberships`"
+          testid="cohort-dashboard-summary"
+          title="Reconciliation"
+        >
+          <template #actions>
+            <v-btn
+              data-testid="cohort-targets-link"
+              size="small"
+              :to="{name: 'cohortTargets'}"
+              variant="outlined"
+            >
+              Brevo targets
+            </v-btn>
+            <v-btn
+              :disabled="loading"
+              data-testid="cohort-refresh-btn"
+              size="small"
+              variant="outlined"
+              @click="refresh"
+            >
+              Refresh
+            </v-btn>
+          </template>
 
-        <div class="category-grid">
-          <v-card
-            v-for="card in CARDS"
-            :key="card.category"
-            :data-testid="`cohort-category-card-${card.category.toLowerCase()}`"
-            class="category-card"
-            role="button"
-            tabindex="0"
-            variant="flat"
-            @click="openCategory(card.category)"
-            @keydown.enter.prevent="openCategory(card.category)"
-            @keydown.space.prevent="openCategory(card.category)"
-          >
-            <div class="category-card__header">
-              <v-icon
-                :icon="card.icon"
-                class="category-card__icon"
-                size="32"
-              />
-              <h2 class="category-card__title">
-                {{ card.title }}
-              </h2>
-            </div>
-            <p class="category-card__blurb">
-              {{ card.blurb }}
-            </p>
-            <div class="category-card__stats">
-              <div class="stat">
-                <div class="stat-value">
-                  {{ countsByCategory[card.category].subjects }}
+          <div class="d-flex flex-wrap gap-2">
+            <v-btn
+              color="primary"
+              data-testid="cohort-action-reconcile-periods"
+              :disabled="!!triggering"
+              :loading="triggering === 'cohort.reconcile-contribution-periods'"
+              size="small"
+              variant="flat"
+              @click="reconcilePeriods"
+            >
+              Reconcile periods
+            </v-btn>
+            <v-btn
+              color="primary"
+              data-testid="cohort-action-reconcile-users"
+              :disabled="!!triggering"
+              :loading="triggering === 'cohort.reconcile-all-users'"
+              size="small"
+              variant="flat"
+              @click="reconcileAllUsers"
+            >
+              Re-evaluate all users
+            </v-btn>
+          </div>
+        </manager-card>
+
+        <!-- The categories are navigation, so they read as a list of places to go rather
+             than as tiles that happen to be clickable. -->
+        <manager-card
+          eyebrow="Categories"
+          flush
+          testid="cohort-category-list"
+        >
+          <v-list density="comfortable">
+            <v-list-item
+              v-for="card in CARDS"
+              :key="card.category"
+              :data-testid="`cohort-category-card-${card.category.toLowerCase()}`"
+              :prepend-icon="card.icon"
+              :subtitle="card.blurb"
+              :title="card.title"
+              @click="openCategory(card.category)"
+            >
+              <template #append>
+                <div class="d-flex align-center category-counts">
+                  <span class="text-body-2">
+                    <strong>{{ countsByCategory[card.category].subjects }}</strong> cohorts
+                  </span>
+                  <span class="text-body-2 text-medium-emphasis">
+                    <strong>{{ countsByCategory[card.category].members }}</strong> members
+                  </span>
+                  <v-icon
+                    icon="mdi-chevron-right"
+                    size="20"
+                  />
                 </div>
-                <div class="stat-label">
-                  Cohorts
-                </div>
-              </div>
-              <v-divider vertical />
-              <div class="stat">
-                <div class="stat-value">
-                  {{ countsByCategory[card.category].members }}
-                </div>
-                <div class="stat-label">
-                  Members
-                </div>
-              </div>
-            </div>
-          </v-card>
-        </div>
+              </template>
+            </v-list-item>
+          </v-list>
+        </manager-card>
       </div>
     </v-container>
   </v-main>
@@ -249,81 +253,7 @@ onMounted(async () => {
   max-width: 980px;
 }
 
-.dashboard-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
-}
-
-.category-card {
-  background: rgba(var(--v-theme-surface), 0.92);
-  padding: 16px 18px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, outline-color 0.15s ease;
-  outline: 1px solid transparent;
-}
-
-.category-card:hover,
-.category-card:focus-visible {
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  outline-color: rgba(var(--v-theme-primary), 0.4);
-}
-
-.category-card__header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.category-card__icon {
-  color: rgba(var(--v-theme-primary), 0.85);
-}
-
-.category-card__title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.1;
-}
-
-.category-card__blurb {
-  margin: 0 0 12px;
-  font-size: 12.5px;
-  line-height: 1.35;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  min-height: 34px;
-}
-
-.category-card__stats {
-  display: flex;
-  align-items: stretch;
-  gap: 14px;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.stat-value {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.stat-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+.category-counts {
+  gap: 16px;
 }
 </style>

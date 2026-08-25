@@ -868,6 +868,27 @@ export type PasswordResetRequest = {
     token: string;
 };
 
+/**
+ * The activation email an account that has not been activated takes.
+ */
+export type PendingActivation = {
+    /**
+     * Which activation email applies to it.
+     */
+    purpose: TokenPurpose;
+    /**
+     * The account.
+     */
+    userId: number;
+};
+
+/**
+ * Which activation email applies to each account that has not been activated. Accounts that are already active do not appear.
+ */
+export type PendingActivationsResponse = {
+    activations: Array<PendingActivation>;
+};
+
 export enum PlatformType {
     FACEBOOK = 'FACEBOOK',
     LINKEDIN = 'LINKEDIN',
@@ -5128,6 +5149,47 @@ export type ResetPasswordResponses = {
 };
 
 export type ResetPasswordResponse = ResetPasswordResponses[keyof ResetPasswordResponses];
+
+export type PendingActivationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/recovery/pending-activations';
+};
+
+export type PendingActivationsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PendingActivationsError = PendingActivationsErrors[keyof PendingActivationsErrors];
+
+export type PendingActivationsResponses = {
+    /**
+     * OK
+     */
+    200: PendingActivationsResponse;
+};
+
+export type PendingActivationsResponse2 = PendingActivationsResponses[keyof PendingActivationsResponses];
 
 export type UserActivateData = {
     body: UserActivationRequest;

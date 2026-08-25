@@ -54,6 +54,7 @@
           >
             <recovery-user-row
               :action-type="actionType"
+              :pending-activation="pendingActivations[user.id] ?? null"
               :user="user"
               @action:done="emit('action:done')"
             />
@@ -76,7 +77,7 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import RecoveryUserRow from "../rows/RecoveryUserRow.vue"
-import type {UserDetailResponse} from "@/services/api"
+import type {TokenPurpose, UserDetailResponse} from "@/services/api"
 import {filterUsers} from "@/plugins/userFilter"
 
 const props = withDefaults(defineProps<{
@@ -85,9 +86,12 @@ const props = withDefaults(defineProps<{
   users: UserDetailResponse[]
   /** 'activation' => resend activation (inactive) | 'password' => password reset (active) | 'restore' => restore user */
   actionType: "activation" | "password" | "restore"
+  /** Which activation each account takes, keyed by user id. */
+  pendingActivations?: Record<number, TokenPurpose>
   startOpen?: boolean
 }>(), {
   panelKey: "",
+  pendingActivations: () => ({}),
   startOpen: false,
 })
 

@@ -25,33 +25,16 @@
             {{ restoreWindowLabel }}
           </v-chip>
 
-          <!-- One pair per email this account can be sent: read it, then send it. -->
-          <div
-            v-for="email in mailableEmails"
-            :key="email.purpose"
-            class="d-flex align-center"
+          <!-- Reading the email is how it is sent: the dialog carries the send button. -->
+          <v-btn
+            v-if="mailableEmail"
+            :data-testid="`recovery-user-send-btn-${mailableEmail.purpose}-${user.id}`"
+            class="btn-tight"
+            variant="text"
+            @click.stop="openEmail"
           >
-            <v-btn
-              :data-testid="`recovery-user-preview-btn-${email.purpose}-${user.id}`"
-              class="btn-tight"
-              icon="mdi-email-search-outline"
-              size="small"
-              :title="`Preview the ${email.noun}`"
-              variant="text"
-              @click.stop="previewEmail(email.purpose)"
-            />
-
-            <v-btn
-              :data-testid="`recovery-user-send-btn-${email.purpose}-${user.id}`"
-              :disabled="sending !== null"
-              :loading="sending === email.purpose"
-              class="btn-tight"
-              variant="text"
-              @click.stop="send(email.purpose)"
-            >
-              {{ email.label }}
-            </v-btn>
-          </div>
+            {{ mailableEmail.label }}
+          </v-btn>
 
           <v-btn
             v-if="actionType === 'restore'"
@@ -70,10 +53,13 @@
 
     <email-preview-dialog
       v-model="previewOpen"
+      :confirm-label="mailableEmail?.label ?? null"
+      :confirm-loading="sending !== null"
       :error="previewError"
       :loading="previewLoading"
       :preview="preview"
-      title="Email preview"
+      :title="mailableEmail?.label ?? 'Email preview'"
+      @confirm="sendPreviewed"
     />
   </div>
 </template>
@@ -90,6 +76,8 @@ import {useEmailPreview} from "@/composables/useEmailPreview"
 const props = defineProps<{
   user: UserDetailResponse
   actionType: "activation" | "password" | "restore"
+  /** Which activation this account takes; the row offers that one and no other. */
+  pendingActivation?: TokenPurpose | null
 }>()
 
 const emit = defineEmits<{
@@ -107,35 +95,36 @@ const {
   show: showPreview,
 } = useEmailPreview()
 
-/** The row supplies the fetch; the composable owns only the state around it. */
-const previewEmail = (purpose: TokenPurpose) =>
+/**
+ * Read before sending: the button opens the email itself, and the dialog carries the send.
+ * The row supplies the fetch; the composable owns only the state around it.
+ */
+const openEmail = () =>
   showPreview(async () => {
+    const purpose = mailableEmail.value?.purpose
+    if (!purpose) return null
     const {data} = await previewRecoveryEmail({path: {userId: props.user.id}, query: {purpose}})
     return data ?? null
   })
 
+const EMAIL_LABELS: Record<string, string> = {
+  [TokenPurpose.USER_ACTIVATION]: "Resend Activation",
+  [TokenPurpose.MEMBER_ACTIVATION]: "Resend Member Activation",
+  [TokenPurpose.PASSWORD_RESET]: "Send Password Reset",
+}
+
 /**
- * The recovery emails this row can send. An account created by the board activates
- * through a different email than one that signed itself up, and which of the two applies
- * is not something the list can tell, so both are offered rather than guessed at.
+ * The one recovery email this row sends. An account created by the board activates through
+ * a different email than one that signed itself up, and the server says which; offering
+ * both would ask the operator to answer a question the system already knows.
  */
-const mailableEmails = computed(() => {
-  if (props.actionType === "activation") {
-    return [
-      {purpose: TokenPurpose.USER_ACTIVATION, label: "Resend Activation", noun: "activation email"},
-      {
-        purpose: TokenPurpose.MEMBER_ACTIVATION,
-        label: "Resend Member Activation",
-        noun: "member activation email",
-      },
-    ]
-  }
-  if (props.actionType === "password") {
-    return [
-      {purpose: TokenPurpose.PASSWORD_RESET, label: "Send Password Reset", noun: "password reset email"},
-    ]
-  }
-  return []
+const mailableEmail = computed(() => {
+  const purpose = props.actionType === "activation"
+    ? props.pendingActivation ?? TokenPurpose.USER_ACTIVATION
+    : props.actionType === "password"
+      ? TokenPurpose.PASSWORD_RESET
+      : null
+  return purpose == null ? null : {purpose, label: EMAIL_LABELS[purpose] ?? "Send"}
 })
 
 const restoreWindowUrgent = computed(() => {
@@ -149,8 +138,9 @@ const restoreWindowLabel = computed(() => {
   return `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
 })
 
-const send = async (purpose: TokenPurpose) => {
-  if (sending.value !== null) return
+const sendPreviewed = async () => {
+  const purpose = mailableEmail.value?.purpose
+  if (!purpose || sending.value !== null) return
   sending.value = purpose
   try {
     if (purpose === TokenPurpose.PASSWORD_RESET) {
@@ -159,6 +149,7 @@ const send = async (purpose: TokenPurpose) => {
       // Purpose-driven, so a board-created account stays reachable once its link expired.
       await resendRecoveryEmail({path: {userId: props.user.id}, query: {purpose}, throwOnError: true})
     }
+    previewOpen.value = false
     emit("action:done")
   } catch (e: unknown) {
     $handleNetworkError(e)

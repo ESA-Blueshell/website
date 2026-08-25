@@ -9,6 +9,8 @@ import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
 import net.blueshell.api.domain.auth.web.mapping.request.asCommand
 import net.blueshell.api.domain.auth.web.dto.response.ActivationResponse
+import net.blueshell.api.domain.auth.web.dto.response.PendingActivation
+import net.blueshell.api.domain.auth.web.dto.response.PendingActivationsResponse
 import net.blueshell.api.domain.auth.web.dto.response.RecoveryEmailPreviewResponse
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.domain.telemetry.web.dto.response.RedirectResponse
@@ -77,6 +79,19 @@ class RecoveryController(
         }
         commandBus.dispatch(ResendRecoveryEmailCommand(userId, purpose))
     }
+
+    /**
+     * Which activation email each account that has not been activated takes, so a caller
+     * offers the one that applies rather than both and a guess.
+     */
+    @GetMapping("/pending-activations")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
+    fun pendingActivations(): PendingActivationsResponse =
+        PendingActivationsResponse(
+            commandBus.dispatch(FindPendingActivationsCommand())
+                .map { (userId, purpose) -> PendingActivation(userId, purpose) }
+                .sortedBy { it.userId },
+        )
 
     /**
      * Renders what a recovery email would look like for this user, without issuing the

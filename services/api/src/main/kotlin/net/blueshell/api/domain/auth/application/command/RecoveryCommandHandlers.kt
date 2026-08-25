@@ -16,6 +16,7 @@ import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.shared.command.CommandHandler
@@ -112,6 +113,16 @@ class ResendRecoveryEmailHandler(
             )
         }
     }
+}
+
+@Component
+class PendingActivationsHandler(
+    private val activationService: UserActivationService
+) : CommandHandler<FindPendingActivationsCommand, Map<Long, TokenPurpose>> {
+    override val commandType = FindPendingActivationsCommand::class
+
+    override fun handle(command: FindPendingActivationsCommand): Map<Long, TokenPurpose> =
+        activationService.pendingActivations()
 }
 
 @Component

@@ -87,6 +87,25 @@ class UserActivationService(
     }
 
     /**
+     * Which activation each account that has not been activated takes.
+     *
+     * An account created by the board activates through the member email; one that signed
+     * itself up activates through the user email. An unconsumed token of a kind is what
+     * records which happened, whether or not that link still works — so an account whose
+     * link has expired still reports the kind it needs, and stays reachable.
+     *
+     * Accounts with no token at all read as a self-signup, which is what an account with no
+     * board involvement is.
+     */
+    @Transactional(readOnly = true)
+    fun pendingActivations(): Map<Long, TokenPurpose> {
+        val memberActivations = tokenValidator.findUserIdsWithUnconsumedType(TokenPurpose.MEMBER_ACTIVATION)
+        return users.findAllDisabledIds().associateWith { userId ->
+            if (userId in memberActivations) TokenPurpose.MEMBER_ACTIVATION else TokenPurpose.USER_ACTIVATION
+        }
+    }
+
+    /**
      * Issue an activation link of a chosen kind, whether or not one is already outstanding.
      *
      * `requestActivationEmail` picks the kind from what happens to be outstanding and does

@@ -71,6 +71,9 @@ data class PreviewRecoveryEmailCommand(
     val purpose: TokenPurpose
 ) : Command<RecoveryEmailPreview>
 
+/** Which activation email each account that has not been activated takes. */
+class FindPendingActivationsCommand : Command<Map<Long, TokenPurpose>>
+
 data class IssueSignupSessionCommand(
     val userId: Long
 ) : Command<SignupSession>

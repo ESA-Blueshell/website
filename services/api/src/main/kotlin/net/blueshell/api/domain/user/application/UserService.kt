@@ -123,6 +123,9 @@ class UserService @Autowired constructor(
      * Used by cross-domain admin views (e.g. cohort dashboard) that resolve
      * a list of user ids to display rows in one round trip.
      */
+    /** Ids of accounts that have not been activated. */
+    fun findAllDisabledIds(): List<Long> = repository.findIdsByEnabledFalse()
+
     fun findAllByIds(ids: Collection<Long>): List<User> =
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 

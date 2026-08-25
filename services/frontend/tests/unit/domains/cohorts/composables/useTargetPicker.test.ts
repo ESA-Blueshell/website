@@ -60,6 +60,41 @@ describe("useTargetPicker", () => {
     expect(picker.filteredOptions.value.map((item) => item.externalId)).toEqual(["2"])
   })
 
+  it("offers the folders the catalogue mentions, once each and in order", async () => {
+    vi.mocked(fetchTargetDescriptors).mockResolvedValue(descriptors)
+    vi.mocked(fetchTargetOptions).mockResolvedValue([
+      target("1", "Guests", "Newsletter"),
+      target("2", "Paid members", "Contribution periods"),
+      target("3", "Unpaid members", "Contribution periods"),
+    ])
+    const picker = useTargetPicker()
+
+    await picker.load("BREVO")
+
+    // One entry per folder, sorted, so creating a target beside existing ones is a search
+    // rather than a recollection.
+    expect(picker.folderOptions.value).toEqual(["Contribution periods", "Newsletter"])
+  })
+
+  it("offers no folders before the catalogue is loaded", () => {
+    const picker = useTargetPicker()
+
+    expect(picker.folderOptions.value).toEqual([])
+  })
+
+  it("leaves out targets that name no folder", async () => {
+    vi.mocked(fetchTargetDescriptors).mockResolvedValue(descriptors)
+    vi.mocked(fetchTargetOptions).mockResolvedValue([
+      {...target("1", "Loose list", "Newsletter"), folderLabel: null},
+      target("2", "Filed list", "Newsletter"),
+    ])
+    const picker = useTargetPicker()
+
+    await picker.load("BREVO")
+
+    expect(picker.folderOptions.value).toEqual(["Newsletter"])
+  })
+
   it("does not load catalog options for descriptors without CATALOG", async () => {
     vi.mocked(fetchTargetDescriptors).mockResolvedValue(descriptors)
     const picker = useTargetPicker()

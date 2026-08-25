@@ -59,6 +59,21 @@ export function useTargetPicker() {
     return options.value.filter((target) => matches(target, q))
   })
 
+  /**
+   * The folders the catalogue mentions, in order, without repeats. Creating a target
+   * usually means putting it beside the ones already there, and the catalogue names each
+   * target's folder, so the folders that exist are already known — no extra call, and no
+   * folder offered that turns out not to be there.
+   *
+   * A folder holding no targets cannot appear, which is why the field stays free text: a
+   * name that is not on the list is still a name that can be typed.
+   */
+  const folderOptions = computed(() =>
+    [...new Set(options.value.map((target) => target.folderLabel).filter((f): f is string => !!f))].sort(
+      (a, b) => a.localeCompare(b),
+    ),
+  )
+
   async function load(system: TargetSystem): Promise<void> {
     loading.value = true
     errorMessage.value = null
@@ -137,6 +152,7 @@ export function useTargetPicker() {
     descriptor,
     options,
     filteredOptions,
+    folderOptions,
     hasCatalog,
     canCreate,
     form,

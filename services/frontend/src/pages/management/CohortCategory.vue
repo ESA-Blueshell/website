@@ -6,9 +6,11 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   type CohortSubjectSummary,
+  type CohortSubjectType,
   CohortSubjectCategory,
   findCohortSubjects,
 } from "@/services/api"
+import {COHORT_TYPE_ORDER, cohortTypeLabel} from "@/domains/cohorts/cohortTypeLabels"
 import store from "@/plugins/store"
 
 defineOptions({name: "CohortCategoryPage"})
@@ -56,6 +58,24 @@ const refresh = async () => {
     loading.value = false
   }
 }
+
+/**
+ * The cohorts of this category, grouped by what kind of cohort they are — committee
+ * members, members in a period, contribution paid. A flat list of thirty cohorts named
+ * after periods tells you nothing about which of them answer the same question.
+ */
+const groupedSubjects = computed(() => {
+  const byType = new Map<CohortSubjectType, CohortSubjectSummary[]>()
+  for (const subject of visibleSubjects.value) {
+    byType.set(subject.type, [...(byType.get(subject.type) ?? []), subject])
+  }
+  return COHORT_TYPE_ORDER.filter((type) => byType.has(type)).map((type) => ({
+    type,
+    label: cohortTypeLabel(type),
+    subjects: [...byType.get(type)!].sort((a, b) => a.label.localeCompare(b.label)),
+    memberCount: byType.get(type)!.reduce((sum, s) => sum + s.memberCount, 0),
+  }))
+})
 
 const openSubject = (subject: CohortSubjectSummary) => {
   void router.push({name: "cohortSubjectDetail", params: {id: subject.id}})
@@ -106,26 +126,34 @@ watch(category, async (next) => {
               subtitle="They appear automatically when the engine first encounters them."
               title="No cohorts yet."
             />
-            <v-list-item
-              v-for="subject in visibleSubjects"
-              :key="subject.id"
-              :data-testid="`cohort-subject-row-${subject.id}`"
-              role="button"
-              tabindex="0"
-              @click="openSubject(subject)"
-              @keydown.enter.prevent="openSubject(subject)"
-              @keydown.space.prevent="openSubject(subject)"
+            <template
+              v-for="group in groupedSubjects"
+              :key="group.type"
             >
-              <v-list-item-title class="subject-title">
-                {{ subject.label }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
-                {{ subject.memberCount }} members · {{ subject.mappingCount }} sync target{{ subject.mappingCount === 1 ? "" : "s" }}
-              </v-list-item-subtitle>
-              <template #append>
-                <v-icon icon="mdi-chevron-right" />
-              </template>
-            </v-list-item>
+              <v-list-subheader :data-testid="`cohort-type-group-${group.type}`">
+                {{ group.label }} · {{ group.subjects.length }} · {{ group.memberCount }} members
+              </v-list-subheader>
+              <v-list-item
+                v-for="subject in group.subjects"
+                :key="subject.id"
+                :data-testid="`cohort-subject-row-${subject.id}`"
+                role="button"
+                tabindex="0"
+                @click="openSubject(subject)"
+                @keydown.enter.prevent="openSubject(subject)"
+                @keydown.space.prevent="openSubject(subject)"
+              >
+                <v-list-item-title class="subject-title">
+                  {{ subject.label }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ subject.memberCount }} members · {{ subject.mappingCount }} sync target{{ subject.mappingCount === 1 ? "" : "s" }}
+                </v-list-item-subtitle>
+                <template #append>
+                  <v-icon icon="mdi-chevron-right" />
+                </template>
+              </v-list-item>
+            </template>
           </v-list>
         </manager-card>
       </div>

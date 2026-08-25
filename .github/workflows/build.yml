@@ -346,44 +346,17 @@ jobs:
             exit 0
           fi
 
-          # A tag read back moments after it was written can come back missing
-          # or error outright while the registry settles — ghcr answered a
-          # `:latest` created 1.3s earlier with exit 255, which under
-          # `pipefail` killed the step before the comparison below could say
-          # anything. One read is not an answer, so give the registry a few.
-          digest_of() {
-            local reference="$1" attempt digest
-            for attempt in 1 2 3 4 5; do
-              if digest="$(docker buildx imagetools inspect "$reference" |
-                    awk '/^Digest:/ { print $2; exit }')" && [[ -n "$digest" ]]; then
-                printf '%s\n' "$digest"
-                return 0
-              fi
-              sleep "$(( attempt * 2 ))"
-            done
-            echo "::error::could not read a digest for ${reference} after 5 attempts" >&2
-            return 1
-          }
-
           # Re-tagging from the release tag rather than from the digests keeps
           # this a pointer move: :latest and :<tag> name the same manifest list.
+          #
+          # No read-back. ghcr is eventually consistent, so a tag written moments
+          # earlier can still read as missing; retrying was not enough and the
+          # release failed for a tag that had in fact moved. `imagetools create`
+          # reports its own failure, which is the signal that means something.
           mapfile -t services < <(jq -r '.[]' <<< "$SERVICES")
           for service in "${services[@]}"; do
             image="${REGISTRY}/${IMAGE_PREFIX}/${service}"
             echo "::group::${service}"
             docker buildx imagetools create -t "${image}:latest" "${image}:${RELEASE_TAG}"
             echo "::endgroup::"
-          done
-
-          # Verified after the fact so a partial promote is visible in the log
-          # rather than inferred from a rollout that never happened.
-          for service in "${services[@]}"; do
-            image="${REGISTRY}/${IMAGE_PREFIX}/${service}"
-            promoted="$(digest_of "${image}:latest")"
-            released="$(digest_of "${image}:${RELEASE_TAG}")"
-            if [[ -z "$promoted" || "$promoted" != "$released" ]]; then
-              echo "::error::${service}: :latest is ${promoted}, expected ${released}"
-              exit 1
-            fi
-            echo "${service}: :latest -> ${promoted}"
           done

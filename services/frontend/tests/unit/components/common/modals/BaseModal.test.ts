@@ -137,4 +137,39 @@ describe("BaseModal", () => {
     // Cancel button should NOT appear since the #actions slot fully overrides it
     expect(wrapper.find("[data-testid='base-modal-cancel']").exists()).toBe(false)
   })
+
+  describe("header and footer bands", () => {
+    it("puts the title in a band of its own", () => {
+      const wrapper = mountModal()
+
+      const band = wrapper.find(".base-modal__title")
+      expect(band.exists()).toBe(true)
+      expect(band.text()).toContain("Test Title")
+    })
+
+    it("puts the actions in a band of their own", () => {
+      const wrapper = mountModal()
+
+      expect(wrapper.find(".base-modal__actions").exists()).toBe(true)
+    })
+
+    it("renders appended content beside the title rather than below it", () => {
+      const wrapper = mount(BaseModal, {
+        props: {modelValue: true, title: "Test Title"},
+        slots: {"title-append": '<span data-testid="appended">and more</span>'},
+      })
+
+      const band = wrapper.find(".base-modal__title")
+      expect(band.find('[data-testid="appended"]').exists()).toBe(true)
+      // Both live in the one header band, which is what puts them on a row together.
+      expect(band.text()).toContain("Test Title")
+      expect(band.text()).toContain("and more")
+    })
+
+    it("needs no appended content", () => {
+      const wrapper = mountModal()
+
+      expect(wrapper.find(".base-modal__title").text().trim()).toBe("Test Title")
+    })
+  })
 })

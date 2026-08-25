@@ -57,6 +57,15 @@ const props = withDefaults(defineProps<Props>(), {
   cancelTestid: undefined,
 })
 
+defineSlots<{
+  default?: () => unknown
+  /** Rendered inline in the header band, to the right of the title. */
+  "title-append"?: () => unknown
+  actions?: () => unknown
+  "actions-append"?: () => unknown
+  save?: () => unknown
+}>()
+
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void
   (e: "save"): void
@@ -100,15 +109,20 @@ const useSaveAsSubmitButton = computed(
     :scrollable="scrollable"
   >
     <v-card>
-      <v-card-title class="text-h5">
-        {{ title }}
+      <v-card-title class="base-modal__title text-h5 d-flex align-center">
+        <span class="base-modal__title-text">{{ title }}</span>
+        <!--
+          #title-append slot — extra affordances rendered inline in the header band,
+          to the right of the title.
+        -->
+        <slot name="title-append" />
       </v-card-title>
 
       <v-card-text>
         <slot />
       </v-card-text>
 
-      <v-card-actions>
+      <v-card-actions class="base-modal__actions">
         <v-btn
           v-if="showDelete"
           :data-testid="deleteTestid"
@@ -174,3 +188,28 @@ const useSaveAsSubmitButton = computed(
     </v-card>
   </v-dialog>
 </template>
+
+<style lang="scss" scoped>
+// Distinct, comfortably padded header band shared by every BaseModal usage: a subtle
+// surface tint plus a bottom divider separate the title, and anything appended beside it,
+// from the body. Theme variables only, so it follows light and dark.
+.base-modal__title {
+  gap: 12px;
+  padding: 16px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.base-modal__title-text {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+// The footer mirrors the header, so the primary actions read as their own band rather than
+// as content that happens to be last.
+.base-modal__actions {
+  padding: 12px 24px;
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+</style>

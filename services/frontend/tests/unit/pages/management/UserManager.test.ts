@@ -424,7 +424,7 @@ describe("UserManager row model", () => {
     expect(rows[1].username).toBe("later")
   })
 
-  it("notable-only type icons: HONORARY and ALUMNI are notable, REGULAR is not", async () => {
+  it("row model carries the latest membership type, which is what marks a row notable", async () => {
     const wrapper = mountWithData(
       [
         {id: 50, fullName: "Honorary", username: "hon", roles: ["MEMBER"]},
@@ -444,14 +444,9 @@ describe("UserManager row model", () => {
     const alumRow = rows.find((r) => r.id === 51)!
     const regRow = rows.find((r) => r.id === 52)!
 
-    const isNotableType = (wrapper.vm as any).isNotableType
-    expect(isNotableType(honRow)).toBe(true)
-    expect(isNotableType(alumRow)).toBe(true)
-    expect(isNotableType(regRow)).toBe(false)
-
-    expect((wrapper.vm as any).typeIcon(honRow)).toBe("mdi-crown")
-    expect((wrapper.vm as any).typeIcon(alumRow)).toBe("mdi-school")
-    expect((wrapper.vm as any).typeIcon(regRow)).toBe("")
+    expect(honRow.latestType).toBe(MemberType.HONORARY)
+    expect(alumRow.latestType).toBe(MemberType.ALUMNI)
+    expect(regRow.latestType).toBe(MemberType.REGULAR)
   })
 
   it("incasso icon is notable only when incasso=true", async () => {

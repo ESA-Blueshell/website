@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.5.0](https://github.com/ESA-Blueshell/website/compare/v1.4.0...v1.5.0) (2026-08-25)
+
+
+### Features
+
+* **api:** bulk mark contributions paid and unpaid ([#567](https://github.com/ESA-Blueshell/website/issues/567)) ([2a4f7f4](https://github.com/ESA-Blueshell/website/commit/2a4f7f433b696f9bc53155cc78bba0ed62f69cdf))
+* **ci:** announce cut releases on Discord ([#574](https://github.com/ESA-Blueshell/website/issues/574)) ([891bc29](https://github.com/ESA-Blueshell/website/commit/891bc296aee6bb61726dd8ddf8c081b7d922392e))
+* **dev:** seed the development database from named fixtures ([#578](https://github.com/ESA-Blueshell/website/issues/578)) ([5bce05f](https://github.com/ESA-Blueshell/website/commit/5bce05f2e13f5d217ddfcd76d3614b4950778e62))
+* **email:** a shared base for rendering an email for inspection ([#576](https://github.com/ESA-Blueshell/website/issues/576)) ([a3f1114](https://github.com/ESA-Blueshell/website/commit/a3f1114dd9e789cae0fa1a055448071fb01a20cf))
+* **modals:** make BaseModal a shell every dialog can actually use ([#577](https://github.com/ESA-Blueshell/website/issues/577)) ([0a65b0c](https://github.com/ESA-Blueshell/website/commit/0a65b0c92ad8bf631e4cc7fe4b69de0bf762f115))
+* **recovery:** preview recovery emails ([#575](https://github.com/ESA-Blueshell/website/issues/575)) ([e21bdd4](https://github.com/ESA-Blueshell/website/commit/e21bdd4464de8015120565a395438c91afd7d9c7))
+
+
+### Bug Fixes
+
+* **api:** keep CSRF protection on the actuator filter chain ([#570](https://github.com/ESA-Blueshell/website/issues/570)) ([f16fdbc](https://github.com/ESA-Blueshell/website/commit/f16fdbc9e1ee8d747754defc1749c0cbb4aac54f))
+* **api:** keep the actuator chain session-free under CSRF ([#572](https://github.com/ESA-Blueshell/website/issues/572)) ([7bbe206](https://github.com/ESA-Blueshell/website/commit/7bbe206c8855c8634860d0fe3e68189e4ab857d1))
+* **frontend:** allowlist the post-login redirect target ([#571](https://github.com/ESA-Blueshell/website/issues/571)) ([bdd462c](https://github.com/ESA-Blueshell/website/commit/bdd462c05acbe5b8d289ab90da95372fbc9806a7))
+
+
+### Build and Dependencies
+
+* **deps:** bump docker/setup-buildx-action in the actions group ([#565](https://github.com/ESA-Blueshell/website/issues/565)) ([892ca21](https://github.com/ESA-Blueshell/website/commit/892ca219c3da159611e24427dc72701aa1d7a9c3))
+* **deps:** bump the frontend group ([#564](https://github.com/ESA-Blueshell/website/issues/564)) ([c595301](https://github.com/ESA-Blueshell/website/commit/c59530152ae71e28370e8344cf664e0b65f613aa))
+* **deps:** bump the gradle group across 1 directory with 5 updates ([#563](https://github.com/ESA-Blueshell/website/issues/563)) ([04a273d](https://github.com/ESA-Blueshell/website/commit/04a273dc956ea5f9e47290554758d27abde7cd80))
+* **deps:** bump undici, js-yaml and brace-expansion out of the open advisories ([#568](https://github.com/ESA-Blueshell/website/issues/568)) ([f5144c5](https://github.com/ESA-Blueshell/website/commit/f5144c5e658f6bb843565e59605d7ab9bf69af4c))
+
 ## [1.4.0](https://github.com/ESA-Blueshell/website/compare/v1.3.0...v1.4.0) (2026-08-21)
 
 

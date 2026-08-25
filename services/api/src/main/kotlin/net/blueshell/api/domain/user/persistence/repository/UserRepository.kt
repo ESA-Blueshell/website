@@ -12,6 +12,10 @@ import java.util.*
 interface UserRepository : BaseRepository<User, Long> {
     fun findByUsername(username: String): Optional<User>
 
+    /** Ids of accounts that have not been activated. Soft-deleted rows are excluded by the entity. */
+    @Query("select u.id from User u where u.enabled = false")
+    fun findIdsByEnabledFalse(): List<Long>
+
     fun existsByUsername(username: String): Boolean
 
     fun existsByUsernameAndIdNot(username: String, id: Long): Boolean

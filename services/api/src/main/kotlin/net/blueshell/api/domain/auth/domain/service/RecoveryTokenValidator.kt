@@ -32,6 +32,11 @@ class RecoveryTokenValidator(
      * @throws ConsumedRecoveryTokenException if token was already consumed
      * @throws TokenVerificationFailedException if verifier doesn't match
      */
+    /** Ids of accounts holding an unconsumed token of this kind. */
+    @Transactional(readOnly = true)
+    fun findUserIdsWithUnconsumedType(type: TokenPurpose): Set<Long> =
+        repository.findUserIdsWithUnconsumedType(type).toSet()
+
     @Transactional(readOnly = true)
     fun verify(rawToken: String, expectedType: TokenPurpose): RecoveryToken {
         // Parse and validate token format

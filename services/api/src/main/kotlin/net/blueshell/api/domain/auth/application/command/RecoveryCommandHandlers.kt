@@ -6,7 +6,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.access.AccessDeniedException
 import net.blueshell.api.domain.auth.command.CorrectSignupEmailCommand
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.auth.application.RecoveryEmailPreviewService
 import net.blueshell.api.domain.auth.application.SignupTokenService
+import net.blueshell.api.shared.model.RecoveryEmailPreview
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.domain.auth.application.PasswordRecoveryService
 import net.blueshell.api.domain.auth.application.SignupCompletionService
@@ -14,6 +16,7 @@ import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.shared.command.CommandHandler
@@ -93,14 +96,16 @@ class ResendUserActivationHandler(
 }
 
 @Component
-class ResendMemberActivationEmailHandler(
+class ResendRecoveryEmailHandler(
     private val activationService: UserActivationService,
     private val jobs: TrackedJobDispatcher
-) : CommandHandler<ResendMemberActivationEmailCommand, Unit> {
-    override val commandType = ResendMemberActivationEmailCommand::class
+) : CommandHandler<ResendRecoveryEmailCommand, Unit> {
+    override val commandType = ResendRecoveryEmailCommand::class
 
-    override fun handle(command: ResendMemberActivationEmailCommand) {
-        val dispatch = activationService.requestActivationEmail(command.userId)
+    override fun handle(command: ResendRecoveryEmailCommand) {
+        val dispatch = command.purpose
+            ?.let { activationService.requestActivation(command.userId, it) }
+            ?: activationService.requestActivationEmail(command.userId)
         if (dispatch != null) {
             jobs.enqueue(
                 EmailJobs.Recovery,
@@ -108,6 +113,26 @@ class ResendMemberActivationEmailHandler(
             )
         }
     }
+}
+
+@Component
+class PendingActivationsHandler(
+    private val activationService: UserActivationService
+) : CommandHandler<FindPendingActivationsCommand, Map<Long, TokenPurpose>> {
+    override val commandType = FindPendingActivationsCommand::class
+
+    override fun handle(command: FindPendingActivationsCommand): Map<Long, TokenPurpose> =
+        activationService.pendingActivations()
+}
+
+@Component
+class PreviewRecoveryEmailHandler(
+    private val previews: RecoveryEmailPreviewService
+) : CommandHandler<PreviewRecoveryEmailCommand, RecoveryEmailPreview> {
+    override val commandType = PreviewRecoveryEmailCommand::class
+
+    override fun handle(command: PreviewRecoveryEmailCommand): RecoveryEmailPreview =
+        previews.preview(command.userId, command.purpose)
 }
 
 @Component

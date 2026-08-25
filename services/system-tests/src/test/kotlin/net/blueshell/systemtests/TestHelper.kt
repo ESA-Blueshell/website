@@ -648,17 +648,41 @@ object TestHelper {
     }
 
     fun outstandingConfirmationLinks(username: String): Int =
+        outstandingRecoveryLinks(username, "USER_ACTIVATION")
+
+    /** Live, unconsumed recovery tokens of one type, so a resend can be checked for retiring the last. */
+    fun outstandingRecoveryLinks(username: String, type: String): Int =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
             conn.prepareStatement(
-                "SELECT COUNT(*) FROM recovery_tokens WHERE user_id = ? AND type = 'USER_ACTIVATION' " +
+                "SELECT COUNT(*) FROM recovery_tokens WHERE user_id = ? AND type = ? " +
                     "AND consumed_at IS NULL AND $ACTIVE_ROW_PREDICATE",
             ).use { stmt ->
                 stmt.setLong(1, userId)
+                stmt.setString(2, type)
                 val rs = stmt.executeQuery()
                 if (rs.next()) rs.getInt(1) else 0
             }
         }
+
+    /** Issue a recovery token straight into the table, to set up a link that is already outstanding. */
+    fun seedRecoveryToken(username: String, type: String) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            // created_at, updated_at, version and deleted_at all carry defaults.
+            conn.prepareStatement(
+                "INSERT INTO recovery_tokens (user_id, type, selector, verifier_hash, expires_at) " +
+                    "VALUES (?, ?, ?, ?, ?)",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                stmt.setString(2, type)
+                stmt.setString(3, UUID.randomUUID().toString().take(24))
+                stmt.setString(4, "seeded-not-a-real-hash")
+                stmt.setTimestamp(5, java.sql.Timestamp.from(java.time.Instant.now().plusSeconds(3600)))
+                stmt.executeUpdate()
+            }
+        }
+    }
 
     fun firstNameOf(username: String): String? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->

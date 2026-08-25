@@ -868,6 +868,27 @@ export type PasswordResetRequest = {
     token: string;
 };
 
+/**
+ * The activation email an account that has not been activated takes.
+ */
+export type PendingActivation = {
+    /**
+     * Which activation email applies to it.
+     */
+    purpose: TokenPurpose;
+    /**
+     * The account.
+     */
+    userId: number;
+};
+
+/**
+ * Which activation email applies to each account that has not been activated. Accounts that are already active do not appear.
+ */
+export type PendingActivationsResponse = {
+    activations: Array<PendingActivation>;
+};
+
 export enum PlatformType {
     FACEBOOK = 'FACEBOOK',
     LINKEDIN = 'LINKEDIN',
@@ -902,6 +923,36 @@ export enum QuestionType {
     CHECKBOX = 'CHECKBOX',
     DESCRIPTION = 'DESCRIPTION'
 }
+
+/**
+ * A recovery email rendered for inspection. No token was issued to produce it.
+ */
+export type RecoveryEmailPreviewResponse = {
+    /**
+     * The rendered email, as delivered but for the inert recovery link.
+     */
+    html: string;
+    /**
+     * What the recovery link carries in place of a token, so the preview can say the link is inert.
+     */
+    linkPlaceholder: string;
+    /**
+     * Which recovery email this is.
+     */
+    purpose: TokenPurpose;
+    /**
+     * Address the email would be sent to.
+     */
+    recipientEmail: string;
+    /**
+     * Name the email addresses the recipient by.
+     */
+    recipientName: string;
+    /**
+     * Subject line the recipient would see.
+     */
+    subject: string;
+};
 
 export type RedirectResponse = {
     path: string;
@@ -1025,6 +1076,13 @@ export type TelemetryResponse = {
     url: string;
     version: number;
 };
+
+export enum TokenPurpose {
+    USER_ACTIVATION = 'USER_ACTIVATION',
+    MEMBER_ACTIVATION = 'MEMBER_ACTIVATION',
+    PASSWORD_RESET = 'PASSWORD_RESET',
+    SIGNUP_CONTINUATION = 'SIGNUP_CONTINUATION'
+}
 
 export type UpdateAddressRequest = {
     city: string;
@@ -5092,6 +5150,47 @@ export type ResetPasswordResponses = {
 
 export type ResetPasswordResponse = ResetPasswordResponses[keyof ResetPasswordResponses];
 
+export type PendingActivationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/recovery/pending-activations';
+};
+
+export type PendingActivationsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PendingActivationsError = PendingActivationsErrors[keyof PendingActivationsErrors];
+
+export type PendingActivationsResponses = {
+    /**
+     * OK
+     */
+    200: PendingActivationsResponse;
+};
+
+export type PendingActivationsResponse2 = PendingActivationsResponses[keyof PendingActivationsResponses];
+
 export type UserActivateData = {
     body: UserActivationRequest;
     path?: never;
@@ -5176,16 +5275,18 @@ export type ResendUserActivationResponses = {
 
 export type ResendUserActivationResponse = ResendUserActivationResponses[keyof ResendUserActivationResponses];
 
-export type ResendMemberActivationEmailData = {
+export type PreviewRecoveryEmailData = {
     body?: never;
     path: {
         userId: number;
     };
-    query?: never;
-    url: '/recovery/users/{userId}/resend/recovery';
+    query: {
+        purpose: TokenPurpose;
+    };
+    url: '/recovery/users/{userId}/email-preview';
 };
 
-export type ResendMemberActivationEmailErrors = {
+export type PreviewRecoveryEmailErrors = {
     /**
      * Validation error
      */
@@ -5208,16 +5309,61 @@ export type ResendMemberActivationEmailErrors = {
     500: ApiError;
 };
 
-export type ResendMemberActivationEmailError = ResendMemberActivationEmailErrors[keyof ResendMemberActivationEmailErrors];
+export type PreviewRecoveryEmailError = PreviewRecoveryEmailErrors[keyof PreviewRecoveryEmailErrors];
 
-export type ResendMemberActivationEmailResponses = {
+export type PreviewRecoveryEmailResponses = {
+    /**
+     * OK
+     */
+    200: RecoveryEmailPreviewResponse;
+};
+
+export type PreviewRecoveryEmailResponse = PreviewRecoveryEmailResponses[keyof PreviewRecoveryEmailResponses];
+
+export type ResendRecoveryEmailData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: {
+        purpose?: TokenPurpose;
+    };
+    url: '/recovery/users/{userId}/resend/recovery';
+};
+
+export type ResendRecoveryEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResendRecoveryEmailError = ResendRecoveryEmailErrors[keyof ResendRecoveryEmailErrors];
+
+export type ResendRecoveryEmailResponses = {
     /**
      * No Content
      */
     204: void;
 };
 
-export type ResendMemberActivationEmailResponse = ResendMemberActivationEmailResponses[keyof ResendMemberActivationEmailResponses];
+export type ResendRecoveryEmailResponse = ResendRecoveryEmailResponses[keyof ResendRecoveryEmailResponses];
 
 export type SignUpData = {
     body: CreateUserRequest;

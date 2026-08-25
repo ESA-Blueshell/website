@@ -1,5 +1,7 @@
 package net.blueshell.api.domain.auth.command
 
+import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.shared.model.RecoveryEmailPreview
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.user.application.validation.UniqueUsername
@@ -55,9 +57,22 @@ data class ResendUserActivationCommand(
     val username: String
 ) : Command<Unit>
 
-data class ResendMemberActivationEmailCommand(
-    val userId: Long
+/**
+ * Resend a recovery email. `purpose` names which one; left null, the outstanding
+ * activation decides, which is the behaviour the endpoint had before it could be told.
+ */
+data class ResendRecoveryEmailCommand(
+    val userId: Long,
+    val purpose: TokenPurpose? = null
 ) : Command<Unit>
+
+data class PreviewRecoveryEmailCommand(
+    val userId: Long,
+    val purpose: TokenPurpose
+) : Command<RecoveryEmailPreview>
+
+/** Which activation email each account that has not been activated takes. */
+class FindPendingActivationsCommand : Command<Map<Long, TokenPurpose>>
 
 data class IssueSignupSessionCommand(
     val userId: Long

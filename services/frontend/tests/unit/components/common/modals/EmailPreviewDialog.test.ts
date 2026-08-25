@@ -83,4 +83,49 @@ describe("EmailPreviewDialog", () => {
     // Bulk dialogs put a recipient picker here; changing it re-renders the email.
     expect(wrapper.find('[data-testid="pick-recipient"]').exists()).toBe(true)
   })
+
+  describe("as the confirmation step for sending", () => {
+    it("offers no send button when the caller did not ask for one", () => {
+      const wrapper = mount(EmailPreviewDialog, {props: {modelValue: true, preview}})
+
+      expect(wrapper.find('[data-testid="email-preview-send-btn"]').exists()).toBe(false)
+    })
+
+    it("offers the send the caller named", () => {
+      const wrapper = mount(EmailPreviewDialog, {
+        props: {modelValue: true, preview, confirmLabel: "Resend Member Activation"},
+      })
+
+      const send = wrapper.find('[data-testid="email-preview-send-btn"]')
+      expect(send.exists()).toBe(true)
+      expect(send.text()).toContain("Resend Member Activation")
+    })
+
+    it("asks the caller to send when it is pressed", async () => {
+      const wrapper = mount(EmailPreviewDialog, {
+        props: {modelValue: true, preview, confirmLabel: "Send"},
+      })
+
+      await wrapper.find('[data-testid="email-preview-send-btn"]').trigger("click")
+
+      expect(wrapper.emitted("confirm")).toHaveLength(1)
+    })
+
+    it("will not send an email nobody has read yet", () => {
+      const wrapper = mount(EmailPreviewDialog, {
+        props: {modelValue: true, loading: true, confirmLabel: "Send"},
+      })
+
+      // Nothing rendered means nothing was confirmed, so there is nothing to send.
+      expect(wrapper.find('[data-testid="email-preview-send-btn"]').exists()).toBe(false)
+    })
+
+    it("will not send when rendering failed", () => {
+      const wrapper = mount(EmailPreviewDialog, {
+        props: {modelValue: true, preview, error: "boom", confirmLabel: "Send"},
+      })
+
+      expect(wrapper.find('[data-testid="email-preview-send-btn"]').exists()).toBe(false)
+    })
+  })
 })

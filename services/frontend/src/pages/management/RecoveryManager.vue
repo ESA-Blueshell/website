@@ -10,8 +10,10 @@
         <recovery-user-list
           panel-key="inactive"
           :users="inactiveUsers"
+          :pending-activations="pendingActivations"
           action-type="activation"
           title="Inactive accounts"
+          @action:done="reloadLists"
         />
 
         <recovery-user-list
@@ -41,12 +43,20 @@ import {onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import RecoveryUserList from "@/components/common/lists/RecoveryUserList.vue"
 
-import {type UserDetailResponse, findDeletedUsers, findUsers} from "@/services/api"
+import {
+  type TokenPurpose,
+  type UserDetailResponse,
+  findDeletedUsers,
+  findUsers,
+  pendingActivations as fetchPendingActivations,
+} from "@/services/api"
 
 const users = ref<UserDetailResponse[]>([])
 const activeUsers = ref<UserDetailResponse[]>([])
 const inactiveUsers = ref<UserDetailResponse[]>([])
 const deletedUsers = ref<UserDetailResponse[]>([])
+// Which activation each inactive account takes, so a row offers that one and no other.
+const pendingActivations = ref<Record<number, TokenPurpose>>({})
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -64,6 +74,13 @@ const getDeletedUsers = async () => {
   else console.log(response.error)
 }
 
+const getPendingActivations = async () => {
+  const {data} = await fetchPendingActivations()
+  pendingActivations.value = Object.fromEntries(
+    (data?.activations ?? []).map((entry) => [entry.userId, entry.purpose]),
+  )
+}
+
 const updateLists = () => {
   const all = users.value
   inactiveUsers.value = all.filter((u) => !u.enabled)
@@ -73,7 +90,7 @@ const updateLists = () => {
 watch([users], updateLists, {deep: true})
 
 const reloadLists = async () => {
-  await Promise.all([getUsers(), getDeletedUsers()])
+  await Promise.all([getUsers(), getDeletedUsers(), getPendingActivations()])
 }
 
 onMounted(async () => {

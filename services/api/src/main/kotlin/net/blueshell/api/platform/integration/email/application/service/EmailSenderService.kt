@@ -1,8 +1,6 @@
 package net.blueshell.api.platform.integration.email.application.service
 
-import net.blueshell.api.domain.auth.application.email.createMemberActivationEmail
-import net.blueshell.api.domain.auth.application.email.createPasswordResetEmail
-import net.blueshell.api.domain.auth.application.email.createUserActivationEmail
+import net.blueshell.api.domain.auth.application.email.buildRecoveryEmail
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
@@ -54,17 +52,7 @@ class EmailSenderService(
         val user = requireExists { users.findById(userId) }
         log.info("Sending {} email for user={}", tokenPurpose, userId)
 
-        val emailContent = when (tokenPurpose) {
-            TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(user, token, frontendUrl)
-            TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(user, token, frontendUrl)
-            TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(user, token, frontendUrl)
-            // Never emailed by design (ADR-024) — fail loudly rather than leak it.
-            TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
-                "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",
-            )
-        }
-
-        deliver(emailContent, "email.recovery", jobExecutionId)
+        deliver(buildRecoveryEmail(tokenPurpose, user, token, frontendUrl), "email.recovery", jobExecutionId)
     }
 
     /**

@@ -34,13 +34,14 @@ class UserActivationService(
     }
 
     /**
-     * Consume every outstanding confirmation link for a user, so links already
-     * delivered stop working. Used when the address itself changes.
+     * Consume every outstanding confirmation link of one kind for a user, so links already
+     * delivered stop working. Used when the address itself changes, and before issuing a
+     * replacement.
      */
     @Transactional
-    fun revokeOutstandingActivations(userId: Long) {
+    fun revokeOutstandingActivations(userId: Long, purpose: TokenPurpose = TokenPurpose.USER_ACTIVATION) {
         tokenValidator.findUnconsumedByUserId(userId)
-            .filter { it.type == TokenPurpose.USER_ACTIVATION }
+            .filter { it.type == purpose }
             .forEach { tokenFactory.consume(it) }
     }
 
@@ -83,6 +84,48 @@ class UserActivationService(
         } else {
             null
         }
+    }
+
+    /**
+     * Which activation each account that has not been activated takes.
+     *
+     * An account created by the board activates through the member email; one that signed
+     * itself up activates through the user email. An unconsumed token of a kind is what
+     * records which happened, whether or not that link still works — so an account whose
+     * link has expired still reports the kind it needs, and stays reachable.
+     *
+     * Accounts with no token at all read as a self-signup, which is what an account with no
+     * board involvement is.
+     */
+    @Transactional(readOnly = true)
+    fun pendingActivations(): Map<Long, TokenPurpose> {
+        val memberActivations = tokenValidator.findUserIdsWithUnconsumedType(TokenPurpose.MEMBER_ACTIVATION)
+        return users.findAllDisabledIds().associateWith { userId ->
+            if (userId in memberActivations) TokenPurpose.MEMBER_ACTIVATION else TokenPurpose.USER_ACTIVATION
+        }
+    }
+
+    /**
+     * Issue an activation link of a chosen kind, whether or not one is already outstanding.
+     *
+     * `requestActivationEmail` picks the kind from what happens to be outstanding and does
+     * nothing when neither is, which leaves an account created by the board unreachable once
+     * its link has expired. This is the path for choosing, so the sender says which email
+     * they mean rather than discovering it afterwards. Returns null when the account is
+     * already active and so has nothing to activate.
+     */
+    @Transactional
+    fun requestActivation(userId: Long, purpose: TokenPurpose): RecoveryDispatch? {
+        require(purpose == TokenPurpose.USER_ACTIVATION || purpose == TokenPurpose.MEMBER_ACTIVATION) {
+            "$purpose is not an activation"
+        }
+        val user = users.findById(userId)
+        if (user.enabled) return null
+
+        // One live link of a kind at a time, however often a resend is asked for.
+        revokeOutstandingActivations(user.id!!, purpose)
+        val ttl = if (purpose == TokenPurpose.MEMBER_ACTIVATION) Duration.ofDays(7) else Duration.ofHours(1)
+        return RecoveryDispatch(user.id!!, tokenFactory.issue(user, purpose, ttl), purpose)
     }
 
     /**

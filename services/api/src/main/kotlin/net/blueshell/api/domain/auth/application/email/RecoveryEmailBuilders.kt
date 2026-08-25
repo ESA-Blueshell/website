@@ -2,6 +2,7 @@ package net.blueshell.api.domain.auth.application.email
 
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.shared.enums.TokenPurpose
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -108,5 +109,30 @@ fun createMemberActivationEmail(
         subject = "Activate your Account",
         markdownContent = markdownContent,
         replyToOverride = "board@blueshell.utwente.nl"
+    )
+}
+
+/**
+ * Stands in for the token in a preview. A recovery link is a credential, and one that
+ * exists is one that can be used, so a preview issues nothing and renders this instead.
+ */
+const val PREVIEW_TOKEN_PLACEHOLDER: String = "PREVIEW-ONLY-NO-TOKEN-ISSUED"
+
+/**
+ * Selects the email a recovery purpose sends. Previewing and sending both come through
+ * here, so a preview cannot show something other than what is delivered.
+ */
+fun buildRecoveryEmail(
+    purpose: TokenPurpose,
+    recipient: User,
+    token: String,
+    frontendUrl: String,
+): EmailContent = when (purpose) {
+    TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(recipient, token, frontendUrl)
+    TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(recipient, token, frontendUrl)
+    TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(recipient, token, frontendUrl)
+    // Never emailed by design (ADR-024) — fail loudly rather than leak it.
+    TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
+        "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",
     )
 }

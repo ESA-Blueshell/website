@@ -8,6 +8,7 @@ import net.blueshell.api.domain.user.application.exception.UserNotFoundException
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -204,5 +205,84 @@ class UserActivationServiceTest {
         service.revokeOutstandingActivations(9L)
 
         verify(tokenFactory, never()).consume(any())
+    }
+
+    @Test
+    fun `requestActivation issues the kind it was asked for, not the one outstanding`() {
+        val user = user(id = 20L, enabled = false)
+        whenever(users.findById(20L)).thenReturn(user)
+        // Only a user-activation link is outstanding; a member activation is still sendable.
+        val outstanding = recoveryToken(user = user, type = TokenPurpose.USER_ACTIVATION)
+        whenever(tokenValidator.findUnconsumedByUserId(20L)).thenReturn(listOf(outstanding))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.MEMBER_ACTIVATION), any<Duration>()))
+            .thenReturn("member.token")
+
+        val result = service.requestActivation(20L, TokenPurpose.MEMBER_ACTIVATION)
+
+        assertThat(result).isNotNull
+        assertThat(result!!.type).isEqualTo(TokenPurpose.MEMBER_ACTIVATION)
+        assertThat(result.rawToken).isEqualTo("member.token")
+    }
+
+    @Test
+    fun `requestActivation sends with nothing outstanding, where the automatic choice cannot`() {
+        val user = user(id = 21L, enabled = false)
+        whenever(users.findById(21L)).thenReturn(user)
+        whenever(tokenValidator.findUnconsumedByUserId(21L)).thenReturn(emptyList())
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.MEMBER_ACTIVATION), any<Duration>()))
+            .thenReturn("member.token")
+
+        assertThat(service.requestActivation(21L, TokenPurpose.MEMBER_ACTIVATION)).isNotNull
+        // The path that guesses gives up here, which is the gap this one closes.
+        assertThat(service.requestActivationEmail(21L)).isNull()
+    }
+
+    @Test
+    fun `requestActivation retires the outstanding link of the same kind first`() {
+        val user = user(id = 22L, enabled = false)
+        whenever(users.findById(22L)).thenReturn(user)
+        val stale = recoveryToken(user = user, type = TokenPurpose.MEMBER_ACTIVATION)
+        val otherKind = recoveryToken(user = user, type = TokenPurpose.USER_ACTIVATION)
+        whenever(tokenValidator.findUnconsumedByUserId(22L)).thenReturn(listOf(stale, otherKind))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.MEMBER_ACTIVATION), any<Duration>()))
+            .thenReturn("member.token")
+
+        service.requestActivation(22L, TokenPurpose.MEMBER_ACTIVATION)
+
+        // One live link per kind; a link of another kind is somebody else's business.
+        verify(tokenFactory).consume(stale)
+        verify(tokenFactory, never()).consume(otherKind)
+    }
+
+    @Test
+    fun `requestActivation gives the member link seven days and the user link an hour`() {
+        val user = user(id = 23L, enabled = false)
+        whenever(users.findById(23L)).thenReturn(user)
+        whenever(tokenValidator.findUnconsumedByUserId(23L)).thenReturn(emptyList())
+        whenever(tokenFactory.issue(eq(user), any(), any<Duration>())).thenReturn("token")
+
+        service.requestActivation(23L, TokenPurpose.MEMBER_ACTIVATION)
+        verify(tokenFactory).issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
+
+        service.requestActivation(23L, TokenPurpose.USER_ACTIVATION)
+        verify(tokenFactory).issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+    }
+
+    @Test
+    fun `requestActivation returns null for an account that is already active`() {
+        val active = user(id = 24L, enabled = true)
+        whenever(users.findById(24L)).thenReturn(active)
+
+        assertThat(service.requestActivation(24L, TokenPurpose.MEMBER_ACTIVATION)).isNull()
+        verify(tokenFactory, never()).issue(any(), any(), any())
+    }
+
+    @Test
+    fun `requestActivation refuses a purpose that is not an activation`() {
+        listOf(TokenPurpose.PASSWORD_RESET, TokenPurpose.SIGNUP_CONTINUATION).forEach { purpose ->
+            assertThatThrownBy { service.requestActivation(25L, purpose) }
+                .isInstanceOf(IllegalArgumentException::class.java)
+                .hasMessageContaining("not an activation")
+        }
     }
 }

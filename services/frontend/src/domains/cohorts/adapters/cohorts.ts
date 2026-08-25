@@ -13,6 +13,7 @@ import {
   listCohortTargetFolders,
   listCohortTargetSystems,
   moveCohortTarget,
+  moveCohortTargets,
   previewInboundReconcile,
   searchCohortTargets,
   switchTarget,
@@ -26,6 +27,7 @@ import type {
   InboundReconcilePreview as ApiInboundReconcilePreview,
   TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
+import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 
 export type TargetSystem = ApiDriftReport["system"]
 
@@ -253,6 +255,55 @@ export async function moveTargetToFolder(
 ): Promise<ExternalTarget> {
   const res = await moveCohortTarget({path: {system, externalId}, body: {folder}, throwOnError: true})
   return toExternalTarget(res.data)
+}
+
+/** One target an external system would not move, and what it said about it. */
+export type FailedTargetMove = {
+  externalId: string
+  label: string
+  message: string
+}
+
+export type BulkTargetMoveResult = {
+  moved: ExternalTarget[]
+  failed: FailedTargetMove[]
+}
+
+/**
+ * What came back from a bulk move: either the api took the selection, or it refused the whole
+ * of it. The two are different enough to the operator — one lists what happened, the other why
+ * nothing did — that they are separate outcomes rather than a result with an error beside it.
+ */
+export type BulkTargetMoveOutcome =
+  | {status: "moved"; result: BulkTargetMoveResult}
+  | {status: "refused"; rejection: BulkRejection}
+
+/**
+ * File several targets under one folder.
+ *
+ * A `moved` outcome may still name failures: the selection was valid, but past that point the
+ * moves are separate calls to a system that cannot roll them back.
+ */
+export async function moveTargetsToFolder(
+  system: TargetSystem,
+  externalIds: string[],
+  folder: string,
+): Promise<BulkTargetMoveOutcome> {
+  const res = await moveCohortTargets({path: {system}, body: {externalIds, folder}})
+  const refused = parseBulkRejection(res)
+  if (refused) return {status: "refused", rejection: refused}
+  if (res.error || !res.data) throw new Error("The move could not be sent.")
+  return {
+    status: "moved",
+    result: {
+      moved: (res.data.moved ?? []).map(toExternalTarget),
+      failed: (res.data.failed ?? []).map((row) => ({
+        externalId: row.externalId,
+        label: row.label,
+        message: row.message,
+      })),
+    },
+  }
 }
 
 function toTargetDescriptor(raw: ApiTargetDescriptor): TargetDescriptor {

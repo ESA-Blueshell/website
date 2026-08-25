@@ -23,6 +23,14 @@ type Fixtures = {
   emails?: Array<Record<string, unknown>>
 }
 
+/** What Brevo reports it holds, for the target catalogue page. */
+const brevoTargets = [
+  {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", memberCount: 2, linkedCohortId: 1},
+  {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", memberCount: 1, linkedCohortId: 2},
+  {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", memberCount: 5, linkedCohortId: null},
+  {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, memberCount: null, linkedCohortId: null},
+]
+
 async function fulfillJson(route: Route, data: unknown, status = 200) {
   await route.fulfill({
     status,
@@ -426,6 +434,58 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           totalPages,
         },
       })
+    }
+    // The external target catalogue behind the Brevo targets page. Brevo is the one system
+    // that can file a target elsewhere, so its descriptor is the one carrying MOVE.
+    if (method === "GET" && path === "/management/cohort-targets/systems") {
+      return fulfillJson(route, [
+        {
+          system: "BREVO",
+          kind: "LIST",
+          systemLabel: "Brevo",
+          targetLabel: "Brevo list",
+          idLabel: "List id",
+          folderLabel: "Folder",
+          capabilities: ["CATALOG", "CREATE", "MOVE"],
+        },
+      ])
+    }
+    if (method === "GET" && path === "/management/cohort-targets/BREVO/folders") {
+      // Includes a folder holding nothing, which is exactly where a target tends to head.
+      return fulfillJson(route, ["Committees", "Contribution periods", "Archive"])
+    }
+    if (method === "PUT" && path === "/management/cohort-targets/BREVO/folder") {
+      const body = request.postDataJSON() as {externalIds: string[]; folder: string}
+      // `99` stands for a target the catalogue still lists but the system no longer has.
+      const gone = body.externalIds.filter((id) => id === "99")
+      if (gone.length) {
+        return fulfillJson(route, {
+          type: "about:blank",
+          title: "Conflict",
+          status: 409,
+          detail: "The selection no longer matches the current data.",
+          errors: [{
+            objectName: "BulkMoveTargetsRequest",
+            field: "externalIds",
+            code: "UnknownTargetIds",
+            message: `${gone.length} of the selected targets no longer exist in BREVO.`,
+            refs: gone,
+          }],
+        }, 409)
+      }
+      const moved = body.externalIds.map((id) => ({
+        system: "BREVO",
+        externalId: id,
+        kind: "LIST",
+        label: brevoTargets.find((t) => t.externalId === id)?.label ?? `List ${id}`,
+        folderLabel: body.folder,
+        memberCount: brevoTargets.find((t) => t.externalId === id)?.memberCount ?? null,
+        linkedCohortId: brevoTargets.find((t) => t.externalId === id)?.linkedCohortId ?? null,
+      }))
+      return fulfillJson(route, {moved, failed: []})
+    }
+    if (method === "GET" && path === "/management/cohort-targets/BREVO") {
+      return fulfillJson(route, brevoTargets)
     }
     // Legacy /management/cohorts list (still used by CohortPicker until
     // the engine is fully on subjects).

@@ -14,6 +14,10 @@ export const BulkRejectionCode = {
   honoraryUsers: "HonoraryUserIds",
   /** The chosen contribution period has gone. */
   unknownPeriod: "UnknownContributionPeriodId",
+  /** External targets the system no longer has; the catalogue is stale. */
+  unknownTargets: "UnknownTargetIds",
+  /** The destination folder is not one the system has. Refused rather than created. */
+  unknownFolder: "UnknownFolder",
 } as const
 
 /** The codes above, as a union. Named apart from the const so both can be exported. */
@@ -25,20 +29,30 @@ export interface BulkRejectionReason {
   field: string
   message: string
   userIds: number[]
+  /**
+   * The offending identifiers when they are not numeric. A user is a number; a list in an
+   * external system is whatever that system calls it. A reason carries one or the other.
+   */
+  refs: string[]
 }
 
 export interface BulkRejection {
   reasons: BulkRejectionReason[]
   /** Every user id the api named, whatever the reason. */
   namedUserIds: number[]
+  /** Every non-numeric identifier the api named, whatever the reason. */
+  namedRefs: string[]
   /** True when a reason means the table is out of date rather than the choice invalid. */
   requiresReload: boolean
 }
 
+// A stale view of the data, which a reload fixes. `unknownFolder` is deliberately absent:
+// the destination was wrong, and reloading the page will not make it right.
 const RELOAD_CODES: readonly string[] = [
   BulkRejectionCode.unknownUsers,
   BulkRejectionCode.deletedUsers,
   BulkRejectionCode.unknownPeriod,
+  BulkRejectionCode.unknownTargets,
 ]
 
 function isApiError(value: unknown): value is ApiError {
@@ -65,6 +79,7 @@ export function parseBulkRejection(result: {
       field: entry.field ?? "",
       message: entry.message ?? "",
       userIds: (entry.values ?? []).filter((id): id is number => typeof id === "number"),
+      refs: (entry.refs ?? []).filter((ref): ref is string => typeof ref === "string"),
     }))
 
   if (reasons.length === 0) return null
@@ -72,6 +87,7 @@ export function parseBulkRejection(result: {
   return {
     reasons,
     namedUserIds: [...new Set(reasons.flatMap((reason) => reason.userIds))],
+    namedRefs: [...new Set(reasons.flatMap((reason) => reason.refs))],
     requiresReload: reasons.some((reason) => RELOAD_CODES.includes(reason.code)),
   }
 }

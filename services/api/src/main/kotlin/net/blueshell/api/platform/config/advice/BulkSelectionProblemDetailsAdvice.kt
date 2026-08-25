@@ -42,6 +42,7 @@ class BulkSelectionProblemDetailsAdvice {
                     "message" to violation.message,
                     "code" to violation.code,
                     "values" to violation.values,
+                    "refs" to violation.refs,
                 )
             },
         )

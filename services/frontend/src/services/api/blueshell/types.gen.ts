@@ -154,6 +154,20 @@ export type BulkMarkUnpaidRequest = {
     userIds: Array<number>;
 };
 
+/**
+ * Where to file several targets at once.
+ */
+export type BulkMoveTargetsRequest = {
+    /**
+     * The external ids of the targets to move, as the system itself names them.
+     */
+    externalIds: Array<string>;
+    /**
+     * The folder to move them into. Must already exist in the system.
+     */
+    folder: string;
+};
+
 export enum BulkRowDisposition {
     INCLUDED = 'INCLUDED',
     SKIPPED = 'SKIPPED',
@@ -182,6 +196,20 @@ export type BulkRowVocabulary = {
     disposition: BulkRowDisposition;
     feeType: BulkFeeType;
     reason: BulkRowReason;
+};
+
+/**
+ * The outcome of moving several targets.
+ */
+export type BulkTargetMoveResult = {
+    /**
+     * The targets the system refused, and what it said. Empty when all moved.
+     */
+    failed: Array<FailedTargetMove>;
+    /**
+     * The targets that were moved, as the system now describes them.
+     */
+    moved: Array<ExternalTarget>;
 };
 
 export type CohortDetail = {
@@ -623,6 +651,18 @@ export type ExtraRow = {
 };
 
 /**
+ * One target the external system would not move.
+ */
+export type FailedTargetMove = {
+    externalId: string;
+    label: string;
+    /**
+     * What the system said, for an operator to act on rather than a stack trace.
+     */
+    message: string;
+};
+
+/**
  * Details about a single field/object validation error.
  */
 export type FieldValidationError = {
@@ -642,6 +682,10 @@ export type FieldValidationError = {
      * Object (target) name that failed validation.
      */
     objectName?: string;
+    /**
+     * Identifiers the error refers to when they are not numeric — an external system's own ids, for instance. The counterpart of `values`; an error carries one or the other, never both.
+     */
+    refs?: Array<string>;
     /**
      * Identifiers the error refers to, when the failing field carries a collection. Lets a client name the offending rows and reload them rather than restate the whole request.
      */
@@ -4115,6 +4159,49 @@ export type SearchCohortTargetsResponses = {
 };
 
 export type SearchCohortTargetsResponse = SearchCohortTargetsResponses[keyof SearchCohortTargetsResponses];
+
+export type MoveCohortTargetsData = {
+    body: BulkMoveTargetsRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folder';
+};
+
+export type MoveCohortTargetsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MoveCohortTargetsError = MoveCohortTargetsErrors[keyof MoveCohortTargetsErrors];
+
+export type MoveCohortTargetsResponses = {
+    /**
+     * OK
+     */
+    200: BulkTargetMoveResult;
+};
+
+export type MoveCohortTargetsResponse = MoveCohortTargetsResponses[keyof MoveCohortTargetsResponses];
 
 export type ListCohortTargetFoldersData = {
     body?: never;

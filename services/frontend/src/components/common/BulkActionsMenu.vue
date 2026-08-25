@@ -1,21 +1,28 @@
 <script lang="ts" setup>
+import {computed} from "vue"
+
 defineOptions({name: "BulkActionsMenu"})
 
 interface Props {
-  disabled?: boolean
+  /** True when at least one user is selected, so there is something to act on. */
+  hasSelection?: boolean
   /** True when no contribution period is selected (period-relative actions are disabled). */
   noPeriod?: boolean
 }
 
-withDefaults(defineProps<Props>(), {
-  disabled: false,
+const props = withDefaults(defineProps<Props>(), {
+  hasSelection: false,
   noPeriod: false,
 })
 
 const emit = defineEmits<{
+  (e: "addUser"): void
   (e: "markPaid"): void
   (e: "markUnpaid"): void
 }>()
+
+// Marking contributions needs a selection to act on and a period to book them against.
+const bulkDisabled = computed(() => !props.hasSelection || props.noPeriod)
 </script>
 
 <template>
@@ -23,7 +30,7 @@ const emit = defineEmits<{
     <template #activator="{ props: menuProps }">
       <v-btn
         v-bind="menuProps"
-        :disabled="disabled"
+        aria-label="User actions"
         data-testid="bulk-actions-menu-btn"
         icon
         size="small"
@@ -39,14 +46,21 @@ const emit = defineEmits<{
       min-width="220"
     >
       <v-list-item
-        :disabled="noPeriod"
+        data-testid="member-manager-add-user-btn"
+        prepend-icon="mdi-account-plus"
+        title="Add user"
+        @click="emit('addUser')"
+      />
+      <v-divider />
+      <v-list-item
+        :disabled="bulkDisabled"
         data-testid="bulk-action-mark-paid"
         prepend-icon="mdi-cash-check"
         title="Mark as paid"
         @click="emit('markPaid')"
       />
       <v-list-item
-        :disabled="noPeriod"
+        :disabled="bulkDisabled"
         data-testid="bulk-action-mark-unpaid"
         prepend-icon="mdi-cash-remove"
         title="Mark as unpaid"

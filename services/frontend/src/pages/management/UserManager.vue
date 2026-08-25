@@ -103,7 +103,6 @@ const {
   toggleHeader,
   headerChecked,
   headerIndeterminate,
-  selectionCount,
   hasSelection,
   clear: clearSelection,
 } = useUserSelection(displayedIds)
@@ -326,10 +325,9 @@ async function confirmDeleteUser() {
               </v-badge>
             </div>
 
-            <!-- Toolbar: search + filters + add user. A deliberate responsive
-                 layout (no ragged flex-wrap): desktop = one row; mobile = search
-                 on its own line, filters in equal-width rows, and a full-width
-                 Add user button. -->
+            <!-- Toolbar: search + filters, spanning the full width. A deliberate
+                 responsive layout (no ragged flex-wrap): desktop = one row; mobile =
+                 search on its own line and filters in equal-width rows. -->
             <div class="member-manager-toolbar mb-3">
               <v-text-field
                 v-model="searchInput"
@@ -375,34 +373,6 @@ async function confirmDeleteUser() {
                   label="Member in period"
                 />
               </div>
-              <v-chip
-                v-if="hasSelection"
-                closable
-                data-testid="member-manager-selection-chip"
-                size="small"
-                variant="tonal"
-                @click:close="clearSelection"
-              >
-                {{ selectionCount }} selected
-              </v-chip>
-
-              <bulk-actions-menu
-                :disabled="!hasSelection"
-                :no-period="!selectedPeriod"
-                @mark-paid="openBulkAction('paid')"
-                @mark-unpaid="openBulkAction('unpaid')"
-              />
-
-              <v-btn
-                class="mm-add"
-                color="primary"
-                data-testid="member-manager-add-user-btn"
-                prepend-icon="mdi-plus"
-                variant="flat"
-                @click="openAddUser"
-              >
-                Add user
-              </v-btn>
             </div>
 
             <!-- Desktop table (lg and up) -->
@@ -417,7 +387,7 @@ async function confirmDeleteUser() {
                 <thead>
                   <tr>
                     <!-- Selects the rows on screen, so a filter never hides part of the selection. -->
-                    <th class="mm-select-cell">
+                    <th class="mm-select-cell mm-th-checkbox">
                       <v-checkbox-btn
                         data-testid="member-manager-header-checkbox"
                         density="compact"
@@ -548,7 +518,18 @@ async function confirmDeleteUser() {
                       />
                     </th>
                     <th>Type / Incasso</th>
-                    <th>Actions</th>
+                    <th class="mm-th-actions">
+                      <div class="mm-th-actions__inner">
+                        <span>Actions</span>
+                        <bulk-actions-menu
+                          :has-selection="hasSelection"
+                          :no-period="!selectedPeriod"
+                          @add-user="openAddUser"
+                          @mark-paid="openBulkAction('paid')"
+                          @mark-unpaid="openBulkAction('unpaid')"
+                        />
+                      </div>
+                    </th>
                   </tr>
                 </thead>
 
@@ -556,6 +537,7 @@ async function confirmDeleteUser() {
                   <tr
                     v-for="row in filteredRows"
                     :key="row.id"
+                    :class="{'mm-row--selected': isSelected(row.id)}"
                     :data-testid="`member-manager-row-${row.id}`"
                   >
                     <td class="mm-select-cell">
@@ -977,7 +959,30 @@ async function confirmDeleteUser() {
   vertical-align: bottom;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: linear-gradient(rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.04)), rgb(var(--v-theme-surface));
+  }
+}
+
+// Every header label sits on the same baseline, whatever its cell holds: a one-line label, a
+// label wrapped onto three lines, or the select-all checkbox.
+.member-manager-vtable thead th {
+  vertical-align: bottom;
+}
+
+// Without this the control keeps its own minimum height and pushes the checkbox a line above
+// the header labels beside it.
+.mm-th-checkbox :deep(.v-selection-control) {
+  min-height: 0;
+}
+
+// The menu sits at the trailing edge of the header row, above the per-row action icons and
+// opposite the select-all checkbox. The label keeps the baseline it has in every other cell,
+// so the taller button must not centre it.
+.mm-th-actions {
+  .mm-th-actions__inner {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
   }
 }
 
@@ -1008,6 +1013,10 @@ tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.02);
 }
 
+tbody tr.mm-row--selected > td {
+  background: rgba(var(--v-theme-primary), 0.14);
+}
+
 .gap-1 {
   gap: 4px;
 }
@@ -1022,23 +1031,22 @@ tbody tr:nth-child(odd) {
   align-items: center;
   gap: 12px;
 
+  // Search takes a third and the four filters split the rest, so the row spans the
+  // card rather than leaving the trailing edge empty.
   .mm-search {
-    flex: 1 1 260px;
-    max-width: 480px;
+    flex: 1 1 0;
     min-width: 180px;
   }
 
   .mm-filters {
     display: flex;
+    flex: 2 1 0;
     gap: 12px;
 
     > * {
-      width: 170px;
+      flex: 1 1 0;
+      min-width: 0;
     }
-  }
-
-  .mm-add {
-    flex: 0 0 auto;
   }
 }
 
@@ -1051,17 +1059,6 @@ tbody tr:nth-child(odd) {
 
     .mm-search {
       flex: 0 0 auto;
-      width: 100%;
-      max-width: none;
-    }
-
-    .mm-filters > * {
-      flex: 1 1 0;
-      width: auto;
-      min-width: 0;
-    }
-
-    .mm-add {
       width: 100%;
     }
   }
@@ -1081,9 +1078,16 @@ tbody tr:nth-child(odd) {
   min-width: auto !important;
 }
 
-// The checkbox column carries no label and should not take room from the ones that do.
+// The checkbox column carries no label and should not take room from the ones that do. Header
+// and body share the column, so they share the centring — otherwise the two rows of checkboxes
+// sit a few pixels apart.
 .mm-select-cell {
   width: 44px;
   padding-inline: 4px !important;
+  text-align: center;
+
+  :deep(.v-selection-control) {
+    justify-content: center;
+  }
 }
 </style>

@@ -13,6 +13,7 @@ object UserManagerHelper {
     }
 
     fun clickAddUser(page: Page) {
+        TestIdLocatorHelper.byTestId(page, "bulk-actions-menu-btn").click()
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 

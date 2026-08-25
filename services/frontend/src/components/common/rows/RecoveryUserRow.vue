@@ -114,13 +114,17 @@ const EMAIL_LABELS: Record<string, string> = {
 }
 
 /**
- * The one recovery email this row sends. An account created by the board activates through
- * a different email than one that signed itself up, and the server says which; offering
- * both would ask the operator to answer a question the system already knows.
+ * The one recovery email this row sends, or none.
+ *
+ * An account created by the board activates through a different email than one that signed
+ * itself up, and the server says which. Naming no activation means none applies — a
+ * deleted account, or one already active — so the row offers nothing rather than guessing
+ * at the ordinary one. Guessing put an activation button on accounts that had no business
+ * with it.
  */
 const mailableEmail = computed(() => {
   const purpose = props.actionType === "activation"
-    ? props.pendingActivation ?? TokenPurpose.USER_ACTIVATION
+    ? props.pendingActivation
     : props.actionType === "password"
       ? TokenPurpose.PASSWORD_RESET
       : null

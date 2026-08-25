@@ -172,4 +172,63 @@ describe("BaseModal", () => {
       expect(wrapper.find(".base-modal__title").text().trim()).toBe("Test Title")
     })
   })
+
+  describe("a body split into a fixed region and a scrolling one", () => {
+    it("scrolls the body whole when nothing is pinned", () => {
+      const wrapper = mountModal()
+
+      expect(wrapper.find(".base-modal__text--split").exists()).toBe(false)
+      expect(wrapper.find(".base-modal__scroll-body").exists()).toBe(false)
+      expect(wrapper.text()).toContain("Dialog body")
+    })
+
+    it("splits the body when a region is pinned to the top of it", () => {
+      const wrapper = mount(BaseModal, {
+        props: {modelValue: true, title: "Test Title"},
+        slots: {
+          "body-header": '<div data-testid="pinned">filters</div>',
+          default: '<div data-testid="rows">rows</div>',
+        },
+      })
+
+      expect(wrapper.find(".base-modal__text--split").exists()).toBe(true)
+      expect(wrapper.find(".base-modal__body-header").find('[data-testid="pinned"]').exists()).toBe(true)
+      // Exactly one scrolling region, and the body is what is in it.
+      expect(wrapper.find(".base-modal__scroll-body").find('[data-testid="rows"]').exists()).toBe(true)
+    })
+
+    it("keeps the pinned region out of the scrolling one", () => {
+      const wrapper = mount(BaseModal, {
+        props: {modelValue: true, title: "Test Title"},
+        slots: {
+          "body-header": '<div data-testid="pinned">filters</div>',
+          default: '<div data-testid="rows">rows</div>',
+        },
+      })
+
+      expect(wrapper.find(".base-modal__scroll-body").find('[data-testid="pinned"]').exists()).toBe(false)
+    })
+  })
+
+  describe("secondary actions", () => {
+    it("renders a secondary action between Cancel and the primary one", () => {
+      const wrapper = mount(BaseModal, {
+        props: {modelValue: true, title: "Test Title", showSave: true, saveLabel: "Send"},
+        slots: {"actions-prepend": '<button data-testid="secondary">Preview</button>'},
+      })
+
+      const actions = wrapper.find(".base-modal__actions")
+      const text = actions.text()
+      expect(actions.find('[data-testid="secondary"]').exists()).toBe(true)
+      // Order is the point: the lesser choice sits between Cancel and the main one.
+      expect(text.indexOf("Cancel")).toBeLessThan(text.indexOf("Preview"))
+      expect(text.indexOf("Preview")).toBeLessThan(text.indexOf("Send"))
+    })
+
+    it("needs no secondary action", () => {
+      const wrapper = mountModal({showSave: true, saveLabel: "Send"})
+
+      expect(wrapper.find(".base-modal__actions").text()).toContain("Send")
+    })
+  })
 })

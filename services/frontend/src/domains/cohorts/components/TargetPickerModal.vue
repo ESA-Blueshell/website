@@ -35,6 +35,16 @@ const {
 const idLabel = computed(() => descriptor.value?.idLabel ?? "External target id")
 const targetLabel = computed(() => descriptor.value?.targetLabel ?? "Target name")
 const folderLabel = computed(() => descriptor.value?.folderLabel ?? null)
+
+/**
+ * What the field for choosing an existing target is called. With a catalogue the operator
+ * picks a target by its name and folder, so calling the field an id describes neither what
+ * is shown nor what is typed; without one they really do type the id.
+ */
+const pickLabel = computed(() => (hasCatalog.value ? targetLabel.value : idLabel.value))
+
+/** The create tab asks for a name for something that does not exist yet, so it says so. */
+const newNameLabel = computed(() => `New ${targetLabel.value.toLowerCase()} name`)
 const catalogItems = computed(() =>
   filteredOptions.value.map((target) => ({
     ...target,
@@ -124,7 +134,7 @@ const submit = async () => {
                 v-model="form.externalId"
                 v-model:search="form.search"
                 :items="catalogItems"
-                :label="idLabel"
+                :label="pickLabel"
                 :loading="loading"
                 data-testid="target-picker-combobox"
                 item-title="title"
@@ -145,7 +155,7 @@ const submit = async () => {
               <v-text-field
                 v-model="form.label"
                 data-testid="target-picker-label"
-                :label="targetLabel"
+                :label="newNameLabel"
               />
               <v-text-field
                 v-if="folderLabel"
@@ -165,7 +175,7 @@ const submit = async () => {
             v-model="form.externalId"
             v-model:search="form.search"
             :items="catalogItems"
-            :label="idLabel"
+            :label="pickLabel"
             :loading="loading"
             data-testid="target-picker-combobox"
             item-title="title"

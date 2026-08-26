@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import InfoBox from "@/components/common/panels/InfoBox.vue"
 import {computed, ref} from "vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {useTableSort} from "@/composables/useTableSort"
@@ -238,17 +239,14 @@ defineExpose({validate})
     -->
     <template #body-header>
       <v-expand-transition v-if="help">
-        <v-alert
+        <info-box
           v-if="helpOpen"
           class="mb-4"
-          data-testid="bulk-action-help-panel"
-          density="comfortable"
-          :title="help.title"
-          type="info"
-          variant="tonal"
+          :label="help.title"
+          testid="bulk-action-help-panel"
         >
           {{ help.body }}
-        </v-alert>
+        </info-box>
       </v-expand-transition>
 
       <v-form ref="formRef">
@@ -264,23 +262,19 @@ defineExpose({validate})
         rather than a border; they wrap on narrow widths.
       -->
       <div class="bulk-info-row">
-        <div
+        <info-box
           v-if="$slots['info-box']"
           class="bulk-info-box elevation-2"
+          :label="infoBoxLabel"
         >
-          <div class="bulk-info-box__label">
-            {{ infoBoxLabel }}
-          </div>
           <slot name="info-box" />
-        </div>
+        </info-box>
 
-        <div
+        <info-box
           class="bulk-info-box elevation-2"
-          data-testid="bulk-action-counts"
+          label="Summary"
+          testid="bulk-action-counts"
         >
-          <div class="bulk-info-box__label">
-            Summary
-          </div>
           <div class="d-flex flex-wrap ga-2 align-center">
             <v-chip
               color="primary"
@@ -321,7 +315,7 @@ defineExpose({validate})
               {{ counts.skipped }} skipped
             </v-chip>
           </div>
-        </div>
+        </info-box>
       </div>
     </template>
 
@@ -471,30 +465,10 @@ defineExpose({validate})
   margin-bottom: 12px;
 }
 
-// Shared labelled-box treatment (matches the app's subtle surface-tint pattern).
+// The box itself is `InfoBox`; what belongs to this dialog is only how the two of them share
+// the row.
 .bulk-info-box {
-  // Elevated-card look, matching the contribution-periods widget on the manager
-  // page: a slightly lifted surface + the elevation-2 drop shadow (set in the
-  // template), instead of a border. The tint keeps the lift visible inside the
-  // dialog, whose body is already the card surface colour.
   flex: 1 1 320px;
-  min-width: 0;
-  padding: 10px 14px;
-  border-radius: 6px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-
-  // Self-contained overline-style label: Vuetify 4 (MD3) removed the
-  // .text-overline utility class, so the small-caps treatment lives here.
-  &__label {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    line-height: 1.4;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-    color: rgba(var(--v-theme-on-surface), 0.7);
-  }
 }
 
 .bulk-row--excluded td {

@@ -6,7 +6,7 @@ import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.event.persistence.GuestAccessTokenCodec
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.survey.application.QuestionService
-import net.blueshell.api.domain.survey.command.AnswerData
+import net.blueshell.api.domain.survey.application.AnswerData
 import net.blueshell.api.domain.survey.persistence.Answer
 import org.springframework.http.HttpStatus
 import jakarta.validation.ConstraintViolationException

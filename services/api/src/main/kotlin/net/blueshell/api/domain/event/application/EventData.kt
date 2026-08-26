@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.event.application
 
-import net.blueshell.api.domain.survey.command.SurveyData
+import net.blueshell.api.domain.survey.application.SurveyData
 import java.time.Instant
 
 /**

@@ -3,7 +3,7 @@ package net.blueshell.api.domain.survey.application.validation
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.domain.survey.application.QuestionService
-import net.blueshell.api.domain.survey.command.AnswerCandidate
+import net.blueshell.api.domain.survey.application.AnswerCandidate
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.shared.enums.QuestionType
 import org.springframework.stereotype.Component

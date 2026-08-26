@@ -133,16 +133,20 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .team-roster__name {
-  flex: 0 0 34%;
+  // Wide enough, at a size small enough, for the longest name the association has fielded:
+  // Blueshell Goombastompers. A narrower column broke the word instead of wrapping it.
+  flex: 0 0 46%;
   min-width: 0;
 
   h2 {
     margin: 0;
-    font-size: clamp(2rem, 5vw, 3.75rem);
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
     font-style: italic;
     font-weight: 700;
     line-height: 1.05;
-    overflow-wrap: anywhere;
+    // Breaks between words, never inside one: `anywhere` split BS Waterboarders into
+    // "BS Waterbo / arders", which reads as a different team.
+    overflow-wrap: break-word;
   }
 }
 

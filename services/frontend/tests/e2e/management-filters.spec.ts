@@ -111,6 +111,14 @@ test.describe("management filters", () => {
     await searchInput(page, "member-manager-search-input").fill("")
     await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
     await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
+
+    // The field's clear button writes null rather than "", which the search has to
+    // read as "not searching" like any other empty value.
+    await searchInput(page, "member-manager-search-input").fill("MemberTarget")
+    await expect(page.getByTestId("member-manager-row-31")).toHaveCount(0)
+    await page.getByTestId("member-manager-search-input").locator(".v-field__clearable").click()
+    await expect(page.getByTestId("member-manager-row-31")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
   })
 
   test("address manager filters users with and without address by multiple fields", async ({page}) => {

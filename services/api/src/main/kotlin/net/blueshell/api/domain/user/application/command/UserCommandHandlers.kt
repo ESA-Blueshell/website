@@ -222,7 +222,8 @@ private fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
         gender = gender,
         nationality = nationality,
         bhv = bhv,
-        ehbo = ehbo
+        ehbo = ehbo,
+        nameOnTeamPages = nameOnTeamPages
     )
 
 private fun UpsertMemberProfileData.upsertInto(user: User) {
@@ -238,6 +239,7 @@ private fun UpsertMemberProfileData.upsertInto(user: User) {
     existing.nationality = nationality
     existing.bhv = bhv
     existing.ehbo = ehbo
+    existing.nameOnTeamPages = nameOnTeamPages
     // The board and self-service payloads both require a version, so this only
     // skips the optimistic check for the signup routes, where the token holder is
     // the only writer. Force-unwrapping here would answer them with a 500.

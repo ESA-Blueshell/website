@@ -129,6 +129,7 @@ const defaultMemberProfile = (): UpsertMemberProfileRequest => ({
   nationality: "NL",
   bhv: false,
   ehbo: false,
+  nameOnTeamPages: false,
 })
 
 const toMemberProfileRequest = (
@@ -162,6 +163,7 @@ const fromMemberProfileResponse = (data: MemberProfileResponse): UpsertMemberPro
   nationality: data.nationality ?? "NL",
   bhv: data.bhv ?? false,
   ehbo: data.ehbo ?? false,
+  nameOnTeamPages: data.nameOnTeamPages ?? false,
   version: data.version,
 })
 
@@ -575,6 +577,17 @@ defineExpose({validate, save, signupSession})
             :component-props="{ hideDetails: true, class: 'w-100' }"
             label="I hold a valid BHV diploma."
             name="bhv"
+          />
+        </div>
+
+        <div class="checkbox-row">
+          <VvField
+            v-model="memberProfileModel.nameOnTeamPages"
+            test-id="user-form-name-on-team-pages-field"
+            :component="VCheckbox"
+            :component-props="{ hideDetails: true, class: 'w-100' }"
+            label="Show my name next to my handle on the esports team pages."
+            name="nameOnTeamPages"
           />
         </div>
       </template>

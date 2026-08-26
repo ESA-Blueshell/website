@@ -13,6 +13,7 @@ fun MemberProfile.asResponse(): MemberProfileResponse =
         nationality = this.nationality,
         bhv = this.bhv,
         ehbo = this.ehbo,
+        nameOnTeamPages = this.nameOnTeamPages,
         conditionsAcceptedAt = this.conditionsAcceptedAt,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

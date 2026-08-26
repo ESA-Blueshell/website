@@ -37,7 +37,7 @@ fun Team.asResponse() = TeamResponse(
     image = image,
 )
 
-fun RosterMemberView.asResponse() = RosterMemberResponse(role = role, handle = handle)
+fun RosterMemberView.asResponse() = RosterMemberResponse(role = role, handle = handle, name = name)
 
 fun TeamView.asResponse() = TeamRosterResponse(
     id = id,

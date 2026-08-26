@@ -19,6 +19,7 @@ data class UpsertMemberProfileData(
     val nationality: String,
     val bhv: Boolean,
     val ehbo: Boolean,
+    val nameOnTeamPages: Boolean = false,
     val version: Long? = null
 )
 

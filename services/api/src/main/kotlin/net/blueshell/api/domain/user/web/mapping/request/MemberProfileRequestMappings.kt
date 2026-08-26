@@ -16,7 +16,8 @@ fun CreateMemberProfileRequest.asCommand(): CreateMemberProfileCommand =
         gender = this.gender,
         nationality = this.nationality!!,
         bhv = this.bhv!!,
-        ehbo = this.ehbo!!
+        ehbo = this.ehbo!!,
+        nameOnTeamPages = this.nameOnTeamPages
     )
 
 fun UpdateMemberProfileRequest.asCommand(userId: Long): UpdateMemberProfileCommand =
@@ -28,6 +29,7 @@ fun UpdateMemberProfileRequest.asCommand(userId: Long): UpdateMemberProfileComma
         nationality = this.nationality!!,
         bhv = this.bhv!!,
         ehbo = this.ehbo!!,
+        nameOnTeamPages = this.nameOnTeamPages,
         version = this.version!!
     )
 
@@ -40,5 +42,6 @@ fun UpsertMemberProfileRequest.asCommandData(): UpsertMemberProfileData =
         nationality = this.nationality!!,
         bhv = this.bhv!!,
         ehbo = this.ehbo!!,
+        nameOnTeamPages = this.nameOnTeamPages,
         version = this.version
     )

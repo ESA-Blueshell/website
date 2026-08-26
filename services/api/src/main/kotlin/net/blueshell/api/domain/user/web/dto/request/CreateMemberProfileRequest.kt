@@ -19,5 +19,8 @@ data class CreateMemberProfileRequest(
 
     var bhv: Boolean,
 
-    var ehbo: Boolean
+    var ehbo: Boolean,
+
+    @Schema(description = "Whether this member's real name may appear on the team pages")
+    var nameOnTeamPages: Boolean = false
 )

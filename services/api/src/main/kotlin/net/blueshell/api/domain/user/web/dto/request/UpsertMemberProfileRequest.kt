@@ -19,5 +19,8 @@ data class UpsertMemberProfileRequest(
 
     var ehbo: Boolean,
 
+    @Schema(description = "Whether this member's real name may appear on the team pages")
+    var nameOnTeamPages: Boolean = false,
+
     var version: Long? = null
 )

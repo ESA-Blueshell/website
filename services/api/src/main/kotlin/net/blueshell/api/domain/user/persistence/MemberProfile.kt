@@ -41,6 +41,15 @@ class MemberProfile(
     @Column(name = "conditions_accepted_at")
     var conditionsAcceptedAt: Instant? = null,
 
+    /**
+     * Whether this member's real name may be shown beside their handle on the team pages.
+     *
+     * Off unless the member turns it on: their name is held here to identify them, and
+     * publishing it is a decision they make for themselves.
+     */
+    @Column(name = "name_on_team_pages", nullable = false)
+    var nameOnTeamPages: Boolean = false,
+
 ) : AuditedCustomIdEntity<Long>() {
     val userId: Long?
         get() = user.id

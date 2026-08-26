@@ -46,13 +46,16 @@ test.describe("esports pages", () => {
     await expect(page.getByTestId("team-roster-3")).toContainText("fetabass")
   })
 
-  test("shows no real names, whatever the database holds", async ({page}) => {
+  test("shows no name for a member who has not allowed one", async ({page}) => {
     await installApiMocks(page)
 
     await page.goto("/esports/valorant")
 
-    // The mock roster's member is linked to a user whose name the admin surface shows.
-    await expect(page.getByTestId("team-roster-1")).not.toContainText("Viktor")
+    // Loafine and Blackout are linked members whose names the admin surface shows; neither
+    // has said their name may be published, so the page knows them by their handle alone.
+    const team = page.getByTestId("team-roster-1")
+    await expect(team).toContainText("Loafine")
+    await expect(team.locator(".team-roster__name-aside")).toHaveCount(1)
   })
 })
 
@@ -97,5 +100,24 @@ test.describe("esports manager", () => {
 
     const request = await created
     expect(JSON.parse(request.postData() ?? "{}")).toMatchObject({handle: "newcomer", role: "PLAYER"})
+  })
+})
+
+test.describe("names on the team pages", () => {
+  test("names a member who allows it, and nobody else", async ({page}) => {
+    await installApiMocks(page)
+
+    await page.goto("/esports/valorant")
+
+    const team = page.getByTestId("team-roster-1")
+    // One member has said their name may be shown; the other two have not.
+    await expect(team).toContainText("AriosFury")
+    await expect(team).toContainText("Viktor Petrov")
+    await expect(team).toContainText("Loafine")
+    await expect(team).not.toContainText("Blackout Petrov")
+
+    const named = team.locator(".team-roster__name-aside")
+    await expect(named).toHaveCount(1)
+    await expect(named).toHaveText("Viktor Petrov")
   })
 })

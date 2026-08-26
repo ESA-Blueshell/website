@@ -11,6 +11,7 @@ const {
   mockFindContributionsByPeriodId,
   mockDeleteUserById,
   mockLgAndUp,
+  mockViewportHeight,
 } = vi.hoisted(() => ({
   mockFindUsers: vi.fn(),
   mockFindUserById: vi.fn(),
@@ -18,13 +19,14 @@ const {
   mockFindContributionsByPeriodId: vi.fn(),
   mockDeleteUserById: vi.fn(),
   mockLgAndUp: {value: true},
+  mockViewportHeight: {value: 1000},
 }))
 
 vi.mock("vuetify", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vuetify")>()
   return {
     ...(actual as Record<string, unknown>),
-    useDisplay: () => ({lgAndUp: mockLgAndUp}),
+    useDisplay: () => ({height: mockViewportHeight, lgAndUp: mockLgAndUp}),
   }
 })
 

@@ -11,6 +11,9 @@ import {installApiMocks, loginAsBoard} from "./mocks"
  * has nothing for them to match, so the tests say so rather than asserting against whatever
  * else happens to be on the page.
  */
+/** Rows carrying a member, as opposed to the scroller's spacers. */
+const dataRow = '[data-testid^="member-manager-row-"]'
+
 async function openDesktopTable(page: import("./test").Page, dark = false): Promise<boolean> {
   await page.setViewportSize({width: 1300, height: 800})
   await installApiMocks(page)
@@ -22,7 +25,9 @@ async function openDesktopTable(page: import("./test").Page, dark = false): Prom
   // Skip on the layout, not on whether rows happen to be visible yet: a probe that can be
   // false for two different reasons turns a real regression into a silent skip.
   const narrow = await page.getByTestId("member-manager-mobile-list").isVisible()
-  if (!narrow) await page.locator("tbody tr").first().waitFor()
+  // A data row, not `tbody tr`: the virtual scroller brackets the rendered window with
+  // zero-height spacer rows, and waiting for one of those to become visible never returns.
+  if (!narrow) await page.locator(dataRow).first().waitFor()
   return !narrow
 }
 
@@ -62,7 +67,9 @@ test.describe("user manager table surfaces", () => {
   test("the stripe is tinted with the theme, not with black", async ({page}) => {
     test.skip(!(await openDesktopTable(page, true)), "narrow layout renders cards, not this table")
 
-    const stripe = await page.locator("tbody tr:nth-child(odd)").first()
+    // The stripe is keyed off the row's index in the list rather than `:nth-child`, which
+    // would land on a spacer row here and would follow the window rather than the list.
+    const stripe = await page.locator(`${dataRow}.mm-row--odd`).first()
       .evaluate((el) => getComputedStyle(el).backgroundColor)
 
     // On the dark theme the foreground is light, so a stripe mixed from it is not all zeroes.

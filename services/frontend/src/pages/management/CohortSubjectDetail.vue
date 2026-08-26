@@ -239,7 +239,25 @@ type SyncFilter = "all" | "attention" | SyncState
 
 const filter = filtersFor<MemberRow>()
 
+/**
+ * Everything a row can be recognised by, in one string: the name we hold, the address, and
+ * the identity the external system knows it as — which for a stranger is all there is.
+ */
+const searchHaystack = (member: MemberRow): string =>
+  [
+    memberName(member),
+    member.userFullName,
+    member.userEmail,
+    member.externalLabel,
+    member.externalUserId,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+
 const {state: filterState, filteredRows} = useRowFilters(allRows, {
+  // Cheapest first: the dropdown is one comparison and rules most rows out before the search
+  // has to build a haystack.
   sync: filter<SyncFilter>({
     initial: "all",
     unset: "all",
@@ -248,6 +266,19 @@ const {state: filterState, filteredRows} = useRowFilters(allRows, {
       // states are there to narrow it further.
       if (value === "attention") return (row) => syncStateOf(row) !== "IN_SYNC"
       return (row) => syncStateOf(row) === value
+    },
+  }),
+  search: filter<string | null>({
+    initial: "",
+    unset: "",
+    // The field is `clearable`, and its clear button writes null rather than "".
+    isUnset: (value) => (value ?? "").trim() === "",
+    match: (value) => {
+      const terms = (value ?? "").trim().toLowerCase().split(/\s+/)
+      return (row) => {
+        const haystack = searchHaystack(row)
+        return terms.every((term) => haystack.includes(term))
+      }
     },
   }),
 })
@@ -661,6 +692,7 @@ watch(subjectId, () => void load())
               <info-box
                 default-open
                 expandable
+                flush
                 label="Members"
                 :summary="membersSummaryLine"
                 testid="cohort-subject-members"
@@ -673,15 +705,25 @@ watch(subjectId, () => void load())
                 </p>
 
                 <template v-else>
-                  <v-select
-                    v-model="filterState.sync"
-                    class="members-filter mb-3"
-                    data-testid="cohort-member-filter-sync"
-                    density="compact"
-                    hide-details
-                    :items="SYNC_FILTER_ITEMS"
-                    label="Sync"
-                  />
+                  <div class="members-toolbar mb-3">
+                    <v-text-field
+                      v-model="filterState.search"
+                      clearable
+                      data-testid="cohort-member-search"
+                      density="compact"
+                      hide-details
+                      label="Search members"
+                      prepend-inner-icon="mdi-magnify"
+                    />
+                    <v-select
+                      v-model="filterState.sync"
+                      data-testid="cohort-member-filter-sync"
+                      density="compact"
+                      hide-details
+                      :items="SYNC_FILTER_ITEMS"
+                      label="Sync"
+                    />
+                  </div>
 
                   <v-table
                     class="manager-table"
@@ -923,9 +965,38 @@ watch(subjectId, () => void load())
   white-space: nowrap;
 }
 
-// A filter, not a form field: it takes the width it needs rather than the width it is given.
-.members-filter {
-  max-width: 260px;
+// Search takes the room and the state select keeps its size, the way the member manager lays
+// its toolbar out.
+.members-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .v-text-field {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .v-select {
+    flex: 0 0 220px;
+  }
+}
+
+@media (max-width: 700px) {
+  .members-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+
+    .v-select {
+      flex: 0 0 auto;
+    }
+  }
+}
+
+// The members box carries the page's own content, so it sits on the card rather than in a
+// panel of its own; the two boxes above it are asides and keep their tint.
+.subject-boxes :deep(.info-box--flush) {
+  margin-top: 4px;
 }
 
 .subject-member--deleted {

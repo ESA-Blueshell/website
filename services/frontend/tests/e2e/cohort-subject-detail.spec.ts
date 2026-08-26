@@ -213,6 +213,38 @@ test.describe("cohort subject detail — drift in the members table", () => {
     await expect(members.getByTestId("cohort-subject-member-sync-301")).toHaveCount(0)
   })
 
+  test("searches across the names, the addresses and the external identity", async ({page}) => {
+    const members = await openMembers(page)
+    const search = members.getByTestId("cohort-member-search").locator("input")
+
+    await search.fill("emma")
+    await expect(members.locator("tbody tr")).toHaveCount(1)
+    await expect(members.getByTestId("cohort-subject-member-301")).toBeVisible()
+
+    // A row with no local account is findable by what the external system calls it, which is
+    // the only identity it has.
+    await search.fill("someone@")
+    await expect(members.locator("tbody tr")).toHaveCount(1)
+    await expect(members.getByTestId("cohort-subject-member-601")).toBeVisible()
+
+    // Clearing with the field's button writes null rather than "", and must read as no search.
+    await members.getByTestId("cohort-member-search").locator(".v-field__clearable").click()
+    await expect(members.locator("tbody tr")).toHaveCount(4)
+  })
+
+  test("narrows by search and state together", async ({page}) => {
+    const members = await openMembers(page)
+
+    await members.getByTestId("cohort-member-search").locator("input").fill("e")
+    await members.getByTestId("cohort-member-filter-sync").click()
+    await page.getByRole("option", {name: "Needs attention"}).click()
+
+    // Both filters apply: rows matching the term that are also out of step.
+    const rows = members.locator("tbody tr")
+    await expect(rows).toHaveCount(3)
+    await expect(members.getByTestId("cohort-subject-member-301")).toHaveCount(0)
+  })
+
   test("offers each row only the actions that apply to it", async ({page}) => {
     const members = await openMembers(page)
 

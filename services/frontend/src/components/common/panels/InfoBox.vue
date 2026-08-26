@@ -24,11 +24,20 @@ const props = withDefaults(defineProps<{
   expandable?: boolean
   /** Whether an expandable box starts open. Ignored when it is not expandable. */
   defaultOpen?: boolean
+  /**
+   * Drop the lifted surface and sit on whatever is behind it.
+   *
+   * A tint says "this is an aside". The box holding what a page is actually about is not an
+   * aside, and tinting it stacks a panel inside a card inside a page — three surfaces for one
+   * thing. Such a box keeps the label and the summary and loses the box.
+   */
+  flush?: boolean
   testid?: string | null
 }>(), {
   summary: null,
   expandable: false,
   defaultOpen: false,
+  flush: false,
   testid: null,
 })
 
@@ -49,6 +58,7 @@ const bodyShown = computed(() => !props.expandable || open.value)
 <template>
   <div
     class="info-box"
+    :class="{'info-box--flush': flush}"
     :data-testid="testid ?? undefined"
   >
     <div
@@ -108,6 +118,13 @@ const bodyShown = computed(() => !props.expandable || open.value)
   padding: 10px 14px;
   border-radius: 6px;
   background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+// No tint and no inset: the box is the thing behind it, with a label on top.
+.info-box--flush {
+  padding: 0;
+  border-radius: 0;
+  background: none;
 }
 
 .info-box__header {

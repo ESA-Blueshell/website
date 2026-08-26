@@ -582,13 +582,19 @@ watch(subjectId, () => void load())
                       <th style="width: 16%">
                         System
                       </th>
-                      <th style="width: 14%">
+                      <th
+                        class="targets-col-detail"
+                        style="width: 14%"
+                      >
                         Kind
                       </th>
                       <th style="width: 30%">
                         Target
                       </th>
-                      <th style="width: 12%">
+                      <th
+                        class="targets-col-detail"
+                        style="width: 12%"
+                      >
                         External id
                       </th>
                       <th style="width: 22%">
@@ -643,13 +649,13 @@ watch(subjectId, () => void load())
                       <td class="font-weight-medium">
                         {{ labelForSystem(mapping.system) }}
                       </td>
-                      <td class="text-medium-emphasis">
+                      <td class="text-medium-emphasis targets-col-detail">
                         {{ mapping.kind }}
                       </td>
                       <td class="text-medium-emphasis">
                         {{ mapping.label }}
                       </td>
-                      <td class="text-monospace text-medium-emphasis">
+                      <td class="text-monospace text-medium-emphasis targets-col-detail">
                         {{ mapping.externalId ?? "—" }}
                       </td>
                       <td
@@ -964,6 +970,25 @@ watch(subjectId, () => void load())
 .targets-th-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+// Six columns do not fit a phone: the table scrolled sideways and took its own action menus
+// off-screen with it, so the only way to reach a target's actions was to scroll a table the
+// page gives no hint scrolls. Kind and external id are the two a reader can do without — the
+// system and the target still name the row — and dropping them lets the rest fit.
+@media (max-width: 700px) {
+  .targets-col-detail {
+    display: none;
+  }
+
+  // What is left may wrap, and sits in tighter gutters. Vuetify keeps a header on one line and
+  // pads for a desktop, either of which is enough on its own to push the four remaining
+  // columns past the width of a phone.
+  [data-testid="cohort-subject-target-list"] th,
+  [data-testid="cohort-subject-target-list"] td {
+    padding-inline: 8px;
+    white-space: normal;
+  }
 }
 
 // The boxes stack with a gap rather than each carrying its own card and margin.

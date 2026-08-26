@@ -267,6 +267,31 @@ test.describe("cohort subject detail — drift in the members table", () => {
     await expect(page.getByTestId("cohort-subject-member-link-601")).toBeVisible()
   })
 
+  test("keeps the targets table, and its menus, inside a narrow viewport", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+    await page.setViewportSize({width: 412, height: 839})
+    await page.goto(SUBJECT)
+
+    const targets = page.getByTestId("cohort-subject-targets")
+    await targets.getByTestId("info-box-toggle").first().click()
+    // The box expands on a transition, and a table measured mid-expand is not yet its own width.
+    await expect(targets.getByTestId("cohort-subject-target-menu-brevo")).toBeVisible()
+
+    // Six columns did not fit a phone: the table scrolled sideways and carried its own action
+    // menus off-screen, where the only way to reach them was a scroll nothing advertises.
+    // Polled rather than measured once: the box expands on a transition, and the table is not
+    // its final width until that has run.
+    await expect.poll(async () => targets.locator(".v-table__wrapper").evaluate(
+      (el) => el.scrollWidth - el.clientWidth,
+    )).toBeLessThanOrEqual(1)
+
+    for (const testid of ["cohort-subject-targets-menu", "cohort-subject-target-menu-brevo"]) {
+      const box = (await targets.getByTestId(testid).boundingBox())!
+      expect(box.x + box.width).toBeLessThanOrEqual(412)
+    }
+  })
+
   test("says when each target was last reconciled, in a column of its own", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())

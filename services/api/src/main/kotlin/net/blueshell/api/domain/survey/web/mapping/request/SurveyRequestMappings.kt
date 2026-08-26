@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.survey.web.mapping.request
 
-import net.blueshell.api.domain.survey.command.QuestionData
-import net.blueshell.api.domain.survey.command.SurveyData
+import net.blueshell.api.domain.survey.application.QuestionData
+import net.blueshell.api.domain.survey.application.SurveyData
 import net.blueshell.api.domain.survey.web.dto.request.QuestionRequest
 import net.blueshell.api.domain.survey.web.dto.request.SurveyRequest
 

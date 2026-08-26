@@ -85,9 +85,11 @@ class DataOwnershipArchitectureTest {
             .resideInAPackage("..domain.survey.persistence.repository..")
             .check(classes)
 
-        // Survey domain command handlers should not access Event repositories
+        // Survey domain application code should not access Event repositories.
+        // Widened alongside the event half: the survey command package is gone, so
+        // the old pattern matched nothing and the rule passed vacuously.
         noClasses()
-            .that().resideInAPackage("..domain.survey.application.command..")
+            .that().resideInAPackage("..domain.survey.application..")
             .should().dependOnClassesThat()
             .resideInAPackage("..domain.event.persistence.repository..")
             .check(classes)

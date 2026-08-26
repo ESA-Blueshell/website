@@ -10,7 +10,7 @@ import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.survey.application.QuestionService
-import net.blueshell.api.domain.survey.command.AnswerData
+import net.blueshell.api.domain.survey.application.AnswerData
 import jakarta.validation.Validator
 import net.blueshell.api.domain.survey.persistence.Question
 import org.assertj.core.api.Assertions.assertThat

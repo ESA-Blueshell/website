@@ -6,7 +6,7 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.survey.application.factory.SurveyFactory
-import net.blueshell.api.domain.survey.command.SurveyData
+import net.blueshell.api.domain.survey.application.SurveyData
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser

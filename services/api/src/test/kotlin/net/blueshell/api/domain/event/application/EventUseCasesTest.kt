@@ -9,8 +9,8 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.survey.application.factory.SurveyFactory
-import net.blueshell.api.domain.survey.command.QuestionData
-import net.blueshell.api.domain.survey.command.SurveyData
+import net.blueshell.api.domain.survey.application.QuestionData
+import net.blueshell.api.domain.survey.application.SurveyData
 import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role

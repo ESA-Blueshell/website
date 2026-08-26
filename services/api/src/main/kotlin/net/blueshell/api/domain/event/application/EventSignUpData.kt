@@ -5,7 +5,7 @@ import net.blueshell.api.domain.event.application.validation.ValidEventSignUpCom
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.survey.application.validation.ValidAnswerList
-import net.blueshell.api.domain.survey.command.AnswerData
+import net.blueshell.api.domain.survey.application.AnswerData
 
 /**
  * Event sign-up information for commands.

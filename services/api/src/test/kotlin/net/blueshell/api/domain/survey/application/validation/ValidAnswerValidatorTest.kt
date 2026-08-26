@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.survey.application.validation
 
 import net.blueshell.api.domain.survey.application.QuestionService
-import net.blueshell.api.domain.survey.command.AnswerData
+import net.blueshell.api.domain.survey.application.AnswerData
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.shared.enums.QuestionType

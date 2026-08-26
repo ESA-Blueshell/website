@@ -5,7 +5,7 @@ import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.EventSignUpData
 import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.survey.command.AnswerData
+import net.blueshell.api.domain.survey.application.AnswerData
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.shared.enums.QuestionType

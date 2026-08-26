@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.survey.application.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.domain.survey.command.AnswerData
+import net.blueshell.api.domain.survey.application.AnswerData
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito

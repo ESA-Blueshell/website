@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.survey.application.factory
 
-import net.blueshell.api.domain.survey.command.SurveyData
+import net.blueshell.api.domain.survey.application.SurveyData
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.domain.survey.persistence.Survey
 import org.springframework.stereotype.Component

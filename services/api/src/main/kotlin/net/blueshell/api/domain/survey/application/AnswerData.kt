@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.survey.command
+package net.blueshell.api.domain.survey.application
 
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.survey.application.validation.ValidAnswer

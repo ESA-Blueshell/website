@@ -2,7 +2,7 @@ package net.blueshell.api.domain.survey.application.validation
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.domain.survey.command.QuestionCandidate
+import net.blueshell.api.domain.survey.application.QuestionCandidate
 
 class ValidQuestionListValidator : ConstraintValidator<ValidQuestionList, List<QuestionCandidate>> {
     override fun isValid(questions: List<QuestionCandidate>?, context: ConstraintValidatorContext): Boolean {

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.survey.command
+package net.blueshell.api.domain.survey.application
 
 import net.blueshell.api.shared.enums.QuestionType
 

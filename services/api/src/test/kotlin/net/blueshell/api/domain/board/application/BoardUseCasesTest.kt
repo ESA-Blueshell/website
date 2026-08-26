@@ -1,12 +1,6 @@
-package net.blueshell.api.domain.board.application.command
+package net.blueshell.api.domain.board.application
 
-import net.blueshell.api.domain.board.application.BoardMemberService
-import net.blueshell.api.domain.board.application.BoardService
 import net.blueshell.api.domain.board.application.exception.BoardMemberNotFoundException
-import net.blueshell.api.domain.board.command.AddBoardMemberCommand
-import net.blueshell.api.domain.board.command.CreateBoardCommand
-import net.blueshell.api.domain.board.command.RemoveBoardMemberCommand
-import net.blueshell.api.domain.board.command.UpdateBoardCommand
 import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.domain.board.persistence.BoardMember
 import net.blueshell.api.domain.file.application.FileService
@@ -27,31 +21,30 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
 
-class BoardCommandHandlersTest {
+class BoardUseCasesTest {
 
     private val boardService = mock<BoardService>()
     private val fileService = mock<FileService>()
     private val userService = mock<UserService>()
     private val boardMemberService = mock<BoardMemberService>()
+    private val useCases = BoardUseCases(boardService, boardMemberService, fileService, userService)
 
     @Nested
     inner class CreateBoard {
 
-        private val handler = CreateBoardHandler(boardService, fileService)
 
         @Test
         fun `creates board without picture`() {
-            val command = CreateBoardCommand(
+            val boardCaptor = argumentCaptor<Board>()
+            whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
+
+            val result = useCases.create(
                 name = "Board 2026",
                 candidate = "Candidate",
                 startDate = LocalDate.of(2026, 1, 1),
                 endDate = LocalDate.of(2026, 12, 31),
-                pictureId = null
+                pictureId = null,
             )
-            val boardCaptor = argumentCaptor<Board>()
-            whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
-
-            val result = handler.handle(command)
 
             assertThat(result.name).isEqualTo("Board 2026")
             assertThat(result.candidate).isEqualTo("Candidate")
@@ -64,17 +57,17 @@ class BoardCommandHandlersTest {
         @Test
         fun `attaches picture when picture id is provided`() {
             val picture = mock<File>()
-            val command = CreateBoardCommand(
-                name = "Board 2026",
-                candidate = "Candidate",
-                startDate = LocalDate.of(2026, 1, 1),
-                pictureId = 55L
-            )
             val boardCaptor = argumentCaptor<Board>()
             whenever(fileService.findById(55L)).thenReturn(picture)
             whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
-            val result = handler.handle(command)
+            val result = useCases.create(
+                name = "Board 2026",
+                candidate = "Candidate",
+                startDate = LocalDate.of(2026, 1, 1),
+                endDate = null,
+                pictureId = 55L,
+            )
 
             assertThat(result.picture).isSameAs(picture)
             verify(fileService).findById(55L)
@@ -84,7 +77,6 @@ class BoardCommandHandlersTest {
     @Nested
     inner class UpdateBoard {
 
-        private val handler = UpdateBoardHandler(boardService, fileService)
 
         @Test
         fun `updates board and clears picture when picture id is null`() {
@@ -93,17 +85,14 @@ class BoardCommandHandlersTest {
             whenever(boardService.findById(7L)).thenReturn(board)
             whenever(boardService.update(board)).thenReturn(board)
 
-            val result = handler.handle(
-                UpdateBoardCommand(
+            val result = useCases.update(
                     id = 7L,
                     name = "Updated Board",
                     candidate = "Updated Candidate",
                     startDate = LocalDate.of(2026, 2, 1),
                     endDate = LocalDate.of(2026, 10, 1),
                     pictureId = null,
-                    version = 3L
                 )
-            )
 
             assertThat(result.name).isEqualTo("Updated Board")
             assertThat(result.candidate).isEqualTo("Updated Candidate")
@@ -119,17 +108,14 @@ class BoardCommandHandlersTest {
             whenever(fileService.findById(21L)).thenReturn(picture)
             whenever(boardService.update(board)).thenReturn(board)
 
-            val result = handler.handle(
-                UpdateBoardCommand(
+            val result = useCases.update(
                     id = 7L,
                     name = "Updated Board",
                     candidate = "Updated Candidate",
                     startDate = LocalDate.of(2026, 2, 1),
                     endDate = null,
                     pictureId = 21L,
-                    version = 2L
                 )
-            )
 
             assertThat(result.picture).isSameAs(picture)
             verify(fileService).findById(21L)
@@ -139,7 +125,6 @@ class BoardCommandHandlersTest {
     @Nested
     inner class AddBoardMember {
 
-        private val handler = AddBoardMemberHandler(boardService, userService, boardMemberService)
 
         @Test
         fun `creates board member when membership does not exist`() {
@@ -151,15 +136,13 @@ class BoardCommandHandlersTest {
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
 
-            val result = handler.handle(
-                AddBoardMemberCommand(
+            val result = useCases.addMember(
                     boardId = 9L,
                     userId = 11L,
                     role = "CHAIR",
                     startDate = LocalDate.of(2026, 1, 1),
                     endDate = null
                 )
-            )
 
             assertThat(result.role).isEqualTo("CHAIR")
             assertThat(result.startDate).isEqualTo(LocalDate.of(2026, 1, 1))
@@ -182,15 +165,13 @@ class BoardCommandHandlersTest {
             whenever(boardMemberService.findById(BoardMember.Id(9L, 11L))).thenReturn(existing)
             whenever(boardMemberService.update(existing)).thenReturn(existing)
 
-            val result = handler.handle(
-                AddBoardMemberCommand(
+            val result = useCases.addMember(
                     boardId = 9L,
                     userId = 11L,
                     role = "TREASURER",
                     startDate = LocalDate.of(2026, 1, 1),
                     endDate = LocalDate.of(2026, 12, 31)
                 )
-            )
 
             assertThat(result.role).isEqualTo("TREASURER")
             assertThat(result.startDate).isEqualTo(LocalDate.of(2026, 1, 1))
@@ -202,14 +183,13 @@ class BoardCommandHandlersTest {
     @Nested
     inner class RemoveBoardMember {
 
-        private val handler = RemoveBoardMemberHandler(boardService, boardMemberService)
 
         @Test
         fun `deletes existing board member by id`() {
             whenever(boardService.findById(4L)).thenReturn(boardEntity())
             whenever(boardMemberService.existsById(BoardMember.Id(4L, 8L))).thenReturn(true)
 
-            handler.handle(RemoveBoardMemberCommand(boardId = 4L, userId = 8L))
+            useCases.removeMember(boardId = 4L, userId = 8L)
 
             verify(boardMemberService).deleteById(eq(BoardMember.Id(4L, 8L)))
         }
@@ -220,7 +200,7 @@ class BoardCommandHandlersTest {
             whenever(boardMemberService.existsById(BoardMember.Id(4L, 8L))).thenReturn(false)
 
             assertThrows<BoardMemberNotFoundException> {
-                handler.handle(RemoveBoardMemberCommand(boardId = 4L, userId = 8L))
+                useCases.removeMember(boardId = 4L, userId = 8L)
             }
 
             verify(boardMemberService, never()).deleteById(any())

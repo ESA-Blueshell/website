@@ -4,16 +4,14 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.committee.application.CommitteeService
-import net.blueshell.api.domain.committee.command.*
 import net.blueshell.api.domain.committee.web.dto.request.CreateCommitteeRequest
 import net.blueshell.api.domain.committee.web.dto.request.UpdateCommitteeRequest
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeDetailResponse
 import net.blueshell.api.domain.committee.web.dto.response.CommitteeResponse
-import net.blueshell.api.domain.committee.web.mapping.request.asCommand
+import net.blueshell.api.domain.committee.web.mapping.request.asData
 import net.blueshell.api.domain.committee.web.mapping.response.asDetailResponse
 import net.blueshell.api.domain.committee.web.mapping.response.asSummaryResponse
 import net.blueshell.api.shared.security.UserPrincipal
-import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
 import org.springframework.http.HttpStatus
@@ -25,7 +23,6 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Committees")
 class CommitteeController(
     service: CommitteeService,
-    private val commandBus: CommandBus
 ) : AdvancedController<CommitteeService>(
     service
 ) {
@@ -36,7 +33,7 @@ class CommitteeController(
     ): MutableList<CommitteeResponse> {
         val principalId = principal?.id ?: return mutableListOf()
         val includeAll = principal.hasAuthority(Role.BOARD)
-        val committees = commandBus.dispatch(FindCommitteesForCurrentUserCommand(principalId, includeAll))
+        val committees = if (includeAll) service.findAll() else service.findAllByUserId(principalId)
         return committees.map { it.asDetailResponse() }.toMutableList()
     }
 
@@ -47,7 +44,7 @@ class CommitteeController(
     fun findCommittees(
         @AuthenticationPrincipal principal: UserPrincipal?
     ): MutableList<CommitteeResponse> {
-        val committees = commandBus.dispatch(FindCommitteesCommand())
+        val committees = service.findAll()
         return if (principal?.hasAuthority(Role.BOARD) == true) {
             committees.map { it.asDetailResponse() }.toMutableList()
         } else {
@@ -63,7 +60,7 @@ class CommitteeController(
         @PathVariable committeeId: Long,
         @AuthenticationPrincipal principal: UserPrincipal?
     ): CommitteeResponse {
-        val committee = commandBus.dispatch(FindCommitteeByIdCommand(committeeId))
+        val committee = service.findById(committeeId)
         if (principal?.hasAuthority(Role.BOARD) == true || committee.hasMember(principal?.id)) {
             return committee.asDetailResponse()
         }
@@ -75,7 +72,11 @@ class CommitteeController(
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
     fun createCommittee(@Valid @RequestBody request: @Valid CreateCommitteeRequest): CommitteeDetailResponse {
-        val committee = commandBus.dispatch(request.asCommand())
+        val committee = service.createWithMembers(
+            name = request.name,
+            description = request.description,
+            members = request.members.map { it.asData() }.toMutableList(),
+        )
         return committee.asDetailResponse()
     }
 
@@ -85,7 +86,13 @@ class CommitteeController(
         @PathVariable id: Long,
         @Valid @RequestBody request: @Valid UpdateCommitteeRequest
     ): CommitteeDetailResponse {
-        val committee = commandBus.dispatch(request.asCommand(id))
+        val committee = service.updateWithMembers(
+            id = id,
+            name = request.name,
+            description = request.description,
+            members = request.members.map { it.asData() }.toMutableList(),
+            version = request.version,
+        )
         return committee.asDetailResponse()
     }
 
@@ -93,6 +100,6 @@ class CommitteeController(
     @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteCommitteeById(@PathVariable id: Long) {
-        commandBus.dispatch(DeleteCommitteeByIdCommand(id))
+        service.deleteById(id)
     }
 }

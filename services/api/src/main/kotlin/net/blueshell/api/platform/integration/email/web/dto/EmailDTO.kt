@@ -22,6 +22,19 @@ data class EmailDTO(
     val jobExecutionId: Long?,
     val createdAt: Instant?,
     val updatedAt: Instant?,
+    @param:Schema(description = "Whether this email's body was stored, so it can be previewed")
+    val previewable: Boolean,
+)
+
+@Schema(name = "SentEmailPreview")
+data class SentEmailPreviewDTO(
+    val subject: String,
+    @param:Schema(description = "The email's html with every url stripped out")
+    val html: String,
+    val recipientEmail: String,
+    val recipientName: String,
+    @param:Schema(description = "Always true: the preview's links were removed before it left the api")
+    val linksRedacted: Boolean = true,
 )
 
 @Schema(name = "EmailStats")

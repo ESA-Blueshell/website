@@ -547,6 +547,10 @@ export type Email = {
     jobExecutionId?: number | null;
     messageId?: string | null;
     openedAt?: string | null;
+    /**
+     * Whether this email's body was stored, so it can be previewed
+     */
+    previewable: boolean;
     recipientEmail?: string | null;
     recipientName?: string | null;
     sentAt?: string | null;
@@ -1063,6 +1067,20 @@ export enum Role {
     ADMIN = 'ADMIN',
     SYSTEM = 'SYSTEM'
 }
+
+export type SentEmailPreview = {
+    /**
+     * The email's html with every url stripped out
+     */
+    html: string;
+    /**
+     * Always true: the preview's links were removed before it left the api
+     */
+    linksRedacted: boolean;
+    recipientEmail: string;
+    recipientName: string;
+    subject: string;
+};
 
 export type ServiceEntry = {
     description: string;
@@ -4514,6 +4532,49 @@ export type GetStats1Responses = {
 };
 
 export type GetStats1Response = GetStats1Responses[keyof GetStats1Responses];
+
+export type PreviewSentEmailData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/emails/{id}/preview';
+};
+
+export type PreviewSentEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewSentEmailError = PreviewSentEmailErrors[keyof PreviewSentEmailErrors];
+
+export type PreviewSentEmailResponses = {
+    /**
+     * OK
+     */
+    200: SentEmailPreview;
+};
+
+export type PreviewSentEmailResponse = PreviewSentEmailResponses[keyof PreviewSentEmailResponses];
 
 export type Retry1Data = {
     body?: never;

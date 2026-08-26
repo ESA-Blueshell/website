@@ -130,6 +130,19 @@ const recipientLabel = computed(() => {
         actually sent.
       </v-alert>
 
+      <!-- A sent email's links are live credentials, so they never reach this dialog. -->
+      <v-alert
+        v-else-if="preview.linksRedacted"
+        class="mb-3"
+        data-testid="email-preview-redacted-notice"
+        density="compact"
+        type="info"
+        variant="tonal"
+      >
+        The links are removed from this preview. They are one-time credentials belonging to
+        the recipient, so following one from here would spend it.
+      </v-alert>
+
       <!--
         Sandboxed srcdoc rather than v-html: the email's own styles cannot reach the app,
         nothing in it executes, and it gets no same-origin access.

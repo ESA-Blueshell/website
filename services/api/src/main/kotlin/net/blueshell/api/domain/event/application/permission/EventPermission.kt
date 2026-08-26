@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.domain.event.application.permission
 
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.persistence.Event

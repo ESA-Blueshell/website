@@ -1,7 +1,9 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.domain.contribution.application.permission
 
-import net.blueshell.api.domain.blog.application.BlogService
-import net.blueshell.api.domain.blog.persistence.Blog
+import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+
+import net.blueshell.api.domain.contribution.application.ContributionReminderService
+import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
@@ -9,16 +11,15 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class BlogPermission @Autowired constructor(service: BlogService) :
-    BasePermissionEvaluator<Blog, Long, BlogService>(service) {
+class ContributionReminderPermission @Autowired constructor(service: ContributionReminderService) :
+    BasePermissionEvaluator<ContributionReminder, ContributionReminder.Id, ContributionReminderService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
         }
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read" -> true
-            "write", "delete" -> isBoard
+            "read", "write", "delete" -> isBoard
             else -> false
         }
     }
@@ -28,7 +29,7 @@ class BlogPermission @Autowired constructor(service: BlogService) :
             return false
         }
         if (id == null) return hasPermission(authentication, null, permission)
-        val blog = service.findById(id as Long)
-        return hasPermission(authentication, blog, permission)
+        val reminder = service.findById(id as ContributionReminder.Id)
+        return hasPermission(authentication, reminder, permission)
     }
 }

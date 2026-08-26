@@ -1,31 +1,26 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.platform.integration.job.application.permission
 
-import net.blueshell.api.domain.telemetry.application.TelemetryService
-import net.blueshell.api.domain.telemetry.persistence.Telemetry
+import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+
 import net.blueshell.api.infrastructure.security.SecurityUtils
+import net.blueshell.api.platform.integration.job.persistence.JobExecution
+import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class TelemetryPermission @Autowired constructor(service: TelemetryService) :
-    BasePermissionEvaluator<Telemetry, Long, TelemetryService>(service) {
+class JobExecutionPermission @Autowired constructor(service: JobExecutionService) :
+    BasePermissionEvaluator<JobExecution, Long, JobExecutionService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
         }
 
-        if (entity == null) {
-            return when (permission) {
-                "write", "delete" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
-                else -> false
-            }
-        }
-
-        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
+        val isAdmin = SecurityUtils.hasAuthority(authentication, Role.ADMIN)
         return when (permission) {
-            "read", "write", "delete" -> isBoard
+            "read", "retry", "write", "delete" -> isAdmin
             else -> false
         }
     }

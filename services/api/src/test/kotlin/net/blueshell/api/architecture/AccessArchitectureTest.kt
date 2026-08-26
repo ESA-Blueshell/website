@@ -179,15 +179,16 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         }
 
     @Test
-    fun `permission evaluators in infrastructure layer`(): Unit =
-        arch("Permission evaluators must be in infrastructure layer") {
+    fun `domain permission evaluators live with their aggregate`(): Unit =
+        arch("Domain permission evaluators must not sit in the shared permission package") {
             classes()
                 .that().haveSimpleNameEndingWith("Permission")
-                .and().resideOutsideOfPackage(ArchitecturePackages.PERMISSION)
-                .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
-                .should().resideInAnyPackage(ArchitecturePackages.PERMISSION)
-                .allowEmptyShould(true)  // All permission evaluators already moved - test passes if none found outside
-                .because("ADR-014: Permission evaluators are infrastructure adapters, not web layer")
+                .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..")
+                .should().resideOutsideOfPackage(ArchitecturePackages.PERMISSION)
+                .because(
+                    "architecture ADR-007: authorization belongs to the module whose aggregate it " +
+                        "governs; only BasePermissionEvaluator and CompositePermissionEvaluator remain central"
+                )
         }
 
     @Test

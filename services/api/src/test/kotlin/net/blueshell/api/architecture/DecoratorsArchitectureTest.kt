@@ -144,11 +144,11 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
     fun `permission evaluators are Spring components`(): Unit =
         arch("Permission evaluators must be @Component") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PERMISSION)
-                .and().haveSimpleNameEndingWith("Permission")
+                .that().haveSimpleNameEndingWith("Permission")
+                .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .should().beAnnotatedWith(Component::class.java)
-                .because("ADR-014: Permission evaluators are Spring beans discovered by CompositePermissionEvaluator")
+                .because("architecture ADR-007: evaluators are discovered by bean type wherever they live")
         }
 
     @Test

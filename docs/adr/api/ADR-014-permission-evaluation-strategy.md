@@ -1,7 +1,23 @@
 # ADR-014: Permission Evaluation Strategy
 
 ## Status
-Accepted
+Superseded by
+[architecture ADR-007](../architecture/ADR-007-authorization-lives-with-its-aggregate.md).
+
+The mechanism described here is unchanged and still in force: domain-specific
+evaluators behind Spring Security's `PermissionEvaluator`, dispatched by
+`CompositePermissionEvaluator`, with `BasePermissionEvaluator` resolving the
+domain type generically and `hasPermission('id', 'Type', 'action')` as the call
+shape.
+
+What is withdrawn is the **location**. The seventeen domain evaluators move to
+the module whose aggregate each governs; only the base class and the composite
+remain in `infrastructure/security/permission`. The three reasons given below
+for the infrastructure layer no longer hold: hexagonal layering was rejected for
+this codebase in architecture ADR-002, the "multiple interfaces" it anticipated
+never materialised, and under Spring Modulith a central package would force every
+module to publish its service and entity. Retained for history.
+
 
 ## Context
 Applications need fine-grained authorization beyond role-based access control (RBAC). Requirements include:

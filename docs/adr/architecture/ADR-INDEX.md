@@ -13,6 +13,7 @@ stack.
 |---|-------|--------|---------|
 | [001](ADR-001-application-modules-replace-layers.md) | Application Modules Replace Layers | Accepted | Feature modules verified by Spring Modulith; layer rules inside a module become convention |
 | [003](ADR-003-package-topology-and-placement-rules.md) | Package Topology and Placement Rules | Accepted | Flat modules, four folders inside each, and six rules for where a file goes |
+| [007](ADR-007-authorization-lives-with-its-aggregate.md) | Authorization Lives With Its Aggregate | Accepted | Domain permission evaluators move to their module; the dispatch mechanism stays |
 
 ### Execution
 
@@ -34,6 +35,7 @@ stack.
 - [API ADR-016: Layer Dependency Rules](../api/ADR-016-layer-dependency-rules.md)
 - [API ADR-020: Shared Kernel Governance](../api/ADR-020-shared-kernel-governance.md)
 - [API ADR-022: Platform, Infrastructure, and Shared Organization](../api/ADR-022-platform-infrastructure-shared-organization.md)
+- [API ADR-014: Permission Evaluation Strategy](../api/ADR-014-permission-evaluation-strategy.md) — location only; the mechanism is carried forward
 
 ## Amended by this set
 - [API ADR-003: Validation Layer Separation](../api/ADR-003-validation-layer-separation.md) — where database-dependent rules run

@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.dto.error
+package net.blueshell.api.platform.web.dto.error
 
 import io.swagger.v3.oas.annotations.media.Schema
 

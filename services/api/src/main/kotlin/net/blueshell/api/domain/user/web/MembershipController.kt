@@ -22,7 +22,7 @@ import net.blueshell.api.domain.user.web.mapping.response.asResponse
 import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
-import net.blueshell.api.shared.validation.group.Administration
+import net.blueshell.api.domain.user.web.validation.group.Administration
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus

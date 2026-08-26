@@ -6,7 +6,7 @@ import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel
 import net.blueshell.api.shared.model.DirtyAwareModel
 
-import net.blueshell.api.shared.model.converter.StringListConverter
+import net.blueshell.api.domain.survey.persistence.converter.StringListConverter
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 

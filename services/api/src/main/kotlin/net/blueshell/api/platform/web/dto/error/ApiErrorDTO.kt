@@ -1,7 +1,7 @@
-package net.blueshell.api.shared.dto.error
+package net.blueshell.api.platform.web.dto.error
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.dto.BaseDTO
+import net.blueshell.api.platform.web.dto.BaseDTO
 import java.net.URI
 
 /**

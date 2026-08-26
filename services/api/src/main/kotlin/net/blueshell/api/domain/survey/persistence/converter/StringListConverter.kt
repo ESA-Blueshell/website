@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.model.converter
+package net.blueshell.api.domain.survey.persistence.converter
 
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.json.JsonMapper

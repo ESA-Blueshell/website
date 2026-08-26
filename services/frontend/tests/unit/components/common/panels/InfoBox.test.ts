@@ -65,14 +65,6 @@ describe("InfoBox", () => {
     expect(box.find('[data-testid="info-box-body"]').exists()).toBe(false)
   })
 
-  it("drops its own surface when it is the thing the page is about", () => {
-    const box = mountBox({flush: true})
-
-    // A tint marks an aside. The main content is not one, and tinting it stacks a panel
-    // inside a card inside a page.
-    expect(box.get(".info-box").classes()).toContain("info-box--flush")
-  })
-
   it("is not a button when there is nothing to open", () => {
     const box = mountBox({})
 

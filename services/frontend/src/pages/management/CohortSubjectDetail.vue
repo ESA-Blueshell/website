@@ -6,18 +6,12 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   type CohortSubjectDetail,
   CohortSubjectCategory,
-  CohortSubjectType,
   TargetSystem,
   enqueue,
   findCohortSubjectById,
 } from "@/services/api"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
-import {cohortTypeLabel} from "@/domains/cohorts/cohortTypeLabels"
-import {
-  countLabel,
-  rulesSummary,
-  targetsSummary,
-} from "@/domains/cohorts/cohortSubjectSummaries"
+import {rulesSummary, targetsSummary} from "@/domains/cohorts/cohortSubjectSummaries"
 import {
   linkUserToExternal,
   removeExternalMember,
@@ -62,13 +56,6 @@ const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
   [CohortSubjectCategory.MEMBERS]: "Members",
   [CohortSubjectCategory.OTHER]: "Other",
 }
-
-/** What this cohort is, said once: where it lives and what kind it is. */
-const identity = computed<string>(() =>
-  subject.value == null
-    ? ""
-    : `${CATEGORY_LABELS[subject.value.category]} · ${cohortTypeLabel(subject.value.type as CohortSubjectType)}`,
-)
 
 const rulesSubtitle = computed<string>(() => rulesSummary(subject.value?.rules ?? []))
 
@@ -212,26 +199,8 @@ const memberName = (member: MemberRow): string => {
 /** Every ledger row the page holds: our members, and the rows only the target knows. */
 const allRows = computed<MemberRow[]>(() => subject.value?.members ?? [])
 
-/** The counts the box states before it is opened, and the badge beside the cohort's name. */
+/** The badge beside the cohort's name: people, not rows. */
 const memberCount = computed(() => allRows.value.filter(isMember).length)
-
-const driftCounts = computed(() => {
-  const rows = allRows.value
-  return {
-    onlyExternal: rows.filter((row) => syncStateOf(row) === "ONLY_EXTERNAL").length,
-    onlyHere: rows.filter((row) => syncStateOf(row) === "ONLY_HERE").length,
-    broken: rows.filter((row) => syncStateOf(row) === "BROKEN").length,
-  }
-})
-
-const membersSummaryLine = computed(() => {
-  const {onlyExternal, onlyHere, broken} = driftCounts.value
-  const parts = [countLabel(memberCount.value, "member")]
-  if (onlyHere > 0) parts.push(`${onlyHere} not synced`)
-  if (onlyExternal > 0) parts.push(`${onlyExternal} only external`)
-  if (broken > 0) parts.push(`${broken} broken`)
-  return parts.join(" · ")
-})
 
 // ── Filtering ─────────────────────────────────────────────────────────────────
 
@@ -553,9 +522,6 @@ watch(subjectId, () => void load())
               </v-btn>
             </div>
 
-            <p class="text-body-2 text-medium-emphasis mb-0">
-              {{ identity }}
-            </p>
             <p
               v-if="subject.description"
               class="text-body-2 text-medium-emphasis mb-0"
@@ -689,14 +655,7 @@ watch(subjectId, () => void load())
                 </div>
               </info-box>
 
-              <info-box
-                default-open
-                expandable
-                flush
-                label="Members"
-                :summary="membersSummaryLine"
-                testid="cohort-subject-members"
-              >
+              <div data-testid="cohort-subject-members">
                 <p
                   v-if="allRows.length === 0"
                   class="text-body-2 text-medium-emphasis mb-0"
@@ -844,7 +803,7 @@ watch(subjectId, () => void load())
                     </tbody>
                   </v-table>
                 </template>
-              </info-box>
+              </div>
             </div>
           </v-card-text>
         </v-card>
@@ -993,9 +952,9 @@ watch(subjectId, () => void load())
   }
 }
 
-// The members box carries the page's own content, so it sits on the card rather than in a
-// panel of its own; the two boxes above it are asides and keep their tint.
-.subject-boxes :deep(.info-box--flush) {
+// The members table is the page's own content, so it sits on the card; the two boxes above it
+// are asides and keep their tint.
+.subject-boxes > [data-testid="cohort-subject-members"] {
   margin-top: 4px;
 }
 

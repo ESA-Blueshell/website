@@ -24,9 +24,6 @@ test.describe("cohort subject detail", () => {
 
     await page.goto(COMMITTEE_SUBJECT)
 
-    // Not `committee_members` lower-cased, which is what the page used to derive by hand.
-    await expect(page.getByTestId("cohort-subject-identity"))
-      .toContainText("Committees · Committee members")
     await expect(page.getByTestId("cohort-subject-identity")).toContainText("Web Cmte")
   })
 
@@ -42,7 +39,6 @@ test.describe("cohort subject detail", () => {
     await expect(page.getByTestId("cohort-subject-member-count")).toContainText("2")
     await expect(page.getByTestId("cohort-subject-rules")).toContainText("1 rule · 1 enabled")
     await expect(page.getByTestId("cohort-subject-targets")).toContainText("1 sync target")
-    await expect(page.getByTestId("cohort-subject-members")).toContainText("2 members")
   })
 
   test("opens a box to show what it holds, and keeps it shut until asked", async ({page}) => {
@@ -190,15 +186,15 @@ test.describe("cohort subject detail — drift in the members table", () => {
     await expect(members.getByTestId("cohort-subject-member-601")).toContainText("someone@example.com")
   })
 
-  test("counts members in the badge and names the exceptions beside it", async ({page}) => {
+  test("counts members in the badge, not rows", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
     await page.goto(SUBJECT)
 
-    // Two of the four rows are members; the badge counts those, as the category page counts.
+    // Four rows, two of them members: the badge counts people, by the same predicate the
+    // category page counts in SQL, so the two pages agree.
     await expect(page.getByTestId("cohort-subject-member-count")).toContainText("2")
-    await expect(page.getByTestId("cohort-subject-members"))
-      .toContainText("2 members · 1 not synced · 2 only external")
+    await expect(page.getByTestId("cohort-subject-members").locator("tbody tr")).toHaveCount(4)
   })
 
   test("filters down to the rows that need attention", async ({page}) => {

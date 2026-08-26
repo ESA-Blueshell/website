@@ -7,7 +7,7 @@ Accepted
 
 The repository runs five distinct test suites. Nothing wrote down what each one is
 for, so the boundaries drifted: two suites drive Playwright over the same pages,
-27 tests requiring a Spring context sit in the source set reserved for tests that
+26 tests requiring a Spring context sit in the source set reserved for tests that
 have none, and the Cucumber features are absent from every description of how the
 project is tested.
 
@@ -48,9 +48,11 @@ A unit test constructs its subject directly. If a test needs `@SpringBootTest`,
 `@DataJpaTest` or `@WebMvcTest`, it is an integration test wherever its file
 happens to sit.
 
-This is currently violated 27 times. Every `*SecurityTest.kt` under
-`src/test/kotlin` carries `@SpringBootTest` — `AddressControllerSecurityTest`,
-`BlogControllerSecurityTest`, `UserControllerSecurityTest` and 24 more. The
+This is currently violated 26 times. Twenty-four are `*SecurityTest.kt` under
+`src/test/kotlin` carrying `@SpringBootTest` — `AddressControllerSecurityTest`,
+`BlogControllerSecurityTest`, `UserControllerSecurityTest` among them — and two
+are not: `OpenApiSpecGeneratorTest` and `EmailTemplateServiceTest`. None uses
+`@DataJpaTest` or `@WebMvcTest`. The
 consequence is measurable rather than theoretical: running `:services:api:test`
 without a database fails 461 of 1253 tests, and 455 of those failures are
 `ApplicationContext failure threshold (1) exceeded`. The unit suite has no
@@ -102,7 +104,7 @@ whether it passes.
 
 Decided, not yet enforced.
 
-- The 27 `@SpringBootTest` files under `src/test/kotlin` must move to
+- The 26 `@SpringBootTest` files under `src/test/kotlin` must move to
   `src/integrationTest/kotlin`. This is sequenced **before** the unit branch gate
   becomes blocking; until it lands the unit exec measures a contaminated set and
   its number means nothing.

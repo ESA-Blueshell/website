@@ -96,7 +96,7 @@ of the original proposal that adds capability rather than moving it.
 Decided, none of it built. Sequenced in
 [ADR-006](ADR-006-migration-sequencing.md), phase 1.
 
-- Deleting the bus touches the 20 controllers that inject it.
+- Deleting the bus touches the 19 controllers that inject it.
 - `AsyncCommandDispatcher`, `AbstractCommandJobHandler`, `CommandJobDefinition`
   and their two unit tests are removed outright — verified unused.
 - `shared/command` (3 files, 13 consumer modules) disappears with the bus.
@@ -123,7 +123,7 @@ Decided, none of it built. Sequenced in
   payload" is a judgement per operation, where the bus asked nothing.
 - **Discoverability drops.** `CommandHandler` implementations were a complete
   list of write operations; methods across fifteen services are not.
-- **A large, broad diff.** Twenty controllers change in phase 1.
+- **A large, broad diff.** Nineteen controllers change in phase 1.
 
 ### Neutral
 - **Command replay and audit-trail arguments were never realised.** The

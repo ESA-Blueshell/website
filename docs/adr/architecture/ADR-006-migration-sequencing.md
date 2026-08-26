@@ -50,7 +50,7 @@ the command refactor:
   consumers or fewer moves to its owning module.
 - The 19 permission classes distribute to their modules, leaving the abstract
   base and the composite evaluator in `security`.
-- The 27 `@SpringBootTest` files that sit in the unit source set move to
+- The 26 `@SpringBootTest` files that sit in the unit source set move to
   `integrationTest`, discharging the obligation in
   [testing ADR-001](../testing/ADR-001-test-pyramid-and-layer-placement.md).
 

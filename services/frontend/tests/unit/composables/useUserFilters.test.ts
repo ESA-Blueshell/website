@@ -154,13 +154,37 @@ describe("useUserFilters", () => {
     expect(filteredRows.value[0]!.id).toBe(2)
   })
 
-  it("sorts by name ascending by default", () => {
+  it("keeps the order the rows arrived in until a column is chosen", () => {
     const rows = ref([makeRow(1, {fullName: "Zoe Last"}), makeRow(2, {fullName: "Anna First"})])
     const index = ref(new Map([[1, "zoe last"], [2, "anna first"]]))
-    const {filteredRows} = useUserFilters(rows, index)
+    const {filteredRows, sortKey} = useUserFilters(rows, index)
 
-    expect(filteredRows.value[0]!.id).toBe(2)
-    expect(filteredRows.value[1]!.id).toBe(1)
+    expect(sortKey.value).toBeNull()
+    expect(filteredRows.value.map((row) => row.id)).toEqual([1, 2])
+  })
+
+  it("sorts by name once the name column is chosen", () => {
+    const rows = ref([makeRow(1, {fullName: "Zoe Last"}), makeRow(2, {fullName: "Anna First"})])
+    const index = ref(new Map([[1, "zoe last"], [2, "anna first"]]))
+    const {filteredRows, toggleSort} = useUserFilters(rows, index)
+
+    toggleSort("name")
+
+    expect(filteredRows.value.map((row) => row.id)).toEqual([2, 1])
+  })
+
+  it("returns to the arrival order at the end of the tri-state cycle", () => {
+    const rows = ref([makeRow(1, {fullName: "Zoe Last"}), makeRow(2, {fullName: "Anna First"})])
+    const index = ref(new Map([[1, "zoe last"], [2, "anna first"]]))
+    const {filteredRows, sortKey, toggleSort} = useUserFilters(rows, index)
+
+    toggleSort("name")
+    toggleSort("name")
+    toggleSort("name")
+
+    // Unsorted is where the header started, so the cycle can get back to it.
+    expect(sortKey.value).toBeNull()
+    expect(filteredRows.value.map((row) => row.id)).toEqual([1, 2])
   })
 
   it("toggleSort changes key and resets to ascending", () => {
@@ -168,17 +192,19 @@ describe("useUserFilters", () => {
     const index = ref(new Map([[1, "u1"], [2, "u2"]]))
     const {sortKey, sortAsc, toggleSort} = useUserFilters(rows, index)
 
-    expect(sortKey.value).toBe("name")
+    expect(sortKey.value).toBeNull()
     toggleSort("status")
     expect(sortKey.value).toBe("status")
     expect(sortAsc.value).toBe(true)
   })
 
-  it("toggleSort on same key flips sortAsc", () => {
+  it("toggleSort on the same key flips sortAsc", () => {
     const rows = ref([makeRow(1)])
     const index = ref(new Map([[1, "u1"]]))
     const {sortAsc, toggleSort} = useUserFilters(rows, index)
 
+    // The first click chooses the column; the second is the one that flips direction.
+    toggleSort("name")
     expect(sortAsc.value).toBe(true)
     toggleSort("name")
     expect(sortAsc.value).toBe(false)

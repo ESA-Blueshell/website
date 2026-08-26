@@ -7,7 +7,7 @@ Accepted
 
 The repository runs five distinct test suites. Nothing wrote down what each one is
 for, so the boundaries drifted: two suites drive Playwright over the same pages,
-26 tests requiring a Spring context sit in the source set reserved for tests that
+tests requiring a Spring context sit in the source set reserved for tests that
 have none, and the Cucumber features are absent from every description of how the
 project is tested.
 
@@ -48,16 +48,27 @@ A unit test constructs its subject directly. If a test needs `@SpringBootTest`,
 `@DataJpaTest` or `@WebMvcTest`, it is an integration test wherever its file
 happens to sit.
 
-This is currently violated 26 times. Twenty-four are `*SecurityTest.kt` under
-`src/test/kotlin` carrying `@SpringBootTest` — `AddressControllerSecurityTest`,
-`BlogControllerSecurityTest`, `UserControllerSecurityTest` among them — and two
-are not: `OpenApiSpecGeneratorTest` and `EmailTemplateServiceTest`. None uses
-`@DataJpaTest` or `@WebMvcTest`. The
-consequence is measurable rather than theoretical: running `:services:api:test`
-without a database fails 461 of 1253 tests, and 455 of those failures are
-`ApplicationContext failure threshold (1) exceeded`. The unit suite has no
-independent fast-feedback value today, because it cannot run at all on a laptop
-without infrastructure.
+This was violated 32 times, and counting them by annotation under-reported it.
+Twenty-six classes carried `@SpringBootTest` directly. Six more —
+`EmailServiceIntegrationTest`, `EmailJobHandlersTest`, `RecoveryEventListenerTest`,
+`ContributionReminderServiceTest`, `EventSignUpServiceEmailTest` and
+`EventJobsListenerTest` — inherited it from `ServiceTestSupport` in `testFixtures`
+without naming it, so a textual search missed them entirely.
+
+**The rule is therefore about the context, not the annotation:** a test needing a
+Spring context is an integration test however it acquires one. The guard that
+enforces this walks the superclass chain rather than grepping.
+
+One class stays in `src/test` by design. `OpenApiSpecGeneratorTest` carries
+`@SpringBootTest` but is excluded from the `test` task by its `openapi-gen` tag
+and is run only by `openApiGenTest`, which reads `sourceSets["test"]`. It never
+contaminates the unit run, and moving it breaks spec generation.
+
+The consequence was measurable rather than theoretical: before the move,
+`:services:api:test` without a database failed 461 of 1253 tests, 455 of them
+`ApplicationContext failure threshold (1) exceeded`. After it, the unit suite
+runs to completion with no database at all, and unit branch coverage reads
+40.8% — down from a 52.6% that was never a unit number.
 
 ### The system layer is bounded by real-stack risk
 
@@ -104,7 +115,7 @@ whether it passes.
 
 Decided, not yet enforced.
 
-- The 26 `@SpringBootTest` files under `src/test/kotlin` must move to
+- The 32 Spring-context files under `src/test/kotlin` must move to
   `src/integrationTest/kotlin`. This is sequenced **before** the unit branch gate
   becomes blocking; until it lands the unit exec measures a contaminated set and
   its number means nothing.

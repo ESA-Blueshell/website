@@ -27,6 +27,12 @@ tasks.withType<Test> {
     useJUnitPlatform {
         excludeTags("system", "brevo-live", "discord-live")
     }
+    // Gradle forks test JVMs with a 512 MB default heap, and GRADLE_OPTS sizes the
+    // daemon rather than the fork. Spring's TestContext framework caches one
+    // ApplicationContext per distinct configuration for the life of the JVM, so a
+    // suite with many @SpringBootTest classes exhausts that default and fails on
+    // context load rather than on an assertion.
+    maxHeapSize = "2g"
 }
 
 tasks.register<Test>("integrationTest") {

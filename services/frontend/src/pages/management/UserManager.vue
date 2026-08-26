@@ -158,9 +158,9 @@ function ariaSort(key: SortKey) {
   return sortAsc.value ? "ascending" : "descending"
 }
 
-// Members count badge: show "shown / total" when a filter/search narrows the
+// Users count badge: show "shown / total" when a filter/search narrows the
 // list, otherwise just the total.
-const memberCountLabel = computed(() =>
+const userCountLabel = computed(() =>
   filteredRows.value.length === rows.value.length
     ? `${rows.value.length}`
     : `${filteredRows.value.length} / ${rows.value.length}`,
@@ -300,7 +300,7 @@ async function confirmDeleteUser() {
 
 <template>
   <v-main>
-    <top-banner title="Member Manager" />
+    <top-banner title="User Manager" />
 
     <v-container>
       <div
@@ -316,11 +316,11 @@ async function confirmDeleteUser() {
           <v-card-text>
             <div class="d-flex align-center mb-4">
               <v-badge
-                :content="memberCountLabel"
+                :content="userCountLabel"
                 color="primary"
               >
                 <h2 class="ma-0">
-                  Members
+                  Users
                 </h2>
               </v-badge>
             </div>
@@ -336,7 +336,7 @@ async function confirmDeleteUser() {
                 data-testid="member-manager-search-input"
                 :density="toolbarDensity"
                 hide-details
-                label="Search members"
+                label="Search users"
                 prepend-inner-icon="mdi-magnify"
               />
               <div class="mm-filters">

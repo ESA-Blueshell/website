@@ -1,17 +1,15 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   type CohortSubjectSummary,
-  type CohortSubjectType,
   CohortSubjectCategory,
   findCohortSubjects,
 } from "@/services/api"
 import {COHORT_TYPE_ORDER, cohortTypeLabel} from "@/domains/cohorts/cohortTypeLabels"
-import {countLabel} from "@/domains/cohorts/cohortSubjectSummaries"
+import {useTableSort} from "@/composables/useTableSort"
 import store from "@/plugins/store"
 
 defineOptions({name: "CohortCategoryPage"})
@@ -40,13 +38,44 @@ const categoryLabel = computed<string>(() =>
   category.value != null ? CATEGORY_LABELS[category.value] : "Cohorts",
 )
 
-const visibleSubjects = computed<CohortSubjectSummary[]>(() => {
+/**
+ * A row per cohort, carrying what it is as a value rather than as a heading above it.
+ *
+ * The kind used to be a group header repeated over every run of rows, which put the same
+ * words on screen twice — once naming the group, once naming the cohort. As a column it is
+ * one word per row, and it sorts.
+ *
+ * Unsorted, the rows read in the order the kinds are declared and then by name, which is the
+ * order the groups used to impose. A column sort replaces it only once one is asked for.
+ */
+type CohortRow = CohortSubjectSummary & {typeLabel: string}
+
+const rows = computed<CohortRow[]>(() => {
   if (category.value == null) return []
   return subjects.value
     .filter((subject) => subject.category === category.value)
-    .slice()
-    .sort((leftSubject, rightSubject) => leftSubject.label.localeCompare(rightSubject.label))
+    .map((subject) => ({...subject, typeLabel: cohortTypeLabel(subject.type)}))
+    .sort((left, right) => {
+      const byType = COHORT_TYPE_ORDER.indexOf(left.type) - COHORT_TYPE_ORDER.indexOf(right.type)
+      return byType !== 0 ? byType : left.label.localeCompare(right.label)
+    })
 })
+
+type SortKey = "label" | "typeLabel" | "memberCount" | "mappingCount"
+
+const {sortedItems, toggleSort, sortIcon, ariaSort} = useTableSort<CohortRow, SortKey>(rows, {
+  label: (a, b) => a.label.localeCompare(b.label),
+  typeLabel: (a, b) => a.typeLabel.localeCompare(b.typeLabel),
+  memberCount: (a, b) => a.memberCount - b.memberCount,
+  mappingCount: (a, b) => a.mappingCount - b.mappingCount,
+})
+
+const COLUMNS: ReadonlyArray<{label: string; sortKey: SortKey; align?: string; width: string}> = [
+  {label: "Cohort", sortKey: "label", width: "42%"},
+  {label: "Kind", sortKey: "typeLabel", width: "26%"},
+  {label: "Members", sortKey: "memberCount", align: "text-right", width: "12%"},
+  {label: "Sync targets", sortKey: "mappingCount", align: "text-right", width: "14%"},
+]
 
 const refresh = async () => {
   loading.value = true
@@ -59,24 +88,6 @@ const refresh = async () => {
     loading.value = false
   }
 }
-
-/**
- * The cohorts of this category, grouped by what kind of cohort they are — committee
- * members, members in a period, contribution paid. A flat list of thirty cohorts named
- * after periods tells you nothing about which of them answer the same question.
- */
-const groupedSubjects = computed(() => {
-  const byType = new Map<CohortSubjectType, CohortSubjectSummary[]>()
-  for (const subject of visibleSubjects.value) {
-    byType.set(subject.type, [...(byType.get(subject.type) ?? []), subject])
-  }
-  return COHORT_TYPE_ORDER.filter((type) => byType.has(type)).map((type) => ({
-    type,
-    label: cohortTypeLabel(type),
-    subjects: [...byType.get(type)!].sort((a, b) => a.label.localeCompare(b.label)),
-    memberCount: byType.get(type)!.reduce((sum, s) => sum + s.memberCount, 0),
-  }))
-})
 
 const openSubject = (subject: CohortSubjectSummary) => {
   void router.push({name: "cohortSubjectDetail", params: {id: subject.id}})
@@ -114,49 +125,100 @@ watch(category, async (next) => {
           All categories
         </v-btn>
 
-        <manager-card
-          :eyebrow="categoryLabel"
-          :subtitle="countLabel(visibleSubjects.length, 'cohort')"
+        <v-card
+          class="manager-card"
+          data-testid="cohort-subject-list"
+          rounded="lg"
+          variant="flat"
         >
-          <v-list
-            data-testid="cohort-subject-list"
-            density="comfortable"
-          >
-            <v-list-item
-              v-if="!loading && visibleSubjects.length === 0"
-              subtitle="They appear automatically when the engine first encounters them."
-              title="No cohorts yet."
-            />
-            <template
-              v-for="group in groupedSubjects"
-              :key="group.type"
-            >
-              <v-list-subheader :data-testid="`cohort-type-group-${group.type}`">
-                {{ group.label }} · {{ countLabel(group.subjects.length, "cohort") }} · {{ countLabel(group.memberCount, "member") }}
-              </v-list-subheader>
-              <v-list-item
-                v-for="subject in group.subjects"
-                :key="subject.id"
-                :data-testid="`cohort-subject-row-${subject.id}`"
-                role="button"
-                tabindex="0"
-                @click="openSubject(subject)"
-                @keydown.enter.prevent="openSubject(subject)"
-                @keydown.space.prevent="openSubject(subject)"
+          <v-card-text>
+            <!-- One heading, carrying the count the way the member table does. The card used
+                 to repeat the banner's own word above a subtitle that held the number. -->
+            <div class="manager-heading mb-4">
+              <v-badge
+                color="primary"
+                :content="rows.length"
+                data-testid="cohort-subject-count"
               >
-                <v-list-item-title class="subject-title">
-                  {{ subject.label }}
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ countLabel(subject.memberCount, "member") }} · {{ countLabel(subject.mappingCount, "sync target") }}
-                </v-list-item-subtitle>
-                <template #append>
-                  <v-icon icon="mdi-chevron-right" />
-                </template>
-              </v-list-item>
-            </template>
-          </v-list>
-        </manager-card>
+                <h2 class="ma-0">
+                  {{ categoryLabel }} &ndash; Cohorts
+                </h2>
+              </v-badge>
+            </div>
+
+            <div style="overflow-x: auto">
+              <v-table class="manager-table">
+                <thead>
+                  <tr>
+                    <th
+                      v-for="column in COLUMNS"
+                      :key="column.sortKey"
+                      :aria-sort="ariaSort(column.sortKey)"
+                      :class="['sortable-header', column.align]"
+                      :data-testid="`cohort-header-${column.sortKey}`"
+                      role="button"
+                      :style="`width: ${column.width}`"
+                      tabindex="0"
+                      @click="toggleSort(column.sortKey)"
+                      @keydown.enter="toggleSort(column.sortKey)"
+                      @keydown.space.prevent="toggleSort(column.sortKey)"
+                    >
+                      {{ column.label }}
+                      <v-icon
+                        :icon="sortIcon(column.sortKey)"
+                        size="16"
+                      />
+                    </th>
+                    <th style="width: 6%" />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr
+                    v-for="subject in sortedItems"
+                    :key="subject.id"
+                    class="manager-table__row"
+                    :data-testid="`cohort-subject-row-${subject.id}`"
+                    role="button"
+                    tabindex="0"
+                    @click="openSubject(subject)"
+                    @keydown.enter.prevent="openSubject(subject)"
+                    @keydown.space.prevent="openSubject(subject)"
+                  >
+                    <td class="font-weight-medium">
+                      {{ subject.label }}
+                    </td>
+                    <td class="text-medium-emphasis">
+                      {{ subject.typeLabel }}
+                    </td>
+                    <td class="text-right">
+                      {{ subject.memberCount }}
+                    </td>
+                    <td class="text-right">
+                      {{ subject.mappingCount }}
+                    </td>
+                    <td class="text-right">
+                      <v-icon
+                        icon="mdi-chevron-right"
+                        size="20"
+                      />
+                    </td>
+                  </tr>
+
+                  <tr v-if="!loading && rows.length === 0">
+                    <td
+                      class="text-center text-medium-emphasis py-6"
+                      colspan="5"
+                    >
+                      No cohorts yet. They appear automatically when the engine first
+                      encounters them.
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </div>
+          </v-card-text>
+        </v-card>
       </div>
     </v-container>
   </v-main>
@@ -165,10 +227,5 @@ watch(category, async (next) => {
 <style lang="scss" scoped>
 .category-page {
   max-width: 980px;
-}
-
-.subject-title {
-  font-size: 15px;
-  font-weight: 600;
 }
 </style>

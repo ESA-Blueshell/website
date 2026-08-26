@@ -21,6 +21,7 @@ type Fixtures = {
   blogStatusById?: Record<string, number>
   jobs?: Array<Record<string, unknown>>
   emails?: Array<Record<string, unknown>>
+  cohortSubjects?: Array<Record<string, unknown>>
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -497,7 +498,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       ])
     }
     if (method === "GET" && path === "/management/cohort-subjects") {
-      return fulfillJson(route, [
+      return fulfillJson(route, fixtures.cohortSubjects ?? [
         {
           id: 101,
           type: "PERIOD_MEMBERS",

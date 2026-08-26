@@ -42,3 +42,51 @@
 .manager-card__body {
   padding: 14px 18px 18px;
 }
+
+// ── Tables ────────────────────────────────────────────────────────────────────
+//
+// A sortable column header, and the click affordance on a row that opens something. Defined
+// here rather than per page because "the same as the other tables" is the requirement, and
+// three scoped copies of it would not stay the same. The dividers come from `v-table` itself.
+
+// Nested under `.manager-table`, and reaching the `th` by element, so these outweigh
+// Vuetify's own `.v-table ... thead > tr > th` background. A bare `.sortable-header` does not:
+// this file is loaded before Vuetify's styles, so an equally specific rule loses to them.
+.manager-table {
+  // Every header label sits on the same baseline, whatever its cell holds: a one-line label,
+  // a label wrapped onto two, or a checkbox.
+  thead th {
+    vertical-align: bottom;
+    background: rgb(var(--v-theme-surface));
+  }
+
+  thead th.sortable-header {
+    cursor: pointer;
+    user-select: none;
+
+    // Tinted with the theme's foreground, not black: on the dark theme a black tint darkens
+    // the header instead of lifting it, so the hover read as a smudge. Layered over the
+    // surface because a sticky header has to stay opaque while rows pass under it.
+    &:hover {
+      background:
+        linear-gradient(rgba(var(--v-theme-on-surface), 0.06), rgba(var(--v-theme-on-surface), 0.06)),
+        rgb(var(--v-theme-surface));
+    }
+  }
+}
+
+// A row that opens something looks like it does.
+.manager-table tbody tr.manager-table__row {
+  cursor: pointer;
+}
+
+.manager-table tbody tr.manager-table__row:hover > td {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+// The count beside a heading, as the member table carries it.
+.manager-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

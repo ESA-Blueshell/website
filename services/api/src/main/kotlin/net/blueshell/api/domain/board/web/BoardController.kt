@@ -3,15 +3,14 @@ package net.blueshell.api.domain.board.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.domain.board.command.*
+import net.blueshell.api.domain.board.application.BoardService
+import net.blueshell.api.domain.board.application.BoardUseCases
 import net.blueshell.api.domain.board.web.dto.request.AddBoardMemberRequest
 import net.blueshell.api.domain.board.web.dto.request.CreateBoardRequest
 import net.blueshell.api.domain.board.web.dto.request.UpdateBoardRequest
 import net.blueshell.api.domain.board.web.dto.response.BoardMemberResponse
 import net.blueshell.api.domain.board.web.dto.response.BoardResponse
-import net.blueshell.api.domain.board.web.mapping.request.asCommand
 import net.blueshell.api.domain.board.web.mapping.response.asResponse
-import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -20,28 +19,33 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/boards")
 @Tag(name = "Boards")
 class BoardController(
-    private val commandBus: CommandBus
+    private val service: BoardService,
+    private val useCases: BoardUseCases,
 ) {
     @PostMapping
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Board', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createBoard(@Valid @RequestBody request: CreateBoardRequest): BoardResponse {
-        val board = commandBus.dispatch(request.asCommand())
+        val board = useCases.create(
+            name = request.name,
+            candidate = request.candidate,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            pictureId = request.pictureId,
+        )
         return board.asResponse()
     }
 
     @GetMapping
     @PermitAll
     fun findAllBoards(): List<BoardResponse> {
-        return commandBus.dispatch(FindBoardsCommand())
-            .map { it.asResponse() }
+        return service.findAll().map { it.asResponse() }
     }
 
     @GetMapping("/{id}")
     @PermitAll
     fun findBoardById(@PathVariable id: Long): BoardResponse {
-        val board = commandBus.dispatch(FindBoardByIdCommand(id))
-        return board.asResponse()
+        return service.findById(id).asResponse()
     }
 
     @PutMapping("/{id}")
@@ -50,7 +54,14 @@ class BoardController(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateBoardRequest
     ): BoardResponse {
-        val board = commandBus.dispatch(request.asCommand(id))
+        val board = useCases.update(
+            id = id,
+            name = request.name,
+            candidate = request.candidate,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            pictureId = request.pictureId,
+        )
         return board.asResponse()
     }
 
@@ -58,7 +69,7 @@ class BoardController(
     @PreAuthorize("hasPermission(#id, 'Board', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteBoard(@PathVariable id: Long) {
-        commandBus.dispatch(DeleteBoardByIdCommand(id))
+        service.deleteById(id)
     }
 
     // Board Member endpoints
@@ -69,7 +80,13 @@ class BoardController(
         @PathVariable boardId: Long,
         @Valid @RequestBody request: AddBoardMemberRequest
     ): BoardMemberResponse {
-        val member = commandBus.dispatch(request.asCommand(boardId))
+        val member = useCases.addMember(
+            boardId = boardId,
+            userId = request.userId,
+            role = request.role,
+            startDate = request.startDate,
+            endDate = request.endDate,
+        )
         return member.asResponse()
     }
 
@@ -80,6 +97,6 @@ class BoardController(
         @PathVariable boardId: Long,
         @PathVariable userId: Long
     ) {
-        commandBus.dispatch(RemoveBoardMemberCommand(boardId, userId))
+        useCases.removeMember(boardId, userId)
     }
 }

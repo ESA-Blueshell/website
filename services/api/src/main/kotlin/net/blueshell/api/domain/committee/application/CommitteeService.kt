@@ -2,7 +2,6 @@ package net.blueshell.api.domain.committee.application
 
 import net.blueshell.api.domain.committee.application.event.CommitteeMembershipChanged
 import net.blueshell.api.domain.committee.application.exception.CommitteeNotFoundException
-import net.blueshell.api.domain.committee.command.CommitteeMemberData
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.committee.persistence.repository.CommitteeRepository

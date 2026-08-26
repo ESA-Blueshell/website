@@ -9,11 +9,11 @@ import jakarta.validation.constraints.Size
 @Schema(name = "UpdateCommitteeRequest")
 data class UpdateCommitteeRequest(
     @field:NotBlank(message = "Committee name cannot be blank.")
-    @field:Size(max = 255, message = "Committee name cannot exceed 255 characters.")
+    @field:Size(min = 1, max = 100, message = "Name must be 1-100 characters")
     var name: String,
 
     @field:NotBlank(message = "Committee description cannot be empty.")
-    @field:Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
+    @field:Size(min = 1, max = 1000, message = "Description must be 1-1000 characters")
     var description: String,
 
     @field:NotEmpty

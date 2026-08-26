@@ -959,7 +959,12 @@ async function confirmDeleteUser() {
   vertical-align: bottom;
 
   &:hover {
-    background: linear-gradient(rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.04)), rgb(var(--v-theme-surface));
+    // Tinted with the theme's foreground, not black: on the dark theme a black tint darkens
+    // the header instead of lifting it, so the hover read as a smudge. Layered over the
+    // surface because the header is sticky and has to stay opaque.
+    background:
+      linear-gradient(rgba(var(--v-theme-on-surface), 0.06), rgba(var(--v-theme-on-surface), 0.06)),
+      rgb(var(--v-theme-surface));
   }
 }
 
@@ -1009,8 +1014,10 @@ async function confirmDeleteUser() {
   }
 }
 
+// Same reason as the header hover: a black stripe on the dark theme sinks into the background
+// rather than separating the rows.
 tbody tr:nth-child(odd) {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(var(--v-theme-on-surface), 0.02);
 }
 
 tbody tr.mm-row--selected > td {

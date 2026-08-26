@@ -1,4 +1,6 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.domain.user.application.permission
+
+import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User

@@ -1,7 +1,7 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.domain.contribution.application.permission
 
-import net.blueshell.api.domain.user.application.AddressService
-import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.domain.contribution.application.ContributionService
+import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
@@ -10,8 +10,8 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class AddressPermission @Autowired constructor(service: AddressService) :
-    BasePermissionEvaluator<Address, Long, AddressService>(service) {
+class ContributionPermission @Autowired constructor(service: ContributionService) :
+    BasePermissionEvaluator<Contribution, Contribution.Id, ContributionService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
@@ -24,22 +24,21 @@ class AddressPermission @Autowired constructor(service: AddressService) :
             }
         }
 
-        val target = entity as Address
+        val contribution = entity as Contribution
         val principal = SecurityUtils.principalFrom(authentication)
         return when (permission) {
-            "read", "write" -> isBoard || (principal?.addressId == target.id)
-            "delete" -> isBoard
+            "read" -> isBoard || (principal?.id == contribution.userId)
+            "write", "delete" -> isBoard
             else -> false
         }
     }
 
     override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
-        if (authentication == null || permission == null) {
+        if (authentication == null || id == null || permission == null) {
             return false
         }
-        if (id == null) return hasPermission(authentication, null, permission)
 
-        val target = service.findById(id as Long)
-        return hasPermission(authentication, target, permission)
+        val targetContribution = service.findById(id as Contribution.Id)
+        return hasPermission(authentication, targetContribution, permission)
     }
 }

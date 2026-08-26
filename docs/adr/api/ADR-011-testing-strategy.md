@@ -1,7 +1,17 @@
 # ADR-011: Testing Strategy
 
 ## Status
-Accepted
+Superseded by the [testing ADR set](../testing/ADR-INDEX.md).
+
+The layered approach below still describes the intent, but the specifics have
+drifted: the `src/test/kotlin/{architecture,domain,testsupport}` layout predates the
+`integrationTest` source set and the extraction of `services/system-tests`, and CI
+provisions MariaDB as a service container rather than through Testcontainers. Layer
+definitions are now in
+[testing ADR-001](../testing/ADR-001-test-pyramid-and-layer-placement.md); coverage
+gating in [testing ADR-002](../testing/ADR-002-coverage-gates-apply-to-changed-code.md)
+and [ADR-003](../testing/ADR-003-coverage-counters-thresholds-and-ratchet.md).
+Retained for history.
 
 ## Context
 Comprehensive testing strategy needed to ensure code quality, architectural compliance, and functionality.

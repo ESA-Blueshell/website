@@ -8,8 +8,8 @@ import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.responses.ApiResponse
-import net.blueshell.api.shared.dto.error.ApiErrorDTO
-import net.blueshell.api.shared.dto.error.FieldValidationErrorDTO
+import net.blueshell.api.platform.web.dto.error.ApiErrorDTO
+import net.blueshell.api.platform.web.dto.error.FieldValidationErrorDTO
 import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

@@ -5,7 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.validation.group.Creation
+import net.blueshell.api.domain.user.web.validation.group.Creation
 
 @Schema(name = "CreateUserRequest")
 class CreateUserRequest(

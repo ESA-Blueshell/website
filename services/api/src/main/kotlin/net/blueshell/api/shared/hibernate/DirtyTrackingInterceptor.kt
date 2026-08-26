@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.model.hibernate
+package net.blueshell.api.shared.hibernate
 
 import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel

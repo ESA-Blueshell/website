@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.dto
+package net.blueshell.api.platform.web.dto
 
 import java.io.Serializable
 

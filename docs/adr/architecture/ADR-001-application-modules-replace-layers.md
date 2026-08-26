@@ -36,9 +36,12 @@ this a modular monolith. Nothing verifies the modules.
 **Feature modules are the primary structure, verified by Spring Modulith. Layer
 rules inside a module are a matter of convention, not of enforcement.**
 
-Spring Modulith 2.0 GA baselines on Spring Boot 4 and Framework 7, which matches
-this codebase, and its event serialisation supports Jackson 3, which this project
-already uses (`tools.jackson`).
+Spring Modulith is already a dependency — `spring-modulith-bom:2.1.0` with
+`spring-modulith-starter-jdbc`, present since the sync work. Its 2.x line
+baselines on Spring Boot 4 and Framework 7, matching this codebase, and its event
+serialisation supports Jackson 3, which this project already uses
+(`tools.jackson`). What this ADR adds is **module verification**, which is not
+enabled.
 
 ### What a module is
 
@@ -91,16 +94,27 @@ Spring practices — are unaffected and stay.
 
 ## Implementation status
 
-Decided, none of it built.
+Partly built. This section originally said "none of it built" and that Modulith
+was not a dependency; both were wrong, asserted without checking. What is
+already in place:
 
-- Spring Modulith is not a dependency. The exact 2.0.x patch version is chosen
-  when the dependency lands.
-- The Event Publication Registry requires an `event_publication` table, so a
-  Flyway migration is a prerequisite for any `@ApplicationModuleListener`.
-- The seven cycles all exist today. `ApplicationModules.verify()` cannot pass
-  until every one is broken.
-- The `@PackageInfo` classes do not exist — roughly twenty of them, one per
-  module.
+- **The dependency**: `spring-modulith-bom:2.1.0` and
+  `spring-modulith-starter-jdbc`.
+- **The Event Publication Registry**: `V59__modulith_event_publication.sql`
+  creates the table, and two listeners already run on it —
+  `CalendarSyncListener` and `ContactSyncListener`, both
+  `@ApplicationModuleListener`. Durable cross-module coordination is therefore
+  not a future capability here; it is the existing mechanism for sync.
+
+What is genuinely outstanding:
+
+- **Module verification is not enabled.** No `ApplicationModules.verify()`
+  anywhere, so nothing checks module boundaries today.
+- **The `@PackageInfo` classes do not exist** — roughly twenty, one per module,
+  carrying the metadata Kotlin cannot put in a `package-info.java`.
+- **The seven cycles all exist**, re-measured on `main` and unchanged by the
+  package moves so far. `ApplicationModules.verify()` cannot pass until every one
+  is broken.
 
 ## Consequences
 

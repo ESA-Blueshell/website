@@ -67,10 +67,11 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [011](ADR-011-testing-strategy.md) | Testing Strategy | Accepted | Test pyramid including architecture, unit, and integration coverage |
+| [011](ADR-011-testing-strategy.md) | Testing Strategy | Superseded | Replaced by the [testing ADR set](../testing/ADR-INDEX.md) |
 
 ## Related Documentation
 - [Flow documentation](../../flows/README.md)
 - [ADR umbrella index](../ADR-INDEX.md)
 - [Frontend ADR index](../frontend/ADR-INDEX.md)
+- [Testing ADR index](../testing/ADR-INDEX.md)
 - [CLAUDE.md](../../../CLAUDE.md)

@@ -4,6 +4,11 @@
 
 Accepted
 
+
+> **Amended** by [architecture ADR-004](../architecture/ADR-004-deferred-execution-surface.md):
+> a `scheduledFor` column and the `runAsync` / `runIn` surface are added;
+> `AsyncCommandDispatcher` is removed.
+
 ## Context
 
 The job system used RabbitMQ for asynchronous job dispatch. This introduced several problems:

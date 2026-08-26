@@ -3,6 +3,11 @@
 ## Status
 Accepted
 
+
+> **Amended** by [architecture ADR-005](../architecture/ADR-005-validation-placement.md):
+> rules requiring a database query move out of bean validation into the use case,
+> guarded by a unique index. Field-level constraints are unaffected.
+
 ## Context
 In Spring Boot applications, validation can occur at multiple levels: web layer (DTOs), domain layer (entities), service layer, or database constraints. Without clear guidelines, validation becomes scattered, duplicated, and inconsistent.
 

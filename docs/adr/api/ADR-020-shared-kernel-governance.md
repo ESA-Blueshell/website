@@ -1,7 +1,16 @@
 # ADR-020: Shared Kernel Governance
 
 ## Status
-Accepted
+Superseded by
+[architecture ADR-003](../architecture/ADR-003-package-topology-and-placement-rules.md).
+
+The governance rules here are replaced by a measurable one: a package used by a
+single module does not belong in the shared kernel. Applied to the current
+`shared/`, that rule relocates nine packages and deletes two with no cross-module
+consumer at all. Evans' warning that a shared kernel needs explicit governance is
+the reason the replacement rule is countable rather than descriptive.
+Retained for history.
+
 
 ## Context
 

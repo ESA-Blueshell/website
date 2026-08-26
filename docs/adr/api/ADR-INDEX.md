@@ -54,7 +54,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [008](ADR-008-exception-handling-strategy.md) | Exception Handling Strategy | Accepted | Problem Details and exception handling conventions |
 | [009](ADR-009-jwt-authentication-strategy.md) | JWT Authentication Strategy | Accepted | Stateless JWT-based authentication |
 | [012](ADR-012-api-documentation-with-openapi.md) | API Documentation with OpenAPI | Accepted | OpenAPI-first API documentation workflow |
-| [014](ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Accepted | Permission evaluators and authorization design |
+| [014](ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Superseded | Mechanism carried forward; evaluators now live with their aggregate |
 | [024](ADR-024-scoped-signup-continuation-tokens.md) | Scoped Signup Continuation Tokens | Accepted | Header-borne capability for unauthenticated signup writes, deliberately not a JWT or a principal |
 
 ### Job System

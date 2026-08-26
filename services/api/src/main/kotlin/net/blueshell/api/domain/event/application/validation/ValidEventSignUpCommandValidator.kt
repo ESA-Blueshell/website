@@ -3,7 +3,7 @@ package net.blueshell.api.domain.event.application.validation
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.domain.event.application.EventService
-import net.blueshell.api.domain.event.command.EventSignUpCandidate
+import net.blueshell.api.domain.event.application.EventSignUpData
 import net.blueshell.api.domain.survey.persistence.Question
 import net.blueshell.api.shared.enums.QuestionType
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,11 +14,10 @@ import java.util.LinkedHashSet
 @Component
 class ValidEventSignUpCommandValidator @Autowired constructor(
     private val events: EventService
-) : ConstraintValidator<ValidEventSignUpCommand, EventSignUpCandidate> {
-    override fun isValid(candidate: EventSignUpCandidate?, ctx: ConstraintValidatorContext): Boolean {
-        if (candidate == null) return true
+) : ConstraintValidator<ValidEventSignUpCommand, EventSignUpData> {
+    override fun isValid(data: EventSignUpData?, ctx: ConstraintValidatorContext): Boolean {
+        if (data == null) return true
 
-        val data = candidate.data
         val eventId = data.eventId
 
         val event = try {

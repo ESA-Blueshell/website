@@ -75,9 +75,12 @@ class DataOwnershipArchitectureTest {
      */
     @ArchTest
     fun `command handlers should not access repositories from other domains`(classes: JavaClasses) {
-        // Event domain command handlers should not access Survey repositories
+        // Event domain application code should not access Survey repositories.
+        // Widened from ..application.command.. when the event handlers became use
+        // cases: the rule is about which repositories event code may reach, not
+        // about the package the caller happens to sit in.
         noClasses()
-            .that().resideInAPackage("..domain.event.application.command..")
+            .that().resideInAPackage("..domain.event.application..")
             .should().dependOnClassesThat()
             .resideInAPackage("..domain.survey.persistence.repository..")
             .check(classes)

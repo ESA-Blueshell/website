@@ -1,8 +1,6 @@
-package net.blueshell.api.domain.event.application.command
+package net.blueshell.api.domain.event.application
 
-import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.GuestService
-import net.blueshell.api.domain.event.command.*
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.event.persistence.GuestAccessTokenCodec
@@ -10,120 +8,83 @@ import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.survey.application.QuestionService
 import net.blueshell.api.domain.survey.command.AnswerData
 import net.blueshell.api.domain.survey.persistence.Answer
-import net.blueshell.api.shared.command.CommandHandler
 import org.springframework.http.HttpStatus
-import org.springframework.stereotype.Component
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validator
+import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
-@Component
-class FindEventSignUpsHandler(
-    private val service: EventSignUpService
-) : CommandHandler<FindEventSignUpsCommand, MutableList<EventSignUp>> {
-    override val commandType = FindEventSignUpsCommand::class
-
-    override fun handle(command: FindEventSignUpsCommand): MutableList<EventSignUp> {
-        return service.findByFilter(command.filter)
-    }
-}
-
-@Component
-class FindEventSignUpsByAccessTokenHandler(
-    private val service: EventSignUpService
-) : CommandHandler<FindEventSignUpsByAccessTokenCommand, MutableList<EventSignUp>> {
-    override val commandType = FindEventSignUpsByAccessTokenCommand::class
-
-    override fun handle(command: FindEventSignUpsByAccessTokenCommand): MutableList<EventSignUp> {
-        return service.findByGuestAccessToken(command.accessToken)
-    }
-}
-
-@Component
-class FindEventSignUpsByEventIdHandler(
-    private val service: EventSignUpService
-) : CommandHandler<FindEventSignUpsByEventIdCommand, MutableList<EventSignUp>> {
-    override val commandType = FindEventSignUpsByEventIdCommand::class
-
-    override fun handle(command: FindEventSignUpsByEventIdCommand): MutableList<EventSignUp> {
-        return service.findByEventId(command.eventId)
-    }
-}
-
-@Component
-class CreateEventSignUpHandler(
+/**
+ * Sign-up writes. Who the sign-up belongs to is decided here, never taken from
+ * the payload: an authenticated caller can only act as themselves, and an
+ * anonymous one must supply guest details.
+ */
+@Service
+class EventSignUpUseCases(
     private val service: EventSignUpService,
     private val eventRepository: EventRepository,
-    private val questionService: QuestionService
-) : CommandHandler<CreateEventSignUpCommand, EventSignUp> {
-    override val commandType = CreateEventSignUpCommand::class
-
-    override fun handle(command: CreateEventSignUpCommand): EventSignUp {
-        val signUpData = if (command.principalId != null) {
+    private val questionService: QuestionService,
+    private val guestService: GuestService,
+    private val validator: Validator,
+) {
+    /**
+     * `@ValidEventSignUpCommand` used to sit on the two sign-up commands and was
+     * applied by the dispatcher. With the commands gone there is no request DTO that
+     * can carry it — the event id arrives on the path, not in the body — so the rule
+     * stays declarative on [EventSignUpData] and is applied here instead. The
+     * exception type is the one the dispatcher raised, so the response is unchanged.
+     */
+    private fun validate(data: EventSignUpData) {
+        val violations = validator.validate(data)
+        if (violations.isNotEmpty()) throw ConstraintViolationException(violations)
+    }
+    fun create(data: EventSignUpData, principalId: Long?): EventSignUp {
+        val signUpData = if (principalId != null) {
             // Authenticated users can only act as themselves.
-            command.data.copy(userId = command.principalId)
+            data.copy(userId = principalId)
         } else {
             // Anonymous signups must always be guest signups.
-            if (command.data.guest == null) {
+            if (data.guest == null) {
                 throw ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Guest details are required for anonymous sign-ups."
+                    "Guest details are required for anonymous sign-ups.",
                 )
             }
-            command.data.copy(userId = null)
+            data.copy(userId = null)
         }
-
-        var eventSignUp = mapSignUp(signUpData, eventRepository, questionService)
-        eventSignUp = service.create(eventSignUp)
-        return eventSignUp
+        validate(signUpData)
+        return service.create(mapSignUp(signUpData, eventRepository, questionService))
     }
-}
 
-@Component
-class UpdateEventSignUpHandler(
-    private val service: EventSignUpService,
-    private val eventRepository: EventRepository,
-    private val questionService: QuestionService
-) : CommandHandler<UpdateEventSignUpCommand, EventSignUp> {
-    override val commandType = UpdateEventSignUpCommand::class
-
-    override fun handle(command: UpdateEventSignUpCommand): EventSignUp {
+    fun update(eventId: Long, data: EventSignUpData, principalId: Long?, accessToken: String?): EventSignUp {
         val signUp: EventSignUp
         val signUpData: EventSignUpData
-        if (command.accessToken == null) {
-            val principalId = requireNotNull(command.principalId) { "User must be authenticated" }
-            signUp = service.findByUserIdAndEventId(principalId, command.eventId)
+        if (accessToken == null) {
+            val id = requireNotNull(principalId) { "User must be authenticated" }
+            signUp = service.findByUserIdAndEventId(id, eventId)
             // Authenticated users can only update their own signup.
-            signUpData = command.data.copy(userId = principalId)
+            signUpData = data.copy(userId = id)
         } else {
-            signUp = service.findByGuestAccessTokenAndEventId(command.accessToken, command.eventId)
+            signUp = service.findByGuestAccessTokenAndEventId(accessToken, eventId)
             // Guest token flow cannot assign a user id.
-            signUpData = command.data.copy(userId = null)
+            signUpData = data.copy(userId = null)
         }
+        validate(signUpData)
         applySignUp(signUpData, signUp, eventRepository, questionService)
         return service.update(signUp)
     }
-}
 
-@Component
-class DeleteEventSignUpHandler(
-    private val service: EventSignUpService,
-    private val guestService: GuestService
-) : CommandHandler<DeleteEventSignUpCommand, Unit> {
-    override val commandType = DeleteEventSignUpCommand::class
-
-    override fun handle(command: DeleteEventSignUpCommand) {
-        val accessToken = command.accessToken
+    fun delete(eventSignUpId: Long, accessToken: String?) {
         if (accessToken.isNullOrBlank()) {
-            service.deleteById(command.eventSignUpId)
+            service.deleteById(eventSignUpId)
             return
         }
-
         // Preserve 404 semantics for unknown guest tokens before target-signup binding check.
         guestService.findByAccessToken(accessToken)
-        val signUp = service.findById(command.eventSignUpId)
+        val signUp = service.findById(eventSignUpId)
         if (signUp.guest?.matchesAccessToken(accessToken) != true) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "Guest token does not match signup")
         }
-
         service.delete(signUp)
     }
 }

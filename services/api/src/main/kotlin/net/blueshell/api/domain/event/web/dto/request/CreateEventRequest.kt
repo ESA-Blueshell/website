@@ -16,11 +16,11 @@ data class CreateEventRequest(
     var committeeId: Long,
 
     @field:NotBlank(message = "Event title cannot be empty.")
-    @field:Size(max = 255, message = "Event title cannot exceed 255 characters.")
+    @field:Size(min = 1, max = 200, message = "Title must be 1-200 characters")
     var title: String,
 
     @field:NotBlank(message = "Event description cannot be empty.")
-    @field:Size(max = 4095, message = "Event description cannot exceed 4095 characters.")
+    @field:Size(min = 1, max = 4095, message = "Description must be 1-4095 characters")
     var description: String,
 
     var location: String? = null,

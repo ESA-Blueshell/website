@@ -1,4 +1,6 @@
-package net.blueshell.api.domain.event.command
+package net.blueshell.api.domain.event.application
+
+import net.blueshell.api.domain.event.application.validation.ValidEventSignUpCommand
 
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
@@ -9,6 +11,7 @@ import net.blueshell.api.domain.survey.command.AnswerData
  * Event sign-up information for commands.
  * Command-layer data structure (not a web DTO).
  */
+@ValidEventSignUpCommand
 data class EventSignUpData(
     @field:NotNull(message = "Event ID is required")
     val eventId: Long,

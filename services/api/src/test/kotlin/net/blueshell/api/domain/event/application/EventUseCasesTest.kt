@@ -1,16 +1,10 @@
-package net.blueshell.api.domain.event.application.command
+package net.blueshell.api.domain.event.application
 
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.query.EventQuery
-import net.blueshell.api.domain.event.command.ApproveEventCommand
-import net.blueshell.api.domain.event.command.CreateEventCommand
-import net.blueshell.api.domain.event.command.DeleteEventByIdCommand
-import net.blueshell.api.domain.event.command.EventBannerData
-import net.blueshell.api.domain.event.command.FindEventByIdCommand
-import net.blueshell.api.domain.event.command.FindEventsCommand
-import net.blueshell.api.domain.event.command.UpdateEventCommand
+import net.blueshell.api.domain.event.application.EventBannerData
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.file.application.FileService
 import net.blueshell.api.domain.file.persistence.File
@@ -34,18 +28,18 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.time.Instant
 
-class EventCommandHandlersTest {
+class EventUseCasesTest {
 
     private val eventService = mock<EventService>()
     private val committeeService = mock<CommitteeService>()
     private val currentUserProvider = mock<CurrentUserProvider>()
     private val surveyFactory = mock<SurveyFactory>()
     private val fileService = mock<FileService>()
+    private val useCases = EventUseCases(eventService, committeeService, currentUserProvider, surveyFactory, fileService)
 
     @Nested
     inner class CreateEvent {
 
-        private val handler = CreateEventHandler(eventService, committeeService, currentUserProvider, surveyFactory, fileService)
 
         @Test
         fun `creates event with mapped fields for board user`() {
@@ -59,16 +53,16 @@ class EventCommandHandlersTest {
             whenever(fileService.findById(77L)).thenReturn(bannerFile)
             val captured = argumentCaptor<Event>()
             whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
-            val command = createEventCommand(approved = true)
+            val data = createEventData(approved = true)
 
-            val result = handler.handle(command)
+            val result = useCases.create(data)
 
             assertThat(captured.firstValue.committee).isSameAs(committee)
             assertThat(captured.firstValue.title).isEqualTo("Event title")
             assertThat(captured.firstValue.description).isEqualTo("Event description")
             assertThat(captured.firstValue.location).isEqualTo("Utrecht")
-            assertThat(captured.firstValue.startTime).isEqualTo(command.startTime)
-            assertThat(captured.firstValue.endTime).isEqualTo(command.endTime)
+            assertThat(captured.firstValue.startTime).isEqualTo(data.startTime)
+            assertThat(captured.firstValue.endTime).isEqualTo(data.endTime)
             assertThat(captured.firstValue.memberPrice).isEqualTo(10.0)
             assertThat(captured.firstValue.publicPrice).isEqualTo(20.0)
             assertThat(captured.firstValue.membersOnly).isTrue()
@@ -89,7 +83,7 @@ class EventCommandHandlersTest {
             val captured = argumentCaptor<Event>()
             whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
 
-            val result = handler.handle(createEventCommand(approved = true))
+            val result = useCases.create(createEventData(approved = true))
 
             assertThat(result.approved).isFalse()
         }
@@ -98,7 +92,6 @@ class EventCommandHandlersTest {
     @Nested
     inner class UpdateEvent {
 
-        private val handler = UpdateEventHandler(eventService, committeeService, currentUserProvider, surveyFactory, fileService)
 
         @Test
         fun `updates event fields and version`() {
@@ -113,16 +106,21 @@ class EventCommandHandlersTest {
             whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(survey)
             whenever(fileService.findById(88L)).thenReturn(bannerFile)
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
-            val command = updateEventCommand()
+            val data = updateEventData()
 
-            val result = handler.handle(command)
+            val result = useCases.update(
+                id = 9L,
+                data = data,
+                removeExistingSignUps = false,
+                version = 5L,
+            )
 
             assertThat(existing.committee).isSameAs(committee)
             assertThat(existing.title).isEqualTo("Updated title")
             assertThat(existing.description).isEqualTo("Updated description")
             assertThat(existing.location).isEqualTo("Amsterdam")
-            assertThat(existing.startTime).isEqualTo(command.startTime)
-            assertThat(existing.endTime).isEqualTo(command.endTime)
+            assertThat(existing.startTime).isEqualTo(data.startTime)
+            assertThat(existing.endTime).isEqualTo(data.endTime)
             assertThat(existing.memberPrice).isEqualTo(12.0)
             assertThat(existing.publicPrice).isEqualTo(24.0)
             assertThat(existing.membersOnly).isFalse()
@@ -138,7 +136,6 @@ class EventCommandHandlersTest {
     @Nested
     inner class ApproveEvent {
 
-        private val handler = ApproveEventHandler(eventService)
 
         @Test
         fun `updates approval status of event`() {
@@ -146,7 +143,7 @@ class EventCommandHandlersTest {
             whenever(eventService.findById(6L)).thenReturn(existing)
             whenever(eventService.update(existing)).thenReturn(existing)
 
-            val result = handler.handle(ApproveEventCommand(id = 6L, approved = true))
+            val result = useCases.approve(id = 6L, approved = true)
 
             assertThat(existing.approved).isTrue()
             assertThat(result).isSameAs(existing)
@@ -156,53 +153,22 @@ class EventCommandHandlersTest {
     @Nested
     inner class FindEventById {
 
-        private val handler = FindEventByIdHandler(eventService)
 
         @Test
         fun `returns event by id`() {
             val expected = eventEntity()
             whenever(eventService.findById(12L)).thenReturn(expected)
 
-            val result = handler.handle(FindEventByIdCommand(12L))
+            val result = eventService.findById(12L)
 
             assertThat(result).isSameAs(expected)
             verify(eventService).findById(12L)
         }
     }
 
-    @Nested
-    inner class FindEvents {
 
-        private val handler = FindEventsHandler(eventService)
 
-        @Test
-        fun `returns events page using filter and pageable`() {
-            val pageable = PageRequest.of(0, 10)
-            val filter = EventQuery(titleContains = "party")
-            val page = PageImpl(listOf(eventEntity()), pageable, 1)
-            whenever(eventService.findByFilter(pageable, filter)).thenReturn(page)
-
-            val result = handler.handle(FindEventsCommand(pageable = pageable, filter = filter))
-
-            assertThat(result).isSameAs(page)
-            verify(eventService).findByFilter(pageable, filter)
-        }
-    }
-
-    @Nested
-    inner class DeleteEventById {
-
-        private val handler = DeleteEventByIdHandler(eventService)
-
-        @Test
-        fun `deletes event by id`() {
-            handler.handle(DeleteEventByIdCommand(eventId = 18L))
-
-            verify(eventService).deleteById(eq(18L))
-        }
-    }
-
-    private fun createEventCommand(approved: Boolean): CreateEventCommand = CreateEventCommand(
+    private fun createEventData(approved: Boolean): EventData = EventData(
         committeeId = 3L,
         title = "Event title",
         description = "Event description",
@@ -218,8 +184,7 @@ class EventCommandHandlersTest {
         signUpForm = surveyData()
     )
 
-    private fun updateEventCommand(): UpdateEventCommand = UpdateEventCommand(
-        id = 9L,
+    private fun updateEventData(): EventData = EventData(
         committeeId = 4L,
         title = "Updated title",
         description = "Updated description",
@@ -232,8 +197,7 @@ class EventCommandHandlersTest {
         membersOnly = false,
         signUp = true,
         banner = EventBannerData(fileId = 88L),
-        signUpForm = surveyData(),
-        version = 5L
+        signUpForm = surveyData()
     )
 
     private fun surveyData(): SurveyData = SurveyData(

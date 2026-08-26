@@ -1,0 +1,56 @@
+package net.blueshell.api.domain.esports.web
+
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import net.blueshell.api.domain.esports.command.ClearGameAccountCommand
+import net.blueshell.api.domain.esports.command.FindGameAccountsCommand
+import net.blueshell.api.domain.esports.web.dto.request.GameAccountRequest
+import net.blueshell.api.domain.esports.web.dto.response.GameAccountResponse
+import net.blueshell.api.domain.esports.web.mapping.request.asCommand
+import net.blueshell.api.domain.esports.web.mapping.response.asResponse
+import net.blueshell.api.shared.command.CommandBus
+import net.blueshell.api.shared.enums.Game
+import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
+
+/**
+ * What a member is called in each game.
+ *
+ * Held per member rather than per roster entry, so a member who changes their handle changes
+ * it on every season they ever played. A member edits their own; the board edits anybody's,
+ * which is what the user permission already means.
+ */
+@RestController
+@RequestMapping("/users/{userId}/game-accounts")
+@Tag(name = "Game accounts", description = "Per-member, per-game handles")
+class GameAccountController(
+    private val commandBus: CommandBus,
+) {
+    @PreAuthorize("hasPermission(#userId, 'User', 'read')")
+    @GetMapping
+    fun findGameAccounts(@PathVariable userId: Long): List<GameAccountResponse> =
+        commandBus.dispatch(FindGameAccountsCommand(userId)).map { it.asResponse() }
+
+    @PreAuthorize("hasPermission(#userId, 'User', 'write')")
+    @PutMapping("/{game}")
+    fun setGameAccount(
+        @PathVariable userId: Long,
+        @PathVariable game: Game,
+        @Valid @RequestBody request: GameAccountRequest,
+    ): GameAccountResponse = commandBus.dispatch(request.asCommand(userId, game)).asResponse()
+
+    @PreAuthorize("hasPermission(#userId, 'User', 'write')")
+    @DeleteMapping("/{game}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun clearGameAccount(@PathVariable userId: Long, @PathVariable game: Game) {
+        commandBus.dispatch(ClearGameAccountCommand(userId, game))
+    }
+}

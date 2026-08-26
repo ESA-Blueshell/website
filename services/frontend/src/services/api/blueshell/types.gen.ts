@@ -26,6 +26,20 @@ export type AddBoardMemberRequest = {
     userId: number;
 };
 
+/**
+ * Put somebody on a team's roster for a season
+ */
+export type AddRosterEntryRequest = {
+    displayName?: string | null;
+    handle: string;
+    role: TeamRole;
+    seasonId: number;
+    /**
+     * The member this entry belongs to, when they are known
+     */
+    userId?: number | null;
+};
+
 export type AddressResponse = {
     city?: string | null;
     country?: string | null;
@@ -521,6 +535,15 @@ export type CreateTargetRequest = {
     system: TargetSystem;
 };
 
+/**
+ * Create a team for a game
+ */
+export type CreateTeamRequest = {
+    game: Game;
+    image?: string | null;
+    name: string;
+};
+
 export type CreateTelemetryRequest = {
     platform: PlatformType;
     url: string;
@@ -599,6 +622,19 @@ export type EnqueueJobRequest = {
     payload?: {
         [key: string]: unknown;
     } | null;
+};
+
+/**
+ * A game's teams for one season, and the seasons that can be shown
+ */
+export type EsportsPageResponse = {
+    game: Game;
+    /**
+     * The season being shown; absent when the game has no rosters yet
+     */
+    season?: SeasonResponse | null;
+    seasons: Array<SeasonResponse>;
+    teams: Array<TeamRosterResponse>;
 };
 
 export type EventBannerRequest = {
@@ -719,6 +755,34 @@ export enum FileType {
     EVENT_PICTURE = 'EVENT_PICTURE',
     SPONSOR_PICTURE = 'SPONSOR_PICTURE'
 }
+
+export enum Game {
+    VALORANT = 'VALORANT',
+    CS2 = 'CS2',
+    CSGO = 'CSGO',
+    LEAGUE_OF_LEGENDS = 'LEAGUE_OF_LEGENDS',
+    ROCKET_LEAGUE = 'ROCKET_LEAGUE',
+    TRACKMANIA = 'TRACKMANIA',
+    GEOGUESSR = 'GEOGUESSR',
+    SMASH = 'SMASH'
+}
+
+/**
+ * Set what a member is called in one game
+ */
+export type GameAccountRequest = {
+    handle: string;
+};
+
+/**
+ * What one member is called in one game
+ */
+export type GameAccountResponse = {
+    game: Game;
+    handle: string;
+    id: number;
+    userId: number;
+};
 
 export type GuestResponse = {
     createdAt: string;
@@ -855,6 +919,13 @@ export type JwtRequest = {
 export type LinkExistingTargetRequest = {
     externalId: string;
     system: TargetSystem;
+};
+
+/**
+ * Attach a roster entry to a member, or detach it with a null id
+ */
+export type LinkRosterEntryRequest = {
+    userId?: number | null;
 };
 
 export type LinkUserRequest = {
@@ -1067,6 +1138,56 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
+/**
+ * A roster entry as an admin edits it, real name included
+ */
+export type RosterEntryResponse = {
+    /**
+     * The member's real name, shown to admins for identification
+     */
+    displayName?: string | null;
+    handle: string;
+    id: number;
+    role: TeamRole;
+    seasonId: number;
+    sortIndex: number;
+    teamId: number;
+    /**
+     * The member this entry belongs to, when anybody could be identified
+     */
+    userId?: number | null;
+};
+
+/**
+ * One person on a team's roster, as the public pages show them
+ */
+export type RosterMemberResponse = {
+    /**
+     * What this member is called in the game
+     */
+    handle: string;
+    role: TeamRole;
+};
+
+/**
+ * Create or rename a season
+ */
+export type SeasonRequest = {
+    endDate: string;
+    name: string;
+    startDate: string;
+};
+
+/**
+ * A stretch of play that rosters belong to
+ */
+export type SeasonResponse = {
+    endDate: string;
+    id: number;
+    name: string;
+    startDate: string;
+};
+
 export type SentEmailPreview = {
     /**
      * The email's html with every url stripped out
@@ -1178,6 +1299,35 @@ export enum TargetSystem {
     GOOGLE_CALENDAR = 'GOOGLE_CALENDAR'
 }
 
+/**
+ * A team the association fields in one game
+ */
+export type TeamResponse = {
+    game: Game;
+    id: number;
+    /**
+     * Asset file name for the team's background image
+     */
+    image?: string | null;
+    name: string;
+};
+
+export enum TeamRole {
+    PLAYER = 'PLAYER',
+    SUBSTITUTE = 'SUBSTITUTE',
+    COACH = 'COACH'
+}
+
+/**
+ * A team with the roster it fielded in one season
+ */
+export type TeamRosterResponse = {
+    id: number;
+    image?: string | null;
+    members: Array<RosterMemberResponse>;
+    name: string;
+};
+
 export type TelemetryResponse = {
     createdAt: string;
     id: number;
@@ -1282,10 +1432,28 @@ export type UpdateMembershipRequest = {
     version: number;
 };
 
+/**
+ * Edit a roster entry
+ */
+export type UpdateRosterEntryRequest = {
+    displayName?: string | null;
+    handle: string;
+    role: TeamRole;
+    sortIndex: number;
+};
+
 export type UpdateSponsorRequest = {
     description: string;
     name: string;
     version: number;
+};
+
+/**
+ * Rename a team or change its image
+ */
+export type UpdateTeamRequest = {
+    image?: string | null;
+    name: string;
 };
 
 export type UpdateUserRequest = {
@@ -3029,6 +3197,606 @@ export type CsrfResponses = {
 };
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
+
+export type FindEsportsPageData = {
+    body?: never;
+    path: {
+        game: Game;
+    };
+    query?: {
+        seasonId?: number;
+    };
+    url: '/esports/games/{game}';
+};
+
+export type FindEsportsPageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindEsportsPageError = FindEsportsPageErrors[keyof FindEsportsPageErrors];
+
+export type FindEsportsPageResponses = {
+    /**
+     * OK
+     */
+    200: EsportsPageResponse;
+};
+
+export type FindEsportsPageResponse = FindEsportsPageResponses[keyof FindEsportsPageResponses];
+
+export type RemoveRosterEntryData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/roster/{id}';
+};
+
+export type RemoveRosterEntryErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveRosterEntryError = RemoveRosterEntryErrors[keyof RemoveRosterEntryErrors];
+
+export type RemoveRosterEntryResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveRosterEntryResponse = RemoveRosterEntryResponses[keyof RemoveRosterEntryResponses];
+
+export type UpdateRosterEntryData = {
+    body: UpdateRosterEntryRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/roster/{id}';
+};
+
+export type UpdateRosterEntryErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateRosterEntryError = UpdateRosterEntryErrors[keyof UpdateRosterEntryErrors];
+
+export type UpdateRosterEntryResponses = {
+    /**
+     * OK
+     */
+    200: RosterEntryResponse;
+};
+
+export type UpdateRosterEntryResponse = UpdateRosterEntryResponses[keyof UpdateRosterEntryResponses];
+
+export type LinkRosterEntryData = {
+    body: LinkRosterEntryRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/roster/{id}/member';
+};
+
+export type LinkRosterEntryErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkRosterEntryError = LinkRosterEntryErrors[keyof LinkRosterEntryErrors];
+
+export type LinkRosterEntryResponses = {
+    /**
+     * OK
+     */
+    200: RosterEntryResponse;
+};
+
+export type LinkRosterEntryResponse = LinkRosterEntryResponses[keyof LinkRosterEntryResponses];
+
+export type FindSeasonsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/esports/seasons';
+};
+
+export type FindSeasonsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindSeasonsError = FindSeasonsErrors[keyof FindSeasonsErrors];
+
+export type FindSeasonsResponses = {
+    /**
+     * OK
+     */
+    200: Array<SeasonResponse>;
+};
+
+export type FindSeasonsResponse = FindSeasonsResponses[keyof FindSeasonsResponses];
+
+export type CreateSeasonData = {
+    body: SeasonRequest;
+    path?: never;
+    query?: never;
+    url: '/esports/seasons';
+};
+
+export type CreateSeasonErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateSeasonError = CreateSeasonErrors[keyof CreateSeasonErrors];
+
+export type CreateSeasonResponses = {
+    /**
+     * Created
+     */
+    201: SeasonResponse;
+};
+
+export type CreateSeasonResponse = CreateSeasonResponses[keyof CreateSeasonResponses];
+
+export type DeleteSeasonData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/seasons/{id}';
+};
+
+export type DeleteSeasonErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteSeasonError = DeleteSeasonErrors[keyof DeleteSeasonErrors];
+
+export type DeleteSeasonResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteSeasonResponse = DeleteSeasonResponses[keyof DeleteSeasonResponses];
+
+export type UpdateSeasonData = {
+    body: SeasonRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/seasons/{id}';
+};
+
+export type UpdateSeasonErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateSeasonError = UpdateSeasonErrors[keyof UpdateSeasonErrors];
+
+export type UpdateSeasonResponses = {
+    /**
+     * OK
+     */
+    200: SeasonResponse;
+};
+
+export type UpdateSeasonResponse = UpdateSeasonResponses[keyof UpdateSeasonResponses];
+
+export type FindTeamsData = {
+    body?: never;
+    path?: never;
+    query: {
+        game: Game;
+    };
+    url: '/esports/teams';
+};
+
+export type FindTeamsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindTeamsError = FindTeamsErrors[keyof FindTeamsErrors];
+
+export type FindTeamsResponses = {
+    /**
+     * OK
+     */
+    200: Array<TeamResponse>;
+};
+
+export type FindTeamsResponse = FindTeamsResponses[keyof FindTeamsResponses];
+
+export type CreateTeamData = {
+    body: CreateTeamRequest;
+    path?: never;
+    query?: never;
+    url: '/esports/teams';
+};
+
+export type CreateTeamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateTeamError = CreateTeamErrors[keyof CreateTeamErrors];
+
+export type CreateTeamResponses = {
+    /**
+     * Created
+     */
+    201: TeamResponse;
+};
+
+export type CreateTeamResponse = CreateTeamResponses[keyof CreateTeamResponses];
+
+export type DeleteTeamData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/teams/{id}';
+};
+
+export type DeleteTeamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteTeamError = DeleteTeamErrors[keyof DeleteTeamErrors];
+
+export type DeleteTeamResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteTeamResponse = DeleteTeamResponses[keyof DeleteTeamResponses];
+
+export type UpdateTeamData = {
+    body: UpdateTeamRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/teams/{id}';
+};
+
+export type UpdateTeamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateTeamError = UpdateTeamErrors[keyof UpdateTeamErrors];
+
+export type UpdateTeamResponses = {
+    /**
+     * OK
+     */
+    200: TeamResponse;
+};
+
+export type UpdateTeamResponse = UpdateTeamResponses[keyof UpdateTeamResponses];
+
+export type FindRosterData = {
+    body?: never;
+    path: {
+        teamId: number;
+    };
+    query: {
+        seasonId: number;
+    };
+    url: '/esports/teams/{teamId}/roster';
+};
+
+export type FindRosterErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindRosterError = FindRosterErrors[keyof FindRosterErrors];
+
+export type FindRosterResponses = {
+    /**
+     * OK
+     */
+    200: Array<RosterEntryResponse>;
+};
+
+export type FindRosterResponse = FindRosterResponses[keyof FindRosterResponses];
+
+export type AddRosterEntryData = {
+    body: AddRosterEntryRequest;
+    path: {
+        teamId: number;
+    };
+    query?: never;
+    url: '/esports/teams/{teamId}/roster';
+};
+
+export type AddRosterEntryErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AddRosterEntryError = AddRosterEntryErrors[keyof AddRosterEntryErrors];
+
+export type AddRosterEntryResponses = {
+    /**
+     * Created
+     */
+    201: RosterEntryResponse;
+};
+
+export type AddRosterEntryResponse = AddRosterEntryResponses[keyof AddRosterEntryResponses];
 
 export type FindEventsData = {
     body?: never;
@@ -6394,6 +7162,137 @@ export type FindUserByIdResponses = {
 };
 
 export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
+
+export type FindGameAccountsData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/game-accounts';
+};
+
+export type FindGameAccountsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindGameAccountsError = FindGameAccountsErrors[keyof FindGameAccountsErrors];
+
+export type FindGameAccountsResponses = {
+    /**
+     * OK
+     */
+    200: Array<GameAccountResponse>;
+};
+
+export type FindGameAccountsResponse = FindGameAccountsResponses[keyof FindGameAccountsResponses];
+
+export type ClearGameAccountData = {
+    body?: never;
+    path: {
+        userId: number;
+        game: Game;
+    };
+    query?: never;
+    url: '/users/{userId}/game-accounts/{game}';
+};
+
+export type ClearGameAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ClearGameAccountError = ClearGameAccountErrors[keyof ClearGameAccountErrors];
+
+export type ClearGameAccountResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ClearGameAccountResponse = ClearGameAccountResponses[keyof ClearGameAccountResponses];
+
+export type SetGameAccountData = {
+    body: GameAccountRequest;
+    path: {
+        userId: number;
+        game: Game;
+    };
+    query?: never;
+    url: '/users/{userId}/game-accounts/{game}';
+};
+
+export type SetGameAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetGameAccountError = SetGameAccountErrors[keyof SetGameAccountErrors];
+
+export type SetGameAccountResponses = {
+    /**
+     * OK
+     */
+    200: GameAccountResponse;
+};
+
+export type SetGameAccountResponse = SetGameAccountResponses[keyof SetGameAccountResponses];
 
 export type FindMemberProfileByUserIdData = {
     body?: never;

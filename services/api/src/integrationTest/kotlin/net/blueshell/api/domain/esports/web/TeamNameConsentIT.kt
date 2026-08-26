@@ -122,8 +122,9 @@ class TeamNameConsentIT : UserTestSupport() {
         mvc.perform(get("/esports/games/{game}", Game.ROCKET_LEAGUE).param("seasonId", playing.id.toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("unattributed"))
-            // The seat carries "Recorded Name"; nobody consented, so nobody is named.
-            .andExpect(jsonPath("$..name").doesNotExist())
+            // The seat carries "Recorded Name"; nobody is linked to it, so nobody is named.
+            // Scoped to the member: a season and a team have a `name` of their own.
+            .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").doesNotExist())
     }
 
     @Test

@@ -13,6 +13,8 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectTy
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import java.time.LocalDateTime
@@ -28,7 +30,9 @@ class CohortSubjectQueryServiceTest {
     private val cohortMembers: CohortMemberRepository = mockk()
     private val users: UserService = mockk()
     private val targetIds: CohortTargetIds = mockk()
-    private val service = CohortSubjectQueryService(subjects, cohorts, cohortMembers, users, targetIds)
+    private val externalIds: ExternalIdMappingService = mockk()
+    private val service =
+        CohortSubjectQueryService(subjects, cohorts, cohortMembers, users, targetIds, externalIds)
 
     @Test
     fun `summaries returns memberCount and mappingCount from count methods not findAll`() {
@@ -110,6 +114,7 @@ class CohortSubjectQueryServiceTest {
         stubDetail(subject, cohort, listOf(desired, synced, verified))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
 
         val detail = service.detail(20L)
 
@@ -124,6 +129,61 @@ class CohortSubjectQueryServiceTest {
     }
 
     @Test
+    fun `detail returns rows present externally with no local account`() {
+        val subject = subject(24L)
+        val cohort = cohort(240L)
+        val member = member(cohort, subject, userId = 5L)
+        val stranger = member(cohort, subject, userId = null, externalUserId = "ext-9", verifiedAt = NOW, label = "someone@example.com")
+        stubDetail(subject, cohort, listOf(member, stranger))
+        every { users.findAllByIds(any()) } returns emptyList()
+        every { users.isSoftDeleted(any()) } returns false
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+
+        val rows = service.detail(24L).members
+
+        // The old member query filtered these out for having no user, which is the one thing
+        // that makes them worth showing.
+        assertThat(rows).hasSize(2)
+        val strangerRow = rows.single { it.member.userId == null }
+        assertThat(strangerRow.state).isEqualTo(CohortMemberState.STRANGER)
+        assertThat(strangerRow.member.externalUserId).isEqualTo("ext-9")
+        assertThat(strangerRow.member.label).isEqualTo("someone@example.com")
+    }
+
+    @Test
+    fun `detail names the account behind a stranger's external id`() {
+        val subject = subject(21L)
+        val cohort = cohort(210L)
+        val stranger = member(cohort, subject, userId = null, externalUserId = "ext-42", verifiedAt = NOW)
+        stubDetail(subject, cohort, listOf(stranger))
+        every { externalIds.findByExternalIds(any(), "BREVO", setOf("ext-42")) } returns
+            listOf(ExternalIdMapping(aggregateType = "USER", aggregateId = 77L, system = "BREVO", externalId = "ext-42"))
+        every { users.findAllByIds(listOf(77L)) } returns listOf(user(77L, "Emma Dokter"))
+        every { users.isSoftDeleted(any()) } returns false
+
+        val row = service.detail(21L).members.single()
+
+        // Without this the page can only show an opaque external id for somebody it knows.
+        assertThat(row.resolvedUserId).isEqualTo(77L)
+        assertThat(row.user?.fullName).isEqualTo("Emma Dokter")
+    }
+
+    @Test
+    fun `detail leaves a stranger nameless when no account claims its external id`() {
+        val subject = subject(25L)
+        val cohort = cohort(250L)
+        stubDetail(subject, cohort, listOf(member(cohort, subject, userId = null, externalUserId = "ext-unknown", verifiedAt = NOW)))
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+        every { users.findAllByIds(any()) } returns emptyList()
+        every { users.isSoftDeleted(any()) } returns false
+
+        val row = service.detail(25L).members.single()
+
+        assertThat(row.resolvedUserId).isNull()
+        assertThat(row.user).isNull()
+    }
+
+    @Test
     fun `detail reports a mapping's newest confirmation as when it was last reconciled`() {
         val subject = subject(22L)
         val cohort = cohort(220L)
@@ -132,6 +192,7 @@ class CohortSubjectQueryServiceTest {
         stubDetail(subject, cohort, listOf(older, newest))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
 
         val mapping = service.detail(22L).mappings.single()
 
@@ -145,6 +206,7 @@ class CohortSubjectQueryServiceTest {
         stubDetail(subject, cohort, listOf(member(cohort, subject, userId = 1L)))
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
 
         assertThat(service.detail(23L).mappings.single().lastReconciledAt).isNull()
     }
@@ -153,7 +215,7 @@ class CohortSubjectQueryServiceTest {
         every { subjects.findById(subject.id!!) } returns Optional.of(subject)
         every { cohorts.findAllBySubjectId(subject.id!!) } returns listOf(cohort)
         every { targetIds.find(cohort) } returns "external-1"
-        every { cohortMembers.findAllBySubjectIdAndUserIdIsNotNull(subject.id!!) } returns rows
+        every { cohortMembers.findAllBySubjectId(subject.id!!) } returns rows
         every { cohortMembers.findAllByCohortId(cohort.id!!) } returns rows
     }
 

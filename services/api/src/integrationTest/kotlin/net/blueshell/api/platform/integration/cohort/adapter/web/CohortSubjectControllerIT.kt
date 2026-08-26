@@ -34,34 +34,34 @@ class CohortSubjectControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var externalIds: ExternalIdMappingRepository
 
+    // The drift report is gone: the subject's own read carries the states and the strangers,
+    // so these two cases follow it there rather than being deleted with the endpoint.
+
     @Test
-    fun `non-admin is forbidden from reading drift`() {
+    fun `non-admin is forbidden from reading a subject`() {
         val member = createUserWithRole(Role.MEMBER)
         val subject = newSubject()
 
         mvc.perform(
-            get("/management/cohort-subjects/{id}/drift", subject.id)
-                .queryParam("system", TargetSystem.BREVO.name)
+            get("/management/cohort-subjects/{id}", subject.id)
                 .with(bearer(member)),
         ).andExpect(status().isForbidden)
     }
 
     @Test
-    fun `admin drift read returns a not-materialised report when the cohort has no external mapping`() {
+    fun `a cohort with no external target reports neither an external id nor a reconcile`() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
         newCohort(subject)
 
         mvc.perform(
-            get("/management/cohort-subjects/{id}/drift", subject.id)
-                .queryParam("system", TargetSystem.BREVO.name)
+            get("/management/cohort-subjects/{id}", subject.id)
                 .with(bearer(admin)),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.externalCohortId").doesNotExist())
-            .andExpect(jsonPath("$.missing.length()").value(0))
-            .andExpect(jsonPath("$.extras.length()").value(0))
-            .andExpect(jsonPath("$.lastReconciledAt").doesNotExist())
+            .andExpect(jsonPath("$.mappings[0].externalId").doesNotExist())
+            .andExpect(jsonPath("$.mappings[0].lastReconciledAt").doesNotExist())
+            .andExpect(jsonPath("$.members.length()").value(0))
     }
 
     @Test

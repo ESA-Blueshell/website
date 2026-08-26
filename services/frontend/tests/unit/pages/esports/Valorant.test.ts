@@ -3,15 +3,21 @@ import {shallowMount} from "@vue/test-utils"
 import Valorant from "@/pages/esports/Valorant.vue"
 
 describe("Valorant page", () => {
-  it("defines valorant teams", () => {
+  it("asks the shared page for its own game, and keeps its own copy", () => {
     const wrapper = shallowMount(Valorant, {
       global: {
         stubs: {
-          TeamDetails: true,
+          EsportsGamePage: {
+            props: ["game", "title"],
+            template: "<div :data-game='game' :data-title='title'><slot name='intro' /></div>",
+          },
         },
       },
     })
 
-    expect((wrapper.vm as any).teams.length).toBeGreaterThan(0)
+    const root = wrapper.get("[data-game]")
+    expect(root.attributes("data-game")).toBe("VALORANT")
+    expect(root.attributes("data-title")).toBe("Valorant")
+    expect(root.text()).toContain("dutch Valorant esports scene")
   })
 })

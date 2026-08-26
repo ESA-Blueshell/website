@@ -42,6 +42,13 @@
               show-submit
             />
           </v-form>
+
+          <!-- Its own resource, saved a game at a time, so it stays out of the form's submit. -->
+          <game-handles
+            v-if="user.id"
+            class="mt-8"
+            :user-id="user.id"
+          />
         </div>
         <v-progress-circular v-else />
       </div>
@@ -56,6 +63,7 @@ import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
+import GameHandles from "@/domains/esports/components/GameHandles.vue"
 import {findUserById} from "@/services/api"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 

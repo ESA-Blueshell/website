@@ -244,6 +244,12 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresBoard: true},
   },
   {
+    path: "/management/esports",
+    name: "esportsManager",
+    component: () => import("@/pages/management/EsportsManager.vue"),
+    meta: {requiresAuth: true, requiresBoard: true},
+  },
+  {
     path: "/management/cohorts",
     name: "cohortDashboard",
     component: () => import("@/pages/management/CohortDashboard.vue"),

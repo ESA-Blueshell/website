@@ -23,6 +23,10 @@ type Fixtures = {
   emails?: Array<Record<string, unknown>>
   cohortSubjects?: Array<Record<string, unknown>>
   cohortMembers?: Array<Record<string, unknown>>
+  esportsPages?: Record<string, Record<string, unknown>>
+  esportsSeasons?: Array<Record<string, unknown>>
+  esportsTeams?: Array<Record<string, unknown>>
+  esportsRoster?: Array<Record<string, unknown>>
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -32,6 +36,51 @@ const brevoTargets = [
   {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", memberCount: 5, linkedCohortId: null},
   {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, memberCount: null, linkedCohortId: null},
 ]
+
+/** Two seasons of one game, so a page has both a roster and something to switch to. */
+const esportsSeasons = [
+  {id: 20, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31"},
+  {id: 19, name: "Spring 2024/25", startDate: "2025-02-01", endDate: "2025-08-31"},
+]
+
+const esportsPageBySeason: Record<string, Record<string, unknown>> = {
+  "20": {
+    game: "VALORANT",
+    season: esportsSeasons[0],
+    seasons: esportsSeasons,
+    teams: [
+      {
+        id: 1,
+        name: "BS Waterboarders",
+        image: "valorantesports1.jpg",
+        members: [
+          {role: "PLAYER", handle: "AriosFury"},
+          {role: "PLAYER", handle: "Loafine"},
+          {role: "SUBSTITUTE", handle: "Blackout"},
+        ],
+      },
+      {
+        id: 2,
+        name: "BS SpicyWater",
+        image: "valorantesports2.jpg",
+        members: [{role: "PLAYER", handle: "Sony"}],
+      },
+    ],
+  },
+  "19": {
+    game: "VALORANT",
+    season: esportsSeasons[1],
+    seasons: esportsSeasons,
+    teams: [
+      {
+        id: 3,
+        name: "BS Tempra",
+        image: "valorantesports1.jpg",
+        members: [{role: "PLAYER", handle: "fetabass"}],
+      },
+    ],
+  },
+}
 
 async function fulfillJson(route: Route, data: unknown, status = 200) {
   await route.fulfill({
@@ -501,6 +550,43 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2, externalId: "7", folder: "Periods"},
         {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1, externalId: "33", folder: "Committees"},
       ])
+    }
+    if (method === "GET" && /^\/esports\/games\/[A-Z_]+$/.test(path)) {
+      const requested = url.searchParams.get("seasonId")
+      const page = fixtures.esportsPages?.[requested ?? "20"]
+        ?? esportsPageBySeason[requested ?? "20"]
+        ?? esportsPageBySeason["20"]
+      return fulfillJson(route, page)
+    }
+    if (method === "GET" && path === "/esports/seasons") {
+      return fulfillJson(route, fixtures.esportsSeasons ?? esportsSeasons)
+    }
+    if (method === "GET" && path === "/esports/teams") {
+      return fulfillJson(route, fixtures.esportsTeams ?? [
+        {id: 1, game: "VALORANT", name: "BS Waterboarders", image: "valorantesports1.jpg"},
+        {id: 2, game: "VALORANT", name: "BS SpicyWater", image: "valorantesports2.jpg"},
+      ])
+    }
+    if (method === "GET" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
+      return fulfillJson(route, fixtures.esportsRoster ?? [
+        {id: 11, teamId: 1, seasonId: 20, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: 1, sortIndex: 0},
+        {id: 12, teamId: 1, seasonId: 20, role: "SUBSTITUTE", handle: "Blackout", displayName: null, userId: null, sortIndex: 1},
+      ])
+    }
+    if (method === "POST" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      return fulfillJson(route, {id: 13, teamId: 1, seasonId: body.seasonId, role: body.role, handle: body.handle, displayName: body.displayName ?? null, userId: null, sortIndex: 2}, 201)
+    }
+    if (method === "PUT" && /^\/esports\/roster\/\d+\/member$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      return fulfillJson(route, {id: 11, teamId: 1, seasonId: 20, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: body.userId ?? null, sortIndex: 0})
+    }
+    if (method === "GET" && /^\/users\/\d+\/game-accounts$/.test(path)) {
+      return fulfillJson(route, [{id: 5, userId: 1, game: "VALORANT", handle: "AriosFury"}])
+    }
+    if (method === "PUT" && /^\/users\/\d+\/game-accounts\/[A-Z_]+$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      return fulfillJson(route, {id: 5, userId: 1, game: path.split("/").pop(), handle: body.handle})
     }
     if (method === "GET" && path === "/management/cohort-subjects") {
       return fulfillJson(route, fixtures.cohortSubjects ?? [

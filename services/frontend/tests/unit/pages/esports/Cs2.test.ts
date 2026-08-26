@@ -2,17 +2,22 @@ import {describe, expect, it} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import Cs2 from "@/pages/esports/Cs2.vue"
 
-describe("Cs2 page", () => {
-  it("defines at least one CS2 team", () => {
+describe("Counter-Strike 2 page", () => {
+  it("asks the shared page for its own game, and keeps its own copy", () => {
     const wrapper = shallowMount(Cs2, {
       global: {
         stubs: {
-          TeamDetails: true,
+          EsportsGamePage: {
+            props: ["game", "title"],
+            template: "<div :data-game='game' :data-title='title'><slot name='intro' /></div>",
+          },
         },
       },
     })
 
-    expect((wrapper.vm as any).teams.length).toBeGreaterThan(0)
-    expect((wrapper.vm as any).teams[0].name).toContain("BS")
+    const root = wrapper.get("[data-game]")
+    expect(root.attributes("data-game")).toBe("CS2")
+    expect(root.attributes("data-title")).toBe("Counter-Strike 2")
+    expect(root.text()).toContain("climb up the charts")
   })
 })

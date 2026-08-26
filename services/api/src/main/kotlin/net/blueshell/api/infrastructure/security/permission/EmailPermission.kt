@@ -15,8 +15,13 @@ class EmailPermission @Autowired constructor(service: EmailService) :
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) return false
         val isAdmin = SecurityUtils.hasAuthority(authentication, Role.ADMIN)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read", "retry", "write", "delete" -> isAdmin
+            // The board fields "I never got the email", so it can see what was sent, read a
+            // delivery back and send a failed one again.
+            "read", "retry" -> isAdmin || isBoard
+            // Changing or removing outbox rows is rewriting the delivery record itself.
+            "write", "delete" -> isAdmin
             else -> false
         }
     }

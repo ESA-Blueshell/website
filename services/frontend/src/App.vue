@@ -222,7 +222,7 @@
               Manage jobs
             </v-list-item>
             <v-list-item
-              v-if="isAdmin"
+              v-if="isBoard || isAdmin"
               to="/management/emails"
             >
               Manage emails

@@ -241,7 +241,7 @@ const routes: RouteRecordRaw[] = [
     path: "/management/emails",
     name: "emailManager",
     component: () => import("@/pages/management/EmailManager.vue"),
-    meta: {requiresAuth: true, requiresAdmin: true},
+    meta: {requiresAuth: true, requiresBoard: true},
   },
   {
     path: "/management/cohorts",
@@ -321,6 +321,8 @@ router.beforeEach((to, from, next) => {
       query: {redirect: to.fullPath},
     })
   } else if (to.meta.requiresAdmin && !store.getters.isAdmin) {
+    next({path: "/"})
+  } else if (to.meta.requiresBoard && !(store.getters.isBoard || store.getters.isAdmin)) {
     next({path: "/"})
   } else {
     next()

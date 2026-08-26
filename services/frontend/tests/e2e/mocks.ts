@@ -62,6 +62,10 @@ export async function loginAsBoard(context: BrowserContext) {
   await loginAsRoles(context, ["BOARD", "MEMBER"])
 }
 
+export async function loginAsMember(context: BrowserContext) {
+  await loginAsRoles(context, ["MEMBER"])
+}
+
 export async function loginAsAdmin(context: BrowserContext) {
   await loginAsRoles(context, ["ADMIN", "MEMBER"])
 }

@@ -30,29 +30,62 @@ test.describe("cohort subject detail", () => {
     await expect(page.getByTestId("cohort-subject-identity")).toContainText("Web Cmte")
   })
 
-  test("each section says how much it holds", async ({page}) => {
+  test("each box says how much it holds without being opened", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
     await page.goto(COMMITTEE_SUBJECT)
 
-    await expect(page.getByTestId("cohort-subject-identity"))
-      .toContainText("1 member · 1 sync target")
+    // The page's own count is the badge on its heading, once — it used to be a line under
+    // the title as well, and again under every section's heading.
+    await expect(page.getByTestId("cohort-subject-member-count")).toContainText("1")
     await expect(page.getByTestId("cohort-subject-rules")).toContainText("1 rule · 1 enabled")
     await expect(page.getByTestId("cohort-subject-targets")).toContainText("1 sync target")
-    // The count is the section's subtitle now, not part of its heading.
     await expect(page.getByTestId("cohort-subject-members")).toContainText("1 member")
-    await expect(page.getByTestId("cohort-subject-members")).not.toContainText("Members (1)")
   })
 
-  test("keeps the add-target action on the sync targets header", async ({page}) => {
+  test("opens a box to show what it holds, and keeps it shut until asked", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+
+    await page.goto(COMMITTEE_SUBJECT)
+
+    const rules = page.getByTestId("cohort-subject-rules")
+    await expect(rules.getByTestId("cohort-subject-rule-9")).toHaveCount(0)
+
+    await rules.getByTestId("info-box-toggle").click()
+
+    // The fact reads as a sentence rather than as the enum it is stored under.
+    await expect(rules.getByTestId("cohort-subject-rule-9")).toContainText("Committee")
+    await expect(rules.getByTestId("cohort-subject-rule-9")).toContainText("42")
+  })
+
+  test("keeps the add-target action on the page's own header", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+
+    await page.goto(COMMITTEE_SUBJECT)
+
+    // Page-level rather than inside the targets box: it adds a target to the cohort, and the
+    // page's actions live in one place instead of being scattered over four cards.
+    const card = page.getByTestId("cohort-subject-identity")
+    await expect(card.getByTestId("cohort-subject-add-target")).toBeVisible()
+  })
+
+  test("puts a target's own actions behind one menu", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
     await page.goto(COMMITTEE_SUBJECT)
 
     const targets = page.getByTestId("cohort-subject-targets")
-    await expect(targets.getByTestId("cohort-subject-add-target")).toBeVisible()
+    await targets.getByTestId("info-box-toggle").first().click()
+
+    // Two outlined buttons per target became one menu holding both.
+    await expect(targets.getByTestId("cohort-subject-switch-target-brevo")).toHaveCount(0)
+    await targets.getByTestId("cohort-subject-target-menu-brevo").click()
+    await expect(page.getByTestId("cohort-subject-switch-target-brevo")).toBeVisible()
+    await expect(page.getByTestId("cohort-subject-inbound-reconcile-brevo")).toBeVisible()
   })
 
   test("counts read as English on the category page that links here", async ({page}) => {

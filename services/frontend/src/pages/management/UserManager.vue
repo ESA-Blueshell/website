@@ -32,8 +32,38 @@ defineOptions({name: "UserManagerPage"})
 
 // ── Display ───────────────────────────────────────────────────────────────────
 
-const {lgAndUp} = useDisplay()
+const {height: viewportHeight, lgAndUp} = useDisplay()
 const toolbarDensity = computed(() => (lgAndUp.value ? "comfortable" : "compact"))
+
+// ── Table layout ──────────────────────────────────────────────────────────────
+
+// A virtual scroller places rows by arithmetic, so every row has to be exactly this tall —
+// which is what `density="comfortable"` already renders, and what the row component pins.
+const ROW_HEIGHT = 44
+
+// Column widths are declared because the table is laid out fixed: under `table-layout: auto`
+// the widths come from whichever rows happen to be mounted, so they would shift as the
+// window scrolls. The percentages are the ones the auto layout settled on, so the table
+// looks the way it did.
+const CHECKBOX_COLUMN_WIDTH = "3.3%"
+const ACTIONS_COLUMN_WIDTH = "18.6%"
+
+const HEADER_COLUMNS: ReadonlyArray<{
+  label: string
+  width: string
+  sortKey?: SortKey
+  testid?: string
+  thClass?: string
+}> = [
+  {label: "Name", width: "13%", sortKey: "name", testid: "member-manager-header-name"},
+  {label: "Username", width: "9.9%", sortKey: "username", testid: "member-manager-header-username"},
+  {label: "Role", width: "8.4%", sortKey: "role", testid: "member-manager-header-role", thClass: "text-right"},
+  {label: "Membership status", width: "9.5%", sortKey: "status", testid: "member-manager-header-status", thClass: "mm-th-multiline"},
+  {label: "Member since", width: "11.7%", sortKey: "memberSince", testid: "member-manager-header-member-since"},
+  {label: "Member in period", width: "7.3%", sortKey: "wasMemberInPeriod", testid: "member-manager-header-period-member", thClass: "mm-th-multiline mm-th-period"},
+  {label: "Paid in period", width: "8%", sortKey: "paid", testid: "member-manager-header-paid", thClass: "mm-th-multiline mm-th-period"},
+  {label: "Type / Incasso", width: "10.3%"},
+]
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -153,6 +183,22 @@ async function refreshAfterBulk() {
     contributionPeriodChanged(selectedPeriod.value ?? undefined),
   ])
 }
+
+// Height of the sticky header row, so a short list can be measured exactly.
+const HEADER_HEIGHT = 48
+
+// Banner, period picker, card heading and toolbar, measured above the table.
+const CHROME_ABOVE_TABLE = 420
+
+// The scroller needs a bounded height to virtualize at all. It takes what the window leaves,
+// but never more than the rows actually need — otherwise a filtered-down table reserves a
+// screenful of empty space below its last row. A number rather than a CSS length on purpose:
+// the scroller falls back to parsing this prop when it cannot measure its container.
+const tableHeight = computed(() => {
+  const available = Math.max(360, viewportHeight.value - CHROME_ABOVE_TABLE)
+  const needed = Math.max(160, filteredRows.value.length * ROW_HEIGHT) + HEADER_HEIGHT
+  return Math.min(available, needed)
+})
 
 function ariaSort(key: SortKey) {
   if (sortKey.value !== key) return "none"
@@ -381,190 +427,99 @@ async function confirmDeleteUser() {
               </div>
             </div>
 
-            <!-- Desktop table (lg and up) -->
-            <div
+            <!-- Desktop table (lg and up). Virtualized: only the rows in the window are
+                 mounted, so the table costs the same whether the association has 200
+                 members or 2000. -->
+            <v-data-table-virtual
               v-if="lgAndUp"
-              style="overflow-x: auto"
+              class="member-manager-vtable"
+              density="comfortable"
+              disable-sort
+              fixed-header
+              :height="tableHeight"
+              item-value="id"
+              :item-height="ROW_HEIGHT"
+              :items="filteredRows"
             >
-              <v-table
-                density="comfortable"
-                class="member-manager-vtable"
-              >
-                <thead>
-                  <tr>
-                    <!-- Selects the rows on screen, so a filter never hides part of the selection. -->
-                    <th class="mm-select-cell mm-th-checkbox">
-                      <v-checkbox-btn
-                        data-testid="member-manager-header-checkbox"
-                        density="compact"
-                        :indeterminate="headerIndeterminate"
-                        :model-value="headerChecked"
-                        @update:model-value="toggleHeader"
-                      />
-                    </th>
+              <template #headers>
+                <tr>
+                  <!-- Selects the rows on screen, so a filter never hides part of the selection. -->
+                  <th
+                    class="mm-select-cell mm-th-checkbox"
+                    :style="`width: ${CHECKBOX_COLUMN_WIDTH}`"
+                  >
+                    <v-checkbox-btn
+                      data-testid="member-manager-header-checkbox"
+                      density="compact"
+                      :indeterminate="headerIndeterminate"
+                      :model-value="headerChecked"
+                      @update:model-value="toggleHeader"
+                    />
+                  </th>
 
-                    <!-- Sortable: Name -->
-                    <th
-                      class="sortable-header"
-                      data-testid="member-manager-header-name"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('name')"
-                      @click="toggleSort('name')"
-                      @keydown.enter="toggleSort('name')"
-                      @keydown.space.prevent="toggleSort('name')"
-                    >
-                      Name
-                      <v-icon
-                        :icon="sortIcon('name')"
-                        size="16"
-                      />
-                    </th>
+                  <th
+                    v-for="column in HEADER_COLUMNS"
+                    :key="column.label"
+                    :aria-sort="column.sortKey ? ariaSort(column.sortKey) : undefined"
+                    :class="[column.sortKey && 'sortable-header', column.thClass]"
+                    :data-testid="column.testid"
+                    :role="column.sortKey ? 'button' : undefined"
+                    :style="`width: ${column.width}`"
+                    :tabindex="column.sortKey ? 0 : undefined"
+                    @click="column.sortKey && toggleSort(column.sortKey)"
+                    @keydown.enter="column.sortKey && toggleSort(column.sortKey)"
+                    @keydown.space.prevent="column.sortKey && toggleSort(column.sortKey)"
+                  >
+                    {{ column.label }}
+                    <v-icon
+                      v-if="column.sortKey"
+                      :icon="sortIcon(column.sortKey)"
+                      size="16"
+                    />
+                  </th>
 
-                    <th
-                      class="sortable-header"
-                      data-testid="member-manager-header-username"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('username')"
-                      @click="toggleSort('username')"
-                      @keydown.enter="toggleSort('username')"
-                      @keydown.space.prevent="toggleSort('username')"
-                    >
-                      Username
-                      <v-icon
-                        :icon="sortIcon('username')"
-                        size="16"
+                  <th
+                    class="mm-th-actions"
+                    :style="`width: ${ACTIONS_COLUMN_WIDTH}`"
+                  >
+                    <div class="mm-th-actions__inner">
+                      <span>Actions</span>
+                      <bulk-actions-menu
+                        :has-selection="hasSelection"
+                        :no-period="!selectedPeriod"
+                        @add-user="openAddUser"
+                        @mark-paid="openBulkAction('paid')"
+                        @mark-unpaid="openBulkAction('unpaid')"
                       />
-                    </th>
-                    <th
-                      class="sortable-header text-right"
-                      data-testid="member-manager-header-role"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('role')"
-                      @click="toggleSort('role')"
-                      @keydown.enter="toggleSort('role')"
-                      @keydown.space.prevent="toggleSort('role')"
-                    >
-                      Role
-                      <v-icon
-                        :icon="sortIcon('role')"
-                        size="16"
-                      />
-                    </th>
+                    </div>
+                  </th>
+                </tr>
+              </template>
 
-                    <!-- Sortable: Membership status -->
-                    <th
-                      class="sortable-header mm-th-multiline"
-                      data-testid="member-manager-header-status"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('status')"
-                      @click="toggleSort('status')"
-                      @keydown.enter="toggleSort('status')"
-                      @keydown.space.prevent="toggleSort('status')"
-                    >
-                      Membership status
-                      <v-icon
-                        :icon="sortIcon('status')"
-                        size="16"
-                      />
-                    </th>
+              <!-- Re-evaluated for every row entering the window while scrolling, so the
+                   bindings stay cheap: no per-row work beyond the lookups below. -->
+              <template #item="{item, index}">
+                <user-manager-row
+                  :key="(item as MemberRow).id"
+                  :class="index % 2 === 0 ? 'mm-row--odd' : undefined"
+                  :row="(item as MemberRow)"
+                  :saving="isSaving((item as MemberRow).id)"
+                  :selected="isSelected((item as MemberRow).id)"
+                  :toggle-disabled="toggleDisabled"
+                  @toggle-selection="toggleSelected"
+                  @toggle-paid="togglePaid"
+                  @manage-membership="openManageMembership"
+                  @edit-profile="openEditProfile"
+                  @delete="openDeleteRow"
+                />
+              </template>
 
-                    <!-- Sortable: Member since -->
-                    <th
-                      class="sortable-header"
-                      data-testid="member-manager-header-member-since"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('memberSince')"
-                      @click="toggleSort('memberSince')"
-                      @keydown.enter="toggleSort('memberSince')"
-                      @keydown.space.prevent="toggleSort('memberSince')"
-                    >
-                      Member since
-                      <v-icon
-                        :icon="sortIcon('memberSince')"
-                        size="16"
-                      />
-                    </th>
-
-                    <th
-                      class="sortable-header mm-th-multiline mm-th-period"
-                      data-testid="member-manager-header-period-member"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('wasMemberInPeriod')"
-                      @click="toggleSort('wasMemberInPeriod')"
-                      @keydown.enter="toggleSort('wasMemberInPeriod')"
-                      @keydown.space.prevent="toggleSort('wasMemberInPeriod')"
-                    >
-                      Member in period
-                      <v-icon
-                        :icon="sortIcon('wasMemberInPeriod')"
-                        size="16"
-                      />
-                    </th>
-
-                    <th
-                      class="sortable-header mm-th-multiline mm-th-period"
-                      data-testid="member-manager-header-paid"
-                      role="button"
-                      tabindex="0"
-                      :aria-sort="ariaSort('paid')"
-                      @click="toggleSort('paid')"
-                      @keydown.enter="toggleSort('paid')"
-                      @keydown.space.prevent="toggleSort('paid')"
-                    >
-                      Paid in period
-                      <v-icon
-                        :icon="sortIcon('paid')"
-                        size="16"
-                      />
-                    </th>
-                    <th>Type / Incasso</th>
-                    <th class="mm-th-actions">
-                      <div class="mm-th-actions__inner">
-                        <span>Actions</span>
-                        <bulk-actions-menu
-                          :has-selection="hasSelection"
-                          :no-period="!selectedPeriod"
-                          @add-user="openAddUser"
-                          @mark-paid="openBulkAction('paid')"
-                          @mark-unpaid="openBulkAction('unpaid')"
-                        />
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <user-manager-row
-                    v-for="row in filteredRows"
-                    :key="row.id"
-                    :row="row"
-                    :saving="isSaving(row.id)"
-                    :selected="isSelected(row.id)"
-                    :toggle-disabled="toggleDisabled"
-                    @toggle-selection="toggleSelected"
-                    @toggle-paid="togglePaid"
-                    @manage-membership="openManageMembership"
-                    @edit-profile="openEditProfile"
-                    @delete="openDeleteRow"
-                  />
-
-                  <tr v-if="filteredRows.length === 0">
-                    <td
-                      colspan="9"
-                      class="text-center text-medium-emphasis py-6"
-                    >
-                      No users found.
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </div>
+              <template #no-data>
+                <div class="text-center text-medium-emphasis py-6">
+                  No users found.
+                </div>
+              </template>
+            </v-data-table-virtual>
 
             <!-- Mobile list (below lg) — list idiom matching Address/Recovery/Contribution managers -->
             <div
@@ -701,7 +656,7 @@ async function confirmDeleteUser() {
 
 // Every header label sits on the same baseline, whatever its cell holds: a one-line label, a
 // label wrapped onto three lines, or the select-all checkbox.
-.member-manager-vtable thead th {
+.member-manager-vtable :deep(thead th) {
   vertical-align: bottom;
 }
 
@@ -737,17 +692,20 @@ async function confirmDeleteUser() {
 }
 
 .member-manager-vtable {
-  thead th {
-    position: sticky;
-    top: 0;
+  :deep(table) {
+    table-layout: fixed;
+  }
+
+  :deep(thead th) {
     background: rgb(var(--v-theme-surface));
-    z-index: 2;
   }
 }
 
 // Same reason as the header hover: a black stripe on the dark theme sinks into the background
-// rather than separating the rows.
-tbody tr:nth-child(odd) {
+// rather than separating the rows. Keyed off the row's index in the list rather than
+// `:nth-child`, because a virtual scroller reuses row elements and CSS parity would describe
+// the window instead of the list.
+tbody tr.mm-row--odd {
   background: rgba(var(--v-theme-on-surface), 0.02);
 }
 

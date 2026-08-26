@@ -136,7 +136,7 @@ type MemberSortKey = "name" | "email" | "joinedAt"
 
 const memberRows = computed(() => subject.value?.members ?? [])
 
-const memberName = (member: {userFullName?: string | null; userId: number; isUserDeleted: boolean}) =>
+const memberName = (member: CohortSubjectDetail["members"][number]) =>
   member.isUserDeleted ? `Deleted user #${member.userId}` : member.userFullName ?? `User #${member.userId}`
 
 const {

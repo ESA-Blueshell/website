@@ -245,6 +245,10 @@ export type CohortMapping = {
     kind: CohortKind;
     label: string;
     /**
+     * When this cohort was last confirmed to agree with its target
+     */
+    lastReconciledAt?: string | null;
+    /**
      * External system this mapping targets
      */
     system: TargetSystem;
@@ -291,11 +295,30 @@ export type CohortSubjectDetail = {
 
 export type CohortSubjectMember = {
     cohortMemberId: number;
+    /**
+     * What the external system calls this row
+     */
+    externalLabel?: string | null;
+    /**
+     * The row's identity in the external system, where it has one
+     */
+    externalUserId?: string | null;
     isUserDeleted: boolean;
     joinedAt: string;
+    /**
+     * Whether this row is in step with the external system
+     */
+    state?: 'DESIRED' | 'SYNCED' | 'VERIFIED' | 'STRANGER' | 'INVALID';
+    /**
+     * Which system's ledger this row belongs to
+     */
+    system?: TargetSystem | null;
     userEmail?: string | null;
     userFullName?: string | null;
-    userId: number;
+    /**
+     * Null for a row present externally with no local account
+     */
+    userId?: number | null;
 };
 
 export type CohortSubjectRule = {

@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.cohort.application
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
-import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
+import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository

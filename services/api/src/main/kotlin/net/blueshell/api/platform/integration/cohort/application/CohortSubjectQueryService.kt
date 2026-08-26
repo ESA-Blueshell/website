@@ -6,6 +6,10 @@ import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
+import net.blueshell.api.platform.integration.cohort.persistence.state
+import net.blueshell.api.shared.enums.TargetSystem
+import java.time.Instant
+import java.time.ZoneOffset
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
@@ -56,13 +60,21 @@ class CohortSubjectQueryService(
             CohortMappingRow(
                 cohort = cohort,
                 externalId = targetIds.find(cohort),
+                // The newest confirmation across this cohort's rows is when it was last seen
+                // to agree with the external system.
+                lastReconciledAt = cohortMembers.findAllByCohortId(cohort.id!!)
+                    .mapNotNull { it.verifiedAt }
+                    .maxOrNull()
+                    ?.toInstant(ZoneOffset.UTC),
             )
         }.sortedBy { it.cohort.system }
 
         val members = cohortMembers.findAllBySubjectIdAndUserIdIsNotNull(subjectId)
-        val memberUserIds = members.mapNotNull { it.userId }.distinct()
-        val userById = users.findAllByIds(memberUserIds).associateBy { it.id }
-        val softDeletedIds = memberUserIds
+        val systemByCohortId = mappings.associate { it.cohort.id!! to TargetSystem.valueOf(it.cohort.system) }
+
+        val userIds = members.mapNotNull { it.userId }.distinct()
+        val userById = users.findAllByIds(userIds).associateBy { it.id }
+        val softDeletedIds = userIds
             .filter { userById[it] == null }
             .filter { users.isSoftDeleted(it) }
             .toSet()
@@ -75,6 +87,8 @@ class CohortSubjectQueryService(
                     member = member,
                     user = userById[member.userId!!],
                     isUserDeleted = userById[member.userId!!] == null && softDeletedIds.contains(member.userId!!),
+                    system = systemByCohortId[member.cohort.id],
+                    state = member.state,
                 )
             }.sortedWith(
                 compareBy(
@@ -109,4 +123,6 @@ data class CohortSubjectDetail(
 data class CohortMappingRow(
     val cohort: Cohort,
     val externalId: String?,
+    /** Newest confirmation across the cohort's rows; null when it has never been confirmed. */
+    val lastReconciledAt: Instant? = null,
 )

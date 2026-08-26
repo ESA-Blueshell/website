@@ -22,6 +22,7 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectTy
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
+import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -160,6 +161,8 @@ data class CohortMappingResponse(
     val label: String,
     /** Native id on the external system; null until the cohort has been materialised. */
     val externalId: String?,
+    @param:Schema(description = "When this cohort was last confirmed to agree with its target")
+    val lastReconciledAt: Instant?,
 )
 
 @Schema(name = "CohortSubjectRule")
@@ -173,10 +176,19 @@ data class CohortSubjectRuleResponse(
 @Schema(name = "CohortSubjectMember")
 data class CohortSubjectMemberResponse(
     val cohortMemberId: Long,
-    val userId: Long,
+    @param:Schema(description = "Which system's ledger this row belongs to")
+    val system: TargetSystem?,
+    @param:Schema(description = "Whether this row is in step with the external system")
+    val state: CohortMemberState?,
+    @param:Schema(description = "Null for a row present externally with no local account")
+    val userId: Long?,
     val userFullName: String?,
     val userEmail: String?,
     val isUserDeleted: Boolean,
+    @param:Schema(description = "The row's identity in the external system, where it has one")
+    val externalUserId: String?,
+    @param:Schema(description = "What the external system calls this row")
+    val externalLabel: String?,
     val joinedAt: Instant,
 )
 
@@ -247,14 +259,19 @@ private fun CohortMappingRow.toResponse(): CohortMappingResponse =
         kind = cohort.kind,
         label = cohort.label,
         externalId = externalId,
+        lastReconciledAt = lastReconciledAt,
     )
 
 private fun CohortMemberRow.toMemberResponse(): CohortSubjectMemberResponse =
     CohortSubjectMemberResponse(
         cohortMemberId = member.id!!,
-        userId = member.userId!!,
+        system = system,
+        state = state,
+        userId = member.userId,
         userFullName = user?.fullName,
         userEmail = user?.email,
         isUserDeleted = isUserDeleted,
+        externalUserId = member.externalUserId,
+        externalLabel = member.label,
         joinedAt = member.createdAt,
     )

@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger
 import net.blueshell.api.platform.integration.cohort.application.ledger.CohortLedger.DesiredConfirmation
-import net.blueshell.api.platform.integration.cohort.persistence.CohortMemberState
+import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.platform.integration.cohort.persistence.state
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository

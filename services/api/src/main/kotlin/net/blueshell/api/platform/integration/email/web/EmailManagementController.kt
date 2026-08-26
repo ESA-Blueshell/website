@@ -3,8 +3,10 @@ package net.blueshell.api.platform.integration.email.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.platform.integration.email.application.query.EmailQuery
 import net.blueshell.api.platform.integration.email.application.service.EmailService
+import net.blueshell.api.platform.integration.email.application.service.SentEmailPreviewService
 import net.blueshell.api.platform.integration.email.web.dto.EmailDTO
 import net.blueshell.api.platform.integration.email.web.dto.EmailStatsDTO
+import net.blueshell.api.platform.integration.email.web.dto.SentEmailPreviewDTO
 import net.blueshell.api.platform.integration.email.persistence.Email
 import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.platform.integration.queue.JobExecutor
@@ -26,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException
 @Tag(name = "Email Management", description = "API for managing outbound emails")
 class EmailManagementController(
     private val emailService: EmailService,
+    private val sentEmailPreviewService: SentEmailPreviewService,
     private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,
 ) {
@@ -52,6 +55,30 @@ class EmailManagementController(
             openedCount = emailService.countByStatus(EmailDeliveryStatus.OPENED),
             bouncedCount = emailService.countByStatus(EmailDeliveryStatus.BOUNCED),
             failedCount = emailService.countByStatus(EmailDeliveryStatus.FAILED),
+        )
+    }
+
+    /**
+     * Renders a sent email so it can be read back, with every url stripped out of it first.
+     *
+     * Gated on the same permission as reading the outbox: the body carries the recipient's
+     * name and whatever the email told them. What it no longer carries is any link — a sent
+     * email's links are live credentials, and the redaction happens before the response
+     * leaves here rather than in the browser.
+     */
+    @GetMapping("/{id}/preview")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")
+    fun previewSentEmail(@PathVariable id: Long): SentEmailPreviewDTO {
+        val preview = sentEmailPreviewService.preview(id)
+            ?: throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Email $id was sent before its body was stored, so it cannot be previewed",
+            )
+        return SentEmailPreviewDTO(
+            subject = preview.subject,
+            html = preview.html,
+            recipientEmail = preview.recipientEmail,
+            recipientName = preview.recipientName,
         )
     }
 
@@ -108,4 +135,5 @@ private fun Email.toDto() = EmailDTO(
     jobExecutionId = this.jobExecutionId,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt,
+    previewable = this.bodyMarkdown != null,
 )

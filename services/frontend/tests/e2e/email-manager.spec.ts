@@ -16,6 +16,7 @@ const BASE_EMAILS = [
     attempts: 1,
     jobExecutionId: 700,
     createdAt: "2025-01-01T09:59:00.000Z",
+    previewable: true,
   },
   {
     id: 802,
@@ -33,6 +34,8 @@ const BASE_EMAILS = [
     attempts: 3,
     jobExecutionId: 701,
     createdAt: "2025-01-01T11:00:00.000Z",
+    // Sent before bodies were stored: there is nothing to read back.
+    previewable: false,
   },
   {
     id: 803,
@@ -329,5 +332,38 @@ test.describe("email manager — pagination", () => {
 
     await expect(page.getByTestId("email-manager-table")).toBeVisible()
     await expect(page.getByTestId("email-manager-pagination")).toBeVisible()
+  })
+})
+
+test.describe("email manager — preview", () => {
+  test("reads a sent email back, and says its links were removed", async ({page}) => {
+    await installApiMocks(page, {emails: BASE_EMAILS})
+    await loginAsAdmin(page.context())
+    await page.goto("/management/emails")
+
+    await page.getByTestId("email-preview-btn-801").click()
+
+    const dialog = page.getByTestId("email-preview-dialog")
+    await expect(dialog).toBeVisible()
+    await expect(page.getByTestId("email-preview-subject")).toHaveText("Welcome to Blueshell")
+    await expect(page.getByTestId("email-preview-recipient")).toContainText("alice@example.com")
+
+    // The email itself renders in a sandboxed frame, so assert through it.
+    const body = page.frameLocator('[data-testid="email-preview-frame"]')
+    await expect(body.locator("body")).toContainText("Hello Alice Example")
+    // The link is still readable; where it pointed is gone.
+    await expect(body.locator("a")).toHaveText("Activate your account")
+    await expect(body.locator("a")).toHaveAttribute("href", "")
+
+    await expect(page.getByTestId("email-preview-redacted-notice")).toBeVisible()
+  })
+
+  test("offers no preview for an email whose body was never stored", async ({page}) => {
+    await installApiMocks(page, {emails: BASE_EMAILS})
+    await loginAsAdmin(page.context())
+    await page.goto("/management/emails")
+
+    await expect(page.getByTestId("email-row-802")).toBeVisible()
+    await expect(page.getByTestId("email-preview-btn-802")).toHaveCount(0)
   })
 })

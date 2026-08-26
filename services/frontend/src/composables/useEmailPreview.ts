@@ -6,6 +6,8 @@ export interface RenderedEmailPreview {
   html: string
   /** Set when the rendered links are inert, so the dialog can say the preview is safe. */
   linkPlaceholder?: string | null
+  /** Set when the links were removed rather than made inert, as for an email already sent. */
+  linksRedacted?: boolean | null
   recipientEmail?: string | null
   recipientName?: string | null
 }

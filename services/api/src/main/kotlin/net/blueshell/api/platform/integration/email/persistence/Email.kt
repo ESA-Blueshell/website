@@ -20,6 +20,11 @@ class Email(
     @Column(name = "recipient_email", nullable = false) val recipientEmail: String = "",
     @Column(name = "recipient_name", nullable = false) val recipientName: String = "",
     @Column(name = "subject", nullable = false) val subject: String = "",
+    /**
+     * The markdown body the sending domain produced, kept so a sent email can be read back.
+     * Null for rows written before the column existed.
+     */
+    @Lob @Column(name = "body_markdown") val bodyMarkdown: String? = null,
     @Column(name = "email_type", nullable = false) val emailType: String = "",
 
     @Enumerated(EnumType.STRING) @Column(

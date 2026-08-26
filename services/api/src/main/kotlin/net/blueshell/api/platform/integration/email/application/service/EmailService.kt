@@ -26,6 +26,7 @@ class EmailService(
             recipientEmail = content.recipientEmail,
             recipientName = content.recipientName,
             subject = content.subject,
+            bodyMarkdown = content.markdownContent,
             emailType = emailType,
             deliveryStatus = EmailDeliveryStatus.PENDING,
             trackingToken = UUID.randomUUID().toString(),

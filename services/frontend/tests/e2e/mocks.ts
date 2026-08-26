@@ -179,6 +179,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       attempts: 1,
       jobExecutionId: 700,
       createdAt: "2025-01-01T11:59:00.000Z",
+      previewable: true,
     },
   ]
 
@@ -586,6 +587,22 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         failedCount: counts["FAILED"],
       })
     }
+    if (method === "GET" && /^\/management\/emails\/\d+\/preview$/.test(path)) {
+      const id = Number(path.replace(/\D+/g, ""))
+      const email = baseEmails.find((candidate) => Number(candidate["id"]) === id)
+      if (!email || email["previewable"] === false) {
+        return fulfillJson(route, {message: "No stored body"}, 404)
+      }
+      // As the api answers: already rendered, and already stripped of its urls.
+      return fulfillJson(route, {
+        subject: email["subject"],
+        html: `<html><body><p>Hello ${email["recipientName"]}</p><a href="">Activate your account</a></body></html>`,
+        recipientEmail: email["recipientEmail"],
+        recipientName: email["recipientName"],
+        linksRedacted: true,
+      })
+    }
+
     if (method === "GET" && path === "/management/emails") {
       const page = Number(url.searchParams.get("page") ?? "0")
       const size = Number(url.searchParams.get("size") ?? "50")

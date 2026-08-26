@@ -2,7 +2,9 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {getStats1, list1, retry1, type Email, type EmailStats} from "@/services/api"
+import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
+import {useEmailPreview} from "@/composables/useEmailPreview"
+import {getStats1, list1, previewSentEmail, retry1, type Email, type EmailStats} from "@/services/api"
 
 defineOptions({name: "EmailManagerPage"})
 
@@ -189,6 +191,22 @@ const refresh = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// ── Preview ───────────────────────────────────────────────────────────────────
+
+const {open: previewOpen, loading: previewLoading, error: previewError, preview, show: showPreview} =
+  useEmailPreview()
+/**
+ * Reads a sent email back. The api renders it and strips its urls before answering, so what
+ * arrives here has no link in it to follow.
+ */
+const openPreview = async (email: Email) => {
+  if (email.id == null) return
+  await showPreview(async () => {
+    const response = await previewSentEmail({path: {id: email.id as number}})
+    return response.data ?? null
+  })
 }
 
 const retryEmail = async (email: Email) => {
@@ -542,6 +560,17 @@ onMounted(() => {
                     </v-chip>
 
                     <v-btn
+                      v-if="email.previewable"
+                      :aria-label="`Preview email ${email.id}`"
+                      :data-testid="`email-preview-btn-${email.id}`"
+                      size="small"
+                      variant="outlined"
+                      @click.stop="openPreview(email)"
+                    >
+                      Preview
+                    </v-btn>
+
+                    <v-btn
                       v-if="canRetry(email)"
                       :data-testid="`email-retry-btn-${email.id}`"
                       :loading="retrying === email.id"
@@ -668,6 +697,13 @@ onMounted(() => {
         </v-card>
       </div>
     </v-container>
+    <email-preview-dialog
+      v-model="previewOpen"
+      :error="previewError"
+      :loading="previewLoading"
+      :preview="preview"
+      title="Sent email"
+    />
   </v-main>
 </template>
 

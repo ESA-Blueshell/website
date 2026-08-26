@@ -1,9 +1,7 @@
-package net.blueshell.api.domain.contribution.application.command
+package net.blueshell.api.domain.contribution.application
 
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionService
-import net.blueshell.api.domain.contribution.command.BulkContributionOperation
-import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.MembershipService
@@ -24,15 +22,15 @@ import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.time.LocalDate
 
-class BulkContributionCommandHandlersTest {
+class BulkContributionUseCasesTest {
 
     private val contributions = mock<ContributionService>()
     private val users = mock<UserService>()
     private val memberships = mock<MembershipService>()
     private val periods = mock<ContributionPeriodService>()
     private val deletedUsers = mock<DeletedUserRepository>()
-    private val handler =
-        ExecuteBulkContributionHandler(contributions, users, memberships, periods, deletedUsers)
+    private val useCases =
+        BulkContributionUseCases(contributions, users, memberships, periods, deletedUsers)
 
     private val periodId = 100L
 
@@ -42,7 +40,7 @@ class BulkContributionCommandHandlersTest {
         knownUser(1L)
         whenever(contributions.existsByUserIdAndPeriodId(1L, periodId)).thenReturn(false)
 
-        val result = handler.handle(command(listOf(1L), BulkContributionOperation.PAID))
+        val result = useCases.execute(listOf(1L), periodId, BulkContributionOperation.PAID)
 
         assertThat(result.applied).isEqualTo(1)
         assertThat(result.skipped).isZero()
@@ -55,7 +53,7 @@ class BulkContributionCommandHandlersTest {
         knownUser(1L)
         whenever(contributions.existsByUserIdAndPeriodId(1L, periodId)).thenReturn(true)
 
-        val result = handler.handle(command(listOf(1L), BulkContributionOperation.PAID))
+        val result = useCases.execute(listOf(1L), periodId, BulkContributionOperation.PAID)
 
         assertThat(result.applied).isZero()
         assertThat(result.skipped).isEqualTo(1)
@@ -68,7 +66,7 @@ class BulkContributionCommandHandlersTest {
         knownUser(1L)
         whenever(contributions.existsByUserIdAndPeriodId(1L, periodId)).thenReturn(true)
 
-        val result = handler.handle(command(listOf(1L), BulkContributionOperation.UNPAID))
+        val result = useCases.execute(listOf(1L), periodId, BulkContributionOperation.UNPAID)
 
         assertThat(result.applied).isEqualTo(1)
         verify(contributions).deleteById(Contribution.Id(1L, periodId))
@@ -80,7 +78,7 @@ class BulkContributionCommandHandlersTest {
         knownUser(1L)
         whenever(users.existsById(99L)).thenReturn(false)
 
-        assertThatThrownBy { handler.handle(command(listOf(1L, 99L), BulkContributionOperation.PAID)) }
+        assertThatThrownBy { useCases.execute(listOf(1L, 99L), periodId, BulkContributionOperation.PAID) }
             .isInstanceOfSatisfying(BulkSelectionRejected::class.java) { rejected ->
                 val violation = rejected.violations.single()
                 assertThat(violation.code).isEqualTo(BulkSelectionRejected.UNKNOWN_USERS)
@@ -100,7 +98,7 @@ class BulkContributionCommandHandlersTest {
         knownUser(7L)
         whenever(deletedUsers.existsById(7L)).thenReturn(true)
 
-        assertThatThrownBy { handler.handle(command(listOf(1L, 7L), BulkContributionOperation.PAID)) }
+        assertThatThrownBy { useCases.execute(listOf(1L, 7L), periodId, BulkContributionOperation.PAID) }
             .isInstanceOfSatisfying(BulkSelectionRejected::class.java) { rejected ->
                 val violation = rejected.violations.single()
                 assertThat(violation.code).isEqualTo(BulkSelectionRejected.DELETED_USERS)
@@ -116,7 +114,7 @@ class BulkContributionCommandHandlersTest {
         knownUser(1L)
         knownUser(2L, MemberType.HONORARY)
 
-        assertThatThrownBy { handler.handle(command(listOf(1L, 2L), BulkContributionOperation.PAID)) }
+        assertThatThrownBy { useCases.execute(listOf(1L, 2L), periodId, BulkContributionOperation.PAID) }
             .isInstanceOfSatisfying(BulkSelectionRejected::class.java) { rejected ->
                 val violation = rejected.violations.single()
                 assertThat(violation.code).isEqualTo(BulkSelectionRejected.HONORARY_USERS)
@@ -132,7 +130,7 @@ class BulkContributionCommandHandlersTest {
         knownUser(2L, MemberType.HONORARY)
         whenever(users.existsById(99L)).thenReturn(false)
 
-        assertThatThrownBy { handler.handle(command(listOf(2L, 99L), BulkContributionOperation.PAID)) }
+        assertThatThrownBy { useCases.execute(listOf(2L, 99L), periodId, BulkContributionOperation.PAID) }
             .isInstanceOfSatisfying(BulkSelectionRejected::class.java) { rejected ->
                 assertThat(rejected.violations.map { it.code })
                     .containsExactlyInAnyOrder(
@@ -146,7 +144,7 @@ class BulkContributionCommandHandlersTest {
     fun `refuses a selection naming a period that no longer exists`() {
         whenever(periods.existsById(periodId)).thenReturn(false)
 
-        assertThatThrownBy { handler.handle(command(listOf(1L), BulkContributionOperation.PAID)) }
+        assertThatThrownBy { useCases.execute(listOf(1L), periodId, BulkContributionOperation.PAID) }
             .isInstanceOfSatisfying(BulkSelectionRejected::class.java) { rejected ->
                 val violation = rejected.violations.single()
                 assertThat(violation.field).isEqualTo("contributionPeriodId")
@@ -162,14 +160,12 @@ class BulkContributionCommandHandlersTest {
         knownUser(1L)
         whenever(contributions.existsByUserIdAndPeriodId(1L, periodId)).thenReturn(false)
 
-        val result = handler.handle(command(listOf(1L, 1L, 1L), BulkContributionOperation.PAID))
+        val result = useCases.execute(listOf(1L, 1L, 1L), periodId, BulkContributionOperation.PAID)
 
         assertThat(result.applied).isEqualTo(1)
         verify(contributions).create(any())
     }
 
-    private fun command(userIds: List<Long>, operation: BulkContributionOperation) =
-        ExecuteBulkContributionCommand(userIds, periodId, operation)
 
     private fun knownPeriod() {
         whenever(periods.existsById(periodId)).thenReturn(true)

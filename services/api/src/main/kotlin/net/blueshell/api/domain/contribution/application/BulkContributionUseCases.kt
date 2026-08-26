@@ -1,18 +1,13 @@
-package net.blueshell.api.domain.contribution.application.command
+package net.blueshell.api.domain.contribution.application
 
-import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.application.ContributionService
-import net.blueshell.api.domain.contribution.command.BulkContributionOperation
-import net.blueshell.api.domain.contribution.command.ExecuteBulkContributionCommand
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.MembershipService
-import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.shared.command.CommandHandler
+import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.MemberType
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -28,21 +23,20 @@ import org.springframework.transaction.annotation.Transactional
  * Rows already in the requested state are reported as unchanged, which is a fact
  * about the data rather than a rejected input.
  */
-@Component
-class ExecuteBulkContributionHandler(
+@Service
+class BulkContributionUseCases(
     private val contributions: ContributionService,
     private val users: UserService,
     private val memberships: MembershipService,
     private val periods: ContributionPeriodService,
     private val deletedUsers: DeletedUserRepository,
-) : CommandHandler<ExecuteBulkContributionCommand, BulkActionResult> {
-    override val commandType = ExecuteBulkContributionCommand::class
-
+) {
     @Transactional
-    override fun handle(command: ExecuteBulkContributionCommand): BulkActionResult {
-        val userIds = command.userIds.distinct()
-        val periodId = command.contributionPeriodId
-        val objectName = if (command.operation == BulkContributionOperation.PAID) {
+    fun execute(userIds: List<Long>, contributionPeriodId: Long, operation: BulkContributionOperation): BulkActionResult {
+
+        val userIds = userIds.distinct()
+        val periodId = contributionPeriodId
+        val objectName = if (operation == BulkContributionOperation.PAID) {
             "BulkMarkPaidRequest"
         } else {
             "BulkMarkUnpaidRequest"
@@ -106,7 +100,7 @@ class ExecuteBulkContributionHandler(
         if (violations.isNotEmpty()) throw BulkSelectionRejected(objectName, violations)
 
         val period = periods.findById(periodId)
-        val wantPaid = command.operation == BulkContributionOperation.PAID
+        val wantPaid = operation == BulkContributionOperation.PAID
         var applied = 0
         var unchanged = 0
 

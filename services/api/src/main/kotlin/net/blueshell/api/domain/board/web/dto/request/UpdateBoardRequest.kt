@@ -20,5 +20,8 @@ data class UpdateBoardRequest(
 
     var pictureId: Long? = null,
 
+    @Schema(description = "Asset file name of the board's photograph")
+    var image: String? = null,
+
     var version: Long
 )

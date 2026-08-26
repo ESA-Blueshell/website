@@ -14,6 +14,7 @@ import net.blueshell.api.factory.telemetry.persistence.TelemetryFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.domain.blog.persistence.Blog
 import net.blueshell.api.domain.board.persistence.Board
+import net.blueshell.api.domain.board.persistence.BoardMember
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.event.persistence.Event
@@ -173,6 +174,17 @@ abstract class UserTestSupport : ServiceTestSupport() {
         val member = boardFactory.buildMember(board, user, role)
         board.addMember(member)
         return persist(board)
+    }
+
+    /** A seat held by somebody with no account, which is most of the association's history. */
+    protected fun addBoardSeat(
+        board: Board,
+        displayName: String,
+        role: String = "CHAIR",
+    ): BoardMember {
+        val seat = boardFactory.buildMember(board, user = null, role = role, displayName = displayName)
+        board.addMember(seat)
+        return persist(board).members.first { it.displayName == displayName }
     }
 
     protected fun createCommitteeFixture(

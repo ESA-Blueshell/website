@@ -31,27 +31,30 @@ class BoardFactory(
         return persistence.persist(build(name, candidate, startDate))
     }
 
+    /** A seat may name somebody with no account, which is most of the association's history. */
     fun buildMember(
         board: Board,
-        user: User,
+        user: User? = null,
         role: String = "CHAIR",
-        startDate: LocalDate = LocalDate.now().minusDays(1)
+        startDate: LocalDate = LocalDate.now().minusDays(1),
+        displayName: String? = null,
     ): BoardMember {
         return BoardMember(
-            id = BoardMember.Id(board.id, user.id),
             board = board,
             user = user,
             role = role,
-            startDate = startDate
+            startDate = startDate,
+            displayName = displayName,
         )
     }
 
     fun createMember(
         board: Board,
-        user: User,
+        user: User? = null,
         role: String = "CHAIR",
-        startDate: LocalDate = LocalDate.now().minusDays(1)
+        startDate: LocalDate = LocalDate.now().minusDays(1),
+        displayName: String? = null,
     ): BoardMember {
-        return persistence.persist(buildMember(board, user, role, startDate))
+        return persistence.persist(buildMember(board, user, role, startDate, displayName))
     }
 }

@@ -1,6 +1,5 @@
 package net.blueshell.api.domain.board.web
 
-import net.blueshell.api.domain.board.persistence.BoardMember
 import net.blueshell.api.domain.board.persistence.repository.BoardMemberRepository
 import net.blueshell.api.domain.board.persistence.repository.BoardRepository
 import net.blueshell.api.shared.enums.Role
@@ -201,7 +200,7 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.role").value("CHAIR"))
 
-            assertThat(boardMemberRepository.findById(BoardMember.Id(board.id, user.id))).isPresent
+            assertThat(boardMemberRepository.findByBoardIdAndUserId(board.id!!, user.id!!)).isPresent
         }
 
         @Test
@@ -220,7 +219,7 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.role").value("TREASURER"))
 
-            val member = boardMemberRepository.findById(BoardMember.Id(board.id, user.id)).orElseThrow()
+            val member = boardMemberRepository.findByBoardIdAndUserId(board.id!!, user.id!!).orElseThrow()
             assertThat(member.role).isEqualTo("TREASURER")
         }
 
@@ -243,32 +242,116 @@ class BoardControllerIT : UserTestSupport() {
     inner class RemoveMember {
 
         @Test
-        fun `removes board member`() {
+        fun `removes a seat by its own id`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
             val user = createUserWithRole(Role.MEMBER)
-            addBoardMember(board, user)
+            val seat = addBoardMember(board, user).members.first()
 
             mvc.perform(
-                delete("/boards/{boardId}/members/{userId}", board.id, user.id)
+                delete("/boards/{boardId}/members/{id}", board.id, seat.id)
                     .with(bearer(boardUser))
             )
                 .andExpect(status().isNoContent)
 
-            assertThat(boardMemberRepository.findById(BoardMember.Id(board.id, user.id))).isEmpty
+            assertThat(boardMemberRepository.findById(seat.id!!)).isEmpty
         }
 
         @Test
-        fun `returns not found when board member does not exist`() {
+        fun `returns not found when the seat does not exist`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
-            val user = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                delete("/boards/{boardId}/members/{userId}", board.id, user.id)
+                delete("/boards/{boardId}/members/{id}", board.id, 999999L)
                     .with(bearer(boardUser))
             )
                 .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    inner class SeatsWithoutAccounts {
+
+        @Test
+        fun `seats somebody with no account, under their own name`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+
+            mvc.perform(
+                post("/boards/{boardId}/members", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"role":"Chair","startDate":"2017-09-01","endDate":"2018-08-31",
+                         "displayName":"Thijs Lieverse","description":"The first chair.",
+                         "image":"board1/thijs.jpg"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.userId").doesNotExist())
+                .andExpect(jsonPath("$.name").value("Thijs Lieverse"))
+                .andExpect(jsonPath("$.description").value("The first chair."))
+                .andExpect(jsonPath("$.image").value("board1/thijs.jpg"))
+        }
+
+        @Test
+        fun `a linked seat is named by the member, not by what was recorded`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+            val user = createUserWithRole(Role.MEMBER)
+            val seat = addBoardSeat(board, displayName = "Somebody Else")
+
+            mvc.perform(
+                put("/boards/{boardId}/members/{id}/member", board.id, seat.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"userId\": ${user.id}}")
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.userId").value(user.id))
+                .andExpect(jsonPath("$.name").value(user.fullName))
+
+            // Detaching leaves the seat standing under the name it was recorded with.
+            mvc.perform(
+                put("/boards/{boardId}/members/{id}/member", board.id, seat.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}")
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.userId").doesNotExist())
+                .andExpect(jsonPath("$.name").value("Somebody Else"))
+        }
+
+        @Test
+        fun `a board carries its own photograph, and anybody may read it`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+            val seat = addBoardSeat(board, displayName = "Nobody Here")
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"name":"${board.name}","candidate":"${board.candidate}",
+                         "startDate":"${board.startDate}","image":"board1/board1.jpg",
+                         "version":${board.version}}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
+
+            // Anybody may read a board, which is what the public page does.
+            mvc.perform(get("/boards/{id}", board.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
+                .andExpect(jsonPath("$.members[?(@.id == %d)].name".format(seat.id)).value("Nobody Here"))
         }
     }
 }

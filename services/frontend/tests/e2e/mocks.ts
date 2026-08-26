@@ -27,6 +27,7 @@ type Fixtures = {
   esportsSeasons?: Array<Record<string, unknown>>
   esportsTeams?: Array<Record<string, unknown>>
   esportsRoster?: Array<Record<string, unknown>>
+  boards?: Array<Record<string, unknown>>
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -81,6 +82,54 @@ const esportsPageBySeason: Record<string, Record<string, unknown>> = {
     ],
   },
 }
+
+/** Two boards, so the page has one in office and one to expand. */
+const boardFixtures = [
+  {
+    id: 9,
+    name: "9th Board",
+    candidate: "9th Board",
+    startDate: "2025-09-01",
+    endDate: "2026-08-31",
+    image: "board9/board9.jpg",
+    version: 0,
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+    members: [
+      {
+        id: 91, boardId: 9, userId: 1, role: "Chair", name: "Emma Dokter",
+        description: "Chairing the ninth board.", image: "board9/Emma.jpg",
+        startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
+        createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+      },
+      {
+        id: 92, boardId: 9, userId: null, role: "Secretary", name: "Viktor Petrov",
+        description: null, image: null,
+        startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
+        createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ],
+  },
+  {
+    id: 1,
+    name: "1st Board",
+    candidate: "1st Board",
+    startDate: "2017-09-01",
+    endDate: "2018-08-31",
+    image: null,
+    version: 0,
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+    members: [
+      {
+        id: 11, boardId: 1, userId: null, role: "Chairman", name: "Thijs Lieverse",
+        description: null, image: null,
+        startDate: "2017-09-01", endDate: "2018-08-31", version: 0,
+        createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ],
+  },
+]
 
 async function fulfillJson(route: Route, data: unknown, status = 200) {
   await route.fulfill({
@@ -550,6 +599,22 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         {id: 1, system: "BREVO", kind: "LIST", label: "Members 2025-2026", memberCount: 2, externalId: "7", folder: "Periods"},
         {id: 2, system: "BREVO", kind: "LIST", label: "Web Cmte", memberCount: 1, externalId: "33", folder: "Committees"},
       ])
+    }
+    if (method === "GET" && path === "/boards") {
+      return fulfillJson(route, fixtures.boards ?? boardFixtures)
+    }
+    if (method === "GET" && /^\/boards\/\d+$/.test(path)) {
+      const id = Number(path.split("/")[2])
+      const board = (fixtures.boards ?? boardFixtures).find((b) => b.id === id)
+      return fulfillJson(route, board ?? {}, board ? 200 : 404)
+    }
+    if (method === "POST" && /^\/boards\/\d+\/members$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      return fulfillJson(route, {id: 99, boardId: Number(path.split("/")[2]), userId: body.userId ?? null, role: body.role, name: body.displayName ?? null, description: body.description ?? null, image: body.image ?? null, startDate: body.startDate, endDate: body.endDate ?? null, version: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"}, 201)
+    }
+    if (method === "PUT" && /^\/boards\/\d+\/members\/\d+\/member$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      return fulfillJson(route, {id: 92, boardId: 9, userId: body.userId ?? null, role: "Secretary", name: "Viktor Petrov", description: null, image: null, startDate: "2025-09-01", endDate: "2026-08-31", version: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"})
     }
     if (method === "GET" && /^\/esports\/games\/[A-Z_]+$/.test(path)) {
       const requested = url.searchParams.get("seasonId")

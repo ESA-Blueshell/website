@@ -16,6 +16,10 @@ interface UserRepository : BaseRepository<User, Long> {
     @Query("select u.id from User u where u.enabled = false")
     fun findIdsByEnabledFalse(): List<Long>
 
+    /** Everybody who opted into the newsletter, activated account or not. */
+    @Query("SELECT u.id FROM User u WHERE u.newsletter = true")
+    fun findIdsByNewsletterTrue(): List<Long>
+
     fun existsByUsername(username: String): Boolean
 
     fun existsByUsernameAndIdNot(username: String, id: Long): Boolean

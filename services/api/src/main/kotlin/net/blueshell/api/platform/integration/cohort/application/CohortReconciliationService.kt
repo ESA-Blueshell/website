@@ -1,7 +1,9 @@
 package net.blueshell.api.platform.integration.cohort.application
 
-import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinitionRegistry
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortMembershipUpdater
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortRegistrar
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortReconciliation
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
@@ -13,17 +15,16 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
 
 /**
- * Application implementation of the [CohortReconciliation] inbound
- * port. Bulk operations fan their work out through per-user /
- * per-cohort jobs so a single failure stays isolated in its own
+ * Application implementation of the [CohortReconciliation] inbound port. Bulk operations fan
+ * their work out through per-user jobs so a single failure stays isolated in its own
  * JobExecution row with its own retry budget.
  */
 @Service
 class CohortReconciliationService(
-    private val periods: ContributionPeriodService,
     private val users: UserService,
-    private val contributionPeriodCohorts: ContributionPeriodCohortResolver,
-    private val evaluator: CohortRuleEvaluator,
+    private val definitions: CohortDefinitionRegistry,
+    private val registrar: CohortRegistrar,
+    private val updater: CohortMembershipUpdater,
     private val jobs: TrackedJobDispatcher,
     transactionManager: PlatformTransactionManager,
 ) : CohortReconciliation {
@@ -37,19 +38,25 @@ class CohortReconciliationService(
 
     @Transactional
     override fun evaluateUserCohorts(userId: Long) {
-        evaluator.evaluate(userId)
+        updater.updateMember(userId)
     }
 
+    /**
+     * Puts a cohort record behind every definition, then recomputes each one in full.
+     *
+     * This is the sweep that catches what events cannot: a definition added in code, a period
+     * created while the application was down, a member whose facts changed elsewhere.
+     */
     @Transactional
     override fun reconcileAllContributionPeriodCohorts() {
-        val all = periods.findAll()
-        log.info("Reconciling cohort + rule for {} contribution periods", all.size)
-        all.forEach { period ->
-            val periodId = period.id ?: return@forEach
-            runCatching { contributionPeriodCohorts.materialize(periodId) }
-                .onFailure { e ->
-                    log.warn("Failed to materialize cohort for period {}: {}", periodId, e.message)
-                }
+        val report = registrar.register()
+        log.info(
+            "[cohort] {} definitions registered ({} new, {} orphaned)",
+            report.total, report.created, report.orphaned.size,
+        )
+        definitions.all().forEach { definition ->
+            runCatching { updater.updateCohort(definition) }
+                .onFailure { e -> log.warn("Failed to recompute {}: {}", definition.key, e.message) }
         }
     }
 

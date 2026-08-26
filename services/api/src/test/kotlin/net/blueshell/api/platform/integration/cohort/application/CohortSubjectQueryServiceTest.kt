@@ -5,6 +5,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinitionRegistry
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
@@ -31,8 +32,9 @@ class CohortSubjectQueryServiceTest {
     private val users: UserService = mockk()
     private val targetIds: CohortTargetIds = mockk()
     private val externalIds: ExternalIdMappingService = mockk()
+    private val definitions: CohortDefinitionRegistry = mockk()
     private val service =
-        CohortSubjectQueryService(subjects, cohorts, cohortMembers, users, targetIds, externalIds)
+        CohortSubjectQueryService(subjects, cohorts, cohortMembers, users, targetIds, externalIds, definitions)
 
     @Test
     fun `summaries returns memberCount and mappingCount from count methods not findAll`() {
@@ -220,7 +222,7 @@ class CohortSubjectQueryServiceTest {
     }
 
     private fun subject(id: Long): CohortSubject =
-        CohortSubject(CohortSubjectType.CUSTOM, "Test Subject $id").apply { this.id = id }
+        CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Test Subject $id").apply { this.id = id }
 
     private fun cohort(id: Long): Cohort =
         Cohort(system = "BREVO", kind = CohortKind.LIST, label = "Cohort $id").apply { this.id = id }

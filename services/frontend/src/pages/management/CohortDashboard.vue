@@ -56,12 +56,6 @@ const CARDS: Card[] = [
     blurb: "Member-status cohorts that aren't tied to a single period (today: Newsletter).",
     icon: "mdi-shield-account",
   },
-  {
-    category: CohortSubjectCategory.OTHER,
-    title: "Other",
-    blurb: "Custom cohorts created by an operator.",
-    icon: "mdi-dots-horizontal-circle",
-  },
 ]
 
 /** What the engine holds in total, which is what the heading claims. */
@@ -72,7 +66,6 @@ const countsByCategory = computed<Record<CohortSubjectCategory, {subjects: numbe
     [CohortSubjectCategory.COMMITTEES]: {subjects: 0, members: 0},
     [CohortSubjectCategory.PERIODS]: {subjects: 0, members: 0},
     [CohortSubjectCategory.MEMBERS]: {subjects: 0, members: 0},
-    [CohortSubjectCategory.OTHER]: {subjects: 0, members: 0},
   }
   for (const subject of subjects.value) {
     counts[subject.category].subjects += 1

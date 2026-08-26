@@ -142,7 +142,7 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `linkExisting allows ids that are not present in the catalog`() {
-        val subject = CohortSubject(CohortSubjectType.CUSTOM, "Members")
+        val subject = CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Members")
         val saved = mock<Cohort> { on { id } doReturn 7L }
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
         whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(null)

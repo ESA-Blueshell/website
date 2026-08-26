@@ -78,7 +78,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     }
 
     private fun newSubject(): CohortSubject =
-        subjects.save(CohortSubject(type = CohortSubjectType.CUSTOM, label = "Members"))
+        subjects.save(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
 
     private fun newCohort(subject: CohortSubject): Cohort =
         cohorts.save(

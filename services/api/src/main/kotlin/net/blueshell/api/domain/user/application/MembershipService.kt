@@ -13,6 +13,7 @@ import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 class MembershipService @Autowired constructor(
@@ -95,6 +96,18 @@ class MembershipService @Autowired constructor(
         )
         return repository.findAll(spec)
     }
+
+    /**
+     * Everybody whose membership overlapped the window. Mirrors the user manager's
+     * "member in period" column, which computes the same rule in the frontend.
+     */
+    @Transactional(readOnly = true)
+    fun findUserIdsOverlapping(from: LocalDate, to: LocalDate): Set<Long> =
+        repository.findUserIdsOverlapping(from, to).toSet()
+
+    @Transactional(readOnly = true)
+    fun heldMembershipBetween(userId: Long, from: LocalDate, to: LocalDate): Boolean =
+        repository.existsOverlapping(userId, from, to)
 
     fun findDeletedByUserId(userId: Long): MutableList<Membership> = repository.findDeletedByUser_Id(userId)
 

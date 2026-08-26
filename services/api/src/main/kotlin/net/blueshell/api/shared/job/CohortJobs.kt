@@ -132,8 +132,8 @@ object CohortJobs {
         val cohortId: Long,
         val system: String,
         val externalTargetId: String,
-        val factKind: String,
-        val factKey: String,
+        /** Which cohort this is reconciling into, by the key of the definition behind it. */
+        val definitionKey: String,
         val selected: List<InboundReconcileSelectedUser>,
     )
     data class InboundReconcileSelectedUser(val externalUserId: String, val userId: Long)

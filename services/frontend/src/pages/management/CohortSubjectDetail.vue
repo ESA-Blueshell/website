@@ -53,7 +53,6 @@ const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
   [CohortSubjectCategory.COMMITTEES]: "Committees",
   [CohortSubjectCategory.PERIODS]: "Periods",
   [CohortSubjectCategory.MEMBERS]: "Members",
-  [CohortSubjectCategory.OTHER]: "Other",
 }
 
 
@@ -61,10 +60,6 @@ const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
  * `MEMBER_IN_PERIOD` is how the fact is stored, not how it reads. The key stays as it is —
  * it is an id, and an operator matching it against the database needs it verbatim.
  */
-const factKindLabel = (factKind: string): string => {
-  const words = factKind.toLowerCase().replace(/_/g, " ")
-  return words.charAt(0).toUpperCase() + words.slice(1)
-}
 
 const SYSTEM_LABELS: Record<string, string> = {
   BREVO: "Brevo",
@@ -513,56 +508,32 @@ watch(subjectId, () => void load())
             <!-- Three boxes saying what they hold, opened when the reader wants the detail.
                  Members starts open: it is what the page is for. -->
             <div class="subject-boxes mt-4">
-              <info-box
-                v-if="subject.rules.length"
-                expandable
-                :count="subject.rules.length"
-                label="Rules"
-                testid="cohort-subject-rules"
+              <!-- What decides who belongs. It is a definition in code now, so there is a
+                   name to read rather than a rule to interpret — and a warning when the code
+                   that produced this cohort is gone. -->
+              <div
+                class="subject-definition"
+                data-testid="cohort-subject-definition"
               >
-                <v-table
-                  class="manager-table"
-                  data-testid="cohort-subject-rule-list"
-                  density="compact"
+                <span class="subject-definition__label">Defined by</span>
+                <code
+                  v-if="subject.definitionKey"
+                  class="subject-definition__key"
+                >{{ subject.definitionKey }}</code>
+                <span
+                  v-else
+                  class="text-medium-emphasis"
+                >nothing any more</span>
+                <v-chip
+                  v-if="subject.orphaned"
+                  color="warning"
+                  data-testid="cohort-subject-orphaned"
+                  size="small"
+                  variant="flat"
                 >
-                  <thead>
-                    <tr>
-                      <th style="width: 46%">
-                        Fact
-                      </th>
-                      <th style="width: 34%">
-                        Must equal
-                      </th>
-                      <th style="width: 20%">
-                        State
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="rule in subject.rules"
-                      :key="rule.id"
-                      :data-testid="`cohort-subject-rule-${rule.id}`"
-                    >
-                      <!-- The fact reads as a sentence; the key stays verbatim because it is
-                           an id somebody matches against the database. -->
-                      <td>{{ factKindLabel(rule.factKind) }}</td>
-                      <td class="text-monospace text-medium-emphasis">
-                        {{ rule.factKey }}
-                      </td>
-                      <td>
-                        <v-chip
-                          :color="rule.enabled ? undefined : 'warning'"
-                          size="small"
-                          :variant="rule.enabled ? 'tonal' : 'flat'"
-                        >
-                          {{ rule.enabled ? "Enabled" : "Disabled" }}
-                        </v-chip>
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </info-box>
+                  Orphaned
+                </v-chip>
+              </div>
 
               <info-box
                 expandable
@@ -992,6 +963,28 @@ watch(subjectId, () => void load())
 }
 
 // The boxes stack with a gap rather than each carrying its own card and margin.
+// The definition reads as one line above the boxes: it is what the cohort *is*, not a
+// section of it.
+.subject-definition {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.subject-definition__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.subject-definition__key {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
 .subject-boxes {
   display: flex;
   flex-direction: column;

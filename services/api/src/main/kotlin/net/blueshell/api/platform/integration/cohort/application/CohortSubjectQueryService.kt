@@ -12,6 +12,7 @@ import net.blueshell.api.platform.integration.sync.application.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 import java.time.Instant
 import java.time.ZoneOffset
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinitionRegistry
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
@@ -34,6 +35,7 @@ class CohortSubjectQueryService(
     private val users: UserService,
     private val targetIds: CohortTargetIds,
     private val externalIds: ExternalIdMappingService,
+    private val definitions: CohortDefinitionRegistry,
 ) {
     @Transactional(readOnly = true)
     fun summaries(): List<CohortSubjectSummary> {
@@ -133,7 +135,10 @@ class CohortSubjectQueryService(
                     { it.user?.fullName?.lowercase() ?: "~~~" },
                 ),
             ),
-            rules = subject.ruleView()?.let { listOf(it) } ?: emptyList(),
+            definitionKey = subject.definitionKey,
+            // Derived rather than stored: a definition appearing or disappearing is a code
+            // change, and a column recording it would be one deploy behind the truth.
+            orphaned = subject.definitionKey?.let { definitions.byKey(it) } == null,
         )
     }
 
@@ -153,7 +158,10 @@ data class CohortSubjectDetail(
     val subject: CohortSubject,
     val mappings: List<CohortMappingRow>,
     val members: List<CohortMemberRow>,
-    val rules: List<CohortRuleView>,
+    /** Which definition in code produces this cohort; null once nothing does. */
+    val definitionKey: String?,
+    /** True when no definition produces this cohort any more — a disbanded committee, say. */
+    val orphaned: Boolean,
 )
 
 /** One per-system mapping under a subject, with its external id resolved. */

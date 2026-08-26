@@ -128,7 +128,7 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
     }
 
     private fun newSubject(): CohortSubject =
-        subjects.saveAndFlush(CohortSubject(type = CohortSubjectType.CUSTOM, label = "Members"))
+        subjects.saveAndFlush(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
 
     private fun newCohort(subject: CohortSubject, externalId: String): Cohort =
         cohorts.saveAndFlush(

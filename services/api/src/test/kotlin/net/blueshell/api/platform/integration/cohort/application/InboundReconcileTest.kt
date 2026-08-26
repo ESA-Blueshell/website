@@ -6,7 +6,8 @@ import io.mockk.verify
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
-import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinition
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinitionRegistry
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
@@ -42,8 +43,9 @@ class InboundReconcileTest {
     private val members: CohortMemberRepository = mockk()
     private val externalIds: ExternalIdMappingService = mockk(relaxed = true)
     private val users: UserService = mockk()
-    private val writers: FactWriters = mockk()
-    private val contributionWriter: FactWriter = mockk()
+    private val writers: MembershipWriters = mockk()
+    private val contributionWriter: MembershipWriter = mockk()
+    private val definitions: CohortDefinitionRegistry = mockk()
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
     private val strategy = RecordingTargetStrategy()
     private val service = InboundReconcile(
@@ -53,6 +55,7 @@ class InboundReconcileTest {
         externalIds = externalIds,
         users = users,
         writers = writers,
+        definitions = definitions,
         jobs = jobs,
         strategies = TargetStrategies(listOf(strategy)),
         transactionManager = ImmediateTransactionManager(),
@@ -82,9 +85,8 @@ class InboundReconcileTest {
             ExternalIdMapping("USER", 4L, TargetSystem.BREVO.name, "ext-inactive"),
         )
         every { users.findAllByIds(setOf(1L, 2L, 3L, 4L)) } returns listOf(user(1L, "mapped@example.org"))
-        every { writers.find(CohortFactKind.CONTRIBUTION_PAID) } returns contributionWriter
-        every { contributionWriter.preview(1L, SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12")) } returns
-            FactPreview(alreadyTrue = false)
+        every { writers.find(CohortSubjectType.PERIOD_PAYERS) } returns contributionWriter
+        every { contributionWriter.preview(1L, any()) } returns MembershipPreview(alreadyMember = false)
 
         val preview = service.preview(10L, 20L)
 
@@ -107,7 +109,7 @@ class InboundReconcileTest {
     }
 
     @Test
-    fun `preview returns disabled writable rows when fact kind has no writer`() {
+    fun `preview returns disabled writable rows when a cohort cannot be written into`() {
         givenNewsletterTarget()
         strategy.remote = listOf(ExternalMember("ext-1", "Mapped One"))
         every { members.findAllByCohortIdAndUserIdIsNotNull(20L) } returns emptyList()
@@ -116,13 +118,13 @@ class InboundReconcileTest {
             ExternalIdMapping("USER", 1L, TargetSystem.BREVO.name, "ext-1"),
         )
         every { users.findAllByIds(setOf(1L)) } returns listOf(user(1L, "mapped@example.org"))
-        every { writers.find(CohortFactKind.NEWSLETTER) } returns null
+        every { writers.find(CohortSubjectType.NEWSLETTER_SUBSCRIBERS) } returns null
 
         val preview = service.preview(10L, 20L)
 
         assertThat(preview.writerSupported).isFalse()
         assertThat(preview.matched.single().writable).isFalse()
-        assertThat(preview.matched.single().alreadyTrue).isFalse()
+        assertThat(preview.matched.single().alreadyMember).isFalse()
     }
 
     @Test
@@ -135,9 +137,8 @@ class InboundReconcileTest {
             ExternalIdMapping("USER", 1L, TargetSystem.BREVO.name, "ext-1"),
         )
         every { users.findAllByIds(setOf(1L)) } returns listOf(user(1L, "mapped@example.org"))
-        every { writers.find(CohortFactKind.CONTRIBUTION_PAID) } returns contributionWriter
-        every { contributionWriter.preview(1L, SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12")) } returns
-            FactPreview(alreadyTrue = false)
+        every { writers.find(CohortSubjectType.PERIOD_PAYERS) } returns contributionWriter
+        every { contributionWriter.preview(1L, any()) } returns MembershipPreview(alreadyMember = false)
 
         val preview = service.preview(10L, 20L)
         strategy.remote = listOf(ExternalMember("ext-other", "Changed"))
@@ -166,9 +167,8 @@ class InboundReconcileTest {
             user(1L, "one@example.org"),
             user(2L, "two@example.org"),
         )
-        every { writers.find(CohortFactKind.CONTRIBUTION_PAID) } returns contributionWriter
-        every { contributionWriter.preview(any(), SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12")) } returns
-            FactPreview(alreadyTrue = false)
+        every { writers.find(CohortSubjectType.PERIOD_PAYERS) } returns contributionWriter
+        every { contributionWriter.preview(any(), any()) } returns MembershipPreview(alreadyMember = false)
         every { jobs.enqueue(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>()) } returns
             TestJobExecution(55L)
 
@@ -186,8 +186,7 @@ class InboundReconcileTest {
                         it.cohortId == 20L &&
                         it.system == TargetSystem.BREVO.name &&
                         it.externalTargetId == "list-20" &&
-                        it.factKind == CohortFactKind.CONTRIBUTION_PAID.name &&
-                        it.factKey == "12" &&
+                        it.definitionKey == "PERIOD_PAYERS:12" &&
                         it.selected == listOf(CohortJobs.InboundReconcileSelectedUser("ext-2", 2L))
                 },
             )
@@ -196,14 +195,13 @@ class InboundReconcileTest {
     }
 
     @Test
-    fun `apply job revalidates mapping and writes fact in its own transaction`() {
+    fun `apply job revalidates the mapping and writes in its own transaction`() {
         val target = givenContributionTarget()
         every { externalIds.findByExternalIds("USER", TargetSystem.BREVO.name, listOf("ext-1")) } returns listOf(
             ExternalIdMapping("USER", 1L, TargetSystem.BREVO.name, "ext-1"),
         )
-        every { writers.find(CohortFactKind.CONTRIBUTION_PAID) } returns contributionWriter
-        every { contributionWriter.apply(1L, SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12")) } returns
-            FactWriteStatus.WRITTEN
+        every { writers.find(CohortSubjectType.PERIOD_PAYERS) } returns contributionWriter
+        every { contributionWriter.apply(1L, any()) } returns MembershipWriteStatus.WRITTEN
 
         val result = service.applyJob(
             CohortJobs.ApplyInboundReconcilePayload(
@@ -211,24 +209,23 @@ class InboundReconcileTest {
                 cohortId = target.cohort.id!!,
                 system = TargetSystem.BREVO.name,
                 externalTargetId = "list-20",
-                factKind = CohortFactKind.CONTRIBUTION_PAID.name,
-                factKey = "12",
+                definitionKey = "PERIOD_PAYERS:12",
                 selected = listOf(CohortJobs.InboundReconcileSelectedUser("ext-1", 1L)),
             ),
         )
 
-        assertThat(result).containsExactly(ApplyInboundReconcileItemResult("ext-1", 1L, FactWriteStatus.WRITTEN))
-        verify(exactly = 1) { contributionWriter.apply(1L, SubjectFact(CohortFactKind.CONTRIBUTION_PAID, "12")) }
+        assertThat(result).containsExactly(ApplyInboundReconcileItemResult("ext-1", 1L, MembershipWriteStatus.WRITTEN))
+        verify(exactly = 1) { contributionWriter.apply(1L, any()) }
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }
     }
 
     @Test
-    fun `apply job reports unsupported fact kinds without writing`() {
+    fun `apply job reports a cohort nothing can write into, without writing`() {
         val target = givenNewsletterTarget()
         every { externalIds.findByExternalIds("USER", TargetSystem.BREVO.name, listOf("ext-1")) } returns listOf(
             ExternalIdMapping("USER", 1L, TargetSystem.BREVO.name, "ext-1"),
         )
-        every { writers.find(CohortFactKind.NEWSLETTER) } returns null
+        every { writers.find(CohortSubjectType.NEWSLETTER_SUBSCRIBERS) } returns null
 
         val result = service.applyJob(
             CohortJobs.ApplyInboundReconcilePayload(
@@ -236,28 +233,34 @@ class InboundReconcileTest {
                 cohortId = target.cohort.id!!,
                 system = TargetSystem.BREVO.name,
                 externalTargetId = "list-20",
-                factKind = CohortFactKind.NEWSLETTER.name,
-                factKey = "true",
+                definitionKey = "NEWSLETTER_SUBSCRIBERS",
                 selected = listOf(CohortJobs.InboundReconcileSelectedUser("ext-1", 1L)),
             ),
         )
 
-        assertThat(result).containsExactly(ApplyInboundReconcileItemResult("ext-1", 1L, FactWriteStatus.UNSUPPORTED))
+        assertThat(result).containsExactly(ApplyInboundReconcileItemResult("ext-1", 1L, MembershipWriteStatus.UNSUPPORTED))
         verify(exactly = 0) { contributionWriter.apply(any(), any()) }
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }
     }
 
-    private fun givenContributionTarget() = givenTarget(CohortFactKind.CONTRIBUTION_PAID, "12")
+    private fun givenContributionTarget() =
+        givenTarget(CohortSubjectType.PERIOD_PAYERS, "PERIOD_PAYERS:12", scope = 12L)
 
-    private fun givenNewsletterTarget() = givenTarget(CohortFactKind.NEWSLETTER, "true")
+    private fun givenNewsletterTarget() =
+        givenTarget(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "NEWSLETTER_SUBSCRIBERS", scope = null)
 
-    private fun givenTarget(kind: CohortFactKind, key: String): TargetFixture {
+    private fun givenTarget(type: CohortSubjectType, key: String, scope: Long?): TargetFixture {
+        val definition = mockk<CohortDefinition>(relaxed = true).also {
+            every { it.key } returns key
+            every { it.type } returns type
+            every { it.scope } returns scope
+            every { it.label } returns "Subject"
+        }
+        every { definitions.byKey(key) } returns definition
         val subject = CohortSubject(
-            type = if (kind == CohortFactKind.NEWSLETTER) CohortSubjectType.NEWSLETTER_SUBSCRIBERS else CohortSubjectType.PERIOD_PAYERS,
+            type = type,
             label = "Subject",
-            factKind = kind,
-            factKey = key,
-            enabled = true,
+            definitionKey = key,
         ).apply { id = 10L }
         val cohort = Cohort(
             system = TargetSystem.BREVO.name,

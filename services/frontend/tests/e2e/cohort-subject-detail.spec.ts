@@ -17,7 +17,7 @@ test.describe("cohort subject detail", () => {
     await page.goto(COMMITTEE_SUBJECT)
 
     await expect(page.getByTestId("cohort-subject-identity")).toBeVisible()
-    await expect(page.getByTestId("cohort-subject-rules")).toBeVisible()
+    await expect(page.getByTestId("cohort-subject-definition")).toBeVisible()
     await expect(page.getByTestId("cohort-subject-targets")).toBeVisible()
     await expect(page.getByTestId("cohort-subject-members")).toBeVisible()
   })
@@ -41,10 +41,32 @@ test.describe("cohort subject detail", () => {
     // as a line underneath. The page's own counts members, so the two rows the target holds
     // and we do not are not in it.
     await expect(page.getByTestId("cohort-subject-member-count")).toContainText("2")
-    await expect(badgeOf(page.getByTestId("cohort-subject-rules"))).toHaveText("1")
     await expect(badgeOf(page.getByTestId("cohort-subject-targets"))).toHaveText("1")
-    await expect(page.getByTestId("cohort-subject-rules")).not.toContainText("enabled")
     await expect(page.getByTestId("cohort-subject-targets")).not.toContainText("1 sync target")
+  })
+
+  test("names the definition that decides who belongs", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+
+    await page.goto(COMMITTEE_SUBJECT)
+
+    // A name to read, rather than a fact kind and a key to interpret.
+    const definition = page.getByTestId("cohort-subject-definition")
+    await expect(definition).toContainText("COMMITTEE_MEMBERS:42")
+    await expect(page.getByTestId("cohort-subject-orphaned")).toHaveCount(0)
+  })
+
+  test("says so when nothing produces the cohort any more", async ({page}) => {
+    await installApiMocks(page, {
+      cohortSubjectDetail: {definitionKey: "COMMITTEE_MEMBERS:42", orphaned: true},
+    })
+    await loginAsAdmin(page.context())
+
+    await page.goto(COMMITTEE_SUBJECT)
+
+    // Its committee was disbanded: the list is still there, and nothing syncs to it.
+    await expect(page.getByTestId("cohort-subject-orphaned")).toBeVisible()
   })
 
   test("opens a box to show what it holds, and keeps it shut until asked", async ({page}) => {
@@ -53,14 +75,12 @@ test.describe("cohort subject detail", () => {
 
     await page.goto(COMMITTEE_SUBJECT)
 
-    const rules = page.getByTestId("cohort-subject-rules")
-    await expect(rules.getByTestId("cohort-subject-rule-9")).toHaveCount(0)
+    const targets = page.getByTestId("cohort-subject-targets")
+    await expect(targets.getByTestId("cohort-subject-target-brevo")).toHaveCount(0)
 
-    await rules.getByTestId("info-box-toggle").click()
+    await targets.getByTestId("info-box-toggle").first().click()
 
-    // The fact reads as a sentence rather than as the enum it is stored under.
-    await expect(rules.getByTestId("cohort-subject-rule-9")).toContainText("Committee")
-    await expect(rules.getByTestId("cohort-subject-rule-9")).toContainText("42")
+    await expect(targets.getByTestId("cohort-subject-target-brevo")).toBeVisible()
   })
 
   test("keeps the add-target action on the header row of the targets table", async ({page}) => {

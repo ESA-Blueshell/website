@@ -5,7 +5,6 @@ import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
-import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
@@ -58,12 +57,8 @@ class CohortQueryService(
             .filter { userById[it] == null }
             .filter { users.isSoftDeleted(it) }
             .toSet()
-        // The rule now lives on the cohort's subject (one fact pair per subject).
-        val rules = cohort.subjectId
-            ?.let { subjects.findById(it).orElse(null) }
-            ?.ruleView()
-            ?.let { listOf(it) }
-            ?: emptyList()
+        // Who belongs is decided by a definition in code; the subject names which one.
+        val subject = cohort.subjectId?.let { subjects.findById(it).orElse(null) }
 
         return CohortDetail(
             cohort = cohort,
@@ -80,7 +75,7 @@ class CohortQueryService(
                     { it.user?.fullName?.lowercase() ?: "~~~" },
                 ),
             ),
-            rules = rules.sortedWith(compareBy({ it.factKind.name }, { it.factKey })),
+            definitionKey = subject?.definitionKey,
         )
     }
 
@@ -93,12 +88,13 @@ data class CohortSummary(
     val externalId: String?,
 )
 
-/** Detail view: the cohort itself plus its members and the rule its subject carries. */
+/** Detail view: the cohort itself plus its members and the definition that produces it. */
 data class CohortDetail(
     val cohort: Cohort,
     val externalId: String?,
     val members: List<CohortMemberRow>,
-    val rules: List<CohortRuleView>,
+    /** Which definition in code decides who belongs here, by key. */
+    val definitionKey: String?,
 )
 
 /**
@@ -128,22 +124,3 @@ data class CohortMemberRow(
      */
     val resolvedUserId: Long? = null,
 )
-
-/**
- * Read projection of the membership rule a subject carries, replacing the
- * retired `CohortRule` row in read responses. [id] is the subject id — the
- * rule's identity is the subject now (one fact pair per subject).
- */
-data class CohortRuleView(
-    val id: Long,
-    val factKind: CohortFactKind,
-    val factKey: String,
-    val enabled: Boolean,
-)
-
-/** The subject's rule as a [CohortRuleView], or null when its fact pair is unset (a bare CUSTOM subject). */
-fun CohortSubject.ruleView(): CohortRuleView? {
-    val kind = factKind ?: return null
-    val key = factKey ?: return null
-    return CohortRuleView(id = id!!, factKind = kind, factKey = key, enabled = enabled)
-}

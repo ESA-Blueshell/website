@@ -11,7 +11,6 @@ import {
   findCohortSubjectById,
 } from "@/services/api"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
-import {rulesSummary, targetsSummary} from "@/domains/cohorts/cohortSubjectSummaries"
 import {
   linkUserToExternal,
   removeExternalMember,
@@ -56,10 +55,6 @@ const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
   [CohortSubjectCategory.MEMBERS]: "Members",
   [CohortSubjectCategory.OTHER]: "Other",
 }
-
-const rulesSubtitle = computed<string>(() => rulesSummary(subject.value?.rules ?? []))
-
-const targetsSubtitle = computed<string>(() => targetsSummary(subject.value?.mappings ?? []))
 
 
 /**
@@ -521,8 +516,8 @@ watch(subjectId, () => void load())
               <info-box
                 v-if="subject.rules.length"
                 expandable
+                :count="subject.rules.length"
                 label="Rules"
-                :summary="rulesSubtitle"
                 testid="cohort-subject-rules"
               >
                 <v-table
@@ -571,8 +566,8 @@ watch(subjectId, () => void load())
 
               <info-box
                 expandable
+                :count="subject.mappings.length"
                 label="Sync targets"
-                :summary="targetsSubtitle"
                 testid="cohort-subject-targets"
               >
                 <!-- A row per target, in the table idiom the rest of these pages use: what

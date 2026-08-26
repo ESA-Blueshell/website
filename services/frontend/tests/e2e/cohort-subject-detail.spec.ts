@@ -1,9 +1,13 @@
+import type {Locator} from "@playwright/test"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin} from "./mocks"
 
 // Subject 102 in the mocks is the committee cohort: one member, one Brevo mapping, one
 // enabled rule — enough for every section to have something to count.
 const COMMITTEE_SUBJECT = "/management/cohorts/subjects/102"
+
+/** The number a box wears on its heading. */
+const badgeOf = (box: Locator) => box.getByTestId("info-box-count").locator(".v-badge__badge")
 
 test.describe("cohort subject detail", () => {
   test("renders every section as a manager card", async ({page}) => {
@@ -33,12 +37,14 @@ test.describe("cohort subject detail", () => {
 
     await page.goto(COMMITTEE_SUBJECT)
 
-    // The page's own count is the badge on its heading, once — it used to be a line under
-    // the title as well, and again under every section's heading. It counts members, so the
-    // two rows the target holds and we do not are not in it.
+    // Every count on the page is a badge on the heading it belongs to, and nothing repeats it
+    // as a line underneath. The page's own counts members, so the two rows the target holds
+    // and we do not are not in it.
     await expect(page.getByTestId("cohort-subject-member-count")).toContainText("2")
-    await expect(page.getByTestId("cohort-subject-rules")).toContainText("1 rule · 1 enabled")
-    await expect(page.getByTestId("cohort-subject-targets")).toContainText("1 sync target")
+    await expect(badgeOf(page.getByTestId("cohort-subject-rules"))).toHaveText("1")
+    await expect(badgeOf(page.getByTestId("cohort-subject-targets"))).toHaveText("1")
+    await expect(page.getByTestId("cohort-subject-rules")).not.toContainText("enabled")
+    await expect(page.getByTestId("cohort-subject-targets")).not.toContainText("1 sync target")
   })
 
   test("opens a box to show what it holds, and keeps it shut until asked", async ({page}) => {

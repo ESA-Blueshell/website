@@ -6,11 +6,18 @@ const mountBox = (props: Record<string, unknown>, slots: Record<string, string> 
   mount(InfoBox, {props: {label: "Rules", ...props}, slots: {default: "<p>the body</p>", ...slots}})
 
 describe("InfoBox", () => {
-  it("names what it holds and says it in one line", () => {
-    const box = mountBox({summary: "1 rule · 1 enabled"})
+  it("names what it holds and wears the count of it", () => {
+    const box = mountBox({count: 3})
 
     expect(box.text()).toContain("Rules")
-    expect(box.get('[data-testid="info-box-summary"]').text()).toBe("1 rule · 1 enabled")
+    expect(box.get('[data-testid="info-box-count"]').attributes("content")).toBe("3")
+  })
+
+  it("wears no badge when it was given nothing to count", () => {
+    const box = mountBox({})
+
+    expect(box.find('[data-testid="info-box-count"]').exists()).toBe(false)
+    expect(box.text()).toContain("Rules")
   })
 
   it("shows its body outright when it is not expandable", () => {
@@ -20,11 +27,11 @@ describe("InfoBox", () => {
     expect(box.find('[data-testid="info-box-toggle"]').exists()).toBe(false)
   })
 
-  it("hides the body behind a chevron when expandable, keeping the summary in view", () => {
-    const box = mountBox({expandable: true, summary: "1 rule"})
+  it("hides the body behind a chevron when expandable, keeping the heading in view", () => {
+    const box = mountBox({expandable: true, count: 1})
 
     expect(box.find('[data-testid="info-box-body"]').exists()).toBe(false)
-    expect(box.get('[data-testid="info-box-summary"]').text()).toBe("1 rule")
+    expect(box.text()).toContain("Rules")
     expect(box.find('[data-testid="info-box-toggle"]').exists()).toBe(true)
   })
 

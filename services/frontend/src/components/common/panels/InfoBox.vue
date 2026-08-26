@@ -11,22 +11,22 @@ defineOptions({name: "InfoBox"})
  * Same intent — a small caps label, a line saying what is inside, and a body you may or may
  * not need — spelled three ways, so no two of them looked alike.
  *
- * Collapsed, it is the labelled box: label, summary, nothing else. Give it `expandable` and
- * the summary keeps its place while the body moves behind a chevron, which is what makes a
- * page of these readable — the reader sees what each holds before deciding to open one.
+ * Collapsed, it is the labelled box: a heading wearing the count of what it holds. Give it
+ * `expandable` and the body moves behind a chevron, which is what makes a page of these
+ * readable — the reader sees what each holds before deciding to open one.
  */
 const props = withDefaults(defineProps<{
-  /** Small caps line naming what the box holds. */
+  /** Heading naming what the box holds. */
   label: string
-  /** One line of context, read before the body is opened. Sits beside nothing else. */
-  summary?: string | null
+  /** How many things are inside, worn as a badge on the label. Omit to show no badge. */
+  count?: number | null
   /** Set to put the body behind a chevron. Without it the body is simply always shown. */
   expandable?: boolean
   /** Whether an expandable box starts open. Ignored when it is not expandable. */
   defaultOpen?: boolean
   testid?: string | null
 }>(), {
-  summary: null,
+  count: null,
   expandable: false,
   defaultOpen: false,
   testid: null,
@@ -62,12 +62,20 @@ const bodyShown = computed(() => !props.expandable || open.value)
       @keydown.space.prevent="canToggle && (open = !open)"
     >
       <div class="info-box__heading">
-        <span class="info-box__label">{{ label }}</span>
+        <v-badge
+          v-if="count != null"
+          color="primary"
+          :content="count"
+          data-testid="info-box-count"
+          :offset-x="-6"
+          :offset-y="-2"
+        >
+          <span class="info-box__label">{{ label }}</span>
+        </v-badge>
         <span
-          v-if="summary"
-          class="info-box__summary text-body-2"
-          data-testid="info-box-summary"
-        >{{ summary }}</span>
+          v-else
+          class="info-box__label"
+        >{{ label }}</span>
       </div>
 
       <div
@@ -105,7 +113,7 @@ const bodyShown = computed(() => !props.expandable || open.value)
 // inside cards that are already the surface colour, where a border reads as a second frame.
 .info-box {
   min-width: 0;
-  padding: 10px 14px;
+  padding: 14px 16px;
   border-radius: 6px;
   background: rgba(var(--v-theme-on-surface), 0.04);
 }
@@ -123,28 +131,30 @@ const bodyShown = computed(() => !props.expandable || open.value)
   user-select: none;
 }
 
-// Label above the summary, both allowed to truncate rather than push the actions off the row.
+// The heading truncates rather than pushing the actions off the row.
 .info-box__heading {
   min-width: 0;
 }
 
-// Self-contained overline treatment: Vuetify 4 (MD3) dropped the `.text-overline` utility.
-.info-box__label {
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  line-height: 1.4;
-  text-transform: uppercase;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+// A section heading rather than an overline: these name the halves of a page, so they carry
+// the weight of one. Vuetify 4 (MD3) dropped `.text-overline`, so the caps are spelled here.
+// Clear of the word rather than over its last letter: the label is short and the badge is
+// nearly as tall as it, so the default overlap swallowed a glyph.
+.info-box__heading :deep(.v-badge__badge) {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 0.625rem;
 }
 
-.info-box__summary {
+.info-box__label {
   display: block;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .info-box__actions {

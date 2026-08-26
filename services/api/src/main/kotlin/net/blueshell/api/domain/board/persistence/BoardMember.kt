@@ -3,14 +3,23 @@ package net.blueshell.api.domain.board.persistence
 import jakarta.persistence.*
 import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
-import net.blueshell.api.shared.model.Identifiable
-import org.hibernate.Hibernate
+import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import java.io.Serializable
 import java.time.LocalDate
 
+/**
+ * One seat on one board.
+ *
+ * The seat is identified by its own id rather than by the pair of board and member, because
+ * most of the people who have sat on a board never had an account here: eight of the nine
+ * boards predate this system. [user] is therefore nullable, and [displayName] carries who
+ * held the seat when nobody can be linked to it. A seat that is linked is what membership
+ * questions read; a seat that is not is still the board that sat.
+ *
+ * [image] names an asset the frontend ships, the way a team's image does. [picture] stays for
+ * a portrait uploaded through the file service.
+ */
 @Entity
 @Table(
     name = "board_members",
@@ -35,23 +44,18 @@ import java.time.LocalDate
     sql = """
       UPDATE board_members
       SET deleted_at = NOW(), version = version + 1
-      WHERE board_id = ? AND user_id = ? AND version = ?
+      WHERE id = ? AND version = ?
     """
 )
 class BoardMember(
 
-    @EmbeddedId
-    override var id: Id = Id(),
-
-    @MapsId("boardId")
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     val board: Board,
 
-    @MapsId("userId")
-    @JoinColumn(name = "user_id", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    val user: User,
+    @JoinColumn(name = "user_id", nullable = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    var user: User? = null,
 
     @Column(nullable = false)
     var role: String,
@@ -60,14 +64,25 @@ class BoardMember(
     var startDate: LocalDate,
 
     @Column()
-    var endDate: LocalDate? = null
+    var endDate: LocalDate? = null,
 
-) : AuditedSoftDeleteEntity(), Identifiable<BoardMember.Id> {
+    /** Who held the seat, for a seat no account can be attached to. */
+    @Column(name = "display_name", length = 128)
+    var displayName: String? = null,
+
+    /** The personal note the board page has always shown beside a member. */
+    @Column(name = "description", columnDefinition = "TEXT")
+    var description: String? = null,
+
+    @Column(name = "image", length = 255)
+    var image: String? = null,
+
+) : AuditedAutoIdEntity() {
     val boardId: Long
-        get() = id.boardId ?: 0
+        get() = board.id ?: 0
 
-    val userId: Long
-        get() = id.userId ?: 0
+    val userId: Long?
+        get() = user?.id
 
     @JoinColumn(name = "picture_id")
     @OneToOne(fetch = FetchType.LAZY)
@@ -77,19 +92,7 @@ class BoardMember(
     val pictureId: Long?
         get() = picture?.id
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null) return false
-        if (Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-        other as BoardMember
-        return id == other.id
-    }
-
-    override fun hashCode(): Int = id.hashCode()
-
-    @Embeddable
-    data class Id(
-        var boardId: Long? = null,
-        var userId: Long? = null
-    ) : Serializable
+    /** The name to show: the member's own when one is linked, the recorded one otherwise. */
+    val name: String?
+        get() = user?.fullName ?: displayName
 }

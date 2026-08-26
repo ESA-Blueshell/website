@@ -20,10 +20,22 @@ export type Actor = {
 };
 
 export type AddBoardMemberRequest = {
+    description?: string | null;
+    /**
+     * Who held the seat, when no account can be attached to it
+     */
+    displayName?: string | null;
     endDate?: string | null;
+    /**
+     * Asset file name of the member's portrait
+     */
+    image?: string | null;
     role: string;
     startDate: string;
-    userId: number;
+    /**
+     * The member holding the seat; absent for somebody with no account
+     */
+    userId?: number | null;
 };
 
 /**
@@ -125,11 +137,30 @@ export type BoardCreateMembershipRequest = {
 export type BoardMemberResponse = {
     boardId: number;
     createdAt: string;
+    /**
+     * The personal note the board page shows beside a member
+     */
+    description?: string | null;
     endDate?: string | null;
+    /**
+     * The seat's own id, which is how it is edited or removed
+     */
+    id: number;
+    /**
+     * Asset file name of the member's portrait
+     */
+    image?: string | null;
+    /**
+     * Who held the seat: the linked member's name, or the recorded one
+     */
+    name?: string | null;
     role: string;
     startDate: string;
     updatedAt: string;
-    userId: number;
+    /**
+     * The member holding the seat, when one is linked to it
+     */
+    userId?: number | null;
     version: number;
 };
 
@@ -138,6 +169,10 @@ export type BoardResponse = {
     createdAt: string;
     endDate?: string | null;
     id: number;
+    /**
+     * Asset file name of the board's own photograph
+     */
+    image?: string | null;
     members: Array<BoardMemberResponse>;
     name: string;
     pictureId?: number | null;
@@ -452,6 +487,10 @@ export type CreateBlogRequest = {
 export type CreateBoardRequest = {
     candidate: string;
     endDate?: string | null;
+    /**
+     * Asset file name of the board's photograph
+     */
+    image?: string | null;
     name: string;
     pictureId?: number | null;
     startDate: string;
@@ -916,6 +955,13 @@ export type JwtRequest = {
     username: string;
 };
 
+export type LinkBoardMemberRequest = {
+    /**
+     * The member to attach to the seat; absent detaches it
+     */
+    userId?: number | null;
+};
+
 export type LinkExistingTargetRequest = {
     externalId: string;
     system: TargetSystem;
@@ -1360,9 +1406,22 @@ export type UpdateBlogRequest = {
     version: number;
 };
 
+export type UpdateBoardMemberRequest = {
+    description?: string | null;
+    displayName?: string | null;
+    endDate?: string | null;
+    image?: string | null;
+    role: string;
+    startDate: string;
+};
+
 export type UpdateBoardRequest = {
     candidate: string;
     endDate?: string | null;
+    /**
+     * Asset file name of the board's photograph
+     */
+    image?: string | null;
     name: string;
     pictureId?: number | null;
     startDate: string;
@@ -2145,10 +2204,10 @@ export type RemoveMemberData = {
     body?: never;
     path: {
         boardId: number;
-        userId: number;
+        id: number;
     };
     query?: never;
-    url: '/boards/{boardId}/members/{userId}';
+    url: '/boards/{boardId}/members/{id}';
 };
 
 export type RemoveMemberErrors = {
@@ -2184,6 +2243,94 @@ export type RemoveMemberResponses = {
 };
 
 export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
+
+export type UpdateMemberData = {
+    body: UpdateBoardMemberRequest;
+    path: {
+        boardId: number;
+        id: number;
+    };
+    query?: never;
+    url: '/boards/{boardId}/members/{id}';
+};
+
+export type UpdateMemberErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateMemberError = UpdateMemberErrors[keyof UpdateMemberErrors];
+
+export type UpdateMemberResponses = {
+    /**
+     * OK
+     */
+    200: BoardMemberResponse;
+};
+
+export type UpdateMemberResponse = UpdateMemberResponses[keyof UpdateMemberResponses];
+
+export type LinkMemberData = {
+    body: LinkBoardMemberRequest;
+    path: {
+        boardId: number;
+        id: number;
+    };
+    query?: never;
+    url: '/boards/{boardId}/members/{id}/member';
+};
+
+export type LinkMemberErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkMemberError = LinkMemberErrors[keyof LinkMemberErrors];
+
+export type LinkMemberResponses = {
+    /**
+     * OK
+     */
+    200: BoardMemberResponse;
+};
+
+export type LinkMemberResponse = LinkMemberResponses[keyof LinkMemberResponses];
 
 export type DeleteBoardData = {
     body?: never;

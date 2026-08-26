@@ -13,7 +13,8 @@ fun Board.asResponse(): BoardResponse =
         startDate = this.startDate,
         endDate = this.endDate,
         pictureId = this.pictureId,
-        members = this.members.map { it.asResponse() },
+        image = this.image,
+        members = this.members.sortedBy { it.id }.map { it.asResponse() },
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
@@ -21,9 +22,13 @@ fun Board.asResponse(): BoardResponse =
 
 fun BoardMember.asResponse(): BoardMemberResponse =
     BoardMemberResponse(
+        id = this.id!!,
         userId = this.userId,
         boardId = this.boardId,
         role = this.role,
+        name = this.name,
+        description = this.description,
+        image = this.image,
         startDate = this.startDate,
         endDate = this.endDate,
         version = this.version,

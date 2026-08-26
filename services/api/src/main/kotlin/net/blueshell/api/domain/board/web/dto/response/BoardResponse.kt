@@ -12,6 +12,8 @@ data class BoardResponse(
     var startDate: LocalDate,
     var endDate: LocalDate? = null,
     var pictureId: Long? = null,
+    @Schema(description = "Asset file name of the board's own photograph")
+    var image: String? = null,
     var members: List<BoardMemberResponse>,
     var version: Long,
     var createdAt: Instant,

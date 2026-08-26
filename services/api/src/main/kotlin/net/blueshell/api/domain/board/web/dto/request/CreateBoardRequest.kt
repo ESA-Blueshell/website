@@ -18,5 +18,8 @@ data class CreateBoardRequest(
 
     var endDate: LocalDate? = null,
 
-    var pictureId: Long? = null
+    var pictureId: Long? = null,
+
+    @Schema(description = "Asset file name of the board's photograph")
+    var image: String? = null
 )

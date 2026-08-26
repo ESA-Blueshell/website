@@ -244,6 +244,12 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresBoard: true},
   },
   {
+    path: "/management/boards",
+    name: "boardManager",
+    component: () => import("@/pages/management/BoardManager.vue"),
+    meta: {requiresAuth: true, requiresBoard: true},
+  },
+  {
     path: "/management/esports",
     name: "esportsManager",
     component: () => import("@/pages/management/EsportsManager.vue"),

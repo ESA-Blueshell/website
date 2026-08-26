@@ -7,6 +7,8 @@ import net.blueshell.api.domain.board.application.BoardService
 import net.blueshell.api.domain.board.application.BoardUseCases
 import net.blueshell.api.domain.board.web.dto.request.AddBoardMemberRequest
 import net.blueshell.api.domain.board.web.dto.request.CreateBoardRequest
+import net.blueshell.api.domain.board.web.dto.request.LinkBoardMemberRequest
+import net.blueshell.api.domain.board.web.dto.request.UpdateBoardMemberRequest
 import net.blueshell.api.domain.board.web.dto.request.UpdateBoardRequest
 import net.blueshell.api.domain.board.web.dto.response.BoardMemberResponse
 import net.blueshell.api.domain.board.web.dto.response.BoardResponse
@@ -32,6 +34,7 @@ class BoardController(
             startDate = request.startDate,
             endDate = request.endDate,
             pictureId = request.pictureId,
+            image = request.image,
         )
         return board.asResponse()
     }
@@ -61,6 +64,7 @@ class BoardController(
             startDate = request.startDate,
             endDate = request.endDate,
             pictureId = request.pictureId,
+            image = request.image,
         )
         return board.asResponse()
     }
@@ -86,17 +90,50 @@ class BoardController(
             role = request.role,
             startDate = request.startDate,
             endDate = request.endDate,
+            displayName = request.displayName,
+            description = request.description,
+            image = request.image,
         )
         return member.asResponse()
     }
 
-    @DeleteMapping("/{boardId}/members/{userId}")
+    @PutMapping("/{boardId}/members/{id}")
+    @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    fun updateMember(
+        @PathVariable boardId: Long,
+        @PathVariable id: Long,
+        @Valid @RequestBody request: UpdateBoardMemberRequest
+    ): BoardMemberResponse {
+        val member = useCases.updateMember(
+            id = id,
+            role = request.role,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            displayName = request.displayName,
+            description = request.description,
+            image = request.image,
+        )
+        return member.asResponse()
+    }
+
+    /** A null member detaches the seat, leaving the history standing under its own name. */
+    @PutMapping("/{boardId}/members/{id}/member")
+    @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    fun linkMember(
+        @PathVariable boardId: Long,
+        @PathVariable id: Long,
+        @RequestBody request: LinkBoardMemberRequest
+    ): BoardMemberResponse {
+        return useCases.linkMember(id, request.userId).asResponse()
+    }
+
+    @DeleteMapping("/{boardId}/members/{id}")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun removeMember(
         @PathVariable boardId: Long,
-        @PathVariable userId: Long
+        @PathVariable id: Long
     ) {
-        useCases.removeMember(boardId, userId)
+        useCases.removeMember(id)
     }
 }

@@ -7,6 +7,8 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortMember
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubject
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.platform.integration.cohort.persistence.state
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.shared.enums.TargetSystem
 import java.time.Instant
 import java.time.ZoneOffset
@@ -31,6 +33,7 @@ class CohortSubjectQueryService(
     private val cohortMembers: CohortMemberRepository,
     private val users: UserService,
     private val targetIds: CohortTargetIds,
+    private val externalIds: ExternalIdMappingService,
 ) {
     @Transactional(readOnly = true)
     fun summaries(): List<CohortSubjectSummary> {
@@ -51,6 +54,31 @@ class CohortSubjectQueryService(
         )
     }
 
+    /**
+     * External id to the account behind it, for the rows that have no account of their own.
+     * Grouped by system because an external id only means anything within one.
+     */
+    private fun resolveStrangerOwners(
+        members: List<CohortMember>,
+        systemByCohortId: Map<Long, TargetSystem>,
+    ): Map<String, Long> {
+        val byExternalId = mutableMapOf<String, Long>()
+        members
+            .filter { it.userId == null }
+            .mapNotNull { row ->
+                val system = systemByCohortId[row.cohort.id] ?: return@mapNotNull null
+                row.externalUserId?.let { system to it }
+            }
+            .groupBy({ it.first }, { it.second })
+            .forEach { (system, externalUserIds) ->
+                externalIds.findByExternalIds(USER_AGGREGATE, system.name, externalUserIds.toSet())
+                    // A mapping row without an external id maps nothing; skip rather than
+                    // keying the map on null.
+                    .forEach { mapping -> mapping.externalId?.let { byExternalId[it] = mapping.aggregateId } }
+            }
+        return byExternalId
+    }
+
     @Transactional(readOnly = true)
     fun detail(subjectId: Long): CohortSubjectDetail {
         val subject = subjects.findById(subjectId).orElseThrow {
@@ -69,10 +97,17 @@ class CohortSubjectQueryService(
             )
         }.sortedBy { it.cohort.system }
 
-        val members = cohortMembers.findAllBySubjectIdAndUserIdIsNotNull(subjectId)
+        // Every ledger row, not only the ones with a user. A row present externally and not
+        // desired locally has no userId by definition, and it is exactly the row somebody
+        // opens this page to find.
+        val members = cohortMembers.findAllBySubjectId(subjectId)
         val systemByCohortId = mappings.associate { it.cohort.id!! to TargetSystem.valueOf(it.cohort.system) }
 
-        val userIds = members.mapNotNull { it.userId }.distinct()
+        // Those rows carry an external id and nothing else. The mapping table knows which
+        // account that id belongs to, if any, which is what turns it into a name.
+        val ownerByExternalId = resolveStrangerOwners(members, systemByCohortId)
+
+        val userIds = (members.mapNotNull { it.userId } + ownerByExternalId.values).distinct()
         val userById = users.findAllByIds(userIds).associateBy { it.id }
         val softDeletedIds = userIds
             .filter { userById[it] == null }
@@ -83,12 +118,14 @@ class CohortSubjectQueryService(
             subject = subject,
             mappings = mappings,
             members = members.map { member ->
+                val ownerId = member.userId ?: member.externalUserId?.let { ownerByExternalId[it] }
                 CohortMemberRow(
                     member = member,
-                    user = userById[member.userId!!],
-                    isUserDeleted = userById[member.userId!!] == null && softDeletedIds.contains(member.userId!!),
+                    user = ownerId?.let { userById[it] },
+                    isUserDeleted = ownerId != null && userById[ownerId] == null && softDeletedIds.contains(ownerId),
                     system = systemByCohortId[member.cohort.id],
                     state = member.state,
+                    resolvedUserId = if (member.userId == null) ownerId else null,
                 )
             }.sortedWith(
                 compareBy(

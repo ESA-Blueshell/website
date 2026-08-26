@@ -10,7 +10,6 @@ import net.blueshell.api.platform.integration.cohort.application.CohortMemberRow
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectDetail
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectQueryService
 import net.blueshell.api.platform.integration.cohort.application.CohortSubjectSummary
-import net.blueshell.api.platform.integration.cohort.application.DriftReport
 import net.blueshell.api.platform.integration.cohort.application.InboundReconcile
 import net.blueshell.api.platform.integration.cohort.application.InboundReconcileApplyRequest
 import net.blueshell.api.platform.integration.cohort.application.InboundReconcileApplyResponse
@@ -19,7 +18,6 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
-import net.blueshell.api.platform.integration.cohort.port.`in`.CohortDrift
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
 import net.blueshell.api.shared.enums.CohortMemberState
@@ -51,7 +49,6 @@ import java.time.Instant
 @PreAuthorize("hasAuthority('ADMIN')")
 class CohortSubjectController(
     private val queries: CohortSubjectQueryService,
-    private val drift: CohortDrift,
     private val remediation: CohortRemediation,
     private val targeting: CohortTargeting,
     private val inboundReconcile: InboundReconcile,
@@ -63,13 +60,6 @@ class CohortSubjectController(
     @GetMapping("/{id}")
     fun findCohortSubjectById(@PathVariable id: Long): CohortSubjectDetailResponse =
         queries.detail(id).toResponse()
-
-    @GetMapping("/{id}/drift")
-    fun getDrift(
-        @PathVariable id: Long,
-        @RequestParam system: TargetSystem,
-    ): DriftReport =
-        drift.compute(id, system)
 
     @PostMapping("/{id}/drift/link-user")
     fun linkUser(
@@ -267,7 +257,9 @@ private fun CohortMemberRow.toMemberResponse(): CohortSubjectMemberResponse =
         cohortMemberId = member.id!!,
         system = system,
         state = state,
-        userId = member.userId,
+        // The row's own user, or the account behind its external id once resolved: a stranger
+        // whose external id is known belongs to somebody, and saying who is the point.
+        userId = member.userId ?: resolvedUserId,
         userFullName = user?.fullName,
         userEmail = user?.email,
         isUserDeleted = isUserDeleted,

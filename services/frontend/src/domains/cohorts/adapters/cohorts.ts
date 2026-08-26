@@ -7,7 +7,6 @@ import {
   applyInboundReconcile,
   createTarget,
   enqueue,
-  getDrift,
   linkExistingTarget,
   linkUser,
   listCohortTargetFolders,
@@ -20,74 +19,20 @@ import {
 } from "@/services/api"
 import type {
   CohortMapping as ApiCohortMapping,
-  DriftReport as ApiDriftReport,
+  TargetSystem as ApiTargetSystem,
   ExternalTarget as ApiExternalTarget,
-  ExtraRow as ApiExtraRow,
   InboundReconcileApplyResponse as ApiInboundReconcileApplyResponse,
   InboundReconcilePreview as ApiInboundReconcilePreview,
   TargetDescriptor as ApiTargetDescriptor,
 } from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 
-export type TargetSystem = ApiDriftReport["system"]
-
-export type ExtraRow = {
-  kind: "KNOWN_LOCAL_USER" | "UNKNOWN_EXTERNAL"
-  externalUserId: string
-  label: string | null
-  userId: number | null
-  fullName: string | null
-  email: string | null
-  softDeleted: boolean | null
-}
-
-export type MissingRow = {
-  userId: number
-  hasExternalMapping: boolean
-}
-
-export type DriftReport = {
-  cohortId: number
-  system: TargetSystem
-  externalCohortId: string | null
-  extras: ExtraRow[]
-  missing: MissingRow[]
-  lastReconciledAt: string | null
-}
+export type TargetSystem = ApiTargetSystem
 
 export type ExternalUserConflict = {
   existingUserId: number
   system: string
   existingUserFullName: string | null
-}
-
-export async function fetchDrift(subjectId: number, system: TargetSystem): Promise<DriftReport> {
-  const res = await getDrift({ path: { id: subjectId }, query: { system } })
-  const raw = res.data!
-  return {
-    cohortId: raw.cohortId,
-    system: raw.system as TargetSystem,
-    externalCohortId: raw.externalCohortId ?? null,
-    extras: (raw.extras ?? []).map(toExtraRow),
-    missing: (raw.missing ?? []).map((m) => ({
-      userId: m.userId,
-      hasExternalMapping: m.hasExternalMapping,
-    })),
-    lastReconciledAt: raw.lastReconciledAt ?? null,
-  }
-}
-
-function toExtraRow(raw: ApiExtraRow): ExtraRow {
-  const known = String(raw.kind) === "KNOWN_LOCAL_USER" && raw.userId != null
-  return {
-    kind: known ? "KNOWN_LOCAL_USER" : "UNKNOWN_EXTERNAL",
-    externalUserId: raw.externalUserId,
-    label: raw.label ?? null,
-    userId: known ? raw.userId! : null,
-    fullName: known ? raw.fullName ?? null : null,
-    email: known ? raw.email ?? null : null,
-    softDeleted: known ? raw.softDeleted ?? false : null,
-  }
 }
 
 export async function triggerReconcile(cohortId: number): Promise<number | null> {

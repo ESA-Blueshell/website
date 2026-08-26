@@ -122,6 +122,11 @@ data class CohortMemberRow(
      * report it, is unaffected.
      */
     val state: CohortMemberState? = null,
+    /**
+     * For a row present externally but not desired locally: the account behind that external
+     * id, once resolved. Null when nothing local matches it.
+     */
+    val resolvedUserId: Long? = null,
 )
 
 /**

@@ -549,15 +549,6 @@ export type CsrfToken = {
     token?: string;
 };
 
-export type DriftReport = {
-    cohortId: number;
-    externalCohortId?: string | null;
-    extras: Array<ExtraRow>;
-    lastReconciledAt?: string | null;
-    missing: Array<MissingRow>;
-    system: TargetSystem;
-};
-
 export type Email = {
     attempts?: number | null;
     createdAt?: string | null;
@@ -665,16 +656,6 @@ export type ExternalTarget = {
     linkedCohortId?: number | null;
     memberCount?: number | null;
     system: TargetSystem;
-};
-
-export type ExtraRow = {
-    email?: string | null;
-    externalUserId: string;
-    fullName?: string | null;
-    kind: 'KNOWN_LOCAL_USER' | 'UNKNOWN_EXTERNAL';
-    label?: string | null;
-    softDeleted?: boolean | null;
-    userId?: number | null;
 };
 
 /**
@@ -939,11 +920,6 @@ export type MembershipResponse = {
     updatedAt: string;
     userId: number;
     version: number;
-};
-
-export type MissingRow = {
-    hasExternalMapping: boolean;
-    userId: number;
 };
 
 /**
@@ -3808,51 +3784,6 @@ export type FindCohortSubjectByIdResponses = {
 };
 
 export type FindCohortSubjectByIdResponse = FindCohortSubjectByIdResponses[keyof FindCohortSubjectByIdResponses];
-
-export type GetDriftData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query: {
-        system: TargetSystem;
-    };
-    url: '/management/cohort-subjects/{id}/drift';
-};
-
-export type GetDriftErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type GetDriftError = GetDriftErrors[keyof GetDriftErrors];
-
-export type GetDriftResponses = {
-    /**
-     * OK
-     */
-    200: DriftReport;
-};
-
-export type GetDriftResponse = GetDriftResponses[keyof GetDriftResponses];
 
 export type LinkUserData = {
     body: LinkUserRequest;

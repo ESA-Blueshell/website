@@ -37,11 +37,12 @@ test.describe("cohort subject detail", () => {
     await page.goto(COMMITTEE_SUBJECT)
 
     // The page's own count is the badge on its heading, once — it used to be a line under
-    // the title as well, and again under every section's heading.
-    await expect(page.getByTestId("cohort-subject-member-count")).toContainText("1")
+    // the title as well, and again under every section's heading. It counts members, so the
+    // two rows the target holds and we do not are not in it.
+    await expect(page.getByTestId("cohort-subject-member-count")).toContainText("2")
     await expect(page.getByTestId("cohort-subject-rules")).toContainText("1 rule · 1 enabled")
     await expect(page.getByTestId("cohort-subject-targets")).toContainText("1 sync target")
-    await expect(page.getByTestId("cohort-subject-members")).toContainText("1 member")
+    await expect(page.getByTestId("cohort-subject-members")).toContainText("2 members")
   })
 
   test("opens a box to show what it holds, and keeps it shut until asked", async ({page}) => {
@@ -146,5 +147,97 @@ test.describe("cohort subject detail", () => {
     await page.getByTestId("cohort-subject-back").click()
 
     await expect(page).toHaveURL(/\/management\/cohorts\/committees$/)
+  })
+})
+
+/**
+ * Drift is not a panel any more. A cohort's members and the rows only its target knows about
+ * are one table, and each row says which of the two it is.
+ */
+test.describe("cohort subject detail — drift in the members table", () => {
+  const SUBJECT = "/management/cohorts/subjects/101"
+
+  const openMembers = async (page: import("./test").Page) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+    await page.goto(SUBJECT)
+    const members = page.getByTestId("cohort-subject-members")
+    await members.getByTestId("cohort-subject-member-list").waitFor()
+    return members
+  }
+
+  test("says what each row is, and chips only the ones that differ", async ({page}) => {
+    const members = await openMembers(page)
+
+    // In sync: stated, but quietly — a cohort of healthy rows should not be a wall of colour.
+    const inSync = members.getByTestId("cohort-subject-member-sync-301")
+    await expect(inSync).toHaveText("In sync")
+    await expect(inSync.locator(".v-chip")).toHaveCount(0)
+
+    // The exceptions carry a chip, and each names the system it is out of step with.
+    await expect(members.getByTestId("cohort-subject-member-sync-401").locator(".v-chip"))
+      .toHaveText("Not in Brevo yet")
+    await expect(members.getByTestId("cohort-subject-member-sync-601").locator(".v-chip"))
+      .toHaveText("Only in Brevo")
+  })
+
+  test("names a row the target knows and we can identify, and shows the rest by its label", async ({page}) => {
+    const members = await openMembers(page)
+
+    // A stranger whose external id maps to an account is that person, not an opaque id.
+    await expect(members.getByTestId("cohort-subject-member-501")).toContainText("Casper Known")
+    // One nothing local claims falls back to whatever the external system calls it.
+    await expect(members.getByTestId("cohort-subject-member-601")).toContainText("someone@example.com")
+  })
+
+  test("counts members in the badge and names the exceptions beside it", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+    await page.goto(SUBJECT)
+
+    // Two of the four rows are members; the badge counts those, as the category page counts.
+    await expect(page.getByTestId("cohort-subject-member-count")).toContainText("2")
+    await expect(page.getByTestId("cohort-subject-members"))
+      .toContainText("2 members · 1 not synced · 2 only external")
+  })
+
+  test("filters down to the rows that need attention", async ({page}) => {
+    const members = await openMembers(page)
+    await expect(members.locator("tbody tr")).toHaveCount(4)
+
+    await members.getByTestId("cohort-member-filter-sync").click()
+    await page.getByRole("option", {name: "Needs attention"}).click()
+
+    // The healthy row goes; the three that differ stay.
+    await expect(members.locator("tbody tr")).toHaveCount(3)
+    await expect(members.getByTestId("cohort-subject-member-sync-301")).toHaveCount(0)
+  })
+
+  test("offers each row only the actions that apply to it", async ({page}) => {
+    const members = await openMembers(page)
+
+    // A member can be re-evaluated and nothing else.
+    await members.getByTestId("cohort-subject-member-menu-301").click()
+    await expect(page.getByTestId("cohort-subject-member-reeval-1")).toBeVisible()
+    await expect(page.getByTestId("cohort-subject-member-remove-301")).toHaveCount(0)
+    await page.keyboard.press("Escape")
+
+    // A row only the target has can be removed from it, and linked when nobody claims it.
+    await members.getByTestId("cohort-subject-member-menu-601").click()
+    await expect(page.getByTestId("cohort-subject-member-remove-601")).toBeVisible()
+    await expect(page.getByTestId("cohort-subject-member-link-601")).toBeVisible()
+  })
+
+  test("says when the target was last reconciled, beside the button that reconciles it", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+    await page.goto(SUBJECT)
+
+    const targets = page.getByTestId("cohort-subject-targets")
+    await targets.getByTestId("info-box-toggle").first().click()
+
+    await expect(targets.getByTestId("cohort-subject-target-reconciled-brevo"))
+      .toContainText("last reconciled")
+    await expect(targets.getByTestId("cohort-subject-reconcile-brevo")).toBeVisible()
   })
 })

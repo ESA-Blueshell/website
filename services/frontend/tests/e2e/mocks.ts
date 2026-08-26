@@ -22,6 +22,7 @@ type Fixtures = {
   jobs?: Array<Record<string, unknown>>
   emails?: Array<Record<string, unknown>>
   cohortSubjects?: Array<Record<string, unknown>>
+  cohortMembers?: Array<Record<string, unknown>>
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -537,6 +538,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             kind: "LIST",
             label: isCommittee ? "Web Cmte" : "Members 2025-2026",
             externalId: isCommittee ? "33" : "7",
+            lastReconciledAt: "2026-02-10T09:00:00Z",
           },
         ],
         rules: [
@@ -544,14 +546,56 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             ? {id: 9, factKind: "COMMITTEE", factKey: "42", enabled: true}
             : {id: 5, factKind: "MEMBER_IN_PERIOD", factKey: "1", enabled: true},
         ],
-        members: [
+        // One of each state the page draws: in sync, ours-but-not-pushed, and two rows the
+        // target has that we do not — one we can name, one we cannot.
+        members: fixtures.cohortMembers ?? [
           {
             cohortMemberId: 200 + id,
+            system: "BREVO",
+            state: "VERIFIED",
             userId: 1,
             userFullName: "Emma Dokter",
             userEmail: "emma@example.com",
             isUserDeleted: false,
+            externalUserId: "ext-1",
+            externalLabel: null,
             joinedAt: "2026-01-15T10:00:00Z",
+          },
+          {
+            cohortMemberId: 300 + id,
+            system: "BREVO",
+            state: "DESIRED",
+            userId: 2,
+            userFullName: "Bram Boardmade",
+            userEmail: "bram@example.com",
+            isUserDeleted: false,
+            externalUserId: null,
+            externalLabel: null,
+            joinedAt: "2026-02-01T10:00:00Z",
+          },
+          {
+            cohortMemberId: 400 + id,
+            system: "BREVO",
+            state: "STRANGER",
+            userId: 3,
+            userFullName: "Casper Known",
+            userEmail: "casper@example.com",
+            isUserDeleted: false,
+            externalUserId: "ext-known",
+            externalLabel: "casper@example.com",
+            joinedAt: "2026-02-02T10:00:00Z",
+          },
+          {
+            cohortMemberId: 500 + id,
+            system: "BREVO",
+            state: "STRANGER",
+            userId: null,
+            userFullName: null,
+            userEmail: null,
+            isUserDeleted: false,
+            externalUserId: "ext-unknown",
+            externalLabel: "someone@example.com",
+            joinedAt: "2026-02-03T10:00:00Z",
           },
         ],
       })

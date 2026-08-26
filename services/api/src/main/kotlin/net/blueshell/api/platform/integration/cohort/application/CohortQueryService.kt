@@ -1,5 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.application
 
+import net.blueshell.api.shared.enums.CohortMemberState
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.cohort.persistence.Cohort
@@ -110,6 +112,16 @@ data class CohortMemberRow(
     val member: CohortMember,
     val user: User?,
     val isUserDeleted: Boolean = false,
+    /**
+     * Which system's ledger this row belongs to. A row is per (cohort, user), and a cohort is
+     * per system, so a subject with two targets holds two rows for the same person.
+     */
+    val system: TargetSystem? = null,
+    /**
+     * The state the row is in. Defaulted so the older per-cohort projection, which does not
+     * report it, is unaffected.
+     */
+    val state: CohortMemberState? = null,
 )
 
 /**

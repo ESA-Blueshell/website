@@ -3,13 +3,11 @@ package net.blueshell.api.domain.file.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.domain.file.application.FileService
-import net.blueshell.api.domain.file.command.DownloadEventBannerCommand
-import net.blueshell.api.domain.file.command.UploadEventBannerCommand
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.domain.file.web.dto.response.FileResponse
 import net.blueshell.api.domain.file.web.mapping.response.asResponse
 import net.blueshell.api.domain.file.web.validation.AllowedContentTypes
 import net.blueshell.api.domain.file.web.validation.FileSize
-import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.core.io.Resource
 import org.springframework.http.HttpStatus
@@ -22,13 +20,12 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @Tag(name = "Files")
 class FileController(
-    service: FileService,
-    private val commandBus: CommandBus
+    service: FileService
 ) : BaseController<FileService>(service) {
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
     fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
-        return commandBus.dispatch(DownloadEventBannerCommand(eventId))
+        return service.prepareFileResponse(service.findByBannerEventId(eventId))
     }
 
     @PostMapping(value = ["/events/banners"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
@@ -45,7 +42,6 @@ class FileController(
             "image/gif"
         ) file: @NotNull(message = "File is required") MultipartFile
     ): FileResponse {
-        val stored = commandBus.dispatch(UploadEventBannerCommand(file))
-        return stored.asResponse()
+        return service.storeMultipart(file, FileType.EVENT_BANNER).asResponse()
     }
 }

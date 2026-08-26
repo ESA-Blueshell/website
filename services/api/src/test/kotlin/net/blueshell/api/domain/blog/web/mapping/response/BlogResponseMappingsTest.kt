@@ -1,5 +1,7 @@
 package net.blueshell.api.domain.blog.web.mapping.response
 
+import net.blueshell.api.domain.blog.application.sanitizeBlogHtml
+
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 

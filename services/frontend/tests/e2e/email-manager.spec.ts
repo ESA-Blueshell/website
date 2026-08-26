@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsAdmin, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsAdmin, loginAsBoard, loginAsMember} from "./mocks"
 
 const BASE_EMAILS = [
   {
@@ -70,9 +70,17 @@ const BASE_EMAILS = [
 ]
 
 test.describe("email manager — access control", () => {
-  test("non-admin is redirected to home", async ({page}) => {
+  test("board can access the email manager", async ({page}) => {
     await installApiMocks(page, {emails: BASE_EMAILS})
     await loginAsBoard(page.context())
+
+    await page.goto("/management/emails")
+    await expect(page.getByTestId("email-manager-table")).toBeVisible()
+  })
+
+  test("a member is redirected to home", async ({page}) => {
+    await installApiMocks(page, {emails: BASE_EMAILS})
+    await loginAsMember(page.context())
 
     await page.goto("/management/emails")
     await expect(page).toHaveURL(/\/$/)

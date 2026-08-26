@@ -44,8 +44,10 @@ class EmailManagementController(
         return page.map { it.toDto() }
     }
 
+    // Counts over the same rows the listing shows, so they answer to the same permission
+    // rather than to a second spelling of it that has to be kept in step.
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyAuthority('BOARD', 'ADMIN')")
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")
     fun getStats(): EmailStatsDTO {
         return EmailStatsDTO(
             totalCount = EmailDeliveryStatus.entries.sumOf { emailService.countByStatus(it) },

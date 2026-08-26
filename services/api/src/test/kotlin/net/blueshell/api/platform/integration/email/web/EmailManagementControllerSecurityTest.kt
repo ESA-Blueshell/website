@@ -14,9 +14,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  *
  * | Endpoint                              | ADMIN | BOARD | MEMBER | Unauth |
  * |---------------------------------------|-------|-------|--------|--------|
- * | GET /management/emails                | 200   | 403   | 403    | 401    |
+ * | GET /management/emails                | 200   | 200   | 403    | 401    |
  * | GET /management/emails/stats          | 200   | 200   | 403    | 401    |
- * | POST /management/emails/{id}/retry    | 200   | 403   | 403    | 401    |
+ * | POST /management/emails/{id}/retry    | 200   | 200   | 403    | 401    |
  */
 @SpringBootTest
 class EmailManagementControllerSecurityTest : UserTestSupport() {
@@ -27,9 +27,9 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         mvc.perform(get("/management/emails").with(bearer(admin))).andExpect(status().isOk)
     }
 
-    @Test fun `board cannot list emails`() {
+    @Test fun `board can list emails`() {
         val board = createUserWithRole(Role.BOARD)
-        mvc.perform(get("/management/emails").with(bearer(board))).andExpect(status().isForbidden)
+        mvc.perform(get("/management/emails").with(bearer(board))).andExpect(status().isOk)
     }
 
     @Test fun `member cannot list emails`() {
@@ -68,16 +68,22 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
             deliveryStatus = EmailDeliveryStatus.FAILED,
             jobExecutionId = null,
         )
-        // 400 is acceptable here — it means security passed but business rule rejected (no job linked)
+        // Exactly 400, not any 4xx: a 403 would otherwise pass and the test would say nothing
+        // about whether the request was allowed. This row has no job to run again.
         mvc.perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
-            .andExpect(status().is4xxClientError)
+            .andExpect(status().isBadRequest)
     }
 
-    @Test fun `board cannot retry email`() {
+    @Test fun `board can retry email`() {
         val board = createUserWithRole(Role.BOARD)
-        val outbox = emailFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
+        val outbox = emailFactory.create(
+            deliveryStatus = EmailDeliveryStatus.FAILED,
+            jobExecutionId = null,
+        )
+        // 400 rather than 403: the request was allowed, and the business rule rejected it
+        // because this row has no job to run again.
         mvc.perform(post("/management/emails/${outbox.id}/retry").with(bearer(board)))
-            .andExpect(status().isForbidden)
+            .andExpect(status().isBadRequest)
     }
 
     @Test fun `member cannot retry email`() {

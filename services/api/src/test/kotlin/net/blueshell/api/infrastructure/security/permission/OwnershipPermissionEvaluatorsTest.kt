@@ -1,5 +1,10 @@
 package net.blueshell.api.infrastructure.security.permission
 
+import net.blueshell.api.domain.user.application.permission.AddressPermission
+import net.blueshell.api.domain.contribution.application.permission.ContributionPermission
+import net.blueshell.api.domain.user.application.permission.MembershipPermission
+import net.blueshell.api.domain.user.application.permission.UserPermission
+
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.AddressService

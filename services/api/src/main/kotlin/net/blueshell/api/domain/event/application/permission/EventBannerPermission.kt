@@ -1,7 +1,7 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.domain.event.application.permission
 
-import net.blueshell.api.domain.committee.application.CommitteeService
-import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.domain.event.application.EventBannerService
+import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
@@ -10,8 +10,10 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class CommitteePermission @Autowired constructor(service: CommitteeService) :
-    BasePermissionEvaluator<Committee, Long, CommitteeService>(service) {
+class EventBannerPermission @Autowired constructor(
+    service: EventBannerService,
+    private val eventPermission: EventPermission
+) : BasePermissionEvaluator<EventBanner, EventBanner.Id, EventBannerService>(service) {
     override fun hasPermission(
         authentication: Authentication?,
         entity: Any?,
@@ -20,22 +22,16 @@ class CommitteePermission @Autowired constructor(service: CommitteeService) :
         if (authentication == null || permission == null) {
             return false
         }
-        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         if (entity == null) {
             return when (permission) {
-                "write", "delete" -> isBoard
-                "read" -> true
+                "write" -> SecurityUtils.hasAuthority(authentication, Role.COMMITTEE)
                 else -> false
             }
         }
-
-        val committee = entity as Committee
-        val principal = SecurityUtils.principalFrom(authentication)
+        val target = entity as EventBanner
         return when (permission) {
-            "read" -> true
-            "events" -> isBoard || committee.hasMember(principal?.id)
-            "write" -> isBoard
-            "delete" -> isBoard
+            "read" -> eventPermission.hasPermission(authentication, target.event, "read")
+            "write", "delete" -> eventPermission.hasPermission(authentication, target.event, "write")
             else -> false
         }
     }
@@ -45,7 +41,7 @@ class CommitteePermission @Autowired constructor(service: CommitteeService) :
             return false
         }
         if (id == null) return hasPermission(authentication, null, permission)
-        val committee = service.findById(id as Long)
-        return hasPermission(authentication, committee, permission)
+        val target = service.findById(id as EventBanner.Id)
+        return hasPermission(authentication, target, permission)
     }
 }

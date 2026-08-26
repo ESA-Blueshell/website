@@ -1,4 +1,6 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.platform.integration.email.application.permission
+
+import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.platform.integration.email.application.service.EmailService

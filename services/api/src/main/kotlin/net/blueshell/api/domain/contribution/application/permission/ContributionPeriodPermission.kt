@@ -1,7 +1,9 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.domain.contribution.application.permission
 
-import net.blueshell.api.domain.board.application.BoardService
-import net.blueshell.api.domain.board.persistence.Board
+import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+
+import net.blueshell.api.domain.contribution.application.ContributionPeriodService
+import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
@@ -9,8 +11,8 @@ import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class BoardPermission @Autowired constructor(service: BoardService) :
-    BasePermissionEvaluator<Board, Long, BoardService>(service) {
+class ContributionPeriodPermission @Autowired constructor(service: ContributionPeriodService) :
+    BasePermissionEvaluator<ContributionPeriod, Long, ContributionPeriodService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
@@ -18,7 +20,7 @@ class BoardPermission @Autowired constructor(service: BoardService) :
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
             "read" -> true
-            "write", "delete", "members" -> isBoard
+            "write", "delete" -> isBoard
             else -> false
         }
     }
@@ -28,7 +30,7 @@ class BoardPermission @Autowired constructor(service: BoardService) :
             return false
         }
         if (id == null) return hasPermission(authentication, null, permission)
-        val board = service.findById(id as Long)
-        return hasPermission(authentication, board, permission)
+        val period = service.findById(id as Long)
+        return hasPermission(authentication, period, permission)
     }
 }

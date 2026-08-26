@@ -1,24 +1,25 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.domain.sponsor.application.permission
 
+import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+
+import net.blueshell.api.domain.sponsor.application.SponsorService
+import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 @Component
-class JobExecutionPermission @Autowired constructor(service: JobExecutionService) :
-    BasePermissionEvaluator<JobExecution, Long, JobExecutionService>(service) {
+class SponsorPermission @Autowired constructor(service: SponsorService) :
+    BasePermissionEvaluator<Sponsor, Long, SponsorService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
         }
-
-        val isAdmin = SecurityUtils.hasAuthority(authentication, Role.ADMIN)
+        val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
-            "read", "retry", "write", "delete" -> isAdmin
+            "read", "write", "delete" -> isBoard
             else -> false
         }
     }
@@ -28,7 +29,7 @@ class JobExecutionPermission @Autowired constructor(service: JobExecutionService
             return false
         }
         if (id == null) return hasPermission(authentication, null, permission)
-        val entity = service.findById(id as Long)
-        return hasPermission(authentication, entity, permission)
+        val sponsor = service.findById(id as Long)
+        return hasPermission(authentication, sponsor, permission)
     }
 }

@@ -57,16 +57,20 @@ test.describe("cohort subject detail", () => {
     await expect(rules.getByTestId("cohort-subject-rule-9")).toContainText("42")
   })
 
-  test("keeps the add-target action on the page's own header", async ({page}) => {
+  test("keeps the add-target action on the targets box it acts on", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
     await page.goto(COMMITTEE_SUBJECT)
 
-    // Page-level rather than inside the targets box: it adds a target to the cohort, and the
-    // page's actions live in one place instead of being scattered over four cards.
-    const card = page.getByTestId("cohort-subject-identity")
-    await expect(card.getByTestId("cohort-subject-add-target")).toBeVisible()
+    // On the box, and reachable without opening it: the action belongs to sync targets rather
+    // than to the page.
+    const targets = page.getByTestId("cohort-subject-targets")
+    await expect(targets.getByTestId("cohort-subject-add-target")).toBeVisible()
+
+    // Clicking it opens the picker rather than the box it sits on.
+    await targets.getByTestId("cohort-subject-add-target").click()
+    await expect(page.getByTestId("target-picker-modal")).toBeVisible()
   })
 
   test("puts a target's own actions behind one menu", async ({page}) => {
@@ -256,7 +260,7 @@ test.describe("cohort subject detail — drift in the members table", () => {
     await expect(page.getByTestId("cohort-subject-member-link-601")).toBeVisible()
   })
 
-  test("says when the target was last reconciled, beside the button that reconciles it", async ({page}) => {
+  test("says when each target was last reconciled, in a column of its own", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
     await page.goto(SUBJECT)
@@ -264,8 +268,12 @@ test.describe("cohort subject detail — drift in the members table", () => {
     const targets = page.getByTestId("cohort-subject-targets")
     await targets.getByTestId("info-box-toggle").first().click()
 
+    // The date is the cell's whole content: the column heading already says what it is.
     await expect(targets.getByTestId("cohort-subject-target-reconciled-brevo"))
-      .toContainText("last reconciled")
-    await expect(targets.getByTestId("cohort-subject-reconcile-brevo")).toBeVisible()
+      .not.toContainText("last reconciled")
+
+    // Reconciling is one of the target's actions, so it lives with the other two.
+    await targets.getByTestId("cohort-subject-target-menu-brevo").click()
+    await expect(page.getByTestId("cohort-subject-reconcile-brevo")).toBeVisible()
   })
 })

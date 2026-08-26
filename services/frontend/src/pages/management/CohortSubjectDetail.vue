@@ -391,14 +391,15 @@ const reconcileTarget = async (cohortId: number) => {
 }
 
 /** What the target row says about its agreement with the external system. */
+/** Reads under a "Last reconciled" column, so it carries the value and not the label. */
 const lastReconciledLabel = (mapping: {externalId?: string | null; lastReconciledAt?: string | null}): string => {
-  if (!mapping.externalId) return "not created in the external system yet"
-  if (!mapping.lastReconciledAt) return "never reconciled"
-  return `last reconciled ${new Date(mapping.lastReconciledAt).toLocaleDateString(undefined, {
+  if (!mapping.externalId) return "Not created yet"
+  if (!mapping.lastReconciledAt) return "Never"
+  return new Date(mapping.lastReconciledAt).toLocaleDateString(undefined, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  })}`
+  })
 }
 
 const openAddTarget = () => {
@@ -495,31 +496,16 @@ watch(subjectId, () => void load())
           variant="flat"
         >
           <v-card-text>
-            <div
-              class="d-flex align-start justify-space-between flex-wrap mb-1"
-              style="gap: 12px"
-            >
-              <div class="manager-heading">
-                <v-badge
-                  color="primary"
-                  :content="memberCount"
-                  data-testid="cohort-subject-member-count"
-                >
-                  <h2 class="ma-0 subject-label">
-                    {{ subject.label }}
-                  </h2>
-                </v-badge>
-              </div>
-
-              <v-btn
-                data-testid="cohort-subject-add-target"
-                prepend-icon="mdi-plus"
-                size="small"
-                variant="text"
-                @click="openAddTarget"
+            <div class="manager-heading mb-1">
+              <v-badge
+                color="primary"
+                :content="memberCount"
+                data-testid="cohort-subject-member-count"
               >
-                Add target
-              </v-btn>
+                <h2 class="ma-0 subject-label">
+                  {{ subject.label }}
+                </h2>
+              </v-badge>
             </div>
 
             <p
@@ -539,28 +525,48 @@ watch(subjectId, () => void load())
                 :summary="rulesSubtitle"
                 testid="cohort-subject-rules"
               >
-                <div
-                  v-for="rule in subject.rules"
-                  :key="rule.id"
-                  class="d-flex align-center subject-rule"
-                  :data-testid="`cohort-subject-rule-${rule.id}`"
+                <v-table
+                  class="manager-table"
+                  data-testid="cohort-subject-rule-list"
+                  density="compact"
                 >
-                  <v-icon
-                    class="mr-2"
-                    :color="rule.enabled ? undefined : 'medium-emphasis'"
-                    :icon="rule.enabled ? 'mdi-check-circle-outline' : 'mdi-pause-circle-outline'"
-                    size="18"
-                    :title="rule.enabled ? 'Enabled' : 'Disabled'"
-                  />
-                  <!-- Reads as the rule it is: the fact, then the value it must equal. -->
-                  <span>{{ factKindLabel(rule.factKind) }}</span>
-                  <span class="text-medium-emphasis mx-1">=</span>
-                  <span class="font-mono">{{ rule.factKey }}</span>
-                  <span
-                    v-if="!rule.enabled"
-                    class="text-medium-emphasis ml-2"
-                  >· disabled</span>
-                </div>
+                  <thead>
+                    <tr>
+                      <th style="width: 46%">
+                        Fact
+                      </th>
+                      <th style="width: 34%">
+                        Must equal
+                      </th>
+                      <th style="width: 20%">
+                        State
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="rule in subject.rules"
+                      :key="rule.id"
+                      :data-testid="`cohort-subject-rule-${rule.id}`"
+                    >
+                      <!-- The fact reads as a sentence; the key stays verbatim because it is
+                           an id somebody matches against the database. -->
+                      <td>{{ factKindLabel(rule.factKind) }}</td>
+                      <td class="text-monospace text-medium-emphasis">
+                        {{ rule.factKey }}
+                      </td>
+                      <td>
+                        <v-chip
+                          :color="rule.enabled ? undefined : 'warning'"
+                          size="small"
+                          :variant="rule.enabled ? 'tonal' : 'flat'"
+                        >
+                          {{ rule.enabled ? "Enabled" : "Disabled" }}
+                        </v-chip>
+                      </td>
+                    </tr>
+                  </tbody>
+                </v-table>
               </info-box>
 
               <info-box
@@ -569,6 +575,20 @@ watch(subjectId, () => void load())
                 :summary="targetsSubtitle"
                 testid="cohort-subject-targets"
               >
+                <!-- On the box it acts on, and reachable without opening it. A click here
+                     reaches the button rather than toggling the box under it. -->
+                <template #actions>
+                  <v-btn
+                    data-testid="cohort-subject-add-target"
+                    prepend-icon="mdi-plus"
+                    size="small"
+                    variant="text"
+                    @click="openAddTarget"
+                  >
+                    Add target
+                  </v-btn>
+                </template>
+
                 <p
                   v-if="!subject.mappings.length"
                   class="text-body-2 text-medium-emphasis mb-0"
@@ -577,82 +597,100 @@ watch(subjectId, () => void load())
                   Add target.
                 </p>
 
-                <!-- One block per target, its two actions behind a menu rather than as two
-                     more buttons on a page that had eight. -->
-                <div
-                  v-for="mapping in subject.mappings"
-                  :key="mapping.system"
-                  class="subject-target"
-                  :data-testid="`cohort-subject-target-${mapping.system.toLowerCase()}`"
+                <!-- A row per target, in the table idiom the rest of these pages use: what
+                     it is, where it points, when it last agreed, and one menu of actions. -->
+                <v-table
+                  v-else
+                  class="manager-table"
+                  data-testid="cohort-subject-target-list"
+                  density="compact"
                 >
-                  <div
-                    class="d-flex align-center justify-space-between"
-                    style="gap: 12px"
-                  >
-                    <div class="subject-target__identity">
-                      <span class="font-weight-medium">{{ labelForSystem(mapping.system) }}</span>
-                      <span class="text-medium-emphasis">
-                        · {{ mapping.kind }} · {{ mapping.label }}
-                        · id {{ mapping.externalId ?? "—" }}
-                      </span>
-                    </div>
-
-                    <v-menu location="bottom end">
-                      <template #activator="{props: menuProps}">
-                        <v-btn
-                          v-bind="menuProps"
-                          :aria-label="`${labelForSystem(mapping.system)} target actions`"
-                          :data-testid="`cohort-subject-target-menu-${mapping.system.toLowerCase()}`"
-                          icon="mdi-dots-vertical"
-                          size="small"
-                          variant="text"
-                        />
-                      </template>
-                      <v-list
-                        density="compact"
-                        min-width="220"
+                  <thead>
+                    <tr>
+                      <th style="width: 16%">
+                        System
+                      </th>
+                      <th style="width: 14%">
+                        Kind
+                      </th>
+                      <th style="width: 30%">
+                        Target
+                      </th>
+                      <th style="width: 12%">
+                        External id
+                      </th>
+                      <th style="width: 22%">
+                        Last reconciled
+                      </th>
+                      <th style="width: 6%" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="mapping in subject.mappings"
+                      :key="mapping.system"
+                      :data-testid="`cohort-subject-target-${mapping.system.toLowerCase()}`"
+                    >
+                      <td class="font-weight-medium">
+                        {{ labelForSystem(mapping.system) }}
+                      </td>
+                      <td class="text-medium-emphasis">
+                        {{ mapping.kind }}
+                      </td>
+                      <td class="text-medium-emphasis">
+                        {{ mapping.label }}
+                      </td>
+                      <td class="text-monospace text-medium-emphasis">
+                        {{ mapping.externalId ?? "—" }}
+                      </td>
+                      <td
+                        class="text-medium-emphasis"
+                        :data-testid="`cohort-subject-target-reconciled-${mapping.system.toLowerCase()}`"
                       >
-                        <v-list-item
-                          :data-testid="`cohort-subject-switch-target-${mapping.system.toLowerCase()}`"
-                          prepend-icon="mdi-swap-horizontal"
-                          title="Switch target"
-                          @click="openSwitchTarget(mapping.cohortId, mapping.system)"
-                        />
-                        <v-list-item
-                          :data-testid="`cohort-subject-inbound-reconcile-${mapping.system.toLowerCase()}`"
-                          :disabled="!mapping.externalId"
-                          prepend-icon="mdi-import"
-                          title="Inbound reconcile"
-                          @click="openInboundReconcile(mapping.cohortId)"
-                        />
-                      </v-list>
-                    </v-menu>
-                  </div>
-
-                  <!-- What the drift panel used to say about the target itself. The rows it
-                       listed are in the members table now; this is what is left. -->
-                  <div
-                    class="d-flex align-center justify-space-between mt-1"
-                    style="gap: 12px"
-                  >
-                    <span
-                      class="text-body-2 text-medium-emphasis"
-                      :data-testid="`cohort-subject-target-reconciled-${mapping.system.toLowerCase()}`"
-                    >
-                      {{ lastReconciledLabel(mapping) }}
-                    </span>
-                    <v-btn
-                      :data-testid="`cohort-subject-reconcile-${mapping.system.toLowerCase()}`"
-                      :disabled="!mapping.externalId || reconciling != null"
-                      :loading="reconciling === mapping.cohortId"
-                      size="small"
-                      variant="text"
-                      @click="reconcileTarget(mapping.cohortId)"
-                    >
-                      Reconcile now
-                    </v-btn>
-                  </div>
-                </div>
+                        {{ lastReconciledLabel(mapping) }}
+                      </td>
+                      <td class="text-right">
+                        <v-menu location="bottom end">
+                          <template #activator="{props: menuProps}">
+                            <v-btn
+                              v-bind="menuProps"
+                              :aria-label="`${labelForSystem(mapping.system)} target actions`"
+                              :data-testid="`cohort-subject-target-menu-${mapping.system.toLowerCase()}`"
+                              icon="mdi-dots-vertical"
+                              size="small"
+                              variant="text"
+                            />
+                          </template>
+                          <v-list
+                            density="compact"
+                            min-width="220"
+                          >
+                            <v-list-item
+                              :data-testid="`cohort-subject-reconcile-${mapping.system.toLowerCase()}`"
+                              :disabled="!mapping.externalId || reconciling != null"
+                              prepend-icon="mdi-sync"
+                              title="Reconcile now"
+                              @click="reconcileTarget(mapping.cohortId)"
+                            />
+                            <v-list-item
+                              :data-testid="`cohort-subject-inbound-reconcile-${mapping.system.toLowerCase()}`"
+                              :disabled="!mapping.externalId"
+                              prepend-icon="mdi-import"
+                              title="Inbound reconcile"
+                              @click="openInboundReconcile(mapping.cohortId)"
+                            />
+                            <v-list-item
+                              :data-testid="`cohort-subject-switch-target-${mapping.system.toLowerCase()}`"
+                              prepend-icon="mdi-swap-horizontal"
+                              title="Switch target"
+                              @click="openSwitchTarget(mapping.cohortId, mapping.system)"
+                            />
+                          </v-list>
+                        </v-menu>
+                      </td>
+                    </tr>
+                  </tbody>
+                </v-table>
               </info-box>
 
               <div data-testid="cohort-subject-members">
@@ -904,24 +942,6 @@ watch(subjectId, () => void load())
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.subject-rule + .subject-rule {
-  margin-top: 6px;
-}
-
-.subject-target + .subject-target {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-// The identity line truncates rather than pushing the target's menu off the row.
-.subject-target__identity {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 // Search takes the room and the state select keeps its size, the way the member manager lays

@@ -3,8 +3,7 @@ package net.blueshell.api.domain.event.application.validation
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventService
-import net.blueshell.api.domain.event.command.EventSignUpCandidate
-import net.blueshell.api.domain.event.command.EventSignUpData
+import net.blueshell.api.domain.event.application.EventSignUpData
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.survey.command.AnswerData
 import net.blueshell.api.domain.survey.persistence.Question
@@ -32,7 +31,7 @@ class ValidEventSignUpCommandValidatorTest {
         whenever(events.findById(404)).thenThrow(RuntimeException("not found"))
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
-        val candidate = TestCandidate(EventSignUpData(eventId = 404, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 404, answers = emptyList())
 
         assertThat(validator.isValid(candidate, context)).isFalse()
     }
@@ -43,7 +42,7 @@ class ValidEventSignUpCommandValidatorTest {
             question(1, QuestionType.DESCRIPTION)
         ))
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 1, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 1, answers = emptyList())
 
         assertThat(validator.isValid(candidate, mock())).isTrue()
     }
@@ -62,7 +61,7 @@ class ValidEventSignUpCommandValidatorTest {
             AnswerData(questionId = 11),
             AnswerData(questionId = 12)
         )
-        val candidate = TestCandidate(EventSignUpData(eventId = 2, answers = answers))
+        val candidate = EventSignUpData(eventId = 2, answers = answers)
 
         assertThat(validator.isValid(candidate, mock())).isTrue()
     }
@@ -71,9 +70,9 @@ class ValidEventSignUpCommandValidatorTest {
     fun `rejects answers with unknown question ids`() {
         whenever(events.findById(3)).thenReturn(eventWithQuestions(question(10, QuestionType.OPEN)))
 
-        val candidate = TestCandidate(
+        val candidate = 
             EventSignUpData(eventId = 3, answers = listOf(AnswerData(questionId = 999)))
-        )
+        
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
         assertThat(validator.isValid(candidate, context)).isFalse()
@@ -86,12 +85,12 @@ class ValidEventSignUpCommandValidatorTest {
             question(11, QuestionType.RADIO)
         ))
 
-        val candidate = TestCandidate(
+        val candidate = 
             EventSignUpData(
                 eventId = 4,
                 answers = listOf(AnswerData(questionId = 10), AnswerData(questionId = 10))
             )
-        )
+        
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
         assertThat(validator.isValid(candidate, context)).isFalse()
@@ -103,7 +102,7 @@ class ValidEventSignUpCommandValidatorTest {
     fun `accepts signup when no deadline set`() {
         whenever(events.findById(10)).thenReturn(eventWithQuestions())
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 10, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 10, answers = emptyList())
 
         assertThat(validator.isValid(candidate, mock())).isTrue()
     }
@@ -114,7 +113,7 @@ class ValidEventSignUpCommandValidatorTest {
             eventWithQuestions(signUpDeadline = Instant.now().plusSeconds(3600))
         )
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 11, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 11, answers = emptyList())
 
         assertThat(validator.isValid(candidate, mock())).isTrue()
     }
@@ -125,7 +124,7 @@ class ValidEventSignUpCommandValidatorTest {
             eventWithQuestions(signUpDeadline = Instant.now().minusSeconds(1))
         )
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 12, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 12, answers = emptyList())
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
         assertThat(validator.isValid(candidate, context)).isFalse()
@@ -135,7 +134,7 @@ class ValidEventSignUpCommandValidatorTest {
     fun `accepts signup when no limit set`() {
         whenever(events.findById(13)).thenReturn(eventWithQuestions())
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 13, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 13, answers = emptyList())
 
         assertThat(validator.isValid(candidate, mock())).isTrue()
     }
@@ -146,7 +145,7 @@ class ValidEventSignUpCommandValidatorTest {
             eventWithQuestions(signUpLimit = 5)
         )
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 14, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 14, answers = emptyList())
 
         assertThat(validator.isValid(candidate, mock())).isTrue()
     }
@@ -157,7 +156,7 @@ class ValidEventSignUpCommandValidatorTest {
             eventWithQuestions(signUpLimit = 0, currentSignUpCount = 0)
         )
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 15, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 15, answers = emptyList())
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
         assertThat(validator.isValid(candidate, context)).isFalse()
@@ -173,7 +172,7 @@ class ValidEventSignUpCommandValidatorTest {
             )
         )
 
-        val candidate = TestCandidate(EventSignUpData(eventId = 16, answers = emptyList()))
+        val candidate = EventSignUpData(eventId = 16, answers = emptyList())
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
         assertThat(validator.isValid(candidate, context)).isFalse()
@@ -230,7 +229,4 @@ class ValidEventSignUpCommandValidatorTest {
         idField.set(entity, id)
     }
 
-    private data class TestCandidate(
-        override val data: EventSignUpData
-    ) : EventSignUpCandidate
 }

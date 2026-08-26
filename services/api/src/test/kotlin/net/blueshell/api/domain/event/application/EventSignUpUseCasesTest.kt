@@ -1,22 +1,17 @@
-package net.blueshell.api.domain.event.application.command
+package net.blueshell.api.domain.event.application
 
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.GuestService
 import net.blueshell.api.domain.event.application.query.EventSignUpQuery
-import net.blueshell.api.domain.event.command.CreateEventSignUpCommand
-import net.blueshell.api.domain.event.command.DeleteEventSignUpCommand
-import net.blueshell.api.domain.event.command.EventSignUpData
-import net.blueshell.api.domain.event.command.FindEventSignUpsByAccessTokenCommand
-import net.blueshell.api.domain.event.command.FindEventSignUpsByEventIdCommand
-import net.blueshell.api.domain.event.command.FindEventSignUpsCommand
-import net.blueshell.api.domain.event.command.GuestData
-import net.blueshell.api.domain.event.command.UpdateEventSignUpCommand
+import net.blueshell.api.domain.event.application.EventSignUpData
+import net.blueshell.api.domain.event.application.GuestData
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.survey.application.QuestionService
 import net.blueshell.api.domain.survey.command.AnswerData
+import jakarta.validation.Validator
 import net.blueshell.api.domain.survey.persistence.Question
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -31,69 +26,22 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-class EventSignUpCommandHandlersTest {
+class EventSignUpUseCasesTest {
 
     private val eventSignUpService = mock<EventSignUpService>()
     private val guestService = mock<GuestService>()
     private val eventRepository = mock<EventRepository>()
     private val questionService = mock<QuestionService>()
+    private val validator = mock<Validator>()
+    private val useCases =
+        EventSignUpUseCases(eventSignUpService, eventRepository, questionService, guestService, validator)
 
-    @Nested
-    inner class FindEventSignUps {
 
-        private val handler = FindEventSignUpsHandler(eventSignUpService)
 
-        @Test
-        fun `returns sign ups by filter`() {
-            val filter = EventSignUpQuery(eventId = 5L)
-            val expected = mutableListOf(emptySignUp())
-            whenever(eventSignUpService.findByFilter(filter)).thenReturn(expected)
-
-            val result = handler.handle(FindEventSignUpsCommand(filter))
-
-            assertThat(result).isSameAs(expected)
-            verify(eventSignUpService).findByFilter(filter)
-        }
-    }
-
-    @Nested
-    inner class FindEventSignUpsByAccessToken {
-
-        private val handler = FindEventSignUpsByAccessTokenHandler(eventSignUpService)
-
-        @Test
-        fun `returns sign ups by guest access token`() {
-            val expected = mutableListOf(emptySignUp())
-            whenever(eventSignUpService.findByGuestAccessToken("TOKEN-1")).thenReturn(expected)
-
-            val result = handler.handle(FindEventSignUpsByAccessTokenCommand("TOKEN-1"))
-
-            assertThat(result).isSameAs(expected)
-            verify(eventSignUpService).findByGuestAccessToken("TOKEN-1")
-        }
-    }
-
-    @Nested
-    inner class FindEventSignUpsByEventId {
-
-        private val handler = FindEventSignUpsByEventIdHandler(eventSignUpService)
-
-        @Test
-        fun `returns sign ups by event id`() {
-            val expected = mutableListOf(emptySignUp())
-            whenever(eventSignUpService.findByEventId(8L)).thenReturn(expected)
-
-            val result = handler.handle(FindEventSignUpsByEventIdCommand(8L))
-
-            assertThat(result).isSameAs(expected)
-            verify(eventSignUpService).findByEventId(8L)
-        }
-    }
 
     @Nested
     inner class CreateEventSignUp {
 
-        private val handler = CreateEventSignUpHandler(eventSignUpService, eventRepository, questionService)
 
         @Test
         fun `creates sign up and overrides user id with principal id`() {
@@ -103,8 +51,8 @@ class EventSignUpCommandHandlersTest {
             whenever(questionService.getReferenceById(200L)).thenReturn(questionRef)
             val captured = argumentCaptor<EventSignUp>()
             whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
-            val command = CreateEventSignUpCommand(
-                data = EventSignUpData(
+
+            val result = useCases.create(EventSignUpData(
                     eventId = 100L,
                     answers = listOf(
                         AnswerData(
@@ -124,11 +72,7 @@ class EventSignUpCommandHandlersTest {
                     ),
                     userId = 5L,
                     version = 7L
-                ),
-                principalId = 42L
-            )
-
-            val result = handler.handle(command)
+                ), 42L)
 
             assertThat(captured.firstValue.event).isSameAs(eventRef)
             assertThat(captured.firstValue.userId).isEqualTo(42L)
@@ -148,8 +92,8 @@ class EventSignUpCommandHandlersTest {
             whenever(eventRepository.getReferenceById(101L)).thenReturn(eventRef)
             val captured = argumentCaptor<EventSignUp>()
             whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
-            val command = CreateEventSignUpCommand(
-                data = EventSignUpData(
+
+            val result = useCases.create(EventSignUpData(
                     eventId = 101L,
                     answers = emptyList(),
                     guest = GuestData(
@@ -162,11 +106,7 @@ class EventSignUpCommandHandlersTest {
                     ),
                     userId = null,
                     version = null
-                ),
-                principalId = null
-            )
-
-            val result = handler.handle(command)
+                ), null)
 
             val rawToken = result.guest?.accessTokenRaw
             assertThat(rawToken).isNotBlank()
@@ -180,8 +120,7 @@ class EventSignUpCommandHandlersTest {
             val captured = argumentCaptor<EventSignUp>()
             whenever(eventSignUpService.create(captured.capture())).thenAnswer { captured.firstValue }
 
-            val command = CreateEventSignUpCommand(
-                data = EventSignUpData(
+            val result = useCases.create(EventSignUpData(
                     eventId = 102L,
                     answers = emptyList(),
                     guest = GuestData(
@@ -194,29 +133,21 @@ class EventSignUpCommandHandlersTest {
                     ),
                     userId = 999L,
                     version = null
-                ),
-                principalId = null
-            )
-
-            val result = handler.handle(command)
+                ), null)
 
             assertThat(result.userId).isNull()
         }
 
         @Test
         fun `anonymous create without guest is rejected`() {
-            val command = CreateEventSignUpCommand(
-                data = EventSignUpData(
+
+            assertThatThrownBy { useCases.create(EventSignUpData(
                     eventId = 103L,
                     answers = emptyList(),
                     guest = null,
                     userId = null,
                     version = null
-                ),
-                principalId = null
-            )
-
-            assertThatThrownBy { handler.handle(command) }
+                ), null) }
                 .isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
                     assertThat(ex.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
                 }
@@ -226,7 +157,6 @@ class EventSignUpCommandHandlersTest {
     @Nested
     inner class UpdateEventSignUp {
 
-        private val handler = UpdateEventSignUpHandler(eventSignUpService, eventRepository, questionService)
 
         @Test
         fun `updates sign up resolved by principal when access token is missing`() {
@@ -238,20 +168,13 @@ class EventSignUpCommandHandlersTest {
             whenever(questionService.getReferenceById(201L)).thenReturn(questionRef)
             whenever(eventSignUpService.update(existing)).thenReturn(existing)
 
-            val result = handler.handle(
-                UpdateEventSignUpCommand(
-                    eventId = 100L,
-                    data = EventSignUpData(
+            val result = useCases.update(100L, EventSignUpData(
                         eventId = 100L,
                         answers = listOf(AnswerData(questionId = 201L, textResponse = "Updated")),
                         userId = 55L,
                         guest = null,
                         version = 4L
-                    ),
-                    accessToken = null,
-                    principalId = 42L
-                )
-            )
+                    ), 42L, null)
 
             verify(eventSignUpService).findByUserIdAndEventId(42L, 100L)
             assertThat(existing.event).isSameAs(eventRef)
@@ -271,20 +194,13 @@ class EventSignUpCommandHandlersTest {
             whenever(eventRepository.getReferenceById(101L)).thenReturn(eventRef)
             whenever(eventSignUpService.update(existing)).thenReturn(existing)
 
-            handler.handle(
-                UpdateEventSignUpCommand(
-                    eventId = 101L,
-                    data = EventSignUpData(
+            useCases.update(101L, EventSignUpData(
                         eventId = 101L,
                         answers = emptyList(),
                         guest = null,
                         userId = null,
                         version = null
-                    ),
-                    accessToken = "TOKEN-2",
-                    principalId = null
-                )
-            )
+                    ), null, "TOKEN-2")
 
             verify(eventSignUpService).findByGuestAccessTokenAndEventId("TOKEN-2", 101L)
             verify(eventSignUpService).update(existing)
@@ -295,14 +211,7 @@ class EventSignUpCommandHandlersTest {
         @Test
         fun `throws when neither access token nor principal is provided`() {
             assertThatThrownBy {
-                handler.handle(
-                    UpdateEventSignUpCommand(
-                        eventId = 100L,
-                        data = EventSignUpData(eventId = 100L),
-                        accessToken = null,
-                        principalId = null
-                    )
-                )
+                useCases.update(100L, EventSignUpData(eventId = 100L), null, null)
             }.isInstanceOf(IllegalArgumentException::class.java)
                 .hasMessage("User must be authenticated")
         }
@@ -311,11 +220,10 @@ class EventSignUpCommandHandlersTest {
     @Nested
     inner class DeleteEventSignUp {
 
-        private val handler = DeleteEventSignUpHandler(eventSignUpService, guestService)
 
         @Test
         fun `deletes sign up by id when no guest access token is supplied`() {
-            handler.handle(DeleteEventSignUpCommand(eventSignUpId = 33L))
+            useCases.delete(33L, null)
 
             verify(eventSignUpService).deleteById(eq(33L))
         }
@@ -334,7 +242,7 @@ class EventSignUpCommandHandlersTest {
             whenever(guestService.findByAccessToken("MATCHING-TOKEN")).thenReturn(signUp.guest!!)
             whenever(eventSignUpService.findById(34L)).thenReturn(signUp)
 
-            handler.handle(DeleteEventSignUpCommand(eventSignUpId = 34L, accessToken = "MATCHING-TOKEN"))
+            useCases.delete(34L, "MATCHING-TOKEN")
 
             verify(guestService).findByAccessToken("MATCHING-TOKEN")
             verify(eventSignUpService).findById(34L)
@@ -365,7 +273,7 @@ class EventSignUpCommandHandlersTest {
             whenever(eventSignUpService.findById(35L)).thenReturn(signUp)
 
             assertThatThrownBy {
-                handler.handle(DeleteEventSignUpCommand(eventSignUpId = 35L, accessToken = "WRONG-TOKEN"))
+                useCases.delete(35L, "WRONG-TOKEN")
             }
                 .isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
                     assertThat(ex.statusCode).isEqualTo(HttpStatus.FORBIDDEN)
@@ -385,7 +293,7 @@ class EventSignUpCommandHandlersTest {
             )
 
             assertThatThrownBy {
-                handler.handle(DeleteEventSignUpCommand(eventSignUpId = 36L, accessToken = "UNKNOWN-TOKEN"))
+                useCases.delete(36L, "UNKNOWN-TOKEN")
             }
                 .isInstanceOfSatisfying(ResponseStatusException::class.java) { ex ->
                     assertThat(ex.statusCode).isEqualTo(HttpStatus.NOT_FOUND)

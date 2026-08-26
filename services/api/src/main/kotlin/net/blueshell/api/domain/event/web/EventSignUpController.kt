@@ -4,15 +4,14 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import net.blueshell.api.domain.event.application.EventSignUpService
-import net.blueshell.api.domain.event.command.*
+import net.blueshell.api.domain.event.application.EventSignUpUseCases
 import net.blueshell.api.domain.event.application.query.EventSignUpQuery
 import net.blueshell.api.domain.event.web.dto.request.CreateEventSignUpRequest
 import net.blueshell.api.domain.event.web.dto.response.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventSignUpRequest
-import net.blueshell.api.domain.event.web.mapping.request.asCommand
+import net.blueshell.api.domain.event.web.mapping.request.asData
 import net.blueshell.api.domain.event.web.mapping.response.asResponse
 import net.blueshell.api.shared.security.UserPrincipal
-import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,7 +24,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "EventSignUps")
 class EventSignUpController @Autowired constructor(
     service: EventSignUpService,
-    private val commandBus: CommandBus
+    private val useCases: EventSignUpUseCases,
 ) : BaseController<EventSignUpService>(service) {
     companion object {
         const val GUEST_ACCESS_TOKEN_HEADER = "X-Guest-Access-Token"
@@ -38,7 +37,7 @@ class EventSignUpController @Autowired constructor(
                 "or (#filter.committeeId != null && hasPermission(#filter.committeeId, 'Committee', 'events'))"
     )
     fun findEventSignUps(@ParameterObject filter: EventSignUpQuery = EventSignUpQuery()): List<EventSignUpResponse> {
-        val eventSignUps = commandBus.dispatch(FindEventSignUpsCommand(filter))
+        val eventSignUps = service.findByFilter(filter)
         return eventSignUps.map { it.asResponse() }
     }
 
@@ -47,14 +46,14 @@ class EventSignUpController @Autowired constructor(
     fun findEventSignUpsByAccessToken(
         @RequestHeader(name = GUEST_ACCESS_TOKEN_HEADER) accessToken: String
     ): List<EventSignUpResponse> {
-        val signUps = commandBus.dispatch(FindEventSignUpsByAccessTokenCommand(accessToken))
+        val signUps = service.findByGuestAccessToken(accessToken)
         return signUps.map { it.asResponse() }
     }
 
     @GetMapping(value = ["/events/{eventId}/signups"])
     @PreAuthorize("hasPermission(#eventId, 'Event', 'write')")
     fun findEventSignUpsByEventId(@PathVariable eventId: Long): List<EventSignUpResponse> {
-        val eventSignUps = commandBus.dispatch(FindEventSignUpsByEventIdCommand(eventId))
+        val eventSignUps = service.findByEventId(eventId)
         return eventSignUps.map { it.asResponse() }
     }
 
@@ -68,7 +67,7 @@ class EventSignUpController @Autowired constructor(
         @AuthenticationPrincipal principal: UserPrincipal?,
         response: HttpServletResponse
     ): EventSignUpResponse {
-        val eventSignUp = commandBus.dispatch(request.asCommand(eventId, principal?.id))
+        val eventSignUp = useCases.create(request.asData(eventId), principal?.id)
         eventSignUp.guest?.accessTokenRaw?.let { response.setHeader(GUEST_ACCESS_TOKEN_HEADER, it) }
         return eventSignUp.asResponse()
     }
@@ -85,8 +84,11 @@ class EventSignUpController @Autowired constructor(
         @AuthenticationPrincipal principal: UserPrincipal?,
         response: HttpServletResponse
     ): EventSignUpResponse {
-        val updated = commandBus.dispatch(
-            request.asCommand(eventId, principal?.id, guestAccessToken)
+        val updated = useCases.update(
+            eventId = eventId,
+            data = request.asData(eventId),
+            principalId = principal?.id,
+            accessToken = guestAccessToken,
         )
         if (!guestAccessToken.isNullOrBlank()) {
             response.setHeader(GUEST_ACCESS_TOKEN_HEADER, guestAccessToken)
@@ -105,6 +107,6 @@ class EventSignUpController @Autowired constructor(
         @PathVariable id: Long,
         @RequestHeader(name = GUEST_ACCESS_TOKEN_HEADER, required = false) guestAccessToken: String?
     ) {
-        commandBus.dispatch(DeleteEventSignUpCommand(eventSignUpId = id, accessToken = guestAccessToken))
+        useCases.delete(eventSignUpId = id, accessToken = guestAccessToken)
     }
 }

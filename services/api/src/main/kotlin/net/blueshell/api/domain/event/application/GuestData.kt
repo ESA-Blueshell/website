@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.event.command
+package net.blueshell.api.domain.event.application
 
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank

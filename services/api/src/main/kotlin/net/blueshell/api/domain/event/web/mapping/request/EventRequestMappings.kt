@@ -1,13 +1,13 @@
 package net.blueshell.api.domain.event.web.mapping.request
 
-import net.blueshell.api.domain.event.command.CreateEventCommand
-import net.blueshell.api.domain.event.command.UpdateEventCommand
+import net.blueshell.api.domain.event.application.EventData
+
 import net.blueshell.api.domain.event.web.dto.request.CreateEventRequest
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventRequest
 import net.blueshell.api.domain.survey.web.mapping.request.asDomainData
 
-fun CreateEventRequest.asCommand(): CreateEventCommand =
-    CreateEventCommand(
+fun CreateEventRequest.asData(): EventData =
+    EventData(
         committeeId = this.committeeId!!,
         title = this.title!!,
         description = this.description!!,
@@ -25,9 +25,8 @@ fun CreateEventRequest.asCommand(): CreateEventCommand =
         signUpForm = this.signUpForm?.asDomainData(),
     )
 
-fun UpdateEventRequest.asCommand(id: Long): UpdateEventCommand =
-    UpdateEventCommand(
-        id = id,
+fun UpdateEventRequest.asData(): EventData =
+    EventData(
         committeeId = this.committeeId!!,
         title = this.title!!,
         description = this.description!!,
@@ -43,6 +42,4 @@ fun UpdateEventRequest.asCommand(id: Long): UpdateEventCommand =
         signUpLimit = this.signUpLimit,
         banner = this.banner?.asDomainData(),
         signUpForm = this.signUpForm?.asDomainData(),
-        removeExistingSignUps = this.removeExistingSignUps == true,
-        version = this.version!!,
     )

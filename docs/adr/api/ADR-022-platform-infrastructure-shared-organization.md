@@ -1,7 +1,15 @@
 # ADR-022: Platform, Infrastructure, and Shared Organization
 
 ## Status
-Accepted
+Superseded by
+[architecture ADR-003](../architecture/ADR-003-package-topology-and-placement-rules.md).
+
+The `shared` / `infrastructure` / `platform` split described here is withdrawn.
+The ambiguities this ADR set out to resolve — where job definitions go, whether
+permission evaluation is web or infrastructure — were still being asked after it
+was written, because the taxonomy described the layers without making placement
+predictable. Retained for history.
+
 
 ## Context
 The codebase follows Domain-Driven Design with multi-layered architecture, using three cross-cutting layers: `shared/`, `infrastructure/`, and `platform/`. Without clear documentation distinguishing these layers, developers may:

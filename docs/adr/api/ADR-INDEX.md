@@ -8,11 +8,11 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [001](ADR-001-multi-layered-domain-driven-architecture.md) | Multi-Layered Domain-Driven Architecture | Accepted | DDD package-by-feature with explicit layer boundaries |
-| [002](ADR-002-command-pattern-with-command-bus.md) | Command Pattern with CommandBus | Accepted | Command dispatch and handler-based write flows |
+| [001](ADR-001-multi-layered-domain-driven-architecture.md) | Multi-Layered Domain-Driven Architecture | Superseded | Replaced by the [architecture ADR set](../architecture/ADR-INDEX.md) |
+| [002](ADR-002-command-pattern-with-command-bus.md) | Command Pattern with CommandBus | Superseded | Replaced by use-case services; query/command split carried forward |
 | [013](ADR-013-entity-association-pattern.md) | Entity Association Pattern | Accepted | Association ownership and reference consistency rules |
-| [016](ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Accepted | Strict dependency direction and ArchUnit-enforced boundaries |
-| [022](ADR-022-platform-infrastructure-shared-organization.md) | Platform, Infrastructure, and Shared Organization | Accepted | Separation of shared contracts, infrastructure adapters, and platform integrations |
+| [016](ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Superseded | Replaced by Spring Modulith module verification |
+| [022](ADR-022-platform-infrastructure-shared-organization.md) | Platform, Infrastructure, and Shared Organization | Superseded | Replaced by the flat-module package topology |
 
 ### Strategic Domain-Driven Design
 
@@ -21,7 +21,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [017](ADR-017-bounded-context-relationships-and-context-map.md) | Bounded Context Relationships and Context Map | Accepted | Domain relationships and context mapping |
 | [018](ADR-018-data-ownership-in-modular-monolith.md) | Data Ownership in Modular Monolith | Accepted | Data ownership boundaries across domains |
 | [019](ADR-019-anti-corruption-layers-for-external-integration.md) | Anti-Corruption Layers for External Integration | Accepted | External integration isolation via ACL adapters |
-| [020](ADR-020-shared-kernel-governance.md) | Shared Kernel Governance | Accepted | Governance rules for shared cross-domain contracts |
+| [020](ADR-020-shared-kernel-governance.md) | Shared Kernel Governance | Superseded | Replaced by the fan-in placement rule |
 | [021](ADR-021-observability-and-distributed-tracing.md) | Observability and Distributed Tracing | Proposed | Correlation, tracing, and observability standards |
 
 ### Data and Persistence
@@ -36,7 +36,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [003](ADR-003-validation-layer-separation.md) | Validation Layer Separation | Accepted | Layered validation responsibilities |
+| [003](ADR-003-validation-layer-separation.md) | Validation Layer Separation | Accepted (amended) | Layered validation responsibilities; database-dependent rules move to the use case |
 | [004](ADR-004-manual-mapping-at-api-boundaries.md) | Manual Mapping at API Boundaries | Accepted | Explicit manual mapping strategy for request/response and command/entity boundaries |
 
 ### Patterns
@@ -44,7 +44,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [005](ADR-005-factory-pattern-for-entity-creation.md) | Factory Pattern for Entity Creation | Accepted | Factories for complex object creation workflows |
-| [006](ADR-006-event-driven-architecture.md) | Event-Driven Architecture | Accepted | Event-based cross-domain coordination |
+| [006](ADR-006-event-driven-architecture.md) | Event-Driven Architecture | Accepted (amended) | Event-based cross-domain coordination, on the Event Publication Registry |
 | [025](ADR-025-membership-commit-rendezvous.md) | Membership Commit Rendezvous | Accepted | Membership commits when the last of email confirmation and application submission lands |
 
 ### Security and API
@@ -61,7 +61,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [023](ADR-023-job-consolidation-and-reliable-execution.md) | Job Consolidation and Reliable Execution | Accepted | Replace RabbitMQ with @Async + RetryTemplate, consolidate job types, add dedup |
+| [023](ADR-023-job-consolidation-and-reliable-execution.md) | Job Consolidation and Reliable Execution | Accepted (amended) | @Async + RetryTemplate, consolidated job types, dedup; gains scheduledFor |
 
 ### Testing
 
@@ -74,4 +74,5 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 - [ADR umbrella index](../ADR-INDEX.md)
 - [Frontend ADR index](../frontend/ADR-INDEX.md)
 - [Testing ADR index](../testing/ADR-INDEX.md)
+- [Architecture ADR index](../architecture/ADR-INDEX.md)
 - [CLAUDE.md](../../../CLAUDE.md)

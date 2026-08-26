@@ -1,7 +1,16 @@
 # ADR-002: Command Pattern with CommandBus
 
 ## Status
-Accepted
+Superseded by
+[architecture ADR-002](../architecture/ADR-002-use-case-services-replace-the-command-bus.md).
+
+The `CommandBus`, the `CommandHandler` interface and the one-handler-per-command
+rule are withdrawn. Measured against the codebase this pattern produced 110
+`handle()` methods of which 53 were a single line, and the async half
+(`AsyncCommandDispatcher`, `AbstractCommandJobHandler`) never acquired a
+production caller. The query/command distinction this ADR drew remains correct
+and is carried forward. Retained for history.
+
 
 ## Context
 Spring Boot controllers typically call service methods directly, leading to:

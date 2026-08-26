@@ -3,6 +3,11 @@
 ## Status
 Accepted
 
+
+> **Amended** by [architecture ADR-001](../architecture/ADR-001-application-modules-replace-layers.md):
+> events run on Spring Modulith's Event Publication Registry and are the instrument
+> for breaking module dependency cycles.
+
 ## Context
 Applications need to react to state changes across different domains without creating tight coupling. Traditional approaches include:
 - Direct service-to-service calls (tight coupling)

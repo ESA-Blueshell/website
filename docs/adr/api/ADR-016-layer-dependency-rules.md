@@ -1,7 +1,14 @@
 # ADR-016: Layer Dependency Rules and Clean Architecture
 
 ## Status
-Accepted
+Superseded by
+[architecture ADR-001](../architecture/ADR-001-application-modules-replace-layers.md).
+
+The seven-layer rules enforced by `LayeredArchitectureTest` are replaced by
+Spring Modulith module verification. The layering held while feature coupling
+decayed unchecked — 103 imports cross a feature boundary and seven pairs of
+features form cycles, none of which a layer rule can see. Retained for history.
+
 
 ## Context
 Multi-layered architecture requires clear dependency rules to prevent coupling, maintain testability, and enable independent evolution. Without explicit rules, developers may create circular dependencies, tight coupling between layers, and violations of the dependency inversion principle.

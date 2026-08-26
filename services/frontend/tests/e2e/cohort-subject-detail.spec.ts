@@ -57,19 +57,20 @@ test.describe("cohort subject detail", () => {
     await expect(rules.getByTestId("cohort-subject-rule-9")).toContainText("42")
   })
 
-  test("keeps the add-target action on the targets box it acts on", async ({page}) => {
+  test("keeps the add-target action on the header row of the targets table", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
     await page.goto(COMMITTEE_SUBJECT)
 
-    // On the box, and reachable without opening it: the action belongs to sync targets rather
-    // than to the page.
+    // Adding a target is one of the table's own actions, so it sits in the header row's menu
+    // rather than on the box around it.
     const targets = page.getByTestId("cohort-subject-targets")
-    await expect(targets.getByTestId("cohort-subject-add-target")).toBeVisible()
+    await targets.getByTestId("info-box-toggle").first().click()
+    await expect(targets.getByTestId("cohort-subject-add-target")).toHaveCount(0)
 
-    // Clicking it opens the picker rather than the box it sits on.
-    await targets.getByTestId("cohort-subject-add-target").click()
+    await targets.getByTestId("cohort-subject-targets-menu").click()
+    await page.getByTestId("cohort-subject-add-target").click()
     await expect(page.getByTestId("target-picker-modal")).toBeVisible()
   })
 

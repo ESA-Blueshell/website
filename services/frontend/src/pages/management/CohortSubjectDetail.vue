@@ -575,32 +575,9 @@ watch(subjectId, () => void load())
                 :summary="targetsSubtitle"
                 testid="cohort-subject-targets"
               >
-                <!-- On the box it acts on, and reachable without opening it. A click here
-                     reaches the button rather than toggling the box under it. -->
-                <template #actions>
-                  <v-btn
-                    data-testid="cohort-subject-add-target"
-                    prepend-icon="mdi-plus"
-                    size="small"
-                    variant="text"
-                    @click="openAddTarget"
-                  >
-                    Add target
-                  </v-btn>
-                </template>
-
-                <p
-                  v-if="!subject.mappings.length"
-                  class="text-body-2 text-medium-emphasis mb-0"
-                >
-                  None yet. Engine cohorts are created on first sync, or attach one with
-                  Add target.
-                </p>
-
                 <!-- A row per target, in the table idiom the rest of these pages use: what
                      it is, where it points, when it last agreed, and one menu of actions. -->
                 <v-table
-                  v-else
                   class="manager-table"
                   data-testid="cohort-subject-target-list"
                   density="compact"
@@ -622,10 +599,47 @@ watch(subjectId, () => void load())
                       <th style="width: 22%">
                         Last reconciled
                       </th>
-                      <th style="width: 6%" />
+                      <!-- What the table as a whole can do, where the member table keeps the
+                           same menu: on the header row, not on the box around it. -->
+                      <th style="width: 6%">
+                        <div class="targets-th-actions">
+                          <v-menu location="bottom end">
+                            <template #activator="{props: menuProps}">
+                              <v-btn
+                                v-bind="menuProps"
+                                aria-label="Sync target actions"
+                                data-testid="cohort-subject-targets-menu"
+                                icon="mdi-dots-vertical"
+                                size="small"
+                                variant="text"
+                              />
+                            </template>
+                            <v-list
+                              density="compact"
+                              min-width="200"
+                            >
+                              <v-list-item
+                                data-testid="cohort-subject-add-target"
+                                prepend-icon="mdi-plus"
+                                title="Add target"
+                                @click="openAddTarget"
+                              />
+                            </v-list>
+                          </v-menu>
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
+                    <tr v-if="!subject.mappings.length">
+                      <td
+                        class="text-medium-emphasis"
+                        colspan="6"
+                      >
+                        None yet. Engine cohorts are created on first sync, or attach one with
+                        Add target.
+                      </td>
+                    </tr>
                     <tr
                       v-for="mapping in subject.mappings"
                       :key="mapping.system"
@@ -935,6 +949,26 @@ watch(subjectId, () => void load())
   font-size: 22px;
   font-weight: 600;
   line-height: 1.15;
+}
+
+// Inside a box, a table paints no fill: the box is already a lifted surface, so a table that
+// carried its own read as a second panel dropped onto the first. Its structure comes from the
+// separators instead, one step stronger than the hairline a card uses so they still read
+// against the tint.
+.info-box .manager-table {
+  --v-border-opacity: 0.2;
+
+  background: transparent;
+
+  thead th {
+    background: transparent;
+  }
+}
+
+// The header's menu sits against the trailing edge, over the row of dots below it.
+.targets-th-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 // The boxes stack with a gap rather than each carrying its own card and margin.

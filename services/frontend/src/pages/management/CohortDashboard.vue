@@ -11,7 +11,7 @@ import {
 } from "@/services/api"
 import store from "@/plugins/store"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
-import {countLabel, nounFor} from "@/domains/cohorts/cohortSubjectSummaries"
+import {useTableSort} from "@/composables/useTableSort"
 
 defineOptions({name: "CohortDashboardPage"})
 
@@ -64,9 +64,8 @@ const CARDS: Card[] = [
   },
 ]
 
-/** What the engine holds in total, which is what the header claims. */
+/** What the engine holds in total, which is what the heading claims. */
 const totalSubjects = computed(() => subjects.value.length)
-const totalMembers = computed(() => subjects.value.reduce((sum, s) => sum + s.memberCount, 0))
 
 const countsByCategory = computed<Record<CohortSubjectCategory, {subjects: number; members: number}>>(() => {
   const counts: Record<CohortSubjectCategory, {subjects: number; members: number}> = {
@@ -117,6 +116,37 @@ const triggerJob = async (jobType: string, payload?: Record<string, unknown>) =>
 const reconcilePeriods = () => triggerJob("cohort.reconcile-contribution-periods")
 const reconcileAllUsers = () => triggerJob("cohort.reconcile-all-users")
 
+/**
+ * A row per category, with its counts alongside rather than appended to its name. Declared
+ * order is the unsorted order — the most-touched categories first — and a column sort replaces
+ * it only once one is asked for.
+ */
+type CategoryRow = Card & {cohorts: number; members: number}
+
+const rows = computed<CategoryRow[]>(() =>
+  CARDS.map((card) => ({
+    ...card,
+    cohorts: countsByCategory.value[card.category].subjects,
+    members: countsByCategory.value[card.category].members,
+  })),
+)
+
+type SortKey = "title" | "cohorts" | "members"
+
+const {sortedItems, toggleSort, sortIcon, ariaSort} = useTableSort<CategoryRow, SortKey>(rows, {
+  title: (a, b) => a.title.localeCompare(b.title),
+  cohorts: (a, b) => a.cohorts - b.cohorts,
+  members: (a, b) => a.members - b.members,
+})
+
+const COLUMNS: ReadonlyArray<{label: string; sortKey: SortKey; align?: string; width: string}> = [
+  {label: "Category", sortKey: "title", width: "18%"},
+  // Wide enough for the label and its sort arrow on one line: any narrower and the arrow
+  // wraps under the word.
+  {label: "Cohorts", sortKey: "cohorts", align: "text-right", width: "12%"},
+  {label: "Members", sortKey: "members", align: "text-right", width: "12%"},
+]
+
 const openCategory = (category: CohortSubjectCategory) => {
   void router.push({name: "cohortCategory", params: {category: category.toLowerCase()}})
 }
@@ -155,95 +185,153 @@ onMounted(async () => {
           {{ successMessage }}
         </v-alert>
 
-        <!-- The engine's own state and the operations on it, where every other management
-             page puts them: in the header of the card that describes the thing. -->
-        <manager-card
-          eyebrow="Cohort engine"
-          spaced
-          :subtitle="`${countLabel(totalSubjects, 'cohort')} across ${countLabel(CARDS.length, 'category', 'categories')} · ${countLabel(totalMembers, 'membership')}`"
-          testid="cohort-dashboard-summary"
-          title="Reconciliation"
+        <!-- One card, one heading: the banner already names the page, and the engine's
+             actions belong beside the thing they act on rather than in a card of their own. -->
+        <v-card
+          class="manager-card"
+          data-testid="cohort-dashboard-summary"
+          rounded="lg"
+          variant="flat"
         >
-          <template #actions>
-            <v-btn
-              data-testid="cohort-targets-link"
-              size="small"
-              :to="{name: 'cohortTargets'}"
-              variant="outlined"
+          <v-card-text>
+            <div
+              class="d-flex align-start justify-space-between flex-wrap mb-4"
+              style="gap: 12px"
             >
-              Brevo targets
-            </v-btn>
-            <v-btn
-              :disabled="loading"
-              data-testid="cohort-refresh-btn"
-              size="small"
-              variant="outlined"
-              @click="refresh"
-            >
-              Refresh
-            </v-btn>
-          </template>
+              <div class="manager-heading">
+                <v-badge
+                  color="primary"
+                  :content="totalSubjects"
+                  data-testid="cohort-total-count"
+                >
+                  <h2 class="ma-0">
+                    Cohorts
+                  </h2>
+                </v-badge>
+              </div>
 
-          <div class="d-flex flex-wrap gap-2">
-            <v-btn
-              color="primary"
-              data-testid="cohort-action-reconcile-periods"
-              :disabled="!!triggering"
-              :loading="triggering === 'cohort.reconcile-contribution-periods'"
-              size="small"
-              variant="flat"
-              @click="reconcilePeriods"
-            >
-              Reconcile periods
-            </v-btn>
-            <v-btn
-              color="primary"
-              data-testid="cohort-action-reconcile-users"
-              :disabled="!!triggering"
-              :loading="triggering === 'cohort.reconcile-all-users'"
-              size="small"
-              variant="flat"
-              @click="reconcileAllUsers"
-            >
-              Re-evaluate all users
-            </v-btn>
-          </div>
-        </manager-card>
+              <div
+                class="d-flex flex-wrap align-center"
+                style="gap: 8px"
+              >
+                <v-btn
+                  color="primary"
+                  data-testid="cohort-action-reconcile-periods"
+                  :disabled="!!triggering"
+                  :loading="triggering === 'cohort.reconcile-contribution-periods'"
+                  size="small"
+                  variant="flat"
+                  @click="reconcilePeriods"
+                >
+                  Reconcile periods
+                </v-btn>
+                <v-btn
+                  color="primary"
+                  data-testid="cohort-action-reconcile-users"
+                  :disabled="!!triggering"
+                  :loading="triggering === 'cohort.reconcile-all-users'"
+                  size="small"
+                  variant="flat"
+                  @click="reconcileAllUsers"
+                >
+                  Re-evaluate all users
+                </v-btn>
+                <v-btn
+                  data-testid="cohort-targets-link"
+                  size="small"
+                  :to="{name: 'cohortTargets'}"
+                  variant="outlined"
+                >
+                  Brevo targets
+                </v-btn>
+                <v-btn
+                  data-testid="cohort-refresh-btn"
+                  :disabled="loading"
+                  size="small"
+                  variant="outlined"
+                  @click="refresh"
+                >
+                  Refresh
+                </v-btn>
+              </div>
+            </div>
 
-        <!-- The categories are navigation, so they read as a list of places to go rather
-             than as tiles that happen to be clickable. -->
-        <manager-card
-          eyebrow="Categories"
-          flush
-          testid="cohort-category-list"
-        >
-          <v-list density="comfortable">
-            <v-list-item
-              v-for="card in CARDS"
-              :key="card.category"
-              :data-testid="`cohort-category-card-${card.category.toLowerCase()}`"
-              :prepend-icon="card.icon"
-              :subtitle="card.blurb"
-              :title="card.title"
-              @click="openCategory(card.category)"
+            <div
+              data-testid="cohort-category-list"
+              style="overflow-x: auto"
             >
-              <template #append>
-                <div class="d-flex align-center category-counts">
-                  <span class="text-body-2">
-                    <strong>{{ countsByCategory[card.category].subjects }}</strong> {{ nounFor(countsByCategory[card.category].subjects, "cohort") }}
-                  </span>
-                  <span class="text-body-2 text-medium-emphasis">
-                    <strong>{{ countsByCategory[card.category].members }}</strong> {{ nounFor(countsByCategory[card.category].members, "member") }}
-                  </span>
-                  <v-icon
-                    icon="mdi-chevron-right"
-                    size="20"
-                  />
-                </div>
-              </template>
-            </v-list-item>
-          </v-list>
-        </manager-card>
+              <v-table class="manager-table">
+                <thead>
+                  <tr>
+                    <th style="width: 4%" />
+                    <th
+                      v-for="column in COLUMNS"
+                      :key="column.sortKey"
+                      :aria-sort="ariaSort(column.sortKey)"
+                      :class="['sortable-header', column.align]"
+                      :data-testid="`cohort-header-${column.sortKey}`"
+                      role="button"
+                      :style="`width: ${column.width}`"
+                      tabindex="0"
+                      @click="toggleSort(column.sortKey)"
+                      @keydown.enter="toggleSort(column.sortKey)"
+                      @keydown.space.prevent="toggleSort(column.sortKey)"
+                    >
+                      {{ column.label }}
+                      <v-icon
+                        :icon="sortIcon(column.sortKey)"
+                        size="16"
+                      />
+                    </th>
+                    <!-- Not sortable: prose, and sorting a description alphabetically tells
+                         nobody anything. -->
+                    <th>What it holds</th>
+                    <th style="width: 6%" />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr
+                    v-for="card in sortedItems"
+                    :key="card.category"
+                    class="manager-table__row"
+                    :data-testid="`cohort-category-card-${card.category.toLowerCase()}`"
+                    role="button"
+                    tabindex="0"
+                    @click="openCategory(card.category)"
+                    @keydown.enter.prevent="openCategory(card.category)"
+                    @keydown.space.prevent="openCategory(card.category)"
+                  >
+                    <td>
+                      <v-icon
+                        :icon="card.icon"
+                        size="20"
+                      />
+                    </td>
+                    <td class="font-weight-medium">
+                      {{ card.title }}
+                    </td>
+                    <td class="text-right">
+                      {{ card.cohorts }}
+                    </td>
+                    <td class="text-right">
+                      {{ card.members }}
+                    </td>
+                    <td class="text-medium-emphasis">
+                      {{ card.blurb }}
+                    </td>
+                    <td class="text-right">
+                      <v-icon
+                        icon="mdi-chevron-right"
+                        size="20"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </div>
+          </v-card-text>
+        </v-card>
       </div>
     </v-container>
   </v-main>
@@ -252,9 +340,5 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .cohorts-page {
   max-width: 980px;
-}
-
-.category-counts {
-  gap: 16px;
 }
 </style>

@@ -432,7 +432,7 @@ async function confirmDeleteUser() {
                  members or 2000. -->
             <v-data-table-virtual
               v-if="lgAndUp"
-              class="member-manager-vtable"
+              class="manager-table member-manager-vtable"
               density="comfortable"
               disable-sort
               fixed-header
@@ -639,21 +639,6 @@ async function confirmDeleteUser() {
 </template>
 
 <style lang="scss" scoped>
-.sortable-header {
-  cursor: pointer;
-  user-select: none;
-  vertical-align: bottom;
-
-  &:hover {
-    // Tinted with the theme's foreground, not black: on the dark theme a black tint darkens
-    // the header instead of lifting it, so the hover read as a smudge. Layered over the
-    // surface because the header is sticky and has to stay opaque.
-    background:
-      linear-gradient(rgba(var(--v-theme-on-surface), 0.06), rgba(var(--v-theme-on-surface), 0.06)),
-      rgb(var(--v-theme-surface));
-  }
-}
-
 // Every header label sits on the same baseline, whatever its cell holds: a one-line label, a
 // label wrapped onto three lines, or the select-all checkbox.
 .member-manager-vtable :deep(thead th) {

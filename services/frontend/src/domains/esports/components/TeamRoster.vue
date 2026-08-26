@@ -100,6 +100,11 @@ onBeforeUnmount(() => observer?.disconnect())
               :style="{'--stagger': `${index * 60}ms`}"
             >
               {{ member.handle }}
+              <!-- Only ever present for a member who said their name may be shown. -->
+              <span
+                v-if="member.name"
+                class="team-roster__name-aside"
+              >{{ member.name }}</span>
             </p>
           </div>
         </div>
@@ -180,6 +185,14 @@ onBeforeUnmount(() => observer?.disconnect())
   font-size: 1.25rem;
   font-weight: 500;
   transition: transform 200ms ease, opacity 200ms ease;
+
+  // The handle leads and the name follows it, quieter: the handle is what a team is known by.
+  .team-roster__name-aside {
+    margin-left: 10px;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    opacity: 0.72;
+  }
 
   &:hover {
     transform: translateX(6px);

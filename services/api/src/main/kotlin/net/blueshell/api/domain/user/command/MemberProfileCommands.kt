@@ -11,7 +11,8 @@ data class CreateMemberProfileCommand(
     val gender: String?,
     val nationality: String,
     val bhv: Boolean,
-    val ehbo: Boolean
+    val ehbo: Boolean,
+    val nameOnTeamPages: Boolean = false
 ) : Command<MemberProfile>
 
 data class UpdateMemberProfileCommand(
@@ -22,6 +23,7 @@ data class UpdateMemberProfileCommand(
     val nationality: String,
     val bhv: Boolean,
     val ehbo: Boolean,
+    val nameOnTeamPages: Boolean = false,
     val version: Long
 ) : Command<MemberProfile>
 

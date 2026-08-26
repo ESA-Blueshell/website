@@ -5,6 +5,8 @@ import net.blueshell.api.domain.esports.command.RosterMemberView
 import net.blueshell.api.domain.esports.command.SeasonView
 import net.blueshell.api.domain.esports.command.TeamView
 import net.blueshell.api.domain.esports.persistence.Season
+import net.blueshell.api.domain.user.application.MemberProfileService
+import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
@@ -16,13 +18,18 @@ import java.time.LocalDate
  *
  * A linked entry is rendered by the member's current handle for the game, so a rename lands
  * on every season at once; an entry nobody is linked to keeps the handle it was published
- * under. Handles for the whole page resolve in one query rather than one per member.
+ * under. A real name appears only for a linked member who has said it may, and never for an
+ * entry nobody is linked to, whatever name that entry was recorded with.
+ *
+ * Handles, consent and names each resolve once for the whole page rather than per member.
  */
 @Service
 class EsportsPageQueryService(
     private val rosters: TeamRosterService,
     private val seasons: SeasonService,
     private val accounts: UserGameAccountService,
+    private val profiles: MemberProfileService,
+    private val users: UserService,
 ) {
     @Transactional(readOnly = true)
     fun page(game: Game, seasonId: Long? = null): EsportsPageView {
@@ -36,7 +43,12 @@ class EsportsPageQueryService(
         if (season == null) return EsportsPageView(game, null, available, emptyList())
 
         val entries = rosters.findByGameAndSeason(game, season.id)
-        val handles = accounts.handlesFor(game, entries.mapNotNull { it.userId }.toSet())
+        val linked = entries.mapNotNull { it.userId }.toSet()
+        val handles = accounts.handlesFor(game, linked)
+        val consenting = profiles.consentingToNameOnTeamPages(linked)
+        val names = users.findAllByIds(consenting)
+            .mapNotNull { user -> user.id?.let { it to user.fullName } }
+            .toMap()
 
         val teams = entries
             .groupBy { it.team }
@@ -49,6 +61,7 @@ class EsportsPageQueryService(
                         RosterMemberView(
                             role = entry.teamRole,
                             handle = entry.userId?.let { handles[it] } ?: entry.handle,
+                            name = entry.userId?.let { names[it] },
                         )
                     },
                 )

@@ -32,7 +32,8 @@ class CreateMemberProfileHandler(
             gender = command.gender,
             nationality = command.nationality,
             bhv = command.bhv,
-            ehbo = command.ehbo
+            ehbo = command.ehbo,
+            nameOnTeamPages = command.nameOnTeamPages
         )
         user.replaceMemberProfile(profile)
         val updated = users.update(user)
@@ -54,6 +55,7 @@ class UpdateMemberProfileHandler(
             nationality = command.nationality
             bhv = command.bhv
             ehbo = command.ehbo
+            nameOnTeamPages = command.nameOnTeamPages
             version = command.version
         }
         return memberProfileService.update(profile)

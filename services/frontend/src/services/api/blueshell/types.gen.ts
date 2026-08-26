@@ -558,6 +558,10 @@ export type CreateMemberProfileRequest = {
     dateOfBirth: string;
     ehbo: boolean;
     gender?: string | null;
+    /**
+     * Whether this member's real name may appear on the team pages
+     */
+    nameOnTeamPages: boolean;
     nationality: string;
     studentNumber?: string | null;
     userId: number;
@@ -1009,6 +1013,10 @@ export type MemberProfileResponse = {
     ehbo: boolean;
     gender?: string;
     id: number;
+    /**
+     * Whether this member's real name may appear on the team pages
+     */
+    nameOnTeamPages: boolean;
     nationality?: string;
     studentNumber?: string;
     updatedAt: string;
@@ -1212,6 +1220,10 @@ export type RosterMemberResponse = {
      * What this member is called in the game
      */
     handle: string;
+    /**
+     * The member's real name, present only when they allow it to be shown
+     */
+    name?: string | null;
     role: TeamRole;
 };
 
@@ -1477,6 +1489,10 @@ export type UpdateMemberProfileRequest = {
     dateOfBirth: string;
     ehbo: boolean;
     gender?: string | null;
+    /**
+     * Whether this member's real name may appear on the team pages
+     */
+    nameOnTeamPages: boolean;
     nationality: string;
     studentNumber?: string | null;
     version: number;
@@ -1529,6 +1545,10 @@ export type UpsertMemberProfileRequest = {
     dateOfBirth: string;
     ehbo: boolean;
     gender?: string | null;
+    /**
+     * Whether this member's real name may appear on the team pages
+     */
+    nameOnTeamPages: boolean;
     nationality: string;
     studentNumber?: string | null;
     version?: number | null;

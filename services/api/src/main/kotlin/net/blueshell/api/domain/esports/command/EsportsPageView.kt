@@ -15,13 +15,14 @@ data class SeasonView(
 /**
  * One person on a roster, as the public page may show them.
  *
- * Carries the handle and nothing that identifies the member behind it: real names are held
- * in the database for identification, and publishing one is a separate decision the member
- * makes for themselves.
+ * The handle is always there. [name] is present only for a linked member who has said their
+ * real name may be published: names are held in the database to identify people, and putting
+ * one on a page is a decision each member makes for themselves.
  */
 data class RosterMemberView(
     val role: TeamRole,
     val handle: String,
+    val name: String? = null,
 )
 
 data class TeamView(

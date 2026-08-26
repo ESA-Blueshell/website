@@ -27,6 +27,8 @@ data class RosterMemberResponse(
     val role: TeamRole,
     @Schema(description = "What this member is called in the game")
     val handle: String,
+    @Schema(description = "The member's real name, present only when they allow it to be shown")
+    val name: String? = null,
 )
 
 @Schema(description = "A team with the roster it fielded in one season")

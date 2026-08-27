@@ -6,6 +6,7 @@ import net.blueshell.api.domain.file.application.exception.EmptyFileException
 import net.blueshell.api.domain.file.application.exception.FileNotFoundException
 import net.blueshell.api.domain.file.application.exception.FileStorageException
 import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.domain.file.application.port.EventBannerFileLookup
 import net.blueshell.api.domain.file.persistence.repository.FileRepository
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
@@ -39,7 +40,8 @@ class FileService @Autowired constructor(
     @Value($$"${storage.location}") storageLocation: String,
     private val trackedEvents: TrackedEventPublisher,
     private val currentUserProvider: CurrentUserProvider,
-    private val users: UserService
+    private val users: UserService,
+    private val eventBannerFiles: EventBannerFileLookup,
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
     private val rootLocation: Path = Paths.get(storageLocation)
     private val assetsLocation: Path = Paths.get("assets")
@@ -271,7 +273,9 @@ class FileService @Autowired constructor(
     }
 
     fun findByBannerEventId(eventId: Long): File {
-        return repository.findFirstBy_eventBannersIdEventId(eventId).orElseThrow {
+        val fileId = eventBannerFiles.fileIdForEvent(eventId)
+            ?: throw FileNotFoundException("eventBanner eventId=$eventId")
+        return repository.findById(fileId).orElseThrow {
             FileNotFoundException("eventBanner eventId=$eventId")
         }
     }

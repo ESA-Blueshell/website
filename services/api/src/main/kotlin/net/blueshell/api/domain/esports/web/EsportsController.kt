@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.esports.application.EsportsPageQueryService
+import net.blueshell.api.domain.esports.application.GamePageService
 import net.blueshell.api.domain.esports.application.SeasonService
 import net.blueshell.api.domain.esports.application.TeamRosterService
 import net.blueshell.api.domain.esports.application.TeamSeasonService
@@ -12,9 +13,11 @@ import net.blueshell.api.domain.esports.web.dto.request.AddRosterEntryRequest
 import net.blueshell.api.domain.esports.web.dto.request.CreateTeamRequest
 import net.blueshell.api.domain.esports.web.dto.request.LinkRosterEntryRequest
 import net.blueshell.api.domain.esports.web.dto.request.SeasonRequest
+import net.blueshell.api.domain.esports.web.dto.request.UpdateGamePageRequest
 import net.blueshell.api.domain.esports.web.dto.request.UpdateRosterEntryRequest
 import net.blueshell.api.domain.esports.web.dto.request.UpdateTeamRequest
 import net.blueshell.api.domain.esports.web.dto.response.EsportsPageResponse
+import net.blueshell.api.domain.esports.web.dto.response.GamePageResponse
 import net.blueshell.api.domain.esports.web.dto.response.RosterEntryResponse
 import net.blueshell.api.domain.esports.web.dto.response.SeasonResponse
 import net.blueshell.api.domain.esports.web.dto.response.TeamResponse
@@ -47,6 +50,7 @@ class EsportsController(
     private val page: EsportsPageQueryService,
     private val seasons: SeasonService,
     private val teams: TeamService,
+    private val gamePages: GamePageService,
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
 ) {
@@ -56,6 +60,22 @@ class EsportsController(
         @PathVariable game: Game,
         @RequestParam(required = false) seasonId: Long?,
     ): EsportsPageResponse = page.page(game, seasonId).asResponse()
+
+    /**
+     * Every game the association has fielded a team in, present or past, in the order they are
+     * shown. Public: the pages are.
+     */
+    @PermitAll
+    @GetMapping("/games")
+    fun findGamePages(): List<GamePageResponse> = gamePages.findAll().map { it.asResponse() }
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PutMapping("/games/{game}")
+    fun updateGamePage(
+        @PathVariable game: Game,
+        @Valid @RequestBody request: UpdateGamePageRequest,
+    ): GamePageResponse =
+        gamePages.update(game, request.slug, request.intro, request.sortIndex, request.fielded).asResponse()
 
     @GetMapping("/seasons")
     @PermitAll

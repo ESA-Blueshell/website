@@ -90,3 +90,16 @@ data class GameAccountRequest(
     @field:Size(min = 1, max = 128, message = "Handle must be 1-128 characters")
     val handle: String,
 )
+
+@Schema(name = "UpdateGamePageRequest", description = "How a game presents itself")
+data class UpdateGamePageRequest(
+    @field:NotBlank
+    @field:Size(max = 64)
+    @field:Schema(description = "The address the game's page answers to")
+    val slug: String,
+    @field:Size(max = 4000)
+    val intro: String? = null,
+    val sortIndex: Int = 0,
+    @field:Schema(description = "Whether the association still fields a team in it")
+    val fielded: Boolean = true,
+)

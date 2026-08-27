@@ -4,6 +4,7 @@ import net.blueshell.api.domain.esports.application.EsportsPageView
 import net.blueshell.api.domain.esports.application.RosterMemberView
 import net.blueshell.api.domain.esports.application.SeasonView
 import net.blueshell.api.domain.esports.application.TeamView
+import net.blueshell.api.domain.esports.persistence.GamePage
 import net.blueshell.api.domain.esports.persistence.Season
 import net.blueshell.api.domain.esports.persistence.Team
 import net.blueshell.api.domain.esports.persistence.TeamRosterEntry
@@ -12,6 +13,7 @@ import net.blueshell.api.domain.esports.web.dto.response.EsportsPageResponse
 import net.blueshell.api.domain.esports.web.dto.response.GameAccountResponse
 import net.blueshell.api.domain.esports.web.dto.response.RosterEntryResponse
 import net.blueshell.api.domain.esports.web.dto.response.RosterMemberResponse
+import net.blueshell.api.domain.esports.web.dto.response.GamePageResponse
 import net.blueshell.api.domain.esports.web.dto.response.SeasonResponse
 import net.blueshell.api.domain.esports.web.dto.response.TeamResponse
 import net.blueshell.api.domain.esports.web.dto.response.TeamRosterResponse
@@ -70,4 +72,12 @@ fun UserGameAccount.asResponse() = GameAccountResponse(
     userId = userId,
     game = game,
     handle = handle,
+)
+
+fun GamePage.asResponse(): GamePageResponse = GamePageResponse(
+    game = game,
+    slug = slug,
+    intro = intro,
+    sortIndex = sortIndex,
+    fielded = fielded,
 )

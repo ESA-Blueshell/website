@@ -158,6 +158,9 @@ class SecurityConfig(
                 "/committeeMembers/committees",
                 "/contributionPeriods",
                 "/download/**",
+                // The collection and one game: "/esports/games/*" matches the second only,
+                // so the list of games needs saying separately.
+                "/esports/games",
                 "/esports/games/*",
                 "/esports/seasons",
                 "/esports/teams",

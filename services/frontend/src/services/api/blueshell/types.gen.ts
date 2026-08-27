@@ -817,6 +817,29 @@ export type GameAccountResponse = {
     userId: number;
 };
 
+/**
+ * How a game presents itself: its address, its copy, and whether it is still fielded
+ */
+export type GamePageResponse = {
+    /**
+     * Whether the association still fields a team in it
+     */
+    fielded: boolean;
+    game: Game;
+    /**
+     * What the page says about the game, where anything is said
+     */
+    intro?: string | null;
+    /**
+     * The address the game's page answers to
+     */
+    slug: string;
+    /**
+     * Where the game sits among the others
+     */
+    sortIndex: number;
+};
+
 export type GuestResponse = {
     createdAt: string;
     discord: string;
@@ -1468,6 +1491,22 @@ export type UpdateEventSignUpRequest = {
     guest?: CreateGuestRequest | null;
     userId?: number | null;
     version?: number | null;
+};
+
+/**
+ * How a game presents itself
+ */
+export type UpdateGamePageRequest = {
+    /**
+     * Whether the association still fields a team in it
+     */
+    fielded: boolean;
+    intro?: string | null;
+    /**
+     * The address the game's page answers to
+     */
+    slug: string;
+    sortIndex: number;
 };
 
 export type UpdateMemberProfileRequest = {
@@ -3351,6 +3390,47 @@ export type CsrfResponses = {
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 
+export type FindGamePagesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/esports/games';
+};
+
+export type FindGamePagesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindGamePagesError = FindGamePagesErrors[keyof FindGamePagesErrors];
+
+export type FindGamePagesResponses = {
+    /**
+     * OK
+     */
+    200: Array<GamePageResponse>;
+};
+
+export type FindGamePagesResponse = FindGamePagesResponses[keyof FindGamePagesResponses];
+
 export type FindEsportsPageData = {
     body?: never;
     path: {
@@ -3395,6 +3475,49 @@ export type FindEsportsPageResponses = {
 };
 
 export type FindEsportsPageResponse = FindEsportsPageResponses[keyof FindEsportsPageResponses];
+
+export type UpdateGamePageData = {
+    body: UpdateGamePageRequest;
+    path: {
+        game: Game;
+    };
+    query?: never;
+    url: '/esports/games/{game}';
+};
+
+export type UpdateGamePageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateGamePageError = UpdateGamePageErrors[keyof UpdateGamePageErrors];
+
+export type UpdateGamePageResponses = {
+    /**
+     * OK
+     */
+    200: GamePageResponse;
+};
+
+export type UpdateGamePageResponse = UpdateGamePageResponses[keyof UpdateGamePageResponses];
 
 export type RemoveRosterEntryData = {
     body?: never;

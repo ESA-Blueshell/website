@@ -29,15 +29,20 @@
 
 @theme {
   /* The island is dark whatever the viewer's theme asks for, so these are not
-     paired with a light set. Deeper than the site's greys: these pages carry
-     photography and want to sit behind it rather than beside it. */
-  --color-void: #07090c;
-  --color-pit: #0d1117;
-  --color-surface: #151b23;
-  --color-raised: #1d242e;
-  --color-hairline: oklch(1 0 0 / 8%);
-  --color-chalk: #f4f7fa;
-  --color-ash: #9aa7b4;
+     paired with a light set.
+     
+     They are the site's own greys rather than a deeper set of its own. The
+     navigation and footer are #212121 and sit directly above and below these
+     pages: a near-black ground under them read as two different sites meeting
+     rather than one page. The ground is a step below the chrome, panels a step
+     above it, and nothing here is tinted. */
+  --color-void: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
 
   /* The association's own two, unchanged: the blue everything is built on and
      the acid green the dark theme already uses as its accent. */

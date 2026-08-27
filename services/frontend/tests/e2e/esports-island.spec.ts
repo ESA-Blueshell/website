@@ -64,8 +64,10 @@ test.describe("the esports island", () => {
     await page.goto("/esports/competitive-scene")
 
     // These pages commit to one treatment; there is no light variant to keep.
+    // The value is the island's ground token, which sits a step below the
+    // navigation's own grey rather than being a near-black of its own.
     const background = await page.getByTestId("esports-island")
       .evaluate(el => getComputedStyle(el).backgroundColor)
-    expect(background).toBe("rgb(7, 9, 12)")
+    expect(background).toBe("rgb(28, 28, 28)")
   })
 })

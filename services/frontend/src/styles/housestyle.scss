@@ -88,7 +88,13 @@ CSS MOMENT
 // letter-spacing on the heading classes; pin both here so the house
 // headings keep their compact display look (otherwise e.g. the banner
 // title overflows its box and overlaps the subtitle below it).
-.v-application .text-h1, .v-application h1 {
+// The esports island is excluded from the heading rules below. These are
+// unlayered, and unlayered rules beat anything in a cascade layer whatever its
+// specificity, so without the exclusion no Tailwind size utility could ever
+// apply to a heading inside the island — a heading asking for 1.5rem still
+// rendered at 90px. Excluding the island changes nothing for any other page:
+// the rules are otherwise identical.
+.v-application .text-h1, .v-application h1:not(.esports-island h1) {
   font-family: "Fugaz One", sans-serif !important;
   text-transform: uppercase;
   font-size: 90px;
@@ -96,7 +102,7 @@ CSS MOMENT
   letter-spacing: normal;
 }
 
-.v-application .text-h2, .v-application h2 {
+.v-application .text-h2, .v-application h2:not(.esports-island h2) {
   font-family: "Fugaz One", sans-serif !important;
   text-transform: uppercase;
   font-size: 38px;
@@ -104,7 +110,7 @@ CSS MOMENT
   letter-spacing: normal;
 }
 
-.v-application .text-h3, .v-application h3 {
+.v-application .text-h3, .v-application h3:not(.esports-island h3) {
   font-family: "Barlow Semi Condensed", sans-serif !important;
   font-size: 26px;
   line-height: 1.3;
@@ -116,7 +122,9 @@ CSS MOMENT
   text-transform: uppercase;
 }
 
-.v-application .text-h4, .v-application h4, .v-application .text-h5, .v-application h5, .v-application .text-h6, .v-application h6 {
+.v-application .text-h4, .v-application h4:not(.esports-island h4),
+.v-application .text-h5, .v-application h5:not(.esports-island h5),
+.v-application .text-h6, .v-application h6:not(.esports-island h6) {
   font-family: "Barlow Semi Condensed", sans-serif !important;
   font-weight: bold;
 }

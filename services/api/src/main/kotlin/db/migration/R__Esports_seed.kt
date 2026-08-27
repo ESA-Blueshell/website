@@ -163,6 +163,10 @@ class R__Esports_seed : BaseJavaMigration() {
             statement.setString(3, handle)
             statement.executeQuery().use { rows -> if (rows.next()) return false }
         }
+        // A roster entry says the team was fielded that season, so the link is written with it.
+        // Without this a seeded team would exist and show nowhere, since the pages read the
+        // link rather than inferring one from the roster.
+        fieldTeam(connection, teamId, seasonId)
         connection.prepareStatement(
             """
             INSERT INTO team_roster_entry (team_id, season_id, handle, team_role, display_name, sort_index)
@@ -178,6 +182,22 @@ class R__Esports_seed : BaseJavaMigration() {
             statement.executeUpdate()
         }
         return true
+    }
+
+    /** Records that a team was fielded in a season, unless it already says so. */
+    private fun fieldTeam(connection: Connection, teamId: Long, seasonId: Long) {
+        connection.prepareStatement(
+            "SELECT id FROM team_season WHERE team_id = ? AND season_id = ? AND $ACTIVE",
+        ).use { statement ->
+            statement.setLong(1, teamId)
+            statement.setLong(2, seasonId)
+            statement.executeQuery().use { rows -> if (rows.next()) return }
+        }
+        connection.prepareStatement("INSERT INTO team_season (team_id, season_id) VALUES (?, ?)").use { statement ->
+            statement.setLong(1, teamId)
+            statement.setLong(2, seasonId)
+            statement.executeUpdate()
+        }
     }
 
     private fun activeId(connection: Connection, sql: String, vararg args: String): Long? =

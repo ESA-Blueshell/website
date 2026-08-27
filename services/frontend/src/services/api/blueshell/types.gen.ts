@@ -3693,6 +3693,94 @@ export type UpdateSeasonResponses = {
 
 export type UpdateSeasonResponse = UpdateSeasonResponses[keyof UpdateSeasonResponses];
 
+export type UnfieldTeamData = {
+    body?: never;
+    path: {
+        seasonId: number;
+        teamId: number;
+    };
+    query?: never;
+    url: '/esports/seasons/{seasonId}/teams/{teamId}';
+};
+
+export type UnfieldTeamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UnfieldTeamError = UnfieldTeamErrors[keyof UnfieldTeamErrors];
+
+export type UnfieldTeamResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UnfieldTeamResponse = UnfieldTeamResponses[keyof UnfieldTeamResponses];
+
+export type FieldTeamData = {
+    body?: never;
+    path: {
+        seasonId: number;
+        teamId: number;
+    };
+    query?: never;
+    url: '/esports/seasons/{seasonId}/teams/{teamId}';
+};
+
+export type FieldTeamErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FieldTeamError = FieldTeamErrors[keyof FieldTeamErrors];
+
+export type FieldTeamResponses = {
+    /**
+     * OK
+     */
+    200: TeamResponse;
+};
+
+export type FieldTeamResponse = FieldTeamResponses[keyof FieldTeamResponses];
+
 export type FindTeamsData = {
     body?: never;
     path?: never;
@@ -3950,6 +4038,49 @@ export type AddRosterEntryResponses = {
 };
 
 export type AddRosterEntryResponse = AddRosterEntryResponses[keyof AddRosterEntryResponses];
+
+export type FindTeamSeasonsData = {
+    body?: never;
+    path: {
+        teamId: number;
+    };
+    query?: never;
+    url: '/esports/teams/{teamId}/seasons';
+};
+
+export type FindTeamSeasonsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindTeamSeasonsError = FindTeamSeasonsErrors[keyof FindTeamSeasonsErrors];
+
+export type FindTeamSeasonsResponses = {
+    /**
+     * OK
+     */
+    200: Array<SeasonResponse>;
+};
+
+export type FindTeamSeasonsResponse = FindTeamSeasonsResponses[keyof FindTeamSeasonsResponses];
 
 export type FindEventsData = {
     body?: never;

@@ -22,6 +22,19 @@ data class TeamResponse(
     val image: String?,
 )
 
+@Schema(description = "How a game presents itself: its address, its copy, and whether it is still fielded")
+data class GamePageResponse(
+    val game: Game,
+    @Schema(description = "The address the game's page answers to")
+    val slug: String,
+    @Schema(description = "What the page says about the game, where anything is said")
+    val intro: String?,
+    @Schema(description = "Where the game sits among the others")
+    val sortIndex: Int,
+    @Schema(description = "Whether the association still fields a team in it")
+    val fielded: Boolean,
+)
+
 @Schema(description = "One person on a team's roster, as the public pages show them")
 data class RosterMemberResponse(
     val role: TeamRole,

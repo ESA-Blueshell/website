@@ -80,7 +80,15 @@ export default defineConfig({
     },
     {
       name: "smoke",
-      use: {...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:4174"},
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://127.0.0.1:4174",
+        // This project is the only one talking to the dev server, which compiles
+        // on demand: its first navigation pays for the whole entry graph,
+        // Tailwind included. The 5s default above is sized for the prebuilt
+        // preview server and is not a budget this navigation can be held to.
+        navigationTimeout: 60_000,
+      },
       testMatch: /module-smoke\.spec\.ts/,
     },
   ],

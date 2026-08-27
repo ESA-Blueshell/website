@@ -1,7 +1,6 @@
 package net.blueshell.api.domain.survey.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.event.persistence.EventSignUpAnswer
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.domain.survey.persistence.converter.BooleanListConverter
 import org.hibernate.annotations.SQLDelete
@@ -31,8 +30,4 @@ class Answer(
 ) : AuditedAutoIdEntity() {
     val questionId: Long
         get() = question.id ?: 0
-
-    @OneToOne(mappedBy = "answer", cascade = [CascadeType.ALL])
-    var eventSignUpAnswer: EventSignUpAnswer? = null
-        internal set
 }

@@ -27,9 +27,9 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessTokenHash = :accessTokenHash")
     fun findByGuestAccessTokenHash(@Param("accessTokenHash") accessTokenHash: String): MutableList<EventSignUp>
 
-    // Fetches every association the sign-up response touches in one query. user.memberProfile and
-    // answer.eventSignUpAnswer are eager mappedBy back-references, so they must be joined here or
-    // Hibernate fires one extra SELECT per row.
+    // Fetches every association the sign-up response touches in one query. user.memberProfile is an
+    // eager mappedBy back-reference, so it must be joined here or Hibernate fires one extra SELECT
+    // per row.
     @Query(
         """
         SELECT DISTINCT es FROM EventSignUp es
@@ -38,7 +38,6 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
         LEFT JOIN FETCH u.memberProfile
         LEFT JOIN FETCH es._answers a
         LEFT JOIN FETCH a.question
-        LEFT JOIN FETCH a.eventSignUpAnswer
         WHERE es.event.id = :eventId
         """
     )

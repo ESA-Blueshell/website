@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.integration.contact.application.job
+package net.blueshell.api.platform.integration.sync.application.job
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService

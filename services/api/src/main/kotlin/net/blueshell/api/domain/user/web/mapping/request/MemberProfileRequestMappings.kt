@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.user.web.mapping.request
 
-import net.blueshell.api.domain.user.command.UpsertMemberProfileData
+import net.blueshell.api.domain.user.application.UpsertMemberProfileData
 import net.blueshell.api.domain.user.web.dto.request.UpsertMemberProfileRequest
 import java.sql.Date
 

@@ -8,6 +8,7 @@ import net.blueshell.api.domain.auth.application.UserActivationService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.domain.user.application.MemberProfileService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.auth.application.RecoveryEmailPreviewService
 import net.blueshell.api.domain.auth.application.SignupTokenService
@@ -34,9 +35,10 @@ class RecoveryUseCasesTest {
     private val previews = mock<RecoveryEmailPreviewService>()
     private val signupTokens = mock<SignupTokenService>()
     private val users = mock<UserService>()
+    private val memberProfiles = mock<MemberProfileService>()
     private val useCases =
         RecoveryUseCases(passwordRecoveryService, activationService, completion, previews, jobs)
-    private val signupUseCases = SignupUseCases(signupTokens, users, activationService, jobs)
+    private val signupUseCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activationService, jobs)
 
     @Nested
     inner class ResetPassword {

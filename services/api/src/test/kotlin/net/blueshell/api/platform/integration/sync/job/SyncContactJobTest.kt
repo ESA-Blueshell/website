@@ -1,6 +1,6 @@
-package net.blueshell.api.platform.integration.contact.job
+package net.blueshell.api.platform.integration.sync.job
 
-import net.blueshell.api.platform.integration.contact.application.job.SyncContactJob
+import net.blueshell.api.platform.integration.sync.application.job.SyncContactJob
 import net.blueshell.api.platform.integration.sync.application.ContactSyncService
 import net.blueshell.api.shared.job.ContactJobs
 import org.junit.jupiter.api.Test

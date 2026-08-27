@@ -1,9 +1,9 @@
-package net.blueshell.api.platform.integration.contact.job
+package net.blueshell.api.platform.integration.sync.job
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.contact.application.job.SyncAllContactsJob
+import net.blueshell.api.platform.integration.sync.application.job.SyncAllContactsJob
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test

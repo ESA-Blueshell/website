@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.integration.contact.application.job
+package net.blueshell.api.platform.integration.sync.application.job
 
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.platform.integration.sync.application.ContactSyncService

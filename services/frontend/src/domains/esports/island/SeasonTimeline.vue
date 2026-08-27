@@ -29,7 +29,17 @@ const AMPLITUDE = 15
  * the window is sized from the climb rather than from the gap, every bend turns through the
  * same radius however far apart two seasons happen to sit.
  */
-const BEND = 1.35
+const BEND = 1.15
+
+/**
+ * Where a bend's control points sit along it, as a fraction of its width.
+ *
+ * At a half they both land on the midpoint and the bend crosses at a lazy diagonal. Past a
+ * half they cross over each other, which holds the line flat for longer at each end and then
+ * takes it through the middle far closer to vertical — a corner rather than a slope, without
+ * losing the horizontal tangents that let it meet the straight runs cleanly.
+ */
+const CORNER = 0.78
 
 const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)
@@ -84,9 +94,8 @@ const path = computed<string>(() => {
     const bend = Math.min(gap * 0.66, climb * BEND)
     const start = from.x + (gap - bend) / 2
     const end = start + bend
-    const mid = (start + end) / 2
     parts.push(`L ${start},${from.y}`)
-    parts.push(`C ${mid},${from.y} ${mid},${to.y} ${end},${to.y}`)
+    parts.push(`C ${start + bend * CORNER},${from.y} ${end - bend * CORNER},${to.y} ${end},${to.y}`)
   }
   parts.push(`L ${track.value},${last.y}`)
   return parts.join(" ")
@@ -415,15 +424,23 @@ const step = (from: number, by: number) => {
   text-transform: uppercase;
 }
 
-/* Twelve bands are thirty pixels wide on a phone, which is room for a node and nothing else,
-   so the labels give way to one caption naming whichever season is being read. */
+/*
+ * On a phone the strip scrolls rather than shrinking, so a band keeps the width its labels
+ * need and they stay on the line: the year and the half travel with the nodes, and the
+ * caption underneath names whichever season is being read in full.
+ */
 @media (max-width: 767px) {
   .season-strip {
     --cut: 14px;
   }
 
-  .season-band__label {
-    display: none;
+  .season-band__label--half {
+    font-size: 10px;
+  }
+
+  .season-band__label--year {
+    font-size: 9px;
+    letter-spacing: 0.1em;
   }
 
   .season-strip__caption {

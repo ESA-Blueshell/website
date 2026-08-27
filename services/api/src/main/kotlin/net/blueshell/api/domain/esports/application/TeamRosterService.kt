@@ -1,6 +1,8 @@
 package net.blueshell.api.domain.esports.application
 
 import net.blueshell.api.domain.esports.application.exception.RosterEntryNotFoundException
+import net.blueshell.api.domain.esports.persistence.Season
+import net.blueshell.api.domain.esports.persistence.Team
 import net.blueshell.api.domain.esports.persistence.TeamRosterEntry
 import net.blueshell.api.domain.esports.persistence.repository.TeamRosterEntryRepository
 import net.blueshell.api.shared.enums.Game
@@ -8,6 +10,9 @@ import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+
+/** A team fielded in a season, with whatever line-up came across with it. */
+data class FieldedTeam(val team: Team, val season: Season, val carried: List<TeamRosterEntry>)
 
 @Service
 class TeamRosterService(
@@ -70,6 +75,41 @@ class TeamRosterService(
                 sortIndex = next,
             ),
         )
+    }
+
+    /**
+     * Fields a team in a season and, when asked, copies across the line-up it last had.
+     *
+     * A third of the recovered history is a roster that carried over unchanged, so copying is
+     * the ordinary case and typing five handles again is the exception. Carrying is never
+     * silent: the caller asks for it, and the answer says what came across. A season that
+     * already holds a line-up for the team keeps it, since carrying into it would either
+     * duplicate the roster or overwrite an edit somebody made on purpose.
+     */
+    @Transactional
+    fun fieldWithLineup(teamId: Long, seasonId: Long, carryLineup: Boolean): FieldedTeam {
+        val team = teams.findById(teamId)
+        val season = seasons.findById(seasonId)
+        fielded.field(teamId, seasonId)
+        if (!carryLineup || entries.findAllByTeamAndSeason(teamId, seasonId).isNotEmpty()) {
+            return FieldedTeam(team, season, emptyList())
+        }
+        val last = entries.findSeasonIdsWithLineup(teamId, seasonId).firstOrNull()
+            ?: return FieldedTeam(team, season, emptyList())
+        val carried = entries.findAllByTeamAndSeason(teamId, last).map { previous ->
+            entries.save(
+                TeamRosterEntry(
+                    team = team,
+                    season = season,
+                    handle = previous.handle,
+                    teamRole = previous.teamRole,
+                    userId = previous.userId,
+                    displayName = previous.displayName,
+                    sortIndex = previous.sortIndex,
+                ),
+            )
+        }
+        return FieldedTeam(team, season, carried)
     }
 
     @Transactional

@@ -740,6 +740,16 @@ export type FailedTargetMove = {
 };
 
 /**
+ * Field a team in a season, with or without the line-up it last had
+ */
+export type FieldTeamRequest = {
+    /**
+     * Copy the team's most recent line-up into this season
+     */
+    carryLineup: boolean;
+};
+
+/**
  * Details about a single field/object validation error.
  */
 export type FieldValidationError = {
@@ -767,6 +777,18 @@ export type FieldValidationError = {
      * Identifiers the error refers to, when the failing field carries a collection. Lets a client name the offending rows and reload them rather than restate the whole request.
      */
     values?: Array<number>;
+};
+
+/**
+ * A team now fielded in a season, and whatever line-up came across with it
+ */
+export type FieldedTeamResponse = {
+    /**
+     * The entries copied from the team's last season; empty when nothing was carried
+     */
+    carried: Array<RosterEntryResponse>;
+    season: SeasonResponse;
+    team: TeamResponse;
 };
 
 export type FileResponse = {
@@ -3861,7 +3883,7 @@ export type UnfieldTeamResponses = {
 export type UnfieldTeamResponse = UnfieldTeamResponses[keyof UnfieldTeamResponses];
 
 export type FieldTeamData = {
-    body?: never;
+    body?: FieldTeamRequest;
     path: {
         seasonId: number;
         teamId: number;
@@ -3899,7 +3921,7 @@ export type FieldTeamResponses = {
     /**
      * OK
      */
-    200: TeamResponse;
+    200: FieldedTeamResponse;
 };
 
 export type FieldTeamResponse = FieldTeamResponses[keyof FieldTeamResponses];

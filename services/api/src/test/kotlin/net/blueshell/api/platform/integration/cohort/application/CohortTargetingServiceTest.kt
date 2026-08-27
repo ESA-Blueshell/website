@@ -11,7 +11,7 @@ import net.blueshell.api.platform.integration.cohort.port.out.TargetCapability
 import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
 import net.blueshell.api.platform.integration.cohort.port.out.TargetStrategy
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test

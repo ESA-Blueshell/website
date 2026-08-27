@@ -7,7 +7,7 @@ import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargetRef
 import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.http.HttpStatus

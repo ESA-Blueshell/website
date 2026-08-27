@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.cohort.adapter.job
 
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
-import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 

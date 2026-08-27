@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.email.job
 
-import net.blueshell.api.platform.integration.email.application.job.ContributionReminderEmailJob
-import net.blueshell.api.platform.integration.email.application.job.EventSignupEmailJob
-import net.blueshell.api.platform.integration.email.application.job.RecoveryEmailJob
+import net.blueshell.api.domain.contribution.application.job.ContributionReminderEmailJob
+import net.blueshell.api.domain.event.application.job.EventSignupEmailJob
+import net.blueshell.api.domain.auth.application.job.RecoveryEmailJob
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.committee.persistence.Committee

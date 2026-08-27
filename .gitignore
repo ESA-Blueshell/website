@@ -58,9 +58,11 @@ docs/proposals/**
 .idea
 *dump.sql*
 
-# service env files (*.env and .*.env anywhere under services/)
+# env files (*.env and .*.env anywhere under services/ or tests/)
 services/**/.*.env
 services/**/*.env
+tests/**/.*.env
+tests/**/*.env
 
 # image build secrets and generated output
 /vps/.env

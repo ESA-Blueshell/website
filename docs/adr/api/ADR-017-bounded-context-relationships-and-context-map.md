@@ -106,7 +106,7 @@ Platform (Shared Service Bounded Context):
 
 [Platform: Job] ──Infrastructure Service──> [*]
   │
-  ├── provides: JobDispatcher (enqueue), JobExecutionService (query/retry)
+  ├── provides: JobDispatcher (runAsync), JobExecutionService (query/retry)
   ├── owns: job_executions table
   └── executes: @Async thread pool + RetryTemplate (see ADR-023)
 

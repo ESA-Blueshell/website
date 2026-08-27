@@ -75,7 +75,7 @@ class StaleJobRecovery(
         val due = jobExecutionService.findDueScheduledRetries(now, pageable)
         for (execution in due) {
             logger.info(
-                "Dispatching scheduled retry for job execution {}. jobType={}, attempts={}, scheduledFor={}",
+                "Dispatching scheduled retry for job execution {}. jobType={}, attempts={}, nextAttemptAt={}",
                 execution.id, execution.jobType, execution.attempts, execution.nextAttemptAt
             )
             jobExecutor.executeAsync(execution.id!!)

@@ -22,7 +22,7 @@ class ContactSyncScheduler(
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {
         log.info("Scheduling contact sync spawn job")
-        jobs.enqueue(ContactJobs.SyncAllContacts, ContactJobs.SyncAllContactsPayload())
+        jobs.runAsync(ContactJobs.SyncAllContacts, ContactJobs.SyncAllContactsPayload())
     }
 
     companion object {

@@ -22,7 +22,7 @@ class ContactSyncSchedulerTest {
     fun `enqueues a single SyncAllContacts job`() {
         scheduler.syncAllContacts()
 
-        verify(jobs).enqueue(
+        verify(jobs).runAsync(
             eq(ContactJobs.SyncAllContacts),
             eq(ContactJobs.SyncAllContactsPayload())
         )

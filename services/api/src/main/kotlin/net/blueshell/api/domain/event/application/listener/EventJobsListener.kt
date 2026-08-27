@@ -21,7 +21,7 @@ class EventJobsListener(
         val guestAccessToken = evt.guestAccessToken ?: return
         val e = signUps.findById(evt.signUpId)
         if (e.guest != null) {
-            jobs.enqueueFromActor(
+            jobs.runAsyncFromActor(
                 EmailJobs.EventSignup,
                 EmailJobs.EventSignupPayload(e.id!!, guestAccessToken),
                 evt,

@@ -27,16 +27,16 @@ class JobDispatcher(
     private val jobExecutor: JobExecutor,
     private val properties: JobQueueProperties
 ) : JobQueue {
-    override fun <T : Any> enqueue(
+    override fun <T : Any> runAsync(
         job: JobDefinition<T>,
         payload: T,
         actor: Actor?
     ): JobExecution? {
         val dedupKey = job.dedupKey(payload)
-        return enqueue(job.type, payload, actor, dedupKey)
+        return runAsync(job.type, payload, actor, dedupKey)
     }
 
-    override fun enqueue(
+    override fun runAsync(
         jobType: String,
         payload: Any?,
         actor: Actor?,

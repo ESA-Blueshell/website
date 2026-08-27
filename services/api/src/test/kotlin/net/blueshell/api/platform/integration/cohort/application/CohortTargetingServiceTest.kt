@@ -165,11 +165,11 @@ class CohortTargetingServiceTest {
 
         verify(strategy).resolve("new-list")
         verify(targetIds).record(cohort, "new-list")
-        verify(jobs).enqueue(
+        verify(jobs).runAsync(
             eq(CohortJobs.DeleteExternalTarget),
             eq(CohortJobs.DeleteExternalTargetPayload("BREVO", "old-list")),
         )
-        verify(jobs).enqueue(
+        verify(jobs).runAsync(
             eq(CohortJobs.ReconcileList),
             eq(CohortJobs.ReconcileListPayload(7L)),
         )
@@ -183,8 +183,8 @@ class CohortTargetingServiceTest {
 
         service.switchTarget(1L, 7L, "new-list", deletePrevious = true, reconcileNow = false)
 
-        verify(jobs, never()).enqueue(eq(CohortJobs.DeleteExternalTarget), any())
-        verify(jobs, never()).enqueue(eq(CohortJobs.ReconcileList), any())
+        verify(jobs, never()).runAsync(eq(CohortJobs.DeleteExternalTarget), any())
+        verify(jobs, never()).runAsync(eq(CohortJobs.ReconcileList), any())
     }
 
     @Test

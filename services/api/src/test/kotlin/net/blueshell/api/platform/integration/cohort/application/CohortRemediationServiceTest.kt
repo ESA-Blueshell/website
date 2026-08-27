@@ -126,14 +126,14 @@ class CohortRemediationServiceTest {
         verify { members.delete(matchingStranger) }
         verify { members.delete(staleStranger) }
         verify {
-            jobs.enqueue(
+            jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
             )
-            jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(3L))
+            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(3L))
         }
         verify(exactly = 0) {
-            jobs.enqueue(CohortJobs.RemoveExternalMember, any<CohortJobs.RemoveExternalMemberPayload>())
+            jobs.runAsync(CohortJobs.RemoveExternalMember, any<CohortJobs.RemoveExternalMemberPayload>())
         }
         verify {
             members.save(
@@ -229,17 +229,17 @@ class CohortRemediationServiceTest {
 
         assertThat(result.enqueuedAdds).isEqualTo(2)
         verify {
-            jobs.enqueue(
+            jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.ADD),
             )
-            jobs.enqueue(
+            jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
             )
         }
         verify(exactly = 0) {
-            jobs.enqueue(
+            jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
                 CohortJobs.SyncCohortMembershipPayload(3L, 99L, SyncCohortMembershipIntent.ADD),
             )

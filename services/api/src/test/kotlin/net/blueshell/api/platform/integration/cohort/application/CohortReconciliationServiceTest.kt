@@ -79,8 +79,8 @@ class CohortReconciliationServiceTest {
 
         verify { users.findActiveIdsAfter(0L, pageSize) }
         verify { users.findActiveIdsAfter(11L, pageSize) }
-        verify { jobs.enqueue(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L)) }
-        verify { jobs.enqueue(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L)) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L)) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L)) }
     }
 
     @Test
@@ -89,13 +89,13 @@ class CohortReconciliationServiceTest {
         every { users.findActiveIdsAfter(11L, pageSize) } returns listOf(12L)
         every { users.findActiveIdsAfter(12L, pageSize) } returns emptyList()
         every {
-            jobs.enqueue(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L))
+            jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L))
         } throws RuntimeException("boom")
 
         service.reconcileAllUserCohorts()
 
         // 10 (before the failure) and 12 (a later page) are still enqueued.
-        verify { jobs.enqueue(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L)) }
-        verify { jobs.enqueue(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(12L)) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L)) }
+        verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(12L)) }
     }
 }

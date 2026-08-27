@@ -52,7 +52,7 @@ class SignupUseCases(
         val dispatch = requireNotNull(activation.requestUserActivation(account.user.username)) {
             "Expected an activation dispatch for the unconfirmed account ${account.id}"
         }
-        jobs.enqueue(
+        jobs.runAsync(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
         )

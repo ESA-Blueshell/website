@@ -64,7 +64,7 @@ class CohortTargetingService(
             CohortMappingRow(cohort, externalId)
         }
 
-        jobs.enqueue(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.cohort.id!!))
+        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.cohort.id!!))
         return linked
     }
 
@@ -107,13 +107,13 @@ class CohortTargetingService(
         }!!
 
         if (deletePrevious && switched.previousExternalId != null && switched.previousExternalId != externalId) {
-            jobs.enqueue(
+            jobs.runAsync(
                 CohortJobs.DeleteExternalTarget,
                 CohortJobs.DeleteExternalTargetPayload(switched.system.name, switched.previousExternalId),
             )
         }
         if (reconcileNow) {
-            jobs.enqueue(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId))
+            jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId))
         }
         return CohortMappingRow(switched.cohort, externalId)
     }

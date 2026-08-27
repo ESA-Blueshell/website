@@ -70,7 +70,7 @@ class InboundReconcile(
             target.definition.key, selected,
         )
         val skipped = current.skipped.size + current.matched.size - selected.size
-        return InboundReconcileApplyResponse(jobs.enqueue(CohortJobs.ApplyInboundReconcile, payload)?.id, selected.size, skipped)
+        return InboundReconcileApplyResponse(jobs.runAsync(CohortJobs.ApplyInboundReconcile, payload)?.id, selected.size, skipped)
     }
 
     fun applyJob(payload: CohortJobs.ApplyInboundReconcilePayload): List<ApplyInboundReconcileItemResult> {

@@ -41,7 +41,7 @@ class JobExecutorIT : ServiceTestSupport() {
     fun `first failure schedules a retry and bumps attempts to 2`() {
         retryingHandler.failForFirstCalls(1)
         // Enqueue starts attempts at 1 (the initial run is already counted).
-        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "123"))!!
         assertThat(execution.attempts).describedAs("initial enqueue counts as attempt 1").isEqualTo(1)
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -58,7 +58,7 @@ class JobExecutorIT : ServiceTestSupport() {
     @Test
     fun `repeated executions eventually succeed`() {
         retryingHandler.failForFirstCalls(2)
-        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "abc"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "abc"))!!
 
         repeat(3) {
             executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
@@ -72,7 +72,7 @@ class JobExecutorIT : ServiceTestSupport() {
     @Test
     fun `exhausting maxRetries marks the job as FAILED`() {
         retryingHandler.alwaysFail()
-        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "456"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "456"))!!
 
         val maxInvocations = jobQueueProperties.maxRetries + 1
         repeat(maxInvocations) {
@@ -89,7 +89,7 @@ class JobExecutorIT : ServiceTestSupport() {
 
     @Test
     fun `marks missing handler errors as DEAD`() {
-        val execution = dispatcher.enqueue("test.missing.handler", mapOf("id" to "789"))!!
+        val execution = dispatcher.runAsync("test.missing.handler", mapOf("id" to "789"))!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 
@@ -104,7 +104,7 @@ class JobExecutorIT : ServiceTestSupport() {
     @Test
     fun `non-retryable exception marks job as FAILED immediately`() {
         retryingHandler.throwNonRetryable()
-        val execution = dispatcher.enqueue(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "failed"))!!
+        val execution = dispatcher.runAsync(RetryingTestJobHandler.JOB_TYPE, mapOf("id" to "failed"))!!
 
         executor.execute(jobExecutions.findById(execution.id!!).orElseThrow())
 

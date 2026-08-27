@@ -88,12 +88,16 @@ would multiply polling queries for a case that may never arise.
 
 Decided. Split by whether anything calls it.
 
-Landing now, because both are free and neither is speculative:
+Landed, because both were free and neither was speculative:
 
-- `TrackedJobDispatcher.enqueue` is renamed `runAsync`.
-- `StaleJobRecovery` logs `nextAttemptAt` under the label `scheduledFor={}`.
-  That is the operator confusion this record predicts, already in production, and
-  it is a one-line fix.
+- `TrackedJobDispatcher.enqueue` is now `runAsync`, as are `JobQueue.enqueue`,
+  its `JobDispatcher` implementations and every caller. `enqueueFromActor`
+  became `runAsyncFromActor` and `EnqueueableJob` became `AsyncJob` with
+  `runAsyncOn`. The operator-facing `JobManagementController.enqueue` /
+  `JobCatalogService.enqueue` trigger endpoint is a different surface and keeps
+  its name.
+- `StaleJobRecovery` logged `nextAttemptAt` under the label `scheduledFor={}`.
+  The placeholder now names the field it prints.
 
 Deferred until a caller exists, on this record's own reasoning that it would
 otherwise be "a schema change for a feature with no current caller":

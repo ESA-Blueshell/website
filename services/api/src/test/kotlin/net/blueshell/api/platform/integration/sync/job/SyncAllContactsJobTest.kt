@@ -33,8 +33,8 @@ class SyncAllContactsJobTest {
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
-        verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
-        verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
+        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
+        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
     }
 
     @Test
@@ -51,11 +51,11 @@ class SyncAllContactsJobTest {
         val users = mutableListOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users)
         doThrow(RuntimeException("enqueue boom")).whenever(jobs)
-            .enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
+            .runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
-        verify(jobs, times(1)).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
-        verify(jobs, times(1)).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
+        verify(jobs, times(1)).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
+        verify(jobs, times(1)).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
     }
 }

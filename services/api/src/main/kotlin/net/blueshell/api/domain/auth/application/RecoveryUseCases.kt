@@ -55,7 +55,7 @@ class RecoveryUseCases(
 
     private fun enqueueRecoveryEmail(dispatch: RecoveryDispatch?) {
         if (dispatch == null) return
-        jobs.enqueue(
+        jobs.runAsync(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
         )

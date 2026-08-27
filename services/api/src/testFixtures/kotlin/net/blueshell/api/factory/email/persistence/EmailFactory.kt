@@ -19,6 +19,7 @@ class EmailFactory(
         messageId: String? = "<test-msg-${System.nanoTime()}@test.blueshell.net>",
         sentAt: Instant? = Instant.now(),
         jobExecutionId: Long? = null,
+        bodyMarkdown: String? = null,
     ): Email = Email(
         recipientEmail = recipientEmail,
         recipientName = recipientName,
@@ -29,6 +30,7 @@ class EmailFactory(
         sentAt = sentAt,
         attempts = if (deliveryStatus == EmailDeliveryStatus.PENDING) 0 else 1,
         jobExecutionId = jobExecutionId,
+        bodyMarkdown = bodyMarkdown,
     )
 
     fun create(
@@ -40,7 +42,18 @@ class EmailFactory(
         messageId: String? = "<test-msg-${System.nanoTime()}@test.blueshell.net>",
         sentAt: Instant? = Instant.now(),
         jobExecutionId: Long? = null,
+        bodyMarkdown: String? = null,
     ): Email = persistence.persist(
-        build(recipientEmail, recipientName, subject, emailType, deliveryStatus, messageId, sentAt, jobExecutionId)
+        build(
+            recipientEmail,
+            recipientName,
+            subject,
+            emailType,
+            deliveryStatus,
+            messageId,
+            sentAt,
+            jobExecutionId,
+            bodyMarkdown,
+        )
     )
 }

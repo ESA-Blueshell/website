@@ -36,6 +36,7 @@ class CohortSubjectQueryService(
     private val targetIds: CohortTargetIds,
     private val externalIds: ExternalIdMappingService,
     private val definitions: CohortDefinitionRegistry,
+    private val strategies: TargetStrategies,
 ) {
     @Transactional(readOnly = true)
     fun summaries(): List<CohortSubjectSummary> {
@@ -96,6 +97,14 @@ class CohortSubjectQueryService(
                     .mapNotNull { it.verifiedAt }
                     .maxOrNull()
                     ?.toInstant(ZoneOffset.UTC),
+                // Where the target sits, from what was recorded when it was linked or moved.
+                // Read from the row rather than from the system, so drawing this page costs
+                // no call to Brevo.
+                path = listOfNotNull(
+                    runCatching { strategies.descriptor(TargetSystem.valueOf(cohort.system)).systemLabel }
+                        .getOrDefault(cohort.system),
+                    cohort.folder?.takeIf { it.isNotBlank() },
+                ),
             )
         }.sortedBy { it.cohort.system }
 
@@ -170,4 +179,6 @@ data class CohortMappingRow(
     val externalId: String?,
     /** Newest confirmation across the cohort's rows; null when it has never been confirmed. */
     val lastReconciledAt: Instant? = null,
+    /** The target's place on its system, outside in: the system, then any folder holding it. */
+    val path: List<String> = emptyList(),
 )

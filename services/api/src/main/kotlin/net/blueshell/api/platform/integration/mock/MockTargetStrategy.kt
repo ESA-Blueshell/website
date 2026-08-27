@@ -43,7 +43,14 @@ class MockTargetStrategy : TargetStrategy {
     override fun resolve(externalId: String): ExternalTarget? = targets[externalId]
 
     override fun create(label: String, folder: String?): ExternalTarget {
-        val target = ExternalTarget(system, ids.getAndIncrement().toString(), descriptor.kind, label, folder)
+        val target = ExternalTarget(
+            system,
+            ids.getAndIncrement().toString(),
+            descriptor.kind,
+            label,
+            folder,
+            path = listOfNotNull(descriptor.systemLabel, folder?.takeIf { it.isNotBlank() }),
+        )
         targets[target.externalId] = target
         return target
     }

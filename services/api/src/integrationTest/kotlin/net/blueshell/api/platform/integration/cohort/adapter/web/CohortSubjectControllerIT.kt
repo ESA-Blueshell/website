@@ -65,6 +65,36 @@ class CohortSubjectControllerIT : UserTestSupport() {
     }
 
     @Test
+    fun `a target reports the folder it is filed in as a path, outside in`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        newCohort(subject, externalId = "list-1", folder = "Committees")
+
+        mvc.perform(
+            get("/management/cohort-subjects/{id}", subject.id)
+                .with(bearer(admin)),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
+            .andExpect(jsonPath("$.mappings[0].path[1]").value("Committees"))
+    }
+
+    @Test
+    fun `an unfiled target is one step deep, not one with a nameless folder`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val subject = newSubject()
+        newCohort(subject, externalId = "list-2")
+
+        mvc.perform(
+            get("/management/cohort-subjects/{id}", subject.id)
+                .with(bearer(admin)),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.mappings[0].path.length()").value(1))
+            .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
+    }
+
+    @Test
     fun `admin link of an external id owned by another user returns 409`() {
         val admin = createUserWithRole(Role.ADMIN)
         val owner = createUserWithRole(Role.MEMBER)
@@ -188,7 +218,11 @@ class CohortSubjectControllerIT : UserTestSupport() {
     private fun newSubject(): CohortSubject =
         subjects.save(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
 
-    private fun newCohort(subject: CohortSubject, externalId: String? = null): Cohort =
+    private fun newCohort(
+        subject: CohortSubject,
+        externalId: String? = null,
+        folder: String? = null,
+    ): Cohort =
         cohorts.save(
             Cohort(
                 system = TargetSystem.BREVO.name,
@@ -196,6 +230,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                 label = "Members",
                 subjectId = subject.id,
                 externalId = externalId,
+                folder = folder,
             ),
         )
 }

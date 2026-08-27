@@ -81,11 +81,14 @@ export async function linkUserToExternal(
   }
 }
 
+// Mirrors the API's CohortMapping. A field added there has to be added here too.
 export type TargetMapping = {
   cohortId: number
   system: string
   externalId: string | null
   label: string
+  /** Where the target sits on its system, outside in. Empty when the system files nothing. */
+  path: string[]
 }
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
@@ -102,6 +105,7 @@ export type TargetDescriptor = {
   capabilities: TargetCapability[]
 }
 
+// Mirrors the API's ExternalTarget. A field added there has to be added here too.
 export type ExternalTarget = {
   system: TargetSystem
   externalId: string
@@ -110,6 +114,8 @@ export type ExternalTarget = {
   folderLabel: string | null
   memberCount: number | null
   linkedCohortId: number | null
+  /** Where the target sits on its system, outside in. Empty when the system files nothing. */
+  path: string[]
 }
 
 export type InboundReconcilePreview = ApiInboundReconcilePreview
@@ -121,6 +127,7 @@ function toTargetMapping(raw: ApiCohortMapping): TargetMapping {
     system: raw.system,
     externalId: raw.externalId ?? null,
     label: raw.label,
+    path: raw.path ?? [],
   }
 }
 
@@ -272,6 +279,7 @@ function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
     folderLabel: raw.folderLabel ?? null,
     memberCount: raw.memberCount ?? null,
     linkedCohortId: raw.linkedCohortId ?? null,
+    path: raw.path ?? [],
   }
 }
 

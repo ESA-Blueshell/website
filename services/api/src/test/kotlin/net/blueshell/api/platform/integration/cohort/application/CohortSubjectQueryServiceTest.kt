@@ -14,6 +14,8 @@ import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectTy
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
+import net.blueshell.api.platform.integration.cohort.port.out.TargetStrategy
 import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.CohortMemberState
@@ -33,8 +35,29 @@ class CohortSubjectQueryServiceTest {
     private val targetIds: CohortTargetIds = mockk()
     private val externalIds: ExternalIdMappingService = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
-    private val service =
-        CohortSubjectQueryService(subjects, cohorts, cohortMembers, users, targetIds, externalIds, definitions)
+    private val brevo: TargetStrategy = mockk<TargetStrategy>().also {
+        every { it.system } returns TargetSystem.BREVO
+        every { it.descriptor } returns TargetDescriptor(
+            system = TargetSystem.BREVO,
+            kind = CohortKind.LIST,
+            systemLabel = "Brevo",
+            targetLabel = "List",
+            idLabel = "List id",
+            folderLabel = "Folder",
+            capabilities = emptySet(),
+        )
+    }
+    private val strategies: TargetStrategies = TargetStrategies(listOf(brevo))
+    private val service = CohortSubjectQueryService(
+        subjects,
+        cohorts,
+        cohortMembers,
+        users,
+        targetIds,
+        externalIds,
+        definitions,
+        strategies,
+    )
 
     @Test
     fun `summaries returns memberCount and mappingCount from count methods not findAll`() {
@@ -202,6 +225,54 @@ class CohortSubjectQueryServiceTest {
     }
 
     @Test
+    fun `detail places a mapping under the system that holds it, and the folder it is filed in`() {
+        val subject = subject(26L)
+        val cohort = cohort(260L).apply { folder = "Committees" }
+        stubDetail(subject, cohort, emptyList())
+        stubNoUsers()
+
+        val mapping = service.detail(26L).mappings.single()
+
+        // Outside in, and the system named the way an operator sees it rather than as an enum.
+        assertThat(mapping.path).containsExactly("Brevo", "Committees")
+    }
+
+    @Test
+    fun `detail places an unfiled mapping directly under its system`() {
+        val subject = subject(27L)
+        val cohort = cohort(270L).apply { folder = null }
+        stubDetail(subject, cohort, emptyList())
+        stubNoUsers()
+
+        // No folder is not an anonymous folder: the path is one step, not two.
+        assertThat(service.detail(27L).mappings.single().path).containsExactly("Brevo")
+    }
+
+    @Test
+    fun `detail ignores a folder recorded as blank`() {
+        val subject = subject(28L)
+        val cohort = cohort(280L).apply { folder = "   " }
+        stubDetail(subject, cohort, emptyList())
+        stubNoUsers()
+
+        assertThat(service.detail(28L).mappings.single().path).containsExactly("Brevo")
+    }
+
+    @Test
+    fun `detail still names a system that has no strategy registered`() {
+        val subject = subject(29L)
+        val cohort = Cohort(system = "GOOGLE_CALENDAR", kind = CohortKind.LIST, label = "Gone")
+            .apply { id = 290L }
+        stubDetail(subject, cohort, emptyList())
+        stubNoUsers()
+
+        // A cohort can outlive the adapter that made it. Without a strategy there is no
+        // human label to use, so the row falls back to the system's own name rather than
+        // losing its place.
+        assertThat(service.detail(29L).mappings.single().path).containsExactly("GOOGLE_CALENDAR")
+    }
+
+    @Test
     fun `detail leaves last reconciled null for a cohort never confirmed`() {
         val subject = subject(23L)
         val cohort = cohort(230L)
@@ -211,6 +282,12 @@ class CohortSubjectQueryServiceTest {
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
 
         assertThat(service.detail(23L).mappings.single().lastReconciledAt).isNull()
+    }
+
+    private fun stubNoUsers() {
+        every { users.findAllByIds(any()) } returns emptyList()
+        every { users.isSoftDeleted(any()) } returns false
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
     }
 
     private fun stubDetail(subject: CohortSubject, cohort: Cohort, rows: List<CohortMember>) {

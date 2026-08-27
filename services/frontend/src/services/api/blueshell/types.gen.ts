@@ -292,6 +292,10 @@ export type CohortMapping = {
      */
     lastReconciledAt?: string | null;
     /**
+     * Where the target sits on its system, outside in: the system, then any folder holding it. Read from what was recorded when the target was linked or moved, so a page costs no call to the system.
+     */
+    path: Array<string>;
+    /**
      * External system this mapping targets
      */
     system: TargetSystem;
@@ -719,6 +723,7 @@ export type ExternalTarget = {
     label: string;
     linkedCohortId?: number | null;
     memberCount?: number | null;
+    path: Array<string>;
     system: TargetSystem;
 };
 

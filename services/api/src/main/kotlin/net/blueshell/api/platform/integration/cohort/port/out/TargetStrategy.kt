@@ -25,6 +25,15 @@ data class ExternalTarget(
     val folderLabel: String? = null,
     val memberCount: Long? = null,
     val linkedCohortId: Long? = null,
+    /**
+     * Where this target sits on its system, from the outside in: `[Brevo, Periods]` for a
+     * list in a folder, `[Brevo]` for one at the top level, and as many entries as a system
+     * that nests more deeply has to report.
+     *
+     * Read rather than derived from [folderLabel] so a system with a real hierarchy needs no
+     * migration to describe itself — and so one with none costs nothing to describe.
+     */
+    val path: List<String> = emptyList(),
 )
 
 data class ExternalMember(val externalUserId: String, val label: String?)

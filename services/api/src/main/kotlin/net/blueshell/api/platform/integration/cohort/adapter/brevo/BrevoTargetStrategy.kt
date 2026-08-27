@@ -56,6 +56,7 @@ class BrevoTargetStrategy(
         kind = descriptor.kind,
         label = label,
         folderLabel = folder,
+        path = pathTo(folder),
     )
 
     override fun members(target: ExternalTarget): List<ExternalMember> =
@@ -89,12 +90,19 @@ class BrevoTargetStrategy(
             ?: throw IllegalArgumentException("No folder named '$folder'")
 
         lists.moveList(target.externalId.toBrevoId("externalId", "move"), folderId)
-        return target.copy(folderLabel = folder)
+        return target.copy(folderLabel = folder, path = pathTo(folder))
     }
 
     override fun delete(target: ExternalTarget) {
         lists.deleteList(target.externalId.toBrevoId("externalId", "delete"))
     }
+
+    /**
+     * Brevo files a list in at most one folder, so a path here is the system and, when there
+     * is one, the folder it sits in.
+     */
+    private fun pathTo(folder: String?): List<String> =
+        listOfNotNull(descriptor.systemLabel, folder?.takeIf { it.isNotBlank() })
 
     private fun folderNames(): Map<String, String> =
         page("folders") { limit, offset ->
@@ -106,7 +114,7 @@ class BrevoTargetStrategy(
     private fun listTargets(folderNames: Map<String, String>): List<ExternalTarget> =
         page("lists") { limit, offset ->
             contactsApi.getLists(limit, offset, GetProcessesSortParameter.ASC).let { page ->
-                Page(page.count, page.lists.orEmpty().map { it.toTarget(folderNames) })
+                Page(page.count, page.lists.orEmpty().map { it.toTarget(folderNames, ::pathTo) })
             }
         }
 
@@ -144,13 +152,18 @@ class BrevoTargetStrategy(
     }
 }
 
-private fun GetLists200ResponseListsInner.toTarget(folderNames: Map<String, String>): ExternalTarget {
+private fun GetLists200ResponseListsInner.toTarget(
+    folderNames: Map<String, String>,
+    pathTo: (String?) -> List<String>,
+): ExternalTarget {
+    val folder = folderNames[folderId.toString()]
     return ExternalTarget(
         system = TargetSystem.BREVO,
         externalId = id.toString(),
         kind = CohortKind.LIST,
         label = name,
-        folderLabel = folderNames[folderId.toString()],
+        folderLabel = folder,
         memberCount = uniqueSubscribers,
+        path = pathTo(folder),
     )
 }

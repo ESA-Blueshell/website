@@ -155,6 +155,12 @@ data class CohortMappingResponse(
     val externalId: String?,
     @param:Schema(description = "When this cohort was last confirmed to agree with its target")
     val lastReconciledAt: Instant?,
+    @param:Schema(
+        description = "Where the target sits on its system, outside in: the system, then any " +
+            "folder holding it. Read from what was recorded when the target was linked or " +
+            "moved, so a page costs no call to the system.",
+    )
+    val path: List<String>,
 )
 
 @Schema(name = "CohortSubjectMember")
@@ -238,6 +244,7 @@ private fun CohortMappingRow.toResponse(): CohortMappingResponse =
         label = cohort.label,
         externalId = externalId,
         lastReconciledAt = lastReconciledAt,
+        path = path,
     )
 
 private fun CohortMemberRow.toMemberResponse(): CohortSubjectMemberResponse =

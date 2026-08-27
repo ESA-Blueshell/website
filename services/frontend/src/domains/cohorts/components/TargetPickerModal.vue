@@ -49,7 +49,9 @@ const newNameLabel = computed(() => `New ${targetLabel.value.toLowerCase()} name
 const catalogItems = computed(() =>
   filteredOptions.value.map((target) => ({
     ...target,
-    title: [target.folderLabel, target.label].filter(Boolean).join(" / "),
+    // The whole place, outside in, so two lists sharing a name are told apart by where they
+    // sit rather than by their id.
+    title: [...(target.path ?? []), target.label].filter(Boolean).join(" › "),
     subtitle: target.memberCount == null ? target.externalId : `${target.externalId} · ${target.memberCount}`,
   })),
 )

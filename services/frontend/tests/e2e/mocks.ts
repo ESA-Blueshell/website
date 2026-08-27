@@ -33,10 +33,12 @@ type Fixtures = {
 
 /** What Brevo reports it holds, for the target catalogue page. */
 const brevoTargets = [
-  {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", memberCount: 2, linkedCohortId: 1},
-  {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", memberCount: 1, linkedCohortId: 2},
-  {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", memberCount: 5, linkedCohortId: null},
-  {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, memberCount: null, linkedCohortId: null},
+  {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", path: ["Brevo", "Contribution periods"], memberCount: 2, linkedCohortId: 1},
+  {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 1, linkedCohortId: 2},
+  {system: "BREVO", externalId: "34", kind: "LIST", label: "Board", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 5, linkedCohortId: null},
+  // Same name as the committee list above, filed somewhere else: only the path tells them apart.
+  {system: "BREVO", externalId: "88", kind: "LIST", label: "Web Cmte", folderLabel: "Archive", path: ["Brevo", "Archive"], memberCount: 0, linkedCohortId: null},
+  {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, path: ["Brevo"], memberCount: null, linkedCohortId: null},
 ]
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
@@ -585,6 +587,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         kind: "LIST",
         label: brevoTargets.find((t) => t.externalId === id)?.label ?? `List ${id}`,
         folderLabel: body.folder,
+        path: ["Brevo", body.folder].filter(Boolean),
         memberCount: brevoTargets.find((t) => t.externalId === id)?.memberCount ?? null,
         linkedCohortId: brevoTargets.find((t) => t.externalId === id)?.linkedCohortId ?? null,
       }))
@@ -689,6 +692,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             system: "BREVO",
             kind: "LIST",
             label: isCommittee ? "Web Cmte" : "Members 2025-2026",
+            path: isCommittee ? ["Brevo", "Committees"] : ["Brevo", "Contribution periods"],
             externalId: isCommittee ? "33" : "7",
             lastReconciledAt: "2026-02-10T09:00:00Z",
           },

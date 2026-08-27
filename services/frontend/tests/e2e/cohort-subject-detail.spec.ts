@@ -329,3 +329,41 @@ test.describe("cohort subject detail — drift in the members table", () => {
     await expect(page.getByTestId("cohort-subject-reconcile-brevo")).toBeVisible()
   })
 })
+
+test.describe("cohort subject detail — where a target lives", () => {
+  test("says which folder a target sits in, not only what it is called", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+    await page.goto(COMMITTEE_SUBJECT)
+
+    const targets = page.getByTestId("cohort-subject-targets")
+    await targets.getByTestId("info-box-toggle").first().click()
+
+    // The row's first column already names the system, so the path picks up below it: the
+    // folder holding the list, then the list.
+    const row = targets.getByTestId("cohort-subject-target-brevo")
+    const path = row.getByTestId("target-path")
+    await expect(path).toContainText("Committees")
+    await expect(path.locator(".target-path__leaf")).toHaveText("Web Cmte")
+    await expect(path).not.toContainText("Brevo")
+  })
+
+  test("tells two same-named lists apart by where each one is filed", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+    await page.goto(COMMITTEE_SUBJECT)
+
+    const targets = page.getByTestId("cohort-subject-targets")
+    await targets.getByTestId("info-box-toggle").first().click()
+    await targets.getByTestId("cohort-subject-targets-menu").click()
+    await page.getByTestId("cohort-subject-add-target").click()
+
+    // Brevo holds two lists called Web Cmte. Picking the right one is impossible on the name
+    // alone, so every option carries its path.
+    await page.getByTestId("target-picker-combobox").click()
+    const options = page.locator(".v-overlay .v-list-item-title", {hasText: "Web Cmte"})
+    await expect(options).toHaveCount(2)
+    await expect(options.filter({hasText: "Committees"})).toHaveCount(1)
+    await expect(options.filter({hasText: "Archive"})).toHaveCount(1)
+  })
+})

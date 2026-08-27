@@ -45,6 +45,25 @@ class BrevoTargetStrategyTest {
     }
 
     @Test
+    fun `says where each list sits, outside in`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetProcessesSortParameter.ASC)))
+            .thenReturn(GetFolders200Response().count(1).folders(listOf(folder(1L, "Committees"))))
+        whenever(contactsApi.getLists(eq(50L), eq(0L), eq(GetProcessesSortParameter.ASC)))
+            .thenReturn(
+                GetLists200Response().count(2)
+                    .lists(listOf(list(10L, "Web Cmte", 1L), list(11L, "Loose ends", 404L))),
+            )
+
+        val targets = strategy.catalog(null).associateBy { it.externalId }
+
+        // The system first, then the folder holding the list: enough to tell two lists that
+        // share a name apart.
+        assertThat(targets.getValue("10").path).containsExactly("Brevo", "Committees")
+        // A list in a folder Brevo did not name is not in an anonymous folder — it is loose.
+        assertThat(targets.getValue("11").path).containsExactly("Brevo")
+    }
+
+    @Test
     fun `filters by query after fetching the bounded catalog`() {
         whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetProcessesSortParameter.ASC)))
             .thenReturn(GetFolders200Response().count(1).folders(listOf(folder(1L, "Members"))))

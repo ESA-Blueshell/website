@@ -11,11 +11,13 @@ import {
   findCohortSubjectById,
 } from "@/services/api"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
+import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
 import {
   linkUserToExternal,
   removeExternalMember,
   triggerReconcile,
   type ExternalUserConflict,
+  type TargetMapping,
 } from "@/domains/cohorts/adapters/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
@@ -68,6 +70,9 @@ const SYSTEM_LABELS: Record<string, string> = {
 }
 
 const labelForSystem = (system: string): string => SYSTEM_LABELS[system] ?? system
+
+// A path starts at the system, and the row's first column already names it.
+const folderSteps = (mapping: TargetMapping): string[] => mapping.path.slice(1)
 
 const load = async () => {
   if (subjectId.value == null) return
@@ -624,7 +629,12 @@ watch(subjectId, () => void load())
                         {{ mapping.kind }}
                       </td>
                       <td class="text-medium-emphasis">
-                        {{ mapping.label }}
+                        <!-- Where it sits, not just what it is called: two lists can share a
+                             name and differ only by the folder holding them. -->
+                        <target-path
+                          :leaf="mapping.label"
+                          :path="folderSteps(mapping)"
+                        />
                       </td>
                       <td class="text-monospace text-medium-emphasis targets-col-detail">
                         {{ mapping.externalId ?? "—" }}

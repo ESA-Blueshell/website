@@ -1,56 +1,46 @@
 import type {Season} from "../adapters/esports"
 
-export interface SeasonNode {
+export interface SeasonBand {
   season: Season
-  /** Where it sits along the axis, 0 at the oldest and 1 at the newest. */
+  /** Its share of the strip: from and to as fractions, with the node in the middle. */
+  from: number
+  to: number
   at: number
   /** "Autumn" or "Spring" where the name says so, otherwise the whole name. */
   half: string
   /** "2025/26" where the name says so, otherwise empty. */
   year: string
-}
-
-export interface YearSpan {
-  year: string
-  /** The middle of this year's seasons, for the label above the line. */
-  at: number
-  from: number
-  to: number
+  /** True when this season's node sits above the middle of the strip. */
+  high: boolean
 }
 
 const NAME = /^(\p{L}+)\s+(\d{4}\/\d{2,4})$/u
 
 /**
- * The seasons as points on a line, oldest first.
+ * The seasons as bands across a strip, oldest first.
  *
- * A season is named for the half of a board year it covers — "Autumn 2025/26" — so the axis
- * carries two readings: the years along the top, and which half of each year below. Anything
- * not named that way still gets a node; it simply has no year to group under.
+ * Each season owns a share of the width rather than a point on it, so a node can sit in the
+ * middle of its own season and the division between two seasons falls halfway between their
+ * nodes — which is where the teams below divide too.
+ *
+ * A season is named for the half of a board year it covers, "Autumn 2025/26", so a band
+ * carries two readings. Anything named some other way still gets a band; it simply has no
+ * year to group under.
  */
-export function seasonAxis(seasons: Season[]): {nodes: SeasonNode[]; years: YearSpan[]} {
+export function seasonBands(seasons: Season[]): SeasonBand[] {
   const ordered = [...seasons].sort((a, b) => a.startDate.localeCompare(b.startDate))
-  const last = Math.max(ordered.length - 1, 1)
+  const share = 1 / Math.max(ordered.length, 1)
 
-  const nodes: SeasonNode[] = ordered.map((season, index) => {
+  return ordered.map((season, index) => {
     const parts = NAME.exec(season.name)
     return {
       season,
-      at: ordered.length === 1 ? 0.5 : index / last,
+      from: index * share,
+      to: (index + 1) * share,
+      at: (index + 0.5) * share,
       half: parts?.[1] ?? season.name,
       year: parts?.[2] ?? "",
+      high: index % 2 === 0,
     }
   })
-
-  const years: YearSpan[] = []
-  for (const node of nodes) {
-    if (!node.year) continue
-    const open = years.find(y => y.year === node.year)
-    if (open) {
-      open.to = node.at
-      open.at = (open.from + open.to) / 2
-    } else {
-      years.push({year: node.year, at: node.at, from: node.at, to: node.at})
-    }
-  }
-  return {nodes, years}
 }

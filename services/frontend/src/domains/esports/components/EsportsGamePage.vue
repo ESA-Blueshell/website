@@ -83,9 +83,10 @@ const entrance = (index: number) => ({
 
       <!-- The seasons as a line rather than a row of pills: the years read across the top,
            the halves below, and the line lights up to whichever season is under the pointer. -->
+      <!-- Full width: the seasons run edge to edge, as the teams below them do. -->
       <section
         v-if="seasons.length > 1"
-        class="mx-auto w-full max-w-6xl px-8 pt-2 pb-8 sm:px-12"
+        class="w-full pt-2 pb-8"
         data-testid="esports-season-bar"
       >
         <season-timeline

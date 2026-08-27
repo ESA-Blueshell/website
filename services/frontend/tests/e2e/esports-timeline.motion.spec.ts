@@ -29,23 +29,40 @@ test.describe("the season timeline, with motion", () => {
     await expect.poll(lit).toBe(atRest)
   })
 
-  test("indents the year under the pointer, and bolds the half being read", async ({page}) => {
+  test("highlights the band under the pointer, and bolds the half being read", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/valorant")
     await page.getByTestId("esports-season-timeline").waitFor()
 
-    const node = page.getByTestId("esports-season-node-20")
-    const top = () => node.evaluate(el => Number.parseFloat(getComputedStyle(el).top))
-    const before = await top()
+    const band = page.getByTestId("esports-season-node-19")
+    const wash = band.locator(".season-band__wash")
+    const half = band.locator(".season-band__label--half")
+    const before = await wash.evaluate(el => Number.parseFloat(getComputedStyle(el).opacity))
 
-    await node.hover()
+    await band.hover()
 
-    // The chain gives way at the part being read.
-    await expect.poll(top).toBeGreaterThan(before)
+    // The whole band lights, not just its node.
+    await expect.poll(async () => wash.evaluate(el => Number.parseFloat(getComputedStyle(el).opacity)))
+      .toBeGreaterThan(before)
     // And the half under the pointer is the one named in bold.
-    const weight = await page.locator(".season-timeline__half", {hasText: "Autumn"}).first()
-      .evaluate(el => getComputedStyle(el).fontWeight)
+    const weight = await half.evaluate(el => getComputedStyle(el).fontWeight)
     expect(Number(weight)).toBeGreaterThanOrEqual(700)
+  })
+
+  test("takes a click to change season, not a hover", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/esports/valorant")
+    await page.getByTestId("esports-season-timeline").waitFor()
+
+    const older = page.getByTestId("esports-season-node-19")
+    await older.hover()
+
+    // Crossing the strip must not drag the page from season to season.
+    await expect(page).not.toHaveURL(/season=19/)
+
+    await older.click()
+
+    await expect(page).toHaveURL(/season=19/)
   })
 
   test("opens the slice under the pointer and closes the one that was open", async ({page}) => {

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref} from "vue"
-import {seasonAxis} from "./seasonAxis"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {seasonBands} from "./seasonAxis"
 import type {Season} from "../adapters/esports"
 
 defineOptions({name: "SeasonTimeline"})
@@ -13,185 +13,200 @@ const props = defineProps<{
 
 const emit = defineEmits<{(event: "select", id: number): void}>()
 
-/** Room at each end so the outermost node and its label are not cut off. */
-const INSET = 34
-/*
- * The height has to hold the lowest thing the chain can produce: a node pushed down by an
- * indent, plus its label below that. Anything less and the label of an indented Spring
- * crosses into whatever follows the rail.
+const HEIGHT = 104
+/**
+ * The narrowest a band may be. Below this a node is untappable and its labels unreadable, so
+ * the strip stops shrinking and starts scrolling instead — which is what a phone gets.
  */
-const HEIGHT = 100
-const AMPLITUDE = 11
-/** How far a year's own stretch of chain drops while it is under the pointer. */
-const INDENT = 14
+const MIN_BAND = 94
+/** How far a node sits above or below the middle of the strip. */
+const AMPLITUDE = 15
+/** The flat run either side of a node, before the line starts to bend. */
+const RUN = 26
 
-const rail = ref<HTMLElement | null>(null)
+const strip = ref<HTMLElement | null>(null)
+const scroller = ref<HTMLElement | null>(null)
 const width = ref(0)
 const hovered = ref<number | null>(null)
 
 let observer: ResizeObserver | null = null
 onMounted(() => {
-  if (!rail.value || typeof ResizeObserver === "undefined") return
+  if (!strip.value || typeof ResizeObserver === "undefined") return
   observer = new ResizeObserver(entries => {
     width.value = entries[0]?.contentRect.width ?? 0
   })
-  observer.observe(rail.value)
-  width.value = rail.value.clientWidth
+  observer.observe(strip.value)
+  width.value = strip.value.clientWidth
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-const axis = computed(() => seasonAxis(props.seasons))
+const bands = computed(() => seasonBands(props.seasons))
 
-/** The year the pointer is in, whose stretch of chain indents. */
-const hoveredYear = computed<string>(() =>
-  axis.value.nodes.find(n => n.season.id === hovered.value)?.year ?? "",
+/** As wide as the strip can be, or as wide as its bands need — whichever is greater. */
+const track = computed<number>(() => Math.max(width.value, bands.value.length * MIN_BAND))
+
+const nodes = computed(() =>
+  bands.value.map(band => ({
+    id: band.season.id,
+    x: band.at * track.value,
+    y: HEIGHT / 2 + (band.high ? -AMPLITUDE : AMPLITUDE),
+  })),
 )
-
-interface Point {
-  id: number
-  name: string
-  half: string
-  year: string
-  x: number
-  y: number
-  /** True when the node sits above the middle, so its label goes above it too. */
-  high: boolean
-}
 
 /**
- * The chain, in pixels.
+ * The line: flat through each node, then an eased bend to the level of the next.
  *
- * It snakes: consecutive seasons sit above and below the middle in turn, which makes a run of
- * twelve nodes read as a chain of links rather than as a ruler. While a year is under the
- * pointer its own two nodes drop, so the chain visibly gives way at the part being read.
+ * Both control points of a bend sit at its midpoint, which leaves the curve horizontal where
+ * it meets each flat run — so it reads as a straight stretch, a bend, another straight
+ * stretch, rather than as a zigzag with rounded corners. It runs to both edges of the strip
+ * because the seasons do.
  */
-const points = computed<Point[]>(() => {
-  const usable = Math.max(width.value - INSET * 2, 1)
-  return axis.value.nodes.map((node, index) => {
-    const high = index % 2 === 0
-    const indent = node.year !== "" && node.year === hoveredYear.value ? INDENT : 0
-    return {
-      id: node.season.id,
-      name: node.season.name,
-      half: node.half,
-      year: node.year,
-      x: INSET + node.at * usable,
-      y: HEIGHT / 2 + (high ? -AMPLITUDE : AMPLITUDE) + indent,
-      high,
-    }
-  })
+const path = computed<string>(() => {
+  const points = nodes.value
+  const first = points[0]
+  const last = points[points.length - 1]
+  if (!first || !last || track.value === 0) return ""
+  const run = Math.min(RUN, (track.value / points.length) * 0.32)
+
+  const parts = [`M 0,${first.y}`, `L ${first.x + run},${first.y}`]
+  for (let i = 1; i < points.length; i += 1) {
+    const from = points[i - 1]
+    const to = points[i]
+    if (!from || !to) continue
+    const mid = (from.x + run + (to.x - run)) / 2
+    parts.push(`C ${mid},${from.y} ${mid},${to.y} ${to.x - run},${to.y}`)
+    parts.push(`L ${to.x + run},${to.y}`)
+  }
+  parts.push(`L ${track.value},${last.y}`)
+  return parts.join(" ")
 })
 
-const polyline = computed<string>(() => points.value.map(p => `${p.x},${p.y}`).join(" "))
-
-const selectedPoint = computed<Point | undefined>(() =>
-  points.value.find(p => p.id === props.selectedId),
-)
-
-/** How much of the chain is lit: to the pointer, or to the season on show at rest. */
+/** How much of the line is lit: to the pointer, or to the season on show at rest. */
 const litFraction = computed<number>(() => {
-  const target = points.value.find(p => p.id === hovered.value) ?? selectedPoint.value
-  if (!target || width.value === 0) return 0
-  return Math.min(Math.max((target.x + 4) / width.value, 0), 1)
+  const target = nodes.value.find(n => n.id === (hovered.value ?? props.selectedId))
+  if (!target || track.value === 0) return 0
+  return Math.min(Math.max((target.x + 6) / track.value, 0), 1)
 })
+
+/** A strip wider than its window opens on the season being shown, not at the far past. */
+watch([() => props.selectedId, track, width], () => {
+  const node = nodes.value.find(n => n.id === props.selectedId)
+  const box = scroller.value
+  if (!node || !box || box.scrollWidth <= box.clientWidth) return
+  box.scrollTo({left: node.x - box.clientWidth / 2, behavior: "auto"})
+}, {flush: "post"})
 
 const caption = computed<string>(() =>
-  (points.value.find(p => p.id === (hovered.value ?? props.selectedId))?.name) ?? "",
+  bands.value.find(b => b.season.id === (hovered.value ?? props.selectedId))?.season.name ?? "",
 )
 
+const yOf = (id: number) => nodes.value.find(n => n.id === id)?.y ?? HEIGHT / 2
+
 const step = (from: number, by: number) => {
-  const next = axis.value.nodes[from + by]
+  const next = bands.value[from + by]
   if (next) emit("select", next.season.id)
 }
 </script>
 
 <template>
   <div
-    ref="rail"
-    class="season-timeline relative w-full select-none"
+    ref="strip"
+    class="season-strip"
     data-testid="esports-season-timeline"
-    :style="{'--accent': accent, '--lit': `${litFraction * 100}%`}"
+    :style="{
+      '--accent': accent,
+      '--lit': `${litFraction * 100}%`,
+      '--h': `${HEIGHT}px`,
+      '--track': `${track}px`,
+    }"
     @mouseleave="hovered = null"
   >
-    <!--
-      The years, each centred over its own two halves. Six of them touch at phone widths, and
-      the caption underneath already names the year, so they only appear once there is room.
-    -->
-    <div class="relative hidden h-4 sm:block">
-      <span
-        v-for="year in axis.years"
-        :key="year.year"
-        class="absolute -translate-x-1/2 font-body text-[10px] tracking-[0.2em] uppercase transition-colors duration-300 sm:text-[11px]"
-        :class="year.year === hoveredYear ? 'text-chalk' : 'text-ash/70'"
-        :style="{left: `${INSET + year.at * Math.max(width - INSET * 2, 1)}px`}"
-      >{{ year.year }}</span>
-    </div>
-
     <div
-      class="relative"
-      :style="{height: `${HEIGHT}px`}"
+      ref="scroller"
+      class="season-strip__scroll"
     >
-      <svg
-        aria-hidden="true"
-        class="absolute inset-0 h-full w-full overflow-visible"
-        :viewBox="`0 0 ${Math.max(width, 1)} ${HEIGHT}`"
-      >
-        <polyline
-          class="season-timeline__rule"
-          fill="none"
-          :points="polyline"
-        />
-        <g class="season-timeline__lit">
-          <polyline
-            fill="none"
-            :points="polyline"
-          />
-        </g>
-      </svg>
+      <div class="season-strip__track">
+        <!--
+          One band per season, tiled exactly so a node can sit in the middle of its own
+          season and the division between two bands falls halfway between their nodes — which
+          is where the teams below divide too. Hovering highlights a band and lights the line
+          as far as its node; changing season takes a click, so a pointer crossing the strip
+          changes nothing.
+        -->
+        <div class="season-strip__bands">
+          <button
+            v-for="(band, index) in bands"
+            :key="band.season.id"
+            class="season-band"
+            :class="{
+              'season-band--on': band.season.id === selectedId,
+              'season-band--lit': band.season.id === hovered,
+              'season-band--last': index === bands.length - 1,
+            }"
+            :aria-current="band.season.id === selectedId ? 'true' : undefined"
+            :data-testid="`esports-season-node-${band.season.id}`"
+            type="button"
+            @click="emit('select', band.season.id)"
+            @focus="hovered = band.season.id"
+            @keydown.left.prevent="step(index, -1)"
+            @keydown.right.prevent="step(index, 1)"
+            @mouseenter="hovered = band.season.id"
+          >
+            <span class="sr-only">{{ band.season.name }}</span>
+            <span
+              aria-hidden="true"
+              class="season-band__wash"
+            />
+            <span
+              aria-hidden="true"
+              class="season-band__label season-band__label--half"
+              :style="{top: band.high ? `${yOf(band.season.id) + 18}px` : `${yOf(band.season.id) - 34}px`}"
+            >{{ band.half }}</span>
+            <span
+              aria-hidden="true"
+              class="season-band__label season-band__label--year"
+              :style="{top: band.high ? `${yOf(band.season.id) + 32}px` : `${yOf(band.season.id) - 20}px`}"
+            >{{ band.year }}</span>
+          </button>
+        </div>
 
-      <button
-        v-for="(point, index) in points"
-        :key="point.id"
-        class="season-timeline__node absolute rounded-full p-2"
-        :class="{'season-timeline__node--on': point.id === selectedId}"
-        :data-testid="`esports-season-node-${point.id}`"
-        :style="{left: `${point.x}px`, top: `${point.y}px`, transform: 'translate(-50%, -50%)'}"
-        type="button"
-        @click="emit('select', point.id)"
-        @focus="hovered = point.id"
-        @keydown.left.prevent="step(index, -1)"
-        @keydown.right.prevent="step(index, 1)"
-        @mouseenter="hovered = point.id"
-      >
-        <span class="sr-only">{{ point.name }}</span>
-        <span
+        <svg
           aria-hidden="true"
-          class="season-timeline__dot block h-2 w-2 rounded-full"
-        />
-      </button>
+          class="season-strip__line"
+          preserveAspectRatio="none"
+          :viewBox="`0 0 ${Math.max(track, 1)} ${HEIGHT}`"
+        >
+          <path
+            class="season-strip__rule"
+            :d="path"
+            fill="none"
+            vector-effect="non-scaling-stroke"
+          />
+          <g class="season-strip__lit">
+            <path
+              :d="path"
+              fill="none"
+              vector-effect="non-scaling-stroke"
+            />
+          </g>
+        </svg>
 
-      <!--
-        Each half sits with its own node, above it or below it as the chain rises and falls.
-        Twelve of them collide on a phone, so there they give way to the caption underneath.
-      -->
-      <span
-        v-for="point in points"
-        :key="`label-${point.id}`"
-        class="season-timeline__half absolute hidden -translate-x-1/2 font-display text-[10px] whitespace-nowrap uppercase transition-[color,font-weight] duration-200 sm:block sm:text-[11px]"
-        :class="[
-          point.id === hovered ? 'font-bold text-chalk' : '',
-          point.id === selectedId && point.id !== hovered ? 'text-chalk' : '',
-          point.id !== hovered && point.id !== selectedId ? 'text-ash/60' : '',
-        ]"
-        :style="{
-          left: `${point.x}px`,
-          top: point.high ? `${point.y - 22}px` : `${point.y + 10}px`,
-        }"
-      >{{ point.half }}</span>
+        <span
+          v-for="node in nodes"
+          :key="node.id"
+          aria-hidden="true"
+          class="season-strip__dot"
+          :class="{
+            'season-strip__dot--on': node.id === selectedId,
+            'season-strip__dot--lit': node.id === hovered,
+          }"
+          :style="{left: `${node.x}px`, top: `${node.y}px`}"
+        />
+      </div>
     </div>
 
     <p
-      class="mt-1 text-center font-display text-xs uppercase sm:hidden"
+      class="season-strip__caption"
       data-testid="esports-season-caption"
     >
       {{ caption }}
@@ -200,57 +215,216 @@ const step = (from: number, by: number) => {
 </template>
 
 <style scoped>
-/* Drawn dashes rather than a dashed border: a border cannot follow a polyline, and this has
-   to read as a measured chain rather than a hairline rule. */
-.season-timeline__rule {
-  stroke: color-mix(in oklab, var(--color-ash) 42%, transparent);
-  stroke-width: 2;
-  stroke-dasharray: 7 7;
-  stroke-linecap: round;
-  transition: none;
+.season-strip {
+  --cut: 26px;
+
+  position: relative;
+  width: 100%;
+  user-select: none;
 }
 
-.season-timeline__lit {
+.season-strip__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.season-strip__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.season-strip__track {
+  position: relative;
+  width: var(--track);
+  min-width: 100%;
+}
+
+.season-strip__bands {
+  display: flex;
+  height: var(--h);
+  width: 100%;
+}
+
+/*
+ * The bands tile exactly, each taking the same share of the track, because the nodes are
+ * placed by arithmetic on that same share. Overlapping them to interlock a diagonal clip
+ * moved every band's centre off the node it belongs to, and the labels drifted away from
+ * their own dots. The division is drawn instead: a slanted rule on the trailing edge, which
+ * reads as the same cut the teams below are separated by.
+ */
+.season-band {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  cursor: pointer;
+}
+
+.season-band::after {
+  content: "";
+  position: absolute;
+  top: -6%;
+  right: 0;
+  height: 112%;
+  width: 1px;
+  background-color: color-mix(in oklab, var(--color-ash) 26%, transparent);
+  rotate: 7deg;
+  transition: background-color 320ms ease;
+}
+
+.season-band--last::after {
+  display: none;
+}
+
+.season-band--lit::after,
+.season-band--on::after {
+  background-color: color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+/* The wash is what divides one season from the next: a faded band of the game's colour,
+   deeper on the season being read. */
+.season-band__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, color-mix(in oklab, var(--accent) 10%, transparent), transparent 74%),
+    linear-gradient(to bottom, transparent, color-mix(in oklab, var(--color-void) 60%, transparent));
+  opacity: 0.45;
+  transition: opacity 320ms ease;
+}
+
+.season-band:nth-child(even) .season-band__wash {
+  opacity: 0.2;
+}
+
+.season-band--lit .season-band__wash,
+.season-band:focus-visible .season-band__wash {
+  opacity: 0.85;
+}
+
+.season-band--on .season-band__wash {
+  opacity: 1;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--accent) 26%, transparent),
+    transparent 78%
+  );
+}
+
+.season-band__label {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+  transition: color 240ms ease;
+}
+
+.season-band__label--half {
+  font-family: var(--font-display);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-ash) 80%, transparent);
+}
+
+.season-band__label--year {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: color-mix(in oklab, var(--color-ash) 55%, transparent);
+}
+
+.season-band--lit .season-band__label--half,
+.season-band--on .season-band__label--half {
+  font-weight: 700;
+  color: var(--color-chalk);
+}
+
+.season-band--lit .season-band__label--year,
+.season-band--on .season-band__label--year {
+  color: var(--color-ash);
+}
+
+.season-strip__line {
+  position: absolute;
+  inset: 0;
+  height: var(--h);
+  width: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.season-strip__rule {
+  stroke: color-mix(in oklab, var(--color-ash) 38%, transparent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.season-strip__lit {
   clip-path: inset(0 calc(100% - var(--lit)) 0 0);
-  transition: clip-path 460ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: clip-path 480ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.season-timeline__lit polyline {
+.season-strip__lit path {
   stroke: var(--accent);
-  stroke-width: 2;
-  stroke-dasharray: 7 7;
+  stroke-width: 2.5;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--accent) 60%, transparent));
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 60%, transparent));
 }
 
-.season-timeline__dot {
-  background-color: var(--color-ash);
-  transition: background-color 240ms ease, scale 240ms ease, box-shadow 240ms ease;
+/* Drawn as elements rather than inside the svg: the line is stretched to the track by its
+   viewBox, and a circle in that space would stretch with it. */
+.season-strip__dot {
+  position: absolute;
+  height: 11px;
+  width: 11px;
+  translate: -50% -50%;
+  border-radius: 9999px;
+  background-color: var(--color-void);
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-ash) 60%, transparent);
+  pointer-events: none;
+  transition: background-color 240ms ease, box-shadow 240ms ease, scale 240ms ease;
 }
 
-.season-timeline__node:hover .season-timeline__dot,
-.season-timeline__node:focus-visible .season-timeline__dot {
+.season-strip__dot--lit {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  scale: 1.15;
+}
+
+.season-strip__dot--on {
   background-color: var(--accent);
-  scale: 1.5;
+  box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 5px color-mix(in oklab, var(--accent) 18%, transparent);
+  scale: 1.3;
 }
 
-.season-timeline__node--on .season-timeline__dot {
-  background-color: var(--accent);
-  scale: 1.6;
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 20%, transparent);
+.season-strip__caption {
+  display: none;
+  margin-top: 0.35rem;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  text-transform: uppercase;
 }
 
-/* The node positions themselves move when a year indents, so they transition with the chain. */
-.season-timeline__node,
-.season-timeline__half {
-  transition: top 320ms cubic-bezier(0.22, 1, 0.36, 1);
+/* Twelve bands are thirty pixels wide on a phone, which is room for a node and nothing else,
+   so the labels give way to one caption naming whichever season is being read. */
+@media (max-width: 767px) {
+  .season-strip {
+    --cut: 14px;
+  }
+
+  .season-band__label {
+    display: none;
+  }
+
+  .season-strip__caption {
+    display: block;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .season-timeline__lit,
-  .season-timeline__dot,
-  .season-timeline__node,
-  .season-timeline__half {
+  .season-strip__lit,
+  .season-strip__dot,
+  .season-band__wash,
+  .season-band__label {
     transition: none;
   }
 }

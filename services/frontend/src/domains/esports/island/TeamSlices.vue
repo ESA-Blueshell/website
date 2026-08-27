@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {onMounted, ref, watch} from "vue"
+import {onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {$require} from "@/plugins/require"
 import {useMotionAllowed} from "./useMotionAllowed"
 import type {TeamRoster} from "../adapters/esports"
@@ -16,6 +16,28 @@ const motion = useMotionAllowed()
  * motion, where it is simply open from the start.
  */
 const open = ref<number | null>(null)
+const slices = ref<HTMLElement[]>([])
+
+/** Stacked, there is no pointer to move across the slices, so the scroll does the choosing. */
+const stacked = () =>
+  typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+
+let watcher: IntersectionObserver | null = null
+
+const watchScroll = () => {
+  watcher?.disconnect()
+  if (!stacked() || typeof IntersectionObserver === "undefined") return
+  watcher = new IntersectionObserver(entries => {
+    // Whichever slice has most of itself in the middle band of the screen is the one open.
+    const best = entries
+      .filter(entry => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+    if (!best) return
+    const index = slices.value.indexOf(best.target as HTMLElement)
+    if (index >= 0) open.value = index
+  }, {rootMargin: "-42% 0px -42% 0px", threshold: [0, 0.25, 0.5, 1]})
+  slices.value.forEach(el => el && watcher?.observe(el))
+}
 
 const settle = () => {
   open.value = 0
@@ -24,15 +46,20 @@ const settle = () => {
 onMounted(() => {
   if (!motion.decorative.value) {
     settle()
-    return
+  } else {
+    requestAnimationFrame(() => requestAnimationFrame(settle))
   }
-  requestAnimationFrame(() => requestAnimationFrame(settle))
+  watchScroll()
 })
+
+onBeforeUnmount(() => watcher?.disconnect())
 
 // A season change brings a different set of teams, so the first of those opens in its turn.
 watch(() => props.teams, () => {
+  slices.value = []
   open.value = motion.decorative.value ? null : 0
   if (motion.decorative.value) requestAnimationFrame(() => requestAnimationFrame(settle))
+  requestAnimationFrame(watchScroll)
 })
 
 const GROUPS = [
@@ -59,6 +86,7 @@ const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.i
     <section
       v-for="(team, index) in teams"
       :key="team.id"
+      :ref="el => { if (el) slices[index] = el as HTMLElement }"
       class="team-slice"
       :class="{
         'team-slice--open': index === open,
@@ -110,7 +138,7 @@ const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.i
                 :key="member.handle"
                 class="team-slice__member"
               >
-                {{ member.handle }}
+                <span class="team-slice__handle">{{ member.handle }}</span>
                 <!-- Only ever present for a member who said their name may be shown. -->
                 <span
                   v-if="member.name"
@@ -280,20 +308,31 @@ const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.i
 .team-slice__members {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.1rem 0.85rem;
-  margin-top: 0.15rem;
+  gap: 0.35rem 1.5rem;
+  margin-top: 0.3rem;
 }
 
+/*
+ * One member, one block. Run along a line the handle and the name beside it read as two
+ * players; stacked, with the handle leading, it is clear which is the person and which is
+ * what they play under.
+ */
 .team-slice__member {
-  font-size: 0.9rem;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.team-slice__handle {
+  font-size: 0.95rem;
   color: var(--color-chalk);
 }
 
-/* The handle leads and the name follows it, quieter: a handle is what a team is known by. */
 .team-slice__member-name {
-  margin-left: 0.35rem;
-  font-size: 0.75rem;
-  color: var(--color-ash);
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+  color: color-mix(in oklab, var(--color-ash) 85%, transparent);
 }
 
 /* Stacked on a narrow screen, where a row of slices would leave each one a sliver. The cut

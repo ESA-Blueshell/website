@@ -48,7 +48,7 @@ describe("TeamSlices", () => {
     const wrapper = mountSlices([{role: "PLAYER", handle: "AriosFury", name: "Viktor Petrov"}])
 
     const member = wrapper.get(".team-slice__member")
-    expect(member.text()).toContain("AriosFury")
+    expect(member.get(".team-slice__handle").text()).toBe("AriosFury")
     expect(member.get(".team-slice__member-name").text()).toBe("Viktor Petrov")
   })
 

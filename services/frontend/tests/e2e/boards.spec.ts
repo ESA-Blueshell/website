@@ -71,6 +71,8 @@ test.describe("board manager", () => {
     await page.getByTestId("board-row-9").click()
     await page.getByTestId("board-add-seat").click()
 
+    // Same reason: the dialog's fields exist before it is shown.
+    await expect(page.getByTestId("board-seat-name")).toBeVisible()
     await page.getByTestId("board-seat-name").locator("input").fill("Thijs Lieverse")
     await page.getByTestId("board-seat-role").locator("input").fill("Chairman")
 
@@ -96,11 +98,17 @@ test.describe("board manager", () => {
     await page.getByTestId("board-row-9").click()
     await page.getByTestId("board-seat-menu-91").click()
 
+    // The menu's items are mounted before the menu is shown, so waiting for the
+    // one being clicked to actually be on screen is what says the menu is open.
+    // Clicking on its presence alone lands on nothing and the request never comes.
+    const detach = page.getByTestId("board-seat-unlink-91")
+    await expect(detach).toBeVisible()
+
     const detached = page.waitForRequest(
       (request) => request.method() === "PUT" && /\/members\/\d+\/member$/.test(new URL(request.url()).pathname),
     )
     // Detaching is one click on the row's own menu, with no picker in the way.
-    await page.getByTestId("board-seat-unlink-91").click()
+    await detach.click()
 
     const request = await detached
     expect(JSON.parse(request.postData() ?? "{}").userId).toBeUndefined()

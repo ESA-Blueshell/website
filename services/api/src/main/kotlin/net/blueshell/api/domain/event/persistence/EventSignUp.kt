@@ -59,6 +59,8 @@ class EventSignUp(
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     var user: User? = null
 
+    // A link with no state of its own: Answer carries the soft-delete, so a deleted answer is
+    // already hidden here. The link table's own deleted_at is historical, seeded from the sign-up.
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinTable(
         name = "event_sign_up_answers",

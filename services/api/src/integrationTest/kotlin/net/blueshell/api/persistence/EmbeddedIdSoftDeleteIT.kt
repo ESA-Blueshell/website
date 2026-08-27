@@ -7,12 +7,7 @@ import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.event.persistence.EventPicture
-import net.blueshell.api.domain.event.persistence.EventSignUpAnswer
-import net.blueshell.api.domain.survey.persistence.Answer
-import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.Survey
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -71,19 +66,6 @@ class EmbeddedIdSoftDeleteIT : UserTestSupport() {
         removeAndFlush(entity)
 
         assertSoftDeleted("event_pictures", "event_id = ${event.id} AND picture_id = ${file.id}")
-    }
-
-    @Test
-    fun `EventSignUpAnswer soft-delete updates deleted_at`() {
-        val signUp = createEventSignUpFixture()
-        val survey = persist(Survey())
-        val question = persist(Question(idx = 0, survey = survey, type = QuestionType.OPEN, label = "Q1"))
-        val answer = persist(Answer(question = question, textResponse = "A1"))
-        val entity = persist(EventSignUpAnswer(eventSignUp = signUp, answer = answer))
-
-        removeAndFlush(entity)
-
-        assertSoftDeleted("event_sign_up_answers", "event_sign_up_id = ${signUp.id} AND answer_id = ${answer.id}")
     }
 
     @Test

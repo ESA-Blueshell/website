@@ -73,6 +73,9 @@ spring:
     validate-migration-naming: true
 
   modulith:
+    # The modules are nested under domain/, platform/ and infrastructure/ today, so the
+    # default direct-sub-package detection does not find them.
+    detection-strategy: net.blueshell.api.NestedModuleDetectionStrategy
     events:
       jdbc:
         schema-initialization:

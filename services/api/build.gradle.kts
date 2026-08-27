@@ -69,6 +69,9 @@ dependencies {
     implementation("org.springframework.session:spring-session-data-redis")
     implementation(platform("org.springframework.modulith:spring-modulith-bom:2.1.0"))
     implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
+    // Module detection pulls in ArchUnit, which has no business in the production jar —
+    // the detection strategy is only ever instantiated by ApplicationModules in a test.
+    compileOnly("org.springframework.modulith:spring-modulith-core")
     implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.2")
     implementation(project(":libs:kotlin-common"))
     implementation("org.springframework.boot:spring-boot-starter-flyway")
@@ -131,6 +134,7 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.5")
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.1")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
+    testImplementation("org.springframework.modulith:spring-modulith-core")
     testImplementation("io.github.classgraph:classgraph:4.8.192")
     testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).

@@ -58,6 +58,15 @@ class CommitteeMemberService(
     }
 
     /**
+     * Gives up every seat the user currently holds. Each removal goes through
+     * [delete] so it publishes its own [CommitteeMembershipChanged].
+     */
+    @Transactional
+    fun revokeAllSeatsForUser(userId: Long) {
+        repository.findByUser_Id(userId).forEach { delete(it) }
+    }
+
+    /**
      * Count the number of committee memberships for a user.
      * Used by other domains to check if a user has committee role.
      */

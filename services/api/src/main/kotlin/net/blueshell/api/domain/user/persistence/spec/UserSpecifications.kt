@@ -4,7 +4,6 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
-import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.user.application.query.UserQuery
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
@@ -13,16 +12,6 @@ import org.springframework.data.jpa.domain.Specification
 import java.util.*
 
 object UserSpecifications {
-    fun approved(): Specification<Event> {
-        return Specification { root, _, cb ->
-            cb.isTrue(
-                root.get(
-                    "approved"
-                )
-            )
-        }
-    }
-
     fun hasMemberAuthority(): Specification<User> {
         return hasAuthorityAtLeast(Role.MEMBER)
     }

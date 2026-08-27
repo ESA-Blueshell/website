@@ -1,0 +1,139 @@
+/*
+ * The esports island.
+ *
+ * Tailwind for the esports pages only. Two rules keep it from touching the
+ * other hundred-odd components in this frontend, both enforced here rather
+ * than by convention:
+ *
+ * 1. Preflight is never imported. Tailwind's reset restyles bare elements
+ *    globally, which would land on every Vuetify page at once. The island
+ *    resets its own subtree instead, at the bottom of this file.
+ *
+ * 2. Utilities are declared inside a cascade layer. Vuetify's stylesheet is
+ *    unlayered, and unlayered rules beat layered ones no matter their order,
+ *    so a Tailwind class can never win against Vuetify outside the island.
+ *    Inside the island there is no Vuetify left to fight.
+ *
+ * Sources are listed explicitly, so a Tailwind class written outside the
+ * esports pages generates nothing and fails visibly rather than quietly
+ * working and spreading.
+ */
+@layer theme, island-base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "../domains/esports";
+@source "../pages/Esports.vue";
+@source "../pages/esports";
+
+@theme {
+  /* The island is dark whatever the viewer's theme asks for, so these are not
+     paired with a light set.
+     
+     They are the site's own greys rather than a deeper set of its own. The
+     navigation and footer are #212121 and sit directly above and below these
+     pages: a near-black ground under them read as two different sites meeting
+     rather than one page. The ground is a step below the chrome, panels a step
+     above it, and nothing here is tinted. */
+  --color-void: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+
+  /* The association's own two, unchanged: the blue everything is built on and
+     the acid green the dark theme already uses as its accent. */
+  --color-brand: #3387fa;
+  --color-brand-lit: #6aa8ff;
+  --color-acid: #a8ff00;
+
+  /* One accent per game. A recognisable colour carries a game further than a
+     photograph of somebody else's tournament, and unlike stock imagery it is
+     consistent across five tiles. */
+  --color-game-league: #c8963c;
+  --color-game-cs2: #e8842a;
+  --color-game-valorant: #ff4655;
+  --color-game-rocket: #1183d6;
+  --color-game-geoguessr: #6cbf3f;
+
+  --font-display: "Fugaz One", system-ui, sans-serif;
+  --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
+
+  /* One easing for everything that moves, so nothing feels borrowed. */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * The island's reset, in a layer that utilities beat.
+ *
+ * Unlayered rules outrank every layer, so an unlayered reset here would win
+ * against Tailwind's own utilities and quietly undo them — a heading with
+ * text-7xl on it would render at the reset's inherited size. Declaring it as a
+ * layer before utilities puts it back where a reset belongs: below anything
+ * written on the element itself, and still below Vuetify's unlayered rules
+ * outside the island.
+ */
+@layer island-base {
+  .esports-island {
+    background-color: var(--color-void);
+    color: var(--color-chalk);
+    font-family: var(--font-body);
+    min-height: 100%;
+  }
+
+  .esports-island *,
+  .esports-island *::before,
+  .esports-island *::after {
+    box-sizing: border-box;
+  }
+
+  .esports-island :is(h1, h2, h3, h4, h5, h6, p, figure, blockquote) {
+    margin: 0;
+  }
+
+  .esports-island :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-display);
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: 0.02em;
+  }
+
+  .esports-island :is(ul, ol) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .esports-island a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .esports-island :is(img, video, svg) {
+    display: block;
+    max-width: 100%;
+  }
+
+  .esports-island :is(button, input, select, textarea) {
+    color: inherit;
+    font: inherit;
+  }
+
+  /* A button carries a background, a border and padding from the browser, and all
+     three show through anything built on top of it — a card rendered as a button
+     sat inside a grey box until this was here. */
+  .esports-island :is(button, [type="button"]) {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+
+  /* Focus must stay visible: the island's own reset is not licence to lose it. */
+  .esports-island :focus-visible {
+    outline: 2px solid var(--color-acid);
+    outline-offset: 2px;
+  }
+}

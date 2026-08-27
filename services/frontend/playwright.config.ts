@@ -26,6 +26,10 @@ export default defineConfig({
     trace: "on-first-retry",
     actionTimeout: 5_000,
     navigationTimeout: 5_000,
+    // Every project but the motion one runs as a visitor who asked for reduced
+    // motion. That is a real product behaviour rather than a test-only switch,
+    // so the suites are deterministic and the reduced-motion path is exercised
+    // by every test rather than by one.
     reducedMotion: "reduce",
   },
   webServer: [
@@ -56,16 +60,35 @@ export default defineConfig({
     {
       name: "chromium",
       use: {...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:4173"},
-      testIgnore: /module-smoke\.spec\.ts/,
+      testIgnore: [/module-smoke\.spec\.ts/, /\.motion\.spec\.ts/],
     },
     {
       name: "mobile-chrome",
       use: {...devices["Pixel 7"], baseURL: "http://127.0.0.1:4173"},
-      testIgnore: /module-smoke\.spec\.ts/,
+      testIgnore: [/module-smoke\.spec\.ts/, /\.motion\.spec\.ts/],
+    },
+    {
+      // The one project that sees motion. Its specs assert the choreography
+      // itself, which is unobservable everywhere else by design.
+      name: "motion",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://127.0.0.1:4173",
+        reducedMotion: "no-preference",
+      },
+      testMatch: /\.motion\.spec\.ts/,
     },
     {
       name: "smoke",
-      use: {...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:4174"},
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://127.0.0.1:4174",
+        // This project is the only one talking to the dev server, which compiles
+        // on demand: its first navigation pays for the whole entry graph,
+        // Tailwind included. The 5s default above is sized for the prebuilt
+        // preview server and is not a budget this navigation can be held to.
+        navigationTimeout: 60_000,
+      },
       testMatch: /module-smoke\.spec\.ts/,
     },
   ],

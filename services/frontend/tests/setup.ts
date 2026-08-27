@@ -44,18 +44,24 @@ config.global.mocks = {
   },
 }
 
+// jsdom implements no media queries, so anything asking for one needs an answer
+// here. A plain function rather than a mock: mockReset is on, which strips a
+// mock's implementation before every test, and a matchMedia that returns
+// undefined is worse than none at all — it passes a typeof check and then throws
+// on the property access. Nothing needs to assert on these calls.
 Object.defineProperty(globalThis, "matchMedia", {
+  configurable: true,
   writable: true,
-  value: vi.fn().mockImplementation((query: string) => ({
+  value: (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
 })
 
 Object.defineProperty(globalThis.HTMLElement.prototype, "scrollIntoView", {

@@ -10,6 +10,9 @@ import {setupAuthSync} from "@/plugins/authSync"
 import {createVPhoneInput, selectPhoneCountryInput, VPhoneCountryFlagSvg} from "v-phone-input"
 import "flag-icons/css/flag-icons.min.css"
 import "v-phone-input/styles"
+// Tailwind for the esports island. No Preflight is imported, so no bare element
+// anywhere else in the app changes; see the file itself.
+import "@/styles/island.css"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const vPhoneInput = createVPhoneInput({...(selectPhoneCountryInput as any), countryDisplayComponent: VPhoneCountryFlagSvg})

@@ -7,7 +7,9 @@ test.describe("route redirects", () => {
 
     await page.goto("/esports")
     await expect(page).toHaveURL(/\/esports\/competitive-scene$/)
-    await expect(page.getByText("ESPORTS", {exact: true})).toBeVisible()
+    // The destination is the esports index. Asserting its root rather than a
+    // heading: the wording of the page is design, the island around it is not.
+    await expect(page.getByTestId("esports-island")).toBeVisible()
 
     await page.goto("/events/calendar")
     await expect(page).toHaveURL(/\/events(\?.*)?$/)

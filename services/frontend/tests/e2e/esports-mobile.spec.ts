@@ -2,21 +2,44 @@ import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
 test.describe("esports mobile layout", () => {
-  test("stacks a team's name above its roster in a narrow viewport", async ({page}) => {
+  test("opens the first team on arrival, and another on a tap", async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
 
     await page.goto("/esports/valorant")
 
     await expect(page).toHaveURL(/\/esports\/valorant$/)
-    const team = page.getByTestId("team-roster-1")
-    await expect(team).toContainText("BS Waterboarders")
-    await expect(team).toContainText("Players")
-    await expect(team).toContainText("AriosFury")
+    const first = page.getByTestId("team-roster-1")
+    const second = page.getByTestId("team-roster-2")
+    await expect(first).toContainText("BS Waterboarders")
 
-    // Stacked, not side by side: the name sits above the roster rather than beside it.
-    const name = await team.getByTestId("team-roster-name").boundingBox()
-    const member = await team.locator(".team-roster__member").first().boundingBox()
-    expect(name!.y + name!.height).toBeLessThanOrEqual(member!.y)
+    // The first slice opens itself, so the page never lands with everything shut.
+    await expect(first.getByRole("button")).toHaveAttribute("aria-expanded", "true")
+    await expect(first).toContainText("AriosFury")
+    await expect(second.getByRole("button")).toHaveAttribute("aria-expanded", "false")
+
+    // A touch screen has no hover to give, so a tap opens a slice instead.
+    await second.getByRole("button").click()
+
+    await expect(second.getByRole("button")).toHaveAttribute("aria-expanded", "true")
+    await expect(first.getByRole("button")).toHaveAttribute("aria-expanded", "false")
+  })
+
+  test("keeps the seasons on the line, and scrolls to the one on show", async ({page}) => {
+    await installApiMocks(page)
+    await page.setViewportSize({width: 390, height: 844})
+
+    await page.goto("/esports/valorant")
+    const strip = page.getByTestId("esports-season-timeline")
+    await strip.waitFor()
+
+    // The strip scrolls rather than shrinking, so a band keeps the width its labels need and
+    // the highlighted one says which season it is without a caption underneath.
+    await expect(strip.locator(".season-band__label--half").first()).toBeVisible()
+    await expect(page.getByTestId("esports-season-caption")).toHaveCount(0)
+
+    const selected = page.locator(".season-band--on")
+    await expect(selected).toHaveCount(1)
+    await expect(selected).toBeInViewport()
   })
 })

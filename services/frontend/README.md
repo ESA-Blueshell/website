@@ -75,10 +75,51 @@ src/
 - **Vite 7.3.1** - Lightning-fast build tool
 
 ### UI & Styling
-- **Vuetify 3.12.0** - Material Design components
-- **Sass 1.97.3** - CSS preprocessor
-- **@mdi/font 7.4.47** - Material Design Icons
-- **Flag Icons 7.5.0** - Country flags
+- **Vuetify** - Material Design components, everywhere except the esports island
+- **Sass** - CSS preprocessor
+- **@mdi/font** - Material Design Icons
+- **Flag Icons** - Country flags
+- **Tailwind CSS** - the esports island only; see below
+- **Reka UI** - headless component behaviour for the island
+- **Motion for Vue** - the island's animation
+
+## The esports island
+
+The esports pages are styled with Tailwind rather than Vuetify. They are the
+association's shopfront rather than a screen somebody works in: full-bleed, dark
+whatever the viewer's theme says, and animated throughout. The rest of the app is
+Vuetify and stays that way.
+
+The island is `src/domains/esports/island` plus the pages under `src/pages/esports`
+and `src/pages/Esports.vue`. Its root component applies the `.esports-island`
+class, and everything Tailwind-styled sits inside that element.
+
+Three things keep it from leaking, all enforced rather than agreed:
+
+- **Preflight is never imported.** `src/styles/island.css` pulls Tailwind's theme
+  and utilities but not its reset, because that reset restyles bare elements
+  globally and would land on every Vuetify page at once. The island resets its own
+  subtree instead.
+- **Utilities live in a cascade layer.** Vuetify's stylesheet is unlayered, and
+  unlayered rules beat layered ones regardless of order, so a Tailwind class
+  cannot win against Vuetify outside the island. The island's own reset is in an
+  earlier layer so utilities still beat *it*.
+- **Sources are listed explicitly.** `island.css` names the directories Tailwind
+  scans. A Tailwind class written anywhere else generates no CSS and fails
+  visibly rather than quietly working.
+
+### Motion
+
+`useMotionAllowed` is the policy. The island reduces motion rather than removing
+it: parallax, drift, tilt and counters are decorative and switch off for a visitor
+who asks for reduced motion, while a crossfade or a sliding indicator stays,
+because it explains what changed. Use `motion-safe:` for a Tailwind hover rather
+than overriding with `motion-reduce:` — the scale utilities set the `scale`
+property, which `transform-none` does not neutralise.
+
+Every Playwright project emulates reduced motion except one named `motion`, which
+matches `*.motion.spec.ts`. Assertions about the choreography go there; everything
+else stays deterministic.
 
 ### State & Routing
 - **Vuex 4.1.0** - Centralized state management

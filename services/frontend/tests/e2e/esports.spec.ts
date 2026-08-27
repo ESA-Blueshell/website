@@ -31,7 +31,7 @@ test.describe("esports pages", () => {
     await page.goto("/esports/valorant")
     await expect(page.getByTestId("team-roster-1")).toBeVisible()
 
-    await page.getByTestId("esports-season-19").click()
+    await page.getByTestId("esports-season-node-19").click()
 
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
     await expect(page.getByTestId("team-roster-1")).toHaveCount(0)
@@ -55,7 +55,7 @@ test.describe("esports pages", () => {
     // has said their name may be published, so the page knows them by their handle alone.
     const team = page.getByTestId("team-roster-1")
     await expect(team).toContainText("Loafine")
-    await expect(team.locator(".team-roster__name-aside")).toHaveCount(1)
+    await expect(team.locator(".team-slice__member-name")).toHaveCount(1)
   })
 })
 
@@ -116,7 +116,7 @@ test.describe("names on the team pages", () => {
     await expect(team).toContainText("Loafine")
     await expect(team).not.toContainText("Blackout Petrov")
 
-    const named = team.locator(".team-roster__name-aside")
+    const named = team.locator(".team-slice__member-name")
     await expect(named).toHaveCount(1)
     await expect(named).toHaveText("Viktor Petrov")
   })

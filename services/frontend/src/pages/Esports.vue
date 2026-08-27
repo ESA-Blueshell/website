@@ -79,12 +79,14 @@ const entrance = {
             Blueshell Esports
           </p>
           <h1 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
-            Teams in five games,<br>
-            <span class="text-brand">and a league for every level</span>
+            Any game you want to play,<br>
+            <span class="text-brand">competitively</span>
           </h1>
-          <p class="mt-3 max-w-lg font-body text-sm leading-relaxed text-ash">
-            Tryouts every season, room in more teams than people expect, and a room full of
-            people who will tell you exactly what you did wrong afterwards.
+          <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
+            The games below have teams in them right now, and that list is not a limit: bring
+            enough people who want to play something else and the association will arrange it.
+            Tryouts run every season, and there is a room full of people who will help you get
+            better.
           </p>
         </div>
       </header>
@@ -167,12 +169,12 @@ const entrance = {
             Want in?
           </h2>
           <p class="relative mt-2 max-w-xl font-body text-sm text-ash">
-            Tryouts run at the start of every season, and there is room in more teams than
-            people expect. Ask esports affairs on Discord, or mail
+            There is room in more teams than people expect, and a game nobody has fielded yet
+            is a conversation rather than a no. Ask esports affairs on Discord, or mail
             <a
               class="text-brand transition-colors hover:text-brand-lit"
-              href="mailto:esports@blueshell.utwente.nl"
-            >esports@blueshell.utwente.nl</a>.
+              href="mailto:esports-affairs@blueshell.utwente.nl"
+            >esports-affairs@blueshell.utwente.nl</a>.
           </p>
         </div>
       </section>

@@ -29,17 +29,20 @@ const AMPLITUDE = 15
  * the window is sized from the climb rather than from the gap, every bend turns through the
  * same radius however far apart two seasons happen to sit.
  */
-const BEND = 1.15
+const BEND = 1.28
 
 /**
  * Where a bend's control points sit along it, as a fraction of its width.
  *
  * At a half they both land on the midpoint and the bend crosses at a lazy diagonal. Past a
- * half they cross over each other, which holds the line flat for longer at each end and then
- * takes it through the middle far closer to vertical — a corner rather than a slope, without
- * losing the horizontal tangents that let it meet the straight runs cleanly.
+ * half they cross over each other, holding the line flat for longer at each end and taking it
+ * through the middle more steeply — a corner rather than a slope, without losing the
+ * horizontal tangents that let it meet the straight runs cleanly.
+ *
+ * Far past a half the middle stands almost upright, which reads as a stair rather than a
+ * line. This sits between the two.
  */
-const CORNER = 0.78
+const CORNER = 0.63
 
 const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)

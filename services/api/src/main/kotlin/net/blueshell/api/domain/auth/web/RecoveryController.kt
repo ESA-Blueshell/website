@@ -1,20 +1,18 @@
 package net.blueshell.api.domain.auth.web
 
+import net.blueshell.api.domain.auth.application.RecoveryUseCases
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.domain.auth.command.*
 import net.blueshell.api.domain.auth.web.dto.request.MemberActivationRequest
 import net.blueshell.api.domain.auth.web.dto.request.PasswordResetRequest
 import net.blueshell.api.domain.auth.web.dto.request.UserActivationRequest
-import net.blueshell.api.domain.auth.web.mapping.request.asCommand
 import net.blueshell.api.domain.auth.web.dto.response.ActivationResponse
 import net.blueshell.api.domain.auth.web.dto.response.PendingActivation
 import net.blueshell.api.domain.auth.web.dto.response.PendingActivationsResponse
 import net.blueshell.api.domain.auth.web.dto.response.RecoveryEmailPreviewResponse
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.domain.telemetry.web.dto.response.RedirectResponse
-import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -24,33 +22,33 @@ import org.springframework.web.server.ResponseStatusException
 @Tag(name = "Recovery")
 @RequestMapping("/recovery")
 class RecoveryController(
-    private val commandBus: CommandBus
+    private val useCases: RecoveryUseCases,
 ) {
     @PostMapping("/password/reset/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
     fun resetPassword(@PathVariable username: String) {
-        commandBus.dispatch(ResetPasswordCommand(username))
+        useCases.resetPassword(username)
     }
 
     @PostMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
     fun setPassword(@Valid @RequestBody request: PasswordResetRequest) {
-        commandBus.dispatch(request.asCommand())
+        useCases.setPassword(request.token!!, request.password!!)
     }
 
     @PostMapping("/user/activate")
     @PermitAll
     fun userActivate(@Valid @RequestBody request: UserActivationRequest): ActivationResponse {
-        val outcome = commandBus.dispatch(request.asCommand())
+        val outcome = useCases.activateUser(request.token!!)
         return ActivationResponse(outcome.membershipStarted)
     }
 
     @PostMapping("/member/activate")
     @PermitAll
     fun memberActivate(@Valid @RequestBody request: MemberActivationRequest): RedirectResponse {
-        commandBus.dispatch(request.asCommand())
+        useCases.activateMember(request.token!!, request.username!!, request.password!!)
         return RedirectResponse("/")
     }
 
@@ -58,7 +56,7 @@ class RecoveryController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
     fun resendUserActivation(@PathVariable username: String) {
-        commandBus.dispatch(ResendUserActivationCommand(username))
+        useCases.resendUserActivation(username)
     }
 
     /**
@@ -77,7 +75,7 @@ class RecoveryController(
         if (purpose != null && !purpose.isActivation) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$purpose is not an activation")
         }
-        commandBus.dispatch(ResendRecoveryEmailCommand(userId, purpose))
+        useCases.resendRecoveryEmail(userId, purpose)
     }
 
     /**
@@ -88,7 +86,7 @@ class RecoveryController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
     fun pendingActivations(): PendingActivationsResponse =
         PendingActivationsResponse(
-            commandBus.dispatch(FindPendingActivationsCommand())
+            useCases.pendingActivations()
                 .map { (userId, purpose) -> PendingActivation(userId, purpose) }
                 .sortedBy { it.userId },
         )
@@ -107,7 +105,7 @@ class RecoveryController(
         if (!purpose.isMailable) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A $purpose token is never emailed")
         }
-        val preview = commandBus.dispatch(PreviewRecoveryEmailCommand(userId, purpose))
+        val preview = useCases.previewRecoveryEmail(userId, purpose)
         return RecoveryEmailPreviewResponse(
             purpose = preview.purpose,
             subject = preview.subject,

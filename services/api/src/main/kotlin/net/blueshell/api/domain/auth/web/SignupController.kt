@@ -1,9 +1,9 @@
 package net.blueshell.api.domain.auth.web
 
+import net.blueshell.api.domain.auth.application.SignupUseCases
 import org.springframework.web.bind.annotation.PatchMapping
 import net.blueshell.api.domain.auth.web.dto.request.SignupDetailsRequest
 import net.blueshell.api.domain.auth.web.dto.request.SignupEmailRequest
-import net.blueshell.api.domain.auth.command.CorrectSignupEmailCommand
 import org.springframework.web.bind.annotation.RequestHeader
 import net.blueshell.api.domain.user.web.dto.response.SignupOutcomeResponse
 import net.blueshell.api.domain.user.command.SubmitSignupApplicationCommand
@@ -15,7 +15,6 @@ import net.blueshell.api.shared.model.SignupSession
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.domain.auth.command.IssueSignupSessionCommand
 import net.blueshell.api.domain.auth.web.dto.response.SignupSessionResponse
 import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
 import net.blueshell.api.domain.user.web.mapping.request.asCommand
@@ -37,7 +36,10 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Signup")
 @RequestMapping("/signup")
 class SignupController(
-    private val commandBus: CommandBus
+    // The bus stays until the user module's signup commands are converted; the two
+    // operations auth owns have already moved.
+    private val commandBus: CommandBus,
+    private val signupUseCases: SignupUseCases,
 ) {
 
     @PostMapping
@@ -45,7 +47,7 @@ class SignupController(
     @ResponseStatus(HttpStatus.CREATED)
     fun signUp(@Valid @RequestBody request: CreateUserRequest): SignupSessionResponse {
         val user = commandBus.dispatch(request.asCommand(isBoard = false))
-        val session = commandBus.dispatch(IssueSignupSessionCommand(user.id!!))
+        val session = signupUseCases.issueSession(user.id!!)
         return SignupSessionResponse(
             userId = session.userId,
             email = session.email,
@@ -119,9 +121,7 @@ class SignupController(
         @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
         @Valid @RequestBody request: SignupEmailRequest
     ) {
-        commandBus.dispatch(
-            CorrectSignupEmailCommand(signupToken = signupToken, email = request.email!!)
-        )
+        signupUseCases.correctEmail(signupToken = signupToken, email = request.email!!)
     }
 
     companion object {

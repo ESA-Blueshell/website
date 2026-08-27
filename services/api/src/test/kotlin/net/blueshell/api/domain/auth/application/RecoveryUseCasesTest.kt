@@ -1,19 +1,16 @@
-package net.blueshell.api.domain.auth.application.command
+package net.blueshell.api.domain.auth.application
 
 import net.blueshell.api.domain.auth.application.PasswordRecoveryService
 import net.blueshell.api.domain.auth.application.RecoveryDispatch
 import net.blueshell.api.domain.auth.application.SignupCompletionService
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.auth.application.UserActivationService
-import net.blueshell.api.domain.auth.command.MemberActivateCommand
-import net.blueshell.api.domain.auth.command.ResendRecoveryEmailCommand
-import net.blueshell.api.domain.auth.command.ResendUserActivationCommand
-import net.blueshell.api.domain.auth.command.ResetPasswordCommand
-import net.blueshell.api.domain.auth.command.SetPasswordCommand
-import net.blueshell.api.domain.auth.command.UserActivateCommand
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.auth.application.RecoveryEmailPreviewService
+import net.blueshell.api.domain.auth.application.SignupTokenService
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -26,7 +23,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.never
 import org.mockito.kotlin.whenever
 
-class RecoveryCommandHandlersTest {
+class RecoveryUseCasesTest {
 
     private val completion = mock<SignupCompletionService>()
 
@@ -34,17 +31,23 @@ class RecoveryCommandHandlersTest {
     private val activationService = mock<UserActivationService>()
     private val jobs = mock<TrackedJobDispatcher>()
 
+    private val previews = mock<RecoveryEmailPreviewService>()
+    private val signupTokens = mock<SignupTokenService>()
+    private val users = mock<UserService>()
+    private val useCases =
+        RecoveryUseCases(passwordRecoveryService, activationService, completion, previews, jobs)
+    private val signupUseCases = SignupUseCases(signupTokens, users, activationService, jobs)
+
     @Nested
     inner class ResetPassword {
 
-        private val handler = ResetPasswordHandler(passwordRecoveryService, jobs)
 
         @Test
         fun `enqueues recovery email when reset dispatch is returned`() {
             val dispatch = RecoveryDispatch(7L, "token-1", TokenPurpose.PASSWORD_RESET)
             whenever(passwordRecoveryService.requestPasswordReset("john")).thenReturn(dispatch)
 
-            handler.handle(ResetPasswordCommand("john"))
+            useCases.resetPassword("john")
 
             verify(passwordRecoveryService).requestPasswordReset("john")
             verify(jobs).enqueue(
@@ -57,7 +60,7 @@ class RecoveryCommandHandlersTest {
         fun `does not enqueue email when reset dispatch is null`() {
             whenever(passwordRecoveryService.requestPasswordReset("john")).thenReturn(null)
 
-            handler.handle(ResetPasswordCommand("john"))
+            useCases.resetPassword("john")
 
             verify(passwordRecoveryService).requestPasswordReset("john")
             verifyNoInteractions(jobs)
@@ -67,11 +70,10 @@ class RecoveryCommandHandlersTest {
     @Nested
     inner class SetPassword {
 
-        private val handler = SetPasswordHandler(passwordRecoveryService)
 
         @Test
         fun `sets password with provided token and password`() {
-            handler.handle(SetPasswordCommand(token = "token-2", password = "Passw0rd!"))
+            useCases.setPassword("token-2", "Passw0rd!")
 
             verify(passwordRecoveryService).setPassword("token-2", "Passw0rd!")
         }
@@ -80,7 +82,6 @@ class RecoveryCommandHandlersTest {
     @Nested
     inner class UserActivate {
 
-        private val handler = UserActivateHandler(activationService, completion)
 
         @Test
         fun `activates the account and reports whether the membership started`() {
@@ -90,7 +91,7 @@ class RecoveryCommandHandlersTest {
             whenever(completion.completeIfReady(4L))
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
 
-            val outcome = handler.handle(UserActivateCommand("sel.ver"))
+            val outcome = useCases.activateUser("sel.ver")
 
             assertThat(outcome.membershipStarted).isTrue()
         }
@@ -99,11 +100,10 @@ class RecoveryCommandHandlersTest {
     @Nested
     inner class MemberActivate {
 
-        private val handler = MemberActivateHandler(activationService)
 
         @Test
         fun `activates member with token and credentials`() {
-            handler.handle(MemberActivateCommand("token-4", "john", "Passw0rd!"))
+            useCases.activateMember("token-4", "john", "Passw0rd!")
 
             verify(activationService).activateMember("token-4", "john", "Passw0rd!")
         }
@@ -112,14 +112,13 @@ class RecoveryCommandHandlersTest {
     @Nested
     inner class ResendUserActivation {
 
-        private val handler = ResendUserActivationHandler(activationService, jobs)
 
         @Test
         fun `enqueues activation email when dispatch exists`() {
             val dispatch = RecoveryDispatch(8L, "token-5", TokenPurpose.USER_ACTIVATION)
             whenever(activationService.requestUserActivation("john")).thenReturn(dispatch)
 
-            handler.handle(ResendUserActivationCommand("john"))
+            useCases.resendUserActivation("john")
 
             verify(activationService).requestUserActivation("john")
             verify(jobs).enqueue(
@@ -132,7 +131,7 @@ class RecoveryCommandHandlersTest {
         fun `does not enqueue activation email when dispatch is null`() {
             whenever(activationService.requestUserActivation("john")).thenReturn(null)
 
-            handler.handle(ResendUserActivationCommand("john"))
+            useCases.resendUserActivation("john")
 
             verify(activationService).requestUserActivation("john")
             verifyNoInteractions(jobs)
@@ -142,14 +141,13 @@ class RecoveryCommandHandlersTest {
     @Nested
     inner class ResendRecoveryEmail {
 
-        private val handler = ResendRecoveryEmailHandler(activationService, jobs)
 
         @Test
         fun `enqueues member activation email when dispatch exists`() {
             val dispatch = RecoveryDispatch(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)
             whenever(activationService.requestActivationEmail(9L)).thenReturn(dispatch)
 
-            handler.handle(ResendRecoveryEmailCommand(9L))
+            useCases.resendRecoveryEmail(9L, null)
 
             verify(activationService).requestActivationEmail(9L)
             verify(jobs).enqueue(
@@ -162,7 +160,7 @@ class RecoveryCommandHandlersTest {
         fun `does not enqueue member activation email when dispatch is null`() {
             whenever(activationService.requestActivationEmail(9L)).thenReturn(null)
 
-            handler.handle(ResendRecoveryEmailCommand(9L))
+            useCases.resendRecoveryEmail(9L, null)
 
             verify(activationService).requestActivationEmail(9L)
             verifyNoInteractions(jobs)
@@ -173,7 +171,7 @@ class RecoveryCommandHandlersTest {
             val dispatch = RecoveryDispatch(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION)
             whenever(activationService.requestActivation(9L, TokenPurpose.MEMBER_ACTIVATION)).thenReturn(dispatch)
 
-            handler.handle(ResendRecoveryEmailCommand(9L, TokenPurpose.MEMBER_ACTIVATION))
+            useCases.resendRecoveryEmail(9L, TokenPurpose.MEMBER_ACTIVATION)
 
             verify(activationService).requestActivation(9L, TokenPurpose.MEMBER_ACTIVATION)
             verify(activationService, never()).requestActivationEmail(any())
@@ -187,7 +185,7 @@ class RecoveryCommandHandlersTest {
         fun `a named purpose for an already active account sends nothing`() {
             whenever(activationService.requestActivation(9L, TokenPurpose.USER_ACTIVATION)).thenReturn(null)
 
-            handler.handle(ResendRecoveryEmailCommand(9L, TokenPurpose.USER_ACTIVATION))
+            useCases.resendRecoveryEmail(9L, TokenPurpose.USER_ACTIVATION)
 
             verifyNoInteractions(jobs)
         }

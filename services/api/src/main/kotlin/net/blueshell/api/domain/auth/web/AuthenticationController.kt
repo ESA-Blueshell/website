@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.auth.web
 
+import net.blueshell.api.domain.auth.application.AuthenticationService
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.servlet.http.HttpServletRequest
@@ -9,9 +10,7 @@ import net.blueshell.api.infrastructure.security.JwtRevocationService
 import net.blueshell.api.infrastructure.security.JwtTokenUtil
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.response.AuthenticationResponse
-import net.blueshell.api.domain.auth.web.mapping.request.asCommand
 import net.blueshell.api.domain.auth.web.mapping.response.asResponse
-import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.PostMapping
@@ -22,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @Tag(name = "Authentication")
 class AuthenticationController(
-    private val commandBus: CommandBus,
+    private val authenticationService: AuthenticationService,
     private val authTokenCookieService: AuthTokenCookieService,
     private val jwtTokenUtil: JwtTokenUtil,
     private val jwtRevocationService: JwtRevocationService
@@ -34,7 +33,10 @@ class AuthenticationController(
         @Validated @RequestBody authenticationRequest: JwtRequest,
         response: HttpServletResponse
     ): AuthenticationResponse {
-        val result = commandBus.dispatch(authenticationRequest.asCommand())
+        val result = authenticationService.authenticate(
+            authenticationRequest.username!!,
+            authenticationRequest.password!!,
+        )
         authTokenCookieService.writeAuthCookie(response, result.token, result.expiresAtEpochMs - System.currentTimeMillis())
         return result.asResponse()
     }

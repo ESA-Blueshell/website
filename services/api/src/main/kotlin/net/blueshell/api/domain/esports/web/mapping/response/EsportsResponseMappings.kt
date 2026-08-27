@@ -1,9 +1,9 @@
 package net.blueshell.api.domain.esports.web.mapping.response
 
-import net.blueshell.api.domain.esports.command.EsportsPageView
-import net.blueshell.api.domain.esports.command.RosterMemberView
-import net.blueshell.api.domain.esports.command.SeasonView
-import net.blueshell.api.domain.esports.command.TeamView
+import net.blueshell.api.domain.esports.application.EsportsPageView
+import net.blueshell.api.domain.esports.application.RosterMemberView
+import net.blueshell.api.domain.esports.application.SeasonView
+import net.blueshell.api.domain.esports.application.TeamView
 import net.blueshell.api.domain.esports.persistence.Season
 import net.blueshell.api.domain.esports.persistence.Team
 import net.blueshell.api.domain.esports.persistence.TeamRosterEntry

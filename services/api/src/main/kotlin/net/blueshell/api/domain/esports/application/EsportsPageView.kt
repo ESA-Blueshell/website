@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.esports.command
+package net.blueshell.api.domain.esports.application
 
 import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole

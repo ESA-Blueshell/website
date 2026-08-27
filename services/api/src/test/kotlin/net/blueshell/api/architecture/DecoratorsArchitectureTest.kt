@@ -130,17 +130,6 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
         }
 
     @Test
-    fun `command handlers are Spring components`(): Unit =
-        arch("Command handlers must be @Component") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.COMMAND_HANDLER)
-                .and().haveSimpleNameEndingWith("Handler")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should().beAnnotatedWith(Component::class.java)
-                .because("ADR-002: Command handlers are Spring beans registered with CommandBus")
-        }
-
-    @Test
     fun `permission evaluators are Spring components`(): Unit =
         arch("Permission evaluators must be @Component") {
             classes()

@@ -1,7 +1,6 @@
 package net.blueshell.api.domain.user.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
@@ -106,18 +105,10 @@ class User(
     val personDetailsId: Long?
         get() = memberProfile?.id
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    private val _committeeMembers: MutableSet<CommitteeMember> = linkedSetOf()
-    val committeeMembers: Set<CommitteeMember>
-        get() = _committeeMembers
-
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _memberships: MutableSet<Membership> = linkedSetOf()
     val memberships: Set<Membership>
         get() = _memberships
-
-    val committeeIds: Set<Long>
-        get() = committeeMembers.mapNotNull { it.committee.id }.toSet()
 
     val inheritedRoles: Set<Role>
         get() = roles.flatMap { it.allInheritedRoles }.toSet()

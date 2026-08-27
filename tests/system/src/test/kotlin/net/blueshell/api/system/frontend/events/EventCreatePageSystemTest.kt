@@ -284,6 +284,6 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     }
 
     private companion object {
-        const val EVENT_BANNER_PATH = "../frontend/public/favicon.png"
+        const val EVENT_BANNER_PATH = "../../services/frontend/public/favicon.png"
     }
 }

@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.auth.application
 
+import net.blueshell.api.domain.user.application.port.SignupCompletion
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
@@ -23,10 +24,10 @@ class SignupCompletionService(
     private val users: UserService,
     private val memberships: MembershipService,
     private val signupTokens: SignupTokenService,
-) {
+) : SignupCompletion {
 
     @Transactional
-    fun completeIfReady(userId: Long): SignupOutcome {
+    override fun completeIfReady(userId: Long): SignupOutcome {
         val user = users.findById(userId)
 
         if (memberships.existsActiveMembershipByUserId(userId)) {

@@ -17,7 +17,7 @@ import net.blueshell.api.platform.integration.sync.application.ExternalIdMapping
 import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory

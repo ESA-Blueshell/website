@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.cohort.adapter.job
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortReconciliation
-import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.ObjectMapper
 

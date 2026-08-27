@@ -1,6 +1,7 @@
-package net.blueshell.api.shared.job
+package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
+import net.blueshell.api.shared.job.JobDefinition
 
 /**
  * Per-target cohort membership sync jobs. One job execution pushes one

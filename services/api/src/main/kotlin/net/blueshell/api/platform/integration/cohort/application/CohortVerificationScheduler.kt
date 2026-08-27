@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.application
 
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled

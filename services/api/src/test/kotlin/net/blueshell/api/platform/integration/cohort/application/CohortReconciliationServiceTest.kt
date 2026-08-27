@@ -9,7 +9,7 @@ import net.blueshell.api.platform.integration.cohort.application.definition.Coho
 import net.blueshell.api.platform.integration.cohort.application.definition.CohortMembershipUpdater
 import net.blueshell.api.platform.integration.cohort.application.definition.CohortRegistrar
 import net.blueshell.api.platform.integration.cohort.application.definition.RegistrationReport
-import net.blueshell.api.shared.job.CohortJobs
+import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test
 

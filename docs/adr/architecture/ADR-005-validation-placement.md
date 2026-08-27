@@ -76,9 +76,20 @@ anything else is checked by the use case that receives them.
 
 ## Implementation status
 
-Decided, not built. The migration this record gated itself on is not owed — it
-landed years before the record was written.
+Partly built — placement is settled, the demotion is not. The migration this
+record gated itself on is not owed: it landed years before the record was
+written.
 
+- **Placement is done.** `@UniqueUserCommand` and its validator sit in `user`,
+  `@ValidEventSignUpCommand` and its validator sit in `event`, each beside the
+  rule it enforces under
+  [ADR-003](ADR-003-package-topology-and-placement-rules.md) rule 3. Both are
+  applied by an explicit `validator.validate(…)` call in the owning use case
+  rather than by the retired dispatcher.
+- **`shared/validation` is empty.** Its `date` package was absorbed under
+  [ADR-003](ADR-003-package-topology-and-placement-rules.md) rule 2 and its
+  group markers moved to `user`, the only module that used them. No package
+  remains under it, so rule 2 holds for validation by construction.
 - Unique indexes are required on the columns `@UniqueUserCommand` guards before
   its pre-check can be demoted to a message-producing convenience. Without the
   index this ADR makes the guarantee weaker, not stronger, so **the migration
@@ -104,8 +115,12 @@ landed years before the record was written.
   > duplicates since V28 — data that would violate them was reconciled by that
   > migration and has been unwritable since. There is nothing left to survey.
 
-- `shared/validation/date` has no cross-module consumer and is absorbed under
-  [ADR-003](ADR-003-package-topology-and-placement-rules.md) rule 2.
+- **The demotion is what remains.** Neither pre-check has been demoted; both
+  still decide the outcome rather than producing the message for a constraint
+  that does. Nothing is owed before the `@UniqueUserCommand` half — the
+  constraints are in place, so it can be done on its own. The
+  `@ValidEventSignUpCommand` half has no constraint to fall back on yet, so it
+  waits on one being written.
 
 ### Why the constraints are composite
 
@@ -141,9 +156,10 @@ form of it, and narrowing it to the bare column would break account deletion.
   > `@ValidEventSignUpCommand`, whose constraint has yet to be written.
 
 ### Neutral
-- **`@ValidEventSignUpCommand` may not need the database at all.** It is grouped
-  here by mechanism; whether it is genuinely a cross-entity rule is settled when
-  it moves.
+- **`@ValidEventSignUpCommand` does need the database.** It was grouped here by
+  mechanism, with the question left open until it moved. It loads the event to
+  read the sign-up deadline, the sign-up limit and the form's questions, so it
+  is a cross-entity rule and belongs in `event` on merit, not by association.
 
 ## Related ADRs
 - [ADR-002: Use-Case Services Replace the Command Bus](ADR-002-use-case-services-replace-the-command-bus.md) — what removed the validation step

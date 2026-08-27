@@ -83,7 +83,6 @@ object ArchitecturePackages {
 
     /** Shared - Common utilities, enums, base classes */
     const val SHARED = "$ROOT.shared.."
-    const val SHARED_VALIDATION = "$ROOT.shared.validation.."
     const val SHARED_MODEL = "$ROOT.shared.model.."
     const val SHARED_ENUM = "$ROOT.shared.enums.."
     const val SHARED_SECURITY = "$ROOT.shared.security.."

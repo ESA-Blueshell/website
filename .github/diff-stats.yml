@@ -83,7 +83,7 @@
   category: build
 
 # --- system tests ---
-- glob: "services/system-tests/**"
+- glob: "tests/system/**"
   service: system-tests
   category: system
 

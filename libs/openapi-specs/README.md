@@ -1,13 +1,13 @@
 # OpenAPI specs
 
 Central location for every OpenAPI document consumed by this repo.
-Consumed by the OpenAPI client generators (`:services:api:clients:*` via
+Consumed by the OpenAPI client generators (`:libs:clients:*` via
 `openapi-client-conventions`) and by the frontend `@hey-api/openapi-ts`
 generators.
 
 | File            | Source                                                                               | Consumer                            |
 | --------------- | ------------------------------------------------------------------------------------ | ----------------------------------- |
-| `brevo.yml`     | `https://api.brevo.com/v3/swagger_definition_v3.yml`                                 | `services/api/clients/brevo`        |
+| `brevo.yml`     | `https://api.brevo.com/v3/swagger_definition_v3.yml`                                 | `libs/clients/brevo`                |
 | `discord.json`  | `https://raw.githubusercontent.com/discord/discord-api-spec/refs/heads/main/specs/openapi.json` | `services/frontend` discord client  |
 | `hornet.json`   | Vendored Hornet bot API spec                                                         | (reserved for future client)        |
 

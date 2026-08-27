@@ -144,7 +144,7 @@ A preview needs no recovery path. It leaves nothing behind to recover from.
 
 ## 11. Testing
 
-`services/system-tests/src/test/resources/features/recovery-emails.feature` carries the
+`tests/system/src/test/resources/features/recovery-emails.feature` carries the
 scenarios; `RecoveryEmailSteps.kt` drives them over HTTP and reads `recovery_tokens`
 directly, so an assertion about what was issued is about the database and not the
 response.

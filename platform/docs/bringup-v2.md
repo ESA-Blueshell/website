@@ -246,7 +246,7 @@ curl https://esa-blueshell.nl/api/.well-known/openid-configuration | jq .issuer
 curl https://status.esa-blueshell.nl/
 ```
 ```bash
-SYSTEM_TEST_BASE_URL=https://esa-blueshell.nl ./gradlew :services:system-tests:test
+SYSTEM_TEST_BASE_URL=https://esa-blueshell.nl ./gradlew :tests:system:test
 ```
 ```bash
 vault login -method=oidc
@@ -275,7 +275,7 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
 - `kubectl top pods -A` shows ≥25 % RAM headroom per namespace.
 - `vault login -method=oidc` + Headlamp login both succeed and land
   the user at `cluster-admin`.
-- `:services:system-tests:test` passes against
+- `:tests:system:test` passes against
   `https://esa-blueshell.nl`.
 
 ## Ongoing updates

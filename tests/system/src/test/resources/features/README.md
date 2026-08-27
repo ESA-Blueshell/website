@@ -5,10 +5,10 @@ by Cucumber against the running compose stack.
 
 ```bash
 # against a running stack (see .github/scripts/start-system-test-stack.sh)
-./gradlew :services:system-tests:acceptanceTest
+./gradlew :tests:system:acceptanceTest
 
 # one area
-./gradlew :services:system-tests:acceptanceTest -PcucumberTags="@membership"
+./gradlew :tests:system:acceptanceTest -PcucumberTags="@membership"
 ```
 
 CI runs them as the `acceptance-features` job, separate from the sharded

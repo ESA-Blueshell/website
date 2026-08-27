@@ -214,8 +214,8 @@ why correcting an address behaves identically in both.
 
 | Suite | Location | Covers |
 |-------|----------|--------|
-| Acceptance features | [`account-creation.feature`](../../../services/system-tests/src/test/resources/features/account-creation.feature) | Confirmation gating, resending, correcting details, and that creating is not joining |
-| Browser system tests | `services/system-tests/.../frontend/login/CreateAccountPageSystemTest.kt` | The page as a user drives it |
+| Acceptance features | [`account-creation.feature`](../../../tests/system/src/test/resources/features/account-creation.feature) | Confirmation gating, resending, correcting details, and that creating is not joining |
+| Browser system tests | `tests/system/.../frontend/login/CreateAccountPageSystemTest.kt` | The page as a user drives it |
 | Frontend unit | `services/frontend/tests/unit/pages/login/CreateAccount.test.ts` | The two states and the edit round trip |
 | API integration | `services/api/src/integrationTest/.../auth/web/SignupDetailsIT.kt` | What the details route accepts and refuses |
 

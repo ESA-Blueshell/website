@@ -10,7 +10,7 @@ jacoco {
 
 // Unit tests live in src/test/; integration tests live in src/integrationTest/.
 // Each source set produces its own JaCoCo report and each has its own coverage
-// gate. System tests are extracted into :services:system-tests and are not
+// gate. System tests are extracted into :tests:system and are not
 // covered by any gate here.
 
 sourceSets {

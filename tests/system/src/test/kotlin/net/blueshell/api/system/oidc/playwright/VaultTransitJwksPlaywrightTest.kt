@@ -28,7 +28,7 @@ import org.junit.jupiter.api.TestInstance
  *
  * Then:
  *
- *   ./gradlew :services:system-tests:vaultOidcLiveTest
+ *   ./gradlew :tests:system:vaultOidcLiveTest
  *
  * Uses Playwright's native APIRequest client (not a chromium BrowserContext)
  * so the GET to the api uses Playwright's own HTTP client instead of the

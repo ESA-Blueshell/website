@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.esports.web
 
+import net.blueshell.api.domain.esports.application.TeamSeasonService
 import net.blueshell.api.domain.esports.persistence.Season
 import net.blueshell.api.domain.esports.persistence.Team
 import net.blueshell.api.domain.esports.persistence.TeamRosterEntry
@@ -40,6 +41,9 @@ class TeamNameConsentIT : UserTestSupport() {
     @Autowired
     private lateinit var profiles: MemberProfileRepository
 
+    @Autowired
+    private lateinit var fielded: TeamSeasonService
+
     private fun season(): Season = seasons.save(
         Season(
             name = "Season ${System.nanoTime()}",
@@ -51,8 +55,11 @@ class TeamNameConsentIT : UserTestSupport() {
     private fun team(game: Game): Team =
         teams.save(Team(game = game, name = "Team ${System.nanoTime()}"))
 
-    private fun seat(team: Team, season: Season, handle: String, userId: Long?): TeamRosterEntry =
-        entries.save(
+    private fun seat(team: Team, season: Season, handle: String, userId: Long?): TeamRosterEntry {
+        // Naming somebody to a team says it is fielded that season, which is what the page
+        // reads; a row written straight to the repository has to say so itself.
+        fielded.field(team.id!!, season.id!!)
+        return entries.save(
             TeamRosterEntry(
                 team = team,
                 season = season,
@@ -62,6 +69,7 @@ class TeamNameConsentIT : UserTestSupport() {
                 displayName = "Recorded Name",
             ),
         )
+    }
 
     private fun profileFor(user: User, consents: Boolean): MemberProfile = profiles.save(
         MemberProfile(

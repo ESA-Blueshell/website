@@ -23,13 +23,14 @@ import java.time.LocalDate
 class EsportsPageQueryService(
     private val rosters: TeamRosterService,
     private val seasons: SeasonService,
+    private val fielded: TeamSeasonService,
     private val accounts: UserGameAccountService,
     private val profiles: MemberProfileService,
     private val users: UserService,
 ) {
     @Transactional(readOnly = true)
     fun page(game: Game, seasonId: Long? = null): EsportsPageView {
-        val available = rosters.findSeasonIdsWithRosters(game)
+        val available = fielded.findSeasonIdsFielded(game)
             .mapNotNull { id -> runCatching { seasons.findById(id) }.getOrNull() }
             .sortedByDescending { it.startDate }
             .map { it.asView() }
@@ -38,6 +39,9 @@ class EsportsPageQueryService(
             ?: available.firstOrNull()
         if (season == null) return EsportsPageView(game, null, available, emptyList())
 
+        // The teams are the ones fielded; the roster entries only say who played for them,
+        // and a team announced before its line-up was settled has none yet.
+        val squads = fielded.findByGameAndSeason(game, season.id)
         val entries = rosters.findByGameAndSeason(game, season.id)
         val linked = entries.mapNotNull { it.userId }.toSet()
         val handles = accounts.handlesFor(game, linked)
@@ -46,14 +50,15 @@ class EsportsPageQueryService(
             .mapNotNull { user -> user.id?.let { it to user.fullName } }
             .toMap()
 
-        val teams = entries
-            .groupBy { it.team }
-            .map { (team, members) ->
+        val byTeam = entries.groupBy { it.team.id }
+        val teams = squads
+            .map { squad -> squad.team }
+            .map { team ->
                 TeamView(
                     id = team.id!!,
                     name = team.name,
                     image = team.image,
-                    members = members.map { entry ->
+                    members = byTeam[team.id].orEmpty().map { entry ->
                         RosterMemberView(
                             role = entry.teamRole,
                             handle = entry.userId?.let { handles[it] } ?: entry.handle,

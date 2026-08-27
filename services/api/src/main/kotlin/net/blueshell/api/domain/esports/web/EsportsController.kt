@@ -6,6 +6,7 @@ import jakarta.validation.Valid
 import net.blueshell.api.domain.esports.application.EsportsPageQueryService
 import net.blueshell.api.domain.esports.application.SeasonService
 import net.blueshell.api.domain.esports.application.TeamRosterService
+import net.blueshell.api.domain.esports.application.TeamSeasonService
 import net.blueshell.api.domain.esports.application.TeamService
 import net.blueshell.api.domain.esports.web.dto.request.AddRosterEntryRequest
 import net.blueshell.api.domain.esports.web.dto.request.CreateTeamRequest
@@ -47,6 +48,7 @@ class EsportsController(
     private val seasons: SeasonService,
     private val teams: TeamService,
     private val rosters: TeamRosterService,
+    private val fielded: TeamSeasonService,
 ) {
     @GetMapping("/games/{game}")
     @PermitAll
@@ -103,6 +105,36 @@ class EsportsController(
     fun deleteTeam(@PathVariable id: Long) {
         teams.delete(id)
     }
+
+    /**
+     * Records that a team is fielded in a season, before anybody has been named to it.
+     *
+     * Saying it twice says the same thing, so a repeat answers with the team rather than
+     * refusing: an interface that has to check first would race itself.
+     */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PutMapping("/seasons/{seasonId}/teams/{teamId}")
+    fun fieldTeam(
+        @PathVariable seasonId: Long,
+        @PathVariable teamId: Long,
+    ): TeamResponse = fielded.field(teamId, seasonId).team.asResponse()
+
+    /** Stops a team being fielded in a season. The team, and its other seasons, are untouched. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @DeleteMapping("/seasons/{seasonId}/teams/{teamId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun unfieldTeam(
+        @PathVariable seasonId: Long,
+        @PathVariable teamId: Long,
+    ) {
+        fielded.unfield(teamId, seasonId)
+    }
+
+    /** Which seasons a team was fielded in, newest first. Public, as the pages show it. */
+    @PermitAll
+    @GetMapping("/teams/{teamId}/seasons")
+    fun findTeamSeasons(@PathVariable teamId: Long): List<SeasonResponse> =
+        fielded.seasonsOf(teamId).map { it.season.asResponse() }
 
     /** The admin view of a roster: the same rows the page shows, with the names attached. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")

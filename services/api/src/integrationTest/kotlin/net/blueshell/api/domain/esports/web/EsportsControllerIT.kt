@@ -1,5 +1,6 @@
 package net.blueshell.api.domain.esports.web
 
+import net.blueshell.api.domain.esports.application.TeamSeasonService
 import net.blueshell.api.domain.esports.persistence.Season
 import net.blueshell.api.domain.esports.persistence.Team
 import net.blueshell.api.domain.esports.persistence.TeamRosterEntry
@@ -38,6 +39,9 @@ class EsportsControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var accounts: UserGameAccountRepository
 
+    @Autowired
+    private lateinit var fielded: TeamSeasonService
+
     private fun season(name: String, from: LocalDate, to: LocalDate): Season =
         seasons.save(Season(name = name, startDate = from, endDate = to))
 
@@ -51,16 +55,21 @@ class EsportsControllerIT : UserTestSupport() {
         role: TeamRole = TeamRole.PLAYER,
         userId: Long? = null,
         displayName: String? = null,
-    ): TeamRosterEntry = entries.save(
-        TeamRosterEntry(
-            team = team,
-            season = season,
-            handle = handle,
-            teamRole = role,
-            userId = userId,
-            displayName = displayName,
-        ),
-    )
+    ): TeamRosterEntry {
+        // Naming somebody to a team says it is fielded that season, which is what the page
+        // reads; a row written straight to the repository has to say so itself.
+        fielded.field(team.id!!, season.id!!)
+        return entries.save(
+            TeamRosterEntry(
+                team = team,
+                season = season,
+                handle = handle,
+                teamRole = role,
+                userId = userId,
+                displayName = displayName,
+            ),
+        )
+    }
 
     @Nested
     inner class PublicPage {

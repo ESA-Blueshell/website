@@ -14,6 +14,7 @@ class TeamRosterService(
     private val entries: TeamRosterEntryRepository,
     private val teams: TeamService,
     private val seasons: SeasonService,
+    private val fielded: TeamSeasonService,
 ) {
     @Transactional(readOnly = true)
     fun findByTeamAndSeason(teamId: Long, seasonId: Long): List<TeamRosterEntry> =
@@ -53,6 +54,9 @@ class TeamRosterService(
         val season = seasons.findById(seasonId)
         val trimmed = handle.trim()
         require(trimmed.isNotBlank()) { "A roster entry needs a handle" }
+        // Naming somebody to a team in a season says the team is fielded there, whether or
+        // not anybody said so first.
+        fielded.field(teamId, seasonId)
         // Appended rather than inserted: the page lists a roster in the order it was written.
         val next = entries.findAllByTeamAndSeason(teamId, seasonId).size
         return entries.save(

@@ -16,6 +16,7 @@ import net.blueshell.api.platform.integration.cohort.application.definition.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -58,6 +59,14 @@ class CohortSubjectQueryService(
     }
 
     /**
+     * The system a stored name stands for, or null when this build has no such system. A row
+     * written by an older build outlives the constant it was written from, and reading one is
+     * not an error worth an exception.
+     */
+    private fun targetSystemOrNull(system: String): TargetSystem? =
+        TargetSystem.entries.firstOrNull { it.name == system }
+
+    /**
      * External id to the account behind it, for the rows that have no account of their own.
      * Grouped by system because an external id only means anything within one.
      */
@@ -87,7 +96,21 @@ class CohortSubjectQueryService(
         val subject = subjects.findById(subjectId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "Subject $subjectId not found")
         }
-        val mappings = cohorts.findAllBySubjectId(subjectId).map { cohort ->
+        val mappings = cohorts.findAllBySubjectId(subjectId).mapNotNull { cohort ->
+            // A cohort can outlive the system it points at. Nothing on its row would work
+            // without that system — reconciling, switching and importing all need its
+            // strategy — so the row is left out and said out loud rather than taking the
+            // whole page down with it.
+            val system = targetSystemOrNull(cohort.system)
+            if (system == null) {
+                log.warn(
+                    "[cohort] subject={} cohort={} points at '{}', which is not a system this build knows",
+                    subjectId,
+                    cohort.id,
+                    cohort.system,
+                )
+                return@mapNotNull null
+            }
             CohortMappingRow(
                 cohort = cohort,
                 externalId = targetIds.find(cohort),
@@ -101,7 +124,7 @@ class CohortSubjectQueryService(
                 // Read from the row rather than from the system, so drawing this page costs
                 // no call to Brevo.
                 path = listOfNotNull(
-                    runCatching { strategies.descriptor(TargetSystem.valueOf(cohort.system)).systemLabel }
+                    runCatching { strategies.descriptor(system).systemLabel }
                         .getOrDefault(cohort.system),
                     cohort.folder?.takeIf { it.isNotBlank() },
                 ),
@@ -112,7 +135,11 @@ class CohortSubjectQueryService(
         // desired locally has no userId by definition, and it is exactly the row somebody
         // opens this page to find.
         val members = cohortMembers.findAllBySubjectId(subjectId)
-        val systemByCohortId = mappings.associate { it.cohort.id!! to TargetSystem.valueOf(it.cohort.system) }
+        // Every row here came through the filter above, so every system named is one that
+        // exists.
+        val systemByCohortId = mappings.mapNotNull { row ->
+            targetSystemOrNull(row.cohort.system)?.let { row.cohort.id!! to it }
+        }.toMap()
 
         // Those rows carry an external id and nothing else. The mapping table knows which
         // account that id belongs to, if any, which is what turns it into a name.
@@ -151,6 +178,9 @@ class CohortSubjectQueryService(
         )
     }
 
+    companion object {
+        private val log = LoggerFactory.getLogger(CohortSubjectQueryService::class.java)
+    }
 }
 
 /** Read-model projection for the dashboard's top-level list. */

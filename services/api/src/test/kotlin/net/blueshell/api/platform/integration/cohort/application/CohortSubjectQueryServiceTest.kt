@@ -273,6 +273,49 @@ class CohortSubjectQueryServiceTest {
     }
 
     @Test
+    fun `detail leaves out a cohort pointing at a system this build does not have`() {
+        val subject = subject(30L)
+        val known = cohort(300L)
+        val unknown = Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
+            .apply { id = 301L }
+        every { subjects.findById(30L) } returns Optional.of(subject)
+        every { cohorts.findAllBySubjectId(30L) } returns listOf(known, unknown)
+        every { targetIds.find(known) } returns "external-1"
+        every { cohortMembers.findAllBySubjectId(30L) } returns emptyList()
+        every { cohortMembers.findAllByCohortId(any()) } returns emptyList()
+        stubNoUsers()
+
+        val detail = service.detail(30L)
+
+        // Nothing on that row would work without its system, and one dead row is not worth
+        // the whole page.
+        assertThat(detail.mappings).extracting<Long> { it.cohort.id }.containsExactly(300L)
+    }
+
+    @Test
+    fun `detail still lists the members of a cohort whose system is gone`() {
+        val subject = subject(31L)
+        val unknown = Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
+            .apply { id = 310L }
+        val row = member(unknown, subject, userId = 1L)
+        every { subjects.findById(31L) } returns Optional.of(subject)
+        every { cohorts.findAllBySubjectId(31L) } returns listOf(unknown)
+        every { cohortMembers.findAllBySubjectId(31L) } returns listOf(row)
+        every { cohortMembers.findAllByCohortId(any()) } returns listOf(row)
+        every { users.findAllByIds(any()) } returns listOf(user(1L, "Emma Dokter"))
+        every { users.isSoftDeleted(any()) } returns false
+        every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
+
+        val detail = service.detail(31L)
+
+        // Dropping the target must not drop the people in it: they are still on the ledger,
+        // and hiding them would make the page lie about who is in the cohort.
+        assertThat(detail.mappings).isEmpty()
+        assertThat(detail.members).hasSize(1)
+        assertThat(detail.members.single().system).isNull()
+    }
+
+    @Test
     fun `detail leaves last reconciled null for a cohort never confirmed`() {
         val subject = subject(23L)
         val cohort = cohort(230L)

@@ -3,6 +3,13 @@
 ## Status
 Accepted
 
+> **Corrected.** This record claimed no unique index backed the columns
+> `@UniqueUserCommand` guards, and gated the validator change on a migration to
+> add them. The constraints exist, and have since
+> `V28__constraints-cleanup-hibernate-realignment.sql`. The original claims stay
+> below with the correction beside each; *Implementation status* carries the
+> migration trail and what it unblocks.
+
 ## Context
 
 Retiring the `CommandBus`
@@ -19,6 +26,11 @@ Two are not. `@UniqueUserCommand` and `@ValidEventSignUpCommand` **run database
 queries inside bean validation** — outside the transaction that follows, with a
 window between the check and the insert in which another request can take the
 username. The gap is small and real, and no unique index closes it today.
+
+> **Correction.** The last clause held for `@ValidEventSignUpCommand` — no
+> unique constraint covers an event sign-up — but not for `@UniqueUserCommand`.
+> Every column that validator reads is already indexed uniquely; see
+> *Implementation status*.
 
 [ADR-024](../api/ADR-024-scoped-signup-continuation-tokens.md) already records a
 case where the declarative form broke down: `/signup/details` checks uniqueness
@@ -64,16 +76,47 @@ anything else is checked by the use case that receives them.
 
 ## Implementation status
 
-Decided, not built.
+Decided, not built. The migration this record gated itself on is not owed — it
+landed years before the record was written.
 
 - Unique indexes are required on the columns `@UniqueUserCommand` guards before
   its pre-check can be demoted to a message-producing convenience. Without the
   index this ADR makes the guarantee weaker, not stronger, so **the migration
   must precede the validator change.**
+
+  > **Correction.** The indexes were already there. `@UniqueUserCommand` reads
+  > four columns — `username`, `email`, `discord`, `phone_number` — and each
+  > carries a unique constraint on `(column, deleted_at)`:
+  > `uk_users_username_deleted_at`, `uk_users_email_deleted_at`,
+  > `uk_users_discord_deleted_at`, `uk_users_phone_number_deleted_at`.
+  > `V23__dates-int-to-bigint-timezone-deletedat-and-user-indexes.sql` created
+  > all four as standalone unique indexes,
+  > `V27__fk-renames-and-index-cleanup.sql` dropped them by name, and
+  > `V28__constraints-cleanup-hibernate-realignment.sql` re-added them as named
+  > table constraints on the same column pairs. No migration after V28 touches
+  > them. **The gate is open: the validator demotion is unblocked and can be
+  > done on its own.**
+
 - Existing data may violate the indexes being added. That has to be surveyed
   before the migration, not discovered by it.
+
+  > **Correction.** Moot. No index is being added, and these have been rejecting
+  > duplicates since V28 — data that would violate them was reconciled by that
+  > migration and has been unwritable since. There is nothing left to survey.
+
 - `shared/validation/date` has no cross-module consumer and is absorbed under
   [ADR-003](ADR-003-package-topology-and-placement-rules.md) rule 2.
+
+### Why the constraints are composite
+
+Each is keyed on `(column, deleted_at)` rather than the column alone because
+`User` is soft-deleted: a deleted row stays in the table with `deleted_at` set
+to the deletion timestamp, and a live row carries the sentinel
+`9999-12-31 23:59:59`. A plain unique index on `discord` would put a handle out
+of reach forever once the account holding it was deleted. Keying on the pair
+admits one live row plus any number of deleted ones, which is the guarantee this
+record asks for. The composite shape is the constraint working, not a weakened
+form of it, and narrowing it to the bare column would break account deletion.
 
 ## Consequences
 
@@ -92,6 +135,10 @@ Decided, not built.
 - **Two places to look** for the rules governing one input.
 - **A migration that can fail on real data**, and uniqueness violations in
   production data are discovered at the worst moment.
+
+  > **Correction.** Not a cost this record carries for the user columns. That
+  > migration is V28, it ran, and the risk was spent then. It stands for
+  > `@ValidEventSignUpCommand`, whose constraint has yet to be written.
 
 ### Neutral
 - **`@ValidEventSignUpCommand` may not need the database at all.** It is grouped

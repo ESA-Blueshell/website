@@ -86,17 +86,31 @@ would multiply polling queries for a case that may never arise.
 
 ## Implementation status
 
-Decided, not built.
+Decided. Split by whether anything calls it.
 
-- `scheduledFor` needs a Flyway migration and a change to
-  `findDueScheduledRetries` to select on either column.
-- `TrackedJobDispatcher` gains `runIn`; `enqueue` is renamed `runAsync` or kept
-  alongside it.
-- `AsyncCommandDispatcher`, `AbstractCommandJobHandler` and
-  `CommandJobDefinition` are deleted in phase 1 of
-  [ADR-006](ADR-006-migration-sequencing.md).
-- The job manager UI should show `scheduledFor`, or the column's purpose is
-  invisible to the operators it exists for.
+Landing now, because both are free and neither is speculative:
+
+- `TrackedJobDispatcher.enqueue` is renamed `runAsync`.
+- `StaleJobRecovery` logs `nextAttemptAt` under the label `scheduledFor={}`.
+  That is the operator confusion this record predicts, already in production, and
+  it is a one-line fix.
+
+Deferred until a caller exists, on this record's own reasoning that it would
+otherwise be "a schema change for a feature with no current caller":
+
+- the `scheduledFor` column and its Flyway migration;
+- `findDueScheduledRetries` selecting on `max(scheduledFor, nextAttemptAt)`;
+- `runIn` itself;
+- the job manager column, without which the field's purpose is invisible to the
+  operators it exists for.
+
+Contribution and event reminders are the likeliest first caller. When one
+arrives, all four land together — a column with no reader and no writer is worse
+than no column.
+
+Already done: `AsyncCommandDispatcher`, `AbstractCommandJobHandler` and
+`CommandJobDefinition` were deleted in phase 1 of
+[ADR-006](ADR-006-migration-sequencing.md).
 
 ## Consequences
 

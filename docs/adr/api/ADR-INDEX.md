@@ -10,7 +10,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 |---|-------|--------|---------|
 | [001](ADR-001-multi-layered-domain-driven-architecture.md) | Multi-Layered Domain-Driven Architecture | Superseded | Replaced by the [architecture ADR set](../architecture/ADR-INDEX.md) |
 | [002](ADR-002-command-pattern-with-command-bus.md) | Command Pattern with CommandBus | Superseded | Replaced by use-case services; query/command split carried forward |
-| [013](ADR-013-entity-association-pattern.md) | Entity Association Pattern | Accepted | Association ownership and reference consistency rules |
+| [013](ADR-013-entity-association-pattern.md) | Entity Association Pattern | Accepted | Association ownership and reference consistency rules; owning side may cross a module boundary, `mappedBy` may not |
 | [016](ADR-016-layer-dependency-rules.md) | Layer Dependency Rules and Clean Architecture | Superseded | Replaced by Spring Modulith module verification |
 | [022](ADR-022-platform-infrastructure-shared-organization.md) | Platform, Infrastructure, and Shared Organization | Superseded | Replaced by the flat-module package topology |
 

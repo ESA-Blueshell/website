@@ -11,22 +11,36 @@ The API is organised as four top-level packages — `domain`, `platform`, `share
 Infrastructure, Shared).
 
 The layering is enforced and the boundaries between features are not. Nothing
-stops `event` reaching into `survey`'s repositories, and nothing has:
+stops `event` reaching into `survey`'s repositories, and nothing has.
 
-| Cycle | imports each way |
-|-------|------------------|
-| `auth` ↔ `user` | 29 / 4 |
-| `event` ↔ `survey` | 23 / 1 |
-| `contribution` ↔ `user` | 9 / 1 |
-| `event` ↔ `file` | 4 / 1 |
-| `committee` ↔ `user` | 3 / 4 |
-| `event` ↔ `user` | 3 / 2 |
-| `file` ↔ `user` | 3 / 1 |
+Counting only the twelve `domain/*` features against each other understates it,
+because the capability packages under `platform/integration` are peers of those
+features rather than a layer beneath them. Measured across every module the
+topology in [ADR-003](ADR-003-package-topology-and-placement-rules.md) names,
+with `shared` and `security` excluded for the reason given below, there are
+**fourteen cycles**:
 
-103 imports cross a feature boundary, and **45 of them reach directly into
-another feature's `persistence` package** — its JPA entities. A layered rule
-permits all of this, because `event.persistence` reading `survey.persistence` is
-same-layer access.
+| Cycle | imports each way | smaller side |
+|-------|------------------|--------------|
+| `cohort` ↔ `jobs` | 40 / 3 | 3 |
+| `auth` ↔ `user` | 29 / 2 | 2 |
+| `survey` ↔ `event` | 1 / 23 | 1 |
+| `user` ↔ `contribution` | 1 / 9 | 1 |
+| `contact` ↔ `sync` | 2 / 8 | 2 |
+| `committee` ↔ `user` | 3 / 4 | 3 |
+| `jobs` ↔ `event` | 4 / 2 | 2 |
+| `file` ↔ `event` | 1 / 4 | 1 |
+| `user` ↔ `event` | 2 / 3 | 2 |
+| `email` ↔ `contribution` | 3 / 1 | 1 |
+| `email` ↔ `event` | 2 / 1 | 1 |
+| `email` ↔ `auth` | 1 / 2 | 1 |
+| `file` ↔ `user` | 3 / 1 | 1 |
+| `jobs` ↔ `contribution` | 2 / 2 | 2 |
+
+731 imports cross a module boundary. **66 of them reach directly into another
+module's `persistence` package**, naming 24 distinct entities, repositories and
+specifications. A layered rule permits all of this, because `event.persistence`
+reading `survey.persistence` is same-layer access.
 
 [ADR-018](../api/ADR-018-data-ownership-in-modular-monolith.md) already declares
 this a modular monolith. Nothing verifies the modules.
@@ -45,13 +59,20 @@ enabled.
 
 ### What a module is
 
-Each direct sub-package of `net.blueshell.api` is an application module. Its
-`api` sub-package is its published surface; everything else is internal and
-unreachable from other modules. The convention is registered through a
-detection strategy rather than annotated per module:
+A module is a package nominated by the detection strategy, not necessarily a
+direct sub-package of `net.blueshell.api`.
+`ApplicationModuleDetectionStrategy.getModuleBasePackages` returns an arbitrary
+`Stream<JavaPackage>`, so the strategy can nominate `domain.user`,
+`platform.integration.cohort` and the rest while the packages stay nested. The
+same class declares the named-interface convention:
 
 ```kotlin
 class BlueshellModuleDetection : ApplicationModuleDetectionStrategy {
+    override fun getModuleBasePackages(basePackage: JavaPackage): Stream<JavaPackage> =
+        // domain.*, platform.integration.*, platform.oidc,
+        // shared, infrastructure.security
+        ...
+
     override fun detectNamedInterfaces(
         basePackage: JavaPackage,
         information: ApplicationModuleInformation,
@@ -59,23 +80,50 @@ class BlueshellModuleDetection : ApplicationModuleDetectionStrategy {
 }
 ```
 
+**Verification therefore does not depend on the flat topology.** An earlier
+version of this record said flattening was a requirement rather than a
+preference; that was asserted without checking the interface. The flattening in
+[ADR-003](ADR-003-package-topology-and-placement-rules.md) is worth doing for
+findability and shorter imports, and it is sequenced last precisely because
+nothing verifiable waits on it.
+
+A module's `api` sub-package is its published surface. `persistence` is
+additionally published as a second named interface, `entities`, reachable only
+by modules that name it — see ADR-003.
+
 Kotlin has no `package-info.java`, so module metadata uses the `@PackageInfo`
 idiom — a class carrying the annotations, one per module.
 
-### Cycles are not permitted
+### Cycles, and the one waiver
 
-`ApplicationModules.verify()` fails on a cycle, and a cycle cannot be waived:
-`allowedDependencies` narrows what a module may reach, it does not authorise a
-loop. The seven cycles above are a precondition for adopting Modulith at all,
-which is why they are phase 2 of
-[ADR-006](ADR-006-migration-sequencing.md) and why nothing downstream can be
-verified before they are gone.
+`ApplicationModules.verify()` fails on a cycle between closed modules.
+`allowedDependencies` does not authorise a loop — it only narrows what a module
+may reach. But a cycle **can** be waived, by exactly one mechanism:
+`@ApplicationModule(type = OPEN)`. Modulith's `ApplicationModulesSliceAssignment`
+returns `SliceIdentifier.ignore()` for an open module, so its types never enter
+ArchUnit's `beFreeOfCycles` check. An earlier version of this record said no
+waiver existed; that was wrong.
 
-Each reverse direction is between one and four imports, so breaking them is
-removing a handful of references rather than reorganising modules. The
-inversions use domain events, which is what
-[ADR-006 on events](../api/ADR-006-event-driven-architecture.md) already
-prescribes for cross-domain coordination.
+**`shared` and `security` are open. Every other module is closed.** Both are
+mechanism rather than capability: `shared` is the kernel that survived the
+fan-in test, and `security` holds `BasePermissionEvaluator`,
+`CompositePermissionEvaluator` and `CurrentUserProvider`. Making them open costs
+nothing that matters, because a cycle through a kernel everything depends on
+reports coupling that is already known and unavoidable, while feature-to-feature
+coupling — the decay this record exists to catch — stays fully checked. It takes
+the count from eighteen cycles to the fourteen tabulated above.
+
+Openness is not extended further. `jobs` and `email` were considered and
+rejected: each has an entity, a repository and a controller, so each is a
+capability, and exempting them would hide coupling in the places it is most
+likely to appear.
+
+Breaking the fourteen means inverting **23 imports** — the smaller side of each
+pair, and a single import in seven of them. Eleven are cross-module JPA
+associations, which no domain event can break; the rule that governs them is in
+[API ADR-013](../api/ADR-013-entity-association-pattern.md). Five are direct
+service calls and four are misfiled types. The instrument is therefore chosen per
+cycle, and [ADR-006](ADR-006-migration-sequencing.md) names it for each.
 
 ### Cross-module coordination
 
@@ -110,11 +158,13 @@ What is genuinely outstanding:
 
 - **Module verification is not enabled.** No `ApplicationModules.verify()`
   anywhere, so nothing checks module boundaries today.
-- **The `@PackageInfo` classes do not exist** — roughly twenty, one per module,
+- **The `@PackageInfo` classes do not exist** — twenty, one per module,
   carrying the metadata Kotlin cannot put in a `package-info.java`.
-- **The seven cycles all exist**, re-measured on `main` and unchanged by the
-  package moves so far. `ApplicationModules.verify()` cannot pass until every one
-  is broken.
+- **The detection strategy does not exist.** Nominating the nested packages is
+  what lets verification run before the flattening in ADR-003.
+- **All fourteen cycles exist**, re-measured on `main` and reduced only where the
+  command-bus slices happened to delete a handler that held a reverse import.
+  `ApplicationModules.verify()` cannot pass until every one is broken.
 
 ## Consequences
 
@@ -130,8 +180,10 @@ What is genuinely outstanding:
   does not need a seven-layer proof.
 
 ### Negative
-- **Seven cycles block everything.** Until they are broken, none of this can be
-  verified, and breaking `auth ↔ user` at 29 imports one way is not trivial.
+- **Fourteen cycles block everything.** Until they are broken, none of this can
+  be verified. The count is twice what a `domain/*`-only measurement suggested,
+  though the work is smaller than the raw import counts imply: `auth ↔ user`
+  reads as 29 imports and is 2 to invert.
 - **Nothing enforces layering inside a module any more.** A controller reaching
   a repository directly becomes a review matter rather than a build failure.
 - **A new framework to learn**, with a Kotlin-specific metadata idiom that has

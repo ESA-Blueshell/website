@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.application.listener
+package net.blueshell.api.domain.committee.application.listener
 
 import net.blueshell.api.domain.committee.application.CommitteeMemberService
 import net.blueshell.api.domain.user.application.UserService
@@ -9,18 +9,17 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
-/** Removes committee memberships when a user loses the MEMBER role. Contact sync is driven by [ContactSyncListener]. */
+/** Gives up a user's committee seats once they no longer hold the MEMBER role. */
 @Component
-class UserEventListener(
+class CommitteeSeatRevocationListener(
     private val users: UserService,
     private val committeeMembers: CommitteeMemberService,
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUpdate(evt: UserUpdated) {
-        val u = users.findById(evt.userId)
-        if (!u.hasAuthority(Role.MEMBER)) {
-            u.committeeMembers.forEach { committeeMembers.delete(it) }
+        if (!users.findById(evt.userId).hasAuthority(Role.MEMBER)) {
+            committeeMembers.revokeAllSeatsForUser(evt.userId)
         }
     }
 }

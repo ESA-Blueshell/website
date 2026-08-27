@@ -11,6 +11,9 @@ import org.springframework.stereotype.Repository
 interface CommitteeMemberRepository : BaseRepository<CommitteeMember, CommitteeMember.Id> {
     fun countByUser_Id(userId: Long): Long
 
+    /** A user's current seats. Seats given up are filtered by the entity's restriction. */
+    fun findByUser_Id(userId: Long): List<CommitteeMember>
+
     /**
      * Native query that bypasses the @SQLRestriction on CommitteeMember so the
      * caller can see the full join history. Returns `(committee_id, joined_at,

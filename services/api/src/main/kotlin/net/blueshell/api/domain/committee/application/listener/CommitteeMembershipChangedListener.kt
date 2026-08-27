@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.user.application.listener
+package net.blueshell.api.domain.committee.application.listener
 
 import net.blueshell.api.domain.committee.application.CommitteeMemberService
 import net.blueshell.api.domain.committee.application.event.CommitteeMembershipChanged

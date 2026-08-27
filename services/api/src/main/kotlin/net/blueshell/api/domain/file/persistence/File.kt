@@ -1,12 +1,9 @@
 package net.blueshell.api.domain.file.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
-import org.hibernate.annotations.OnDelete
-import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -50,10 +47,4 @@ class File(
 
     val uploaderId: Long
         get() = uploader.id ?: 0
-
-    @OneToMany(mappedBy = "file", fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private val _eventBanners: MutableSet<EventBanner> = linkedSetOf()
-    val eventBanners: Set<EventBanner>
-        get() = _eventBanners
 }

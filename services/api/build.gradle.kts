@@ -114,8 +114,8 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2")
     implementation("org.openapitools:jackson-databind-nullable:0.2.11")
 
-    implementation(project(":services:api:clients:brevo"))
-    implementation(project(":services:api:clients:discord"))
+    implementation(project(":libs:clients:brevo"))
+    implementation(project(":libs:clients:discord"))
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 

@@ -37,7 +37,7 @@ download_external_specs() {
 
 regen_brevo_client() {
   echo "Regenerating Brevo Java client..."
-  ./gradlew --no-daemon --build-cache :services:api:clients:brevo:generate
+  ./gradlew --no-daemon --build-cache :libs:clients:brevo:generate
 }
 
 # Normalizes the Blueshell API spec in-place. Caller must have written

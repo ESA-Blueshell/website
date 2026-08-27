@@ -57,10 +57,6 @@
   service: api
   category: prod
 
-- glob: "services/api/clients/**"
-  service: api
-  category: prod
-
 - glob: "services/api/**"
   service: api
   category: build
@@ -87,11 +83,15 @@
   category: build
 
 # --- system tests ---
-- glob: "services/system-tests/**"
+- glob: "tests/system/**"
   service: system-tests
   category: system
 
 # --- libs ---
+- glob: "libs/clients/**"
+  service: libs
+  category: prod
+
 - glob: "libs/**"
   service: libs
   category: prod

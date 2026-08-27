@@ -40,7 +40,7 @@ action refuses to touch them at all rather than recording one.
 ## Invariants
 
 Each of these is defended by a scenario in
-`services/system-tests/src/test/resources/features/bulk-contribution-marking.feature`.
+`tests/system/src/test/resources/features/bulk-contribution-marking.feature`.
 
 - A selection is never partly applied. If any selected user cannot be acted on, no
   contribution is created or removed for any of them.

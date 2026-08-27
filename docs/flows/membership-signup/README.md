@@ -126,7 +126,7 @@ that is correct — confirming an address says nothing about wanting to join.
 ## Invariants
 
 Each of these is a thing that cannot happen, and each is covered by a scenario in
-the [acceptance features](../../../services/system-tests/src/test/resources/features/)
+the [acceptance features](../../../tests/system/src/test/resources/features/)
 — see [Testing](#testing).
 
 1. **No membership without a confirmed email address.** A `Membership` row implies
@@ -470,23 +470,23 @@ that drift:
 
 | Feature | Covers |
 |---------|--------|
-| [`account-registration.feature`](../../../services/system-tests/src/test/resources/features/account-registration.feature) | An account is unusable until its address is confirmed, and confirming is not joining |
-| [`membership-join-with-account.feature`](../../../services/system-tests/src/test/resources/features/membership-join-with-account.feature) | The signed-in path: no token, no confirmation email, membership on submission |
-| [`membership-eligibility.feature`](../../../services/system-tests/src/test/resources/features/membership-eligibility.feature) | The preconditions, as an `Examples` table, plus submit-twice idempotency |
-| [`membership-join-new-applicant.feature`](../../../services/system-tests/src/test/resources/features/membership-join-new-applicant.feature) | The new-applicant path, both arrival orders, and correcting a mistyped address |
-| [`signup-session-scope.feature`](../../../services/system-tests/src/test/resources/features/signup-session-scope.feature) | What a signup session may and may not do |
-| [`zz-harness-selfcheck.feature`](../../../services/system-tests/src/test/resources/features/zz-harness-selfcheck.feature) | That the suite ran at all, so a green job cannot mean an empty one |
+| [`account-registration.feature`](../../../tests/system/src/test/resources/features/account-registration.feature) | An account is unusable until its address is confirmed, and confirming is not joining |
+| [`membership-join-with-account.feature`](../../../tests/system/src/test/resources/features/membership-join-with-account.feature) | The signed-in path: no token, no confirmation email, membership on submission |
+| [`membership-eligibility.feature`](../../../tests/system/src/test/resources/features/membership-eligibility.feature) | The preconditions, as an `Examples` table, plus submit-twice idempotency |
+| [`membership-join-new-applicant.feature`](../../../tests/system/src/test/resources/features/membership-join-new-applicant.feature) | The new-applicant path, both arrival orders, and correcting a mistyped address |
+| [`signup-session-scope.feature`](../../../tests/system/src/test/resources/features/signup-session-scope.feature) | What a signup session may and may not do |
+| [`zz-harness-selfcheck.feature`](../../../tests/system/src/test/resources/features/zz-harness-selfcheck.feature) | That the suite ran at all, so a green job cannot mean an empty one |
 
 Two adjacent flows have their own features:
-[`account-creation.feature`](../../../services/system-tests/src/test/resources/features/account-creation.feature)
-and [`sign-in.feature`](../../../services/system-tests/src/test/resources/features/sign-in.feature).
+[`account-creation.feature`](../../../tests/system/src/test/resources/features/account-creation.feature)
+and [`sign-in.feature`](../../../tests/system/src/test/resources/features/sign-in.feature).
 
-Run them with `./gradlew :services:system-tests:acceptanceTest` against a running
+Run them with `./gradlew :tests:system:acceptanceTest` against a running
 stack. They are their own CI job (`acceptance-features`) and carry no browser, so
 the suite is fast. Every scenario runs; nothing is tagged `@pending`.
 
 Conventions for writing them are in
-[the features README](../../../services/system-tests/src/test/resources/features/README.md).
+[the features README](../../../tests/system/src/test/resources/features/README.md).
 
 Browser-level coverage of the same screens lives alongside, in the JUnit system
 tests, which exercise what the acceptance features deliberately do not — that the
@@ -494,7 +494,7 @@ pages render and the steps are reachable by clicking:
 
 | Suite | Location | Covers |
 |-------|----------|--------|
-| Browser system tests | `services/system-tests/src/test/kotlin/.../frontend/membership/` | The stepper as a user drives it, both applicant types, the correction form |
+| Browser system tests | `tests/system/src/test/kotlin/.../frontend/membership/` | The stepper as a user drives it, both applicant types, the correction form |
 | Frontend e2e | `services/frontend/tests/e2e/membership-signup.spec.ts` | Validation gates and that each write carries the token header |
 | Unit (Vue) | `services/frontend/tests/unit/pages/membership/MembershipSignUp.test.ts` | Step progression and both endings of the flow |
 | API unit | `services/api/src/test/.../auth/application/` | `completeIfReady` branches, token scope and expiry |

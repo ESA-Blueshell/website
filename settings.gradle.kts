@@ -15,11 +15,7 @@ dependencyResolutionManagement {
 }
 
 include(":libs:kotlin-common")
+include(":libs:clients:brevo")
+include(":libs:clients:discord")
 include(":services:api")
-include(":services:api:clients:brevo")
-include(":services:api:clients:discord")
-include(":services:system-tests")
-
-// libs:kotlin-common is an empty skeleton in this PR. When the OIDC / Vault
-// helpers land there, api's build.gradle.kts can add
-// implementation(project(":libs:kotlin-common")).
+include(":tests:system")

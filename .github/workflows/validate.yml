@@ -10,7 +10,7 @@ on:
     paths:
       - 'services/api/**'
       - 'services/frontend/**'
-      - 'services/system-tests/**'
+      - 'tests/**'
       - 'build-logic/**'
       - 'libs/**'
       - 'gradle/**'
@@ -153,9 +153,9 @@ jobs:
             :services:api:compileTestFixturesKotlin \
             :services:api:compileTestKotlin \
             :services:api:compileIntegrationTestKotlin \
-            :services:system-tests:compileTestKotlin \
+            :tests:system:compileTestKotlin \
             :services:api:resolveAllDependencies \
-            :services:system-tests:resolveAllDependencies
+            :tests:system:resolveAllDependencies
 
   api-tests:
     name: API unit and integration tests
@@ -292,7 +292,7 @@ jobs:
   system-tests:
     # Shard the system-test class set across N parallel matrix jobs so
     # the wall-clock cost scales sub-linearly with new classes. The Gradle
-    # config in services/system-tests/build.gradle.kts reads SHARD_TOTAL
+    # config in tests/system/build.gradle.kts reads SHARD_TOTAL
     # and SHARD_INDEX (1-based) from the env, hashes each test class FQCN,
     # and includes only its own slice via JUnit's --tests filter. Stable
     # partition: a class always lands on the same shard, which makes
@@ -326,7 +326,7 @@ jobs:
           SHARD_TOTAL: 6
           SHARD_INDEX: ${{ matrix.shard }}
         run: |
-          ./gradlew --no-daemon :services:system-tests:test \
+          ./gradlew --no-daemon :tests:system:test \
             -Dsystem.frontend.url=http://localhost:3000 \
             -Dtest.frontend.url=http://localhost:3000 \
             -Dtest.api.url=http://localhost:8080 \
@@ -349,7 +349,7 @@ jobs:
           # Per-shard artifact name so parallel jobs don't collide.
           name: system-test-reports-shard-${{ matrix.shard }}
           path: |
-            services/system-tests/build/reports/tests/test
+            tests/system/build/reports/tests/test
           if-no-files-found: warn
 
   acceptance-features:
@@ -383,7 +383,7 @@ jobs:
 
       - name: Run acceptance features
         run: |
-          ./gradlew --no-daemon :services:system-tests:acceptanceTest \
+          ./gradlew --no-daemon :tests:system:acceptanceTest \
             -Dtest.frontend.url=http://localhost:3000 \
             -Dtest.api.url=http://localhost:8080 \
             -Dtest.db.url="jdbc:mariadb://localhost:3307/blueshell" \
@@ -404,8 +404,8 @@ jobs:
         with:
           name: acceptance-feature-report
           path: |
-            services/system-tests/build/reports/cucumber
-            services/system-tests/build/test-results/acceptanceTest
+            tests/system/build/reports/cucumber
+            tests/system/build/test-results/acceptanceTest
           if-no-files-found: warn
 
   fe-unit:

@@ -38,8 +38,8 @@ Five layers. Each answers one question and is bounded by what it may reach for.
 |-------|-----------|---------|---------|
 | Unit | `services/api/src/test` | Does this class do what it says? | Nothing outside the JVM. **No Spring context.** |
 | Integration | `services/api/src/integrationTest` | Do these classes, modules and events combine to produce the required result? | Spring context, real database, real event publication |
-| Acceptance | `services/system-tests` `acceptanceTest` | Does the product do what was agreed, in the domain's language? | The running stack over HTTP. No browser |
-| System | `services/system-tests` `test` | Does the assembled system hold together? | The running stack and a browser |
+| Acceptance | `tests/system` `acceptanceTest` | Does the product do what was agreed, in the domain's language? | The running stack over HTTP. No browser |
+| System | `tests/system` `test` | Does the assembled system hold together? | The running stack and a browser |
 | Frontend unit / e2e | `services/frontend` `tests/unit`, `tests/e2e` | Does the SPA behave? | jsdom / a browser against a stubbed API |
 
 ### The unit layer may not use Spring
@@ -119,7 +119,7 @@ Decided, not yet enforced.
   `src/integrationTest/kotlin`. This is sequenced **before** the unit branch gate
   becomes blocking; until it lands the unit exec measures a contaminated set and
   its number means nothing.
-- `VaultTransitJwksPlaywrightTest` sits in `services/system-tests` tagged only
+- `VaultTransitJwksPlaywrightTest` sits in `tests/system` tagged only
   `@Tag("vault-oidc-live")`, so the `includeTags("system")` filter never selects
   it. Either it gains the tag or the policy records why live-credential tests are
   exempt.

@@ -145,8 +145,8 @@ credentials are examined.
 
 | Suite | Location | Covers |
 |-------|----------|--------|
-| Acceptance features | [`sign-in.feature`](../../../services/system-tests/src/test/resources/features/sign-in.feature) | Who gets in, who does not, and what the refusal gives away |
-| Browser system tests | `services/system-tests/.../frontend/login/` | The page as a user drives it |
+| Acceptance features | [`sign-in.feature`](../../../tests/system/src/test/resources/features/sign-in.feature) | Who gets in, who does not, and what the refusal gives away |
+| Browser system tests | `tests/system/.../frontend/login/` | The page as a user drives it |
 | Frontend unit | `services/frontend/tests/unit/pages/login/Login.test.ts` | Form behaviour and error rendering |
 
 ## Related documentation

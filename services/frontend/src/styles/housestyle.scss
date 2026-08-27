@@ -143,11 +143,15 @@ CSS MOMENT
 .v-application {
   font-family: "Barlow Semi Condensed", sans-serif;
 
-  p {
+  // The island is excluded here too. These are unlayered, so they beat the
+  // island's own reset whatever it says: every paragraph carried a bottom
+  // margin it had not asked for, and every list — including a grid built as
+  // one — was indented by 24px.
+  p:not(.esports-island p) {
     margin-bottom: 16px;
   }
 
-  ol, ul {
+  ol:not(.esports-island ol), ul:not(.esports-island ul) {
     padding-left: 24px;
   }
 }
@@ -161,11 +165,16 @@ a:visited.text-decoration-none {
 }
 
 .v-application.v-theme--dark {
-  ul:not(.v-pagination__list) li {
+  // The island is excluded for the same reason as the headings above: this rule
+  // is unlayered, so the island's own `list-style: none` could never beat it and
+  // every grid built as a list wore a bullet beside each tile.
+  ul:not(.v-pagination__list) li:not(.esports-island li) {
     list-style-image: url('@/assets/svgs/listitemdark.svg')
   }
 
-  p, li {
+  // Excluded from the island, which sets its own text colours: this forced
+  // every muted line back to full white.
+  p:not(.esports-island p), li:not(.esports-island li) {
     color: white;
   }
 
@@ -176,7 +185,7 @@ a:visited.text-decoration-none {
 
 
 .v-application:not(.v-theme--dark) {
-  ul:not(.v-pagination__list) li {
+  ul:not(.v-pagination__list) li:not(.esports-island li) {
     list-style-image: url('@/assets/svgs/listitemlight.svg')
   }
 }

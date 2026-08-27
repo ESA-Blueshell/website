@@ -50,6 +50,15 @@
   --color-brand-lit: #6aa8ff;
   --color-acid: #a8ff00;
 
+  /* One accent per game. A recognisable colour carries a game further than a
+     photograph of somebody else's tournament, and unlike stock imagery it is
+     consistent across five tiles. */
+  --color-game-league: #c8963c;
+  --color-game-cs2: #e8842a;
+  --color-game-valorant: #ff4655;
+  --color-game-rocket: #1183d6;
+  --color-game-geoguessr: #6cbf3f;
+
   --font-display: "Fugaz One", system-ui, sans-serif;
   --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
 

@@ -1,0 +1,527 @@
+game,team,season,handle,role,display_name,sort_index,season_source
+CS2,BS HyperS,Autumn 2023/24,BSKingCookie,PLAYER,Ivo Heitlager,0,read
+CS2,BS HyperS,Autumn 2023/24,Reign,PLAYER,Reinier Algra,1,read
+CS2,BS HyperS,Autumn 2023/24,MacVanish_,PLAYER,Joran Hagen,2,read
+CS2,BS HyperS,Autumn 2023/24,TheCheeser,PLAYER,Mario van der Wal Agraz,3,read
+CS2,BS HyperS,Autumn 2023/24,Marijn02,PLAYER,Marijn de Boer,4,read
+CS2,BS HyperS,Autumn 2023/24,FetaBass,SUBSTITUTE,Chris Wong,5,read
+CS2,BS HyperS,Autumn 2023/24,Bobbuz,COACH,Bob Even,6,read
+CS2,BS HyperS,Spring 2023/24,BSKingCookie,PLAYER,Ivo Heitlager,0,inferred
+CS2,BS HyperS,Spring 2023/24,Reign,PLAYER,Reinier Algra,1,inferred
+CS2,BS HyperS,Spring 2023/24,MacVanish_,PLAYER,Joran Hagen,2,inferred
+CS2,BS HyperS,Spring 2023/24,TheCheeser,PLAYER,Mario van der Wal Agraz,3,inferred
+CS2,BS HyperS,Spring 2023/24,Marijn02,PLAYER,Marijn de Boer,4,inferred
+CS2,BS HyperS,Spring 2023/24,FetaBass,SUBSTITUTE,Chris Wong,5,inferred
+CS2,BS HyperS,Spring 2023/24,Bobbuz,COACH,Bob Even,6,inferred
+CS2,BS HyperS,Autumn 2024/25,BSKingCookie,PLAYER,Ivo Heitlager,0,inferred
+CS2,BS HyperS,Autumn 2024/25,Reign,PLAYER,Reinier Algra,1,inferred
+CS2,BS HyperS,Autumn 2024/25,MacVanish_,PLAYER,Joran Hagen,2,inferred
+CS2,BS HyperS,Autumn 2024/25,TheCheeser,PLAYER,Mario van der Wal Agraz,3,inferred
+CS2,BS HyperS,Autumn 2024/25,Marijn02,PLAYER,Marijn de Boer,4,inferred
+CS2,BS HyperS,Autumn 2024/25,FetaBass,SUBSTITUTE,Chris Wong,5,inferred
+CS2,BS HyperS,Autumn 2024/25,Bobbuz,COACH,Bob Even,6,inferred
+CS2,BS HyperS,Spring 2024/25,BSKingCookie,PLAYER,Ivo Heitlager,0,read
+CS2,BS HyperS,Spring 2024/25,Reign,PLAYER,Reinier Algra,1,read
+CS2,BS HyperS,Spring 2024/25,MacVanish_,PLAYER,Joran Hagen,2,read
+CS2,BS HyperS,Spring 2024/25,TheCheeser,PLAYER,Mario van der Wal Agraz,3,read
+CS2,BS HyperS,Spring 2024/25,Marijn02,PLAYER,Marijn de Boer,4,read
+CS2,BS HyperS,Spring 2024/25,FetaBass,SUBSTITUTE,Chris Wong,5,read
+CS2,BS HyperS,Spring 2024/25,Bobbuz,COACH,Bob Even,6,read
+CS2,BS HyperS,Autumn 2025/26,BSKingCookie,PLAYER,Ivo Heitlager,0,read
+CS2,BS HyperS,Autumn 2025/26,MacVanish_,PLAYER,Joran Hagen,1,read
+CS2,BS HyperS,Autumn 2025/26,Marijn02,PLAYER,Marijn de Boer,2,read
+CS2,BS HyperS,Autumn 2025/26,JakobDutch,PLAYER,Boris Kusters,3,read
+CS2,BS HyperS,Autumn 2025/26,Veldman,PLAYER,Max Veldman,4,read
+CS2,BS HyperS,Autumn 2025/26,Reinier,SUBSTITUTE,Reinier Algra,5,read
+CS2,BS HyperS,Autumn 2025/26,TheCheeser,SUBSTITUTE,Mario van der Wal Agraz,6,read
+CS2,BS HyperS,Autumn 2025/26,FetaBass,SUBSTITUTE,Chris Wong,7,read
+CS2,BS HyperS,Autumn 2025/26,Yannickryan,SUBSTITUTE,Yannick Sloot,8,read
+CS2,BS HyperS,Autumn 2025/26,Klutch_,SUBSTITUTE,Hielke Kleijsen,9,read
+CS2,BS HyperS,Spring 2025/26,BSKingCookie,PLAYER,Ivo Heitlager,0,read
+CS2,BS HyperS,Spring 2025/26,MacVanish_,PLAYER,Joran Hagen,1,read
+CS2,BS HyperS,Spring 2025/26,Marijn02,PLAYER,Marijn de Boer,2,read
+CS2,BS HyperS,Spring 2025/26,JakobDutch,PLAYER,Boris Kusters,3,read
+CS2,BS HyperS,Spring 2025/26,Veldman,PLAYER,Max Veldman,4,read
+CS2,BS HyperS,Spring 2025/26,Reinier,SUBSTITUTE,Reinier Algra,5,read
+CS2,BS HyperS,Spring 2025/26,TheCheeser,SUBSTITUTE,Mario Wal,6,read
+CS2,BS HyperS,Spring 2025/26,FetaBass,SUBSTITUTE,Chris Wong,7,read
+CS2,BS HyperS,Spring 2025/26,Yannickryan,SUBSTITUTE,Yannick Sloot,8,read
+CS2,BS HyperS,Spring 2025/26,Klutch_,SUBSTITUTE,Hielke Kleijsen,9,read
+CS2,BS PepeDS,Autumn 2025/26,TheJellyMan,PLAYER,Jelle,0,read
+CS2,BS PepeDS,Autumn 2025/26,Bobbuuz,PLAYER,Bob,1,read
+CS2,BS PepeDS,Autumn 2025/26,ItIsIThomas,PLAYER,Thomas Dekker,2,read
+CS2,BS PepeDS,Autumn 2025/26,Budget_Machom36,PLAYER,Jesse van Gameren,3,read
+CS2,BS PepeDS,Autumn 2025/26,Rijksoverheid,PLAYER,Taha Aydin,4,read
+CS2,BS PepeDS,Autumn 2025/26,Lyncxe,SUBSTITUTE,Rosalin de Vos,5,read
+CS2,BS PepeDS,Autumn 2025/26,Loafine,SUBSTITUTE,Reini Strating,6,read
+CS2,BS PepeDS,Autumn 2025/26,Tennissky,SUBSTITUTE,Mitchell van Poecke,7,read
+CS2,BS PepeDS,Spring 2025/26,TheJellyMan,PLAYER,Jelle van Wezep,0,read
+CS2,BS PepeDS,Spring 2025/26,Bobbuuz,PLAYER,Bob,1,read
+CS2,BS PepeDS,Spring 2025/26,ItIsIThomas,PLAYER,Thomas Dekker,2,read
+CS2,BS PepeDS,Spring 2025/26,Budget_Machom36,PLAYER,Jesse van Gameren,3,read
+CS2,BS PepeDS,Spring 2025/26,Rijksoverheid,PLAYER,Taha Aydin,4,read
+CS2,BS PepeDS,Spring 2025/26,Lyncxe,SUBSTITUTE,Rosalin de Vos,5,read
+CS2,BS PepeDS,Spring 2025/26,Loafine,SUBSTITUTE,Reini Strating,6,read
+CS2,BS PepeDS,Spring 2025/26,Tennissky,SUBSTITUTE,Mitchell van Poecke,7,read
+CSGO,BS HyperS,Spring 2020/21,LpC,PLAYER,Thomas Rijgersberg,0,read
+CSGO,BS HyperS,Spring 2020/21,Clunky,PLAYER,Jonas Valentijn,1,read
+CSGO,BS HyperS,Spring 2020/21,SonGoku,PLAYER,Gorkem Cardak,2,read
+CSGO,BS HyperS,Spring 2020/21,Reign,PLAYER,Reinier Algra,3,read
+CSGO,BS HyperS,Spring 2020/21,FreeFall,PLAYER,Wilco Strijker,4,read
+CSGO,BS HyperS,Spring 2020/21,King Cookie,PLAYER,Ivo Heitlager,5,read
+CSGO,BS HyperS,Autumn 2021/22,DextoxTea,PLAYER,Antons Naumenko,0,read
+CSGO,BS HyperS,Autumn 2021/22,Clunky,PLAYER,Jonas Valentijn,1,read
+CSGO,BS HyperS,Autumn 2021/22,TheCheeser,PLAYER,Mario Walvis,2,read
+CSGO,BS HyperS,Autumn 2021/22,Reign,PLAYER,Reinier Algra,3,read
+CSGO,BS HyperS,Autumn 2021/22,FreeFall,PLAYER,Wilco Strijker,4,read
+CSGO,BS HyperS,Autumn 2021/22,Sjonnie,SUBSTITUTE,Tim Blok,5,read
+CSGO,BS HyperS,Autumn 2021/22,King Cookie,SUBSTITUTE,Ivo Heitlager,6,read
+CSGO,BS HyperS,Autumn 2021/22,DerpHagen,COACH,Horan Jagen,7,read
+CSGO,BS HyperS,Spring 2021/22,DextoxTea,PLAYER,Antons Naumenko,0,inferred
+CSGO,BS HyperS,Spring 2021/22,Clunky,PLAYER,Jonas Valentijn,1,inferred
+CSGO,BS HyperS,Spring 2021/22,TheCheeser,PLAYER,Mario Walvis,2,inferred
+CSGO,BS HyperS,Spring 2021/22,Reign,PLAYER,Reinier Algra,3,inferred
+CSGO,BS HyperS,Spring 2021/22,FreeFall,PLAYER,Wilco Strijker,4,inferred
+CSGO,BS HyperS,Spring 2021/22,Sjonnie,SUBSTITUTE,Tim Blok,5,inferred
+CSGO,BS HyperS,Spring 2021/22,King Cookie,SUBSTITUTE,Ivo Heitlager,6,inferred
+CSGO,BS HyperS,Spring 2021/22,DerpHagen,COACH,Horan Jagen,7,inferred
+CSGO,BS HyperS,Autumn 2022/23,FetaBass,PLAYER,Chris Wong,0,read
+CSGO,BS HyperS,Autumn 2022/23,Clunky,PLAYER,Jonas Valentijn,1,read
+CSGO,BS HyperS,Autumn 2022/23,TheCheeser,PLAYER,Mario Walvis,2,read
+CSGO,BS HyperS,Autumn 2022/23,Reign,PLAYER,Reinier Algra,3,read
+CSGO,BS HyperS,Autumn 2022/23,FreeFall,PLAYER,Wilco Strijker,4,read
+CSGO,BS HyperS,Autumn 2022/23,Sjonnie,SUBSTITUTE,Tim Blok,5,read
+CSGO,BS HyperS,Autumn 2022/23,King Cookie,SUBSTITUTE,Ivo Heitlager,6,read
+CSGO,BS HyperS,Autumn 2022/23,DerpHagen,COACH,Horan Jagen,7,read
+CSGO,BS HyperS,Spring 2022/23,FetaBass,PLAYER,Chris Wong,0,inferred
+CSGO,BS HyperS,Spring 2022/23,Clunky,PLAYER,Jonas Valentijn,1,inferred
+CSGO,BS HyperS,Spring 2022/23,TheCheeser,PLAYER,Mario Walvis,2,inferred
+CSGO,BS HyperS,Spring 2022/23,Reign,PLAYER,Reinier Algra,3,inferred
+CSGO,BS HyperS,Spring 2022/23,FreeFall,PLAYER,Wilco Strijker,4,inferred
+CSGO,BS HyperS,Spring 2022/23,Sjonnie,SUBSTITUTE,Tim Blok,5,inferred
+CSGO,BS HyperS,Spring 2022/23,King Cookie,SUBSTITUTE,Ivo Heitlager,6,inferred
+CSGO,BS HyperS,Spring 2022/23,DerpHagen,COACH,Horan Jagen,7,inferred
+CSGO,BS HyperS,Autumn 2023/24,FetaBass,PLAYER,Chris Wong,0,inferred
+CSGO,BS HyperS,Autumn 2023/24,Clunky,PLAYER,Jonas Valentijn,1,inferred
+CSGO,BS HyperS,Autumn 2023/24,TheCheeser,PLAYER,Mario Walvis,2,inferred
+CSGO,BS HyperS,Autumn 2023/24,Reign,PLAYER,Reinier Algra,3,inferred
+CSGO,BS HyperS,Autumn 2023/24,FreeFall,PLAYER,Wilco Strijker,4,inferred
+CSGO,BS HyperS,Autumn 2023/24,Sjonnie,SUBSTITUTE,Tim Blok,5,inferred
+CSGO,BS HyperS,Autumn 2023/24,King Cookie,SUBSTITUTE,Ivo Heitlager,6,inferred
+CSGO,BS HyperS,Autumn 2023/24,DerpHagen,COACH,Horan Jagen,7,inferred
+CSGO,BS Revenge,Autumn 2021/22,Vinnyjj,PLAYER,,0,read
+CSGO,BS Revenge,Autumn 2021/22,Mart10,PLAYER,,1,read
+CSGO,BS Revenge,Autumn 2021/22,CaptainGork,PLAYER,,2,read
+CSGO,BS Revenge,Autumn 2021/22,m1nml,PLAYER,,3,read
+CSGO,BS Revenge,Autumn 2021/22,GuacamoleMen,PLAYER,,4,read
+CSGO,BS Revenge,Autumn 2021/22,YSLyoungthug,SUBSTITUTE,,5,read
+CSGO,BS Revenge,Spring 2021/22,Vinnyjj,PLAYER,,0,inferred
+CSGO,BS Revenge,Spring 2021/22,Mart10,PLAYER,,1,inferred
+CSGO,BS Revenge,Spring 2021/22,CaptainGork,PLAYER,,2,inferred
+CSGO,BS Revenge,Spring 2021/22,m1nml,PLAYER,,3,inferred
+CSGO,BS Revenge,Spring 2021/22,GuacamoleMen,PLAYER,,4,inferred
+CSGO,BS Revenge,Spring 2021/22,YSLyoungthug,SUBSTITUTE,,5,inferred
+GEOGUESSR,Geoguessr,Autumn 2025/26,Job 404,PLAYER,Job de Ruijter,0,read
+GEOGUESSR,Geoguessr,Autumn 2025/26,FetaBass,PLAYER,Chris Wong,1,read
+GEOGUESSR,Geoguessr,Spring 2025/26,Job 404,PLAYER,Job de Ruijter,0,read
+GEOGUESSR,Geoguessr,Spring 2025/26,FetaBass,PLAYER,Chris Wong,1,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,ShyGuy2328,PLAYER,Jasper Ligthart,0,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,j8stars,PLAYER,Jari van Ravenstein,1,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,Rallyman888,PLAYER,Lars Bossink,2,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,WARDSTRIDER,PLAYER,Ward Gesthuizen,3,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,TheDarkSoul12,PLAYER,Mikaël Bos,4,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,xXswaglordzXx,SUBSTITUTE,Alexander de Ranitz,5,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,Th0tto,SUBSTITUTE,Otto Hajenius,6,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,Bl4ckdragonn,SUBSTITUTE,Maarten Dekker,7,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2020/21,Ironbone99,SUBSTITUTE,Raymon de Lange,8,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,ShyGuy2328,PLAYER,Jasper Ligthart,0,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,j8stars,PLAYER,Jari van Ravenstein,1,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,Rallyman888,PLAYER,Lars Bossink,2,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,WARDSTRIDER,PLAYER,Ward Gesthuizen,3,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,TheDarkSoul12,PLAYER,Mikaël Bos,4,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,xXswaglordzXx,SUBSTITUTE,Alexander de Ranitz,5,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,Th0tto,SUBSTITUTE,Otto Hajenius,6,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,Bl4ckdragonn,SUBSTITUTE,Maarten Dekker,7,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Autumn 2021/22,Ironbone99,SUBSTITUTE,Raymon de Lange,8,read
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,ShyGuy2328,PLAYER,Jasper Ligthart,0,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,j8stars,PLAYER,Jari van Ravenstein,1,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,Rallyman888,PLAYER,Lars Bossink,2,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,WARDSTRIDER,PLAYER,Ward Gesthuizen,3,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,TheDarkSoul12,PLAYER,Mikaël Bos,4,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,xXswaglordzXx,SUBSTITUTE,Alexander de Ranitz,5,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,Th0tto,SUBSTITUTE,Otto Hajenius,6,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,Bl4ckdragonn,SUBSTITUTE,Maarten Dekker,7,inferred
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021/22,Ironbone99,SUBSTITUTE,Raymon de Lange,8,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,markdeotter,PLAYER,Mark Otter,0,read
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,tennissky1,PLAYER,Mithell van Poecke,1,read
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,The RUde Unicorn,PLAYER,Victor Barkey,2,read
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,Machom36,PLAYER,Jesse van Gameren,3,read
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,TheJellyMan,PLAYER,Jelle van Wezep,4,read
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,SylWorld,SUBSTITUTE,Sylwia Siekman,5,read
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,ShadowSkyeWolf,SUBSTITUTE,Roos Kruk,6,read
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2023/24,DwalendeDrol,COACH,Max Jansdam,7,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,markdeotter,PLAYER,Mark Otter,0,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,tennissky1,PLAYER,Mithell van Poecke,1,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,The RUde Unicorn,PLAYER,Victor Barkey,2,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,Machom36,PLAYER,Jesse van Gameren,3,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,TheJellyMan,PLAYER,Jelle van Wezep,4,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,SylWorld,SUBSTITUTE,Sylwia Siekman,5,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,ShadowSkyeWolf,SUBSTITUTE,Roos Kruk,6,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2023/24,DwalendeDrol,COACH,Max Jansdam,7,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,markdeotter,PLAYER,Mark Otter,0,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,tennissky1,PLAYER,Mithell van Poecke,1,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,The RUde Unicorn,PLAYER,Victor Barkey,2,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,Machom36,PLAYER,Jesse van Gameren,3,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,TheJellyMan,PLAYER,Jelle van Wezep,4,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,SylWorld,SUBSTITUTE,Sylwia Siekman,5,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,ShadowSkyeWolf,SUBSTITUTE,Roos Kruk,6,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Autumn 2024/25,DwalendeDrol,COACH,Max Jansdam,7,inferred
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,markdeotter,PLAYER,Mark Otter,0,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,tennissky1,PLAYER,Mithell van Poecke,1,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,The RUde Unicorn,PLAYER,Victor Barkey,2,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,Machom36,PLAYER,Jesse van Gameren,3,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,TheJellyMan,PLAYER,Jelle van Wezep,4,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,SylWorld,SUBSTITUTE,Sylwia Siekman,5,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,ShadowSkyeWolf,SUBSTITUTE,Roos Kruk,6,read
+LEAGUE_OF_LEGENDS,BS Housecats,Spring 2024/25,DwalendeDrol,COACH,Max Jansdam,7,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,Rule64FatWillump,PLAYER,Nicolás Pita,0,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,Talpa,PLAYER,Taha Aydin,1,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,Zalie,PLAYER,Alen Mozes,2,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,lyx,PLAYER,Liam Beld,3,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,Gibblegab,PLAYER,Emma Dokter,4,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,markdeotter,SUBSTITUTE,Mark Otter,5,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,Hoodyboy,SUBSTITUTE,joran Riemer,6,read
+LEAGUE_OF_LEGENDS,BS Pandora,Autumn 2025/26,Mora,SUBSTITUTE,Razvan Morariu,7,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,Rule64FatWillump,PLAYER,Nicolás Pita,0,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,Talpa,PLAYER,Taha Aydin,1,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,Zalie,PLAYER,Alen Mozes,2,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,lyx,PLAYER,Liam Beld,3,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,Gibblegab,PLAYER,Emma Dokter,4,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,markdeotter,SUBSTITUTE,Mark Otter,5,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,Hoodyboy,SUBSTITUTE,joran Riemer,6,read
+LEAGUE_OF_LEGENDS,BS Pandora,Spring 2025/26,Mora,SUBSTITUTE,Razvan Morariu,7,read
+LEAGUE_OF_LEGENDS,BS Primus,Spring 2020/21,DepressedBySoloQ,PLAYER,Enzo Vicento,0,read
+LEAGUE_OF_LEGENDS,BS Primus,Spring 2020/21,Swirliix,PLAYER,Sven Vosslamber,1,read
+LEAGUE_OF_LEGENDS,BS Primus,Spring 2020/21,Lateralus,PLAYER,Hidde Veldkamp,2,read
+LEAGUE_OF_LEGENDS,BS Primus,Spring 2020/21,ZenoXed,PLAYER,Ziad Elleithy,3,read
+LEAGUE_OF_LEGENDS,BS Primus,Spring 2020/21,Vis Soepje,PLAYER,Mart Ordelmans,4,read
+LEAGUE_OF_LEGENDS,BS Primus,Spring 2020/21,Captain Maxwell,SUBSTITUTE,Max Traas,5,read
+LEAGUE_OF_LEGENDS,BS Primus,Spring 2020/21,Magaera,COACH,Mark Ganzefles,6,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Autumn 2025/26,DwalendeDrol,PLAYER,Max Jansdam,0,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Autumn 2025/26,fdghjkghsdfg,PLAYER,,1,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Autumn 2025/26,Sword Dance,PLAYER,,2,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Autumn 2025/26,banaan9999,PLAYER,Arend Heijn,3,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Autumn 2025/26,craezed,PLAYER,Marcus Caeyers,4,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Spring 2025/26,DwalendeDrol,PLAYER,Max Jansdam,0,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Spring 2025/26,fdghjkghsdfg,PLAYER,,1,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Spring 2025/26,Sword Dance,PLAYER,,2,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Spring 2025/26,banaan9999,PLAYER,Arend Heijn,3,read
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,Spring 2025/26,craezed,PLAYER,Marcus Caeyers,4,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2022/23,Fill Main,PLAYER,Wilco Strijker,0,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2022/23,ThompieB,PLAYER,Thomas van den Brink,1,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2022/23,Bobbus,PLAYER,Bob Even,2,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2022/23,Magaera,PLAYER,Mark Ganzevles,3,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2022/23,BS King Cookie,PLAYER,Ivo Heitlager,4,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2022/23,OG Klutch,COACH,Hielke Kleijsen,5,read
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2023/24,Fill Main,PLAYER,Wilco Strijker,0,read
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2023/24,ThompieB,PLAYER,Thomas van den Brink,1,read
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2023/24,Bobbus,PLAYER,Bob Even,2,read
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2023/24,Magaera,PLAYER,Mark Ganzevles,3,read
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2023/24,BS King Cookie,PLAYER,Ivo Heitlager,4,read
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2023/24,OG Klutch,COACH,Hielke Kleijsen,5,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2023/24,Fill Main,PLAYER,Wilco Strijker,0,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2023/24,ThompieB,PLAYER,Thomas van den Brink,1,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2023/24,Bobbus,PLAYER,Bob Even,2,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2023/24,Magaera,PLAYER,Mark Ganzevles,3,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2023/24,BS King Cookie,PLAYER,Ivo Heitlager,4,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2023/24,OG Klutch,COACH,Hielke Kleijsen,5,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2024/25,Fill Main,PLAYER,Wilco Strijker,0,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2024/25,ThompieB,PLAYER,Thomas van den Brink,1,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2024/25,Bobbus,PLAYER,Bob Even,2,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2024/25,Magaera,PLAYER,Mark Ganzevles,3,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2024/25,BS King Cookie,PLAYER,Ivo Heitlager,4,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Autumn 2024/25,OG Klutch,COACH,Hielke Kleijsen,5,inferred
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2024/25,Fill Main,PLAYER,Wilco Strijker,0,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2024/25,ThompieB,PLAYER,Thomas van den Brink,1,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2024/25,Bobbus,PLAYER,Bob Even,2,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2024/25,Magaera,PLAYER,Mark Ganzevles,3,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2024/25,BS King Cookie,PLAYER,Ivo Heitlager,4,read
+LEAGUE_OF_LEGENDS,BS Scaling,Spring 2024/25,OG Klutch,COACH,Hielke Kleijsen,5,read
+LEAGUE_OF_LEGENDS,BS Street Rats,Autumn 2022/23,BS Shigersky,PLAYER,Mateusz Bartnicki,0,read
+LEAGUE_OF_LEGENDS,BS Street Rats,Autumn 2022/23,BS Chit,PLAYER,Iason FIlippidis,1,read
+LEAGUE_OF_LEGENDS,BS Street Rats,Autumn 2022/23,Enorenaren,PLAYER,Hristo Dimitrov,2,read
+LEAGUE_OF_LEGENDS,BS Street Rats,Autumn 2022/23,BS RuigeRichard,PLAYER,Richard Leenknegt,3,read
+LEAGUE_OF_LEGENDS,BS Street Rats,Autumn 2022/23,SweatIRL,PLAYER,Omar Markovinovic,4,read
+LEAGUE_OF_LEGENDS,BS Street Rats,Autumn 2022/23,BS Twinjanni,SUBSTITUTE,Jannis Tenwinkel,5,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Autumn 2021/22,Aiden,PLAYER,Jungjun Mok,0,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Autumn 2021/22,xOmegafire,PLAYER,Bas Arkesteijn,1,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Autumn 2021/22,Lateralus,PLAYER,Hidde Veldkamp,2,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Autumn 2021/22,Reflection,PLAYER,Sterk Bruijn,3,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Autumn 2021/22,Mahonix,PLAYER,Anthonie van Bemmelen,4,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Autumn 2021/22,Captain Maxwell,SUBSTITUTE,Max Traas,5,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Autumn 2021/22,Magaera,COACH,Mark Ganzefles,6,read
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Spring 2021/22,Aiden,PLAYER,Jungjun Mok,0,inferred
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Spring 2021/22,xOmegafire,PLAYER,Bas Arkesteijn,1,inferred
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Spring 2021/22,Lateralus,PLAYER,Hidde Veldkamp,2,inferred
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Spring 2021/22,Reflection,PLAYER,Sterk Bruijn,3,inferred
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Spring 2021/22,Mahonix,PLAYER,Anthonie van Bemmelen,4,inferred
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Spring 2021/22,Captain Maxwell,SUBSTITUTE,Max Traas,5,inferred
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,Spring 2021/22,Magaera,COACH,Mark Ganzefles,6,inferred
+ROCKET_LEAGUE,BS Oogway,Autumn 2023/24,Vdhooft_,PLAYER,Allard van der Hooft,0,read
+ROCKET_LEAGUE,BS Oogway,Autumn 2023/24,Amalox,PLAYER,Max Liebe,1,read
+ROCKET_LEAGUE,BS Oogway,Autumn 2023/24,Job 404,PLAYER,Job de Ruijter,2,read
+ROCKET_LEAGUE,BS Oogway,Autumn 2023/24,Bak en Braad,PLAYER,Julian van den Nieuwenhuizen,3,read
+ROCKET_LEAGUE,BS Oogway,Spring 2023/24,Vdhooft_,PLAYER,Allard van der Hooft,0,inferred
+ROCKET_LEAGUE,BS Oogway,Spring 2023/24,Amalox,PLAYER,Max Liebe,1,inferred
+ROCKET_LEAGUE,BS Oogway,Spring 2023/24,Job 404,PLAYER,Job de Ruijter,2,inferred
+ROCKET_LEAGUE,BS Oogway,Spring 2023/24,Bak en Braad,PLAYER,Julian van den Nieuwenhuizen,3,inferred
+ROCKET_LEAGUE,BS Oogway,Autumn 2024/25,Vdhooft_,PLAYER,Allard van der Hooft,0,inferred
+ROCKET_LEAGUE,BS Oogway,Autumn 2024/25,Amalox,PLAYER,Max Liebe,1,inferred
+ROCKET_LEAGUE,BS Oogway,Autumn 2024/25,Job 404,PLAYER,Job de Ruijter,2,inferred
+ROCKET_LEAGUE,BS Oogway,Autumn 2024/25,Bak en Braad,PLAYER,Julian van den Nieuwenhuizen,3,inferred
+ROCKET_LEAGUE,BS Oogway,Spring 2024/25,Vdhooft_,PLAYER,Allard van der Hooft,0,read
+ROCKET_LEAGUE,BS Oogway,Spring 2024/25,Amalox,PLAYER,Max Liebe,1,read
+ROCKET_LEAGUE,BS Oogway,Spring 2024/25,Job 404,PLAYER,Job de Ruijter,2,read
+ROCKET_LEAGUE,BS Oogway,Spring 2024/25,Bak en Braad,PLAYER,Julian van den Nieuwenhuizen,3,read
+ROCKET_LEAGUE,BS Squirtles,Autumn 2023/24,ItIsIThomas,PLAYER,Thomas Dekker,0,read
+ROCKET_LEAGUE,BS Squirtles,Autumn 2023/24,Bluegy,PLAYER,Joy Verheijen,1,read
+ROCKET_LEAGUE,BS Squirtles,Autumn 2023/24,bosvruchtenthee,PLAYER,Huub Hammink,2,read
+ROCKET_LEAGUE,BS Squirtles,Spring 2023/24,ItIsIThomas,PLAYER,Thomas Dekker,0,inferred
+ROCKET_LEAGUE,BS Squirtles,Spring 2023/24,Bluegy,PLAYER,Joy Verheijen,1,inferred
+ROCKET_LEAGUE,BS Squirtles,Spring 2023/24,bosvruchtenthee,PLAYER,Huub Hammink,2,inferred
+ROCKET_LEAGUE,BS Squirtles,Autumn 2024/25,ItIsIThomas,PLAYER,Thomas Dekker,0,inferred
+ROCKET_LEAGUE,BS Squirtles,Autumn 2024/25,Bluegy,PLAYER,Joy Verheijen,1,inferred
+ROCKET_LEAGUE,BS Squirtles,Autumn 2024/25,bosvruchtenthee,PLAYER,Huub Hammink,2,inferred
+ROCKET_LEAGUE,BS Squirtles,Spring 2024/25,ItIsIThomas,PLAYER,Thomas Dekker,0,read
+ROCKET_LEAGUE,BS Squirtles,Spring 2024/25,Bluegy,PLAYER,Joy Verheijen,1,read
+ROCKET_LEAGUE,BS Squirtles,Spring 2024/25,bosvruchtenthee,PLAYER,Huub Hammink,2,read
+ROCKET_LEAGUE,BS Squirtles,Autumn 2025/26,ItIsIThomas,PLAYER,Thomas Dekker,0,read
+ROCKET_LEAGUE,BS Squirtles,Autumn 2025/26,bluegy,PLAYER,Joy Verheijen,1,read
+ROCKET_LEAGUE,BS Squirtles,Autumn 2025/26,boscvruchten thee,PLAYER,Huub Hammink,2,read
+ROCKET_LEAGUE,BS Squirtles,Autumn 2025/26,Mr. Pancake^-^,SUBSTITUTE,René Hammink,3,read
+ROCKET_LEAGUE,BS Squirtles,Spring 2025/26,ItIsIThomas,PLAYER,Thomas Dekker,0,read
+ROCKET_LEAGUE,BS Squirtles,Spring 2025/26,bluegy,PLAYER,Joy Verheijen,1,read
+ROCKET_LEAGUE,BS Squirtles,Spring 2025/26,boscvruchten thee,PLAYER,Huub Hammink,2,read
+ROCKET_LEAGUE,BS Squirtles,Spring 2025/26,Mr. Pancake^-^,SUBSTITUTE,René Hammink,3,read
+ROCKET_LEAGUE,BS Tadpole,Autumn 2023/24,SJAWID,PLAYER,Stijn Dollenkamp,0,read
+ROCKET_LEAGUE,BS Tadpole,Autumn 2023/24,JustDqnt,PLAYER,Thijs Krosman,1,read
+ROCKET_LEAGUE,BS Tadpole,Autumn 2023/24,poopiejoe,PLAYER,Henry Slegers,2,read
+ROCKET_LEAGUE,BS Tadpole,Autumn 2023/24,Darkneoteric,PLAYER,Thijs Willems,3,read
+ROCKET_LEAGUE,BS Tadpole,Spring 2023/24,SJAWID,PLAYER,Stijn Dollenkamp,0,inferred
+ROCKET_LEAGUE,BS Tadpole,Spring 2023/24,JustDqnt,PLAYER,Thijs Krosman,1,inferred
+ROCKET_LEAGUE,BS Tadpole,Spring 2023/24,poopiejoe,PLAYER,Henry Slegers,2,inferred
+ROCKET_LEAGUE,BS Tadpole,Spring 2023/24,Darkneoteric,PLAYER,Thijs Willems,3,inferred
+ROCKET_LEAGUE,BS Tadpole,Autumn 2024/25,SJAWID,PLAYER,Stijn Dollenkamp,0,inferred
+ROCKET_LEAGUE,BS Tadpole,Autumn 2024/25,JustDqnt,PLAYER,Thijs Krosman,1,inferred
+ROCKET_LEAGUE,BS Tadpole,Autumn 2024/25,poopiejoe,PLAYER,Henry Slegers,2,inferred
+ROCKET_LEAGUE,BS Tadpole,Autumn 2024/25,Darkneoteric,PLAYER,Thijs Willems,3,inferred
+ROCKET_LEAGUE,BS Tadpole,Spring 2024/25,SJAWID,PLAYER,Stijn Dollenkamp,0,read
+ROCKET_LEAGUE,BS Tadpole,Spring 2024/25,JustDqnt,PLAYER,Thijs Krosman,1,read
+ROCKET_LEAGUE,BS Tadpole,Spring 2024/25,poopiejoe,PLAYER,Henry Slegers,2,read
+ROCKET_LEAGUE,BS Tadpole,Spring 2024/25,Darkneoteric,PLAYER,Thijs Willems,3,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2022/23,Job 404,PLAYER,Job de Ruijter,0,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2022/23,Mr. Pancake^-^,PLAYER,René Hammink,1,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2022/23,Dipsy,PLAYER,Bas Willemsen,2,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2022/23,Diagonize,PLAYER,Finn Prinsenberg,3,read
+ROCKET_LEAGUE,BS Turtles,Spring 2022/23,Job 404,PLAYER,Job de Ruijter,0,inferred
+ROCKET_LEAGUE,BS Turtles,Spring 2022/23,Mr. Pancake^-^,PLAYER,René Hammink,1,inferred
+ROCKET_LEAGUE,BS Turtles,Spring 2022/23,Dipsy,PLAYER,Bas Willemsen,2,inferred
+ROCKET_LEAGUE,BS Turtles,Spring 2022/23,Diagonize,PLAYER,Finn Prinsenberg,3,inferred
+ROCKET_LEAGUE,BS Turtles,Autumn 2023/24,Mr. Pancake^-^,PLAYER,René Hammink,0,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2023/24,Diagonize,PLAYER,Finn Prinsenberg,1,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2023/24,Dipsy,PLAYER,Bas Willemsen,2,read
+ROCKET_LEAGUE,BS Turtles,Spring 2023/24,Mr. Pancake^-^,PLAYER,René Hammink,0,inferred
+ROCKET_LEAGUE,BS Turtles,Spring 2023/24,Diagonize,PLAYER,Finn Prinsenberg,1,inferred
+ROCKET_LEAGUE,BS Turtles,Spring 2023/24,Dipsy,PLAYER,Bas Willemsen,2,inferred
+ROCKET_LEAGUE,BS Turtles,Autumn 2024/25,Mr. Pancake^-^,PLAYER,René Hammink,0,inferred
+ROCKET_LEAGUE,BS Turtles,Autumn 2024/25,Diagonize,PLAYER,Finn Prinsenberg,1,inferred
+ROCKET_LEAGUE,BS Turtles,Autumn 2024/25,Dipsy,PLAYER,Bas Willemsen,2,inferred
+ROCKET_LEAGUE,BS Turtles,Spring 2024/25,Mr. Pancake^-^,PLAYER,René Hammink,0,read
+ROCKET_LEAGUE,BS Turtles,Spring 2024/25,Diagonize,PLAYER,Finn Prinsenberg,1,read
+ROCKET_LEAGUE,BS Turtles,Spring 2024/25,Dipsy,PLAYER,Bas Willemsen,2,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2025/26,robertP19,PLAYER,Robert Pantilie,0,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2025/26,Diagonize,PLAYER,Finn Prinsenberg,1,read
+ROCKET_LEAGUE,BS Turtles,Autumn 2025/26,Bak en Braad,PLAYER,Julian van den Nieuwenhuizen,2,read
+ROCKET_LEAGUE,BS Turtles,Spring 2025/26,robertP19,PLAYER,Robert Pantilie,0,read
+ROCKET_LEAGUE,BS Turtles,Spring 2025/26,Diagonize,PLAYER,Finn Prinsenberg,1,read
+ROCKET_LEAGUE,BS Turtles,Spring 2025/26,Bak en Braad,PLAYER,Julian van den Nieuwenhuizen,2,read
+ROCKET_LEAGUE,Blueshell Tortoises,Autumn 2022/23,ItIsIThomas,PLAYER,Thomas Dekker,0,read
+ROCKET_LEAGUE,Blueshell Tortoises,Autumn 2022/23,Visper,PLAYER,Pepijn Visser,1,read
+ROCKET_LEAGUE,Blueshell Tortoises,Autumn 2022/23,KrabbyPattie,PLAYER,Patrick Wolbers,2,read
+ROCKET_LEAGUE,Blueshell Tortoises,Autumn 2022/23,vdhooft_,PLAYER,Allard van der Hooft,3,read
+ROCKET_LEAGUE,Blueshell Tortoises,Spring 2022/23,ItIsIThomas,PLAYER,Thomas Dekker,0,inferred
+ROCKET_LEAGUE,Blueshell Tortoises,Spring 2022/23,Visper,PLAYER,Pepijn Visser,1,inferred
+ROCKET_LEAGUE,Blueshell Tortoises,Spring 2022/23,KrabbyPattie,PLAYER,Patrick Wolbers,2,inferred
+ROCKET_LEAGUE,Blueshell Tortoises,Spring 2022/23,vdhooft_,PLAYER,Allard van der Hooft,3,inferred
+SMASH,Smash,Autumn 2020/21,ZenoXed,PLAYER,Ziad Elleithy,0,read
+SMASH,Smash,Autumn 2020/21,Thoran,PLAYER,Jander Gilbers,1,read
+SMASH,Smash,Autumn 2020/21,MacVanish,PLAYER,Joran Hagen,2,read
+SMASH,Smash,Autumn 2020/21,Kebab,PLAYER,Ilayda Hotamis,3,read
+SMASH,Smash,Spring 2020/21,ZenoXed,PLAYER,Ziad Elleithy,0,read
+SMASH,Smash,Spring 2020/21,Thoran,PLAYER,Jander Gilbers,1,read
+SMASH,Smash,Spring 2020/21,MacVanish,PLAYER,Joran Hagen,2,read
+SMASH,Smash,Spring 2020/21,Kebab,PLAYER,Ilayda Hotamis,3,read
+TRACKMANIA,[ESABS],Spring 2022/23,Poepboer,PLAYER,Jarno,0,read
+TRACKMANIA,[ESABS],Spring 2022/23,Swordie,PLAYER,Tim,1,read
+TRACKMANIA,[ESABS],Autumn 2023/24,Poepboer,PLAYER,Jarno,0,read
+TRACKMANIA,[ESABS],Autumn 2023/24,Swordie,PLAYER,Tim,1,read
+TRACKMANIA,[ESABS],Spring 2023/24,Poepboer,PLAYER,Jarno,0,inferred
+TRACKMANIA,[ESABS],Spring 2023/24,Swordie,PLAYER,Tim,1,inferred
+TRACKMANIA,[ESABS],Autumn 2024/25,Poepboer,PLAYER,Jarno,0,inferred
+TRACKMANIA,[ESABS],Autumn 2024/25,Swordie,PLAYER,Tim,1,inferred
+TRACKMANIA,[ESABS],Spring 2024/25,Poepboer,PLAYER,Jarno,0,read
+TRACKMANIA,[ESABS],Spring 2024/25,Swordie,PLAYER,Tim,1,read
+TRACKMANIA,[ESABS],Autumn 2025/26,Poepboer,PLAYER,Jarno,0,read
+TRACKMANIA,[ESABS],Autumn 2025/26,Swordie,PLAYER,Tim,1,read
+TRACKMANIA,[ESABS],Spring 2025/26,Poepboer,PLAYER,Jarno,0,read
+TRACKMANIA,[ESABS],Spring 2025/26,Swordie,PLAYER,Tim,1,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,Puffy71,PLAYER,Dóra Csiszár,0,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,EternalScreams,PLAYER,Sanne van Kooten,1,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,SylWorld,PLAYER,Sylwia Siekman,2,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,Yank,PLAYER,Yannick Sloot,3,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,cawa,PLAYER,Sacha Brienesse,4,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,kimic,SUBSTITUTE,Kim Wolf,5,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,Lyncxe,SUBSTITUTE,Rosalin de Vos,6,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,ronicats,SUBSTITUTE,Veronika Sebaha,7,read
+VALORANT,BS G.G.C. Yaptown,Autumn 2025/26,BSP Reign,COACH,Reinier Algra,8,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,Puffy71,PLAYER,Dóra Csiszár,0,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,EternalScreams,PLAYER,Sanne van Kooten,1,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,SylWorld,PLAYER,Sylwia Siekman,2,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,Yank,PLAYER,Yannick Sloot,3,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,cawa,PLAYER,Sacha Brienesse,4,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,kimic,SUBSTITUTE,Kim Wolf,5,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,Lyncxe,SUBSTITUTE,Rosalin de Vos,6,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,ronicats,SUBSTITUTE,Veronika Sebaha,7,read
+VALORANT,BS G.G.C. Yaptown,Spring 2025/26,BSP Reign,COACH,Reinier Algra,8,read
+VALORANT,BS Huge,Spring 2020/21,Hyzaq,PLAYER,Teun Kok,0,read
+VALORANT,BS Huge,Spring 2020/21,King Cookie,PLAYER,Ivo Heitlager,1,read
+VALORANT,BS Huge,Spring 2020/21,LpC,PLAYER,Thomas Rijgersberg,2,read
+VALORANT,BS Huge,Spring 2020/21,SonGoku,PLAYER,Gorkem Cardak,3,read
+VALORANT,BS Huge,Spring 2020/21,TheCheeser,PLAYER,Mario Wal,4,read
+VALORANT,BS Huge,Spring 2020/21,ZenoXed,PLAYER,Ziad Elleithy,5,read
+VALORANT,BS Huge,Autumn 2021/22,Hyzaq,PLAYER,Teun Kok,0,inferred
+VALORANT,BS Huge,Autumn 2021/22,King Cookie,PLAYER,Ivo Heitlager,1,inferred
+VALORANT,BS Huge,Autumn 2021/22,LpC,PLAYER,Thomas Rijgersberg,2,inferred
+VALORANT,BS Huge,Autumn 2021/22,SonGoku,PLAYER,Gorkem Cardak,3,inferred
+VALORANT,BS Huge,Autumn 2021/22,TheCheeser,PLAYER,Mario Wal,4,inferred
+VALORANT,BS Huge,Autumn 2021/22,ZenoXed,PLAYER,Ziad Elleithy,5,inferred
+VALORANT,BS Huge,Spring 2021/22,Hyzaq,PLAYER,Teun Kok,0,inferred
+VALORANT,BS Huge,Spring 2021/22,King Cookie,PLAYER,Ivo Heitlager,1,inferred
+VALORANT,BS Huge,Spring 2021/22,LpC,PLAYER,Thomas Rijgersberg,2,inferred
+VALORANT,BS Huge,Spring 2021/22,SonGoku,PLAYER,Gorkem Cardak,3,inferred
+VALORANT,BS Huge,Spring 2021/22,TheCheeser,PLAYER,Mario Wal,4,inferred
+VALORANT,BS Huge,Spring 2021/22,ZenoXed,PLAYER,Ziad Elleithy,5,inferred
+VALORANT,BS IcyWater,Autumn 2023/24,Machom36,PLAYER,Jesse van Gameren,0,read
+VALORANT,BS IcyWater,Autumn 2023/24,TheJellyMan,PLAYER,Jelle van Wezep,1,read
+VALORANT,BS IcyWater,Autumn 2023/24,tennisky1,PLAYER,Mitchell van Poecke,2,read
+VALORANT,BS IcyWater,Autumn 2023/24,Yank,PLAYER,Yannick Sloot,3,read
+VALORANT,BS IcyWater,Autumn 2023/24,Mr. Pancake,PLAYER,René Hammink,4,read
+VALORANT,BS IcyWater,Spring 2023/24,Machom36,PLAYER,Jesse van Gameren,0,inferred
+VALORANT,BS IcyWater,Spring 2023/24,TheJellyMan,PLAYER,Jelle van Wezep,1,inferred
+VALORANT,BS IcyWater,Spring 2023/24,tennisky1,PLAYER,Mitchell van Poecke,2,inferred
+VALORANT,BS IcyWater,Spring 2023/24,Yank,PLAYER,Yannick Sloot,3,inferred
+VALORANT,BS IcyWater,Spring 2023/24,Mr. Pancake,PLAYER,René Hammink,4,inferred
+VALORANT,BS IcyWater,Autumn 2024/25,Machom36,PLAYER,Jesse van Gameren,0,inferred
+VALORANT,BS IcyWater,Autumn 2024/25,TheJellyMan,PLAYER,Jelle van Wezep,1,inferred
+VALORANT,BS IcyWater,Autumn 2024/25,tennisky1,PLAYER,Mitchell van Poecke,2,inferred
+VALORANT,BS IcyWater,Autumn 2024/25,Yank,PLAYER,Yannick Sloot,3,inferred
+VALORANT,BS IcyWater,Autumn 2024/25,Mr. Pancake,PLAYER,René Hammink,4,inferred
+VALORANT,BS IcyWater,Spring 2024/25,Machom36,PLAYER,Jesse van Gameren,0,read
+VALORANT,BS IcyWater,Spring 2024/25,TheJellyMan,PLAYER,Jelle van Wezep,1,read
+VALORANT,BS IcyWater,Spring 2024/25,tennisky1,PLAYER,Mitchell van Poecke,2,read
+VALORANT,BS IcyWater,Spring 2024/25,Yank,PLAYER,Yannick Sloot,3,read
+VALORANT,BS IcyWater,Spring 2024/25,Mr. Pancake,PLAYER,René Hammink,4,read
+VALORANT,BS SpicyWater,Autumn 2023/24,udeyy,PLAYER,Michal Rokita,0,read
+VALORANT,BS SpicyWater,Autumn 2023/24,ItIsIThomas,PLAYER,Thomas Dekker,1,read
+VALORANT,BS SpicyWater,Autumn 2023/24,EternalScreams,PLAYER,Sanne van Kooten,2,read
+VALORANT,BS SpicyWater,Autumn 2023/24,DwalendeDrol,PLAYER,Max Jansdam,3,read
+VALORANT,BS SpicyWater,Autumn 2023/24,DJundertaker25,PLAYER,Joris Jonkers,4,read
+VALORANT,BS SpicyWater,Autumn 2023/24,Reign,SUBSTITUTE,Reinier Algra,5,read
+VALORANT,BS SpicyWater,Spring 2023/24,udeyy,PLAYER,Michal Rokita,0,inferred
+VALORANT,BS SpicyWater,Spring 2023/24,ItIsIThomas,PLAYER,Thomas Dekker,1,inferred
+VALORANT,BS SpicyWater,Spring 2023/24,EternalScreams,PLAYER,Sanne van Kooten,2,inferred
+VALORANT,BS SpicyWater,Spring 2023/24,DwalendeDrol,PLAYER,Max Jansdam,3,inferred
+VALORANT,BS SpicyWater,Spring 2023/24,DJundertaker25,PLAYER,Joris Jonkers,4,inferred
+VALORANT,BS SpicyWater,Spring 2023/24,Reign,SUBSTITUTE,Reinier Algra,5,inferred
+VALORANT,BS SpicyWater,Autumn 2024/25,udeyy,PLAYER,Michal Rokita,0,inferred
+VALORANT,BS SpicyWater,Autumn 2024/25,ItIsIThomas,PLAYER,Thomas Dekker,1,inferred
+VALORANT,BS SpicyWater,Autumn 2024/25,EternalScreams,PLAYER,Sanne van Kooten,2,inferred
+VALORANT,BS SpicyWater,Autumn 2024/25,DwalendeDrol,PLAYER,Max Jansdam,3,inferred
+VALORANT,BS SpicyWater,Autumn 2024/25,DJundertaker25,PLAYER,Joris Jonkers,4,inferred
+VALORANT,BS SpicyWater,Autumn 2024/25,Reign,SUBSTITUTE,Reinier Algra,5,inferred
+VALORANT,BS SpicyWater,Spring 2024/25,udeyy,PLAYER,Michal Rokita,0,read
+VALORANT,BS SpicyWater,Spring 2024/25,ItIsIThomas,PLAYER,Thomas Dekker,1,read
+VALORANT,BS SpicyWater,Spring 2024/25,EternalScreams,PLAYER,Sanne van Kooten,2,read
+VALORANT,BS SpicyWater,Spring 2024/25,DwalendeDrol,PLAYER,Max Jansdam,3,read
+VALORANT,BS SpicyWater,Spring 2024/25,DJundertaker25,PLAYER,Joris Jonkers,4,read
+VALORANT,BS SpicyWater,Spring 2024/25,Reign,SUBSTITUTE,Reinier Algra,5,read
+VALORANT,BS SpicyWater,Autumn 2025/26,Sony,PLAYER,Shay Karim,0,read
+VALORANT,BS SpicyWater,Autumn 2025/26,JoshSyx,PLAYER,Yoshua Ligt,1,read
+VALORANT,BS SpicyWater,Autumn 2025/26,Stefo,PLAYER,Stefan Borachev,2,read
+VALORANT,BS SpicyWater,Autumn 2025/26,drSL,PLAYER,Thorranin Vudhidhanaseth,3,read
+VALORANT,BS SpicyWater,Autumn 2025/26,ItIsIThomas,PLAYER,Thomas Dekker,4,read
+VALORANT,BS SpicyWater,Autumn 2025/26,Machom36,SUBSTITUTE,Jesse van Gameren,5,read
+VALORANT,BS SpicyWater,Autumn 2025/26,MrPancake,SUBSTITUTE,René Hammink,6,read
+VALORANT,BS SpicyWater,Autumn 2025/26,udeyy,SUBSTITUTE,Michal Rokita,7,read
+VALORANT,BS SpicyWater,Autumn 2025/26,Tennissky,SUBSTITUTE,Mitchell van Poecke,8,read
+VALORANT,BS SpicyWater,Spring 2025/26,Sony,PLAYER,Shay Karim,0,read
+VALORANT,BS SpicyWater,Spring 2025/26,JoshSyx,PLAYER,Yoshua Ligt,1,read
+VALORANT,BS SpicyWater,Spring 2025/26,Stefo,PLAYER,Stefan Borachev,2,read
+VALORANT,BS SpicyWater,Spring 2025/26,drSL,PLAYER,Thorranin Vudhidhanaseth,3,read
+VALORANT,BS SpicyWater,Spring 2025/26,ItIsIThomas,PLAYER,Thomas Dekker,4,read
+VALORANT,BS SpicyWater,Spring 2025/26,Machom36,SUBSTITUTE,Jesse van Gameren,5,read
+VALORANT,BS SpicyWater,Spring 2025/26,MrPancake,SUBSTITUTE,René Hammink,6,read
+VALORANT,BS SpicyWater,Spring 2025/26,udeyy,SUBSTITUTE,Michal Rokita,7,read
+VALORANT,BS SpicyWater,Spring 2025/26,Tennissky,SUBSTITUTE,Mitchell van Poecke,8,read
+VALORANT,BS Tempra,Autumn 2023/24,fetabass,PLAYER,Chris Wong,0,read
+VALORANT,BS Tempra,Autumn 2023/24,hazzY,PLAYER,Mudassar Jamil,1,read
+VALORANT,BS Tempra,Autumn 2023/24,Infory,PLAYER,Dylan Holkenborg,2,read
+VALORANT,BS Tempra,Autumn 2023/24,BigMonke778,PLAYER,Niels de Gruijl,3,read
+VALORANT,BS Tempra,Autumn 2023/24,seidukan,PLAYER,Amir Kuanov,4,read
+VALORANT,BS Tempra,Autumn 2023/24,stweebfan,SUBSTITUTE,Stefan Morriën,5,read
+VALORANT,BS Tempra,Spring 2023/24,fetabass,PLAYER,Chris Wong,0,inferred
+VALORANT,BS Tempra,Spring 2023/24,hazzY,PLAYER,Mudassar Jamil,1,inferred
+VALORANT,BS Tempra,Spring 2023/24,Infory,PLAYER,Dylan Holkenborg,2,inferred
+VALORANT,BS Tempra,Spring 2023/24,BigMonke778,PLAYER,Niels de Gruijl,3,inferred
+VALORANT,BS Tempra,Spring 2023/24,seidukan,PLAYER,Amir Kuanov,4,inferred
+VALORANT,BS Tempra,Spring 2023/24,stweebfan,SUBSTITUTE,Stefan Morriën,5,inferred
+VALORANT,BS Tempra,Autumn 2024/25,fetabass,PLAYER,Chris Wong,0,inferred
+VALORANT,BS Tempra,Autumn 2024/25,hazzY,PLAYER,Mudassar Jamil,1,inferred
+VALORANT,BS Tempra,Autumn 2024/25,Infory,PLAYER,Dylan Holkenborg,2,inferred
+VALORANT,BS Tempra,Autumn 2024/25,BigMonke778,PLAYER,Niels de Gruijl,3,inferred
+VALORANT,BS Tempra,Autumn 2024/25,seidukan,PLAYER,Amir Kuanov,4,inferred
+VALORANT,BS Tempra,Autumn 2024/25,stweebfan,SUBSTITUTE,Stefan Morriën,5,inferred
+VALORANT,BS Tempra,Spring 2024/25,fetabass,PLAYER,Chris Wong,0,read
+VALORANT,BS Tempra,Spring 2024/25,hazzY,PLAYER,Mudassar Jamil,1,read
+VALORANT,BS Tempra,Spring 2024/25,Infory,PLAYER,Dylan Holkenborg,2,read
+VALORANT,BS Tempra,Spring 2024/25,BigMonke778,PLAYER,Niels de Gruijl,3,read
+VALORANT,BS Tempra,Spring 2024/25,seidukan,PLAYER,Amir Kuanov,4,read
+VALORANT,BS Tempra,Spring 2024/25,stweebfan,SUBSTITUTE,Stefan Morriën,5,read
+VALORANT,BS Valorant,Autumn 2022/23,Vossie17,PLAYER,Sam de Vos,0,read
+VALORANT,BS Valorant,Autumn 2022/23,Chani,PLAYER,Ismail El Fechka,1,read
+VALORANT,BS Valorant,Autumn 2022/23,SonGoku,PLAYER,Görkem Çardak,2,read
+VALORANT,BS Valorant,Autumn 2022/23,AWESOME614,PLAYER,Cas van Peer,3,read
+VALORANT,BS Valorant,Autumn 2022/23,Heny,PLAYER,Henry Woolley,4,read
+VALORANT,BS Valorant,Spring 2022/23,Vossie17,PLAYER,Sam de Vos,0,inferred
+VALORANT,BS Valorant,Spring 2022/23,Chani,PLAYER,Ismail El Fechka,1,inferred
+VALORANT,BS Valorant,Spring 2022/23,SonGoku,PLAYER,Görkem Çardak,2,inferred
+VALORANT,BS Valorant,Spring 2022/23,AWESOME614,PLAYER,Cas van Peer,3,inferred
+VALORANT,BS Valorant,Spring 2022/23,Heny,PLAYER,Henry Woolley,4,inferred
+VALORANT,BS Waterboarders,Autumn 2025/26,AriosFury,PLAYER,Viktor Petrov,0,read
+VALORANT,BS Waterboarders,Autumn 2025/26,BS Syched,PLAYER,Raghavendran Srinivasan,1,read
+VALORANT,BS Waterboarders,Autumn 2025/26,Loafine,PLAYER,Reini Strating,2,read
+VALORANT,BS Waterboarders,Autumn 2025/26,The Toilet Mage,PLAYER,Benyamin Unsurorlu,3,read
+VALORANT,BS Waterboarders,Autumn 2025/26,lyx,PLAYER,Liam Beld,4,read
+VALORANT,BS Waterboarders,Autumn 2025/26,BangForYourBucky,SUBSTITUTE,Harm Dreteler,5,read
+VALORANT,BS Waterboarders,Autumn 2025/26,Blackout,SUBSTITUTE,Mauro Foddis,6,read
+VALORANT,BS Waterboarders,Autumn 2025/26,BS King Cookie,SUBSTITUTE,Ivo Heitlager,7,read
+VALORANT,BS Waterboarders,Autumn 2025/26,DJundertaker25,SUBSTITUTE,Joris Jonkers,8,read
+VALORANT,BS Waterboarders,Spring 2025/26,AriosFury,PLAYER,Viktor Petrov,0,read
+VALORANT,BS Waterboarders,Spring 2025/26,BS Syched,PLAYER,Raghavendran Srinivasan,1,read
+VALORANT,BS Waterboarders,Spring 2025/26,Loafine,PLAYER,Reini Strating,2,read
+VALORANT,BS Waterboarders,Spring 2025/26,The Toilet Mage,PLAYER,Benyamin Unsurorlu,3,read
+VALORANT,BS Waterboarders,Spring 2025/26,lyx,PLAYER,Liam Beld,4,read
+VALORANT,BS Waterboarders,Spring 2025/26,BangForYourBucky,SUBSTITUTE,Harm Dreteler,5,read
+VALORANT,BS Waterboarders,Spring 2025/26,Blackout,SUBSTITUTE,Mauro Foddis,6,read
+VALORANT,BS Waterboarders,Spring 2025/26,BS King Cookie,SUBSTITUTE,Ivo Heitlager,7,read
+VALORANT,BS Waterboarders,Spring 2025/26,DJundertaker25,SUBSTITUTE,Joris Jonkers,8,read

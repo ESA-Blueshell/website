@@ -4,7 +4,8 @@ import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
-import TeamSlices from "@/domains/esports/island/TeamSlices.vue"
+import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
+import {$require} from "@/plugins/require"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
@@ -37,6 +38,28 @@ const {loading, teams, seasons, season, hasRosters, showSeason} = useEsportsPage
 )
 
 const currentSeasonId = computed<number | null>(() => season.value?.id ?? null)
+
+/** The roster as the pages have always read it: players, then substitutes, then coaches. */
+const GROUPS = [
+  {role: "PLAYER", one: "Player", many: "Players"},
+  {role: "SUBSTITUTE", one: "Substitute", many: "Substitutes"},
+  {role: "COACH", one: "Coach", many: "Coaches"},
+] as const
+
+const rosterOf = (teamId: number) => {
+  const team = teams.value.find(t => t.id === teamId)
+  if (!team) return []
+  return GROUPS
+    .map(group => ({...group, members: team.members.filter(m => m.role === group.role)}))
+    .filter(group => group.members.length > 0)
+}
+
+const slices = computed(() => teams.value.map(team => ({
+  id: team.id,
+  title: team.name,
+  meta: `${team.members.length} on the roster`,
+  banner: team.image ? $require(`@/assets/${team.image}`) : "",
+})))
 
 const entrance = (index: number) => ({
   initial: motion.decorative.value ? {opacity: 0, y: 14} : {opacity: 1},
@@ -117,10 +140,37 @@ const entrance = (index: number) => ({
           :key="currentSeasonId ?? 'none'"
           v-bind="entrance(0)"
         >
-          <team-slices
+          <banner-slices
             :accent="identity.accent"
-            :teams="teams"
-          />
+            :items="slices"
+            testid-prefix="team-roster"
+          >
+            <template #details="{item}">
+              <span
+                v-for="group in rosterOf(item.id as number)"
+                :key="group.role"
+                class="team-slice__group"
+              >
+                <span class="team-slice__group-label">
+                  {{ group.members.length === 1 ? group.one : group.many }}
+                </span>
+                <span class="team-slice__members">
+                  <span
+                    v-for="member in group.members"
+                    :key="member.handle"
+                    class="team-slice__member"
+                  >
+                    <span class="team-slice__handle">{{ member.handle }}</span>
+                    <!-- Only ever present for a member who said their name may be shown. -->
+                    <span
+                      v-if="member.name"
+                      class="team-slice__member-name"
+                    >{{ member.name }}</span>
+                  </span>
+                </span>
+              </span>
+            </template>
+          </banner-slices>
         </Motion>
       </section>
     </esports-island>

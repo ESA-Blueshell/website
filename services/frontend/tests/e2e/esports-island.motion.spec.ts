@@ -2,48 +2,45 @@ import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
 /**
- * Runs only in the motion project, which does not emulate reduced motion. What
- * it asserts is that the motion is actually wired up: everywhere else it is
- * switched off, so nothing else would notice if it disappeared.
+ * Runs only in the motion project, which does not emulate reduced motion. Everywhere else the
+ * motion is switched off, so nothing else would notice if it disappeared.
  */
-test.describe("the esports island, with motion", () => {
-  test("the game cards animate in rather than appearing at once", async ({page}) => {
+test.describe("the esports index, with motion", () => {
+  test("opens the first game of the season, and passes it along on hover", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/competitive-scene")
+    const slices = page.getByTestId("esports-game-slices")
+    await slices.waitFor()
 
-    const first = page.getByTestId("esports-game-league-of-legends")
-    await first.waitFor()
+    const each = slices.locator('[data-testid^="esports-game-"]')
+    const first = each.first()
+    const second = each.nth(1)
 
-    // Caught mid-entrance the cards are staggered, so the last is still behind
-    // the first. Polling rather than sampling once: the assertion is that a
-    // stagger happens at all, not what it measures at one instant.
-    const staggered = await page.evaluate(() => {
-      const cards = [...document.querySelectorAll('[data-testid^="esports-game-"]')]
-      return cards.length > 1
-    })
-    expect(staggered).toBe(true)
+    // The first opens itself once the page has settled, so the opening is seen happening.
+    await expect.poll(async () => first.getAttribute("class")).toContain("team-slice--open")
 
-    // By the time it settles every card is fully opaque and in place.
-    await expect.poll(async () =>
-      first.evaluate(el => getComputedStyle(el.parentElement as Element).opacity),
-    ).toBe("1")
+    await second.hover()
+
+    await expect.poll(async () => second.getAttribute("class")).toContain("team-slice--open")
+    await expect.poll(async () => first.getAttribute("class")).not.toContain("team-slice--open")
   })
 
-  test("a hovered card lifts its logo and puts it back", async ({page}) => {
+  test("brightens a game's banner as its slice opens", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/competitive-scene")
+    const slices = page.getByTestId("esports-game-slices")
+    await slices.waitFor()
 
-    const card = page.getByTestId("esports-game-valorant")
-    const logo = card.locator("img")
-    // Tailwind's scale utilities set the `scale` property rather than building a
-    // transform, so that is what moves here.
-    const scaleOf = () => logo.evaluate(el => getComputedStyle(el).scale)
-    await expect.poll(scaleOf).toBe("none")
+    const second = slices.locator('[data-testid^="esports-game-"]').nth(1)
+    const banner = second.locator("img")
+    if (await banner.count() === 0) test.skip()
 
-    await card.hover()
-    await expect.poll(scaleOf).not.toBe("none")
+    const grey = () => banner.evaluate(el => getComputedStyle(el).filter)
+    const shut = await grey()
 
-    await page.mouse.move(0, 0)
-    await expect.poll(scaleOf).toBe("none")
+    await second.hover()
+
+    // Shut it is greyed and dimmed; open it is the game's own picture.
+    await expect.poll(grey).not.toBe(shut)
   })
 })

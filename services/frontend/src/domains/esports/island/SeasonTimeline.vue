@@ -21,8 +21,15 @@ const HEIGHT = 104
 const MIN_BAND = 94
 /** How far a node sits above or below the middle of the strip. */
 const AMPLITUDE = 15
-/** The flat run either side of a node, before the line starts to bend. */
-const RUN = 26
+/**
+ * How wide a bend is, as a multiple of the height it has to climb.
+ *
+ * The bend is a fixed window in the middle of the gap rather than the whole of it, so the
+ * line runs straight for most of its length and then turns in a short, round corner. Because
+ * the window is sized from the climb rather than from the gap, every bend turns through the
+ * same radius however far apart two seasons happen to sit.
+ */
+const BEND = 1.35
 
 const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)
@@ -66,16 +73,20 @@ const path = computed<string>(() => {
   const first = points[0]
   const last = points[points.length - 1]
   if (!first || !last || track.value === 0) return ""
-  const run = Math.min(RUN, (track.value / points.length) * 0.32)
-
-  const parts = [`M 0,${first.y}`, `L ${first.x + run},${first.y}`]
+  const parts = [`M 0,${first.y}`]
   for (let i = 1; i < points.length; i += 1) {
     const from = points[i - 1]
     const to = points[i]
     if (!from || !to) continue
-    const mid = (from.x + run + (to.x - run)) / 2
-    parts.push(`C ${mid},${from.y} ${mid},${to.y} ${to.x - run},${to.y}`)
-    parts.push(`L ${to.x + run},${to.y}`)
+    const gap = to.x - from.x
+    const climb = Math.abs(to.y - from.y)
+    // A bend never eats more than two thirds of the gap, however tight the seasons are.
+    const bend = Math.min(gap * 0.66, climb * BEND)
+    const start = from.x + (gap - bend) / 2
+    const end = start + bend
+    const mid = (start + end) / 2
+    parts.push(`L ${start},${from.y}`)
+    parts.push(`C ${mid},${from.y} ${mid},${to.y} ${end},${to.y}`)
   }
   parts.push(`L ${track.value},${last.y}`)
   return parts.join(" ")

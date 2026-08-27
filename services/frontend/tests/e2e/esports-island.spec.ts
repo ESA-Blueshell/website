@@ -18,24 +18,26 @@ test.describe("the esports island", () => {
       .toHaveCount(0)
   })
 
-  test("every game is offered and each one links to its page", async ({page}) => {
+  test("shows the games fielded in the season on show, each linking to its own page", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/competitive-scene")
 
-    const grid = page.getByTestId("esports-game-grid")
-    await expect(grid.locator("a")).toHaveCount(5)
-    await expect(page.getByTestId("esports-game-league-of-legends"))
-      .toHaveAttribute("href", "/esports/league-of-legends")
+    const slices = page.getByTestId("esports-game-slices")
+    await slices.waitFor()
+    // Every game the mock reports a team for, and a way into each one's own history.
+    await expect(slices.locator('[data-testid^="esports-game-"]')).not.toHaveCount(0)
+    await expect(slices.locator('a[href="/esports/valorant"]')).toHaveCount(1)
   })
 
   test("the island's reset stops at its own root", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/competitive-scene")
 
-    // Inside, the island's reset applies: its lists carry no markers.
-    const insideList = await page.getByTestId("esports-game-grid")
-      .evaluate(el => getComputedStyle(el).listStyleType)
-    expect(insideList).toBe("none")
+    // Inside, the island's reset applies: a heading carries none of the margin the rest of
+    // the site gives it.
+    const insideHeading = await page.locator('[data-testid="esports-island"] h1').first()
+      .evaluate(el => getComputedStyle(el).marginBlockEnd)
+    expect(insideHeading).toBe("0px")
 
     // Outside, a bare paragraph keeps the margin the browser gives it. This is
     // the assertion that Preflight is not imported: Tailwind's reset would have

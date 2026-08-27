@@ -1,12 +1,26 @@
 <script lang="ts" setup>
 import {onBeforeUnmount, onMounted, ref, watch} from "vue"
-import {$require} from "@/plugins/require"
 import {useMotionAllowed} from "./useMotionAllowed"
-import type {TeamRoster} from "../adapters/esports"
 
-defineOptions({name: "TeamSlices"})
+defineOptions({name: "BannerSlices"})
 
-const props = defineProps<{teams: TeamRoster[]; accent: string}>()
+export interface SliceItem {
+  id: number | string
+  title: string
+  /** A line under the title while the slice is shut, and while it is open. */
+  meta: string
+  /** The image behind it, where there is one. */
+  banner: string
+  /** Its own colour, where it has one; otherwise the band's accent is used. */
+  accent?: string
+}
+
+const props = defineProps<{
+  items: SliceItem[]
+  accent: string
+  /** What each slice's data-testid is built from, since the two pages name them differently. */
+  testidPrefix: string
+}>()
 
 const motion = useMotionAllowed()
 
@@ -54,54 +68,42 @@ onMounted(() => {
 
 onBeforeUnmount(() => watcher?.disconnect())
 
-// A season change brings a different set of teams, so the first of those opens in its turn.
-watch(() => props.teams, () => {
+// A change of what is on show brings a different set, so the first of those opens in its turn.
+watch(() => props.items, () => {
   slices.value = []
   open.value = motion.decorative.value ? null : 0
   if (motion.decorative.value) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
 })
-
-const GROUPS = [
-  {role: "PLAYER", one: "Player", many: "Players"},
-  {role: "SUBSTITUTE", one: "Substitute", many: "Substitutes"},
-  {role: "COACH", one: "Coach", many: "Coaches"},
-] as const
-
-const rosterOf = (team: TeamRoster) =>
-  GROUPS.map(group => ({...group, members: team.members.filter(m => m.role === group.role)}))
-    .filter(group => group.members.length > 0)
-
-/** A team's own banner, where it has one. An empty string simply leaves the accent showing. */
-const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.image}`) : "")
 </script>
 
 <template>
   <div
     class="team-slices"
-    data-testid="esports-team-slices"
+    :data-testid="`${testidPrefix}-slices`"
     :style="{'--accent': accent}"
     @mouseleave="open = 0"
   >
     <section
-      v-for="(team, index) in teams"
-      :key="team.id"
+      v-for="(item, index) in items"
+      :key="item.id"
       :ref="el => { if (el) slices[index] = el as HTMLElement }"
       class="team-slice"
       :class="{
         'team-slice--open': index === open,
         'team-slice--first': index === 0,
-        'team-slice--last': index === teams.length - 1,
+        'team-slice--last': index === items.length - 1,
       }"
-      :data-testid="`team-roster-${team.id}`"
+      :data-testid="`${testidPrefix}-${item.id}`"
+      :style="item.accent ? {'--accent': item.accent} : undefined"
       @focusin="open = index"
       @mouseenter="open = index"
     >
       <img
-        v-if="bannerOf(team)"
+        v-if="item.banner"
         alt=""
         class="team-slice__banner"
-        :src="bannerOf(team)"
+        :src="item.banner"
       >
       <span
         aria-hidden="true"
@@ -119,34 +121,15 @@ const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.i
             aria-hidden="true"
             class="team-slice__tick"
           />
-          <span class="team-slice__name">{{ team.name }}</span>
-          <span class="team-slice__count">{{ team.members.length }} on the roster</span>
+          <span class="team-slice__name">{{ item.title }}</span>
+          <span class="team-slice__count">{{ item.meta }}</span>
         </span>
 
         <span class="team-slice__roster">
-          <span
-            v-for="group in rosterOf(team)"
-            :key="group.role"
-            class="team-slice__group"
-          >
-            <span class="team-slice__group-label">
-              {{ group.members.length === 1 ? group.one : group.many }}
-            </span>
-            <span class="team-slice__members">
-              <span
-                v-for="member in group.members"
-                :key="member.handle"
-                class="team-slice__member"
-              >
-                <span class="team-slice__handle">{{ member.handle }}</span>
-                <!-- Only ever present for a member who said their name may be shown. -->
-                <span
-                  v-if="member.name"
-                  class="team-slice__member-name"
-                >{{ member.name }}</span>
-              </span>
-            </span>
-          </span>
+          <slot
+            :item="item"
+            name="details"
+          />
         </span>
       </button>
     </section>
@@ -297,7 +280,16 @@ const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.i
   }
 }
 
-.team-slice__group-label {
+/*
+ * The rules below dress what a page renders into the details slot. That content is compiled
+ * in the page's own scope, not this component's, so a plain scoped selector never matches it
+ * — which left rosters running together as one line of text.
+ */
+:slotted(.team-slice__group) {
+  display: block;
+}
+
+:slotted(.team-slice__group-label) {
   display: block;
   font-size: 0.6rem;
   letter-spacing: 0.18em;
@@ -305,7 +297,7 @@ const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.i
   color: var(--color-ash);
 }
 
-.team-slice__members {
+:slotted(.team-slice__members) {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 1.5rem;
@@ -317,19 +309,34 @@ const bannerOf = (team: TeamRoster) => (team.image ? $require(`@/assets/${team.i
  * players; stacked, with the handle leading, it is clear which is the person and which is
  * what they play under.
  */
-.team-slice__member {
+:slotted(.team-slice__member) {
   display: flex;
   min-width: 0;
   flex-direction: column;
   line-height: 1.15;
 }
 
-.team-slice__handle {
+:slotted(.team-slice__handle) {
   font-size: 0.95rem;
   color: var(--color-chalk);
 }
 
-.team-slice__member-name {
+:slotted(.team-slice__link) {
+  align-self: flex-start;
+  margin-top: 0.9rem;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  transition: opacity 200ms ease;
+}
+
+:slotted(.team-slice__link):hover {
+  opacity: 0.75;
+}
+
+:slotted(.team-slice__member-name) {
   font-size: 0.7rem;
   letter-spacing: 0.01em;
   color: color-mix(in oklab, var(--color-ash) 85%, transparent);

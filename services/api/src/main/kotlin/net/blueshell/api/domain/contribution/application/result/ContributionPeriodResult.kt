@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.contribution.command.result
+package net.blueshell.api.domain.contribution.application.result
 
 import java.time.Instant
 import java.time.LocalDate

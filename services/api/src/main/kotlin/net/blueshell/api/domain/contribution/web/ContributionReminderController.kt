@@ -5,7 +5,7 @@ import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.command.*
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.application.ContributionReminderUseCases
-import net.blueshell.api.domain.contribution.command.result.toContributionReminderResults
+import net.blueshell.api.domain.contribution.application.result.toContributionReminderResults
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
 import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionReminderRequest
 import net.blueshell.api.domain.contribution.web.mapping.response.asResponse

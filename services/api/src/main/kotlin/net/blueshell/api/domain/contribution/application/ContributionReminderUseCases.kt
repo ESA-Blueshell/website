@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.contribution.application
 
-import net.blueshell.api.domain.contribution.command.result.ContributionReminderResult
-import net.blueshell.api.domain.contribution.command.result.toContributionReminderResults
-import net.blueshell.api.domain.contribution.command.result.toResult
+import net.blueshell.api.domain.contribution.application.result.ContributionReminderResult
+import net.blueshell.api.domain.contribution.application.result.toContributionReminderResults
+import net.blueshell.api.domain.contribution.application.result.toResult
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.user.application.UserService
 import org.springframework.stereotype.Service

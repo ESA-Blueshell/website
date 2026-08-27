@@ -7,8 +7,8 @@ import net.blueshell.api.domain.sponsor.application.SponsorService
 import net.blueshell.api.domain.sponsor.application.SponsorUseCases
 import net.blueshell.api.domain.sponsor.command.*
 import net.blueshell.api.domain.sponsor.web.dto.request.CreateSponsorRequest
-import net.blueshell.api.domain.sponsor.command.result.toResult
-import net.blueshell.api.domain.sponsor.command.result.toResults
+import net.blueshell.api.domain.sponsor.application.result.toResult
+import net.blueshell.api.domain.sponsor.application.result.toResults
 import net.blueshell.api.domain.sponsor.web.dto.response.SponsorResponse
 import net.blueshell.api.domain.sponsor.web.dto.request.UpdateSponsorRequest
 import net.blueshell.api.domain.sponsor.web.mapping.response.asResponse

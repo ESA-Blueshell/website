@@ -100,6 +100,6 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
                 .that().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.WEB)
                 .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
                 .should().beAnnotatedWith(Autowired::class.java)
-                .because("Controllers should use constructor injection for immutable CommandBus reference")
+                .because("Controllers should use constructor injection for immutable collaborator references")
         }
 }

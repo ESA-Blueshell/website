@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.contribution.application
 
-import net.blueshell.api.domain.contribution.command.result.ContributionPeriodResult
-import net.blueshell.api.domain.contribution.command.result.toResult
+import net.blueshell.api.domain.contribution.application.result.ContributionPeriodResult
+import net.blueshell.api.domain.contribution.application.result.toResult
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import org.springframework.stereotype.Service
 import java.time.LocalDate

@@ -5,7 +5,7 @@ import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.application.ContributionUseCases
 import net.blueshell.api.domain.contribution.command.*
-import net.blueshell.api.domain.contribution.command.result.toContributionResults
+import net.blueshell.api.domain.contribution.application.result.toContributionResults
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse
 import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionRequest

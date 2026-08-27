@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.sponsor.web.mapping.response
 
-import net.blueshell.api.domain.sponsor.command.result.SponsorResult
+import net.blueshell.api.domain.sponsor.application.result.SponsorResult
 import net.blueshell.api.domain.sponsor.web.dto.response.SponsorResponse
 
 fun SponsorResult.asResponse(): SponsorResponse =

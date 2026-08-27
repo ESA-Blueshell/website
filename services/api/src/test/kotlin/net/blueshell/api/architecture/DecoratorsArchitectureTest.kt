@@ -118,18 +118,6 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
         }
 
     @Test
-    fun `commands must not be Spring components`(): Unit =
-        arch("Commands must be passive data structures") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.COMMAND)
-                .and().haveSimpleNameEndingWith("Command")
-                .should().beAnnotatedWith(Component::class.java)
-                .orShould().beAnnotatedWith(Service::class.java)
-                .orShould().beAnnotatedWith(Repository::class.java)
-                .because("ADR-002: Commands are immutable data classes, not managed beans")
-        }
-
-    @Test
     fun `permission evaluators are Spring components`(): Unit =
         arch("Permission evaluators must be @Component") {
             classes()

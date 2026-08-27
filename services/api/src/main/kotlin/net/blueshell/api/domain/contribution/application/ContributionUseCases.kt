@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.contribution.application
 
-import net.blueshell.api.domain.contribution.command.result.ContributionResult
-import net.blueshell.api.domain.contribution.command.result.toResult
+import net.blueshell.api.domain.contribution.application.result.ContributionResult
+import net.blueshell.api.domain.contribution.application.result.toResult
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.UserService
 import org.springframework.stereotype.Service

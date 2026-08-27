@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.contribution.web.mapping.response
 
-import net.blueshell.api.domain.contribution.command.result.ContributionPeriodResult
-import net.blueshell.api.domain.contribution.command.result.ContributionReminderResult
-import net.blueshell.api.domain.contribution.command.result.ContributionResult
+import net.blueshell.api.domain.contribution.application.result.ContributionPeriodResult
+import net.blueshell.api.domain.contribution.application.result.ContributionReminderResult
+import net.blueshell.api.domain.contribution.application.result.ContributionResult
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionPeriodResponse
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionReminderResponse
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionResponse

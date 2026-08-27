@@ -16,13 +16,9 @@ object ArchitecturePackages {
     const val WEB_VALIDATION = "$ROOT..web.validation.."
     const val WEB_MAPPING = "$ROOT..web.mapping.."
 
-    /** Command Layer - Command objects (ADR-002) */
-    const val COMMAND = "$ROOT..command.."
-
-    /** Application Layer - Services, Handlers, Business Validators, Listeners, Factories */
+    /** Application Layer - Use cases, Services, Business Validators, Listeners, Factories */
     const val APPLICATION = "$ROOT..application.."
     const val SERVICE = "$ROOT..application..*Service"
-    const val COMMAND_HANDLER = "$ROOT..application.command.."
     const val APPLICATION_VALIDATION = "$ROOT..application.validation.."
     const val LISTENER = "$ROOT..application.listener.."
     const val EVENT = "$ROOT..application.event.."
@@ -91,7 +87,6 @@ object ArchitecturePackages {
 
     /** Shared - Common utilities, enums, base classes */
     const val SHARED = "$ROOT.shared.."
-    const val SHARED_COMMAND = "$ROOT.shared.command.."
     const val SHARED_VALIDATION = "$ROOT.shared.validation.."
     const val SHARED_MODEL = "$ROOT.shared.model.."
     const val SHARED_ENUM = "$ROOT.shared.enums.."

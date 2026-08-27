@@ -5,9 +5,8 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionPeriodUseCases
-import net.blueshell.api.domain.contribution.command.result.toContributionPeriodResults
-import net.blueshell.api.domain.contribution.command.result.toResult
-import net.blueshell.api.domain.contribution.command.*
+import net.blueshell.api.domain.contribution.application.result.toContributionPeriodResults
+import net.blueshell.api.domain.contribution.application.result.toResult
 import net.blueshell.api.domain.contribution.web.dto.response.ContributionPeriodResponse
 import net.blueshell.api.domain.contribution.web.dto.request.CreateContributionPeriodRequest
 import net.blueshell.api.domain.contribution.web.dto.request.UpdateContributionPeriodRequest

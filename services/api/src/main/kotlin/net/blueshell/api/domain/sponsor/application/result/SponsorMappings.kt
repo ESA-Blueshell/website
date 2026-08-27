@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.sponsor.command.result
+package net.blueshell.api.domain.sponsor.application.result
 
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.contribution.command.result
+package net.blueshell.api.domain.contribution.application.result
 
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod

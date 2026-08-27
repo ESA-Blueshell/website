@@ -52,7 +52,7 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
                 .and().haveSimpleNameEndingWith("Controller")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage(ArchitecturePackages.REPOSITORY)
-                .because("ADR-002: Controllers use CommandBus, not direct repository access")
+                .because("ADR-002: Controllers reach persistence through the application layer, never directly")
         }
 
     @Test
@@ -95,16 +95,6 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
                 .that().resideInAnyPackage(ArchitecturePackages.DTO)
                 .should().beAnnotatedWith(Entity::class.java)
                 .because("DTOs and entities serve different purposes - keep them separate")
-        }
-
-    @Test
-    fun `commands must not be entities`(): Unit =
-        arch("Commands must not be JPA entities") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.COMMAND)
-                .and().haveSimpleNameEndingWith("Command")
-                .should().beAnnotatedWith(Entity::class.java)
-                .because("ADR-002: Commands are use case representations, not persistence models")
         }
 
     @Test

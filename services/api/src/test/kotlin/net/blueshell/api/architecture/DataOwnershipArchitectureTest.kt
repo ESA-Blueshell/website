@@ -66,19 +66,18 @@ class DataOwnershipArchitectureTest {
     }
 
     /**
-     * ADR-018 Violation 2: Command handlers accessing repositories from other domains
+     * ADR-018 Violation 2: application code accessing repositories from other domains
      *
      * Example violation fixed in Phase 1:
-     * - EventSignUpCommandHandlers importing QuestionRepository from Survey domain
+     * - EventSignUpUseCases importing QuestionRepository from Survey domain
      *
      * Fix: Use QuestionService instead
      */
     @ArchTest
-    fun `command handlers should not access repositories from other domains`(classes: JavaClasses) {
+    fun `application code should not access repositories from other domains`(classes: JavaClasses) {
         // Event domain application code should not access Survey repositories.
-        // Widened from ..application.command.. when the event handlers became use
-        // cases: the rule is about which repositories event code may reach, not
-        // about the package the caller happens to sit in.
+        // The rule is about which repositories event code may reach, not about the
+        // package the caller happens to sit in.
         noClasses()
             .that().resideInAPackage("..domain.event.application..")
             .should().dependOnClassesThat()

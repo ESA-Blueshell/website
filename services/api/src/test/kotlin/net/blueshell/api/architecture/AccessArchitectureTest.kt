@@ -36,21 +36,6 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         }
 
     @Test
-    fun `commands accessed by web and application layers`(): Unit =
-        arch("Commands are used by web and application layers") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.COMMAND)
-                .and().haveSimpleNameEndingWith("Command")
-                .should().onlyBeAccessed().byAnyPackage(
-                    ArchitecturePackages.WEB,
-                    ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.COMMAND,
-                    ArchitecturePackages.SHARED_COMMAND  // CommandBus
-                )
-                .because("ADR-002: Commands are dispatched from controllers and handled by command handlers")
-        }
-
-    @Test
     fun `repository only accessed by application and persistence layers`(): Unit =
         arch("Repositories only accessed from application layer") {
             classes()
@@ -87,17 +72,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .that().resideInAnyPackage(ArchitecturePackages.WEB)
                 .and().haveSimpleNameEndingWith("Controller")
                 .should().accessClassesThat().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
-                .because("ADR-002: Controllers dispatch commands via CommandBus, they don't call repositories")
-        }
-
-    @Test
-    fun `controllers do not call services directly`(): Unit =
-        arch("Controllers use CommandBus not direct service calls") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.WEB)
-                .and().haveSimpleNameEndingWith("Controller")
-                .should().accessClassesThat().resideInAnyPackage(ArchitecturePackages.SERVICE)
-                .because("ADR-002: Controllers dispatch commands via CommandBus for write operations")
+                .because("ADR-002: Controllers call use cases and services, never repositories")
         }
 
     @Test

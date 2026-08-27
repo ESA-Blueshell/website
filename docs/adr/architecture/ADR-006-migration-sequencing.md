@@ -150,7 +150,7 @@ structural phases barely reach, so they run in parallel rather than waiting for
 phase 4:
 
 - ADR-004's `enqueue` → `runAsync` rename and its misleading `scheduledFor={}`
-  log line are immediate. `runIn` and the `scheduledFor` column wait for a
+  log line have landed. `runIn` and the `scheduledFor` column wait for a
   caller.
 - ADR-005's missing unique constraints on `discord` and `phone_number` are a
   live integrity gap and are filed as a defect. The two validator moves follow

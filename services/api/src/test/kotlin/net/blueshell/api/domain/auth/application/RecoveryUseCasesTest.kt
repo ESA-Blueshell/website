@@ -52,7 +52,7 @@ class RecoveryUseCasesTest {
             useCases.resetPassword("john")
 
             verify(passwordRecoveryService).requestPasswordReset("john")
-            verify(jobs).enqueue(
+            verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(7L, "token-1", TokenPurpose.PASSWORD_RESET))
             )
@@ -123,7 +123,7 @@ class RecoveryUseCasesTest {
             useCases.resendUserActivation("john")
 
             verify(activationService).requestUserActivation("john")
-            verify(jobs).enqueue(
+            verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(8L, "token-5", TokenPurpose.USER_ACTIVATION))
             )
@@ -152,7 +152,7 @@ class RecoveryUseCasesTest {
             useCases.resendRecoveryEmail(9L, null)
 
             verify(activationService).requestActivationEmail(9L)
-            verify(jobs).enqueue(
+            verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION))
             )
@@ -177,7 +177,7 @@ class RecoveryUseCasesTest {
 
             verify(activationService).requestActivation(9L, TokenPurpose.MEMBER_ACTIVATION)
             verify(activationService, never()).requestActivationEmail(any())
-            verify(jobs).enqueue(
+            verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
                 eq(EmailJobs.RecoveryPayload(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION))
             )

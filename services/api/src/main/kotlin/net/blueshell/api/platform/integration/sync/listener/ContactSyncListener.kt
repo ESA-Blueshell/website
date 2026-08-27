@@ -26,16 +26,16 @@ class ContactSyncListener(
 ) {
     @ApplicationModuleListener
     fun on(event: UserCreated) {
-        jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
+        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
     }
 
     @ApplicationModuleListener
     fun on(event: UserUpdated) {
-        jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
+        jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(event.userId))
     }
 
     @ApplicationModuleListener
     fun on(event: UserDeleted) {
-        jobs.enqueue(ContactJobs.RemoveContact, ContactJobs.RemoveContactPayload(event.userId))
+        jobs.runAsync(ContactJobs.RemoveContact, ContactJobs.RemoveContactPayload(event.userId))
     }
 }

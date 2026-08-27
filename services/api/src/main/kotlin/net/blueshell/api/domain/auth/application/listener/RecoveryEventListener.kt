@@ -22,7 +22,7 @@ class RecoveryEventListener(
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUserCreated(event: UserCreated) {
         val dispatch = activationService.issueActivationForNewUser(event.userId, event.createdByBoard == true)
-        jobs.enqueueFromActor(
+        jobs.runAsyncFromActor(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
             event

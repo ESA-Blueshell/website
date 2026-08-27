@@ -32,7 +32,7 @@ class SyncAllContactsJob(
         log.info("Enqueueing per-user contact sync jobs for {} users", users.size)
         users.forEach { user ->
             runCatching {
-                jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!))
+                jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(user.id!!))
             }.onFailure { e ->
                 log.error("Failed to enqueue contact sync for user {}: {}", user.id, e.message)
             }

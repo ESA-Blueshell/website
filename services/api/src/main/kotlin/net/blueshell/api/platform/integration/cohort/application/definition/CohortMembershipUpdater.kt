@@ -87,7 +87,7 @@ class CohortMembershipUpdater(
             IllegalStateException("Cohort ${cohort.id} names a subject that is not there")
         }
         memberships.save(CohortMember(cohort = cohort, userId = userId, subject = subject))
-        jobs.enqueue(
+        jobs.runAsync(
             CohortJobs.SyncCohortMembership,
             CohortJobs.SyncCohortMembershipPayload(userId, cohort.id!!, SyncCohortMembershipIntent.ADD),
         )
@@ -97,7 +97,7 @@ class CohortMembershipUpdater(
         val userId = member.userId ?: return
         val cohortId = member.cohort.id ?: return
         memberships.delete(member) // soft delete: the row is kept for historical statistics
-        jobs.enqueue(
+        jobs.runAsync(
             CohortJobs.SyncCohortMembership,
             CohortJobs.SyncCohortMembershipPayload(userId, cohortId, SyncCohortMembershipIntent.REMOVE),
         )

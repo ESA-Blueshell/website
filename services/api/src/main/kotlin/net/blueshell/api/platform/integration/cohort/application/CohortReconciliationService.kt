@@ -71,7 +71,7 @@ class CohortReconciliationService(
                 val ids = users.findActiveIdsAfter(afterId, PAGE_SIZE)
                 ids.forEach { userId ->
                     runCatching {
-                        jobs.enqueue(
+                        jobs.runAsync(
                             CohortJobs.EvaluateUserCohorts,
                             CohortJobs.EvaluateUserCohortsPayload(userId),
                         )

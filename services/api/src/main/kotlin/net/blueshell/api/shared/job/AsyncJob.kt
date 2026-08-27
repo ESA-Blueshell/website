@@ -6,13 +6,13 @@ package net.blueshell.api.shared.job
  *
  * Usage:
  * ```kotlin
- * provider.contactSyncJob(userId).enqueueOn(jobs)
+ * provider.contactSyncJob(userId).runAsyncOn(jobs)
  * ```
  */
-data class EnqueueableJob<T : Any>(
+data class AsyncJob<T : Any>(
     val definition: JobDefinition<T>,
     val payload: T,
 ) {
-    fun enqueueOn(dispatcher: TrackedJobDispatcher): JobExecution? =
-        dispatcher.enqueue(definition, payload)
+    fun runAsyncOn(dispatcher: TrackedJobDispatcher): JobExecution? =
+        dispatcher.runAsync(definition, payload)
 }

@@ -10,20 +10,20 @@ class TrackedJobDispatcher(
     private val queue: JobQueue,
     private val actors: ActorProvider
 ) {
-    fun <T : Any> enqueue(job: JobDefinition<T>, payload: T): JobExecution? {
-        return queue.enqueue(job, payload, actors.currentOrSystem())
+    fun <T : Any> runAsync(job: JobDefinition<T>, payload: T): JobExecution? {
+        return queue.runAsync(job, payload, actors.currentOrSystem())
     }
 
-    fun <T : Any> enqueueFromActor(job: JobDefinition<T>, payload: T, actor: ActorTracked): JobExecution? {
-        return queue.enqueue(job, payload, actor.actor)
+    fun <T : Any> runAsyncFromActor(job: JobDefinition<T>, payload: T, actor: ActorTracked): JobExecution? {
+        return queue.runAsync(job, payload, actor.actor)
     }
 
-    @Deprecated("Prefer the typed enqueue(JobDefinition, payload) overload.")
-    fun enqueue(
+    @Deprecated("Prefer the typed runAsync(JobDefinition, payload) overload.")
+    fun runAsync(
         jobType: String,
         payload: Any? = null,
         actor: Actor? = null
     ): JobExecution? {
-        return queue.enqueue(jobType, payload, actor ?: actors.currentOrSystem())
+        return queue.runAsync(jobType, payload, actor ?: actors.currentOrSystem())
     }
 }

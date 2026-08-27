@@ -11,20 +11,20 @@ import net.blueshell.api.shared.tracking.ActorTracked
  */
 interface JobQueue {
     /**
-     * Enqueues a job with a typed payload.
+     * Runs a job with a typed payload asynchronously and durably.
      * Returns a job execution tracking object, or null if dedup suppressed the job.
      */
-    fun <T : Any> enqueue(
+    fun <T : Any> runAsync(
         job: JobDefinition<T>,
         payload: T,
         actor: Actor? = null
     ): JobExecution?
 
     /**
-     * Enqueues a job by type name with optional payload.
+     * Runs a job by type name with optional payload asynchronously and durably.
      * Returns a job execution tracking object, or null if dedup suppressed the job.
      */
-    fun enqueue(
+    fun runAsync(
         jobType: String,
         payload: Any? = null,
         actor: Actor? = null,

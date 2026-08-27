@@ -78,7 +78,7 @@ class CohortMembershipSyncService(
         val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
         if (externalUserId == null) {
-            jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId))
+            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId))
             throw CohortMembershipNotReadyException(
                 "user $userId has no $system external id — enqueued SyncContact, will retry",
             )

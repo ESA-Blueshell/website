@@ -71,7 +71,7 @@ class CohortMembershipSyncServiceTest {
             .hasMessageContaining("cohort 10 has no BREVO target")
 
         verify(exactly = 0) {
-            jobs.enqueue(CohortJobs.MaterializeCohortTarget, any<CohortJobs.MaterializeCohortTargetPayload>())
+            jobs.runAsync(CohortJobs.MaterializeCohortTarget, any<CohortJobs.MaterializeCohortTargetPayload>())
         }
         verify(exactly = 0) { brevoPort.addMember(any(), any()) }
         verify(exactly = 0) { brevoPort.createCohort(any(), any()) }
@@ -99,7 +99,7 @@ class CohortMembershipSyncServiceTest {
         }.isInstanceOf(CohortMembershipNotReadyException::class.java)
 
         verify {
-            jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(1L))
+            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(1L))
         }
         verify(exactly = 0) { brevoPort.addMember(any(), any()) }
     }

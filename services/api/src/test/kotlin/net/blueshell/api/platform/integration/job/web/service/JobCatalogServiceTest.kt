@@ -49,7 +49,7 @@ class JobCatalogServiceTest {
             .thenReturn(ContactJobs.SyncContactPayload::class.java)
         whenever(objectMapper.convertValue(eq(rawPayload), eq(ContactJobs.SyncContactPayload::class.java)))
             .thenReturn(payload)
-        whenever(dispatcher.enqueue(eq(ContactJobs.SyncContact.type), eq(payload), isNull(), isNull()))
+        whenever(dispatcher.runAsync(eq(ContactJobs.SyncContact.type), eq(payload), isNull(), isNull()))
             .thenReturn(execution)
 
         val result = service.enqueue(ContactJobs.SyncContact.type, rawPayload)

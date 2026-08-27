@@ -137,7 +137,7 @@ class RecoveryEventListener(
             event.createdByBoard == true
         )
 
-        jobDispatcher.enqueue(
+        jobDispatcher.runAsync(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
         )
@@ -435,7 +435,7 @@ class RecoveryEventListener(
             event.createdByBoard == true
         )
 
-        jobDispatcher.enqueue(
+        jobDispatcher.runAsync(
             EmailJobs.Recovery,
             EmailJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type)
         )
@@ -455,7 +455,7 @@ Domain Service
 Domain Event (e.g., UserCreated)
     ↓ @EventListener
 Event Listener
-    ↓ JobDispatcher.enqueue(...)
+    ↓ JobDispatcher.runAsync(...)
 Job Queue (async)
     ↓ AbstractJsonJobHandler.handle()
 Job Handler (e.g., SyncContactJob)
@@ -472,7 +472,7 @@ class ContactSyncEventListener(private val jobDispatcher: JobDispatcher) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onUserCreated(event: UserCreated) {
-        jobDispatcher.enqueue(
+        jobDispatcher.runAsync(
             ContactJobs.SyncContact,
             ContactJobs.SyncContactPayload(userId = event.userId)
         )

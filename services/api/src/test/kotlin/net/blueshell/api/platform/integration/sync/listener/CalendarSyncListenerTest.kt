@@ -19,7 +19,7 @@ class CalendarSyncListenerTest {
     fun `EventChanged enqueues a SyncCalendarEvent job`() {
         listener.on(EventChanged(42L, EventChange.CREATED))
 
-        verify(jobs).enqueue(eq(CalendarJobs.SyncCalendarEvent), eq(CalendarJobs.SyncCalendarEventPayload(42L)))
+        verify(jobs).runAsync(eq(CalendarJobs.SyncCalendarEvent), eq(CalendarJobs.SyncCalendarEventPayload(42L)))
         verifyNoMoreInteractions(jobs)
     }
 }

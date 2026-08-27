@@ -23,7 +23,7 @@ class ContributionReminderService @Autowired constructor(
 
     fun sendReminder(reminder: ContributionReminder) {
         val reminderId = reminder.id
-        jobs.enqueue(
+        jobs.runAsync(
             EmailJobs.ContributionReminder,
             EmailJobs.ContributionReminderPayload(reminderId.userId!!, reminderId.contributionPeriodId!!)
         )

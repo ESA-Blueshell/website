@@ -19,6 +19,6 @@ class CalendarSyncListener(
 ) {
     @ApplicationModuleListener
     fun on(event: EventChanged) {
-        jobs.enqueue(CalendarJobs.SyncCalendarEvent, CalendarJobs.SyncCalendarEventPayload(event.eventId))
+        jobs.runAsync(CalendarJobs.SyncCalendarEvent, CalendarJobs.SyncCalendarEventPayload(event.eventId))
     }
 }

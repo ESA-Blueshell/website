@@ -20,7 +20,7 @@ class ContactSyncListenerTest {
     fun `UserCreated enqueues a SyncContact job`() {
         listener.on(UserCreated(7L))
 
-        verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(7L)))
+        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(7L)))
         verifyNoMoreInteractions(jobs)
     }
 
@@ -28,7 +28,7 @@ class ContactSyncListenerTest {
     fun `UserUpdated enqueues a SyncContact job`() {
         listener.on(UserUpdated(11L))
 
-        verify(jobs).enqueue(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(11L)))
+        verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(11L)))
         verifyNoMoreInteractions(jobs)
     }
 
@@ -36,7 +36,7 @@ class ContactSyncListenerTest {
     fun `UserDeleted enqueues a RemoveContact job`() {
         listener.on(UserDeleted(13L))
 
-        verify(jobs).enqueue(eq(ContactJobs.RemoveContact), eq(ContactJobs.RemoveContactPayload(13L)))
+        verify(jobs).runAsync(eq(ContactJobs.RemoveContact), eq(ContactJobs.RemoveContactPayload(13L)))
         verifyNoMoreInteractions(jobs)
     }
 }

@@ -103,7 +103,7 @@ class CohortRemediationService(
             val rows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(cohortId)
                 .filter { it.syncedAt == null }
             rows.forEach { row ->
-                jobs.enqueue(
+                jobs.runAsync(
                     CohortJobs.SyncCohortMembership,
                     CohortJobs.SyncCohortMembershipPayload(row.userId!!, cohortId, SyncCohortMembershipIntent.ADD),
                 )
@@ -213,9 +213,9 @@ class CohortRemediationService(
         desiredRows.forEach { row ->
             val extId = externalIdByUserId[row.userId]
             if (extId == null) {
-                jobs.enqueue(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!))
+                jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!))
             } else if (extId !in remoteExtIds) {
-                jobs.enqueue(
+                jobs.runAsync(
                     CohortJobs.SyncCohortMembership,
                     CohortJobs.SyncCohortMembershipPayload(row.userId!!, plan.cohortId, SyncCohortMembershipIntent.ADD),
                 )

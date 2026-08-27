@@ -4,6 +4,7 @@ import {defineConfig} from 'vite'
 import {fileURLToPath} from 'node:url'
 import svgLoader from 'vite-svg-loader'
 import istanbul from 'vite-plugin-istanbul'
+import tailwind from '@tailwindcss/vite'
 
 export default defineConfig({
     build: {
@@ -31,6 +32,7 @@ export default defineConfig({
                     if (/[\\/](?:v-phone-input|flag-icons)[\\/]/.test(id)) return 'phone-input'
                     if (/[\\/](?:vue|@vue|vue-router|vuex|vue-axios)[\\/]/.test(id)) return 'vue-core'
                     if (/[\\/]luxon[\\/]/.test(id)) return 'datetime'
+                    if (/[\\/](?:reka-ui|motion-v|motion-dom|@vueuse)[\\/]/.test(id)) return 'island'
                     if (/[\\/](?:marked|dompurify|xss|node-emoji)[\\/]/.test(id)) return 'markup'
                 },
             },
@@ -74,6 +76,9 @@ export default defineConfig({
             }
         }),
         svgLoader(),
+        // Tailwind serves the esports island only; src/styles/island.css lists
+        // the directories it scans, so a class used elsewhere generates nothing.
+        tailwind(),
     ],
     optimizeDeps: {
         exclude: [

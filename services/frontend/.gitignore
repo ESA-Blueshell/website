@@ -44,3 +44,6 @@ pnpm-debug.log*
 env/*.env
 .playwright-browsers
 *.md
+
+# Vite writes these beside the config when it reloads it; never ours to keep.
+vite.config.mjs.timestamp-*

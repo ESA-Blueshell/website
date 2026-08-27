@@ -44,6 +44,12 @@ data class UpdateTeamRequest(
     val image: String? = null,
 )
 
+@Schema(description = "Field a team in a season, with or without the line-up it last had")
+data class FieldTeamRequest(
+    @Schema(description = "Copy the team's most recent line-up into this season")
+    val carryLineup: Boolean = false,
+)
+
 @Schema(description = "Put somebody on a team's roster for a season")
 data class AddRosterEntryRequest(
     @field:NotNull(message = "Season id is required")

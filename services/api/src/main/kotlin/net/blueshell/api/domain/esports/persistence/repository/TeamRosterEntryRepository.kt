@@ -81,5 +81,23 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     )
     fun findUserIdsInWindow(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Long>
 
+    /**
+     * The seasons a team has a line-up for, newest first, ignoring one. Carrying a line-up
+     * across asks for the first of these, and must not answer with the season being filled.
+     */
+    @Query(
+        """
+        SELECT s.id FROM TeamRosterEntry e
+        JOIN e.season s
+        WHERE e.team.id = :teamId AND s.id <> :ignoring
+        GROUP BY s.id, s.startDate
+        ORDER BY s.startDate DESC
+        """,
+    )
+    fun findSeasonIdsWithLineup(
+        @Param("teamId") teamId: Long,
+        @Param("ignoring") ignoring: Long,
+    ): List<Long>
+
     fun findAllByUserId(userId: Long): List<TeamRosterEntry>
 }

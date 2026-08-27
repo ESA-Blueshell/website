@@ -61,6 +61,14 @@ data class EsportsPageResponse(
     val teams: List<TeamRosterResponse>,
 )
 
+@Schema(description = "A team now fielded in a season, and whatever line-up came across with it")
+data class FieldedTeamResponse(
+    val team: TeamResponse,
+    val season: SeasonResponse,
+    @Schema(description = "The entries copied from the team's last season; empty when nothing was carried")
+    val carried: List<RosterEntryResponse>,
+)
+
 @Schema(description = "A roster entry as an admin edits it, real name included")
 data class RosterEntryResponse(
     val id: Long,

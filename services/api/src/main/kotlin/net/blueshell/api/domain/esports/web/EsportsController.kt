@@ -11,12 +11,14 @@ import net.blueshell.api.domain.esports.application.TeamSeasonService
 import net.blueshell.api.domain.esports.application.TeamService
 import net.blueshell.api.domain.esports.web.dto.request.AddRosterEntryRequest
 import net.blueshell.api.domain.esports.web.dto.request.CreateTeamRequest
+import net.blueshell.api.domain.esports.web.dto.request.FieldTeamRequest
 import net.blueshell.api.domain.esports.web.dto.request.LinkRosterEntryRequest
 import net.blueshell.api.domain.esports.web.dto.request.SeasonRequest
 import net.blueshell.api.domain.esports.web.dto.request.UpdateGamePageRequest
 import net.blueshell.api.domain.esports.web.dto.request.UpdateRosterEntryRequest
 import net.blueshell.api.domain.esports.web.dto.request.UpdateTeamRequest
 import net.blueshell.api.domain.esports.web.dto.response.EsportsPageResponse
+import net.blueshell.api.domain.esports.web.dto.response.FieldedTeamResponse
 import net.blueshell.api.domain.esports.web.dto.response.GamePageResponse
 import net.blueshell.api.domain.esports.web.dto.response.RosterEntryResponse
 import net.blueshell.api.domain.esports.web.dto.response.SeasonResponse
@@ -127,7 +129,8 @@ class EsportsController(
     }
 
     /**
-     * Records that a team is fielded in a season, before anybody has been named to it.
+     * Records that a team is fielded in a season, before anybody has been named to it, and
+     * optionally brings the line-up it last had across with it.
      *
      * Saying it twice says the same thing, so a repeat answers with the team rather than
      * refusing: an interface that has to check first would race itself.
@@ -137,7 +140,15 @@ class EsportsController(
     fun fieldTeam(
         @PathVariable seasonId: Long,
         @PathVariable teamId: Long,
-    ): TeamResponse = fielded.field(teamId, seasonId).team.asResponse()
+        @RequestBody(required = false) request: FieldTeamRequest?,
+    ): FieldedTeamResponse {
+        val fieldedTeam = rosters.fieldWithLineup(teamId, seasonId, request?.carryLineup == true)
+        return FieldedTeamResponse(
+            team = fieldedTeam.team.asResponse(),
+            season = fieldedTeam.season.asResponse(),
+            carried = fieldedTeam.carried.map { it.asResponse() },
+        )
+    }
 
     /** Stops a team being fielded in a season. The team, and its other seasons, are untouched. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")

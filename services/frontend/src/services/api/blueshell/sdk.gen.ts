@@ -391,7 +391,11 @@ export const unfieldTeam = <ThrowOnError extends boolean = false>(options: Optio
 export const fieldTeam = <ThrowOnError extends boolean = false>(options: Options<FieldTeamData, ThrowOnError>): RequestResult<FieldTeamResponses, FieldTeamErrors, ThrowOnError> => (options.client ?? client).put<FieldTeamResponses, FieldTeamErrors, ThrowOnError>({
     responseType: 'json',
     url: '/esports/seasons/{seasonId}/teams/{teamId}',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 export const findTeams = <ThrowOnError extends boolean = false>(options: Options<FindTeamsData, ThrowOnError>): RequestResult<FindTeamsResponses, FindTeamsErrors, ThrowOnError> => (options.client ?? client).get<FindTeamsResponses, FindTeamsErrors, ThrowOnError>({

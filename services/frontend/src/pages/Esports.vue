@@ -107,7 +107,7 @@ const entrance = {
         />
       </section>
 
-      <section class="w-full pb-14 sm:pb-20">
+      <section class="w-full pb-3 sm:pb-4">
         <div
           v-if="loading"
           class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"

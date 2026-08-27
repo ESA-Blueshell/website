@@ -22,8 +22,8 @@ const EMAIL = "esports-affairs@blueshell.utwente.nl"
           Want in?
         </h2>
         <p class="join-band__line">
-          Membership is what puts you on a roster. Ask first if you would rather — the board
-          answers on Discord, and esports affairs answers by mail.
+          Membership is what puts you on a roster. If you would rather ask first, the board
+          answers on Discord and esports affairs answers by mail.
         </p>
       </div>
 
@@ -51,7 +51,7 @@ const EMAIL = "esports-affairs@blueshell.utwente.nl"
           data-testid="esports-join-mail"
           :href="`mailto:${EMAIL}`"
         >
-          <span>{{ EMAIL }}</span>
+          <span>Ask over email</span>
         </a>
       </div>
     </div>
@@ -168,8 +168,6 @@ const EMAIL = "esports-affairs@blueshell.utwente.nl"
 .join-cut--quiet {
   background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
   color: var(--color-ash);
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 .join-cut--quiet:hover,

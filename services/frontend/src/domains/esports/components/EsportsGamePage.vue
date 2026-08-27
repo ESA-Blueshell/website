@@ -5,6 +5,7 @@ import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
+import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import {$require} from "@/plugins/require"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
@@ -121,7 +122,7 @@ const entrance = (index: number) => ({
       </section>
 
       <!-- Full width, edge to edge: the teams are the page, not a card grid inside it. -->
-      <section class="w-full pb-16 sm:pb-20">
+      <section class="w-full pb-3 sm:pb-4">
         <div
           v-if="loading"
           class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
@@ -173,6 +174,8 @@ const entrance = (index: number) => ({
           </banner-slices>
         </Motion>
       </section>
+
+      <join-band />
     </esports-island>
   </v-main>
 </template>

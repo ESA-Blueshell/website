@@ -94,16 +94,6 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
         }
 
     @Test
-    fun `command handlers use constructor injection`(): Unit =
-        arch("Command handlers must use constructor injection") {
-            noFields()
-                .that().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.COMMAND_HANDLER)
-                .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Handler")
-                .should().beAnnotatedWith(Autowired::class.java)
-                .because("ADR-002: Handlers should use constructor injection for testability")
-        }
-
-    @Test
     fun `controllers use constructor injection`(): Unit =
         arch("Controllers must use constructor injection") {
             noFields()

@@ -2,13 +2,10 @@ package net.blueshell.api.domain.esports.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import net.blueshell.api.domain.esports.command.ClearGameAccountCommand
-import net.blueshell.api.domain.esports.command.FindGameAccountsCommand
+import net.blueshell.api.domain.esports.application.UserGameAccountService
 import net.blueshell.api.domain.esports.web.dto.request.GameAccountRequest
 import net.blueshell.api.domain.esports.web.dto.response.GameAccountResponse
-import net.blueshell.api.domain.esports.web.mapping.request.asCommand
 import net.blueshell.api.domain.esports.web.mapping.response.asResponse
-import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Game
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -32,12 +29,12 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/users/{userId}/game-accounts")
 @Tag(name = "Game accounts", description = "Per-member, per-game handles")
 class GameAccountController(
-    private val commandBus: CommandBus,
+    private val accounts: UserGameAccountService,
 ) {
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     @GetMapping
     fun findGameAccounts(@PathVariable userId: Long): List<GameAccountResponse> =
-        commandBus.dispatch(FindGameAccountsCommand(userId)).map { it.asResponse() }
+        accounts.findAllForUser(userId).map { it.asResponse() }
 
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     @PutMapping("/{game}")
@@ -45,12 +42,12 @@ class GameAccountController(
         @PathVariable userId: Long,
         @PathVariable game: Game,
         @Valid @RequestBody request: GameAccountRequest,
-    ): GameAccountResponse = commandBus.dispatch(request.asCommand(userId, game)).asResponse()
+    ): GameAccountResponse = accounts.set(userId, game, request.handle).asResponse()
 
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     @DeleteMapping("/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun clearGameAccount(@PathVariable userId: Long, @PathVariable game: Game) {
-        commandBus.dispatch(ClearGameAccountCommand(userId, game))
+        accounts.clear(userId, game)
     }
 }

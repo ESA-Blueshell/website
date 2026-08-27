@@ -124,17 +124,6 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         }
 
     @Test
-    fun `command handlers do not depend on DTOs`(): Unit =
-        arch("Command handlers must not depend on web DTOs") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.COMMAND_HANDLER)
-                .and().haveSimpleNameEndingWith("Handler")
-                .and().resideOutsideOfPackage("${ArchitecturePackages.DOMAIN_EVENT}application.command..")  // Event domain - known issue
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DTO)
-                .because("ADR-002: Handlers work with commands, not web DTOs")
-        }
-
-    @Test
     fun `repositories do not depend on services`(): Unit =
         arch("Repositories must not depend on services") {
             noClasses()

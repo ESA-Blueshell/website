@@ -3,8 +3,12 @@ package net.blueshell.api.domain.contribution.application.email
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.time.LocalDate
+import java.util.Locale
 
 /**
  * Tests for contribution reminder email builder.
@@ -14,6 +18,12 @@ import java.time.LocalDate
 class ContributionReminderEmailBuilderTest {
 
     private val frontendUrl = "https://test-frontend.com"
+    private val originalLocale: Locale = Locale.getDefault()
+
+    @AfterEach
+    fun restoreDefaultLocale() {
+        Locale.setDefault(originalLocale)
+    }
 
     @Test
     fun `createContributionReminderEmail builds correct EmailContent`() {
@@ -42,9 +52,9 @@ class ContributionReminderEmailBuilderTest {
             .contains("Dear John Doe")
             .contains("2024-01-01")
             .contains("2024-12-31")
-            .contains("Half year fee: €25.00")
-            .contains("Full year fee: €45.00")
-            .contains("Alumni fee: €10.00")
+            .contains("Half year fee: €25,00")
+            .contains("Full year fee: €45,00")
+            .contains("Alumni fee: €10,00")
             .contains(frontendUrl)
     }
 
@@ -66,9 +76,11 @@ class ContributionReminderEmailBuilderTest {
             .contains("Treasurer of Blueshell Esports")
     }
 
-    @Test
-    fun `email formats currency correctly`() {
-        // Given: Period with precise decimal amounts
+    @ParameterizedTest
+    @ValueSource(strings = ["nl-NL", "en-US", "de-DE"])
+    fun `email formats currency in Dutch notation whatever the JVM default locale is`(languageTag: String) {
+        // Given: A JVM default locale that must not influence the rendered amounts
+        Locale.setDefault(Locale.forLanguageTag(languageTag))
         val user = createTestUser("test", "test@example.com", "Test", "User")
         val period = createTestPeriod(
             halfYearFee = 12.50,
@@ -79,11 +91,11 @@ class ContributionReminderEmailBuilderTest {
         // When: Building email
         val emailContent = createContributionReminderEmail(user, period, frontendUrl)
 
-        // Then: Currency is formatted with 2 decimals
+        // Then: Amounts carry two decimals behind a comma
         assertThat(emailContent.markdownContent)
-            .contains("€12.50")
-            .contains("€20.00")
-            .contains("€5.99")
+            .contains("€12,50")
+            .contains("€20,00")
+            .contains("€5,99")
     }
 
     private fun createTestUser(username: String, email: String, firstName: String, lastName: String): User {

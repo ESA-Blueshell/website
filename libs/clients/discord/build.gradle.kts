@@ -169,7 +169,7 @@ tasks.named("generate").configure { dependsOn(filterDiscordSpec) }
 openApiClient {
     // Path is resolved against the repo root by the convention plugin, so this
     // string must be a root-relative path.
-    specPath.set("services/api/clients/discord/build/discord-filtered.json")
+    specPath.set("libs/clients/discord/build/discord-filtered.json")
     apiPackage.set("net.blueshell.clients.discord.api")
     modelPackage.set("net.blueshell.clients.discord.model")
     packageName.set("net.blueshell.clients.discord.invoker")

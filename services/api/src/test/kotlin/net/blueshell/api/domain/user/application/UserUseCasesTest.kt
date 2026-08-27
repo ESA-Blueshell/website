@@ -1,30 +1,28 @@
-package net.blueshell.api.domain.user.application.command
+package net.blueshell.api.domain.user.application
 
-import net.blueshell.api.domain.user.application.UserService
+import jakarta.validation.ConstraintViolation
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validator
 import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.user.application.query.UserQuery
-import net.blueshell.api.domain.user.command.BoardUpdateUserCommand
-import net.blueshell.api.domain.user.command.CreateUserCommand
-import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
-import net.blueshell.api.domain.user.command.FindUserByIdCommand
-import net.blueshell.api.domain.user.command.FindDeletedUsersCommand
-import net.blueshell.api.domain.user.command.FindUsersCommand
-import net.blueshell.api.domain.user.command.RestoreDeletedUserByIdCommand
-import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
-import net.blueshell.api.domain.user.command.UpdateUserCommand
-import net.blueshell.api.domain.user.command.UpsertMemberProfileData
-import net.blueshell.api.domain.user.persistence.MemberProfile
+import net.blueshell.api.domain.user.application.validation.UserRegistration
+import net.blueshell.api.domain.user.application.validation.UserUniqueness
 import net.blueshell.api.domain.user.persistence.DeletedUser
+import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
@@ -32,40 +30,48 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.sql.Date
 
-class UserCommandHandlersTest {
+class UserUseCasesTest {
 
     private val userService = mock<UserService>()
     private val erasure = mock<UserErasureService>()
     private val passwordEncoder = mock<PasswordEncoder>()
+    private val validator = mock<Validator>()
+
+    private val useCases = UserUseCases(userService, erasure, passwordEncoder, validator)
+
+    @BeforeEach
+    fun noViolations() {
+        whenever(validator.validate(any<UserRegistration>())).thenReturn(mutableSetOf())
+        whenever(validator.validate(any<UserUniqueness>())).thenReturn(mutableSetOf())
+    }
 
     @Nested
-    inner class CreateUser {
-
-        private val handler = CreateUserHandler(userService, passwordEncoder)
+    inner class Create {
 
         @Test
         fun `creates non board user with encoded provided password and member profile`() {
             whenever(passwordEncoder.encode("Passw0rd!")).thenReturn("encoded-pass")
             val captured = argumentCaptor<User>()
             whenever(userService.create(captured.capture())).thenAnswer { captured.firstValue }
-            val command = CreateUserCommand(
-                isBoard = false,
-                username = "john",
-                email = "john@example.com",
-                initials = "JD",
-                firstName = "John",
-                prefix = null,
-                lastName = "Doe",
-                newsletter = true,
-                consentPrivacy = true,
-                photoConsent = true,
-                password = "Passw0rd!",
-                discord = "john#0001",
-                phoneNumber = "0612345678",
-                memberProfile = upsertMemberProfileData(version = null)
-            )
 
-            val result = handler.handle(command)
+            val result = useCases.create(
+                NewUserData(
+                    username = "john",
+                    email = "john@example.com",
+                    initials = "JD",
+                    firstName = "John",
+                    prefix = null,
+                    lastName = "Doe",
+                    newsletter = true,
+                    consentPrivacy = true,
+                    photoConsent = true,
+                    password = "Passw0rd!",
+                    discord = "john#0001",
+                    phoneNumber = "0612345678",
+                    memberProfile = upsertMemberProfileData(version = null)
+                ),
+                isBoard = false,
+            )
 
             assertThat(captured.firstValue.username).isEqualTo("john")
             assertThat(captured.firstValue.email).isEqualTo("john@example.com")
@@ -85,24 +91,8 @@ class UserCommandHandlersTest {
             val capturedUser = argumentCaptor<User>()
             val capturedPassword = argumentCaptor<CharSequence>()
             whenever(userService.create(capturedUser.capture())).thenAnswer { capturedUser.firstValue }
-            val command = CreateUserCommand(
-                isBoard = true,
-                username = "board",
-                email = "board@example.com",
-                initials = "BD",
-                firstName = "Board",
-                prefix = null,
-                lastName = "User",
-                newsletter = false,
-                consentPrivacy = false,
-                photoConsent = false,
-                password = null,
-                discord = "board#0001",
-                phoneNumber = "0611111111",
-                memberProfile = null
-            )
 
-            val result = handler.handle(command)
+            val result = useCases.create(boardData(), isBoard = true)
 
             verify(passwordEncoder).encode(capturedPassword.capture())
             assertThat(capturedPassword.firstValue).isNotNull
@@ -112,35 +102,57 @@ class UserCommandHandlersTest {
 
         @Test
         fun `rejects non board create when password is missing`() {
-            val command = CreateUserCommand(
-                isBoard = false,
-                username = "john",
-                email = "john@example.com",
-                initials = "JD",
-                firstName = "John",
-                prefix = null,
-                lastName = "Doe",
-                newsletter = true,
-                consentPrivacy = false,
-                photoConsent = false,
-                password = null,
-                discord = "john#0001",
-                phoneNumber = "0612345678",
-                memberProfile = null
-            )
-
             val thrown = assertThrows<IllegalArgumentException> {
-                handler.handle(command)
+                useCases.create(boardData().copy(password = null), isBoard = false)
             }
 
             assertThat(thrown.message).contains("Password is required")
         }
+
+        @Test
+        fun `checks the registration rules against the route it came in on`() {
+            whenever(passwordEncoder.encode(any())).thenReturn("encoded")
+            whenever(userService.create(any())).thenAnswer { it.arguments[0] }
+
+            useCases.create(boardData(), isBoard = true)
+
+            verify(validator).validate(check<UserRegistration> {
+                assertThat(it.isBoard).isTrue()
+                assertThat(it.username).isEqualTo("board")
+                assertThat(it.email).isEqualTo("board@example.com")
+                assertThat(it.subjectId).isNull()
+            })
+        }
+
+        @Test
+        fun `refuses a registration the rules reject, before creating anything`() {
+            whenever(validator.validate(any<UserRegistration>()))
+                .thenReturn(mutableSetOf(mock<ConstraintViolation<UserRegistration>>()))
+
+            assertThatThrownBy { useCases.create(boardData(), isBoard = false) }
+                .isInstanceOf(ConstraintViolationException::class.java)
+            verify(userService, never()).create(any())
+        }
+
+        private fun boardData() = NewUserData(
+            username = "board",
+            email = "board@example.com",
+            initials = "BD",
+            firstName = "Board",
+            prefix = null,
+            lastName = "User",
+            newsletter = false,
+            consentPrivacy = false,
+            photoConsent = false,
+            password = null,
+            discord = "board#0001",
+            phoneNumber = "0611111111",
+            memberProfile = null
+        )
     }
 
     @Nested
-    inner class BoardUpdateUser {
-
-        private val handler = BoardUpdateUserHandler(userService)
+    inner class BoardUpdate {
 
         @Test
         fun `updates all board editable fields and creates member profile when missing`() {
@@ -148,9 +160,9 @@ class UserCommandHandlersTest {
             whenever(userService.findById(1L)).thenReturn(existing)
             whenever(userService.update(existing)).thenReturn(existing)
 
-            val result = handler.handle(
-                BoardUpdateUserCommand(
-                    id = 1L,
+            val result = useCases.boardUpdate(
+                1L,
+                BoardUserData(
                     username = "newuser",
                     email = "new@example.com",
                     initials = "NU",
@@ -181,32 +193,61 @@ class UserCommandHandlersTest {
             assertThat(existing.memberProfile?.studentNumber).isEqualTo("s123")
             assertThat(result).isSameAs(existing)
         }
+
+        @Test
+        fun `checks uniqueness excluding the row being edited`() {
+            val existing = testUser("john")
+            whenever(userService.findById(1L)).thenReturn(existing)
+            whenever(userService.update(existing)).thenReturn(existing)
+
+            useCases.boardUpdate(
+                1L,
+                BoardUserData(
+                    username = "newuser",
+                    email = "new@example.com",
+                    initials = "NU",
+                    firstName = "New",
+                    prefix = null,
+                    lastName = "User",
+                    newsletter = false,
+                    photoConsent = false,
+                    discord = "new#0001",
+                    phoneNumber = "0622222222",
+                    version = 4L,
+                )
+            )
+
+            verify(validator).validate(check<UserUniqueness> {
+                assertThat(it.subjectId).isEqualTo(1L)
+                assertThat(it.username).isEqualTo("newuser")
+                assertThat(it.email).isEqualTo("new@example.com")
+            })
+        }
     }
 
     @Nested
-    inner class UpdateUser {
-
-        private val handler = UpdateUserHandler(userService)
+    inner class Update {
 
         @Test
         fun `updates own fields and existing member profile`() {
             val existing = testUser("john")
-            val existingProfile = MemberProfile(
-                user = existing,
-                dateOfBirth = Date.valueOf("1999-01-01"),
-                studentNumber = "old",
-                gender = "F",
-                nationality = "Dutch",
-                bhv = false,
-                ehbo = false
+            existing.replaceMemberProfile(
+                MemberProfile(
+                    user = existing,
+                    dateOfBirth = Date.valueOf("1999-01-01"),
+                    studentNumber = "old",
+                    gender = "F",
+                    nationality = "Dutch",
+                    bhv = false,
+                    ehbo = false
+                )
             )
-            existing.replaceMemberProfile(existingProfile)
             whenever(userService.findById(2L)).thenReturn(existing)
             whenever(userService.update(existing)).thenReturn(existing)
 
-            val result = handler.handle(
-                UpdateUserCommand(
-                    id = 2L,
+            val result = useCases.update(
+                2L,
+                SelfUserData(
                     discord = "upd#0001",
                     phoneNumber = "0633333333",
                     newsletter = true,
@@ -225,12 +266,36 @@ class UserCommandHandlersTest {
             assertThat(existing.memberProfile?.version).isEqualTo(9L)
             assertThat(result).isSameAs(existing)
         }
+
+        @Test
+        fun `checks only the two fields the self-service shape can change`() {
+            val existing = testUser("john")
+            whenever(userService.findById(2L)).thenReturn(existing)
+            whenever(userService.update(existing)).thenReturn(existing)
+
+            useCases.update(
+                2L,
+                SelfUserData(
+                    discord = "upd#0001",
+                    phoneNumber = "0633333333",
+                    newsletter = true,
+                    photoConsent = true,
+                    version = 8L,
+                )
+            )
+
+            verify(validator).validate(check<UserUniqueness> {
+                assertThat(it.subjectId).isEqualTo(2L)
+                assertThat(it.discord).isEqualTo("upd#0001")
+                assertThat(it.phoneNumber).isEqualTo("0633333333")
+                assertThat(it.username).isNull()
+                assertThat(it.email).isNull()
+            })
+        }
     }
 
     @Nested
-    inner class FindUsers {
-
-        private val handler = FindUsersHandler(userService)
+    inner class FindByQuery {
 
         @Test
         fun `returns users page by query and pageable`() {
@@ -239,47 +304,37 @@ class UserCommandHandlersTest {
             val page = PageImpl(listOf(testUser("john")), pageable, 1)
             whenever(userService.findByQuery(query, pageable)).thenReturn(page)
 
-            val result = handler.handle(FindUsersCommand(filter = query, pageable = pageable))
-
-            assertThat(result).isSameAs(page)
+            assertThat(useCases.findByQuery(query, pageable)).isSameAs(page)
             verify(userService).findByQuery(query, pageable)
         }
     }
 
     @Nested
-    inner class FindUserById {
-
-        private val handler = FindUserByIdHandler(userService)
+    inner class FindById {
 
         @Test
         fun `returns user by id`() {
             val expected = testUser("john")
             whenever(userService.findById(3L)).thenReturn(expected)
 
-            val result = handler.handle(FindUserByIdCommand(3L))
-
-            assertThat(result).isSameAs(expected)
+            assertThat(useCases.findById(3L)).isSameAs(expected)
             verify(userService).findById(3L)
         }
     }
 
     @Nested
-    inner class DeleteUserById {
-
-        private val handler = DeleteUserByIdHandler(erasure)
+    inner class Delete {
 
         @Test
         fun `deletes user by id`() {
-            handler.handle(DeleteUserByIdCommand(4L))
+            useCases.delete(4L)
 
             verify(erasure).deleteUser(eq(4L))
         }
     }
 
     @Nested
-    inner class FindDeletedUsers {
-
-        private val handler = FindDeletedUsersHandler(erasure)
+    inner class FindDeleted {
 
         @Test
         fun `returns deleted users by pageable`() {
@@ -308,37 +363,30 @@ class UserCommandHandlersTest {
             )
             whenever(erasure.findDeletedUsers(pageable)).thenReturn(page)
 
-            val result = handler.handle(FindDeletedUsersCommand(pageable))
-
-            assertThat(result).isSameAs(page)
+            assertThat(useCases.findDeleted(pageable)).isSameAs(page)
             verify(erasure).findDeletedUsers(pageable)
         }
     }
 
     @Nested
-    inner class RestoreDeletedUserById {
-        private val handler = RestoreDeletedUserByIdHandler(erasure)
+    inner class Restore {
 
         @Test
         fun `restores user by id`() {
-            handler.handle(RestoreDeletedUserByIdCommand(9L))
+            useCases.restore(9L)
             verify(erasure).restoreDeletedUser(9L)
         }
     }
 
     @Nested
-    inner class ToggleUserRole {
-
-        private val handler = ToggleUserRoleHandler(userService)
+    inner class ToggleRole {
 
         @Test
         fun `toggles user role`() {
             val expected = testUser("john")
             whenever(userService.toggleRole(5L, Role.BOARD)).thenReturn(expected)
 
-            val result = handler.handle(ToggleUserRoleCommand(5L, Role.BOARD))
-
-            assertThat(result).isSameAs(expected)
+            assertThat(useCases.toggleRole(5L, Role.BOARD)).isSameAs(expected)
             verify(userService).toggleRole(5L, Role.BOARD)
         }
     }

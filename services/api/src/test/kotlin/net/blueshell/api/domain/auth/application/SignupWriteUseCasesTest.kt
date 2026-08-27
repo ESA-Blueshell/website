@@ -1,14 +1,10 @@
-package net.blueshell.api.domain.user.application.command
+package net.blueshell.api.domain.auth.application
 
-import net.blueshell.api.domain.auth.application.SignupCompletionService
-import net.blueshell.api.domain.auth.application.SignupTokenService
 import net.blueshell.api.domain.user.application.MemberProfileService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.command.SaveSignupAddressCommand
-import net.blueshell.api.domain.user.command.SubmitSignupApplicationCommand
+import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.domain.user.persistence.MemberProfile
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.auth.application.SignupAccount
 import net.blueshell.api.shared.model.SignupOutcome
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -20,7 +16,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.security.access.AccessDeniedException
 
-class SignupWriteHandlersTest {
+class SignupWriteUseCasesTest {
 
     private companion object {
         const val APPLICANT_ID = 7L
@@ -30,6 +26,10 @@ class SignupWriteHandlersTest {
     private val memberProfiles = mock<MemberProfileService>()
     private val signupTokens = mock<SignupTokenService>()
     private val completion = mock<SignupCompletionService>()
+    private val activation = mock<UserActivationService>()
+    private val jobs = mock<TrackedJobDispatcher>()
+
+    private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs)
 
     private fun applicant(withProfile: Boolean): User {
         val user = User(
@@ -55,14 +55,12 @@ class SignupWriteHandlersTest {
     @Nested
     inner class SaveAddress {
 
-        private val handler = SaveSignupAddressHandler(users, signupTokens)
-
-        private fun command() = SaveSignupAddressCommand(
+        private fun save(houseNumber: String = "5") = useCases.saveAddress(
             signupToken = "sel.ver",
             country = "NL",
             city = "Enschede",
             street = "Drienerlolaan",
-            houseNumber = "5",
+            houseNumber = houseNumber,
             zipCode = "7522NB",
         )
 
@@ -70,7 +68,7 @@ class SignupWriteHandlersTest {
         fun `attaches the address to the account the token speaks for`() {
             val user = applicant(withProfile = true)
 
-            handler.handle(command())
+            save()
 
             assertThat(user.address).isNotNull()
             assertThat(user.address!!.houseNumber).isEqualTo("5")
@@ -80,9 +78,9 @@ class SignupWriteHandlersTest {
         @Test
         fun `replaces an address that is already on file`() {
             val user = applicant(withProfile = true)
-            handler.handle(command())
+            save()
 
-            handler.handle(command().copy(houseNumber = "7"))
+            save(houseNumber = "7")
 
             assertThat(user.address!!.houseNumber).isEqualTo("7")
         }
@@ -91,9 +89,6 @@ class SignupWriteHandlersTest {
     @Nested
     inner class SubmitApplication {
 
-        private val handler = SubmitSignupApplicationHandler(memberProfiles, signupTokens, completion)
-
-        private fun command() = SubmitSignupApplicationCommand("sel.ver", conditionsAccepted = true)
 
         @Test
         fun `stamps the acceptance and reports the outcome`() {
@@ -101,7 +96,7 @@ class SignupWriteHandlersTest {
             whenever(completion.completeIfReady(APPLICANT_ID))
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
 
-            val outcome = handler.handle(command())
+            val outcome = useCases.submitApplication("sel.ver")
 
             assertThat(user.memberProfile!!.conditionsAcceptedAt).isNotNull()
             verify(memberProfiles).update(user.memberProfile!!)
@@ -115,7 +110,7 @@ class SignupWriteHandlersTest {
                 .thenReturn(SignupOutcome(emailConfirmed = false, membershipStarted = false))
 
             // Unlike the signed-in route, not-yet-ready is the normal case here.
-            val outcome = handler.handle(command())
+            val outcome = useCases.submitApplication("sel.ver")
 
             assertThat(outcome.membershipStarted).isFalse()
         }
@@ -124,7 +119,7 @@ class SignupWriteHandlersTest {
         fun `refuses a signup that never asked for membership`() {
             applicant(withProfile = false)
 
-            assertThatThrownBy { handler.handle(command()) }
+            assertThatThrownBy { useCases.submitApplication("sel.ver") }
                 .isInstanceOf(AccessDeniedException::class.java)
                 .hasMessageContaining("did not apply for membership")
             verify(memberProfiles, never()).update(org.mockito.kotlin.any())

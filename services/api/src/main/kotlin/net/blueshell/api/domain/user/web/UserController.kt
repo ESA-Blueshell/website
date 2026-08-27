@@ -4,21 +4,15 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.domain.user.application.UserUseCases
 import net.blueshell.api.domain.user.application.query.UserQuery
-import net.blueshell.api.domain.user.command.DeleteUserByIdCommand
-import net.blueshell.api.domain.user.command.FindUserByIdCommand
-import net.blueshell.api.domain.user.command.FindDeletedUsersCommand
-import net.blueshell.api.domain.user.command.FindUsersCommand
-import net.blueshell.api.domain.user.command.RestoreDeletedUserByIdCommand
-import net.blueshell.api.domain.user.command.ToggleUserRoleCommand
 import net.blueshell.api.domain.user.web.dto.request.BoardUpdateUserRequest
 import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
 import net.blueshell.api.domain.user.web.dto.request.UpdateUserRequest
 import net.blueshell.api.domain.user.web.dto.response.UserDetailResponse
-import net.blueshell.api.domain.user.web.mapping.request.asBoardCommand
-import net.blueshell.api.domain.user.web.mapping.request.asCommand
+import net.blueshell.api.domain.user.web.mapping.request.asBoardData
+import net.blueshell.api.domain.user.web.mapping.request.asData
 import net.blueshell.api.domain.user.web.mapping.response.asDetailResponse
-import net.blueshell.api.shared.command.CommandBus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.web.AdvancedController
@@ -36,7 +30,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Users")
 class UserController(
     service: UserService,
-    private val commandBus: CommandBus
+    private val useCases: UserUseCases,
 ) : AdvancedController<UserService>(
     service
 ) {
@@ -44,7 +38,7 @@ class UserController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
     fun createUser(@RequestBody @Valid request: CreateUserRequest): UserDetailResponse {
-        val user = commandBus.dispatch(request.asCommand(isBoard = true))
+        val user = useCases.create(request.asData(), isBoard = true)
         return user.asDetailResponse()
     }
 
@@ -64,10 +58,10 @@ class UserController(
         val user = when (payload) {
             is BoardUpdateUserRequest -> {
                 if (!isBoard) throw AccessDeniedException("Board role required")
-                commandBus.dispatch(payload.asBoardCommand(id))
+                useCases.boardUpdate(id, payload.asBoardData())
             }
 
-            is UpdateUserRequest -> commandBus.dispatch(payload.asCommand(id))
+            is UpdateUserRequest -> useCases.update(id, payload.asData())
         }
 
         return user.asDetailResponse()
@@ -79,14 +73,14 @@ class UserController(
         @ParameterObject query: UserQuery = UserQuery(),
         @ParameterObject pageable: Pageable = Pageable.unpaged()
     ): Page<UserDetailResponse> {
-        val users = commandBus.dispatch(FindUsersCommand(query, pageable))
+        val users = useCases.findByQuery(query, pageable)
         return users.map { it.asDetailResponse() }
     }
 
     @GetMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     fun findUserById(@PathVariable userId: Long): UserDetailResponse {
-        val user = commandBus.dispatch(FindUserByIdCommand(userId))
+        val user = useCases.findById(userId)
         return user.asDetailResponse()
     }
 
@@ -95,7 +89,7 @@ class UserController(
     fun findDeletedUsers(
         @ParameterObject pageable: Pageable = Pageable.unpaged()
     ): Page<UserDetailResponse> {
-        val users = commandBus.dispatch(FindDeletedUsersCommand(pageable))
+        val users = useCases.findDeleted(pageable)
         return users.map { it.asDetailResponse() }
     }
 
@@ -103,14 +97,14 @@ class UserController(
     @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUserById(@PathVariable userId: Long) {
-        commandBus.dispatch(DeleteUserByIdCommand(userId))
+        useCases.delete(userId)
     }
 
     @PutMapping(value = ["/users/{userId}/restore"])
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun restoreDeletedUserById(@PathVariable userId: Long) {
-        commandBus.dispatch(RestoreDeletedUserByIdCommand(userId))
+        useCases.restore(userId)
     }
 
     @PutMapping(value = ["/users/{userId}/roles"])
@@ -119,7 +113,7 @@ class UserController(
         @PathVariable userId: Long,
         @RequestParam(value = "role") role: Role
     ): UserDetailResponse {
-        val user = commandBus.dispatch(ToggleUserRoleCommand(userId, role))
+        val user = useCases.toggleRole(userId, role)
         return user.asDetailResponse()
     }
 }

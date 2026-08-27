@@ -1,14 +1,12 @@
 package net.blueshell.api.domain.auth.web
 
 import net.blueshell.api.domain.auth.application.SignupUseCases
+import net.blueshell.api.domain.user.application.UserUseCases
 import org.springframework.web.bind.annotation.PatchMapping
 import net.blueshell.api.domain.auth.web.dto.request.SignupDetailsRequest
 import net.blueshell.api.domain.auth.web.dto.request.SignupEmailRequest
 import org.springframework.web.bind.annotation.RequestHeader
 import net.blueshell.api.domain.user.web.dto.response.SignupOutcomeResponse
-import net.blueshell.api.domain.user.command.SubmitSignupApplicationCommand
-import net.blueshell.api.domain.user.command.SaveSignupAddressCommand
-import net.blueshell.api.domain.user.command.UpdateSignupDetailsCommand
 import net.blueshell.api.domain.auth.web.dto.request.SignupApplicationRequest
 import net.blueshell.api.domain.auth.web.dto.request.SignupAddressRequest
 import net.blueshell.api.shared.model.SignupSession
@@ -17,9 +15,9 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.domain.auth.web.dto.response.SignupSessionResponse
 import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
-import net.blueshell.api.domain.user.web.mapping.request.asCommand
+import net.blueshell.api.domain.user.application.SignupDetailsData
+import net.blueshell.api.domain.user.web.mapping.request.asData
 import net.blueshell.api.domain.user.web.mapping.request.asCommandData
-import net.blueshell.api.shared.command.CommandBus
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -36,9 +34,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Signup")
 @RequestMapping("/signup")
 class SignupController(
-    // The bus stays until the user module's signup commands are converted; the two
-    // operations auth owns have already moved.
-    private val commandBus: CommandBus,
+    private val userUseCases: UserUseCases,
     private val signupUseCases: SignupUseCases,
 ) {
 
@@ -46,7 +42,7 @@ class SignupController(
     @PermitAll
     @ResponseStatus(HttpStatus.CREATED)
     fun signUp(@Valid @RequestBody request: CreateUserRequest): SignupSessionResponse {
-        val user = commandBus.dispatch(request.asCommand(isBoard = false))
+        val user = userUseCases.create(request.asData(), isBoard = false)
         val session = signupUseCases.issueSession(user.id!!)
         return SignupSessionResponse(
             userId = session.userId,
@@ -63,15 +59,13 @@ class SignupController(
         @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
         @Valid @RequestBody request: SignupAddressRequest
     ) {
-        commandBus.dispatch(
-            SaveSignupAddressCommand(
-                signupToken = signupToken,
-                country = request.country!!,
-                city = request.city!!,
-                street = request.street!!,
-                houseNumber = request.houseNumber!!,
-                zipCode = request.zipCode!!,
-            )
+        signupUseCases.saveAddress(
+            signupToken = signupToken,
+            country = request.country,
+            city = request.city,
+            street = request.street,
+            houseNumber = request.houseNumber,
+            zipCode = request.zipCode,
         )
     }
 
@@ -81,12 +75,7 @@ class SignupController(
         @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
         @Valid @RequestBody request: SignupApplicationRequest
     ): SignupOutcomeResponse {
-        val outcome = commandBus.dispatch(
-            SubmitSignupApplicationCommand(
-                signupToken = signupToken,
-                conditionsAccepted = request.conditionsAccepted,
-            )
-        )
+        val outcome = signupUseCases.submitApplication(signupToken)
         return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted)
     }
 
@@ -97,20 +86,20 @@ class SignupController(
         @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
         @Valid @RequestBody request: SignupDetailsRequest
     ) {
-        commandBus.dispatch(
-            UpdateSignupDetailsCommand(
-                signupToken = signupToken,
-                username = request.username!!,
-                initials = request.initials!!,
-                firstName = request.firstName!!,
+        signupUseCases.updateDetails(
+            signupToken = signupToken,
+            data = SignupDetailsData(
+                username = request.username,
+                initials = request.initials,
+                firstName = request.firstName,
                 prefix = request.prefix,
-                lastName = request.lastName!!,
-                discord = request.discord!!,
-                phoneNumber = request.phoneNumber!!,
-                newsletter = request.newsletter!!,
+                lastName = request.lastName,
+                discord = request.discord,
+                phoneNumber = request.phoneNumber,
+                newsletter = request.newsletter,
                 photoConsent = request.photoConsent == true,
                 memberProfile = request.memberProfile?.asCommandData(),
-            )
+            ),
         )
     }
 

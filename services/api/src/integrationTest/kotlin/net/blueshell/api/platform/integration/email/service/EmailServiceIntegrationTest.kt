@@ -141,9 +141,9 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             assertThat(email.toEmail).isEqualTo("contributor@example.com")
             assertThat(email.subject).contains("Contribution Payment Reminder")
             assertThat(email.htmlContent)
-                .contains("25.0")
-                .contains("45.0")
-                .contains("10.0")
+                .contains("€25,00")
+                .contains("€45,00")
+                .contains("€10,00")
                 .contains("Treasurer")
         }
     }

@@ -99,9 +99,16 @@ mechanism is in
 
 ### Re-homing a cascade
 
-A dropped back-reference takes its `cascade` with it. Where the cascade was doing
-real work, the owning module publishes a participant interface and the modules
-that held the collection register implementations:
+A dropped back-reference takes its `cascade` with it, so the first question is
+whether the cascade ever ran. In this codebase the four cross-module collections
+on `User` all carried `cascade = ALL` and none of them was ever exercised:
+`UserErasureService.deleteUser` anonymises the row in place and
+`finalizeExpiredDeletedUsers` removes the profile, the address and the snapshot
+but never the `User` itself, so no path deletes a `User` through Hibernate.
+Establish that before building a replacement for a cascade that never fired.
+
+Where the cascade is doing real work, the owning module publishes a participant
+interface and the modules that held the collection register implementations:
 
 ```kotlin
 // user/api
@@ -121,6 +128,11 @@ Spring resolves `List<UserDeletionParticipant>` by bean type, so registration is
 package-independent — the same mechanism `CompositePermissionEvaluator` already
 relies on. The dependency runs from each participant to `user`, which is the
 direction that already existed, so no edge is added.
+
+The example is written against a `delete` that removes the row. Where deletion is
+anonymisation instead, as it is for `User` here, the participants are whatever the
+anonymisation must also reach — and if it already reaches everything, there are
+none.
 
 A database-level `ON DELETE CASCADE` is not an alternative here: `User` carries
 `@SQLDelete`, so deleting it emits an `UPDATE` and no foreign-key cascade fires.

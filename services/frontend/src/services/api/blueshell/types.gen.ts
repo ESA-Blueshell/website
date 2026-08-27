@@ -130,7 +130,7 @@ export type BoardCreateMembershipRequest = {
     endDate?: string | null;
     incasso: boolean;
     memberType: MemberType;
-    startDate?: string | null;
+    startDate: string | null;
     userId: number;
 };
 
@@ -1488,7 +1488,7 @@ export type UpdateMembershipRequest = {
     endDate?: string | null;
     incasso?: boolean | null;
     memberType?: MemberType | null;
-    startDate?: string | null;
+    startDate: string | null;
     userId: number;
     version: number;
 };

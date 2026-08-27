@@ -620,7 +620,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       return fulfillJson(route, {id: 92, boardId: 9, userId: body.userId ?? null, role: "Secretary", name: "Viktor Petrov", description: null, image: null, startDate: "2025-09-01", endDate: "2026-08-31", version: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"})
     }
-    if (method === "GET" && /^\/esports\/games\/[A-Z_]+$/.test(path)) {
+    // [A-Z0-9_]+ rather than [A-Z_]+: a game's enum name can carry a digit, and
+    // CS2 is one. With the digit excluded this route never matched, so every CS2
+    // page in the suite silently rendered as having no teams.
+    if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
       const requested = url.searchParams.get("seasonId")
       const page = fixtures.esportsPages?.[requested ?? "20"]
         ?? esportsPageBySeason[requested ?? "20"]
@@ -653,7 +656,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /^\/users\/\d+\/game-accounts$/.test(path)) {
       return fulfillJson(route, [{id: 5, userId: 1, game: "VALORANT", handle: "AriosFury"}])
     }
-    if (method === "PUT" && /^\/users\/\d+\/game-accounts\/[A-Z_]+$/.test(path)) {
+    if (method === "PUT" && /^\/users\/\d+\/game-accounts\/[A-Z0-9_]+$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       return fulfillJson(route, {id: 5, userId: 1, game: path.split("/").pop(), handle: body.handle})
     }

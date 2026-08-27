@@ -3,6 +3,12 @@ package net.blueshell.api.domain.contribution.application.email
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.email.EmailContent
+import java.util.Locale
+
+/** Members read these amounts in Dutch notation, so the separator is pinned rather than inherited from the JVM. */
+private val MONEY_LOCALE: Locale = Locale.forLanguageTag("nl-NL")
+
+private fun formatEuros(amount: Double): String = String.format(MONEY_LOCALE, "%.2f", amount)
 
 /**
  * Email builder for contribution payment reminders.
@@ -21,9 +27,9 @@ fun createContributionReminderEmail(
         This is a friendly reminder that your contribution payment for the period ${contributionPeriod.startDate} to ${contributionPeriod.endDate} is due.
 
         Payment options:
-        - Half year fee: €${"%.2f".format(contributionPeriod.halfYearFee)}
-        - Full year fee: €${"%.2f".format(contributionPeriod.fullYearFee)}
-        - Alumni fee: €${"%.2f".format(contributionPeriod.alumniFee)}
+        - Half year fee: €${formatEuros(contributionPeriod.halfYearFee)}
+        - Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}
+        - Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}
 
         Please make your payment at your earliest convenience via our [website]($frontendUrl).
 

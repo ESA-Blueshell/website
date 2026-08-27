@@ -7,9 +7,13 @@ import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
+import net.blueshell.api.domain.auth.application.job.RecoveryEmailJob
+import net.blueshell.api.domain.contribution.application.job.ContributionReminderEmailJob
+import net.blueshell.api.domain.event.application.job.EventSignupEmailJob
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.shared.job.EmailJobs
+import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.shared.job.NonRetryableJobException
@@ -25,14 +29,22 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 /**
- * Integration tests for EmailService.
- *
- * Tests the complete email flow: domain builder → template service → delivery.
+ * Tests the complete email flow through its real entry point: the job handler in
+ * the module that owns the content, then the template service, then delivery.
  */
 class EmailServiceIntegrationTest : ServiceTestSupport() {
 
     @Autowired
-    private lateinit var emailService: EmailSenderService
+    private lateinit var recoveryEmailJob: RecoveryEmailJob
+
+    @Autowired
+    private lateinit var eventSignupEmailJob: EventSignupEmailJob
+
+    @Autowired
+    private lateinit var contributionReminderEmailJob: ContributionReminderEmailJob
+
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
 
     @Autowired
     private lateinit var emailClient: InMemoryEmailClient
@@ -45,15 +57,28 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         emailClient.reset()
     }
 
+    private fun sendRecovery(userId: Long, token: String, purpose: TokenPurpose) =
+        recoveryEmailJob.handle(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
+
+    private fun sendContributionReminder(userId: Long, periodId: Long) =
+        contributionReminderEmailJob.handle(
+            objectMapper.writeValueAsString(EmailJobs.ContributionReminderPayload(userId, periodId)),
+        )
+
+    private fun sendEventSignup(signUpId: Long, guestAccessToken: String) =
+        eventSignupEmailJob.handle(
+            objectMapper.writeValueAsString(EmailJobs.EventSignupPayload(signUpId, guestAccessToken)),
+        )
+
     @Nested
     inner class RecoveryEmails {
 
         @Test
-        fun `sendUserResetEmail sends password reset email`() {
+        fun `a password reset email reaches the user`() {
             val user = createAndSaveUser("john.doe", "john@example.com")
             val token = "reset-token-123"
 
-            emailService.sendUserResetEmail(user.id!!, token, TokenPurpose.PASSWORD_RESET)
+            sendRecovery(user.id!!, token, TokenPurpose.PASSWORD_RESET)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -67,11 +92,11 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         }
 
         @Test
-        fun `sendUserResetEmail sends user activation email`() {
+        fun `a user activation email reaches the user`() {
             val user = createAndSaveUser("jane.smith", "jane@example.com")
             val token = "activation-token-456"
 
-            emailService.sendUserResetEmail(user.id!!, token, TokenPurpose.USER_ACTIVATION)
+            sendRecovery(user.id!!, token, TokenPurpose.USER_ACTIVATION)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -83,11 +108,11 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         }
 
         @Test
-        fun `sendUserResetEmail sends member activation email`() {
+        fun `a member activation email reaches the board member`() {
             val user = createAndSaveUser("board.member", "board@example.com")
             val token = "member-token-789"
 
-            emailService.sendUserResetEmail(user.id!!, token, TokenPurpose.MEMBER_ACTIVATION)
+            sendRecovery(user.id!!, token, TokenPurpose.MEMBER_ACTIVATION)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -102,12 +127,12 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
     inner class ContributionEmails {
 
         @Test
-        fun `sendContributionReminderEmail sends reminder with payment options`() {
+        fun `a contribution reminder lists the payment options`() {
             val user = createAndSaveUser("contributor", "contributor@example.com")
             val period = createAndSavePeriod()
             val reminder = createAndSaveReminder(user, period)
 
-            emailService.sendContributionReminderEmail(user.id!!, period.id!!)
+            sendContributionReminder(user.id!!, period.id!!)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -127,12 +152,12 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
     inner class EventEmails {
 
         @Test
-        fun `sendEventSignupEmail sends confirmation to guest`() {
+        fun `an event signup confirmation reaches the guest`() {
             val event = createAndSaveEvent("Summer Tournament", "Campus Hall")
             val guestAccessToken = "event-signup-token-${System.currentTimeMillis()}"
             val signUp = createAndSaveSignUp(event, "Guest Name", "guest@example.com", guestAccessToken)
 
-            emailService.sendEventSignupEmail(signUp.id!!, guestAccessToken)
+            sendEventSignup(signUp.id!!, guestAccessToken)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -155,7 +180,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         fun `emails are sent with correct sender information`() {
             val user = createAndSaveUser("test", "test@example.com")
 
-            emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
+            sendRecovery(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
 
             val email = emailClient.sentEmails.first()
             assertThat(email.subject).isNotBlank()
@@ -166,7 +191,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         fun `emails contain HTML content`() {
             val user = createAndSaveUser("html.test", "html@example.com")
 
-            emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
+            sendRecovery(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
 
             val email = emailClient.sentEmails.first()
             assertThat(email.htmlContent)
@@ -180,7 +205,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         fun `emails contain styled content`() {
             val user = createAndSaveUser("style.test", "style@example.com")
 
-            emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
+            sendRecovery(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
 
             val email = emailClient.sentEmails.first()
             assertThat(email.htmlContent)
@@ -197,7 +222,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             emailClient.simulateSendFailure()
             try {
                 assertThatThrownBy {
-                    emailService.sendUserResetEmail(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
+                    sendRecovery(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
                 }
                     .isInstanceOf(RuntimeException::class.java)
                     .isNotInstanceOf(NonRetryableJobException::class.java)

@@ -1,11 +1,5 @@
 package net.blueshell.api.platform.integration.email.application.service
 
-import net.blueshell.api.domain.auth.application.email.buildRecoveryEmail
-import net.blueshell.api.domain.contribution.application.ContributionReminderService
-import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
-import net.blueshell.api.domain.contribution.persistence.ContributionReminder
-import net.blueshell.api.domain.event.application.EventSignUpService
-import net.blueshell.api.domain.event.application.email.createEventSignupEmail
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.email.adapter.EmailTransportClient
 import net.blueshell.api.platform.integration.email.application.service.EmailService
@@ -22,9 +16,6 @@ import org.springframework.web.server.ResponseStatusException
 class EmailSenderService(
     private val templateService: EmailTemplateService,
     private val emailClient: EmailTransportClient,
-    private val users: UserService,
-    private val reminders: ContributionReminderService,
-    private val eventSignUps: EventSignUpService,
     private val emailService: EmailService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
     @param:Value($$"${app.url}") private val appUrl: String,
@@ -32,29 +23,6 @@ class EmailSenderService(
     @param:Value($$"${email.from.address}") private val senderAddress: String,
     @param:Value($$"${email.reply-to}") private val defaultReplyTo: String,
 ) {
-    fun sendContributionReminderEmail(userId: Long, contributionPeriodId: Long, jobExecutionId: Long? = null) {
-        val reminder = requireExists { reminders.findById(ContributionReminder.Id(userId, contributionPeriodId)) }
-        val emailContent = createContributionReminderEmail(
-            reminder.user,
-            reminder.contributionPeriod,
-            frontendUrl
-        )
-        deliver(emailContent, "email.contribution-reminder", jobExecutionId)
-    }
-
-    fun sendEventSignupEmail(eventSignUpId: Long, guestAccessToken: String, jobExecutionId: Long? = null) {
-        val eventSignUp = requireExists { eventSignUps.findById(eventSignUpId) }
-        val emailContent = createEventSignupEmail(eventSignUp, frontendUrl, guestAccessToken)
-        deliver(emailContent, "email.event-signup", jobExecutionId)
-    }
-
-    fun sendUserResetEmail(userId: Long, token: String, tokenPurpose: TokenPurpose, jobExecutionId: Long? = null) {
-        val user = requireExists { users.findById(userId) }
-        log.info("Sending {} email for user={}", tokenPurpose, userId)
-
-        deliver(buildRecoveryEmail(tokenPurpose, user, token, frontendUrl), "email.recovery", jobExecutionId)
-    }
-
     /**
      * Render an email to the HTML a recipient would receive, without delivering it. The
      * send path renders through here too, so a preview cannot show something else.
@@ -67,8 +35,12 @@ class EmailSenderService(
             emailContent.markdownContent,
         )
 
-    /** Render template, inject tracking pixel, create the outbox record, then hand off to the transport. */
-    private fun deliver(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
+    /**
+     * Render template, inject tracking pixel, create the outbox record, then hand off
+     * to the transport. This is the email module's surface: a caller composes the
+     * content it wants sent, and this decides how sending happens.
+     */
+    fun send(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
         val htmlContent = renderEmailHtml(emailContent)
 
         val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
@@ -114,12 +86,4 @@ class EmailSenderService(
         }
     }
 
-}
-
-private inline fun <T> requireExists(block: () -> T): T = try {
-    block()
-} catch (ex: ResponseStatusException) {
-    if (ex.statusCode == HttpStatus.NOT_FOUND)
-        throw NonRetryableJobException(ex.reason ?: "Entity not found", ex)
-    throw ex
 }

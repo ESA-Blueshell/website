@@ -2,7 +2,7 @@ import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
 test.describe("esports mobile layout", () => {
-  test("stacks a team's name above its roster in a narrow viewport", async ({page}) => {
+  test("opens a team's roster on a tap, since there is no pointer to hover with", async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
 
@@ -11,12 +11,26 @@ test.describe("esports mobile layout", () => {
     await expect(page).toHaveURL(/\/esports\/valorant$/)
     const team = page.getByTestId("team-roster-1")
     await expect(team).toContainText("BS Waterboarders")
+    await expect(team).toContainText("3 on the roster")
+
+    // A card turns over on hover, which a touch screen cannot offer; tapping pins it over.
+    const card = team.getByRole("button")
+    await expect(card).toHaveAttribute("aria-expanded", "false")
+
+    await card.click()
+
+    await expect(card).toHaveAttribute("aria-expanded", "true")
     await expect(team).toContainText("Players")
     await expect(team).toContainText("AriosFury")
+  })
 
-    // Stacked, not side by side: the name sits above the roster rather than beside it.
-    const name = await team.getByTestId("team-roster-name").boundingBox()
-    const member = await team.locator(".team-roster__member").first().boundingBox()
-    expect(name!.y + name!.height).toBeLessThanOrEqual(member!.y)
+  test("names the season on show, where there is no room to label every node", async ({page}) => {
+    await installApiMocks(page)
+    await page.setViewportSize({width: 390, height: 844})
+
+    await page.goto("/esports/valorant")
+
+    // The half labels give way to one caption on a narrow screen: twelve of them collide.
+    await expect(page.getByTestId("esports-season-caption")).toContainText("Autumn 2025/26")
   })
 })

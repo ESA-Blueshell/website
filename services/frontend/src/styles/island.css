@@ -122,6 +122,15 @@
     font: inherit;
   }
 
+  /* A button carries a background, a border and padding from the browser, and all
+     three show through anything built on top of it — a card rendered as a button
+     sat inside a grey box until this was here. */
+  .esports-island :is(button, [type="button"]) {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+
   /* Focus must stay visible: the island's own reset is not licence to lose it. */
   .esports-island :focus-visible {
     outline: 2px solid var(--color-acid);

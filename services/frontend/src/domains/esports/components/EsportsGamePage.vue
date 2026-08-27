@@ -1,20 +1,23 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
-import TeamRoster from "./TeamRoster.vue"
+import {Motion} from "motion-v"
+import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
+import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
+import TeamFlipCard from "@/domains/esports/island/TeamFlipCard.vue"
+import {identityOf} from "@/domains/esports/island/gameIdentity"
+import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
 import type {Game} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
-const props = defineProps<{
-  game: Game
-  title: string
-}>()
+const props = defineProps<{game: Game; title: string}>()
 
 const route = useRoute()
 const router = useRouter()
+const motion = useMotionAllowed()
+const identity = computed(() => identityOf(props.game))
 
 const seasonFromRoute = () => {
   const raw = route.query.season
@@ -34,113 +37,103 @@ const {loading, teams, seasons, season, hasRosters, showSeason} = useEsportsPage
 )
 
 const currentSeasonId = computed<number | null>(() => season.value?.id ?? null)
+
+const entrance = (index: number) => ({
+  initial: motion.decorative.value ? {opacity: 0, y: 14} : {opacity: 1},
+  animate: {opacity: 1, y: 0},
+  transition: {
+    duration: motion.duration(0.4),
+    delay: motion.decorative.value ? index * 0.05 : 0,
+    ease: [0.22, 1, 0.36, 1] as const,
+  },
+})
 </script>
 
 <template>
   <v-main>
-    <top-banner :title="title" />
-
-    <div class="mx-3">
-      <div
-        class="mx-auto my-10 esports-intro"
-        style="max-width: 800px"
-      >
-        <slot name="intro" />
-      </div>
-    </div>
-
-    <!-- Which season is on show, and the ones that can be. Hidden when there is only ever
-         been one, since a switcher offering a single choice is furniture. -->
-    <v-container
-      v-if="seasons.length > 1"
-      class="season-bar"
-      data-testid="esports-season-bar"
-    >
-      <v-slide-group
-        :model-value="currentSeasonId"
-        show-arrows
-      >
-        <v-slide-group-item
-          v-for="option in seasons"
-          :key="option.id"
-          :value="option.id"
-        >
-          <v-chip
-            class="ma-1"
-            :color="option.id === currentSeasonId ? 'primary' : undefined"
-            :data-testid="`esports-season-${option.id}`"
-            :variant="option.id === currentSeasonId ? 'flat' : 'tonal'"
-            @click="showSeason(option.id)"
-          >
-            {{ option.name }}
-          </v-chip>
-        </v-slide-group-item>
-      </v-slide-group>
-    </v-container>
-
-    <v-container
-      v-if="loading"
-      class="py-10"
-    >
-      <v-skeleton-loader
-        v-for="n in 2"
-        :key="n"
-        class="mb-4"
-        type="image, list-item-two-line, list-item-two-line"
-      />
-    </v-container>
-
-    <p
-      v-else-if="!hasRosters"
-      class="text-body-1 text-center my-16"
-      data-testid="esports-empty"
-    >
-      No teams recorded for this season yet.
-    </p>
-
-    <template v-else>
-      <transition-group
-        appear
-        name="team-fade"
-      >
-        <team-roster
-          v-for="(team, index) in teams"
-          :key="`${currentSeasonId}-${team.id}`"
-          :name-right="index % 2 !== 0"
-          :team="team"
+    <esports-island>
+      <header class="relative isolate overflow-hidden">
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"
+          :style="{backgroundColor: identity.accent}"
         />
-      </transition-group>
-    </template>
+        <div class="relative mx-auto w-full max-w-6xl px-5 pt-12 pb-8 sm:px-8 sm:pt-16 sm:pb-10">
+          <div class="flex items-center gap-4">
+            <img
+              v-if="identity.mark"
+              alt=""
+              class="h-10 w-10 object-contain sm:h-12 sm:w-12"
+              :src="identity.mark"
+            >
+            <div>
+              <p class="font-body text-[11px] tracking-[0.28em] text-ash uppercase">
+                Blueshell Esports
+              </p>
+              <h1 class="font-display text-2xl leading-none uppercase sm:text-4xl">
+                {{ title }}
+              </h1>
+            </div>
+          </div>
+          <div class="mt-5 max-w-2xl font-body text-sm leading-relaxed text-ash">
+            <slot name="intro" />
+          </div>
+        </div>
+      </header>
+
+      <!-- The seasons as a line rather than a row of pills: the years read across the top,
+           the halves below, and the line lights up to whichever season is under the pointer. -->
+      <section
+        v-if="seasons.length > 1"
+        class="mx-auto w-full max-w-6xl px-8 pt-2 pb-8 sm:px-12"
+        data-testid="esports-season-bar"
+      >
+        <season-timeline
+          :accent="identity.accent"
+          :seasons="seasons"
+          :selected-id="currentSeasonId"
+          @select="showSeason"
+        />
+      </section>
+
+      <section class="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8 sm:pb-20">
+        <div
+          v-if="loading"
+          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <div
+            v-for="n in 3"
+            :key="n"
+            class="h-44 animate-pulse rounded-2xl bg-surface motion-reduce:animate-none"
+          />
+        </div>
+
+        <p
+          v-else-if="!hasRosters"
+          class="py-16 text-center font-body text-sm text-ash"
+          data-testid="esports-empty"
+        >
+          No teams recorded for this season yet.
+        </p>
+
+        <ul
+          v-else
+          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          data-testid="esports-team-grid"
+        >
+          <Motion
+            v-for="(team, index) in teams"
+            :key="`${currentSeasonId}-${team.id}`"
+            as="li"
+            v-bind="entrance(index)"
+          >
+            <team-flip-card
+              :accent="identity.accent"
+              :team="team"
+            />
+          </Motion>
+        </ul>
+      </section>
+    </esports-island>
   </v-main>
 </template>
-
-<style lang="scss" scoped>
-.season-bar {
-  max-width: 1100px;
-}
-
-// A season change swaps one set of teams for another, so the old set leaves rather than
-// being replaced under the reader's eyes.
-.team-fade-enter-active,
-.team-fade-leave-active {
-  transition: opacity 260ms ease, transform 260ms ease;
-}
-
-.team-fade-enter-from,
-.team-fade-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.team-fade-leave-active {
-  position: absolute;
-  width: 100%;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .team-fade-enter-active,
-  .team-fade-leave-active {
-    transition: none;
-  }
-}
-</style>

@@ -66,8 +66,8 @@ class EventSignUpFetchIT : UserTestSupport() {
     private fun seedMemberSignUp(event: Event, question: Question) {
         val user = createUserWithRole(Role.MEMBER)
         val signUp = eventFactory.createSignUp(event, user)
-        val answer = persist(Answer(question = question, textResponse = "because"))
-        persist(EventSignUpAnswer(eventSignUp = signUp, answer = answer))
+        (signUp.answers as MutableSet).add(Answer(question = question, textResponse = "because"))
+        persist(signUp)
     }
 
     /** Loads the sign-ups for an event and fully maps them, forcing every association to initialise. */

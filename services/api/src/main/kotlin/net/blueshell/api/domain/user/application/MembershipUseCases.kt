@@ -2,7 +2,7 @@ package net.blueshell.api.domain.user.application
 
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
-import net.blueshell.api.domain.auth.application.SignupCompletionService
+import net.blueshell.api.domain.user.application.port.SignupCompletion
 import net.blueshell.api.domain.user.application.exception.MembershipNotFoundException
 import net.blueshell.api.domain.user.application.query.MembershipQuery
 import net.blueshell.api.domain.user.application.validation.MembershipInterval
@@ -24,7 +24,7 @@ class MembershipUseCases(
     private val service: MembershipService,
     private val users: UserService,
     private val memberProfiles: MemberProfileService,
-    private val completion: SignupCompletionService,
+    private val completion: SignupCompletion,
     private val validator: Validator,
 ) {
     fun findByQuery(filter: MembershipQuery): MutableList<Membership> = service.findByQuery(filter)

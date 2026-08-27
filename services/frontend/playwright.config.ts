@@ -17,7 +17,10 @@ export default defineConfig({
   // 8 workers on the 4-vCPU runner stays stable — concurrency-sensitive specs
   // no longer race the compiler. See #424.
   workers: process.env.CI ? 8 : undefined,
-  retries: 0,
+  // Eight workers on the runner's four vCPUs stretch a local 0.8s test to ~6s, so a
+  // single starved assertion can blow the 5s cap on an otherwise green suite. The one
+  // retry also lets the trace above be captured, which retries: 0 made impossible.
+  retries: process.env.CI ? 1 : 0,
   reporter: "list",
   use: {
     trace: "on-first-retry",

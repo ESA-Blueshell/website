@@ -5,7 +5,6 @@ import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.event.persistence.EventSignUp
-import net.blueshell.api.domain.file.persistence.File
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
@@ -24,10 +23,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
         UniqueConstraint(name = "uk_users_discord_deleted_at", columnNames = ["discord", "deleted_at"]),
         UniqueConstraint(name = "uk_users_phone_number_deleted_at", columnNames = ["phone_number", "deleted_at"]),
         UniqueConstraint(name = "uk_users_address_id_deleted_at", columnNames = ["address_id", "deleted_at"]),
-        UniqueConstraint(
-            name = "uk_users_profile_picture_id_deleted_at",
-            columnNames = ["profile_picture_id", "deleted_at"]
-        ),
     ],
     indexes = [
         Index(name = "idx_users_deleted_at", columnList = "deleted_at"),
@@ -106,14 +101,6 @@ class User(
 
     val addressId: Long?
         get() = address?.id
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_picture_id")
-    var profilePicture: File? = null
-        internal set
-
-    val profilePictureId: Long?
-        get() = profilePicture?.id
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     var memberProfile: MemberProfile? = null

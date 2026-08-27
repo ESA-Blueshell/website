@@ -2,19 +2,13 @@ package net.blueshell.api.platform.integration.job.web.service
 
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.event.application.EventSignUpService
-import net.blueshell.api.domain.event.application.EventService
-import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.cohort.persistence.Cohort
-import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.job.web.dto.JobExecutionDTO
 import net.blueshell.api.platform.integration.job.web.dto.JobExecutionRelatedEntityDTO
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
+import net.blueshell.api.platform.integration.job.web.port.JobSubject
+import net.blueshell.api.platform.integration.job.web.port.JobSubjectResolver
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.JobExecutionCategory
@@ -26,28 +20,25 @@ import org.springframework.web.server.ResponseStatusException
 class JobExecutionViewService(
     private val objectMapper: ObjectMapper,
     private val userService: UserService,
-    private val eventService: EventService,
-    private val eventSignUpService: EventSignUpService,
-    private val contributionPeriodService: ContributionPeriodService,
-    private val cohortRepository: CohortRepository,
+    /** Ordered by `@Order`, which fixes the order related entities are listed in. */
+    private val subjectResolvers: List<JobSubjectResolver>,
 ) {
+    private val resolversByField: Map<String, JobSubjectResolver> =
+        subjectResolvers.flatMap { r -> r.payloadFields.map { it to r } }.toMap()
+
+    private companion object {
+        /** The job module resolves its own initiator and subject users. */
+        const val USER_FIELD = "userId"
+        const val USER_TYPE = "USER"
+    }
+
 
     fun toDtos(executions: List<JobExecution>): List<JobExecutionDTO> {
         val userCache = mutableMapOf<Long, User?>()
-        val eventCache = mutableMapOf<Long, Event?>()
-        val signUpCache = mutableMapOf<Long, EventSignUp?>()
-        val periodCache = mutableMapOf<Long, ContributionPeriod?>()
-        val cohortCache = mutableMapOf<Long, Cohort?>()
+        val labelCache = mutableMapOf<String, String>()
 
         return executions.map { execution ->
-            toDto(
-                execution = execution,
-                userCache = userCache,
-                eventCache = eventCache,
-                signUpCache = signUpCache,
-                periodCache = periodCache,
-                cohortCache = cohortCache,
-            )
+            toDto(execution = execution, userCache = userCache, labelCache = labelCache)
         }
     }
 
@@ -56,19 +47,13 @@ class JobExecutionViewService(
     private fun toDto(
         execution: JobExecution,
         userCache: MutableMap<Long, User?>,
-        eventCache: MutableMap<Long, Event?>,
-        signUpCache: MutableMap<Long, EventSignUp?>,
-        periodCache: MutableMap<Long, ContributionPeriod?>,
-        cohortCache: MutableMap<Long, Cohort?>,
+        labelCache: MutableMap<String, String>,
     ): JobExecutionDTO {
         val parsedPayload = parsePayload(execution.payload)
         val relatedEntities = buildRelatedEntities(
             payload = parsedPayload,
             userCache = userCache,
-            eventCache = eventCache,
-            signUpCache = signUpCache,
-            periodCache = periodCache,
-            cohortCache = cohortCache,
+            labelCache = labelCache,
         )
         val initiatedByUser = execution.initiatedByUserId?.let { userId ->
             getOrPutNullable(userCache, userId) {
@@ -115,10 +100,7 @@ class JobExecutionViewService(
     private fun buildRelatedEntities(
         payload: ParsedPayload,
         userCache: MutableMap<Long, User?>,
-        eventCache: MutableMap<Long, Event?>,
-        signUpCache: MutableMap<Long, EventSignUp?>,
-        periodCache: MutableMap<Long, ContributionPeriod?>,
-        cohortCache: MutableMap<Long, Cohort?>,
+        labelCache: MutableMap<String, String>,
     ): List<JobExecutionRelatedEntityDTO> {
         val entities = linkedMapOf<String, JobExecutionRelatedEntityDTO>()
 
@@ -129,77 +111,29 @@ class JobExecutionViewService(
             }
         }
 
-        payload.userId?.let { userId ->
-            val user = getOrPutNullable(userCache, userId) {
-                findUserOrNull(userId)
+        fun addSubject(subject: JobSubject) {
+            if (subject.field == USER_FIELD) {
+                val user = getOrPutNullable(userCache, subject.id) { findUserOrNull(subject.id) }
+                add(type = USER_TYPE, id = subject.id, label = userLabel(subject.id, user))
+                return
             }
-            add(type = "USER", id = userId, label = userLabel(userId, user))
+            val resolver = resolversByField[subject.field] ?: return
+            val key = "${resolver.entityType}:${subject.id}"
+            if (entities.containsKey(key)) return
+            val label = labelCache.getOrPut("${subject.field}:${subject.id}") { resolver.label(subject.id) }
+            add(type = resolver.entityType, id = subject.id, label = label)
+            resolver.implied(subject.id).forEach { addSubject(it) }
         }
 
-        payload.eventId?.let { eventId ->
-            val event = getOrPutNullable(eventCache, eventId) {
-                eventService.findByIdIncludingDeletedOrNull(eventId)
-            }
-            add(type = "EVENT", id = eventId, label = eventLabel(eventId, event))
-        }
+        payload.id(USER_FIELD)?.let { addSubject(JobSubject(USER_FIELD, it)) }
 
-        payload.eventSignUpId?.let { signUpId ->
-            val signUp = getOrPutNullable(signUpCache, signUpId) {
-                findEventSignUpOrNull(signUpId)
-            }
-            add(type = "EVENT_SIGNUP", id = signUpId, label = "Event sign-up #$signUpId")
-
-            val signUpUserId = signUp?.userId
-            if (signUpUserId != null) {
-                val user = getOrPutNullable(userCache, signUpUserId) {
-                    findUserOrNull(signUpUserId)
-                }
-                add(type = "USER", id = signUpUserId, label = userLabel(signUpUserId, user))
-            }
-
-            val signUpEventId = signUp?.eventId?.takeIf { it > 0 }
-            if (signUpEventId != null) {
-                val event = getOrPutNullable(eventCache, signUpEventId) {
-                    eventService.findByIdIncludingDeletedOrNull(signUpEventId)
-                }
-                add(type = "EVENT", id = signUpEventId, label = eventLabel(signUpEventId, event))
-            }
-        }
-
-        payload.contributionPeriodId?.let { periodId ->
-            val period = getOrPutNullable(periodCache, periodId) {
-                findContributionPeriodOrNull(periodId)
-            }
-            add(type = "CONTRIBUTION_PERIOD", id = periodId, label = periodLabel(periodId, period))
-        }
-
-        payload.cohortId?.let { cohortId ->
-            val cohort = getOrPutNullable(cohortCache, cohortId) {
-                cohortRepository.findById(cohortId).orElse(null)
-            }
-            add(type = "COHORT", id = cohortId, label = cohortLabel(cohortId, cohort))
+        // Ordered by @Order, so the list a reader sees is stable across deploys.
+        subjectResolvers.forEach { resolver ->
+            resolver.payloadFields.firstNotNullOfOrNull { payload.id(it) }
+                ?.let { addSubject(JobSubject(resolver.payloadFields.first(), it)) }
         }
 
         return entities.values.toList()
-    }
-
-    private fun cohortLabel(cohortId: Long, cohort: Cohort?): String {
-        if (cohort == null) return "Cohort #$cohortId"
-        return "${cohort.label} (${cohort.system} ${cohort.kind})"
-    }
-
-    private fun periodLabel(periodId: Long, period: ContributionPeriod?): String {
-        if (period == null) {
-            return "Contribution period #$periodId"
-        }
-        return "Contribution period #$periodId (${period.startDate} - ${period.endDate})"
-    }
-
-    private fun eventLabel(eventId: Long, event: Event?): String {
-        if (event == null) {
-            return "Event #$eventId"
-        }
-        return "Event #$eventId: ${event.title}"
     }
 
     private fun userLabel(userId: Long, user: User?): String {
@@ -273,11 +207,9 @@ class JobExecutionViewService(
             objectMapper.convertValue(root, Map::class.java) as Map<String, Any?>?
         }.getOrNull()
         return ParsedPayload(
-            userId = root.longValue("userId"),
-            eventId = root.longValue("eventId"),
-            eventSignUpId = root.longValue("eventSignUpId"),
-            contributionPeriodId = root.longValue("contributionPeriodId") ?: root.longValue("periodId"),
-            cohortId = root.longValue("cohortId"),
+            ids = root.propertyNames().mapNotNull { name ->
+                root.longValue(name)?.let { name to it }
+            }.toMap(),
             system = root.contactSystem("system"),
             raw = rawMap,
         )
@@ -300,14 +232,6 @@ class JobExecutionViewService(
         return findOrNull { userService.findById(userId) }
     }
 
-    private fun findEventSignUpOrNull(signUpId: Long): EventSignUp? {
-        return findOrNull { eventSignUpService.findById(signUpId) }
-    }
-
-    private fun findContributionPeriodOrNull(periodId: Long): ContributionPeriod? {
-        return findOrNull { contributionPeriodService.findById(periodId) }
-    }
-
     private fun <T> findOrNull(fetcher: () -> T): T? {
         return try {
             fetcher()
@@ -328,13 +252,12 @@ class JobExecutionViewService(
     }
 
     private data class ParsedPayload(
-        val userId: Long? = null,
-        val eventId: Long? = null,
-        val eventSignUpId: Long? = null,
-        val contributionPeriodId: Long? = null,
-        val cohortId: Long? = null,
+        /** Every numeric payload field, so a resolver can name whichever it reads. */
+        val ids: Map<String, Long> = emptyMap(),
         val system: ContactSystem? = null,
         /** The full payload as a plain map; the admin UI renders unknown fields itself. */
         val raw: Map<String, Any?>? = null,
-    )
+    ) {
+        fun id(field: String): Long? = ids[field]
+    }
 }

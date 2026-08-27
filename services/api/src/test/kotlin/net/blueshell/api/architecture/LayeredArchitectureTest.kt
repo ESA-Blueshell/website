@@ -1,5 +1,6 @@
 package net.blueshell.api.architecture
 
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.library.Architectures.layeredArchitecture
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import org.junit.jupiter.api.Test
@@ -149,13 +150,17 @@ class LayeredArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         arch("Persistence layer is inner - no application dependencies except queries") {
             com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses()
                 .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
-                .should().dependOnClassesThat()
-                .resideInAnyPackage(
-                    ArchitecturePackages.SERVICE,
-                    ArchitecturePackages.APPLICATION_VALIDATION,
-                    ArchitecturePackages.LISTENER,
-                    ArchitecturePackages.EVENT,
-                    ArchitecturePackages.FACTORY
+                .should().dependOnClassesThat(
+                    JavaClass.Predicates.resideInAnyPackage(
+                        ArchitecturePackages.APPLICATION_VALIDATION,
+                        ArchitecturePackages.LISTENER,
+                        ArchitecturePackages.EVENT,
+                        ArchitecturePackages.FACTORY
+                    ).or(
+                        // Services are named, not packaged: a `*Service` glob matches no package.
+                        JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.APPLICATION)
+                            .and(JavaClass.Predicates.simpleNameEndingWith("Service"))
+                    ).`as`("application services, validators, listeners, events or factories")
                 )
                 // Note: ArchitecturePackages.QUERY is intentionally omitted (ADR-015: Specs can use query objects)
                 .because("ADR-016: Persistence can depend on query objects (ADR-015), but not services/handlers/validators")

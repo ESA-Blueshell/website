@@ -11,14 +11,12 @@ object ArchitecturePackages {
 
     /** Web Layer - Controllers, DTOs, Web Validators */
     const val WEB = "$ROOT..web.."
-    const val CONTROLLER = "$ROOT..web..*Controller"
     const val DTO = "$ROOT..web.dto.."
     const val WEB_VALIDATION = "$ROOT..web.validation.."
     const val WEB_MAPPING = "$ROOT..web.mapping.."
 
     /** Application Layer - Use cases, Services, Business Validators, Listeners, Factories */
     const val APPLICATION = "$ROOT..application.."
-    const val SERVICE = "$ROOT..application..*Service"
     const val APPLICATION_VALIDATION = "$ROOT..application.validation.."
     const val LISTENER = "$ROOT..application.listener.."
     const val EVENT = "$ROOT..application.event.."
@@ -32,7 +30,6 @@ object ArchitecturePackages {
 
     /** Persistence Layer - Entities, Repositories, Specifications */
     const val PERSISTENCE = "$ROOT..persistence.."
-    const val ENTITY = "$ROOT..persistence..*"
     const val REPOSITORY = "$ROOT..persistence.repository.."
     const val SPECIFICATION = "$ROOT..persistence.spec.."
 
@@ -48,7 +45,6 @@ object ArchitecturePackages {
     const val PLATFORM_CONFIG = "$ROOT.platform.config.."
     const val PLATFORM_INTEGRATION = "$ROOT.platform.integration.."
     const val JOB = "$ROOT.platform.integration..job.."
-    const val ACL_ADAPTER = "$ROOT.platform.integration..*Adapter"
 
     /** Mock/test adapter implementations */
     const val PLATFORM_MOCK = "$ROOT.platform.integration.mock.."

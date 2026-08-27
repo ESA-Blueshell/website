@@ -1,5 +1,7 @@
 package net.blueshell.api.architecture
 
+import com.tngtech.archunit.base.DescribedPredicate
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaMethod
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
@@ -81,10 +83,13 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
             noClasses()
                 .that().resideInAnyPackage(
                     ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.DOMAIN,
+                    // DOMAIN is the module root ($ROOT..domain..), which also covers each module's
+                    // web package; the domain layer proper is model + service.
+                    ArchitecturePackages.DOMAIN_MODEL,
+                    ArchitecturePackages.DOMAIN_SERVICE,
                     ArchitecturePackages.PERSISTENCE
                 )
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.CONTROLLER)
+                .should().dependOnClassesThat(webControllers)
                 .because("ADR-016: Inner layers must not depend on web layer")
         }
 
@@ -103,7 +108,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         arch("Repositories must not depend on services") {
             noClasses()
                 .that().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.SERVICE)
+                .should().dependOnClassesThat(applicationServices)
                 .because("ADR-016: Dependency direction is Service -> Repository, never the reverse")
         }
 
@@ -138,7 +143,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                     ArchitecturePackages.PLATFORM_CONFIG,
                     ArchitecturePackages.SECURITY
                 )
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.CONTROLLER)
+                .should().dependOnClassesThat(webControllers)
                 .because("Configuration wires beans without coupling to specific controllers")
         }
 
@@ -200,5 +205,19 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 }
             }
         }
+    }
+
+    private companion object {
+        // Controllers and services are named, not packaged: a `*Controller` or `*Service` glob
+        // handed to resideInAnyPackage matches no package at all, so these are predicates instead.
+        val webControllers: DescribedPredicate<JavaClass> =
+            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.WEB)
+                .and(JavaClass.Predicates.simpleNameEndingWith("Controller"))
+                .`as`("web controllers")
+
+        val applicationServices: DescribedPredicate<JavaClass> =
+            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.APPLICATION)
+                .and(JavaClass.Predicates.simpleNameEndingWith("Service"))
+                .`as`("application services")
     }
 }

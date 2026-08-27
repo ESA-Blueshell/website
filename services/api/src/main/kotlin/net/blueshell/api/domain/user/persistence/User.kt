@@ -1,10 +1,7 @@
 package net.blueshell.api.domain.user.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.auth.persistence.RecoveryToken
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
-import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
@@ -109,30 +106,15 @@ class User(
     val personDetailsId: Long?
         get() = memberProfile?.id
 
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    private val _recoveryTokens: MutableSet<RecoveryToken> = linkedSetOf()
-    val recoveryTokens: Set<RecoveryToken>
-        get() = _recoveryTokens
-
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     private val _committeeMembers: MutableSet<CommitteeMember> = linkedSetOf()
     val committeeMembers: Set<CommitteeMember>
         get() = _committeeMembers
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    private val _contributions: MutableSet<Contribution> = linkedSetOf()
-    val contributions: Set<Contribution>
-        get() = _contributions
-
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _memberships: MutableSet<Membership> = linkedSetOf()
     val memberships: Set<Membership>
         get() = _memberships
-
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    private val _eventSignUps: MutableSet<EventSignUp> = linkedSetOf()
-    val eventSignUps: Set<EventSignUp>
-        get() = _eventSignUps
 
     val committeeIds: Set<Long>
         get() = committeeMembers.mapNotNull { it.committee.id }.toSet()

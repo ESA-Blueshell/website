@@ -4,7 +4,7 @@ import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
-import TeamFlipCard from "@/domains/esports/island/TeamFlipCard.vue"
+import TeamSlices from "@/domains/esports/island/TeamSlices.vue"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
@@ -96,17 +96,12 @@ const entrance = (index: number) => ({
         />
       </section>
 
-      <section class="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8 sm:pb-20">
+      <!-- Full width, edge to edge: the teams are the page, not a card grid inside it. -->
+      <section class="w-full pb-16 sm:pb-20">
         <div
           v-if="loading"
-          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <div
-            v-for="n in 3"
-            :key="n"
-            class="h-44 animate-pulse rounded-2xl bg-surface motion-reduce:animate-none"
-          />
-        </div>
+          class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+        />
 
         <p
           v-else-if="!hasRosters"
@@ -116,23 +111,16 @@ const entrance = (index: number) => ({
           No teams recorded for this season yet.
         </p>
 
-        <ul
+        <Motion
           v-else
-          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-          data-testid="esports-team-grid"
+          :key="currentSeasonId ?? 'none'"
+          v-bind="entrance(0)"
         >
-          <Motion
-            v-for="(team, index) in teams"
-            :key="`${currentSeasonId}-${team.id}`"
-            as="li"
-            v-bind="entrance(index)"
-          >
-            <team-flip-card
-              :accent="identity.accent"
-              :team="team"
-            />
-          </Motion>
-        </ul>
+          <team-slices
+            :accent="identity.accent"
+            :teams="teams"
+          />
+        </Motion>
       </section>
     </esports-island>
   </v-main>

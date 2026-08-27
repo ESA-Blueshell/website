@@ -55,7 +55,7 @@ test.describe("esports pages", () => {
     // has said their name may be published, so the page knows them by their handle alone.
     const team = page.getByTestId("team-roster-1")
     await expect(team).toContainText("Loafine")
-    await expect(team.locator(".team-card__member-name")).toHaveCount(1)
+    await expect(team.locator(".team-slice__member-name")).toHaveCount(1)
   })
 })
 
@@ -116,7 +116,7 @@ test.describe("names on the team pages", () => {
     await expect(team).toContainText("Loafine")
     await expect(team).not.toContainText("Blackout Petrov")
 
-    const named = team.locator(".team-card__member-name")
+    const named = team.locator(".team-slice__member-name")
     await expect(named).toHaveCount(1)
     await expect(named).toHaveText("Viktor Petrov")
   })

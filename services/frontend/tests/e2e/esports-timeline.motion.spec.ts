@@ -2,45 +2,65 @@ import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
 /**
- * Runs in the motion project, which does not emulate reduced motion. The line lighting up is
- * the whole point of the timeline, and it is invisible to every other project by design.
+ * Runs in the motion project, which does not emulate reduced motion. The chain lighting up
+ * and a slice opening are the whole point of this page, and both are switched off everywhere
+ * else by design.
  */
 test.describe("the season timeline, with motion", () => {
-  test("lights the line as far as the season under the pointer", async ({page}) => {
+  test("lights the chain as far as the season under the pointer", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/esports/valorant")
+    const timeline = page.getByTestId("esports-season-timeline")
+    await timeline.waitFor()
+
+    // How far the chain is lit, as the component itself records it.
+    const lit = () => timeline.evaluate(
+      el => Number.parseFloat(getComputedStyle(el).getPropertyValue("--lit")),
+    )
+
+    // At rest it runs as far as the season on show, which is the newest.
+    const atRest = await lit()
+    expect(atRest).toBeGreaterThan(50)
+
+    await page.getByTestId("esports-season-node-19").hover()
+    await expect.poll(lit).toBeLessThan(atRest)
+
+    await page.getByTestId("esports-season-node-20").hover()
+    await expect.poll(lit).toBe(atRest)
+  })
+
+  test("indents the year under the pointer, and bolds the half being read", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/valorant")
     await page.getByTestId("esports-season-timeline").waitFor()
 
-    const litWidth = () => page.locator(".season-timeline__lit")
-      .evaluate(el => el.getBoundingClientRect().width)
+    const node = page.getByTestId("esports-season-node-20")
+    const top = () => node.evaluate(el => Number.parseFloat(getComputedStyle(el).top))
+    const before = await top()
 
-    // At rest the line runs as far as the season on show, which is the newest.
-    const atRest = await litWidth()
+    await node.hover()
 
-    await page.getByTestId("esports-season-node-19").hover()
-    await expect.poll(litWidth).toBeLessThan(atRest)
-
-    await page.getByTestId("esports-season-node-20").hover()
-    await expect.poll(litWidth).toBe(atRest)
+    // The chain gives way at the part being read.
+    await expect.poll(top).toBeGreaterThan(before)
+    // And the half under the pointer is the one named in bold.
+    const weight = await page.locator(".season-timeline__half", {hasText: "Autumn"}).first()
+      .evaluate(el => getComputedStyle(el).fontWeight)
+    expect(Number(weight)).toBeGreaterThanOrEqual(700)
   })
 
-  test("turns a team card over when it is hovered, and back when it is left", async ({page}) => {
+  test("opens the slice under the pointer and closes the one that was open", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/valorant")
-    const card = page.getByTestId("team-roster-1")
-    await card.waitFor()
+    const first = page.getByTestId("team-roster-1")
+    const second = page.getByTestId("team-roster-2")
+    await first.waitFor()
 
-    const turn = () => card.locator(".team-card__inner")
-      .evaluate(el => getComputedStyle(el).transform)
+    // The first opens itself once the page has settled, so the animation is seen happening.
+    await expect.poll(async () => first.getAttribute("class")).toContain("team-slice--open")
 
-    // Untouched the card carries no transform at all.
-    await expect.poll(turn).toBe("none")
+    await second.hover()
 
-    await card.hover()
-    // Half a turn about the y axis, which the computed matrix reports as 3d.
-    await expect.poll(turn).not.toBe("none")
-
-    await page.mouse.move(0, 0)
-    await expect.poll(turn).toBe("none")
+    await expect.poll(async () => second.getAttribute("class")).toContain("team-slice--open")
+    await expect.poll(async () => first.getAttribute("class")).not.toContain("team-slice--open")
   })
 })

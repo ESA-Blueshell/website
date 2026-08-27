@@ -7,6 +7,7 @@ import net.blueshell.api.domain.committee.persistence.repository.CommitteeMember
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.stereotype.Service
+import java.time.Instant
 import org.springframework.transaction.annotation.Transactional
 import java.util.function.Supplier
 
@@ -75,6 +76,14 @@ class CommitteeMemberService(
      * @SQLRestriction.
      */
     @Transactional(readOnly = true)
+    /** Who sits on this committee now. */
+    fun findUserIdsOnCommittee(committeeId: Long): Set<Long> =
+        repository.findUserIdsByCommitteeId(committeeId).toSet()
+
+    /** Everybody who held any committee seat during the window, seats since left included. */
+    fun findUserIdsSeatedBetween(from: Instant, to: Instant): Set<Long> =
+        repository.findUserIdsWithSeatOverlapping(from, to).toSet()
+
     fun findMembershipWindowsForUser(userId: Long): List<CommitteeMembershipWindow> =
         repository.findWindowsByUserId(userId).map { row ->
             CommitteeMembershipWindow(

@@ -6,7 +6,6 @@ import net.blueshell.api.platform.integration.cohort.application.CohortDetail
 import net.blueshell.api.platform.integration.cohort.application.CohortMemberRow
 import net.blueshell.api.platform.integration.cohort.application.CohortQueryService
 import net.blueshell.api.platform.integration.cohort.application.CohortSummary
-import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRemediation
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRepairResult
@@ -70,7 +69,8 @@ data class CohortDetailResponse(
     val memberCount: Int,
     val externalId: String?,
     val members: List<CohortMemberRowResponse>,
-    val rules: List<CohortRuleResponse>,
+    @Schema(description = "Which definition in code decides who belongs to this cohort")
+    val definitionKey: String?,
 )
 
 @Schema(name = "CohortMemberRow")
@@ -87,14 +87,6 @@ data class CohortMemberRowResponse(
      */
     val isUserDeleted: Boolean,
     val joinedAt: Instant,
-)
-
-@Schema(name = "CohortRule")
-data class CohortRuleResponse(
-    val id: Long,
-    val factKind: CohortFactKind,
-    val factKey: String,
-    val enabled: Boolean,
 )
 
 @Schema(name = "CohortRepair")
@@ -121,14 +113,7 @@ private fun CohortDetail.toResponse(): CohortDetailResponse =
         memberCount = members.size,
         externalId = externalId,
         members = members.map { it.toResponse() },
-        rules = rules.map {
-            CohortRuleResponse(
-                id = it.id,
-                factKind = it.factKind,
-                factKey = it.factKey,
-                enabled = it.enabled,
-            )
-        },
+        definitionKey = definitionKey,
     )
 
 private fun CohortMemberRow.toResponse(): CohortMemberRowResponse =

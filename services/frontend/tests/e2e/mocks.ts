@@ -28,6 +28,7 @@ type Fixtures = {
   esportsTeams?: Array<Record<string, unknown>>
   esportsRoster?: Array<Record<string, unknown>>
   boards?: Array<Record<string, unknown>>
+  cohortSubjectDetail?: Record<string, unknown>
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -692,11 +693,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             lastReconciledAt: "2026-02-10T09:00:00Z",
           },
         ],
-        rules: [
-          isCommittee
-            ? {id: 9, factKind: "COMMITTEE", factKey: "42", enabled: true}
-            : {id: 5, factKind: "MEMBER_IN_PERIOD", factKey: "1", enabled: true},
-        ],
+        definitionKey: isCommittee ? "COMMITTEE_MEMBERS:42" : "PERIOD_MEMBERS:1",
+        orphaned: false,
+        ...(fixtures.cohortSubjectDetail ?? {}),
         // One of each state the page draws: in sync, ours-but-not-pushed, and two rows the
         // target has that we do not — one we can name, one we cannot.
         members: fixtures.cohortMembers ?? [

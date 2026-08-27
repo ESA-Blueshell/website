@@ -247,7 +247,7 @@ class CohortRemediationServiceTest {
     }
 
     private fun subject(id: Long): CohortSubject =
-        CohortSubject(CohortSubjectType.CUSTOM, "Members").apply { this.id = id }
+        CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Members").apply { this.id = id }
 
     private fun cohort(id: Long, subjectId: Long): Cohort =
         Cohort(

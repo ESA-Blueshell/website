@@ -2,8 +2,8 @@ package net.blueshell.api.platform.integration.cohort.persistence
 
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -66,7 +66,7 @@ class CohortRepositoryIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val subject = subjects.save(
             net.blueshell.api.platform.integration.cohort.persistence.CohortSubject(
-                type = net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType.CUSTOM,
+                type = net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
                 label = "Members",
             )
         )
@@ -94,35 +94,21 @@ class CohortRepositoryIT : UserTestSupport() {
     }
 
     @Test
-    fun `findAllForEnabledSubjectFact returns cohorts for enabled subjects only`() {
-        // The rule now lives on the subject: one subject per (factKind, factKey),
-        // carrying the enabled flag the evaluator filters on.
-        val enabledSubject = subjects.save(
+    fun `a subject is found by the definition that produces it`() {
+        val subject = subjects.save(
             CohortSubject(
-                type = CohortSubjectType.CUSTOM,
-                label = "Members",
-                factKind = CohortFactKind.ROLE,
-                factKey = Role.MEMBER.name,
-                enabled = true,
+                type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
+                label = "Newsletter Subscribers",
+                definitionKey = "NEWSLETTER_SUBSCRIBERS",
             ),
         )
-        val disabledSubject = subjects.save(
-            CohortSubject(
-                type = CohortSubjectType.CUSTOM,
-                label = "Board",
-                factKind = CohortFactKind.ROLE,
-                factKey = Role.BOARD.name,
-                enabled = false,
-            ),
+        val cohort = cohorts.save(
+            Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Newsletter", subjectId = subject.id),
         )
-        val memberCohort = cohorts.save(
-            Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Members", subjectId = enabledSubject.id),
-        )
-        cohorts.save(Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Board", subjectId = disabledSubject.id))
 
-        assertThat(cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.MEMBER.name).map { it.id })
-            .containsExactly(memberCohort.id)
-        assertThat(cohorts.findAllForEnabledSubjectFact(CohortFactKind.ROLE, Role.BOARD.name)).isEmpty()
+        assertThat(subjects.findByDefinitionKey("NEWSLETTER_SUBSCRIBERS")?.id).isEqualTo(subject.id)
+        assertThat(cohorts.findAllBySubjectId(subject.id!!).map { it.id }).containsExactly(cohort.id)
+        assertThat(subjects.findByDefinitionKey("PERIOD_MEMBERS:404")).isNull()
     }
 
     // ── Ledger invariants (V74) ───────────────────────────────────────────────
@@ -205,7 +191,7 @@ class CohortRepositoryIT : UserTestSupport() {
     }
 
     private fun newSubject(): CohortSubject =
-        subjects.save(CohortSubject(type = CohortSubjectType.CUSTOM, label = "Members"))
+        subjects.save(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))
 
     private fun newCohort(subject: CohortSubject): Cohort =
         cohorts.save(

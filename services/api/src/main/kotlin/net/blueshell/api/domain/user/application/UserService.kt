@@ -125,6 +125,9 @@ class UserService @Autowired constructor(
      * a list of user ids to display rows in one round trip.
      */
     /** Ids of accounts that have not been activated. */
+    /** Everybody who opted into the newsletter, whether or not they activated an account. */
+    fun findNewsletterSubscriberIds(): Set<Long> = repository.findIdsByNewsletterTrue().toSet()
+
     fun findAllDisabledIds(): List<Long> = repository.findIdsByEnabledFalse()
 
     fun findAllByIds(ids: Collection<Long>): List<User> =

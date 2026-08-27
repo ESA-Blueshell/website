@@ -24,7 +24,6 @@ const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
   [CohortSubjectCategory.COMMITTEES]: "Committees",
   [CohortSubjectCategory.PERIODS]: "Periods",
   [CohortSubjectCategory.MEMBERS]: "Members",
-  [CohortSubjectCategory.OTHER]: "Other",
 }
 
 const category = computed<CohortSubjectCategory | null>(() => {

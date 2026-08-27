@@ -262,6 +262,10 @@ export type BulkTargetMoveResult = {
 };
 
 export type CohortDetail = {
+    /**
+     * Which definition in code decides who belongs to this cohort
+     */
+    definitionKey?: string | null;
     externalId?: string | null;
     folder?: string | null;
     id: number;
@@ -269,18 +273,8 @@ export type CohortDetail = {
     label: string;
     memberCount: number;
     members: Array<CohortMemberRow>;
-    rules: Array<CohortRule>;
     system: string;
 };
-
-export enum CohortFactKind {
-    ROLE = 'ROLE',
-    COMMITTEE = 'COMMITTEE',
-    CONTRIBUTION_PAID = 'CONTRIBUTION_PAID',
-    MEMBER_IN_PERIOD = 'MEMBER_IN_PERIOD',
-    NEWSLETTER = 'NEWSLETTER',
-    ACTIVE_IN_PERIOD = 'ACTIVE_IN_PERIOD'
-}
 
 export enum CohortKind {
     LIST = 'LIST',
@@ -317,28 +311,27 @@ export type CohortRepair = {
     enqueuedAdds: number;
 };
 
-export type CohortRule = {
-    enabled: boolean;
-    factKey: string;
-    factKind: CohortFactKind;
-    id: number;
-};
-
 export enum CohortSubjectCategory {
     COMMITTEES = 'COMMITTEES',
     PERIODS = 'PERIODS',
-    MEMBERS = 'MEMBERS',
-    OTHER = 'OTHER'
+    MEMBERS = 'MEMBERS'
 }
 
 export type CohortSubjectDetail = {
     category: CohortSubjectCategory;
+    /**
+     * Which definition in code decides who belongs here
+     */
+    definitionKey?: string | null;
     description?: string | null;
     id: number;
     label: string;
     mappings: Array<CohortMapping>;
     members: Array<CohortSubjectMember>;
-    rules: Array<CohortSubjectRule>;
+    /**
+     * True when no definition produces this cohort any more
+     */
+    orphaned: boolean;
     type: CohortSubjectType;
 };
 
@@ -370,13 +363,6 @@ export type CohortSubjectMember = {
     userId?: number | null;
 };
 
-export type CohortSubjectRule = {
-    enabled: boolean;
-    factKey: string;
-    factKind: CohortFactKind;
-    id: number;
-};
-
 export type CohortSubjectSummary = {
     category: CohortSubjectCategory;
     id: number;
@@ -391,8 +377,7 @@ export enum CohortSubjectType {
     PERIOD_PAYERS = 'PERIOD_PAYERS',
     PERIOD_MEMBERS = 'PERIOD_MEMBERS',
     PERIOD_ACTIVE_MEMBERS = 'PERIOD_ACTIVE_MEMBERS',
-    NEWSLETTER_SUBSCRIBERS = 'NEWSLETTER_SUBSCRIBERS',
-    CUSTOM = 'CUSTOM'
+    NEWSLETTER_SUBSCRIBERS = 'NEWSLETTER_SUBSCRIBERS'
 }
 
 export type CohortSummary = {
@@ -850,7 +835,8 @@ export type InboundReconcileApplyResponse = {
 };
 
 export type InboundReconcilePreview = {
-    fact: SubjectFact;
+    cohortLabel: string;
+    definitionKey: string;
     matched: Array<InboundReconcileRow>;
     previewToken: string;
     remoteCount: number;
@@ -859,7 +845,7 @@ export type InboundReconcilePreview = {
 };
 
 export type InboundReconcileRow = {
-    alreadyTrue: boolean;
+    alreadyMember: boolean;
     externalLabel?: string | null;
     externalUserId: string;
     reason?: 'DUPLICATE_REMOTE_ID' | 'MAPPING_CONFLICT' | 'DUPLICATE_USER_MATCH' | 'MAPPED_USER_INACTIVE' | 'UNMATCHED';
@@ -1316,11 +1302,6 @@ export type SponsorResponse = {
     name: string;
     updatedAt: string;
     version: number;
-};
-
-export type SubjectFact = {
-    key: string;
-    kind: CohortFactKind;
 };
 
 export type SurveyRequest = {

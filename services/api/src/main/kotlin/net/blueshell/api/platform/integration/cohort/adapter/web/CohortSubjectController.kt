@@ -14,7 +14,6 @@ import net.blueshell.api.platform.integration.cohort.application.InboundReconcil
 import net.blueshell.api.platform.integration.cohort.application.InboundReconcileApplyRequest
 import net.blueshell.api.platform.integration.cohort.application.InboundReconcileApplyResponse
 import net.blueshell.api.platform.integration.cohort.application.InboundReconcilePreview
-import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
@@ -137,7 +136,10 @@ data class CohortSubjectDetailResponse(
     val label: String,
     val description: String?,
     val mappings: List<CohortMappingResponse>,
-    val rules: List<CohortSubjectRuleResponse>,
+    @Schema(description = "Which definition in code decides who belongs here")
+    val definitionKey: String?,
+    @Schema(description = "True when no definition produces this cohort any more")
+    val orphaned: Boolean,
     val members: List<CohortSubjectMemberResponse>,
 )
 
@@ -153,14 +155,6 @@ data class CohortMappingResponse(
     val externalId: String?,
     @param:Schema(description = "When this cohort was last confirmed to agree with its target")
     val lastReconciledAt: Instant?,
-)
-
-@Schema(name = "CohortSubjectRule")
-data class CohortSubjectRuleResponse(
-    val id: Long,
-    val factKind: CohortFactKind,
-    val factKey: String,
-    val enabled: Boolean,
 )
 
 @Schema(name = "CohortSubjectMember")
@@ -231,14 +225,8 @@ private fun CohortSubjectDetail.toResponse(): CohortSubjectDetailResponse =
         label = subject.label,
         description = subject.description,
         mappings = mappings.map { it.toResponse() },
-        rules = rules.map {
-            CohortSubjectRuleResponse(
-                id = it.id,
-                factKind = it.factKind,
-                factKey = it.factKey,
-                enabled = it.enabled,
-            )
-        },
+        definitionKey = definitionKey,
+        orphaned = orphaned,
         members = members.map { it.toMemberResponse() },
     )
 

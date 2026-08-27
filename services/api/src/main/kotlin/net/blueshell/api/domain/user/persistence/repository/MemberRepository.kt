@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
 
 @Repository
 @Suppress("FunctionName")
@@ -13,6 +14,36 @@ interface MemberRepository : BaseRepository<Membership, Long> {
     fun existsByUser_Id(userId: Long): Boolean
     fun existsByUser_IdAndEndDateIsNull(userId: Long): Boolean
     fun findByUser_Id(userId: Long): MutableList<Membership>
+
+    /**
+     * Everybody whose membership overlapped the window, whatever kind of membership it was.
+     * A membership with no end date is still running, so it overlaps anything from its start
+     * onwards — including a stretch of time that has not arrived yet.
+     *
+     * This is the rule the user manager's "member in period" column draws, spelled once more
+     * here for the association to ask the same question of itself. Changing one means
+     * changing the other: see `overlapsContributionPeriod` in the frontend.
+     */
+    @Query(
+        """
+        SELECT DISTINCT m.user.id FROM Membership m
+        WHERE m.startDate <= :to AND (m.endDate IS NULL OR m.endDate >= :from)
+        """,
+    )
+    fun findUserIdsOverlapping(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Long>
+
+    @Query(
+        """
+        SELECT COUNT(m) > 0 FROM Membership m
+        WHERE m.user.id = :userId
+          AND m.startDate <= :to AND (m.endDate IS NULL OR m.endDate >= :from)
+        """,
+    )
+    fun existsOverlapping(
+        @Param("userId") userId: Long,
+        @Param("from") from: LocalDate,
+        @Param("to") to: LocalDate,
+    ): Boolean
 
     // Native queries deliberately bypass the entity's @SQLRestriction (which pins
     // every managed/Criteria query to deleted_at = sentinel), so they can read and

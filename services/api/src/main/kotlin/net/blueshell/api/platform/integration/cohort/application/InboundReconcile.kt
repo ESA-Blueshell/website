@@ -3,7 +3,8 @@ package net.blueshell.api.platform.integration.cohort.application
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.cohort.application.InboundReconcileSkipReason.*
-import net.blueshell.api.platform.integration.cohort.persistence.CohortFactKind
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinition
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinitionRegistry
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortMemberRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
@@ -29,7 +30,8 @@ class InboundReconcile(
     private val members: CohortMemberRepository,
     private val externalIds: ExternalIdMappingService,
     private val users: UserService,
-    private val writers: FactWriters,
+    private val writers: MembershipWriters,
+    private val definitions: CohortDefinitionRegistry,
     private val jobs: TrackedJobDispatcher,
     private val strategies: TargetStrategies,
     transactionManager: PlatformTransactionManager,
@@ -43,7 +45,9 @@ class InboundReconcile(
     private fun preview(target: InboundTarget): InboundReconcilePreview {
         val remote = noTx.execute { strategies.require(target.system).members(target.external) }.orEmpty()
         val (matched, skipped) = match(target, remote)
-        val preview = InboundReconcilePreview(target.fact, target.writer != null, "", remote.size, matched, skipped)
+        val preview = InboundReconcilePreview(
+            target.definition.key, target.definition.label, target.writer != null, "", remote.size, matched, skipped,
+        )
         return preview.copy(previewToken = token(target, preview))
     }
 
@@ -63,17 +67,17 @@ class InboundReconcile(
         }
         val payload = CohortJobs.ApplyInboundReconcilePayload(
             target.subjectId, target.cohortId, target.system.name, target.external.externalId,
-            target.fact.kind.name, target.fact.key, selected,
+            target.definition.key, selected,
         )
         val skipped = current.skipped.size + current.matched.size - selected.size
         return InboundReconcileApplyResponse(jobs.enqueue(CohortJobs.ApplyInboundReconcile, payload)?.id, selected.size, skipped)
     }
 
     fun applyJob(payload: CohortJobs.ApplyInboundReconcilePayload): List<ApplyInboundReconcileItemResult> {
-        val factKind = CohortFactKind.valueOf(payload.factKind)
-        val fact = SubjectFact(factKind, payload.factKey)
+        val definition = definitions.byKey(payload.definitionKey)
+            ?: bad("${payload.definitionKey} names no cohort any more")
         return payload.selected.map { selected ->
-            val status = itemTx.execute { applyOne(payload, fact, selected) }
+            val status = itemTx.execute { applyOne(payload, definition, selected) }
             ApplyInboundReconcileItemResult(selected.externalUserId, selected.userId, status)
         }
     }
@@ -86,33 +90,35 @@ class InboundReconcile(
         if (cohort.subjectId != subjectId) {
             missing("Cohort $cohortId is not a target of subject $subjectId")
         }
-        if (!subject.enabled) bad("Subject $subjectId is disabled")
-        val fact = SubjectFact(
-            subject.factKind ?: bad("Subject $subjectId has no fact kind"),
-            subject.factKey.required("Subject $subjectId has no fact key"),
-        )
+        val definition = subject.definitionKey?.let { definitions.byKey(it) }
+            ?: bad("Subject $subjectId names no cohort in code any more")
         val system = TargetSystem.valueOf(cohort.system)
         val externalId = cohort.externalId.required("Cohort $cohortId has no external target")
-        return InboundTarget(subjectId, cohortId, system, ExternalTarget(system, externalId, cohort.kind, cohort.label, cohort.folder), fact, writers.find(fact.kind))
+        return InboundTarget(
+            subjectId, cohortId, system,
+            ExternalTarget(system, externalId, cohort.kind, cohort.label, cohort.folder),
+            definition, writers.find(definition.type),
+        )
     }
 
     private fun applyOne(
         payload: CohortJobs.ApplyInboundReconcilePayload,
-        fact: SubjectFact,
+        definition: CohortDefinition,
         selected: CohortJobs.InboundReconcileSelectedUser,
-    ): FactWriteStatus {
+    ): MembershipWriteStatus {
         val target = loadTarget(payload.subjectId, payload.cohortId)
-        if (!target.matches(payload, fact)) return FactWriteStatus.FAILED
+        if (!target.matches(payload, definition)) return MembershipWriteStatus.FAILED
         val mappings = externalIds.findByExternalIds(
             ExternalIdMappingService.USER_AGGREGATE,
             payload.system,
             listOf(selected.externalUserId),
         ).filter { it.externalId == selected.externalUserId }
         val mappedUserId = mappings.singleOrNull()?.aggregateId
-            ?: return if (mappings.isEmpty()) FactWriteStatus.SKIPPED_UNMATCHED else FactWriteStatus.SKIPPED_MAPPING_CONFLICT
-        if (mappedUserId != selected.userId) return FactWriteStatus.SKIPPED_MAPPING_CONFLICT
-        val writer = writers.find(fact.kind) ?: return FactWriteStatus.UNSUPPORTED
-        return runCatching { writer.apply(selected.userId, fact) }.getOrElse { FactWriteStatus.FAILED }
+            ?: return if (mappings.isEmpty()) MembershipWriteStatus.SKIPPED_UNMATCHED else MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
+        if (mappedUserId != selected.userId) return MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
+        val writer = writers.find(definition.type) ?: return MembershipWriteStatus.UNSUPPORTED
+        return runCatching { writer.apply(selected.userId, definition) }
+            .getOrElse { MembershipWriteStatus.FAILED }
     }
 
     private fun match(target: InboundTarget, remote: List<ExternalMember>): Pair<List<InboundReconcileRow>, List<InboundReconcileRow>> {
@@ -153,20 +159,22 @@ class InboundReconcile(
         ).filter { !it.externalId.isNullOrBlank() }.groupBy { it.externalId!! }
 
     private fun InboundTarget.row(member: ExternalMember, user: User): InboundReconcileRow {
-        val alreadyTrue = writer?.preview(user.id!!, fact)?.alreadyTrue ?: false
-        return InboundReconcileRow(member.externalUserId, member.label, user.id!!, user.fullName, user.email, alreadyTrue, writer != null && !alreadyTrue)
+        val alreadyMember = writer?.preview(user.id!!, definition)?.alreadyMember ?: false
+        return InboundReconcileRow(member.externalUserId, member.label, user.id!!, user.fullName, user.email, alreadyMember, writer != null && !alreadyMember)
     }
 
     private fun token(target: InboundTarget, preview: InboundReconcilePreview): String {
         val rows = preview.matched.sortedBy { it.externalUserId }
             .joinToString(",") { "${it.externalUserId}=${it.userId}:${it.writable}" }
-        val input = "${target.subjectId}|${target.cohortId}|${target.system}|${target.external.externalId}|${target.fact.kind}|${target.fact.key}|$rows"
+        val input = "${target.subjectId}|${target.cohortId}|${target.system}|${target.external.externalId}|${target.definition.key}|$rows"
         return MessageDigest.getInstance("SHA-256").digest(input.toByteArray(StandardCharsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
     }
 
-    private fun InboundTarget.matches(payload: CohortJobs.ApplyInboundReconcilePayload, fact: SubjectFact) =
-        system.name == payload.system && external.externalId == payload.externalTargetId && this.fact == fact
+    private fun InboundTarget.matches(payload: CohortJobs.ApplyInboundReconcilePayload, definition: CohortDefinition) =
+        system.name == payload.system &&
+            external.externalId == payload.externalTargetId &&
+            this.definition.key == definition.key
 
     private fun ExternalMember.skip(reason: InboundReconcileSkipReason) =
         InboundReconcileRow(externalUserId = externalUserId, externalLabel = label, reason = reason)
@@ -179,9 +187,16 @@ class InboundReconcile(
         TransactionTemplate(this).apply { propagationBehavior = propagation }
 }
 
-private data class InboundTarget(val subjectId: Long, val cohortId: Long, val system: TargetSystem, val external: ExternalTarget, val fact: SubjectFact, val writer: FactWriter?)
+private data class InboundTarget(
+    val subjectId: Long,
+    val cohortId: Long,
+    val system: TargetSystem,
+    val external: ExternalTarget,
+    val definition: CohortDefinition,
+    val writer: MembershipWriter?,
+)
 
-data class InboundReconcilePreview(val fact: SubjectFact, val writerSupported: Boolean, val previewToken: String, val remoteCount: Int, val matched: List<InboundReconcileRow>, val skipped: List<InboundReconcileRow>)
+data class InboundReconcilePreview(val definitionKey: String, val cohortLabel: String, val writerSupported: Boolean, val previewToken: String, val remoteCount: Int, val matched: List<InboundReconcileRow>, val skipped: List<InboundReconcileRow>)
 
 data class InboundReconcileRow(
     val externalUserId: String,
@@ -189,7 +204,7 @@ data class InboundReconcileRow(
     val userId: Long? = null,
     val userFullName: String? = null,
     val userEmail: String? = null,
-    val alreadyTrue: Boolean = false,
+    val alreadyMember: Boolean = false,
     val writable: Boolean = false,
     val reason: InboundReconcileSkipReason? = null,
 )
@@ -198,4 +213,4 @@ enum class InboundReconcileSkipReason { DUPLICATE_REMOTE_ID, MAPPING_CONFLICT, D
 
 data class InboundReconcileApplyRequest(val previewToken: String, val selectedExternalUserIds: List<String>)
 data class InboundReconcileApplyResponse(val jobId: Long?, val acceptedCount: Int, val skippedCount: Int)
-data class ApplyInboundReconcileItemResult(val externalUserId: String, val userId: Long, val status: FactWriteStatus)
+data class ApplyInboundReconcileItemResult(val externalUserId: String, val userId: Long, val status: MembershipWriteStatus)

@@ -3,22 +3,25 @@ package net.blueshell.api.platform.integration.cohort.application
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinition
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinitionRegistry
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortMembershipUpdater
+import net.blueshell.api.platform.integration.cohort.application.definition.CohortRegistrar
+import net.blueshell.api.platform.integration.cohort.application.definition.RegistrationReport
 import net.blueshell.api.shared.job.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.junit.jupiter.api.Test
 
 class CohortReconciliationServiceTest {
 
-    private val periods: ContributionPeriodService = mockk()
     private val users: UserService = mockk()
-    private val resolver: ContributionPeriodCohortResolver = mockk(relaxed = true)
-    private val evaluator: CohortRuleEvaluator = mockk(relaxed = true)
+    private val definitions: CohortDefinitionRegistry = mockk()
+    private val registrar: CohortRegistrar = mockk(relaxed = true)
+    private val updater: CohortMembershipUpdater = mockk(relaxed = true)
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
     private val service = CohortReconciliationService(
-        periods, users, resolver, evaluator, jobs,
+        users, definitions, registrar, updater, jobs,
         // A relaxed manager runs the per-page TransactionTemplate callbacks inline.
         transactionManager = mockk(relaxed = true),
     )
@@ -26,33 +29,43 @@ class CohortReconciliationServiceTest {
     private val pageSize = CohortReconciliationService.PAGE_SIZE
 
     @Test
-    fun `evaluateUserCohorts delegates to the rule evaluator`() {
+    fun `evaluateUserCohorts reconciles that one member`() {
         service.evaluateUserCohorts(42L)
 
-        verify { evaluator.evaluate(42L) }
+        verify { updater.updateMember(42L) }
     }
 
     @Test
-    fun `reconcileAllContributionPeriodCohorts calls the resolver for every period`() {
-        every { periods.findAll() } returns mutableListOf(period(1L), period(2L), period(7L))
+    fun `the sweep registers the definitions and then recomputes each one`() {
+        val first = definition("PERIOD_MEMBERS:1")
+        val second = definition("PERIOD_MEMBERS:2")
+        every { registrar.register() } returns RegistrationReport(2, 0, 0, emptyList())
+        every { definitions.all() } returns listOf(first, second)
 
         service.reconcileAllContributionPeriodCohorts()
 
-        verify { resolver.materialize(1L) }
-        verify { resolver.materialize(2L) }
-        verify { resolver.materialize(7L) }
+        verify { registrar.register() }
+        verify { updater.updateCohort(first) }
+        verify { updater.updateCohort(second) }
     }
 
     @Test
-    fun `reconcileAllContributionPeriodCohorts continues past a single materialize failure`() {
-        every { periods.findAll() } returns mutableListOf(period(1L), period(2L), period(7L))
-        every { resolver.materialize(2L) } throws RuntimeException("kaboom")
+    fun `one cohort failing to recompute does not stop the others`() {
+        val first = definition("PERIOD_MEMBERS:1")
+        val broken = definition("PERIOD_MEMBERS:2")
+        val last = definition("PERIOD_MEMBERS:7")
+        every { registrar.register() } returns RegistrationReport(3, 0, 0, emptyList())
+        every { definitions.all() } returns listOf(first, broken, last)
+        every { updater.updateCohort(broken) } throws RuntimeException("kaboom")
 
         service.reconcileAllContributionPeriodCohorts()
 
-        verify { resolver.materialize(1L) }
-        verify { resolver.materialize(2L) }
-        verify { resolver.materialize(7L) }
+        verify { updater.updateCohort(first) }
+        verify { updater.updateCohort(last) }
+    }
+
+    private fun definition(key: String): CohortDefinition = mockk<CohortDefinition>().also {
+        every { it.key } returns key
     }
 
     @Test
@@ -84,11 +97,5 @@ class CohortReconciliationServiceTest {
         // 10 (before the failure) and 12 (a later page) are still enqueued.
         verify { jobs.enqueue(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L)) }
         verify { jobs.enqueue(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(12L)) }
-    }
-
-    private fun period(id: Long): ContributionPeriod {
-        val p = mockk<ContributionPeriod>()
-        every { p.id } returns id
-        return p
     }
 }

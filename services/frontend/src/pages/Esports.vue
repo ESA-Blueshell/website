@@ -5,6 +5,7 @@ import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
+import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
@@ -95,7 +96,7 @@ const entrance = {
            below is the games the association fielded in it. -->
       <section
         v-if="seasons.length > 1"
-        class="w-full pt-2 pb-6"
+        class="w-full pt-1 pb-2"
         data-testid="esports-index-seasons"
       >
         <season-timeline
@@ -159,25 +160,7 @@ const entrance = {
         </Motion>
       </section>
 
-      <section class="mx-auto w-full max-w-6xl px-5 pb-14 sm:px-8 sm:pb-20">
-        <div class="relative isolate overflow-hidden rounded-2xl bg-pit px-5 py-6 sm:px-8 sm:py-8">
-          <div
-            aria-hidden="true"
-            class="pointer-events-none absolute -right-16 -bottom-20 h-56 w-56 rounded-full bg-brand/20 blur-[70px]"
-          />
-          <h2 class="relative font-display text-base uppercase sm:text-xl">
-            Want in?
-          </h2>
-          <p class="relative mt-2 max-w-xl font-body text-sm text-ash">
-            There is room in more teams than people expect, and a game nobody has fielded yet
-            is a conversation rather than a no. Ask esports affairs on Discord, or mail
-            <a
-              class="text-brand transition-colors hover:text-brand-lit"
-              href="mailto:esports-affairs@blueshell.utwente.nl"
-            >esports-affairs@blueshell.utwente.nl</a>.
-          </p>
-        </div>
-      </section>
+      <join-band />
     </esports-island>
   </v-main>
 </template>

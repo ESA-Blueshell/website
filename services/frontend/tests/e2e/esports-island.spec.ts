@@ -29,6 +29,32 @@ test.describe("the esports island", () => {
     await expect(slices.locator('a[href="/esports/valorant"]')).toHaveCount(1)
   })
 
+  test("offers the three ways in, and points each of them somewhere real", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/esports/competitive-scene")
+
+    const band = page.getByTestId("esports-join")
+    await expect(band).toBeVisible()
+
+    // Joining is the one that puts somebody on a roster, so it leads.
+    await expect(page.getByTestId("esports-join-member")).toHaveAttribute("href", "/membership")
+    // Asking first is the alternative, in both the places the association answers.
+    await expect(page.getByTestId("esports-join-discord"))
+      .toHaveAttribute("href", /^https:\/\/discord\.gg\//)
+    await expect(page.getByTestId("esports-join-mail"))
+      .toHaveAttribute("href", "mailto:esports-affairs@blueshell.utwente.nl")
+  })
+
+  test("opens the Discord in its own tab, and safely", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/esports/competitive-scene")
+
+    const discord = page.getByTestId("esports-join-discord")
+    await expect(discord).toHaveAttribute("target", "_blank")
+    // A tab opened from here must not be handed a reference back to this one.
+    await expect(discord).toHaveAttribute("rel", /noopener/)
+  })
+
   test("the island's reset stops at its own root", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/competitive-scene")

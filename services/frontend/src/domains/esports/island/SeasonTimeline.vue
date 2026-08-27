@@ -119,10 +119,6 @@ watch([() => props.selectedId, track, width], () => {
   box.scrollTo({left: node.x - box.clientWidth / 2, behavior: "auto"})
 }, {flush: "post"})
 
-const caption = computed<string>(() =>
-  bands.value.find(b => b.season.id === (hovered.value ?? props.selectedId))?.season.name ?? "",
-)
-
 const yOf = (id: number) => nodes.value.find(n => n.id === id)?.y ?? HEIGHT / 2
 
 const step = (from: number, by: number) => {
@@ -227,13 +223,6 @@ const step = (from: number, by: number) => {
         />
       </div>
     </div>
-
-    <p
-      class="season-strip__caption"
-      data-testid="esports-season-caption"
-    >
-      {{ caption }}
-    </p>
   </div>
 </template>
 
@@ -418,19 +407,10 @@ const step = (from: number, by: number) => {
   scale: 1.3;
 }
 
-.season-strip__caption {
-  display: none;
-  margin-top: 0.35rem;
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-}
-
 /*
  * On a phone the strip scrolls rather than shrinking, so a band keeps the width its labels
- * need and they stay on the line: the year and the half travel with the nodes, and the
- * caption underneath names whichever season is being read in full.
+ * need and they stay on the line: the year and the half travel with their own nodes, which
+ * is all the naming a highlighted band needs.
  */
 @media (max-width: 767px) {
   .season-strip {

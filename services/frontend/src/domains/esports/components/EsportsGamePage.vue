@@ -109,7 +109,7 @@ const entrance = (index: number) => ({
       <!-- Full width: the seasons run edge to edge, as the teams below them do. -->
       <section
         v-if="seasons.length > 1"
-        class="w-full pt-2 pb-8"
+        class="w-full pt-1 pb-2"
         data-testid="esports-season-bar"
       >
         <season-timeline

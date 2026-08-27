@@ -25,13 +25,21 @@ test.describe("esports mobile layout", () => {
     await expect(first.getByRole("button")).toHaveAttribute("aria-expanded", "false")
   })
 
-  test("names the season on show, where there is no room to label every node", async ({page}) => {
+  test("keeps the seasons on the line, and scrolls to the one on show", async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
 
     await page.goto("/esports/valorant")
+    const strip = page.getByTestId("esports-season-timeline")
+    await strip.waitFor()
 
-    // The half labels and the years both give way to one caption on a narrow screen.
-    await expect(page.getByTestId("esports-season-caption")).toContainText("Autumn 2025/26")
+    // The strip scrolls rather than shrinking, so a band keeps the width its labels need and
+    // the highlighted one says which season it is without a caption underneath.
+    await expect(strip.locator(".season-band__label--half").first()).toBeVisible()
+    await expect(page.getByTestId("esports-season-caption")).toHaveCount(0)
+
+    const selected = page.locator(".season-band--on")
+    await expect(selected).toHaveCount(1)
+    await expect(selected).toBeInViewport()
   })
 })

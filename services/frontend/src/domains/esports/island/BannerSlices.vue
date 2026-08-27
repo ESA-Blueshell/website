@@ -32,6 +32,14 @@ const motion = useMotionAllowed()
 const open = ref<number | null>(null)
 const slices = ref<HTMLElement[]>([])
 
+/**
+ * A slice the visitor opened themselves. Stacked, the scroll decides which slice is open, and
+ * without this a tap was undone by the next observation: the slice opened and shut again
+ * before a finger left the screen. The choice stands until the page is scrolled, at which
+ * point the scroll is the visitor's intent again.
+ */
+const tapped = ref<number | null>(null)
+
 /** Stacked, there is no pointer to move across the slices, so the scroll does the choosing. */
 const stacked = () =>
   typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
@@ -47,10 +55,20 @@ const watchScroll = () => {
       .filter(entry => entry.isIntersecting)
       .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
     if (!best) return
+    if (tapped.value !== null) return
     const index = slices.value.indexOf(best.target as HTMLElement)
     if (index >= 0) open.value = index
   }, {rootMargin: "-42% 0px -42% 0px", threshold: [0, 0.25, 0.5, 1]})
   slices.value.forEach(el => el && watcher?.observe(el))
+}
+
+const releaseTap = () => {
+  tapped.value = null
+}
+
+const choose = (index: number) => {
+  open.value = index
+  if (stacked()) tapped.value = index
 }
 
 const settle = () => {
@@ -64,13 +82,18 @@ onMounted(() => {
     requestAnimationFrame(() => requestAnimationFrame(settle))
   }
   watchScroll()
+  window.addEventListener("scroll", releaseTap, {passive: true})
 })
 
-onBeforeUnmount(() => watcher?.disconnect())
+onBeforeUnmount(() => {
+  watcher?.disconnect()
+  window.removeEventListener("scroll", releaseTap)
+})
 
 // A change of what is on show brings a different set, so the first of those opens in its turn.
 watch(() => props.items, () => {
   slices.value = []
+  tapped.value = null
   open.value = motion.decorative.value ? null : 0
   if (motion.decorative.value) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
@@ -114,7 +137,7 @@ watch(() => props.items, () => {
         class="team-slice__body"
         :aria-expanded="index === open"
         type="button"
-        @click="open = index"
+        @click="choose(index)"
       >
         <span class="team-slice__heading">
           <span

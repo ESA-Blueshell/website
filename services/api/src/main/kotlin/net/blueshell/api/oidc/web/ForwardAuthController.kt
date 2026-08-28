@@ -5,6 +5,7 @@ import jakarta.annotation.security.PermitAll
 import jakarta.servlet.http.HttpServletRequest
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
+import net.blueshell.api.shared.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
@@ -48,9 +49,6 @@ class ForwardAuthController(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    private fun sanitizeForLog(value: String?): String =
-        value.orEmpty().replace(Regex("\\p{Cntrl}"), "_")
-
     @GetMapping
     @PermitAll
     fun forwardAuth(
@@ -58,7 +56,7 @@ class ForwardAuthController(
         request: HttpServletRequest,
     ): ResponseEntity<Void> {
         val forwardedHost = request.getHeader("X-Forwarded-Host").orEmpty()
-        // CR/LF-stripped copy of the attacker-controllable host header for logging (log-injection, #464).
+        // Scrubbed copy of the attacker-controllable host header, for logging only.
         val safeHost = sanitizeForLog(forwardedHost)
         val forwardedUri = request.getHeader("X-Forwarded-Uri").orEmpty().ifEmpty { "/" }
         val forwardedProto = request.getHeader("X-Forwarded-Proto").orEmpty().ifEmpty { "https" }

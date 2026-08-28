@@ -13,6 +13,7 @@ import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.service.BaseModelService
+import net.blueshell.api.shared.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -90,8 +91,7 @@ class FileService @Autowired constructor(
             val path = type.directory + "/" + hashedFilename
             val fullPath = rootLocation.resolve(path).normalize()
 
-            val safeFilename = (multipart.originalFilename ?: "<null>").replace(Regex("\\p{Cntrl}"), "_")
-            log.info("Storing {} at {}", safeFilename, fullPath)
+            log.info("Storing {} at {}", sanitizeForLog(multipart.originalFilename), sanitizeForLog(fullPath))
 
             if (Files.exists(fullPath)) {
                 Files.deleteIfExists(tmp)

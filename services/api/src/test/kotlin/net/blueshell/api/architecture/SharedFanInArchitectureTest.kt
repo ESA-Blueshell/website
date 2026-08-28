@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test
  * the reason, so the rule still bites for every other package and for every
  * package added later.
  *
- * Thirteen packages under `shared` hold types. Eleven clear the threshold, from
- * `shared/dto/bulk` at three consumer modules up to `shared/enums` at 22; two are
+ * Thirteen packages under `shared` hold types. Twelve clear the threshold, from
+ * `shared/dto/bulk` at three consumer modules up to `shared/enums` at 22; one is
  * pinned below it.
  */
 class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
@@ -36,8 +36,6 @@ class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
          * keeps the rest of the rule enforceable.
          */
         val BELOW_THRESHOLD = mapOf(
-            // Slug and formatting helpers reached only by `user`.
-            "shared/util" to 1,
             // Dirty-tracking support. Its other reader, HibernateDirtyTrackingConfig,
             // is application-root wiring under ADR-003 rule 6 rather than a module,
             // so `survey` is the only module that reaches it.

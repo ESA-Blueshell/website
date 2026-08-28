@@ -2,6 +2,7 @@ package net.blueshell.api.platform.config.advice
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import net.blueshell.api.shared.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -38,15 +39,12 @@ class ExceptionLoggingResolver : HandlerExceptionResolver {
         handler: Any?,
         ex: Exception,
     ): ModelAndView? {
-        // Strip CR/LF from the request URI and exception message before logging (log-injection, #464).
-        val safeUri = request.requestURI.replace('\r', '_').replace('\n', '_')
-        val safeMessage = (ex.message ?: "<null>").replace('\r', '_').replace('\n', '_')
         log.error(
             "{} {} -> {}: {}",
-            request.method,
-            safeUri,
+            sanitizeForLog(request.method),
+            sanitizeForLog(request.requestURI),
             ex.javaClass.simpleName,
-            safeMessage,
+            sanitizeForLog(ex.message),
             ex,
         )
         return null

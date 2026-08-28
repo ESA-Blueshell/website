@@ -2,7 +2,7 @@ package net.blueshell.api.email.domain
 
 import net.blueshell.api.domain.contribution.application.job.ContributionReminderEmailJob
 import net.blueshell.api.domain.event.application.job.EventSignupEmailJob
-import net.blueshell.api.domain.auth.application.job.RecoveryEmailJob
+import net.blueshell.api.auth.domain.RecoveryEmailJob
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.committee.persistence.Committee

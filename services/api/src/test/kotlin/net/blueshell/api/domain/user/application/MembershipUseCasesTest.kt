@@ -3,7 +3,7 @@ package net.blueshell.api.domain.user.application
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
-import net.blueshell.api.domain.auth.application.SignupCompletionService
+import net.blueshell.api.auth.domain.SignupCompletionService
 import net.blueshell.api.domain.user.application.query.MembershipQuery
 import net.blueshell.api.domain.user.application.validation.MembershipInterval
 import net.blueshell.api.domain.user.persistence.MemberProfile

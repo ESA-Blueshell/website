@@ -8,7 +8,7 @@ import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
-import net.blueshell.api.domain.auth.application.job.RecoveryEmailJob
+import net.blueshell.api.auth.domain.RecoveryEmailJob
 import net.blueshell.api.domain.contribution.application.job.ContributionReminderEmailJob
 import net.blueshell.api.domain.event.application.job.EventSignupEmailJob
 import net.blueshell.api.shared.enums.TokenPurpose

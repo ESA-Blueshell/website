@@ -1,6 +1,6 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.domain.auth.domain.service.TokenGenerator
+import net.blueshell.api.auth.api.TokenGenerator
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 

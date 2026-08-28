@@ -4,7 +4,7 @@ import net.blueshell.api.domain.contribution.application.ContributionPeriodServi
 import net.blueshell.api.domain.contribution.application.ContributionService
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.auth.application.UserActivationService
+import net.blueshell.api.auth.domain.UserActivationService
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.Membership

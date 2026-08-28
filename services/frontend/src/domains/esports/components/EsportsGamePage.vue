@@ -8,12 +8,13 @@ import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
+import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import {$require} from "@/plugins/require"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
-import type {Game, Season} from "../adapters/esports"
+import type {Game, Season, Team} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
@@ -35,7 +36,7 @@ const rememberSeason = (id: number) => {
   void router.replace({query: {...route.query, season: String(id)}})
 }
 
-const {page, loading, teams, seasons, season, hasRosters, showSeason} = useEsportsPage(
+const {page, loading, teams, seasons, season, hasRosters, showSeason, reload} = useEsportsPage(
   props.game,
   seasonFromRoute,
   rememberSeason,
@@ -106,6 +107,20 @@ const addSeason = () => {
 
 const closeEditor = (open: boolean) => {
   editorOpen.value = open
+}
+
+const adding = ref(false)
+/** The team just added, which is the one to look at when the band comes back. */
+const justAdded = ref<number | null>(null)
+
+/**
+ * The season is asked about again rather than patched here: what a team looks like on the
+ * page is the api's answer, roster and all, and a team just added has a roster only because
+ * something was written on the other side.
+ */
+const teamAdded = async (team: Team) => {
+  justAdded.value = team.id
+  await reload(season.value?.id)
 }
 
 // The strip and the labels under it both read from the loaded page, so the saved season is
@@ -187,6 +202,16 @@ const seasonSaved = (saved: Season) => {
           @saved="seasonSaved"
           @update:open="closeEditor"
         />
+
+        <add-team-dialog
+          :accent="identity.accent"
+          :fielded-team-ids="teams.map(one => one.id)"
+          :game="game"
+          :open="adding"
+          :season="season"
+          @added="teamAdded"
+          @update:open="adding = $event"
+        />
       </section>
 
       <!-- Full width, edge to edge: the teams are the page, not a card grid inside it. -->
@@ -211,8 +236,12 @@ const seasonSaved = (saved: Season) => {
         >
           <banner-slices
             :accent="identity.accent"
+            add-label="Add a team"
             :items="slices"
+            :may-add="mayEdit"
+            :open-id="justAdded"
             testid-prefix="team-roster"
+            @add="adding = true"
           >
             <template #details="{item}">
               <span

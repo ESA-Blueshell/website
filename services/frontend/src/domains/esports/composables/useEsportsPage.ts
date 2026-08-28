@@ -40,5 +40,6 @@ export function useEsportsPage(game: Game, seasonFromRoute: () => number | null,
     if (next != null && next !== season.value?.id) void load(next)
   })
 
-  return {page, loading, teams, seasons, season, hasRosters, showSeason}
+  // `reload` re-asks about the season already on show, which `showSeason` declines to do.
+  return {page, loading, teams, seasons, season, hasRosters, showSeason, reload: load}
 }

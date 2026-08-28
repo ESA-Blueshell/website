@@ -35,6 +35,15 @@ import org.springframework.transaction.annotation.Transactional
  *
  * Aligned with ADR-019 (Anti-Corruption Layers) and ADR-022 (Platform Organization).
  */
+/*
+ * Two placement rules were retired when the packages were flattened: `*Job` classes had to
+ * sit in `..application.job..` or `..adapter.job..`, and `*Client` classes in `..adapter..`.
+ * Architecture ADR-003 gives every module the same four folders, so neither sub-package
+ * exists any more and neither rule can select a class. What they were really protecting —
+ * that a job handler extends AbstractJsonJobHandler, is a @Component, and does not annotate
+ * handlePayload as transactional — is keyed on the type rather than the package and is
+ * unaffected.
+ */
 class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
     // ── Group A: Job Handler Structure ────────────────────────────────────────
@@ -50,7 +59,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `job handlers must extend AbstractJsonJobHandler`(): Unit =
         arch("Concrete *Job classes must extend AbstractJsonJobHandler") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.JOB)
+                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().haveSimpleNameEndingWith("Job")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .should().beAssignableTo(AbstractJsonJobHandler::class.java)
@@ -67,7 +76,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `job handlers must be annotated with @Component`(): Unit =
         arch("Concrete *Job classes must be @Component") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.JOB)
+                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().haveSimpleNameEndingWith("Job")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .should().beAnnotatedWith(Component::class.java)
@@ -85,7 +94,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
         arch("handlePayload methods in job handlers must not be @Transactional") {
             methods()
                 .that().haveName("handlePayload")
-                .and().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.JOB)
+                .and().areDeclaredInClassesThat().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().areDeclaredInClassesThat()
                     .areAssignableTo(AbstractJsonJobHandler::class.java)
                 .should().notBeAnnotatedWith(Transactional::class.java)
@@ -232,17 +241,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: low-level HTTP/API clients are adapter-layer infrastructure and must be co-located
      * with their adapter counterparts, not scattered at the module root.
      */
-    @Test
-    fun `platform clients must reside in adapter packages`(): Unit =
-        arch("*Client classes in platform.integration must reside in ..adapter.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Client")
-                .and().resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_ADAPTER)
-                .because("ADR-022: Platform clients must reside in ..adapter.. sub-package alongside their adapters")
-        }
-
     // ── Group F: Service Placement ────────────────────────────────────────────
 
     /**
@@ -325,20 +323,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * accepted while the rest of the codebase migrates; new modules
      * should land directly under `adapter/job/`.
      */
-    @Test
-    fun `platform job handlers must reside in a job sub-package`(): Unit =
-        arch("Concrete *Job classes in platform.integration must reside in ..application.job.. or ..adapter.job.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Job")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should().resideInAnyPackage(
-                    ArchitecturePackages.APPLICATION_JOB,
-                    ArchitecturePackages.ADAPTER_JOB,
-                )
-                .because("ADR-022: Job handlers are driving adapters and belong in a job sub-package")
-        }
-
     // ── Group J: Queue Isolation ──────────────────────────────────────────────
 
     /**

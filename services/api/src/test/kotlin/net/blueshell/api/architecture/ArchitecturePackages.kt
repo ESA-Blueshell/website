@@ -55,6 +55,13 @@ object ArchitecturePackages {
     const val PLATFORM_INTEGRATION = "$ROOT.platform.integration.."
     const val JOB = "$ROOT.platform.integration..job.."
 
+    /**
+     * Where a capability module's job handlers, adapters and clients sit once the module
+     * is flattened: the sub-packages [JOB] and [PLATFORM_ADAPTER] name do not survive the
+     * four-folder layout, so the same types land in the module's own domain or api folder.
+     */
+    val JOB_HOMES = arrayOf(JOB, MODULE_DOMAIN, MODULE_API)
+
     /** Mock/test adapter implementations */
     const val PLATFORM_MOCK = "$ROOT.platform.integration.mock.."
 

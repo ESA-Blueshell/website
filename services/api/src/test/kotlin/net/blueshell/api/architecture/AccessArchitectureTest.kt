@@ -57,10 +57,12 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `jobs only accessed from platform layer`(): Unit =
         arch("Jobs only triggered by platform infrastructure") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.JOB)
+                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().haveSimpleNameEndingWith("Job")
                 .should().onlyBeAccessed().byAnyPackage(
                     ArchitecturePackages.JOB,
+                    ArchitecturePackages.MODULE_DOMAIN,
+                    ArchitecturePackages.MODULE_API,
                     ArchitecturePackages.PLATFORM,
                     ArchitecturePackages.LISTENER  // Listeners can dispatch jobs
                 )
@@ -239,6 +241,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
                 .should().resideOutsideOfPackages(
                     ArchitecturePackages.QUERY,
+                    ArchitecturePackages.MODULE_DOMAIN,  // same layer, once the module is flattened
                     ArchitecturePackages.WEB  // Acceptable for web query params
                 )
                 .because("ADR-015: Query objects are application concerns, not persistence filters")

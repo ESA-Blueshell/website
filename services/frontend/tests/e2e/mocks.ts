@@ -183,6 +183,26 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
   let nextTeamId = 70
   let nextEntryId = 200
+  /**
+   * The line-up of the seeded team, as the admin reads and writes it. The public page builds
+   * that team's members from it, so an edit here is visible there — which is the whole of
+   * what "the slice shows the change" means.
+   */
+  const roster: Array<Record<string, unknown>> = [
+    {id: 21, teamId: 1, seasonId: 20, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: 1, sortIndex: 0, roleTitle: "Captain", description: "Holds the **middle** together."},
+    {id: 22, teamId: 1, seasonId: 20, role: "PLAYER", handle: "Loafine", displayName: null, userId: null, sortIndex: 1, roleTitle: null, description: null},
+    {id: 23, teamId: 1, seasonId: 20, role: "SUBSTITUTE", handle: "Blackout", displayName: null, userId: null, sortIndex: 2, roleTitle: null, description: null},
+    // The team that played a season ago and has a line-up worth carrying across.
+    {id: 11, teamId: 3, seasonId: 19, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: 1, sortIndex: 0, roleTitle: null, description: null},
+    {id: 12, teamId: 3, seasonId: 19, role: "SUBSTITUTE", handle: "Blackout", displayName: null, userId: null, sortIndex: 1, roleTitle: null, description: null},
+  ]
+  const asMember = (entry: Record<string, unknown>) => ({
+    role: entry.role,
+    handle: entry.handle,
+    name: entry.userId != null ? entry.displayName : null,
+    roleTitle: entry.roleTitle ?? null,
+    description: entry.description ?? null,
+  })
 
   await page.addInitScript((params: {cookieConsentStorageKey: string; cookieConsentPayload: string}) => {
     localStorage.setItem(params.cookieConsentStorageKey, params.cookieConsentPayload)
@@ -654,7 +674,17 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         .filter(row => row.team != null && row.team.game === game)
         .map(row => ({id: row.one.teamId, name: row.team!.name, image: row.team!.image ?? null, members: row.one.members}))
       const fieldsThis = game === "VALORANT" || game === "CS2"
-      const teams = [...(fieldsThis ? page.teams as Array<Record<string, unknown>> : []), ...extra]
+      // The seeded team's members come from the same line-up the admin edits, so a change
+      // made there is a change here.
+      const seeded = (fieldsThis ? page.teams as Array<Record<string, unknown>> : []).map(team => (
+        team.id === 1
+          ? {...team, members: roster
+            .filter(one => one.teamId === 1 && one.seasonId === shownSeason)
+            .sort((a, b) => Number(a.sortIndex) - Number(b.sortIndex))
+            .map(asMember)}
+          : team
+      ))
+      const teams = [...seeded, ...extra]
       return fulfillJson(route, {...page, game, teams})
     }
     if (method === "POST" && path === "/esports/seasons") {
@@ -716,10 +746,26 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       })
     }
     if (method === "GET" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
-      return fulfillJson(route, fixtures.esportsRoster ?? [
-        {id: 11, teamId: 1, seasonId: 20, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: 1, sortIndex: 0},
-        {id: 12, teamId: 1, seasonId: 20, role: "SUBSTITUTE", handle: "Blackout", displayName: null, userId: null, sortIndex: 1},
-      ])
+      if (fixtures.esportsRoster) return fulfillJson(route, fixtures.esportsRoster)
+      const teamId = Number(path.split("/")[3])
+      const seasonId = Number(url.searchParams.get("seasonId"))
+      return fulfillJson(route, roster.filter(one => one.teamId === teamId && one.seasonId === seasonId))
+    }
+    if (method === "PUT" && /^\/esports\/roster\/\d+$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const id = Number(path.split("/").pop())
+      const entry = roster.find(one => one.id === id)
+      if (entry) Object.assign(entry, {
+        handle: body.handle, role: body.role, displayName: body.displayName ?? null,
+        sortIndex: body.sortIndex, roleTitle: body.roleTitle ?? null, description: body.description ?? null,
+      })
+      return fulfillJson(route, entry ?? {})
+    }
+    if (method === "DELETE" && /^\/esports\/roster\/\d+$/.test(path)) {
+      const id = Number(path.split("/").pop())
+      const at = roster.findIndex(one => one.id === id)
+      if (at >= 0) roster.splice(at, 1)
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "POST" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
@@ -727,11 +773,20 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       nextEntryId += 1
       const seated = fieldedNow.find(one => one.teamId === teamId && one.seasonId === body.seasonId)
       seated?.members.push({role: body.role, handle: body.handle, name: null})
+      roster.push({
+        id: nextEntryId, teamId, seasonId: body.seasonId, role: body.role, handle: body.handle,
+        displayName: body.displayName ?? null, userId: body.userId ?? null,
+        sortIndex: body.sortIndex ?? roster.length, roleTitle: body.roleTitle ?? null,
+        description: body.description ?? null,
+      })
       return fulfillJson(route, {id: nextEntryId, teamId, seasonId: body.seasonId, role: body.role, handle: body.handle, displayName: body.displayName ?? null, userId: null, sortIndex: 2}, 201)
     }
     if (method === "PUT" && /^\/esports\/roster\/\d+\/member$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      return fulfillJson(route, {id: 11, teamId: 1, seasonId: 20, role: "PLAYER", handle: "AriosFury", displayName: "Viktor Petrov", userId: body.userId ?? null, sortIndex: 0})
+      const id = Number(path.split("/")[3])
+      const entry = roster.find(one => one.id === id)
+      if (entry) entry.userId = body.userId ?? null
+      return fulfillJson(route, entry ?? {id, userId: body.userId ?? null})
     }
     if (method === "GET" && /^\/users\/\d+\/game-accounts$/.test(path)) {
       return fulfillJson(route, [{id: 5, userId: 1, game: "VALORANT", handle: "AriosFury"}])

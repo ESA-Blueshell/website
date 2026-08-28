@@ -9,6 +9,7 @@ import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
+import LineupDialog from "@/domains/esports/island/LineupDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {$require} from "@/plugins/require"
@@ -124,6 +125,21 @@ const teamAdded = async (team: Team) => {
   await reload(season.value?.id)
 }
 
+const editingTeam = ref<{id: number; name: string} | null>(null)
+const lineupOpen = ref(false)
+
+const editLineup = (teamId: number | string) => {
+  const team = teams.value.find(one => one.id === teamId)
+  if (!team) return
+  editingTeam.value = {id: team.id, name: team.name}
+  lineupOpen.value = true
+}
+
+/** What the slice shows is the api's answer, so it is asked again rather than patched here. */
+const lineupSaved = async () => {
+  await reload(season.value?.id)
+}
+
 // The strip and the labels under it both read from the loaded page, so the saved season is
 // written back into it rather than fetched again.
 const seasonSaved = (saved: Season) => {
@@ -204,6 +220,16 @@ const seasonSaved = (saved: Season) => {
           @update:open="closeEditor"
         />
 
+        <lineup-dialog
+          :accent="identity.accent"
+          :open="lineupOpen"
+          :season="season"
+          :team-id="editingTeam?.id ?? null"
+          :team-name="editingTeam?.name ?? ''"
+          @saved="lineupSaved"
+          @update:open="lineupOpen = $event"
+        />
+
         <add-team-dialog
           :accent="identity.accent"
           :fielded-team-ids="teams.map(one => one.id)"
@@ -240,9 +266,11 @@ const seasonSaved = (saved: Season) => {
             add-label="Add a team"
             :items="slices"
             :may-add="mayEdit"
+            :may-edit="mayEdit"
             :open-id="justAdded"
             testid-prefix="team-roster"
             @add="adding = true"
+            @edit="editLineup"
           >
             <template #details="{item}">
               <span

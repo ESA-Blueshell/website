@@ -16,6 +16,7 @@ import {
   findSeasons,
   findTeamSeasons,
   findTeams,
+  findUsers,
   linkRosterEntry,
   removeRosterEntry,
   setGameAccount,
@@ -162,7 +163,15 @@ export async function loadRoster(teamId: number, seasonId: number): Promise<Rost
 
 export async function addToRoster(
   teamId: number,
-  entry: {seasonId: number; handle: string; role: TeamRole; userId?: number | null; displayName?: string | null},
+  entry: {
+    seasonId: number
+    handle: string
+    role: TeamRole
+    userId?: number | null
+    displayName?: string | null
+    roleTitle?: string | null
+    description?: string | null
+  },
 ): Promise<RosterEntry | null> {
   const res = await addRosterEntry({
     path: {teamId},
@@ -172,6 +181,8 @@ export async function addToRoster(
       role: entry.role,
       userId: entry.userId ?? undefined,
       displayName: entry.displayName ?? undefined,
+      roleTitle: entry.roleTitle ?? undefined,
+      description: entry.description ?? undefined,
     },
   })
   return res.data ?? null
@@ -179,7 +190,14 @@ export async function addToRoster(
 
 export async function saveRosterEntry(
   id: number,
-  entry: {handle: string; role: TeamRole; displayName?: string | null; sortIndex: number},
+  entry: {
+    handle: string
+    role: TeamRole
+    displayName?: string | null
+    sortIndex: number
+    roleTitle?: string | null
+    description?: string | null
+  },
 ): Promise<RosterEntry | null> {
   const res = await updateRosterEntry({
     path: {id},
@@ -188,6 +206,8 @@ export async function saveRosterEntry(
       role: entry.role,
       displayName: entry.displayName ?? undefined,
       sortIndex: entry.sortIndex,
+      roleTitle: entry.roleTitle ?? undefined,
+      description: entry.description ?? undefined,
     },
   })
   return res.data ?? null
@@ -201,6 +221,32 @@ export async function linkRosterMember(id: number, userId: number | null): Promi
 
 export async function dropRosterEntry(id: number): Promise<void> {
   await removeRosterEntry({path: {id}})
+}
+
+/** A member as a roster entry needs to name them: who they are, and how to tell two apart. */
+export interface Member {
+  id: number
+  name: string
+  email: string | null
+}
+
+/**
+ * The members an entry can be attached to.
+ *
+ * Asked for once and filtered where it is used, the way the rest of the site's member pickers
+ * work. Attaching a roster entry is rare enough that a search round trip per keystroke would
+ * buy nothing.
+ */
+export async function loadMembers(): Promise<Member[]> {
+  const res = await findUsers({query: {size: 500}})
+  return (res.data?.content ?? [])
+    .filter(user => user.id != null)
+    .map(user => ({
+      id: user.id as number,
+      name: user.fullName ?? user.email ?? `Member ${user.id}`,
+      email: user.email ?? null,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export async function loadGameAccounts(userId: number): Promise<GameAccount[]> {

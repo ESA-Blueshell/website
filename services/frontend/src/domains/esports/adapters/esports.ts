@@ -12,6 +12,7 @@ import {
   fieldTeam,
   findEsportsPage,
   findGameAccounts,
+  findGamePages,
   findRoster,
   findSeasonContents,
   findSeasons,
@@ -31,6 +32,7 @@ import type {
   FieldedTeamResponse,
   Game as ApiGame,
   GameAccountResponse,
+  GamePageResponse,
   RosterEntryResponse,
   SeasonResponse,
   TeamResponse,
@@ -46,12 +48,20 @@ export type Team = TeamResponse
 export type TeamRoster = TeamRosterResponse
 export type RosterEntry = RosterEntryResponse
 export type GameAccount = GameAccountResponse
+/** A game itself: what it is called, the art it is drawn with, and how its page presents it. */
+export type GameRecord = GamePageResponse
 export type FieldedTeam = FieldedTeamResponse
 
 /** What a season holds, so an offer to remove it can say what goes with it. */
 export interface SeasonContents {
   teams: number
   players: number
+}
+
+/** Every game the association knows, in the order their records put them. */
+export async function loadGames(): Promise<GameRecord[]> {
+  const res = await findGamePages()
+  return res.data ?? []
 }
 
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {

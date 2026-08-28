@@ -3,21 +3,14 @@ import {shallowMount} from "@vue/test-utils"
 import League from "@/pages/esports/League.vue"
 
 describe("League of Legends page", () => {
-  it("asks the shared page for its own game, and keeps its own copy", () => {
+  it("asks the shared page for its own game, and says nothing else about it", () => {
+    // The name, the copy and the art are the record's to give; this says which game it is.
     const wrapper = shallowMount(League, {
       global: {
-        stubs: {
-          EsportsGamePage: {
-            props: ["game", "title"],
-            template: "<div :data-game='game' :data-title='title'><slot name='intro' /></div>",
-          },
-        },
+        stubs: {EsportsGamePage: {props: ["game"], template: "<div :data-game='game' />"}},
       },
     })
 
-    const root = wrapper.get("[data-game]")
-    expect(root.attributes("data-game")).toBe("LEAGUE_OF_LEGENDS")
-    expect(root.attributes("data-title")).toBe("League of Legends")
-    expect(root.text()).toContain("special place")
+    expect(wrapper.get("[data-game]").attributes("data-game")).toBe("LEAGUE_OF_LEGENDS")
   })
 })

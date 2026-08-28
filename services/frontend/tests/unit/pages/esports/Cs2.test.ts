@@ -3,21 +3,14 @@ import {shallowMount} from "@vue/test-utils"
 import Cs2 from "@/pages/esports/Cs2.vue"
 
 describe("Counter-Strike 2 page", () => {
-  it("asks the shared page for its own game, and keeps its own copy", () => {
+  it("asks the shared page for its own game, and says nothing else about it", () => {
+    // The name, the copy and the art are the record's to give; this says which game it is.
     const wrapper = shallowMount(Cs2, {
       global: {
-        stubs: {
-          EsportsGamePage: {
-            props: ["game", "title"],
-            template: "<div :data-game='game' :data-title='title'><slot name='intro' /></div>",
-          },
-        },
+        stubs: {EsportsGamePage: {props: ["game"], template: "<div :data-game='game' />"}},
       },
     })
 
-    const root = wrapper.get("[data-game]")
-    expect(root.attributes("data-game")).toBe("CS2")
-    expect(root.attributes("data-title")).toBe("Counter-Strike 2")
-    expect(root.text()).toContain("climb up the charts")
+    expect(wrapper.get("[data-game]").attributes("data-game")).toBe("CS2")
   })
 })

@@ -10,11 +10,9 @@ import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons} from "@/domains/esports/adapters/esports"
-import {identityOf} from "@/domains/esports/island/gameIdentity"
+import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
-import {$require} from "@/plugins/require"
-import {Game as GameEnum} from "@/services/api"
 import type {Game, Season, Team} from "@/domains/esports/adapters/esports"
 
 defineOptions({name: "EsportsPage"})
@@ -23,20 +21,17 @@ const route = useRoute()
 const router = useRouter()
 const motion = useMotionAllowed()
 
-/**
- * The games the index offers, and where each one's own page lives. Which games exist, in what
- * order, and what is said about each becomes a record in its own right; until then this is
- * what the router already answers to.
- */
-const GAMES: Array<{game: Game; name: string; url: string; banner: string}> = [
-  {game: GameEnum.LEAGUE_OF_LEGENDS, name: "League of Legends", url: "/esports/league-of-legends", banner: "leagueesportsbg1.jpg"},
-  {game: GameEnum.CS2, name: "CS2", url: "/esports/counter-strike-2", banner: "csgoesports2.jpg"},
-  {game: GameEnum.VALORANT, name: "Valorant", url: "/esports/valorant", banner: "valorantesports1.jpg"},
-  {game: GameEnum.ROCKET_LEAGUE, name: "Rocket League", url: "/esports/rocketleague", banner: "rocketleagueesports.jpg"},
-  {game: GameEnum.GEOGUESSR, name: "GeoGuessr", url: "/esports/geoguessr", banner: ""},
-]
+// Which games exist, what each is called and the art each carries are the records' answer;
+// the index keeps no list of its own.
+const {fielded: playedGames, ready, identityOf, recordOf} = useGames()
 
-const {seasons, selected, entries, loading, fielded, show, reload} = useSeasonLineup(GAMES.map(g => g.game))
+const gameCodes = computed<Game[]>(() => playedGames.value.map(one => one.game))
+const urlOf = (game: string) => {
+  const record = recordOf(game)
+  return record ? `/esports/${record.slug}` : "/esports"
+}
+
+const {seasons, selected, entries, loading, fielded, show, reload} = useSeasonLineup(gameCodes, ready)
 
 const seasonName = computed(() =>
   seasons.value.find(s => s.id === selected.value)?.name ?? "",
@@ -44,21 +39,20 @@ const seasonName = computed(() =>
 
 const slices = computed(() =>
   entries.value.map(entry => {
-    const known = GAMES.find(g => g.game === entry.game)
+    const identity = identityOf(entry.game)
     const teams = entry.teams.length
     return {
       id: entry.game,
-      href: known?.url,
-      title: known?.name ?? entry.game,
+      href: urlOf(entry.game),
+      title: identity.name,
       meta: `${teams} team${teams === 1 ? "" : "s"} this season`,
-      banner: known?.banner ? $require(`@/assets/${known.banner}`) : "",
-      accent: identityOf(entry.game).accent,
+      banner: identity.banner ?? "",
+      accent: identity.accent,
     }
   }),
 )
 
 const teamsOf = (game: string) => entries.value.find(e => e.game === game)?.teams ?? []
-const urlOf = (game: string) => GAMES.find(g => g.game === game)?.url ?? "/esports"
 
 const chooseSeason = (id: number) => {
   void router.replace({query: {...route.query, season: String(id)}})
@@ -263,7 +257,7 @@ const seasonSaved = (saved: Season) => {
           accent="var(--color-brand)"
           :fielded-games="entries.map(entry => entry.game)"
           :fielded-team-ids="alreadyFielded"
-          :games="GAMES.map(one => ({game: one.game, name: one.name}))"
+          :games="playedGames.map(one => ({game: one.game, name: one.name}))"
           :open="adding"
           :season="seasonOnShow"
           @added="teamAdded"

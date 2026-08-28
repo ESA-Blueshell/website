@@ -27,6 +27,7 @@ type Fixtures = {
   esportsSeasons?: Array<Record<string, unknown>>
   esportsTeams?: Array<Record<string, unknown>>
   esportsRoster?: Array<Record<string, unknown>>
+  esportsGames?: Array<Record<string, unknown>>
   boards?: Array<Record<string, unknown>>
   cohortSubjectDetail?: Record<string, unknown>
 }
@@ -39,6 +40,21 @@ const brevoTargets = [
   // Same name as the committee list above, filed somewhere else: only the path tells them apart.
   {system: "BREVO", externalId: "88", kind: "LIST", label: "Web Cmte", folderLabel: "Archive", path: ["Brevo", "Archive"], memberCount: 0, linkedCohortId: null},
   {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, path: ["Brevo"], memberCount: null, linkedCohortId: null},
+]
+
+/**
+ * The games themselves, as their records hold them: what each is called, the address its page
+ * answers to, and the art it is drawn with. The pages read every one of these from here.
+ */
+const esportsGames = [
+  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", mark: "valorant.png", banner: "valorantesports1.jpg", intro: "Shooters, and plenty of them.", sortIndex: 1, fielded: true},
+  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", mark: "cs2.png", banner: "csgoesports2.jpg", intro: "Those sweet headshots.", sortIndex: 2, fielded: true},
+  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", mark: "league.png", banner: "leagueesportsbg1.jpg", intro: "A special place.", sortIndex: 3, fielded: true},
+  {game: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", mark: "rocketleague.png", banner: "rocketleagueesports.jpg", intro: "Football, with rocket cars.", sortIndex: 4, fielded: true},
+  {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", mark: "geoguessrlogo.webp", banner: null, intro: "Guessing where.", sortIndex: 5, fielded: true},
+  // No accent or mark has ever been written for Trackmania: it reads on the island's own blue.
+  {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, mark: null, banner: null, intro: "Driving, fast.", sortIndex: 6, fielded: true},
+  {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", mark: "cs2.png", banner: null, intro: null, sortIndex: 7, fielded: false},
 ]
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
@@ -655,6 +671,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "PUT" && /^\/boards\/\d+\/members\/\d+\/member$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       return fulfillJson(route, {id: 92, boardId: 9, userId: body.userId ?? null, role: "Secretary", name: "Viktor Petrov", description: null, image: null, startDate: "2025-09-01", endDate: "2026-08-31", version: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"})
+    }
+    // The api answers in the order the records put the games in, and so does this.
+    if (method === "GET" && path === "/esports/games") {
+      return fulfillJson(route, fixtures.esportsGames ?? esportsGames)
     }
     // [A-Z0-9_]+ rather than [A-Z_]+: a game's enum name can carry a digit, and
     // CS2 is one. With the digit excluded this route never matched, so every CS2

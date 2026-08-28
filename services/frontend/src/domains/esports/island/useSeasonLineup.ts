@@ -1,4 +1,4 @@
-import {computed, onMounted, ref} from "vue"
+import {computed, onMounted, ref, unref, type MaybeRef} from "vue"
 import {loadEsportsPage, type EsportsPage, type Game, type Season} from "../adapters/esports"
 
 export interface LineupEntry {
@@ -16,8 +16,12 @@ export interface LineupEntry {
  *
  * A game that fielded nothing in the season is left out rather than shown empty, since the
  * page is about what was fielded.
+ *
+ * Which games to ask about arrives from their records, so it is read at each load rather than
+ * captured once, and the first load waits on `until` — otherwise it would ask about no games
+ * and the page would read as a season nothing was fielded in.
  */
-export function useSeasonLineup(games: Game[]) {
+export function useSeasonLineup(games: MaybeRef<Game[]>, until?: Promise<unknown>) {
   const seasons = ref<Season[]>([])
   const selected = ref<number | null>(null)
   const entries = ref<LineupEntry[]>([])
@@ -26,9 +30,10 @@ export function useSeasonLineup(games: Game[]) {
   const load = async (seasonId?: number) => {
     loading.value = true
     try {
-      const pages = await Promise.all(games.map(game => loadEsportsPage(game, seasonId)))
+      const asking = unref(games)
+      const pages = await Promise.all(asking.map(game => loadEsportsPage(game, seasonId)))
       const answered = pages
-        .map((page, index) => ({page, game: games[index] as Game}))
+        .map((page, index) => ({page, game: asking[index] as Game}))
         .filter((row): row is {page: EsportsPage; game: Game} => row.page != null)
 
       const first = answered[0]?.page
@@ -44,7 +49,10 @@ export function useSeasonLineup(games: Game[]) {
     }
   }
 
-  onMounted(() => load())
+  onMounted(async () => {
+    await until
+    await load()
+  })
 
   const show = async (seasonId: number) => {
     if (seasonId === selected.value) return

@@ -14,19 +14,23 @@ import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {$require} from "@/plugins/require"
-import {identityOf} from "@/domains/esports/island/gameIdentity"
+import {useGames} from "@/domains/esports/island/useGames"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
 import type {Game, Season, Team} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
-const props = defineProps<{game: Game; title: string}>()
+const props = defineProps<{game: Game}>()
 
 const route = useRoute()
 const router = useRouter()
 const motion = useMotionAllowed()
+// What the game is called, the colour it carries and its mark are its record's answer, as is
+// what this page says about it.
+const {identityOf, recordOf} = useGames()
 const identity = computed(() => identityOf(props.game))
+const intro = computed(() => recordOf(props.game)?.intro ?? "")
 
 const seasonFromRoute = () => {
   const raw = route.query.season
@@ -233,14 +237,19 @@ const seasonSaved = (saved: Season) => {
               <p class="font-body text-[11px] tracking-[0.28em] text-ash uppercase">
                 Blueshell Esports
               </p>
-              <h1 class="font-display text-2xl leading-none uppercase sm:text-4xl">
-                {{ title }}
+              <!-- min-h holds the line while the records answer, so the name arriving does
+                   not shift the header down. -->
+              <h1 class="min-h-[1em] font-display text-2xl leading-none uppercase sm:text-4xl">
+                {{ identity.name }}
               </h1>
             </div>
           </div>
-          <div class="mt-5 max-w-2xl font-body text-sm leading-relaxed text-ash">
-            <slot name="intro" />
-          </div>
+          <div
+            v-if="intro"
+            class="mt-5 max-w-2xl font-body text-sm leading-relaxed text-ash"
+            data-testid="esports-game-intro"
+            v-html="$markdownToHtml(intro)"
+          />
         </div>
       </header>
 

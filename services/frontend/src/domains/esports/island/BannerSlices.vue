@@ -33,9 +33,14 @@ const props = withDefaults(defineProps<{
    * would simply be undone.
    */
   openId?: SliceItem["id"] | null
-}>(), {mayAdd: false, addLabel: "Add", openId: null})
+  /** Whether each slice offers a way to change what it shows. */
+  mayEdit?: boolean
+}>(), {mayAdd: false, addLabel: "Add", openId: null, mayEdit: false})
 
-const emit = defineEmits<{(event: "add"): void}>()
+const emit = defineEmits<{
+  (event: "add"): void
+  (event: "edit", id: SliceItem["id"]): void
+}>()
 
 const motion = useMotionAllowed()
 
@@ -164,6 +169,29 @@ watch([() => props.openId, () => props.items], () => {
       @focusin="open = index"
       @mouseenter="open = index"
     >
+      <!--
+        Offered only to somebody who may take it up, and belonging to the slice it sits on.
+        Where there is a pointer it waits for one; where there is not, it stands.
+      -->
+      <button
+        v-if="mayEdit"
+        :aria-label="`Edit ${item.title}`"
+        class="team-slice__edit"
+        :data-testid="`${testidPrefix}-edit-${item.id}`"
+        type="button"
+        @click.stop="emit('edit', item.id)"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+        </svg>
+      </button>
+
       <img
         v-if="item.banner"
         alt=""
@@ -265,6 +293,40 @@ watch([() => props.openId, () => props.items], () => {
 
 .team-slice--last {
   clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* Hidden rather than transparent, for the same reason as the strip's: a see-through
+   affordance still answers a click. */
+.team-slice__edit {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 3;
+  visibility: hidden;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  background: color-mix(in oklab, var(--color-void) 78%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.team-slice__edit svg {
+  width: 14px;
+  height: 14px;
+}
+
+.team-slice:hover .team-slice__edit,
+.team-slice:focus-within .team-slice__edit {
+  visibility: visible;
+}
+
+@media (hover: none) {
+  .team-slice__edit {
+    visibility: visible;
+  }
 }
 
 .team-slice--add {
@@ -512,7 +574,41 @@ watch([() => props.openId, () => props.items], () => {
     min-height: 0;
   }
 
-  .team-slice--add {
+  /* Hidden rather than transparent, for the same reason as the strip's: a see-through
+   affordance still answers a click. */
+.team-slice__edit {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 3;
+  visibility: hidden;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  background: color-mix(in oklab, var(--color-void) 78%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.team-slice__edit svg {
+  width: 14px;
+  height: 14px;
+}
+
+.team-slice:hover .team-slice__edit,
+.team-slice:focus-within .team-slice__edit {
+  visibility: visible;
+}
+
+@media (hover: none) {
+  .team-slice__edit {
+    visibility: visible;
+  }
+}
+
+.team-slice--add {
     width: 100%;
     min-height: 5.5rem;
   }

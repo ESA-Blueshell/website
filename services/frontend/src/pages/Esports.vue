@@ -223,7 +223,7 @@ const seasonSaved = (saved: Season) => {
         >
           <banner-slices
             accent="var(--color-brand)"
-            add-label="Add a team"
+            add-label="Add a game"
             :items="slices"
             :may-add="mayEdit"
             :open-id="justAdded"
@@ -261,6 +261,7 @@ const seasonSaved = (saved: Season) => {
 
         <add-team-dialog
           accent="var(--color-brand)"
+          :fielded-games="entries.map(entry => entry.game)"
           :fielded-team-ids="alreadyFielded"
           :games="GAMES.map(one => ({game: one.game, name: one.name}))"
           :open="adding"

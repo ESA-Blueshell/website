@@ -62,11 +62,38 @@ test.describe("adding a team to the season on show", () => {
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
 
-    const options = page.getByTestId("add-team-existing").locator("option")
+    const matches = page.getByTestId("add-team-matches").locator("button")
     // BS Waterboarders and BS SpicyWater already play this season; only the third is left.
-    await expect(options.filter({hasText: "BS Old Guard"})).toHaveCount(1)
-    await expect(options.filter({hasText: "BS Waterboarders"})).toHaveCount(0)
-    await expect(options.filter({hasText: "BS SpicyWater"})).toHaveCount(0)
+    await expect(matches.filter({hasText: "BS Old Guard"})).toHaveCount(1)
+    await expect(matches.filter({hasText: "BS Waterboarders"})).toHaveCount(0)
+    await expect(matches.filter({hasText: "BS SpicyWater"})).toHaveCount(0)
+  })
+
+  test("the team picker is typed at rather than scrolled through", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+
+    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("add-team-source-existing").click()
+
+    // Typing narrows to what was asked for.
+    await page.getByTestId("add-team-existing").fill("old")
+    await expect(page.getByTestId("add-team-match-3")).toBeVisible()
+
+    await page.getByTestId("add-team-existing").fill("nothing answers to this")
+    await expect(page.getByTestId("add-team-matches")).toHaveCount(0)
+    await expect(page.getByTestId("add-team-no-matches")).toBeVisible()
+
+    // Picking one puts the search away and says what was chosen.
+    await page.getByTestId("add-team-existing").fill("guard")
+    await page.getByTestId("add-team-match-3").click()
+    await expect(page.getByTestId("add-team-chosen")).toContainText("BS Old Guard")
+    await expect(page.getByTestId("add-team-existing")).toHaveCount(0)
+
+    // And it can be handed back.
+    await page.getByTestId("add-team-unpick").click()
+    await expect(page.getByTestId("add-team-existing")).toBeVisible()
   })
 
   test("picking a team that played before shows exactly who would come with it", async ({page}) => {
@@ -76,7 +103,7 @@ test.describe("adding a team to the season on show", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
-    await page.getByTestId("add-team-existing").selectOption("3")
+    await page.getByTestId("add-team-match-3").click()
 
     const lineup = page.getByTestId("add-team-lineup")
     await expect(lineup).toBeVisible()
@@ -100,7 +127,7 @@ test.describe("adding a team to the season on show", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
-    await page.getByTestId("add-team-existing").selectOption("3")
+    await page.getByTestId("add-team-match-3").click()
     await page.getByTestId("add-team-player-12").locator("input").uncheck()
     await page.getByTestId("add-team-save").click()
 
@@ -123,7 +150,7 @@ test.describe("adding a team to the season on show", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
-    await page.getByTestId("add-team-existing").selectOption("3")
+    await page.getByTestId("add-team-match-3").click()
     await page.getByTestId("add-team-player-11").locator("input").uncheck()
     await page.getByTestId("add-team-player-12").locator("input").uncheck()
     await page.getByTestId("add-team-save").click()
@@ -131,6 +158,36 @@ test.describe("adding a team to the season on show", () => {
     await expect(page.getByTestId("add-team-dialog")).toBeHidden()
     expect(written).toEqual([])
     await expect(page.getByTestId("team-roster-3")).toBeVisible()
+  })
+
+  test("the index offers a game rather than a team, and only games not already there", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(INDEX)
+
+    await expect(page.getByTestId("esports-game-add")).toContainText("Add a game")
+    await page.getByTestId("esports-game-add").click()
+
+    // Named for what it does, and asking the game before anything else.
+    await expect(page.getByTestId("add-team-dialog")).toContainText("Add a game")
+    const games = page.getByTestId("add-team-game").locator("option")
+    // Valorant and CS2 already play this season, so there is nothing to add of them.
+    await expect(games.filter({hasText: "Rocket League"})).toHaveCount(1)
+    await expect(games.filter({hasText: "Valorant"})).toHaveCount(0)
+    await expect(games.filter({hasText: "CS2"})).toHaveCount(0)
+  })
+
+  test("a game's own page still offers a team", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+
+    await expect(page.getByTestId("team-roster-add")).toContainText("Add a team")
+    await page.getByTestId("team-roster-add").click()
+
+    // The game is settled by the page, so it is not asked for.
+    await expect(page.getByTestId("add-team-dialog")).toContainText("Add a team")
+    await expect(page.getByTestId("add-team-game")).toHaveCount(0)
   })
 
   test("adding a team in a game with none this season puts that game on the index", async ({page}) => {

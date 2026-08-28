@@ -94,15 +94,10 @@ class AuthorizationServerConfig {
             }
         }
 
-    // Traefik strips `/api` before forwarding, so re-add it so the redirect
-    // lands at the public URL and the SPA's off-SPA navigation re-enters this chain.
     private fun loginRedirectEntryPoint(): AuthenticationEntryPoint =
         AuthenticationEntryPoint { request, response, _ ->
-            val publicPath = "/api${request.requestURI}"
-            val query = request.queryString
-            val originalUrl = if (!query.isNullOrEmpty()) "$publicPath?$query" else publicPath
-            val encoded = URLEncoder.encode(originalUrl, StandardCharsets.UTF_8)
-            response.sendRedirect("/login?redirect=$encoded")
+            val target = loginRedirectTarget(request.requestURI, request.queryString)
+            response.sendRedirect("/login?redirect=${URLEncoder.encode(target, StandardCharsets.UTF_8)}")
         }
 
     @Bean
@@ -138,3 +133,25 @@ class AuthorizationServerConfig {
         return InMemoryOAuth2AuthorizationConsentService()
     }
 }
+
+/** Where a member lands after logging in when the page they wanted is not safe to return to. */
+internal const val DEFAULT_POST_LOGIN_PATH = "/"
+
+/**
+ * The value that goes in `/login?redirect=…` for a request that arrived unauthenticated.
+ *
+ * Traefik strips `/api` before forwarding, so it is re-added: the redirect has to name the
+ * public URL for the frontend's off-SPA navigation to re-enter this chain.
+ *
+ * The frontend navigates to whatever this returns, so it must be a path on this site. A value
+ * that is protocol-relative (`//host`, `/\host`) or not rooted at `/` would leave the origin,
+ * and is replaced by [DEFAULT_POST_LOGIN_PATH] rather than passed through (CWE-601).
+ */
+internal fun loginRedirectTarget(requestUri: String, queryString: String?): String {
+    if (!isSameOriginPath(requestUri)) return DEFAULT_POST_LOGIN_PATH
+    val publicPath = "/api$requestUri"
+    return if (!queryString.isNullOrEmpty()) "$publicPath?$queryString" else publicPath
+}
+
+private fun isSameOriginPath(value: String): Boolean =
+    value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\")

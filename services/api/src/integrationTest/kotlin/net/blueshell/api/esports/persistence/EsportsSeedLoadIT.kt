@@ -23,7 +23,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
     @Autowired private lateinit var jdbc: JdbcTemplate
 
-    private val tables = listOf("season", "team", "team_roster_entry")
+    private val tables = listOf("game_page", "season", "team", "team_roster_entry")
 
     private fun count(table: String): Int =
         jdbc.queryForObject("SELECT COUNT(*) FROM $table WHERE deleted_at = '9999-12-31 23:59:59'", Int::class.java)!!
@@ -32,8 +32,9 @@ class EsportsSeedLoadIT : UserTestSupport() {
     fun `every record in the files lands`() {
         runLoader()
 
-        // The history the pages published, recovered: twelve seasons, twenty-seven teams and
-        // five hundred and twenty-six appearances.
+        // The history the pages published, recovered: eight games, twelve seasons, twenty-seven
+        // teams and five hundred and twenty-six appearances.
+        assertThat(count("game_page")).isEqualTo(8)
         assertThat(count("season")).isEqualTo(12)
         assertThat(count("team")).isEqualTo(27)
         assertThat(count("team_roster_entry")).isEqualTo(526)
@@ -62,6 +63,55 @@ class EsportsSeedLoadIT : UserTestSupport() {
                 Int::class.java,
             ),
         ).isGreaterThan(0)
+    }
+
+    @Test
+    fun `a game carries the name and the art the file gives it`() {
+        runLoader()
+
+        val row = jdbc.queryForMap("SELECT name, slug, accent, mark, banner FROM game_page WHERE game = 'VALORANT'")
+        assertThat(row["name"]).isEqualTo("Valorant")
+        assertThat(row["slug"]).isEqualTo("valorant")
+        assertThat(row["accent"]).isEqualTo("#ff4655")
+        assertThat(row["mark"]).isEqualTo("valorant.png")
+        assertThat(row["banner"]).isEqualTo("valorantesports1.jpg")
+    }
+
+    @Test
+    fun `a game nobody has drawn art for carries none rather than something invented`() {
+        runLoader()
+
+        // Trackmania has never had an accent or a mark written for it. The island reads such a
+        // game on its own colour, which it can only do if the record says there is none.
+        val row = jdbc.queryForMap("SELECT accent, mark, banner FROM game_page WHERE game = 'TRACKMANIA'")
+        assertThat(row["accent"]).isNull()
+        assertThat(row["mark"]).isNull()
+        assertThat(row["banner"]).isNull()
+    }
+
+    @Test
+    fun `a game renamed in the file is renamed on the next run`() {
+        runLoader()
+        jdbc.update("UPDATE game_page SET name = 'Something Else' WHERE game = 'GEOGUESSR'")
+
+        runLoader()
+
+        // The files are the reviewed record, the same way they are for a roster entry.
+        assertThat(jdbc.queryForObject("SELECT name FROM game_page WHERE game = 'GEOGUESSR'", String::class.java))
+            .isEqualTo("GeoGuessr")
+    }
+
+    @Test
+    fun `a game the file lists is brought back, unlike everything else the file lists`() {
+        runLoader()
+        jdbc.update("UPDATE game_page SET deleted_at = NOW(6) WHERE game = 'SMASH'")
+
+        runLoader()
+
+        // A game is what a team points at, so the file listing one is the statement that it
+        // exists. A team or a roster entry is the other way round: removing it is a decision
+        // the next run leaves alone.
+        assertThat(count("game_page")).isEqualTo(8)
     }
 
     @Test

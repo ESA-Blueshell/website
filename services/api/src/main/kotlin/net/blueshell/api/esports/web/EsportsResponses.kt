@@ -22,11 +22,19 @@ data class TeamResponse(
     val image: String?,
 )
 
-@Schema(description = "How a game presents itself: its address, its copy, and whether it is still fielded")
+@Schema(description = "A game: what it is called, the art it is drawn with, and how its page presents it")
 data class GamePageResponse(
     val game: Game,
+    @Schema(description = "What the pages print for this game")
+    val name: String,
     @Schema(description = "The address the game's page answers to")
     val slug: String,
+    @Schema(description = "The colour that carries this game, where one has been chosen")
+    val accent: String?,
+    @Schema(description = "Asset file name for the game's own mark, where it has one")
+    val mark: String?,
+    @Schema(description = "Asset file name for the image behind the game on the index")
+    val banner: String?,
     @Schema(description = "What the page says about the game, where anything is said")
     val intro: String?,
     @Schema(description = "Where the game sits among the others")

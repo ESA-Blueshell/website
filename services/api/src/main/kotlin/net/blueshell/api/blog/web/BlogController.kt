@@ -1,14 +1,10 @@
-package net.blueshell.api.domain.blog.web
+package net.blueshell.api.blog.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.domain.blog.application.BlogService
-import net.blueshell.api.domain.blog.application.BlogUseCases
-import net.blueshell.api.domain.blog.web.dto.request.CreateBlogRequest
-import net.blueshell.api.domain.blog.web.dto.request.UpdateBlogRequest
-import net.blueshell.api.domain.blog.web.dto.response.BlogResponse
-import net.blueshell.api.domain.blog.web.mapping.response.asResponse
+import net.blueshell.api.blog.domain.BlogService
+import net.blueshell.api.blog.domain.BlogUseCases
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus

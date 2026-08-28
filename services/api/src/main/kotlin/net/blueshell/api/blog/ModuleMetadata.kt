@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog
+package net.blueshell.api.blog
 
 import org.springframework.modulith.ApplicationModule
 import org.springframework.modulith.PackageInfo

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog.web
+package net.blueshell.api.blog.web
 
 import net.blueshell.api.factory.blog.web.request.BlogRequestFactory
 import net.blueshell.api.shared.enums.Role

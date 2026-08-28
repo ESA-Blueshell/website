@@ -1,8 +1,7 @@
-package net.blueshell.api.domain.blog.application
+package net.blueshell.api.blog.domain
 
-import net.blueshell.api.domain.blog.application.exception.BlogNotFoundException
-import net.blueshell.api.domain.blog.persistence.Blog
-import net.blueshell.api.domain.blog.persistence.repository.BlogRepository
+import net.blueshell.api.blog.persistence.Blog
+import net.blueshell.api.blog.persistence.BlogRepository
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationEventPublisher

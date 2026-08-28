@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog.persistence
+package net.blueshell.api.blog.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.shared.model.AuditedAutoIdEntity

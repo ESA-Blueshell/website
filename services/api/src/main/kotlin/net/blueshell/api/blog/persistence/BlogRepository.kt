@@ -1,7 +1,6 @@
-package net.blueshell.api.domain.blog.persistence.repository
+package net.blueshell.api.blog.persistence
 
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.domain.blog.persistence.Blog
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

@@ -1,6 +1,6 @@
-package net.blueshell.api.domain.blog.application
+package net.blueshell.api.blog.domain
 
-import net.blueshell.api.domain.blog.persistence.Blog
+import net.blueshell.api.blog.persistence.Blog
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

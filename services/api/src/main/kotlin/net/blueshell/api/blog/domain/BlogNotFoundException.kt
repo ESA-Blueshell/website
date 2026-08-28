@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog.application.exception
+package net.blueshell.api.blog.domain
 
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException

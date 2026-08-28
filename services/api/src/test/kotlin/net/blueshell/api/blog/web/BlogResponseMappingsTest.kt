@@ -1,6 +1,6 @@
-package net.blueshell.api.domain.blog.web.mapping.response
+package net.blueshell.api.blog.web
 
-import net.blueshell.api.domain.blog.application.sanitizeBlogHtml
+import net.blueshell.api.blog.domain.sanitizeBlogHtml
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

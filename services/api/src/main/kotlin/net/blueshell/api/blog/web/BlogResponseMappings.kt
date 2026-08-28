@@ -1,7 +1,6 @@
-package net.blueshell.api.domain.blog.web.mapping.response
+package net.blueshell.api.blog.web
 
-import net.blueshell.api.domain.blog.persistence.Blog
-import net.blueshell.api.domain.blog.web.dto.response.BlogResponse
+import net.blueshell.api.blog.persistence.Blog
 
 fun Blog.asResponse(frontendUrl: String): BlogResponse =
     BlogResponse(

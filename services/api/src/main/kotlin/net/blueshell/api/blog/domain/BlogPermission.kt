@@ -1,9 +1,8 @@
-package net.blueshell.api.domain.blog.application.permission
+package net.blueshell.api.blog.domain
 
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 
-import net.blueshell.api.domain.blog.application.BlogService
-import net.blueshell.api.domain.blog.persistence.Blog
+import net.blueshell.api.blog.persistence.Blog
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired

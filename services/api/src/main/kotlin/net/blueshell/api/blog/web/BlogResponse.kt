@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog.web.dto.response
+package net.blueshell.api.blog.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant

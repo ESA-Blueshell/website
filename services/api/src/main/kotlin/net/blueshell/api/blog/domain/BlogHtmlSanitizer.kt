@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.blog.application
+package net.blueshell.api.blog.domain
 
 import org.jsoup.Jsoup
 import org.jsoup.safety.Cleaner

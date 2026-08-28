@@ -1,16 +1,18 @@
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
+import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
+import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import {$require} from "@/plugins/require"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
-import type {Game} from "../adapters/esports"
+import type {Game, Season} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
@@ -32,7 +34,7 @@ const rememberSeason = (id: number) => {
   void router.replace({query: {...route.query, season: String(id)}})
 }
 
-const {loading, teams, seasons, season, hasRosters, showSeason} = useEsportsPage(
+const {page, loading, teams, seasons, season, hasRosters, showSeason} = useEsportsPage(
   props.game,
   seasonFromRoute,
   rememberSeason,
@@ -71,6 +73,31 @@ const entrance = (index: number) => ({
     ease: [0.22, 1, 0.36, 1] as const,
   },
 })
+
+const mayEdit = useMayEditEsports()
+const editing = ref<Season | null>(null)
+const editorOpen = ref(false)
+
+const editSeason = (season: Season) => {
+  editing.value = season
+  editorOpen.value = true
+}
+
+const closeEditor = (open: boolean) => {
+  editorOpen.value = open
+}
+
+// The strip and the labels under it both read from the loaded page, so the saved season is
+// written back into it rather than fetched again.
+const seasonSaved = (saved: Season) => {
+  const current = page.value
+  if (!current) return
+  page.value = {
+    ...current,
+    seasons: current.seasons.map(one => (one.id === saved.id ? saved : one)),
+    season: current.season?.id === saved.id ? saved : current.season,
+  }
+}
 </script>
 
 <template>
@@ -115,9 +142,20 @@ const entrance = (index: number) => ({
       >
         <season-timeline
           :accent="identity.accent"
+          :may-edit="mayEdit"
           :seasons="seasons"
           :selected-id="currentSeasonId"
+          @edit="editSeason"
           @select="showSeason"
+        />
+
+        <season-dialog
+          v-if="editing"
+          :accent="identity.accent"
+          :open="editorOpen"
+          :season="editing"
+          @saved="seasonSaved"
+          @update:open="closeEditor"
         />
       </section>
 

@@ -5,13 +5,18 @@ import type {Season} from "../adapters/esports"
 
 defineOptions({name: "SeasonTimeline"})
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   seasons: Season[]
   selectedId: number | null
   accent: string
-}>()
+  /** Whether to offer the edit affordance. Decided by the page, which knows who is reading. */
+  mayEdit?: boolean
+}>(), {mayEdit: false})
 
-const emit = defineEmits<{(event: "select", id: number): void}>()
+const emit = defineEmits<{
+  (event: "select", id: number): void
+  (event: "edit", season: Season): void
+}>()
 
 const HEIGHT = 104
 /**
@@ -48,6 +53,15 @@ const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)
 const width = ref(0)
 const hovered = ref<number | null>(null)
+/**
+ * The season whose affordance was last taken up.
+ *
+ * It stays visible until the pointer goes to another season. Opening the dialog moves focus
+ * into it, which means the affordance is neither hovered nor focused while it is open — and
+ * a hidden element cannot be given focus back when it closes. Pinning it is what gives the
+ * dialog somewhere to return to, and does not depend on anything happening in time.
+ */
+const pinned = ref<number | null>(null)
 
 let observer: ResizeObserver | null = null
 onMounted(() => {
@@ -121,6 +135,11 @@ watch([() => props.selectedId, track, width], () => {
 
 const yOf = (id: number) => nodes.value.find(n => n.id === id)?.y ?? HEIGHT / 2
 
+const enter = (id: number) => {
+  hovered.value = id
+  if (id !== pinned.value) pinned.value = null
+}
+
 const step = (from: number, by: number) => {
   const next = bands.value[from + by]
   if (next) emit("select", next.season.id)
@@ -153,40 +172,69 @@ const step = (from: number, by: number) => {
           changes nothing.
         -->
         <div class="season-strip__bands">
-          <button
+          <div
             v-for="(band, index) in bands"
             :key="band.season.id"
-            class="season-band"
-            :class="{
-              'season-band--on': band.season.id === selectedId,
-              'season-band--lit': band.season.id === hovered,
-              'season-band--last': index === bands.length - 1,
-            }"
-            :aria-current="band.season.id === selectedId ? 'true' : undefined"
-            :data-testid="`esports-season-node-${band.season.id}`"
-            type="button"
-            @click="emit('select', band.season.id)"
-            @focus="hovered = band.season.id"
-            @keydown.left.prevent="step(index, -1)"
-            @keydown.right.prevent="step(index, 1)"
-            @mouseenter="hovered = band.season.id"
+            class="season-slot"
+            :class="{'season-slot--editing': band.season.id === pinned}"
+            @mouseenter="enter(band.season.id)"
           >
-            <span class="sr-only">{{ band.season.name }}</span>
-            <span
-              aria-hidden="true"
-              class="season-band__wash"
-            />
-            <span
-              aria-hidden="true"
-              class="season-band__label season-band__label--half"
-              :style="{top: band.high ? `${yOf(band.season.id) + 18}px` : `${yOf(band.season.id) - 34}px`}"
-            >{{ band.half }}</span>
-            <span
-              aria-hidden="true"
-              class="season-band__label season-band__label--year"
-              :style="{top: band.high ? `${yOf(band.season.id) + 32}px` : `${yOf(band.season.id) - 20}px`}"
-            >{{ band.year }}</span>
-          </button>
+            <button
+              class="season-band"
+              :class="{
+                'season-band--on': band.season.id === selectedId,
+                'season-band--lit': band.season.id === hovered,
+                'season-band--last': index === bands.length - 1,
+              }"
+              :aria-current="band.season.id === selectedId ? 'true' : undefined"
+              :data-testid="`esports-season-node-${band.season.id}`"
+              type="button"
+              @click="emit('select', band.season.id)"
+              @focus="hovered = band.season.id"
+              @keydown.left.prevent="step(index, -1)"
+              @keydown.right.prevent="step(index, 1)"
+            >
+              <span class="sr-only">{{ band.season.name }}</span>
+              <span
+                aria-hidden="true"
+                class="season-band__wash"
+              />
+              <span
+                aria-hidden="true"
+                class="season-band__label season-band__label--half"
+                :style="{top: band.high ? `${yOf(band.season.id) + 18}px` : `${yOf(band.season.id) - 34}px`}"
+              >{{ band.half }}</span>
+              <span
+                aria-hidden="true"
+                class="season-band__label season-band__label--year"
+                :style="{top: band.high ? `${yOf(band.season.id) + 32}px` : `${yOf(band.season.id) - 20}px`}"
+              >{{ band.year }}</span>
+            </button>
+
+            <!--
+              Offered only to somebody who may take it up. Where there is a pointer it belongs
+              to the season being pointed at; where there is not, there is nothing to hover
+              with, so it simply stands.
+            -->
+            <button
+              v-if="mayEdit"
+              :aria-label="`Edit ${band.season.name}`"
+              class="season-slot__edit"
+              :data-testid="`esports-season-edit-${band.season.id}`"
+              type="button"
+              @click="pinned = band.season.id; emit('edit', band.season)"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <svg
@@ -264,12 +312,63 @@ const step = (from: number, by: number) => {
  * their own dots. The division is drawn instead: a slanted rule on the trailing edge, which
  * reads as the same cut the teams below are separated by.
  */
-.season-band {
+.season-slot {
   position: relative;
   flex: 1 1 0;
   min-width: 0;
   height: 100%;
+}
+
+.season-band {
+  position: relative;
+  width: 100%;
+  height: 100%;
   cursor: pointer;
+}
+
+/*
+ * Hidden rather than transparent: an affordance that is merely see-through still answers a
+ * click, and a test that asks whether it is on screen would be told that it is.
+ */
+.season-slot__edit {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 2;
+  visibility: hidden;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  background: color-mix(in oklab, var(--color-void) 78%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.season-slot__edit svg {
+  width: 13px;
+  height: 13px;
+}
+
+/*
+ * Focus-within rather than focus on the affordance itself: hidden means unfocusable, so an
+ * affordance that waited to be focused could never be reached. Focus lands on the band first,
+ * which reveals the affordance sitting behind it, and the next tab reaches it. While its own
+ * dialog is open it stays put, so closing the dialog has somewhere to give focus back to.
+ */
+.season-slot:hover .season-slot__edit,
+.season-slot:focus-within .season-slot__edit,
+.season-slot--editing .season-slot__edit {
+  visibility: visible;
+}
+
+/* No pointer to hover with, so there is no state to reveal it from. */
+@media (hover: none) {
+  .season-slot__edit {
+    visibility: visible;
+  }
 }
 
 .season-band::after {
@@ -305,7 +404,7 @@ const step = (from: number, by: number) => {
   transition: opacity 320ms ease;
 }
 
-.season-band:nth-child(even) .season-band__wash {
+.season-slot:nth-child(even) .season-band__wash {
   opacity: 0.2;
 }
 

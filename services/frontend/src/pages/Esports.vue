@@ -1,17 +1,19 @@
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
+import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
+import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {$require} from "@/plugins/require"
 import {Game as GameEnum} from "@/services/api"
-import type {Game} from "@/domains/esports/adapters/esports"
+import type {Game, Season} from "@/domains/esports/adapters/esports"
 
 defineOptions({name: "EsportsPage"})
 
@@ -65,6 +67,25 @@ const entrance = {
   animate: {opacity: 1, y: 0},
   transition: {duration: motion.duration(0.45), ease: [0.22, 1, 0.36, 1] as const},
 }
+
+const mayEdit = useMayEditEsports()
+const editing = ref<Season | null>(null)
+const editorOpen = ref(false)
+
+const editSeason = (season: Season) => {
+  editing.value = season
+  editorOpen.value = true
+}
+
+const closeEditor = (open: boolean) => {
+  editorOpen.value = open
+}
+
+// The strip reads from this list, so writing the saved season back into it is the whole of
+// showing the change.
+const seasonSaved = (saved: Season) => {
+  seasons.value = seasons.value.map(one => (one.id === saved.id ? saved : one))
+}
 </script>
 
 <template>
@@ -101,9 +122,20 @@ const entrance = {
       >
         <season-timeline
           accent="var(--color-brand)"
+          :may-edit="mayEdit"
           :seasons="seasons"
           :selected-id="selected"
+          @edit="editSeason"
           @select="chooseSeason"
+        />
+
+        <season-dialog
+          v-if="editing"
+          accent="var(--color-brand)"
+          :open="editorOpen"
+          :season="editing"
+          @saved="seasonSaved"
+          @update:open="closeEditor"
         />
       </section>
 

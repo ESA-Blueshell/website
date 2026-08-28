@@ -22,10 +22,21 @@ const emit = defineEmits<{
 
 const motion = useMotionAllowed()
 
-/** How fast the strip travels while an arrow is held under the pointer, in px per ms. */
+/** How fast the strip travels while the pointer rests on its side, in px per ms. */
 const PAN_RATE = 0.55
-/** How much of the strip a click on an arrow moves, as a share of what is in view. */
+/** How much of the strip a click on a chevron moves, as a share of what is in view. */
 const PAN_STEP = 0.8
+/**
+ * How far in from each edge counts as resting on that side, and at most what share of the
+ * strip that may be.
+ *
+ * The side answers the pointer, but only the chevron answers a click: a band under a fade is
+ * still a band to be clicked, and a control the width of this zone would have taken the
+ * seasons at both ends out of reach. The share matters on a narrow strip, where two zones of
+ * a fixed width would between them be most of it.
+ */
+const PAN_ZONE = 84
+const PAN_ZONE_SHARE = 0.18
 
 const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)
@@ -93,20 +104,24 @@ const litFraction = computed<number>(() => {
  * somewhere the visitor cannot see — a shared link, the back button, a season just written
  * down. It is wrong after a click: the node they aimed at would slide out from under the
  * pointer, and whichever band slid into its place would light the line instead.
+ *
+ * The id rather than a flag, because a click is not a promise. Where the page declines to
+ * follow one — a refused read, a parent that ignores it — a flag would sit set and swallow
+ * the next season that did arrive from elsewhere, and the back button would stop centring.
+ * An id only ever holds back the scroll for the one season it names.
  */
-const chosenHere = ref(false)
+const chosenHere = ref<number | null>(null)
 
 const choose = (id: number) => {
-  if (id !== props.selectedId) chosenHere.value = true
+  if (id !== props.selectedId) chosenHere.value = id
   emit("select", id)
 }
 
 /** A strip wider than its window opens on the season being shown, not at the far past. */
 watch([() => props.selectedId, track, width], ([id], [before]) => {
-  if (id !== before && chosenHere.value) {
-    chosenHere.value = false
-    return
-  }
+  const claimed = chosenHere.value
+  chosenHere.value = null
+  if (id !== before && claimed === id) return
   const node = nodes.value.find(n => n.id === props.selectedId)
   const box = scroller.value
   if (!node || !box || box.scrollWidth <= box.clientWidth) return
@@ -135,10 +150,13 @@ watch([track, width], measureScroll, {flush: "post"})
 let panning: number | null = null
 let panDirection = 0
 let panAt = 0
+/** Which way the strip is travelling, for the side that is doing it to show that it is. */
+const travelling = ref(0)
 
 /** Travels while the pointer rests on an arrow, and stops where there is no further to go. */
 const pan = (direction: number) => {
   panDirection = direction
+  travelling.value = direction
   if (panning != null) return
   panAt = performance.now()
   const step = (now: number) => {
@@ -159,8 +177,31 @@ const pan = (direction: number) => {
 
 const rest = () => {
   panDirection = 0
+  travelling.value = 0
   if (panning != null) cancelAnimationFrame(panning)
   panning = null
+}
+
+/**
+ * Whether there is a pointer that can rest on something.
+ *
+ * A touch screen has none: a finger is either on the strip or off it, and dragging is how the
+ * strip is travelled there. Left ungated, the first tap anywhere near an edge would set the
+ * strip moving under it.
+ */
+const canHover = () => typeof window === "undefined"
+  || typeof window.matchMedia !== "function"
+  || window.matchMedia("(hover: hover)").matches
+
+/** Travels while the pointer is down either side of the strip, and stands still between. */
+const aim = (event: MouseEvent) => {
+  const box = strip.value?.getBoundingClientRect()
+  if (!box || !canHover()) return
+  const zone = Math.min(PAN_ZONE, box.width * PAN_ZONE_SHARE)
+  const from = event.clientX - box.left
+  if (from <= zone && canPanBack.value) pan(-1)
+  else if (from >= box.width - zone && canPanOn.value) pan(1)
+  else rest()
 }
 
 /** A click moves a screenful, which is the gesture for somebody who is not hovering at all. */
@@ -197,7 +238,8 @@ const step = (from: number, by: number) => {
       '--h': `${STRIP.height}px`,
       '--track': `${track}px`,
     }"
-    @mouseleave="hovered = null"
+    @mousemove="aim"
+    @mouseleave="hovered = null; rest()"
   >
     <div
       ref="scroller"
@@ -419,12 +461,10 @@ const step = (from: number, by: number) => {
       v-if="canPanBack"
       aria-label="Show earlier seasons"
       class="season-strip__pan season-strip__pan--back"
+      :class="{'season-strip__pan--live': travelling === -1}"
       data-testid="esports-season-pan-back"
       type="button"
-      @blur="rest"
       @click="panBy(-1)"
-      @mouseenter="pan(-1)"
-      @mouseleave="rest"
     >
       <svg
         aria-hidden="true"
@@ -443,12 +483,10 @@ const step = (from: number, by: number) => {
       v-if="canPanOn"
       aria-label="Show later seasons"
       class="season-strip__pan season-strip__pan--on"
+      :class="{'season-strip__pan--live': travelling === 1}"
       data-testid="esports-season-pan-on"
       type="button"
-      @blur="rest"
       @click="panBy(1)"
-      @mouseenter="pan(1)"
-      @mouseleave="rest"
     >
       <svg
         aria-hidden="true"
@@ -736,20 +774,22 @@ const step = (from: number, by: number) => {
 /*
  * The way to the seasons that do not fit.
  *
- * The side of the strip rather than a button on it: the whole edge answers the pointer, and
- * what it shows is a fade coming out of that edge with a chevron in it — the strip carrying on
- * that way rather than a control sitting on top of it. Resting anywhere in the fade travels;
- * the chevron is where to look, not a target to hit.
+ * The side of the strip answers the pointer — resting anywhere down either edge travels that
+ * way — and shows a fade with a chevron in it, the strip carrying on rather than a control
+ * sitting on top of it. Only the chevron answers a click, and the fade takes no clicks at
+ * all: a season under either is still a season to be clicked, which a control the width of
+ * the whole edge would have put out of reach.
  */
 .season-strip__pan {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 50%;
   z-index: 3;
+  translate: 0 -50%;
   display: grid;
-  align-items: center;
-  width: 84px;
-  padding: 0 12px;
+  place-items: center;
+  width: 44px;
+  height: 52px;
+  padding: 0;
   border: 0;
   background: none;
   color: var(--color-chalk);
@@ -759,12 +799,14 @@ const step = (from: number, by: number) => {
 .season-strip__pan::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: -26px;
+  bottom: -26px;
   pointer-events: none;
   opacity: 0.72;
   transition: opacity 220ms ease;
 }
 
+.season-strip__pan--live::before,
 .season-strip__pan:hover::before,
 .season-strip__pan:focus-visible::before {
   opacity: 1;
@@ -778,6 +820,7 @@ const step = (from: number, by: number) => {
   transition: scale 220ms ease, opacity 220ms ease;
 }
 
+.season-strip__pan--live svg,
 .season-strip__pan:hover svg,
 .season-strip__pan:focus-visible svg {
   opacity: 1;
@@ -786,19 +829,21 @@ const step = (from: number, by: number) => {
 
 .season-strip__pan--back {
   left: 0;
-  justify-items: start;
 }
 
 .season-strip__pan--back::before {
+  left: 0;
+  right: -40px;
   background: linear-gradient(to right, color-mix(in oklab, var(--color-void) 82%, transparent), transparent);
 }
 
 .season-strip__pan--on {
   right: 0;
-  justify-items: end;
 }
 
 .season-strip__pan--on::before {
+  left: -40px;
+  right: 0;
   background: linear-gradient(to left, color-mix(in oklab, var(--color-void) 82%, transparent), transparent);
 }
 

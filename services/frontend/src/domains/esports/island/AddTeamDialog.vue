@@ -48,6 +48,7 @@ const source = ref<Source>("new")
 const chosenGame = ref<Game | null>(null)
 const name = ref("")
 const chosenTeamId = ref<number | null>(null)
+const teamSearch = ref("")
 const candidates = ref<Team[]>([])
 const lineup = ref<RosterEntry[]>([])
 const lineupFrom = ref<Season | null>(null)
@@ -77,6 +78,29 @@ const heading = computed(() => {
 const offered = computed<Team[]>(() =>
   candidates.value.filter(team => !props.fieldedTeamIds.includes(team.id)))
 
+/**
+ * What typing narrows the list to.
+ *
+ * A game the association has played for years has more teams than a picker can usefully
+ * list, so the list is what was asked for rather than everything. Typing nothing offers
+ * the first handful, which is enough where there are only a few.
+ */
+const matches = computed<Team[]>(() => {
+  const term = teamSearch.value.trim().toLowerCase()
+  const found = term === ""
+    ? offered.value
+    : offered.value.filter(team => team.name.toLowerCase().includes(term))
+  return found.slice(0, 8)
+})
+
+const chosenTeam = computed<Team | null>(() =>
+  offered.value.find(team => team.id === chosenTeamId.value) ?? null)
+
+const pick = (team: Team) => {
+  chosenTeamId.value = team.id
+  teamSearch.value = ""
+}
+
 const carried = computed<RosterEntry[]>(() => lineup.value.filter(entry => !dropped.value.has(entry.id)))
 
 const complete = computed(() => {
@@ -89,6 +113,7 @@ const reset = () => {
   chosenGame.value = props.game ?? null
   name.value = ""
   chosenTeamId.value = null
+  teamSearch.value = ""
   candidates.value = []
   lineup.value = []
   lineupFrom.value = null
@@ -278,29 +303,67 @@ const submit = async () => {
         >
       </label>
 
-      <label
+      <div
         v-else
         class="team-form__field"
       >
         <span class="team-form__label">Team</span>
-        <select
-          v-model="chosenTeamId"
-          class="team-form__input"
-          data-testid="add-team-existing"
-          required
+
+        <!-- Chosen, and shown as chosen: the search is put away until it is wanted again. -->
+        <span
+          v-if="chosenTeam"
+          class="team-form__chosen"
+          data-testid="add-team-chosen"
         >
-          <option :value="null">
-            Pick a team
-          </option>
-          <option
-            v-for="team in offered"
-            :key="team.id"
-            :value="team.id"
+          {{ chosenTeam.name }}
+          <button
+            :aria-label="`Choose a different team than ${chosenTeam.name}`"
+            class="team-form__unpick"
+            data-testid="add-team-unpick"
+            type="button"
+            @click="chosenTeamId = null"
+          >&times;</button>
+        </span>
+
+        <template v-else>
+          <input
+            v-model="teamSearch"
+            aria-label="Search the teams that played before"
+            class="team-form__input"
+            data-testid="add-team-existing"
+            placeholder="Search a team that played before"
+            type="text"
           >
-            {{ team.name }}
-          </option>
-        </select>
-      </label>
+          <ul
+            v-if="matches.length > 0"
+            class="team-form__matches"
+            data-testid="add-team-matches"
+          >
+            <li
+              v-for="team in matches"
+              :key="team.id"
+            >
+              <button
+                class="team-form__match"
+                :data-testid="`add-team-match-${team.id}`"
+                type="button"
+                @click="pick(team)"
+              >
+                {{ team.name }}
+              </button>
+            </li>
+          </ul>
+          <p
+            v-else
+            class="team-form__note"
+            data-testid="add-team-no-matches"
+          >
+            {{ offered.length === 0
+              ? "Every team of this game already plays this season."
+              : "No team of this game answers to that." }}
+          </p>
+        </template>
+      </div>
 
       <fieldset
         v-if="source === 'existing' && lineup.length > 0"
@@ -420,6 +483,53 @@ const submit = async () => {
   color: #f2f4f6;
   font-family: inherit;
   font-size: 0.95rem;
+}
+
+/* The same shape the member picker in the line-up editor uses, so the two read alike. */
+.team-form__matches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-form__match {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: #262626;
+  border: 0;
+  color: #f2f4f6;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.team-form__match:hover,
+.team-form__match:focus-visible {
+  background: color-mix(in oklab, var(--dialog-accent, #3387fa) 30%, #262626);
+}
+
+.team-form__chosen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.5rem;
+  background: #1c1c1c;
+  border: 1px solid rgb(255 255 255 / 12%);
+  color: #f2f4f6;
+  font-size: 0.95rem;
+}
+
+.team-form__unpick {
+  background: none;
+  border: 0;
+  color: #a0a6ac;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .team-form__lineup {

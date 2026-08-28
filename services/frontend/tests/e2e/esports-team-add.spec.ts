@@ -62,11 +62,38 @@ test.describe("adding a team to the season on show", () => {
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
 
-    const options = page.getByTestId("add-team-existing").locator("option")
+    const matches = page.getByTestId("add-team-matches").locator("button")
     // BS Waterboarders and BS SpicyWater already play this season; only the third is left.
-    await expect(options.filter({hasText: "BS Old Guard"})).toHaveCount(1)
-    await expect(options.filter({hasText: "BS Waterboarders"})).toHaveCount(0)
-    await expect(options.filter({hasText: "BS SpicyWater"})).toHaveCount(0)
+    await expect(matches.filter({hasText: "BS Old Guard"})).toHaveCount(1)
+    await expect(matches.filter({hasText: "BS Waterboarders"})).toHaveCount(0)
+    await expect(matches.filter({hasText: "BS SpicyWater"})).toHaveCount(0)
+  })
+
+  test("the team picker is typed at rather than scrolled through", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+
+    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("add-team-source-existing").click()
+
+    // Typing narrows to what was asked for.
+    await page.getByTestId("add-team-existing").fill("old")
+    await expect(page.getByTestId("add-team-match-3")).toBeVisible()
+
+    await page.getByTestId("add-team-existing").fill("nothing answers to this")
+    await expect(page.getByTestId("add-team-matches")).toHaveCount(0)
+    await expect(page.getByTestId("add-team-no-matches")).toBeVisible()
+
+    // Picking one puts the search away and says what was chosen.
+    await page.getByTestId("add-team-existing").fill("guard")
+    await page.getByTestId("add-team-match-3").click()
+    await expect(page.getByTestId("add-team-chosen")).toContainText("BS Old Guard")
+    await expect(page.getByTestId("add-team-existing")).toHaveCount(0)
+
+    // And it can be handed back.
+    await page.getByTestId("add-team-unpick").click()
+    await expect(page.getByTestId("add-team-existing")).toBeVisible()
   })
 
   test("picking a team that played before shows exactly who would come with it", async ({page}) => {
@@ -76,7 +103,7 @@ test.describe("adding a team to the season on show", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
-    await page.getByTestId("add-team-existing").selectOption("3")
+    await page.getByTestId("add-team-match-3").click()
 
     const lineup = page.getByTestId("add-team-lineup")
     await expect(lineup).toBeVisible()
@@ -100,7 +127,7 @@ test.describe("adding a team to the season on show", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
-    await page.getByTestId("add-team-existing").selectOption("3")
+    await page.getByTestId("add-team-match-3").click()
     await page.getByTestId("add-team-player-12").locator("input").uncheck()
     await page.getByTestId("add-team-save").click()
 
@@ -123,7 +150,7 @@ test.describe("adding a team to the season on show", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("add-team-source-existing").click()
-    await page.getByTestId("add-team-existing").selectOption("3")
+    await page.getByTestId("add-team-match-3").click()
     await page.getByTestId("add-team-player-11").locator("input").uncheck()
     await page.getByTestId("add-team-player-12").locator("input").uncheck()
     await page.getByTestId("add-team-save").click()

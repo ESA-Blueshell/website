@@ -39,6 +39,11 @@ files/
 files
 data
 /storage/
+# What the esports upload tests write. They run with the api module as their working
+# directory, and the rule above anchors to the repository root, so it misses this.
+services/api/storage/team-posters/
+services/api/storage/esports-banners/
+services/api/storage/roster-icons/
 private
 **/.yarn
 .playwright
@@ -55,6 +60,9 @@ backups
 # the PR. Proposals stay ignored: they are working documents, not repo record.
 !docs/**/*.md
 docs/proposals/**
+# The game art's credit file. CC BY asks for the attribution to be published
+# wherever the images are, so the row for each file travels with it.
+!gameart/CREDITS.md
 .idea
 *dump.sql*
 

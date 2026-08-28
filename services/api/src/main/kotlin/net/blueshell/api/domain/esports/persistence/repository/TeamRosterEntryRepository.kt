@@ -100,4 +100,6 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     ): List<Long>
 
     fun findAllByUserId(userId: Long): List<TeamRosterEntry>
+
+    fun countBySeasonId(seasonId: Long): Long
 }

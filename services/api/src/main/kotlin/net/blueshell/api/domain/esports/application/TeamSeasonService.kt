@@ -1,6 +1,7 @@
 package net.blueshell.api.domain.esports.application
 
 import net.blueshell.api.domain.esports.persistence.TeamSeason
+import net.blueshell.api.domain.esports.persistence.repository.TeamRosterEntryRepository
 import net.blueshell.api.domain.esports.persistence.repository.TeamSeasonRepository
 import net.blueshell.api.shared.enums.Game
 import org.springframework.stereotype.Service
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class TeamSeasonService(
     private val fielded: TeamSeasonRepository,
+    private val entries: TeamRosterEntryRepository,
     private val teams: TeamService,
     private val seasons: SeasonService,
 ) {
@@ -28,6 +30,16 @@ class TeamSeasonService(
     /** The seasons a team was fielded in, newest first. */
     @Transactional(readOnly = true)
     fun seasonsOf(teamId: Long): List<TeamSeason> = fielded.findAllByTeamId(teamId)
+
+    /**
+     * How much a season holds, so a removal can say what goes with it before it happens.
+     *
+     * Counted rather than listed: what the reader needs before deciding is the size of what
+     * they are about to hide, not its contents.
+     */
+    @Transactional(readOnly = true)
+    fun contentsOf(seasonId: Long): Pair<Long, Long> =
+        fielded.countBySeasonId(seasonId) to entries.countBySeasonId(seasonId)
 
     @Transactional(readOnly = true)
     fun isFielded(teamId: Long, seasonId: Long): Boolean =

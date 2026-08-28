@@ -13,6 +13,7 @@ import {
   findEsportsPage,
   findGameAccounts,
   findRoster,
+  findSeasonContents,
   findSeasons,
   findTeamSeasons,
   findTeams,
@@ -21,6 +22,7 @@ import {
   removeRosterEntry,
   setGameAccount,
   updateRosterEntry,
+  unfieldTeam,
   updateSeason,
   updateTeam,
 } from "@/services/api"
@@ -45,6 +47,12 @@ export type TeamRoster = TeamRosterResponse
 export type RosterEntry = RosterEntryResponse
 export type GameAccount = GameAccountResponse
 export type FieldedTeam = FieldedTeamResponse
+
+/** What a season holds, so an offer to remove it can say what goes with it. */
+export interface SeasonContents {
+  teams: number
+  players: number
+}
 
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {
   const res = await findEsportsPage({path: {game}, query: seasonId == null ? {} : {seasonId}})
@@ -98,6 +106,20 @@ export async function saveSeason(
     ? await createSeason({body})
     : await updateSeason({path: {id: season.id}, body})
   return res.data ?? null
+}
+
+export async function loadSeasonContents(id: number): Promise<SeasonContents> {
+  const res = await findSeasonContents({path: {id}})
+  return res.data ?? {teams: 0, players: 0}
+}
+
+/**
+ * Drops a team from one season. The team, and the seasons it played, are untouched: a team
+ * fielded in five seasons and dropped from one still played the other four.
+ */
+export async function unfieldTeamFromSeason(teamId: number, seasonId: number): Promise<void> {
+  const res = await unfieldTeam({path: {seasonId, teamId}})
+  if (res.error) throw res.error
 }
 
 export async function dropSeason(id: number): Promise<void> {

@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
-import {saveSeasonOrReason, type Season} from "../adapters/esports"
+import ConfirmDialog from "./ConfirmDialog.vue"
+import {dropSeason, loadSeasonContents, saveSeasonOrReason, type Season} from "../adapters/esports"
 
 /**
  * Writing a season down, from wherever the seasons are shown: an existing one to change it,
@@ -22,6 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: "update:open", open: boolean): void
   (event: "saved", season: Season): void
+  (event: "removed", season: Season): void
 }>()
 
 const name = ref("")
@@ -44,6 +46,54 @@ watch(
 )
 
 const title = computed(() => (props.season ? "Edit season" : "Add season"))
+
+const confirming = ref(false)
+const removing = ref(false)
+const removalFailure = ref<string | null>(null)
+const holds = ref<{teams: number; players: number} | null>(null)
+
+/**
+ * Taking a season away hides everything recorded against it, so how much that is is read
+ * before the question is put rather than after it is answered.
+ */
+const askToRemove = async () => {
+  if (!props.season) return
+  removalFailure.value = null
+  holds.value = await loadSeasonContents(props.season.id)
+  confirming.value = true
+}
+
+const countOf = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+const question = computed(() => {
+  const season = props.season
+  if (!season) return ""
+  const held = holds.value
+  if (!held || (held.teams === 0 && held.players === 0)) {
+    return `${season.name} holds no teams. Removing it takes it off the strip.`
+  }
+  return `${season.name} holds ${countOf(held.teams, "team", "teams")} and `
+    + `${countOf(held.players, "roster place", "roster places")}. Removing the season takes them with it.`
+})
+
+const removeSeason = async () => {
+  const season = props.season
+  if (!season || removing.value) return
+  removing.value = true
+  removalFailure.value = null
+  try {
+    await dropSeason(season.id)
+    emit("removed", season)
+    confirming.value = false
+    emit("update:open", false)
+  } catch (error) {
+    // Nothing has gone, so the dialog stands and says why.
+    const body = (error as {detail?: string; title?: string})
+    removalFailure.value = body?.detail || body?.title || "The season could not be removed."
+  } finally {
+    removing.value = false
+  }
+}
 
 const complete = computed(() => name.value.trim() !== "" && startDate.value !== "" && endDate.value !== "")
 
@@ -131,6 +181,15 @@ const submit = async () => {
 
       <div class="season-form__actions">
         <button
+          v-if="season"
+          class="season-form__button season-form__button--drop"
+          data-testid="season-dialog-remove"
+          type="button"
+          @click="askToRemove"
+        >
+          Remove
+        </button>
+        <button
           class="season-form__button season-form__button--ghost"
           data-testid="season-dialog-cancel"
           type="button"
@@ -149,6 +208,18 @@ const submit = async () => {
       </div>
     </form>
   </island-dialog>
+
+  <confirm-dialog
+    :accent="accent"
+    :failure="removalFailure"
+    :open="confirming"
+    :question="question"
+    testid="season-remove-dialog"
+    title="Remove this season?"
+    :working="removing"
+    @confirm="removeSeason"
+    @update:open="confirming = $event"
+  />
 </template>
 
 <style>
@@ -217,6 +288,12 @@ const submit = async () => {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
+}
+
+.season-form__button--drop {
+  margin-right: auto;
+  background: none;
+  color: #d98080;
 }
 
 .season-form__button--ghost {

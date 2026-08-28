@@ -21,6 +21,7 @@ import net.blueshell.api.domain.esports.web.dto.response.EsportsPageResponse
 import net.blueshell.api.domain.esports.web.dto.response.FieldedTeamResponse
 import net.blueshell.api.domain.esports.web.dto.response.GamePageResponse
 import net.blueshell.api.domain.esports.web.dto.response.RosterEntryResponse
+import net.blueshell.api.domain.esports.web.dto.response.SeasonContentsResponse
 import net.blueshell.api.domain.esports.web.dto.response.SeasonResponse
 import net.blueshell.api.domain.esports.web.dto.response.TeamResponse
 import net.blueshell.api.domain.esports.web.mapping.response.asResponse
@@ -95,6 +96,14 @@ class EsportsController(
         @PathVariable id: Long,
         @Valid @RequestBody request: SeasonRequest,
     ): SeasonResponse = seasons.update(id, request.name, request.startDate, request.endDate).asResponse()
+
+    /** What a season holds, so the offer to remove it can say what goes with it. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @GetMapping("/seasons/{id}/contents")
+    fun findSeasonContents(@PathVariable id: Long): SeasonContentsResponse {
+        val (teams, players) = fielded.contentsOf(id)
+        return SeasonContentsResponse(teams = teams.toInt(), players = players.toInt())
+    }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/seasons/{id}")

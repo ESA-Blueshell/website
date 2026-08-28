@@ -183,6 +183,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
   let nextTeamId = 70
   let nextEntryId = 200
+  /** Seasons and fieldings taken away during the test, which the reads then leave out. */
+  const gone = new Set<number>()
+  const dropped: Array<{seasonId: number; teamId: number}> = []
   /**
    * The line-up of the seeded team, as the admin reads and writes it. The public page builds
    * that team's members from it, so an edit here is visible there — which is the whole of
@@ -664,6 +667,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const page = fixtures.esportsPages?.[requested ?? "20"]
         ?? esportsPageBySeason[requested ?? "20"]
         ?? esportsPageBySeason["20"]
+      const offered = (page.seasons as Array<{id: number}>).filter(one => !gone.has(one.id))
       // Teams fielded during this test belong to the page the same way the seeded ones do.
       const game = path.split("/").pop()
       const shownSeason = Number((page.season as {id: number} | undefined)?.id ?? requested ?? 20)
@@ -676,7 +680,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const fieldsThis = game === "VALORANT" || game === "CS2"
       // The seeded team's members come from the same line-up the admin edits, so a change
       // made there is a change here.
-      const seeded = (fieldsThis ? page.teams as Array<Record<string, unknown>> : []).map(team => (
+      const stillFielded = (team: Record<string, unknown>) =>
+        !dropped.some(one => one.seasonId === shownSeason && one.teamId === team.id)
+      const seeded = (fieldsThis ? page.teams as Array<Record<string, unknown>> : []).filter(stillFielded).map(team => (
         team.id === 1
           ? {...team, members: roster
             .filter(one => one.teamId === 1 && one.seasonId === shownSeason)
@@ -685,7 +691,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           : team
       ))
       const teams = [...seeded, ...extra]
-      return fulfillJson(route, {...page, game, teams})
+      return fulfillJson(route, {...page, game, seasons: offered, teams})
     }
     if (method === "POST" && path === "/esports/seasons") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
@@ -693,12 +699,33 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       written.set(41, season)
       return fulfillJson(route, season, 201)
     }
+    if (method === "GET" && /^\/esports\/seasons\/\d+\/contents$/.test(path)) {
+      const seasonId = Number(path.split("/")[3])
+      const held = roster.filter(one => one.seasonId === seasonId)
+      const teamsHeld = new Set(held.map(one => one.teamId))
+      return fulfillJson(route, {teams: teamsHeld.size, players: held.length})
+    }
+    if (method === "DELETE" && /^\/esports\/seasons\/\d+$/.test(path)) {
+      const seasonId = Number(path.split("/").pop())
+      gone.add(seasonId)
+      return route.fulfill({status: 204, body: ""})
+    }
+    if (method === "DELETE" && /^\/esports\/seasons\/\d+\/teams\/\d+$/.test(path)) {
+      const parts = path.split("/")
+      const seasonId = Number(parts[3])
+      const teamId = Number(parts[5])
+      dropped.push({seasonId, teamId})
+      const at = fieldedNow.findIndex(one => one.seasonId === seasonId && one.teamId === teamId)
+      if (at >= 0) fieldedNow.splice(at, 1)
+      return route.fulfill({status: 204, body: ""})
+    }
     if (method === "PUT" && /^\/esports\/seasons\/\d+$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       return fulfillJson(route, {id: Number(path.split("/").pop()), ...body})
     }
     if (method === "GET" && path === "/esports/seasons") {
-      return fulfillJson(route, fixtures.esportsSeasons ?? esportsSeasons)
+      const all = [...(fixtures.esportsSeasons ?? esportsSeasons), ...written.values()]
+      return fulfillJson(route, all.filter(one => !gone.has(Number((one as {id: number}).id))))
     }
     if (method === "GET" && path === "/esports/teams") {
       const forGame = url.searchParams.get("game")

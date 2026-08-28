@@ -5,10 +5,13 @@ import ConfirmDialog from "./ConfirmDialog.vue"
 import {
   addToRoster,
   dropRosterEntry,
+  dropTeam,
   linkRosterMember,
   loadMembers,
   loadRoster,
+  loadTeamSeasons,
   saveRosterEntry,
+  renameTeam,
   type Member,
   type RosterEntry,
   type Season,
@@ -42,14 +45,22 @@ interface Row {
   roleTitle: string
   description: string
   userId: number | null
-  /** What was published as their name, which consent governs and this form does not touch. */
-  displayName: string | null
+  /**
+   * The name recorded for them, which is what tells an admin who a handle belongs to.
+   *
+   * Recording it is not publishing it: the api puts a name on the public page only for a
+   * member who has said it may be shown, so what is written here reaches the page only
+   * where that holds.
+   */
+  displayName: string
 }
 
 const props = defineProps<{
   open: boolean
   teamId: number | null
   teamName: string
+  /** The team's banner asset, so the same dialog can change it. */
+  teamImage?: string | null
   season: Season | null
   accent?: string
 }>()
@@ -57,7 +68,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: "update:open", open: boolean): void
   (event: "saved"): void
+  (event: "removed"): void
 }>()
+
+/**
+ * The team's own name and banner, which belong to it in every season rather than to this one.
+ * They live here because this is the dialog a team is opened from, and they are marked as
+ * what they are so a rename does not read as a change to one season's line-up.
+ */
+const draftName = ref("")
+const draftImage = ref("")
 
 const rows = ref<Row[]>([])
 const removed = ref<number[]>([])
@@ -74,7 +94,7 @@ const rowOf = (entry: RosterEntry): Row => ({
   roleTitle: entry.roleTitle ?? "",
   description: entry.description ?? "",
   userId: entry.userId ?? null,
-  displayName: entry.displayName ?? null,
+  displayName: entry.displayName ?? "",
 })
 
 watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open, teamId, seasonId]) => {
@@ -83,6 +103,9 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   failure.value = null
   removed.value = []
   memberSearch.value = {}
+  draftName.value = props.teamName
+  draftImage.value = props.teamImage ?? ""
+  playedIn.value = null
   try {
     const entries = await loadRoster(teamId, seasonId)
     rows.value = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
@@ -94,7 +117,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
 
 const add = () => {
   rows.value = [...rows.value, {
-    id: null, handle: "", role: TeamRoleEnum.PLAYER, roleTitle: "", description: "", userId: null, displayName: null,
+    id: null, handle: "", role: TeamRoleEnum.PLAYER, roleTitle: "", description: "", userId: null, displayName: "",
   }]
 }
 
@@ -149,7 +172,46 @@ const attach = (index: number, userId: number | null) => {
   memberSearch.value = {...memberSearch.value, [index]: ""}
 }
 
-const complete = computed(() => rows.value.every(row => row.handle.trim() !== ""))
+const complete = computed(() =>
+  draftName.value.trim() !== "" && rows.value.every(row => row.handle.trim() !== ""))
+
+const droppingTeam = ref(false)
+const playedIn = ref<number | null>(null)
+const teamFailure = ref<string | null>(null)
+const removingTeam = ref(false)
+
+/** How many seasons the team played, so removing it altogether can say what that means. */
+const askToRemoveTeam = async () => {
+  if (props.teamId == null) return
+  teamFailure.value = null
+  playedIn.value = (await loadTeamSeasons(props.teamId)).length
+  droppingTeam.value = true
+}
+
+const teamQuestion = computed(() => {
+  const seasons = playedIn.value
+  const played = seasons == null || seasons === 1 ? "one season" : `${seasons} seasons`
+  return `${props.teamName} played ${played}. Removing the team takes it out of all of them, `
+    + "which is not the same as dropping it from the season on show."
+})
+
+const removeTeam = async () => {
+  const teamId = props.teamId
+  if (teamId == null || removingTeam.value) return
+  removingTeam.value = true
+  teamFailure.value = null
+  try {
+    await dropTeam(teamId)
+    droppingTeam.value = false
+    emit("removed")
+    emit("update:open", false)
+  } catch (error) {
+    const body = (error as {detail?: string; title?: string})
+    teamFailure.value = body?.detail || body?.title || "The team could not be removed."
+  } finally {
+    removingTeam.value = false
+  }
+}
 
 const reasonFrom = (error: unknown): string => {
   const body = (error as {detail?: string; title?: string})
@@ -163,6 +225,16 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
+    // The team's own name and banner first: a line-up written against a team that was
+    // meant to be renamed would leave the rename half-applied if anything after it failed.
+    if (draftName.value.trim() !== props.teamName || (draftImage.value.trim() || null) !== (props.teamImage ?? null)) {
+      const renamed = await renameTeam(teamId, draftName.value.trim(), draftImage.value.trim() || null)
+      if (!renamed.ok) {
+        failure.value = renamed.reason
+        return
+      }
+    }
+
     for (const id of removed.value) await dropRosterEntry(id)
 
     for (const [index, row] of rows.value.entries()) {
@@ -174,10 +246,11 @@ const submit = async () => {
         sortIndex: index,
       }
       if (row.id == null) {
-        await addToRoster(teamId, {seasonId, ...shared, userId: row.userId, displayName: null})
+        await addToRoster(teamId, {
+          seasonId, ...shared, userId: row.userId, displayName: row.displayName.trim() || null,
+        })
       } else {
-        // The published name is governed by consent and is not this form's to change.
-        await saveRosterEntry(row.id, {...shared, displayName: row.displayName})
+        await saveRosterEntry(row.id, {...shared, displayName: row.displayName.trim() || null})
         await linkRosterMember(row.id, row.userId)
       }
     }
@@ -201,6 +274,36 @@ const submit = async () => {
     @update:open="emit('update:open', $event)"
   >
     <div class="lineup">
+      <!--
+        The team itself, marked as belonging to every season rather than to this one, so a
+        rename does not read as a change to the line-up underneath it.
+      -->
+      <fieldset class="lineup__team">
+        <legend class="lineup__legend">
+          The team, in every season
+        </legend>
+        <div class="lineup__line">
+          <input
+            v-model="draftName"
+            aria-label="Team name"
+            class="lineup__input"
+            data-testid="lineup-team-name"
+            maxlength="128"
+            placeholder="Team name"
+            type="text"
+          >
+          <input
+            v-model="draftImage"
+            aria-label="Banner"
+            class="lineup__input"
+            data-testid="lineup-team-image"
+            maxlength="255"
+            placeholder="Banner asset, e.g. valorantesports1.jpg"
+            type="text"
+          >
+        </div>
+      </fieldset>
+
       <p
         v-if="loading"
         class="lineup__note"
@@ -301,6 +404,20 @@ const submit = async () => {
           </label>
         </div>
 
+        <div class="lineup__line">
+          <label class="lineup__note-field">
+            <input
+              v-model="row.displayName"
+              :aria-label="`Recorded name for ${row.handle || 'this player'}`"
+              class="lineup__input"
+              :data-testid="`lineup-name-${index}`"
+              maxlength="128"
+              placeholder="Recorded name — shown on the page only with their consent"
+              type="text"
+            >
+          </label>
+        </div>
+
         <div class="lineup__line lineup__line--member">
           <span
             v-if="row.userId != null"
@@ -369,6 +486,14 @@ const submit = async () => {
 
       <div class="lineup__actions">
         <button
+          class="lineup__button lineup__button--drop"
+          data-testid="lineup-remove-team"
+          type="button"
+          @click="askToRemoveTeam"
+        >
+          Remove team
+        </button>
+        <button
           class="lineup__button lineup__button--ghost"
           data-testid="lineup-cancel"
           type="button"
@@ -391,6 +516,19 @@ const submit = async () => {
 
   <confirm-dialog
     :accent="accent"
+    confirm-label="Remove the team"
+    :failure="teamFailure"
+    :open="droppingTeam"
+    :question="teamQuestion"
+    testid="team-remove-dialog"
+    title="Remove this team altogether?"
+    :working="removingTeam"
+    @confirm="removeTeam"
+    @update:open="droppingTeam = $event"
+  />
+
+  <confirm-dialog
+    :accent="accent"
     confirm-label="Take them off"
     :open="dropping !== null"
     :question="`${droppingName} comes off this season's line-up when it is saved. `
@@ -408,6 +546,26 @@ const submit = async () => {
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+}
+
+.lineup__team {
+  margin: 0;
+  padding: 0.55rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+}
+
+.lineup__legend {
+  padding: 0 0.3rem;
+  color: #a0a6ac;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lineup__button--drop {
+  margin-right: auto;
+  background: none;
+  color: #d98080;
 }
 
 .lineup__row {

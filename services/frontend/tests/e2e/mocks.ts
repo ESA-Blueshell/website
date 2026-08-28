@@ -186,6 +186,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   /** Seasons and fieldings taken away during the test, which the reads then leave out. */
   const gone = new Set<number>()
   const dropped: Array<{seasonId: number; teamId: number}> = []
+  /** Teams renamed or removed during the test, which the reads then reflect. */
+  const renamed = new Map<number, {name: unknown; image: unknown}>()
+  const goneTeams = new Set<number>()
   /**
    * The line-up of the seeded team, as the admin reads and writes it. The public page builds
    * that team's members from it, so an edit here is visible there — which is the whole of
@@ -682,7 +685,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // made there is a change here.
       const stillFielded = (team: Record<string, unknown>) =>
         !dropped.some(one => one.seasonId === shownSeason && one.teamId === team.id)
-      const seeded = (fieldsThis ? page.teams as Array<Record<string, unknown>> : []).filter(stillFielded).map(team => (
+        && !goneTeams.has(Number(team.id))
+      const named = (team: Record<string, unknown>) => {
+        const change = renamed.get(Number(team.id))
+        return change ? {...team, name: change.name, image: change.image} : team
+      }
+      const seeded = (fieldsThis ? page.teams as Array<Record<string, unknown>> : []).filter(stillFielded).map(named).map(team => (
         team.id === 1
           ? {...team, members: roster
             .filter(one => one.teamId === 1 && one.seasonId === shownSeason)
@@ -743,6 +751,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const team = {id: nextTeamId, game: body.game, name: body.name, image: body.image ?? null}
       teamsMade.push(team)
       return fulfillJson(route, team, 201)
+    }
+    if (method === "PUT" && /^\/esports\/teams\/\d+$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const id = Number(path.split("/").pop())
+      renamed.set(id, {name: body.name, image: body.image ?? null})
+      return fulfillJson(route, {id, game: "VALORANT", name: body.name, image: body.image ?? null})
+    }
+    if (method === "DELETE" && /^\/esports\/teams\/\d+$/.test(path)) {
+      goneTeams.add(Number(path.split("/").pop()))
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "GET" && /^\/esports\/teams\/\d+\/seasons$/.test(path)) {
       // Only the one team in these fixtures has a season behind it to carry from.

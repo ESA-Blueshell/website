@@ -154,8 +154,23 @@ export async function saveTeamOrReason(
   return {ok: true, team: res.data ?? null}
 }
 
+/**
+ * Renames a team, or changes the banner it is drawn with. Its game never changes: a team is
+ * of the game it was made for, and moving one between games would be a different team.
+ */
+export async function renameTeam(
+  id: number,
+  name: string,
+  image: string | null,
+): Promise<TeamSaved | SeasonRefused> {
+  const res = await updateTeam({path: {id}, body: {name, image: image ?? undefined}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error)}
+  return {ok: true, team: res.data ?? null}
+}
+
 export async function dropTeam(id: number): Promise<void> {
-  await deleteTeam({path: {id}})
+  const res = await deleteTeam({path: {id}})
+  if (res.error) throw res.error
 }
 
 /** The seasons a team has been fielded in, newest first. */

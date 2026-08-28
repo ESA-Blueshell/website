@@ -60,6 +60,8 @@ test.describe("editing a line-up in place", () => {
     await openLineup(page)
 
     await page.getByTestId("lineup-remove-2").click()
+    // Somebody already on the roster is asked about before they come off.
+    await page.getByTestId("confirm-go").click()
     await page.getByTestId("lineup-add").click()
     await page.getByTestId("lineup-handle-2").fill("Newblood")
     await page.getByTestId("lineup-role-2").selectOption("SUBSTITUTE")

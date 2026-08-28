@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
+import ConfirmDialog from "./ConfirmDialog.vue"
 import {
   addToRoster,
   dropRosterEntry,
@@ -97,10 +98,27 @@ const add = () => {
   }]
 }
 
+const dropping = ref<number | null>(null)
+
+/**
+ * Taking somebody off asks first where they are already on the roster. A row added a moment
+ * ago and not yet saved is nobody's record, so it simply goes.
+ */
+const askToRemove = (index: number) => {
+  if (rows.value[index]?.id == null) remove(index)
+  else dropping.value = index
+}
+
+const droppingName = computed(() => {
+  const row = dropping.value == null ? null : rows.value[dropping.value]
+  return row?.handle?.trim() || "this player"
+})
+
 const remove = (index: number) => {
   const row = rows.value[index]
   if (row?.id != null) removed.value = [...removed.value, row.id]
   rows.value = rows.value.filter((_, at) => at !== index)
+  dropping.value = null
 }
 
 /** Order is the order they are listed in, so moving a row is the whole of setting it. */
@@ -259,7 +277,7 @@ const submit = async () => {
               class="lineup__step lineup__step--drop"
               :data-testid="`lineup-remove-${index}`"
               type="button"
-              @click="remove(index)"
+              @click="askToRemove(index)"
             >×</button>
           </span>
         </div>
@@ -370,6 +388,18 @@ const submit = async () => {
       </div>
     </div>
   </island-dialog>
+
+  <confirm-dialog
+    :accent="accent"
+    confirm-label="Take them off"
+    :open="dropping !== null"
+    :question="`${droppingName} comes off this season's line-up when it is saved. `
+      + `The seasons they played before are untouched.`"
+    testid="lineup-remove-dialog"
+    title="Take this player off?"
+    @confirm="dropping !== null && remove(dropping)"
+    @update:open="dropping = $event ? dropping : null"
+  />
 </template>
 
 <style>

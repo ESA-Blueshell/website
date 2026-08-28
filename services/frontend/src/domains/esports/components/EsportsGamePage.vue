@@ -6,10 +6,11 @@ import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {loadSeasons} from "../adapters/esports"
+import {loadSeasons, unfieldTeamFromSeason} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import LineupDialog from "@/domains/esports/island/LineupDialog.vue"
+import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {$require} from "@/plugins/require"
@@ -111,6 +112,18 @@ const closeEditor = (open: boolean) => {
   editorOpen.value = open
 }
 
+/** A season that has gone takes its place on the strip with it, and the page moves to another. */
+const seasonRemoved = async (gone: Season) => {
+  allSeasons.value = allSeasons.value.filter(one => one.id !== gone.id)
+  const current = page.value
+  if (current) {
+    page.value = {...current, seasons: current.seasons.filter(one => one.id !== gone.id)}
+  }
+  const next = (stripSeasons.value[0] ?? null)
+  if (next) await reload(next.id)
+  else await reload()
+}
+
 const adding = ref(false)
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
@@ -138,6 +151,43 @@ const editLineup = (teamId: number | string) => {
 /** What the slice shows is the api's answer, so it is asked again rather than patched here. */
 const lineupSaved = async () => {
   await reload(season.value?.id)
+}
+
+const dropping = ref<{id: number; name: string; players: number} | null>(null)
+const dropFailure = ref<string | null>(null)
+const droppingNow = ref(false)
+
+const askToDrop = (teamId: number | string) => {
+  const team = teams.value.find(one => one.id === teamId)
+  if (!team) return
+  dropFailure.value = null
+  dropping.value = {id: team.id, name: team.name, players: team.members.length}
+}
+
+const dropQuestion = computed(() => {
+  const team = dropping.value
+  if (!team || !season.value) return ""
+  const players = team.players === 1 ? "1 roster place" : `${team.players} roster places`
+  return `${team.name} played ${season.value.name} with ${players}. Dropping it from this season `
+    + "leaves the team, and the other seasons it played, as they are."
+})
+
+const dropTeamFromSeason = async () => {
+  const team = dropping.value
+  const seasonId = season.value?.id
+  if (!team || seasonId == null || droppingNow.value) return
+  droppingNow.value = true
+  dropFailure.value = null
+  try {
+    await unfieldTeamFromSeason(team.id, seasonId)
+    dropping.value = null
+    await reload(seasonId)
+  } catch (error) {
+    const body = (error as {detail?: string; title?: string})
+    dropFailure.value = body?.detail || body?.title || "The team could not be dropped."
+  } finally {
+    droppingNow.value = false
+  }
 }
 
 // The strip and the labels under it both read from the loaded page, so the saved season is
@@ -216,8 +266,22 @@ const seasonSaved = (saved: Season) => {
           :accent="identity.accent"
           :open="editorOpen"
           :season="editing"
+          @removed="seasonRemoved"
           @saved="seasonSaved"
           @update:open="closeEditor"
+        />
+
+        <confirm-dialog
+          :accent="identity.accent"
+          confirm-label="Drop from this season"
+          :failure="dropFailure"
+          :open="dropping !== null"
+          :question="dropQuestion"
+          testid="team-drop-dialog"
+          title="Drop this team from the season?"
+          :working="droppingNow"
+          @confirm="dropTeamFromSeason"
+          @update:open="dropping = $event ? dropping : null"
         />
 
         <lineup-dialog
@@ -266,10 +330,12 @@ const seasonSaved = (saved: Season) => {
             add-label="Add a team"
             :items="slices"
             :may-add="mayEdit"
+            :may-drop="mayEdit"
             :may-edit="mayEdit"
             :open-id="justAdded"
             testid-prefix="team-roster"
             @add="adding = true"
+            @drop="askToDrop"
             @edit="editLineup"
           >
             <template #details="{item}">

@@ -65,6 +65,14 @@ data class EsportsPageResponse(
     val teams: List<TeamRosterResponse>,
 )
 
+@Schema(description = "What a season holds, for a removal to say before it happens")
+data class SeasonContentsResponse(
+    @Schema(description = "Teams fielded in it, across every game")
+    val teams: Int,
+    @Schema(description = "Roster places held in it, across those teams")
+    val players: Int,
+)
+
 @Schema(description = "A team now fielded in a season, and whatever line-up came across with it")
 data class FieldedTeamResponse(
     val team: TeamResponse,

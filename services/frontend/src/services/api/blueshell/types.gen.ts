@@ -1288,6 +1288,20 @@ export type RosterMemberResponse = {
 };
 
 /**
+ * What a season holds, for a removal to say before it happens
+ */
+export type SeasonContentsResponse = {
+    /**
+     * Roster places held in it, across those teams
+     */
+    players: number;
+    /**
+     * Teams fielded in it, across every game
+     */
+    teams: number;
+};
+
+/**
  * Create or rename a season
  */
 export type SeasonRequest = {
@@ -3869,6 +3883,49 @@ export type UpdateSeasonResponses = {
 };
 
 export type UpdateSeasonResponse = UpdateSeasonResponses[keyof UpdateSeasonResponses];
+
+export type FindSeasonContentsData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/seasons/{id}/contents';
+};
+
+export type FindSeasonContentsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindSeasonContentsError = FindSeasonContentsErrors[keyof FindSeasonContentsErrors];
+
+export type FindSeasonContentsResponses = {
+    /**
+     * OK
+     */
+    200: SeasonContentsResponse;
+};
+
+export type FindSeasonContentsResponse = FindSeasonContentsResponses[keyof FindSeasonContentsResponses];
 
 export type UnfieldTeamData = {
     body?: never;

@@ -35,11 +35,14 @@ const props = withDefaults(defineProps<{
   openId?: SliceItem["id"] | null
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
-}>(), {mayAdd: false, addLabel: "Add", openId: null, mayEdit: false})
+  /** Whether each slice offers a way to take it out of what is on show. */
+  mayDrop?: boolean
+}>(), {mayAdd: false, addLabel: "Add", openId: null, mayEdit: false, mayDrop: false})
 
 const emit = defineEmits<{
   (event: "add"): void
   (event: "edit", id: SliceItem["id"]): void
+  (event: "drop", id: SliceItem["id"]): void
 }>()
 
 const motion = useMotionAllowed()
@@ -192,6 +195,25 @@ watch([() => props.openId, () => props.items], () => {
         </svg>
       </button>
 
+      <button
+        v-if="mayDrop"
+        :aria-label="`Remove ${item.title}`"
+        class="team-slice__edit team-slice__drop"
+        :data-testid="`${testidPrefix}-drop-${item.id}`"
+        type="button"
+        @click.stop="emit('drop', item.id)"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+
       <img
         v-if="item.banner"
         alt=""
@@ -311,6 +333,17 @@ watch([() => props.openId, () => props.items], () => {
   border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
   color: var(--color-chalk);
   cursor: pointer;
+}
+
+/* Beside the edit, not on top of it: two affordances on one slice read as a pair. */
+.team-slice__drop {
+  right: 44px;
+}
+
+.team-slice__drop:hover,
+.team-slice__drop:focus-visible {
+  border-color: #b03434;
+  color: #ff9d9d;
 }
 
 .team-slice__edit svg {
@@ -590,6 +623,17 @@ watch([() => props.openId, () => props.items], () => {
   border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
   color: var(--color-chalk);
   cursor: pointer;
+}
+
+/* Beside the edit, not on top of it: two affordances on one slice read as a pair. */
+.team-slice__drop {
+  right: 44px;
+}
+
+.team-slice__drop:hover,
+.team-slice__drop:focus-visible {
+  border-color: #b03434;
+  color: #ff9d9d;
 }
 
 .team-slice__edit svg {

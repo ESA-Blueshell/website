@@ -101,6 +101,15 @@ const closeEditor = (open: boolean) => {
   editorOpen.value = open
 }
 
+/** A season that has gone takes its place on the strip with it, and the page moves to another. */
+const seasonRemoved = async (gone: Season) => {
+  allSeasons.value = allSeasons.value.filter(one => one.id !== gone.id)
+  seasons.value = seasons.value.filter(one => one.id !== gone.id)
+  const next = stripSeasons.value[0] ?? null
+  if (next) await show(next.id)
+  else await reload()
+}
+
 const adding = ref(false)
 /** The game the team just added belongs to, which is the slice to look at. */
 const justAdded = ref<Game | null>(null)
@@ -182,6 +191,7 @@ const seasonSaved = (saved: Season) => {
           accent="var(--color-brand)"
           :open="editorOpen"
           :season="editing"
+          @removed="seasonRemoved"
           @saved="seasonSaved"
           @update:open="closeEditor"
         />

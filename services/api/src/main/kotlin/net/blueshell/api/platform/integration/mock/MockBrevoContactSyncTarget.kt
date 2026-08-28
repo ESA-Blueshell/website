@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.platform.integration.sync.target.contact.ContactAdapterSyncTarget
+import net.blueshell.api.sync.domain.ContactAdapterSyncTarget
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component

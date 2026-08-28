@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.domain.event.application.calendar.CalendarEventData
+import net.blueshell.api.event.api.CalendarEventData
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach

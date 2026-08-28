@@ -1,6 +1,6 @@
 package net.blueshell.api.shared.security
 
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 
 object UserPrincipalMapper {
     fun fromUser(user: User): UserPrincipal {

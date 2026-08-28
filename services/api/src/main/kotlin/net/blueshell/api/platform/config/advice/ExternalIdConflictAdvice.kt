@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.config.advice
 
 import jakarta.servlet.http.HttpServletRequest
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdConflictException
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.sync.api.ExternalIdConflictException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus

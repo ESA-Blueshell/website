@@ -17,6 +17,22 @@ object ArchitecturePackages {
 
     /** Application Layer - Use cases, Services, Business Validators, Listeners, Factories */
     const val APPLICATION = "$ROOT..application.."
+
+    /**
+     * The flattened equivalents of [APPLICATION], for modules that already sit directly
+     * under the base package. Written with a single `*` segment so they cannot also match
+     * the old `net.blueshell.api.domain.<module>` grouping level, which [DOMAIN] does.
+     */
+    const val MODULE_DOMAIN = "$ROOT.*.domain.."
+    const val MODULE_API = "$ROOT.*.api.."
+    const val MODULE_WEB = "$ROOT.*.web.."
+    const val MODULE_PERSISTENCE = "$ROOT.*.persistence.."
+
+    /**
+     * Where a module's services live: the published ones in `api`, the rest in `domain`.
+     * Replaces the old single `application` package, which the flattening removes.
+     */
+    val SERVICE_LAYER = arrayOf(MODULE_API, MODULE_DOMAIN)
     const val APPLICATION_VALIDATION = "$ROOT..application.validation.."
     const val APPLICATION_EXCEPTION = "$ROOT..application.exception.."
     const val LISTENER = "$ROOT..application.listener.."
@@ -46,6 +62,13 @@ object ArchitecturePackages {
     const val PLATFORM_CONFIG = "$ROOT.platform.config.."
     const val PLATFORM_INTEGRATION = "$ROOT.platform.integration.."
     const val JOB = "$ROOT.platform.integration..job.."
+
+    /**
+     * Where a capability module's job handlers, adapters and clients sit once the module
+     * is flattened: the sub-packages [JOB] and [PLATFORM_ADAPTER] name do not survive the
+     * four-folder layout, so the same types land in the module's own domain or api folder.
+     */
+    val JOB_HOMES = arrayOf(JOB, MODULE_DOMAIN, MODULE_API)
 
     /** Mock/test adapter implementations */
     const val PLATFORM_MOCK = "$ROOT.platform.integration.mock.."

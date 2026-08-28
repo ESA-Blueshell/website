@@ -1,0 +1,29 @@
+package net.blueshell.api.oidc
+
+import org.springframework.modulith.ApplicationModule
+import org.springframework.modulith.PackageInfo
+
+/**
+ * The API acting as an OIDC provider for the admin tooling: authorization server wiring, the
+ * registered clients (Headlamp with PKCE, Vault as a confidential client) and the Vault Transit
+ * JWK source that signs the tokens.
+ *
+ * The Traefik forward-auth check and the MyApps catalogue belong to this module too, but sit in
+ * `platform/web/oidc` until the packages flatten.
+ */
+@PackageInfo
+@ApplicationModule(
+    id = "oidc",
+    allowedDependencies = [
+        // Open kernel: the token endpoint runs inside the filter chain.
+        "security",
+        // Open kernel.
+        "shared",
+        // The subject is resolved through UserService.
+        "user :: api",
+        // DEBT. OidcUserLoader reads User columns to fill the id-token claims. This
+        // wants a claims projection published through user :: api.
+        "user :: entities",
+    ],
+)
+class ModuleMetadata

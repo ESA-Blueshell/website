@@ -2,7 +2,7 @@ package net.blueshell.api.testsupport
 
 import jakarta.persistence.EntityManager
 import net.blueshell.api.config.TestCleanUpListener
-import net.blueshell.api.platform.integration.job.persistence.repository.JobExecutionRepository
+import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import

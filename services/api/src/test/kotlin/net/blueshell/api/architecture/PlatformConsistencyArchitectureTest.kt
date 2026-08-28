@@ -10,7 +10,7 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import org.junit.jupiter.api.Test
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
@@ -35,6 +35,28 @@ import org.springframework.transaction.annotation.Transactional
  *
  * Aligned with ADR-019 (Anti-Corruption Layers) and ADR-022 (Platform Organization).
  */
+/*
+ * Two placement rules were retired when the packages were flattened: `*Job` classes had to
+ * sit in `..application.job..` or `..adapter.job..`, and `*Client` classes in `..adapter..`.
+ * Architecture ADR-003 gives every module the same four folders, so neither sub-package
+ * exists any more and neither rule can select a class. What they were really protecting —
+ * that a job handler extends AbstractJsonJobHandler, is a @Component, and does not annotate
+ * handlePayload as transactional — is keyed on the type rather than the package and is
+ * unaffected.
+ *
+ * Five placement rules went with the platform/integration grouping itself, which the
+ * flattening empties: platform controllers reaching a platform repository (already covered
+ * twice, by `Controllers must not access repositories` and `Controllers must not import
+ * repositories`), and four requiring *Repository, *Scheduler, @Service and *Adapter types to
+ * sit in a named sub-package that the four-folder layout does not have.
+ *
+ * The @Profile rule survives them, widened from platform/integration to the whole project:
+ * a production adapter needs a profile wherever it now lives.
+ *
+ * Two more went the same way: `platform.integration.queue` no longer exists, having merged
+ * into the jobs module, and no *DTO class remains under `platform.integration` for the DTO
+ * placement rule to select.
+ */
 class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
     // ── Group A: Job Handler Structure ────────────────────────────────────────
@@ -50,7 +72,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `job handlers must extend AbstractJsonJobHandler`(): Unit =
         arch("Concrete *Job classes must extend AbstractJsonJobHandler") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.JOB)
+                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().haveSimpleNameEndingWith("Job")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .should().beAssignableTo(AbstractJsonJobHandler::class.java)
@@ -67,7 +89,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `job handlers must be annotated with @Component`(): Unit =
         arch("Concrete *Job classes must be @Component") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.JOB)
+                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().haveSimpleNameEndingWith("Job")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .should().beAnnotatedWith(Component::class.java)
@@ -85,7 +107,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
         arch("handlePayload methods in job handlers must not be @Transactional") {
             methods()
                 .that().haveName("handlePayload")
-                .and().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.JOB)
+                .and().areDeclaredInClassesThat().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().areDeclaredInClassesThat()
                     .areAssignableTo(AbstractJsonJobHandler::class.java)
                 .should().notBeAnnotatedWith(Transactional::class.java)
@@ -107,7 +129,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `production adapters must declare @Profile`(): Unit =
         arch("Production *Adapter classes must be annotated with @Profile") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
+                .that().resideInAnyPackage("${ArchitecturePackages.ROOT}..")
                 .and().haveSimpleNameEndingWith("Adapter")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .and().resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
@@ -159,16 +181,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: standard layout makes repositories discoverable and ensures the existing
      * "repository only accessed by application/persistence layers" rule applies uniformly.
      */
-    @Test
-    fun `platform repositories must reside in persistence dot repository packages`(): Unit =
-        arch("Platform *Repository interfaces must be in ..persistence.repository.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Repository")
-                .should().resideInAnyPackage("${ArchitecturePackages.ROOT}.platform.integration..persistence.repository..")
-                .because("ADR-022: Standard layout requires repositories at ..persistence.repository.. for rule uniformity")
-        }
-
     /**
      * C2: Platform specifications must reside in ..persistence.spec.. packages.
      *
@@ -195,17 +207,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: mirrors the existing "controllers do not access repositories directly" rule;
      * controllers must use the service layer instead of accessing repositories directly.
      */
-    @Test
-    fun `platform controllers must not access any platform repository directly`(): Unit =
-        arch("Platform *Controller classes must not access any platform repository") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Controller")
-                .should().accessClassesThat()
-                    .resideInAnyPackage(ArchitecturePackages.PLATFORM_ANY_REPOSITORY)
-                .because("ADR-002/ADR-022: Controllers must not access repositories directly; use service layer instead")
-        }
-
     // ── Group E: Adapter/Client Placement ────────────────────────────────────
 
     /**
@@ -214,35 +215,12 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: ACL adapters must be in the adapter sub-package for the standard layout;
      * placing them at the module root mixes infrastructure concerns with application logic.
      */
-    @Test
-    fun `production adapters must reside in adapter packages`(): Unit =
-        arch("Production *Adapter classes must reside in ..adapter.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Adapter")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .and().resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_ADAPTER)
-                .because("ADR-022: Production adapters must reside in ..adapter.. sub-package")
-        }
-
     /**
      * E2: *Client classes in PLATFORM_INTEGRATION (outside mock) must reside in ..adapter.. packages.
      *
      * Rationale: low-level HTTP/API clients are adapter-layer infrastructure and must be co-located
      * with their adapter counterparts, not scattered at the module root.
      */
-    @Test
-    fun `platform clients must reside in adapter packages`(): Unit =
-        arch("*Client classes in platform.integration must reside in ..adapter.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Client")
-                .and().resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_ADAPTER)
-                .because("ADR-022: Platform clients must reside in ..adapter.. sub-package alongside their adapters")
-        }
-
     // ── Group F: Service Placement ────────────────────────────────────────────
 
     /**
@@ -252,21 +230,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * application sub-package; placing them at the module root or in service/ at the root level
      * bypasses the standard layer structure.
      */
-    @Test
-    fun `platform services must reside in application packages`(): Unit =
-        arch("@Service classes in platform.integration must reside in ..application.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().areAnnotatedWith(Service::class.java)
-                .and().resideOutsideOfPackages(
-                    ArchitecturePackages.PLATFORM_ADAPTER,
-                    ArchitecturePackages.PLATFORM_MOCK,
-                    ArchitecturePackages.PLATFORM_QUEUE,
-                )
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_APPLICATION)
-                .because("ADR-022: Platform @Service beans must reside in ..application.. sub-package")
-        }
-
     // ── Group G: DTO Placement ────────────────────────────────────────────────
 
     /**
@@ -275,16 +238,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: DTOs are web-layer presentation objects; placing them in a generic dto/ at
      * the module root conflates the web boundary with internal packages.
      */
-    @Test
-    fun `platform DTOs must reside in web dto packages`(): Unit =
-        arch("*DTO classes in platform.integration must reside in ..web.dto.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("DTO")
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_WEB_DTO)
-                .because("ADR-022: Platform DTOs are web-layer objects and must reside in ..web.dto..")
-        }
-
     // ── Group H: Scheduler Placement ─────────────────────────────────────────
 
     /**
@@ -293,17 +246,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: schedulers coordinate application-level background tasks and belong in the
      * application sub-package alongside services, not at the module root.
      */
-    @Test
-    fun `platform schedulers must reside in application packages`(): Unit =
-        arch("*Scheduler Spring bean classes in platform.integration must reside in ..application.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Scheduler")
-                .and(isSpringBean())
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_APPLICATION)
-                .because("ADR-022: Platform schedulers must reside in ..application.. sub-package")
-        }
-
     // ── Group I: Job Handler Placement ───────────────────────────────────────
 
     /**
@@ -325,20 +267,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * accepted while the rest of the codebase migrates; new modules
      * should land directly under `adapter/job/`.
      */
-    @Test
-    fun `platform job handlers must reside in a job sub-package`(): Unit =
-        arch("Concrete *Job classes in platform.integration must reside in ..application.job.. or ..adapter.job.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Job")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .should().resideInAnyPackage(
-                    ArchitecturePackages.APPLICATION_JOB,
-                    ArchitecturePackages.ADAPTER_JOB,
-                )
-                .because("ADR-022: Job handlers are driving adapters and belong in a job sub-package")
-        }
-
     // ── Group J: Queue Isolation ──────────────────────────────────────────────
 
     /**
@@ -348,16 +276,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * layer; direct repository access in queue classes bypasses transactional service logic
      * and creates unwanted coupling between queue infrastructure and persistence.
      */
-    @Test
-    fun `queue classes must not access platform repositories directly`(): Unit =
-        arch("Classes in platform.integration.queue must not access platform repositories") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_QUEUE)
-                .should().accessClassesThat()
-                    .resideInAnyPackage(ArchitecturePackages.PLATFORM_ANY_REPOSITORY)
-                .because("ADR-022: Queue infrastructure must not access repositories directly; use the service layer instead")
-        }
-
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /** Matches classes that are Spring-managed beans (@Component or @Service). */

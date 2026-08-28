@@ -18,7 +18,7 @@ interface JobQueue {
         job: JobDefinition<T>,
         payload: T,
         actor: Actor? = null
-    ): JobExecution?
+    ): QueuedJob?
 
     /**
      * Runs a job by type name with optional payload asynchronously and durably.
@@ -29,14 +29,14 @@ interface JobQueue {
         payload: Any? = null,
         actor: Actor? = null,
         dedupKey: String? = null
-    ): JobExecution?
+    ): QueuedJob?
 }
 
 /**
- * Represents a queued or executing job.
+ * A job that has been accepted by the queue and may still be executing.
  * Minimal interface for domain layer - platform layer can extend this.
  */
-interface JobExecution : ActorTracked {
+interface QueuedJob : ActorTracked {
     val id: Long?
     val jobType: String
     val payload: String?

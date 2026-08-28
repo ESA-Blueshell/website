@@ -18,6 +18,13 @@ import org.springframework.security.access.prepost.PreAuthorize
  * ArchUnit tests enforcing access rules between layers and components.
  * Aligned with ADR-001, ADR-002, ADR-016.
  */
+/*
+ * `domain model and domain services must not depend on outer layers` was retired with the
+ * package flattening. It selected `..domain.model..` and `..domain.service..`, a split only
+ * the auth module ever had, and architecture ADR-003 gives every module one domain folder
+ * holding both. Its cross-module half is what module verification now checks; what remains
+ * intra-module is a single folder with no layer boundary left to cross.
+ */
 class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
     @Test
@@ -41,10 +48,11 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `repository only accessed by application and persistence layers`(): Unit =
         arch("Repositories only accessed from application layer") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and().haveSimpleNameEndingWith("Repository")
                 .should().onlyBeAccessed().byAnyPackage(
-                    ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.REPOSITORY,
+                    *ArchitecturePackages.SERVICE_LAYER,
+                    ArchitecturePackages.MODULE_PERSISTENCE,
                     ArchitecturePackages.DOMAIN_SERVICE,  // Domain services can access repositories
                     ArchitecturePackages.PERSISTENCE,
                     ArchitecturePackages.JOB,             // Per-integration job handlers read DB state
@@ -57,10 +65,12 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `jobs only accessed from platform layer`(): Unit =
         arch("Jobs only triggered by platform infrastructure") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.JOB)
+                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
                 .and().haveSimpleNameEndingWith("Job")
                 .should().onlyBeAccessed().byAnyPackage(
                     ArchitecturePackages.JOB,
+                    ArchitecturePackages.MODULE_DOMAIN,
+                    ArchitecturePackages.MODULE_API,
                     ArchitecturePackages.PLATFORM,
                     ArchitecturePackages.LISTENER  // Listeners can dispatch jobs
                 )
@@ -97,9 +107,9 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `application services do not depend on DTOs`(): Unit =
         arch("Application services must not depend on web DTOs") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.APPLICATION)
+                .that().resideInAnyPackage(*ArchitecturePackages.SERVICE_LAYER)
                 .and().haveSimpleNameEndingWith("Service")
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DTO)
+                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .because("ADR-001: Keep DTO usage at boundary; application works with entities and commands")
         }
 
@@ -107,7 +117,8 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `repositories do not depend on services`(): Unit =
         arch("Repositories must not depend on services") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and().haveSimpleNameEndingWith("Repository")
                 .should().dependOnClassesThat(applicationServices)
                 .because("ADR-016: Dependency direction is Service -> Repository, never the reverse")
         }
@@ -160,35 +171,12 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         }
 
     @Test
-    fun `domain model and domain services must not depend on outer layers`(): Unit =
-        arch("Domain layer depends inward only") {
-            noClasses()
-                .that().resideInAnyPackage(
-                    ArchitecturePackages.DOMAIN_MODEL,
-                    ArchitecturePackages.DOMAIN_SERVICE
-                )
-                .should().dependOnClassesThat(
-                    JavaClass.Predicates.resideInAnyPackage(
-                        ArchitecturePackages.WEB,
-                        ArchitecturePackages.APPLICATION,
-                        ArchitecturePackages.INFRASTRUCTURE,
-                        ArchitecturePackages.PLATFORM
-                    // A domain service signals failure by throwing its module's application exception.
-                    ).and(
-                        DescribedPredicate.not(
-                            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.APPLICATION_EXCEPTION)
-                        )
-                    ).`as`("the web, application, infrastructure or platform layers")
-                )
-                .because("ADR-016: a rich domain model reaches persistence and shared, never outward")
-        }
-
-    @Test
     fun `repositories do not depend on DTOs`(): Unit =
         arch("Repositories must not depend on DTOs") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DTO)
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and().haveSimpleNameEndingWith("Repository")
+                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .because("ADR-016: Persistence layer should not know about web DTOs")
         }
 
@@ -239,6 +227,7 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
                 .should().resideOutsideOfPackages(
                     ArchitecturePackages.QUERY,
+                    ArchitecturePackages.MODULE_DOMAIN,  // same layer, once the module is flattened
                     ArchitecturePackages.WEB  // Acceptable for web query params
                 )
                 .because("ADR-015: Query objects are application concerns, not persistence filters")

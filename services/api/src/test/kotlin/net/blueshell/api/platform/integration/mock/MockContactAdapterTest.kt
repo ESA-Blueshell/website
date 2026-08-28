@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.platform.integration.contact.adapter.ContactData
-import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
+import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.contact.api.ContactServiceException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach

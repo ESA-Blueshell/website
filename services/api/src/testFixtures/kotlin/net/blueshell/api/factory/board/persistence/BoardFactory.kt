@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.board.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.domain.board.persistence.Board
-import net.blueshell.api.domain.board.persistence.BoardMember
+import net.blueshell.api.board.persistence.Board
+import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.domain.user.persistence.User
 import org.springframework.stereotype.Component
 import java.time.LocalDate

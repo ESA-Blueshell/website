@@ -13,8 +13,8 @@ import net.blueshell.api.factory.email.persistence.EmailFactory
 import net.blueshell.api.factory.telemetry.persistence.TelemetryFactory
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.blog.persistence.Blog
-import net.blueshell.api.domain.board.persistence.Board
-import net.blueshell.api.domain.board.persistence.BoardMember
+import net.blueshell.api.board.persistence.Board
+import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.event.persistence.Event

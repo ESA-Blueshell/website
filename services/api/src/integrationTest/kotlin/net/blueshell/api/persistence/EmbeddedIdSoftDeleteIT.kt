@@ -1,7 +1,7 @@
 package net.blueshell.api.persistence
 
-import net.blueshell.api.domain.board.persistence.BoardDocument
-import net.blueshell.api.domain.board.persistence.BoardMember
+import net.blueshell.api.board.persistence.BoardDocument
+import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.domain.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder

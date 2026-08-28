@@ -1,7 +1,7 @@
 package net.blueshell.api.security
 
 import net.blueshell.api.blog.domain.BlogPermission
-import net.blueshell.api.domain.board.application.permission.BoardPermission
+import net.blueshell.api.board.domain.BoardPermission
 import net.blueshell.api.domain.contribution.application.permission.ContributionPeriodPermission
 import net.blueshell.api.domain.contribution.application.permission.ContributionReminderPermission
 import net.blueshell.api.domain.event.application.permission.GuestPermission
@@ -11,8 +11,8 @@ import net.blueshell.api.telemetry.domain.TelemetryPermission
 
 import net.blueshell.api.blog.domain.BlogService
 import net.blueshell.api.blog.persistence.Blog
-import net.blueshell.api.domain.board.application.BoardService
-import net.blueshell.api.domain.board.persistence.Board
+import net.blueshell.api.board.domain.BoardService
+import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod

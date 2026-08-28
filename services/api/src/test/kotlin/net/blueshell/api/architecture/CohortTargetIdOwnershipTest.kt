@@ -18,8 +18,8 @@ class CohortTargetIdOwnershipTest {
     @Test
     fun `no cohort code references COHORT_AGGREGATE`() {
         val root = listOf(
-            File("src/main/kotlin/net/blueshell/api/platform/integration/cohort"),
-            File("services/api/src/main/kotlin/net/blueshell/api/platform/integration/cohort"),
+            File("src/main/kotlin/net/blueshell/api/cohort"),
+            File("services/api/src/main/kotlin/net/blueshell/api/cohort"),
         ).firstOrNull { it.isDirectory }
             ?: error("cohort source root not found from ${File("").absolutePath}")
 

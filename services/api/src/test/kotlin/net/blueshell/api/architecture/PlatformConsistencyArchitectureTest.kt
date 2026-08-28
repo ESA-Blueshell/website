@@ -44,6 +44,15 @@ import org.springframework.transaction.annotation.Transactional
  * handlePayload as transactional — is keyed on the type rather than the package and is
  * unaffected.
  *
+ * Five placement rules went with the platform/integration grouping itself, which the
+ * flattening empties: platform controllers reaching a platform repository (already covered
+ * twice, by `Controllers must not access repositories` and `Controllers must not import
+ * repositories`), and four requiring *Repository, *Scheduler, @Service and *Adapter types to
+ * sit in a named sub-package that the four-folder layout does not have.
+ *
+ * The @Profile rule survives them, widened from platform/integration to the whole project:
+ * a production adapter needs a profile wherever it now lives.
+ *
  * Two more went the same way: `platform.integration.queue` no longer exists, having merged
  * into the jobs module, and no *DTO class remains under `platform.integration` for the DTO
  * placement rule to select.
@@ -120,7 +129,7 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
     fun `production adapters must declare @Profile`(): Unit =
         arch("Production *Adapter classes must be annotated with @Profile") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
+                .that().resideInAnyPackage("${ArchitecturePackages.ROOT}..")
                 .and().haveSimpleNameEndingWith("Adapter")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .and().resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
@@ -172,16 +181,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: standard layout makes repositories discoverable and ensures the existing
      * "repository only accessed by application/persistence layers" rule applies uniformly.
      */
-    @Test
-    fun `platform repositories must reside in persistence dot repository packages`(): Unit =
-        arch("Platform *Repository interfaces must be in ..persistence.repository.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Repository")
-                .should().resideInAnyPackage("${ArchitecturePackages.ROOT}.platform.integration..persistence.repository..")
-                .because("ADR-022: Standard layout requires repositories at ..persistence.repository.. for rule uniformity")
-        }
-
     /**
      * C2: Platform specifications must reside in ..persistence.spec.. packages.
      *
@@ -208,17 +207,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: mirrors the existing "controllers do not access repositories directly" rule;
      * controllers must use the service layer instead of accessing repositories directly.
      */
-    @Test
-    fun `platform controllers must not access any platform repository directly`(): Unit =
-        arch("Platform *Controller classes must not access any platform repository") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Controller")
-                .should().accessClassesThat()
-                    .resideInAnyPackage(ArchitecturePackages.PLATFORM_ANY_REPOSITORY)
-                .because("ADR-002/ADR-022: Controllers must not access repositories directly; use service layer instead")
-        }
-
     // ── Group E: Adapter/Client Placement ────────────────────────────────────
 
     /**
@@ -227,18 +215,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: ACL adapters must be in the adapter sub-package for the standard layout;
      * placing them at the module root mixes infrastructure concerns with application logic.
      */
-    @Test
-    fun `production adapters must reside in adapter packages`(): Unit =
-        arch("Production *Adapter classes must reside in ..adapter.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Adapter")
-                .and().doNotHaveModifier(JavaModifier.ABSTRACT)
-                .and().resideOutsideOfPackages(ArchitecturePackages.PLATFORM_MOCK)
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_ADAPTER)
-                .because("ADR-022: Production adapters must reside in ..adapter.. sub-package")
-        }
-
     /**
      * E2: *Client classes in PLATFORM_INTEGRATION (outside mock) must reside in ..adapter.. packages.
      *
@@ -254,21 +230,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * application sub-package; placing them at the module root or in service/ at the root level
      * bypasses the standard layer structure.
      */
-    @Test
-    fun `platform services must reside in application packages`(): Unit =
-        arch("@Service classes in platform.integration must reside in ..application.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().areAnnotatedWith(Service::class.java)
-                .and().resideOutsideOfPackages(
-                    ArchitecturePackages.PLATFORM_ADAPTER,
-                    ArchitecturePackages.PLATFORM_MOCK,
-                    ArchitecturePackages.PLATFORM_QUEUE,
-                )
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_APPLICATION)
-                .because("ADR-022: Platform @Service beans must reside in ..application.. sub-package")
-        }
-
     // ── Group G: DTO Placement ────────────────────────────────────────────────
 
     /**
@@ -285,17 +246,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: schedulers coordinate application-level background tasks and belong in the
      * application sub-package alongside services, not at the module root.
      */
-    @Test
-    fun `platform schedulers must reside in application packages`(): Unit =
-        arch("*Scheduler Spring bean classes in platform.integration must reside in ..application.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("Scheduler")
-                .and(isSpringBean())
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_APPLICATION)
-                .because("ADR-022: Platform schedulers must reside in ..application.. sub-package")
-        }
-
     // ── Group I: Job Handler Placement ───────────────────────────────────────
 
     /**

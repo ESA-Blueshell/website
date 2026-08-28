@@ -94,15 +94,10 @@ class AuthorizationServerConfig {
             }
         }
 
-    // Traefik strips `/api` before forwarding, so re-add it so the redirect
-    // lands at the public URL and the SPA's off-SPA navigation re-enters this chain.
     private fun loginRedirectEntryPoint(): AuthenticationEntryPoint =
         AuthenticationEntryPoint { request, response, _ ->
-            val publicPath = "/api${request.requestURI}"
-            val query = request.queryString
-            val originalUrl = if (!query.isNullOrEmpty()) "$publicPath?$query" else publicPath
-            val encoded = URLEncoder.encode(originalUrl, StandardCharsets.UTF_8)
-            response.sendRedirect("/login?redirect=$encoded")
+            val target = LoginRedirectTarget.forRequest(request.requestURI, request::getParameter)
+            response.sendRedirect("/login?redirect=${URLEncoder.encode(target, StandardCharsets.UTF_8)}")
         }
 
     @Bean

@@ -5,12 +5,10 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.security.SecurityUtils
-import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -22,9 +20,8 @@ class CommitteeController(
 ) {
     @GetMapping("/committeeMembers/committees")
     @PermitAll
-    fun findCommitteesByUserId(
-        @AuthenticationPrincipal principal: UserPrincipal?
-    ): MutableList<CommitteeResponse> {
+    fun findCommitteesByUserId(): MutableList<CommitteeResponse> {
+        val principal = SecurityUtils.currentPrincipal()
         val principalId = principal?.id ?: return mutableListOf()
         val includeAll = principal.hasAuthority(Role.BOARD)
         val committees = if (includeAll) service.findAll() else service.findAllByUserId(principalId)

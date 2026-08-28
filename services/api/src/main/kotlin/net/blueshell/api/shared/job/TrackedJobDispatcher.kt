@@ -10,11 +10,11 @@ class TrackedJobDispatcher(
     private val queue: JobQueue,
     private val actors: ActorProvider
 ) {
-    fun <T : Any> runAsync(job: JobDefinition<T>, payload: T): JobExecution? {
+    fun <T : Any> runAsync(job: JobDefinition<T>, payload: T): QueuedJob? {
         return queue.runAsync(job, payload, actors.currentOrSystem())
     }
 
-    fun <T : Any> runAsyncFromActor(job: JobDefinition<T>, payload: T, actor: ActorTracked): JobExecution? {
+    fun <T : Any> runAsyncFromActor(job: JobDefinition<T>, payload: T, actor: ActorTracked): QueuedJob? {
         return queue.runAsync(job, payload, actor.actor)
     }
 
@@ -23,7 +23,7 @@ class TrackedJobDispatcher(
         jobType: String,
         payload: Any? = null,
         actor: Actor? = null
-    ): JobExecution? {
+    ): QueuedJob? {
         return queue.runAsync(jobType, payload, actor ?: actors.currentOrSystem())
     }
 }

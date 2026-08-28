@@ -16,7 +16,7 @@ import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.JobExecution
+import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -308,7 +308,7 @@ class InboundReconcileTest {
 
     private data class TargetFixture(val subject: CohortSubject, val cohort: Cohort)
 
-    private data class TestJobExecution(override val id: Long?) : JobExecution {
+    private data class TestJobExecution(override val id: Long?) : QueuedJob {
         override val jobType: String = "test"
         override val payload: String? = null
         override val actor = net.blueshell.api.shared.tracking.Actor.system()

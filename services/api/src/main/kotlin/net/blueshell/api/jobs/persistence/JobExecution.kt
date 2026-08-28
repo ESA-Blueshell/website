@@ -4,24 +4,15 @@ import jakarta.persistence.*
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.shared.tracking.Actor
 import java.time.Instant
-import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
 
 /**
- * Platform implementation of JobExecution with persistence and tracking capabilities.
- * Implements the shared JobExecution interface for domain layer usage.
- *
- * The class intentionally shares its simple name with the `shared.job.JobExecution`
- * port it implements: this is the persistence adapter for that domain port
- * (ports-and-adapters). The interface is imported aliased as `JobExecutionInterface`
- * to keep the two unambiguous at the declaration below, so there is no real
- * confusion for readers. Renaming the entity would churn ~15 call sites for a
- * purely cosmetic gain, so the java/class-name-matches-super-class note is
- * suppressed here rather than fixed.
+ * Persistence adapter for the [QueuedJob] port: a stored job execution with its
+ * tracking metadata.
  */
-// codeql[java/class-name-matches-super-class]
 @Entity
 @Table(
     name = "job_executions",
@@ -34,7 +25,6 @@ import net.blueshell.api.shared.job.JobExecution as JobExecutionInterface
         Index(name = "idx_job_executions_due_retry", columnList = "status, next_attempt_at"),
     ]
 )
-// codeql[java/class-name-matches-super-class] — intentional adapter/port name-sharing; see KDoc above.
 class JobExecution(
     @Column(name = "job_type", nullable = false)
     override var jobType: String = "",
@@ -86,7 +76,7 @@ class JobExecution(
     @Enumerated(EnumType.STRING)
     @Column(name = "initiated_by_role", nullable = false)
     var initiatedByRole: Role = Role.ADMIN
-) : AuditedAutoIdEntity(), JobExecutionInterface
+) : AuditedAutoIdEntity(), QueuedJob
 
 {
     @get:Transient

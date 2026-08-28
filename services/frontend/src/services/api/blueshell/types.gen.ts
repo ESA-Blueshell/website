@@ -542,6 +542,17 @@ export type CreateEventSignUpRequest = {
     userId?: number | null;
 };
 
+/**
+ * A game the association has started playing
+ */
+export type CreateGameRequest = {
+    name: string;
+    /**
+     * The address the game's page answers to
+     */
+    slug: string;
+};
+
 export type CreateGuestRequest = {
     discord: string;
     email: string;
@@ -3503,6 +3514,47 @@ export type FindGamePagesResponses = {
 };
 
 export type FindGamePagesResponse = FindGamePagesResponses[keyof FindGamePagesResponses];
+
+export type CreateGameData = {
+    body: CreateGameRequest;
+    path?: never;
+    query?: never;
+    url: '/esports/games';
+};
+
+export type CreateGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateGameError = CreateGameErrors[keyof CreateGameErrors];
+
+export type CreateGameResponses = {
+    /**
+     * Created
+     */
+    201: GamePageResponse;
+};
+
+export type CreateGameResponse = CreateGameResponses[keyof CreateGameResponses];
 
 export type FindEsportsPageData = {
     body?: never;

@@ -24,7 +24,7 @@ class TeamService(
     /** A team belongs to a game, so a code naming none is refused before anything is written. */
     @Transactional
     fun create(game: String, name: String, image: String?): Team =
-        teams.save(Team(game = games.require(game).game, name = name.trim(), image = image?.trim()?.ifBlank { null }))
+        teams.save(Team(game = games.requireGame(game).game, name = name.trim(), image = image?.trim()?.ifBlank { null }))
 
     @Transactional
     fun update(id: Long, name: String, image: String?): Team {

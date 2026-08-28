@@ -32,7 +32,7 @@ class EsportsPageQueryService(
     @Transactional(readOnly = true)
     fun page(game: String, seasonId: Long? = null): EsportsPageView {
         // A code naming no game is refused rather than answered with an empty page.
-        games.require(game)
+        games.requireGame(game)
         val available = fielded.findSeasonIdsFielded(game)
             .mapNotNull { id -> runCatching { seasons.findById(id) }.getOrNull() }
             .sortedByDescending { it.startDate }

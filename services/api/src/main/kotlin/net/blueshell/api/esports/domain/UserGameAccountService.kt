@@ -29,7 +29,7 @@ class UserGameAccountService(
         require(trimmed.isNotBlank()) { "A handle cannot be blank" }
         // A handle is a handle in some game, so a code naming none is refused with a reason
         // rather than reaching the foreign key.
-        games.require(game)
+        games.requireGame(game)
         val existing = accounts.findByUserIdAndGame(userId, game)
         if (existing == null) {
             return accounts.save(UserGameAccount(userId = userId, game = game, handle = trimmed))

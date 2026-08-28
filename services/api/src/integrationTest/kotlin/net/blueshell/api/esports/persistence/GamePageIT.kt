@@ -191,6 +191,112 @@ class GamePageIT : UserTestSupport() {
     }
 
     @Test
+    fun `the board adds a game the association has started playing`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            post("/esports/games")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Rocket League 2","slug":"rocket-league-2"}"""),
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.name").value("Rocket League 2"))
+            .andExpect(jsonPath("$.slug").value("rocket-league-2"))
+            // Its code is taken from its name: the identity everything else points at.
+            .andExpect(jsonPath("$.game").value("ROCKET_LEAGUE_2"))
+            // Nobody has drawn it anything, so it reads on the island's own colour.
+            .andExpect(jsonPath("$.accent").doesNotExist())
+            .andExpect(jsonPath("$.fielded").value(true))
+
+        mvc.perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.slug == 'rocket-league-2')].name").value("Rocket League 2"))
+    }
+
+    @Test
+    fun `a game added this way can have a team written for it straight away`() {
+        val board = createUserWithRole(Role.BOARD)
+        mvc.perform(
+            post("/esports/games").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Pong","slug":"pong"}"""),
+        ).andExpect(status().isCreated)
+
+        // The code the api answered with is a real game now, which the foreign key agrees with.
+        mvc.perform(
+            post("/esports/teams").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"game":"PONG","name":"BS Paddlers"}"""),
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.game").value("PONG"))
+    }
+
+    @Test
+    fun `an address another game already claims is refused with a reason`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            post("/esports/games").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Valorant Two","slug":"valorant"}"""),
+        )
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Valorant")))
+    }
+
+    @Test
+    fun `a game the association already knows is refused rather than added twice`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            post("/esports/games").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Valorant","slug":"valorant-again"}"""),
+        )
+            .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `an address is tidied into one somebody can be sent to`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            post("/esports/games").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Age of Empires II","slug":"  Age Of Empires II  "}"""),
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.slug").value("age-of-empires-ii"))
+            .andExpect(jsonPath("$.game").value("AGE_OF_EMPIRES_II"))
+    }
+
+    @Test
+    fun `a game cannot claim the index's own address`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        // It would have a record and no page, because that address is the index's.
+        mvc.perform(
+            post("/esports/games").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Competitive Scene","slug":"competitive-scene"}"""),
+        )
+            .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `a member cannot add a game`() {
+        val member = createUserWithRole(Role.MEMBER)
+
+        mvc.perform(
+            post("/esports/games").with(bearer(member))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Pong","slug":"pong"}"""),
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
     fun `a member cannot rewrite a game's page`() {
         val member = createUserWithRole(Role.MEMBER)
 

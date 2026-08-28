@@ -12,6 +12,7 @@ import {
   fieldTeam,
   findEsportsPage,
   findGameAccounts,
+  createGame,
   findGamePages,
   findRoster,
   findSeasonContents,
@@ -73,6 +74,25 @@ export async function loadGames(): Promise<GameRecord[]> {
   return Array.isArray(res.data) ? res.data : []
 }
 
+export interface GameSaved {
+  ok: true
+  game: GameRecord
+}
+
+/**
+ * A game the association has started playing.
+ *
+ * Its code is the api's to derive from the name: a code is what everything else points at, and
+ * two people naming the same game must not end up with two of it.
+ */
+export async function addGameOrReason(
+  game: {name: string; slug: string},
+): Promise<GameSaved | SeasonRefused> {
+  const res = await createGame({body: {name: game.name, slug: game.slug}})
+  if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be added.")}
+  return {ok: true, game: res.data}
+}
+
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {
   const res = await findEsportsPage({path: {game}, query: seasonId == null ? {} : {seasonId}})
   return res.data ?? null
@@ -111,10 +131,10 @@ export async function saveSeasonOrReason(
 }
 
 /** Whatever the api said, preferring the specific complaint over the generic one. */
-function reasonFrom(error: unknown): string {
+function reasonFrom(error: unknown, fallback = "The season could not be saved."): string {
   const body = (error as {detail?: string; title?: string; errors?: Array<{message?: string}>})
   const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
-  return fields || body?.detail || body?.title || "The season could not be saved."
+  return fields || body?.detail || body?.title || fallback
 }
 
 export async function saveSeason(

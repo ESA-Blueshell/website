@@ -55,6 +55,13 @@ class EsportsController(
     @GetMapping("/games")
     fun findGamePages(): List<GamePageResponse> = gamePages.findAll().map { it.asResponse() }
 
+    /** A game the association has started playing. Its page answers straight away. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PostMapping("/games")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createGame(@Valid @RequestBody request: CreateGameRequest): GamePageResponse =
+        gamePages.create(request.name, request.slug).asResponse()
+
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/games/{game}")
     fun updateGamePage(

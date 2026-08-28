@@ -112,6 +112,18 @@ data class GameAccountRequest(
     val handle: String,
 )
 
+@Schema(name = "CreateGameRequest", description = "A game the association has started playing")
+data class CreateGameRequest(
+    @field:NotBlank(message = "A game needs a name")
+    @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
+    val name: String,
+
+    @field:NotBlank(message = "A game's page needs an address")
+    @field:Size(min = 1, max = 64, message = "Address must be 1-64 characters")
+    @field:Schema(description = "The address the game's page answers to")
+    val slug: String,
+)
+
 @Schema(name = "UpdateGamePageRequest", description = "How a game presents itself")
 data class UpdateGamePageRequest(
     @field:NotBlank

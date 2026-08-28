@@ -196,6 +196,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   // Teams written down and fielded during the test, so a page asked again reports them the
   // way the api would rather than forgetting they were added.
   const teamsMade: Array<Record<string, unknown>> = []
+  /** Games added during the test, which every read then reports as one of the games. */
+  const gamesMade: Array<Record<string, string | number | boolean | null>> = []
   const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
   let nextTeamId = 70
   let nextEntryId = 200
@@ -672,9 +674,26 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       return fulfillJson(route, {id: 92, boardId: 9, userId: body.userId ?? null, role: "Secretary", name: "Viktor Petrov", description: null, image: null, startDate: "2025-09-01", endDate: "2026-08-31", version: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"})
     }
+    // A game added during a test is one of the games from then on, the way the api has it.
+    if (method === "POST" && path === "/esports/games") {
+      const body = JSON.parse(request.postData() ?? "{}") as {name?: string; slug?: string}
+      const slug = String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+      const held = known.find(one => one.slug === slug)
+      if (held) {
+        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+      }
+      const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+      const made = {
+        game: code, name: String(body.name ?? ""), slug, accent: null, mark: null, banner: null,
+        intro: null, sortIndex: known.length + 1, fielded: true,
+      }
+      gamesMade.push(made)
+      return fulfillJson(route, made, 201)
+    }
     // The api answers in the order the records put the games in, and so does this.
     if (method === "GET" && path === "/esports/games") {
-      return fulfillJson(route, fixtures.esportsGames ?? esportsGames)
+      return fulfillJson(route, [...(fixtures.esportsGames ?? esportsGames), ...gamesMade])
     }
     // [A-Z0-9_]+ rather than [A-Z_]+: a game's enum name can carry a digit, and
     // CS2 is one. With the digit excluded this route never matched, so every CS2

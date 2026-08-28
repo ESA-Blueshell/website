@@ -2,7 +2,7 @@ package net.blueshell.api.domain.event.application.permission
 
 import net.blueshell.api.domain.event.application.GuestService
 import net.blueshell.api.domain.event.persistence.Guest
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.security.permission.BasePermissionEvaluator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component

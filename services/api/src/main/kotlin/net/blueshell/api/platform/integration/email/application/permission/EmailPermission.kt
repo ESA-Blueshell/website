@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.email.application.permission
 
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.security.permission.BasePermissionEvaluator
 
-import net.blueshell.api.infrastructure.security.SecurityUtils
+import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.platform.integration.email.application.service.EmailService
 import net.blueshell.api.platform.integration.email.persistence.Email
 import net.blueshell.api.shared.enums.Role

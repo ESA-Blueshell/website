@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import net.blueshell.api.domain.auth.domain.service.TokenGenerator
 import org.springframework.beans.factory.annotation.Value

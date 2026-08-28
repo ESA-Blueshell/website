@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean

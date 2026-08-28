@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.auth.web
 
 import net.blueshell.api.factory.auth.web.request.AuthRequestFactory
-import net.blueshell.api.infrastructure.security.JwtTokenUtil
+import net.blueshell.api.security.JwtTokenUtil
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat

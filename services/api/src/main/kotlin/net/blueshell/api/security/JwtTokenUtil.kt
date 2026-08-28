@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.ExpiredJwtException

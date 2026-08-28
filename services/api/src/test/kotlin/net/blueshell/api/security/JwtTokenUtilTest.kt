@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

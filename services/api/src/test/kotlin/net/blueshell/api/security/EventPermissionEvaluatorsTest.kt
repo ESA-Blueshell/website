@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.security
 
 import net.blueshell.api.domain.committee.application.permission.CommitteePermission
 import net.blueshell.api.domain.event.application.permission.EventBannerPermission

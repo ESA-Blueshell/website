@@ -1,10 +1,10 @@
 package net.blueshell.api.domain.contribution.application.permission
 
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.security.permission.BasePermissionEvaluator
 
 import net.blueshell.api.domain.contribution.application.ContributionPeriodService
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.infrastructure.security.SecurityUtils
+import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication

@@ -2,8 +2,8 @@ package net.blueshell.api.domain.esports.application.permission
 
 import net.blueshell.api.domain.esports.application.TeamService
 import net.blueshell.api.domain.esports.persistence.Team
-import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.security.SecurityUtils
+import net.blueshell.api.security.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component

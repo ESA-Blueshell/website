@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal

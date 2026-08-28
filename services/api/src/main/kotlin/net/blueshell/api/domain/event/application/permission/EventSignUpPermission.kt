@@ -3,8 +3,8 @@ package net.blueshell.api.domain.event.application.permission
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.persistence.EventSignUp
-import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.security.SecurityUtils
+import net.blueshell.api.security.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication

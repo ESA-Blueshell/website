@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.security.permission
 
 import net.blueshell.api.sponsor.domain.SponsorService
 import net.blueshell.api.sponsor.persistence.Sponsor

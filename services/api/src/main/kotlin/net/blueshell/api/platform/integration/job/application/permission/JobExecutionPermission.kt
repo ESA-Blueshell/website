@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.job.application.permission
 
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.security.permission.BasePermissionEvaluator
 
-import net.blueshell.api.infrastructure.security.SecurityUtils
+import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.shared.enums.Role

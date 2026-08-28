@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component

@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.security.permission
 
 import net.blueshell.api.shared.model.Identifiable
 import net.blueshell.api.shared.service.BaseModelService

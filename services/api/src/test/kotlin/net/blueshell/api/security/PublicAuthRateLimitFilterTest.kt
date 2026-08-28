@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import jakarta.servlet.FilterChain
 import org.assertj.core.api.Assertions.assertThat

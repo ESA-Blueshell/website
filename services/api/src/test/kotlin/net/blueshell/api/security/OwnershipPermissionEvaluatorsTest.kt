@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.security
 
 import net.blueshell.api.domain.user.application.permission.AddressPermission
 import net.blueshell.api.domain.contribution.application.permission.ContributionPermission

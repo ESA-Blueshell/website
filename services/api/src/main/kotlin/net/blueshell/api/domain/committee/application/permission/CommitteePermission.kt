@@ -2,8 +2,8 @@ package net.blueshell.api.domain.committee.application.permission
 
 import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee
-import net.blueshell.api.infrastructure.security.SecurityUtils
-import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
+import net.blueshell.api.security.SecurityUtils
+import net.blueshell.api.security.permission.BasePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication

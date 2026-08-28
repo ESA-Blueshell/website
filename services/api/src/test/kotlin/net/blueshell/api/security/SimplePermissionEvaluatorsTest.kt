@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security.permission
+package net.blueshell.api.security
 
 import net.blueshell.api.blog.domain.BlogPermission
 import net.blueshell.api.domain.board.application.permission.BoardPermission

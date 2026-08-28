@@ -5,7 +5,7 @@ import com.nimbusds.jose.proc.SecurityContext
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import net.blueshell.api.infrastructure.security.JwtAuthFilter
+import net.blueshell.api.security.JwtAuthFilter
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

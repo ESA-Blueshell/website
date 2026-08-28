@@ -1,10 +1,10 @@
 package net.blueshell.api.platform.config
 
 import net.blueshell.api.domain.auth.web.SignupController
-import net.blueshell.api.infrastructure.security.JwtAuthFilter
-import net.blueshell.api.infrastructure.security.JwtAuthenticationEntryPoint
-import net.blueshell.api.infrastructure.security.PublicAuthRateLimitFilter
-import net.blueshell.api.infrastructure.security.permission.CompositePermissionEvaluator
+import net.blueshell.api.security.JwtAuthFilter
+import net.blueshell.api.security.JwtAuthenticationEntryPoint
+import net.blueshell.api.security.PublicAuthRateLimitFilter
+import net.blueshell.api.security.permission.CompositePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value

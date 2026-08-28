@@ -1,4 +1,4 @@
-package net.blueshell.api.infrastructure.security
+package net.blueshell.api.security
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.exception.UserNotFoundException

@@ -5,9 +5,9 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import net.blueshell.api.infrastructure.security.AuthTokenCookieService
-import net.blueshell.api.infrastructure.security.JwtRevocationService
-import net.blueshell.api.infrastructure.security.JwtTokenUtil
+import net.blueshell.api.security.AuthTokenCookieService
+import net.blueshell.api.security.JwtRevocationService
+import net.blueshell.api.security.JwtTokenUtil
 import net.blueshell.api.domain.auth.web.dto.request.JwtRequest
 import net.blueshell.api.domain.auth.web.dto.response.AuthenticationResponse
 import net.blueshell.api.domain.auth.web.mapping.response.asResponse

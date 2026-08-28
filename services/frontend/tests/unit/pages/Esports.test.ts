@@ -7,6 +7,9 @@ const seasons = [
   {id: 2, name: "Spring 2025/26", startDate: "2026-02-01", endDate: "2026-08-31"},
 ]
 
+/** Written down, but nobody has been fielded in it, so no game's page reports it. */
+const emptySeason = {id: 3, name: "Autumn 2026/27", startDate: "2026-09-01", endDate: "2027-01-31"}
+
 // The index asks each game what it fielded; only two of them answer with a team.
 const pageFor = (game: string) => ({
   game,
@@ -20,6 +23,8 @@ const pageFor = (game: string) => ({
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadEsportsPage: vi.fn(async (game: string) => pageFor(game)),
   saveSeasonOrReason: vi.fn(async () => ({ok: true, season: seasons[0]})),
+  // Every season written down, which is more than the games were fielded in.
+  loadSeasons: vi.fn(async () => [...seasons, emptySeason]),
 }))
 
 // The page asks the store whether the reader may change esports, so every mount answers.
@@ -54,7 +59,23 @@ describe("Esports page", () => {
     await flushPromises()
 
     // One per season on the strip, so the affordance belongs to a season rather than to the page.
-    expect(wrapper.findAll('[data-testid^="esports-season-edit-"]')).toHaveLength(seasons.length)
+    expect(wrapper.findAll('[data-testid^="esports-season-edit-"]')).toHaveLength(seasons.length + 1)
+  })
+
+  it("shows a visitor only the seasons something was fielded in", async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    // The empty season is nothing to somebody who cannot put a team in it.
+    expect(wrapper.find(`[data-testid="esports-season-node-${emptySeason.id}"]`).exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid^="esports-season-node-"]')).toHaveLength(seasons.length)
+  })
+
+  it("shows the board a season nothing was fielded in, so a team can be put in it", async () => {
+    const wrapper = mountPage({board: true})
+    await flushPromises()
+
+    expect(wrapper.find(`[data-testid="esports-season-node-${emptySeason.id}"]`).exists()).toBe(true)
   })
 
   it("shows only the games that fielded a team in the season on show", async () => {

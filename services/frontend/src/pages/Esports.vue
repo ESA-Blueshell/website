@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
@@ -8,6 +8,7 @@ import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
+import {loadSeasons} from "@/domains/esports/adapters/esports"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
@@ -69,11 +70,29 @@ const entrance = {
 }
 
 const mayEdit = useMayEditEsports()
+
+/**
+ * A visitor's strip carries the seasons something was fielded in; somebody who may edit sees
+ * every season, since a season has to be reachable before a team can be added to it.
+ */
+const allSeasons = ref<Season[]>([])
+watch(mayEdit, async (may) => {
+  if (may && allSeasons.value.length === 0) allSeasons.value = await loadSeasons()
+}, {immediate: true})
+
+const stripSeasons = computed<Season[]>(() =>
+  (mayEdit.value && allSeasons.value.length > 0 ? allSeasons.value : seasons.value))
 const editing = ref<Season | null>(null)
 const editorOpen = ref(false)
 
 const editSeason = (season: Season) => {
   editing.value = season
+  editorOpen.value = true
+}
+
+// Nothing to fill the form from: the dialog opens empty and writes a new season.
+const addSeason = () => {
+  editing.value = null
   editorOpen.value = true
 }
 
@@ -84,7 +103,16 @@ const closeEditor = (open: boolean) => {
 // The strip reads from this list, so writing the saved season back into it is the whole of
 // showing the change.
 const seasonSaved = (saved: Season) => {
-  seasons.value = seasons.value.map(one => (one.id === saved.id ? saved : one))
+  const known = seasons.value.some(one => one.id === saved.id)
+  seasons.value = known
+    ? seasons.value.map(one => (one.id === saved.id ? saved : one))
+    : [...seasons.value, saved]
+  const listed = allSeasons.value.some(one => one.id === saved.id)
+  allSeasons.value = listed
+    ? allSeasons.value.map(one => (one.id === saved.id ? saved : one))
+    : [...allSeasons.value, saved]
+  // A season nobody has seen before is the one to show, which also scrolls the strip to it.
+  if (!known && !listed) void show(saved.id)
 }
 </script>
 
@@ -116,21 +144,21 @@ const seasonSaved = (saved: Season) => {
       <!-- The same strip as a game page, one level up: it selects a season, and what shows
            below is the games the association fielded in it. -->
       <section
-        v-if="seasons.length > 1"
+        v-if="stripSeasons.length > 1"
         class="w-full pt-1 pb-2"
         data-testid="esports-index-seasons"
       >
         <season-timeline
           accent="var(--color-brand)"
           :may-edit="mayEdit"
-          :seasons="seasons"
+          :seasons="stripSeasons"
           :selected-id="selected"
+          @add="addSeason"
           @edit="editSeason"
           @select="chooseSeason"
         />
 
         <season-dialog
-          v-if="editing"
           accent="var(--color-brand)"
           :open="editorOpen"
           :season="editing"

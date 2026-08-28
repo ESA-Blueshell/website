@@ -16,6 +16,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   (event: "select", id: number): void
   (event: "edit", season: Season): void
+  (event: "add"): void
 }>()
 
 const HEIGHT = 104
@@ -258,6 +259,30 @@ const step = (from: number, by: number) => {
           </g>
         </svg>
 
+        <!--
+          Seasons are added twice a year and always at the end, which is where their absence
+          is noticed. It stands rather than waiting to be hovered: there is no season under
+          the pointer for it to belong to.
+        -->
+        <button
+          v-if="mayEdit"
+          aria-label="Add a season"
+          class="season-strip__add"
+          data-testid="esports-season-add"
+          type="button"
+          @click="emit('add')"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+
         <span
           v-for="node in nodes"
           :key="node.id"
@@ -420,6 +445,32 @@ const step = (from: number, by: number) => {
     color-mix(in oklab, var(--accent) 26%, transparent),
     transparent 78%
   );
+}
+
+.season-strip__add {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  z-index: 3;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in oklab, var(--color-void) 82%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 65%, transparent);
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.season-strip__add svg {
+  width: 15px;
+  height: 15px;
+}
+
+.season-strip__add:hover,
+.season-strip__add:focus-visible {
+  background: color-mix(in oklab, var(--accent) 30%, var(--color-void));
 }
 
 .season-band__label {

@@ -1,6 +1,8 @@
 package net.blueshell.api.domain.esports.application
 
+import net.blueshell.api.domain.esports.application.exception.SeasonDatesReversedException
 import net.blueshell.api.domain.esports.application.exception.SeasonNotFoundException
+import net.blueshell.api.domain.esports.application.exception.SeasonOverlapException
 import net.blueshell.api.domain.esports.persistence.Season
 import net.blueshell.api.domain.esports.persistence.repository.SeasonRepository
 import org.springframework.stereotype.Service
@@ -36,12 +38,14 @@ class SeasonService(
     @Transactional
     fun create(name: String, startDate: LocalDate, endDate: LocalDate): Season {
         requireOrdered(startDate, endDate)
+        requireClear(startDate, endDate, itself = null)
         return seasons.save(Season(name = name.trim(), startDate = startDate, endDate = endDate))
     }
 
     @Transactional
     fun update(id: Long, name: String, startDate: LocalDate, endDate: LocalDate): Season {
         requireOrdered(startDate, endDate)
+        requireClear(startDate, endDate, itself = id)
         val season = findById(id)
         season.name = name.trim()
         season.startDate = startDate
@@ -52,6 +56,13 @@ class SeasonService(
     @Transactional
     fun delete(id: Long) = seasons.delete(findById(id))
 
-    private fun requireOrdered(startDate: LocalDate, endDate: LocalDate) =
-        require(!endDate.isBefore(startDate)) { "A season cannot end before it starts" }
+    private fun requireOrdered(startDate: LocalDate, endDate: LocalDate) {
+        if (endDate.isBefore(startDate)) throw SeasonDatesReversedException()
+    }
+
+    /** A season may cover the same ground as itself, and as nothing else. */
+    private fun requireClear(startDate: LocalDate, endDate: LocalDate, itself: Long?) {
+        val clash = seasons.findAllOverlapping(startDate, endDate).firstOrNull { it.id != itself }
+        if (clash != null) throw SeasonOverlapException(clash.name)
+    }
 }

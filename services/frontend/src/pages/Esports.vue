@@ -5,6 +5,7 @@ import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
+import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
@@ -14,7 +15,7 @@ import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {$require} from "@/plugins/require"
 import {Game as GameEnum} from "@/services/api"
-import type {Game, Season} from "@/domains/esports/adapters/esports"
+import type {Game, Season, Team} from "@/domains/esports/adapters/esports"
 
 defineOptions({name: "EsportsPage"})
 
@@ -35,7 +36,7 @@ const GAMES: Array<{game: Game; name: string; url: string; banner: string}> = [
   {game: GameEnum.GEOGUESSR, name: "GeoGuessr", url: "/esports/geoguessr", banner: ""},
 ]
 
-const {seasons, selected, entries, loading, fielded, show} = useSeasonLineup(GAMES.map(g => g.game))
+const {seasons, selected, entries, loading, fielded, show, reload} = useSeasonLineup(GAMES.map(g => g.game))
 
 const seasonName = computed(() =>
   seasons.value.find(s => s.id === selected.value)?.name ?? "",
@@ -98,6 +99,25 @@ const addSeason = () => {
 
 const closeEditor = (open: boolean) => {
   editorOpen.value = open
+}
+
+const adding = ref(false)
+/** The game the team just added belongs to, which is the slice to look at. */
+const justAdded = ref<Game | null>(null)
+
+/** The season on show, with whatever game the team was added to now among its slices. */
+const seasonOnShow = computed<Season | null>(() =>
+  seasons.value.find(one => one.id === selected.value) ?? null)
+
+/** Ids are unique across games, so one flat list says who is already playing this season. */
+const alreadyFielded = computed<number[]>(() =>
+  entries.value.flatMap(entry => entry.teams.map(team => team.id)))
+
+const teamAdded = async (team: Team) => {
+  await reload(selected.value ?? undefined)
+  // A game that fielded nothing this season had no slice; it does now, and it is the one to
+  // look at. Which game that is comes from the answer, not from what was asked for.
+  justAdded.value = entries.value.find(entry => entry.teams.some(one => one.id === team.id))?.game ?? null
 }
 
 // The strip reads from this list, so writing the saved season back into it is the whole of
@@ -188,8 +208,12 @@ const seasonSaved = (saved: Season) => {
         >
           <banner-slices
             accent="var(--color-brand)"
+            add-label="Add a team"
             :items="slices"
+            :may-add="mayEdit"
+            :open-id="justAdded"
             testid-prefix="esports-game"
+            @add="adding = true"
           >
             <template #details="{item}">
               <span class="team-slice__group">
@@ -218,6 +242,16 @@ const seasonSaved = (saved: Season) => {
             </template>
           </banner-slices>
         </Motion>
+
+        <add-team-dialog
+          accent="var(--color-brand)"
+          :fielded-team-ids="alreadyFielded"
+          :games="GAMES.map(one => ({game: one.game, name: one.name}))"
+          :open="adding"
+          :season="seasonOnShow"
+          @added="teamAdded"
+          @update:open="adding = $event"
+        />
       </section>
 
       <join-band />

@@ -9,10 +9,12 @@ import {
   createTeam,
   deleteSeason,
   deleteTeam,
+  fieldTeam,
   findEsportsPage,
   findGameAccounts,
   findRoster,
   findSeasons,
+  findTeamSeasons,
   findTeams,
   linkRosterEntry,
   removeRosterEntry,
@@ -23,6 +25,7 @@ import {
 } from "@/services/api"
 import type {
   EsportsPageResponse,
+  FieldedTeamResponse,
   Game as ApiGame,
   GameAccountResponse,
   RosterEntryResponse,
@@ -40,6 +43,7 @@ export type Team = TeamResponse
 export type TeamRoster = TeamRosterResponse
 export type RosterEntry = RosterEntryResponse
 export type GameAccount = GameAccountResponse
+export type FieldedTeam = FieldedTeamResponse
 
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {
   const res = await findEsportsPage({path: {game}, query: seasonId == null ? {} : {seasonId}})
@@ -113,8 +117,42 @@ export async function saveTeam(
   return res.data ?? null
 }
 
+export interface TeamSaved {
+  ok: true
+  team: Team | null
+}
+
+/** Same reason as a season's: the api answers a refusal with a body, not a thrown error. */
+export async function saveTeamOrReason(
+  team: {game: Game; name: string; image?: string | null},
+): Promise<TeamSaved | SeasonRefused> {
+  const res = await createTeam({body: {game: team.game, name: team.name, image: team.image ?? undefined}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error)}
+  return {ok: true, team: res.data ?? null}
+}
+
 export async function dropTeam(id: number): Promise<void> {
   await deleteTeam({path: {id}})
+}
+
+/** The seasons a team has been fielded in, newest first. */
+export async function loadTeamSeasons(teamId: number): Promise<Season[]> {
+  const res = await findTeamSeasons({path: {teamId}})
+  return res.data ?? []
+}
+
+/**
+ * Fields a team in a season, optionally bringing across the line-up it last had.
+ *
+ * Answers with what came with it, so a caller can show the roster it is about to publish.
+ */
+export async function fieldTeamInSeason(
+  teamId: number,
+  seasonId: number,
+  carryLineup: boolean,
+): Promise<FieldedTeam | null> {
+  const res = await fieldTeam({path: {seasonId, teamId}, body: {carryLineup}})
+  return res.data ?? null
 }
 
 export async function loadRoster(teamId: number, seasonId: number): Promise<RosterEntry[]> {

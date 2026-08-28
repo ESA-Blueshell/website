@@ -15,12 +15,27 @@ export interface SliceItem {
   accent?: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   items: SliceItem[]
   accent: string
   /** What each slice's data-testid is built from, since the two pages name them differently. */
   testidPrefix: string
-}>()
+  /** Whether the band ends in a way to add another. */
+  mayAdd?: boolean
+  /** What the plus is called, since one page adds a team and the other adds one to a game. */
+  addLabel?: string
+  /**
+   * One slice to open by name, which wins over opening the first.
+   *
+   * Something just added is the thing to look at, and it is rarely first: the band is in the
+   * order it reads in, not the order things were written down. A prop rather than a method
+   * because a new set of items reopens the first of them, and a call made before that lands
+   * would simply be undone.
+   */
+  openId?: SliceItem["id"] | null
+}>(), {mayAdd: false, addLabel: "Add", openId: null})
+
+const emit = defineEmits<{(event: "add"): void}>()
 
 const motion = useMotionAllowed()
 
@@ -71,8 +86,17 @@ const choose = (index: number) => {
   if (stacked()) tapped.value = index
 }
 
+const indexOfNamed = () => props.items.findIndex(item => item.id === props.openId)
+
+
+
 const settle = () => {
-  open.value = 0
+  const named = indexOfNamed()
+  open.value = named >= 0 ? named : 0
+  // Stacked, the scroll decides what is open, so a named slice has to be held against it the
+  // same way a tap is. This runs on mount too, which is where a band rebuilt around a slice
+  // that was just added arrives with the name already set and no change left to react to.
+  if (named >= 0 && stacked()) tapped.value = named
 }
 
 onMounted(() => {
@@ -90,14 +114,32 @@ onBeforeUnmount(() => {
   window.removeEventListener("scroll", releaseTap)
 })
 
-// A change of what is on show brings a different set, so the first of those opens in its turn.
+// A change of what is on show brings a different set, so the first of those opens in its turn
+// — unless one of them is named, which is the set arriving because that one was just added.
 watch(() => props.items, () => {
   slices.value = []
-  tapped.value = null
-  open.value = motion.decorative.value ? null : 0
+  const named = indexOfNamed()
+  // Stacked, the scroll decides what is open, so a named slice has to hold against it.
+  tapped.value = stacked() && named >= 0 ? named : null
+  open.value = motion.decorative.value ? null : (named >= 0 ? named : 0)
   if (motion.decorative.value) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
 })
+
+/**
+ * Opens the named slice, which is the one just added.
+ *
+ * After the update rather than during it, so the set it belongs to is the one on screen.
+ * Stacked, this is held the same way a tap is held — until the visitor scrolls, at which
+ * point the scroll is their intent again. Scrolling to it ourselves would be that scroll,
+ * and would hand the choice straight back to whichever slice happened to be in the middle.
+ */
+watch([() => props.openId, () => props.items], () => {
+  const named = indexOfNamed()
+  if (named < 0) return
+  open.value = named
+  if (stacked()) tapped.value = named
+}, {flush: "post"})
 </script>
 
 <template>
@@ -115,7 +157,7 @@ watch(() => props.items, () => {
       :class="{
         'team-slice--open': index === open,
         'team-slice--first': index === 0,
-        'team-slice--last': index === items.length - 1,
+        'team-slice--last': index === items.length - 1 && !mayAdd,
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
       :style="item.accent ? {'--accent': item.accent} : undefined"
@@ -156,6 +198,38 @@ watch(() => props.items, () => {
         </span>
       </button>
     </section>
+
+    <!--
+      A pane of its own rather than a control floating over the band: adding belongs to the
+      band, and the band is the page. Narrow, because it is a way in rather than a thing to
+      read.
+    -->
+    <section
+      v-if="mayAdd"
+      class="team-slice team-slice--add team-slice--last"
+    >
+      <button
+        class="team-slice__body team-slice__add"
+        :data-testid="`${testidPrefix}-add`"
+        type="button"
+        @click="emit('add')"
+      >
+        <span
+          aria-hidden="true"
+          class="team-slice__plus"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </span>
+        <span class="team-slice__add-label">{{ addLabel }}</span>
+      </button>
+    </section>
   </div>
 </template>
 
@@ -191,6 +265,44 @@ watch(() => props.items, () => {
 
 .team-slice--last {
   clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.team-slice--add {
+  flex: 0 0 auto;
+  width: 8rem;
+  background-color: var(--color-pit);
+}
+
+.team-slice__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 100%;
+  padding-left: var(--cut);
+  color: var(--color-ash);
+  cursor: pointer;
+}
+
+.team-slice__add:hover,
+.team-slice__add:focus-visible {
+  background-color: color-mix(in oklab, var(--accent) 16%, var(--color-pit));
+  color: var(--color-chalk);
+}
+
+.team-slice__plus svg {
+  width: 26px;
+  height: 26px;
+}
+
+.team-slice__add-label {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .team-slice--first.team-slice--last {
@@ -373,6 +485,16 @@ watch(() => props.items, () => {
 
     flex-direction: column;
     min-height: 0;
+  }
+
+  .team-slice--add {
+    width: 100%;
+    min-height: 5.5rem;
+  }
+
+  .team-slice__add {
+    flex-direction: row;
+    padding-left: 0;
   }
 
   .team-slice {

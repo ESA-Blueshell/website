@@ -52,5 +52,9 @@ export function useSeasonLineup(games: Game[]) {
     await load(seasonId)
   }
 
-  return {seasons, selected, entries, loading, show, fielded: computed(() => entries.value.length > 0)}
+  // `reload` re-asks about the season already on show, which `show` declines to do.
+  return {
+    seasons, selected, entries, loading, show, reload: load,
+    fielded: computed(() => entries.value.length > 0),
+  }
 }

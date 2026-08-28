@@ -177,6 +177,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   // Seasons written down during the test. The api shows a season that was asked for even
   // where the game fielded nobody in it, and these are exactly those seasons.
   const written = new Map<number, Record<string, unknown>>()
+  // Teams written down and fielded during the test, so a page asked again reports them the
+  // way the api would rather than forgetting they were added.
+  const teamsMade: Array<Record<string, unknown>> = []
+  const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
+  let nextTeamId = 70
+  let nextEntryId = 200
 
   await page.addInitScript((params: {cookieConsentStorageKey: string; cookieConsentPayload: string}) => {
     localStorage.setItem(params.cookieConsentStorageKey, params.cookieConsentPayload)
@@ -638,7 +644,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const page = fixtures.esportsPages?.[requested ?? "20"]
         ?? esportsPageBySeason[requested ?? "20"]
         ?? esportsPageBySeason["20"]
-      return fulfillJson(route, page)
+      // Teams fielded during this test belong to the page the same way the seeded ones do.
+      const game = path.split("/").pop()
+      const shownSeason = Number((page.season as {id: number} | undefined)?.id ?? requested ?? 20)
+      const extra = fieldedNow
+        .filter(one => one.seasonId === shownSeason)
+        .map(one => ({one, team: teamsMade.find(made => made.id === one.teamId)
+          ?? [{id: 3, game: "VALORANT", name: "BS Old Guard", image: null}].find(known => known.id === one.teamId)}))
+        .filter(row => row.team != null && row.team.game === game)
+        .map(row => ({id: row.one.teamId, name: row.team!.name, image: row.team!.image ?? null, members: row.one.members}))
+      const fieldsThis = game === "VALORANT" || game === "CS2"
+      const teams = [...(fieldsThis ? page.teams as Array<Record<string, unknown>> : []), ...extra]
+      return fulfillJson(route, {...page, game, teams})
     }
     if (method === "POST" && path === "/esports/seasons") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
@@ -654,10 +671,49 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, fixtures.esportsSeasons ?? esportsSeasons)
     }
     if (method === "GET" && path === "/esports/teams") {
-      return fulfillJson(route, fixtures.esportsTeams ?? [
+      const forGame = url.searchParams.get("game")
+      const known = fixtures.esportsTeams ?? [
         {id: 1, game: "VALORANT", name: "BS Waterboarders", image: "valorantesports1.jpg"},
         {id: 2, game: "VALORANT", name: "BS SpicyWater", image: "valorantesports2.jpg"},
-      ])
+        {id: 3, game: "VALORANT", name: "BS Old Guard", image: null},
+      ]
+      const all = [...known, ...teamsMade]
+      return fulfillJson(route, forGame ? all.filter(team => team.game === forGame) : all)
+    }
+    if (method === "POST" && path === "/esports/teams") {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      nextTeamId += 1
+      const team = {id: nextTeamId, game: body.game, name: body.name, image: body.image ?? null}
+      teamsMade.push(team)
+      return fulfillJson(route, team, 201)
+    }
+    if (method === "GET" && /^\/esports\/teams\/\d+\/seasons$/.test(path)) {
+      // Only the one team in these fixtures has a season behind it to carry from.
+      const teamId = Number(path.split("/")[3])
+      return fulfillJson(route, teamId === 3 ? [esportsSeasons[1]] : [])
+    }
+    if (method === "PUT" && /^\/esports\/seasons\/\d+\/teams\/\d+$/.test(path)) {
+      const parts = path.split("/")
+      const seasonId = Number(parts[3])
+      const teamId = Number(parts[5])
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const team = [...(fixtures.esportsTeams ?? []), ...teamsMade,
+        {id: 1, game: "VALORANT", name: "BS Waterboarders", image: "valorantesports1.jpg"},
+        {id: 2, game: "VALORANT", name: "BS SpicyWater", image: "valorantesports2.jpg"},
+        {id: 3, game: "VALORANT", name: "BS Old Guard", image: null},
+      ].find(one => one.id === teamId) ?? {id: teamId, game: "VALORANT", name: `Team ${teamId}`, image: null}
+      const carried = body.carryLineup === true && teamId === 3
+        ? [{role: "PLAYER", handle: "veteran", name: null}]
+        : []
+      fieldedNow.push({seasonId, teamId, members: carried})
+      return fulfillJson(route, {
+        team,
+        season: written.get(seasonId) ?? esportsSeasons.find(one => one.id === seasonId) ?? esportsSeasons[0],
+        carried: carried.map((member, index) => ({
+          id: 300 + index, teamId, seasonId, role: member.role, handle: member.handle,
+          displayName: null, userId: null, sortIndex: index,
+        })),
+      })
     }
     if (method === "GET" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
       return fulfillJson(route, fixtures.esportsRoster ?? [
@@ -667,7 +723,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "POST" && /^\/esports\/teams\/\d+\/roster$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      return fulfillJson(route, {id: 13, teamId: 1, seasonId: body.seasonId, role: body.role, handle: body.handle, displayName: body.displayName ?? null, userId: null, sortIndex: 2}, 201)
+      const teamId = Number(path.split("/")[3])
+      nextEntryId += 1
+      const seated = fieldedNow.find(one => one.teamId === teamId && one.seasonId === body.seasonId)
+      seated?.members.push({role: body.role, handle: body.handle, name: null})
+      return fulfillJson(route, {id: nextEntryId, teamId, seasonId: body.seasonId, role: body.role, handle: body.handle, displayName: body.displayName ?? null, userId: null, sortIndex: 2}, 201)
     }
     if (method === "PUT" && /^\/esports\/roster\/\d+\/member$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>

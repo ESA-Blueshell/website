@@ -113,6 +113,77 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         }
 
     @Test
+    fun `persistence must not depend on web layer`(): Unit =
+        arch("Persistence layer independent of web concerns") {
+            noClasses()
+                .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
+                .should().dependOnClassesThat()
+                .resideInAnyPackage(ArchitecturePackages.WEB)
+                .because("ADR-016: Persistence layer must not know about web DTOs or controllers")
+        }
+
+    @Test
+    fun `persistence must not depend on application layer`(): Unit =
+        arch("Persistence layer is inner - no application dependencies except queries") {
+            noClasses()
+                .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
+                .should().dependOnClassesThat(
+                    JavaClass.Predicates.resideInAnyPackage(
+                        ArchitecturePackages.APPLICATION_VALIDATION,
+                        ArchitecturePackages.LISTENER,
+                        ArchitecturePackages.EVENT,
+                        ArchitecturePackages.FACTORY
+                    ).or(
+                        // Services are named, not packaged: a `*Service` glob matches no package.
+                        JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.APPLICATION)
+                            .and(JavaClass.Predicates.simpleNameEndingWith("Service"))
+                    ).or(applicationOfADomainModuleOtherThanQueries)
+                        .`as`("application services, validators, listeners, events, factories or any other part of a domain module's application package")
+                )
+                // ArchitecturePackages.QUERY is exempt (ADR-015: Specs can use query objects)
+                .because("ADR-016: Persistence can depend on query objects (ADR-015), but not services/handlers/validators")
+        }
+
+    @Test
+    fun `only the web layer reaches a domain module's web package`(): Unit =
+        arch("Domain web packages are reached from the web layer only") {
+            noClasses()
+                .that().resideInAnyPackage(
+                    ArchitecturePackages.APPLICATION,
+                    ArchitecturePackages.INFRASTRUCTURE,
+                    ArchitecturePackages.PLATFORM
+                )
+                // The OpenAPI schema customizer documents a response type, so it names one.
+                .and(DescribedPredicate.not(openApiConfiguration))
+                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DOMAIN_WEB)
+                .because("ADR-016: controllers, request/response types and their mappers serve one endpoint; inner layers work with entities and commands")
+        }
+
+    @Test
+    fun `domain model and domain services must not depend on outer layers`(): Unit =
+        arch("Domain layer depends inward only") {
+            noClasses()
+                .that().resideInAnyPackage(
+                    ArchitecturePackages.DOMAIN_MODEL,
+                    ArchitecturePackages.DOMAIN_SERVICE
+                )
+                .should().dependOnClassesThat(
+                    JavaClass.Predicates.resideInAnyPackage(
+                        ArchitecturePackages.WEB,
+                        ArchitecturePackages.APPLICATION,
+                        ArchitecturePackages.INFRASTRUCTURE,
+                        ArchitecturePackages.PLATFORM
+                    // A domain service signals failure by throwing its module's application exception.
+                    ).and(
+                        DescribedPredicate.not(
+                            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.APPLICATION_EXCEPTION)
+                        )
+                    ).`as`("the web, application, infrastructure or platform layers")
+                )
+                .because("ADR-016: a rich domain model reaches persistence and shared, never outward")
+        }
+
+    @Test
     fun `repositories do not depend on DTOs`(): Unit =
         arch("Repositories must not depend on DTOs") {
             noClasses()
@@ -219,5 +290,19 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
             JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.APPLICATION)
                 .and(JavaClass.Predicates.simpleNameEndingWith("Service"))
                 .`as`("application services")
+
+        val applicationOfADomainModuleOtherThanQueries: DescribedPredicate<JavaClass> =
+            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.DOMAIN_APPLICATION)
+                .and(
+                    DescribedPredicate.not(
+                        JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.QUERY)
+                    )
+                )
+                .`as`("a domain module's application package other than its query objects")
+
+        val openApiConfiguration: DescribedPredicate<JavaClass> =
+            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.PLATFORM_CONFIG)
+                .and(JavaClass.Predicates.simpleNameContaining("OpenApi"))
+                .`as`("OpenAPI configuration")
     }
 }

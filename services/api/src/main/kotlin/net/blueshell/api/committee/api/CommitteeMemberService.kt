@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service
 import java.time.Instant
 import org.springframework.transaction.annotation.Transactional
 import java.util.function.Supplier
-import net.blueshell.api.committee.domain.CommitteeMembershipWindow
 
 @Service
 class CommitteeMemberService(

@@ -10,6 +10,8 @@ import net.blueshell.api.shared.tracking.ActorProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
+import net.blueshell.api.jobs.api.JobExecutionService
+import net.blueshell.api.jobs.api.JobExecutor
 
 /**
  * Async job dispatcher. Writes a DB row then calls JobExecutor.executeAsync().

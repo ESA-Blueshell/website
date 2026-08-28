@@ -1,4 +1,4 @@
-package net.blueshell.api.jobs.web
+package net.blueshell.api.jobs.domain
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport

@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "event",
     allowedDependencies = [
+        // AbstractJsonJobHandler, which this module's job handlers extend.
+        "jobs :: api",
         // The organising committee is resolved through CommitteeService.
         "committee :: api",
         // Event.committee is an owning @ManyToOne holding the FK into committees.

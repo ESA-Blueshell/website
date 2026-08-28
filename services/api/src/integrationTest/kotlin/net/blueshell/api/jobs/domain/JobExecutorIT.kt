@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 import java.util.concurrent.atomic.AtomicInteger
+import net.blueshell.api.jobs.api.JobExecutor
 
 // These tests drive the executor by hand; disable the background recovery
 // scheduler so it cannot dispatch the same job concurrently and trip an

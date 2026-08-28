@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "contribution",
     allowedDependencies = [
+        // AbstractJsonJobHandler, which this module's job handlers extend.
+        "jobs :: api",
         // Contribution reminders go out through EmailSenderService.
         "email :: api",
         // DEBT, not a surface. The reminder job resolver implements JobSubject and

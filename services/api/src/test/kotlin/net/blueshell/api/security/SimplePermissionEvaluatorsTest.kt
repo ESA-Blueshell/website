@@ -24,7 +24,7 @@ import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.telemetry.domain.TelemetryService
 import net.blueshell.api.telemetry.persistence.Telemetry
 import net.blueshell.api.jobs.persistence.JobExecution
-import net.blueshell.api.jobs.domain.JobExecutionService
+import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.shared.enums.PlatformType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

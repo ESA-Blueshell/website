@@ -1,4 +1,4 @@
-package net.blueshell.api.jobs.domain
+package net.blueshell.api.jobs.api
 
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import net.blueshell.api.jobs.domain.JobExecutionQuery
 
 @Service
 class JobExecutionService(

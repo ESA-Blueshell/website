@@ -9,6 +9,8 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import net.blueshell.api.jobs.api.JobExecutionService
+import net.blueshell.api.jobs.api.JobExecutor
 
 /**
  * Two responsibilities, both driven by `@Scheduled`:

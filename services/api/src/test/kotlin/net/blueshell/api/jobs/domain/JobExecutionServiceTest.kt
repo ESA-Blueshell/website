@@ -11,6 +11,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.lang.reflect.Field
+import net.blueshell.api.jobs.api.JobExecutionService
 
 /**
  * Pure unit tests for [JobExecutionService]. No Spring context.

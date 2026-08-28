@@ -43,6 +43,10 @@ import org.springframework.transaction.annotation.Transactional
  * that a job handler extends AbstractJsonJobHandler, is a @Component, and does not annotate
  * handlePayload as transactional — is keyed on the type rather than the package and is
  * unaffected.
+ *
+ * Two more went the same way: `platform.integration.queue` no longer exists, having merged
+ * into the jobs module, and no *DTO class remains under `platform.integration` for the DTO
+ * placement rule to select.
  */
 class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
@@ -273,16 +277,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: DTOs are web-layer presentation objects; placing them in a generic dto/ at
      * the module root conflates the web boundary with internal packages.
      */
-    @Test
-    fun `platform DTOs must reside in web dto packages`(): Unit =
-        arch("*DTO classes in platform.integration must reside in ..web.dto.. packages") {
-            classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
-                .and().haveSimpleNameEndingWith("DTO")
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_WEB_DTO)
-                .because("ADR-022: Platform DTOs are web-layer objects and must reside in ..web.dto..")
-        }
-
     // ── Group H: Scheduler Placement ─────────────────────────────────────────
 
     /**
@@ -332,16 +326,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * layer; direct repository access in queue classes bypasses transactional service logic
      * and creates unwanted coupling between queue infrastructure and persistence.
      */
-    @Test
-    fun `queue classes must not access platform repositories directly`(): Unit =
-        arch("Classes in platform.integration.queue must not access platform repositories") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.PLATFORM_QUEUE)
-                .should().accessClassesThat()
-                    .resideInAnyPackage(ArchitecturePackages.PLATFORM_ANY_REPOSITORY)
-                .because("ADR-022: Queue infrastructure must not access repositories directly; use the service layer instead")
-        }
-
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /** Matches classes that are Spring-managed beans (@Component or @Service). */

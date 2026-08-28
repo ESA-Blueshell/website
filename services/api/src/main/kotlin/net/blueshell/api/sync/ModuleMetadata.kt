@@ -15,6 +15,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "sync",
     allowedDependencies = [
+        // AbstractJsonJobHandler, which this module's job handlers extend.
+        "jobs :: api",
         // Contacts are pushed through ContactAdapter, and the Brevo target composes
         // the Brevo adapter.
         "contact :: api",

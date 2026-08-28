@@ -1,4 +1,4 @@
-package net.blueshell.api.committee.domain
+package net.blueshell.api.committee.api
 
 import java.time.Instant
 

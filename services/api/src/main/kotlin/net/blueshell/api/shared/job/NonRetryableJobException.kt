@@ -10,7 +10,7 @@ open class NonRetryableJobException(
     companion object {
         /**
          * Canonical set of exception types that should never be retried.
-         * [net.blueshell.api.jobs.domain.JobExecutor] inspects this
+         * [net.blueshell.api.jobs.api.JobExecutor] inspects this
          * set to decide whether a failed attempt should be marked FAILED
          * immediately (no further attempts) or scheduled for an
          * exponential-backoff retry.

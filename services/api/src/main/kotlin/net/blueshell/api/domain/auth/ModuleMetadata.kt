@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "auth",
     allowedDependencies = [
+        // AbstractJsonJobHandler, which this module's job handlers extend.
+        "jobs :: api",
         // Account mail — the signup confirmation and the password-reset link — goes
         // out through EmailSenderService.
         "email :: api",

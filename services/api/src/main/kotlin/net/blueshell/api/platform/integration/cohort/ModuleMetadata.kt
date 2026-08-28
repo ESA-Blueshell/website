@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "cohort",
     allowedDependencies = [
+        // AbstractJsonJobHandler, which this module's job handlers extend.
+        "jobs :: api",
         // The board-members cohort is built from BoardMemberService.
         "board :: api",
         // The committee-members cohort is built from CommitteeService and

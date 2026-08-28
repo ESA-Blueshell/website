@@ -4,8 +4,8 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.jobs.domain.JobExecutionQuery
 import jakarta.validation.Valid
-import net.blueshell.api.jobs.domain.JobExecutionService
-import net.blueshell.api.jobs.domain.JobExecutor
+import net.blueshell.api.jobs.api.JobExecutionService
+import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page

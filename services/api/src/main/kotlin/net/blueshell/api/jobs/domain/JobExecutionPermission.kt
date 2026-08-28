@@ -8,6 +8,7 @@ import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
+import net.blueshell.api.jobs.api.JobExecutionService
 
 @Component
 class JobExecutionPermission @Autowired constructor(service: JobExecutionService) :

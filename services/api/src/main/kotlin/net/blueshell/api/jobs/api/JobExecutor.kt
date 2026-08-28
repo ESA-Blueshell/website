@@ -1,4 +1,4 @@
-package net.blueshell.api.jobs.domain
+package net.blueshell.api.jobs.api
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service
 import java.time.Instant
 import kotlin.math.min
 import kotlin.math.pow
+import net.blueshell.api.jobs.domain.JobHandlerRegistry
 
 /**
  * Runs job handlers and persists their outcome.

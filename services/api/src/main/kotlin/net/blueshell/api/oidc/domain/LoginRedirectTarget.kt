@@ -1,42 +1,60 @@
 package net.blueshell.api.oidc.domain
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 /**
  * Decides what goes in `/login?redirect=…` when a request reaches the authorization server
  * unauthenticated. The frontend navigates to whatever that parameter holds, so it may only
  * ever name a path on this site (CWE-601).
+ *
+ * The target is rebuilt rather than copied: the path is a constant, and only the authorization
+ * parameters named in [CARRIED_PARAMETERS] are carried, each URL-encoded. Nothing the caller
+ * sends reaches the redirect unencoded, and no caller-supplied text decides the path.
  */
 object LoginRedirectTarget {
 
-    /** Where a member lands when the page they wanted is not safe to return to. */
+    /** Where a member lands when the page they wanted is not one this can resume. */
     const val DEFAULT_PATH = "/"
+
+    /**
+     * The only endpoint on this chain a browser navigates to directly. The rest are called by
+     * a client with a token, so there is nothing to send a member back to.
+     */
+    private const val AUTHORIZE_PATH = "/oauth2/authorize"
 
     /**
      * Traefik strips `/api` before forwarding, so it is re-added: the redirect has to name the
      * public URL for the frontend's off-SPA navigation to re-enter this chain.
-     *
-     * Only known-safe request paths are eligible. Query parameters are intentionally not carried
-     * over from unauthenticated requests.
      */
-    fun forRequest(requestUri: String, queryString: String?): String {
-        val allowlistedTarget = when (requestUri) {
-            "/oauth2/authorize" -> "/api/oauth2/authorize"
-            else -> DEFAULT_PATH
-        }
-        return sameOriginOrDefault(allowlistedTarget)
-    }
+    private const val PUBLIC_AUTHORIZE_PATH = "/api$AUTHORIZE_PATH"
 
     /**
-     * The last word on what may be handed to the frontend to navigate to.
-     *
-     * Composing a target from a servlet's request URI cannot currently produce anything but a
-     * same-origin path, since the container normalises it and this prepends `/api`. This is the
-     * check that has to keep holding if either of those ever stops being true, so it guards the
-     * composed value rather than the input it was built from.
+     * What an authorization request needs to resume after login. Dropping these strands the
+     * flow: the request comes back with no client, no scope and no PKCE challenge.
      */
-    fun sameOriginOrDefault(candidate: String): String =
-        if (isSameOriginPath(candidate)) candidate else DEFAULT_PATH
+    private val CARRIED_PARAMETERS = listOf(
+        "response_type",
+        "client_id",
+        "redirect_uri",
+        "scope",
+        "state",
+        "nonce",
+        "prompt",
+        "login_hint",
+        "code_challenge",
+        "code_challenge_method",
+    )
 
-    // `//host` and `/\host` are protocol-relative: a browser resolves both to another origin.
-    private fun isSameOriginPath(value: String): Boolean =
-        value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\")
+    fun forRequest(requestUri: String, parameter: (String) -> String?): String {
+        if (requestUri != AUTHORIZE_PATH) return DEFAULT_PATH
+
+        val query = CARRIED_PARAMETERS
+            .mapNotNull { name -> parameter(name)?.let { "$name=${encode(it)}" } }
+            .joinToString("&")
+
+        return if (query.isEmpty()) PUBLIC_AUTHORIZE_PATH else "$PUBLIC_AUTHORIZE_PATH?$query"
+    }
+
+    private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
 }

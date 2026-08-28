@@ -96,7 +96,7 @@ class AuthorizationServerConfig {
 
     private fun loginRedirectEntryPoint(): AuthenticationEntryPoint =
         AuthenticationEntryPoint { request, response, _ ->
-            val target = LoginRedirectTarget.forRequest(request.requestURI, request.queryString)
+            val target = LoginRedirectTarget.forRequest(request.requestURI, request::getParameter)
             response.sendRedirect("/login?redirect=${URLEncoder.encode(target, StandardCharsets.UTF_8)}")
         }
 

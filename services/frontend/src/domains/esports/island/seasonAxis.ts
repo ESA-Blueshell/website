@@ -26,10 +26,14 @@ const NAME = /^(\p{L}+)\s+(\d{4}\/\d{2,4})$/u
  * A season is named for the half of a board year it covers, "Autumn 2025/26", so a band
  * carries two readings. Anything named some other way still gets a band; it simply has no
  * year to group under.
+ *
+ * [trailing] reserves shares at the end for bands that are not seasons — the one offering to
+ * add another. Reserved here rather than taken out of the width afterwards, because that is
+ * what keeps every node in the middle of its own band.
  */
-export function seasonBands(seasons: Season[]): SeasonBand[] {
+export function seasonBands(seasons: Season[], trailing = 0): SeasonBand[] {
   const ordered = [...seasons].sort((a, b) => a.startDate.localeCompare(b.startDate))
-  const share = 1 / Math.max(ordered.length, 1)
+  const share = 1 / Math.max(ordered.length + trailing, 1)
 
   return ordered.map((season, index) => {
     const parts = NAME.exec(season.name)

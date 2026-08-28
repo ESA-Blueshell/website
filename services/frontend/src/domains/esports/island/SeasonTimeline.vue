@@ -25,6 +25,14 @@ const HEIGHT = 104
  * the strip stops shrinking and starts scrolling instead — which is what a phone gets.
  */
 const MIN_BAND = 94
+
+/**
+ * How many bands the strip shows at once.
+ *
+ * Fewer than this and they stretch to fill the width; more and the strip scrolls, so a band
+ * never becomes a sliver just because the association has been running a long time.
+ */
+const TILES = 6
 /** How far a node sits above or below the middle of the strip. */
 const AMPLITUDE = 15
 /**
@@ -75,10 +83,19 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-const bands = computed(() => seasonBands(props.seasons))
+/**
+ * The block offering another season is a band like the rest, so it takes a share of the strip
+ * rather than floating over the end of it.
+ */
+const trailing = computed(() => (props.mayEdit ? 1 : 0))
+
+const bands = computed(() => seasonBands(props.seasons, trailing.value))
 
 /** As wide as the strip can be, or as wide as its bands need — whichever is greater. */
-const track = computed<number>(() => Math.max(width.value, bands.value.length * MIN_BAND))
+const track = computed<number>(() => {
+  const count = bands.value.length + trailing.value
+  return Math.max(width.value, count * Math.max(width.value / TILES, MIN_BAND))
+})
 
 const nodes = computed(() =>
   bands.value.map(band => ({
@@ -115,7 +132,10 @@ const path = computed<string>(() => {
     parts.push(`L ${start},${from.y}`)
     parts.push(`C ${start + bend * CORNER},${from.y} ${end - bend * CORNER},${to.y} ${end},${to.y}`)
   }
-  parts.push(`L ${track.value},${last.y}`)
+  // The line is about seasons, so it stops where they do: at the edge of the band that
+  // offers another one rather than running on through it.
+  const end = (bands.value[bands.value.length - 1]?.to ?? 1) * track.value
+  parts.push(`L ${end},${last.y}`)
   return parts.join(" ")
 })
 
@@ -185,7 +205,7 @@ const step = (from: number, by: number) => {
               :class="{
                 'season-band--on': band.season.id === selectedId,
                 'season-band--lit': band.season.id === hovered,
-                'season-band--last': index === bands.length - 1,
+                'season-band--last': index === bands.length - 1 && !mayEdit,
               }"
               :aria-current="band.season.id === selectedId ? 'true' : undefined"
               :data-testid="`esports-season-node-${band.season.id}`"
@@ -236,6 +256,42 @@ const step = (from: number, by: number) => {
               </svg>
             </button>
           </div>
+
+          <!--
+            Seasons are added twice a year and always at the end, which is where their absence
+            is noticed — so the offer is a band at the end of the line rather than a control
+            floating over it. It stands rather than waiting to be hovered: there is no season
+            under the pointer for it to belong to.
+          -->
+          <div
+            v-if="mayEdit"
+            class="season-slot season-slot--add"
+          >
+            <button
+              aria-label="Add a season"
+              class="season-band season-band--add"
+              data-testid="esports-season-add"
+              type="button"
+              @click="emit('add')"
+            >
+              <span
+                aria-hidden="true"
+                class="season-band__wash"
+              />
+              <span
+                aria-hidden="true"
+                class="season-band__plus island-plus"
+              >
+                <svg
+                  class="island-plus__edge"
+                  fill="none"
+                  viewBox="0 0 100 100"
+                >
+                  <path d="M38 2 H62 V38 H98 V62 H62 V98 H38 V62 H2 V38 H38 Z" />
+                </svg>
+              </span>
+            </button>
+          </div>
         </div>
 
         <svg
@@ -258,30 +314,6 @@ const step = (from: number, by: number) => {
             />
           </g>
         </svg>
-
-        <!--
-          Seasons are added twice a year and always at the end, which is where their absence
-          is noticed. It stands rather than waiting to be hovered: there is no season under
-          the pointer for it to belong to.
-        -->
-        <button
-          v-if="mayEdit"
-          aria-label="Add a season"
-          class="season-strip__add"
-          data-testid="esports-season-add"
-          type="button"
-          @click="emit('add')"
-        >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
 
         <span
           v-for="node in nodes"
@@ -308,7 +340,9 @@ const step = (from: number, by: number) => {
   user-select: none;
 }
 
+/* The ends fade rather than stopping at a line: the strip belongs to the page it sits on. */
 .season-strip__scroll {
+  mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -328,6 +362,7 @@ const step = (from: number, by: number) => {
   display: flex;
   height: var(--h);
   width: 100%;
+  overflow: hidden;
 }
 
 /*
@@ -357,24 +392,23 @@ const step = (from: number, by: number) => {
  */
 .season-slot__edit {
   position: absolute;
-  top: 6px;
-  left: 50%;
-  translate: -50% 0;
+  top: 2px;
+  right: 4px;
   z-index: 2;
   visibility: hidden;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  background: color-mix(in oklab, var(--color-void) 78%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  width: 38px;
+  height: 38px;
+  background: none;
+  border: 0;
   color: var(--color-chalk);
   cursor: pointer;
 }
 
 .season-slot__edit svg {
-  width: 13px;
-  height: 13px;
+  width: 22px;
+  height: 22px;
 }
 
 /*
@@ -419,9 +453,15 @@ const step = (from: number, by: number) => {
 
 /* The wash is what divides one season from the next: a faded band of the game's colour,
    deeper on the season being read. */
+/*
+ * Skewed to the same angle as the slanted rule that divides one season from the next, so the
+ * lit band is bounded by the lines that bound the season rather than by a rectangle that
+ * crosses them. The overhang this leaves at either end is clipped by the row.
+ */
 .season-band__wash {
   position: absolute;
   inset: 0;
+  transform: skewX(-7deg);
   background:
     linear-gradient(to bottom, color-mix(in oklab, var(--accent) 10%, transparent), transparent 74%),
     linear-gradient(to bottom, transparent, color-mix(in oklab, var(--color-void) 60%, transparent));
@@ -447,30 +487,41 @@ const step = (from: number, by: number) => {
   );
 }
 
-.season-strip__add {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  z-index: 3;
-  translate: 0 -50%;
+/*
+ * The band that offers another season: the same wash and the same slanted division as a
+ * season's, so it reads as the next one along rather than as a control on the end.
+ */
+.season-band--add {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  background: color-mix(in oklab, var(--color-void) 82%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent) 65%, transparent);
-  color: var(--color-chalk);
-  cursor: pointer;
+  color: color-mix(in oklab, var(--color-ash) 88%, transparent);
 }
 
-.season-strip__add svg {
-  width: 15px;
-  height: 15px;
+.season-band--add .season-band__wash {
+  opacity: 0.28;
 }
 
-.season-strip__add:hover,
-.season-strip__add:focus-visible {
-  background: color-mix(in oklab, var(--accent) 30%, var(--color-void));
+.season-band--add:hover .island-plus,
+.season-band--add:focus-visible .island-plus {
+  opacity: 0.95;
+  background: color-mix(in oklab, var(--color-chalk) 20%, transparent);
+}
+
+.season-band--add:hover .season-band__wash,
+.season-band--add:focus-visible .season-band__wash {
+  opacity: 0.75;
+}
+
+
+/*
+ * Skewed rather than rotated, and to the same angle as the rule that divides one season from
+ * the next: a rotated plus reads as tipped over, a skewed one leans with the band it sits in.
+ */
+.season-band__plus {
+  position: relative;
+  width: 60%;
+  max-width: 66px;
+  transform: skewX(-7deg);
 }
 
 .season-band__label {

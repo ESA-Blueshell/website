@@ -137,3 +137,36 @@
     outline-offset: 2px;
   }
 }
+
+/*
+ * A plus drawn once and glazed as a whole.
+ *
+ * Two translucent bars crossed at the middle showed their overlap, because each was shaded on
+ * its own. This is one shape: the element is clipped to the plus, frosted behind, and the
+ * outline is a single stroked path over the same geometry — so the middle reads as the rest
+ * of it does.
+ */
+.island-plus {
+  display: block;
+  aspect-ratio: 1;
+  clip-path: polygon(
+    38% 2%, 62% 2%, 62% 38%, 98% 38%, 98% 62%, 62% 62%,
+    62% 98%, 38% 98%, 38% 62%, 2% 62%, 2% 38%, 38% 38%
+  );
+  background: color-mix(in oklab, var(--color-chalk) 12%, transparent);
+  backdrop-filter: blur(6px);
+  opacity: 0.55;
+  transition: opacity 260ms ease, background-color 260ms ease;
+}
+
+.island-plus__edge {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.island-plus__edge path {
+  stroke: color-mix(in oklab, var(--color-chalk) 62%, transparent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}

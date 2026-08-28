@@ -6,6 +6,8 @@ defineOptions({name: "BannerSlices"})
 
 export interface SliceItem {
   id: number | string
+  /** Where the slice leads, where it leads anywhere. The whole block is the way in. */
+  href?: string
   title: string
   /** A line under the title while the slice is shut, and while it is open. */
   meta: string
@@ -43,6 +45,7 @@ const emit = defineEmits<{
   (event: "add"): void
   (event: "edit", id: SliceItem["id"]): void
   (event: "drop", id: SliceItem["id"]): void
+  (event: "go", item: SliceItem): void
 }>()
 
 const motion = useMotionAllowed()
@@ -89,7 +92,17 @@ const releaseTap = () => {
   tapped.value = null
 }
 
+/**
+ * Opening a slice and going to it are the same gesture, one after the other: a slice that is
+ * already showing what it holds has said what it has to say, so the next click follows it.
+ * Stacked, that is the second tap; side by side, the pointer has already opened it.
+ */
 const choose = (index: number) => {
+  const item = props.items[index]
+  if (item?.href && index === open.value) {
+    emit("go", item)
+    return
+  }
   open.value = index
   if (stacked()) tapped.value = index
 }
@@ -124,13 +137,21 @@ onBeforeUnmount(() => {
 
 // A change of what is on show brings a different set, so the first of those opens in its turn
 // — unless one of them is named, which is the set arriving because that one was just added.
-watch(() => props.items, () => {
+/**
+ * A change of what is on show keeps the slice that was open where the same one is still
+ * there. Switching season re-answers with much the same band, and reopening the first of them
+ * each time made every switch look like a page rebuilding itself.
+ */
+watch(() => props.items, (items, before) => {
   slices.value = []
   const named = indexOfNamed()
-  // Stacked, the scroll decides what is open, so a named slice has to hold against it.
+  const held = before?.[open.value ?? -1]?.id
+  const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
+  const target = named >= 0 ? named : (stillThere >= 0 ? stillThere : 0)
   tapped.value = stacked() && named >= 0 ? named : null
-  open.value = motion.decorative.value ? null : (named >= 0 ? named : 0)
-  if (motion.decorative.value) requestAnimationFrame(() => requestAnimationFrame(settle))
+  // Only a band that has nothing in common with the one before it opens from nothing.
+  open.value = motion.decorative.value && stillThere < 0 && named < 0 ? null : target
+  if (open.value === null) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
 })
 
@@ -155,7 +176,6 @@ watch([() => props.openId, () => props.items], () => {
     class="team-slices"
     :data-testid="`${testidPrefix}-slices`"
     :style="{'--accent': accent}"
-    @mouseleave="open = 0"
   >
     <section
       v-for="(item, index) in items"
@@ -266,18 +286,23 @@ watch([() => props.openId, () => props.items], () => {
       >
         <span
           aria-hidden="true"
-          class="team-slice__plus"
+          class="team-slice__plus island-plus"
         >
           <svg
+            class="island-plus__edge"
             fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
+            viewBox="0 0 100 100"
           >
-            <path d="M12 5v14M5 12h14" />
+            <path d="M38 2 H62 V38 H98 V62 H62 V98 H38 V62 H2 V38 H38 Z" />
           </svg>
         </span>
-        <span class="team-slice__add-label">{{ addLabel }}</span>
+        <span class="team-slice__heading">
+          <span
+            aria-hidden="true"
+            class="team-slice__tick"
+          />
+          <span class="team-slice__name">{{ addLabel }}</span>
+        </span>
       </button>
     </section>
   </div>
@@ -327,28 +352,27 @@ watch([() => props.openId, () => props.items], () => {
   visibility: hidden;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  background: color-mix(in oklab, var(--color-void) 78%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: 0;
   color: var(--color-chalk);
   cursor: pointer;
 }
 
 /* Beside the edit, not on top of it: two affordances on one slice read as a pair. */
 .team-slice__drop {
-  right: 44px;
+  right: 58px;
 }
 
 .team-slice__drop:hover,
 .team-slice__drop:focus-visible {
-  border-color: #b03434;
   color: #ff9d9d;
 }
 
 .team-slice__edit svg {
-  width: 14px;
-  height: 14px;
+  width: 23px;
+  height: 23px;
 }
 
 .team-slice:hover .team-slice__edit,
@@ -362,42 +386,52 @@ watch([() => props.openId, () => props.items], () => {
   }
 }
 
+/*
+ * A slice like the others rather than a strip on the end: it takes the same share of the
+ * band, carries the same seam, and answers the pointer the same way. What is behind it is a
+ * plus through the middle instead of a photograph.
+ */
+/* Narrower than a team: a way in rather than something to read. */
 .team-slice--add {
-  flex: 0 0 auto;
-  width: 8rem;
+  flex: 0 0 clamp(6.5rem, 11%, 10rem);
   background-color: var(--color-pit);
 }
 
-.team-slice__add {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  height: 100%;
-  padding-left: var(--cut);
-  color: var(--color-ash);
-  cursor: pointer;
+.team-slice--add:hover {
+  background-color: color-mix(in oklab, var(--accent) 14%, var(--color-pit));
 }
 
-.team-slice__add:hover,
-.team-slice__add:focus-visible {
-  background-color: color-mix(in oklab, var(--accent) 16%, var(--color-pit));
+.team-slice__add {
   color: var(--color-chalk);
 }
 
-.team-slice__plus svg {
-  width: 26px;
-  height: 26px;
+/*
+ * The middle of the slice rather than the middle of a stack: the plus is the mark on the
+ * block, and the label below it sits where a team's name sits.
+ */
+/*
+ * Skewed, not rotated, and to the angle of the seam this band is cut on — the same lean the
+ * slices themselves have, so the mark belongs to the block rather than sitting on top of it.
+ */
+.team-slice__plus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* Centred and skewed in the one property: the two split across `translate` and `transform`
+     did not compose here, which left the mark hanging off the edge of its own block. */
+  transform: translate(-50%, -50%) skewX(-5deg);
+  width: min(56%, 92px);
 }
 
-.team-slice__add-label {
-  font-family: var(--font-display);
-  font-size: 0.72rem;
-  font-style: italic;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.team-slice--add:hover .team-slice__plus {
+  opacity: 0.95;
+  background: color-mix(in oklab, var(--color-chalk) 20%, transparent);
+}
+
+.team-slice__plus svg {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
 }
 
 .team-slice--first.team-slice--last {
@@ -607,59 +641,13 @@ watch([() => props.openId, () => props.items], () => {
     min-height: 0;
   }
 
-  /* Hidden rather than transparent, for the same reason as the strip's: a see-through
-   affordance still answers a click. */
-.team-slice__edit {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  z-index: 3;
-  visibility: hidden;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  background: color-mix(in oklab, var(--color-void) 78%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-/* Beside the edit, not on top of it: two affordances on one slice read as a pair. */
-.team-slice__drop {
-  right: 44px;
-}
-
-.team-slice__drop:hover,
-.team-slice__drop:focus-visible {
-  border-color: #b03434;
-  color: #ff9d9d;
-}
-
-.team-slice__edit svg {
-  width: 14px;
-  height: 14px;
-}
-
-.team-slice:hover .team-slice__edit,
-.team-slice:focus-within .team-slice__edit {
-  visibility: visible;
-}
-
-@media (hover: none) {
-  .team-slice__edit {
-    visibility: visible;
-  }
-}
-
-.team-slice--add {
-    width: 100%;
-    min-height: 5.5rem;
+  .team-slice--add {
+    flex: 0 0 auto;
+    min-height: 7rem;
   }
 
-  .team-slice__add {
-    flex-direction: row;
-    padding-left: 0;
+  .team-slice__plus {
+    width: 44px;
   }
 
   .team-slice {

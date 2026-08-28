@@ -1,17 +1,14 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.CalendarAdapter
-import net.blueshell.api.event.domain.CalendarEventData
-import net.blueshell.api.event.domain.CalendarEventRef
-import net.blueshell.api.event.domain.CalendarServiceException
+import net.blueshell.api.event.api.CalendarEventData
+import net.blueshell.api.event.api.CalendarEventRef
+import net.blueshell.api.event.api.CalendarServiceException
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import java.io.IOException
-import net.blueshell.api.event.api.CalendarEventData
-import net.blueshell.api.event.api.CalendarEventRef
-import net.blueshell.api.event.api.CalendarServiceException
 
 /**
  * Google Calendar Anti-Corruption Layer (ADR-019)

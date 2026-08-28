@@ -13,6 +13,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.time.Instant
+import net.blueshell.api.event.api.EventService
 
 class ValidEventSignUpCommandValidatorTest {
 

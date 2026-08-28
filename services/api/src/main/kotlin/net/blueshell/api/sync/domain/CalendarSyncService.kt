@@ -1,13 +1,12 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventService
-import net.blueshell.api.event.domain.CalendarEventData
+import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import net.blueshell.api.event.api.CalendarEventData
 
 /**
  * Drives calendar sync to every registered calendar target.

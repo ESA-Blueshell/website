@@ -142,30 +142,26 @@ class DataOwnershipArchitectureTest {
      */
     @ArchTest
     fun `domains should only access their own repositories`(classes: JavaClasses) {
-        // User domain can only access user repositories
-        noClasses()
-            .that().resideInAPackage("..domain.user..")
-            .should().dependOnClassesThat()
-            .resideInAnyPackage(
-                "..domain.committee.persistence.repository..",
-                "..domain.event.persistence.repository..",
-                "..domain.survey.persistence.repository..",
-                "..domain.contribution.persistence.repository..",
-                "..domain.auth.persistence.repository.."
-            )
-            .because("ADR-018: Each domain should only access its own persistence layer")
-            .check(classes)
-
-        // Event domain can only access event repositories (not survey)
-        noClasses()
-            .that().resideInAPackage("..domain.event..")
-            .should().dependOnClassesThat()
-            .resideInAnyPackage(
-                "..domain.survey.persistence.repository..",
-                "..domain.user.persistence.repository..",
-                "..domain.committee.persistence.repository.."
-            )
-            .because("ADR-018: Event domain should use services to access other domains")
-            .check(classes)
+        // Each entry names the owning module and the modules whose repositories it may not
+        // reach. Both package layouts are listed so the rule holds while some modules are
+        // flattened and others are not, and repositories are matched by name because the
+        // flattened layout keeps them beside the entities, which are reachable.
+        val forbidden = mapOf(
+            "user" to listOf("committee", "event", "survey", "contribution", "auth"),
+            "event" to listOf("survey", "user", "committee"),
+        )
+        forbidden.forEach { (owner, others) ->
+            noClasses()
+                .that().resideInAnyPackage("..domain.$owner..", "net.blueshell.api.$owner..")
+                .should().dependOnClassesThat(
+                    JavaClass.Predicates.resideInAnyPackage(
+                        *others.flatMap {
+                            listOf("..domain.$it.persistence..", "net.blueshell.api.$it.persistence..")
+                        }.toTypedArray()
+                    ).and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+                )
+                .because("ADR-018: a module reaches another module through its services, not its repositories")
+                .check(classes)
+        }
     }
 }

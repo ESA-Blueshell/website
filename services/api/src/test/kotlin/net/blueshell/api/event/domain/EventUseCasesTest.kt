@@ -24,6 +24,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.time.Instant
+import net.blueshell.api.event.api.EventService
 
 class EventUseCasesTest {
 

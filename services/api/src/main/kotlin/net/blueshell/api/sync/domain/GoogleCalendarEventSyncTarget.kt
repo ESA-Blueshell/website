@@ -1,11 +1,10 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.CalendarAdapter
-import net.blueshell.api.event.domain.CalendarEventData
+import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import net.blueshell.api.event.api.CalendarEventData
 
 @Component
 @Profile("!test & !dev")

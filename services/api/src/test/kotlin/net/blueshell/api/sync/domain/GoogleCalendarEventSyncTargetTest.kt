@@ -1,8 +1,8 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.CalendarAdapter
-import net.blueshell.api.event.domain.CalendarEventData
-import net.blueshell.api.event.domain.CalendarEventRef
+import net.blueshell.api.event.api.CalendarEventData
+import net.blueshell.api.event.api.CalendarEventRef
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test

@@ -1,9 +1,8 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.event.domain.CalendarEventData
+import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.event.api.CalendarEventData
 
 /** Kind of aggregate a target syncs. Persisted as a string in `external_id_mapping.aggregate_type`. */
 enum class AggregateType { USER, EVENT, CONTACT_LIST }

@@ -1,16 +1,14 @@
 package net.blueshell.api.platform.integration.mock
 
 import net.blueshell.api.event.api.CalendarAdapter
-import net.blueshell.api.event.domain.CalendarEventData
-import net.blueshell.api.event.domain.CalendarEventRef
+import net.blueshell.api.event.api.CalendarEventData
+import net.blueshell.api.event.api.CalendarEventRef
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
-import net.blueshell.api.event.api.CalendarEventData
-import net.blueshell.api.event.api.CalendarEventRef
 
 /**
  * Mock implementation of CalendarAdapter for testing and development.

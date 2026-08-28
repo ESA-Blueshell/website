@@ -17,6 +17,14 @@ object ArchitecturePackages {
 
     /** Application Layer - Use cases, Services, Business Validators, Listeners, Factories */
     const val APPLICATION = "$ROOT..application.."
+
+    /**
+     * The flattened equivalents of [APPLICATION], for modules that already sit directly
+     * under the base package. Written with a single `*` segment so they cannot also match
+     * the old `net.blueshell.api.domain.<module>` grouping level, which [DOMAIN] does.
+     */
+    const val MODULE_DOMAIN = "$ROOT.*.domain.."
+    const val MODULE_API = "$ROOT.*.api.."
     const val APPLICATION_VALIDATION = "$ROOT..application.validation.."
     const val APPLICATION_EXCEPTION = "$ROOT..application.exception.."
     const val LISTENER = "$ROOT..application.listener.."

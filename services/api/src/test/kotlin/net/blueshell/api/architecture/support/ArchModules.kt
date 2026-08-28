@@ -26,6 +26,16 @@ object ArchModules {
         "sync" to "sync",
     )
 
+    /**
+     * Modules already moved to a direct sub-package of the base package. Listed so the
+     * derivation works while some modules are flattened and others are not.
+     */
+    private val FLAT_MODULES = setOf(
+        "auth", "blog", "board", "committee", "contribution", "esports", "event", "file",
+        "sponsor", "survey", "telemetry", "user", "cohort", "contact", "email", "jobs",
+        "sync", "oidc", "security", "shared",
+    )
+
     fun moduleOf(javaClass: JavaClass): String? = moduleOf(javaClass.packageName)
 
     fun moduleOf(packageName: String): String? {
@@ -33,6 +43,7 @@ object ArchModules {
         val segments = packageName.removePrefix(BASE).removePrefix(".").split(".").filter { it.isNotEmpty() }
         return when {
             segments.isEmpty() -> null
+            segments[0] in FLAT_MODULES -> segments[0]
             segments[0] == "domain" -> segments.getOrNull(1)
             segments[0] == "shared" -> "shared"
             segments[0] == "infrastructure" -> segments.getOrNull(1)

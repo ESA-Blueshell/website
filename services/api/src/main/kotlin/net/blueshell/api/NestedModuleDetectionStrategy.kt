@@ -5,8 +5,11 @@ import org.springframework.modulith.core.JavaPackage
 import java.util.stream.Stream
 
 /**
- * Nominates the twenty application-module base packages, which today sit two or three
- * levels below `net.blueshell.api` instead of directly underneath it.
+ * Nominates the twenty application-module base packages, which sit two or three levels
+ * below `net.blueshell.api` until the flattening moves them directly underneath it.
+ *
+ * Both the nested and the flat name of every module are listed, so a module that has
+ * already moved and one that has not are both nominated.
  *
  * Each nominated package carries a `ModuleMetadata` class declaring the module's id, so the
  * module names are already the flat ones (`user`, `jobs`, `shared`) rather than the nested
@@ -49,6 +52,28 @@ class NestedModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
             "platform.oidc",
             "infrastructure.security",
             "shared",
+            // Flat names, matched once a module has been moved out from under
+            // `domain` or `platform`. A name that matches nothing is simply not
+            // nominated, so both layouts can be listed while the move is in progress.
+            "auth",
+            "blog",
+            "board",
+            "committee",
+            "contribution",
+            "esports",
+            "event",
+            "file",
+            "sponsor",
+            "survey",
+            "telemetry",
+            "user",
+            "cohort",
+            "contact",
+            "email",
+            "jobs",
+            "sync",
+            "oidc",
+            "security",
         )
     }
 }

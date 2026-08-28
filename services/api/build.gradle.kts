@@ -212,10 +212,10 @@ tasks.withType<Test>().configureEach {
 // package, so the signup classes get their own gate. CLASS element rather than
 // PACKAGE so it picks up new Signup* classes without dragging in existing ones.
 val signupCoverageIncludes = listOf(
-    "net.blueshell.api.domain.auth.application.Signup*",
-    "net.blueshell.api.domain.auth.application.command.Signup*",
-    "net.blueshell.api.domain.auth.web.Signup*",
-    "net.blueshell.api.domain.user.application.command.*Signup*",
+    "net.blueshell.api.auth.domain.Signup*",
+    "net.blueshell.api.auth.web.Signup*",
+    "net.blueshell.api.user.api.Signup*",
+    "net.blueshell.api.user.web.Signup*",
 )
 
 fun JacocoCoverageVerification.requireSignupCoverage() {

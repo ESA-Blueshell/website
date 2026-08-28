@@ -28,7 +28,7 @@ Access Swagger UI: `http://localhost:8080/swagger-ui`
 ./gradlew :api:test
 
 # Run specific domain tests
-./gradlew :api:test --tests "net.blueshell.api.domain.auth.*"
+./gradlew :api:test --tests "net.blueshell.api.auth.*"
 
 # Run architecture tests (ArchUnit)
 ./gradlew :api:test --tests "net.blueshell.api.architecture.*"

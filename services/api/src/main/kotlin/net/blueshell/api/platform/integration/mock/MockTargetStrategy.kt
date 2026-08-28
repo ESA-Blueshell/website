@@ -1,11 +1,11 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.platform.integration.cohort.persistence.CohortKind
-import net.blueshell.api.platform.integration.cohort.port.out.ExternalMember
-import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
-import net.blueshell.api.platform.integration.cohort.port.out.TargetCapability
-import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
-import net.blueshell.api.platform.integration.cohort.port.out.TargetStrategy
+import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.domain.ExternalMember
+import net.blueshell.api.cohort.domain.ExternalTarget
+import net.blueshell.api.cohort.domain.TargetCapability
+import net.blueshell.api.cohort.domain.TargetDescriptor
+import net.blueshell.api.cohort.domain.TargetStrategy
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile

@@ -5,6 +5,8 @@ import net.blueshell.api.file.domain.FileDeleted
 import net.blueshell.api.file.domain.EmptyFileException
 import net.blueshell.api.file.domain.FileNotFoundException
 import net.blueshell.api.file.domain.FileStorageException
+import net.blueshell.api.file.domain.FileTooLargeException
+import net.blueshell.api.file.domain.UnsupportedMediaTypeException
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.user.api.UserService
@@ -70,6 +72,7 @@ class FileService @Autowired constructor(
         if (multipart.isEmpty) {
             throw EmptyFileException()
         }
+        enforce(type, multipart)
 
         try {
             Files.createDirectories(rootLocation.resolve(type.directory))
@@ -135,6 +138,21 @@ class FileService @Autowired constructor(
         }
     }
 
+    /**
+     * What a kind of file admits, checked before anything is written.
+     *
+     * The content type is the one the browser declared. It is a claim rather than a fact, and
+     * this is a gate on what may be stored, not a guarantee about what was.
+     */
+    private fun enforce(type: FileType, multipart: MultipartFile) {
+        val declared = multipart.contentType.orEmpty().substringBefore(';').trim().lowercase(Locale.getDefault())
+        if (type.allowedMediaTypes.isNotEmpty() && declared !in type.allowedMediaTypes) {
+            throw UnsupportedMediaTypeException(type, declared.ifBlank { "unknown" })
+        }
+        val max = type.maxBytes
+        if (max != null && multipart.size > max) throw FileTooLargeException(type, max)
+    }
+
     @Transactional
     override fun delete(entity: File) {
         super.delete(entity)
@@ -173,6 +191,37 @@ class FileService @Autowired constructor(
         } catch (_: MalformedURLException) {
             throw FileNotFoundException("asset=$filename")
         }
+    }
+
+    /**
+     * A file of a kind that exists to be drawn on a public page.
+     *
+     * A file of any other kind is reported missing rather than forbidden: whether one exists
+     * is not something an anonymous caller has any business learning.
+     */
+    @Transactional(readOnly = true)
+    fun findPubliclyReadable(id: Long): File {
+        val file = repository.findById(id).orElseThrow { FileNotFoundException("public id=") }
+        if (!file.type.publiclyReadable) throw FileNotFoundException("public id=")
+        return file
+    }
+
+    /**
+     * A public file, sent to be rendered rather than saved.
+     *
+     * Inline where [prepareFileResponse] attaches: this answers an image tag, and an
+     * attachment disposition makes the browser download it instead of drawing it.
+     */
+    @Transactional(readOnly = true)
+    fun preparePublicFileResponse(file: File): ResponseEntity<Resource> {
+        val resource = loadAsResource(file)
+        val headers = HttpHeaders()
+        headers.contentType = MediaType.valueOf(file.mediaType)
+        headers.contentDisposition = ContentDisposition.inline().filename(file.name).build()
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
+            .headers(headers)
+            .body(resource)
     }
 
     @Transactional(readOnly = true)

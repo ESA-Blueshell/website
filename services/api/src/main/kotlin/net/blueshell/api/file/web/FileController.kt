@@ -1,6 +1,7 @@
 package net.blueshell.api.file.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.annotation.security.PermitAll
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.FileType
@@ -18,6 +19,17 @@ import org.springframework.web.multipart.MultipartFile
 class FileController(
     service: FileService
 ) : BaseController<FileService>(service) {
+    /**
+     * A file of a publicly readable kind, sent inline for a page to draw.
+     *
+     * Anything else answers 404 rather than 403: whether a file exists is not something an
+     * anonymous caller has any business learning.
+     */
+    @GetMapping("/files/public/{id}")
+    @PermitAll
+    fun downloadPublicFile(@PathVariable id: Long): ResponseEntity<Resource> =
+        service.preparePublicFileResponse(service.findPubliclyReadable(id))
+
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
     fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {

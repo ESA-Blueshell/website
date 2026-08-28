@@ -18,6 +18,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         SELECT e FROM TeamRosterEntry e
         JOIN FETCH e.team t
         JOIN FETCH e.season s
+        LEFT JOIN FETCH e.icon
         WHERE t.game = :game AND s.id = :seasonId
         ORDER BY t.name ASC, e.teamRole ASC, e.sortIndex ASC
         """,

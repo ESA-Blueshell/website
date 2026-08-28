@@ -83,6 +83,8 @@ function redirectToLogin(ms = 2000) {
 onMounted(async () => {
   const token = loadRecoveryTokenFromRoute(route, router, RECOVERY_TOKEN_STORAGE_KEY)
 
+  // js/user-controlled-bypass flags this guard: nothing is authorised here, the token is only
+  // ever validated by the API and this branch just renders the error state for a tokenless link.
   if (!token) {
     loading.value = false
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)

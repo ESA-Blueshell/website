@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.committee.api.CommitteeService
+import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.AdvancedController
@@ -32,13 +33,11 @@ class CommitteeController(
 
     @GetMapping("/committees")
     @PermitAll
-    // CodeQL false positive: `principal` is Spring-injected from the validated session, not user input; it only picks DTO detail level.
-    @Suppress("codeql[java/user-controlled-bypass]")
-    fun findCommittees(
-        @AuthenticationPrincipal principal: UserPrincipal?
-    ): MutableList<CommitteeResponse> {
+    fun findCommittees(): MutableList<CommitteeResponse> {
         val committees = service.findAll()
-        return if (principal?.hasAuthority(Role.BOARD) == true) {
+        // Taken from the security context rather than bound as a request parameter, so the
+        // detail level is picked from a server-held value only.
+        return if (SecurityUtils.hasAuthority(Role.BOARD)) {
             committees.map { it.asDetailResponse() }.toMutableList()
         } else {
             committees.map { it.asSummaryResponse() }.toMutableList()
@@ -47,13 +46,11 @@ class CommitteeController(
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
-    // CodeQL false positive: `principal` is Spring-injected from the validated session, not user input; access is already gated by @PreAuthorize.
-    @Suppress("codeql[java/user-controlled-bypass]")
-    fun findCommitteeById(
-        @PathVariable committeeId: Long,
-        @AuthenticationPrincipal principal: UserPrincipal?
-    ): CommitteeResponse {
+    fun findCommitteeById(@PathVariable committeeId: Long): CommitteeResponse {
         val committee = service.findById(committeeId)
+        // Taken from the security context rather than bound as a request parameter, so the
+        // detail level is picked from a server-held value only.
+        val principal = SecurityUtils.currentPrincipal()
         if (principal?.hasAuthority(Role.BOARD) == true || committee.hasMember(principal?.id)) {
             return committee.asDetailResponse()
         }

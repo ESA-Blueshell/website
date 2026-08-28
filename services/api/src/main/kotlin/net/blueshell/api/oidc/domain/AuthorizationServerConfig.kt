@@ -30,8 +30,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-private val ADMIN_ONLY_CLIENTS = setOf("headlamp", "vault")
-
 @Configuration
 class AuthorizationServerConfig {
 
@@ -67,8 +65,10 @@ class AuthorizationServerConfig {
         return http.build()
     }
 
-    // CodeQL false positive: `clientId` only selects whether to apply the admin gate; the gate itself uses the server-authoritative SecurityContext.
-    @Suppress("codeql[java/user-controlled-bypass]")
+    // Every client registered with this server is an admin tool (see RegisteredClients), so
+    // authorization requests are admin-only across the board. The gate deliberately does not
+    // branch on the request's own `client_id`: letting that parameter decide whether the check
+    // runs would hand an attacker the switch that turns the check off (CWE-807).
     private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
         object : OncePerRequestFilter() {
             override fun shouldNotFilter(request: HttpServletRequest): Boolean =
@@ -79,11 +79,6 @@ class AuthorizationServerConfig {
                 response: HttpServletResponse,
                 filterChain: FilterChain,
             ) {
-                val clientId = request.getParameter("client_id")
-                if (clientId == null || clientId !in ADMIN_ONLY_CLIENTS) {
-                    filterChain.doFilter(request, response)
-                    return
-                }
                 val auth = SecurityContextHolder.getContext().authentication
                 if (auth == null || auth is AnonymousAuthenticationToken || !auth.isAuthenticated) {
                     // Unauthenticated — let the entry point redirect to /login.
@@ -92,10 +87,7 @@ class AuthorizationServerConfig {
                 }
                 val isAdmin = auth.authorities.any { it.authority == Role.ADMIN.reprString }
                 if (!isAdmin) {
-                    response.sendError(
-                        HttpServletResponse.SC_FORBIDDEN,
-                        "Admin access required for $clientId",
-                    )
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin access required")
                     return
                 }
                 filterChain.doFilter(request, response)

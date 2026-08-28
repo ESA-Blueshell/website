@@ -76,7 +76,7 @@ test.describe("posters, icons and banners", () => {
     await expect(page.getByTestId("lineup-icon-0-empty")).toBeVisible()
     await choose(page, "lineup-icon-0")
 
-    await expect(page.getByTestId("lineup-icon-0-preview")).toBeVisible()
+    await expect.poll(() => loaded(page, "lineup-icon-0-preview")).toBe(true)
     // The entry beside it is untouched: an icon belongs to one place on one roster.
     await expect(page.getByTestId("lineup-icon-1-empty")).toBeVisible()
   })

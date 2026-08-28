@@ -24,9 +24,13 @@ const motion = useMotionAllowed()
 
 // Which games exist, what each is called and the art each carries are the records' answer;
 // the index keeps no list of its own.
-const {fielded: playedGames, ready, identityOf, recordOf, refresh: refreshGames} = useGames()
+const {games: allGames, fielded: playedGames, ready, identityOf, recordOf, refresh: refreshGames} = useGames()
 
-const gameCodes = computed<Game[]>(() => playedGames.value.map(one => one.game))
+// Every game, not only the ones still fielded. `fielded` says whether a game is offered as
+// current, which is what the menu and the add-a-team dialog want; the band below is about what
+// was fielded in the season on show, and a retired game still played the seasons it played.
+// Asking about all of them is safe: a game that fielded nothing in the season is dropped.
+const gameCodes = computed<Game[]>(() => allGames.value.map(one => one.game))
 const urlOf = (game: string) => {
   const record = recordOf(game)
   return record ? `/esports/${record.slug}` : "/esports"

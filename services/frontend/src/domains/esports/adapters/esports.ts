@@ -170,11 +170,16 @@ export async function dropGameOrReason(game: Game): Promise<{ok: true} | SeasonR
  */
 const media = (path?: string | null): string | null => (path ? apiUrl(path) : null)
 
+const withPoster = <T extends {posterUrl?: string | null}>(team: T): T =>
+  ({...team, posterUrl: media(team.posterUrl)})
+
+const withIcon = <T extends {iconUrl?: string | null}>(entry: T): T =>
+  ({...entry, iconUrl: media(entry.iconUrl)})
+
 const withMedia = (team: TeamRoster): TeamRoster => ({
-  ...team,
-  posterUrl: media(team.posterUrl),
+  ...withPoster(team),
   bannerUrl: media(team.bannerUrl),
-  members: team.members.map(member => ({...member, iconUrl: media(member.iconUrl)})),
+  members: team.members.map(withIcon),
 })
 
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {
@@ -253,7 +258,7 @@ export async function dropSeason(id: number): Promise<void> {
 
 export async function loadTeams(game: Game): Promise<Team[]> {
   const res = await findTeams({query: {game}})
-  return (res.data ?? []).map(one => ({...one, posterUrl: media(one.posterUrl)}))
+  return (res.data ?? []).map(withPoster)
 }
 
 export async function saveTeam(
@@ -320,7 +325,7 @@ export async function fieldTeamInSeason(
 
 export async function loadRoster(teamId: number, seasonId: number): Promise<RosterEntry[]> {
   const res = await findRoster({path: {teamId}, query: {seasonId}})
-  return (res.data ?? []).map(one => ({...one, iconUrl: media(one.iconUrl)}))
+  return (res.data ?? []).map(withIcon)
 }
 
 export async function addToRoster(
@@ -437,25 +442,30 @@ export async function dropGameAccount(userId: number, game: Game): Promise<void>
  */
 export async function setTeamPoster(teamId: number, file: File): Promise<Team | null> {
   const res = await uploadTeamPoster({path: {id: teamId}, body: {file}})
-  return res.data ? {...res.data, posterUrl: media(res.data.posterUrl)} : null
+  return res.data ? withPoster(res.data) : null
 }
 
 export async function clearTeamPoster(teamId: number): Promise<Team | null> {
   const res = await removeTeamPoster({path: {id: teamId}})
-  return res.data ? {...res.data, posterUrl: media(res.data.posterUrl)} : null
+  return res.data ? withPoster(res.data) : null
 }
 
 export async function setRosterIcon(entryId: number, file: File): Promise<RosterEntry | null> {
   const res = await uploadRosterIcon({path: {id: entryId}, body: {file}})
-  return res.data ? {...res.data, iconUrl: media(res.data.iconUrl)} : null
+  return res.data ? withIcon(res.data) : null
 }
 
 export async function clearRosterIcon(entryId: number): Promise<RosterEntry | null> {
   const res = await removeRosterIcon({path: {id: entryId}})
-  return res.data ? {...res.data, iconUrl: media(res.data.iconUrl)} : null
+  return res.data ? withIcon(res.data) : null
 }
 
-/** Every banner set for a game, so the levels already covered can be shown before another is added. */
+/**
+ * Every banner set for a game, so the levels already covered can be shown before another is added.
+ *
+ * Resolved with `apiUrl` rather than `media`: a banner always has a url, so there is no absence
+ * to carry through.
+ */
 export async function loadBanners(game: Game): Promise<EsportsBanner[]> {
   const res = await findBanners({query: {game}})
   return (res.data ?? []).map(one => ({...one, url: apiUrl(one.url)}))

@@ -25,6 +25,12 @@ const choose = async (page: import("@playwright/test").Page, testid: string) => 
   })
 }
 
+/** An image that decoded, which a url pointing at the wrong origin never does. */
+const loaded = async (page: import("@playwright/test").Page, testid: string) => {
+  await expect(page.getByTestId(testid)).toBeVisible()
+  return page.getByTestId(testid).evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)
+}
+
 const openLineup = async (page: import("@playwright/test").Page) => {
   await page.getByTestId("team-roster-1").hover()
   await page.getByTestId("team-roster-edit-1").click()
@@ -42,8 +48,8 @@ test.describe("posters, icons and banners", () => {
     await choose(page, "lineup-team-poster")
 
     const preview = page.getByTestId("lineup-team-poster-preview")
-    await expect(preview).toBeVisible()
     await expect(preview).toHaveAttribute("src", /\/files\/public\/\d+/)
+    await expect.poll(() => loaded(page, "lineup-team-poster-preview")).toBe(true)
   })
 
   test("an uploaded poster can be taken away again", async ({page}) => {
@@ -101,7 +107,9 @@ test.describe("posters, icons and banners", () => {
     await expect(page.getByTestId("banner-game-preview")).toBeVisible()
     await page.keyboard.press("Escape")
 
-    await expect(page.getByTestId("esports-page-banner")).toBeVisible()
+    // Drawn, not merely present: the api answers on another origin than the page, so a url
+    // the frontend failed to resolve still sets an `src` and still renders nothing.
+    await expect.poll(() => loaded(page, "esports-page-banner")).toBe(true)
   })
 
   test("the banner levels read least specific first, so which one wins is legible", async ({page}) => {

@@ -1,3 +1,4 @@
+import {Buffer} from "node:buffer"
 import type {BrowserContext, Page, Route} from "@playwright/test"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
@@ -878,6 +879,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       icons.delete(id)
       const entry = roster.find(one => one.id === id) ?? {}
       return fulfillJson(route, {...entry, id, iconUrl: null})
+    }
+    // A real image rather than an empty body: a url that resolves to nothing still sets an
+    // `src`, so only an image that actually decodes proves the page is pointing at the api.
+    if (method === "GET" && /^\/files\/public\/\d+$/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: "image/png",
+        body: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "base64",
+        ),
+      })
     }
     if (method === "GET" && path === "/esports/banners") {
       return fulfillJson(route, banners)

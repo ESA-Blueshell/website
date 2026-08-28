@@ -13,6 +13,12 @@ import javax.sql.DataSource
  * Test listener that deletes all rows from every test-schema table between tests (excluding Flyway
  * history). Hard-guards against accidental non-test schema truncation.
  *
+ * The games the association knows are reference data rather than a test's own rows: a team and a
+ * member's game account point at one, and the migration is what establishes the set. Wiping them
+ * would leave every later test unable to write a team at all. They are therefore restored to what
+ * the migration left, rather than excluded from the wipe — so a test that renames or adds a game
+ * still does not leak into the next one.
+ *
  * Uses DELETE (not TRUNCATE) inside an explicit transaction so that MariaDB/InnoDB only needs a
  * shared metadata lock + row-level write locks, rather than the exclusive table-level metadata lock
  * that TRUNCATE requires. Under CI's limited CPU resources the exclusive-MDL wait can exceed
@@ -59,6 +65,7 @@ class TestCleanUpListener : TestExecutionListener {
             if (tables.isEmpty()) {
                 return@withConnection
             }
+            val reference = REFERENCE_TABLES.filter { it in tables }.associateWith { snapshotOf(conn, it) }
 
             conn.autoCommit = false
             try {
@@ -69,6 +76,7 @@ class TestCleanUpListener : TestExecutionListener {
                     }
                     st.execute("SET FOREIGN_KEY_CHECKS = 1")
                 }
+                reference.forEach { (table, rows) -> restore(conn, table, rows) }
                 conn.commit()
             } catch (e: Exception) {
                 runCatching { conn.rollback() }
@@ -76,6 +84,38 @@ class TestCleanUpListener : TestExecutionListener {
             } finally {
                 conn.autoCommit = true
             }
+        }
+    }
+
+    /**
+     * What a reference table held when this run started, read once. The wipe puts it back after
+     * every test, so what is captured is the migration's own rows unless a run was killed
+     * mid-test — recreating the schema is the cure for that.
+     */
+    private fun snapshotOf(conn: java.sql.Connection, table: String): Snapshot =
+        snapshots.getOrPut(table) {
+            conn.createStatement().use { st ->
+                st.executeQuery("SELECT * FROM `$TEST_SCHEMA`.`$table`").use { rs ->
+                    val columns = (1..rs.metaData.columnCount).map { rs.metaData.getColumnName(it) }
+                    val rows = mutableListOf<List<Any?>>()
+                    while (rs.next()) {
+                        rows.add(columns.indices.map { rs.getObject(it + 1) })
+                    }
+                    Snapshot(columns, rows)
+                }
+            }
+        }
+
+    private fun restore(conn: java.sql.Connection, table: String, snapshot: Snapshot) {
+        if (snapshot.rows.isEmpty()) return
+        val columns = snapshot.columns.joinToString(", ") { "`$it`" }
+        val holders = snapshot.columns.joinToString(", ") { "?" }
+        conn.prepareStatement("INSERT INTO `$TEST_SCHEMA`.`$table` ($columns) VALUES ($holders)").use { ps ->
+            for (row in snapshot.rows) {
+                row.forEachIndexed { index, value -> ps.setObject(index + 1, value) }
+                ps.addBatch()
+            }
+            ps.executeBatch()
         }
     }
 
@@ -118,7 +158,13 @@ class TestCleanUpListener : TestExecutionListener {
         }
     }
 
+    private data class Snapshot(val columns: List<String>, val rows: List<List<Any?>>)
+
     private companion object {
+        /** Rows the migration establishes that other tables point at, restored after every wipe. */
+        val REFERENCE_TABLES = listOf("game_page")
+        val snapshots = mutableMapOf<String, Snapshot>()
+
         const val TEST_SCHEMA = "blueshell-test"
         const val FLYWAY_V5_TABLE = "flyway_schema_history"
         const val FLYWAY_V3_TABLE = "schema_version"

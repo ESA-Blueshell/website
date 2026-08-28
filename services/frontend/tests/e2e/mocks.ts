@@ -58,7 +58,7 @@ const esportsPageBySeason: Record<string, Record<string, unknown>> = {
         name: "BS Waterboarders",
         image: "valorantesports1.jpg",
         members: [
-          {role: "PLAYER", handle: "AriosFury", name: "Viktor Petrov"},
+          {role: "PLAYER", handle: "AriosFury", name: "Viktor Petrov", roleTitle: "Captain", description: "Holds the **middle** together."},
           {role: "PLAYER", handle: "Loafine"},
           {role: "SUBSTITUTE", handle: "Blackout"},
         ],

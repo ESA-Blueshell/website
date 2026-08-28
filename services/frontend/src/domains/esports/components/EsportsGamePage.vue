@@ -10,6 +10,7 @@ import {loadSeasons} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
+import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {$require} from "@/plugins/require"
 import {identityOf} from "@/domains/esports/island/gameIdentity"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
@@ -259,11 +260,22 @@ const seasonSaved = (saved: Season) => {
                     class="team-slice__member"
                   >
                     <span class="team-slice__handle">{{ member.handle }}</span>
+                    <!-- What they did in the team's own words, beside the part they played. -->
+                    <span
+                      v-if="member.roleTitle"
+                      class="team-slice__member-role"
+                    >{{ member.roleTitle }}</span>
                     <!-- Only ever present for a member who said their name may be shown. -->
                     <span
                       v-if="member.name"
                       class="team-slice__member-name"
                     >{{ member.name }}</span>
+                    <!-- Written by an admin, but read on a public page, so it is sanitised. -->
+                    <span
+                      v-if="member.description"
+                      class="team-slice__member-note"
+                      v-html="$markdownToHtml(member.description)"
+                    />
                   </span>
                 </span>
               </span>

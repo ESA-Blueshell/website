@@ -54,6 +54,8 @@ class TeamRosterService(
         role: TeamRole,
         userId: Long?,
         displayName: String?,
+        roleTitle: String? = null,
+        description: String? = null,
     ): TeamRosterEntry {
         val team = teams.findById(teamId)
         val season = seasons.findById(seasonId)
@@ -72,6 +74,8 @@ class TeamRosterService(
                 teamRole = role,
                 userId = userId,
                 displayName = displayName?.trim()?.ifBlank { null },
+                roleTitle = roleTitle?.trim()?.ifBlank { null },
+                description = description?.trim()?.ifBlank { null },
                 sortIndex = next,
             ),
         )
@@ -119,6 +123,8 @@ class TeamRosterService(
         role: TeamRole,
         displayName: String?,
         sortIndex: Int,
+        roleTitle: String? = null,
+        description: String? = null,
     ): TeamRosterEntry {
         val entry = findById(id)
         val trimmed = handle.trim()
@@ -126,6 +132,8 @@ class TeamRosterService(
         entry.handle = trimmed
         entry.teamRole = role
         entry.displayName = displayName?.trim()?.ifBlank { null }
+        entry.roleTitle = roleTitle?.trim()?.ifBlank { null }
+        entry.description = description?.trim()?.ifBlank { null }
         entry.sortIndex = sortIndex
         return entries.save(entry)
     }

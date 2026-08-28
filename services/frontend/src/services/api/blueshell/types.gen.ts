@@ -42,9 +42,17 @@ export type AddBoardMemberRequest = {
  * Put somebody on a team's roster for a season
  */
 export type AddRosterEntryRequest = {
+    /**
+     * A short caption about them, in markdown
+     */
+    description?: string | null;
     displayName?: string | null;
     handle: string;
     role: TeamRole;
+    /**
+     * What they did in the team's own words, beside the fixed part
+     */
+    roleTitle?: string | null;
     seasonId: number;
     /**
      * The member this entry belongs to, when they are known
@@ -1233,12 +1241,20 @@ export enum Role {
  */
 export type RosterEntryResponse = {
     /**
+     * A short caption about them, in markdown
+     */
+    description?: string | null;
+    /**
      * The member's real name, shown to admins for identification
      */
     displayName?: string | null;
     handle: string;
     id: number;
     role: TeamRole;
+    /**
+     * What they did in the team's own words
+     */
+    roleTitle?: string | null;
     seasonId: number;
     sortIndex: number;
     teamId: number;
@@ -1253,6 +1269,10 @@ export type RosterEntryResponse = {
  */
 export type RosterMemberResponse = {
     /**
+     * A short caption about them, in markdown, where anything was written
+     */
+    description?: string | null;
+    /**
      * What this member is called in the game
      */
     handle: string;
@@ -1261,6 +1281,10 @@ export type RosterMemberResponse = {
      */
     name?: string | null;
     role: TeamRole;
+    /**
+     * What they did in the team's own words, where anything was said
+     */
+    roleTitle?: string | null;
 };
 
 /**
@@ -1558,9 +1582,17 @@ export type UpdateMembershipRequest = {
  * Edit a roster entry
  */
 export type UpdateRosterEntryRequest = {
+    /**
+     * A short caption about them, in markdown
+     */
+    description?: string | null;
     displayName?: string | null;
     handle: string;
     role: TeamRole;
+    /**
+     * What they did in the team's own words, beside the fixed part
+     */
+    roleTitle?: string | null;
     sortIndex: number;
 };
 

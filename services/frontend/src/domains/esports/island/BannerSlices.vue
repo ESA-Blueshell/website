@@ -477,6 +477,31 @@ watch([() => props.openId, () => props.items], () => {
   color: color-mix(in oklab, var(--color-ash) 85%, transparent);
 }
 
+/* Beside the part they played rather than under it: it qualifies the role, it is not a
+   second fact about the person. */
+:slotted(.team-slice__member-role) {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--accent) 82%, var(--color-chalk));
+}
+
+/* A caption, so it is held to a couple of lines and the markdown inside it stays inline. */
+:slotted(.team-slice__member-note) {
+  display: block;
+  margin-top: 0.15rem;
+  max-width: 22rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: color-mix(in oklab, var(--color-ash) 92%, transparent);
+}
+
+:slotted(.team-slice__member-note p) {
+  display: inline;
+  margin: 0;
+}
+
 /* Stacked on a narrow screen, where a row of slices would leave each one a sliver. The cut
    turns with them so the seams still read as diagonal. */
 @media (max-width: 767px) {

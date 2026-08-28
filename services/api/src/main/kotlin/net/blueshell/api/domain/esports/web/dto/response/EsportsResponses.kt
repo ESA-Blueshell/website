@@ -42,6 +42,10 @@ data class RosterMemberResponse(
     val handle: String,
     @Schema(description = "The member's real name, present only when they allow it to be shown")
     val name: String? = null,
+    @Schema(description = "What they did in the team's own words, where anything was said")
+    val roleTitle: String? = null,
+    @Schema(description = "A short caption about them, in markdown, where anything was written")
+    val description: String? = null,
 )
 
 @Schema(description = "A team with the roster it fielded in one season")
@@ -81,6 +85,10 @@ data class RosterEntryResponse(
     @Schema(description = "The member this entry belongs to, when anybody could be identified")
     val userId: Long?,
     val sortIndex: Int,
+    @Schema(description = "What they did in the team's own words")
+    val roleTitle: String? = null,
+    @Schema(description = "A short caption about them, in markdown")
+    val description: String? = null,
 )
 
 @Schema(description = "What one member is called in one game")

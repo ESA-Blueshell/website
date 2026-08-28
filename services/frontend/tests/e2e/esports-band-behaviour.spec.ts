@@ -18,7 +18,7 @@ test.describe("moving around the esports pages", () => {
     await expect(valorant).toHaveClass(/team-slice--open/)
     await valorant.click()
 
-    await expect(page).toHaveURL(/\/esports\/valorant$/)
+    await expect(page).toHaveURL(/\/esports\/valorant\?season=20$/)
   })
 
   test("what was last looked at stays open", async ({page}, info) => {

@@ -26,7 +26,59 @@ test.describe("the esports island", () => {
     await slices.waitFor()
     // Every game the mock reports a team for, and a way into each one's own history.
     await expect(slices.locator('[data-testid^="esports-game-"]')).not.toHaveCount(0)
-    await expect(slices.locator('a[href="/esports/valorant"]')).toHaveCount(1)
+    // On the season being read here, so following it lands on what was just being looked at.
+    await expect(slices.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
+  })
+
+  test("a game followed from the index opens on the season that was being read", async ({page}, info) => {
+    test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
+    await installApiMocks(page)
+    await page.goto("/esports/competitive-scene")
+    await page.getByTestId("esports-game-slices").waitFor()
+
+    // An earlier season, chosen here because of what was fielded in it.
+    await page.getByTestId("esports-season-node-19").click()
+    await expect(page.getByTestId("esports-game-VALORANT")).toContainText("BS Tempra")
+
+    // Opening a slice and going to it are the same gesture, one after the other.
+    const valorant = page.getByTestId("esports-game-VALORANT")
+    await valorant.hover()
+    await valorant.click()
+
+    // The same season, and its roster rather than the newest one's.
+    await expect(page).toHaveURL(/\/esports\/valorant\?season=19$/)
+    await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
+    await expect(page.getByTestId("team-roster-1")).toHaveCount(0)
+  })
+
+  test("the link into a game names the season it goes to", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/esports/competitive-scene")
+    await page.getByTestId("esports-game-slices").waitFor()
+    await page.getByTestId("esports-season-node-19").click()
+
+    const link = page.locator('a[href="/esports/valorant?season=19"]')
+    await expect(link).toHaveCount(1)
+    // It goes to one season, so it says which rather than promising all of them.
+    await expect(link).toContainText("Valorant in Spring 2024/25")
+  })
+
+  test("the way back is the index on the season that was chosen", async ({page}, info) => {
+    test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
+    await installApiMocks(page)
+    await page.goto("/esports/competitive-scene")
+    await page.getByTestId("esports-game-slices").waitFor()
+    await page.getByTestId("esports-season-node-19").click()
+
+    const valorant = page.getByTestId("esports-game-VALORANT")
+    await valorant.hover()
+    await valorant.click()
+    await expect(page.getByTestId("team-roster-3")).toBeVisible()
+
+    await page.goBack()
+
+    await expect(page).toHaveURL(/\/esports\/competitive-scene\?season=19$/)
+    await expect(page.getByTestId("esports-game-VALORANT")).toContainText("BS Tempra")
   })
 
   test("offers the three ways in, and points each of them somewhere real", async ({page}) => {

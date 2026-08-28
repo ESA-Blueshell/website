@@ -16,6 +16,7 @@ import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {$require} from "@/plugins/require"
+import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
@@ -44,11 +45,7 @@ const gameSaved = async () => {
   if (now && now.slug !== route.params.slug) void router.replace(`/esports/${now.slug}`)
 }
 
-const seasonFromRoute = () => {
-  const raw = route.query.season
-  const value = Number(Array.isArray(raw) ? raw[0] : raw)
-  return Number.isFinite(value) && value > 0 ? value : null
-}
+const seasonFromRoute = () => seasonInRoute(route)
 
 // The season lives in the url, so a roster can be linked to and the back button works.
 const rememberSeason = (id: number) => {

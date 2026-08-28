@@ -1,4 +1,4 @@
-import {computed, onMounted, ref, unref, type MaybeRef} from "vue"
+import {computed, onMounted, ref, unref, watch, type MaybeRef} from "vue"
 import {loadEsportsPage, type EsportsPage, type Game, type Season} from "../adapters/esports"
 
 export interface LineupEntry {
@@ -20,8 +20,15 @@ export interface LineupEntry {
  * Which games to ask about arrives from their records, so it is read at each load rather than
  * captured once, and the first load waits on `until` — otherwise it would ask about no games
  * and the page would read as a season nothing was fielded in.
+ *
+ * The season is part of the url, so a season can be linked to, the back button works, and
+ * following a game out of the index arrives on the season that was being read.
  */
-export function useSeasonLineup(games: MaybeRef<Game[]>, until?: Promise<unknown>) {
+export function useSeasonLineup(
+  games: MaybeRef<Game[]>,
+  seasonFromRoute: () => number | null,
+  until?: Promise<unknown>,
+) {
   const seasons = ref<Season[]>([])
   const selected = ref<number | null>(null)
   const entries = ref<LineupEntry[]>([])
@@ -51,7 +58,7 @@ export function useSeasonLineup(games: MaybeRef<Game[]>, until?: Promise<unknown
 
   onMounted(async () => {
     await until
-    await load()
+    await load(seasonFromRoute() ?? undefined)
   })
 
   const show = async (seasonId: number) => {
@@ -59,6 +66,11 @@ export function useSeasonLineup(games: MaybeRef<Game[]>, until?: Promise<unknown
     selected.value = seasonId
     await load(seasonId)
   }
+
+  // A season chosen elsewhere — the back button, a shared link — is still a season change.
+  watch(seasonFromRoute, (next) => {
+    if (next != null && next !== selected.value) void load(next)
+  })
 
   // `reload` re-asks about the season already on show, which `show` declines to do.
   return {

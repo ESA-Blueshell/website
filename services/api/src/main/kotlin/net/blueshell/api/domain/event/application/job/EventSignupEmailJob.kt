@@ -3,7 +3,7 @@ package net.blueshell.api.domain.event.application.job
 import net.blueshell.api.domain.event.application.EventSignUpService
 import net.blueshell.api.domain.event.application.email.createEventSignupEmail
 import net.blueshell.api.email.api.EmailSenderService
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.beans.factory.annotation.Value

@@ -1,8 +1,8 @@
-package net.blueshell.api.platform.integration.job.application.service
+package net.blueshell.api.jobs.domain
 
 import jakarta.persistence.EntityManager
-import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.job.persistence.repository.JobExecutionRepository
+import net.blueshell.api.jobs.persistence.JobExecution
+import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat

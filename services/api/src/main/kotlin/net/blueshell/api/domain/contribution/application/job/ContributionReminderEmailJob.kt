@@ -4,7 +4,7 @@ import net.blueshell.api.domain.contribution.application.ContributionReminderSer
 import net.blueshell.api.domain.contribution.application.email.createContributionReminderEmail
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.email.api.EmailSenderService
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.beans.factory.annotation.Value

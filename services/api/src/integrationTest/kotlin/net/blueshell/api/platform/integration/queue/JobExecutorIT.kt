@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.integration.queue
+package net.blueshell.api.jobs.domain
 
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.enums.JobExecutionStatus

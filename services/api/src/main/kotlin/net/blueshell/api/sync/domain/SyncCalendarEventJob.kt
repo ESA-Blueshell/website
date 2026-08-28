@@ -1,6 +1,6 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.CalendarJobs
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper

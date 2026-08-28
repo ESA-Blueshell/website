@@ -2,7 +2,7 @@ package net.blueshell.api.sync.domain
 
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory

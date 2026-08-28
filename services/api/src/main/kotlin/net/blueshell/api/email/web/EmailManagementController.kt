@@ -5,8 +5,8 @@ import net.blueshell.api.email.domain.EmailQuery
 import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.SentEmailPreviewService
 import net.blueshell.api.email.persistence.Email
-import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
-import net.blueshell.api.platform.integration.queue.JobExecutor
+import net.blueshell.api.jobs.domain.JobExecutionService
+import net.blueshell.api.jobs.domain.JobExecutor
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springdoc.core.annotations.ParameterObject

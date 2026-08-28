@@ -1,6 +1,6 @@
-package net.blueshell.api.platform.integration.queue
+package net.blueshell.api.jobs.domain
 
-import net.blueshell.api.platform.integration.job.persistence.JobExecution
+import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat

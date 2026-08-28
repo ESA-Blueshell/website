@@ -13,7 +13,7 @@ import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
-import net.blueshell.api.platform.integration.job.persistence.JobExecution
+import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs

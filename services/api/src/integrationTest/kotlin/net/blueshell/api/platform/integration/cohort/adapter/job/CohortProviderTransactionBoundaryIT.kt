@@ -23,7 +23,7 @@ import tools.jackson.databind.ObjectMapper
 
 /**
  * Proves the no-provider-call-inside-a-DB-transaction rule on the job
- * path. [AbstractJsonJobHandler.handle][net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler]
+ * path. [AbstractJsonJobHandler.handle][net.blueshell.api.jobs.api.AbstractJsonJobHandler]
  * is `@Transactional`, so a job is always dispatched with a transaction
  * active. The application services suspend it (`PROPAGATION_NOT_SUPPORTED`)
  * around every [CohortPort][net.blueshell.api.platform.integration.cohort.port.out.CohortPort]

@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.adapter.job
 
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortTargeting
-import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException

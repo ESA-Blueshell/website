@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.event.application
 
-import net.blueshell.api.platform.integration.job.web.port.JobSubject
-import net.blueshell.api.platform.integration.job.web.port.JobSubjectResolver
+import net.blueshell.api.jobs.web.JobSubject
+import net.blueshell.api.jobs.web.JobSubjectResolver
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component

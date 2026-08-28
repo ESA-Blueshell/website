@@ -5,7 +5,7 @@ import net.blueshell.api.board.domain.BoardPermission
 import net.blueshell.api.domain.contribution.application.permission.ContributionPeriodPermission
 import net.blueshell.api.domain.contribution.application.permission.ContributionReminderPermission
 import net.blueshell.api.domain.event.application.permission.GuestPermission
-import net.blueshell.api.platform.integration.job.application.permission.JobExecutionPermission
+import net.blueshell.api.jobs.domain.JobExecutionPermission
 import net.blueshell.api.sponsor.domain.SponsorPermission
 import net.blueshell.api.telemetry.domain.TelemetryPermission
 
@@ -23,8 +23,8 @@ import net.blueshell.api.sponsor.domain.SponsorService
 import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.telemetry.domain.TelemetryService
 import net.blueshell.api.telemetry.persistence.Telemetry
-import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
+import net.blueshell.api.jobs.persistence.JobExecution
+import net.blueshell.api.jobs.domain.JobExecutionService
 import net.blueshell.api.shared.enums.PlatformType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

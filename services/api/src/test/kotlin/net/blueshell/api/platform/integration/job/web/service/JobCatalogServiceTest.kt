@@ -1,8 +1,8 @@
-package net.blueshell.api.platform.integration.job.web.service
+package net.blueshell.api.jobs.web
 
-import net.blueshell.api.platform.integration.job.persistence.JobExecution
-import net.blueshell.api.platform.integration.queue.JobDispatcher
-import net.blueshell.api.platform.integration.queue.JobHandlerRegistry
+import net.blueshell.api.jobs.persistence.JobExecution
+import net.blueshell.api.jobs.domain.JobDispatcher
+import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.shared.job.ContactJobs
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy

@@ -2,9 +2,9 @@ package net.blueshell.api.domain.event.persistence
 
 import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
 import net.blueshell.api.domain.event.web.mapping.response.asResponse
-import net.blueshell.api.domain.survey.persistence.Answer
-import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.survey.persistence.Answer
+import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport

@@ -4,7 +4,7 @@ import net.blueshell.api.domain.event.application.EventData
 
 import net.blueshell.api.domain.event.web.dto.request.CreateEventRequest
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventRequest
-import net.blueshell.api.domain.survey.web.mapping.request.asDomainData
+import net.blueshell.api.survey.web.asDomainData
 
 fun CreateEventRequest.asData(): EventData =
     EventData(

@@ -2,7 +2,7 @@ package net.blueshell.api.domain.event.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

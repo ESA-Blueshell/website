@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import net.blueshell.api.domain.event.web.validation.HasSignUpDeadline
 import net.blueshell.api.domain.event.web.validation.ValidSignUpDeadline
-import net.blueshell.api.domain.survey.web.dto.request.SurveyRequest
+import net.blueshell.api.survey.web.SurveyRequest
 import java.time.Instant
 
 @Schema(name = "UpdateEventRequest")

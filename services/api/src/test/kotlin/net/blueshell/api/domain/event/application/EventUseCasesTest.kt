@@ -6,10 +6,10 @@ import net.blueshell.api.domain.event.application.query.EventQuery
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.domain.survey.application.factory.SurveyFactory
-import net.blueshell.api.domain.survey.application.QuestionData
-import net.blueshell.api.domain.survey.application.SurveyData
-import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.survey.api.SurveyFactory
+import net.blueshell.api.survey.api.QuestionData
+import net.blueshell.api.survey.api.SurveyData
+import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser

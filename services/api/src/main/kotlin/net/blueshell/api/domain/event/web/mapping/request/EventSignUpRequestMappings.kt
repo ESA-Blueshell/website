@@ -6,8 +6,8 @@ import net.blueshell.api.domain.event.application.GuestData
 import net.blueshell.api.domain.event.web.dto.request.CreateEventSignUpRequest
 import net.blueshell.api.domain.event.web.dto.request.CreateGuestRequest
 import net.blueshell.api.domain.event.web.dto.request.UpdateEventSignUpRequest
-import net.blueshell.api.domain.survey.application.AnswerData
-import net.blueshell.api.domain.survey.web.dto.request.AnswerRequest
+import net.blueshell.api.survey.api.AnswerData
+import net.blueshell.api.survey.web.AnswerRequest
 
 private fun AnswerRequest.asData(): AnswerData =
     AnswerData(

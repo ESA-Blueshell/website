@@ -5,9 +5,9 @@ import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.file.api.FileService
-import net.blueshell.api.domain.survey.application.factory.SurveyFactory
-import net.blueshell.api.domain.survey.application.SurveyData
-import net.blueshell.api.domain.survey.persistence.Question
+import net.blueshell.api.survey.api.SurveyFactory
+import net.blueshell.api.survey.api.SurveyData
+import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider

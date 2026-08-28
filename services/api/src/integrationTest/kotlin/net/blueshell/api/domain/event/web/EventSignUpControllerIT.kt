@@ -1,8 +1,8 @@
 package net.blueshell.api.domain.event.web
 
 import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.survey.persistence.Question
-import net.blueshell.api.domain.survey.persistence.Survey
+import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.factory.event.web.request.EventRequestFactory
 import net.blueshell.api.factory.event.web.request.EventSignUpRequestFactory
 import net.blueshell.api.shared.enums.QuestionType

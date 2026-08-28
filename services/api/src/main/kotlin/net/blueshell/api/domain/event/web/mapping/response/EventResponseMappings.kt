@@ -8,7 +8,7 @@ import net.blueshell.api.domain.event.web.dto.response.EventBannerResponse
 import net.blueshell.api.domain.event.web.dto.response.EventResponse
 import net.blueshell.api.domain.event.web.dto.response.EventSignUpResponse
 import net.blueshell.api.domain.event.web.dto.response.GuestResponse
-import net.blueshell.api.domain.survey.web.mapping.response.asResponse
+import net.blueshell.api.survey.web.asResponse
 import net.blueshell.api.domain.user.web.mapping.response.asSummaryResponse
 
 fun Event.asResponse(): EventResponse =

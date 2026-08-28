@@ -1,4 +1,4 @@
-package net.blueshell.api.user.domain
+package net.blueshell.api.user.api
 
 import java.sql.Date
 

@@ -2,7 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.user.api.MemberProfileService
-import net.blueshell.api.user.domain.SignupDetailsData
+import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.upsertInto
 import net.blueshell.api.user.persistence.Address

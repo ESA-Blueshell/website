@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.user.web.CreateUserRequest
-import net.blueshell.api.user.domain.SignupDetailsData
+import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.web.asData
 import net.blueshell.api.user.web.asCommandData
 import org.springframework.http.HttpStatus

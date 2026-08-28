@@ -11,10 +11,6 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import net.blueshell.api.user.domain.BoardUserData
-import net.blueshell.api.user.domain.NewUserData
-import net.blueshell.api.user.domain.SelfUserData
-import net.blueshell.api.user.domain.UpsertMemberProfileData
 import net.blueshell.api.user.domain.UserQuery
 import net.blueshell.api.user.domain.UserRegistration
 import net.blueshell.api.user.domain.UserUniqueness

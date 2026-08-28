@@ -5,11 +5,9 @@ import com.tngtech.archunit.core.domain.JavaClass
 /**
  * Derives the architecture ADR-003 module a type belongs to from its package.
  *
- * Modules are not the direct sub-packages of the base package — `domain` and
- * `platform` are grouping levels that ADR-003 sequences away last, so the module
- * is one or two segments deeper. A handful of packages were split by role rather
- * than by feature and still map onto a single module: `job` plus `queue` are both
- * `jobs`, and `sync` plus `calendar` are both `sync`.
+ * Every module is a direct sub-package of the base package. `platform` is not one:
+ * its `config`, `web` and `integration.mock` packages are the application root under
+ * ADR-003 rules 5 and 6.
  *
  * Types directly under the base package belong to no module — that is where
  * global wiring lives — and [moduleOf] returns null for them.
@@ -18,17 +16,8 @@ object ArchModules {
 
     const val BASE = "net.blueshell.api"
 
-    /** Packages split by role that ADR-003 folds back into one module. */
-    private val INTEGRATION_ALIASES = mapOf(
-        "job" to "jobs",
-        "queue" to "jobs",
-        "calendar" to "sync",
-        "sync" to "sync",
-    )
-
     /**
-     * Modules already moved to a direct sub-package of the base package. Listed so the
-     * derivation works while some modules are flattened and others are not.
+     * The twenty modules, each a direct sub-package of the base package.
      */
     private val FLAT_MODULES = setOf(
         "auth", "blog", "board", "committee", "contribution", "esports", "event", "file",
@@ -44,12 +33,8 @@ object ArchModules {
         return when {
             segments.isEmpty() -> null
             segments[0] in FLAT_MODULES -> segments[0]
-            segments[0] == "domain" -> segments.getOrNull(1)
-            segments[0] == "shared" -> "shared"
-            segments[0] == "infrastructure" -> segments.getOrNull(1)
-            segments[0] == "platform" && segments.getOrNull(1) == "integration" ->
-                segments.getOrNull(2)?.let { INTEGRATION_ALIASES[it] ?: it }
-            segments[0] == "platform" -> segments.getOrNull(1)
+            // platform/config, platform/web and platform/integration/mock are the
+            // application root under ADR-003 rules 5 and 6, not a module.
             else -> null
         }
     }

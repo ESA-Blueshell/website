@@ -48,10 +48,11 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `repository only accessed by application and persistence layers`(): Unit =
         arch("Repositories only accessed from application layer") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and().haveSimpleNameEndingWith("Repository")
                 .should().onlyBeAccessed().byAnyPackage(
-                    ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.REPOSITORY,
+                    *ArchitecturePackages.SERVICE_LAYER,
+                    ArchitecturePackages.MODULE_PERSISTENCE,
                     ArchitecturePackages.DOMAIN_SERVICE,  // Domain services can access repositories
                     ArchitecturePackages.PERSISTENCE,
                     ArchitecturePackages.JOB,             // Per-integration job handlers read DB state
@@ -106,9 +107,9 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `application services do not depend on DTOs`(): Unit =
         arch("Application services must not depend on web DTOs") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.APPLICATION)
+                .that().resideInAnyPackage(*ArchitecturePackages.SERVICE_LAYER)
                 .and().haveSimpleNameEndingWith("Service")
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DTO)
+                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .because("ADR-001: Keep DTO usage at boundary; application works with entities and commands")
         }
 
@@ -116,7 +117,8 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `repositories do not depend on services`(): Unit =
         arch("Repositories must not depend on services") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and().haveSimpleNameEndingWith("Repository")
                 .should().dependOnClassesThat(applicationServices)
                 .because("ADR-016: Dependency direction is Service -> Repository, never the reverse")
         }
@@ -172,8 +174,9 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `repositories do not depend on DTOs`(): Unit =
         arch("Repositories must not depend on DTOs") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.REPOSITORY)
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DTO)
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and().haveSimpleNameEndingWith("Repository")
+                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .because("ADR-016: Persistence layer should not know about web DTOs")
         }
 

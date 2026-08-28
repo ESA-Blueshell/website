@@ -1,6 +1,6 @@
 package net.blueshell.api.user.web
 
-import net.blueshell.api.user.domain.UpsertMemberProfileData
+import net.blueshell.api.user.api.UpsertMemberProfileData
 import java.sql.Date
 
 fun UpsertMemberProfileRequest.asCommandData(): UpsertMemberProfileData =

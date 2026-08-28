@@ -91,7 +91,7 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
     fun `services use constructor injection`(): Unit =
         arch("Services must use constructor injection") {
             noFields()
-                .that().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.APPLICATION)
+                .that().areDeclaredInClassesThat().resideInAnyPackage(*ArchitecturePackages.SERVICE_LAYER)
                 .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Service")
                 .should().beAnnotatedWith(Autowired::class.java)
                 .because("Services should use constructor injection for immutable dependencies")

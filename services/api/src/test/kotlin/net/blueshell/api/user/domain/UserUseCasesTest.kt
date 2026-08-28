@@ -28,6 +28,10 @@ import java.sql.Date
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.UserUseCases
+import net.blueshell.api.user.api.BoardUserData
+import net.blueshell.api.user.api.NewUserData
+import net.blueshell.api.user.api.SelfUserData
+import net.blueshell.api.user.api.UpsertMemberProfileData
 
 class UserUseCasesTest {
 

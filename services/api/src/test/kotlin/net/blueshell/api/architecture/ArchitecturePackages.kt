@@ -25,6 +25,14 @@ object ArchitecturePackages {
      */
     const val MODULE_DOMAIN = "$ROOT.*.domain.."
     const val MODULE_API = "$ROOT.*.api.."
+    const val MODULE_WEB = "$ROOT.*.web.."
+    const val MODULE_PERSISTENCE = "$ROOT.*.persistence.."
+
+    /**
+     * Where a module's services live: the published ones in `api`, the rest in `domain`.
+     * Replaces the old single `application` package, which the flattening removes.
+     */
+    val SERVICE_LAYER = arrayOf(MODULE_API, MODULE_DOMAIN)
     const val APPLICATION_VALIDATION = "$ROOT..application.validation.."
     const val APPLICATION_EXCEPTION = "$ROOT..application.exception.."
     const val LISTENER = "$ROOT..application.listener.."

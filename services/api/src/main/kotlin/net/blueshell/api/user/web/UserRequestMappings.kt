@@ -1,8 +1,8 @@
 package net.blueshell.api.user.web
 
-import net.blueshell.api.user.domain.BoardUserData
-import net.blueshell.api.user.domain.NewUserData
-import net.blueshell.api.user.domain.SelfUserData
+import net.blueshell.api.user.api.BoardUserData
+import net.blueshell.api.user.api.NewUserData
+import net.blueshell.api.user.api.SelfUserData
 
 fun CreateUserRequest.asData(): NewUserData =
     NewUserData(

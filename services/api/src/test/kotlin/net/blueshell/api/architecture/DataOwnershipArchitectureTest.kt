@@ -115,9 +115,11 @@ class DataOwnershipArchitectureTest {
     @ArchTest
     fun `web validators should use services not repositories`(classes: JavaClasses) {
         noClasses()
-            .that().resideInAPackage("..domain.*.web.validation..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..persistence.repository..")
+            .that().resideInAPackage("net.blueshell.api.*.web..")
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("net.blueshell.api.*.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
             .because("ADR-003 and ADR-018: Web validators should access data via services, not repositories")
             .check(classes)
     }

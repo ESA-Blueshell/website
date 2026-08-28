@@ -433,9 +433,32 @@ watch([() => props.openId, () => props.items], () => {
   height: 23px;
 }
 
+/*
+ * Focus on the slice rather than on the affordance itself: hidden means unfocusable, so an
+ * affordance that waited to be focused could never be reached. Focus lands on the slice
+ * first, which reveals the affordances sitting on it, and the next tab reaches them.
+ */
 .team-slice:hover .team-slice__edit,
 .team-slice:focus-within .team-slice__edit {
   visibility: visible;
+}
+
+/*
+ * Except where the focus the slice holds is a pointer's. A click focuses the body it lands
+ * on, and `:focus-within` cannot tell that focus from a keyboard's — so a slice clicked open
+ * went on offering to be edited long after the pointer had left it, and read as a control
+ * that had latched.
+ *
+ * Written as an exception to the rule above rather than folded into it. The obvious fold,
+ * asking the slice for `:has(:focus-visible)`, breaks the keyboard route: the affordances are
+ * revealed only while the body holds the focus, so the tab that hands the focus over hides
+ * them in the same recalc, and the browser drops the focus rather than landing it on
+ * something that has just gone. `:focus-within` survives that hand-off because the focus
+ * never leaves the slice, and the exception below does not apply during it: the body has let
+ * the focus go by then.
+ */
+.team-slice:not(:hover):has(.team-slice__body:focus:not(:focus-visible)) .team-slice__edit {
+  visibility: hidden;
 }
 
 @media (hover: none) {

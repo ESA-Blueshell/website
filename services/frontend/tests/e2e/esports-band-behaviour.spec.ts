@@ -37,6 +37,26 @@ test.describe("moving around the esports pages", () => {
     await expect(second).toHaveClass(/team-slice--open/)
   })
 
+  test("a slice's affordances go when the pointer does, and do not latch on a click", async ({page}, info) => {
+    test.skip(info.project.name === "mobile-chrome", "There is no pointer to hover with.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+
+    const slice = page.getByTestId("team-roster-1")
+    const pencil = page.getByTestId("team-roster-edit-1")
+    await slice.hover()
+    await expect(pencil).toBeVisible()
+
+    // Opening a slice focuses the body that was clicked. That is not a reason for the slice
+    // to keep offering to be edited once the pointer has moved off it.
+    await slice.click()
+    await page.mouse.move(10, 10)
+
+    await expect(pencil).toBeHidden()
+    await expect(page.getByTestId("team-roster-drop-1")).toBeHidden()
+  })
+
   test("the strip holds a season's width however long the history is", async ({page}, info) => {
     test.skip(info.project.name === "mobile-chrome", "A phone scrolls the strip by design.")
     const many = Array.from({length: 12}, (_, i) => ({

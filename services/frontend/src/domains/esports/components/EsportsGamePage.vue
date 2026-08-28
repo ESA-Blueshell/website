@@ -9,7 +9,7 @@ import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons, unfieldTeamFromSeason} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
-import LineupDialog from "@/domains/esports/island/LineupDialog.vue"
+import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
 import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
@@ -284,17 +284,6 @@ const seasonSaved = (saved: Season) => {
           @update:open="dropping = $event ? dropping : null"
         />
 
-        <lineup-dialog
-          :accent="identity.accent"
-          :open="lineupOpen"
-          :season="season"
-          :team-id="editingTeam?.id ?? null"
-          :team-image="editingTeam?.image ?? null"
-          :team-name="editingTeam?.name ?? ''"
-          @removed="lineupSaved"
-          @saved="lineupSaved"
-          @update:open="lineupOpen = $event"
-        />
 
         <add-team-dialog
           :accent="identity.accent"
@@ -332,6 +321,7 @@ const seasonSaved = (saved: Season) => {
             add-label="Add a team"
             :items="slices"
             :may-add="mayEdit"
+            :editing-id="lineupOpen ? editingTeam?.id ?? null : null"
             :may-drop="mayEdit"
             :may-edit="mayEdit"
             :open-id="justAdded"
@@ -340,6 +330,19 @@ const seasonSaved = (saved: Season) => {
             @drop="askToDrop"
             @edit="editLineup"
           >
+            <template #editor="{item}">
+              <lineup-editor
+                :accent="identity.accent"
+                :open="lineupOpen && item.id === editingTeam?.id"
+                :season="season"
+                :team-id="editingTeam?.id ?? null"
+                :team-image="editingTeam?.image ?? null"
+                :team-name="editingTeam?.name ?? ''"
+                @removed="lineupSaved"
+                @saved="lineupSaved"
+                @update:open="lineupOpen = $event"
+              />
+            </template>
             <template #details="{item}">
               <span
                 v-for="group in rosterOf(item.id as number)"

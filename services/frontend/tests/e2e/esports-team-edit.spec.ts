@@ -13,7 +13,7 @@ const GAME_PAGE = "/esports/valorant"
 const openLineup = async (page: import("@playwright/test").Page) => {
   await page.getByTestId("team-roster-1").hover()
   await page.getByTestId("team-roster-edit-1").click()
-  await expect(page.getByTestId("lineup-dialog")).toBeVisible()
+  await expect(page.getByTestId("lineup-editor")).toBeVisible()
 }
 
 test.describe("changing the team, not just its line-up", () => {
@@ -26,7 +26,7 @@ test.describe("changing the team, not just its line-up", () => {
     await expect(page.getByTestId("lineup-team-name")).toHaveValue("BS Waterboarders")
     await expect(page.getByTestId("lineup-team-image")).toHaveValue("valorantesports1.jpg")
     // Said plainly, because a rename is not a change to the season on show.
-    await expect(page.getByTestId("lineup-dialog")).toContainText("The team, in every season")
+    await expect(page.getByTestId("lineup-editor")).toContainText("The team, in every season")
   })
 
   test("renaming the team shows on the page without a reload", async ({page}) => {
@@ -38,7 +38,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.getByTestId("lineup-team-name").fill("BS Renamed")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Renamed")
   })
 
@@ -73,7 +73,7 @@ test.describe("changing the team, not just its line-up", () => {
 
     await page.getByTestId("lineup-name-1").fill("Sanne Kok")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
 
     // Written down: it comes back when the line-up is opened again.
     await openLineup(page)
@@ -108,7 +108,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.getByTestId("confirm-go").click()
 
     await expect(page.getByTestId("team-remove-dialog")).toBeHidden()
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
     await expect(page.getByTestId("team-roster-1")).toHaveCount(0)
     // The other team is untouched.
     await expect(page.getByTestId("team-roster-2")).toBeVisible()

@@ -12,7 +12,7 @@ const GAME_PAGE = "/esports/valorant"
 const openLineup = async (page: import("@playwright/test").Page) => {
   await page.getByTestId("team-roster-1").hover()
   await page.getByTestId("team-roster-edit-1").click()
-  await expect(page.getByTestId("lineup-dialog")).toBeVisible()
+  await expect(page.getByTestId("lineup-editor")).toBeVisible()
 }
 
 test.describe("editing a line-up in place", () => {
@@ -67,7 +67,7 @@ test.describe("editing a line-up in place", () => {
     await page.getByTestId("lineup-role-2").selectOption("SUBSTITUTE")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
     const slice = page.getByTestId("team-roster-1")
     await expect(slice).toContainText("Newblood")
     await expect(slice).not.toContainText("Blackout")
@@ -83,7 +83,7 @@ test.describe("editing a line-up in place", () => {
     await page.getByTestId("lineup-description-1").fill("Calls the *rounds*.")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
     const slice = page.getByTestId("team-roster-1")
     await expect(slice).toContainText("In-game leader")
     await expect(slice.locator(".team-slice__member-note em")).toHaveText("rounds")
@@ -99,7 +99,7 @@ test.describe("editing a line-up in place", () => {
     await page.getByTestId("lineup-up-1").click()
     await expect(page.getByTestId("lineup-handle-0")).toHaveValue("Loafine")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
 
     await openLineup(page)
     await expect(page.getByTestId("lineup-handle-0")).toHaveValue("Loafine")
@@ -135,7 +135,7 @@ test.describe("editing a line-up in place", () => {
     await openLineup(page)
     await page.getByTestId("lineup-title-0").fill("Still captain")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
 
     // Editing around somebody does not publish a name that was not published before.
     await expect(slice.locator(".team-slice__member-name")).toHaveCount(1)
@@ -149,7 +149,7 @@ test.describe("editing a line-up in place", () => {
 
     await page.getByTestId("lineup-handle-0").fill("Renamed")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
 
     // The season before it is a different line-up and is untouched.
     await page.getByTestId("esports-season-node-19").click()

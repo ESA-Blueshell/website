@@ -39,7 +39,15 @@ const props = withDefaults(defineProps<{
   mayEdit?: boolean
   /** Whether each slice offers a way to take it out of what is on show. */
   mayDrop?: boolean
-}>(), {mayAdd: false, addLabel: "Add", openId: null, mayEdit: false, mayDrop: false})
+  /**
+   * The slice being edited, which gives its body over to the editor slot and takes the room
+   * of the band to do it. Editing happens in the band rather than over it: what is being
+   * changed is the thing on the page, and it stays the thing on the page while it changes.
+   */
+  editingId?: SliceItem["id"] | null
+}>(), {
+  mayAdd: false, addLabel: "Add", openId: null, mayEdit: false, mayDrop: false, editingId: null,
+})
 
 const emit = defineEmits<{
   (event: "add"): void
@@ -186,6 +194,7 @@ watch([() => props.openId, () => props.items], () => {
         'team-slice--open': index === open,
         'team-slice--first': index === 0,
         'team-slice--last': index === items.length - 1 && !mayAdd,
+        'team-slice--editing': item.id === editingId,
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
       :style="item.accent ? {'--accent': item.accent} : undefined"
@@ -197,7 +206,7 @@ watch([() => props.openId, () => props.items], () => {
         Where there is a pointer it waits for one; where there is not, it stands.
       -->
       <button
-        v-if="mayEdit"
+        v-if="mayEdit && item.id !== editingId"
         :aria-label="`Edit ${item.title}`"
         class="team-slice__edit"
         :data-testid="`${testidPrefix}-edit-${item.id}`"
@@ -216,7 +225,7 @@ watch([() => props.openId, () => props.items], () => {
       </button>
 
       <button
-        v-if="mayDrop"
+        v-if="mayDrop && item.id !== editingId"
         :aria-label="`Remove ${item.title}`"
         class="team-slice__edit team-slice__drop"
         :data-testid="`${testidPrefix}-drop-${item.id}`"
@@ -245,7 +254,18 @@ watch([() => props.openId, () => props.items], () => {
         class="team-slice__scrim"
       />
 
+      <div
+        v-if="item.id === editingId"
+        class="team-slice__editor"
+      >
+        <slot
+          :item="item"
+          name="editor"
+        />
+      </div>
+
       <button
+        v-else
         class="team-slice__body"
         :aria-expanded="index === open"
         type="button"
@@ -331,6 +351,44 @@ watch([() => props.openId, () => props.items], () => {
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: calc(var(--cut) * -1);
   transition: flex-grow 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * A slice being edited takes the band. A form squeezed into a share of a row is not a form,
+ * and the others hold their seam and go narrow rather than disappearing, so the band still
+ * reads as the band while one of them is being worked on.
+ */
+.team-slice--editing {
+  flex: 1 1 100%;
+  z-index: 4;
+  background-color: var(--color-void);
+}
+
+/* The photograph is what a slice says at rest. Behind a form it is only noise. */
+.team-slice--editing .team-slice__banner,
+.team-slice--editing .team-slice__scrim {
+  display: none;
+}
+
+.team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) {
+  flex: 0 1 7%;
+}
+
+/* A name broken across four lines in a sliver says less than no name at all. */
+.team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) .team-slice__heading {
+  opacity: 0;
+}
+
+.team-slice__editor {
+  position: relative;
+  width: 100%;
+  max-height: 34rem;
+  overflow-y: auto;
+  padding: 1rem 1rem 1rem calc(var(--cut) + 1rem);
+}
+
+.team-slice--first .team-slice__editor {
+  padding-left: 1rem;
 }
 
 .team-slice--first {
@@ -644,6 +702,24 @@ watch([() => props.openId, () => props.items], () => {
   .team-slice--add {
     flex: 0 0 auto;
     min-height: 7rem;
+  }
+
+  /* Stacked, an editor takes the height it needs and the others keep theirs. */
+  .team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) {
+    flex: 0 0 auto;
+  }
+
+  .team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) .team-slice__heading {
+    opacity: 1;
+  }
+
+  .team-slice--editing {
+    min-height: 0;
+  }
+
+  .team-slice__editor {
+    max-height: none;
+    padding: 0.85rem;
   }
 
   .team-slice__plus {

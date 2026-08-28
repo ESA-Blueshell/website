@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import IslandDialog from "./IslandDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
 import {
   addToRoster,
@@ -22,11 +21,14 @@ import {TeamRole as TeamRoleEnum} from "@/services/api"
 /**
  * Who played for one team in one season, and what is said about each of them.
  *
+ * It sits in the slice that shows the team rather than over the page: what is being changed
+ * is the thing on the page, and it stays the thing on the page while it changes.
+ *
  * Everything is held here until it is saved, so a line-up is published as one answer rather
  * than as a series of half-finished ones. A season is edited on its own: the same team in
  * another season is a different line-up and is left alone.
  */
-defineOptions({name: "LineupDialog"})
+defineOptions({name: "LineupEditor"})
 
 /** The parts a roster is grouped by, from the api's own enum rather than a list kept in step. */
 const PARTS: Array<{value: TeamRole; label: string}> = [
@@ -86,6 +88,16 @@ const memberSearch = ref<Record<number, string>>({})
 const failure = ref<string | null>(null)
 const saving = ref(false)
 const loading = ref(false)
+
+/*
+ * Declared with the rest of the state rather than beside what reads it: the watcher below
+ * runs immediately, which is during setup, and in the band it arrives already open — so
+ * anything it touches has to exist by then or it throws before it has done anything.
+ */
+const droppingTeam = ref(false)
+const playedIn = ref<number | null>(null)
+const teamFailure = ref<string | null>(null)
+const removingTeam = ref(false)
 
 const rowOf = (entry: RosterEntry): Row => ({
   id: entry.id,
@@ -175,10 +187,6 @@ const attach = (index: number, userId: number | null) => {
 const complete = computed(() =>
   draftName.value.trim() !== "" && rows.value.every(row => row.handle.trim() !== ""))
 
-const droppingTeam = ref(false)
-const playedIn = ref<number | null>(null)
-const teamFailure = ref<string | null>(null)
-const removingTeam = ref(false)
 
 /** How many seasons the team played, so removing it altogether can say what that means. */
 const askToRemoveTeam = async () => {
@@ -266,253 +274,251 @@ const submit = async () => {
 </script>
 
 <template>
-  <island-dialog
-    :accent="accent"
-    :open="open"
-    testid="lineup-dialog"
-    :title="season ? `${teamName} in ${season.name}` : teamName"
-    @update:open="emit('update:open', $event)"
+  <div
+    class="lineup"
+    data-testid="lineup-editor"
   >
-    <div class="lineup">
-      <!--
+    <p class="lineup__where">
+      {{ season ? `${teamName} in ${season.name}` : teamName }}
+    </p>
+    <!--
         The team itself, marked as belonging to every season rather than to this one, so a
         rename does not read as a change to the line-up underneath it.
       -->
-      <fieldset class="lineup__team">
-        <legend class="lineup__legend">
-          The team, in every season
-        </legend>
-        <div class="lineup__line">
-          <input
-            v-model="draftName"
-            aria-label="Team name"
-            class="lineup__input"
-            data-testid="lineup-team-name"
-            maxlength="128"
-            placeholder="Team name"
-            type="text"
-          >
-          <input
-            v-model="draftImage"
-            aria-label="Banner"
-            class="lineup__input"
-            data-testid="lineup-team-image"
-            maxlength="255"
-            placeholder="Banner asset, e.g. valorantesports1.jpg"
-            type="text"
-          >
-        </div>
-      </fieldset>
+    <fieldset class="lineup__team">
+      <legend class="lineup__legend">
+        The team, in every season
+      </legend>
+      <div class="lineup__line">
+        <input
+          v-model="draftName"
+          aria-label="Team name"
+          class="lineup__input"
+          data-testid="lineup-team-name"
+          maxlength="128"
+          placeholder="Team name"
+          type="text"
+        >
+        <input
+          v-model="draftImage"
+          aria-label="Banner"
+          class="lineup__input"
+          data-testid="lineup-team-image"
+          maxlength="255"
+          placeholder="Banner asset, e.g. valorantesports1.jpg"
+          type="text"
+        >
+      </div>
+    </fieldset>
 
-      <p
-        v-if="loading"
-        class="lineup__note"
-      >
-        Reading the line-up…
-      </p>
+    <p
+      v-if="loading"
+      class="lineup__note"
+    >
+      Reading the line-up…
+    </p>
 
-      <p
-        v-else-if="rows.length === 0"
-        class="lineup__note"
-        data-testid="lineup-empty"
-      >
-        Nobody has played for this team this season yet.
-      </p>
+    <p
+      v-else-if="rows.length === 0"
+      class="lineup__note"
+      data-testid="lineup-empty"
+    >
+      Nobody has played for this team this season yet.
+    </p>
 
-      <div
-        v-for="(row, index) in rows"
-        :key="row.id ?? `new-${index}`"
-        class="lineup__row"
-        :data-testid="`lineup-row-${row.id ?? `new-${index}`}`"
-      >
-        <div class="lineup__line">
-          <input
-            v-model="row.handle"
-            aria-label="Handle"
-            class="lineup__input lineup__input--handle"
-            :data-testid="`lineup-handle-${index}`"
-            maxlength="128"
-            placeholder="Handle"
-            type="text"
+    <div
+      v-for="(row, index) in rows"
+      :key="row.id ?? `new-${index}`"
+      class="lineup__row"
+      :data-testid="`lineup-row-${row.id ?? `new-${index}`}`"
+    >
+      <div class="lineup__line">
+        <input
+          v-model="row.handle"
+          aria-label="Handle"
+          class="lineup__input lineup__input--handle"
+          :data-testid="`lineup-handle-${index}`"
+          maxlength="128"
+          placeholder="Handle"
+          type="text"
+        >
+        <select
+          v-model="row.role"
+          aria-label="Part"
+          class="lineup__input lineup__input--part"
+          :data-testid="`lineup-role-${index}`"
+        >
+          <option
+            v-for="part in PARTS"
+            :key="part.value"
+            :value="part.value"
           >
-          <select
-            v-model="row.role"
-            aria-label="Part"
-            class="lineup__input lineup__input--part"
-            :data-testid="`lineup-role-${index}`"
-          >
-            <option
-              v-for="part in PARTS"
-              :key="part.value"
-              :value="part.value"
-            >
-              {{ part.label }}
-            </option>
-          </select>
-          <input
-            v-model="row.roleTitle"
-            aria-label="In their own words"
-            class="lineup__input"
-            :data-testid="`lineup-title-${index}`"
-            maxlength="64"
-            placeholder="Captain, in-game leader…"
-            type="text"
-          >
-          <span class="lineup__order">
-            <button
-              :aria-label="`Move ${row.handle || 'this player'} up`"
-              class="lineup__step"
-              :data-testid="`lineup-up-${index}`"
-              :disabled="index === 0"
-              type="button"
-              @click="move(index, -1)"
-            >↑</button>
-            <button
-              :aria-label="`Move ${row.handle || 'this player'} down`"
-              class="lineup__step"
-              :data-testid="`lineup-down-${index}`"
-              :disabled="index === rows.length - 1"
-              type="button"
-              @click="move(index, 1)"
-            >↓</button>
-            <button
-              :aria-label="`Remove ${row.handle || 'this player'}`"
-              class="lineup__step lineup__step--drop"
-              :data-testid="`lineup-remove-${index}`"
-              type="button"
-              @click="askToRemove(index)"
-            >×</button>
-          </span>
-        </div>
-
-        <div class="lineup__line">
-          <label class="lineup__note-field">
-            <textarea
-              v-model="row.description"
-              aria-label="A word about them"
-              class="lineup__input lineup__input--note"
-              :data-testid="`lineup-description-${index}`"
-              :maxlength="DESCRIPTION_CAP"
-              placeholder="A word about them"
-              rows="2"
-            />
-            <span
-              class="lineup__count"
-              :class="{'lineup__count--full': row.description.length === DESCRIPTION_CAP}"
-              :data-testid="`lineup-count-${index}`"
-            >{{ row.description.length }}/{{ DESCRIPTION_CAP }}</span>
-          </label>
-        </div>
-
-        <div class="lineup__line">
-          <label class="lineup__note-field">
-            <input
-              v-model="row.displayName"
-              :aria-label="`Recorded name for ${row.handle || 'this player'}`"
-              class="lineup__input"
-              :data-testid="`lineup-name-${index}`"
-              maxlength="128"
-              placeholder="Recorded name — shown on the page only with their consent"
-              type="text"
-            >
-          </label>
-        </div>
-
-        <div class="lineup__line lineup__line--member">
-          <span
-            v-if="row.userId != null"
-            class="lineup__attached"
-            :data-testid="`lineup-member-${index}`"
-          >
-            {{ nameOf(row.userId) }}
-            <button
-              :aria-label="`Detach ${nameOf(row.userId)}`"
-              class="lineup__step"
-              :data-testid="`lineup-detach-${index}`"
-              type="button"
-              @click="attach(index, null)"
-            >×</button>
-          </span>
-          <template v-else>
-            <input
-              :aria-label="`Attach ${row.handle || 'this player'} to a member`"
-              class="lineup__input lineup__input--search"
-              :data-testid="`lineup-search-${index}`"
-              placeholder="No account — search a member"
-              type="text"
-              :value="memberSearch[index] ?? ''"
-              @input="memberSearch = {...memberSearch, [index]: ($event.target as HTMLInputElement).value}"
-            >
-            <ul
-              v-if="matches(index).length > 0"
-              class="lineup__matches"
-              :data-testid="`lineup-matches-${index}`"
-            >
-              <li
-                v-for="member in matches(index)"
-                :key="member.id"
-              >
-                <button
-                  class="lineup__match"
-                  :data-testid="`lineup-match-${member.id}`"
-                  type="button"
-                  @click="attach(index, member.id)"
-                >
-                  {{ member.name }}
-                </button>
-              </li>
-            </ul>
-          </template>
-        </div>
+            {{ part.label }}
+          </option>
+        </select>
+        <input
+          v-model="row.roleTitle"
+          aria-label="In their own words"
+          class="lineup__input"
+          :data-testid="`lineup-title-${index}`"
+          maxlength="64"
+          placeholder="Captain, in-game leader…"
+          type="text"
+        >
+        <span class="lineup__order">
+          <button
+            :aria-label="`Move ${row.handle || 'this player'} up`"
+            class="lineup__step"
+            :data-testid="`lineup-up-${index}`"
+            :disabled="index === 0"
+            type="button"
+            @click="move(index, -1)"
+          >↑</button>
+          <button
+            :aria-label="`Move ${row.handle || 'this player'} down`"
+            class="lineup__step"
+            :data-testid="`lineup-down-${index}`"
+            :disabled="index === rows.length - 1"
+            type="button"
+            @click="move(index, 1)"
+          >↓</button>
+          <button
+            :aria-label="`Remove ${row.handle || 'this player'}`"
+            class="lineup__step lineup__step--drop"
+            :data-testid="`lineup-remove-${index}`"
+            type="button"
+            @click="askToRemove(index)"
+          >×</button>
+        </span>
       </div>
 
-      <button
-        class="lineup__add"
-        data-testid="lineup-add"
-        type="button"
-        @click="add"
-      >
-        Add somebody
-      </button>
+      <div class="lineup__line">
+        <label class="lineup__note-field">
+          <textarea
+            v-model="row.description"
+            aria-label="A word about them"
+            class="lineup__input lineup__input--note"
+            :data-testid="`lineup-description-${index}`"
+            :maxlength="DESCRIPTION_CAP"
+            placeholder="A word about them"
+            rows="2"
+          />
+          <span
+            class="lineup__count"
+            :class="{'lineup__count--full': row.description.length === DESCRIPTION_CAP}"
+            :data-testid="`lineup-count-${index}`"
+          >{{ row.description.length }}/{{ DESCRIPTION_CAP }}</span>
+        </label>
+      </div>
 
-      <p
-        v-if="failure"
-        class="lineup__failure"
-        data-testid="lineup-failure"
-        role="alert"
-      >
-        {{ failure }}
-      </p>
+      <div class="lineup__line">
+        <label class="lineup__note-field">
+          <input
+            v-model="row.displayName"
+            :aria-label="`Recorded name for ${row.handle || 'this player'}`"
+            class="lineup__input"
+            :data-testid="`lineup-name-${index}`"
+            maxlength="128"
+            placeholder="Recorded name — shown on the page only with their consent"
+            type="text"
+          >
+        </label>
+      </div>
 
-      <div class="lineup__actions">
-        <button
-          class="lineup__button lineup__button--drop"
-          data-testid="lineup-remove-team"
-          type="button"
-          @click="askToRemoveTeam"
+      <div class="lineup__line lineup__line--member">
+        <span
+          v-if="row.userId != null"
+          class="lineup__attached"
+          :data-testid="`lineup-member-${index}`"
         >
-          Remove team
-        </button>
-        <button
-          class="lineup__button lineup__button--ghost"
-          data-testid="lineup-cancel"
-          type="button"
-          @click="emit('update:open', false)"
-        >
-          Cancel
-        </button>
-        <button
-          class="lineup__button lineup__button--go"
-          data-testid="lineup-save"
-          :disabled="!complete || saving"
-          type="button"
-          @click="submit"
-        >
-          {{ saving ? "Saving" : "Save" }}
-        </button>
+          {{ nameOf(row.userId) }}
+          <button
+            :aria-label="`Detach ${nameOf(row.userId)}`"
+            class="lineup__step"
+            :data-testid="`lineup-detach-${index}`"
+            type="button"
+            @click="attach(index, null)"
+          >×</button>
+        </span>
+        <template v-else>
+          <input
+            :aria-label="`Attach ${row.handle || 'this player'} to a member`"
+            class="lineup__input lineup__input--search"
+            :data-testid="`lineup-search-${index}`"
+            placeholder="No account — search a member"
+            type="text"
+            :value="memberSearch[index] ?? ''"
+            @input="memberSearch = {...memberSearch, [index]: ($event.target as HTMLInputElement).value}"
+          >
+          <ul
+            v-if="matches(index).length > 0"
+            class="lineup__matches"
+            :data-testid="`lineup-matches-${index}`"
+          >
+            <li
+              v-for="member in matches(index)"
+              :key="member.id"
+            >
+              <button
+                class="lineup__match"
+                :data-testid="`lineup-match-${member.id}`"
+                type="button"
+                @click="attach(index, member.id)"
+              >
+                {{ member.name }}
+              </button>
+            </li>
+          </ul>
+        </template>
       </div>
     </div>
-  </island-dialog>
+
+    <button
+      class="lineup__add"
+      data-testid="lineup-add"
+      type="button"
+      @click="add"
+    >
+      Add somebody
+    </button>
+
+    <p
+      v-if="failure"
+      class="lineup__failure"
+      data-testid="lineup-failure"
+      role="alert"
+    >
+      {{ failure }}
+    </p>
+
+    <div class="lineup__actions">
+      <button
+        class="lineup__button lineup__button--drop"
+        data-testid="lineup-remove-team"
+        type="button"
+        @click="askToRemoveTeam"
+      >
+        Remove team
+      </button>
+      <button
+        class="lineup__button lineup__button--ghost"
+        data-testid="lineup-cancel"
+        type="button"
+        @click="emit('update:open', false)"
+      >
+        Cancel
+      </button>
+      <button
+        class="lineup__button lineup__button--go"
+        data-testid="lineup-save"
+        :disabled="!complete || saving"
+        type="button"
+        @click="submit"
+      >
+        {{ saving ? "Saving" : "Save" }}
+      </button>
+    </div>
+  </div>
 
   <confirm-dialog
     :accent="accent"
@@ -541,7 +547,8 @@ const submit = async () => {
 </template>
 
 <style>
-/* Unscoped: the dialog is portalled out of this component's subtree. */
+/* Unscoped: the island's own reset styles these controls, and the editor is rendered into
+   the band's slot rather than into a subtree of its own. */
 .lineup {
   display: flex;
   flex-direction: column;
@@ -566,6 +573,16 @@ const submit = async () => {
   margin-right: auto;
   background: none;
   color: #d98080;
+}
+
+.lineup__where {
+  margin: 0 0 0.2rem;
+  color: #a0a6ac;
+  font-family: "Fugaz One", system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .lineup__row {

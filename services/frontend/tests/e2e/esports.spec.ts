@@ -92,7 +92,7 @@ test.describe("what the manager used to do, where it happens now", () => {
     await page.getByTestId("team-roster-1").hover()
     await page.getByTestId("team-roster-edit-1").click()
 
-    const lineup = page.getByTestId("lineup-dialog")
+    const lineup = page.getByTestId("lineup-editor")
     await expect(lineup).toBeVisible()
     await expect(page.getByTestId("lineup-handle-0")).toHaveValue("AriosFury")
     await expect(page.getByTestId("lineup-name-0")).toHaveValue("Viktor Petrov")

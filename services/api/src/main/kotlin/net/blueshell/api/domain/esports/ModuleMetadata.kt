@@ -14,7 +14,7 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "esports",
     allowedDependencies = [
-        // Open kernel: EsportsPermission extends the base evaluator.
+        // Open kernel: TeamPermission extends the base evaluator.
         "security",
         // Open kernel.
         "shared",

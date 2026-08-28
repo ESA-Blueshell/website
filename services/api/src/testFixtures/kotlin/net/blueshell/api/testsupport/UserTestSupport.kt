@@ -16,7 +16,7 @@ import net.blueshell.api.blog.persistence.Blog
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest

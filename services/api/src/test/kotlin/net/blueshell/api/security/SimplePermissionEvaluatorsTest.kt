@@ -2,8 +2,8 @@ package net.blueshell.api.security
 
 import net.blueshell.api.blog.domain.BlogPermission
 import net.blueshell.api.board.domain.BoardPermission
-import net.blueshell.api.domain.contribution.application.permission.ContributionPeriodPermission
-import net.blueshell.api.domain.contribution.application.permission.ContributionReminderPermission
+import net.blueshell.api.contribution.domain.ContributionPeriodPermission
+import net.blueshell.api.contribution.domain.ContributionReminderPermission
 import net.blueshell.api.domain.event.application.permission.GuestPermission
 import net.blueshell.api.jobs.domain.JobExecutionPermission
 import net.blueshell.api.sponsor.domain.SponsorPermission
@@ -13,10 +13,10 @@ import net.blueshell.api.blog.domain.BlogService
 import net.blueshell.api.blog.persistence.Blog
 import net.blueshell.api.board.domain.BoardService
 import net.blueshell.api.board.persistence.Board
-import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.application.ContributionReminderService
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.contribution.api.ContributionPeriodService
+import net.blueshell.api.contribution.domain.ContributionReminderService
+import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.application.GuestService
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.sponsor.domain.SponsorService

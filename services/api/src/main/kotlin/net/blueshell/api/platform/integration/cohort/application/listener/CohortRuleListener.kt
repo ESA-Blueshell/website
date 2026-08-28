@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.application.listener
 
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
-import net.blueshell.api.domain.contribution.application.event.ContributionChanged
+import net.blueshell.api.contribution.api.ContributionChanged
 import net.blueshell.api.domain.user.application.event.MembershipChanged
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserDeleted

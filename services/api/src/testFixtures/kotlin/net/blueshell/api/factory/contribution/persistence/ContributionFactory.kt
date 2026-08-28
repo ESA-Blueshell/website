@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.contribution.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 

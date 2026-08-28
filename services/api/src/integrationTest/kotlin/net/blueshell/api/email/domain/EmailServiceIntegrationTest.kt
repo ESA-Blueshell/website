@@ -1,15 +1,15 @@
 package net.blueshell.api.email.domain
 
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.auth.domain.RecoveryEmailJob
-import net.blueshell.api.domain.contribution.application.job.ContributionReminderEmailJob
+import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
 import net.blueshell.api.domain.event.application.job.EventSignupEmailJob
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs

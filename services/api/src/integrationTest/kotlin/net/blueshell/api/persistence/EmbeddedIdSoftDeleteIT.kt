@@ -3,8 +3,8 @@ package net.blueshell.api.persistence
 import net.blueshell.api.board.persistence.BoardDocument
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.committee.persistence.CommitteeMember
-import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.contribution.persistence.ContributionReminder
+import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.event.persistence.EventPicture
 import net.blueshell.api.shared.enums.FileType

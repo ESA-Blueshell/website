@@ -2,7 +2,7 @@ package net.blueshell.api.platform.integration.cohort.application.definition
 
 import io.mockk.every
 import io.mockk.mockk
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import org.assertj.core.api.Assertions.assertThat

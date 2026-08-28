@@ -1,12 +1,12 @@
 package net.blueshell.api.security
 
 import net.blueshell.api.domain.user.application.permission.AddressPermission
-import net.blueshell.api.domain.contribution.application.permission.ContributionPermission
+import net.blueshell.api.contribution.domain.ContributionPermission
 import net.blueshell.api.domain.user.application.permission.MembershipPermission
 import net.blueshell.api.domain.user.application.permission.UserPermission
 
-import net.blueshell.api.domain.contribution.application.ContributionService
-import net.blueshell.api.domain.contribution.persistence.Contribution
+import net.blueshell.api.contribution.api.ContributionService
+import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.AddressService
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService

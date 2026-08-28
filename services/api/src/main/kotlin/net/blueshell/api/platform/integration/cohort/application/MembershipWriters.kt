@@ -1,6 +1,6 @@
 package net.blueshell.api.platform.integration.cohort.application
 
-import net.blueshell.api.domain.contribution.application.ContributionService
+import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.platform.integration.cohort.application.definition.CohortDefinition
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import net.blueshell.api.platform.integration.cohort.port.`in`.CohortReconciliation

@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.integration.cohort.application.definition
 
-import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.application.ContributionService
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.api.ContributionPeriodService
+import net.blueshell.api.contribution.api.ContributionService
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import org.springframework.stereotype.Component

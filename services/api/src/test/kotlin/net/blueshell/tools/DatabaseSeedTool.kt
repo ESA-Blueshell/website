@@ -3,8 +3,8 @@ package net.blueshell.tools
 import com.github.javafaker.Faker
 import net.blueshell.api.ApiApplication
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.domain.contribution.persistence.Contribution
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.domain.user.persistence.Membership

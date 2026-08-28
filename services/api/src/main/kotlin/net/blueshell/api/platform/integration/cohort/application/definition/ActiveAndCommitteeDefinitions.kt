@@ -3,8 +3,8 @@ package net.blueshell.api.platform.integration.cohort.application.definition
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.domain.contribution.application.ContributionPeriodService
-import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.api.ContributionPeriodService
+import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.platform.integration.cohort.persistence.CohortSubjectType
 import org.springframework.stereotype.Component

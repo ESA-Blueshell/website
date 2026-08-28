@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.user.web
 
-import net.blueshell.api.domain.contribution.persistence.Contribution
+import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.domain.user.application.event.UserRestored
 import net.blueshell.api.domain.user.application.erasure.UserErasureService

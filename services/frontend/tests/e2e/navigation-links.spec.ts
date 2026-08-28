@@ -35,13 +35,15 @@ test.describe("navbar route integrity", () => {
     await assertPathRenders(page, "/contact", /CONTACT/i)
   })
 
-  test("esports navbar destinations render and trackmania link is absent", async ({page}) => {
+  test("esports navbar destinations render, including the game nothing used to link to", async ({page}) => {
     await installApiMocks(page)
 
     await page.goto("/")
-    await expect(page.locator("a[href='/esports/trackmania']")).toHaveCount(0)
+    // The menu lists what the records report as fielded, so a game no longer fielded is not on it.
+    await expect(page.locator("a[href='/esports/counter-strike-global-offensive']")).toHaveCount(0)
 
     await assertPathRenders(page, "/esports/competitive-scene", /ESPORTS/i)
+    await assertPathRenders(page, "/esports/trackmania", /TRACKMANIA/i)
     await assertPathRenders(page, "/esports/league-of-legends", /LEAGUE OF LEGENDS/i)
     await assertPathRenders(page, "/esports/counter-strike-2", /COUNTER-STRIKE 2/i)
     await assertPathRenders(page, "/esports/valorant", /VALORANT/i)
@@ -62,6 +64,7 @@ test.describe("navbar route integrity", () => {
       "/partners/el-nino",
       "/partners/marketing-maatwerk",
       "/esports/geoguessr",
+      "/esports/trackmania",
       "/events/circuitShowdown",
     ]
 
@@ -69,6 +72,6 @@ test.describe("navbar route integrity", () => {
       await expect(page.locator(`a[href='${path}']`).first()).toBeAttached()
     }
 
-    await expect(page.locator("a[href='/esports/trackmania']")).toHaveCount(0)
+    await expect(page.locator("a[href='/esports/counter-strike-global-offensive']")).toHaveCount(0)
   })
 })

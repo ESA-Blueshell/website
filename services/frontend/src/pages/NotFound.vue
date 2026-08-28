@@ -2,6 +2,7 @@
   <v-main>
     <div
       class="text-body-1 mx-auto mt-16 text-center"
+      data-testid="not-found"
       style="max-width: 800px;"
     >
       <v-img

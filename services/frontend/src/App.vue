@@ -101,20 +101,12 @@
             <v-list-item to="/esports/competitive-scene">
               Competitive scene
             </v-list-item>
-            <v-list-item to="/esports/league-of-legends">
-              League of Legends
-            </v-list-item>
-            <v-list-item to="/esports/counter-strike-2">
-              Counter Strike 2
-            </v-list-item>
-            <v-list-item to="/esports/valorant">
-              Valorant
-            </v-list-item>
-            <v-list-item to="/esports/rocketleague">
-              Rocket League
-            </v-list-item>
-            <v-list-item to="/esports/geoguessr">
-              Geoguessr
+            <v-list-item
+              v-for="game in fieldedGames"
+              :key="game.game"
+              :to="`/esports/${game.slug}`"
+            >
+              {{ game.name }}
             </v-list-item>
           </v-list>
         </v-menu>
@@ -341,20 +333,12 @@
           <v-list-item to="/esports/competitive-scene">
             Competitive scene
           </v-list-item>
-          <v-list-item to="/esports/league-of-legends">
-            League of Legends
-          </v-list-item>
-          <v-list-item to="/esports/counter-strike-2">
-            Counter Strike 2
-          </v-list-item>
-          <v-list-item to="/esports/valorant">
-            Valorant
-          </v-list-item>
-          <v-list-item to="/esports/rocketleague">
-            Rocket League
-          </v-list-item>
-          <v-list-item to="/esports/geoguessr">
-            Geoguessr
+          <v-list-item
+            v-for="game in fieldedGames"
+            :key="game.game"
+            :to="`/esports/${game.slug}`"
+          >
+            {{ game.name }}
           </v-list-item>
           <v-divider class="mb-1" />
         </v-list-group>
@@ -511,6 +495,7 @@ import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {useCookiePolicyConsent} from "@/composables/useCookiePolicyConsent"
+import {useGames} from "@/domains/esports/island/useGames"
 import DOMPurify from "dompurify"
 import {findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
 
@@ -523,6 +508,12 @@ const {
   refreshCookieConsentPrompt,
   acceptCookies,
 } = useCookiePolicyConsent()
+
+/**
+ * The esports menu lists the games the association currently fields, as their records report
+ * them. It used to list five by hand, which is why Trackmania had a page nothing linked to.
+ */
+const {fielded: fieldedGames} = useGames()
 
 // Composables
 const store = useStore()

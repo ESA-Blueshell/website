@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.sponsor
+package net.blueshell.api.sponsor
 
 import org.springframework.modulith.ApplicationModule
 import org.springframework.modulith.PackageInfo

@@ -1,8 +1,6 @@
-package net.blueshell.api.domain.sponsor.application
+package net.blueshell.api.sponsor.domain
 
-import net.blueshell.api.domain.sponsor.application.result.SponsorResult
-import net.blueshell.api.domain.sponsor.application.result.toResult
-import net.blueshell.api.domain.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.Sponsor
 import org.springframework.stereotype.Service
 
 /**

@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.sponsor.application.result
+package net.blueshell.api.sponsor.domain
 
 import java.time.Instant
 

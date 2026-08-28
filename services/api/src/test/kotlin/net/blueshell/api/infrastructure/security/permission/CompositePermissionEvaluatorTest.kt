@@ -1,7 +1,7 @@
 package net.blueshell.api.infrastructure.security.permission
 
-import net.blueshell.api.domain.sponsor.application.SponsorService
-import net.blueshell.api.domain.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.domain.SponsorService
+import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.telemetry.application.TelemetryService
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import org.assertj.core.api.Assertions.assertThat

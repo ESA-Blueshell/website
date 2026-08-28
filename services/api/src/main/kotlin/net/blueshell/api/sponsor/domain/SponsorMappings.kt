@@ -1,6 +1,6 @@
-package net.blueshell.api.domain.sponsor.application.result
+package net.blueshell.api.sponsor.domain
 
-import net.blueshell.api.domain.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.Sponsor
 
 /**
  * Mappings from Sponsor entity to SponsorResult.

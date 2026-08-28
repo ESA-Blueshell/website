@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.sponsor.persistence
+package net.blueshell.api.sponsor.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.file.persistence.File

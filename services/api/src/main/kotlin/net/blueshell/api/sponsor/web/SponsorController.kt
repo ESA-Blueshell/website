@@ -1,16 +1,12 @@
-package net.blueshell.api.domain.sponsor.web
+package net.blueshell.api.sponsor.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
-import net.blueshell.api.domain.sponsor.application.SponsorService
-import net.blueshell.api.domain.sponsor.application.SponsorUseCases
-import net.blueshell.api.domain.sponsor.web.dto.request.CreateSponsorRequest
-import net.blueshell.api.domain.sponsor.application.result.toResult
-import net.blueshell.api.domain.sponsor.application.result.toResults
-import net.blueshell.api.domain.sponsor.web.dto.response.SponsorResponse
-import net.blueshell.api.domain.sponsor.web.dto.request.UpdateSponsorRequest
-import net.blueshell.api.domain.sponsor.web.mapping.response.asResponse
+import net.blueshell.api.sponsor.domain.SponsorService
+import net.blueshell.api.sponsor.domain.SponsorUseCases
+import net.blueshell.api.sponsor.domain.toResult
+import net.blueshell.api.sponsor.domain.toResults
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize

@@ -1,9 +1,8 @@
-package net.blueshell.api.domain.sponsor.application.permission
+package net.blueshell.api.sponsor.domain
 
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 
-import net.blueshell.api.domain.sponsor.application.SponsorService
-import net.blueshell.api.domain.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired

@@ -1,6 +1,6 @@
-package net.blueshell.api.domain.sponsor.application
+package net.blueshell.api.sponsor.domain
 
-import net.blueshell.api.domain.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.Sponsor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

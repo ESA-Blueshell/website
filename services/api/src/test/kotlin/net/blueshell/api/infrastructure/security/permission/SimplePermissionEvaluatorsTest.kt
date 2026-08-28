@@ -6,7 +6,7 @@ import net.blueshell.api.domain.contribution.application.permission.Contribution
 import net.blueshell.api.domain.contribution.application.permission.ContributionReminderPermission
 import net.blueshell.api.domain.event.application.permission.GuestPermission
 import net.blueshell.api.platform.integration.job.application.permission.JobExecutionPermission
-import net.blueshell.api.domain.sponsor.application.permission.SponsorPermission
+import net.blueshell.api.sponsor.domain.SponsorPermission
 import net.blueshell.api.domain.telemetry.application.permission.TelemetryPermission
 
 import net.blueshell.api.domain.blog.application.BlogService
@@ -19,8 +19,8 @@ import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.application.GuestService
 import net.blueshell.api.domain.event.persistence.Guest
-import net.blueshell.api.domain.sponsor.application.SponsorService
-import net.blueshell.api.domain.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.domain.SponsorService
+import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.telemetry.application.TelemetryService
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import net.blueshell.api.platform.integration.job.persistence.JobExecution

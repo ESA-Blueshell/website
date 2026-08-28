@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.sponsor.web.dto.request
+package net.blueshell.api.sponsor.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank

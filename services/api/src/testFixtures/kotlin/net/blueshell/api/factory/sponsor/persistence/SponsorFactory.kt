@@ -2,7 +2,7 @@ package net.blueshell.api.factory.sponsor.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.domain.sponsor.persistence.Sponsor
+import net.blueshell.api.sponsor.persistence.Sponsor
 import org.springframework.stereotype.Component
 
 @Component

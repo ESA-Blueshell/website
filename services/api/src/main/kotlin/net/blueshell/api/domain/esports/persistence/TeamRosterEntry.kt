@@ -62,6 +62,19 @@ class TeamRosterEntry(
     @Column(name = "team_role", nullable = false, length = 16)
     var teamRole: TeamRole = TeamRole.PLAYER,
 
+    /**
+     * What this person did, in the team's own words — "Captain", "In-game leader".
+     *
+     * Decoration on top of [teamRole] rather than a replacement for it: the enum is what a
+     * roster is grouped and sorted by, and stays required.
+     */
+    @Column(name = "role_title", nullable = true, length = 64)
+    var roleTitle: String? = null,
+
+    /** A caption rather than a biography, in markdown, capped short enough to stay one. */
+    @Column(name = "description", nullable = true, length = 280)
+    var description: String? = null,
+
     @Column(name = "user_id", nullable = true)
     var userId: Long? = null,
 

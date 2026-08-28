@@ -67,6 +67,14 @@ data class AddRosterEntryRequest(
 
     @field:Size(max = 128, message = "Name must be at most 128 characters")
     val displayName: String? = null,
+
+    @Schema(description = "What they did in the team's own words, beside the fixed part")
+    @field:Size(max = 64, message = "Role must be at most 64 characters")
+    val roleTitle: String? = null,
+
+    @Schema(description = "A short caption about them, in markdown")
+    @field:Size(max = 280, message = "Description must be at most 280 characters")
+    val description: String? = null,
 )
 
 @Schema(description = "Edit a roster entry")
@@ -80,6 +88,14 @@ data class UpdateRosterEntryRequest(
 
     @field:Size(max = 128, message = "Name must be at most 128 characters")
     val displayName: String? = null,
+
+    @Schema(description = "What they did in the team's own words, beside the fixed part")
+    @field:Size(max = 64, message = "Role must be at most 64 characters")
+    val roleTitle: String? = null,
+
+    @Schema(description = "A short caption about them, in markdown")
+    @field:Size(max = 280, message = "Description must be at most 280 characters")
+    val description: String? = null,
 
     @field:NotNull(message = "Order is required")
     val sortIndex: Int,

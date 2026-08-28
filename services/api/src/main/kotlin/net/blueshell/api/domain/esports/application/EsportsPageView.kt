@@ -23,6 +23,10 @@ data class RosterMemberView(
     val role: TeamRole,
     val handle: String,
     val name: String? = null,
+    /** What they did, in the team's own words, where anything was said. */
+    val roleTitle: String? = null,
+    /** A caption about them, in markdown, where anything was written. */
+    val description: String? = null,
 )
 
 data class TeamView(

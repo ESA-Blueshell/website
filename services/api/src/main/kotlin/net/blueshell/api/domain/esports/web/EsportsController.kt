@@ -189,6 +189,8 @@ class EsportsController(
         role = request.role,
         userId = request.userId,
         displayName = request.displayName,
+        roleTitle = request.roleTitle,
+        description = request.description,
     ).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
@@ -197,7 +199,15 @@ class EsportsController(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateRosterEntryRequest,
     ): RosterEntryResponse =
-        rosters.update(id, request.handle, request.role, request.displayName, request.sortIndex).asResponse()
+        rosters.update(
+            id = id,
+            handle = request.handle,
+            role = request.role,
+            displayName = request.displayName,
+            sortIndex = request.sortIndex,
+            roleTitle = request.roleTitle,
+            description = request.description,
+        ).asResponse()
 
     /** A null user unlinks: an entry nobody can be attributed to is a roster spot all the same. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")

@@ -68,6 +68,8 @@ class EsportsPageQueryService(
                             role = entry.teamRole,
                             handle = entry.userId?.let { handles[it] } ?: entry.handle,
                             name = entry.userId?.let { names[it] },
+                            roleTitle = entry.roleTitle,
+                            description = entry.description,
                         )
                     },
                 )

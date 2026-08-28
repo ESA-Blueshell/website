@@ -12,5 +12,17 @@ import org.springframework.modulith.PackageInfo
  * module would sit in a cycle with all twenty of them.
  */
 @PackageInfo
-@ApplicationModule(id = "security", type = ApplicationModule.Type.OPEN)
+@ApplicationModule(
+    id = "security",
+    type = ApplicationModule.Type.OPEN,
+    allowedDependencies = [
+        // The filter chain issues and validates tokens through TokenGenerator.
+        "auth :: api",
+        // Open kernel.
+        "shared",
+        // CurrentUserProvider resolves the authenticated principal through
+        // UserService.
+        "user :: api",
+    ],
+)
 class ModuleMetadata

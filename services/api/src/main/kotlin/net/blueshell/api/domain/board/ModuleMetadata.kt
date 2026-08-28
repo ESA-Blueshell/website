@@ -10,5 +10,22 @@ import org.springframework.modulith.PackageInfo
  * account here, so an unlinked seat still records the board that sat.
  */
 @PackageInfo
-@ApplicationModule(id = "board")
+@ApplicationModule(
+    id = "board",
+    allowedDependencies = [
+        // Board pictures and documents are stored and resolved through FileService.
+        "file :: api",
+        // Board.picture, BoardMember.picture and BoardDocument.file are owning
+        // associations holding the FKs into files.
+        "file :: entities",
+        // Open kernel: BoardPermission extends the base evaluator.
+        "security",
+        // Open kernel.
+        "shared",
+        // Members are resolved through UserService.
+        "user :: api",
+        // BoardMember.user is an owning @ManyToOne holding the FK into users.
+        "user :: entities",
+    ],
+)
 class ModuleMetadata

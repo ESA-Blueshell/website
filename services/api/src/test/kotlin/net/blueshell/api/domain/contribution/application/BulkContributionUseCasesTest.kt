@@ -6,7 +6,7 @@ import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.domain.user.persistence.Membership
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
@@ -28,9 +28,9 @@ class BulkContributionUseCasesTest {
     private val users = mock<UserService>()
     private val memberships = mock<MembershipService>()
     private val periods = mock<ContributionPeriodService>()
-    private val deletedUsers = mock<DeletedUserRepository>()
+    private val erasure = mock<UserErasureService>()
     private val useCases =
-        BulkContributionUseCases(contributions, users, memberships, periods, deletedUsers)
+        BulkContributionUseCases(contributions, users, memberships, periods, erasure)
 
     private val periodId = 100L
 
@@ -96,7 +96,7 @@ class BulkContributionUseCasesTest {
         knownPeriod()
         knownUser(1L)
         knownUser(7L)
-        whenever(deletedUsers.existsById(7L)).thenReturn(true)
+        whenever(erasure.isDeleted(7L)).thenReturn(true)
 
         assertThatThrownBy { useCases.execute(listOf(1L, 7L), periodId, BulkContributionOperation.PAID) }
             .isInstanceOfSatisfying(BulkSelectionRejected::class.java) { rejected ->

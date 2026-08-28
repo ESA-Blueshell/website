@@ -11,5 +11,16 @@ import org.springframework.modulith.PackageInfo
  * removal job can still find the external id after the contact is gone from every query.
  */
 @PackageInfo
-@ApplicationModule(id = "contact")
+@ApplicationModule(
+    id = "contact",
+    allowedDependencies = [
+        // Open kernel.
+        "shared",
+        // DEBT. ContactData.toContactData maps a User into the shape pushed to an
+        // external system. No contact entity holds an FK into users — Contact
+        // stores the id. This wants a contact projection published through
+        // user :: api.
+        "user :: entities",
+    ],
+)
 class ModuleMetadata

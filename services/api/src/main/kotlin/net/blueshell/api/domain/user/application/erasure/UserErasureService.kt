@@ -42,6 +42,14 @@ class UserErasureService(
         return deletedUsers.findAllByOrderByRestoreUntilAtAsc(pageable)
     }
 
+    /**
+     * Whether a deletion snapshot is held for [userId]. Deletion anonymises the account and keeps
+     * the row for the restore window, so a deleted user still resolves by id — the snapshot is
+     * what distinguishes them.
+     */
+    @Transactional(readOnly = true)
+    fun isDeleted(userId: Long): Boolean = deletedUsers.existsById(userId)
+
     @Transactional
     fun deleteUser(userId: Long) {
         if (deletedUsers.existsById(userId)) {

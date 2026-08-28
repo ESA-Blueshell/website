@@ -11,5 +11,13 @@ import org.springframework.modulith.PackageInfo
  * a permissioned write.
  */
 @PackageInfo
-@ApplicationModule(id = "telemetry")
+@ApplicationModule(
+    id = "telemetry",
+    allowedDependencies = [
+        // Open kernel: TelemetryPermission extends the base evaluator.
+        "security",
+        // Open kernel.
+        "shared",
+    ],
+)
 class ModuleMetadata

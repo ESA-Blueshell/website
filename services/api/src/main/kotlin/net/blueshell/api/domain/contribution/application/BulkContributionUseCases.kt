@@ -3,7 +3,7 @@ package net.blueshell.api.domain.contribution.application
 import net.blueshell.api.domain.contribution.persistence.Contribution
 import net.blueshell.api.domain.user.application.MembershipService
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.repository.DeletedUserRepository
+import net.blueshell.api.domain.user.application.erasure.UserErasureService
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.MemberType
@@ -29,7 +29,7 @@ class BulkContributionUseCases(
     private val users: UserService,
     private val memberships: MembershipService,
     private val periods: ContributionPeriodService,
-    private val deletedUsers: DeletedUserRepository,
+    private val erasure: UserErasureService,
 ) {
     @Transactional
     fun execute(userIds: List<Long>, contributionPeriodId: Long, operation: BulkContributionOperation): BulkActionResult {
@@ -57,9 +57,8 @@ class BulkContributionUseCases(
         }
 
         val unknown = userIds.filterNot { users.existsById(it) }
-        // Deletion anonymises the account and keeps the row for a restore window, so a
-        // deleted user still resolves by id. The snapshot is what distinguishes them.
-        val deleted = userIds.filterNot { it in unknown }.filter { deletedUsers.existsById(it) }
+        // A deleted user still resolves by id — the erasure snapshot is what distinguishes them.
+        val deleted = userIds.filterNot { it in unknown }.filter { erasure.isDeleted(it) }
         // Only actionable ids are inspected; the others have no membership worth reading.
         val honorary = userIds.filterNot { it in unknown || it in deleted }.filter { userId ->
             memberships.findByUserId(userId).maxByOrNull { it.startDate }?.memberType == MemberType.HONORARY

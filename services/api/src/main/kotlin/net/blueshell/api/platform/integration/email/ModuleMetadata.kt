@@ -11,5 +11,19 @@ import org.springframework.modulith.PackageInfo
  * `EmailContent`, so this module renders and delivers without knowing what it is about.
  */
 @PackageInfo
-@ApplicationModule(id = "email")
+@ApplicationModule(
+    id = "email",
+    allowedDependencies = [
+        // A send is recorded as a job execution through JobExecutionService.
+        "jobs :: api",
+        // DEBT. EmailManagementController reads JobExecution.status to decide
+        // whether a retry is allowed. That decision belongs behind
+        // jobs :: api rather than in a controller reading the row.
+        "jobs :: entities",
+        // Open kernel: EmailPermission extends the base evaluator.
+        "security",
+        // Open kernel.
+        "shared",
+    ],
+)
 class ModuleMetadata

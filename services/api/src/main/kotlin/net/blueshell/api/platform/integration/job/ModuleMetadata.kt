@@ -12,5 +12,20 @@ import org.springframework.modulith.PackageInfo
  * can label an execution without importing that module's services.
  */
 @PackageInfo
-@ApplicationModule(id = "jobs")
+@ApplicationModule(
+    id = "jobs",
+    allowedDependencies = [
+        // Open kernel: JobExecutionPermission extends the base evaluator.
+        "security",
+        // Open kernel.
+        "shared",
+        // The initiator is resolved through UserService.
+        "user :: api",
+        // DEBT. JobExecutionSpecifications filters on User columns and
+        // JobExecutionViewService reads User rows to name the initiator. No job
+        // entity holds an FK into users — job_executions stores the id. This wants
+        // an initiator projection published through user :: api.
+        "user :: entities",
+    ],
+)
 class ModuleMetadata

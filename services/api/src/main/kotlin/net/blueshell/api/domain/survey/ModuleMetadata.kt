@@ -11,5 +11,11 @@ import org.springframework.modulith.PackageInfo
  * survey — event sign-ups today — reference it rather than owning it.
  */
 @PackageInfo
-@ApplicationModule(id = "survey")
+@ApplicationModule(
+    id = "survey",
+    allowedDependencies = [
+        // Open kernel.
+        "shared",
+    ],
+)
 class ModuleMetadata

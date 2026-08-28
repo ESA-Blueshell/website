@@ -158,12 +158,11 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
         CommitteeManagerHelper.openEditForm(page, committeeId)
         CommitteeFormHelper.fillCommittee(page, updatedName, updatedDescription)
 
-        val response = page.waitForResponse("**/committees/$committeeId") {
-            CommitteeFormHelper.submit(page)
-        }
-        assertThat(response.status())
-            .withFailMessage("Expected metadata update to succeed but got %s, body=%s", response.status(), response.text())
-            .isEqualTo(200)
+        // Not wrapped in a response wait: saving re-renders the manager, and a response
+        // whose page has already moved on can be lost, putting a five-second cap on a round
+        // trip that had in fact succeeded. What the save was for is the stored committee, and
+        // that is what is waited for.
+        CommitteeFormHelper.submit(page)
 
         pollFor("committee metadata updated") {
             val refreshed = TestHelper.findCommittee(committeeId)

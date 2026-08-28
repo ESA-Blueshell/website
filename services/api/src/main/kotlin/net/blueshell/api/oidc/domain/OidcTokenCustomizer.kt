@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.oidc.domain
 
 import net.blueshell.api.shared.enums.Role
 import org.springframework.context.annotation.Bean

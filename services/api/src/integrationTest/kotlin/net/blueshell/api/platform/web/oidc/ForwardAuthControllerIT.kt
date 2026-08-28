@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.web.oidc
+package net.blueshell.api.oidc.web
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport

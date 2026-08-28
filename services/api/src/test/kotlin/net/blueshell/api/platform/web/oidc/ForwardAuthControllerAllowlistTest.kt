@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.web.oidc
+package net.blueshell.api.oidc.web
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

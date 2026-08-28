@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.oidc.domain
 
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext

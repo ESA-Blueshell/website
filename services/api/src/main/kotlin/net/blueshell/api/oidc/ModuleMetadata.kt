@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.oidc
 
 import org.springframework.modulith.ApplicationModule
 import org.springframework.modulith.PackageInfo

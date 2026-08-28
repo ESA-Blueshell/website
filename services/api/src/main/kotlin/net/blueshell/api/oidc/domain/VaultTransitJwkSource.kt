@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.oidc.domain
 
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.JWKSelector

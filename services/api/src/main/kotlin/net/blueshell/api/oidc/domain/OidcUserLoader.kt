@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.oidc.domain
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.application.exception.UserNotFoundException

@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.oidc
+package net.blueshell.api.oidc.domain
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

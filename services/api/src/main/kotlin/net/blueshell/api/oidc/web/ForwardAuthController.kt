@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.web.oidc
+package net.blueshell.api.oidc.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll

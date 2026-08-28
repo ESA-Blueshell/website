@@ -630,6 +630,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         ?? esportsPageBySeason["20"]
       return fulfillJson(route, page)
     }
+    if (method === "PUT" && /^\/esports\/seasons\/\d+$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      return fulfillJson(route, {id: Number(path.split("/").pop()), ...body})
+    }
     if (method === "GET" && path === "/esports/seasons") {
       return fulfillJson(route, fixtures.esportsSeasons ?? esportsSeasons)
     }

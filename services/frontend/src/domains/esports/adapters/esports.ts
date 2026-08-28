@@ -51,6 +51,40 @@ export async function loadSeasons(): Promise<Season[]> {
   return res.data ?? []
 }
 
+/** A save that was refused, in the api's own words. */
+export interface SeasonRefused {
+  ok: false
+  reason: string
+}
+
+export interface SeasonSaved {
+  ok: true
+  season: Season | null
+}
+
+/**
+ * The api answers a refused write with a body rather than a thrown error, so a caller that
+ * only reads `data` cannot tell a rejection from a success. This reports both, for the places
+ * that have to say why.
+ */
+export async function saveSeasonOrReason(
+  season: {id?: number; name: string; startDate: string; endDate: string},
+): Promise<SeasonSaved | SeasonRefused> {
+  const body = {name: season.name, startDate: season.startDate, endDate: season.endDate}
+  const res = season.id == null
+    ? await createSeason({body})
+    : await updateSeason({path: {id: season.id}, body})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error)}
+  return {ok: true, season: res.data ?? null}
+}
+
+/** Whatever the api said, preferring the specific complaint over the generic one. */
+function reasonFrom(error: unknown): string {
+  const body = (error as {detail?: string; title?: string; errors?: Array<{message?: string}>})
+  const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
+  return fields || body?.detail || body?.title || "The season could not be saved."
+}
+
 export async function saveSeason(
   season: {id?: number; name: string; startDate: string; endDate: string},
 ): Promise<Season | null> {

@@ -19,11 +19,14 @@ const pageFor = (game: string) => ({
 
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadEsportsPage: vi.fn(async (game: string) => pageFor(game)),
+  saveSeasonOrReason: vi.fn(async () => ({ok: true, season: seasons[0]})),
 }))
 
-const mountPage = () =>
+// The page asks the store whether the reader may change esports, so every mount answers.
+const mountPage = ({board = false}: {board?: boolean} = {}) =>
   mount(Esports, {
     global: {
+      provide: {store: {getters: {isBoard: board}}},
       stubs: {
         RouterLink: {props: ["to"], template: "<a :data-to='to'><slot /></a>"},
         Motion: {template: "<div><slot /></div>"},
@@ -37,6 +40,21 @@ describe("Esports page", () => {
   it("sits inside the esports island", () => {
     // The island's root is what its reset and its tokens hang off.
     expect(mountPage().find('[data-testid="esports-island"]').exists()).toBe(true)
+  })
+
+  it("offers no way to change a season to somebody who may not", async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-testid^="esports-season-edit-"]')).toHaveLength(0)
+  })
+
+  it("offers the board a way to change each season it shows", async () => {
+    const wrapper = mountPage({board: true})
+    await flushPromises()
+
+    // One per season on the strip, so the affordance belongs to a season rather than to the page.
+    expect(wrapper.findAll('[data-testid^="esports-season-edit-"]')).toHaveLength(seasons.length)
   })
 
   it("shows only the games that fielded a team in the season on show", async () => {

@@ -3,7 +3,7 @@ package net.blueshell.api.domain.event.application.job
 import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.domain.event.application.EventSignUpService
-import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
+import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThatThrownBy

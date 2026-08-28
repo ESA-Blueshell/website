@@ -3,7 +3,7 @@ package net.blueshell.api.domain.auth.application
 import net.blueshell.api.domain.auth.application.email.PREVIEW_TOKEN_PLACEHOLDER
 import net.blueshell.api.domain.auth.application.email.buildRecoveryEmail
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.email.application.service.EmailPreviewRenderer
+import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.RecoveryEmailPreview
 import org.springframework.beans.factory.annotation.Value

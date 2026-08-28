@@ -5,7 +5,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.email.application.service.EmailPreviewRenderer
+import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.RenderedEmailPreview

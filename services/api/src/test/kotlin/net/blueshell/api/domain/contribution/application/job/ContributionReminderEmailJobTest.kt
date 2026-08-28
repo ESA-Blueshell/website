@@ -4,7 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.domain.contribution.application.ContributionReminderService
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
-import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
+import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThatThrownBy

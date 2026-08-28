@@ -2,7 +2,7 @@ package net.blueshell.api.domain.auth.application.job
 
 import net.blueshell.api.domain.auth.application.email.buildRecoveryEmail
 import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.platform.integration.email.application.service.EmailSenderService
+import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.platform.integration.queue.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists

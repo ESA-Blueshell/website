@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.email.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.platform.integration.email.persistence.Email
+import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import org.springframework.stereotype.Component
 import java.time.Instant

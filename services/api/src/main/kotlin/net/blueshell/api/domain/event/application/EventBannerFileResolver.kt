@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.event.application
 
 import net.blueshell.api.domain.event.persistence.repository.EventBannerRepository
-import net.blueshell.api.domain.file.application.port.EventBannerFileLookup
+import net.blueshell.api.file.api.EventBannerFileLookup
 import org.springframework.stereotype.Component
 
 @Component

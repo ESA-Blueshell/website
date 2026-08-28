@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.sponsor.application
 
 import jakarta.ws.rs.NotFoundException
-import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.sponsor.persistence.SponsorRepository
 import net.blueshell.api.shared.service.BaseModelService

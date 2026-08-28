@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.event.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
 

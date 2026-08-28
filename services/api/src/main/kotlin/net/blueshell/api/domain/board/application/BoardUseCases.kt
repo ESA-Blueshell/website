@@ -2,7 +2,7 @@ package net.blueshell.api.domain.board.application
 
 import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.domain.board.persistence.BoardMember
-import net.blueshell.api.domain.file.application.FileService
+import net.blueshell.api.file.api.FileService
 import net.blueshell.api.domain.user.application.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

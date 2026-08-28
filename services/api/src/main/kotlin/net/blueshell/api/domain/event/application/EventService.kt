@@ -7,7 +7,7 @@ import net.blueshell.api.domain.event.application.query.EventQuery
 import net.blueshell.api.domain.event.persistence.repository.EventBannerRepository
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.spec.EventSpecifications
-import net.blueshell.api.domain.file.application.FileService
+import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService

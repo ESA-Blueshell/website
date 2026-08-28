@@ -4,7 +4,7 @@ import net.blueshell.api.domain.committee.application.CommitteeService
 import net.blueshell.api.domain.committee.persistence.Committee
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventBanner
-import net.blueshell.api.domain.file.application.FileService
+import net.blueshell.api.file.api.FileService
 import net.blueshell.api.domain.survey.application.factory.SurveyFactory
 import net.blueshell.api.domain.survey.application.SurveyData
 import net.blueshell.api.domain.survey.persistence.Question

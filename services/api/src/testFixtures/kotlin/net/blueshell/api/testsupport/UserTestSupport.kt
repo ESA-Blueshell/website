@@ -20,7 +20,7 @@ import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest
-import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.domain.sponsor.persistence.Sponsor
 import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import net.blueshell.api.domain.user.persistence.Address

@@ -5,7 +5,7 @@ import net.blueshell.api.factory.event.web.request.EventSignUpRequestFactory
 import java.time.Instant
 import net.blueshell.api.domain.event.persistence.repository.EventRepository
 import net.blueshell.api.domain.event.persistence.repository.EventSignUpRepository
-import net.blueshell.api.domain.file.persistence.repository.FileRepository
+import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat

@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.file.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.stereotype.Component

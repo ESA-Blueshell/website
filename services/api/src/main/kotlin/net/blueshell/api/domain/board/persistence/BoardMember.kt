@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.board.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete

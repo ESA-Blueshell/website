@@ -3,8 +3,8 @@ package net.blueshell.api.domain.board.application
 import net.blueshell.api.domain.board.application.exception.BoardMemberNotFoundException
 import net.blueshell.api.domain.board.persistence.Board
 import net.blueshell.api.domain.board.persistence.BoardMember
-import net.blueshell.api.domain.file.application.FileService
-import net.blueshell.api.domain.file.persistence.File
+import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
 import net.blueshell.api.shared.enums.Role

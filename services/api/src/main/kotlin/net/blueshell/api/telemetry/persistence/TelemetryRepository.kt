@@ -1,7 +1,6 @@
-package net.blueshell.api.domain.telemetry.persistence.repository
+package net.blueshell.api.telemetry.persistence
 
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.domain.telemetry.persistence.Telemetry
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

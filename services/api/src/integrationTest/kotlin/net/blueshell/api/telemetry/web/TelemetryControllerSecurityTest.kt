@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.telemetry.web
+package net.blueshell.api.telemetry.web
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport

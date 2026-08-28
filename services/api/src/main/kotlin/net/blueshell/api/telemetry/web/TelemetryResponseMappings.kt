@@ -1,7 +1,6 @@
-package net.blueshell.api.domain.telemetry.web.mapping.response
+package net.blueshell.api.telemetry.web
 
-import net.blueshell.api.domain.telemetry.persistence.Telemetry
-import net.blueshell.api.domain.telemetry.web.dto.response.TelemetryResponse
+import net.blueshell.api.telemetry.persistence.Telemetry
 
 fun Telemetry.asResponse(): TelemetryResponse =
     TelemetryResponse(

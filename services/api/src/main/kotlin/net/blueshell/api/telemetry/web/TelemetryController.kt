@@ -1,12 +1,9 @@
-package net.blueshell.api.domain.telemetry.web
+package net.blueshell.api.telemetry.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.domain.telemetry.application.TelemetryService
-import net.blueshell.api.domain.telemetry.web.dto.request.CreateTelemetryRequest
-import net.blueshell.api.domain.telemetry.web.dto.response.TelemetryResponse
-import net.blueshell.api.domain.telemetry.web.mapping.response.asResponse
+import net.blueshell.api.telemetry.domain.TelemetryService
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize

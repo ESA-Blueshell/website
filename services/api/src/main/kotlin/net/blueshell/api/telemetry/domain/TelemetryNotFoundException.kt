@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.telemetry.application.exception
+package net.blueshell.api.telemetry.domain
 
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException

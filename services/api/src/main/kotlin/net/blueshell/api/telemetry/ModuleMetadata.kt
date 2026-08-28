@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.telemetry
+package net.blueshell.api.telemetry
 
 import org.springframework.modulith.ApplicationModule
 import org.springframework.modulith.PackageInfo

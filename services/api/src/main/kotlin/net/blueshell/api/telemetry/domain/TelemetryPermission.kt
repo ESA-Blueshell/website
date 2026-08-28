@@ -1,9 +1,8 @@
-package net.blueshell.api.domain.telemetry.application.permission
+package net.blueshell.api.telemetry.domain
 
 import net.blueshell.api.infrastructure.security.permission.BasePermissionEvaluator
 
-import net.blueshell.api.domain.telemetry.application.TelemetryService
-import net.blueshell.api.domain.telemetry.persistence.Telemetry
+import net.blueshell.api.telemetry.persistence.Telemetry
 import net.blueshell.api.infrastructure.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.beans.factory.annotation.Autowired

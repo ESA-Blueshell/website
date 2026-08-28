@@ -32,7 +32,7 @@ class CrossModuleWebAccessArchitectureTest : ArchJUnitTestBase(ArchitecturePacka
          * landed, as `<consuming module> -> <type reached>`.
          */
         val PINNED = setOf(
-            "auth -> net.blueshell.api.domain.telemetry.web.dto.response.RedirectResponse",
+            "auth -> net.blueshell.api.telemetry.web.RedirectResponse",
             "auth -> net.blueshell.api.domain.user.web.dto.request.CreateUserRequest",
             "auth -> net.blueshell.api.domain.user.web.dto.request.UpsertMemberProfileRequest",
             "auth -> net.blueshell.api.domain.user.web.dto.response.SignupOutcomeResponse",

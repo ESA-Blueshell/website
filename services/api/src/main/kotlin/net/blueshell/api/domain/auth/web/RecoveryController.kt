@@ -12,7 +12,7 @@ import net.blueshell.api.domain.auth.web.dto.response.PendingActivation
 import net.blueshell.api.domain.auth.web.dto.response.PendingActivationsResponse
 import net.blueshell.api.domain.auth.web.dto.response.RecoveryEmailPreviewResponse
 import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.domain.telemetry.web.dto.response.RedirectResponse
+import net.blueshell.api.telemetry.web.RedirectResponse
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*

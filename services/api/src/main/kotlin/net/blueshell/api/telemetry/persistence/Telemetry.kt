@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.telemetry.persistence
+package net.blueshell.api.telemetry.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.shared.enums.PlatformType

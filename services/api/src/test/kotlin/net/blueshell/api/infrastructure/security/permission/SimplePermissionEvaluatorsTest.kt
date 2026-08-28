@@ -7,7 +7,7 @@ import net.blueshell.api.domain.contribution.application.permission.Contribution
 import net.blueshell.api.domain.event.application.permission.GuestPermission
 import net.blueshell.api.platform.integration.job.application.permission.JobExecutionPermission
 import net.blueshell.api.sponsor.domain.SponsorPermission
-import net.blueshell.api.domain.telemetry.application.permission.TelemetryPermission
+import net.blueshell.api.telemetry.domain.TelemetryPermission
 
 import net.blueshell.api.blog.domain.BlogService
 import net.blueshell.api.blog.persistence.Blog
@@ -21,8 +21,8 @@ import net.blueshell.api.domain.event.application.GuestService
 import net.blueshell.api.domain.event.persistence.Guest
 import net.blueshell.api.sponsor.domain.SponsorService
 import net.blueshell.api.sponsor.persistence.Sponsor
-import net.blueshell.api.domain.telemetry.application.TelemetryService
-import net.blueshell.api.domain.telemetry.persistence.Telemetry
+import net.blueshell.api.telemetry.domain.TelemetryService
+import net.blueshell.api.telemetry.persistence.Telemetry
 import net.blueshell.api.platform.integration.job.persistence.JobExecution
 import net.blueshell.api.platform.integration.job.application.service.JobExecutionService
 import net.blueshell.api.shared.enums.PlatformType

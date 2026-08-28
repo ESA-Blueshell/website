@@ -1,4 +1,4 @@
-package net.blueshell.api.domain.telemetry.web.dto.request
+package net.blueshell.api.telemetry.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank

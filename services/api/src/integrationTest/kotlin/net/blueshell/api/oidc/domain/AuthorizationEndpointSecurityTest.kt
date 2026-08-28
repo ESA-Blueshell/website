@@ -1,9 +1,11 @@
 package net.blueshell.api.oidc.domain
 
 import net.blueshell.api.shared.enums.Role
+import org.assertj.core.api.Assertions.assertThat
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.HttpStatus
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -12,19 +14,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  * Every client registered with this authorization server is an admin tool, so starting an
  * authorization flow is admin-only.
  *
- * The gate used to read `client_id` off the request and skip the admin check when the value
- * was not one it recognised, which let the request decide whether it was checked at all. The
- * unknown-client case below is what fails if that branching comes back.
+ * Requests are built as query strings: the authorization server's own validation does not see
+ * parameters added through MockMvc's builder, and rejects the request as malformed instead.
  */
 @SpringBootTest
 class AuthorizationEndpointSecurityTest : UserTestSupport() {
 
-    // headlamp is the PKCE client, so a request without a code challenge is rejected as
-    // malformed before authentication is considered. The challenge is a fixed dummy: nothing
-    // here exchanges the code, so only its presence matters.
-    // headlamp is the PKCE client, so a request without a code challenge is rejected as
-    // malformed before authentication is considered. The challenge is a fixed dummy: nothing
-    // here exchanges the code, so only its presence matters.
+    // headlamp requires PKCE, so a request without a code challenge never reaches the gate.
     private fun authorizeRequest(clientId: String) =
         get(
             "/oauth2/authorize?response_type=code&client_id={c}" +
@@ -46,6 +42,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
 
         mvc.perform(authorizeRequest("headlamp").with(bearer(member)))
             .andExpect(status().isForbidden)
+            .andExpect { assertThat(it.response.errorMessage).isEqualTo(ADMIN_REFUSAL) }
     }
 
     @Test
@@ -60,8 +57,6 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
     fun `an unregistered client is refused rather than waved through`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        // The old gate skipped the admin check for any client_id it did not recognise, so this
-        // request reached the authorization server instead of being refused here.
         mvc.perform(authorizeRequest("not-a-registered-client").with(bearer(member)))
             .andExpect(status().isForbidden)
     }
@@ -78,11 +73,16 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
     fun `an admin is let past the gate`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        // Past the gate the authorization server takes over, so anything other than the 403
-        // this class is about counts as let through.
-        val status = mvc.perform(authorizeRequest("headlamp").with(bearer(admin)))
-            .andReturn().response.status
+        // The assertion is about this gate and nothing further: the authorization server
+        // refuses the request afterwards for its own reasons, which the gate does not decide.
+        val response = mvc.perform(authorizeRequest("headlamp").with(bearer(admin))).andReturn().response
 
-        assert(status != 403) { "an admin was refused by the admin gate (status $status)" }
+        assertThat(response.errorMessage).isNotEqualTo(ADMIN_REFUSAL)
+        assertThat(response.status).isNotEqualTo(HttpStatus.FORBIDDEN.value())
+    }
+
+    private companion object {
+        /** What the gate itself says when it refuses, as distinct from any later refusal. */
+        const val ADMIN_REFUSAL = "Admin access required"
     }
 }

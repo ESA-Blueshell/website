@@ -96,7 +96,7 @@ class AuthorizationServerConfig {
 
     private fun loginRedirectEntryPoint(): AuthenticationEntryPoint =
         AuthenticationEntryPoint { request, response, _ ->
-            val target = loginRedirectTarget(request.requestURI, request.queryString)
+            val target = LoginRedirectTarget.forRequest(request.requestURI, request.queryString)
             response.sendRedirect("/login?redirect=${URLEncoder.encode(target, StandardCharsets.UTF_8)}")
         }
 
@@ -133,25 +133,3 @@ class AuthorizationServerConfig {
         return InMemoryOAuth2AuthorizationConsentService()
     }
 }
-
-/** Where a member lands after logging in when the page they wanted is not safe to return to. */
-internal const val DEFAULT_POST_LOGIN_PATH = "/"
-
-/**
- * The value that goes in `/login?redirect=…` for a request that arrived unauthenticated.
- *
- * Traefik strips `/api` before forwarding, so it is re-added: the redirect has to name the
- * public URL for the frontend's off-SPA navigation to re-enter this chain.
- *
- * The frontend navigates to whatever this returns, so it must be a path on this site. A value
- * that is protocol-relative (`//host`, `/\host`) or not rooted at `/` would leave the origin,
- * and is replaced by [DEFAULT_POST_LOGIN_PATH] rather than passed through (CWE-601).
- */
-internal fun loginRedirectTarget(requestUri: String, queryString: String?): String {
-    if (!isSameOriginPath(requestUri)) return DEFAULT_POST_LOGIN_PATH
-    val publicPath = "/api$requestUri"
-    return if (!queryString.isNullOrEmpty()) "$publicPath?$queryString" else publicPath
-}
-
-private fun isSameOriginPath(value: String): Boolean =
-    value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\")

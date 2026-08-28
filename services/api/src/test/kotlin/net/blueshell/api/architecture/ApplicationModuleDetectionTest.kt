@@ -10,7 +10,8 @@ import org.springframework.modulith.core.ApplicationModules
  * a strategy that nominates no package produces an empty `ApplicationModules` and every
  * later check passes vacuously. This pins the twenty modules by name.
  *
- * Deliberately does not call `verify()` — the cycles are not broken yet.
+ * `verify()` runs here too: it is the boundary check itself, and it needs the detection above
+ * to have found something before it means anything.
  */
 class ApplicationModuleDetectionTest {
 
@@ -48,6 +49,17 @@ class ApplicationModuleDetectionTest {
         }
 
         assertThat(unresolvable).isEmpty()
+    }
+
+    /**
+     * The boundary check. A module may reach another only through a named interface its
+     * `allowedDependencies` lists, no closed module may take part in a cycle, and nothing outside
+     * a module may reach a type the module does not publish. Static analysis over the compiled
+     * classes — no Spring context and no database, per testing ADR-001.
+     */
+    @Test
+    fun `module boundaries hold`() {
+        modules.verify()
     }
 
     @Test

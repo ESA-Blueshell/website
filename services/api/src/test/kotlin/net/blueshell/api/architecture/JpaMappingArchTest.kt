@@ -3,12 +3,14 @@ package net.blueshell.api.architecture
 import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaField
 import com.tngtech.archunit.core.domain.JavaModifier
+import com.tngtech.archunit.core.domain.JavaParameterizedType
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
 import jakarta.persistence.*
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
+import net.blueshell.api.architecture.support.ArchModules
 import org.junit.jupiter.api.Test
 
 class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
@@ -41,6 +43,21 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .and().areAnnotatedWith(OneToOne::class.java)
                 .should(oneToOneInverseSideMustNotSpecifyLazy())
                 .because("JPA providers often ignore LAZY on mappedBy side; don't encode misleading intent in mappings.")
+        }
+
+    @Test
+    fun `mappedBy must not name a type from another module`(): Unit =
+        arch("Inverse-side associations stay inside their own module") {
+            fields()
+                .that().areAnnotatedWith(OneToMany::class.java)
+                .or().areAnnotatedWith(OneToOne::class.java)
+                .or().areAnnotatedWith(ManyToMany::class.java)
+                .should(mappedByMustStayInsideItsModule())
+                .because(
+                    "architecture ADR-003: an inverse side makes the owning module's table a member of " +
+                        "this aggregate and loads it on traversal. What another module needs goes through " +
+                        "its api surface or a query keyed on the foreign key it already holds."
+                )
         }
 
     @Test
@@ -158,6 +175,47 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                     )
                 )
             }
+        }
+
+    /**
+     * The module a `mappedBy` field points at, read from the association's type argument for a
+     * collection and from the field type itself for a to-one. A type outside `net.blueshell.api`
+     * — the collection interface a raw signature would erase to — belongs to no module and is
+     * skipped, so the rule reports what it could resolve rather than what it could not.
+     */
+    private fun mappedByMustStayInsideItsModule(): ArchCondition<JavaField> =
+        object : ArchCondition<JavaField>("name a type from the declaring module") {
+            override fun check(item: JavaField, events: ConditionEvents) {
+                val mappedBy = item.mappedByOrNull() ?: return
+                val ownerModule = ArchModules.moduleOf(item.owner) ?: return
+
+                item.associationTargets()
+                    .mapNotNull { target -> ArchModules.moduleOf(target)?.let { target to it } }
+                    .filter { (_, targetModule) -> targetModule != ownerModule }
+                    .forEach { (target, targetModule) ->
+                        events.add(
+                            SimpleConditionEvent.violated(
+                                item,
+                                "${item.owner.fullName}.${item.name} is the inverse side of " +
+                                    "'$mappedBy' on ${target.fullName}, which module '$targetModule' " +
+                                    "owns while '$ownerModule' declares the field"
+                            )
+                        )
+                    }
+            }
+        }
+
+    private fun JavaField.mappedByOrNull(): String? =
+        sequenceOf(
+            getAnnotationOfTypeOrNull(OneToMany::class.java)?.mappedBy,
+            getAnnotationOfTypeOrNull(OneToOne::class.java)?.mappedBy,
+            getAnnotationOfTypeOrNull(ManyToMany::class.java)?.mappedBy,
+        ).filterNotNull().firstOrNull { it.isNotBlank() }
+
+    private fun JavaField.associationTargets(): List<JavaClass> =
+        when (val fieldType = type) {
+            is JavaParameterizedType -> fieldType.actualTypeArguments.map { it.toErasure() }
+            else -> listOf(fieldType.toErasure())
         }
 
     private fun relationWithIdFieldMustBeReadOnlyOrMapsId(): ArchCondition<JavaField> =

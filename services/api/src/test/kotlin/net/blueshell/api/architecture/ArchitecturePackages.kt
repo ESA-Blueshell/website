@@ -18,6 +18,7 @@ object ArchitecturePackages {
     /** Application Layer - Use cases, Services, Business Validators, Listeners, Factories */
     const val APPLICATION = "$ROOT..application.."
     const val APPLICATION_VALIDATION = "$ROOT..application.validation.."
+    const val APPLICATION_EXCEPTION = "$ROOT..application.exception.."
     const val LISTENER = "$ROOT..application.listener.."
     const val EVENT = "$ROOT..application.event.."
     const val FACTORY = "$ROOT..application.factory.."
@@ -88,6 +89,14 @@ object ArchitecturePackages {
     const val SHARED_SECURITY = "$ROOT.shared.security.."
 
     // ===== Domain-Specific Packages =====
+
+    /**
+     * A domain module's own web and application packages. The layer globs above start
+     * `$ROOT..`, so they also match the platform modules, whose web and application
+     * packages sit inside [PLATFORM]. These two name the domain half on its own.
+     */
+    const val DOMAIN_WEB = "$ROOT.domain..web.."
+    const val DOMAIN_APPLICATION = "$ROOT.domain..application.."
 
     /** Domain Boundaries (ADR-017, ADR-018) */
     const val DOMAIN_AUTH = "$ROOT.domain.auth.."

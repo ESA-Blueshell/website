@@ -234,12 +234,6 @@
               Manage boards
             </v-list-item>
             <v-list-item
-              v-if="isBoard"
-              to="/management/esports"
-            >
-              Manage esports
-            </v-list-item>
-            <v-list-item
               v-if="isAdmin"
               to="/management/cohorts"
             >

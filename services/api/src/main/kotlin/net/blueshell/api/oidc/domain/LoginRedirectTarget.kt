@@ -13,11 +13,16 @@ object LoginRedirectTarget {
     /**
      * Traefik strips `/api` before forwarding, so it is re-added: the redirect has to name the
      * public URL for the frontend's off-SPA navigation to re-enter this chain.
+     *
+     * Only known-safe request paths are eligible. Query parameters are intentionally not carried
+     * over from unauthenticated requests.
      */
     fun forRequest(requestUri: String, queryString: String?): String {
-        val publicPath = "/api$requestUri"
-        val composed = if (!queryString.isNullOrEmpty()) "$publicPath?$queryString" else publicPath
-        return sameOriginOrDefault(composed)
+        val allowlistedTarget = when (requestUri) {
+            "/oauth2/authorize" -> "/api/oauth2/authorize"
+            else -> DEFAULT_PATH
+        }
+        return sameOriginOrDefault(allowlistedTarget)
     }
 
     /**

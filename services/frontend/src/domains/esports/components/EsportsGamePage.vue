@@ -5,6 +5,7 @@ import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
+import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons, unfieldTeamFromSeason} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
@@ -15,19 +16,33 @@ import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {$require} from "@/plugins/require"
-import {identityOf} from "@/domains/esports/island/gameIdentity"
+import {useGames} from "@/domains/esports/island/useGames"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
 import type {Game, Season, Team} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
-const props = defineProps<{game: Game; title: string}>()
+const props = defineProps<{game: Game}>()
 
 const route = useRoute()
 const router = useRouter()
 const motion = useMotionAllowed()
+// What the game is called, the colour it carries and its mark are its record's answer, as is
+// what this page says about it.
+const {identityOf, recordOf, refresh: refreshGames} = useGames()
 const identity = computed(() => identityOf(props.game))
+const intro = computed(() => recordOf(props.game)?.intro ?? "")
+
+/** The same editor the index offers, reached from the page the game is on. */
+const gameEditorOpen = ref(false)
+
+const gameSaved = async () => {
+  await refreshGames()
+  // Its address may have moved, and this page is at the old one.
+  const now = recordOf(props.game)
+  if (now && now.slug !== route.params.slug) void router.replace(`/esports/${now.slug}`)
+}
 
 const seasonFromRoute = () => {
   const raw = route.query.season
@@ -254,6 +269,27 @@ const seasonSaved = (saved: Season) => {
           :style="{backgroundColor: identity.accent}"
         />
         <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
+          <!-- Where the game itself is corrected: the same affordance the seasons and the
+               teams below already carry. -->
+          <button
+            v-if="mayEdit"
+            aria-label="Edit this game"
+            class="game-header__edit"
+            data-testid="esports-game-edit"
+            type="button"
+            @click="gameEditorOpen = true"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+            </svg>
+          </button>
+
           <div class="flex items-center gap-4">
             <img
               v-if="identity.mark"
@@ -265,13 +301,18 @@ const seasonSaved = (saved: Season) => {
               <p class="font-body text-[11px] tracking-[0.28em] text-ash uppercase">
                 Blueshell Esports
               </p>
-              <h1 class="font-display text-2xl leading-none uppercase sm:text-4xl">
-                {{ title }}
+              <!-- min-h holds the line while the records answer, so the name arriving does
+                   not shift the header down. -->
+              <h1 class="min-h-[1em] font-display text-2xl leading-none uppercase sm:text-4xl">
+                {{ identity.name }}
               </h1>
             </div>
+            <!-- `mr-11` keeps this clear of the edit affordance pinned to the header's corner,
+                 which is permanently visible on a touch device and would otherwise take the tap
+                 meant for this button. Both only appear for somebody who may edit. -->
             <button
               v-if="mayEdit"
-              class="ml-auto rounded border border-ash/40 px-3 py-1.5 font-body text-xs text-ash transition-colors hover:border-current hover:text-white"
+              class="mr-11 ml-auto rounded border border-ash/40 px-3 py-1.5 font-body text-xs text-ash transition-colors hover:border-current hover:text-white"
               data-testid="esports-banners-open"
               type="button"
               @click="bannersOpen = true"
@@ -279,10 +320,22 @@ const seasonSaved = (saved: Season) => {
               Banners
             </button>
           </div>
-          <div class="mt-5 max-w-2xl font-body text-sm leading-relaxed text-ash">
-            <slot name="intro" />
-          </div>
+          <div
+            v-if="intro"
+            class="mt-5 max-w-2xl font-body text-sm leading-relaxed text-ash"
+            data-testid="esports-game-intro"
+            v-html="$markdownToHtml(intro)"
+          />
         </div>
+
+        <game-dialog
+          :accent="identity.accent"
+          :game="recordOf(game)"
+          :open="gameEditorOpen"
+          @removed="router.push('/esports/competitive-scene')"
+          @saved="gameSaved"
+          @update:open="gameEditorOpen = $event"
+        />
       </header>
 
       <!-- The seasons as a line rather than a row of pills: the years read across the top,
@@ -452,3 +505,41 @@ const seasonSaved = (saved: Season) => {
     </esports-island>
   </v-main>
 </template>
+
+<style scoped>
+/*
+  The same affordance the slices below carry: top right, no chrome, and where there is a
+  pointer it waits for one. Where there is not, it stands.
+*/
+.game-header__edit {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 3;
+  visibility: hidden;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: 0;
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.game-header__edit svg {
+  width: 23px;
+  height: 23px;
+}
+
+header:hover .game-header__edit,
+header:focus-within .game-header__edit {
+  visibility: visible;
+}
+
+@media (hover: none) {
+  .game-header__edit {
+    visibility: visible;
+  }
+}
+</style>

@@ -542,6 +542,17 @@ export type CreateEventSignUpRequest = {
     userId?: number | null;
 };
 
+/**
+ * A game the association has started playing
+ */
+export type CreateGameRequest = {
+    name: string;
+    /**
+     * The address the game's page answers to
+     */
+    slug: string;
+};
+
 export type CreateGuestRequest = {
     discord: string;
     email: string;
@@ -579,7 +590,7 @@ export type CreateTargetRequest = {
  * Create a team for a game
  */
 export type CreateTeamRequest = {
-    game: Game;
+    game: string;
     image?: string | null;
     name: string;
 };
@@ -668,7 +679,7 @@ export type EnqueueJobRequest = {
  * A banner and how narrowly it was set, as an admin manages them
  */
 export type EsportsBannerResponse = {
-    game: Game;
+    game: string;
     id: number;
     /**
      * The season it is set for; absent when it carries every season
@@ -692,7 +703,7 @@ export type EsportsPageResponse = {
      * The banner for the game and season shown, absent when none is set anywhere
      */
     bannerUrl?: string | null;
-    game: Game;
+    game: string;
     /**
      * The season being shown; absent when the game has no rosters yet
      */
@@ -846,17 +857,6 @@ export enum FileType {
     ROSTER_ICON = 'ROSTER_ICON'
 }
 
-export enum Game {
-    VALORANT = 'VALORANT',
-    CS2 = 'CS2',
-    CSGO = 'CSGO',
-    LEAGUE_OF_LEGENDS = 'LEAGUE_OF_LEGENDS',
-    ROCKET_LEAGUE = 'ROCKET_LEAGUE',
-    TRACKMANIA = 'TRACKMANIA',
-    GEOGUESSR = 'GEOGUESSR',
-    SMASH = 'SMASH'
-}
-
 /**
  * Set what a member is called in one game
  */
@@ -868,10 +868,24 @@ export type GameAccountRequest = {
  * What one member is called in one game
  */
 export type GameAccountResponse = {
-    game: Game;
+    game: string;
     handle: string;
     id: number;
     userId: number;
+};
+
+/**
+ * What a game holds, for a removal to say before it happens
+ */
+export type GameContentsResponse = {
+    /**
+     * Roster places those teams carry
+     */
+    players: number;
+    /**
+     * Teams recorded in it, across every season
+     */
+    teams: number;
 };
 
 /**
@@ -890,7 +904,7 @@ export type GamePageResponse = {
      * Whether the association still fields a team in it
      */
     fielded: boolean;
-    game: Game;
+    game: string;
     /**
      * What the page says about the game, where anything is said
      */
@@ -1481,7 +1495,7 @@ export enum TargetSystem {
  * A team the association fields in one game
  */
 export type TeamResponse = {
-    game: Game;
+    game: string;
     id: number;
     /**
      * Asset file name for the team's background image
@@ -1621,10 +1635,26 @@ export type UpdateEventSignUpRequest = {
  */
 export type UpdateGamePageRequest = {
     /**
+     * The colour that carries this game, or nothing for the island's own
+     */
+    accent?: string | null;
+    /**
+     * Asset file name for the image behind the game on the index
+     */
+    banner?: string | null;
+    /**
      * Whether the association still fields a team in it
      */
     fielded: boolean;
     intro?: string | null;
+    /**
+     * Asset file name for the game's own mark
+     */
+    mark?: string | null;
+    /**
+     * What the pages print for this game. Its code is not editable
+     */
+    name: string;
     /**
      * The address the game's page answers to
      */
@@ -3525,7 +3555,7 @@ export type FindBannersData = {
     body?: never;
     path?: never;
     query: {
-        game: Game;
+        game: string;
     };
     url: '/esports/banners';
 };
@@ -3570,7 +3600,7 @@ export type UploadBannerData = {
     };
     path?: never;
     query: {
-        game: Game;
+        game: string;
         seasonId?: number;
         teamId?: number;
     };
@@ -3695,10 +3725,94 @@ export type FindGamePagesResponses = {
 
 export type FindGamePagesResponse = FindGamePagesResponses[keyof FindGamePagesResponses];
 
+export type CreateGameData = {
+    body: CreateGameRequest;
+    path?: never;
+    query?: never;
+    url: '/esports/games';
+};
+
+export type CreateGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateGameError = CreateGameErrors[keyof CreateGameErrors];
+
+export type CreateGameResponses = {
+    /**
+     * Created
+     */
+    201: GamePageResponse;
+};
+
+export type CreateGameResponse = CreateGameResponses[keyof CreateGameResponses];
+
+export type DeleteGameData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/esports/games/{game}';
+};
+
+export type DeleteGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteGameError = DeleteGameErrors[keyof DeleteGameErrors];
+
+export type DeleteGameResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteGameResponse = DeleteGameResponses[keyof DeleteGameResponses];
+
 export type FindEsportsPageData = {
     body?: never;
     path: {
-        game: Game;
+        game: string;
     };
     query?: {
         seasonId?: number;
@@ -3743,7 +3857,7 @@ export type FindEsportsPageResponse = FindEsportsPageResponses[keyof FindEsports
 export type UpdateGamePageData = {
     body: UpdateGamePageRequest;
     path: {
-        game: Game;
+        game: string;
     };
     query?: never;
     url: '/esports/games/{game}';
@@ -3782,6 +3896,49 @@ export type UpdateGamePageResponses = {
 };
 
 export type UpdateGamePageResponse = UpdateGamePageResponses[keyof UpdateGamePageResponses];
+
+export type FindGameContentsData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/esports/games/{game}/contents';
+};
+
+export type FindGameContentsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindGameContentsError = FindGameContentsErrors[keyof FindGameContentsErrors];
+
+export type FindGameContentsResponses = {
+    /**
+     * OK
+     */
+    200: GameContentsResponse;
+};
+
+export type FindGameContentsResponse = FindGameContentsResponses[keyof FindGameContentsResponses];
 
 export type RemoveRosterEntryData = {
     body?: never;
@@ -4303,7 +4460,7 @@ export type FindTeamsData = {
     body?: never;
     path?: never;
     query: {
-        game: Game;
+        game: string;
     };
     url: '/esports/teams';
 };
@@ -8143,7 +8300,7 @@ export type ClearGameAccountData = {
     body?: never;
     path: {
         userId: number;
-        game: Game;
+        game: string;
     };
     query?: never;
     url: '/users/{userId}/game-accounts/{game}';
@@ -8187,7 +8344,7 @@ export type SetGameAccountData = {
     body: GameAccountRequest;
     path: {
         userId: number;
-        game: Game;
+        game: string;
     };
     query?: never;
     url: '/users/{userId}/game-accounts/{game}';

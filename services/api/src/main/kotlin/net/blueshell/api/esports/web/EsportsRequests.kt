@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import java.time.LocalDate
 
@@ -24,7 +23,7 @@ data class SeasonRequest(
 @Schema(description = "Create a team for a game")
 data class CreateTeamRequest(
     @field:NotNull(message = "Game is required")
-    val game: Game,
+    val game: String,
 
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
@@ -113,14 +112,39 @@ data class GameAccountRequest(
     val handle: String,
 )
 
+@Schema(name = "CreateGameRequest", description = "A game the association has started playing")
+data class CreateGameRequest(
+    @field:NotBlank(message = "A game needs a name")
+    @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
+    val name: String,
+
+    @field:NotBlank(message = "A game's page needs an address")
+    @field:Size(min = 1, max = 64, message = "Address must be 1-64 characters")
+    @field:Schema(description = "The address the game's page answers to")
+    val slug: String,
+)
+
 @Schema(name = "UpdateGamePageRequest", description = "How a game presents itself")
 data class UpdateGamePageRequest(
+    @field:NotBlank(message = "A game needs a name")
+    @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
+    @field:Schema(description = "What the pages print for this game. Its code is not editable")
+    val name: String,
     @field:NotBlank
     @field:Size(max = 64)
     @field:Schema(description = "The address the game's page answers to")
     val slug: String,
     @field:Size(max = 4000)
     val intro: String? = null,
+    @field:Size(max = 32)
+    @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
+    val accent: String? = null,
+    @field:Size(max = 255)
+    @field:Schema(description = "Asset file name for the game's own mark")
+    val mark: String? = null,
+    @field:Size(max = 255)
+    @field:Schema(description = "Asset file name for the image behind the game on the index")
+    val banner: String? = null,
     val sortIndex: Int = 0,
     @field:Schema(description = "Whether the association still fields a team in it")
     val fielded: Boolean = true,

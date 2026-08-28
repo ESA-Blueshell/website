@@ -1,7 +1,6 @@
 package net.blueshell.api.esports.web
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import java.time.LocalDate
 
@@ -16,7 +15,7 @@ data class SeasonResponse(
 @Schema(description = "A team the association fields in one game")
 data class TeamResponse(
     val id: Long,
-    val game: Game,
+    val game: String,
     val name: String,
     @Schema(description = "Asset file name for the team's background image")
     val image: String?,
@@ -26,7 +25,7 @@ data class TeamResponse(
 
 @Schema(description = "A game: what it is called, the art it is drawn with, and how its page presents it")
 data class GamePageResponse(
-    val game: Game,
+    val game: String,
     @Schema(description = "What the pages print for this game")
     val name: String,
     @Schema(description = "The address the game's page answers to")
@@ -74,13 +73,21 @@ data class TeamRosterResponse(
 
 @Schema(description = "A game's teams for one season, and the seasons that can be shown")
 data class EsportsPageResponse(
-    val game: Game,
+    val game: String,
     @Schema(description = "The season being shown; absent when the game has no rosters yet")
     val season: SeasonResponse?,
     val seasons: List<SeasonResponse>,
     val teams: List<TeamRosterResponse>,
     @Schema(description = "The banner for the game and season shown, absent when none is set anywhere")
     val bannerUrl: String? = null,
+)
+
+@Schema(description = "What a game holds, for a removal to say before it happens")
+data class GameContentsResponse(
+    @Schema(description = "Teams recorded in it, across every season")
+    val teams: Int,
+    @Schema(description = "Roster places those teams carry")
+    val players: Int,
 )
 
 @Schema(description = "What a season holds, for a removal to say before it happens")
@@ -123,14 +130,14 @@ data class RosterEntryResponse(
 data class GameAccountResponse(
     val id: Long,
     val userId: Long,
-    val game: Game,
+    val game: String,
     val handle: String,
 )
 
 @Schema(description = "A banner and how narrowly it was set, as an admin manages them")
 data class EsportsBannerResponse(
     val id: Long,
-    val game: Game,
+    val game: String,
     @Schema(description = "The season it is set for; absent when it carries every season")
     val seasonId: Long? = null,
     @Schema(description = "The team it is set for; absent when it carries every team")

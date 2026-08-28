@@ -6,7 +6,6 @@ import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.SeasonRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
@@ -38,7 +37,7 @@ class TeamRosterServiceIT : UserTestSupport() {
         seasons.save(Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = to))
 
     private fun rosterEntry(season: Season, userId: Long?, handle: String = "handle${System.nanoTime()}"): TeamRosterEntry {
-        val team = teams.save(Team(game = Game.VALORANT, name = "Team ${System.nanoTime()}"))
+        val team = teams.save(Team(game = "VALORANT", name = "Team ${System.nanoTime()}"))
         return entries.save(
             TeamRosterEntry(
                 team = team,
@@ -81,7 +80,7 @@ class TeamRosterServiceIT : UserTestSupport() {
 
     @Test
     fun `the same team fields a different roster each season`() {
-        val team = teams.save(Team(game = Game.CS2, name = "Team ${System.nanoTime()}"))
+        val team = teams.save(Team(game = "CS2", name = "Team ${System.nanoTime()}"))
         val first = season(LocalDate.of(2024, 9, 1), LocalDate.of(2025, 1, 31))
         val second = season(LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
         entries.save(TeamRosterEntry(team = team, season = first, handle = "veteran"))

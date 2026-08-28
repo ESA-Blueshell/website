@@ -1,6 +1,11 @@
 /**
- * Esports domain adapter — the only file in this domain that imports from
- * @/services/api (per frontend ADR-002). Everything else imports from here.
+ * Esports domain adapter — every call this domain makes to the api goes through here, and
+ * everything else in the domain imports from here rather than from @/services/api (frontend
+ * ADR-002).
+ *
+ * One exception stands: a component may import a generated enum straight from the sdk, as
+ * LineupEditor does for TeamRole, so that the values a picker offers are the ones the api
+ * declares rather than a list copied into a component and left to drift.
  */
 import {
   addRosterEntry,
@@ -14,6 +19,11 @@ import {
   findBanners,
   findEsportsPage,
   findGameAccounts,
+  createGame,
+  deleteGame,
+  findGameContents,
+  updateGamePage,
+  findGamePages,
   findRoster,
   findSeasonContents,
   findSeasons,
@@ -38,8 +48,8 @@ import type {
   EsportsBannerResponse,
   EsportsPageResponse,
   FieldedTeamResponse,
-  Game as ApiGame,
   GameAccountResponse,
+  GamePageResponse,
   RosterEntryResponse,
   SeasonResponse,
   TeamResponse,
@@ -47,7 +57,11 @@ import type {
   TeamRosterResponse,
 } from "@/services/api"
 
-export type Game = ApiGame
+/**
+ * A game's code: the identity a team, a roster and a member's handle point at. A plain string
+ * because the games that exist are rows rather than a list fixed when the code is built.
+ */
+export type Game = string
 export type TeamRole = ApiTeamRole
 export type EsportsPage = EsportsPageResponse
 export type Season = SeasonResponse
@@ -55,6 +69,8 @@ export type Team = TeamResponse
 export type TeamRoster = TeamRosterResponse
 export type RosterEntry = RosterEntryResponse
 export type GameAccount = GameAccountResponse
+/** A game itself: what it is called, the art it is drawn with, and how its page presents it. */
+export type GameRecord = GamePageResponse
 export type FieldedTeam = FieldedTeamResponse
 export type EsportsBanner = EsportsBannerResponse
 
@@ -62,6 +78,97 @@ export type EsportsBanner = EsportsBannerResponse
 export interface SeasonContents {
   teams: number
   players: number
+}
+
+/**
+ * Every game the association knows, in the order their records put them.
+ *
+ * Answers with a list whatever came back. Every page asks for this now, including ones served
+ * before the api is reachable, and a body that is not the list it was promised must read as no
+ * games rather than take the navigation down with it.
+ */
+export async function loadGames(): Promise<GameRecord[]> {
+  const res = await findGamePages()
+  return Array.isArray(res.data) ? res.data : []
+}
+
+export interface GameSaved {
+  ok: true
+  game: GameRecord
+}
+
+/**
+ * A game the association has started playing.
+ *
+ * Its code is the api's to derive from the name: a code is what everything else points at, and
+ * two people naming the same game must not end up with two of it.
+ */
+export async function addGameOrReason(
+  game: {name: string; slug: string},
+): Promise<GameSaved | SeasonRefused> {
+  const res = await createGame({body: {name: game.name, slug: game.slug}})
+  if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be added.")}
+  return {ok: true, game: res.data}
+}
+
+/**
+ * A game corrected, from wherever it is shown.
+ *
+ * Its code is not here: it is the identity a team, a roster and a member's handle point at, and
+ * changing it would be a different game.
+ */
+export async function saveGameOrReason(
+  code: Game,
+  game: {
+    name: string
+    slug: string
+    intro: string | null
+    accent: string | null
+    mark: string | null
+    banner: string | null
+    sortIndex: number
+    fielded: boolean
+  },
+): Promise<GameSaved | SeasonRefused> {
+  const res = await updateGamePage({
+    path: {game: code},
+    body: {
+      name: game.name,
+      slug: game.slug,
+      intro: game.intro ?? undefined,
+      accent: game.accent ?? undefined,
+      mark: game.mark ?? undefined,
+      banner: game.banner ?? undefined,
+      sortIndex: game.sortIndex,
+      fielded: game.fielded,
+    },
+  })
+  if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be saved.")}
+  return {ok: true, game: res.data}
+}
+
+/**
+ * What a game holds, so an offer to remove it can say what would go with it.
+ *
+ * Answers null when the read fails, rather than zero. A failed read is not an empty game, and
+ * reporting it as one would offer to remove a game while telling the reader it holds nothing.
+ */
+export async function loadGameContents(game: Game): Promise<SeasonContents | null> {
+  const res = await findGameContents({path: {game}})
+  return res.data ?? null
+}
+
+/**
+ * A game taken off the site.
+ *
+ * The refusal is the point: a game carrying history cannot go, and the api says so in words the
+ * reader can act on. The sdk answers with an error rather than throwing, so a caller that only
+ * catches would report a removal that never happened.
+ */
+export async function dropGameOrReason(game: Game): Promise<{ok: true} | SeasonRefused> {
+  const res = await deleteGame({path: {game}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The game could not be removed.")}
+  return {ok: true}
 }
 
 /**
@@ -73,11 +180,16 @@ export interface SeasonContents {
  */
 const media = (path?: string | null): string | null => (path ? apiUrl(path) : null)
 
+const withPoster = <T extends {posterUrl?: string | null}>(team: T): T =>
+  ({...team, posterUrl: media(team.posterUrl)})
+
+const withIcon = <T extends {iconUrl?: string | null}>(entry: T): T =>
+  ({...entry, iconUrl: media(entry.iconUrl)})
+
 const withMedia = (team: TeamRoster): TeamRoster => ({
-  ...team,
-  posterUrl: media(team.posterUrl),
+  ...withPoster(team),
   bannerUrl: media(team.bannerUrl),
-  members: team.members.map(member => ({...member, iconUrl: media(member.iconUrl)})),
+  members: team.members.map(withIcon),
 })
 
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {
@@ -120,10 +232,10 @@ export async function saveSeasonOrReason(
 }
 
 /** Whatever the api said, preferring the specific complaint over the generic one. */
-function reasonFrom(error: unknown): string {
+function reasonFrom(error: unknown, fallback = "The season could not be saved."): string {
   const body = (error as {detail?: string; title?: string; errors?: Array<{message?: string}>})
   const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
-  return fields || body?.detail || body?.title || "The season could not be saved."
+  return fields || body?.detail || body?.title || fallback
 }
 
 export async function saveSeason(
@@ -156,7 +268,7 @@ export async function dropSeason(id: number): Promise<void> {
 
 export async function loadTeams(game: Game): Promise<Team[]> {
   const res = await findTeams({query: {game}})
-  return (res.data ?? []).map(one => ({...one, posterUrl: media(one.posterUrl)}))
+  return (res.data ?? []).map(withPoster)
 }
 
 export async function saveTeam(
@@ -223,7 +335,7 @@ export async function fieldTeamInSeason(
 
 export async function loadRoster(teamId: number, seasonId: number): Promise<RosterEntry[]> {
   const res = await findRoster({path: {teamId}, query: {seasonId}})
-  return (res.data ?? []).map(one => ({...one, iconUrl: media(one.iconUrl)}))
+  return (res.data ?? []).map(withIcon)
 }
 
 export async function addToRoster(
@@ -340,25 +452,30 @@ export async function dropGameAccount(userId: number, game: Game): Promise<void>
  */
 export async function setTeamPoster(teamId: number, file: File): Promise<Team | null> {
   const res = await uploadTeamPoster({path: {id: teamId}, body: {file}})
-  return res.data ? {...res.data, posterUrl: media(res.data.posterUrl)} : null
+  return res.data ? withPoster(res.data) : null
 }
 
 export async function clearTeamPoster(teamId: number): Promise<Team | null> {
   const res = await removeTeamPoster({path: {id: teamId}})
-  return res.data ? {...res.data, posterUrl: media(res.data.posterUrl)} : null
+  return res.data ? withPoster(res.data) : null
 }
 
 export async function setRosterIcon(entryId: number, file: File): Promise<RosterEntry | null> {
   const res = await uploadRosterIcon({path: {id: entryId}, body: {file}})
-  return res.data ? {...res.data, iconUrl: media(res.data.iconUrl)} : null
+  return res.data ? withIcon(res.data) : null
 }
 
 export async function clearRosterIcon(entryId: number): Promise<RosterEntry | null> {
   const res = await removeRosterIcon({path: {id: entryId}})
-  return res.data ? {...res.data, iconUrl: media(res.data.iconUrl)} : null
+  return res.data ? withIcon(res.data) : null
 }
 
-/** Every banner set for a game, so the levels already covered can be shown before another is added. */
+/**
+ * Every banner set for a game, so the levels already covered can be shown before another is added.
+ *
+ * Resolved with `apiUrl` rather than `media`: a banner always has a url, so there is no absence
+ * to carry through.
+ */
 export async function loadBanners(game: Game): Promise<EsportsBanner[]> {
   const res = await findBanners({query: {game}})
   return (res.data ?? []).map(one => ({...one, url: apiUrl(one.url)}))

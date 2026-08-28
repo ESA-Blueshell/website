@@ -2,7 +2,6 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.EsportsBannerRepository
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.shared.enums.Game
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -20,7 +19,7 @@ class BannerResolutionService(
     private val banners: EsportsBannerRepository,
 ) {
     @Transactional(readOnly = true)
-    fun resolve(game: Game, seasonId: Long? = null, teamId: Long? = null): File? =
+    fun resolve(game: String, seasonId: Long? = null, teamId: Long? = null): File? =
         mostSpecificBanner(banners.findAllByGame(game), seasonId, teamId)?.file
 
     /**
@@ -30,7 +29,7 @@ class BannerResolutionService(
      * query per team for a set of banners that does not change between them.
      */
     @Transactional(readOnly = true)
-    fun resolveForTeams(game: Game, seasonId: Long?, teamIds: Collection<Long>): Map<Long, File> {
+    fun resolveForTeams(game: String, seasonId: Long?, teamIds: Collection<Long>): Map<Long, File> {
         val candidates = banners.findAllByGame(game)
         return teamIds.mapNotNull { teamId ->
             mostSpecificBanner(candidates, seasonId, teamId)?.let { teamId to it.file }

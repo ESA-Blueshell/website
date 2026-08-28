@@ -28,6 +28,7 @@ type Fixtures = {
   esportsSeasons?: Array<Record<string, unknown>>
   esportsTeams?: Array<Record<string, unknown>>
   esportsRoster?: Array<Record<string, unknown>>
+  esportsGames?: Array<Record<string, unknown>>
   boards?: Array<Record<string, unknown>>
   cohortSubjectDetail?: Record<string, unknown>
 }
@@ -40,6 +41,21 @@ const brevoTargets = [
   // Same name as the committee list above, filed somewhere else: only the path tells them apart.
   {system: "BREVO", externalId: "88", kind: "LIST", label: "Web Cmte", folderLabel: "Archive", path: ["Brevo", "Archive"], memberCount: 0, linkedCohortId: null},
   {system: "BREVO", externalId: "50", kind: "LIST", label: "Loose ends", folderLabel: null, path: ["Brevo"], memberCount: null, linkedCohortId: null},
+]
+
+/**
+ * The games themselves, as their records hold them: what each is called, the address its page
+ * answers to, and the art it is drawn with. The pages read every one of these from here.
+ */
+const esportsGames = [
+  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", mark: "valorant.png", banner: "valorantesports1.jpg", intro: "Shooters, and plenty of them.", sortIndex: 1, fielded: true},
+  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", mark: "cs2.png", banner: "csgoesports2.jpg", intro: "Those sweet headshots.", sortIndex: 2, fielded: true},
+  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", mark: "league.png", banner: "leagueesportsbg1.jpg", intro: "A special place.", sortIndex: 3, fielded: true},
+  {game: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", mark: "rocketleague.png", banner: "rocketleagueesports.jpg", intro: "Football, with rocket cars.", sortIndex: 4, fielded: true},
+  {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", mark: "geoguessrlogo.webp", banner: null, intro: "Guessing where.", sortIndex: 5, fielded: true},
+  // No accent or mark has ever been written for Trackmania: it reads on the island's own blue.
+  {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, mark: null, banner: null, intro: "Driving, fast.", sortIndex: 6, fielded: true},
+  {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", mark: "cs2.png", banner: null, intro: null, sortIndex: 7, fielded: false},
 ]
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
@@ -181,6 +197,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   // Teams written down and fielded during the test, so a page asked again reports them the
   // way the api would rather than forgetting they were added.
   const teamsMade: Array<Record<string, unknown>> = []
+  /** Games added during the test, which every read then reports as one of the games. */
+  const gamesMade: Array<Record<string, string | number | boolean | null>> = []
+  /** Games corrected during the test, which every read then reports as corrected. */
+  const gamesEdited = new Map<string, Record<string, string | number | boolean | null>>()
+  /** Games removed during the test, which the reads then leave out. */
+  const gamesGone = new Set<string>()
   const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
   let nextTeamId = 70
   let nextEntryId = 200
@@ -670,6 +692,78 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "PUT" && /^\/boards\/\d+\/members\/\d+\/member$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       return fulfillJson(route, {id: 92, boardId: 9, userId: body.userId ?? null, role: "Secretary", name: "Viktor Petrov", description: null, image: null, startDate: "2025-09-01", endDate: "2026-08-31", version: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"})
+    }
+    // A game added during a test is one of the games from then on, the way the api has it.
+    if (method === "POST" && path === "/esports/games") {
+      const body = JSON.parse(request.postData() ?? "{}") as {name?: string; slug?: string}
+      const slug = String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+      const held = known.find(one => one.slug === slug)
+      if (held) {
+        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+      }
+      const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+      const made = {
+        game: code, name: String(body.name ?? ""), slug, accent: null, mark: null, banner: null,
+        intro: null, sortIndex: known.length + 1, fielded: true,
+      }
+      gamesMade.push(made)
+      return fulfillJson(route, made, 201)
+    }
+    if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+\/contents$/.test(path)) {
+      const code = path.split("/")[3] as string
+      const held = [...(fixtures.esportsTeams ?? []), ...teamsMade].filter(one => one.game === code)
+      const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
+      return fulfillJson(route, {teams: held.length + seeded, players: (held.length + seeded) * 3})
+    }
+
+    if (method === "DELETE" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
+      const code = path.split("/").pop() as string
+      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+      const held = [...(fixtures.esportsTeams ?? []), ...teamsMade].filter(one => one.game === code)
+      const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
+      if (held.length + seeded > 0) {
+        const game = known.find(one => one.game === code)
+        return fulfillJson(route, {
+          detail: `${game?.name ?? code} holds ${held.length + seeded} teams and 6 roster places. `
+            + "Mark it as no longer fielded instead, and everything it played stays readable.",
+        }, 409)
+      }
+      gamesGone.add(code)
+      return route.fulfill({status: 204, body: ""})
+    }
+
+    // A game corrected during a test reads corrected from then on.
+    if (method === "PUT" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
+      const code = path.split("/").pop() as string
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const slug = String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+      const held = known.find(one => one.slug === slug && one.game !== code)
+      if (held) {
+        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+      }
+      const was = known.find(one => one.game === code)
+      const now = {
+        ...(was ?? {game: code}),
+        name: body.name ?? was?.name ?? code,
+        slug,
+        intro: body.intro ?? null,
+        accent: body.accent ?? null,
+        mark: body.mark ?? null,
+        banner: body.banner ?? null,
+        sortIndex: body.sortIndex ?? was?.sortIndex ?? 0,
+        fielded: body.fielded ?? true,
+      } as Record<string, string | number | boolean | null>
+      gamesEdited.set(code, now)
+      return fulfillJson(route, now)
+    }
+    // The api answers in the order the records put the games in, and so does this.
+    if (method === "GET" && path === "/esports/games") {
+      const all = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+        .filter(one => !gamesGone.has(String(one.game)))
+        .map(one => gamesEdited.get(String(one.game)) ?? one)
+      return fulfillJson(route, all)
     }
     // [A-Z0-9_]+ rather than [A-Z_]+: a game's enum name can carry a digit, and
     // CS2 is one. With the digit excluded this route never matched, so every CS2

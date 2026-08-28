@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.domain
 
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import java.time.LocalDate
 
@@ -44,7 +43,7 @@ data class TeamView(
 
 /** A whole game page: the season being shown, the ones that can be, and that season's teams. */
 data class EsportsPageView(
-    val game: Game,
+    val game: String,
     val season: SeasonView?,
     val seasons: List<SeasonView>,
     val teams: List<TeamView>,

@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import Esports from "@/pages/Esports.vue"
+import {forgetGames} from "@/domains/esports/island/useGames"
 
 const seasons = [
   {id: 1, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31"},
@@ -20,8 +21,16 @@ const pageFor = (game: string) => ({
     : [],
 })
 
+/** The games as their records have them: the index keeps no list of its own to fall back on. */
+const games = [
+  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", mark: null, banner: null, intro: null, sortIndex: 1, fielded: true},
+  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", mark: null, banner: null, intro: null, sortIndex: 2, fielded: true},
+  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", mark: null, banner: null, intro: null, sortIndex: 3, fielded: true},
+]
+
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadEsportsPage: vi.fn(async (game: string) => pageFor(game)),
+  loadGames: vi.fn(async () => games),
   saveSeasonOrReason: vi.fn(async () => ({ok: true, season: seasons[0]})),
   // Every season written down, which is more than the games were fielded in.
   loadSeasons: vi.fn(async () => [...seasons, emptySeason]),
@@ -40,7 +49,11 @@ const mountPage = ({board = false}: {board?: boolean} = {}) =>
   })
 
 describe("Esports page", () => {
-  beforeEach(() => vi.clearAllMocks())
+  // The records are read once and shared, so a case that changes them must clear them first.
+  beforeEach(() => {
+    vi.clearAllMocks()
+    forgetGames()
+  })
 
   it("sits inside the esports island", () => {
     // The island's root is what its reset and its tokens hang off.

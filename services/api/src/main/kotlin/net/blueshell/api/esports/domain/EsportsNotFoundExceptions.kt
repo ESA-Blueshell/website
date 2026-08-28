@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.domain
 
-import net.blueshell.api.shared.enums.Game
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
@@ -31,5 +30,5 @@ class BannerNotFoundException(id: Long) :
  * A banner narrowed to a team has to be a banner for that team's own game, or it would be
  * unreachable: nothing ever resolves a banner for a game the team does not play.
  */
-class BannerTeamPlaysAnotherGameException(team: String, game: Game) :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "$team does not play ${game.label}")
+class BannerTeamPlaysAnotherGameException(team: String, game: String) :
+    ResponseStatusException(HttpStatus.BAD_REQUEST, "$team does not play ${game}")

@@ -8,7 +8,6 @@ import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.shared.enums.Game
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -58,7 +57,7 @@ class EsportsMediaService(
     }
 
     @Transactional(readOnly = true)
-    fun findBanners(game: Game): List<EsportsBanner> = banners.findAllByGame(game)
+    fun findBanners(game: String): List<EsportsBanner> = banners.findAllByGame(game)
 
     /**
      * Sets the banner for one combination of game, season and team, replacing whatever was
@@ -68,7 +67,7 @@ class EsportsMediaService(
      * a second: a combination has one banner, and the database says so too.
      */
     @Transactional
-    fun setBanner(game: Game, seasonId: Long?, teamId: Long?, upload: MultipartFile): EsportsBanner {
+    fun setBanner(game: String, seasonId: Long?, teamId: Long?, upload: MultipartFile): EsportsBanner {
         val team = teamId?.let { team(it) }
         if (team != null && team.game != game) throw BannerTeamPlaysAnotherGameException(team.name, game)
         val season = seasonId?.let { seasons.findById(it) }

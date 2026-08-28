@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from "vitest"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
 const {
   mockAxiosCreate,
@@ -71,7 +71,7 @@ vi.mock("axios", () => {
 })
 
 import {AxiosHeaders} from "axios"
-import {createClientConfig} from "@/services/api/blueshell.runtime"
+import {apiUrl, createClientConfig} from "@/services/api/blueshell.runtime"
 
 describe("blueshell runtime csrf behavior", () => {
   beforeEach(() => {
@@ -255,5 +255,41 @@ describe("blueshell runtime csrf behavior", () => {
     const updatedHeaders = (updated as { headers: AxiosHeaders }).headers
 
     expect(updatedHeaders.get("Authorization")).toBeUndefined()
+  })
+})
+
+describe("apiUrl", () => {
+  // The api answers with paths of its own, such as /files/public/1, because it cannot know
+  // what sits in front of it. Left bare, such a path resolves against the page's origin —
+  // the frontend, not the api — which is how every uploaded esports image came to 404.
+  beforeEach(() => {
+    vi.stubEnv("VITE_APP_URL", "https://esa-blueshell.nl/api")
+  })
+
+  // vitest is not configured to unstub environments between files, so a stub left standing
+  // here would follow the worker into the next one.
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it("puts a path the api handed back onto the api's own base", () => {
+    expect(apiUrl("/files/public/1")).toBe("https://esa-blueshell.nl/api/files/public/1")
+  })
+
+  it("leaves an absolute url alone, so resolving twice cannot corrupt one", () => {
+    const absolute = "https://cdn.example.com/poster.png"
+    expect(apiUrl(absolute)).toBe(absolute)
+    expect(apiUrl(apiUrl(absolute))).toBe(absolute)
+  })
+
+  it("joins with exactly one slash however the base and the path are spelled", () => {
+    vi.stubEnv("VITE_APP_URL", "https://esa-blueshell.nl/api/")
+    expect(apiUrl("/files/public/2")).toBe("https://esa-blueshell.nl/api/files/public/2")
+    expect(apiUrl("files/public/2")).toBe("https://esa-blueshell.nl/api/files/public/2")
+  })
+
+  it("resolves against the page's own origin when no api url is configured", () => {
+    vi.stubEnv("VITE_APP_URL", "")
+    expect(apiUrl("/files/public/3")).toBe(`${window.location.origin}/api/files/public/3`)
   })
 })

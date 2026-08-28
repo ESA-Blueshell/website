@@ -57,30 +57,12 @@ const routes: RouteRecordRaw[] = [
     name: "board",
     component: () => import("@/pages/Board.vue"),
   },
+  // Every game's page, found by the address its record names. Declared after the fixed
+  // esports paths above so those keep winning, and adding a game needs no route written.
   {
-    path: "/esports/league-of-legends",
-    name: "league",
-    component: () => import("@/pages/esports/League.vue"),
-  },
-  {
-    path: "/esports/counter-strike-2",
-    name: "cs2",
-    component: () => import("@/pages/esports/Cs2.vue"),
-  },
-  {
-    path: "/esports/valorant",
-    name: "valorant",
-    component: () => import("@/pages/esports/Valorant.vue"),
-  },
-  {
-    path: "/esports/rocketleague",
-    name: "rocketleague",
-    component: () => import("@/pages/esports/RocketLeague.vue"),
-  },
-  {
-    path: "/esports/geoguessr",
-    name: "geoguessr",
-    component: () => import("@/pages/esports/Geoguessr.vue"),
+    path: "/esports/:slug",
+    name: "game",
+    component: () => import("@/pages/esports/GameBySlug.vue"),
   },
   {
     path: "/partners/become-a-partner",

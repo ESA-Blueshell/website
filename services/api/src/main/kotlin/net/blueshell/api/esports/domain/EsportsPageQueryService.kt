@@ -3,7 +3,6 @@ package net.blueshell.api.esports.domain
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,10 +27,13 @@ class EsportsPageQueryService(
     private val accounts: UserGameAccountService,
     private val profiles: MemberProfileService,
     private val users: UserService,
+    private val games: GamePageService,
     private val banners: BannerResolutionService,
 ) {
     @Transactional(readOnly = true)
-    fun page(game: Game, seasonId: Long? = null): EsportsPageView {
+    fun page(game: String, seasonId: Long? = null): EsportsPageView {
+        // A code naming no game is refused rather than answered with an empty page.
+        games.requireGame(game)
         val available = fielded.findSeasonIdsFielded(game)
             .mapNotNull { id -> runCatching { seasons.findById(id) }.getOrNull() }
             .sortedByDescending { it.startDate }

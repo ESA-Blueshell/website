@@ -2,12 +2,9 @@ package net.blueshell.api.esports.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -37,9 +34,8 @@ class UserGameAccount(
     @Column(name = "user_id", nullable = false)
     var userId: Long,
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "game", nullable = false, length = 32)
-    var game: Game,
+    var game: String,
 
     @Column(name = "handle", nullable = false, length = 128)
     var handle: String,

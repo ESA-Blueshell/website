@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -39,7 +38,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     }
 
     private fun team(name: String = "Team ${System.nanoTime()}"): Team =
-        teams.save(Team(game = Game.TRACKMANIA, name = name))
+        teams.save(Team(game = "TRACKMANIA", name = name))
 
     @Test
     fun `a team can be fielded before anybody is named to it, and shows with an empty roster`() {
@@ -48,7 +47,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
 
         fielded.field(team.id!!, season.id!!)
 
-        val view = page.page(Game.TRACKMANIA, season.id)
+        val view = page.page("TRACKMANIA", season.id)
         assertThat(view.teams).extracting<String> { it.name }.contains("BS Nobody Yet")
         assertThat(view.teams.single { it.name == "BS Nobody Yet" }.members).isEmpty()
     }
@@ -73,7 +72,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val again = fielded.field(team.id!!, season.id!!)
 
         assertThat(again.id).isEqualTo(first.id)
-        assertThat(page.page(Game.TRACKMANIA, season.id).teams).hasSize(1)
+        assertThat(page.page("TRACKMANIA", season.id).teams).hasSize(1)
     }
 
     @Test
@@ -85,9 +84,9 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         // A team of its own, so the other season is one this game genuinely played in.
         fielded.field(team("BS The Other Lot").id!!, other.id!!)
 
-        assertThat(page.page(Game.TRACKMANIA, played.id).teams).extracting<String> { it.name }
+        assertThat(page.page("TRACKMANIA", played.id).teams).extracting<String> { it.name }
             .contains("BS One Season")
-        assertThat(page.page(Game.TRACKMANIA, other.id).teams).extracting<String> { it.name }
+        assertThat(page.page("TRACKMANIA", other.id).teams).extracting<String> { it.name }
             .doesNotContain("BS One Season")
     }
 
@@ -97,7 +96,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         fielded.field(team("BS Somebody").id!!, played.id!!)
         val empty = season(LocalDate.of(2032, 9, 1))
 
-        val view = page.page(Game.TRACKMANIA, empty.id)
+        val view = page.page("TRACKMANIA", empty.id)
 
         // The answer for a season with no teams is that it had none, not another season's.
         assertThat(view.season?.id).isEqualTo(empty.id)
@@ -124,12 +123,12 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     @Test
     fun `a season only offers itself once the game has a team in it`() {
         val season = season()
-        val before = page.page(Game.TRACKMANIA).seasons.map { it.id }
+        val before = page.page("TRACKMANIA").seasons.map { it.id }
         assertThat(before).doesNotContain(season.id)
 
         fielded.field(team().id!!, season.id!!)
 
-        assertThat(page.page(Game.TRACKMANIA).seasons.map { it.id }).contains(season.id)
+        assertThat(page.page("TRACKMANIA").seasons.map { it.id }).contains(season.id)
     }
 
     @Test
@@ -140,7 +139,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val team = team("BS Carried Across")
         rosters.add(team.id!!, season.id!!, "Handle", TeamRole.PLAYER, null, null)
 
-        val view = page.page(Game.TRACKMANIA, season.id)
+        val view = page.page("TRACKMANIA", season.id)
 
         assertThat(view.teams).extracting<String> { it.name }.contains("BS Carried Across")
         assertThat(view.teams.single { it.name == "BS Carried Across" }.members).hasSize(1)

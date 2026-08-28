@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -22,7 +21,7 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         """,
     )
     fun findAllByGameAndSeason(
-        @Param("game") game: Game,
+        @Param("game") game: String,
         @Param("seasonId") seasonId: Long,
     ): List<TeamSeason>
 
@@ -36,7 +35,7 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         ORDER BY s.id DESC
         """,
     )
-    fun findSeasonIdsFielded(@Param("game") game: Game): List<Long>
+    fun findSeasonIdsFielded(@Param("game") game: String): List<Long>
 
     fun findByTeamIdAndSeasonId(teamId: Long, seasonId: Long): TeamSeason?
 

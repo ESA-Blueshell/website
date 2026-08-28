@@ -9,7 +9,6 @@ import net.blueshell.api.esports.persistence.SeasonRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.UserGameAccountRepository
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
@@ -45,7 +44,7 @@ class EsportsControllerIT : UserTestSupport() {
     private fun season(name: String, from: LocalDate, to: LocalDate): Season =
         seasons.save(Season(name = name, startDate = from, endDate = to))
 
-    private fun team(game: Game, name: String): Team =
+    private fun team(game: String, name: String): Team =
         teams.save(Team(game = game, name = name, image = "$name.jpg"))
 
     private fun entry(
@@ -77,11 +76,11 @@ class EsportsControllerIT : UserTestSupport() {
         fun `shows the newest season's roster when none is asked for`() {
             val older = season("Older ${System.nanoTime()}", LocalDate.of(2021, 9, 1), LocalDate.of(2022, 1, 31))
             val newer = season("Newer ${System.nanoTime()}", LocalDate.of(2024, 9, 1), LocalDate.of(2025, 1, 31))
-            val squad = team(Game.TRACKMANIA, "Squad ${System.nanoTime()}")
+            val squad = team("TRACKMANIA", "Squad ${System.nanoTime()}")
             entry(squad, older, "backThen")
             entry(squad, newer, "rightNow")
 
-            mvc.perform(get("/esports/games/{game}", Game.TRACKMANIA))
+            mvc.perform(get("/esports/games/{game}", "TRACKMANIA"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.season.name").value(newer.name))
                 .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("rightNow"))
@@ -91,11 +90,11 @@ class EsportsControllerIT : UserTestSupport() {
         fun `shows an older season when asked for it`() {
             val older = season("Older ${System.nanoTime()}", LocalDate.of(2021, 9, 1), LocalDate.of(2022, 1, 31))
             val newer = season("Newer ${System.nanoTime()}", LocalDate.of(2024, 9, 1), LocalDate.of(2025, 1, 31))
-            val squad = team(Game.GEOGUESSR, "Squad ${System.nanoTime()}")
+            val squad = team("GEOGUESSR", "Squad ${System.nanoTime()}")
             entry(squad, older, "backThen")
             entry(squad, newer, "rightNow")
 
-            mvc.perform(get("/esports/games/{game}", Game.GEOGUESSR).param("seasonId", older.id.toString()))
+            mvc.perform(get("/esports/games/{game}", "GEOGUESSR").param("seasonId", older.id.toString()))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.season.id").value(older.id))
                 .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("backThen"))
@@ -104,10 +103,10 @@ class EsportsControllerIT : UserTestSupport() {
         @Test
         fun `never publishes a real name, however the entry was recovered`() {
             val playing = season("Named ${System.nanoTime()}", LocalDate.of(2023, 9, 1), LocalDate.of(2024, 1, 31))
-            val squad = team(Game.SMASH, "Squad ${System.nanoTime()}")
+            val squad = team("SMASH", "Squad ${System.nanoTime()}")
             entry(squad, playing, "handleOnly", displayName = "Ada Lovelace")
 
-            mvc.perform(get("/esports/games/{game}", Game.SMASH))
+            mvc.perform(get("/esports/games/{game}", "SMASH"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$..members[0].handle").value("handleOnly"))
                 .andExpect(jsonPath("$..displayName").doesNotExist())
@@ -117,12 +116,12 @@ class EsportsControllerIT : UserTestSupport() {
         @Test
         fun `renders a linked member by the handle they hold now, not the one they played under`() {
             val member = createUserWithRole(Role.MEMBER)
-            accounts.save(UserGameAccount(userId = member.id!!, game = Game.CS2, handle = "renamed"))
+            accounts.save(UserGameAccount(userId = member.id!!, game = "CS2", handle = "renamed"))
             val playing = season("Linked ${System.nanoTime()}", LocalDate.of(2023, 9, 1), LocalDate.of(2024, 1, 31))
-            val squad = team(Game.CS2, "Squad ${System.nanoTime()}")
+            val squad = team("CS2", "Squad ${System.nanoTime()}")
             entry(squad, playing, "playedAs", userId = member.id)
 
-            mvc.perform(get("/esports/games/{game}", Game.CS2).param("seasonId", playing.id.toString()))
+            mvc.perform(get("/esports/games/{game}", "CS2").param("seasonId", playing.id.toString()))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("renamed"))
         }
@@ -176,7 +175,7 @@ class EsportsControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val member = createUserWithRole(Role.MEMBER)
             val playing = season("Link ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
-            val squad = team(Game.ROCKET_LEAGUE, "Squad ${System.nanoTime()}")
+            val squad = team("ROCKET_LEAGUE", "Squad ${System.nanoTime()}")
             val row = entry(squad, playing, "someone")
 
             mvc.perform(
@@ -206,7 +205,7 @@ class EsportsControllerIT : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                put("/users/{userId}/game-accounts/{game}", member.id, Game.VALORANT)
+                put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"handle":"mine"}"""),
@@ -215,7 +214,7 @@ class EsportsControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.handle").value("mine"))
 
             mvc.perform(
-                put("/users/{userId}/game-accounts/{game}", member.id, Game.VALORANT)
+                put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"handle":"mine again"}"""),
@@ -234,7 +233,7 @@ class EsportsControllerIT : UserTestSupport() {
             val other = createUserWithRole(Role.MEMBER)
 
             mvc.perform(
-                put("/users/{userId}/game-accounts/{game}", other.id, Game.VALORANT)
+                put("/users/{userId}/game-accounts/{game}", other.id, "VALORANT")
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"handle":"not mine"}"""),

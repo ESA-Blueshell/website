@@ -4,7 +4,6 @@ import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.persistence.MemberProfileRepository
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
@@ -46,7 +45,7 @@ class TeamNameConsentIT : UserTestSupport() {
         ),
     )
 
-    private fun team(game: Game): Team =
+    private fun team(game: String): Team =
         teams.save(Team(game = game, name = "Team ${System.nanoTime()}"))
 
     private fun seat(team: Team, season: Season, handle: String, userId: Long?): TeamRosterEntry {
@@ -80,10 +79,10 @@ class TeamNameConsentIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         profileFor(member, consents = true)
         val playing = season()
-        val squad = team(Game.VALORANT)
+        val squad = team("VALORANT")
         seat(squad, playing, "theirHandle", member.id)
 
-        mvc.perform(get("/esports/games/{game}", Game.VALORANT).param("seasonId", playing.id.toString()))
+        mvc.perform(get("/esports/games/{game}", "VALORANT").param("seasonId", playing.id.toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("theirHandle"))
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").value(member.fullName))
@@ -94,10 +93,10 @@ class TeamNameConsentIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         profileFor(member, consents = false)
         val playing = season()
-        val squad = team(Game.CS2)
+        val squad = team("CS2")
         seat(squad, playing, "quietHandle", member.id)
 
-        mvc.perform(get("/esports/games/{game}", Game.CS2).param("seasonId", playing.id.toString()))
+        mvc.perform(get("/esports/games/{game}", "CS2").param("seasonId", playing.id.toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("quietHandle"))
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").doesNotExist())
@@ -107,10 +106,10 @@ class TeamNameConsentIT : UserTestSupport() {
     fun `a member with no profile at all has consented to nothing`() {
         val member = createUserWithRole(Role.MEMBER)
         val playing = season()
-        val squad = team(Game.LEAGUE_OF_LEGENDS)
+        val squad = team("LEAGUE_OF_LEGENDS")
         seat(squad, playing, "noProfile", member.id)
 
-        mvc.perform(get("/esports/games/{game}", Game.LEAGUE_OF_LEGENDS).param("seasonId", playing.id.toString()))
+        mvc.perform(get("/esports/games/{game}", "LEAGUE_OF_LEGENDS").param("seasonId", playing.id.toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").doesNotExist())
     }
@@ -118,10 +117,10 @@ class TeamNameConsentIT : UserTestSupport() {
     @Test
     fun `an entry nobody is linked to is never named, whatever it was recorded with`() {
         val playing = season()
-        val squad = team(Game.ROCKET_LEAGUE)
+        val squad = team("ROCKET_LEAGUE")
         seat(squad, playing, "unattributed", userId = null)
 
-        mvc.perform(get("/esports/games/{game}", Game.ROCKET_LEAGUE).param("seasonId", playing.id.toString()))
+        mvc.perform(get("/esports/games/{game}", "ROCKET_LEAGUE").param("seasonId", playing.id.toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("unattributed"))
             // The seat carries "Recorded Name"; nobody is linked to it, so nobody is named.
@@ -134,16 +133,16 @@ class TeamNameConsentIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val profile = profileFor(member, consents = true)
         val playing = season()
-        val squad = team(Game.TRACKMANIA)
+        val squad = team("TRACKMANIA")
         seat(squad, playing, "revoker", member.id)
 
-        mvc.perform(get("/esports/games/{game}", Game.TRACKMANIA).param("seasonId", playing.id.toString()))
+        mvc.perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").value(member.fullName))
 
         profile.nameOnTeamPages = false
         profiles.save(profile)
 
-        mvc.perform(get("/esports/games/{game}", Game.TRACKMANIA).param("seasonId", playing.id.toString()))
+        mvc.perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").doesNotExist())
     }

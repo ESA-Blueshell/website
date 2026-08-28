@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -39,7 +38,7 @@ class SeasonContentsIT : UserTestSupport() {
         )
     }
 
-    private fun team(): Team = teams.save(Team(game = Game.TRACKMANIA, name = "BS Count ${System.nanoTime()}"))
+    private fun team(): Team = teams.save(Team(game = "TRACKMANIA", name = "BS Count ${System.nanoTime()}"))
 
     @Test
     fun `a season says how many teams and players it holds`() {
@@ -94,5 +93,5 @@ class SeasonContentsIT : UserTestSupport() {
     @Autowired private lateinit var pages: EsportsPageQueryService
 
     private fun page(seasonId: Long) =
-        pages.page(Game.TRACKMANIA, seasonId).teams.map { it.name }
+        pages.page("TRACKMANIA", seasonId).teams.map { it.name }
 }

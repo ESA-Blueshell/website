@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -23,5 +22,5 @@ interface EsportsBannerRepository : JpaRepository<EsportsBanner, Long> {
         WHERE b.game = :game
         """,
     )
-    fun findAllByGame(@Param("game") game: Game): List<EsportsBanner>
+    fun findAllByGame(@Param("game") game: String): List<EsportsBanner>
 }

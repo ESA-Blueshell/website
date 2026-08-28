@@ -5,7 +5,6 @@ import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,11 +28,11 @@ class TeamRosterService(
         entries.findAllByTeamAndSeason(teamId, seasonId)
 
     @Transactional(readOnly = true)
-    fun findByGameAndSeason(game: Game, seasonId: Long): List<TeamRosterEntry> =
+    fun findByGameAndSeason(game: String, seasonId: Long): List<TeamRosterEntry> =
         entries.findAllByGameAndSeason(game, seasonId)
 
     @Transactional(readOnly = true)
-    fun findSeasonIdsWithRosters(game: Game): List<Long> = entries.findSeasonIdsWithRosters(game)
+    fun findSeasonIdsWithRosters(game: String): List<Long> = entries.findSeasonIdsWithRosters(game)
 
     /**
      * Whether a member held a roster spot in a season overlapping the window.

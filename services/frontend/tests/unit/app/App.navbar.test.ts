@@ -7,6 +7,7 @@ import {
   hasAcceptedCookiePolicy,
 } from "@/config/policies"
 import {settle} from "../helpers/testUtils"
+import {forgetGames} from "@/domains/esports/island/useGames"
 
 const {
   mockDisplay,
@@ -101,6 +102,16 @@ vi.mock("@/services/api", () => ({
   findUserById: mockFindUserById,
 }))
 
+// The esports menu lists what the records report as fielded, so a navbar case has to say
+// which games there are.
+vi.mock("@/domains/esports/adapters/esports", () => ({
+  loadGames: vi.fn(async () => [
+    {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: null, mark: null, banner: null, intro: null, sortIndex: 5, fielded: true},
+    {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, mark: null, banner: null, intro: null, sortIndex: 6, fielded: true},
+    {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: null, mark: null, banner: null, intro: null, sortIndex: 7, fielded: false},
+  ]),
+}))
+
 vi.mock("@/components/common/banners/FooterBanner.vue", () => ({
   default: {
     name: "FooterBanner",
@@ -110,6 +121,7 @@ vi.mock("@/components/common/banners/FooterBanner.vue", () => ({
 
 describe("App navbar behavior", () => {
   beforeEach(() => {
+    forgetGames()
     vi.clearAllMocks()
     localStorage.clear()
 
@@ -157,7 +169,9 @@ describe("App navbar behavior", () => {
     expect(wrapper.find('[to="/login"]').exists()).toBe(false)
 
     expect(wrapper.find('[to="/esports/geoguessr"]').exists()).toBe(true)
-    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(false)
+    // Trackmania is fielded and is offered; CS:GO is history and is not.
+    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(true)
+    expect(wrapper.find('[to="/esports/counter-strike-global-offensive"]').exists()).toBe(false)
     expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)
     expect(wrapper.find('[to="/management/jobs"]').exists()).toBe(true)
   })
@@ -171,7 +185,7 @@ describe("App navbar behavior", () => {
     expect(wrapper.find('[icon="mdi-menu"]').exists()).toBe(true)
     expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)
     expect(wrapper.find('[to="/esports/geoguessr"]').exists()).toBe(true)
-    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(false)
+    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(true)
   })
 
   it("loads roles for the logged-in user on mount", async () => {

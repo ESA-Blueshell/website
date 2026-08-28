@@ -10,7 +10,6 @@ import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
-import net.blueshell.api.shared.enums.Game
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -49,7 +48,7 @@ class EsportsController(
     @GetMapping("/games/{game}")
     @PermitAll
     fun findEsportsPage(
-        @PathVariable game: Game,
+        @PathVariable game: String,
         @RequestParam(required = false) seasonId: Long?,
     ): EsportsPageResponse = page.page(game, seasonId).asResponse()
 
@@ -61,13 +60,45 @@ class EsportsController(
     @GetMapping("/games")
     fun findGamePages(): List<GamePageResponse> = gamePages.findAll().map { it.asResponse() }
 
+    /** A game the association has started playing. Its page answers straight away. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PostMapping("/games")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createGame(@Valid @RequestBody request: CreateGameRequest): GamePageResponse =
+        gamePages.create(request.name, request.slug).asResponse()
+
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/games/{game}")
     fun updateGamePage(
-        @PathVariable game: Game,
+        @PathVariable game: String,
         @Valid @RequestBody request: UpdateGamePageRequest,
     ): GamePageResponse =
-        gamePages.update(game, request.slug, request.intro, request.sortIndex, request.fielded).asResponse()
+        gamePages.update(
+            game = game,
+            name = request.name,
+            slug = request.slug,
+            intro = request.intro,
+            accent = request.accent,
+            mark = request.mark,
+            banner = request.banner,
+            sortIndex = request.sortIndex,
+            fielded = request.fielded,
+        ).asResponse()
+
+    /** What a game holds, so the offer to remove it can say what goes with it. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @GetMapping("/games/{game}/contents")
+    fun findGameContents(@PathVariable game: String): GameContentsResponse {
+        val (teams, players) = gamePages.contentsOf(game)
+        return GameContentsResponse(teams = teams.toInt(), players = players.toInt())
+    }
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @DeleteMapping("/games/{game}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteGame(@PathVariable game: String) {
+        gamePages.delete(game)
+    }
 
     @GetMapping("/seasons")
     @PermitAll
@@ -135,7 +166,7 @@ class EsportsController(
     /** Every banner set for a game, so the levels already covered can be seen before another is added. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/banners")
-    fun findBanners(@RequestParam game: Game): List<EsportsBannerResponse> =
+    fun findBanners(@RequestParam game: String): List<EsportsBannerResponse> =
         media.findBanners(game).map { it.asResponse() }
 
     /**
@@ -148,7 +179,7 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/banners", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadBanner(
-        @RequestParam game: Game,
+        @RequestParam game: String,
         @RequestParam(required = false) seasonId: Long?,
         @RequestParam(required = false) teamId: Long?,
         @RequestPart("file") file: MultipartFile,
@@ -163,7 +194,7 @@ class EsportsController(
 
     @GetMapping("/teams")
     @PermitAll
-    fun findTeams(@RequestParam game: Game): List<TeamResponse> =
+    fun findTeams(@RequestParam game: String): List<TeamResponse> =
         teams.findAllByGame(game).map { it.asResponse() }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")

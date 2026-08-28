@@ -2,6 +2,7 @@
 import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
 import {
+  addGameOrReason,
   fieldTeamInSeason,
   loadRoster,
   loadTeamSeasons,
@@ -13,6 +14,7 @@ import {
   type Season,
   type Team,
 } from "../adapters/esports"
+import {useGames} from "./useGames"
 
 /**
  * Putting a team into the season on show: a new one, or one that played before.
@@ -44,8 +46,16 @@ const emit = defineEmits<{
 
 type Source = "new" | "existing"
 
+/** What the game picker offers besides the games there already are. */
+const ANOTHER = "__another__"
+
+// A game added here is offered everywhere teams are added, which means re-reading the records.
+const {refresh: refreshGames} = useGames()
+
 const source = ref<Source>("new")
 const chosenGame = ref<Game | null>(null)
+const newGameName = ref("")
+const newGameSlug = ref("")
 const name = ref("")
 const chosenTeamId = ref<number | null>(null)
 const teamSearch = ref("")
@@ -56,7 +66,25 @@ const dropped = ref<Set<number>>(new Set())
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
-const game = computed<Game | null>(() => props.game ?? chosenGame.value)
+/**
+ * A game can be added where a game is being chosen, which is the index. A game's own page is
+ * about one game and offers no picker.
+ */
+const mayAddGame = computed(() => props.game == null)
+
+const addingGame = computed(() => chosenGame.value === ANOTHER)
+
+/**
+ * The address as it will be stored, so what is typed and what is reachable are the same thing.
+ * GamePageService.addressFor is the rule; this shows it rather than deciding it.
+ */
+const addressPreview = computed(() =>
+  newGameSlug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))
+
+const game = computed<Game | null>(() => {
+  if (props.game) return props.game
+  return addingGame.value ? null : chosenGame.value
+})
 
 /**
  * A game already in the season on show is not one to add to it: putting another team into a
@@ -103,14 +131,23 @@ const pick = (team: Team) => {
 
 const carried = computed<RosterEntry[]>(() => lineup.value.filter(entry => !dropped.value.has(entry.id)))
 
+const named = computed(() =>
+  (source.value === "new" ? name.value.trim() !== "" : chosenTeamId.value != null))
+
 const complete = computed(() => {
+  // A game being added is named here rather than picked, and its address comes with it.
+  if (addingGame.value) {
+    return newGameName.value.trim() !== "" && newGameSlug.value.trim() !== "" && name.value.trim() !== ""
+  }
   if (game.value == null) return false
-  return source.value === "new" ? name.value.trim() !== "" : chosenTeamId.value != null
+  return named.value
 })
 
 const reset = () => {
   source.value = "new"
   chosenGame.value = props.game ?? null
+  newGameName.value = ""
+  newGameSlug.value = ""
   name.value = ""
   chosenTeamId.value = null
   teamSearch.value = ""
@@ -129,6 +166,11 @@ watch(() => props.open, (open) => {
 watch([game, source, () => props.open], async ([forGame, from, open]) => {
   if (!open || from !== "existing" || forGame == null) return
   candidates.value = await loadTeams(forGame)
+})
+
+// A game nobody has played yet has no team that played before, so only the one path is open.
+watch(addingGame, (adding) => {
+  if (adding) source.value = "new"
 })
 
 /**
@@ -163,11 +205,31 @@ const reasonFrom = (error: unknown): string => {
 
 const submit = async () => {
   const season = props.season
-  const forGame = game.value
-  if (!complete.value || saving.value || season == null || forGame == null) return
+  if (!complete.value || saving.value || season == null) return
   saving.value = true
   failure.value = null
   try {
+    // The game first, where one is being added: everything below points at its code.
+    let forGame = game.value
+    if (addingGame.value) {
+      const made = await addGameOrReason({name: newGameName.value.trim(), slug: newGameSlug.value.trim()})
+      if (!made.ok) {
+        // Whatever was typed stays: the address is the usual thing to correct.
+        failure.value = made.reason
+        return
+      }
+      await refreshGames()
+      forGame = made.game.game
+      // The game is added and stays added, so the dialog stops offering to add it. Without this
+      // a team refused below leaves a game nobody asked twice for, and trying again would ask
+      // the api to add it a second time and be told its address is taken.
+      chosenGame.value = forGame
+    }
+    if (forGame == null) {
+      failure.value = "Pick a game first."
+      return
+    }
+
     let team: Team | null
     if (source.value === "new") {
       const created = await saveTeamOrReason({game: forGame, name: name.value.trim()})
@@ -228,7 +290,7 @@ const submit = async () => {
       @submit.prevent="submit"
     >
       <label
-        v-if="gamesToOffer.length > 0"
+        v-if="gamesToOffer.length > 0 || mayAddGame"
         class="team-form__field"
       >
         <span class="team-form__label">Game</span>
@@ -248,16 +310,48 @@ const submit = async () => {
           >
             {{ option.name }}
           </option>
+          <option
+            v-if="mayAddGame"
+            :value="ANOTHER"
+          >
+            Something else — a game we have started playing
+          </option>
         </select>
       </label>
 
       <p
-        v-else-if="games && games.length > 0"
+        v-else-if="games && games.length > 0 && !mayAddGame"
         class="team-form__note"
         data-testid="add-team-no-games"
       >
         Every game the association knows already plays this season.
       </p>
+
+      <template v-if="addingGame">
+        <label class="team-form__field">
+          <span class="team-form__label">What the game is called</span>
+          <input
+            v-model="newGameName"
+            class="team-form__input"
+            data-testid="add-game-name"
+            maxlength="64"
+            required
+            type="text"
+          >
+        </label>
+        <label class="team-form__field">
+          <span class="team-form__label">What its page answers to</span>
+          <input
+            v-model="newGameSlug"
+            class="team-form__input"
+            data-testid="add-game-slug"
+            maxlength="64"
+            required
+            type="text"
+          >
+          <span class="team-form__hint">esa-blueshell.nl/esports/{{ addressPreview }}</span>
+        </label>
+      </template>
 
       <div
         class="team-form__choice"
@@ -561,6 +655,13 @@ const submit = async () => {
 
 .team-form__note {
   color: #a0a6ac;
+}
+
+/* Where the page will answer, under the field that decides it. */
+.team-form__hint {
+  color: #7d848b;
+  font-size: 0.75rem;
+  word-break: break-all;
 }
 
 .team-form__failure {

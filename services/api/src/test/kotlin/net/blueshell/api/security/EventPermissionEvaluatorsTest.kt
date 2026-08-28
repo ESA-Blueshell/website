@@ -1,18 +1,18 @@
 package net.blueshell.api.security
 
 import net.blueshell.api.committee.domain.CommitteePermission
-import net.blueshell.api.domain.event.application.permission.EventBannerPermission
-import net.blueshell.api.domain.event.application.permission.EventPermission
-import net.blueshell.api.domain.event.application.permission.EventSignUpPermission
+import net.blueshell.api.event.domain.EventBannerPermission
+import net.blueshell.api.event.domain.EventPermission
+import net.blueshell.api.event.domain.EventSignUpPermission
 
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.domain.event.application.EventBannerService
-import net.blueshell.api.domain.event.application.EventService
-import net.blueshell.api.domain.event.application.EventSignUpService
-import net.blueshell.api.domain.event.persistence.Event
-import net.blueshell.api.domain.event.persistence.EventBanner
-import net.blueshell.api.domain.event.persistence.EventSignUp
+import net.blueshell.api.event.domain.EventBannerService
+import net.blueshell.api.event.api.EventService
+import net.blueshell.api.event.domain.EventSignUpService
+import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.EventBanner
+import net.blueshell.api.event.persistence.EventSignUp
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

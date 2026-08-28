@@ -1,6 +1,6 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.domain.event.application.calendar.CalendarEventData
+import net.blueshell.api.event.domain.CalendarEventData
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.shared.enums.TargetSystem
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -1,11 +1,12 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.domain.event.application.calendar.CalendarEventData
+import net.blueshell.api.event.domain.CalendarEventData
 import net.blueshell.api.sync.domain.CalendarSyncTarget
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import net.blueshell.api.event.api.CalendarEventData
 
 /** Test/dev calendar target backed by [MockCalendarAdapter]. */
 @Component

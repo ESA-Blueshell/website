@@ -393,7 +393,7 @@ private class DatabaseSeedRunner(
             ),
         )
 
-        val persistedEvents = mutableListOf<net.blueshell.api.domain.event.persistence.Event>()
+        val persistedEvents = mutableListOf<net.blueshell.api.event.persistence.Event>()
         eventScenarios.forEach { scenario ->
             repeat(scenario.count) { index ->
                 val committee = committees[random.nextInt(committees.size)]

@@ -1,8 +1,8 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.domain.event.application.event.EventChange
-import net.blueshell.api.domain.event.application.event.EventChanged
-import net.blueshell.api.domain.event.persistence.Event
+import net.blueshell.api.event.domain.EventChange
+import net.blueshell.api.event.api.EventChanged
+import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.domain.user.application.event.UserCreated
 import net.blueshell.api.domain.user.application.event.UserDeleted
 import net.blueshell.api.platform.integration.mock.MockCalendarAdapter

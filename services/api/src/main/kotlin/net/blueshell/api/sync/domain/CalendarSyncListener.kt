@@ -1,6 +1,6 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.domain.event.application.event.EventChanged
+import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.modulith.events.ApplicationModuleListener

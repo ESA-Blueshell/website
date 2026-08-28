@@ -1,5 +1,6 @@
 package net.blueshell.api.architecture
 
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaClasses
 import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.junit.AnalyzeClasses
@@ -59,8 +60,10 @@ class DataOwnershipArchitectureTest {
         // Event domain listeners should not access Survey repositories
         noClasses()
             .that().resideInAPackage("..domain.event.application.listener..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..domain.survey.persistence.repository..")
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
             .allowEmptyShould(true)
             .check(classes)
     }
@@ -79,18 +82,24 @@ class DataOwnershipArchitectureTest {
         // The rule is about which repositories event code may reach, not about the
         // package the caller happens to sit in.
         noClasses()
-            .that().resideInAPackage("..domain.event.application..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..domain.survey.persistence.repository..")
+            .that().resideInAnyPackage("..domain.event.application..", "net.blueshell.api.event.domain..", "net.blueshell.api.event.api..")
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
             .check(classes)
 
+        // Repositories are named rather than located: the flattened layout keeps them in
+        // the same persistence folder as the entities, which are legitimately reachable.
         // Survey domain application code should not access Event repositories.
         // Widened alongside the event half: the survey command package is gone, so
         // the old pattern matched nothing and the rule passed vacuously.
         noClasses()
-            .that().resideInAPackage("..domain.survey.application..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..domain.event.persistence.repository..")
+            .that().resideInAnyPackage("..domain.survey.application..", "net.blueshell.api.survey.domain..", "net.blueshell.api.survey.api..")
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("..domain.event.persistence..", "net.blueshell.api.event.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
             .check(classes)
     }
 

@@ -18,6 +18,13 @@ import org.springframework.security.access.prepost.PreAuthorize
  * ArchUnit tests enforcing access rules between layers and components.
  * Aligned with ADR-001, ADR-002, ADR-016.
  */
+/*
+ * `domain model and domain services must not depend on outer layers` was retired with the
+ * package flattening. It selected `..domain.model..` and `..domain.service..`, a split only
+ * the auth module ever had, and architecture ADR-003 gives every module one domain folder
+ * holding both. Its cross-module half is what module verification now checks; what remains
+ * intra-module is a single folder with no layer boundary left to cross.
+ */
 class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
     @Test
@@ -159,30 +166,6 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .and(DescribedPredicate.not(openApiConfiguration))
                 .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DOMAIN_WEB)
                 .because("ADR-016: controllers, request/response types and their mappers serve one endpoint; inner layers work with entities and commands")
-        }
-
-    @Test
-    fun `domain model and domain services must not depend on outer layers`(): Unit =
-        arch("Domain layer depends inward only") {
-            noClasses()
-                .that().resideInAnyPackage(
-                    ArchitecturePackages.DOMAIN_MODEL,
-                    ArchitecturePackages.DOMAIN_SERVICE
-                )
-                .should().dependOnClassesThat(
-                    JavaClass.Predicates.resideInAnyPackage(
-                        ArchitecturePackages.WEB,
-                        ArchitecturePackages.APPLICATION,
-                        ArchitecturePackages.INFRASTRUCTURE,
-                        ArchitecturePackages.PLATFORM
-                    // A domain service signals failure by throwing its module's application exception.
-                    ).and(
-                        DescribedPredicate.not(
-                            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.APPLICATION_EXCEPTION)
-                        )
-                    ).`as`("the web, application, infrastructure or platform layers")
-                )
-                .because("ADR-016: a rich domain model reaches persistence and shared, never outward")
         }
 
     @Test

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
-import {seasonBands} from "./seasonAxis"
+import {computed, onBeforeUnmount, onMounted, ref, useId, watch} from "vue"
+import {litAt, seasonStrip, STRIP} from "./seasonAxis"
+import {useMotionAllowed} from "./useMotionAllowed"
 import type {Season} from "../adapters/esports"
 
 defineOptions({name: "SeasonTimeline"})
@@ -19,44 +20,23 @@ const emit = defineEmits<{
   (event: "add"): void
 }>()
 
-const HEIGHT = 104
-/**
- * The narrowest a band may be. Below this a node is untappable and its labels unreadable, so
- * the strip stops shrinking and starts scrolling instead — which is what a phone gets.
- */
-const MIN_BAND = 94
+const motion = useMotionAllowed()
 
+/** How fast the strip travels while the pointer rests on its side, in px per ms. */
+const PAN_RATE = 0.55
+/** How much of the strip a click on a chevron moves, as a share of what is in view. */
+const PAN_STEP = 0.8
 /**
- * How many bands the strip shows at once.
+ * How far in from each edge counts as resting on that side, and at most what share of the
+ * strip that may be.
  *
- * Fewer than this and they stretch to fill the width; more and the strip scrolls, so a band
- * never becomes a sliver just because the association has been running a long time.
+ * The side answers the pointer, but only the chevron answers a click: a band under a fade is
+ * still a band to be clicked, and a control the width of this zone would have taken the
+ * seasons at both ends out of reach. The share matters on a narrow strip, where two zones of
+ * a fixed width would between them be most of it.
  */
-const TILES = 6
-/** How far a node sits above or below the middle of the strip. */
-const AMPLITUDE = 15
-/**
- * How wide a bend is, as a multiple of the height it has to climb.
- *
- * The bend is a fixed window in the middle of the gap rather than the whole of it, so the
- * line runs straight for most of its length and then turns in a short, round corner. Because
- * the window is sized from the climb rather than from the gap, every bend turns through the
- * same radius however far apart two seasons happen to sit.
- */
-const BEND = 1.28
-
-/**
- * Where a bend's control points sit along it, as a fraction of its width.
- *
- * At a half they both land on the midpoint and the bend crosses at a lazy diagonal. Past a
- * half they cross over each other, holding the line flat for longer at each end and taking it
- * through the middle more steeply — a corner rather than a slope, without losing the
- * horizontal tangents that let it meet the straight runs cleanly.
- *
- * Far past a half the middle stands almost upright, which reads as a stair rather than a
- * line. This sits between the two.
- */
-const CORNER = 0.63
+const PAN_ZONE = 84
+const PAN_ZONE_SHARE = 0.18
 
 const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)
@@ -72,8 +52,14 @@ const hovered = ref<number | null>(null)
  */
 const pinned = ref<number | null>(null)
 
+/** Ids for the mask that dissolves the ends of the line, which the two layers share. */
+const uid = useId()
+const fadeId = `${uid}-fade`
+const maskId = `${uid}-ends`
+
 let observer: ResizeObserver | null = null
 onMounted(() => {
+  measureScroll()
   if (!strip.value || typeof ResizeObserver === "undefined") return
   observer = new ResizeObserver(entries => {
     width.value = entries[0]?.contentRect.width ?? 0
@@ -81,7 +67,10 @@ onMounted(() => {
   observer.observe(strip.value)
   width.value = strip.value.clientWidth
 })
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  rest()
+})
 
 /**
  * The block offering another season is a band like the rest, so it takes a share of the strip
@@ -89,72 +78,143 @@ onBeforeUnmount(() => observer?.disconnect())
  */
 const trailing = computed(() => (props.mayEdit ? 1 : 0))
 
-const bands = computed(() => seasonBands(props.seasons, trailing.value))
-
-/** As wide as the strip can be, or as wide as its bands need — whichever is greater. */
-const track = computed<number>(() => {
-  const count = bands.value.length + trailing.value
-  return Math.max(width.value, count * Math.max(width.value / TILES, MIN_BAND))
-})
-
-const nodes = computed(() =>
-  bands.value.map(band => ({
-    id: band.season.id,
-    x: band.at * track.value,
-    y: HEIGHT / 2 + (band.high ? -AMPLITUDE : AMPLITUDE),
-  })),
-)
+/** Where everything on the strip sits, in pixels: the bands, the nodes and the line. */
+const axis = computed(() => seasonStrip(props.seasons, {width: width.value, trailing: trailing.value}))
+const bands = computed(() => axis.value.bands)
+const nodes = computed(() => axis.value.nodes)
+const track = computed(() => axis.value.track)
 
 /**
- * The line: flat through each node, then an eased bend to the level of the next.
+ * How far the line is lit: to the pointer, or to the season on show at rest.
  *
- * Both control points of a bend sit at its midpoint, which leaves the curve horizontal where
- * it meets each flat run — so it reads as a straight stretch, a bend, another straight
- * stretch, rather than as a zigzag with rounded corners. It runs to both edges of the strip
- * because the seasons do.
+ * A share of the track, because that is the box the layer drawing it occupies — so the lit
+ * stretch ends on the middle of the node however many seasons there are and whether or not
+ * the strip reserves a band for adding one.
  */
-const path = computed<string>(() => {
-  const points = nodes.value
-  const first = points[0]
-  const last = points[points.length - 1]
-  if (!first || !last || track.value === 0) return ""
-  const parts = [`M 0,${first.y}`]
-  for (let i = 1; i < points.length; i += 1) {
-    const from = points[i - 1]
-    const to = points[i]
-    if (!from || !to) continue
-    const gap = to.x - from.x
-    const climb = Math.abs(to.y - from.y)
-    // A bend never eats more than two thirds of the gap, however tight the seasons are.
-    const bend = Math.min(gap * 0.66, climb * BEND)
-    const start = from.x + (gap - bend) / 2
-    const end = start + bend
-    parts.push(`L ${start},${from.y}`)
-    parts.push(`C ${start + bend * CORNER},${from.y} ${end - bend * CORNER},${to.y} ${end},${to.y}`)
-  }
-  // The line is about seasons, so it stops where they do: at the edge of the band that
-  // offers another one rather than running on through it.
-  const end = (bands.value[bands.value.length - 1]?.to ?? 1) * track.value
-  parts.push(`L ${end},${last.y}`)
-  return parts.join(" ")
+const litFraction = computed<number>(() => {
+  if (track.value === 0) return 0
+  const at = litAt(nodes.value, hovered.value ?? props.selectedId)
+  return Math.min(Math.max(at / track.value, 0), 1)
 })
 
-/** How much of the line is lit: to the pointer, or to the season on show at rest. */
-const litFraction = computed<number>(() => {
-  const target = nodes.value.find(n => n.id === (hovered.value ?? props.selectedId))
-  if (!target || track.value === 0) return 0
-  return Math.min(Math.max((target.x + 6) / track.value, 0), 1)
-})
+/**
+ * The season on show was chosen here, on a node in front of the visitor.
+ *
+ * The strip opens on the season being shown, which is right when that season arrives from
+ * somewhere the visitor cannot see — a shared link, the back button, a season just written
+ * down. It is wrong after a click: the node they aimed at would slide out from under the
+ * pointer, and whichever band slid into its place would light the line instead.
+ *
+ * The id rather than a flag, because a click is not a promise. Where the page declines to
+ * follow one — a refused read, a parent that ignores it — a flag would sit set and swallow
+ * the next season that did arrive from elsewhere, and the back button would stop centring.
+ * An id only ever holds back the scroll for the one season it names.
+ */
+const chosenHere = ref<number | null>(null)
+
+const choose = (id: number) => {
+  if (id !== props.selectedId) chosenHere.value = id
+  emit("select", id)
+}
 
 /** A strip wider than its window opens on the season being shown, not at the far past. */
-watch([() => props.selectedId, track, width], () => {
+watch([() => props.selectedId, track, width], ([id], [before]) => {
+  const claimed = chosenHere.value
+  chosenHere.value = null
+  if (id !== before && claimed === id) return
   const node = nodes.value.find(n => n.id === props.selectedId)
   const box = scroller.value
   if (!node || !box || box.scrollWidth <= box.clientWidth) return
   box.scrollTo({left: node.x - box.clientWidth / 2, behavior: "auto"})
 }, {flush: "post"})
 
-const yOf = (id: number) => nodes.value.find(n => n.id === id)?.y ?? HEIGHT / 2
+/**
+ * Whether there is anything further to see each way.
+ *
+ * The scrollbar is hidden and the ends fade rather than cutting, so without this the seasons
+ * off the end of the window are simply not found.
+ */
+const canPanBack = ref(false)
+const canPanOn = ref(false)
+
+const measureScroll = () => {
+  const box = scroller.value
+  if (!box) return
+  const furthest = box.scrollWidth - box.clientWidth
+  canPanBack.value = box.scrollLeft > 1
+  canPanOn.value = box.scrollLeft < furthest - 1
+}
+
+watch([track, width], measureScroll, {flush: "post"})
+
+let panning: number | null = null
+let panDirection = 0
+let panAt = 0
+/** Which way the strip is travelling, for the side that is doing it to show that it is. */
+const travelling = ref(0)
+
+/** Travels while the pointer rests on an arrow, and stops where there is no further to go. */
+const pan = (direction: number) => {
+  panDirection = direction
+  travelling.value = direction
+  if (panning != null) return
+  panAt = performance.now()
+  const step = (now: number) => {
+    const box = scroller.value
+    if (!box || panDirection === 0) {
+      panning = null
+      return
+    }
+    box.scrollLeft += panDirection * PAN_RATE * (now - panAt)
+    panAt = now
+    measureScroll()
+    panning = (panDirection < 0 ? canPanBack.value : canPanOn.value)
+      ? requestAnimationFrame(step)
+      : null
+  }
+  panning = requestAnimationFrame(step)
+}
+
+const rest = () => {
+  panDirection = 0
+  travelling.value = 0
+  if (panning != null) cancelAnimationFrame(panning)
+  panning = null
+}
+
+/**
+ * Whether there is a pointer that can rest on something.
+ *
+ * A touch screen has none: a finger is either on the strip or off it, and dragging is how the
+ * strip is travelled there. Left ungated, the first tap anywhere near an edge would set the
+ * strip moving under it.
+ */
+const canHover = () => typeof window === "undefined"
+  || typeof window.matchMedia !== "function"
+  || window.matchMedia("(hover: hover)").matches
+
+/** Travels while the pointer is down either side of the strip, and stands still between. */
+const aim = (event: MouseEvent) => {
+  const box = strip.value?.getBoundingClientRect()
+  if (!box || !canHover()) return
+  const zone = Math.min(PAN_ZONE, box.width * PAN_ZONE_SHARE)
+  const from = event.clientX - box.left
+  if (from <= zone && canPanBack.value) pan(-1)
+  else if (from >= box.width - zone && canPanOn.value) pan(1)
+  else rest()
+}
+
+/** A click moves a screenful, which is the gesture for somebody who is not hovering at all. */
+const panBy = (direction: number) => {
+  const box = scroller.value
+  if (!box) return
+  box.scrollBy({
+    left: direction * box.clientWidth * PAN_STEP,
+    behavior: motion.decorative.value ? "smooth" : "auto",
+  })
+}
+
+const yOf = (id: number) => nodes.value.find(n => n.id === id)?.y ?? STRIP.height / 2
 
 const enter = (id: number) => {
   hovered.value = id
@@ -175,14 +235,16 @@ const step = (from: number, by: number) => {
     :style="{
       '--accent': accent,
       '--lit': `${litFraction * 100}%`,
-      '--h': `${HEIGHT}px`,
+      '--h': `${STRIP.height}px`,
       '--track': `${track}px`,
     }"
-    @mouseleave="hovered = null"
+    @mousemove="aim"
+    @mouseleave="hovered = null; rest()"
   >
     <div
       ref="scroller"
       class="season-strip__scroll"
+      @scroll="measureScroll"
     >
       <div class="season-strip__track">
         <!--
@@ -210,7 +272,7 @@ const step = (from: number, by: number) => {
               :aria-current="band.season.id === selectedId ? 'true' : undefined"
               :data-testid="`esports-season-node-${band.season.id}`"
               type="button"
-              @click="emit('select', band.season.id)"
+              @click="choose(band.season.id)"
               @focus="hovered = band.season.id"
               @keydown.left.prevent="step(index, -1)"
               @keydown.right.prevent="step(index, 1)"
@@ -294,27 +356,88 @@ const step = (from: number, by: number) => {
           </div>
         </div>
 
-        <svg
-          aria-hidden="true"
-          class="season-strip__line"
-          preserveAspectRatio="none"
-          :viewBox="`0 0 ${Math.max(track, 1)} ${HEIGHT}`"
-        >
-          <path
-            class="season-strip__rule"
-            :d="path"
-            fill="none"
-            vector-effect="non-scaling-stroke"
-          />
-          <g class="season-strip__lit">
+        <!--
+          The line, in two layers over the same path: the rule it always is, and the lit
+          stretch as far as the season being read. Two svgs rather than two groups in one,
+          because the lit one is revealed by clipping its own box — and a box is a thing a
+          group does not have, which is what left the lit stretch measured against the
+          bounding box of the path and stopping short of the season it was reporting.
+        -->
+        <template v-if="axis.path">
+          <svg
+            aria-hidden="true"
+            class="season-strip__line"
+            preserveAspectRatio="none"
+            :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
+          >
+            <defs>
+              <!--
+                The line dissolves as it arrives at its end rather than stopping at one. Where
+                the block that adds a season bounds it, its end is in view, and a stub with a
+                cap on it reads as a drawing laid on the strip rather than as the seasons
+                carrying on. Nothing is left over to fall on a block that is not a season.
+              -->
+              <linearGradient
+                :id="fadeId"
+                gradientUnits="userSpaceOnUse"
+                :x1="axis.to - STRIP.fade"
+                :x2="axis.to"
+                y1="0"
+                y2="0"
+              >
+                <stop
+                  offset="0"
+                  stop-color="#fff"
+                />
+                <stop
+                  offset="1"
+                  stop-color="#fff"
+                  stop-opacity="0"
+                />
+              </linearGradient>
+              <mask
+                :id="maskId"
+                :height="STRIP.height"
+                maskUnits="userSpaceOnUse"
+                :width="axis.to - axis.from"
+                :x="axis.from"
+                y="0"
+              >
+                <rect
+                  :fill="`url(#${fadeId})`"
+                  :height="STRIP.height"
+                  :width="axis.to - axis.from"
+                  :x="axis.from"
+                  y="0"
+                />
+              </mask>
+            </defs>
             <path
-              :d="path"
+              class="season-strip__rule"
+              :d="axis.path"
               fill="none"
+              :mask="`url(#${maskId})`"
               vector-effect="non-scaling-stroke"
             />
-          </g>
-        </svg>
+          </svg>
 
+          <svg
+            aria-hidden="true"
+            class="season-strip__line season-strip__lit"
+            preserveAspectRatio="none"
+            :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
+          >
+            <path
+              :d="axis.path"
+              fill="none"
+              :mask="`url(#${maskId})`"
+              vector-effect="non-scaling-stroke"
+            />
+          </svg>
+        </template>
+
+        <!-- Drawn as elements rather than inside the svg: the line is stretched to the track
+             by its viewBox, and a circle in that space would stretch with it. -->
         <span
           v-for="node in nodes"
           :key="node.id"
@@ -328,6 +451,55 @@ const step = (from: number, by: number) => {
         />
       </div>
     </div>
+
+    <!--
+      Where the strip holds more seasons than fit, the way to the rest of them. Resting the
+      pointer on one travels that way; a click moves a screenful, which is what somebody
+      arriving by keyboard gets. Neither changes the season being read.
+    -->
+    <button
+      v-if="canPanBack"
+      aria-label="Show earlier seasons"
+      class="season-strip__pan season-strip__pan--back"
+      :class="{'season-strip__pan--live': travelling === -1}"
+      data-testid="esports-season-pan-back"
+      type="button"
+      @click="panBy(-1)"
+    >
+      <svg
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.6"
+        viewBox="0 0 24 24"
+      >
+        <path d="M14.5 5.5 8 12l6.5 6.5" />
+      </svg>
+    </button>
+
+    <button
+      v-if="canPanOn"
+      aria-label="Show later seasons"
+      class="season-strip__pan season-strip__pan--on"
+      :class="{'season-strip__pan--live': travelling === 1}"
+      data-testid="esports-season-pan-on"
+      type="button"
+      @click="panBy(1)"
+    >
+      <svg
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.6"
+        viewBox="0 0 24 24"
+      >
+        <path d="M9.5 5.5 16 12l-6.5 6.5" />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -446,8 +618,7 @@ const step = (from: number, by: number) => {
   display: none;
 }
 
-.season-band--lit::after,
-.season-band--on::after {
+.season-band--lit::after {
   background-color: color-mix(in oklab, var(--accent) 60%, transparent);
 }
 
@@ -469,7 +640,14 @@ const step = (from: number, by: number) => {
   transition: opacity 320ms ease;
 }
 
-.season-slot:nth-child(even) .season-band__wash {
+/*
+ * Every second band sits back a little, so the strip reads as a run of seasons rather than as
+ * one flat wash. Only while it is at rest, though: written to match any band at all this
+ * outweighed both the band being read and the band under the pointer — they carry one class
+ * each and this carries two and a position — so every second season lost its highlight
+ * altogether and the strip answered "which season is this" only half the time.
+ */
+.season-slot:nth-child(even) .season-band:not(.season-band--on, .season-band--lit) .season-band__wash {
   opacity: 0.2;
 }
 
@@ -478,13 +656,20 @@ const step = (from: number, by: number) => {
   opacity: 0.85;
 }
 
+/*
+ * The season on show, which is the first thing the strip is asked.
+ *
+ * Its wash, and nothing else: deeper in the game's own colour than a band under the pointer
+ * can go, and washed up from the foot as well as down from the head, so it reads as lit from
+ * within rather than drawn around. A rule along its edges said the same thing a second time
+ * and did it loudly, and the strip sits under photography — shouting over that is the louder
+ * mistake.
+ */
 .season-band--on .season-band__wash {
   opacity: 1;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--accent) 26%, transparent),
-    transparent 78%
-  );
+  background:
+    linear-gradient(to bottom, color-mix(in oklab, var(--accent) 20%, transparent), transparent 70%),
+    linear-gradient(to top, color-mix(in oklab, var(--accent) 8%, transparent), transparent 38%);
 }
 
 /*
@@ -568,9 +753,13 @@ const step = (from: number, by: number) => {
 .season-strip__rule {
   stroke: color-mix(in oklab, var(--color-ash) 38%, transparent);
   stroke-width: 2;
-  stroke-linecap: round;
 }
 
+/*
+ * Clipped against its own box, which is the track: a share of the track is what the lit
+ * length is reckoned as, so the two agree and the lit stretch ends on the middle of the node
+ * whether the strip carries two seasons or twenty.
+ */
 .season-strip__lit {
   clip-path: inset(0 calc(100% - var(--lit)) 0 0);
   transition: clip-path 480ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -579,12 +768,85 @@ const step = (from: number, by: number) => {
 .season-strip__lit path {
   stroke: var(--accent);
   stroke-width: 2.5;
-  stroke-linecap: round;
   filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 60%, transparent));
 }
 
-/* Drawn as elements rather than inside the svg: the line is stretched to the track by its
-   viewBox, and a circle in that space would stretch with it. */
+/*
+ * The way to the seasons that do not fit.
+ *
+ * The side of the strip answers the pointer — resting anywhere down either edge travels that
+ * way — and shows a fade with a chevron in it, the strip carrying on rather than a control
+ * sitting on top of it. Only the chevron answers a click, and the fade takes no clicks at
+ * all: a season under either is still a season to be clicked, which a control the width of
+ * the whole edge would have put out of reach.
+ */
+.season-strip__pan {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.season-strip__pan::before {
+  content: "";
+  position: absolute;
+  top: -26px;
+  bottom: -26px;
+  pointer-events: none;
+  opacity: 0.72;
+  transition: opacity 220ms ease;
+}
+
+.season-strip__pan--live::before,
+.season-strip__pan:hover::before,
+.season-strip__pan:focus-visible::before {
+  opacity: 1;
+}
+
+.season-strip__pan svg {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  opacity: 0.78;
+  transition: scale 220ms ease, opacity 220ms ease;
+}
+
+.season-strip__pan--live svg,
+.season-strip__pan:hover svg,
+.season-strip__pan:focus-visible svg {
+  opacity: 1;
+  scale: 1.24;
+}
+
+.season-strip__pan--back {
+  left: 0;
+}
+
+.season-strip__pan--back::before {
+  left: 0;
+  right: -40px;
+  background: linear-gradient(to right, color-mix(in oklab, var(--color-void) 82%, transparent), transparent);
+}
+
+.season-strip__pan--on {
+  right: 0;
+}
+
+.season-strip__pan--on::before {
+  left: -40px;
+  right: 0;
+  background: linear-gradient(to left, color-mix(in oklab, var(--color-void) 82%, transparent), transparent);
+}
+
 .season-strip__dot {
   position: absolute;
   height: 11px;
@@ -636,7 +898,9 @@ const step = (from: number, by: number) => {
   .season-strip__lit,
   .season-strip__dot,
   .season-band__wash,
-  .season-band__label {
+  .season-band__label,
+  .season-strip__pan::before,
+  .season-strip__pan svg {
     transition: none;
   }
 }

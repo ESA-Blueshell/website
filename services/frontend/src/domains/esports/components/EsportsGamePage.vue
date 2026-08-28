@@ -253,7 +253,7 @@ const seasonSaved = (saved: Season) => {
           class="pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"
           :style="{backgroundColor: identity.accent}"
         />
-        <div class="relative mx-auto w-full max-w-6xl px-5 pt-12 pb-8 sm:px-8 sm:pt-16 sm:pb-10">
+        <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
           <div class="flex items-center gap-4">
             <img
               v-if="identity.mark"
@@ -288,9 +288,11 @@ const seasonSaved = (saved: Season) => {
       <!-- The seasons as a line rather than a row of pills: the years read across the top,
            the halves below, and the line lights up to whichever season is under the pointer. -->
       <!-- Full width: the seasons run edge to edge, as the teams below them do. -->
+      <!-- No room of its own above or below: the strip is a slice of the page, and a slice
+           meets the one before it. -->
       <section
         v-if="stripSeasons.length > 1"
-        class="w-full pt-1 pb-2"
+        class="w-full"
         data-testid="esports-season-bar"
       >
         <season-timeline
@@ -338,23 +340,34 @@ const seasonSaved = (saved: Season) => {
       </section>
 
       <!-- Full width, edge to edge: the teams are the page, not a card grid inside it. -->
-      <section class="w-full pb-3 sm:pb-4">
+      <section class="w-full">
+        <!--
+          Only while there is nothing to show. A season switch has the season before it on
+          screen and keeps it there until the next answer lands: swapping the band for a
+          pulsing block and back again is the blink, and it says nothing a visitor needs.
+        -->
         <div
-          v-if="loading"
+          v-if="loading && !hasRosters"
           class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+          data-testid="esports-loading"
         />
 
         <p
           v-else-if="!hasRosters"
-          class="py-16 text-center font-body text-sm text-ash"
+          class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
           data-testid="esports-empty"
         >
           No teams recorded for this season yet.
         </p>
 
+        <!--
+          Not keyed on the season: a key would rebuild the band on every switch, and the
+          entrance would play again for a set of slices that is largely the same one — which
+          is the blink, and the reason the slice just clicked was the one that moved. The band
+          updates in place instead, and only what actually changed moves.
+        -->
         <Motion
           v-else
-          :key="currentSeasonId ?? 'none'"
           v-bind="entrance(0)"
         >
           <banner-slices

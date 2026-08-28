@@ -154,7 +154,7 @@ const seasonSaved = (saved: Season) => {
           aria-hidden="true"
           class="pointer-events-none absolute -top-32 -left-24 h-80 w-[36rem] rounded-full bg-brand/18 blur-[90px]"
         />
-        <div class="relative mx-auto w-full max-w-6xl px-5 pt-12 pb-8 sm:px-8 sm:pt-16 sm:pb-10">
+        <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
           <p class="font-body text-[11px] font-medium tracking-[0.3em] text-acid uppercase">
             Blueshell Esports
           </p>
@@ -173,9 +173,11 @@ const seasonSaved = (saved: Season) => {
 
       <!-- The same strip as a game page, one level up: it selects a season, and what shows
            below is the games the association fielded in it. -->
+      <!-- No room of its own above or below: the strip is a slice of the page, and a slice
+           meets the one before it. -->
       <section
         v-if="stripSeasons.length > 1"
-        class="w-full pt-1 pb-2"
+        class="w-full"
         data-testid="esports-index-seasons"
       >
         <season-timeline
@@ -198,15 +200,20 @@ const seasonSaved = (saved: Season) => {
         />
       </section>
 
-      <section class="w-full pb-3 sm:pb-4">
+      <section class="w-full">
+        <!--
+          Only while there is nothing to show: a season switch keeps the band it has until the
+          next answer lands, rather than blinking through a pulsing block.
+        -->
         <div
-          v-if="loading"
+          v-if="loading && !fielded"
           class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+          data-testid="esports-index-loading"
         />
 
         <p
           v-else-if="!fielded"
-          class="py-16 text-center font-body text-sm text-ash"
+          class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
           data-testid="esports-index-empty"
         >
           No teams were fielded in {{ seasonName || "this season" }}.

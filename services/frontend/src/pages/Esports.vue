@@ -48,6 +48,7 @@ const slices = computed(() =>
     const teams = entry.teams.length
     return {
       id: entry.game,
+      href: known?.url,
       title: known?.name ?? entry.game,
       meta: `${teams} team${teams === 1 ? "" : "s"} this season`,
       banner: known?.banner ? $require(`@/assets/${known.banner}`) : "",
@@ -211,9 +212,13 @@ const seasonSaved = (saved: Season) => {
           No teams were fielded in {{ seasonName || "this season" }}.
         </p>
 
+        <!--
+          Not keyed on the season: a key would rebuild the band on every switch, and the
+          entrance would play again for a set of slices that is largely the same one. The
+          band updates in place instead, and only what actually changed moves.
+        -->
         <Motion
           v-else
-          :key="selected ?? 'none'"
           v-bind="entrance"
         >
           <banner-slices
@@ -223,6 +228,7 @@ const seasonSaved = (saved: Season) => {
             :may-add="mayEdit"
             :open-id="justAdded"
             testid-prefix="esports-game"
+            @go="item => item.href && router.push(item.href)"
             @add="adding = true"
           >
             <template #details="{item}">

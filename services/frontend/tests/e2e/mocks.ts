@@ -200,6 +200,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const gamesMade: Array<Record<string, string | number | boolean | null>> = []
   /** Games corrected during the test, which every read then reports as corrected. */
   const gamesEdited = new Map<string, Record<string, string | number | boolean | null>>()
+  /** Games removed during the test, which the reads then leave out. */
+  const gamesGone = new Set<string>()
   const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
   let nextTeamId = 70
   let nextEntryId = 200
@@ -693,6 +695,29 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       gamesMade.push(made)
       return fulfillJson(route, made, 201)
     }
+    if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+\/contents$/.test(path)) {
+      const code = path.split("/")[3] as string
+      const held = [...(fixtures.esportsTeams ?? []), ...teamsMade].filter(one => one.game === code)
+      const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
+      return fulfillJson(route, {teams: held.length + seeded, players: (held.length + seeded) * 3})
+    }
+
+    if (method === "DELETE" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
+      const code = path.split("/").pop() as string
+      const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+      const held = [...(fixtures.esportsTeams ?? []), ...teamsMade].filter(one => one.game === code)
+      const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
+      if (held.length + seeded > 0) {
+        const game = known.find(one => one.game === code)
+        return fulfillJson(route, {
+          detail: `${game?.name ?? code} holds ${held.length + seeded} teams and 6 roster places. `
+            + "Mark it as no longer fielded instead, and everything it played stays readable.",
+        }, 409)
+      }
+      gamesGone.add(code)
+      return route.fulfill({status: 204, body: ""})
+    }
+
     // A game corrected during a test reads corrected from then on.
     if (method === "PUT" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
       const code = path.split("/").pop() as string
@@ -721,6 +746,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // The api answers in the order the records put the games in, and so does this.
     if (method === "GET" && path === "/esports/games") {
       const all = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+        .filter(one => !gamesGone.has(String(one.game)))
         .map(one => gamesEdited.get(String(one.game)) ?? one)
       return fulfillJson(route, all)
     }

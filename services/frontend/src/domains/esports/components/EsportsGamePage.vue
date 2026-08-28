@@ -288,6 +288,7 @@ const seasonSaved = (saved: Season) => {
           :accent="identity.accent"
           :game="recordOf(game)"
           :open="gameEditorOpen"
+          @removed="router.push('/esports/competitive-scene')"
           @saved="gameSaved"
           @update:open="gameEditorOpen = $event"
         />

@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
-import {saveGameOrReason, type GameRecord} from "../adapters/esports"
+import ConfirmDialog from "./ConfirmDialog.vue"
+import {dropGameOrReason, loadGameContents, saveGameOrReason, type GameRecord} from "../adapters/esports"
 import {useGames} from "./useGames"
 
 /**
@@ -22,6 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: "update:open", open: boolean): void
   (event: "saved", game: GameRecord): void
+  (event: "removed", game: GameRecord): void
 }>()
 
 const {refresh: refreshGames} = useGames()
@@ -65,6 +67,61 @@ const addressPreview = computed(() =>
   slug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))
 
 const complete = computed(() => name.value.trim() !== "" && addressPreview.value !== "")
+
+const confirming = ref(false)
+const removing = ref(false)
+const removalFailure = ref<string | null>(null)
+const holds = ref<{teams: number; players: number} | null>(null)
+
+/**
+ * How much a game holds is read before the question is put rather than after it is answered,
+ * because what it holds is what decides whether it can go at all.
+ */
+const askToRemove = async () => {
+  const game = props.game
+  if (!game) return
+  removalFailure.value = null
+  holds.value = await loadGameContents(game.game)
+  confirming.value = true
+}
+
+const countOf = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+const question = computed(() => {
+  const game = props.game
+  if (!game) return ""
+  const held = holds.value
+  if (!held || held.teams === 0) {
+    return `${game.name} holds no teams. Removing it takes it and its page off the site.`
+  }
+  return `${game.name} holds ${countOf(held.teams, "team", "teams")} and `
+    + `${countOf(held.players, "roster place", "roster places")}, so it cannot be removed. `
+    + "Untick \"still fielded\" instead: it stops being offered as current and everything it "
+    + "played stays readable."
+})
+
+const removeGame = async () => {
+  const game = props.game
+  if (!game || removing.value) return
+  removing.value = true
+  removalFailure.value = null
+  try {
+    const result = await dropGameOrReason(game.game)
+    if (!result.ok) {
+      // Nothing has gone, so the dialog stands and says why.
+      removalFailure.value = result.reason
+      return
+    }
+    // Said before the records are re-read: forgetting the game unmounts the page this dialog
+    // is on, and an emit from a component that is going nowhere reaches nobody.
+    emit("removed", game)
+    confirming.value = false
+    emit("update:open", false)
+    await refreshGames()
+  } finally {
+    removing.value = false
+  }
+}
 
 const submit = async () => {
   const game = props.game
@@ -220,6 +277,14 @@ const submit = async () => {
 
       <div class="game-form__actions">
         <button
+          class="game-form__button game-form__button--drop"
+          data-testid="game-dialog-remove"
+          type="button"
+          @click="askToRemove"
+        >
+          Remove
+        </button>
+        <button
           class="game-form__button game-form__button--ghost"
           data-testid="game-dialog-cancel"
           type="button"
@@ -238,6 +303,18 @@ const submit = async () => {
       </div>
     </form>
   </island-dialog>
+
+  <confirm-dialog
+    :accent="colour || props.accent"
+    :failure="removalFailure"
+    :open="confirming"
+    :question="question"
+    testid="game-remove-dialog"
+    title="Remove this game?"
+    :working="removing"
+    @confirm="removeGame"
+    @update:open="confirming = $event"
+  />
 </template>
 
 <style>
@@ -332,6 +409,13 @@ const submit = async () => {
 
 .game-form__button--ghost {
   background: transparent;
+}
+
+/* First in the row and set apart, the way the season dialog sets its own removal apart. */
+.game-form__button--drop {
+  margin-right: auto;
+  background: transparent;
+  color: #ff9d9d;
 }
 
 .game-form__button--go {

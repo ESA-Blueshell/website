@@ -116,8 +116,8 @@ const editGame = (game: string) => {
 }
 
 /**
- * A game corrected is a game every slice draws differently, and one marked no longer fielded
- * leaves the band. Re-asking is the whole of showing that.
+ * A game corrected is a game every slice draws differently; one marked no longer fielded, or
+ * removed outright, leaves the band. Re-asking is the whole of showing either.
  */
 const gameSaved = async () => {
   await refreshGames()
@@ -278,6 +278,7 @@ const seasonSaved = (saved: Season) => {
           accent="var(--color-brand)"
           :game="editingGame"
           :open="gameEditorOpen"
+          @removed="gameSaved"
           @saved="gameSaved"
           @update:open="gameEditorOpen = $event"
         />

@@ -2,6 +2,8 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.GamePage
 import net.blueshell.api.esports.persistence.GamePageRepository
+import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,7 +20,11 @@ import org.springframework.web.server.ResponseStatusException
  * naming something else has to be refused here.
  */
 @Service
-class GamePageService(private val pages: GamePageRepository) {
+class GamePageService(
+    private val pages: GamePageRepository,
+    private val teams: TeamRepository,
+    private val entries: TeamRosterEntryRepository,
+) {
     @Transactional(readOnly = true)
     fun findAll(): List<GamePage> = pages.findAllByOrderBySortIndexAsc()
 
@@ -102,6 +108,40 @@ class GamePageService(private val pages: GamePageRepository) {
         page.sortIndex = sortIndex
         page.fielded = fielded
         return pages.save(page)
+    }
+
+    /**
+     * What a game holds: teams recorded in it, and the roster places those carry.
+     *
+     * Read so a removal can say what it would take before it is agreed to, rather than after.
+     */
+    @Transactional(readOnly = true)
+    fun contentsOf(game: String): Pair<Long, Long> {
+        val code = requireGame(game).game
+        return teams.countByGame(code) to entries.countByGame(code)
+    }
+
+    /**
+     * A game added by mistake, taken off the site.
+     *
+     * A game that carries history cannot go: it is refused, and marking it no longer fielded is
+     * the act that fits — everything it played stays readable. What is left is a game holding
+     * nothing, which has no history to keep, so it is removed rather than hidden. Its code is
+     * unique across every row, and a hidden row would hold that code for good.
+     */
+    @Transactional
+    fun delete(game: String) {
+        val page = requireGame(game)
+        val (held, players) = contentsOf(page.game)
+        if (held > 0) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "${page.name} holds $held team${if (held == 1L) "" else "s"} and " +
+                    "$players roster place${if (players == 1L) "" else "s"}. " +
+                    "Mark it as no longer fielded instead, and everything it played stays readable.",
+            )
+        }
+        pages.delete(page)
     }
 
     /**

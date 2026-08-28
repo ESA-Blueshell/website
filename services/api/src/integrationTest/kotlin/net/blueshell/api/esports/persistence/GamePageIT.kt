@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -370,6 +371,80 @@ class GamePageIT : UserTestSupport() {
                 .content("""{"name":"   ","slug":"valorant","sortIndex":1,"fielded":true}"""),
         )
             .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `what a game holds is read before the question is put`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(get("/esports/games/{game}/contents", "VALORANT").with(bearer(board)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.teams").isNumber)
+            .andExpect(jsonPath("$.players").isNumber)
+    }
+
+    @Test
+    fun `a game holding nothing is removed, and its page stops answering`() {
+        val board = createUserWithRole(Role.BOARD)
+        mvc.perform(
+            post("/esports/games").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Pong","slug":"pong"}"""),
+        ).andExpect(status().isCreated)
+
+        mvc.perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
+            .andExpect(status().isNoContent)
+
+        mvc.perform(get("/esports/games/{game}", "PONG")).andExpect(status().isBadRequest)
+        mvc.perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.game == 'PONG')]").doesNotExist())
+    }
+
+    @Test
+    fun `a game with teams recorded in it is refused, and offered the softer act`() {
+        val board = createUserWithRole(Role.BOARD)
+        mvc.perform(
+            post("/esports/teams").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"game":"VALORANT","name":"BS Holders"}"""),
+        ).andExpect(status().isCreated)
+
+        mvc.perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("no longer fielded")))
+
+        // Nothing went: the game and its team are both still there.
+        mvc.perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].name").value("Valorant"))
+    }
+
+    @Test
+    fun `the reason a removal was refused says how much the game holds`() {
+        val board = createUserWithRole(Role.BOARD)
+        mvc.perform(
+            post("/esports/teams").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"game":"GEOGUESSR","name":"BS Guessers"}"""),
+        ).andExpect(status().isCreated)
+
+        mvc.perform(delete("/esports/games/{game}", "GEOGUESSR").with(bearer(board)))
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("1 team")))
+    }
+
+    @Test
+    fun `a code naming no game cannot be removed`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `a member cannot remove a game`() {
+        val member = createUserWithRole(Role.MEMBER)
+
+        mvc.perform(delete("/esports/games/{game}", "SMASH").with(bearer(member)))
+            .andExpect(status().isForbidden)
     }
 
     @Test

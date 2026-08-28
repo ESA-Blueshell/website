@@ -8,4 +8,6 @@ interface TeamRepository : BaseRepository<Team, Long> {
     fun findAllByGameOrderByNameAsc(game: String): List<Team>
 
     fun findByGameAndNameIgnoreCase(game: String, name: String): Team?
+
+    fun countByGame(game: String): Long
 }

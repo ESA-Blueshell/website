@@ -80,6 +80,21 @@ class EsportsController(
             fielded = request.fielded,
         ).asResponse()
 
+    /** What a game holds, so the offer to remove it can say what goes with it. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @GetMapping("/games/{game}/contents")
+    fun findGameContents(@PathVariable game: String): GameContentsResponse {
+        val (teams, players) = gamePages.contentsOf(game)
+        return GameContentsResponse(teams = teams.toInt(), players = players.toInt())
+    }
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @DeleteMapping("/games/{game}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteGame(@PathVariable game: String) {
+        gamePages.delete(game)
+    }
+
     @GetMapping("/seasons")
     @PermitAll
     fun findSeasons(): List<SeasonResponse> = seasons.findAll().map { it.asResponse() }

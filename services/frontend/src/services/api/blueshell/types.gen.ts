@@ -848,6 +848,20 @@ export type GameAccountResponse = {
 };
 
 /**
+ * What a game holds, for a removal to say before it happens
+ */
+export type GameContentsResponse = {
+    /**
+     * Roster places those teams carry
+     */
+    players: number;
+    /**
+     * Teams recorded in it, across every season
+     */
+    teams: number;
+};
+
+/**
  * A game: what it is called, the art it is drawn with, and how its page presents it
  */
 export type GamePageResponse = {
@@ -3572,6 +3586,49 @@ export type CreateGameResponses = {
 
 export type CreateGameResponse = CreateGameResponses[keyof CreateGameResponses];
 
+export type DeleteGameData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/esports/games/{game}';
+};
+
+export type DeleteGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteGameError = DeleteGameErrors[keyof DeleteGameErrors];
+
+export type DeleteGameResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteGameResponse = DeleteGameResponses[keyof DeleteGameResponses];
+
 export type FindEsportsPageData = {
     body?: never;
     path: {
@@ -3659,6 +3716,49 @@ export type UpdateGamePageResponses = {
 };
 
 export type UpdateGamePageResponse = UpdateGamePageResponses[keyof UpdateGamePageResponses];
+
+export type FindGameContentsData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/esports/games/{game}/contents';
+};
+
+export type FindGameContentsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindGameContentsError = FindGameContentsErrors[keyof FindGameContentsErrors];
+
+export type FindGameContentsResponses = {
+    /**
+     * OK
+     */
+    200: GameContentsResponse;
+};
+
+export type FindGameContentsResponse = FindGameContentsResponses[keyof FindGameContentsResponses];
 
 export type RemoveRosterEntryData = {
     body?: never;

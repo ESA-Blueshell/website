@@ -100,4 +100,8 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     fun findAllByUserId(userId: Long): List<TeamRosterEntry>
 
     fun countBySeasonId(seasonId: Long): Long
+
+    /** Roster places held across every team of one game, for a removal to say before it happens. */
+    @Query("SELECT COUNT(e) FROM TeamRosterEntry e WHERE e.team.game = :game")
+    fun countByGame(@Param("game") game: String): Long
 }

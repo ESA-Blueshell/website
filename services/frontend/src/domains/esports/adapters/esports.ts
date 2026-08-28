@@ -13,6 +13,8 @@ import {
   findEsportsPage,
   findGameAccounts,
   createGame,
+  deleteGame,
+  findGameContents,
   updateGamePage,
   findGamePages,
   findRoster,
@@ -128,6 +130,25 @@ export async function saveGameOrReason(
   })
   if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be saved.")}
   return {ok: true, game: res.data}
+}
+
+/** What a game holds, so an offer to remove it can say what would go with it. */
+export async function loadGameContents(game: Game): Promise<SeasonContents> {
+  const res = await findGameContents({path: {game}})
+  return res.data ?? {teams: 0, players: 0}
+}
+
+/**
+ * A game taken off the site.
+ *
+ * The refusal is the point: a game carrying history cannot go, and the api says so in words the
+ * reader can act on. The sdk answers with an error rather than throwing, so a caller that only
+ * catches would report a removal that never happened.
+ */
+export async function dropGameOrReason(game: Game): Promise<{ok: true} | SeasonRefused> {
+  const res = await deleteGame({path: {game}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The game could not be removed.")}
+  return {ok: true}
 }
 
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {

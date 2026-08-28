@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsAdmin} from "./mocks"
+import {installApiMocks, loginAsBoard} from "./mocks"
 
 test.describe("esports pages", () => {
   test("shows the teams of the season on offer, with their handles", async ({page}) => {
@@ -59,44 +59,61 @@ test.describe("esports pages", () => {
   })
 })
 
-test.describe("esports manager", () => {
-  test("lists the seasons and the teams of the chosen game", async ({page}) => {
+/**
+ * What the esports manager used to guarantee, asserted where each of those things now
+ * happens. The manager is gone; none of what it covered went with it.
+ */
+test.describe("what the manager used to do, where it happens now", () => {
+  test("its address lands on the pages that replaced it", async ({page}) => {
     await installApiMocks(page)
-    await loginAsAdmin(page.context())
+    await loginAsBoard(page.context())
 
     await page.goto("/management/esports")
 
-    await expect(page.getByTestId("esports-season-row-20")).toContainText("Autumn 2025/26")
-    await expect(page.getByTestId("esports-team-row-1")).toContainText("BS Waterboarders")
+    await expect(page).toHaveURL(/\/esports\/competitive-scene$/)
+    await expect(page.getByTestId("esports-island")).toBeVisible()
   })
 
-  test("shows a roster with its real names, which the public page does not", async ({page}) => {
+  test("the seasons and the teams of a game are both on the game's own page", async ({page}) => {
     await installApiMocks(page)
-    await loginAsAdmin(page.context())
+    await loginAsBoard(page.context())
 
-    await page.goto("/management/esports")
-    await page.getByTestId("esports-team-row-1").click()
+    await page.goto("/esports/valorant")
 
-    const roster = page.getByTestId("esports-roster-table")
-    await expect(roster).toContainText("AriosFury")
-    await expect(roster).toContainText("Viktor Petrov")
-    // An entry nobody could be attributed to is marked rather than hidden.
-    await expect(roster).toContainText("Unlinked")
+    await expect(page.getByTestId("esports-season-node-20")).toContainText("Autumn 2025/26")
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
   })
 
-  test("puts somebody new on a roster", async ({page}) => {
+  test("a roster is read with its real names where it is edited, which the public page does not do", async ({page}) => {
     await installApiMocks(page)
-    await loginAsAdmin(page.context())
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
 
-    await page.goto("/management/esports")
-    await page.getByTestId("esports-team-row-1").click()
-    await page.getByTestId("esports-add-entry").click()
+    await page.getByTestId("team-roster-1").hover()
+    await page.getByTestId("team-roster-edit-1").click()
 
-    await page.getByTestId("esports-entry-handle").locator("input").fill("newcomer")
+    const lineup = page.getByTestId("lineup-dialog")
+    await expect(lineup).toBeVisible()
+    await expect(page.getByTestId("lineup-handle-0")).toHaveValue("AriosFury")
+    await expect(page.getByTestId("lineup-name-0")).toHaveValue("Viktor Petrov")
+    // Somebody nobody could be attributed to is offered a member to attach rather than hidden.
+    await expect(page.getByTestId("lineup-search-1")).toBeVisible()
+  })
+
+  test("somebody new goes onto a roster from the slice that shows it", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+
+    await page.getByTestId("team-roster-1").hover()
+    await page.getByTestId("team-roster-edit-1").click()
+    await page.getByTestId("lineup-add").click()
+    await page.getByTestId("lineup-handle-3").fill("newcomer")
+
     const created = page.waitForRequest(
       (request) => request.method() === "POST" && /\/esports\/teams\/\d+\/roster$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("esports-entry-save").click()
+    await page.getByTestId("lineup-save").click()
 
     const request = await created
     expect(JSON.parse(request.postData() ?? "{}")).toMatchObject({handle: "newcomer", role: "PLAYER"})

@@ -12,5 +12,18 @@ import org.springframework.modulith.PackageInfo
  * `platform/web/oidc` until the packages flatten.
  */
 @PackageInfo
-@ApplicationModule(id = "oidc")
+@ApplicationModule(
+    id = "oidc",
+    allowedDependencies = [
+        // Open kernel: the token endpoint runs inside the filter chain.
+        "security",
+        // Open kernel.
+        "shared",
+        // The subject is resolved through UserService.
+        "user :: api",
+        // DEBT. OidcUserLoader reads User columns to fill the id-token claims. This
+        // wants a claims projection published through user :: api.
+        "user :: entities",
+    ],
+)
 class ModuleMetadata

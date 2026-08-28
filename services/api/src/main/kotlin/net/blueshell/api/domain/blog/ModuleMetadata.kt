@@ -11,5 +11,13 @@ import org.springframework.modulith.PackageInfo
  * a second time on the response side.
  */
 @PackageInfo
-@ApplicationModule(id = "blog")
+@ApplicationModule(
+    id = "blog",
+    allowedDependencies = [
+        // Open kernel: BlogPermission extends the base evaluator.
+        "security",
+        // Open kernel.
+        "shared",
+    ],
+)
 class ModuleMetadata

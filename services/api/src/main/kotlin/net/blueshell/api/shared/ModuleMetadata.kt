@@ -13,5 +13,15 @@ import org.springframework.modulith.PackageInfo
  * about a supertype.
  */
 @PackageInfo
-@ApplicationModule(id = "shared", type = ApplicationModule.Type.OPEN)
+@ApplicationModule(
+    id = "shared",
+    type = ApplicationModule.Type.OPEN,
+    allowedDependencies = [
+        // AuditedVersionedEntity.createdBy and .updatedBy are owning @ManyToOne
+        // associations holding the FKs into users, so every audited row in every
+        // module carries them. It is the one dependency the kernel has on a feature
+        // module, and it is the schema's own direction.
+        "user :: entities",
+    ],
+)
 class ModuleMetadata

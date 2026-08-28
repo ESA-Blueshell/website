@@ -12,5 +12,14 @@ import org.springframework.modulith.PackageInfo
  * port this module declares and `auth` implements.
  */
 @PackageInfo
-@ApplicationModule(id = "user")
+@ApplicationModule(
+    id = "user",
+    allowedDependencies = [
+        // Open kernel: UserPermission extends the base evaluator and CurrentUserProvider
+        // reads the security context.
+        "security",
+        // Open kernel.
+        "shared",
+    ],
+)
 class ModuleMetadata

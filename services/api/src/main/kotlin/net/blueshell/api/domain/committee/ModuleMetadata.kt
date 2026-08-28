@@ -10,5 +10,18 @@ import org.springframework.modulith.PackageInfo
  * revokes seats itself, so a committee decides what its own membership means.
  */
 @PackageInfo
-@ApplicationModule(id = "committee")
+@ApplicationModule(
+    id = "committee",
+    allowedDependencies = [
+        // Open kernel: CommitteePermission extends the base evaluator.
+        "security",
+        // Open kernel.
+        "shared",
+        // Members are resolved through UserService, and seats are revoked in
+        // response to UserUpdated.
+        "user :: api",
+        // CommitteeMember.user is an owning @ManyToOne holding the FK into users.
+        "user :: entities",
+    ],
+)
 class ModuleMetadata

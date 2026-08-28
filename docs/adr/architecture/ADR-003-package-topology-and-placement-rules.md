@@ -139,6 +139,44 @@ to reach `user :: entities` must enumerate **all** its allowed dependencies, not
 just that one. Only the two or three modules holding a cross-module owning
 reference pay it.
 
+> **Corrected.** Two claims above did not survive being implemented.
+>
+> **"Only a module that names it may reach it" needs every module to declare.**
+> An `allowedDependencies` whitelist constrains the module that declares it and
+> nothing else. A module that declares none may reach any named interface of any
+> module, `entities` included — Modulith checks `isExposed`, which is true for
+> every named interface. So `entities` is a restriction only if all twenty
+> modules declare a whitelist, and all twenty now do. The upside is that the
+> module graph is written down in full: every edge in it is a line in a
+> `ModuleMetadata` class with a justification beside it.
+>
+> **"Only the two or three modules pay it" was off by an order of magnitude.**
+> Fifteen of the twenty modules name another module's `entities`, across 24
+> entries. Eight modules hold a genuine owning-side FK — `auth`, `board`,
+> `committee`, `contribution`, `event`, `file` and `sponsor`, plus `shared`
+> itself, whose `AuditedVersionedEntity.createdBy` puts a `User` FK on every
+> audited row in the system. The other seven — `cohort`, `contact`, `email`,
+> `esports`, `jobs`, `oidc` and `sync` — reach entities only from a service, a
+> specification or a response mapper, which is debt rather than a published
+> surface. Twelve of the 24 entries carry a `DEBT` justification naming what
+> would remove them. The remaining five modules declare a whitelist naming only
+> the two open modules.
+>
+> **Two further named interfaces exist, and both are debt.** `legacy-web` covers
+> the reaches into another module's `web` package that this record already calls
+> "a defect rather than a surface", and `legacy-repository` covers the one module
+> that drives another module's repository. Neither is a surface; they are named
+> so that a whitelist entry carrying debt says so, and so that a *new* reach of
+> either kind fails verification instead of passing unnoticed.
+>
+> **The named interfaces are declared on today's packages, so they are wider
+> than the target.** `api/` does not exist yet — it appears in the flattening,
+> which runs after verification. `api` is therefore declared on `application`
+> and its published sub-packages, and on `port` where a module has one, which
+> publishes internals that the flattening will narrow when only genuinely
+> published types move into `api/`. Narrowing them is part of that work, not a
+> separate omission.
+
 `net.blueshell.api.user.web.UserController` — five segments, down from seven.
 `web/dto/request`, `web/dto/response`, `web/mapping/request`,
 `web/mapping/response` and `application/command` all disappear; most of them
@@ -187,12 +225,18 @@ Already applied:
 - The permission classes have distributed to their modules under
   [ADR-007](ADR-007-authorization-lives-with-its-aggregate.md), leaving the base
   and the composite in `security`.
+- **The named interfaces and the whitelists.** Each module publishes `api` and
+  `entities`, plus `legacy-web` or `legacy-repository` where a recorded reach
+  needs one, and all twenty declare `allowedDependencies`.
+  `ApplicationModules.verify()` passes against that graph, cycles included.
+  Switching it on in CI is the remaining step.
 
 Outstanding:
 
 - **The flattening itself**: 653 main files and 228 api test files change
-  package, in rename-only commits, one module per commit.
-- **The two named interfaces** and the `allowedDependencies` whitelists.
+  package, in rename-only commits, one module per commit. It also narrows `api`,
+  which is currently declared on whole `application` packages because `api/` does
+  not exist yet.
 - **30 imports reach another module's `web` package**, naming 16 distinct
   controller DTOs. Those are a defect rather than a surface: they are inverted or
   copied, not published.

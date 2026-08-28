@@ -10,5 +10,17 @@ import org.springframework.modulith.PackageInfo
  * surface over one table plus its uniqueness constraints.
  */
 @PackageInfo
-@ApplicationModule(id = "sponsor")
+@ApplicationModule(
+    id = "sponsor",
+    allowedDependencies = [
+        // Sponsor.picture is an owning @OneToOne holding the FK into files. Also
+        // DEBT: SponsorRepository.findByPicture takes a File, so the query signature
+        // reaches for the entity where the id would do.
+        "file :: entities",
+        // Open kernel: SponsorPermission extends the base evaluator.
+        "security",
+        // Open kernel.
+        "shared",
+    ],
+)
 class ModuleMetadata

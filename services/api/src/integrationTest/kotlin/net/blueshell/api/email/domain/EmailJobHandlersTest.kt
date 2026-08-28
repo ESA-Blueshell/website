@@ -5,7 +5,7 @@ import net.blueshell.api.domain.event.application.job.EventSignupEmailJob
 import net.blueshell.api.domain.auth.application.job.RecoveryEmailJob
 
 import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.domain.contribution.persistence.ContributionPeriod
 import net.blueshell.api.domain.contribution.persistence.ContributionReminder
 import net.blueshell.api.domain.event.persistence.Event

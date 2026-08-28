@@ -1,7 +1,7 @@
 package net.blueshell.api.domain.event.application.validation
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.EventSignUpData
 import net.blueshell.api.domain.event.persistence.Event

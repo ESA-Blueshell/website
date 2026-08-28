@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.event.persistence.spec
 
-import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.query.EventQuery
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.repository.EventRepository

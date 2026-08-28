@@ -1,12 +1,12 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.domain.committee.application.permission.CommitteePermission
+import net.blueshell.api.committee.domain.CommitteePermission
 import net.blueshell.api.domain.event.application.permission.EventBannerPermission
 import net.blueshell.api.domain.event.application.permission.EventPermission
 import net.blueshell.api.domain.event.application.permission.EventSignUpPermission
 
-import net.blueshell.api.domain.committee.application.CommitteeService
-import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.committee.api.CommitteeService
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.domain.event.application.EventBannerService
 import net.blueshell.api.domain.event.application.EventService
 import net.blueshell.api.domain.event.application.EventSignUpService

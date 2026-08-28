@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.event.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventBanner
 import net.blueshell.api.domain.event.persistence.EventSignUp

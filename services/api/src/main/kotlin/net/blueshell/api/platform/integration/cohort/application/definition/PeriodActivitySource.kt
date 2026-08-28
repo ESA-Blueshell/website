@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.application.definition
 
 import net.blueshell.api.board.api.BoardMemberService
-import net.blueshell.api.domain.committee.application.CommitteeMemberService
+import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.esports.api.TeamRosterService
 import org.springframework.stereotype.Component
 import java.time.LocalDate

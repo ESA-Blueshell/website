@@ -4,7 +4,7 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Root
-import net.blueshell.api.domain.committee.persistence.CommitteeMember
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.application.query.EventSignUpQuery
 import net.blueshell.api.shared.enums.Role

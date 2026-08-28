@@ -3,7 +3,7 @@ package net.blueshell.api.domain.event.persistence.spec
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
-import net.blueshell.api.domain.committee.persistence.CommitteeMember
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.application.query.EventQuery
 import net.blueshell.api.shared.enums.Role

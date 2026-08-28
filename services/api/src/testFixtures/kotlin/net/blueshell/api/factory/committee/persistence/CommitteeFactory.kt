@@ -1,8 +1,8 @@
 package net.blueshell.api.factory.committee.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.domain.committee.persistence.Committee
-import net.blueshell.api.domain.committee.persistence.CommitteeMember
+import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.domain.user.persistence.User
 import org.springframework.stereotype.Component
 

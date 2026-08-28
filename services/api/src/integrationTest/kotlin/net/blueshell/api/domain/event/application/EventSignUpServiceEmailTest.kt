@@ -1,6 +1,6 @@
 package net.blueshell.api.domain.event.application
 
-import net.blueshell.api.domain.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.domain.event.persistence.Event
 import net.blueshell.api.domain.event.persistence.EventSignUp
 import net.blueshell.api.domain.event.persistence.Guest

@@ -133,6 +133,36 @@ test.describe("adding a team to the season on show", () => {
     await expect(page.getByTestId("team-roster-3")).toBeVisible()
   })
 
+  test("the index offers a game rather than a team, and only games not already there", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(INDEX)
+
+    await expect(page.getByTestId("esports-game-add")).toContainText("Add a game")
+    await page.getByTestId("esports-game-add").click()
+
+    // Named for what it does, and asking the game before anything else.
+    await expect(page.getByTestId("add-team-dialog")).toContainText("Add a game")
+    const games = page.getByTestId("add-team-game").locator("option")
+    // Valorant and CS2 already play this season, so there is nothing to add of them.
+    await expect(games.filter({hasText: "Rocket League"})).toHaveCount(1)
+    await expect(games.filter({hasText: "Valorant"})).toHaveCount(0)
+    await expect(games.filter({hasText: "CS2"})).toHaveCount(0)
+  })
+
+  test("a game's own page still offers a team", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+
+    await expect(page.getByTestId("team-roster-add")).toContainText("Add a team")
+    await page.getByTestId("team-roster-add").click()
+
+    // The game is settled by the page, so it is not asked for.
+    await expect(page.getByTestId("add-team-dialog")).toContainText("Add a team")
+    await expect(page.getByTestId("add-team-game")).toHaveCount(0)
+  })
+
   test("adding a team in a game with none this season puts that game on the index", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())

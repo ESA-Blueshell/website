@@ -30,6 +30,8 @@ const props = defineProps<{
   game?: Game
   /** The games to choose from, where it is not. */
   games?: Array<{game: Game; name: string}>
+  /** Games already in the season on show, which there is nothing to add. */
+  fieldedGames?: Game[]
   /** Teams already playing this season, which there is no sense in offering again. */
   fieldedTeamIds: number[]
   accent?: string
@@ -54,6 +56,22 @@ const failure = ref<string | null>(null)
 const saving = ref(false)
 
 const game = computed<Game | null>(() => props.game ?? chosenGame.value)
+
+/**
+ * A game already in the season on show is not one to add to it: putting another team into a
+ * game that is already there is what that game's own page is for.
+ */
+const gamesToOffer = computed(() =>
+  (props.games ?? []).filter(one => !(props.fieldedGames ?? []).includes(one.game)))
+
+/**
+ * Named for what it does. On a game's own page a team is being added; on the index a game
+ * is, and a game arrives in a season by having a team fielded in it.
+ */
+const heading = computed(() => {
+  const where = props.season ? ` to ${props.season.name}` : ""
+  return props.game ? `Add a team${where}` : `Add a game${where}`
+})
 
 /** Teams of the game that are not already playing this season. */
 const offered = computed<Team[]>(() =>
@@ -177,13 +195,45 @@ const submit = async () => {
     :accent="accent"
     :open="open"
     testid="add-team-dialog"
-    :title="season ? `Add a team to ${season.name}` : 'Add a team'"
+    :title="heading"
     @update:open="emit('update:open', $event)"
   >
     <form
       class="team-form"
       @submit.prevent="submit"
     >
+      <label
+        v-if="gamesToOffer.length > 0"
+        class="team-form__field"
+      >
+        <span class="team-form__label">Game</span>
+        <select
+          v-model="chosenGame"
+          class="team-form__input"
+          data-testid="add-team-game"
+          required
+        >
+          <option :value="null">
+            Pick a game
+          </option>
+          <option
+            v-for="option in gamesToOffer"
+            :key="option.game"
+            :value="option.game"
+          >
+            {{ option.name }}
+          </option>
+        </select>
+      </label>
+
+      <p
+        v-else-if="games && games.length > 0"
+        class="team-form__note"
+        data-testid="add-team-no-games"
+      >
+        Every game the association knows already plays this season.
+      </p>
+
       <div
         class="team-form__choice"
         role="radiogroup"
@@ -212,26 +262,6 @@ const submit = async () => {
         </button>
       </div>
 
-      <label
-        v-if="games && games.length > 0"
-        class="team-form__field"
-      >
-        <span class="team-form__label">Game</span>
-        <select
-          v-model="chosenGame"
-          class="team-form__input"
-          data-testid="add-team-game"
-          required
-        >
-          <option
-            v-for="option in games"
-            :key="option.game"
-            :value="option.game"
-          >
-            {{ option.name }}
-          </option>
-        </select>
-      </label>
 
       <label
         v-if="source === 'new'"

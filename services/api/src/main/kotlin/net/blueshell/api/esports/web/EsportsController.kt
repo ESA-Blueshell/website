@@ -68,7 +68,17 @@ class EsportsController(
         @PathVariable game: String,
         @Valid @RequestBody request: UpdateGamePageRequest,
     ): GamePageResponse =
-        gamePages.update(game, request.slug, request.intro, request.sortIndex, request.fielded).asResponse()
+        gamePages.update(
+            game = game,
+            name = request.name,
+            slug = request.slug,
+            intro = request.intro,
+            accent = request.accent,
+            mark = request.mark,
+            banner = request.banner,
+            sortIndex = request.sortIndex,
+            fielded = request.fielded,
+        ).asResponse()
 
     @GetMapping("/seasons")
     @PermitAll

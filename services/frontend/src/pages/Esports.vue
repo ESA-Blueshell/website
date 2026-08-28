@@ -8,12 +8,13 @@ import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
+import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons} from "@/domains/esports/adapters/esports"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
-import type {Game, Season, Team} from "@/domains/esports/adapters/esports"
+import type {Game, GameRecord, Season, Team} from "@/domains/esports/adapters/esports"
 
 defineOptions({name: "EsportsPage"})
 
@@ -23,7 +24,7 @@ const motion = useMotionAllowed()
 
 // Which games exist, what each is called and the art each carries are the records' answer;
 // the index keeps no list of its own.
-const {fielded: playedGames, ready, identityOf, recordOf} = useGames()
+const {fielded: playedGames, ready, identityOf, recordOf, refresh: refreshGames} = useGames()
 
 const gameCodes = computed<Game[]>(() => playedGames.value.map(one => one.game))
 const urlOf = (game: string) => {
@@ -103,6 +104,24 @@ const seasonRemoved = async (gone: Season) => {
   const next = stripSeasons.value[0] ?? null
   if (next) await show(next.id)
   else await reload()
+}
+
+/** The game being corrected, from the slice it is shown on. */
+const editingGame = ref<GameRecord | null>(null)
+const gameEditorOpen = ref(false)
+
+const editGame = (game: string) => {
+  editingGame.value = recordOf(game)
+  gameEditorOpen.value = true
+}
+
+/**
+ * A game corrected is a game every slice draws differently, and one marked no longer fielded
+ * leaves the band. Re-asking is the whole of showing that.
+ */
+const gameSaved = async () => {
+  await refreshGames()
+  await reload(selected.value ?? undefined)
 }
 
 const adding = ref(false)
@@ -221,9 +240,11 @@ const seasonSaved = (saved: Season) => {
             :items="slices"
             :may-add="mayEdit"
             :open-id="justAdded"
+            :may-edit="mayEdit"
             testid-prefix="esports-game"
             @go="item => item.href && router.push(item.href)"
             @add="adding = true"
+            @edit="id => editGame(String(id))"
           >
             <template #details="{item}">
               <span class="team-slice__group">
@@ -252,6 +273,14 @@ const seasonSaved = (saved: Season) => {
             </template>
           </banner-slices>
         </Motion>
+
+        <game-dialog
+          accent="var(--color-brand)"
+          :game="editingGame"
+          :open="gameEditorOpen"
+          @saved="gameSaved"
+          @update:open="gameEditorOpen = $event"
+        />
 
         <add-team-dialog
           accent="var(--color-brand)"

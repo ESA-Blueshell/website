@@ -126,12 +126,25 @@ data class CreateGameRequest(
 
 @Schema(name = "UpdateGamePageRequest", description = "How a game presents itself")
 data class UpdateGamePageRequest(
+    @field:NotBlank(message = "A game needs a name")
+    @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
+    @field:Schema(description = "What the pages print for this game. Its code is not editable")
+    val name: String,
     @field:NotBlank
     @field:Size(max = 64)
     @field:Schema(description = "The address the game's page answers to")
     val slug: String,
     @field:Size(max = 4000)
     val intro: String? = null,
+    @field:Size(max = 32)
+    @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
+    val accent: String? = null,
+    @field:Size(max = 255)
+    @field:Schema(description = "Asset file name for the game's own mark")
+    val mark: String? = null,
+    @field:Size(max = 255)
+    @field:Schema(description = "Asset file name for the image behind the game on the index")
+    val banner: String? = null,
     val sortIndex: Int = 0,
     @field:Schema(description = "Whether the association still fields a team in it")
     val fielded: Boolean = true,

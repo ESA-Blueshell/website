@@ -13,6 +13,7 @@ import {
   findEsportsPage,
   findGameAccounts,
   createGame,
+  updateGamePage,
   findGamePages,
   findRoster,
   findSeasonContents,
@@ -90,6 +91,42 @@ export async function addGameOrReason(
 ): Promise<GameSaved | SeasonRefused> {
   const res = await createGame({body: {name: game.name, slug: game.slug}})
   if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be added.")}
+  return {ok: true, game: res.data}
+}
+
+/**
+ * A game corrected, from wherever it is shown.
+ *
+ * Its code is not here: it is the identity a team, a roster and a member's handle point at, and
+ * changing it would be a different game.
+ */
+export async function saveGameOrReason(
+  code: Game,
+  game: {
+    name: string
+    slug: string
+    intro: string | null
+    accent: string | null
+    mark: string | null
+    banner: string | null
+    sortIndex: number
+    fielded: boolean
+  },
+): Promise<GameSaved | SeasonRefused> {
+  const res = await updateGamePage({
+    path: {game: code},
+    body: {
+      name: game.name,
+      slug: game.slug,
+      intro: game.intro ?? undefined,
+      accent: game.accent ?? undefined,
+      mark: game.mark ?? undefined,
+      banner: game.banner ?? undefined,
+      sortIndex: game.sortIndex,
+      fielded: game.fielded,
+    },
+  })
+  if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be saved.")}
   return {ok: true, game: res.data}
 }
 

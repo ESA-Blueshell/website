@@ -154,7 +154,7 @@ class GamePageIT : UserTestSupport() {
             put("/esports/games/{game}", "GEOGUESSR")
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"slug":"geoguessr","intro":"Guessing, competitively.","sortIndex":5,"fielded":true}"""),
+                .content("""{"name":"GeoGuessr","slug":"geoguessr","intro":"Guessing, competitively.","sortIndex":5,"fielded":true}"""),
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.intro").value("Guessing, competitively."))
@@ -171,7 +171,7 @@ class GamePageIT : UserTestSupport() {
             put("/esports/games/{game}", "SMASH")
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"slug":"valorant","intro":null,"sortIndex":8,"fielded":false}"""),
+                .content("""{"name":"Super Smash Bros.","slug":"valorant","intro":null,"sortIndex":8,"fielded":false}"""),
         )
             .andExpect(status().isConflict)
     }
@@ -185,7 +185,7 @@ class GamePageIT : UserTestSupport() {
             put("/esports/games/{game}", "TRACKMANIA")
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"slug":"trackmania","intro":"Driving, fast.","sortIndex":6,"fielded":true}"""),
+                .content("""{"name":"Trackmania","slug":"trackmania","intro":"Driving, fast.","sortIndex":6,"fielded":true}"""),
         )
             .andExpect(status().isOk)
     }
@@ -297,6 +297,82 @@ class GamePageIT : UserTestSupport() {
     }
 
     @Test
+    fun `the board corrects a game's name, colour and art where it is shown`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            put("/esports/games/{game}", "TRACKMANIA")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"name":"TrackMania","slug":"trackmania","intro":"Driving, fast.",
+                     "accent":"#22d3ee","mark":"valorant.png","banner":"valorantesports1.jpg",
+                     "sortIndex":6,"fielded":true}
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value("TrackMania"))
+            .andExpect(jsonPath("$.accent").value("#22d3ee"))
+            .andExpect(jsonPath("$.mark").value("valorant.png"))
+            // The code is the identity everything else points at, and is not the request's to set.
+            .andExpect(jsonPath("$.game").value("TRACKMANIA"))
+    }
+
+    @Test
+    fun `art can be taken away again, leaving the island's own colour`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            put("/esports/games/{game}", "VALORANT")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Valorant","slug":"valorant","accent":"","mark":"","sortIndex":1,"fielded":true}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.accent").doesNotExist())
+            .andExpect(jsonPath("$.mark").doesNotExist())
+    }
+
+    @Test
+    fun `a game marked no longer fielded keeps everything it holds`() {
+        val board = createUserWithRole(Role.BOARD)
+        mvc.perform(
+            post("/esports/teams").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"game":"VALORANT","name":"BS Retiring"}"""),
+        ).andExpect(status().isCreated)
+
+        mvc.perform(
+            put("/esports/games/{game}", "VALORANT")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"Valorant","slug":"valorant","sortIndex":1,"fielded":false}"""),
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.fielded").value(false))
+
+        // The soft act: it stops being current and its history stays readable.
+        mvc.perform(get("/esports/teams").param("game", "VALORANT"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.name == 'BS Retiring')]").exists())
+    }
+
+    @Test
+    fun `a game cannot be renamed to nothing`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            put("/esports/games/{game}", "VALORANT")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"   ","slug":"valorant","sortIndex":1,"fielded":true}"""),
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
     fun `a member cannot rewrite a game's page`() {
         val member = createUserWithRole(Role.MEMBER)
 
@@ -304,7 +380,7 @@ class GamePageIT : UserTestSupport() {
             put("/esports/games/{game}", "VALORANT")
                 .with(bearer(member))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"slug":"valorant","intro":"Mine now.","sortIndex":1,"fielded":true}"""),
+                .content("""{"name":"Valorant","slug":"valorant","intro":"Mine now.","sortIndex":1,"fielded":true}"""),
         )
             .andExpect(status().isForbidden)
     }
@@ -315,7 +391,7 @@ class GamePageIT : UserTestSupport() {
         mvc.perform(
             put("/esports/games/{game}", "VALORANT")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"slug":"valorant","intro":null,"sortIndex":1,"fielded":true}"""),
+                .content("""{"name":"Valorant","slug":"valorant","intro":null,"sortIndex":1,"fielded":true}"""),
         )
             .andExpect(status().isUnauthorized)
     }

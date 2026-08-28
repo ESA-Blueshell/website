@@ -68,13 +68,37 @@ class GamePageService(private val pages: GamePageRepository) {
         return pages.save(GamePage(game = code, name = called, slug = address, sortIndex = last + 1))
     }
 
+    /**
+     * A game corrected. Everything about it is editable except its code, which is the identity
+     * a team, a roster and a member's handle already point at.
+     *
+     * Marking it no longer fielded is the soft act: it stops being offered as current and keeps
+     * every team, season and roster place it holds.
+     */
     @Transactional
-    fun update(game: String, slug: String, intro: String?, sortIndex: Int, fielded: Boolean): GamePage {
+    @Suppress("LongParameterList")
+    fun update(
+        game: String,
+        name: String,
+        slug: String,
+        intro: String?,
+        accent: String?,
+        mark: String?,
+        banner: String?,
+        sortIndex: Int,
+        fielded: Boolean,
+    ): GamePage {
         val page = findByGame(game)
+        val called = name.trim()
+        if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name")
         val wanted = addressFor(slug)
         claimed(wanted, page.id)
+        page.name = called
         page.slug = wanted
         page.intro = intro?.trim()?.ifBlank { null }
+        page.accent = accent?.trim()?.ifBlank { null }
+        page.mark = mark?.trim()?.ifBlank { null }
+        page.banner = banner?.trim()?.ifBlank { null }
         page.sortIndex = sortIndex
         page.fielded = fielded
         return pages.save(page)

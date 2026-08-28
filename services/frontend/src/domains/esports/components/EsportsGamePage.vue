@@ -5,6 +5,7 @@ import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
+import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons, unfieldTeamFromSeason} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
@@ -28,9 +29,19 @@ const router = useRouter()
 const motion = useMotionAllowed()
 // What the game is called, the colour it carries and its mark are its record's answer, as is
 // what this page says about it.
-const {identityOf, recordOf} = useGames()
+const {identityOf, recordOf, refresh: refreshGames} = useGames()
 const identity = computed(() => identityOf(props.game))
 const intro = computed(() => recordOf(props.game)?.intro ?? "")
+
+/** The same editor the index offers, reached from the page the game is on. */
+const gameEditorOpen = ref(false)
+
+const gameSaved = async () => {
+  await refreshGames()
+  // Its address may have moved, and this page is at the old one.
+  const now = recordOf(props.game)
+  if (now && now.slug !== route.params.slug) void router.replace(`/esports/${now.slug}`)
+}
 
 const seasonFromRoute = () => {
   const raw = route.query.season
@@ -226,6 +237,27 @@ const seasonSaved = (saved: Season) => {
           :style="{backgroundColor: identity.accent}"
         />
         <div class="relative mx-auto w-full max-w-6xl px-5 pt-12 pb-8 sm:px-8 sm:pt-16 sm:pb-10">
+          <!-- Where the game itself is corrected: the same affordance the seasons and the
+               teams below already carry. -->
+          <button
+            v-if="mayEdit"
+            aria-label="Edit this game"
+            class="game-header__edit"
+            data-testid="esports-game-edit"
+            type="button"
+            @click="gameEditorOpen = true"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+            </svg>
+          </button>
+
           <div class="flex items-center gap-4">
             <img
               v-if="identity.mark"
@@ -251,6 +283,14 @@ const seasonSaved = (saved: Season) => {
             v-html="$markdownToHtml(intro)"
           />
         </div>
+
+        <game-dialog
+          :accent="identity.accent"
+          :game="recordOf(game)"
+          :open="gameEditorOpen"
+          @saved="gameSaved"
+          @update:open="gameEditorOpen = $event"
+        />
       </header>
 
       <!-- The seasons as a line rather than a row of pills: the years read across the top,
@@ -396,3 +436,41 @@ const seasonSaved = (saved: Season) => {
     </esports-island>
   </v-main>
 </template>
+
+<style scoped>
+/*
+  The same affordance the slices below carry: top right, no chrome, and where there is a
+  pointer it waits for one. Where there is not, it stands.
+*/
+.game-header__edit {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 3;
+  visibility: hidden;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: 0;
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.game-header__edit svg {
+  width: 23px;
+  height: 23px;
+}
+
+header:hover .game-header__edit,
+header:focus-within .game-header__edit {
+  visibility: visible;
+}
+
+@media (hover: none) {
+  .game-header__edit {
+    visibility: visible;
+  }
+}
+</style>

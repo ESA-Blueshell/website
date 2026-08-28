@@ -1574,10 +1574,26 @@ export type UpdateEventSignUpRequest = {
  */
 export type UpdateGamePageRequest = {
     /**
+     * The colour that carries this game, or nothing for the island's own
+     */
+    accent?: string | null;
+    /**
+     * Asset file name for the image behind the game on the index
+     */
+    banner?: string | null;
+    /**
      * Whether the association still fields a team in it
      */
     fielded: boolean;
     intro?: string | null;
+    /**
+     * Asset file name for the game's own mark
+     */
+    mark?: string | null;
+    /**
+     * What the pages print for this game. Its code is not editable
+     */
+    name: string;
     /**
      * The address the game's page answers to
      */

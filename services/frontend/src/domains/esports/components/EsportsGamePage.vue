@@ -259,7 +259,7 @@ const seasonSaved = (saved: Season) => {
         <img
           v-if="pageBanner"
           alt=""
-          class="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40"
+          class="page-banner pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40"
           data-testid="esports-page-banner"
           :src="pageBanner"
         >
@@ -541,5 +541,21 @@ header:focus-within .game-header__edit {
   .game-header__edit {
     visibility: visible;
   }
+}
+
+/*
+ * The banner is carried to nothing before the header ends.
+ *
+ * Drawn across the header's whole box it stopped at that box's edge, which put a hard line
+ * across the page exactly where the header meets the season strip — and the darker the
+ * picture the more it read as a panel sitting on the page rather than as the top of it.
+ *
+ * Masked rather than covered by a gradient: an overlay has to be the colour of whatever is
+ * behind it, and what is behind it is the game's own accent wash, which is a different colour
+ * on every page.
+ */
+.page-banner {
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
 }
 </style>

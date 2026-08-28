@@ -81,8 +81,8 @@ class EsportsSeedLoadIT : UserTestSupport() {
     fun `a game nobody has drawn art for carries none rather than something invented`() {
         runLoader()
 
-        // Trackmania has never had an accent or a mark written for it. The island reads such a
-        // game on its own colour, which it can only do if the record says there is none.
+        // No accent or icon has ever been chosen for Trackmania. The frontend falls back to the
+        // brand colour, which it can only do if the record says the fields are empty.
         val row = jdbc.queryForMap("SELECT accent, mark, banner FROM game_page WHERE game = 'TRACKMANIA'")
         assertThat(row["accent"]).isNull()
         assertThat(row["mark"]).isNull()
@@ -96,7 +96,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
         runLoader()
 
-        // The files are the reviewed record, the same way they are for a roster entry.
+        // The files are authoritative, the same as for a roster entry.
         assertThat(jdbc.queryForObject("SELECT name FROM game_page WHERE game = 'GEOGUESSR'", String::class.java))
             .isEqualTo("GeoGuessr")
     }
@@ -108,9 +108,8 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
         runLoader()
 
-        // A game is what a team points at, so the file listing one is the statement that it
-        // exists. A team or a roster entry is the other way round: removing it is a decision
-        // the next run leaves alone.
+        // Teams reference a game, so a row in the file means the game must exist. Teams and roster
+        // entries work the other way round: deleting one is deliberate, and the next run respects it.
         assertThat(count("game_page")).isEqualTo(8)
     }
 

@@ -6,11 +6,11 @@ import {dropGameOrReason, loadGameContents, saveGameOrReason, type GameRecord} f
 import {useGames} from "./useGames"
 
 /**
- * Correcting a game from wherever it is shown: what it is called, what its page answers to and
- * says, where it sits among the others, and the art it is drawn with.
+ * Edits a game from wherever it is shown: its name, page address, intro text, position, accent
+ * colour and images.
  *
- * A refusal keeps what was typed, the way the season dialog does. Losing an address because
- * another game claimed it would mean typing it again to find out what the objection was.
+ * A rejected save keeps the entered values, as SeasonDialog does. Clearing the form because the
+ * address was taken would mean retyping it just to see the error again.
  */
 defineOptions({name: "GameDialog"})
 
@@ -31,7 +31,7 @@ const {refresh: refreshGames} = useGames()
 const name = ref("")
 const slug = ref("")
 const intro = ref("")
-/** The game's own colour, which is not the island accent this dialog is drawn on. */
+/** The game's accent colour. Distinct from the `accent` prop, which styles the dialog itself. */
 const colour = ref("")
 const mark = ref("")
 const banner = ref("")
@@ -40,7 +40,7 @@ const fielded = ref(true)
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
-// Opening fills the form from the game as it stands; a reopen after a refusal starts clean.
+// Opening fills the form from the current record; reopening after a rejection starts clean.
 watch(
   () => [props.open, props.game] as const,
   ([open]) => {
@@ -60,8 +60,8 @@ watch(
 )
 
 /**
- * The address as it will be stored, so what is typed and what is reachable are the same thing.
- * GamePageService.addressFor is the rule; this shows it rather than deciding it.
+ * The address as it will be stored, so what is typed matches what the page is served from.
+ * GamePageService.addressFor decides it; this only previews the same normalisation.
  */
 const addressPreview = computed(() =>
   slug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))
@@ -73,10 +73,7 @@ const removing = ref(false)
 const removalFailure = ref<string | null>(null)
 const holds = ref<{teams: number; players: number} | null>(null)
 
-/**
- * How much a game holds is read before the question is put rather than after it is answered,
- * because what it holds is what decides whether it can go at all.
- */
+/** The counts are fetched before the dialog opens, since they decide whether deleting is possible at all. */
 const askToRemove = async () => {
   const game = props.game
   if (!game) return
@@ -92,12 +89,11 @@ const question = computed(() => {
   if (!game) return ""
   const held = holds.value
   if (!held || held.teams === 0) {
-    return `${game.name} holds no teams. Removing it takes it and its page off the site.`
+    return `${game.name} has no teams. Deleting it removes the game and its page for good.`
   }
-  return `${game.name} holds ${countOf(held.teams, "team", "teams")} and `
-    + `${countOf(held.players, "roster place", "roster places")}, so it cannot be removed. `
-    + "Untick \"still fielded\" instead: it stops being offered as current and everything it "
-    + "played stays readable."
+  return `${game.name} has ${countOf(held.teams, "team", "teams")} with `
+    + `${countOf(held.players, "person", "people")} listed, so it cannot be deleted. `
+    + "Uncheck \"Active\" instead to archive it: its page and history stay online."
 })
 
 const removeGame = async () => {
@@ -108,12 +104,12 @@ const removeGame = async () => {
   try {
     const result = await dropGameOrReason(game.game)
     if (!result.ok) {
-      // Nothing has gone, so the dialog stands and says why.
+      // Nothing was deleted, so the dialog stays open and shows the reason.
       removalFailure.value = result.reason
       return
     }
-    // Said before the records are re-read: forgetting the game unmounts the page this dialog
-    // is on, and an emit from a component that is going nowhere reaches nobody.
+    // Emitted before refetching: dropping the game unmounts the page this dialog is mounted on,
+    // and an event from an unmounted component never reaches its handler.
     emit("removed", game)
     confirming.value = false
     emit("update:open", false)
@@ -143,7 +139,7 @@ const submit = async () => {
       failure.value = result.reason
       return
     }
-    // Every page draws this game from the records, so they are what has to be brought up to date.
+    // Every page reads this game from the shared records, so refetch them.
     await refreshGames()
     emit("saved", result.game)
     emit("update:open", false)
@@ -175,12 +171,12 @@ const submit = async () => {
           required
           type="text"
         >
-        <!-- The code is what a team, a roster and a member's handle already point at. -->
-        <span class="game-form__hint">Known to everything else as {{ game?.game }}, which does not change</span>
+        <!-- The code is what teams, rosters and game handles reference, so it is fixed. -->
+        <span class="game-form__hint">ID: {{ game?.game }} — used internally, cannot be changed</span>
       </label>
 
       <label class="game-form__field">
-        <span class="game-form__label">Address</span>
+        <span class="game-form__label">Page address</span>
         <input
           v-model="slug"
           class="game-form__input"
@@ -193,7 +189,7 @@ const submit = async () => {
       </label>
 
       <label class="game-form__field">
-        <span class="game-form__label">What the page says</span>
+        <span class="game-form__label">Intro text</span>
         <textarea
           v-model="intro"
           class="game-form__input game-form__input--tall"
@@ -205,7 +201,7 @@ const submit = async () => {
 
       <div class="game-form__row">
         <label class="game-form__field">
-          <span class="game-form__label">Colour</span>
+          <span class="game-form__label">Accent colour</span>
           <input
             v-model="colour"
             class="game-form__input"
@@ -214,10 +210,10 @@ const submit = async () => {
             placeholder="#ff4655"
             type="text"
           >
-          <span class="game-form__hint">Empty reads on the association's own blue</span>
+          <span class="game-form__hint">Leave empty to use the default blue</span>
         </label>
         <label class="game-form__field game-form__field--narrow">
-          <span class="game-form__label">Order</span>
+          <span class="game-form__label">Position</span>
           <input
             v-model.number="sortIndex"
             class="game-form__input"
@@ -229,7 +225,7 @@ const submit = async () => {
 
       <div class="game-form__row">
         <label class="game-form__field">
-          <span class="game-form__label">Mark</span>
+          <span class="game-form__label">Icon</span>
           <input
             v-model="mark"
             class="game-form__input"
@@ -240,7 +236,7 @@ const submit = async () => {
           >
         </label>
         <label class="game-form__field">
-          <span class="game-form__label">Banner</span>
+          <span class="game-form__label">Background image</span>
           <input
             v-model="banner"
             class="game-form__input"
@@ -259,9 +255,10 @@ const submit = async () => {
           type="checkbox"
         >
         <span>
-          Still fielded
+          Active
           <span class="game-form__hint">
-            Unticking it stops the game being offered as current. Everything it played stays readable.
+            Uncheck to archive. The game's page and history stay online, it just stops appearing in
+            menus and when adding a team.
           </span>
         </span>
       </label>

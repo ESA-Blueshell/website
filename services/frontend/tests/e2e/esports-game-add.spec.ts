@@ -2,8 +2,7 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 /**
- * Adding a game the association has started playing, from the band where the games are shown.
- * A game used to arrive by somebody editing a compiled list and deploying.
+ * Adding a game from the index band. A game used to require editing a compiled enum and deploying.
  */
 test.describe("adding a game", () => {
   test("a visitor is offered no way to add one", async ({page}) => {
@@ -15,7 +14,7 @@ test.describe("adding a game", () => {
     await expect(page.getByTestId("esports-game-add")).toHaveCount(0)
   })
 
-  test("asks what the game is called and what its page answers to", async ({page, context}) => {
+  test("asks for the game name and page address", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
@@ -68,7 +67,7 @@ test.describe("adding a game", () => {
     await page.getByTestId("add-team-name").fill("BS Seconds")
     await page.getByTestId("add-team-save").click()
 
-    await expect(page.getByTestId("add-team-dialog")).toContainText("already answers to")
+    await expect(page.getByTestId("add-team-dialog")).toContainText("is already used by")
     // The address is the thing to correct, so nothing typed is thrown away.
     await expect(page.getByTestId("add-game-name")).toHaveValue("Valorant Two")
     await expect(page.getByTestId("add-game-slug")).toHaveValue("valorant")

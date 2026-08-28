@@ -9,9 +9,9 @@ import java.sql.Date
 /**
  * Loads the recovered esports history from the seed files.
  *
- * The history was recovered from years of page commits, and the files under `db/seed/esports`
- * are the reviewed record of it: one row per game, season, team and roster entry, in a form
- * somebody who was there can read and correct. This puts what those files say into the database.
+ * The history was recovered from years of page commits. The files under `db/seed/esports` are the
+ * reviewed record of it — one row per game, season, team and roster entry, in a format someone who
+ * was there can read and correct. This loads them into the database.
  *
  * Repeatable rather than versioned, keyed on the files' own contents, so correcting a row is
  * an edit and a deploy rather than another migration. Running it against a database that
@@ -36,7 +36,7 @@ class R__Esports_seed : BaseJavaMigration() {
 
     override fun migrate(context: Context) {
         val connection = context.connection
-        // The games come first: a team names one, and the database now enforces that it exists.
+        // Games first: teams reference one, and there is now a foreign key enforcing it.
         val games = parse(read("games.csv"))
         games.forEach { row -> upsertGame(connection, row) }
         val seasons = parse(read("seasons.csv"))
@@ -71,12 +71,11 @@ class R__Esports_seed : BaseJavaMigration() {
     }
 
     /**
-     * A game as the file has it: what it is called, the address its page answers to, the art it
-     * carries and whether a team is still fielded in it.
+     * Writes one game: its display name, page URL, images, position and fielded flag.
      *
-     * The code is the identity and is never rewritten. Unlike the rest of the seed a deleted game
-     * is not left deleted: a game is what a team points at, so a row in the file is the statement
-     * that the game exists.
+     * The code is never rewritten — it is what teams and game accounts reference. Unlike the rest
+     * of the seed, a deleted game is restored rather than left deleted: teams reference a game, so
+     * a row in the file means the game has to exist.
      */
     private fun upsertGame(connection: Connection, row: Map<String, String>) {
         val code = row.getValue("game")
@@ -89,9 +88,8 @@ class R__Esports_seed : BaseJavaMigration() {
         val fielded = row.getValue("fielded").toBoolean()
         val intro = row.getValue("intro").ifBlank { null }
 
-        // Found whether or not it is deleted: a code is unique across every row, so there is no
-        // second row to insert beside a deleted one. A game the file lists exists, so a deleted
-        // row is brought back rather than duplicated.
+        // Matched regardless of deleted_at: the code is unique across every row, so inserting a
+        // second row alongside a deleted one would fail. A deleted game is restored instead.
         val existing = activeId(connection, "SELECT id FROM game_page WHERE game = ?", code)
         val fields = listOf<Any?>(name, slug, accent, mark, banner, sortIndex, fielded, intro)
         if (existing != null) {

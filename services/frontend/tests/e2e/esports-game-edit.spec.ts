@@ -88,11 +88,11 @@ test.describe("changing a game", () => {
     await page.getByTestId("game-dialog-slug").fill("geoguessr")
     await page.getByTestId("game-dialog-save").click()
 
-    await expect(page.getByTestId("game-dialog-failure")).toContainText("already answers to")
+    await expect(page.getByTestId("game-dialog-failure")).toContainText("is already used by")
     await expect(page.getByTestId("game-dialog-slug")).toHaveValue("geoguessr")
   })
 
-  test("a game marked no longer fielded leaves the navigation and keeps its page", async ({page, context}) => {
+  test("a game archived leaves the navigation and keeps its page", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
@@ -102,7 +102,7 @@ test.describe("changing a game", () => {
     await page.getByTestId("game-dialog-save").click()
     await expect(page.getByTestId("game-dialog")).toHaveCount(0)
 
-    // Its history stays readable at the address it always had.
+    // Its history stays online at the address it always had.
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Trackmania")
     await expect(page.locator("a[href='/esports/trackmania']")).toHaveCount(0)
   })

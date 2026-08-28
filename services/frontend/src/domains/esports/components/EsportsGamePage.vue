@@ -206,9 +206,9 @@ const askToDrop = (teamId: number | string) => {
 const dropQuestion = computed(() => {
   const team = dropping.value
   if (!team || !season.value) return ""
-  const players = team.players === 1 ? "1 roster place" : `${team.players} roster places`
-  return `${team.name} played ${season.value.name} with ${players}. Dropping it from this season `
-    + "leaves the team, and the other seasons it played, as they are."
+  const players = team.players === 1 ? "1 person" : `${team.players} people`
+  return `${team.name} played ${season.value.name} with ${players} listed. Removing it from this `
+    + "season leaves the team, and the other seasons it played, unchanged."
 })
 
 const dropTeamFromSeason = async () => {
@@ -412,7 +412,6 @@ const seasonSaved = (saved: Season) => {
             add-label="Add a team"
             :items="slices"
             :may-add="mayEdit"
-            :editing-id="lineupOpen ? editingTeam?.id ?? null : null"
             :may-drop="mayEdit"
             :may-edit="mayEdit"
             :open-id="justAdded"
@@ -421,20 +420,6 @@ const seasonSaved = (saved: Season) => {
             @drop="askToDrop"
             @edit="editLineup"
           >
-            <template #editor="{item}">
-              <lineup-editor
-                :accent="identity.accent"
-                :open="lineupOpen && item.id === editingTeam?.id"
-                :season="season"
-                :team-id="editingTeam?.id ?? null"
-                :team-image="editingTeam?.image ?? null"
-                :team-name="editingTeam?.name ?? ''"
-                :team-poster-url="editingTeam?.posterUrl ?? null"
-                @removed="lineupSaved"
-                @saved="lineupSaved"
-                @update:open="lineupOpen = $event"
-              />
-            </template>
             <template #details="{item}">
               <span
                 v-for="group in rosterOf(item.id as number)"
@@ -472,6 +457,19 @@ const seasonSaved = (saved: Season) => {
               </span>
             </template>
           </banner-slices>
+
+          <lineup-editor
+            :accent="identity.accent"
+            :open="lineupOpen"
+            :season="season"
+            :team-id="editingTeam?.id ?? null"
+            :team-image="editingTeam?.image ?? null"
+            :team-name="editingTeam?.name ?? ''"
+            :team-poster-url="editingTeam?.posterUrl ?? null"
+            @removed="lineupSaved"
+            @saved="lineupSaved"
+            @update:open="lineupOpen = $event"
+          />
         </Motion>
       </section>
 

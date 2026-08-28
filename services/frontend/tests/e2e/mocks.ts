@@ -43,8 +43,8 @@ const brevoTargets = [
 ]
 
 /**
- * The games themselves, as their records hold them: what each is called, the address its page
- * answers to, and the art it is drawn with. The pages read every one of these from here.
+ * The game records: each game's display name, the page
+ * address, and its images. The pages read all of it from here.
  */
 const esportsGames = [
   {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", mark: "valorant.png", banner: "valorantesports1.jpg", intro: "Shooters, and plenty of them.", sortIndex: 1, fielded: true},
@@ -699,7 +699,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug)
       if (held) {
-        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+        return fulfillJson(route, {detail: `The address '${slug}' is already used by ${held.name}.`}, 409)
       }
       const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
       const made = {
@@ -724,8 +724,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       if (held.length + seeded > 0) {
         const game = known.find(one => one.game === code)
         return fulfillJson(route, {
-          detail: `${game?.name ?? code} holds ${held.length + seeded} teams and 6 roster places. `
-            + "Mark it as no longer fielded instead, and everything it played stays readable.",
+          detail: `${game?.name ?? code} has ${held.length + seeded} teams with 6 people listed, `
+            + "so it cannot be deleted. Uncheck \"Active\" instead to archive it: its page and "
+            + "history stay online.",
         }, 409)
       }
       gamesGone.add(code)
@@ -740,7 +741,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug && one.game !== code)
       if (held) {
-        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+        return fulfillJson(route, {detail: `The address '${slug}' is already used by ${held.name}.`}, 409)
       }
       const was = known.find(one => one.game === code)
       const now = {

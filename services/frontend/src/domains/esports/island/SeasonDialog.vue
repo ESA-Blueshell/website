@@ -70,10 +70,10 @@ const question = computed(() => {
   if (!season) return ""
   const held = holds.value
   if (!held || (held.teams === 0 && held.players === 0)) {
-    return `${season.name} holds no teams. Removing it takes it off the strip.`
+    return `${season.name} has no teams. Deleting it removes it from the timeline.`
   }
-  return `${season.name} holds ${countOf(held.teams, "team", "teams")} and `
-    + `${countOf(held.players, "roster place", "roster places")}. Removing the season takes them with it.`
+  return `${season.name} has ${countOf(held.teams, "team", "teams")} with `
+    + `${countOf(held.players, "person", "people")} listed. Deleting the season removes them too.`
 })
 
 const removeSeason = async () => {

@@ -10,14 +10,13 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 /**
- * The games the association knows, and how each presents itself.
+ * Reads and writes the game records.
  *
- * Every game has a page whether or not a team is still fielded in it, because a retired game
- * keeps its history and somebody may still link to it.
+ * Every game has a page whether or not a team is still fielded in it: a retired game keeps its
+ * history and existing links to it must keep working.
  *
- * A game's code used to be a compiled constant, so a request naming one that did not exist could
- * not be built. It is a row now, so the codes that exist are whatever the rows say, and a request
- * naming something else has to be refused here.
+ * A game's code used to be a compiled enum constant, so an unknown code could not be written in
+ * Kotlin at all. Codes are now whatever rows exist, so unknown ones are rejected here instead.
  */
 @Service
 class GamePageService(
@@ -32,41 +31,44 @@ class GamePageService(
     fun findByGame(game: String): GamePage = requireGame(game)
 
     /**
-     * The game a code names, refused with a reason where none does.
+     * The game with this code, or a 400 naming the code that matched nothing.
      *
-     * Bad request rather than not-found: it is the same answer a code outside the compiled list
-     * used to get, when the framework could not turn it into one.
+     * 400 rather than 404, because that is what Spring already returned when it could not convert
+     * an unknown value into a Game enum constant.
      */
     @Transactional(readOnly = true)
     fun requireGame(game: String): GamePage =
         pages.findByGame(game.trim())
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "No game answers to '$game'")
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "There is no game with the code '$game'.")
 
-    /** The codes of every game there is, for anything that has to offer a choice of one. */
+    /** Every existing game code, for anything that has to offer a choice of one. */
     @Transactional(readOnly = true)
     fun codes(): List<String> = pages.findAllByOrderBySortIndexAsc().map { it.game }
 
-    /** The game an address belongs to, or nothing where no game answers to it. */
+    /** The game served from this page address, or null if none is. */
     @Transactional(readOnly = true)
     fun findBySlug(slug: String): GamePage? = pages.findBySlug(slug.trim().lowercase())
 
     /**
-     * A game the association has started playing.
+     * Creates a game from a name and a page address.
      *
-     * The caller says what it is called and what its page answers to; its code is taken from the
-     * name, because a code is the identity everything else points at and is nobody's to choose
-     * twice. Art can wait: a game with none reads on the island's own colour.
+     * The code is derived from the name rather than supplied, because it is what teams and game
+     * accounts reference and two people naming the same game must not produce two rows. Images are
+     * optional: a game without them renders on the site's brand colour.
      */
     @Transactional
     fun create(name: String, slug: String): GamePage {
         val called = name.trim()
-        if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name")
+        if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name.")
         val code = codeFor(called)
         if (code.isBlank()) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "'$called' has no letters or digits to name it by")
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "A game's name needs at least one letter or number.",
+            )
         }
         pages.findByGame(code)?.let { held ->
-            throw ResponseStatusException(HttpStatus.CONFLICT, "${held.name} is already a game")
+            throw ResponseStatusException(HttpStatus.CONFLICT, "There is already a game called ${held.name}.")
         }
         val address = addressFor(slug)
         claimed(address, null)
@@ -75,11 +77,11 @@ class GamePageService(
     }
 
     /**
-     * A game corrected. Everything about it is editable except its code, which is the identity
-     * a team, a roster and a member's handle already point at.
+     * Updates a game. Everything is editable except the code, which teams, rosters and game
+     * accounts reference.
      *
-     * Marking it no longer fielded is the soft act: it stops being offered as current and keeps
-     * every team, season and roster place it holds.
+     * Setting `fielded` to false archives it: it stops appearing in menus and when adding a team,
+     * and keeps every team, season and roster entry it has.
      */
     @Transactional
     @Suppress("LongParameterList")
@@ -96,7 +98,7 @@ class GamePageService(
     ): GamePage {
         val page = findByGame(game)
         val called = name.trim()
-        if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name")
+        if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name.")
         val wanted = addressFor(slug)
         claimed(wanted, page.id)
         page.name = called
@@ -111,9 +113,9 @@ class GamePageService(
     }
 
     /**
-     * What a game holds: teams recorded in it, and the roster places those carry.
+     * How many teams reference this game, and how many roster entries those teams hold.
      *
-     * Read so a removal can say what it would take before it is agreed to, rather than after.
+     * Read before the delete confirmation is shown, so the counts are visible when deciding.
      */
     @Transactional(readOnly = true)
     fun contentsOf(game: String): Pair<Long, Long> {
@@ -122,12 +124,12 @@ class GamePageService(
     }
 
     /**
-     * A game added by mistake, taken off the site.
+     * Deletes a game that has no teams.
      *
-     * A game that carries history cannot go: it is refused, and marking it no longer fielded is
-     * the act that fits — everything it played stays readable. What is left is a game holding
-     * nothing, which has no history to keep, so it is removed rather than hidden. Its code is
-     * unique across every row, and a hidden row would hold that code for good.
+     * A game with teams is rejected: archiving it with `fielded = false` is the operation that
+     * fits, and it keeps the history. What remains is a game with nothing to preserve, so the row
+     * is deleted outright rather than soft-deleted — the code is unique across every row, and a
+     * soft-deleted row would hold it permanently.
      */
     @Transactional
     fun delete(game: String) {
@@ -136,38 +138,46 @@ class GamePageService(
         if (held > 0) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
-                "${page.name} holds $held team${if (held == 1L) "" else "s"} and " +
-                    "$players roster place${if (players == 1L) "" else "s"}. " +
-                    "Mark it as no longer fielded instead, and everything it played stays readable.",
+                "${page.name} has $held team${if (held == 1L) "" else "s"} with " +
+                    "$players ${if (players == 1L) "person" else "people"} listed, so it cannot be " +
+                    "deleted. Uncheck \"Active\" instead to archive it: its page and history stay online.",
             )
         }
         pages.delete(page)
     }
 
     /**
-     * A code from a name: what everything else points at, so it carries no punctuation and no
-     * case. "Rocket League" is ROCKET_LEAGUE, the way the games already recorded read.
+     * Derives a code from a name: uppercase, with every run of other characters replaced by a
+     * single underscore. "Rocket League" becomes ROCKET_LEAGUE, matching the existing codes.
      */
     private fun codeFor(name: String): String =
         name.uppercase().map { if (it.isLetterOrDigit()) it else '_' }
             .joinToString("").trim('_').replace(Regex("_+"), "_").take(CODE_LENGTH)
 
-    /** An address somebody can be sent to: no case, no spaces, nothing that reads as a path. */
+    /** Normalises a page address: lowercase, non-alphanumeric runs replaced by a single hyphen. */
     private fun addressFor(slug: String): String {
         val address = slug.trim().lowercase().map { if (it.isLetterOrDigit()) it else '-' }
             .joinToString("").trim('-').replace(Regex("-+"), "-").take(SLUG_LENGTH)
-        if (address.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game's page needs an address")
+        if (address.isBlank()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a page address.")
+        }
         if (address in RESERVED) {
-            throw ResponseStatusException(HttpStatus.CONFLICT, "'$address' is the esports index's own address")
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "'$address' is reserved for the esports index page. Pick another address.",
+            )
         }
         return address
     }
 
-    /** An address is how somebody reaches a page; two games cannot share one. */
+    /** Two games cannot share a page address, since it is what the route resolves on. */
     private fun claimed(address: String, mine: Long?) {
         pages.findBySlug(address)?.let { held ->
             if (held.id != mine) {
-                throw ResponseStatusException(HttpStatus.CONFLICT, "${held.name} already answers to '$address'")
+                throw ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "The address '$address' is already used by ${held.name}.",
+                )
             }
         }
     }
@@ -176,7 +186,7 @@ class GamePageService(
         const val CODE_LENGTH = 32
         const val SLUG_LENGTH = 64
 
-        /** Addresses under /esports that are not a game's, so a game claiming one is unreachable. */
+        /** Paths under /esports that are not games. A game using one would be unreachable. */
         val RESERVED = setOf("competitive-scene")
     }
 }

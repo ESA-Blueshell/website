@@ -46,10 +46,10 @@ const emit = defineEmits<{
 
 type Source = "new" | "existing"
 
-/** What the game picker offers besides the games there already are. */
+/** The dropdown value meaning "not in this list — create it". */
 const ANOTHER = "__another__"
 
-// A game added here is offered everywhere teams are added, which means re-reading the records.
+// A game created here has to be offered wherever teams are added, so refetch the records.
 const {refresh: refreshGames} = useGames()
 
 const source = ref<Source>("new")
@@ -66,17 +66,14 @@ const dropped = ref<Set<number>>(new Set())
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
-/**
- * A game can be added where a game is being chosen, which is the index. A game's own page is
- * about one game and offers no picker.
- */
+/** Only the index offers a game dropdown; a game's own page is about one game and has none. */
 const mayAddGame = computed(() => props.game == null)
 
 const addingGame = computed(() => chosenGame.value === ANOTHER)
 
 /**
- * The address as it will be stored, so what is typed and what is reachable are the same thing.
- * GamePageService.addressFor is the rule; this shows it rather than deciding it.
+ * The address as it will be stored, so what is typed matches what the page is served from.
+ * GamePageService.addressFor decides it; this only previews the same normalisation.
  */
 const addressPreview = computed(() =>
   newGameSlug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))
@@ -94,8 +91,8 @@ const gamesToOffer = computed(() =>
   (props.games ?? []).filter(one => !(props.fieldedGames ?? []).includes(one.game)))
 
 /**
- * Named for what it does. On a game's own page a team is being added; on the index a game
- * is, and a game arrives in a season by having a team fielded in it.
+ * A game's own page adds a team to that game; the index adds a game, which enters a season by
+ * having a team fielded in it.
  */
 const heading = computed(() => {
   const where = props.season ? ` to ${props.season.name}` : ""
@@ -135,7 +132,7 @@ const named = computed(() =>
   (source.value === "new" ? name.value.trim() !== "" : chosenTeamId.value != null))
 
 const complete = computed(() => {
-  // A game being added is named here rather than picked, and its address comes with it.
+  // A new game is named here rather than picked, and needs an address too.
   if (addingGame.value) {
     return newGameName.value.trim() !== "" && newGameSlug.value.trim() !== "" && name.value.trim() !== ""
   }
@@ -168,7 +165,7 @@ watch([game, source, () => props.open], async ([forGame, from, open]) => {
   candidates.value = await loadTeams(forGame)
 })
 
-// A game nobody has played yet has no team that played before, so only the one path is open.
+// A brand new game has no previous teams, so only the "new team" option applies.
 watch(addingGame, (adding) => {
   if (adding) source.value = "new"
 })
@@ -209,12 +206,12 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    // The game first, where one is being added: everything below points at its code.
+    // Create the game first: the team below references its code.
     let forGame = game.value
     if (addingGame.value) {
       const made = await addGameOrReason({name: newGameName.value.trim(), slug: newGameSlug.value.trim()})
       if (!made.ok) {
-        // Whatever was typed stays: the address is the usual thing to correct.
+        // Keep the entered values: the address is usually what needs correcting.
         failure.value = made.reason
         return
       }
@@ -310,7 +307,7 @@ const submit = async () => {
             v-if="mayAddGame"
             :value="ANOTHER"
           >
-            Something else — a game we have started playing
+            Add a new game…
           </option>
         </select>
       </label>
@@ -320,12 +317,12 @@ const submit = async () => {
         class="team-form__note"
         data-testid="add-team-no-games"
       >
-        Every game the association knows already plays this season.
+        Every game already has a team this season.
       </p>
 
       <template v-if="addingGame">
         <label class="team-form__field">
-          <span class="team-form__label">What the game is called</span>
+          <span class="team-form__label">Game name</span>
           <input
             v-model="newGameName"
             class="team-form__input"
@@ -336,7 +333,7 @@ const submit = async () => {
           >
         </label>
         <label class="team-form__field">
-          <span class="team-form__label">What its page answers to</span>
+          <span class="team-form__label">Page address</span>
           <input
             v-model="newGameSlug"
             class="team-form__input"

@@ -14,17 +14,16 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
- * A game's own record: what it is called, the art it is drawn with, the address it answers to,
- * what is said about it, where it sits, and whether the association still fields a team in it.
- * All of it lived in the frontend, where a change to any of it was a deploy.
+ * A game's record: display name, images, page URL, intro text, position and fielded flag. All of
+ * it used to live in the frontend, where changing any of it meant a deploy.
  */
 @SpringBootTest
 class GamePageIT : UserTestSupport() {
 
     /**
-     * Nothing is seeded here. The games are what the migration established, and the suite's
-     * clean-up restores them after every case rather than wiping them, because a team and a
-     * game account point at one.
+     * Nothing is seeded here. The games come from the seed migration, and the suite's clean-up
+     * restores them after each test rather than wiping them, because teams and game accounts
+     * have foreign keys to them.
      */
     @Test
     fun `every game has a page, in the order they are shown`() {
@@ -57,7 +56,7 @@ class GamePageIT : UserTestSupport() {
 
     @Test
     fun `the addresses are the ones the pages already answered to`() {
-        // Every link anybody has ever shared keeps working.
+        // Every link anyone has shared keeps working.
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.game == 'CS2')].slug").value("counter-strike-2"))
             .andExpect(jsonPath("$[?(@.game == 'ROCKET_LEAGUE')].slug").value("rocketleague"))
@@ -98,7 +97,7 @@ class GamePageIT : UserTestSupport() {
 
     @Test
     fun `a game nobody has drawn art for says so rather than inventing any`() {
-        // The island reads such a game on the association's own colour; it does not go missing.
+        // The frontend falls back to the brand colour for these; it does not fail to render.
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].name").value("Trackmania"))
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].accent").doesNotExist())
@@ -106,11 +105,12 @@ class GamePageIT : UserTestSupport() {
     }
 
     /**
-     * The enum made an unknown code unrepresentable in Kotlin, and the database was told
-     * nothing. Once a game is a row rather than a compiled constant that stops being true, so
-     * the tie is stated where the rows live. Written natively because a well-typed caller
-     * cannot express the code these reject; each states the accepted case alongside the
-     * rejected one, so a statement that is simply malformed cannot read as the tie holding.
+     * The Game enum made an invalid code impossible to write in Kotlin, so the database was never
+     * given a constraint. That stops being true once games are rows, hence the foreign keys.
+     *
+     * These use native SQL because a type-safe caller cannot produce the code they reject. Each
+     * asserts a valid insert succeeds alongside the invalid one failing, so a malformed statement
+     * cannot be mistaken for the constraint working.
      */
     @Test
     fun `a team cannot name a game that does not exist`() {

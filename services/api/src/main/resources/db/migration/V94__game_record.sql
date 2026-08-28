@@ -1,17 +1,13 @@
--- What a game is called and the art it is drawn with, moved out of the frontend and into the
--- game's own row.
+-- Adds a game's display name and images to game_page, and enforces the link from team and
+-- user_game_account to a real game.
 --
--- The name lived in a compiled enum's label and again in a table in the index page; the accent,
--- the mark and the banner lived only in the frontend, three of them in two different files. A
--- game could therefore not be added without a deploy, however complete its row was.
+-- The name was defined twice: as the `label` on the Game enum, and in a hardcoded array in the
+-- frontend's index page. The accent colour, icon and banner existed only in the frontend, split
+-- across two files. Adding a game therefore needed a code change and a deploy.
 --
--- Only the shape is here. What each game is called and how it is drawn is in the seed files with
--- the seasons, teams and rosters, so correcting a name or an accent is an edit to a file somebody
--- can read rather than another migration.
---
--- The tie from a team and from a member's game account to its game becomes a real foreign key. It
--- was previously assumed: the enum made an unknown code unrepresentable in Kotlin and the database
--- was told nothing.
+-- Only the columns and constraints are here. The values are in db/seed/esports/games.csv,
+-- alongside the seasons, teams and rosters already seeded that way, so correcting a name or an
+-- image is an edit to a reviewed file rather than another migration.
 
 ALTER TABLE game_page
     ADD COLUMN name   VARCHAR(64)  NOT NULL DEFAULT '' AFTER game,
@@ -19,12 +15,14 @@ ALTER TABLE game_page
     ADD COLUMN mark   VARCHAR(255) NULL AFTER accent,
     ADD COLUMN banner VARCHAR(255) NULL AFTER mark;
 
--- A code identifies a game for the whole life of the site, so it is unique across every row
--- rather than only among the ones still present. That is also what lets the two ties below
--- reference it: a foreign key needs a key covering the referenced column alone.
+-- A game's code must be unique across every row, not only among rows that are not soft-deleted:
+-- teams and game accounts reference it for the life of the site. It also has to be unique on its
+-- own, because a foreign key can only reference a key covering the referenced column alone.
 ALTER TABLE game_page DROP INDEX uk_game_page_game;
 ALTER TABLE game_page ADD UNIQUE INDEX uk_game_page_code (game);
 
+-- Previously unenforced: the Game enum made an invalid code impossible to write in Kotlin, so
+-- the database was never told about the relationship.
 ALTER TABLE team
     ADD CONSTRAINT fk_team_game FOREIGN KEY (game) REFERENCES game_page (game);
 ALTER TABLE user_game_account

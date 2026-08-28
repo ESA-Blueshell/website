@@ -1,6 +1,11 @@
 /**
- * Esports domain adapter — the only file in this domain that imports from
- * @/services/api (per frontend ADR-002). Everything else imports from here.
+ * Esports domain adapter — every call this domain makes to the api goes through here, and
+ * everything else in the domain imports from here rather than from @/services/api (frontend
+ * ADR-002).
+ *
+ * One exception stands: a component may import a generated enum straight from the sdk, as
+ * LineupEditor does for TeamRole, so that the values a picker offers are the ones the api
+ * declares rather than a list copied into a component and left to drift.
  */
 import {
   addRosterEntry,
@@ -142,10 +147,15 @@ export async function saveGameOrReason(
   return {ok: true, game: res.data}
 }
 
-/** What a game holds, so an offer to remove it can say what would go with it. */
-export async function loadGameContents(game: Game): Promise<SeasonContents> {
+/**
+ * What a game holds, so an offer to remove it can say what would go with it.
+ *
+ * Answers null when the read fails, rather than zero. A failed read is not an empty game, and
+ * reporting it as one would offer to remove a game while telling the reader it holds nothing.
+ */
+export async function loadGameContents(game: Game): Promise<SeasonContents | null> {
   const res = await findGameContents({path: {game}})
-  return res.data ?? {teams: 0, players: 0}
+  return res.data ?? null
 }
 
 /**

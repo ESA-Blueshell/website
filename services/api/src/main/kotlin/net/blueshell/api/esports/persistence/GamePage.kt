@@ -22,6 +22,11 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
  * the only game that ever goes is one that holds nothing and has none to keep. Its code is also
  * unique across every row, since that is what a team and a game account point at, and a soft
  * delete would hold that code against a game added by mistake for good.
+ *
+ * The `deleted_at` column is left over from when this was soft-deleted and is now vestigial: it
+ * is the sentinel on every row, because no way to delete a game existed before removal became
+ * real. It still scopes the slug's unique index, where it is therefore a no-op. Nothing filters
+ * on it and nothing should start to.
  */
 @Entity
 @Table(

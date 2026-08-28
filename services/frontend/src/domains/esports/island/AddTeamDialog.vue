@@ -220,6 +220,10 @@ const submit = async () => {
       }
       await refreshGames()
       forGame = made.game.game
+      // The game is added and stays added, so the dialog stops offering to add it. Without this
+      // a team refused below leaves a game nobody asked twice for, and trying again would ask
+      // the api to add it a second time and be told its address is taken.
+      chosenGame.value = forGame
     }
     if (forGame == null) {
       failure.value = "Pick a game first."

@@ -33,6 +33,25 @@ test.describe("removing a game", () => {
     await expect(page.getByTestId("confirm-question")).toContainText("roster place")
   })
 
+  test("a game whose contents cannot be read is not offered for removal", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    // Registered after the mocks so it wins: Playwright tries the most recent route first.
+    await page.route(
+      /\/esports\/games\/[A-Z0-9_]+\/contents$/,
+      route => route.fulfill({status: 500, contentType: "application/json", body: "{}"}),
+    )
+
+    await page.goto("/esports/valorant")
+    await openGameEditor(page)
+    await page.getByTestId("game-dialog-remove").click()
+
+    // A failed read is not an empty game. The question is not put at all, rather than put with
+    // "holds no teams" standing in for an answer nobody got.
+    await expect(page.getByTestId("confirm-question")).toHaveCount(0)
+    await expect(page.getByTestId("game-dialog-failure")).toContainText("could not be read")
+  })
+
   test("a game holding teams offers the softer act instead", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)

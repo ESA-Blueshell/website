@@ -81,7 +81,16 @@ const askToRemove = async () => {
   const game = props.game
   if (!game) return
   removalFailure.value = null
-  holds.value = await loadGameContents(game.game)
+  failure.value = null
+  const held = await loadGameContents(game.game)
+  if (held == null) {
+    // No question is put on a guess. Offering to remove a game while saying it holds nothing,
+    // when what it holds could not be read, is the one wrong thing this dialog could say here.
+    // Said on this dialog rather than the confirmation, which is precisely what does not open.
+    failure.value = "What this game holds could not be read, so it cannot be removed yet. Try again."
+    return
+  }
+  holds.value = held
   confirming.value = true
 }
 
@@ -91,6 +100,7 @@ const question = computed(() => {
   const game = props.game
   if (!game) return ""
   const held = holds.value
+  // `held` is never null here: the question is only put once it has been read.
   if (!held || held.teams === 0) {
     return `${game.name} holds no teams. Removing it takes it and its page off the site.`
   }

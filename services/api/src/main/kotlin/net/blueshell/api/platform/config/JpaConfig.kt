@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.config
 
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.security.SecurityUtils
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

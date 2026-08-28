@@ -2,7 +2,7 @@ package net.blueshell.api.committee.domain
 
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.enums.Role
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component

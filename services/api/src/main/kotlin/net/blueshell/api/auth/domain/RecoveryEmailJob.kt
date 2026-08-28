@@ -1,6 +1,6 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs

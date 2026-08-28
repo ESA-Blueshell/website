@@ -3,8 +3,8 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.domain.user.application.event.UserCreated
-import net.blueshell.api.domain.user.application.event.UserDeleted
+import net.blueshell.api.user.api.UserCreated
+import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
 import net.blueshell.api.sync.persistence.ExternalIdMapping

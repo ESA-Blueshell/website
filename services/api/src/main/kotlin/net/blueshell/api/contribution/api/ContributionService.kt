@@ -3,7 +3,7 @@ package net.blueshell.api.contribution.api
 import net.blueshell.api.contribution.domain.ContributionChange
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionRepository
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.beans.factory.annotation.Autowired

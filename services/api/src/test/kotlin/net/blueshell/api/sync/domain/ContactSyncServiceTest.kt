@@ -1,7 +1,7 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.persistence.Contact
 import net.blueshell.api.contact.persistence.ContactRepository

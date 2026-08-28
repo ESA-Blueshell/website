@@ -826,7 +826,7 @@ class EventControllerIT : UserTestSupport() {
         }
     }
 
-    private fun uploadBanner(user: net.blueshell.api.domain.user.persistence.User): Long {
+    private fun uploadBanner(user: net.blueshell.api.user.persistence.User): Long {
         val banner = eventRequestFactory.eventBannerMultipart()
         val uploadResult = mvc.perform(
             multipart("/events/banners")

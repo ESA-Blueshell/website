@@ -1,9 +1,9 @@
 package net.blueshell.api.esports.persistence
 
 import net.blueshell.api.esports.domain.TeamSeasonService
-import net.blueshell.api.domain.user.persistence.MemberProfile
-import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.persistence.repository.MemberProfileRepository
+import net.blueshell.api.user.persistence.MemberProfile
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.MemberProfileRepository
 import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole

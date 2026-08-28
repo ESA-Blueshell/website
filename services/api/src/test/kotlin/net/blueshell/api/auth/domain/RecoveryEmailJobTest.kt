@@ -2,8 +2,8 @@ package net.blueshell.api.auth.domain
 
 import io.mockk.every
 import io.mockk.mockk
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs

@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
-import net.blueshell.api.domain.user.application.MemberProfileService
+import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
@@ -33,7 +33,7 @@ class SignupEmailCorrectionIT : UserTestSupport() {
     private fun applicant(enabled: Boolean = false) =
         assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST, enabled = enabled)))
 
-    private fun signupToken(user: net.blueshell.api.domain.user.persistence.User) =
+    private fun signupToken(user: net.blueshell.api.user.persistence.User) =
         tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, Duration.ofHours(2))
 
     private fun correct(token: String, email: String) = mvc.perform(

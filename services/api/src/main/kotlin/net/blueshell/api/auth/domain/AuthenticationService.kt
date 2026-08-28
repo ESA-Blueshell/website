@@ -1,6 +1,6 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.stereotype.Service

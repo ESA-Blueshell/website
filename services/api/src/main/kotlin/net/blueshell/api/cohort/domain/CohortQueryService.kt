@@ -2,8 +2,8 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortMember
 import net.blueshell.api.cohort.persistence.CohortSubject

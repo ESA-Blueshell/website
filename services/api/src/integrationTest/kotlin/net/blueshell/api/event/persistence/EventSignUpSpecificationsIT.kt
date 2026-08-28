@@ -209,7 +209,7 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
         )
     }
 
-    private fun createSignUp(event: Event, user: net.blueshell.api.domain.user.persistence.User = createUserWithRole(Role.MEMBER)): EventSignUp {
+    private fun createSignUp(event: Event, user: net.blueshell.api.user.persistence.User = createUserWithRole(Role.MEMBER)): EventSignUp {
         return persist(
             EventSignUp(
                 event = event,

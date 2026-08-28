@@ -1,6 +1,6 @@
 package net.blueshell.api.contact.api
 
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 
 /**

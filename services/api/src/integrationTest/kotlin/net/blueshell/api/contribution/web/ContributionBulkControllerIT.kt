@@ -2,7 +2,7 @@ package net.blueshell.api.contribution.web
 
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport

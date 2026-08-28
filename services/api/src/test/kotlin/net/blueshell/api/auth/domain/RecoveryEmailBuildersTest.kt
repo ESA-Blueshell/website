@@ -1,6 +1,6 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

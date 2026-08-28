@@ -1,6 +1,6 @@
 package net.blueshell.api.email.api
 
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.email.domain.EmailTransportClient
 import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.shared.email.EmailContent

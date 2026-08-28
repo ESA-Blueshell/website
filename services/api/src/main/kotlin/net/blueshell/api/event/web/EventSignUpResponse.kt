@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.survey.web.AnswerResponse
-import net.blueshell.api.domain.user.web.dto.response.UserSummaryResponse
+import net.blueshell.api.user.web.UserSummaryResponse
 import java.time.Instant
 
 @Schema(name = "EventSignUpResponse")

@@ -11,7 +11,7 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.TokenPurpose

@@ -1,11 +1,11 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.model.SignupOutcome
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.domain.user.application.MemberProfileService
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

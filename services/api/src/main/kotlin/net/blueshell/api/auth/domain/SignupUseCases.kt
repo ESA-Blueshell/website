@@ -1,11 +1,11 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.model.SignupSession
-import net.blueshell.api.domain.user.application.MemberProfileService
-import net.blueshell.api.domain.user.application.SignupDetailsData
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.upsertInto
-import net.blueshell.api.domain.user.persistence.Address
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.domain.SignupDetailsData
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.api.upsertInto
+import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.shared.model.SignupOutcome
 import java.time.Instant
 import net.blueshell.api.shared.job.TrackedJobDispatcher

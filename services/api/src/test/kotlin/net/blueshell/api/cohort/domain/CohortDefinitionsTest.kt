@@ -3,7 +3,7 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.user.application.MembershipService
+import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

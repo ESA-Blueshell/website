@@ -3,7 +3,7 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.user.application.MembershipService
+import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import org.springframework.stereotype.Component
 

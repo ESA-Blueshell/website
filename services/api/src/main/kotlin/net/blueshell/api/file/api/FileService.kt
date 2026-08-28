@@ -7,8 +7,8 @@ import net.blueshell.api.file.domain.FileNotFoundException
 import net.blueshell.api.file.domain.FileStorageException
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider

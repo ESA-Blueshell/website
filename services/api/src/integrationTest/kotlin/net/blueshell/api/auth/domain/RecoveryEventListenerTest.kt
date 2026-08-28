@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.event.UserCreated
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserCreated
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport

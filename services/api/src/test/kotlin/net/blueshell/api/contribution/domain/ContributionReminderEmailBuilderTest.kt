@@ -1,7 +1,7 @@
 package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test

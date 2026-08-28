@@ -27,7 +27,7 @@ class SignupScopeSecurityTest : UserTestSupport() {
         {"country":"NL","city":"Enschede","street":"Drienerlolaan","houseNumber":"5","zipCode":"7522NB"}
     """.trimIndent()
 
-    private fun signupTokenFor(user: net.blueshell.api.domain.user.persistence.User) =
+    private fun signupTokenFor(user: net.blueshell.api.user.persistence.User) =
         tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, Duration.ofHours(2))
 
     @Nested

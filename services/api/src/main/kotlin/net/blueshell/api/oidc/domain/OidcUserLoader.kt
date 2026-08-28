@@ -1,7 +1,7 @@
 package net.blueshell.api.oidc.domain
 
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.exception.UserNotFoundException
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.api.UserNotFoundException
 import net.blueshell.api.shared.enums.Role
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional

@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.port.SignupCompletion
+import net.blueshell.api.user.api.SignupCompletion
 import net.blueshell.api.shared.model.SignupOutcome
-import net.blueshell.api.domain.user.application.MembershipService
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.Membership
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Membership
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate

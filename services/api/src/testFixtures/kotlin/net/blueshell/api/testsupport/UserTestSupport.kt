@@ -23,10 +23,10 @@ import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.telemetry.persistence.Telemetry
-import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.persistence.Membership
-import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.domain.user.persistence.repository.UserRepository
+import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.UserRepository
 import net.blueshell.api.security.JwtTokenGenerator
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.jobs.persistence.JobExecution

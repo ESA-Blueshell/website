@@ -2,8 +2,8 @@ package net.blueshell.api.jobs.web
 
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.ContactSystem

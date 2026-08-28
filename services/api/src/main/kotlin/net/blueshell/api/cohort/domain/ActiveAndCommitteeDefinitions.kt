@@ -5,7 +5,7 @@ import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import org.springframework.stereotype.Component
 

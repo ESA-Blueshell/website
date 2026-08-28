@@ -1,10 +1,10 @@
 package net.blueshell.api.factory.user.persistence
 
 import net.blueshell.api.factory.support.FactoryPersistenceSupport
-import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.persistence.MemberProfile
-import net.blueshell.api.domain.user.persistence.Membership
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.user.persistence.MemberProfile
+import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import org.springframework.security.crypto.password.PasswordEncoder

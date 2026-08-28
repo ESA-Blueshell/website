@@ -7,7 +7,7 @@ import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Component
 import java.time.Instant
 

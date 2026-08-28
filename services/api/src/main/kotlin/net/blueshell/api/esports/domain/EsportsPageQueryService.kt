@@ -1,8 +1,8 @@
 package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.Season
-import net.blueshell.api.domain.user.application.MemberProfileService
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service

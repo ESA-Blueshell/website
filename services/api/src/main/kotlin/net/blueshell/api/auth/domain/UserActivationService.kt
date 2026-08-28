@@ -1,8 +1,8 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.exception.UserNotFoundException
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.api.UserNotFoundException
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

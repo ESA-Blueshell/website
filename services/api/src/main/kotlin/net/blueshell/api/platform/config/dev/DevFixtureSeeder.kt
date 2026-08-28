@@ -5,10 +5,10 @@ import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.auth.domain.UserActivationService
-import net.blueshell.api.domain.user.application.MembershipService
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.Membership
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner

@@ -4,8 +4,8 @@ import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

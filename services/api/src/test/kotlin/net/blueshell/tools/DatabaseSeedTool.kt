@@ -7,8 +7,8 @@ import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.domain.user.persistence.Membership
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.factory.board.persistence.BoardFactory
 import net.blueshell.api.factory.committee.persistence.CommitteeFactory
 import net.blueshell.api.factory.contribution.persistence.ContributionFactory

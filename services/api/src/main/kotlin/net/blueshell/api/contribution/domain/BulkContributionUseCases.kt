@@ -1,9 +1,9 @@
 package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.persistence.Contribution
-import net.blueshell.api.domain.user.application.MembershipService
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.erasure.UserErasureService
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.MemberType

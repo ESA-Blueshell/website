@@ -1,7 +1,7 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.application.exception.UserNotFoundException
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.api.UserNotFoundException
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.DisabledException

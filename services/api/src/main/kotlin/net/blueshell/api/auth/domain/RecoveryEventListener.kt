@@ -1,6 +1,6 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.event.UserCreated
+import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.context.event.EventListener

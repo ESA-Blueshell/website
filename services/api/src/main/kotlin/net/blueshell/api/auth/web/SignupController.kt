@@ -1,18 +1,18 @@
 package net.blueshell.api.auth.web
 
 import net.blueshell.api.auth.domain.SignupUseCases
-import net.blueshell.api.domain.user.application.UserUseCases
+import net.blueshell.api.user.api.UserUseCases
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.RequestHeader
-import net.blueshell.api.domain.user.web.dto.response.SignupOutcomeResponse
+import net.blueshell.api.user.web.SignupOutcomeResponse
 import net.blueshell.api.shared.model.SignupSession
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.domain.user.web.dto.request.CreateUserRequest
-import net.blueshell.api.domain.user.application.SignupDetailsData
-import net.blueshell.api.domain.user.web.mapping.request.asData
-import net.blueshell.api.domain.user.web.mapping.request.asCommandData
+import net.blueshell.api.user.web.CreateUserRequest
+import net.blueshell.api.user.domain.SignupDetailsData
+import net.blueshell.api.user.web.asData
+import net.blueshell.api.user.web.asCommandData
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

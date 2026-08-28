@@ -3,8 +3,8 @@ package net.blueshell.api.auth.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.TokenPurpose

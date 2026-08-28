@@ -7,8 +7,8 @@ import io.mockk.verify
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionRepository
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.MemberProfileService
-import net.blueshell.api.domain.user.persistence.repository.MemberRepository
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -25,7 +25,7 @@ class SignupCompletionIT : UserTestSupport() {
     private lateinit var memberships: MemberRepository
 
     @Autowired
-    private lateinit var users: net.blueshell.api.domain.user.application.UserService
+    private lateinit var users: net.blueshell.api.user.api.UserService
 
     private fun applicant(enabled: Boolean) =
         assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST, enabled = enabled)))

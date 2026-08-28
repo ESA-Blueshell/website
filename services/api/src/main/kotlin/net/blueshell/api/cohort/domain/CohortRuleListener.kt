@@ -2,10 +2,10 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
 import net.blueshell.api.contribution.api.ContributionChanged
-import net.blueshell.api.domain.user.application.event.MembershipChanged
-import net.blueshell.api.domain.user.application.event.UserCreated
-import net.blueshell.api.domain.user.application.event.UserDeleted
-import net.blueshell.api.domain.user.application.event.UserUpdated
+import net.blueshell.api.user.api.MembershipChanged
+import net.blueshell.api.user.api.UserCreated
+import net.blueshell.api.user.api.UserDeleted
+import net.blueshell.api.user.api.UserUpdated
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation

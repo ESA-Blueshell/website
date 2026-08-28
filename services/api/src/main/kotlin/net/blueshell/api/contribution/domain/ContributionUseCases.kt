@@ -1,7 +1,7 @@
 package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.persistence.Contribution
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService

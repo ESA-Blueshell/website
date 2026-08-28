@@ -1,7 +1,7 @@
 package net.blueshell.api.committee.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.Hibernate

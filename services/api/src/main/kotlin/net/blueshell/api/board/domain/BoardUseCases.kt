@@ -3,7 +3,7 @@ package net.blueshell.api.board.domain
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.file.api.FileService
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate

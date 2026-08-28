@@ -1,7 +1,7 @@
 package net.blueshell.api.shared.model
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.ColumnDefault
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp

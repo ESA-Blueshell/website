@@ -1,18 +1,18 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.domain.user.application.permission.AddressPermission
+import net.blueshell.api.user.domain.AddressPermission
 import net.blueshell.api.contribution.domain.ContributionPermission
-import net.blueshell.api.domain.user.application.permission.MembershipPermission
-import net.blueshell.api.domain.user.application.permission.UserPermission
+import net.blueshell.api.user.domain.MembershipPermission
+import net.blueshell.api.user.domain.UserPermission
 
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
-import net.blueshell.api.domain.user.application.AddressService
-import net.blueshell.api.domain.user.application.MembershipService
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.persistence.Membership
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.domain.AddressService
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

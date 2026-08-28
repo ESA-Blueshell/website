@@ -1,6 +1,6 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.domain.user.application.UserService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.RecoveryEmailPreview

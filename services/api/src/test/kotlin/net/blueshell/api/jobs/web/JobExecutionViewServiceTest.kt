@@ -2,8 +2,8 @@ package net.blueshell.api.jobs.web
 
 import io.mockk.every
 import io.mockk.mockk
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.jobs.persistence.JobExecution
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

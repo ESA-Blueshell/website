@@ -1,8 +1,8 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.domain.user.application.event.UserCreated
-import net.blueshell.api.domain.user.application.event.UserDeleted
-import net.blueshell.api.domain.user.application.event.UserUpdated
+import net.blueshell.api.user.api.UserCreated
+import net.blueshell.api.user.api.UserDeleted
+import net.blueshell.api.user.api.UserUpdated
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.modulith.events.ApplicationModuleListener

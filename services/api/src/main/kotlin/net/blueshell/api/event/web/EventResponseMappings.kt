@@ -5,7 +5,7 @@ import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.survey.web.asResponse
-import net.blueshell.api.domain.user.web.mapping.response.asSummaryResponse
+import net.blueshell.api.user.web.asSummaryResponse
 
 fun Event.asResponse(): EventResponse =
     EventResponse(

@@ -1,12 +1,12 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.model.SignupOutcome
-import net.blueshell.api.domain.user.application.MembershipService
-import net.blueshell.api.domain.user.application.UserService
-import net.blueshell.api.domain.user.persistence.Address
-import net.blueshell.api.domain.user.persistence.MemberProfile
-import net.blueshell.api.domain.user.persistence.Membership
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.user.persistence.MemberProfile
+import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any

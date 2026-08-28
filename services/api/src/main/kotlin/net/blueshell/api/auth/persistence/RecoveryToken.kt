@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.persistence
 
 import jakarta.persistence.*
-import net.blueshell.api.domain.user.persistence.User
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete

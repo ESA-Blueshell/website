@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.sync.target.contact
 
-import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
-import net.blueshell.api.platform.integration.contact.adapter.ContactData
+import net.blueshell.api.contact.api.ContactAdapter
+import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.platform.integration.sync.port.ContactSyncTarget
 import net.blueshell.api.shared.enums.TargetSystem
 

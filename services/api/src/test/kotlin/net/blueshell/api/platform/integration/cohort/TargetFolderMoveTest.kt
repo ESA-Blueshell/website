@@ -3,7 +3,7 @@ package net.blueshell.api.platform.integration.cohort
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.platform.integration.cohort.adapter.brevo.BrevoTargetStrategy
 import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget

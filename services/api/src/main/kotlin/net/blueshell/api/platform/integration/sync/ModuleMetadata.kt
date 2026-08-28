@@ -22,11 +22,13 @@ import org.springframework.modulith.PackageInfo
         // list-membership handler working. No sync entity holds an FK into
         // contacts. Removing it is design work, not a rename: contact has to own
         // the write.
+        // Also covers ContactRepository, which sync still writes through directly.
+        // The separate legacy-repository interface dissolved when the repository
+        // package merged into persistence; the debt itself is unchanged.
         "contact :: entities",
         // DEBT, not a surface. ContactSyncService creates, loads and soft-deletes
         // Contact rows through ContactRepository. Same fix as the entities
         // entry above — contact has to own the write.
-        "contact :: legacy-repository",
         // Calendar publication runs through EventService and the CalendarAdapter port
         // event declares.
         "event :: api",

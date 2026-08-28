@@ -2,9 +2,9 @@ package net.blueshell.api.platform.integration.sync.application
 
 import net.blueshell.api.domain.user.application.UserService
 import net.blueshell.api.domain.user.persistence.User
-import net.blueshell.api.platform.integration.contact.adapter.ContactData
-import net.blueshell.api.platform.integration.contact.persistence.Contact
-import net.blueshell.api.platform.integration.contact.persistence.repository.ContactRepository
+import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.contact.persistence.Contact
+import net.blueshell.api.contact.persistence.ContactRepository
 import net.blueshell.api.platform.integration.sync.port.ContactSyncTarget
 import net.blueshell.api.platform.integration.sync.port.SyncTargetRegistry
 import net.blueshell.api.shared.enums.TargetSystem

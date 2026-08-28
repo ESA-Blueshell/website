@@ -1,10 +1,10 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.platform.integration.contact.adapter.ContactAdapter
-import net.blueshell.api.platform.integration.contact.adapter.ContactData
-import net.blueshell.api.platform.integration.contact.adapter.ContactListMember
-import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
-import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
+import net.blueshell.api.contact.api.ContactAdapter
+import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.contact.api.ContactListMember
+import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary

@@ -6,8 +6,8 @@ import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
 import net.blueshell.api.platform.integration.cohort.port.out.TargetCapability
 import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
 import net.blueshell.api.platform.integration.cohort.port.out.TargetStrategy
-import net.blueshell.api.platform.integration.contact.adapter.ContactListAdapter
-import net.blueshell.api.platform.integration.contact.adapter.ContactServiceException
+import net.blueshell.api.contact.api.ContactListAdapter
+import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi

@@ -104,7 +104,13 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
                 .that().haveSimpleNameEndingWith("Adapter")
                 .and().areNotInterfaces()
                 .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
-                .should().resideInAnyPackage(ArchitecturePackages.PLATFORM_INTEGRATION)
+                .should().resideInAnyPackage(
+                    ArchitecturePackages.PLATFORM_INTEGRATION,
+                    // A capability module keeps its adapters once it is flattened out
+                    // from under platform/integration.
+                    ArchitecturePackages.MODULE_API,
+                    ArchitecturePackages.MODULE_DOMAIN,
+                )
                 .because("ADR-019: ACL adapters protect domain from external system changes")
                 .allowEmptyShould(true)
         }

@@ -1,5 +1,6 @@
 import {expect, test} from "./test"
-import {installApiMocks} from "./mocks"
+import {installApiMocks, loginAsBoard} from "./mocks"
+import {eightSeasonFixtures} from "./esportsStrip"
 
 /**
  * Runs in the motion project, which does not emulate reduced motion. The chain lighting up
@@ -63,6 +64,32 @@ test.describe("the season timeline, with motion", () => {
     await older.click()
 
     await expect(page).toHaveURL(/season=19/)
+  })
+
+  test("travels while the pointer rests on the side of the strip", async ({page}) => {
+    await installApiMocks(page, eightSeasonFixtures)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+    const strip = page.getByTestId("esports-season-timeline")
+    await strip.waitFor()
+    await expect(page.getByTestId("esports-season-pan-back")).toBeVisible()
+
+    const at = () => page.locator(".season-strip__scroll").evaluate(el => el.scrollLeft)
+    const before = await at()
+    expect(before).toBeGreaterThan(0)
+
+    // Anywhere down that side, not the chevron itself: the whole edge answers the pointer.
+    const box = (await strip.boundingBox())!
+    await page.mouse.move(box.x + 20, box.y + box.height - 14)
+
+    await expect.poll(at).toBeLessThan(before)
+    // And once it has travelled, the way on appears.
+    await expect(page.getByTestId("esports-season-pan-on")).toBeVisible()
+
+    // Off the strip, and it stands still again.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height + 120)
+    const parked = await at()
+    await expect.poll(at).toBe(parked)
   })
 
   test("opens the slice under the pointer and closes the one that was open", async ({page}) => {

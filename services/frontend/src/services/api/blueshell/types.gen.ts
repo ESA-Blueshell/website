@@ -676,9 +676,33 @@ export type EnqueueJobRequest = {
 };
 
 /**
+ * A banner and how narrowly it was set, as an admin manages them
+ */
+export type EsportsBannerResponse = {
+    game: string;
+    id: number;
+    /**
+     * The season it is set for; absent when it carries every season
+     */
+    seasonId?: number | null;
+    /**
+     * The team it is set for; absent when it carries every team
+     */
+    teamId?: number | null;
+    /**
+     * Where the image is served
+     */
+    url: string;
+};
+
+/**
  * A game's teams for one season, and the seasons that can be shown
  */
 export type EsportsPageResponse = {
+    /**
+     * The banner for the game and season shown, absent when none is set anywhere
+     */
+    bannerUrl?: string | null;
     game: string;
     /**
      * The season being shown; absent when the game has no rosters yet
@@ -827,7 +851,10 @@ export enum FileType {
     PROFILE_PICTURE = 'PROFILE_PICTURE',
     EVENT_BANNER = 'EVENT_BANNER',
     EVENT_PICTURE = 'EVENT_PICTURE',
-    SPONSOR_PICTURE = 'SPONSOR_PICTURE'
+    SPONSOR_PICTURE = 'SPONSOR_PICTURE',
+    TEAM_POSTER = 'TEAM_POSTER',
+    ESPORTS_BANNER = 'ESPORTS_BANNER',
+    ROSTER_ICON = 'ROSTER_ICON'
 }
 
 /**
@@ -1279,6 +1306,10 @@ export type RosterEntryResponse = {
      */
     displayName?: string | null;
     handle: string;
+    /**
+     * Where this entry's uploaded picture is served, where one was uploaded
+     */
+    iconUrl?: string | null;
     id: number;
     role: TeamRole;
     /**
@@ -1306,6 +1337,10 @@ export type RosterMemberResponse = {
      * What this member is called in the game
      */
     handle: string;
+    /**
+     * Where this entry's uploaded picture is served, where one was uploaded
+     */
+    iconUrl?: string | null;
     /**
      * The member's real name, present only when they allow it to be shown
      */
@@ -1467,6 +1502,10 @@ export type TeamResponse = {
      */
     image?: string | null;
     name: string;
+    /**
+     * Where the team's uploaded poster is served, where one was uploaded
+     */
+    posterUrl?: string | null;
 };
 
 export enum TeamRole {
@@ -1479,10 +1518,18 @@ export enum TeamRole {
  * A team with the roster it fielded in one season
  */
 export type TeamRosterResponse = {
+    /**
+     * The banner resolved for this team in the season being shown
+     */
+    bannerUrl?: string | null;
     id: number;
     image?: string | null;
     members: Array<RosterMemberResponse>;
     name: string;
+    /**
+     * Where the team's uploaded poster is served, where one was uploaded
+     */
+    posterUrl?: string | null;
 };
 
 export type TelemetryResponse = {
@@ -3504,6 +3551,139 @@ export type CsrfResponses = {
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 
+export type FindBannersData = {
+    body?: never;
+    path?: never;
+    query: {
+        game: string;
+    };
+    url: '/esports/banners';
+};
+
+export type FindBannersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBannersError = FindBannersErrors[keyof FindBannersErrors];
+
+export type FindBannersResponses = {
+    /**
+     * OK
+     */
+    200: Array<EsportsBannerResponse>;
+};
+
+export type FindBannersResponse = FindBannersResponses[keyof FindBannersResponses];
+
+export type UploadBannerData = {
+    body?: {
+        file: Blob | File;
+    };
+    path?: never;
+    query: {
+        game: string;
+        seasonId?: number;
+        teamId?: number;
+    };
+    url: '/esports/banners';
+};
+
+export type UploadBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadBannerError = UploadBannerErrors[keyof UploadBannerErrors];
+
+export type UploadBannerResponses = {
+    /**
+     * OK
+     */
+    200: EsportsBannerResponse;
+};
+
+export type UploadBannerResponse = UploadBannerResponses[keyof UploadBannerResponses];
+
+export type RemoveBannerData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/banners/{id}';
+};
+
+export type RemoveBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveBannerError = RemoveBannerErrors[keyof RemoveBannerErrors];
+
+export type RemoveBannerResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveBannerResponse = RemoveBannerResponses[keyof RemoveBannerResponses];
+
 export type FindGamePagesData = {
     body?: never;
     path?: never;
@@ -3845,6 +4025,94 @@ export type UpdateRosterEntryResponses = {
 };
 
 export type UpdateRosterEntryResponse = UpdateRosterEntryResponses[keyof UpdateRosterEntryResponses];
+
+export type RemoveRosterIconData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/roster/{id}/icon';
+};
+
+export type RemoveRosterIconErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveRosterIconError = RemoveRosterIconErrors[keyof RemoveRosterIconErrors];
+
+export type RemoveRosterIconResponses = {
+    /**
+     * OK
+     */
+    200: RosterEntryResponse;
+};
+
+export type RemoveRosterIconResponse = RemoveRosterIconResponses[keyof RemoveRosterIconResponses];
+
+export type UploadRosterIconData = {
+    body?: {
+        file: Blob | File;
+    };
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/roster/{id}/icon';
+};
+
+export type UploadRosterIconErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadRosterIconError = UploadRosterIconErrors[keyof UploadRosterIconErrors];
+
+export type UploadRosterIconResponses = {
+    /**
+     * OK
+     */
+    200: RosterEntryResponse;
+};
+
+export type UploadRosterIconResponse = UploadRosterIconResponses[keyof UploadRosterIconResponses];
 
 export type LinkRosterEntryData = {
     body: LinkRosterEntryRequest;
@@ -4357,6 +4625,94 @@ export type UpdateTeamResponses = {
 };
 
 export type UpdateTeamResponse = UpdateTeamResponses[keyof UpdateTeamResponses];
+
+export type RemoveTeamPosterData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/teams/{id}/poster';
+};
+
+export type RemoveTeamPosterErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveTeamPosterError = RemoveTeamPosterErrors[keyof RemoveTeamPosterErrors];
+
+export type RemoveTeamPosterResponses = {
+    /**
+     * OK
+     */
+    200: TeamResponse;
+};
+
+export type RemoveTeamPosterResponse = RemoveTeamPosterResponses[keyof RemoveTeamPosterResponses];
+
+export type UploadTeamPosterData = {
+    body?: {
+        file: Blob | File;
+    };
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/esports/teams/{id}/poster';
+};
+
+export type UploadTeamPosterErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadTeamPosterError = UploadTeamPosterErrors[keyof UploadTeamPosterErrors];
+
+export type UploadTeamPosterResponses = {
+    /**
+     * OK
+     */
+    200: TeamResponse;
+};
+
+export type UploadTeamPosterResponse = UploadTeamPosterResponses[keyof UploadTeamPosterResponses];
 
 export type FindRosterData = {
     body?: never;
@@ -5118,6 +5474,49 @@ export type ApproveEventResponses = {
 };
 
 export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventResponses];
+
+export type DownloadPublicFileData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/files/public/{id}';
+};
+
+export type DownloadPublicFileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadPublicFileError = DownloadPublicFileErrors[keyof DownloadPublicFileErrors];
+
+export type DownloadPublicFileResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadPublicFileResponse = DownloadPublicFileResponses[keyof DownloadPublicFileResponses];
 
 export type HealthCheckData = {
     body?: never;

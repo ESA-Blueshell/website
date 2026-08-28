@@ -9,6 +9,7 @@ import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons, unfieldTeamFromSeason} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
+import BannerDialog from "@/domains/esports/island/BannerDialog.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
 import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
@@ -77,11 +78,13 @@ const rosterOf = (teamId: number) => {
     .filter(group => group.members.length > 0)
 }
 
+// The uploaded poster where there is one, and the bundled asset until then, so a team that
+// has not been given a picture yet keeps the one the page has always drawn.
 const slices = computed(() => teams.value.map(team => ({
   id: team.id,
   title: team.name,
   meta: `${team.members.length} on the roster`,
-  banner: team.image ? $require(`@/assets/${team.image}`) : "",
+  banner: team.posterUrl || (team.image ? $require(`@/assets/${team.image}`) : ""),
 })))
 
 const entrance = (index: number) => ({
@@ -140,6 +143,10 @@ const seasonRemoved = async (gone: Season) => {
 }
 
 const adding = ref(false)
+const bannersOpen = ref(false)
+
+/** The banner the api resolved for this game and season, where anything was set. */
+const pageBanner = computed(() => page.value?.bannerUrl ?? null)
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
 
@@ -153,19 +160,36 @@ const teamAdded = async (team: Team) => {
   await reload(season.value?.id)
 }
 
-const editingTeam = ref<{id: number; name: string; image: string | null} | null>(null)
+const editingTeam = ref<{id: number; name: string; image: string | null; posterUrl: string | null} | null>(null)
 const lineupOpen = ref(false)
 
 const editLineup = (teamId: number | string) => {
   const team = teams.value.find(one => one.id === teamId)
   if (!team) return
-  editingTeam.value = {id: team.id, name: team.name, image: team.image ?? null}
+  editingTeam.value = {
+    id: team.id,
+    name: team.name,
+    image: team.image ?? null,
+    posterUrl: team.posterUrl ?? null,
+  }
   lineupOpen.value = true
 }
 
-/** What the slice shows is the api's answer, so it is asked again rather than patched here. */
+/**
+ * What the slice shows is the api's answer, so it is asked again rather than patched here.
+ *
+ * The team being edited is refreshed from that answer as well. The editor reads its poster
+ * from this, and reloading rebuilds the props it watches — so leaving this stale would undo
+ * an upload on screen a moment after it landed.
+ */
 const lineupSaved = async () => {
   await reload(season.value?.id)
+  const open = editingTeam.value
+  if (!open) return
+  const fresh = teams.value.find(one => one.id === open.id)
+  if (fresh) {
+    editingTeam.value = {...open, image: fresh.image ?? null, posterUrl: fresh.posterUrl ?? null}
+  }
 }
 
 const dropping = ref<{id: number; name: string; players: number} | null>(null)
@@ -231,6 +255,14 @@ const seasonSaved = (saved: Season) => {
   <v-main>
     <esports-island>
       <header class="relative isolate overflow-hidden">
+        <!-- The uploaded banner where one was set; the accent wash alone until then. -->
+        <img
+          v-if="pageBanner"
+          alt=""
+          class="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40"
+          data-testid="esports-page-banner"
+          :src="pageBanner"
+        >
         <div
           aria-hidden="true"
           class="pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"
@@ -275,6 +307,15 @@ const seasonSaved = (saved: Season) => {
                 {{ identity.name }}
               </h1>
             </div>
+            <button
+              v-if="mayEdit"
+              class="ml-auto rounded border border-ash/40 px-3 py-1.5 font-body text-xs text-ash transition-colors hover:border-current hover:text-white"
+              data-testid="esports-banners-open"
+              type="button"
+              @click="bannersOpen = true"
+            >
+              Banners
+            </button>
           </div>
           <div
             v-if="intro"
@@ -388,6 +429,7 @@ const seasonSaved = (saved: Season) => {
                 :team-id="editingTeam?.id ?? null"
                 :team-image="editingTeam?.image ?? null"
                 :team-name="editingTeam?.name ?? ''"
+                :team-poster-url="editingTeam?.posterUrl ?? null"
                 @removed="lineupSaved"
                 @saved="lineupSaved"
                 @update:open="lineupOpen = $event"
@@ -432,6 +474,16 @@ const seasonSaved = (saved: Season) => {
           </banner-slices>
         </Motion>
       </section>
+
+      <banner-dialog
+        :accent="identity.accent"
+        :game="game"
+        :open="bannersOpen"
+        :season="season"
+        :teams="teams.map(one => ({id: one.id, name: one.name}))"
+        @changed="reload(season?.id)"
+        @update:open="bannersOpen = $event"
+      />
 
       <join-band />
     </esports-island>

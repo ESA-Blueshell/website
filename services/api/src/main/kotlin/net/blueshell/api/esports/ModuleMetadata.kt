@@ -18,6 +18,10 @@ import org.springframework.modulith.PackageInfo
         "security",
         // Open kernel.
         "shared",
+        // Posters, banners and roster icons are uploaded through FileService.
+        "file :: api",
+        // A poster, an icon and a banner each hold the FK into files.
+        "file :: entities",
         // Players are resolved through UserService and MemberProfileService.
         "user :: api",
         // DEBT. EsportsPageQueryService reads User rows to name a player. No

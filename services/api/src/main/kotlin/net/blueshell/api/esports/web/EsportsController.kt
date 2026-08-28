@@ -3,6 +3,7 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.esports.domain.EsportsMediaService
 import net.blueshell.api.esports.domain.EsportsPageQueryService
 import net.blueshell.api.esports.domain.GamePageService
 import net.blueshell.api.esports.domain.SeasonService
@@ -10,6 +11,7 @@ import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,9 +20,11 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 
 /**
  * The esports pages and the admin surface behind them.
@@ -39,6 +43,7 @@ class EsportsController(
     private val gamePages: GamePageService,
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
+    private val media: EsportsMediaService,
 ) {
     @GetMapping("/games/{game}")
     @PermitAll
@@ -125,6 +130,66 @@ class EsportsController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteSeason(@PathVariable id: Long) {
         seasons.delete(id)
+    }
+
+    /**
+     * The team's own poster.
+     *
+     * Removing one clears the reference and leaves the stored file alone: files are stored by
+     * content hash, so the row may be another team's poster too.
+     */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PostMapping("/teams/{id}/poster", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadTeamPoster(
+        @PathVariable id: Long,
+        @RequestPart("file") file: MultipartFile,
+    ): TeamResponse = media.setTeamPoster(id, file).asResponse()
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @DeleteMapping("/teams/{id}/poster")
+    fun removeTeamPoster(@PathVariable id: Long): TeamResponse =
+        media.clearTeamPoster(id).asResponse()
+
+    /** One roster entry's own picture, which is why a player can look different across seasons. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PostMapping("/roster/{id}/icon", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadRosterIcon(
+        @PathVariable id: Long,
+        @RequestPart("file") file: MultipartFile,
+    ): RosterEntryResponse = media.setRosterIcon(id, file).asResponse()
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @DeleteMapping("/roster/{id}/icon")
+    fun removeRosterIcon(@PathVariable id: Long): RosterEntryResponse =
+        media.clearRosterIcon(id).asResponse()
+
+    /** Every banner set for a game, so the levels already covered can be seen before another is added. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @GetMapping("/banners")
+    fun findBanners(@RequestParam game: String): List<EsportsBannerResponse> =
+        media.findBanners(game).map { it.asResponse() }
+
+    /**
+     * Sets the banner for one combination of game, season and team.
+     *
+     * Naming neither a season nor a team sets the game's own, which is the one every page
+     * falls back to. Uploading against a combination that already has one replaces it: a
+     * combination has one banner, and the database says so too.
+     */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PostMapping("/banners", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadBanner(
+        @RequestParam game: String,
+        @RequestParam(required = false) seasonId: Long?,
+        @RequestParam(required = false) teamId: Long?,
+        @RequestPart("file") file: MultipartFile,
+    ): EsportsBannerResponse = media.setBanner(game, seasonId, teamId, file).asResponse()
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @DeleteMapping("/banners/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun removeBanner(@PathVariable id: Long) {
+        media.removeBanner(id)
     }
 
     @GetMapping("/teams")

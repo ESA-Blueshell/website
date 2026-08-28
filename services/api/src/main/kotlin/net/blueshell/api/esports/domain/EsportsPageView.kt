@@ -26,6 +26,8 @@ data class RosterMemberView(
     val roleTitle: String? = null,
     /** A caption about them, in markdown, where anything was written. */
     val description: String? = null,
+    /** This entry's own picture, where one was uploaded. */
+    val iconFileId: Long? = null,
 )
 
 data class TeamView(
@@ -33,6 +35,10 @@ data class TeamView(
     val name: String,
     val image: String?,
     val members: List<RosterMemberView>,
+    /** The team's own poster, where one was uploaded. */
+    val posterFileId: Long? = null,
+    /** The banner resolved for this team in the season being shown. */
+    val bannerFileId: Long? = null,
 )
 
 /** A whole game page: the season being shown, the ones that can be, and that season's teams. */
@@ -41,4 +47,6 @@ data class EsportsPageView(
     val season: SeasonView?,
     val seasons: List<SeasonView>,
     val teams: List<TeamView>,
+    /** The banner resolved for the game and the season being shown, before any team narrows it. */
+    val bannerFileId: Long? = null,
 )

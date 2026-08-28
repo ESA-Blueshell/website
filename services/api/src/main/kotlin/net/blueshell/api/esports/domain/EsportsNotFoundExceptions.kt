@@ -22,3 +22,13 @@ class SeasonOverlapException(name: String) :
 
 class SeasonDatesReversedException :
     ResponseStatusException(HttpStatus.BAD_REQUEST, "A season cannot end before it starts")
+
+class BannerNotFoundException(id: Long) :
+    ResponseStatusException(HttpStatus.NOT_FOUND, "Banner with id $id not found")
+
+/**
+ * A banner narrowed to a team has to be a banner for that team's own game, or it would be
+ * unreachable: nothing ever resolves a banner for a game the team does not play.
+ */
+class BannerTeamPlaysAnotherGameException(team: String, game: String) :
+    ResponseStatusException(HttpStatus.BAD_REQUEST, "$team does not play ${game}")

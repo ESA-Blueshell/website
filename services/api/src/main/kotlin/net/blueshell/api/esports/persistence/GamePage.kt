@@ -33,15 +33,15 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
     indexes = [Index(name = "idx_game_page_deleted_at", columnList = "deleted_at")],
 )
 class GamePage(
-    /** What everything else points at. A game's identity, and not editable. */
+    /** The identifier teams, rosters and game accounts reference. Never changes. */
     @Column(name = "game", nullable = false, length = 32)
     var game: String,
 
-    /** What the pages print. Free to change; the code it belongs to is not. */
+    /** The name shown on the pages. Editable, unlike [game]. */
     @Column(name = "name", nullable = false, length = 64)
     var name: String,
 
-    /** The address the page answers to. What the router already used, so links keep working. */
+    /** The URL segment this game's page is served from, e.g. "counter-strike-2". */
     @Column(name = "slug", nullable = false, length = 64)
     var slug: String,
 
@@ -49,22 +49,22 @@ class GamePage(
     @Column(name = "intro")
     var intro: String? = null,
 
-    /** The colour that carries this game across the island, where one has been chosen. */
+    /** Hex colour used to accent this game across the site. Null falls back to the brand colour. */
     @Column(name = "accent", length = 32)
     var accent: String? = null,
 
-    /** The game's own mark, as an asset file name, where the association has one. */
+    /** Filename of the game's icon in the frontend's assets, if it has one. */
     @Column(name = "mark", length = 255)
     var mark: String? = null,
 
-    /** The image behind the game on the index, as an asset file name. */
+    /** Filename of the background image used on the index, if it has one. */
     @Column(name = "banner", length = 255)
     var banner: String? = null,
 
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,
 
-    /** Whether the association still fields a team in it. A retired game keeps its history. */
+    /** Whether a team is still fielded in it. A retired game keeps all its history. */
     @Column(name = "fielded", nullable = false)
     var fielded: Boolean = true,
 ) : AuditedAutoIdEntity()

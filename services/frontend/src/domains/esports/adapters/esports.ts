@@ -10,6 +10,7 @@ import {
   deleteSeason,
   deleteTeam,
   fieldTeam,
+  findBanners,
   findEsportsPage,
   findGameAccounts,
   createGame,
@@ -24,14 +25,21 @@ import {
   findTeams,
   findUsers,
   linkRosterEntry,
+  removeBanner,
   removeRosterEntry,
+  removeRosterIcon,
+  removeTeamPoster,
   setGameAccount,
   updateRosterEntry,
   unfieldTeam,
   updateSeason,
   updateTeam,
+  uploadBanner,
+  uploadRosterIcon,
+  uploadTeamPoster,
 } from "@/services/api"
 import type {
+  EsportsBannerResponse,
   EsportsPageResponse,
   FieldedTeamResponse,
   GameAccountResponse,
@@ -58,6 +66,7 @@ export type GameAccount = GameAccountResponse
 /** A game itself: what it is called, the art it is drawn with, and how its page presents it. */
 export type GameRecord = GamePageResponse
 export type FieldedTeam = FieldedTeamResponse
+export type EsportsBanner = EsportsBannerResponse
 
 /** What a season holds, so an offer to remove it can say what goes with it. */
 export interface SeasonContents {
@@ -399,4 +408,56 @@ export async function saveGameAccount(
 
 export async function dropGameAccount(userId: number, game: Game): Promise<void> {
   await clearGameAccount({path: {userId, game}})
+}
+
+/**
+ * The images an admin puts on the pages.
+ *
+ * Each answers with the record as it now stands rather than with the file, so a caller
+ * re-renders from the same shape it already draws.
+ */
+export async function setTeamPoster(teamId: number, file: File): Promise<Team | null> {
+  const res = await uploadTeamPoster({path: {id: teamId}, body: {file}})
+  return res.data ?? null
+}
+
+export async function clearTeamPoster(teamId: number): Promise<Team | null> {
+  const res = await removeTeamPoster({path: {id: teamId}})
+  return res.data ?? null
+}
+
+export async function setRosterIcon(entryId: number, file: File): Promise<RosterEntry | null> {
+  const res = await uploadRosterIcon({path: {id: entryId}, body: {file}})
+  return res.data ?? null
+}
+
+export async function clearRosterIcon(entryId: number): Promise<RosterEntry | null> {
+  const res = await removeRosterIcon({path: {id: entryId}})
+  return res.data ?? null
+}
+
+/** Every banner set for a game, so the levels already covered can be shown before another is added. */
+export async function loadBanners(game: Game): Promise<EsportsBanner[]> {
+  const res = await findBanners({query: {game}})
+  return res.data ?? []
+}
+
+/**
+ * Sets the banner for one combination of game, season and team.
+ *
+ * Naming neither a season nor a team sets the game's own, which is what every page falls
+ * back to.
+ */
+export async function setBanner(
+  game: Game,
+  file: File,
+  seasonId?: number,
+  teamId?: number,
+): Promise<EsportsBanner | null> {
+  const res = await uploadBanner({query: {game, seasonId, teamId}, body: {file}})
+  return res.data ?? null
+}
+
+export async function dropBanner(id: number): Promise<void> {
+  await removeBanner({path: {id}})
 }

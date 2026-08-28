@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
+import ImagePicker from "./ImagePicker.vue"
 import {
   addToRoster,
+  clearRosterIcon,
+  clearTeamPoster,
   dropRosterEntry,
   dropTeam,
   linkRosterMember,
@@ -11,6 +14,8 @@ import {
   loadTeamSeasons,
   saveRosterEntry,
   renameTeam,
+  setRosterIcon,
+  setTeamPoster,
   type Member,
   type RosterEntry,
   type Season,
@@ -55,6 +60,8 @@ interface Row {
    * where that holds.
    */
   displayName: string
+  /** Where this entry's picture is served, or nothing where none was uploaded. */
+  iconUrl: string | null
 }
 
 const props = defineProps<{
@@ -63,6 +70,8 @@ const props = defineProps<{
   teamName: string
   /** The team's banner asset, so the same dialog can change it. */
   teamImage?: string | null
+  /** Where the team's uploaded poster is served, so the same dialog can replace it. */
+  teamPosterUrl?: string | null
   season: Season | null
   accent?: string
 }>()
@@ -107,7 +116,89 @@ const rowOf = (entry: RosterEntry): Row => ({
   description: entry.description ?? "",
   userId: entry.userId ?? null,
   displayName: entry.displayName ?? "",
+  iconUrl: entry.iconUrl ?? null,
 })
+
+/**
+ * The poster and the icons, which unlike everything else here take effect as they are chosen.
+ *
+ * A file is not a draft. Holding one until the save would mean keeping the bytes in the page
+ * and uploading them at a moment the visitor has stopped thinking about the picture, and a
+ * failure then would be reported against a save that otherwise worked.
+ */
+const posterUrl = ref<string | null>(null)
+const posterBusy = ref(false)
+const iconBusy = ref<number | null>(null)
+
+/*
+ * The poster is followed on its own rather than only being read when the editor opens.
+ * Uploading one reloads the page underneath, which re-runs the watcher below and would
+ * otherwise reset the picker to what the prop said before the upload landed.
+ */
+watch(() => props.teamPosterUrl, (url) => {
+  posterUrl.value = url ?? null
+})
+
+const uploadPoster = async (file: File) => {
+  const teamId = props.teamId
+  if (teamId == null || posterBusy.value) return
+  posterBusy.value = true
+  teamFailure.value = null
+  try {
+    posterUrl.value = (await setTeamPoster(teamId, file))?.posterUrl ?? null
+    emit("saved")
+  } catch {
+    teamFailure.value = "That poster could not be uploaded."
+  } finally {
+    posterBusy.value = false
+  }
+}
+
+const removePoster = async () => {
+  const teamId = props.teamId
+  if (teamId == null || posterBusy.value) return
+  posterBusy.value = true
+  teamFailure.value = null
+  try {
+    posterUrl.value = (await clearTeamPoster(teamId))?.posterUrl ?? null
+    emit("saved")
+  } catch {
+    teamFailure.value = "That poster could not be removed."
+  } finally {
+    posterBusy.value = false
+  }
+}
+
+const uploadIcon = async (index: number, file: File) => {
+  const row = rows.value[index]
+  // A row nobody has saved yet has no entry to hang a picture on.
+  if (!row?.id || iconBusy.value !== null) return
+  iconBusy.value = row.id
+  failure.value = null
+  try {
+    row.iconUrl = (await setRosterIcon(row.id, file))?.iconUrl ?? null
+    emit("saved")
+  } catch {
+    failure.value = "That picture could not be uploaded."
+  } finally {
+    iconBusy.value = null
+  }
+}
+
+const removeIcon = async (index: number) => {
+  const row = rows.value[index]
+  if (!row?.id || iconBusy.value !== null) return
+  iconBusy.value = row.id
+  failure.value = null
+  try {
+    row.iconUrl = (await clearRosterIcon(row.id))?.iconUrl ?? null
+    emit("saved")
+  } catch {
+    failure.value = "That picture could not be removed."
+  } finally {
+    iconBusy.value = null
+  }
+}
 
 watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open, teamId, seasonId]) => {
   if (!open || teamId == null || seasonId == null) return
@@ -117,6 +208,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   memberSearch.value = {}
   draftName.value = props.teamName
   draftImage.value = props.teamImage ?? ""
+  posterUrl.value = props.teamPosterUrl ?? null
   playedIn.value = null
   try {
     const entries = await loadRoster(teamId, seasonId)
@@ -128,8 +220,10 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
 }, {immediate: true})
 
 const add = () => {
+  // No icon: there is no entry to hang one on until this row has been saved.
   rows.value = [...rows.value, {
-    id: null, handle: "", role: TeamRoleEnum.PLAYER, roleTitle: "", description: "", userId: null, displayName: "",
+    id: null, handle: "", role: TeamRoleEnum.PLAYER, roleTitle: "", description: "", userId: null,
+    displayName: "", iconUrl: null,
   }]
 }
 
@@ -309,6 +403,22 @@ const submit = async () => {
           type="text"
         >
       </div>
+      <!-- Applies as it is chosen, unlike the two fields above, which wait for the save. -->
+      <image-picker
+        :busy="posterBusy"
+        label="Poster"
+        testid="lineup-team-poster"
+        :url="posterUrl"
+        @clear="removePoster"
+        @pick="uploadPoster"
+      />
+      <p
+        v-if="teamFailure"
+        class="lineup__failure"
+        data-testid="lineup-team-failure"
+      >
+        {{ teamFailure }}
+      </p>
     </fieldset>
 
     <p
@@ -332,6 +442,15 @@ const submit = async () => {
       class="lineup__row"
       :data-testid="`lineup-row-${row.id ?? `new-${index}`}`"
     >
+      <image-picker
+        v-if="row.id"
+        :busy="iconBusy === row.id"
+        label="Picture"
+        :testid="`lineup-icon-${index}`"
+        :url="row.iconUrl"
+        @clear="removeIcon(index)"
+        @pick="uploadIcon(index, $event)"
+      />
       <div class="lineup__line">
         <input
           v-model="row.handle"

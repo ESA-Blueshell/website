@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
@@ -74,6 +75,16 @@ class TeamRosterEntry(
     /** A caption rather than a biography, in markdown, capped short enough to stay one. */
     @Column(name = "description", nullable = true, length = 280)
     var description: String? = null,
+
+    /**
+     * This entry's own picture, where one has been uploaded.
+     *
+     * On the entry rather than on the member, so a player can look different across seasons
+     * and an entry nobody could be attributed to can still carry one.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "icon_file_id")
+    var icon: File? = null,
 
     @Column(name = "user_id", nullable = true)
     var userId: Long? = null,

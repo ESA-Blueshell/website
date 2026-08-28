@@ -2,11 +2,15 @@ package net.blueshell.api.esports.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
@@ -42,4 +46,14 @@ class Team(
     /** Asset file name for the page's background, as the pages have always referenced it. */
     @Column(name = "image", nullable = true, length = 255)
     var image: String? = null,
+
+    /**
+     * The team's own poster, where one has been uploaded.
+     *
+     * Sits beside [image] rather than replacing it: a team without a poster still falls back
+     * to the file the frontend bundles, so the pages keep rendering while the uploads catch up.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "poster_file_id")
+    var poster: File? = null,
 ) : AuditedAutoIdEntity()

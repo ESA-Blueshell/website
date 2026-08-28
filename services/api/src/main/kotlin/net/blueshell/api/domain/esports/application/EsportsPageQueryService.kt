@@ -35,8 +35,13 @@ class EsportsPageQueryService(
             .sortedByDescending { it.startDate }
             .map { it.asView() }
 
-        val season = seasonId?.let { requested -> available.firstOrNull { it.id == requested } }
-            ?: available.firstOrNull()
+        // A season that was asked for by name is shown even where this game fielded nobody in
+        // it: a season has to be reachable before a team can be added to it, and the answer
+        // for a season with no teams is that it had none, not a different season's teams.
+        val season = seasonId?.let { requested ->
+            available.firstOrNull { it.id == requested }
+                ?: runCatching { seasons.findById(requested) }.getOrNull()?.asView()
+        } ?: available.firstOrNull()
         if (season == null) return EsportsPageView(game, null, available, emptyList())
 
         // The teams are the ones fielded; the roster entries only say who played for them,

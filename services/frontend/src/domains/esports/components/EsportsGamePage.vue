@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
+import {loadSeasons} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import {$require} from "@/plugins/require"
@@ -75,11 +76,31 @@ const entrance = (index: number) => ({
 })
 
 const mayEdit = useMayEditEsports()
+
+/**
+ * A visitor's strip carries the seasons this game played in; there is nothing to say about
+ * one it sat out. Somebody who may edit sees every season, because a season has to be
+ * reachable before a team can be added to it — and a season just written down has nobody in
+ * it by definition.
+ */
+const allSeasons = ref<Season[]>([])
+watch(mayEdit, async (may) => {
+  if (may && allSeasons.value.length === 0) allSeasons.value = await loadSeasons()
+}, {immediate: true})
+
+const stripSeasons = computed<Season[]>(() =>
+  (mayEdit.value && allSeasons.value.length > 0 ? allSeasons.value : seasons.value))
 const editing = ref<Season | null>(null)
 const editorOpen = ref(false)
 
 const editSeason = (season: Season) => {
   editing.value = season
+  editorOpen.value = true
+}
+
+// Nothing to fill the form from: the dialog opens empty and writes a new season.
+const addSeason = () => {
+  editing.value = null
   editorOpen.value = true
 }
 
@@ -92,11 +113,20 @@ const closeEditor = (open: boolean) => {
 const seasonSaved = (saved: Season) => {
   const current = page.value
   if (!current) return
+  const known = current.seasons.some(one => one.id === saved.id)
   page.value = {
     ...current,
-    seasons: current.seasons.map(one => (one.id === saved.id ? saved : one)),
+    seasons: known
+      ? current.seasons.map(one => (one.id === saved.id ? saved : one))
+      : [...current.seasons, saved],
     season: current.season?.id === saved.id ? saved : current.season,
   }
+  const listed = allSeasons.value.some(one => one.id === saved.id)
+  allSeasons.value = listed
+    ? allSeasons.value.map(one => (one.id === saved.id ? saved : one))
+    : [...allSeasons.value, saved]
+  // A season nobody has seen before is the one to show, which also scrolls the strip to it.
+  if (!known && !listed) showSeason(saved.id)
 }
 </script>
 
@@ -136,21 +166,21 @@ const seasonSaved = (saved: Season) => {
            the halves below, and the line lights up to whichever season is under the pointer. -->
       <!-- Full width: the seasons run edge to edge, as the teams below them do. -->
       <section
-        v-if="seasons.length > 1"
+        v-if="stripSeasons.length > 1"
         class="w-full pt-1 pb-2"
         data-testid="esports-season-bar"
       >
         <season-timeline
           :accent="identity.accent"
           :may-edit="mayEdit"
-          :seasons="seasons"
+          :seasons="stripSeasons"
           :selected-id="currentSeasonId"
+          @add="addSeason"
           @edit="editSeason"
           @select="showSeason"
         />
 
         <season-dialog
-          v-if="editing"
           :accent="identity.accent"
           :open="editorOpen"
           :season="editing"

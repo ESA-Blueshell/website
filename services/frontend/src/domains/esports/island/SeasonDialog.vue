@@ -4,7 +4,8 @@ import IslandDialog from "./IslandDialog.vue"
 import {saveSeasonOrReason, type Season} from "../adapters/esports"
 
 /**
- * Changing a season's name or dates, from wherever the season is shown.
+ * Writing a season down, from wherever the seasons are shown: an existing one to change it,
+ * nothing to add one.
  *
  * A refusal keeps what was typed. Losing three fields because the dates overlapped another
  * season would mean typing them again to find out what the objection was.
@@ -13,7 +14,8 @@ defineOptions({name: "SeasonDialog"})
 
 const props = defineProps<{
   open: boolean
-  season: Season
+  /** The season being changed, or nothing to add one. */
+  season: Season | null
   accent?: string
 }>()
 
@@ -33,13 +35,15 @@ watch(
   () => [props.open, props.season] as const,
   ([open]) => {
     if (!open) return
-    name.value = props.season.name
-    startDate.value = props.season.startDate
-    endDate.value = props.season.endDate
+    name.value = props.season?.name ?? ""
+    startDate.value = props.season?.startDate ?? ""
+    endDate.value = props.season?.endDate ?? ""
     failure.value = null
   },
   {immediate: true},
 )
+
+const title = computed(() => (props.season ? "Edit season" : "Add season"))
 
 const complete = computed(() => name.value.trim() !== "" && startDate.value !== "" && endDate.value !== "")
 
@@ -49,7 +53,7 @@ const submit = async () => {
   failure.value = null
   try {
     const result = await saveSeasonOrReason({
-      id: props.season.id,
+      id: props.season?.id,
       name: name.value.trim(),
       startDate: startDate.value,
       endDate: endDate.value,
@@ -71,7 +75,7 @@ const submit = async () => {
     :accent="accent"
     :open="open"
     testid="season-dialog"
-    title="Edit season"
+    :title="title"
     @update:open="emit('update:open', $event)"
   >
     <form

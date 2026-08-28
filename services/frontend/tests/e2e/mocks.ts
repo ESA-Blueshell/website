@@ -174,6 +174,10 @@ export async function loginAsAdmin(context: BrowserContext) {
 }
 
 export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
+  // Seasons written down during the test. The api shows a season that was asked for even
+  // where the game fielded nobody in it, and these are exactly those seasons.
+  const written = new Map<number, Record<string, unknown>>()
+
   await page.addInitScript((params: {cookieConsentStorageKey: string; cookieConsentPayload: string}) => {
     localStorage.setItem(params.cookieConsentStorageKey, params.cookieConsentPayload)
     if (localStorage.getItem("esa-blueshell.nl:darkMode") == null) {
@@ -625,10 +629,22 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // page in the suite silently rendered as having no teams.
     if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
       const requested = url.searchParams.get("seasonId")
+      const fresh = requested != null ? written.get(Number(requested)) : undefined
+      if (fresh) {
+        // Nobody has been fielded in it yet, which is the answer rather than a reason to
+        // show a different season's teams.
+        return fulfillJson(route, {game: path.split("/").pop(), season: fresh, seasons: esportsSeasons, teams: []})
+      }
       const page = fixtures.esportsPages?.[requested ?? "20"]
         ?? esportsPageBySeason[requested ?? "20"]
         ?? esportsPageBySeason["20"]
       return fulfillJson(route, page)
+    }
+    if (method === "POST" && path === "/esports/seasons") {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const season = {id: 41, ...body}
+      written.set(41, season)
+      return fulfillJson(route, season, 201)
     }
     if (method === "PUT" && /^\/esports\/seasons\/\d+$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>

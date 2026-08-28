@@ -83,14 +83,28 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val other = season(LocalDate.of(2031, 9, 1))
         val team = team("BS One Season")
         fielded.field(team.id!!, played.id!!)
-        // The other season needs a team of its own, or the page falls back to the newest
-        // season the game actually fielded and answers about that one instead.
+        // A team of its own, so the other season is one this game genuinely played in.
         fielded.field(team("BS The Other Lot").id!!, other.id!!)
 
         assertThat(page.page(Game.TRACKMANIA, played.id).teams).extracting<String> { it.name }
             .contains("BS One Season")
         assertThat(page.page(Game.TRACKMANIA, other.id).teams).extracting<String> { it.name }
             .doesNotContain("BS One Season")
+    }
+
+    @Test
+    fun `a season asked for by name is answered about, even where this game fielded nobody`() {
+        val played = season(LocalDate.of(2030, 9, 1))
+        fielded.field(team("BS Somebody").id!!, played.id!!)
+        val empty = season(LocalDate.of(2032, 9, 1))
+
+        val view = page.page(Game.TRACKMANIA, empty.id)
+
+        // The answer for a season with no teams is that it had none, not another season's.
+        assertThat(view.season?.id).isEqualTo(empty.id)
+        assertThat(view.teams).isEmpty()
+        // It is still not offered to a visitor, who has nothing to do with an empty season.
+        assertThat(view.seasons).extracting<Long> { it.id }.doesNotContain(empty.id)
     }
 
     @Test

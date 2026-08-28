@@ -138,13 +138,13 @@ const teamAdded = async (team: Team) => {
   await reload(season.value?.id)
 }
 
-const editingTeam = ref<{id: number; name: string} | null>(null)
+const editingTeam = ref<{id: number; name: string; image: string | null} | null>(null)
 const lineupOpen = ref(false)
 
 const editLineup = (teamId: number | string) => {
   const team = teams.value.find(one => one.id === teamId)
   if (!team) return
-  editingTeam.value = {id: team.id, name: team.name}
+  editingTeam.value = {id: team.id, name: team.name, image: team.image ?? null}
   lineupOpen.value = true
 }
 
@@ -289,7 +289,9 @@ const seasonSaved = (saved: Season) => {
           :open="lineupOpen"
           :season="season"
           :team-id="editingTeam?.id ?? null"
+          :team-image="editingTeam?.image ?? null"
           :team-name="editingTeam?.name ?? ''"
+          @removed="lineupSaved"
           @saved="lineupSaved"
           @update:open="lineupOpen = $event"
         />

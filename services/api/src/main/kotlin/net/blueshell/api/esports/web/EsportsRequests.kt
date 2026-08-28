@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.TeamRole
 import java.time.LocalDate
 
@@ -24,7 +23,7 @@ data class SeasonRequest(
 @Schema(description = "Create a team for a game")
 data class CreateTeamRequest(
     @field:NotNull(message = "Game is required")
-    val game: Game,
+    val game: String,
 
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")

@@ -579,7 +579,7 @@ export type CreateTargetRequest = {
  * Create a team for a game
  */
 export type CreateTeamRequest = {
-    game: Game;
+    game: string;
     image?: string | null;
     name: string;
 };
@@ -668,7 +668,7 @@ export type EnqueueJobRequest = {
  * A game's teams for one season, and the seasons that can be shown
  */
 export type EsportsPageResponse = {
-    game: Game;
+    game: string;
     /**
      * The season being shown; absent when the game has no rosters yet
      */
@@ -819,17 +819,6 @@ export enum FileType {
     SPONSOR_PICTURE = 'SPONSOR_PICTURE'
 }
 
-export enum Game {
-    VALORANT = 'VALORANT',
-    CS2 = 'CS2',
-    CSGO = 'CSGO',
-    LEAGUE_OF_LEGENDS = 'LEAGUE_OF_LEGENDS',
-    ROCKET_LEAGUE = 'ROCKET_LEAGUE',
-    TRACKMANIA = 'TRACKMANIA',
-    GEOGUESSR = 'GEOGUESSR',
-    SMASH = 'SMASH'
-}
-
 /**
  * Set what a member is called in one game
  */
@@ -841,7 +830,7 @@ export type GameAccountRequest = {
  * What one member is called in one game
  */
 export type GameAccountResponse = {
-    game: Game;
+    game: string;
     handle: string;
     id: number;
     userId: number;
@@ -863,7 +852,7 @@ export type GamePageResponse = {
      * Whether the association still fields a team in it
      */
     fielded: boolean;
-    game: Game;
+    game: string;
     /**
      * What the page says about the game, where anything is said
      */
@@ -1446,7 +1435,7 @@ export enum TargetSystem {
  * A team the association fields in one game
  */
 export type TeamResponse = {
-    game: Game;
+    game: string;
     id: number;
     /**
      * Asset file name for the team's background image
@@ -3518,7 +3507,7 @@ export type FindGamePagesResponse = FindGamePagesResponses[keyof FindGamePagesRe
 export type FindEsportsPageData = {
     body?: never;
     path: {
-        game: Game;
+        game: string;
     };
     query?: {
         seasonId?: number;
@@ -3563,7 +3552,7 @@ export type FindEsportsPageResponse = FindEsportsPageResponses[keyof FindEsports
 export type UpdateGamePageData = {
     body: UpdateGamePageRequest;
     path: {
-        game: Game;
+        game: string;
     };
     query?: never;
     url: '/esports/games/{game}';
@@ -4035,7 +4024,7 @@ export type FindTeamsData = {
     body?: never;
     path?: never;
     query: {
-        game: Game;
+        game: string;
     };
     url: '/esports/teams';
 };
@@ -7744,7 +7733,7 @@ export type ClearGameAccountData = {
     body?: never;
     path: {
         userId: number;
-        game: Game;
+        game: string;
     };
     query?: never;
     url: '/users/{userId}/game-accounts/{game}';
@@ -7788,7 +7777,7 @@ export type SetGameAccountData = {
     body: GameAccountRequest;
     path: {
         userId: number;
-        game: Game;
+        game: string;
     };
     query?: never;
     url: '/users/{userId}/game-accounts/{game}';

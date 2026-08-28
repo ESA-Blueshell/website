@@ -9,7 +9,6 @@ import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
-import net.blueshell.api.shared.enums.Game
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -44,7 +43,7 @@ class EsportsController(
     @GetMapping("/games/{game}")
     @PermitAll
     fun findEsportsPage(
-        @PathVariable game: Game,
+        @PathVariable game: String,
         @RequestParam(required = false) seasonId: Long?,
     ): EsportsPageResponse = page.page(game, seasonId).asResponse()
 
@@ -59,7 +58,7 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/games/{game}")
     fun updateGamePage(
-        @PathVariable game: Game,
+        @PathVariable game: String,
         @Valid @RequestBody request: UpdateGamePageRequest,
     ): GamePageResponse =
         gamePages.update(game, request.slug, request.intro, request.sortIndex, request.fielded).asResponse()
@@ -98,7 +97,7 @@ class EsportsController(
 
     @GetMapping("/teams")
     @PermitAll
-    fun findTeams(@RequestParam game: Game): List<TeamResponse> =
+    fun findTeams(@RequestParam game: String): List<TeamResponse> =
         teams.findAllByGame(game).map { it.asResponse() }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")

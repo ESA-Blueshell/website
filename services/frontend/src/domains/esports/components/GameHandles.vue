@@ -7,7 +7,7 @@ import {
   saveGameAccount,
   type Game,
 } from "../adapters/esports"
-import {Game as GameEnum} from "@/services/api"
+import {useGames} from "@/domains/esports/island/useGames"
 
 defineOptions({name: "GameHandles"})
 
@@ -15,10 +15,13 @@ const props = defineProps<{
   userId: number
 }>()
 
-const GAMES = Object.values(GameEnum) as Game[]
+// Every game, not only the ones still fielded: a handle in a retired game stays editable.
+// What each is called is its record's to say, rather than its code title-cased.
+const {games, identityOf} = useGames()
 
-const gameLabel = (game: Game) =>
-  game.toLowerCase().split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")
+const GAMES = computed<Game[]>(() => games.value.map(one => one.game))
+
+const gameLabel = (game: Game) => identityOf(game).name || game
 
 /** What is stored, against what is typed: a row is dirty when the two differ. */
 const stored = ref<Record<string, string>>({})

@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -8,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -27,10 +27,31 @@ class GamePageIT : UserTestSupport() {
      */
     @Test
     fun `every game has a page, in the order they are shown`() {
+        // Eight games: the six still fielded and the two whose teams are history.
         mvc.perform(get("/esports/games"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.length()").value(Game.entries.size))
+            .andExpect(jsonPath("$.length()").value(8))
             .andExpect(jsonPath("$[0].game").value("VALORANT"))
+    }
+
+    @Test
+    fun `a code naming no game is refused with a reason`() {
+        // Nothing makes such a code unrepresentable any more, so the edge has to say so.
+        mvc.perform(get("/esports/games/{game}", "PONG"))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `a team cannot be written for a game that does not exist`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            post("/esports/teams")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"game":"PONG","name":"Table Tennis Firsts"}"""),
+        )
+            .andExpect(status().isBadRequest)
     }
 
     @Test

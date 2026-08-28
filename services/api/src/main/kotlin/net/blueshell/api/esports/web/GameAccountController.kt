@@ -3,7 +3,6 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.esports.domain.UserGameAccountService
-import net.blueshell.api.shared.enums.Game
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -37,14 +36,14 @@ class GameAccountController(
     @PutMapping("/{game}")
     fun setGameAccount(
         @PathVariable userId: Long,
-        @PathVariable game: Game,
+        @PathVariable game: String,
         @Valid @RequestBody request: GameAccountRequest,
     ): GameAccountResponse = accounts.set(userId, game, request.handle).asResponse()
 
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     @DeleteMapping("/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun clearGameAccount(@PathVariable userId: Long, @PathVariable game: Game) {
+    fun clearGameAccount(@PathVariable userId: Long, @PathVariable game: String) {
         accounts.clear(userId, game)
     }
 }

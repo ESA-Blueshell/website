@@ -2,13 +2,10 @@ package net.blueshell.api.esports.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Lob
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -35,9 +32,8 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class GamePage(
     /** What everything else points at. A game's identity, and not editable. */
-    @Enumerated(EnumType.STRING)
     @Column(name = "game", nullable = false, length = 32)
-    var game: Game,
+    var game: String,
 
     /** What the pages print. Free to change; the code it belongs to is not. */
     @Column(name = "name", nullable = false, length = 64)

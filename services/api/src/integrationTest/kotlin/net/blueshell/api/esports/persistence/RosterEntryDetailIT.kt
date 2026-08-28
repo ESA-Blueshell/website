@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
@@ -39,7 +38,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         ),
     )
 
-    private fun team(): Team = teams.save(Team(game = Game.TRACKMANIA, name = "BS Detail ${System.nanoTime()}"))
+    private fun team(): Team = teams.save(Team(game = "TRACKMANIA", name = "BS Detail ${System.nanoTime()}"))
 
     @Test
     fun `a roster entry carries what somebody did and a caption about them`() {
@@ -66,7 +65,7 @@ class RosterEntryDetailIT : UserTestSupport() {
             description = "Calls the rounds.",
         )
 
-        val member = page.page(Game.TRACKMANIA, season.id).teams.single().members.single()
+        val member = page.page("TRACKMANIA", season.id).teams.single().members.single()
 
         assertThat(member.roleTitle).isEqualTo("In-game leader")
         assertThat(member.description).isEqualTo("Calls the rounds.")

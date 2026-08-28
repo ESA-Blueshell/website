@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
@@ -37,7 +36,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = from.plusMonths(5)),
     )
 
-    private fun team(): Team = teams.save(Team(game = Game.TRACKMANIA, name = "BS Carry ${System.nanoTime()}"))
+    private fun team(): Team = teams.save(Team(game = "TRACKMANIA", name = "BS Carry ${System.nanoTime()}"))
 
     @Test
     fun `an existing team is fielded in a season it was not in`() {

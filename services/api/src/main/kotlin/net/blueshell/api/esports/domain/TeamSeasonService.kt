@@ -3,7 +3,6 @@ package net.blueshell.api.esports.domain
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
-import net.blueshell.api.shared.enums.Game
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -21,11 +20,11 @@ class TeamSeasonService(
     private val seasons: SeasonService,
 ) {
     @Transactional(readOnly = true)
-    fun findByGameAndSeason(game: Game, seasonId: Long): List<TeamSeason> =
+    fun findByGameAndSeason(game: String, seasonId: Long): List<TeamSeason> =
         fielded.findAllByGameAndSeason(game, seasonId)
 
     @Transactional(readOnly = true)
-    fun findSeasonIdsFielded(game: Game): List<Long> = fielded.findSeasonIdsFielded(game)
+    fun findSeasonIdsFielded(game: String): List<Long> = fielded.findSeasonIdsFielded(game)
 
     /** The seasons a team was fielded in, newest first. */
     @Transactional(readOnly = true)

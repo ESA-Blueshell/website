@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.shared.enums.Game
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -23,7 +22,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         """,
     )
     fun findAllByGameAndSeason(
-        @Param("game") game: Game,
+        @Param("game") game: String,
         @Param("seasonId") seasonId: Long,
     ): List<TeamRosterEntry>
 
@@ -51,7 +50,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         ORDER BY s.id DESC
         """,
     )
-    fun findSeasonIdsWithRosters(@Param("game") game: Game): List<Long>
+    fun findSeasonIdsWithRosters(@Param("game") game: String): List<Long>
 
     /**
      * Whether a member held a roster spot in a season overlapping the window — the question

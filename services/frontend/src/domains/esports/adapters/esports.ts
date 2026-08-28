@@ -30,7 +30,6 @@ import {
 import type {
   EsportsPageResponse,
   FieldedTeamResponse,
-  Game as ApiGame,
   GameAccountResponse,
   GamePageResponse,
   RosterEntryResponse,
@@ -40,7 +39,11 @@ import type {
   TeamRosterResponse,
 } from "@/services/api"
 
-export type Game = ApiGame
+/**
+ * A game's code: the identity a team, a roster and a member's handle point at. A plain string
+ * because the games that exist are rows rather than a list fixed when the code is built.
+ */
+export type Game = string
 export type TeamRole = ApiTeamRole
 export type EsportsPage = EsportsPageResponse
 export type Season = SeasonResponse
@@ -58,10 +61,16 @@ export interface SeasonContents {
   players: number
 }
 
-/** Every game the association knows, in the order their records put them. */
+/**
+ * Every game the association knows, in the order their records put them.
+ *
+ * Answers with a list whatever came back. Every page asks for this now, including ones served
+ * before the api is reachable, and a body that is not the list it was promised must read as no
+ * games rather than take the navigation down with it.
+ */
 export async function loadGames(): Promise<GameRecord[]> {
   const res = await findGamePages()
-  return res.data ?? []
+  return Array.isArray(res.data) ? res.data : []
 }
 
 export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {

@@ -848,9 +848,17 @@ export type GameAccountResponse = {
 };
 
 /**
- * How a game presents itself: its address, its copy, and whether it is still fielded
+ * A game: what it is called, the art it is drawn with, and how its page presents it
  */
 export type GamePageResponse = {
+    /**
+     * The colour that carries this game, where one has been chosen
+     */
+    accent?: string | null;
+    /**
+     * Asset file name for the image behind the game on the index
+     */
+    banner?: string | null;
     /**
      * Whether the association still fields a team in it
      */
@@ -860,6 +868,14 @@ export type GamePageResponse = {
      * What the page says about the game, where anything is said
      */
     intro?: string | null;
+    /**
+     * Asset file name for the game's own mark, where it has one
+     */
+    mark?: string | null;
+    /**
+     * What the pages print for this game
+     */
+    name: string;
     /**
      * The address the game's page answers to
      */

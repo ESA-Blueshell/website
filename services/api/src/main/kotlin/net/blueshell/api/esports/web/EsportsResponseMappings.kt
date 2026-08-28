@@ -76,7 +76,11 @@ fun UserGameAccount.asResponse() = GameAccountResponse(
 
 fun GamePage.asResponse(): GamePageResponse = GamePageResponse(
     game = game,
+    name = name,
     slug = slug,
+    accent = accent,
+    mark = mark,
+    banner = banner,
     intro = intro,
     sortIndex = sortIndex,
     fielded = fielded,

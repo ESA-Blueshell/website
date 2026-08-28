@@ -14,18 +14,19 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * How a game presents itself: its address, what is said about it, where it sits in the list,
- * and whether the association still fields a team in it.
+ * A game the association plays: what it is called, the art it is drawn with, the address its
+ * page answers to, what that page says, where it sits among the others, and whether a team is
+ * still fielded in it.
  *
- * The enum remains what a team, a game account and the cohort rules refer to; this is only
- * presentation. Adding a game is still a code change, which is honest — a new game needs a
- * banner and an accent written for it either way.
+ * Everything that makes a game itself is here. The name was a label on a compiled enum and the
+ * accent, the mark and the banner were written into the frontend, so a game could not be added
+ * without a deploy however complete its row was.
  */
 @Entity
 @Table(
     name = "game_page",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_game_page_game", columnNames = ["game", "deleted_at"]),
+        UniqueConstraint(name = "uk_game_page_code", columnNames = ["game"]),
         UniqueConstraint(name = "uk_game_page_slug", columnNames = ["slug", "deleted_at"]),
     ],
     indexes = [Index(name = "idx_game_page_deleted_at", columnList = "deleted_at")],
@@ -33,9 +34,14 @@ import org.hibernate.annotations.SQLRestriction
 @SQLDelete(sql = "UPDATE game_page SET deleted_at = NOW(6), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class GamePage(
+    /** What everything else points at. A game's identity, and not editable. */
     @Enumerated(EnumType.STRING)
     @Column(name = "game", nullable = false, length = 32)
     var game: Game,
+
+    /** What the pages print. Free to change; the code it belongs to is not. */
+    @Column(name = "name", nullable = false, length = 64)
+    var name: String,
 
     /** The address the page answers to. What the router already used, so links keep working. */
     @Column(name = "slug", nullable = false, length = 64)
@@ -44,6 +50,18 @@ class GamePage(
     @Lob
     @Column(name = "intro")
     var intro: String? = null,
+
+    /** The colour that carries this game across the island, where one has been chosen. */
+    @Column(name = "accent", length = 32)
+    var accent: String? = null,
+
+    /** The game's own mark, as an asset file name, where the association has one. */
+    @Column(name = "mark", length = 255)
+    var mark: String? = null,
+
+    /** The image behind the game on the index, as an asset file name. */
+    @Column(name = "banner", length = 255)
+    var banner: String? = null,
 
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,

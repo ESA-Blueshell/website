@@ -3,6 +3,7 @@ package net.blueshell.api.esports.persistence
 import net.blueshell.api.shared.enums.Game
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,9 +15,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
- * A game's presentation: the address it answers to, what is said about it, where it sits, and
- * whether the association still fields a team in it. All four lived in the frontend, where a
- * change to any of them was a deploy.
+ * A game's own record: what it is called, the art it is drawn with, the address it answers to,
+ * what is said about it, where it sits, and whether the association still fields a team in it.
+ * All of it lived in the frontend, where a change to any of it was a deploy.
  */
 @SpringBootTest
 class GamePageIT : UserTestSupport() {
@@ -33,14 +34,23 @@ class GamePageIT : UserTestSupport() {
     fun seedGamePages() {
         if (pages.findByGame(Game.VALORANT) != null) return
         listOf(
-            GamePage(Game.VALORANT, "valorant", "Shooters, and plenty of them.", 1, true),
-            GamePage(Game.CS2, "counter-strike-2", "Those sweet headshots.", 2, true),
-            GamePage(Game.LEAGUE_OF_LEGENDS, "league-of-legends", "A special place.", 3, true),
-            GamePage(Game.ROCKET_LEAGUE, "rocketleague", "Football, with rocket cars.", 4, true),
-            GamePage(Game.GEOGUESSR, "geoguessr", "Guessing where.", 5, true),
-            GamePage(Game.TRACKMANIA, "trackmania", "Driving, fast.", 6, true),
-            GamePage(Game.CSGO, "counter-strike-global-offensive", null, 7, false),
-            GamePage(Game.SMASH, "super-smash-bros", null, 8, false),
+            GamePage(Game.VALORANT, "Valorant", "valorant", "Shooters, and plenty of them.",
+                "#ff4655", "valorant.png", "valorantesports1.jpg", 1, true),
+            GamePage(Game.CS2, "CS2", "counter-strike-2", "Those sweet headshots.",
+                "#e8842a", "cs2.png", "csgoesports2.jpg", 2, true),
+            GamePage(Game.LEAGUE_OF_LEGENDS, "League of Legends", "league-of-legends", "A special place.",
+                "#c8963c", "league.png", "leagueesportsbg1.jpg", 3, true),
+            GamePage(Game.ROCKET_LEAGUE, "Rocket League", "rocketleague", "Football, with rocket cars.",
+                "#1183d6", "rocketleague.png", "rocketleagueesports.jpg", 4, true),
+            GamePage(Game.GEOGUESSR, "GeoGuessr", "geoguessr", "Guessing where.",
+                "#6cbf3f", "geoguessrlogo.webp", null, 5, true),
+            // No accent or mark has ever been written for Trackmania or Smash.
+            GamePage(Game.TRACKMANIA, "Trackmania", "trackmania", "Driving, fast.",
+                null, null, null, 6, true),
+            GamePage(Game.CSGO, "CS:GO", "counter-strike-global-offensive", null,
+                "#e8842a", "cs2.png", null, 7, false),
+            GamePage(Game.SMASH, "Super Smash Bros.", "super-smash-bros", null,
+                null, null, null, 8, false),
         ).forEach { pages.save(it) }
     }
 
@@ -75,6 +85,73 @@ class GamePageIT : UserTestSupport() {
             .andExpect(jsonPath("$[?(@.game == 'CSGO')].fielded").value(false))
             .andExpect(jsonPath("$[?(@.game == 'SMASH')].fielded").value(false))
             .andExpect(jsonPath("$[?(@.game == 'VALORANT')].fielded").value(true))
+    }
+
+    @Test
+    fun `a game carries the name the pages print`() {
+        mvc.perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.game == 'LEAGUE_OF_LEGENDS')].name").value("League of Legends"))
+            .andExpect(jsonPath("$[?(@.game == 'CSGO')].name").value("CS:GO"))
+            .andExpect(jsonPath("$[?(@.game == 'SMASH')].name").value("Super Smash Bros."))
+    }
+
+    @Test
+    fun `a game carries the art it is drawn with`() {
+        mvc.perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].accent").value("#ff4655"))
+            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].mark").value("valorant.png"))
+            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].banner").value("valorantesports1.jpg"))
+    }
+
+    @Test
+    fun `a game nobody has drawn art for says so rather than inventing any`() {
+        // The island reads such a game on the association's own colour; it does not go missing.
+        mvc.perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].name").value("Trackmania"))
+            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].accent").doesNotExist())
+            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].mark").doesNotExist())
+    }
+
+    /**
+     * The enum made an unknown code unrepresentable in Kotlin, and the database was told
+     * nothing. Once a game is a row rather than a compiled constant that stops being true, so
+     * the tie is stated where the rows live. Written natively because a well-typed caller
+     * cannot express the code these reject; each states the accepted case alongside the
+     * rejected one, so a statement that is simply malformed cannot read as the tie holding.
+     */
+    @Test
+    fun `a team cannot name a game that does not exist`() {
+        insertTeamNamed("VALORANT", "Blueshell Firsts")
+
+        assertThatThrownBy { insertTeamNamed("PONG", "Table Tennis Firsts") }
+            .hasMessageContaining("fk_team_game")
+    }
+
+    @Test
+    fun `a member's game account cannot name a game that does not exist`() {
+        val member = createUserWithRole(Role.MEMBER)
+        insertAccountFor(member.id!!, "VALORANT")
+
+        assertThatThrownBy { insertAccountFor(member.id!!, "PONG") }
+            .hasMessageContaining("fk_user_game_account_game")
+    }
+
+    private fun insertTeamNamed(game: String, name: String) = transactionTemplate.execute {
+        entityManager.createNativeQuery("INSERT INTO team (game, name) VALUES (:game, :name)")
+            .setParameter("game", game)
+            .setParameter("name", name)
+            .executeUpdate()
+        entityManager.flush()
+    }
+
+    private fun insertAccountFor(userId: Long, game: String) = transactionTemplate.execute {
+        entityManager.createNativeQuery(
+            "INSERT INTO user_game_account (user_id, game, handle) VALUES (:user, :game, 'paddler')",
+        )
+            .setParameter("user", userId)
+            .setParameter("game", game)
+            .executeUpdate()
+        entityManager.flush()
     }
 
     @Test

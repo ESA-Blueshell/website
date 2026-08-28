@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.cohort.port.`in`
 
-import net.blueshell.api.platform.integration.sync.application.ExternalIdConflictException
-import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
+import net.blueshell.api.sync.api.ExternalIdConflictException
+import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 
 /**

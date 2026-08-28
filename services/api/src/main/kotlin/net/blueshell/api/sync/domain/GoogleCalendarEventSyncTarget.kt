@@ -1,18 +1,15 @@
-package net.blueshell.api.platform.integration.mock
+package net.blueshell.api.sync.domain
 
+import net.blueshell.api.domain.event.application.calendar.CalendarAdapter
 import net.blueshell.api.domain.event.application.calendar.CalendarEventData
-import net.blueshell.api.sync.domain.CalendarSyncTarget
 import net.blueshell.api.shared.enums.TargetSystem
-import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
-/** Test/dev calendar target backed by [MockCalendarAdapter]. */
 @Component
-@Primary
-@Profile("test | dev")
-class MockGoogleCalendarSyncTarget(
-    private val adapter: MockCalendarAdapter,
+@Profile("!test & !dev")
+class GoogleCalendarEventSyncTarget(
+    private val adapter: CalendarAdapter,
 ) : CalendarSyncTarget {
     override val system = TargetSystem.GOOGLE_CALENDAR
 

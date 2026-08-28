@@ -16,8 +16,8 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.out.TargetDescriptor
 import net.blueshell.api.platform.integration.cohort.port.out.TargetStrategy
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import java.time.LocalDateTime

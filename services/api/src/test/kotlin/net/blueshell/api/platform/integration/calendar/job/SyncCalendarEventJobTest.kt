@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.integration.calendar.job
 
-import net.blueshell.api.platform.integration.calendar.application.job.SyncCalendarEventJob
-import net.blueshell.api.platform.integration.sync.application.CalendarSyncService
+import net.blueshell.api.sync.domain.SyncCalendarEventJob
+import net.blueshell.api.sync.domain.CalendarSyncService
 import net.blueshell.api.shared.job.CalendarJobs
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq

@@ -10,9 +10,8 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.out.ExternalMember
 import net.blueshell.api.platform.integration.cohort.port.out.ExternalTarget
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
+import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service

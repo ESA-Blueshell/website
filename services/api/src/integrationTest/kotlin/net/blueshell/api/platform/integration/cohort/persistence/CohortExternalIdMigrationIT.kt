@@ -1,9 +1,9 @@
 package net.blueshell.api.platform.integration.cohort.persistence
 
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortRepository
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.COHORT_AGGREGATE
-import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
-import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
+import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.COHORT_AGGREGATE
+import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat

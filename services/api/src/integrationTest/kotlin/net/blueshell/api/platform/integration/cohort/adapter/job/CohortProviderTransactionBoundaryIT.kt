@@ -8,9 +8,9 @@ import net.blueshell.api.platform.integration.cohort.persistence.repository.Coho
 import net.blueshell.api.platform.integration.cohort.persistence.repository.CohortSubjectRepository
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.mock.MockCohortPort
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
-import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
-import net.blueshell.api.platform.integration.sync.persistence.repository.ExternalIdMappingRepository
+import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
+import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.platform.integration.cohort.application.CohortJobs

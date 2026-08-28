@@ -12,12 +12,11 @@ import net.blueshell.api.platform.integration.cohort.port.`in`.CohortRepairResul
 import net.blueshell.api.platform.integration.cohort.port.`in`.SyncCohortMembershipIntent
 import net.blueshell.api.platform.integration.cohort.port.out.CohortPortRegistry
 import net.blueshell.api.platform.integration.cohort.port.out.MemberRef
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService
-import net.blueshell.api.platform.integration.sync.application.ExternalIdMappingService.Companion.USER_AGGREGATE
-import net.blueshell.api.platform.integration.sync.persistence.ExternalIdMapping
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
+import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.platform.integration.cohort.application.CohortJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory

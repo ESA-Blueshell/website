@@ -20,11 +20,17 @@ data class ImageRendition(
  *
  * Widths and urls rather than a finished `srcset`: composing that string is a display decision
  * and belongs where the markup is written, not in the payload.
+ *
+ * [path] is here because a picture is uploaded on its own and put on a record by the save that
+ * names it, so a picker that is showing an image has to be able to say which one it is holding.
+ * It is the same fact as [url] with the route taken off, rather than anything new.
  */
 @Schema(name = "Image", description = "An image a public page draws, and the widths it is stored at")
 data class Image(
     @Schema(description = "Where the full-size image is served")
     val url: String,
+    @Schema(description = "Where it is stored, which is what a save points at to put it on a record")
+    val path: String,
     @Schema(description = "How wide it is, absent where its size could not be read")
     val width: Int? = null,
     @Schema(description = "How tall it is, absent where its size could not be read")
@@ -36,11 +42,16 @@ data class Image(
 /**
  * The image a stored file is, for a payload to point a page at.
  *
- * The rendition list is empty: a file is stored at one width for now, and the ladder that
- * fills this in arrives with the work that derives it.
+ * The widths come from the copies stored against this picture, narrowest first. A picture
+ * uploaded before the ladder existed, or one whose kind lists no widths, carries none — and a
+ * caller that finds none draws the full-size image, which is what it did before.
  */
 fun File.asImage(): Image = Image(
     url = PublicFileUrls.of(this),
+    path = path,
     width = width,
     height = height,
+    renditions = renditions.mapNotNull { copy ->
+        copy.renditionWidth?.let { ImageRendition(url = PublicFileUrls.of(copy), width = it) }
+    },
 )

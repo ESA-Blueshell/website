@@ -8,6 +8,7 @@ import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons, unfieldTeamFromSeason, type EsportsImage} from "../adapters/esports"
+import {sizeOf, srcsetOf} from "../pictures"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import BannerDialog from "@/domains/esports/island/BannerDialog.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
@@ -76,12 +77,15 @@ const rosterOf = (teamId: number) => {
 }
 
 // The uploaded poster where there is one, and the bundled asset until then, so a team that
-// has not been given a picture yet keeps the one the page has always drawn.
+// has not been given a picture yet keeps the one the page has always drawn. An upload also
+// carries the widths it is stored at; a bundled file is one file and has none.
 const slices = computed(() => teams.value.map(team => ({
   id: team.id,
   title: team.name,
   meta: `${team.members.length} on the roster`,
   banner: team.poster?.url || (team.image ? $require(`@/assets/${team.image}`) : ""),
+  srcset: srcsetOf(team.poster),
+  ...sizeOf(team.poster),
 })))
 
 const entrance = (index: number) => ({
@@ -143,7 +147,7 @@ const adding = ref(false)
 const bannersOpen = ref(false)
 
 /** The banner the api resolved for this game and season, where anything was set. */
-const pageBanner = computed(() => page.value?.banner?.url ?? null)
+const pageBanner = computed(() => page.value?.banner ?? null)
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
 
@@ -253,12 +257,21 @@ const seasonSaved = (saved: Season) => {
     <esports-island>
       <header class="relative isolate overflow-hidden">
         <!-- The uploaded banner where one was set; the accent wash alone until then. -->
+        <!--
+          Full-bleed behind the header, so the browser is told to pick for the whole viewport.
+          The width and the height are the picture's own: they give the element a ratio, and
+          the stylesheet decides what it is actually drawn at.
+        -->
         <img
           v-if="pageBanner"
           alt=""
           class="page-banner pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40"
           data-testid="esports-page-banner"
-          :src="pageBanner"
+          :height="pageBanner.height ?? undefined"
+          sizes="100vw"
+          :src="pageBanner.url"
+          :srcset="srcsetOf(pageBanner)"
+          :width="pageBanner.width ?? undefined"
         >
         <div
           aria-hidden="true"

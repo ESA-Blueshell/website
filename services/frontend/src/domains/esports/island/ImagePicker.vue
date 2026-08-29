@@ -1,46 +1,81 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
+import {storePicture, type EsportsImage} from "../adapters/esports"
+import {srcsetOf} from "../pictures"
+import type {FileType} from "@/services/api"
 
 /**
- * One uploaded image, and the two things that can be done to it.
+ * One picture, and the two things that can be done to it.
  *
- * The picker shows what is set rather than describing it: an image nobody can see is one
- * nobody can tell is wrong. Choosing a file uploads it there and then — there is no separate
- * save, because there is nothing else on the control to save with it.
+ * The picker shows what is set rather than describing it: a picture nobody can see is one
+ * nobody can tell is wrong. Choosing a file puts it into storage there and then, and the
+ * picker holds what came back — but nothing is on a record until the dialog around it is
+ * saved. Cancelling that dialog therefore leaves the team, the person or the game exactly as
+ * it was, rather than keeping a picture and throwing the rest of the form away.
+ *
+ * The bytes a cancelled dialog leaves in storage stay. Storage is addressed by content, the
+ * pictures are small, and counting who points at a file is a larger mechanism than the
+ * problem deserves.
  */
 defineOptions({name: "ImagePicker"})
 
 const props = withDefaults(defineProps<{
-  /** Where the image now set is served, or nothing where none is. */
-  url?: string | null
+  /** The picture now held, or nothing where none is. */
+  picture?: EsportsImage | null
   label: string
   testid: string
-  /** Whether the control offers to take the image away, which a required image does not. */
+  /** What kind of picture this is, which decides how it is scaled and where it is stored. */
+  kind: FileType
+  /** Whether the control offers to take the picture away, which a required picture does not. */
   mayClear?: boolean
+  /** Whether something outside is busy, which is not the same as this control uploading. */
   busy?: boolean
-}>(), {url: null, mayClear: true, busy: false})
+}>(), {picture: null, mayClear: true, busy: false})
 
 const emit = defineEmits<{
-  (event: "pick", file: File): void
-  (event: "clear"): void
+  (event: "update:picture", picture: EsportsImage | null): void
 }>()
 
 const input = ref<HTMLInputElement | null>(null)
-const tooLarge = ref(false)
+const failure = ref<string | null>(null)
+const uploading = ref(false)
 
 /** What the api admits, so a refusal happens here rather than after the upload. */
 const ACCEPT = "image/png,image/jpeg,image/webp"
 const MAX_BYTES = 15 * 1024 * 1024
 
-const has = computed(() => Boolean(props.url))
+const has = computed(() => Boolean(props.picture))
+const working = computed(() => props.busy || uploading.value)
+const srcset = computed(() => srcsetOf(props.picture))
 
-const choose = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  tooLarge.value = file.size > MAX_BYTES
-  if (!tooLarge.value) emit("pick", file)
+const choose = async (event: Event) => {
+  const chosen = (event.target as HTMLInputElement).files?.[0]
   // Cleared so choosing the same file again is still a change the input reports.
   if (input.value) input.value.value = ""
+  if (!chosen) return
+
+  failure.value = null
+  if (chosen.size > MAX_BYTES) {
+    failure.value = "That file is larger than 15 MB."
+    return
+  }
+
+  uploading.value = true
+  try {
+    const stored = await storePicture(chosen, props.kind)
+    if (!stored.ok) {
+      failure.value = stored.reason
+      return
+    }
+    emit("update:picture", stored.picture)
+  } finally {
+    uploading.value = false
+  }
+}
+
+const clear = () => {
+  failure.value = null
+  emit("update:picture", null)
 }
 </script>
 
@@ -53,11 +88,15 @@ const choose = (event: Event) => {
 
     <div class="picker__body">
       <img
-        v-if="has"
+        v-if="picture"
         alt=""
         class="picker__preview"
         :data-testid="`${testid}-preview`"
-        :src="url ?? undefined"
+        :height="picture.height ?? undefined"
+        sizes="6rem"
+        :src="picture.url"
+        :srcset="srcset"
+        :width="picture.width ?? undefined"
       >
       <span
         v-else
@@ -68,7 +107,7 @@ const choose = (event: Event) => {
       <div class="picker__actions">
         <label
           class="picker__button"
-          :class="{'picker__button--busy': busy}"
+          :class="{'picker__button--busy': working}"
         >
           {{ has ? "Replace" : "Upload" }}
           <input
@@ -76,7 +115,7 @@ const choose = (event: Event) => {
             :accept="ACCEPT"
             class="picker__file"
             :data-testid="`${testid}-file`"
-            :disabled="busy"
+            :disabled="working"
             type="file"
             @change="choose"
           >
@@ -86,9 +125,9 @@ const choose = (event: Event) => {
           v-if="has && mayClear"
           class="picker__button picker__button--quiet"
           :data-testid="`${testid}-clear`"
-          :disabled="busy"
+          :disabled="working"
           type="button"
-          @click="emit('clear')"
+          @click="clear"
         >
           Remove
         </button>
@@ -96,11 +135,11 @@ const choose = (event: Event) => {
     </div>
 
     <p
-      v-if="tooLarge"
+      v-if="failure"
       class="picker__failure"
-      :data-testid="`${testid}-too-large`"
+      :data-testid="`${testid}-failure`"
     >
-      That file is larger than 15 MB.
+      {{ failure }}
     </p>
   </div>
 </template>

@@ -7,6 +7,7 @@ import net.blueshell.api.file.domain.ImageDimensions
 import net.blueshell.api.file.domain.FileNotFoundException
 import net.blueshell.api.file.domain.FileStorageException
 import net.blueshell.api.file.domain.FileTooLargeException
+import net.blueshell.api.file.domain.ImageRenditionWriter
 import net.blueshell.api.file.domain.PublicImageUploadPreparer
 import net.blueshell.api.file.domain.UnsupportedMediaTypeException
 import net.blueshell.api.file.persistence.File
@@ -48,6 +49,7 @@ class FileService @Autowired constructor(
     private val users: UserService,
     private val eventBannerFiles: EventBannerFileLookup,
     private val publicImageUploads: PublicImageUploadPreparer,
+    private val imageRenditions: ImageRenditionWriter,
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
     private val rootLocation: Path = Paths.get(storageLocation)
     private val assetsLocation: Path = Paths.get("assets")
@@ -151,11 +153,12 @@ class FileService @Autowired constructor(
                 )
                 entity.type = type
 
-                return if (entity.id != null) {
-                    update(entity)
-                } else {
-                    create(entity)
-                }
+                val stored = if (entity.id != null) update(entity) else create(entity)
+                // The widths this picture is served at, written now rather than at the first
+                // request for one: a converter run while somebody is waiting for an image is a
+                // request that waits for a subprocess.
+                imageRenditions.derive(stored)
+                return stored
             } finally {
                 // Whatever did not become the stored file is a leftover: the upload itself once
                 // a converted copy replaced it, and the converted copy when its address turned
@@ -238,6 +241,20 @@ class FileService @Autowired constructor(
         if (!file.type.publiclyReadable) throw FileNotFoundException("public path=")
         return file
     }
+
+    /**
+     * A stored picture of exactly this kind, or nothing.
+     *
+     * What a save names when it puts a picture on a record. The kind has to match: a poster
+     * field takes a poster, so that a directory goes on meaning what it says.
+     *
+     * Absence is an answer here rather than a failure, because the caller is a write being
+     * validated rather than a request for a file, and it has its own words for a save that
+     * names a picture nobody stored.
+     */
+    @Transactional(readOnly = true)
+    fun findPublicImage(path: String, type: FileType): File? =
+        repository.findByPath(path).orElse(null)?.takeIf { it.type == type && it.type.publiclyReadable }
 
     /**
      * A public file, sent to be rendered rather than saved.

@@ -44,8 +44,32 @@ object UserSpecifications {
     }
 
 
+    /**
+     * Accounts that are people.
+     *
+     * The service account is the site itself: it owns the files the repository ships with so
+     * that no board member is credited with art they never chose. It is not somebody anybody
+     * can pick, write to or count, so it is left out of every listing and out of the totals
+     * those listings report.
+     *
+     * A subquery rather than a join on the roles collection, because a join would only say
+     * that a row has *some* role that is not SYSTEM, which every account does.
+     */
+    fun isNotServiceAccount(): Specification<User> =
+        Specification { root, query, cb ->
+            // The query is nullable in the criteria api and never null here: this is composed
+            // only for `findAll`, which supplies one for the selection and for the count. A
+            // caller that somehow had none would get every account, so it is worth knowing
+            // that the one path here is the one that reads the listing.
+            val held = query?.subquery(Long::class.java)
+                ?: return@Specification cb.conjunction()
+            val roles = held.correlate(root).join<User, Role>("roles", JoinType.INNER)
+            held.select(cb.literal(1L)).where(roles.`in`(EnumSet.of(Role.SYSTEM)))
+            cb.not(cb.exists(held))
+        }
+
     fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
-        var spec = Specification { _: Root<User>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
+        var spec = isNotServiceAccount()
 
         val isMember = query.isMember
         if (isMember != null) {

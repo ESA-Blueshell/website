@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -55,8 +56,43 @@ class File(
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     var type: FileType,
+
+    /**
+     * The picture this is a narrower copy of, or nothing where this is the picture itself.
+     *
+     * A copy is a file in its own right — it is served by the same route and read by the same
+     * rules — and this is what says which picture it stands for.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_file_id")
+    var source: File? = null,
+
+    /** The width this copy was written at, and half of the address it was written to. */
+    @Column(name = "rendition_width")
+    var renditionWidth: Int? = null,
 ) : AuditedAutoIdEntity() {
+
+    @OneToMany(mappedBy = "source", fetch = FetchType.LAZY)
+    @OrderBy("renditionWidth ASC")
+    @BatchSize(size = 64)
+    private val _renditions: MutableList<File> = mutableListOf()
+
+    /**
+     * The widths this picture is stored at, narrowest first.
+     *
+     * Read-only: a width is written by deriving it from this picture, never by being added to
+     * a list on it.
+     *
+     * Batched rather than fetched one collection at a time: a page draws a poster, a banner and
+     * an icon per player, and each of those asking for its own widths on its own would be a
+     * query per image for a list a single round trip could have answered.
+     */
+    val renditions: List<File>
+        get() = _renditions
 
     val uploaderId: Long
         get() = uploader.id ?: 0
+
+    /** Whether this is a narrower copy of another picture rather than a picture somebody uploaded. */
+    val isRendition: Boolean get() = renditionWidth != null
 }

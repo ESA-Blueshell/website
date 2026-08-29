@@ -13,6 +13,16 @@ export interface SliceItem {
   meta: string
   /** The image behind it, where there is one. */
   banner: string
+  /**
+   * The widths that image is stored at, ready for a `srcset`, where it is stored at several.
+   *
+   * A picture somebody uploaded has them; a file bundled into the frontend is one file and
+   * has none, and a slice drawing one simply gets no attribute.
+   */
+  srcset?: string
+  /** Its own dimensions, so the browser reserves its space before the bytes arrive. */
+  width?: number
+  height?: number
   /** Its own colour, where it has one; otherwise the band's accent is used. */
   accent?: string
 }
@@ -243,11 +253,23 @@ watch([() => props.openId, () => props.items], () => {
         </svg>
       </button>
 
+      <!--
+        The slice is the full width of the band on a phone and half of it from there up, which
+        is what `sizes` tells the browser before any layout has happened.
+      -->
+      <!--
+        No testid of its own: the specs reach it through the slice, and a testid built from
+        the same prefix the slices use would be caught by their own prefix selector.
+      -->
       <img
         v-if="item.banner"
         alt=""
         class="team-slice__banner"
+        :height="item.height"
+        sizes="(min-width: 768px) 50vw, 100vw"
         :src="item.banner"
+        :srcset="item.srcset"
+        :width="item.width"
       >
       <span
         aria-hidden="true"

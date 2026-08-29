@@ -48,6 +48,10 @@ export type AddRosterEntryRequest = {
     description?: string | null;
     displayName?: string | null;
     handle: string;
+    /**
+     * Where this entry's picture is stored; nothing leaves it without one
+     */
+    icon?: string | null;
     role: TeamRole;
     /**
      * What they did in the team's own words, beside the fixed part
@@ -593,6 +597,10 @@ export type CreateTeamRequest = {
     game: string;
     image?: string | null;
     name: string;
+    /**
+     * Where the team's poster is stored; nothing leaves the team without one
+     */
+    poster?: string | null;
 };
 
 export type CreateTelemetryRequest = {
@@ -948,6 +956,10 @@ export type Image = {
      * How tall it is, absent where its size could not be read
      */
     height?: number | null;
+    /**
+     * Where it is stored, which is what a save points at to put it on a record
+     */
+    path: string;
     /**
      * The widths it is stored at, narrowest first
      */
@@ -1442,6 +1454,25 @@ export type ServiceEntry = {
     url: string;
 };
 
+/**
+ * The picture behind one game, season or team
+ */
+export type SetBannerRequest = {
+    game: string;
+    /**
+     * Where the picture is stored
+     */
+    picture: string;
+    /**
+     * The season it is for; nothing carries every season
+     */
+    seasonId?: number | null;
+    /**
+     * The team it is for; nothing carries every team
+     */
+    teamId?: number | null;
+};
+
 export type SignupAddressRequest = {
     city: string;
     country: string;
@@ -1730,6 +1761,10 @@ export type UpdateRosterEntryRequest = {
     description?: string | null;
     displayName?: string | null;
     handle: string;
+    /**
+     * Where this entry's picture is stored; nothing takes the picture away
+     */
+    icon?: string | null;
     role: TeamRole;
     /**
      * What they did in the team's own words, beside the fixed part
@@ -1745,11 +1780,15 @@ export type UpdateSponsorRequest = {
 };
 
 /**
- * Rename a team or change its image
+ * Rename a team or change the pictures it is drawn with
  */
 export type UpdateTeamRequest = {
     image?: string | null;
     name: string;
+    /**
+     * Where the team's poster is stored; nothing takes the poster away
+     */
+    poster?: string | null;
 };
 
 export type UpdateUserRequest = {
@@ -3629,20 +3668,14 @@ export type FindBannersResponses = {
 
 export type FindBannersResponse = FindBannersResponses[keyof FindBannersResponses];
 
-export type UploadBannerData = {
-    body?: {
-        file: Blob | File;
-    };
+export type SetBannerData = {
+    body: SetBannerRequest;
     path?: never;
-    query: {
-        game: string;
-        seasonId?: number;
-        teamId?: number;
-    };
+    query?: never;
     url: '/esports/banners';
 };
 
-export type UploadBannerErrors = {
+export type SetBannerErrors = {
     /**
      * Validation error
      */
@@ -3665,16 +3698,16 @@ export type UploadBannerErrors = {
     500: ApiError;
 };
 
-export type UploadBannerError = UploadBannerErrors[keyof UploadBannerErrors];
+export type SetBannerError = SetBannerErrors[keyof SetBannerErrors];
 
-export type UploadBannerResponses = {
+export type SetBannerResponses = {
     /**
      * OK
      */
     200: EsportsBannerResponse;
 };
 
-export type UploadBannerResponse = UploadBannerResponses[keyof UploadBannerResponses];
+export type SetBannerResponse = SetBannerResponses[keyof SetBannerResponses];
 
 export type RemoveBannerData = {
     body?: never;
@@ -4060,94 +4093,6 @@ export type UpdateRosterEntryResponses = {
 };
 
 export type UpdateRosterEntryResponse = UpdateRosterEntryResponses[keyof UpdateRosterEntryResponses];
-
-export type RemoveRosterIconData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/esports/roster/{id}/icon';
-};
-
-export type RemoveRosterIconErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RemoveRosterIconError = RemoveRosterIconErrors[keyof RemoveRosterIconErrors];
-
-export type RemoveRosterIconResponses = {
-    /**
-     * OK
-     */
-    200: RosterEntryResponse;
-};
-
-export type RemoveRosterIconResponse = RemoveRosterIconResponses[keyof RemoveRosterIconResponses];
-
-export type UploadRosterIconData = {
-    body?: {
-        file: Blob | File;
-    };
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/esports/roster/{id}/icon';
-};
-
-export type UploadRosterIconErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UploadRosterIconError = UploadRosterIconErrors[keyof UploadRosterIconErrors];
-
-export type UploadRosterIconResponses = {
-    /**
-     * OK
-     */
-    200: RosterEntryResponse;
-};
-
-export type UploadRosterIconResponse = UploadRosterIconResponses[keyof UploadRosterIconResponses];
 
 export type LinkRosterEntryData = {
     body: LinkRosterEntryRequest;
@@ -4660,94 +4605,6 @@ export type UpdateTeamResponses = {
 };
 
 export type UpdateTeamResponse = UpdateTeamResponses[keyof UpdateTeamResponses];
-
-export type RemoveTeamPosterData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/esports/teams/{id}/poster';
-};
-
-export type RemoveTeamPosterErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RemoveTeamPosterError = RemoveTeamPosterErrors[keyof RemoveTeamPosterErrors];
-
-export type RemoveTeamPosterResponses = {
-    /**
-     * OK
-     */
-    200: TeamResponse;
-};
-
-export type RemoveTeamPosterResponse = RemoveTeamPosterResponses[keyof RemoveTeamPosterResponses];
-
-export type UploadTeamPosterData = {
-    body?: {
-        file: Blob | File;
-    };
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/esports/teams/{id}/poster';
-};
-
-export type UploadTeamPosterErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type UploadTeamPosterError = UploadTeamPosterErrors[keyof UploadTeamPosterErrors];
-
-export type UploadTeamPosterResponses = {
-    /**
-     * OK
-     */
-    200: TeamResponse;
-};
-
-export type UploadTeamPosterResponse = UploadTeamPosterResponses[keyof UploadTeamPosterResponses];
 
 export type FindRosterData = {
     body?: never;
@@ -5509,6 +5366,51 @@ export type ApproveEventResponses = {
 };
 
 export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventResponses];
+
+export type UploadPublicImageData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query: {
+        type: FileType;
+    };
+    url: '/files/images';
+};
+
+export type UploadPublicImageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadPublicImageError = UploadPublicImageErrors[keyof UploadPublicImageErrors];
+
+export type UploadPublicImageResponses = {
+    /**
+     * Created
+     */
+    201: Image;
+};
+
+export type UploadPublicImageResponse = UploadPublicImageResponses[keyof UploadPublicImageResponses];
 
 export type DownloadPublicFileData = {
     body?: never;

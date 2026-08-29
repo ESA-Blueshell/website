@@ -152,8 +152,19 @@ const boardFixtures = [
 ]
 
 /** An image as the api describes one: where it is served, how large it is, and its widths. */
+/** Where a kind of picture is stored, as the api's own directories name them. */
+const DIRECTORY_OF: Record<string, string> = {
+  TEAM_POSTER: "team-posters",
+  ROSTER_ICON: "roster-icons",
+  ESPORTS_BANNER: "esports-banners",
+  GAME_MARK: "game-marks",
+  GAME_BANNER: "game-banners",
+}
+
 type MockImage = {
   url: string
+  /** Where it is stored, which is what a save points at to put it on a record. */
+  path: string
   width: number
   height: number
   renditions: Array<{url: string; width: number}>
@@ -223,9 +234,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   /**
    * The uploaded images, held as the api holds them: a reference per owner rather than bytes.
    * Each upload takes the next file id, so a replacement is visibly a different url.
+   *
+   * Storing is separate from applying, exactly as the api has it: a picture goes into `stored`
+   * when it is uploaded and reaches a poster or an icon only when a save names its path.
    */
   const posters = new Map<number, MockImage>()
   const icons = new Map<number, MockImage>()
+  const stored = new Map<string, MockImage>()
   const banners: Array<{id: number; game: string; seasonId: number | null; teamId: number | null; image: MockImage}> = []
   let nextFileId = 500
   let nextBannerId = 90
@@ -235,8 +250,27 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    */
   const nextImage = (directory: string): MockImage => {
     nextFileId += 1
-    return {url: `/files/public/${directory}/mock-${nextFileId}.webp`, width: 1, height: 1, renditions: []}
+    const at = `${directory}/mock-${nextFileId}.webp`
+    return {
+      url: `/files/public/${at}`,
+      path: at,
+      width: 640,
+      height: 360,
+      // The widths a picture of this size is stored at, so a page has a srcset to compose.
+      renditions: [320, 640].map(width => ({url: `/files/public/${directory}/mock-${nextFileId}-${width}.webp`, width})),
+    }
   }
+
+  /** The one endpoint that stores a picture. What it ends up on is a later save's business. */
+  const storePicture = (kind: string): MockImage => {
+    const made = nextImage(DIRECTORY_OF[kind] ?? "team-posters")
+    stored.set(made.path, made)
+    return made
+  }
+
+  /** The picture a save names, or nothing where the save names none. */
+  const pictureNamed = (picture: unknown): MockImage | null =>
+    (typeof picture === "string" ? stored.get(picture) ?? null : null)
   /**
    * The line-up of the seeded team, as the admin reads and writes it. The public page builds
    * that team's members from it, so an edit here is visible there — which is the whole of
@@ -868,29 +902,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const all = [...(fixtures.esportsSeasons ?? esportsSeasons), ...written.values()]
       return fulfillJson(route, all.filter(one => !gone.has(Number((one as {id: number}).id))))
     }
-    if (method === "POST" && /^\/esports\/teams\/\d+\/poster$/.test(path)) {
-      const id = Number(path.split("/")[3])
-      const made = nextImage("team-posters")
-      posters.set(id, made)
-      return fulfillJson(route, {id, game: "VALORANT", name: "BS Waterboarders", image: null, poster: made})
-    }
-    if (method === "DELETE" && /^\/esports\/teams\/\d+\/poster$/.test(path)) {
-      const id = Number(path.split("/")[3])
-      posters.delete(id)
-      return fulfillJson(route, {id, game: "VALORANT", name: "BS Waterboarders", image: null, poster: null})
-    }
-    if (method === "POST" && /^\/esports\/roster\/\d+\/icon$/.test(path)) {
-      const id = Number(path.split("/")[3])
-      const made = nextImage("roster-icons")
-      icons.set(id, made)
-      const entry = roster.find(one => one.id === id) ?? {}
-      return fulfillJson(route, {...entry, id, icon: made})
-    }
-    if (method === "DELETE" && /^\/esports\/roster\/\d+\/icon$/.test(path)) {
-      const id = Number(path.split("/")[3])
-      icons.delete(id)
-      const entry = roster.find(one => one.id === id) ?? {}
-      return fulfillJson(route, {...entry, id, icon: null})
+    if (method === "POST" && path === "/files/images") {
+      return fulfillJson(route, storePicture(url.searchParams.get("type") ?? ""), 201)
     }
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
@@ -908,20 +921,21 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, banners)
     }
     if (method === "POST" && path === "/esports/banners") {
-      const seasonId = url.searchParams.get("seasonId")
-      const teamId = url.searchParams.get("teamId")
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const picture = pictureNamed(body.picture)
+      if (!picture) return fulfillJson(route, {detail: "That picture is not in storage"}, 400)
       const level = {
-        game: url.searchParams.get("game") ?? "VALORANT",
-        seasonId: seasonId == null ? null : Number(seasonId),
-        teamId: teamId == null ? null : Number(teamId),
+        game: (body.game as string) ?? "VALORANT",
+        seasonId: body.seasonId == null ? null : Number(body.seasonId),
+        teamId: body.teamId == null ? null : Number(body.teamId),
       }
       const existing = banners.find(one => one.seasonId === level.seasonId && one.teamId === level.teamId)
       if (existing) {
-        existing.image = nextImage("esports-banners")
+        existing.image = picture
         return fulfillJson(route, existing)
       }
       nextBannerId += 1
-      const made = {id: nextBannerId, ...level, image: nextImage("esports-banners")}
+      const made = {id: nextBannerId, ...level, image: picture}
       banners.push(made)
       return fulfillJson(route, made)
     }
@@ -946,13 +960,20 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       nextTeamId += 1
       const team = {id: nextTeamId, game: body.game, name: body.name, image: body.image ?? null}
       teamsMade.push(team)
-      return fulfillJson(route, team, 201)
+      const poster = pictureNamed(body.poster)
+      if (poster) posters.set(nextTeamId, poster)
+      return fulfillJson(route, {...team, poster}, 201)
     }
+    // The poster is part of this write, so a save with none takes the team's away — which is
+    // what the picker's Remove means once the dialog around it is saved.
     if (method === "PUT" && /^\/esports\/teams\/\d+$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       const id = Number(path.split("/").pop())
       renamed.set(id, {name: body.name, image: body.image ?? null})
-      return fulfillJson(route, {id, game: "VALORANT", name: body.name, image: body.image ?? null})
+      const poster = pictureNamed(body.poster)
+      if (poster) posters.set(id, poster)
+      else posters.delete(id)
+      return fulfillJson(route, {id, game: "VALORANT", name: body.name, image: body.image ?? null, poster})
     }
     if (method === "DELETE" && /^\/esports\/teams\/\d+$/.test(path)) {
       goneTeams.add(Number(path.split("/").pop()))
@@ -1002,7 +1023,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         handle: body.handle, role: body.role, displayName: body.displayName ?? null,
         sortIndex: body.sortIndex, roleTitle: body.roleTitle ?? null, description: body.description ?? null,
       })
-      return fulfillJson(route, entry ?? {})
+      const icon = pictureNamed(body.icon)
+      if (icon) icons.set(id, icon)
+      else icons.delete(id)
+      return fulfillJson(route, {...(entry ?? {}), icon})
     }
     if (method === "DELETE" && /^\/esports\/roster\/\d+$/.test(path)) {
       const id = Number(path.split("/").pop())
@@ -1022,7 +1046,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         sortIndex: body.sortIndex ?? roster.length, roleTitle: body.roleTitle ?? null,
         description: body.description ?? null,
       })
-      return fulfillJson(route, {id: nextEntryId, teamId, seasonId: body.seasonId, role: body.role, handle: body.handle, displayName: body.displayName ?? null, userId: null, sortIndex: 2}, 201)
+      const icon = pictureNamed(body.icon)
+      if (icon) icons.set(nextEntryId, icon)
+      return fulfillJson(route, {id: nextEntryId, teamId, seasonId: body.seasonId, role: body.role, handle: body.handle, displayName: body.displayName ?? null, userId: null, sortIndex: 2, icon}, 201)
     }
     if (method === "PUT" && /^\/esports\/roster\/\d+\/member$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>

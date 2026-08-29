@@ -33,19 +33,17 @@ import {
   linkRosterEntry,
   removeBanner,
   removeRosterEntry,
-  removeRosterIcon,
-  removeTeamPoster,
   setGameAccount,
   updateRosterEntry,
   unfieldTeam,
   updateSeason,
   updateTeam,
-  uploadBanner,
-  uploadRosterIcon,
-  uploadTeamPoster,
+  uploadPublicImage,
+  setBanner as setBannerAt,
 } from "@/services/api"
 import type {
   EsportsBannerResponse,
+  FileType,
   EsportsPageResponse,
   Image,
   FieldedTeamResponse,
@@ -108,7 +106,7 @@ export interface GameSaved {
  */
 export async function addGameOrReason(
   game: {name: string; slug: string},
-): Promise<GameSaved | SeasonRefused> {
+): Promise<GameSaved | Refused> {
   const res = await createGame({body: {name: game.name, slug: game.slug}})
   if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be added.")}
   return {ok: true, game: res.data}
@@ -132,7 +130,7 @@ export async function saveGameOrReason(
     sortIndex: number
     fielded: boolean
   },
-): Promise<GameSaved | SeasonRefused> {
+): Promise<GameSaved | Refused> {
   const res = await updateGamePage({
     path: {game: code},
     body: {
@@ -168,7 +166,7 @@ export async function loadGameContents(game: Game): Promise<SeasonContents | nul
  * reader can act on. The sdk answers with an error rather than throwing, so a caller that only
  * catches would report a removal that never happened.
  */
-export async function dropGameOrReason(game: Game): Promise<{ok: true} | SeasonRefused> {
+export async function dropGameOrReason(game: Game): Promise<{ok: true} | Refused> {
   const res = await deleteGame({path: {game}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The game could not be removed.")}
   return {ok: true}
@@ -189,6 +187,34 @@ const image = (one: Image): Image => ({
   url: apiUrl(one.url),
   renditions: one.renditions.map(rendition => ({...rendition, url: apiUrl(rendition.url)})),
 })
+
+export interface PictureStored {
+  ok: true
+  picture: EsportsImage
+}
+
+/**
+ * A picture put into storage, ready for a save to name it.
+ *
+ * Storing and applying are separate: the dialog that chose the picture is what puts it on the
+ * team, the person or the game, so cancelling that dialog leaves all three as they were. What
+ * comes back is the whole image — where it is served, how large it is and the widths it is
+ * stored at — so a picker can draw it before anything has been saved.
+ *
+ * A refusal comes back in the api's own words. A picture the converter cannot read is the one
+ * thing whoever chose it can act on, and "something went wrong" does not tell them to pick
+ * another.
+ */
+export async function storePicture(
+  file: File,
+  kind: FileType,
+): Promise<PictureStored | Refused> {
+  const res = await uploadPublicImage({query: {type: kind}, body: {file}})
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "That picture could not be stored.")}
+  }
+  return {ok: true, picture: image(res.data)}
+}
 
 const imageOrNone = (one?: Image | null): Image | null => (one ? image(one) : null)
 
@@ -216,8 +242,14 @@ export async function loadSeasons(): Promise<Season[]> {
   return res.data ?? []
 }
 
-/** A save that was refused, in the api's own words. */
-export interface SeasonRefused {
+/**
+ * A write the api refused, in its own words.
+ *
+ * Every write in this adapter that can be argued with answers this rather than throwing: the
+ * sdk hands a refusal back as a body, so a caller that only reads `data` cannot tell a
+ * rejection from a success.
+ */
+export interface Refused {
   ok: false
   reason: string
 }
@@ -234,7 +266,7 @@ export interface SeasonSaved {
  */
 export async function saveSeasonOrReason(
   season: {id?: number; name: string; startDate: string; endDate: string},
-): Promise<SeasonSaved | SeasonRefused> {
+): Promise<SeasonSaved | Refused> {
   const body = {name: season.name, startDate: season.startDate, endDate: season.endDate}
   const res = season.id == null
     ? await createSeason({body})
@@ -283,15 +315,6 @@ export async function loadTeams(game: Game): Promise<Team[]> {
   return (res.data ?? []).map(withPoster)
 }
 
-export async function saveTeam(
-  team: {id?: number; game: Game; name: string; image?: string | null},
-): Promise<Team | null> {
-  const res = team.id == null
-    ? await createTeam({body: {game: team.game, name: team.name, image: team.image ?? undefined}})
-    : await updateTeam({path: {id: team.id}, body: {name: team.name, image: team.image ?? undefined}})
-  return res.data ?? null
-}
-
 export interface TeamSaved {
   ok: true
   team: Team | null
@@ -300,24 +323,30 @@ export interface TeamSaved {
 /** Same reason as a season's: the api answers a refusal with a body, not a thrown error. */
 export async function saveTeamOrReason(
   team: {game: Game; name: string; image?: string | null},
-): Promise<TeamSaved | SeasonRefused> {
+): Promise<TeamSaved | Refused> {
   const res = await createTeam({body: {game: team.game, name: team.name, image: team.image ?? undefined}})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error)}
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be added.")}
   return {ok: true, team: res.data ?? null}
 }
 
 /**
- * Renames a team, or changes the banner it is drawn with. Its game never changes: a team is
- * of the game it was made for, and moving one between games would be a different team.
+ * The team as it now stands: what it is called, the bundled art it names, and the poster it
+ * carries. Its game never changes — a team is of the game it was made for, and moving one
+ * between games would be a different team.
+ *
+ * The poster is part of this write rather than something applied when it was chosen, so
+ * cancelling the dialog leaves the team exactly as it was. Naming no picture takes it away.
  */
-export async function renameTeam(
+export async function saveTeamAs(
   id: number,
-  name: string,
-  image: string | null,
-): Promise<TeamSaved | SeasonRefused> {
-  const res = await updateTeam({path: {id}, body: {name, image: image ?? undefined}})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error)}
-  return {ok: true, team: res.data ?? null}
+  team: {name: string; image: string | null; poster: string | null},
+): Promise<TeamSaved | Refused> {
+  const res = await updateTeam({
+    path: {id},
+    body: {name: team.name, image: team.image ?? undefined, poster: team.poster ?? undefined},
+  })
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be saved.")}
+  return {ok: true, team: res.data ? withPoster(res.data) : null}
 }
 
 export async function dropTeam(id: number): Promise<void> {
@@ -360,6 +389,7 @@ export async function addToRoster(
     displayName?: string | null
     roleTitle?: string | null
     description?: string | null
+    icon?: string | null
   },
 ): Promise<RosterEntry | null> {
   const res = await addRosterEntry({
@@ -372,9 +402,10 @@ export async function addToRoster(
       displayName: entry.displayName ?? undefined,
       roleTitle: entry.roleTitle ?? undefined,
       description: entry.description ?? undefined,
+      icon: entry.icon ?? undefined,
     },
   })
-  return res.data ?? null
+  return res.data ? withIcon(res.data) : null
 }
 
 export async function saveRosterEntry(
@@ -386,6 +417,7 @@ export async function saveRosterEntry(
     sortIndex: number
     roleTitle?: string | null
     description?: string | null
+    icon?: string | null
   },
 ): Promise<RosterEntry | null> {
   const res = await updateRosterEntry({
@@ -397,9 +429,10 @@ export async function saveRosterEntry(
       sortIndex: entry.sortIndex,
       roleTitle: entry.roleTitle ?? undefined,
       description: entry.description ?? undefined,
+      icon: entry.icon ?? undefined,
     },
   })
-  return res.data ?? null
+  return res.data ? withIcon(res.data) : null
 }
 
 /** A null member detaches the entry, which is how an unattributed roster spot is kept. */
@@ -457,32 +490,6 @@ export async function dropGameAccount(userId: number, game: Game): Promise<void>
 }
 
 /**
- * The images an admin puts on the pages.
- *
- * Each answers with the record as it now stands rather than with the file, so a caller
- * re-renders from the same shape it already draws.
- */
-export async function setTeamPoster(teamId: number, file: File): Promise<Team | null> {
-  const res = await uploadTeamPoster({path: {id: teamId}, body: {file}})
-  return res.data ? withPoster(res.data) : null
-}
-
-export async function clearTeamPoster(teamId: number): Promise<Team | null> {
-  const res = await removeTeamPoster({path: {id: teamId}})
-  return res.data ? withPoster(res.data) : null
-}
-
-export async function setRosterIcon(entryId: number, file: File): Promise<RosterEntry | null> {
-  const res = await uploadRosterIcon({path: {id: entryId}, body: {file}})
-  return res.data ? withIcon(res.data) : null
-}
-
-export async function clearRosterIcon(entryId: number): Promise<RosterEntry | null> {
-  const res = await removeRosterIcon({path: {id: entryId}})
-  return res.data ? withIcon(res.data) : null
-}
-
-/**
  * Every banner set for a game, so the levels already covered can be shown before another is added.
  *
  * Resolved with `image` rather than `imageOrNone`: a banner always has one, so there is no
@@ -494,18 +501,18 @@ export async function loadBanners(game: Game): Promise<EsportsBanner[]> {
 }
 
 /**
- * Sets the banner for one combination of game, season and team.
+ * Puts a stored picture behind one combination of game, season and team.
  *
  * Naming neither a season nor a team sets the game's own, which is what every page falls
- * back to.
+ * back to. The picture was stored when it was chosen; this is what puts it behind a page.
  */
 export async function setBanner(
   game: Game,
-  file: File,
+  picture: string,
   seasonId?: number,
   teamId?: number,
 ): Promise<EsportsBanner | null> {
-  const res = await uploadBanner({query: {game, seasonId, teamId}, body: {file}})
+  const res = await setBannerAt({body: {game, picture, seasonId, teamId}})
   return res.data ? {...res.data, image: image(res.data.image)} : null
 }
 

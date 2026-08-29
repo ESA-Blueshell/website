@@ -11,7 +11,6 @@ import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,11 +19,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.multipart.MultipartFile
 
 /**
  * The esports pages and the admin surface behind them.
@@ -132,37 +129,6 @@ class EsportsController(
         seasons.delete(id)
     }
 
-    /**
-     * The team's own poster.
-     *
-     * Removing one clears the reference and leaves the stored file alone: files are stored by
-     * content hash, so the row may be another team's poster too.
-     */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @PostMapping("/teams/{id}/poster", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun uploadTeamPoster(
-        @PathVariable id: Long,
-        @RequestPart("file") file: MultipartFile,
-    ): TeamResponse = media.setTeamPoster(id, file).asResponse()
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @DeleteMapping("/teams/{id}/poster")
-    fun removeTeamPoster(@PathVariable id: Long): TeamResponse =
-        media.clearTeamPoster(id).asResponse()
-
-    /** One roster entry's own picture, which is why a player can look different across seasons. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @PostMapping("/roster/{id}/icon", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun uploadRosterIcon(
-        @PathVariable id: Long,
-        @RequestPart("file") file: MultipartFile,
-    ): RosterEntryResponse = media.setRosterIcon(id, file).asResponse()
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @DeleteMapping("/roster/{id}/icon")
-    fun removeRosterIcon(@PathVariable id: Long): RosterEntryResponse =
-        media.clearRosterIcon(id).asResponse()
-
     /** Every banner set for a game, so the levels already covered can be seen before another is added. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/banners")
@@ -173,17 +139,18 @@ class EsportsController(
      * Sets the banner for one combination of game, season and team.
      *
      * Naming neither a season nor a team sets the game's own, which is the one every page
-     * falls back to. Uploading against a combination that already has one replaces it: a
+     * falls back to. Setting one against a combination that already has one replaces it: a
      * combination has one banner, and the database says so too.
+     *
+     * It names a stored picture rather than carrying one. The picture was stored when it was
+     * chosen; this is what puts it behind a page.
      */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @PostMapping("/banners", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun uploadBanner(
-        @RequestParam game: String,
-        @RequestParam(required = false) seasonId: Long?,
-        @RequestParam(required = false) teamId: Long?,
-        @RequestPart("file") file: MultipartFile,
-    ): EsportsBannerResponse = media.setBanner(game, seasonId, teamId, file).asResponse()
+    @PostMapping("/banners")
+    fun setBanner(
+        @Valid @RequestBody request: SetBannerRequest,
+    ): EsportsBannerResponse =
+        media.setBanner(request.game, request.seasonId, request.teamId, request.picture).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/banners/{id}")
@@ -201,14 +168,14 @@ class EsportsController(
     @PostMapping("/teams")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTeam(@Valid @RequestBody request: CreateTeamRequest): TeamResponse =
-        teams.create(request.game, request.name, request.image).asResponse()
+        teams.create(request.game, request.name, request.image, request.poster).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/teams/{id}")
     fun updateTeam(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateTeamRequest,
-    ): TeamResponse = teams.update(id, request.name, request.image).asResponse()
+    ): TeamResponse = teams.update(id, request.name, request.image, request.poster).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/teams/{id}")
@@ -280,6 +247,7 @@ class EsportsController(
         displayName = request.displayName,
         roleTitle = request.roleTitle,
         description = request.description,
+        icon = request.icon,
     ).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
@@ -296,6 +264,7 @@ class EsportsController(
             sortIndex = request.sortIndex,
             roleTitle = request.roleTitle,
             description = request.description,
+            icon = request.icon,
         ).asResponse()
 
     /** A null user unlinks: an entry nobody can be attributed to is a roster spot all the same. */

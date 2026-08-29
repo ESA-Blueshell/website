@@ -19,6 +19,9 @@ object PublicFileUrls {
     /** The route, whose two segments are the stored path this object splits and rejoins. */
     const val MAPPING = "$PATH/{directory}/{filename}"
 
+    /** Where a picture meant to be seen is uploaded. One endpoint, whatever it ends up on. */
+    const val UPLOAD = "/files/images"
+
     fun of(file: File): String = "$PATH/${file.path}"
 
     /** The stored path a request for [MAPPING] names. */

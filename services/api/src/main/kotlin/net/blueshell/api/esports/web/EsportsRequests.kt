@@ -31,9 +31,13 @@ data class CreateTeamRequest(
 
     @field:Size(max = 255, message = "Image must be at most 255 characters")
     val image: String? = null,
+
+    @Schema(description = "Where the team's poster is stored; nothing leaves the team without one")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val poster: String? = null,
 )
 
-@Schema(description = "Rename a team or change its image")
+@Schema(description = "Rename a team or change the pictures it is drawn with")
 data class UpdateTeamRequest(
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
@@ -41,6 +45,10 @@ data class UpdateTeamRequest(
 
     @field:Size(max = 255, message = "Image must be at most 255 characters")
     val image: String? = null,
+
+    @Schema(description = "Where the team's poster is stored; nothing takes the poster away")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val poster: String? = null,
 )
 
 @Schema(description = "Field a team in a season, with or without the line-up it last had")
@@ -74,6 +82,10 @@ data class AddRosterEntryRequest(
     @Schema(description = "A short caption about them, in markdown")
     @field:Size(max = 280, message = "Description must be at most 280 characters")
     val description: String? = null,
+
+    @Schema(description = "Where this entry's picture is stored; nothing leaves it without one")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val icon: String? = null,
 )
 
 @Schema(description = "Edit a roster entry")
@@ -98,6 +110,10 @@ data class UpdateRosterEntryRequest(
 
     @field:NotNull(message = "Order is required")
     val sortIndex: Int,
+
+    @Schema(description = "Where this entry's picture is stored; nothing takes the picture away")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val icon: String? = null,
 )
 
 @Schema(description = "Attach a roster entry to a member, or detach it with a null id")
@@ -148,4 +164,27 @@ data class UpdateGamePageRequest(
     val sortIndex: Int = 0,
     @field:Schema(description = "Whether the association still fields a team in it")
     val fielded: Boolean = true,
+)
+
+/**
+ * Puts a stored picture behind one combination of game, season and team.
+ *
+ * Naming neither a season nor a team sets the game's own, which is what every page falls back
+ * to. The picture is named rather than carried: it was stored when it was chosen.
+ */
+@Schema(name = "SetBannerRequest", description = "The picture behind one game, season or team")
+data class SetBannerRequest(
+    @field:NotBlank(message = "A banner is always for a game")
+    val game: String,
+
+    @Schema(description = "The season it is for; nothing carries every season")
+    val seasonId: Long? = null,
+
+    @Schema(description = "The team it is for; nothing carries every team")
+    val teamId: Long? = null,
+
+    @field:NotBlank(message = "A banner needs a picture")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    @field:Schema(description = "Where the picture is stored")
+    val picture: String,
 )

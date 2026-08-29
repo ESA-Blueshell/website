@@ -57,6 +57,44 @@ test.describe("moving around the esports pages", () => {
     await expect(page.getByTestId("team-roster-drop-1")).toBeHidden()
   })
 
+  test("a keyboard arriving at a slice reveals its affordances", async ({page}, info) => {
+    test.skip(info.project.name === "mobile-chrome", "The affordances stand, so there is nothing to reveal.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+
+    const pencil = page.getByTestId("team-roster-edit-1")
+    await expect(page.getByTestId("team-roster-1")).toBeVisible()
+    await expect(pencil).toBeHidden()
+
+    // Into the band from the strip above it, which is where a keyboard comes from.
+    await page.getByTestId("esports-season-add").focus()
+    await page.keyboard.press("Tab")
+    await expect(pencil).toBeVisible()
+
+    // Revealed by the keyboard and not by the click that would have latched it: moving on
+    // takes it away again rather than leaving it behind.
+    await page.keyboard.press("Tab")
+    await expect(pencil).toBeHidden()
+  })
+
+  test("a tap leaves a slice's affordances standing, having nothing to hover with", async ({page}, info) => {
+    test.skip(info.project.name !== "mobile-chrome", "Only a touch screen has nothing to hover with.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+    await expect(page.getByTestId("team-roster-1")).toBeVisible()
+
+    // A tap is the only way to reach anything here, and it leaves the focus behind it — so a
+    // rule about pointers must not be allowed to hide what the tap just reached.
+    await page.getByTestId("esports-season-node-19").tap()
+    await expect(page.getByTestId("team-roster-3")).toBeVisible()
+    await expect(page.getByTestId("esports-season-edit-19")).toBeVisible()
+
+    await page.getByTestId("team-roster-3").tap()
+    await expect(page.getByTestId("team-roster-edit-3")).toBeVisible()
+  })
+
   test("the strip holds a season's width however long the history is", async ({page}, info) => {
     test.skip(info.project.name === "mobile-chrome", "A phone scrolls the strip by design.")
     const many = Array.from({length: 12}, (_, i) => ({

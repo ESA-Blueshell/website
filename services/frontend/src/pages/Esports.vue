@@ -290,7 +290,7 @@ const seasonSaved = (saved: Season) => {
                 class="team-slice__link"
                 :to="onSeason(urlOf(String(item.id)))"
               >
-                {{ item.title }} in {{ seasonName }} →
+                {{ seasonName ? `${item.title} in ${seasonName}` : `Every season of ${item.title}` }} →
               </router-link>
             </template>
           </banner-slices>

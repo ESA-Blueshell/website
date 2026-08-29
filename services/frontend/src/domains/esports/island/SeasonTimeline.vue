@@ -608,9 +608,16 @@ const step = (from: number, by: number) => {
  * on something that has just gone. `:focus-within` survives that hand-off because the focus
  * never leaves the slot, and the exception below does not apply during it: the band has let
  * the focus go by then.
+ *
+ * Asked of a pointer rather than written to outrank the standing rule below. Where there is
+ * nothing to hover with, a tap is the only way to reach anything and leaves the focus behind
+ * it — so an exception about pointers would hide every affordance on the strip the moment one
+ * was used.
  */
-.season-slot:not(:hover):not(.season-slot--editing):has(.season-band:focus:not(:focus-visible)) .season-slot__edit {
-  visibility: hidden;
+@media (hover: hover) {
+  .season-slot:not(:hover):not(.season-slot--editing):has(.season-band:focus:not(:focus-visible)) .season-slot__edit {
+    visibility: hidden;
+  }
 }
 
 /* No pointer to hover with, so there is no state to reveal it from. */

@@ -456,9 +456,16 @@ watch([() => props.openId, () => props.items], () => {
  * something that has just gone. `:focus-within` survives that hand-off because the focus
  * never leaves the slice, and the exception below does not apply during it: the body has let
  * the focus go by then.
+ *
+ * Asked of a pointer rather than written to outrank the standing rule below. Where there is
+ * nothing to hover with, a tap is the only way to reach anything and leaves the focus behind
+ * it — so an exception about pointers would hide every affordance on the page the moment one
+ * was used.
  */
-.team-slice:not(:hover):has(.team-slice__body:focus:not(:focus-visible)) .team-slice__edit {
-  visibility: hidden;
+@media (hover: hover) {
+  .team-slice:not(:hover):has(.team-slice__body:focus:not(:focus-visible)) .team-slice__edit {
+    visibility: hidden;
+  }
 }
 
 @media (hover: none) {

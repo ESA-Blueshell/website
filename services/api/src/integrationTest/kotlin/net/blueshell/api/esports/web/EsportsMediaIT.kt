@@ -53,6 +53,16 @@ class EsportsMediaIT : UserTestSupport() {
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
     )
 
+    /** A picture of a stated size, for asserting that the size recorded is the real one. */
+    private fun pngOf(width: Int, height: Int): ByteArray =
+        java.io.ByteArrayOutputStream().also {
+            javax.imageio.ImageIO.write(
+                java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB),
+                "png",
+                it,
+            )
+        }.toByteArray()
+
     private fun png(name: String, bytes: ByteArray = pngBytes) =
         MockMultipartFile("file", name, MediaType.IMAGE_PNG_VALUE, bytes)
 
@@ -85,10 +95,10 @@ class EsportsMediaIT : UserTestSupport() {
                     .with(bearer(admin)).with(csrfToken()),
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.posterUrl").isNotEmpty)
+                .andExpect(jsonPath("$.poster.url").isNotEmpty)
                 .andReturn()
 
-            val url = mapper.readTree(posted.response.contentAsString)["posterUrl"].asText()
+            val url = mapper.readTree(posted.response.contentAsString)["poster"]["url"].asText()
 
             // Anonymous: the pages that draw this are public, and so is the image.
             mvc.perform(get(url))
@@ -96,6 +106,26 @@ class EsportsMediaIT : UserTestSupport() {
                 .andExpect(content().contentType(MediaType.IMAGE_PNG))
                 // Inline, not an attachment: a browser has to draw this rather than save it.
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.startsWith("inline")))
+        }
+
+        /**
+         * A picture is measured on the way in. The two sides differ so a width reported as a
+         * height would fail rather than pass by coincidence, and the widths it is stored at
+         * are empty because a picture is stored at one width for now.
+         */
+        @Test
+        fun `an uploaded poster carries its own size and no widths yet`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val team = team("VALORANT", "Measured Team")
+
+            mvc.perform(
+                multipart("/esports/teams/${team.id}/poster").file(png("measured.png", pngOf(6, 4)))
+                    .with(bearer(admin)).with(csrfToken()),
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.poster.width").value(6))
+                .andExpect(jsonPath("$.poster.height").value(4))
+                .andExpect(jsonPath("$.poster.renditions").isEmpty)
         }
 
         @Test
@@ -111,7 +141,7 @@ class EsportsMediaIT : UserTestSupport() {
             mvc.perform(get("/esports/teams?game=VALORANT").with(bearer(admin)))
                 .andExpect(status().isOk)
                 .andExpect(
-                    jsonPath("$[?(@.name == 'Replacing Team')].posterUrl").value(
+                    jsonPath("$[?(@.name == 'Replacing Team')].poster.url").value(
                         org.hamcrest.Matchers.contains(second),
                     ),
                 )
@@ -125,7 +155,7 @@ class EsportsMediaIT : UserTestSupport() {
 
             mvc.perform(delete("/esports/teams/${team.id}/poster").with(bearer(admin)).with(csrfToken()))
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.posterUrl").doesNotExist())
+                .andExpect(jsonPath("$.poster").doesNotExist())
         }
 
         @Test
@@ -152,7 +182,7 @@ class EsportsMediaIT : UserTestSupport() {
                 multipart("/esports/teams/${team.id}/poster").file(file)
                     .with(bearer(admin)).with(csrfToken()),
             ).andExpect(status().isOk).andReturn()
-            return mapper.readTree(result.response.contentAsString)["posterUrl"].asText()
+            return mapper.readTree(result.response.contentAsString)["poster"]["url"].asText()
         }
     }
 
@@ -171,12 +201,12 @@ class EsportsMediaIT : UserTestSupport() {
                     .with(bearer(admin)).with(csrfToken()),
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.iconUrl").isNotEmpty)
+                .andExpect(jsonPath("$.icon.url").isNotEmpty)
 
             mvc.perform(get("/esports/games/CS2?seasonId=${season.id}"))
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.teams[0].members[?(@.handle == 'hasicon')].iconUrl").isNotEmpty)
-                .andExpect(jsonPath("$.teams[0].members[?(@.handle == 'noicon')].iconUrl").isEmpty)
+                .andExpect(jsonPath("$.teams[0].members[?(@.handle == 'hasicon')].icon.url").isNotEmpty)
+                .andExpect(jsonPath("$.teams[0].members[?(@.handle == 'noicon')].icon").isEmpty)
         }
 
         @Test
@@ -193,7 +223,7 @@ class EsportsMediaIT : UserTestSupport() {
 
             mvc.perform(delete("/esports/roster/${entry.id}/icon").with(bearer(admin)).with(csrfToken()))
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.iconUrl").doesNotExist())
+                .andExpect(jsonPath("$.icon").doesNotExist())
         }
     }
 
@@ -210,8 +240,8 @@ class EsportsMediaIT : UserTestSupport() {
 
             mvc.perform(get("/esports/games/ROCKET_LEAGUE?seasonId=${season.id}"))
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.bannerUrl").value(url))
-                .andExpect(jsonPath("$.teams[0].bannerUrl").value(url))
+                .andExpect(jsonPath("$.banner.url").value(url))
+                .andExpect(jsonPath("$.teams[0].banner.url").value(url))
         }
 
         @Test
@@ -231,11 +261,11 @@ class EsportsMediaIT : UserTestSupport() {
             mvc.perform(get("/esports/games/LEAGUE_OF_LEGENDS?seasonId=${season.id}"))
                 .andExpect(status().isOk)
                 // The page itself is not narrowed to a team, so it keeps the game's banner.
-                .andExpect(jsonPath("$.bannerUrl").value(gameUrl))
-                .andExpect(jsonPath("$.teams[?(@.name == 'Override Team')].bannerUrl").value(
+                .andExpect(jsonPath("$.banner.url").value(gameUrl))
+                .andExpect(jsonPath("$.teams[?(@.name == 'Override Team')].banner.url").value(
                     org.hamcrest.Matchers.contains(teamUrl),
                 ))
-                .andExpect(jsonPath("$.teams[?(@.name == 'Plain Team')].bannerUrl").value(
+                .andExpect(jsonPath("$.teams[?(@.name == 'Plain Team')].banner.url").value(
                     org.hamcrest.Matchers.contains(gameUrl),
                 ))
         }
@@ -265,7 +295,7 @@ class EsportsMediaIT : UserTestSupport() {
 
             mvc.perform(get("/esports/games/TRACKMANIA?seasonId=${season.id}"))
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.bannerUrl").value(gameUrl))
+                .andExpect(jsonPath("$.banner.url").value(gameUrl))
         }
 
         @Test
@@ -276,8 +306,8 @@ class EsportsMediaIT : UserTestSupport() {
 
             mvc.perform(get("/esports/games/SMASH?seasonId=${season.id}"))
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.bannerUrl").doesNotExist())
-                .andExpect(jsonPath("$.teams[0].bannerUrl").doesNotExist())
+                .andExpect(jsonPath("$.banner").doesNotExist())
+                .andExpect(jsonPath("$.teams[0].banner").doesNotExist())
         }
 
         @Test
@@ -305,7 +335,7 @@ class EsportsMediaIT : UserTestSupport() {
             teamId?.let { request.param("teamId", it.toString()) }
             val result = mvc.perform(request.with(bearer(admin)).with(csrfToken()))
                 .andExpect(status().isOk).andReturn()
-            return mapper.readTree(result.response.contentAsString)["url"].asText()
+            return mapper.readTree(result.response.contentAsString)["image"]["url"].asText()
         }
     }
 

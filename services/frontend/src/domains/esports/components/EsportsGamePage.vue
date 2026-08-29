@@ -7,7 +7,7 @@ import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {loadSeasons, unfieldTeamFromSeason} from "../adapters/esports"
+import {loadSeasons, unfieldTeamFromSeason, type EsportsImage} from "../adapters/esports"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import BannerDialog from "@/domains/esports/island/BannerDialog.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
@@ -81,7 +81,7 @@ const slices = computed(() => teams.value.map(team => ({
   id: team.id,
   title: team.name,
   meta: `${team.members.length} on the roster`,
-  banner: team.posterUrl || (team.image ? $require(`@/assets/${team.image}`) : ""),
+  banner: team.poster?.url || (team.image ? $require(`@/assets/${team.image}`) : ""),
 })))
 
 const entrance = (index: number) => ({
@@ -143,7 +143,7 @@ const adding = ref(false)
 const bannersOpen = ref(false)
 
 /** The banner the api resolved for this game and season, where anything was set. */
-const pageBanner = computed(() => page.value?.bannerUrl ?? null)
+const pageBanner = computed(() => page.value?.banner?.url ?? null)
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
 
@@ -157,7 +157,7 @@ const teamAdded = async (team: Team) => {
   await reload(season.value?.id)
 }
 
-const editingTeam = ref<{id: number; name: string; image: string | null; posterUrl: string | null} | null>(null)
+const editingTeam = ref<{id: number; name: string; image: string | null; poster: EsportsImage | null} | null>(null)
 const lineupOpen = ref(false)
 
 const editLineup = (teamId: number | string) => {
@@ -167,7 +167,7 @@ const editLineup = (teamId: number | string) => {
     id: team.id,
     name: team.name,
     image: team.image ?? null,
-    posterUrl: team.posterUrl ?? null,
+    poster: team.poster ?? null,
   }
   lineupOpen.value = true
 }
@@ -185,7 +185,7 @@ const lineupSaved = async () => {
   if (!open) return
   const fresh = teams.value.find(one => one.id === open.id)
   if (fresh) {
-    editingTeam.value = {...open, image: fresh.image ?? null, posterUrl: fresh.posterUrl ?? null}
+    editingTeam.value = {...open, image: fresh.image ?? null, poster: fresh.poster ?? null}
   }
 }
 
@@ -442,7 +442,7 @@ const seasonSaved = (saved: Season) => {
                 :team-id="editingTeam?.id ?? null"
                 :team-image="editingTeam?.image ?? null"
                 :team-name="editingTeam?.name ?? ''"
-                :team-poster-url="editingTeam?.posterUrl ?? null"
+                :team-poster="editingTeam?.poster ?? null"
                 @removed="lineupSaved"
                 @saved="lineupSaved"
                 @update:open="lineupOpen = $event"

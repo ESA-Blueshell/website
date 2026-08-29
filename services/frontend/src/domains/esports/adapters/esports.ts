@@ -47,6 +47,7 @@ import {
 import type {
   EsportsBannerResponse,
   EsportsPageResponse,
+  Image,
   FieldedTeamResponse,
   GameAccountResponse,
   GamePageResponse,
@@ -73,6 +74,8 @@ export type GameAccount = GameAccountResponse
 export type GameRecord = GamePageResponse
 export type FieldedTeam = FieldedTeamResponse
 export type EsportsBanner = EsportsBannerResponse
+/** An image a page draws: where it is served, how large it is, and the widths it is stored at. */
+export type EsportsImage = Image
 
 /** What a season holds, so an offer to remove it can say what goes with it. */
 export interface SeasonContents {
@@ -177,18 +180,27 @@ export async function dropGameOrReason(game: Game): Promise<{ok: true} | SeasonR
  * Done here rather than at each place one is drawn: the api answers with its own paths, and
  * a bare path resolves against the frontend's origin instead of the api's. Resolving at the
  * one seam every image comes through means no component has to remember.
+ *
+ * Every width is resolved, not only the full-size one, so a component can hand the whole set
+ * to a `srcset` without checking which of them are usable.
  */
-const media = (path?: string | null): string | null => (path ? apiUrl(path) : null)
+const image = (one: Image): Image => ({
+  ...one,
+  url: apiUrl(one.url),
+  renditions: one.renditions.map(rendition => ({...rendition, url: apiUrl(rendition.url)})),
+})
 
-const withPoster = <T extends {posterUrl?: string | null}>(team: T): T =>
-  ({...team, posterUrl: media(team.posterUrl)})
+const imageOrNone = (one?: Image | null): Image | null => (one ? image(one) : null)
 
-const withIcon = <T extends {iconUrl?: string | null}>(entry: T): T =>
-  ({...entry, iconUrl: media(entry.iconUrl)})
+const withPoster = <T extends {poster?: Image | null}>(team: T): T =>
+  ({...team, poster: imageOrNone(team.poster)})
+
+const withIcon = <T extends {icon?: Image | null}>(entry: T): T =>
+  ({...entry, icon: imageOrNone(entry.icon)})
 
 const withMedia = (team: TeamRoster): TeamRoster => ({
   ...withPoster(team),
-  bannerUrl: media(team.bannerUrl),
+  banner: imageOrNone(team.banner),
   members: team.members.map(withIcon),
 })
 
@@ -196,7 +208,7 @@ export async function loadEsportsPage(game: Game, seasonId?: number): Promise<Es
   const res = await findEsportsPage({path: {game}, query: seasonId == null ? {} : {seasonId}})
   const page = res.data
   if (!page) return null
-  return {...page, bannerUrl: media(page.bannerUrl), teams: page.teams.map(withMedia)}
+  return {...page, banner: imageOrNone(page.banner), teams: page.teams.map(withMedia)}
 }
 
 export async function loadSeasons(): Promise<Season[]> {
@@ -473,12 +485,12 @@ export async function clearRosterIcon(entryId: number): Promise<RosterEntry | nu
 /**
  * Every banner set for a game, so the levels already covered can be shown before another is added.
  *
- * Resolved with `apiUrl` rather than `media`: a banner always has a url, so there is no absence
- * to carry through.
+ * Resolved with `image` rather than `imageOrNone`: a banner always has one, so there is no
+ * absence to carry through.
  */
 export async function loadBanners(game: Game): Promise<EsportsBanner[]> {
   const res = await findBanners({query: {game}})
-  return (res.data ?? []).map(one => ({...one, url: apiUrl(one.url)}))
+  return (res.data ?? []).map(one => ({...one, image: image(one.image)}))
 }
 
 /**
@@ -494,7 +506,7 @@ export async function setBanner(
   teamId?: number,
 ): Promise<EsportsBanner | null> {
   const res = await uploadBanner({query: {game, seasonId, teamId}, body: {file}})
-  return res.data ? {...res.data, url: apiUrl(res.data.url)} : null
+  return res.data ? {...res.data, image: image(res.data.image)} : null
 }
 
 export async function dropBanner(id: number): Promise<void> {

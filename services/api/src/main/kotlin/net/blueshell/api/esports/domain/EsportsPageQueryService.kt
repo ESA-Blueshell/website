@@ -1,6 +1,7 @@
 package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.Season
+import net.blueshell.api.file.api.asImage
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.enums.TeamRole
@@ -47,7 +48,7 @@ class EsportsPageQueryService(
                 ?: runCatching { seasons.findById(requested) }.getOrNull()?.asView()
         } ?: available.firstOrNull()
         if (season == null) {
-            return EsportsPageView(game, null, available, emptyList(), banners.resolve(game)?.id)
+            return EsportsPageView(game, null, available, emptyList(), banners.resolve(game)?.asImage())
         }
 
         // The teams are the ones fielded; the roster entries only say who played for them,
@@ -82,16 +83,16 @@ class EsportsPageQueryService(
                             name = entry.userId?.let { names[it] },
                             roleTitle = entry.roleTitle,
                             description = entry.description,
-                            iconFileId = entry.icon?.id,
+                            icon = entry.icon?.asImage(),
                         )
                     },
-                    posterFileId = team.poster?.id,
-                    bannerFileId = teamBanners[team.id]?.id,
+                    poster = team.poster?.asImage(),
+                    banner = teamBanners[team.id]?.asImage(),
                 )
             }
             .sortedBy { it.name }
 
-        return EsportsPageView(game, season, available, teams, pageBanner?.id)
+        return EsportsPageView(game, season, available, teams, pageBanner?.asImage())
     }
 
     private fun Season.asView() =

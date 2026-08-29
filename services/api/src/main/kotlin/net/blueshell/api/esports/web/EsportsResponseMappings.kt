@@ -10,7 +10,7 @@ import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.UserGameAccount
-import net.blueshell.api.file.api.PublicFileUrls
+import net.blueshell.api.file.api.asImage
 
 fun Season.asResponse() = SeasonResponse(
     id = id!!,
@@ -31,7 +31,7 @@ fun Team.asResponse() = TeamResponse(
     game = game,
     name = name,
     image = image,
-    posterUrl = poster?.id?.let(PublicFileUrls::of),
+    poster = poster?.asImage(),
 )
 
 fun RosterMemberView.asResponse() = RosterMemberResponse(
@@ -40,7 +40,7 @@ fun RosterMemberView.asResponse() = RosterMemberResponse(
     name = name,
     roleTitle = roleTitle,
     description = description,
-    iconUrl = iconFileId?.let(PublicFileUrls::of),
+    icon = icon,
 )
 
 fun TeamView.asResponse() = TeamRosterResponse(
@@ -48,8 +48,8 @@ fun TeamView.asResponse() = TeamRosterResponse(
     name = name,
     image = image,
     members = members.map { it.asResponse() },
-    posterUrl = posterFileId?.let(PublicFileUrls::of),
-    bannerUrl = bannerFileId?.let(PublicFileUrls::of),
+    poster = poster,
+    banner = banner,
 )
 
 fun EsportsPageView.asResponse() = EsportsPageResponse(
@@ -57,7 +57,7 @@ fun EsportsPageView.asResponse() = EsportsPageResponse(
     season = season?.asResponse(),
     seasons = seasons.map { it.asResponse() },
     teams = teams.map { it.asResponse() },
-    bannerUrl = bannerFileId?.let(PublicFileUrls::of),
+    banner = banner,
 )
 
 /** The admin view of an entry, which unlike the public one carries the real name. */
@@ -72,7 +72,7 @@ fun TeamRosterEntry.asResponse() = RosterEntryResponse(
     sortIndex = sortIndex,
     roleTitle = roleTitle,
     description = description,
-    iconUrl = icon?.id?.let(PublicFileUrls::of),
+    icon = icon?.asImage(),
 )
 
 fun UserGameAccount.asResponse() = GameAccountResponse(
@@ -99,5 +99,5 @@ fun EsportsBanner.asResponse() = EsportsBannerResponse(
     game = game,
     seasonId = seasonId,
     teamId = teamId,
-    url = PublicFileUrls.of(file.id!!),
+    image = file.asImage(),
 )

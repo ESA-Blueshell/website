@@ -682,6 +682,10 @@ export type EsportsBannerResponse = {
     game: string;
     id: number;
     /**
+     * The image itself
+     */
+    image: Image;
+    /**
      * The season it is set for; absent when it carries every season
      */
     seasonId?: number | null;
@@ -689,10 +693,6 @@ export type EsportsBannerResponse = {
      * The team it is set for; absent when it carries every team
      */
     teamId?: number | null;
-    /**
-     * Where the image is served
-     */
-    url: string;
 };
 
 /**
@@ -702,7 +702,7 @@ export type EsportsPageResponse = {
     /**
      * The banner for the game and season shown, absent when none is set anywhere
      */
-    bannerUrl?: string | null;
+    banner?: Image | null;
     game: string;
     /**
      * The season being shown; absent when the game has no rosters yet
@@ -936,6 +936,39 @@ export type GuestResponse = {
     phoneNumber?: string | null;
     updatedAt: string;
     version: number;
+};
+
+/**
+ * An image a public page draws, and the widths it is stored at
+ */
+export type Image = {
+    /**
+     * How tall it is, absent where its size could not be read
+     */
+    height?: number | null;
+    /**
+     * The widths it is stored at, narrowest first
+     */
+    renditions: Array<ImageRendition>;
+    /**
+     * Where the full-size image is served
+     */
+    url: string;
+    /**
+     * How wide it is, absent where its size could not be read
+     */
+    width?: number | null;
+};
+
+/**
+ * One stored width of an image
+ */
+export type ImageRendition = {
+    /**
+     * Where this width is served
+     */
+    url: string;
+    width: number;
 };
 
 export type InboundReconcileApplyRequest = {
@@ -1307,9 +1340,9 @@ export type RosterEntryResponse = {
     displayName?: string | null;
     handle: string;
     /**
-     * Where this entry's uploaded picture is served, where one was uploaded
+     * This entry's uploaded picture, where one was uploaded
      */
-    iconUrl?: string | null;
+    icon?: Image | null;
     id: number;
     role: TeamRole;
     /**
@@ -1338,9 +1371,9 @@ export type RosterMemberResponse = {
      */
     handle: string;
     /**
-     * Where this entry's uploaded picture is served, where one was uploaded
+     * This entry's uploaded picture, where one was uploaded
      */
-    iconUrl?: string | null;
+    icon?: Image | null;
     /**
      * The member's real name, present only when they allow it to be shown
      */
@@ -1503,9 +1536,9 @@ export type TeamResponse = {
     image?: string | null;
     name: string;
     /**
-     * Where the team's uploaded poster is served, where one was uploaded
+     * The team's uploaded poster, where one was uploaded
      */
-    posterUrl?: string | null;
+    poster?: Image | null;
 };
 
 export enum TeamRole {
@@ -1521,15 +1554,15 @@ export type TeamRosterResponse = {
     /**
      * The banner resolved for this team in the season being shown
      */
-    bannerUrl?: string | null;
+    banner?: Image | null;
     id: number;
     image?: string | null;
     members: Array<RosterMemberResponse>;
     name: string;
     /**
-     * Where the team's uploaded poster is served, where one was uploaded
+     * The team's uploaded poster, where one was uploaded
      */
-    posterUrl?: string | null;
+    poster?: Image | null;
 };
 
 export type TelemetryResponse = {

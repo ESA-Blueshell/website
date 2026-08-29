@@ -152,7 +152,7 @@ const remove = async (level: Level) => {
         :busy="busy === level.key"
         :label="level.label"
         :testid="`banner-${level.key}`"
-        :url="at(level)?.url ?? null"
+        :url="at(level)?.image.url ?? null"
         @clear="remove(level)"
         @pick="upload(level, $event)"
       />

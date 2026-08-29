@@ -27,11 +27,13 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         @Param("seasonId") seasonId: Long,
     ): List<TeamRosterEntry>
 
+    /** One team's line-up, the icons fetched with it for the same reason as the whole game's. */
     @Query(
         """
         SELECT e FROM TeamRosterEntry e
         JOIN FETCH e.team t
         JOIN FETCH e.season s
+        LEFT JOIN FETCH e.icon
         WHERE t.id = :teamId AND s.id = :seasonId
         ORDER BY e.teamRole ASC, e.sortIndex ASC
         """,

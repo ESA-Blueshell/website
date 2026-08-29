@@ -151,6 +151,14 @@ const boardFixtures = [
   },
 ]
 
+/** An image as the api describes one: where it is served, how large it is, and its widths. */
+type MockImage = {
+  url: string
+  width: number
+  height: number
+  renditions: Array<{url: string; width: number}>
+}
+
 async function fulfillJson(route: Route, data: unknown, status = 200) {
   await route.fulfill({
     status,
@@ -216,14 +224,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    * The uploaded images, held as the api holds them: a reference per owner rather than bytes.
    * Each upload takes the next file id, so a replacement is visibly a different url.
    */
-  const posters = new Map<number, string>()
-  const icons = new Map<number, string>()
-  const banners: Array<{id: number; game: string; seasonId: number | null; teamId: number | null; url: string}> = []
+  const posters = new Map<number, MockImage>()
+  const icons = new Map<number, MockImage>()
+  const banners: Array<{id: number; game: string; seasonId: number | null; teamId: number | null; image: MockImage}> = []
   let nextFileId = 500
   let nextBannerId = 90
-  const nextUrl = () => {
+  /**
+   * An image as the api describes one. The size is that of the picture actually served below,
+   * so a page reserving an image's space reserves the right amount of it.
+   */
+  const nextImage = (): MockImage => {
     nextFileId += 1
-    return `/files/public/${nextFileId}`
+    return {url: `/files/public/${nextFileId}`, width: 1, height: 1, renditions: []}
   }
   /**
    * The line-up of the seeded team, as the admin reads and writes it. The public page builds
@@ -244,7 +256,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     name: entry.userId != null ? entry.displayName : null,
     roleTitle: entry.roleTitle ?? null,
     description: entry.description ?? null,
-    iconUrl: icons.get(Number(entry.id)) ?? null,
+    icon: icons.get(Number(entry.id)) ?? null,
   })
 
   await page.addInitScript((params: {cookieConsentStorageKey: string; cookieConsentPayload: string}) => {
@@ -810,17 +822,17 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // Most specific first, as the api resolves it: the team's own, then the season's,
       // then the game's.
       const bannerFor = (teamId: number | null) =>
-        banners.find(one => one.teamId === teamId && one.seasonId === shownSeason)?.url
-        ?? banners.find(one => one.teamId === teamId && one.seasonId === null)?.url
-        ?? banners.find(one => one.teamId === null && one.seasonId === shownSeason)?.url
-        ?? banners.find(one => one.teamId === null && one.seasonId === null)?.url
+        banners.find(one => one.teamId === teamId && one.seasonId === shownSeason)?.image
+        ?? banners.find(one => one.teamId === teamId && one.seasonId === null)?.image
+        ?? banners.find(one => one.teamId === null && one.seasonId === shownSeason)?.image
+        ?? banners.find(one => one.teamId === null && one.seasonId === null)?.image
         ?? null
       const teams = [...seeded, ...extra].map(team => ({
         ...team,
-        posterUrl: posters.get(Number((team as {id: number}).id)) ?? null,
-        bannerUrl: bannerFor(Number((team as {id: number}).id)),
+        poster: posters.get(Number((team as {id: number}).id)) ?? null,
+        banner: bannerFor(Number((team as {id: number}).id)),
       }))
-      return fulfillJson(route, {...page, game, seasons: offered, teams, bannerUrl: bannerFor(null)})
+      return fulfillJson(route, {...page, game, seasons: offered, teams, banner: bannerFor(null)})
     }
     if (method === "POST" && path === "/esports/seasons") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
@@ -858,27 +870,27 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "POST" && /^\/esports\/teams\/\d+\/poster$/.test(path)) {
       const id = Number(path.split("/")[3])
-      const url = nextUrl()
-      posters.set(id, url)
-      return fulfillJson(route, {id, game: "VALORANT", name: "BS Waterboarders", image: null, posterUrl: url})
+      const made = nextImage()
+      posters.set(id, made)
+      return fulfillJson(route, {id, game: "VALORANT", name: "BS Waterboarders", image: null, poster: made})
     }
     if (method === "DELETE" && /^\/esports\/teams\/\d+\/poster$/.test(path)) {
       const id = Number(path.split("/")[3])
       posters.delete(id)
-      return fulfillJson(route, {id, game: "VALORANT", name: "BS Waterboarders", image: null, posterUrl: null})
+      return fulfillJson(route, {id, game: "VALORANT", name: "BS Waterboarders", image: null, poster: null})
     }
     if (method === "POST" && /^\/esports\/roster\/\d+\/icon$/.test(path)) {
       const id = Number(path.split("/")[3])
-      const url = nextUrl()
-      icons.set(id, url)
+      const made = nextImage()
+      icons.set(id, made)
       const entry = roster.find(one => one.id === id) ?? {}
-      return fulfillJson(route, {...entry, id, iconUrl: url})
+      return fulfillJson(route, {...entry, id, icon: made})
     }
     if (method === "DELETE" && /^\/esports\/roster\/\d+\/icon$/.test(path)) {
       const id = Number(path.split("/")[3])
       icons.delete(id)
       const entry = roster.find(one => one.id === id) ?? {}
-      return fulfillJson(route, {...entry, id, iconUrl: null})
+      return fulfillJson(route, {...entry, id, icon: null})
     }
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
@@ -905,11 +917,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       const existing = banners.find(one => one.seasonId === level.seasonId && one.teamId === level.teamId)
       if (existing) {
-        existing.url = nextUrl()
+        existing.image = nextImage()
         return fulfillJson(route, existing)
       }
       nextBannerId += 1
-      const made = {id: nextBannerId, ...level, url: nextUrl()}
+      const made = {id: nextBannerId, ...level, image: nextImage()}
       banners.push(made)
       return fulfillJson(route, made)
     }
@@ -980,7 +992,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const seasonId = Number(url.searchParams.get("seasonId"))
       return fulfillJson(route, roster
         .filter(one => one.teamId === teamId && one.seasonId === seasonId)
-        .map(one => ({...one, iconUrl: icons.get(Number(one.id)) ?? null})))
+        .map(one => ({...one, icon: icons.get(Number(one.id)) ?? null})))
     }
     if (method === "PUT" && /^\/esports\/roster\/\d+$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>

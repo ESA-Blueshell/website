@@ -3,6 +3,7 @@ package net.blueshell.api.file.api
 import jakarta.annotation.PostConstruct
 import net.blueshell.api.file.domain.FileDeleted
 import net.blueshell.api.file.domain.EmptyFileException
+import net.blueshell.api.file.domain.ImageDimensions
 import net.blueshell.api.file.domain.FileNotFoundException
 import net.blueshell.api.file.domain.FileStorageException
 import net.blueshell.api.file.domain.FileTooLargeException
@@ -272,6 +273,16 @@ class FileService @Autowired constructor(
             throw RuntimeException("Could not read file size for: $path", e)
         }
         file.path = path
+        // Only a picture is opened for a size, which is the same net the backfill casts. A
+        // size that cannot be read leaves whatever the record already had rather than clearing
+        // it: the same content re-uploaded reuses its record, and a reader that answers this
+        // time and not the next should not take a good answer away.
+        if (ImageDimensions.mayHaveSize(mediaType)) {
+            ImageDimensions.of(fullPath)?.let { size ->
+                file.width = size.width
+                file.height = size.height
+            }
+        }
     }
 
     private fun detectContentType(filename: String, resource: Resource): String {

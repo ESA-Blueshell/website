@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.domain
 
+import net.blueshell.api.file.api.Image
 import net.blueshell.api.shared.enums.TeamRole
 import java.time.LocalDate
 
@@ -27,7 +28,7 @@ data class RosterMemberView(
     /** A caption about them, in markdown, where anything was written. */
     val description: String? = null,
     /** This entry's own picture, where one was uploaded. */
-    val iconFileId: Long? = null,
+    val icon: Image? = null,
 )
 
 data class TeamView(
@@ -36,9 +37,9 @@ data class TeamView(
     val image: String?,
     val members: List<RosterMemberView>,
     /** The team's own poster, where one was uploaded. */
-    val posterFileId: Long? = null,
+    val poster: Image? = null,
     /** The banner resolved for this team in the season being shown. */
-    val bannerFileId: Long? = null,
+    val banner: Image? = null,
 )
 
 /** A whole game page: the season being shown, the ones that can be, and that season's teams. */
@@ -48,5 +49,5 @@ data class EsportsPageView(
     val seasons: List<SeasonView>,
     val teams: List<TeamView>,
     /** The banner resolved for the game and the season being shown, before any team narrows it. */
-    val bannerFileId: Long? = null,
+    val banner: Image? = null,
 )

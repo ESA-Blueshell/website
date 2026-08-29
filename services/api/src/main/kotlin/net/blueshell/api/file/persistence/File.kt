@@ -40,6 +40,18 @@ class File(
     @Column(name = "size")
     var size: Long? = null,
 
+    /**
+     * How wide the image is, where it is one and its size could be read.
+     *
+     * Null is an answer rather than a gap: a format nothing here can measure is still stored,
+     * and a caller draws it without reserving its space.
+     */
+    @Column(name = "width")
+    var width: Int? = null,
+
+    @Column(name = "height")
+    var height: Int? = null,
+
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     var type: FileType,

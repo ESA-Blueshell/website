@@ -50,8 +50,9 @@ class StoredImageDimensionsBackfillIT : UserTestSupport() {
                 .file(MockMultipartFile("file", "poster.png", MediaType.IMAGE_PNG_VALUE, pngOf(width, height)))
                 .with(bearer(admin)).with(csrfToken()),
         ).andExpect(status().isOk).andReturn()
-        return mapper.readTree(posted.response.contentAsString)["poster"]["url"]
-            .asText().substringAfterLast('/').toLong()
+        val path = mapper.readTree(posted.response.contentAsString)["poster"]["url"]
+            .asText().removePrefix("/files/public/")
+        return files.findByPath(path).orElseThrow().id!!
     }
 
     @Test

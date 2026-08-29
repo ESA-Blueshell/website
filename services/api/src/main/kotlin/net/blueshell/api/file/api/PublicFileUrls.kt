@@ -1,5 +1,7 @@
 package net.blueshell.api.file.api
 
+import net.blueshell.api.file.persistence.File
+
 /**
  * Where a publicly readable file is served from.
  *
@@ -14,5 +16,11 @@ package net.blueshell.api.file.api
 object PublicFileUrls {
     const val PATH = "/files/public"
 
-    fun of(fileId: Long): String = "$PATH/$fileId"
+    /** The route, whose two segments are the stored path this object splits and rejoins. */
+    const val MAPPING = "$PATH/{directory}/{filename}"
+
+    fun of(file: File): String = "$PATH/${file.path}"
+
+    /** The stored path a request for [MAPPING] names. */
+    fun pathOf(directory: String, filename: String): String = "$directory/$filename"
 }

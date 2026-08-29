@@ -184,6 +184,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Install WebP tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
+
       - name: Prepare test database schema
         run: |
           # The runner blocks steps until the service reports healthy, and the
@@ -503,6 +506,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Install WebP tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
 
       - name: Generate Blueshell OpenAPI spec and frontend client
         run: |

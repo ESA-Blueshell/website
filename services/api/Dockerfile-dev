@@ -8,6 +8,7 @@ WORKDIR /src
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    webp \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright

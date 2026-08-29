@@ -118,6 +118,11 @@ app:
     issuer: ${JWT_ISSUER:blueshell-api}
     audience: ${JWT_AUDIENCE:blueshell-web}
     revoked-jtis: ${JWT_REVOKED_JTIS:}
+  files:
+    # The libwebp encoder every public page image is converted with. The api refuses to start
+    # when it does not answer, so a packaging mistake surfaces at deploy rather than at
+    # somebody's first upload.
+    cwebp-path: ${CWEBP_PATH:cwebp}
   jobs:
     max-retries: ${JOB_MAX_RETRIES:3}
     initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:1000}

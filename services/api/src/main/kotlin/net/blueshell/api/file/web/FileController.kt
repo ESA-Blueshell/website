@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.core.io.Resource
@@ -25,10 +26,14 @@ class FileController(
      * Anything else answers 404 rather than 403: whether a file exists is not something an
      * anonymous caller has any business learning.
      */
-    @GetMapping("/files/public/{id}")
+    @GetMapping(PublicFileUrls.MAPPING)
     @PermitAll
-    fun downloadPublicFile(@PathVariable id: Long): ResponseEntity<Resource> =
-        service.preparePublicFileResponse(service.findPubliclyReadable(id))
+    fun downloadPublicFile(
+        @PathVariable directory: String,
+        @PathVariable filename: String,
+    ): ResponseEntity<Resource> = service.preparePublicFileResponse(
+        service.findPubliclyReadable(PublicFileUrls.pathOf(directory, filename)),
+    )
 
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")

@@ -624,7 +624,7 @@ export const approveEvent = <ThrowOnError extends boolean = false>(options: Opti
 
 export const downloadPublicFile = <ThrowOnError extends boolean = false>(options: Options<DownloadPublicFileData, ThrowOnError>): RequestResult<DownloadPublicFileResponses, DownloadPublicFileErrors, ThrowOnError> => (options.client ?? client).get<DownloadPublicFileResponses, DownloadPublicFileErrors, ThrowOnError>({
     responseType: 'json',
-    url: '/files/public/{id}',
+    url: '/files/public/{directory}/{filename}',
     ...options
 });
 

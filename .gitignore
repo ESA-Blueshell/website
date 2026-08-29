@@ -44,6 +44,8 @@ data
 services/api/storage/team-posters/
 services/api/storage/esports-banners/
 services/api/storage/roster-icons/
+services/api/storage/game-banners/
+services/api/storage/game-marks/
 private
 **/.yarn
 .playwright

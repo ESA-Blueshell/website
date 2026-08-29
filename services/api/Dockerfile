@@ -15,6 +15,8 @@ RUN --mount=type=cache,target=/root/.gradle \
 
 FROM eclipse-temurin:25-jre-alpine@sha256:28db6fdf60e38945e43d840c0333aeaec66c15943070104f7586fd3c9d1665b0 AS runtime
 
+RUN apk add --no-cache libwebp-tools
+
 RUN addgroup -S app && adduser -S -G app app
 
 WORKDIR /app

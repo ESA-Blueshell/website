@@ -1,5 +1,6 @@
 package db.migration
 
+import net.blueshell.api.esports.domain.SeedCsv
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import org.slf4j.LoggerFactory
@@ -267,10 +268,7 @@ class R__Esports_seed : BaseJavaMigration() {
     private fun isDeleted(connection: Connection, sql: String, vararg args: String): Boolean =
         activeId(connection, sql, *args) != null
 
-    private fun read(name: String): String =
-        R__Esports_seed::class.java.classLoader.getResourceAsStream("db/seed/esports/$name")
-            ?.use { it.readBytes().toString(Charsets.UTF_8) }
-            ?: error("Seed file db/seed/esports/$name is missing")
+    private fun read(name: String): String = SeedCsv.read(name)
 
     companion object {
         private val log = LoggerFactory.getLogger(R__Esports_seed::class.java)
@@ -280,42 +278,11 @@ class R__Esports_seed : BaseJavaMigration() {
         private const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"
 
         /**
-         * Reads a comma-separated file with a header, quoting a field only where it has to.
-         * A team called "BS Ohm, Sweet Ohm" is one field, not two.
+         * The rows of one seed file.
+         *
+         * Delegates to [SeedCsv], which the start-up step that puts the art on these records
+         * reads the same files with. Kept here as the name the migration's own tests call.
          */
-        fun parse(content: String): List<Map<String, String>> {
-            val rows = splitRows(content).filter { row -> row.any { it.isNotBlank() } }
-            if (rows.isEmpty()) return emptyList()
-            val header = rows.first()
-            return rows.drop(1).map { cells ->
-                require(cells.size == header.size) { "Row has ${cells.size} fields, header has ${header.size}: $cells" }
-                header.zip(cells).toMap()
-            }
-        }
-
-        private fun splitRows(content: String): List<List<String>> {
-            val rows = mutableListOf<List<String>>()
-            var cells = mutableListOf<String>()
-            val cell = StringBuilder()
-            var quoted = false
-            var index = 0
-            while (index < content.length) {
-                val char = content[index]
-                when {
-                    quoted && char == '"' && content.getOrNull(index + 1) == '"' -> { cell.append('"'); index += 1 }
-                    char == '"' -> quoted = !quoted
-                    !quoted && char == ',' -> { cells.add(cell.toString()); cell.clear() }
-                    !quoted && (char == '\n' || char == '\r') -> {
-                        if (char == '\r' && content.getOrNull(index + 1) == '\n') index += 1
-                        cells.add(cell.toString()); cell.clear()
-                        rows.add(cells); cells = mutableListOf()
-                    }
-                    else -> cell.append(char)
-                }
-                index += 1
-            }
-            if (cell.isNotEmpty() || cells.isNotEmpty()) { cells.add(cell.toString()); rows.add(cells) }
-            return rows
-        }
+        fun parse(content: String): List<Map<String, String>> = SeedCsv.parse(content)
     }
 }

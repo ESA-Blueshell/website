@@ -1,0 +1,210 @@
+package net.blueshell.api.esports.domain
+
+import net.blueshell.api.esports.persistence.EsportsBannerRepository
+import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.persistence.File
+import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
+import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
+import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
+
+/**
+ * Puts the art the repository ships onto the games and teams the seed files name.
+ *
+ * The pictures under `db/seed/esports/art` are the association's default art, and the `poster`
+ * column of `teams.csv` and the rows of `banners.csv` say which record each of them belongs to.
+ * Every picture is stored the way an upload is — converted where it needs converting, addressed
+ * by its contents, written at the ladder of widths its kind lists — and credited to the site's
+ * own account, because nobody chose it.
+ *
+ * Here rather than in the migration that loads those same files. Storing a picture needs the
+ * storage volume and the converter, and a migration runner has neither; it also runs before the
+ * application is up, which is to say before there is anywhere to put the bytes. So the migration
+ * writes the records and this puts the art on them, in that order, on every start.
+ *
+ * **A picture already chosen is never replaced.** A slot that is filled is somebody's decision
+ * and it is later than this one, so only an empty slot is written. Correcting the art of a team
+ * that already has some is therefore an edit in the pages rather than an edit in the file — the
+ * same rule the seed's own header states for a season, a team or a roster entry that was removed.
+ *
+ * Storing and applying are separate, and every picture is stored on every start whether or not
+ * anything is waiting for it. That is what makes a lost storage volume repair itself: the bytes
+ * go back to the address they always had, so the url a page has been serving for a year answers
+ * again. Skipping the ones nothing is waiting for would be faster and would mean the pictures
+ * somebody chose are exactly the ones that never come back.
+ */
+@Component
+class ShippedArt(
+    private val files: FileService,
+    private val users: UserService,
+    private val teams: TeamRepository,
+    private val banners: EsportsBannerRepository,
+    private val media: EsportsMediaService,
+    private val transactions: TransactionTemplate,
+) {
+    /** What a run changed, which is nothing at all on every start after the first. */
+    data class Applied(val posters: Int, val banners: Int)
+
+    fun apply(): Applied {
+        val owner = siteAccount() ?: return Applied(0, 0)
+        // A team's picture and a game's, each as the record it belongs to and the art it names.
+        val teamArt = SeedCsv.parse(SeedCsv.read(TEAMS))
+            .mapNotNull { row ->
+                row[POSTER]?.ifBlank { null }?.let { art -> Triple(row.getValue("game"), row.getValue("name"), art) }
+            }
+        val gameArt = SeedCsv.parse(SeedCsv.read(BANNERS))
+            .map { row -> row.getValue("game") to row.getValue("art") }
+
+        // Every picture first, so one that is waiting for nothing is still put back where it
+        // was. One picture may belong to two records — a game fields more teams than it has
+        // art — and the addresses remembered here are what stops it being stored twice.
+        val stored = mutableMapOf<Pair<String, FileType>, String>()
+        teamArt.forEach { (_, team, art) ->
+            attempt("the picture for $team") { store(art, FileType.TEAM_POSTER, owner, stored); 0 }
+        }
+        gameArt.forEach { (game, art) ->
+            attempt("the picture for $game") { store(art, FileType.ESPORTS_BANNER, owner, stored); 0 }
+        }
+
+        val posters = teamArt.sumOf { (game, team, art) ->
+            attempt("the poster of $team") { poster(game, team, art, owner, stored) }
+        }
+        val banners = gameArt.sumOf { (game, art) ->
+            attempt("the banner of $game") { banner(game, art, owner, stored) }
+        }
+
+        if (posters > 0 || banners > 0) {
+            log.info("[shipped-art] {} posters and {} banners now carry the art that ships", posters, banners)
+        }
+        return Applied(posters, banners)
+    }
+
+    /**
+     * The team's poster, where the team is there and has none.
+     *
+     * A team the file names and the database does not is not an error here: the seed leaves a
+     * team that was removed removed, and its row stays in the file until somebody takes it out.
+     */
+    private fun poster(
+        game: String,
+        name: String,
+        art: String,
+        owner: User,
+        stored: MutableMap<Pair<String, FileType>, String>,
+    ): Int = transactions.execute {
+        val team = teams.findByGameAndNameIgnoreCase(game, name) ?: return@execute 0
+        if (team.poster != null) return@execute 0
+        team.poster = store(art, FileType.TEAM_POSTER, owner, stored)
+        teams.save(team)
+        1
+    }
+
+    /**
+     * The game's own banner, where nothing is set for the game as a whole.
+     *
+     * Only the game-wide slot is looked at. A banner an admin set for one team or one season is
+     * a narrower statement that this one does not contradict, and filling the empty slot behind
+     * it leaves that narrower banner winning wherever it applies.
+     */
+    private fun banner(
+        game: String,
+        art: String,
+        owner: User,
+        stored: MutableMap<Pair<String, FileType>, String>,
+    ): Int = transactions.execute {
+        if (banners.findAllByGame(game).any { it.seasonId == null && it.teamId == null }) return@execute 0
+        val picture = store(art, FileType.ESPORTS_BANNER, owner, stored)
+        media.setBanner(game, seasonId = null, teamId = null, picture = picture.path)
+        1
+    }
+
+    /**
+     * One picture, stored the first time it is asked for.
+     *
+     * What is remembered between records is the address rather than the row, because each of
+     * them is written in a transaction of its own and a row read in one is stale in the next.
+     * The address is stable — it is the picture's own contents — so the second team to ask for
+     * a picture reads back the row the first one wrote instead of storing the bytes again.
+     */
+    private fun store(
+        art: String,
+        kind: FileType,
+        owner: User,
+        stored: MutableMap<Pair<String, FileType>, String>,
+    ): File {
+        stored[art to kind]?.let { path -> files.findPublicImage(path, kind)?.let { return it } }
+        val name = "$art.webp"
+        val resource = "${SeedCsv.DIRECTORY}/art/$name"
+        val bytes = javaClass.classLoader.getResourceAsStream(resource)
+            ?: error("Shipped art $resource is missing")
+        val file = files.store(bytes, name, WEBP, kind, owner)
+        stored[art to kind] = file.path
+        return file
+    }
+
+    /**
+     * The account the shipped art is credited to.
+     *
+     * Absent only where the migration that writes it has not run, which is to say never in a
+     * running application. Answering with null rather than throwing keeps that impossible case
+     * from being the reason a start fails.
+     */
+    private fun siteAccount(): User? {
+        val account = runCatching { users.findByUsername(SITE_ACCOUNT) }.getOrNull()
+        if (account == null) {
+            log.warn("[shipped-art] there is no '{}' account to credit the art to", SITE_ACCOUNT)
+        }
+        return account
+    }
+
+    /** One record's art, whose failure is its own rather than the rest of the run's. */
+    private fun attempt(what: String, apply: () -> Int): Int =
+        try {
+            apply()
+        } catch (e: Exception) {
+            log.warn("[shipped-art] could not set {}: {}", what, e.message)
+            0
+        }
+
+    private companion object {
+        val log = LoggerFactory.getLogger(ShippedArt::class.java)
+        const val TEAMS = "teams.csv"
+        const val BANNERS = "banners.csv"
+        const val POSTER = "poster"
+        const val WEBP = "image/webp"
+        const val SITE_ACCOUNT = "system"
+    }
+}
+
+/**
+ * Applies the shipped art once the application is up, and never stops it coming up.
+ *
+ * A separate bean so the work is reached through the proxy, the way the backfills in the file
+ * module beside it are arranged.
+ *
+ * A failure is reported and swallowed. Art that did not land is a page drawn on the picture it
+ * was drawn on yesterday, and refusing to start over one would take every page down — which is
+ * the exact failure this art is meant to decorate, not cause.
+ */
+@Component
+class ShippedArtOnStartup(
+    private val art: ShippedArt,
+) {
+    @EventListener(ApplicationReadyEvent::class)
+    fun onReady() {
+        try {
+            art.apply()
+        } catch (e: Exception) {
+            log.warn("[shipped-art] could not put the art that ships onto the records: {}", e.message)
+        }
+    }
+
+    private companion object {
+        val log = LoggerFactory.getLogger(ShippedArtOnStartup::class.java)
+    }
+}

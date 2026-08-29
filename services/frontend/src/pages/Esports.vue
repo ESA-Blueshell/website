@@ -11,6 +11,7 @@ import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons} from "@/domains/esports/adapters/esports"
+import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
@@ -36,11 +37,21 @@ const urlOf = (game: string) => {
   return record ? `/esports/${record.slug}` : "/esports"
 }
 
-const {seasons, selected, entries, loading, fielded, show, reload} = useSeasonLineup(gameCodes, ready)
+const {seasons, selected, entries, loading, fielded, show, reload} =
+  useSeasonLineup(gameCodes, () => seasonInRoute(route), ready)
 
 const seasonName = computed(() =>
   seasons.value.find(s => s.id === selected.value)?.name ?? "",
 )
+
+/**
+ * A game's own page, on the season being read here.
+ *
+ * Somebody who chose a season and then followed a game did so because of what that game did
+ * in that season, so the season goes with them. The game page reads its season from the url
+ * already, which is the whole of the other end of this.
+ */
+const onSeason = (url: string) => (selected.value == null ? url : `${url}?season=${selected.value}`)
 
 const slices = computed(() =>
   entries.value.map(entry => {
@@ -48,7 +59,7 @@ const slices = computed(() =>
     const teams = entry.teams.length
     return {
       id: entry.game,
-      href: urlOf(entry.game),
+      href: onSeason(urlOf(entry.game)),
       title: identity.name,
       meta: `${teams} team${teams === 1 ? "" : "s"} this season`,
       banner: identity.banner ?? "",
@@ -277,9 +288,9 @@ const seasonSaved = (saved: Season) => {
               </span>
               <router-link
                 class="team-slice__link"
-                :to="urlOf(String(item.id))"
+                :to="onSeason(urlOf(String(item.id)))"
               >
-                Every season of {{ item.title }} →
+                {{ seasonName ? `${item.title} in ${seasonName}` : `Every season of ${item.title}` }} →
               </router-link>
             </template>
           </banner-slices>

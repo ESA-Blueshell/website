@@ -584,7 +584,7 @@ const step = (from: number, by: number) => {
 }
 
 /*
- * Focus-within rather than focus on the affordance itself: hidden means unfocusable, so an
+ * Focus on the slot rather than on the affordance itself: hidden means unfocusable, so an
  * affordance that waited to be focused could never be reached. Focus lands on the band first,
  * which reveals the affordance sitting behind it, and the next tab reaches it. While its own
  * dialog is open it stays put, so closing the dialog has somewhere to give focus back to.
@@ -593,6 +593,31 @@ const step = (from: number, by: number) => {
 .season-slot:focus-within .season-slot__edit,
 .season-slot--editing .season-slot__edit {
   visibility: visible;
+}
+
+/*
+ * Except where the focus the slot holds is a pointer's. A click focuses the band it lands on,
+ * and `:focus-within` cannot tell that focus from a keyboard's — so a band clicked to choose
+ * a season went on offering to be edited long after the pointer had left it, and read as a
+ * control that had latched.
+ *
+ * Written as an exception to the rule above rather than folded into it. The obvious fold,
+ * asking the slot for `:has(:focus-visible)`, breaks the keyboard route: the affordance is
+ * revealed only while the band holds the focus, so the tab that hands the focus over hides
+ * the affordance in the same recalc, and the browser drops the focus rather than landing it
+ * on something that has just gone. `:focus-within` survives that hand-off because the focus
+ * never leaves the slot, and the exception below does not apply during it: the band has let
+ * the focus go by then.
+ *
+ * Asked of a pointer rather than written to outrank the standing rule below. Where there is
+ * nothing to hover with, a tap is the only way to reach anything and leaves the focus behind
+ * it — so an exception about pointers would hide every affordance on the strip the moment one
+ * was used.
+ */
+@media (hover: hover) {
+  .season-slot:not(:hover):not(.season-slot--editing):has(.season-band:focus:not(:focus-visible)) .season-slot__edit {
+    visibility: hidden;
+  }
 }
 
 /* No pointer to hover with, so there is no state to reveal it from. */

@@ -18,7 +18,7 @@ test.describe("moving around the esports pages", () => {
     await expect(valorant).toHaveClass(/team-slice--open/)
     await valorant.click()
 
-    await expect(page).toHaveURL(/\/esports\/valorant$/)
+    await expect(page).toHaveURL(/\/esports\/valorant\?season=20$/)
   })
 
   test("what was last looked at stays open", async ({page}, info) => {
@@ -35,6 +35,64 @@ test.describe("moving around the esports pages", () => {
     await page.mouse.move(10, 10)
     await page.waitForTimeout(400)
     await expect(second).toHaveClass(/team-slice--open/)
+  })
+
+  test("a slice's affordances go when the pointer does, and do not latch on a click", async ({page}, info) => {
+    test.skip(info.project.name === "mobile-chrome", "There is no pointer to hover with.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+
+    const slice = page.getByTestId("team-roster-1")
+    const pencil = page.getByTestId("team-roster-edit-1")
+    await slice.hover()
+    await expect(pencil).toBeVisible()
+
+    // Opening a slice focuses the body that was clicked. That is not a reason for the slice
+    // to keep offering to be edited once the pointer has moved off it.
+    await slice.click()
+    await page.mouse.move(10, 10)
+
+    await expect(pencil).toBeHidden()
+    await expect(page.getByTestId("team-roster-drop-1")).toBeHidden()
+  })
+
+  test("a keyboard arriving at a slice reveals its affordances", async ({page}, info) => {
+    test.skip(info.project.name === "mobile-chrome", "The affordances stand, so there is nothing to reveal.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+
+    const pencil = page.getByTestId("team-roster-edit-1")
+    await expect(page.getByTestId("team-roster-1")).toBeVisible()
+    await expect(pencil).toBeHidden()
+
+    // Into the band from the strip above it, which is where a keyboard comes from.
+    await page.getByTestId("esports-season-add").focus()
+    await page.keyboard.press("Tab")
+    await expect(pencil).toBeVisible()
+
+    // Revealed by the keyboard and not by the click that would have latched it: moving on
+    // takes it away again rather than leaving it behind.
+    await page.keyboard.press("Tab")
+    await expect(pencil).toBeHidden()
+  })
+
+  test("a tap leaves a slice's affordances standing, having nothing to hover with", async ({page}, info) => {
+    test.skip(info.project.name !== "mobile-chrome", "Only a touch screen has nothing to hover with.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports/valorant")
+    await expect(page.getByTestId("team-roster-1")).toBeVisible()
+
+    // A tap is the only way to reach anything here, and it leaves the focus behind it — so a
+    // rule about pointers must not be allowed to hide what the tap just reached.
+    await page.getByTestId("esports-season-node-19").tap()
+    await expect(page.getByTestId("team-roster-3")).toBeVisible()
+    await expect(page.getByTestId("esports-season-edit-19")).toBeVisible()
+
+    await page.getByTestId("team-roster-3").tap()
+    await expect(page.getByTestId("team-roster-edit-3")).toBeVisible()
   })
 
   test("the strip holds a season's width however long the history is", async ({page}, info) => {

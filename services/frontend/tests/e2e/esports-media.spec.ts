@@ -112,6 +112,27 @@ test.describe("posters, icons and banners", () => {
     await expect.poll(() => loaded(page, "esports-page-banner")).toBe(true)
   })
 
+  test("the banner fades out rather than stopping in a line above the strip", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+
+    await page.getByTestId("esports-banners-open").click()
+    await expect(page.getByTestId("banner-dialog")).toBeVisible()
+    await choose(page, "banner-game")
+    await expect(page.getByTestId("banner-game-preview")).toBeVisible()
+    await page.keyboard.press("Escape")
+
+    const banner = page.getByTestId("esports-page-banner")
+    await expect(banner).toBeVisible()
+
+    // Carried to nothing before the header's own edge, so the header and the strip below it
+    // meet without a line between them.
+    const mask = await banner.evaluate(el => getComputedStyle(el).maskImage)
+    expect(mask).toContain("gradient")
+    expect(mask).toContain("rgba(0, 0, 0, 0)")
+  })
+
   test("the banner levels read least specific first, so which one wins is legible", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())

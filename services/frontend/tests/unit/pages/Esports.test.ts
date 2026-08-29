@@ -1,7 +1,27 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
+import {reactive} from "vue"
 import Esports from "@/pages/Esports.vue"
 import {forgetGames} from "@/domains/esports/island/useGames"
+
+/**
+ * The season lives in the url, so the page reads one and writes one back. Reactive, because
+ * the page watches it: a season chosen elsewhere — the back button, a shared link — is a
+ * season change like any other.
+ */
+const route = reactive<{query: Record<string, string>}>({query: {}})
+const replace = vi.fn(({query}: {query: Record<string, string>}) => {
+  route.query = query
+})
+
+vi.mock("vue-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vue-router")>()
+  return {
+    ...actual,
+    useRoute: () => route,
+    useRouter: () => ({replace, push: vi.fn()}),
+  }
+})
 
 const seasons = [
   {id: 1, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31"},
@@ -53,6 +73,7 @@ describe("Esports page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     forgetGames()
+    route.query = {}
   })
 
   it("sits inside the esports island", () => {
@@ -101,13 +122,24 @@ describe("Esports page", () => {
     expect(wrapper.find('[data-testid="esports-game-GEOGUESSR"]').exists()).toBe(false)
   })
 
-  it("links each game to its own page, where every season of it lives", async () => {
+  it("links each game to its own page, on the season being read here", async () => {
     const wrapper = mountPage()
     await flushPromises()
 
+    // Somebody who chose a season and then follows a game wants that game in that season.
     const targets = wrapper.findAll("a[data-to]").map(node => node.attributes("data-to"))
-    expect(targets).toContain("/esports/valorant")
-    expect(targets).toContain("/esports/counter-strike-2")
+    expect(targets).toContain(`/esports/valorant?season=${seasons[0]!.id}`)
+    expect(targets).toContain(`/esports/counter-strike-2?season=${seasons[0]!.id}`)
+  })
+
+  it("opens on the season its own url names", async () => {
+    route.query = {season: String(seasons[1]!.id)}
+    mountPage()
+    await flushPromises()
+
+    const {loadEsportsPage} = await import("@/domains/esports/adapters/esports")
+    // Every game asked about that season rather than about whichever one is newest.
+    expect(vi.mocked(loadEsportsPage).mock.calls.every(([, id]) => id === seasons[1]!.id)).toBe(true)
   })
 
   it("offers the seasons it was told about", async () => {

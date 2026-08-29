@@ -38,6 +38,54 @@ test.describe("editing a season where it is shown", () => {
     await expect(second).toBeHidden()
   })
 
+  test("the affordance goes when the pointer does, however it was revealed", async ({page}, testInfo) => {
+    test.skip(testInfo.project.name === "mobile-chrome", "There is no pointer to hover with.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+
+    const node = page.getByTestId("esports-season-node-20")
+    const pencil = page.getByTestId("esports-season-edit-20")
+    await node.hover()
+    await expect(pencil).toBeVisible()
+
+    // Choosing a season focuses the band it is drawn on. That is not a reason for the season
+    // to keep offering to be edited once the pointer has moved somewhere else.
+    await node.click()
+    await page.mouse.move(10, 10)
+
+    await expect(pencil).toBeHidden()
+  })
+
+  test("a keyboard reveals the affordance the pointer does, and reaches it", async ({page}, testInfo) => {
+    test.skip(testInfo.project.name === "mobile-chrome", "The affordances stand, so there is nothing to reveal.")
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await expect(page.getByTestId("team-roster-1")).toBeVisible()
+
+    // The strip reads oldest first, so the earlier season is where a keyboard entering the
+    // strip arrives. Clicking it leaves the focus there without revealing anything, which is
+    // the pointer half of the rule; the tab that follows is the keyboard taking over.
+    const pencil = page.getByTestId("esports-season-edit-19")
+    await page.getByTestId("esports-season-node-19").click()
+    await expect(page.getByTestId("team-roster-3")).toBeVisible()
+    await page.mouse.move(10, 10)
+    await expect(pencil).toBeHidden()
+
+    // Revealed and reached in one step, because the focus never leaves the season it belongs
+    // to: the tab that takes it off the band puts it on the affordance the band was hiding.
+    await page.keyboard.press("Tab")
+    await expect(pencil).toBeVisible()
+    await expect(pencil).toBeFocused()
+
+    // On to the next season, which offers its own and takes the first one's away again.
+    await page.keyboard.press("Tab")
+    await expect(page.getByTestId("esports-season-node-20")).toBeFocused()
+    await expect(page.getByTestId("esports-season-edit-20")).toBeVisible()
+    await expect(pencil).toBeHidden()
+  })
+
   test("with no pointer the affordance simply stands", async ({page}, testInfo) => {
     test.skip(testInfo.project.name !== "mobile-chrome", "Only a touch screen has nothing to hover with.")
     await installApiMocks(page)

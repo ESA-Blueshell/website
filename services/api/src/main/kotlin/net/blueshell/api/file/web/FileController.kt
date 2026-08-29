@@ -4,7 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.api.Image
 import net.blueshell.api.file.api.PublicFileUrls
+import net.blueshell.api.file.api.asImage
+import net.blueshell.api.file.domain.NotAPublicImageException
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.core.io.Resource
@@ -35,6 +38,34 @@ class FileController(
         service.findPubliclyReadable(PublicFileUrls.pathOf(directory, filename)),
     )
 
+    /**
+     * A picture meant to be seen, stored so that a save can point at it.
+     *
+     * One endpoint rather than one per record. What a picture ends up on is decided when the
+     * dialog that chose it is saved, so storing it and applying it are separate: choosing in a
+     * dialog and then cancelling leaves the team, the person and the game exactly as they were.
+     *
+     * It admits only kinds that are publicly readable, so it can never be used to stash a
+     * private document behind a route anybody can fetch from.
+     *
+     * The bytes an abandoned dialog leaves behind stay. Storage is addressed by content, the
+     * pictures are small, and counting references across every table that can point at a file
+     * is a larger and more dangerous mechanism than the problem deserves.
+     *
+     * Answers with the same image shape the payloads carry, so the picker draws what was
+     * chosen from exactly what it will later be handed back, and holds its path for the save.
+     */
+    @PostMapping(value = [PublicFileUrls.UPLOAD], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    fun uploadPublicImage(
+        @RequestParam type: FileType,
+        @RequestPart("file") @NotNull(message = "File is required") file: MultipartFile,
+    ): Image {
+        if (!type.publiclyReadable) throw NotAPublicImageException(type)
+        return service.storeMultipart(file, type).asImage()
+    }
+
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
     fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
@@ -58,3 +89,4 @@ class FileController(
         return service.storeMultipart(file, FileType.EVENT_BANNER).asResponse()
     }
 }
+

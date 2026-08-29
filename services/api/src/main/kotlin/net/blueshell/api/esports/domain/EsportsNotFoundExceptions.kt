@@ -32,3 +32,13 @@ class BannerNotFoundException(id: Long) :
  */
 class BannerTeamPlaysAnotherGameException(team: String, game: String) :
     ResponseStatusException(HttpStatus.BAD_REQUEST, "$team does not play ${game}")
+
+/**
+ * A save named a picture that is not in storage.
+ *
+ * Refused rather than ignored: a picture is uploaded on its own and put on a record by the save
+ * that names it, and a save that quietly drops the name leaves whoever chose it looking at a
+ * dialog that closed and a record that did not change.
+ */
+class PictureNotStoredException :
+    ResponseStatusException(HttpStatus.BAD_REQUEST, "That picture is not in storage")

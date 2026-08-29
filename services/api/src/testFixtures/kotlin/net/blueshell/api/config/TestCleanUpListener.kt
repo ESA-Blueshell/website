@@ -65,7 +65,9 @@ class TestCleanUpListener : TestExecutionListener {
             if (tables.isEmpty()) {
                 return@withConnection
             }
-            val reference = REFERENCE_TABLES.filter { it in tables }.associateWith { snapshotOf(conn, it) }
+            val reference = REFERENCE_TABLES
+                .filter { it.table in tables }
+                .associate { it.table to snapshotOf(conn, it) }
 
             conn.autoCommit = false
             try {
@@ -92,10 +94,10 @@ class TestCleanUpListener : TestExecutionListener {
      * every test, so what is captured is the migration's own rows unless a run was killed
      * mid-test — recreating the schema is the cure for that.
      */
-    private fun snapshotOf(conn: java.sql.Connection, table: String): Snapshot =
-        snapshots.getOrPut(table) {
+    private fun snapshotOf(conn: java.sql.Connection, reference: Reference): Snapshot =
+        snapshots.getOrPut(reference.table) {
             conn.createStatement().use { st ->
-                st.executeQuery("SELECT * FROM `$TEST_SCHEMA`.`$table`").use { rs ->
+                st.executeQuery("SELECT * FROM `$TEST_SCHEMA`.`${reference.table}` WHERE ${reference.rows}").use { rs ->
                     val columns = (1..rs.metaData.columnCount).map { rs.metaData.getColumnName(it) }
                     val rows = mutableListOf<List<Any?>>()
                     while (rs.next()) {
@@ -160,9 +162,26 @@ class TestCleanUpListener : TestExecutionListener {
 
     private data class Snapshot(val columns: List<String>, val rows: List<List<Any?>>)
 
+    /** A table the migrations seed, and which of its rows the migrations are responsible for. */
+    private data class Reference(val table: String, val rows: String)
+
     private companion object {
-        /** Rows the migration establishes that other tables point at, restored after every wipe. */
-        val REFERENCE_TABLES = listOf("game_page")
+        /**
+         * Rows the migration establishes that other tables point at, restored after every wipe.
+         *
+         * `users` and `authorities` are here for the service account, which owns the files the
+         * site ships with. Wiping it would leave those records pointing at an uploader that is
+         * not there, so every later test in the run fails for a reason that has nothing to do
+         * with what it was testing. In order: a row in `authorities` names one in `users`.
+         *
+         * Only the rows the migrations left are put back — the snapshot is taken before any
+         * test writes — so accounts a test creates still do not leak into the next one.
+         */
+        val REFERENCE_TABLES = listOf(
+            Reference("game_page", "1 = 1"),
+            Reference("users", "id IN (SELECT user_id FROM authorities WHERE authority = 'SYSTEM')"),
+            Reference("authorities", "authority = 'SYSTEM'"),
+        )
         val snapshots = mutableMapOf<String, Snapshot>()
 
         const val TEST_SCHEMA = "blueshell-test"

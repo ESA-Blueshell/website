@@ -5,10 +5,12 @@ import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import net.blueshell.api.esports.domain.EsportsPictures
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
@@ -22,6 +24,7 @@ class TeamRosterService(
     private val teams: TeamService,
     private val seasons: SeasonService,
     private val fielded: TeamSeasonService,
+    private val pictures: EsportsPictures,
 ) {
     @Transactional(readOnly = true)
     fun findByTeamAndSeason(teamId: Long, seasonId: Long): List<TeamRosterEntry> =
@@ -58,6 +61,7 @@ class TeamRosterService(
         displayName: String?,
         roleTitle: String? = null,
         description: String? = null,
+        icon: String? = null,
     ): TeamRosterEntry {
         val team = teams.findById(teamId)
         val season = seasons.findById(seasonId)
@@ -79,6 +83,7 @@ class TeamRosterService(
                 roleTitle = roleTitle?.trim()?.ifBlank { null },
                 description = description?.trim()?.ifBlank { null },
                 sortIndex = next,
+                icon = pictures.of(icon, FileType.ROSTER_ICON),
             ),
         )
     }
@@ -112,6 +117,7 @@ class TeamRosterService(
                     userId = previous.userId,
                     displayName = previous.displayName,
                     sortIndex = previous.sortIndex,
+                    icon = previous.icon,
                 ),
             )
         }
@@ -127,6 +133,7 @@ class TeamRosterService(
         sortIndex: Int,
         roleTitle: String? = null,
         description: String? = null,
+        icon: String? = null,
     ): TeamRosterEntry {
         val entry = findById(id)
         val trimmed = handle.trim()
@@ -137,6 +144,9 @@ class TeamRosterService(
         entry.roleTitle = roleTitle?.trim()?.ifBlank { null }
         entry.description = description?.trim()?.ifBlank { null }
         entry.sortIndex = sortIndex
+        // Part of the save rather than applied when it was chosen, so cancelling the line-up
+        // leaves the person as they were. Naming no picture takes theirs away.
+        entry.icon = pictures.of(icon, FileType.ROSTER_ICON)
         return entries.save(entry)
     }
 

@@ -8,12 +8,11 @@ import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
-import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
-import net.blueshell.api.shared.security.UserPrincipalMapper
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Nested
@@ -23,11 +22,12 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -61,8 +61,6 @@ class EsportsMediaIT : UserTestSupport() {
     @Autowired
     private lateinit var fileRepository: FileRepository
 
-    @Autowired
-    private lateinit var files: FileService
 
     /** A one-pixel PNG: the smallest thing that is genuinely the content type it claims. */
     private val pngBytes = java.util.Base64.getDecoder().decode(
@@ -137,18 +135,6 @@ class EsportsMediaIT : UserTestSupport() {
         org.assertj.core.api.Assertions.assertThat(process.exitValue()).describedAs(output).isEqualTo(0)
     }
 
-    private fun <T> authenticatedAs(user: User, block: () -> T): T {
-        val principal = UserPrincipalMapper.fromUser(user)
-        val context = SecurityContextHolder.createEmptyContext()
-        context.authentication = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
-        SecurityContextHolder.setContext(context)
-        return try {
-            block()
-        } finally {
-            SecurityContextHolder.clearContext()
-        }
-    }
-
     private fun season(name: String, year: Int): Season = seasons.save(
         Season(
             name = name,
@@ -166,6 +152,84 @@ class EsportsMediaIT : UserTestSupport() {
         )
     }
 
+    /**
+     * A picture put into storage through the one endpoint that stores them, answering where it
+     * went. Nothing is on a record yet: what a picture ends up on is decided by the save that
+     * names it.
+     */
+    private fun upload(admin: User, type: FileType, file: MockMultipartFile): String {
+        val result = mvc.perform(
+            multipart(PublicFileUrls.UPLOAD).file(file).param("type", type.name)
+                .with(bearer(admin)).with(csrfToken()),
+        ).andExpect(status().isCreated).andReturn()
+        return mapper.readTree(result.response.contentAsString)["path"].asText()
+    }
+
+    /** The team as it now stands, poster included — the save the dialog's Save makes. */
+    private fun saveTeam(admin: User, team: Team, poster: String?): ResultActions =
+        mvc.perform(
+            put("/esports/teams/${team.id}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("name" to team.name, "poster" to poster)))
+                .with(bearer(admin)).with(csrfToken()),
+        )
+
+    /** A poster stored and then committed, answering where it is served. */
+    private fun posterOn(admin: User, team: Team, file: MockMultipartFile): String {
+        val stored = upload(admin, FileType.TEAM_POSTER, file)
+        val saved = saveTeam(admin, team, stored).andExpect(status().isOk).andReturn()
+        return mapper.readTree(saved.response.contentAsString)["poster"]["url"].asText()
+    }
+
+    /** The roster entry as it now stands, picture included. */
+    private fun saveEntry(admin: User, entry: TeamRosterEntry, icon: String?): ResultActions =
+        mvc.perform(
+            put("/esports/roster/${entry.id}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf(
+                            "handle" to entry.handle,
+                            "role" to entry.teamRole.name,
+                            "sortIndex" to entry.sortIndex,
+                            "icon" to icon,
+                        ),
+                    ),
+                )
+                .with(bearer(admin)).with(csrfToken()),
+        )
+
+    /** A banner stored and then put behind a page, answering where it is served. */
+    private fun bannerOn(
+        admin: User,
+        game: String,
+        seasonId: Long?,
+        teamId: Long?,
+        file: MockMultipartFile,
+    ): String {
+        val stored = upload(admin, FileType.ESPORTS_BANNER, file)
+        val result = setBanner(admin, game, seasonId, teamId, stored).andExpect(status().isOk).andReturn()
+        return mapper.readTree(result.response.contentAsString)["image"]["url"].asText()
+    }
+
+    private fun setBanner(
+        admin: User,
+        game: String,
+        seasonId: Long?,
+        teamId: Long?,
+        picture: String,
+    ): ResultActions =
+        mvc.perform(
+            post("/esports/banners")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf("game" to game, "seasonId" to seasonId, "teamId" to teamId, "picture" to picture),
+                    ),
+                )
+                .with(bearer(admin)).with(csrfToken()),
+        )
+
     @Nested
     inner class TeamPosters {
         @Test
@@ -173,15 +237,7 @@ class EsportsMediaIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             val team = team("VALORANT", "Poster Team")
 
-            val posted = mvc.perform(
-                multipart("/esports/teams/${team.id}/poster").file(png("poster.png"))
-                    .with(bearer(admin)).with(csrfToken()),
-            )
-                .andExpect(status().isOk)
-                .andExpect(jsonPath("$.poster.url").isNotEmpty)
-                .andReturn()
-
-            val url = mapper.readTree(posted.response.contentAsString)["poster"]["url"].asText()
+            val url = posterOn(admin, team, png("poster.png"))
             org.assertj.core.api.Assertions.assertThat(url).startsWith("/files/public/team-posters/")
             org.assertj.core.api.Assertions.assertThat(url.substringAfterLast('/')).contains(".webp")
 
@@ -198,12 +254,7 @@ class EsportsMediaIT : UserTestSupport() {
         fun `the old row-id public file route is gone`() {
             val admin = createUserWithRole(Role.ADMIN)
             val team = team("VALORANT", "Old Route Team")
-            val posted = mvc.perform(
-                multipart("/esports/teams/${team.id}/poster").file(png("poster.png"))
-                    .with(bearer(admin)).with(csrfToken()),
-            ).andExpect(status().isOk).andReturn()
-
-            val url = mapper.readTree(posted.response.contentAsString)["poster"]["url"].asText()
+            val url = posterOn(admin, team, png("poster.png"))
             val rowId = fileRepository.findByPath(url.removePrefix("/files/public/")).orElseThrow().id
 
             mvc.perform(get("/files/public/$rowId"))
@@ -212,18 +263,15 @@ class EsportsMediaIT : UserTestSupport() {
 
         /**
          * A picture is measured on the way in. The two sides differ so a width reported as a
-         * height would fail rather than pass by coincidence, and the widths it is stored at
-         * are empty because a picture is stored at one width for now.
+         * height would fail rather than pass by coincidence, and this one is narrower than
+         * every width its kind lists, so it is offered at none of them.
          */
         @Test
-        fun `an uploaded poster carries its own size and no widths yet`() {
+        fun `an uploaded poster carries its own size, and a tiny one gets no widths`() {
             val admin = createUserWithRole(Role.ADMIN)
             val team = team("VALORANT", "Measured Team")
 
-            mvc.perform(
-                multipart("/esports/teams/${team.id}/poster").file(png("measured.png", imageOf(6, 4, "png")))
-                    .with(bearer(admin)).with(csrfToken()),
-            )
+            saveTeam(admin, team, upload(admin, FileType.TEAM_POSTER, png("measured.png", imageOf(6, 4, "png"))))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.poster.width").value(6))
                 .andExpect(jsonPath("$.poster.height").value(4))
@@ -235,17 +283,13 @@ class EsportsMediaIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             val team = team("VALORANT", "Large Poster Team")
 
-            val posted = mvc.perform(
-                multipart("/esports/teams/${team.id}/poster").file(jpeg("large-poster.jpg", 3000, 1200))
-                    .with(bearer(admin)).with(csrfToken()),
-            )
+            saveTeam(admin, team, upload(admin, FileType.TEAM_POSTER, jpeg("large-poster.jpg", 3000, 1200)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.poster.url").value(org.hamcrest.Matchers.endsWith(".webp")))
                 .andExpect(jsonPath("$.poster.width").value(2560))
                 .andExpect(jsonPath("$.poster.height").value(1024))
-                .andReturn()
 
-            val url = mapper.readTree(posted.response.contentAsString)["poster"]["url"].asText()
+            val url = "/files/public/" + teams.findById(team.id!!).orElseThrow().poster!!.path
             val served = mvc.perform(get(url))
                 .andExpect(status().isOk)
                 .andExpect(content().contentType("image/webp"))
@@ -279,8 +323,9 @@ class EsportsMediaIT : UserTestSupport() {
             val whole = imageOf(200, 120, "png")
 
             mvc.perform(
-                multipart("/esports/teams/${team.id}/poster")
+                multipart(PublicFileUrls.UPLOAD)
                     .file(png("truncated.png", whole.copyOf(whole.size / 2)))
+                    .param("type", FileType.TEAM_POSTER.name)
                     .with(bearer(admin)).with(csrfToken()),
             ).andExpect(status().isBadRequest)
         }
@@ -290,16 +335,12 @@ class EsportsMediaIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             val team = team("VALORANT", "Narrow Poster Team")
 
-            val posted = mvc.perform(
-                multipart("/esports/teams/${team.id}/poster").file(jpeg("narrow-poster.jpg", 400, 240))
-                    .with(bearer(admin)).with(csrfToken()),
-            )
+            saveTeam(admin, team, upload(admin, FileType.TEAM_POSTER, jpeg("narrow-poster.jpg", 400, 240)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.poster.width").value(400))
                 .andExpect(jsonPath("$.poster.height").value(240))
-                .andReturn()
 
-            val url = mapper.readTree(posted.response.contentAsString)["poster"]["url"].asText()
+            val url = "/files/public/" + teams.findById(team.id!!).orElseThrow().poster!!.path
             val served = mvc.perform(get(url)).andExpect(status().isOk).andReturn()
             org.assertj.core.api.Assertions.assertThat(decodedWebp(served.response.contentAsByteArray).width).isEqualTo(400)
         }
@@ -310,18 +351,13 @@ class EsportsMediaIT : UserTestSupport() {
             val team = team("VALORANT", "Large WebP Poster Team")
             val webp = webpOf(3000, 1200)
 
-            val posted = mvc.perform(
-                multipart("/esports/teams/${team.id}/poster")
-                    .file(MockMultipartFile("file", "large-poster.webp", "image/webp", webp))
-                    .with(bearer(admin)).with(csrfToken()),
-            )
+            val picture = upload(admin, FileType.TEAM_POSTER, MockMultipartFile("file", "large-poster.webp", "image/webp", webp))
+            saveTeam(admin, team, picture)
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.poster.width").value(2560))
                 .andExpect(jsonPath("$.poster.height").value(1024))
-                .andReturn()
 
-            val url = mapper.readTree(posted.response.contentAsString)["poster"]["url"].asText()
-            val served = mvc.perform(get(url)).andExpect(status().isOk).andReturn()
+            val served = mvc.perform(get("/files/public/$picture")).andExpect(status().isOk).andReturn()
             val decoded = decodedWebp(served.response.contentAsByteArray)
             org.assertj.core.api.Assertions.assertThat(decoded.width).isEqualTo(2560)
             org.assertj.core.api.Assertions.assertThat(decoded.height).isEqualTo(1024)
@@ -333,18 +369,13 @@ class EsportsMediaIT : UserTestSupport() {
             val team = team("VALORANT", "WebP Poster Team")
             val webp = webpOf(64, 32)
 
-            val posted = mvc.perform(
-                multipart("/esports/teams/${team.id}/poster")
-                    .file(MockMultipartFile("file", "poster.webp", "image/webp", webp))
-                    .with(bearer(admin)).with(csrfToken()),
-            )
+            val picture = upload(admin, FileType.TEAM_POSTER, MockMultipartFile("file", "poster.webp", "image/webp", webp))
+            saveTeam(admin, team, picture)
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.poster.width").value(64))
                 .andExpect(jsonPath("$.poster.height").value(32))
-                .andReturn()
 
-            val url = mapper.readTree(posted.response.contentAsString)["poster"]["url"].asText()
-            val served = mvc.perform(get(url))
+            val served = mvc.perform(get("/files/public/$picture"))
                 .andExpect(status().isOk)
                 .andExpect(content().contentType("image/webp"))
                 .andReturn()
@@ -352,30 +383,25 @@ class EsportsMediaIT : UserTestSupport() {
         }
 
         /**
-         * The one thing here that is stored rather than posted.
-         *
-         * A mark is a logo, so it is the kind that must not be encoded lossily, and it is also
-         * the only kind with no endpoint of its own yet — the single upload endpoint that will
-         * carry it is #840. Until then the store is the nearest seam to the rule, and the
-         * assertion is still on served bytes rather than on how the encoder was called.
+         * A mark is a logo, so it is the kind that must not be encoded lossily. Asserted on
+         * the served bytes rather than on how the encoder was called: what a viewer gets is
+         * the thing the rule is about.
          */
         @Test
         fun `a game mark is encoded losslessly`() {
             val admin = createUserWithRole(Role.ADMIN)
             val source = transparentPng()
 
-            val stored = authenticatedAs(admin) {
-                files.storeMultipart(
-                    MockMultipartFile("file", "mark.png", MediaType.IMAGE_PNG_VALUE, source),
-                    FileType.GAME_MARK,
-                )
-            }
+            val stored = upload(
+                admin,
+                FileType.GAME_MARK,
+                MockMultipartFile("file", "mark.png", MediaType.IMAGE_PNG_VALUE, source),
+            )
 
-            org.assertj.core.api.Assertions.assertThat(stored.path).startsWith("game-marks/")
-            org.assertj.core.api.Assertions.assertThat(stored.path).endsWith(".webp")
-            org.assertj.core.api.Assertions.assertThat(stored.mediaType).isEqualTo("image/webp")
+            org.assertj.core.api.Assertions.assertThat(stored).startsWith("game-marks/")
+            org.assertj.core.api.Assertions.assertThat(stored).endsWith(".webp")
 
-            val served = mvc.perform(get("/files/public/${stored.path}"))
+            val served = mvc.perform(get("/files/public/$stored"))
                 .andExpect(status().isOk)
                 .andExpect(content().contentType("image/webp"))
                 .andReturn()
@@ -396,9 +422,9 @@ class EsportsMediaIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             val team = team("VALORANT", "Replacing Team")
 
-            val first = uploadPoster(admin, team, png("first.png"))
+            val first = posterOn(admin, team, png("first.png"))
             // Different pixels, or the converted content hash would make the replacement indistinguishable.
-            val second = uploadPoster(admin, team, png("second.png", imageOf(2, 1, "png")))
+            val second = posterOn(admin, team, png("second.png", imageOf(2, 1, "png")))
 
             org.assertj.core.api.Assertions.assertThat(second).isNotEqualTo(first)
             mvc.perform(get("/esports/teams?game=VALORANT").with(bearer(admin)))
@@ -410,42 +436,39 @@ class EsportsMediaIT : UserTestSupport() {
                 )
         }
 
+        /** Naming no picture is what the picker's Remove means once the dialog is saved. */
         @Test
-        fun `a removed poster leaves the team without one`() {
+        fun `a save naming no poster leaves the team without one`() {
             val admin = createUserWithRole(Role.ADMIN)
             val team = team("VALORANT", "Removing Team")
-            uploadPoster(admin, team, png("gone.png"))
+            posterOn(admin, team, png("gone.png"))
 
-            mvc.perform(delete("/esports/teams/${team.id}/poster").with(bearer(admin)).with(csrfToken()))
+            saveTeam(admin, team, null)
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.poster").doesNotExist())
         }
 
+        /**
+         * A save naming a picture nobody stored is refused rather than quietly dropped: a save
+         * that closes the dialog and changes nothing is the one thing that must not happen.
+         */
         @Test
-        fun `a visitor may not upload a poster`() {
-            val team = team("VALORANT", "Guarded Team")
-            mvc.perform(multipart("/esports/teams/${team.id}/poster").file(png("no.png")).with(csrfToken()))
-                .andExpect(status().isUnauthorized)
-        }
-
-        @Test
-        fun `a poster has to be an image`() {
+        fun `a save naming a picture that is not in storage is refused`() {
             val admin = createUserWithRole(Role.ADMIN)
-            val team = team("VALORANT", "Typed Team")
-            val pdf = MockMultipartFile("file", "poster.pdf", MediaType.APPLICATION_PDF_VALUE, pngBytes)
+            val team = team("VALORANT", "Imaginary Poster Team")
 
-            mvc.perform(
-                multipart("/esports/teams/${team.id}/poster").file(pdf)
-                    .with(bearer(admin)).with(csrfToken()),
-            ).andExpect(status().isUnsupportedMediaType)
+            saveTeam(admin, team, "team-posters/nothing-is-here.webp")
+                .andExpect(status().isBadRequest)
         }
 
-        private fun uploadPoster(admin: net.blueshell.api.user.persistence.User, team: Team, file: MockMultipartFile): String {
-            val result = mvc.perform(
-                multipart("/esports/teams/${team.id}/poster").file(file)
-                    .with(bearer(admin)).with(csrfToken()),
-            ).andExpect(status().isOk).andReturn()
-            return mapper.readTree(result.response.contentAsString)["poster"]["url"].asText()
+        /** A poster field takes a poster, so a directory goes on meaning what it says. */
+        @Test
+        fun `a save naming a picture of another kind is refused`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val team = team("VALORANT", "Wrong Kind Team")
+            val mark = upload(admin, FileType.GAME_MARK, png("mark.png"))
+
+            saveTeam(admin, team, mark).andExpect(status().isBadRequest)
         }
     }
 
@@ -459,10 +482,7 @@ class EsportsMediaIT : UserTestSupport() {
             val withIcon = entry(team, season, "hasicon")
             entry(team, season, "noicon")
 
-            mvc.perform(
-                multipart("/esports/roster/${withIcon.id}/icon").file(png("icon.png"))
-                    .with(bearer(admin)).with(csrfToken()),
-            )
+            saveEntry(admin, withIcon, upload(admin, FileType.ROSTER_ICON, png("icon.png")))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.icon.url").isNotEmpty)
 
@@ -473,18 +493,16 @@ class EsportsMediaIT : UserTestSupport() {
         }
 
         @Test
-        fun `a removed icon leaves the entry without one`() {
+        fun `a save naming no picture leaves the entry without one`() {
             val admin = createUserWithRole(Role.ADMIN)
             val season = season("Icon Removal Season", 2032)
             val team = team("CS2", "Icon Removal Team")
             val entry = entry(team, season, "temporary")
 
-            mvc.perform(
-                multipart("/esports/roster/${entry.id}/icon").file(png("icon.png"))
-                    .with(bearer(admin)).with(csrfToken()),
-            ).andExpect(status().isOk)
+            saveEntry(admin, entry, upload(admin, FileType.ROSTER_ICON, png("icon.png")))
+                .andExpect(status().isOk)
 
-            mvc.perform(delete("/esports/roster/${entry.id}/icon").with(bearer(admin)).with(csrfToken()))
+            saveEntry(admin, entry, null)
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.icon").doesNotExist())
         }
@@ -499,7 +517,7 @@ class EsportsMediaIT : UserTestSupport() {
             val team = team("ROCKET_LEAGUE", "Banner Team")
             entry(team, season, "player")
 
-            val url = uploadBanner(admin, "ROCKET_LEAGUE", null, null, png("game.png"))
+            val url = bannerOn(admin, "ROCKET_LEAGUE", null, null, png("game.png"))
 
             mvc.perform(get("/esports/games/ROCKET_LEAGUE?seasonId=${season.id}"))
                 .andExpect(status().isOk)
@@ -516,8 +534,8 @@ class EsportsMediaIT : UserTestSupport() {
             entry(overridden, season, "one")
             entry(plain, season, "two")
 
-            val gameUrl = uploadBanner(admin, "LEAGUE_OF_LEGENDS", null, null, png("g.png"))
-            val teamUrl = uploadBanner(
+            val gameUrl = bannerOn(admin, "LEAGUE_OF_LEGENDS", null, null, png("g.png"))
+            val teamUrl = bannerOn(
                 admin, "LEAGUE_OF_LEGENDS", null, overridden.id, png("t.png", imageOf(3, 2, "png")),
             )
             // Two banners of the same picture share one address, and this test would then
@@ -537,10 +555,10 @@ class EsportsMediaIT : UserTestSupport() {
         }
 
         @Test
-        fun `uploading against a combination that has one replaces it`() {
+        fun `setting one against a combination that has one replaces it`() {
             val admin = createUserWithRole(Role.ADMIN)
-            uploadBanner(admin, "GEOGUESSR", null, null, png("first.png"))
-            uploadBanner(admin, "GEOGUESSR", null, null, png("second.png", imageOf(3, 2, "png")))
+            bannerOn(admin, "GEOGUESSR", null, null, png("first.png"))
+            bannerOn(admin, "GEOGUESSR", null, null, png("second.png", imageOf(3, 2, "png")))
 
             org.assertj.core.api.Assertions.assertThat(banners.findAllByGame("GEOGUESSR")).hasSize(1)
         }
@@ -552,8 +570,8 @@ class EsportsMediaIT : UserTestSupport() {
             val team = team("TRACKMANIA", "Fallback Team")
             entry(team, season, "driver")
 
-            val gameUrl = uploadBanner(admin, "TRACKMANIA", null, null, png("g.png"))
-            uploadBanner(admin, "TRACKMANIA", season.id, null, png("s.png", imageOf(3, 2, "png")))
+            val gameUrl = bannerOn(admin, "TRACKMANIA", null, null, png("g.png"))
+            bannerOn(admin, "TRACKMANIA", season.id, null, png("s.png", imageOf(3, 2, "png")))
 
             val seasonBanner = banners.findAllByGame("TRACKMANIA").single { it.seasonId == season.id }
             mvc.perform(delete("/esports/banners/${seasonBanner.id}").with(bearer(admin)).with(csrfToken()))
@@ -581,27 +599,9 @@ class EsportsMediaIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             val elsewhere = team("CS2", "Elsewhere Team")
 
-            mvc.perform(
-                multipart("/esports/banners").file(png("wrong.png"))
-                    .param("game", "VALORANT")
-                    .param("teamId", elsewhere.id.toString())
-                    .with(bearer(admin)).with(csrfToken()),
-            ).andExpect(status().isBadRequest)
-        }
-
-        private fun uploadBanner(
-            admin: net.blueshell.api.user.persistence.User,
-            game: String,
-            seasonId: Long?,
-            teamId: Long?,
-            file: MockMultipartFile,
-        ): String {
-            val request = multipart("/esports/banners").file(file).param("game", game)
-            seasonId?.let { request.param("seasonId", it.toString()) }
-            teamId?.let { request.param("teamId", it.toString()) }
-            val result = mvc.perform(request.with(bearer(admin)).with(csrfToken()))
-                .andExpect(status().isOk).andReturn()
-            return mapper.readTree(result.response.contentAsString)["image"]["url"].asText()
+            val picture = upload(admin, FileType.ESPORTS_BANNER, png("wrong.png"))
+            setBanner(admin, "VALORANT", null, elsewhere.id, picture)
+                .andExpect(status().isBadRequest)
         }
     }
 
@@ -621,38 +621,17 @@ class EsportsMediaIT : UserTestSupport() {
             val team = team("VALORANT", "Anonymous Team")
             val member = entry(team, season, "anonymous")
 
-            val poster = uploadedUrl(
-                multipart("/esports/teams/${team.id}/poster").file(png("poster.png")),
-                admin,
-                "poster",
-            )
-            val icon = uploadedUrl(
-                multipart("/esports/roster/${member.id}/icon").file(png("icon.png", imageOf(4, 4, "png"))),
-                admin,
-                "icon",
-            )
-            val banner = uploadedUrl(
-                multipart("/esports/banners").file(png("banner.png", imageOf(8, 5, "png")))
-                    .param("game", "VALORANT"),
-                admin,
-                "image",
-            )
+            val poster = posterOn(admin, team, png("poster.png"))
+            val iconResult = saveEntry(admin, member, upload(admin, FileType.ROSTER_ICON, png("icon.png", imageOf(4, 4, "png"))))
+                .andExpect(status().isOk).andReturn()
+            val icon = mapper.readTree(iconResult.response.contentAsString)["icon"]["url"].asText()
+            val banner = bannerOn(admin, "VALORANT", null, null, png("banner.png", imageOf(8, 5, "png")))
 
             for (url in listOf(poster, icon, banner)) {
                 mvc.perform(get(url))
                     .andExpect(status().isOk)
                     .andExpect(content().contentType("image/webp"))
             }
-        }
-
-        private fun uploadedUrl(
-            request: org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder,
-            admin: User,
-            field: String,
-        ): String {
-            val result = mvc.perform(request.with(bearer(admin)).with(csrfToken()))
-                .andExpect(status().isOk).andReturn()
-            return mapper.readTree(result.response.contentAsString)[field]["url"].asText()
         }
 
         @Test

@@ -4,8 +4,6 @@ import ConfirmDialog from "./ConfirmDialog.vue"
 import ImagePicker from "./ImagePicker.vue"
 import {
   addToRoster,
-  clearRosterIcon,
-  clearTeamPoster,
   dropRosterEntry,
   dropTeam,
   linkRosterMember,
@@ -13,16 +11,14 @@ import {
   loadRoster,
   loadTeamSeasons,
   saveRosterEntry,
-  renameTeam,
-  setRosterIcon,
-  setTeamPoster,
+  saveTeamAs,
   type EsportsImage,
   type Member,
   type RosterEntry,
   type Season,
   type TeamRole,
 } from "../adapters/esports"
-import {TeamRole as TeamRoleEnum} from "@/services/api"
+import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
 
 /**
  * Who played for one team in one season, and what is said about each of them.
@@ -121,84 +117,18 @@ const rowOf = (entry: RosterEntry): Row => ({
 })
 
 /**
- * The poster and the icons, which unlike everything else here take effect as they are chosen.
+ * The team's poster, held like everything else here until the save.
  *
- * A file is not a draft. Holding one until the save would mean keeping the bytes in the page
- * and uploading them at a moment the visitor has stopped thinking about the picture, and a
- * failure then would be reported against a save that otherwise worked.
+ * Choosing one puts it into storage straight away — the picker has to draw it, and it cannot
+ * draw bytes nobody has stored — but nothing is on the team until Save. Cancelling therefore
+ * leaves the poster as it was along with the name and the line-up, rather than keeping the
+ * picture and discarding the rest of the form.
  */
 const poster = ref<EsportsImage | null>(null)
-const posterBusy = ref(false)
-const iconBusy = ref<number | null>(null)
 
-/*
- * The poster is followed on its own rather than only being read when the editor opens.
- * Uploading one reloads the page underneath, which re-runs the watcher below and would
- * otherwise reset the picker to what the prop said before the upload landed.
- */
-watch(() => props.teamPoster, (image) => {
-  poster.value = image ?? null
-})
-
-const uploadPoster = async (file: File) => {
-  const teamId = props.teamId
-  if (teamId == null || posterBusy.value) return
-  posterBusy.value = true
-  teamFailure.value = null
-  try {
-    poster.value = (await setTeamPoster(teamId, file))?.poster ?? null
-    emit("saved")
-  } catch {
-    teamFailure.value = "That poster could not be uploaded."
-  } finally {
-    posterBusy.value = false
-  }
-}
-
-const removePoster = async () => {
-  const teamId = props.teamId
-  if (teamId == null || posterBusy.value) return
-  posterBusy.value = true
-  teamFailure.value = null
-  try {
-    poster.value = (await clearTeamPoster(teamId))?.poster ?? null
-    emit("saved")
-  } catch {
-    teamFailure.value = "That poster could not be removed."
-  } finally {
-    posterBusy.value = false
-  }
-}
-
-const uploadIcon = async (index: number, file: File) => {
+const stageIcon = (index: number, picture: EsportsImage | null) => {
   const row = rows.value[index]
-  // A row nobody has saved yet has no entry to hang a picture on.
-  if (!row?.id || iconBusy.value !== null) return
-  iconBusy.value = row.id
-  failure.value = null
-  try {
-    row.icon = (await setRosterIcon(row.id, file))?.icon ?? null
-    emit("saved")
-  } catch {
-    failure.value = "That picture could not be uploaded."
-  } finally {
-    iconBusy.value = null
-  }
-}
-
-const removeIcon = async (index: number) => {
-  const row = rows.value[index]
-  if (!row?.id || iconBusy.value !== null) return
-  iconBusy.value = row.id
-  failure.value = null
-  try {
-    row.icon = (await clearRosterIcon(row.id))?.icon ?? null
-    emit("saved")
-  } catch {
-    failure.value = "That picture could not be removed."
-  } finally {
-    iconBusy.value = null
-  }
+  if (row) row.icon = picture
 }
 
 watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open, teamId, seasonId]) => {
@@ -221,7 +151,6 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
 }, {immediate: true})
 
 const add = () => {
-  // No icon: there is no entry to hang one on until this row has been saved.
   rows.value = [...rows.value, {
     id: null, handle: "", role: TeamRoleEnum.PLAYER, roleTitle: "", description: "", userId: null,
     displayName: "", icon: null,
@@ -328,14 +257,17 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    // The team's own name and banner first: a line-up written against a team that was
-    // meant to be renamed would leave the rename half-applied if anything after it failed.
-    if (draftName.value.trim() !== props.teamName || (draftImage.value.trim() || null) !== (props.teamImage ?? null)) {
-      const renamed = await renameTeam(teamId, draftName.value.trim(), draftImage.value.trim() || null)
-      if (!renamed.ok) {
-        failure.value = renamed.reason
-        return
-      }
+    // The team itself first — its name, its bundled art and its poster. A line-up written
+    // against a team that was meant to be renamed would leave the rename half-applied if
+    // anything after it failed.
+    const saved = await saveTeamAs(teamId, {
+      name: draftName.value.trim(),
+      image: draftImage.value.trim() || null,
+      poster: poster.value?.path ?? null,
+    })
+    if (!saved.ok) {
+      failure.value = saved.reason
+      return
     }
 
     for (const id of removed.value) await dropRosterEntry(id)
@@ -347,6 +279,7 @@ const submit = async () => {
         roleTitle: row.roleTitle.trim() || null,
         description: row.description.trim() || null,
         sortIndex: index,
+        icon: row.icon?.path ?? null,
       }
       if (row.id == null) {
         await addToRoster(teamId, {
@@ -404,14 +337,13 @@ const submit = async () => {
           type="text"
         >
       </div>
-      <!-- Applies as it is chosen, unlike the two fields above, which wait for the save. -->
+      <!-- Held until the save, like the two fields above it. -->
       <image-picker
-        :busy="posterBusy"
+        :kind="FileType.TEAM_POSTER"
         label="Poster"
+        :picture="poster"
         testid="lineup-team-poster"
-        :url="poster?.url ?? null"
-        @clear="removePoster"
-        @pick="uploadPoster"
+        @update:picture="poster = $event"
       />
       <p
         v-if="teamFailure"
@@ -444,13 +376,11 @@ const submit = async () => {
       :data-testid="`lineup-row-${row.id ?? `new-${index}`}`"
     >
       <image-picker
-        v-if="row.id"
-        :busy="iconBusy === row.id"
+        :kind="FileType.ROSTER_ICON"
         label="Picture"
+        :picture="row.icon"
         :testid="`lineup-icon-${index}`"
-        :url="row.icon?.url ?? null"
-        @clear="removeIcon(index)"
-        @pick="uploadIcon(index, $event)"
+        @update:picture="stageIcon(index, $event)"
       />
       <div class="lineup__line">
         <input

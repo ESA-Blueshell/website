@@ -11,11 +11,14 @@ interface TeamRepository : BaseRepository<Team, Long> {
      * A game's teams, the posters fetched with them.
      *
      * The fetch is load-bearing rather than tidy. A team's response carries the poster's own
-     * size, and reading that initialises the association — so without this the list runs a
-     * query per team. It would not fail either: lazy loading outside a transaction is enabled,
-     * so the only symptom is the queries.
+     * size and the widths it is stored at, and reading those initialises the association — so
+     * without this the list runs two queries per team. It would not fail either: lazy loading
+     * outside a transaction is enabled, so the only symptom is the queries.
      */
-    @Query("SELECT t FROM Team t LEFT JOIN FETCH t.poster WHERE t.game = :game ORDER BY t.name ASC")
+    @Query(
+        "SELECT t FROM Team t LEFT JOIN FETCH t.poster p LEFT JOIN FETCH p._renditions " +
+            "WHERE t.game = :game ORDER BY t.name ASC",
+    )
     fun findAllByGameOrderByNameAsc(@Param("game") game: String): List<Team>
 
     fun findByGameAndNameIgnoreCase(game: String, name: String): Team?

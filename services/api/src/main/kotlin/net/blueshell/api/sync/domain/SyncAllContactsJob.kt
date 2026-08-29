@@ -3,6 +3,7 @@ package net.blueshell.api.sync.domain
 import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import org.slf4j.LoggerFactory
@@ -28,7 +29,10 @@ class SyncAllContactsJob(
     override val jobType: String = ContactJobs.SyncAllContacts.type
 
     override fun handlePayload(payload: ContactJobs.SyncAllContactsPayload) {
-        val users = userService.findAll()
+        // The service account is the site itself rather than somebody who reads mail. It owns
+        // the files the repository ships with, and syncing it would put an address nobody
+        // answers on the mailing list.
+        val users = userService.findAll().filterNot { it.hasRole(Role.SYSTEM) }
         log.info("Enqueueing per-user contact sync jobs for {} users", users.size)
         users.forEach { user ->
             runCatching {

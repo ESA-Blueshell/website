@@ -1,8 +1,8 @@
 package net.blueshell.api.file.domain
 
-import net.blueshell.api.esports.persistence.Team
-import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.file.persistence.FileRepository
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -31,9 +31,6 @@ class StoredImageDimensionsBackfillIT : UserTestSupport() {
     private lateinit var files: FileRepository
 
     @Autowired
-    private lateinit var teams: TeamRepository
-
-    @Autowired
     private lateinit var backfill: StoredImageDimensionsBackfill
 
     private fun pngOf(width: Int, height: Int): ByteArray =
@@ -44,14 +41,13 @@ class StoredImageDimensionsBackfillIT : UserTestSupport() {
     /** Stores a picture the way one is actually stored, and answers with the record. */
     private fun storedPoster(width: Int, height: Int): Long {
         val admin = createUserWithRole(Role.ADMIN)
-        val team = teams.save(Team(game = "VALORANT", name = "Backfill Team ${System.nanoTime()}"))
         val posted = mvc.perform(
-            multipart("/esports/teams/${team.id}/poster")
+            multipart(PublicFileUrls.UPLOAD)
                 .file(MockMultipartFile("file", "poster.png", MediaType.IMAGE_PNG_VALUE, pngOf(width, height)))
+                .param("type", FileType.TEAM_POSTER.name)
                 .with(bearer(admin)).with(csrfToken()),
-        ).andExpect(status().isOk).andReturn()
-        val path = mapper.readTree(posted.response.contentAsString)["poster"]["url"]
-            .asText().removePrefix("/files/public/")
+        ).andExpect(status().isCreated).andReturn()
+        val path = mapper.readTree(posted.response.contentAsString)["path"].asText()
         return files.findByPath(path).orElseThrow().id!!
     }
 

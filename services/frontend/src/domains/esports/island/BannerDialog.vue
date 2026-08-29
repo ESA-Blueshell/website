@@ -7,16 +7,18 @@ import {
   loadBanners,
   setBanner,
   type EsportsBanner,
+  type EsportsImage,
   type Game,
   type Season,
 } from "../adapters/esports"
+import {FileType} from "@/services/api"
 
 /**
  * The banners behind a game's pages, at each of the levels one can be set for.
  *
  * The levels are shown together rather than one at a time because which of them a page ends
- * up with is decided by comparing them: an upload against the game is invisible on a team
- * that has its own, and that is only obvious with both in front of you.
+ * up with is decided by comparing them: a picture set for the game is invisible on a team that
+ * has its own, and that is only obvious with both in front of you.
  */
 defineOptions({name: "BannerDialog"})
 
@@ -90,21 +92,6 @@ watch(() => [props.open, props.game] as const, ([open]) => {
   if (open) void read()
 }, {immediate: true})
 
-const upload = async (level: Level, file: File) => {
-  if (busy.value) return
-  busy.value = level.key
-  failure.value = null
-  try {
-    await setBanner(props.game, file, level.seasonId, level.teamId)
-    await read()
-    emit("changed")
-  } catch {
-    failure.value = "That banner could not be uploaded."
-  } finally {
-    busy.value = null
-  }
-}
-
 const remove = async (level: Level) => {
   const banner = at(level)
   if (!banner || busy.value) return
@@ -116,6 +103,29 @@ const remove = async (level: Level) => {
     emit("changed")
   } catch {
     failure.value = "That banner could not be removed."
+  } finally {
+    busy.value = null
+  }
+}
+
+/**
+ * A picture chosen for one level, put behind that level.
+ *
+ * Applied as it is chosen rather than held, because a level is the only thing this dialog
+ * edits: there is no name or colour beside it for a Save to commit it along with. Clearing a
+ * level removes the banner set there, which is what falls the page back to the wider one.
+ */
+const apply = async (level: Level, picture: EsportsImage | null) => {
+  if (busy.value) return
+  if (!picture) return remove(level)
+  busy.value = level.key
+  failure.value = null
+  try {
+    await setBanner(props.game, picture.path, level.seasonId, level.teamId)
+    await read()
+    emit("changed")
+  } catch {
+    failure.value = "That banner could not be set."
   } finally {
     busy.value = null
   }
@@ -150,11 +160,11 @@ const remove = async (level: Level) => {
     >
       <image-picker
         :busy="busy === level.key"
+        :kind="FileType.ESPORTS_BANNER"
         :label="level.label"
+        :picture="at(level)?.image ?? null"
         :testid="`banner-${level.key}`"
-        :url="at(level)?.image.url ?? null"
-        @clear="remove(level)"
-        @pick="upload(level, $event)"
+        @update:picture="apply(level, $event)"
       />
     </div>
 

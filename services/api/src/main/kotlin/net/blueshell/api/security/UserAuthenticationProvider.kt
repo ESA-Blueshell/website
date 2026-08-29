@@ -27,6 +27,14 @@ class UserAuthenticationProvider(
             throw BadCredentialsException("Invalid credentials", ex)
         }
 
+        // Before anything else about the account is looked at. The service account is the site
+        // itself, it holds a role that inherits administrator, and nobody signs in as it — so
+        // enabling it or resetting its password must not be enough to get in. Refused as bad
+        // credentials rather than as disabled, because which accounts are not people is not
+        // something a sign-in page has any business telling whoever is trying.
+        if (user.isServiceAccount) {
+            throw BadCredentialsException("Invalid credentials")
+        }
         if (!user.isEnabled) {
             throw DisabledException("User is disabled")
         }

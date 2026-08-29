@@ -852,6 +852,8 @@ export enum FileType {
     EVENT_BANNER = 'EVENT_BANNER',
     EVENT_PICTURE = 'EVENT_PICTURE',
     SPONSOR_PICTURE = 'SPONSOR_PICTURE',
+    GAME_BANNER = 'GAME_BANNER',
+    GAME_MARK = 'GAME_MARK',
     TEAM_POSTER = 'TEAM_POSTER',
     ESPORTS_BANNER = 'ESPORTS_BANNER',
     ROSTER_ICON = 'ROSTER_ICON'
@@ -5511,10 +5513,11 @@ export type ApproveEventResponse = ApproveEventResponses[keyof ApproveEventRespo
 export type DownloadPublicFileData = {
     body?: never;
     path: {
-        id: number;
+        directory: string;
+        filename: string;
     };
     query?: never;
-    url: '/files/public/{id}';
+    url: '/files/public/{directory}/{filename}';
 };
 
 export type DownloadPublicFileErrors = {

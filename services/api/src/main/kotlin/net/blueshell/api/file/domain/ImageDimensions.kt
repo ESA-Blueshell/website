@@ -6,6 +6,8 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.imageio.ImageIO
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 /**
  * How large a stored picture is, read from the picture itself.
@@ -18,13 +20,35 @@ import javax.imageio.ImageIO
  * an answer rather than a failure: the file is still stored and still served, it is simply
  * drawn without its space reserved. It is never a reason to refuse an upload.
  *
- * WebP is one of those formats — the platform registers no reader for it. Nothing stored today
- * is WebP, and the conversion work that makes everything WebP knows the size it produced, so
- * that records the size rather than measuring it back off the disk.
+ * WebP is read from its container header directly, because the platform registers no ImageIO
+ * reader for it.
  */
 object ImageDimensions {
 
-    data class Size(val width: Int, val height: Int)
+    data class Size(val width: Int, val height: Int) {
+
+        /** The edge a kind's ceiling governs. */
+        val longestEdge: Int get() = max(width, height)
+
+        /**
+         * This size brought under [maxEdge], keeping its shape.
+         *
+         * A size already within the ceiling is returned as it is, because nothing is upscaled:
+         * a picture narrower than what its kind admits keeps its own width. An edge that
+         * rounds below one pixel is held at one, so an extreme panorama still gives the
+         * encoder a target it will accept.
+         */
+        fun fittedWithin(maxEdge: Int): Size {
+            val edge = longestEdge
+            if (edge <= maxEdge) return this
+
+            val ratio = maxEdge.toDouble() / edge.toDouble()
+            return Size(
+                width = max(1, (width * ratio).roundToInt()),
+                height = max(1, (height * ratio).roundToInt()),
+            )
+        }
+    }
 
     /**
      * Whether a file of this media type is worth opening for a size.
@@ -41,7 +65,11 @@ object ImageDimensions {
     /** The size of a stored file, or nothing where it is missing or cannot be read. */
     fun of(path: Path): Size? =
         try {
-            if (Files.exists(path)) Files.newInputStream(path).use(::of) else null
+            if (Files.exists(path)) {
+                WebpDimensions.of(path) ?: Files.newInputStream(path).use(::of)
+            } else {
+                null
+            }
         } catch (e: IOException) {
             log.warn("Could not read the size of a stored picture: {}", e.message)
             null

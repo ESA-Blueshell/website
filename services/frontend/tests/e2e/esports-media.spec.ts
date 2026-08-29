@@ -48,7 +48,7 @@ test.describe("posters, icons and banners", () => {
     await choose(page, "lineup-team-poster")
 
     const preview = page.getByTestId("lineup-team-poster-preview")
-    await expect(preview).toHaveAttribute("src", /\/files\/public\/\d+/)
+    await expect(preview).toHaveAttribute("src", /\/files\/public\/team-posters\/[^/]+\.webp/)
     await expect.poll(() => loaded(page, "lineup-team-poster-preview")).toBe(true)
   })
 

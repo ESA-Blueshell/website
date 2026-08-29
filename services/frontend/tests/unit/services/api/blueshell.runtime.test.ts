@@ -259,9 +259,10 @@ describe("blueshell runtime csrf behavior", () => {
 })
 
 describe("apiUrl", () => {
-  // The api answers with paths of its own, such as /files/public/1, because it cannot know
-  // what sits in front of it. Left bare, such a path resolves against the page's origin —
-  // the frontend, not the api — which is how every uploaded esports image came to 404.
+  // The api answers with paths of its own, such as
+  // /files/public/team-posters/hash.webp, because it cannot know what sits in front of it.
+  // Left bare, such a path resolves against the page's origin — the frontend, not the api —
+  // which is how every uploaded esports image came to 404.
   beforeEach(() => {
     vi.stubEnv("VITE_APP_URL", "https://esa-blueshell.nl/api")
   })
@@ -273,7 +274,7 @@ describe("apiUrl", () => {
   })
 
   it("puts a path the api handed back onto the api's own base", () => {
-    expect(apiUrl("/files/public/1")).toBe("https://esa-blueshell.nl/api/files/public/1")
+    expect(apiUrl("/files/public/team-posters/one.webp")).toBe("https://esa-blueshell.nl/api/files/public/team-posters/one.webp")
   })
 
   it("leaves an absolute url alone, so resolving twice cannot corrupt one", () => {
@@ -284,12 +285,12 @@ describe("apiUrl", () => {
 
   it("joins with exactly one slash however the base and the path are spelled", () => {
     vi.stubEnv("VITE_APP_URL", "https://esa-blueshell.nl/api/")
-    expect(apiUrl("/files/public/2")).toBe("https://esa-blueshell.nl/api/files/public/2")
-    expect(apiUrl("files/public/2")).toBe("https://esa-blueshell.nl/api/files/public/2")
+    expect(apiUrl("/files/public/roster-icons/two.webp")).toBe("https://esa-blueshell.nl/api/files/public/roster-icons/two.webp")
+    expect(apiUrl("files/public/roster-icons/two.webp")).toBe("https://esa-blueshell.nl/api/files/public/roster-icons/two.webp")
   })
 
   it("resolves against the page's own origin when no api url is configured", () => {
     vi.stubEnv("VITE_APP_URL", "")
-    expect(apiUrl("/files/public/3")).toBe(`${window.location.origin}/api/files/public/3`)
+    expect(apiUrl("/files/public/esports-banners/three.webp")).toBe(`${window.location.origin}/api/files/public/esports-banners/three.webp`)
   })
 })

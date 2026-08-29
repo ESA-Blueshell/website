@@ -40,7 +40,7 @@ data class Image(
  * fills this in arrives with the work that derives it.
  */
 fun File.asImage(): Image = Image(
-    url = PublicFileUrls.of(id!!),
+    url = PublicFileUrls.of(this),
     width = width,
     height = height,
 )

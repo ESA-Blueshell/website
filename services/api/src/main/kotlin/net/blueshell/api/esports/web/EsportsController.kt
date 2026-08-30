@@ -54,7 +54,12 @@ class EsportsController(
      */
     @PermitAll
     @GetMapping("/games")
-    fun findGamePages(): List<GamePageResponse> = gamePages.findAll().map { it.asResponse() }
+    fun findGamePages(): List<GamePageResponse> {
+        // Which games the association currently plays is derived rather than stored, so it is
+        // read once for the whole list rather than asked of each row.
+        val played = fielded.currentlyPlayed()
+        return gamePages.findAll().map { it.asResponse(played.contains(it.game)) }
+    }
 
     /** A game the association has started playing. Its page answers straight away. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
@@ -78,8 +83,7 @@ class EsportsController(
             banner = request.banner,
             icon = request.icon,
             sortIndex = request.sortIndex,
-            fielded = request.fielded,
-        ).asResponse()
+        ).asResponse(fielded.currentlyPlayed().contains(game))
 
     /** What a game holds, so the offer to remove it can say what goes with it. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")

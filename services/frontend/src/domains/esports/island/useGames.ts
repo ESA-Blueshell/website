@@ -48,7 +48,7 @@ let asked: Promise<GameRecord[]> | null = null
 
 export function useGames(): {
   games: Ref<GameRecord[]>
-  fielded: ComputedRef<GameRecord[]>
+  current: ComputedRef<GameRecord[]>
   ready: Promise<GameRecord[]>
   identityOf: (game: Game | string) => GameIdentity
   recordOf: (game: Game | string) => GameRecord | null
@@ -66,7 +66,7 @@ export function useGames(): {
 
   return {
     games: records,
-    fielded: computed(() => records.value.filter(one => one.fielded)),
+    current: computed(() => records.value.filter(one => one.current)),
     ready: asked,
     identityOf: (game) => {
       const record = recordOf(game)

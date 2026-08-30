@@ -42,6 +42,10 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
 
     fun countBySeasonId(seasonId: Long): Long
 
+    /** The games a team was fielded in across any of these seasons. */
+    @Query("SELECT DISTINCT ts.game FROM TeamSeason ts WHERE ts.season.id IN :seasonIds")
+    fun gamesFieldedIn(@Param("seasonIds") seasonIds: Collection<Long>): List<String>
+
     /** The seasons one team was fielded in, newest first. */
     @Query("SELECT ts FROM TeamSeason ts JOIN FETCH ts.season s WHERE ts.team.id = :teamId ORDER BY s.startDate DESC")
     fun findAllByTeamId(@Param("teamId") teamId: Long): List<TeamSeason>

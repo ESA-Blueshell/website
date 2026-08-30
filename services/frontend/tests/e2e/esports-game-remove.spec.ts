@@ -52,7 +52,7 @@ test.describe("removing a game", () => {
     await expect(page.getByTestId("game-dialog-failure")).toContainText("could not be read")
   })
 
-  test("a game holding teams offers the softer act instead", async ({page, context}) => {
+  test("a game holding teams says what it holds and that its history stays", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
@@ -60,7 +60,9 @@ test.describe("removing a game", () => {
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
 
-    await expect(page.getByTestId("confirm-question")).toContainText("still fielded")
+    // There is no softer act to offer any more: a game leaves the front of the site by not
+    // being entered in a season, which is a thing that happens rather than a thing to press.
+    await expect(page.getByTestId("confirm-question")).toContainText("cannot be removed")
     await expect(page.getByTestId("confirm-question")).toContainText("stays readable")
   })
 
@@ -105,9 +107,9 @@ test.describe("removing a game", () => {
     await installApiMocks(page, {
       esportsGames: [
         {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null,
-          intro: null, sortIndex: 1, fielded: true},
+          intro: null, sortIndex: 1, current: true},
         {game: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
-          intro: null, sortIndex: 2, fielded: true},
+          intro: null, sortIndex: 2, current: true},
       ],
       esportsTeams: [],
     })
@@ -128,9 +130,9 @@ test.describe("removing a game", () => {
     await installApiMocks(page, {
       esportsGames: [
         {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null,
-          intro: null, sortIndex: 1, fielded: true},
+          intro: null, sortIndex: 1, current: true},
         {game: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
-          intro: null, sortIndex: 2, fielded: true},
+          intro: null, sortIndex: 2, current: true},
       ],
       esportsTeams: [],
     })

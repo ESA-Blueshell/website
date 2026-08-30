@@ -15,7 +15,6 @@ CREATE TABLE game_page (
     slug          VARCHAR(64)  NOT NULL,
     intro         TEXT         NULL,
     sort_index    INT          NOT NULL DEFAULT 0,
-    fielded       BIT(1)       NOT NULL DEFAULT b'1',
     version       BIGINT       NOT NULL DEFAULT 0,
     created_at    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     created_by_id BIGINT       NULL,
@@ -31,19 +30,20 @@ CREATE TABLE game_page (
 
 -- The slugs are the addresses the router already answers to, so every link that exists keeps
 -- working. The copy is what each page already said. Trackmania is given the address it never
--- had; CS:GO and Smash are recorded as no longer fielded.
-INSERT INTO game_page (game, slug, sort_index, fielded, intro) VALUES
-('VALORANT', 'valorant', 1, b'1',
+-- had. Whether the association still plays one is not recorded: it is derived from the
+-- seasons, where a team playing it is what says so.
+INSERT INTO game_page (game, slug, sort_index, intro) VALUES
+('VALORANT', 'valorant', 1,
  'With shooters'' prevalence in the global esports scene, not only do we have a CS team, but also multiple Valorant teams. They''ll be battling it out within the dutch Valorant esports scene. Below you can find our competitive Valorant teams.'),
-('CS2', 'counter-strike-2', 2, b'1',
+('CS2', 'counter-strike-2', 2,
  'With shooters'' prevalence in the global esports scene, Blueshell Esports''s CS2 teams are trying to climb up the charts with those sweet headshots! Below you can find our competitive CS2 team(s).'),
-('LEAGUE_OF_LEGENDS', 'league-of-legends', 3, b'1',
+('LEAGUE_OF_LEGENDS', 'league-of-legends', 3,
  'As it is around the globe, League of Legends as a competitive ground holds a special place in Blueshell Esports. Below you can find our competitive League of Legends team(s).'),
-('ROCKET_LEAGUE', 'rocketleague', 4, b'1',
+('ROCKET_LEAGUE', 'rocketleague', 4,
  'This year we have another new game Blueshell will compete in. A new rocket league team has been created! They will be joining tournaments representing Blueshell and compete in DSL.'),
-('GEOGUESSR', 'geoguessr', 5, b'1',
+('GEOGUESSR', 'geoguessr', 5,
  'Geoguessr is one of Blueshell Esports'' newest competitive titles. Our players test their geographical knowledge and quick decision-making in community events and tournaments, proudly representing Blueshell esports.'),
-('TRACKMANIA', 'trackmania', 6, b'1',
+('TRACKMANIA', 'trackmania', 6,
  'We have two players playing under the Blueshell banner for multiple Trackmania tournaments, most notably in the regionals of the Trackmania World Tour circuit. Aside from that we have multiple players sporting our club tag, competing in whatever tournament happens to be active.'),
-('CSGO', 'counter-strike-global-offensive', 7, b'0', NULL),
-('SMASH', 'super-smash-bros', 8, b'0', NULL);
+('CSGO', 'counter-strike-global-offensive', 7, NULL),
+('SMASH', 'super-smash-bros', 8, NULL);

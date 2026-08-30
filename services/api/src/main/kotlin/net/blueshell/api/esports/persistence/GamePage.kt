@@ -21,9 +21,14 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
  * accent, the icon and the banner were written into the frontend, so a game could not be added
  * without a deploy however complete its row was.
  *
+ * Whether the association still plays it is not written down here. It was a flag somebody set,
+ * beside season records that answered the same question more precisely, and two sources of one
+ * claim drift. It is derived instead: a game is current when a team played it in the season we
+ * are in or the one before it.
+ *
  * Removal is real rather than soft, unlike everything else on these pages. A game holding a team
- * cannot be removed at all — it is marked no longer fielded instead, which keeps its history — so
- * the only game that ever goes is one that holds nothing and has none to keep. Its code is also
+ * cannot be removed at all, so the only game that ever goes is one that holds nothing and has
+ * none to keep. Its code is also
  * unique across every row, since that is what a team and a game account point at, and a soft
  * delete would hold that code against a game added by mistake for good.
  *
@@ -86,7 +91,4 @@ class GamePage(
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,
 
-    /** Whether a team is still fielded in it. A retired game keeps all its history. */
-    @Column(name = "fielded", nullable = false)
-    var fielded: Boolean = true,
 ) : AuditedAutoIdEntity()

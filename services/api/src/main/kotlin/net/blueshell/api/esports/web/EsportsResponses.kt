@@ -44,8 +44,8 @@ data class GamePageResponse(
     val intro: String?,
     @Schema(description = "Where the game sits among the others")
     val sortIndex: Int,
-    @Schema(description = "Whether the association still fields a team in it")
-    val fielded: Boolean,
+    @Schema(description = "Whether the association currently plays it: a team played it this season or last")
+    val current: Boolean,
 )
 
 @Schema(description = "One person on a team's roster, as the public pages show them")

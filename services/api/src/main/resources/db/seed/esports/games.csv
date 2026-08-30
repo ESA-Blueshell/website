@@ -1,9 +1,9 @@
-game,name,slug,accent,sort_index,fielded,intro
-VALORANT,Valorant,valorant,#ff4655,1,true,"With shooters’ prevalence in the global esports scene, not only do we have a CS team, but also multiple Valorant teams. They'll be battling it out within the dutch Valorant esports scene. Below you can find our competitive Valorant teams."
-CS2,Counter-Strike 2,counter-strike-2,#e8842a,2,true,"With shooters’ prevalence in the global esports scene, Blueshell Esports's CS2 teams are trying to climb up the charts with those sweet headshots! Below you can find our competitive CS2 team(s)."
-LEAGUE_OF_LEGENDS,League of Legends,league-of-legends,#c8963c,3,true,"As it is around the globe, League of Legends as a competitive ground holds a special place in Blueshell Esports. Below you can find our competitive League of Legends team(s)."
-ROCKET_LEAGUE,Rocket League,rocketleague,#1183d6,4,true,This year we have another new game Blueshell will compete in. A new rocket league team has been created! They will be joining tournaments representing Blueshell and compete in DSL.
-GEOGUESSR,GeoGuessr,geoguessr,#6cbf3f,5,true,"Geoguessr is one of Blueshell Esports' newest competitive titles. Our players test their geographical knowledge and quick decision-making in community events and tournaments, proudly representing Blueshell esports."
-TRACKMANIA,Trackmania,trackmania,,6,true,"We have two players playing under the Blueshell banner for multiple Trackmania tournaments, most notably in the regionals of the Trackmania World Tour circuit. Aside from that we have multiple players sporting our club tag, competing in whatever tournament happens to be active."
-CSGO,CS:GO,counter-strike-global-offensive,#e8842a,7,false,
-SMASH,Super Smash Bros.,super-smash-bros,,8,false,
+game,name,slug,accent,sort_index,intro
+VALORANT,Valorant,valorant,#ff4655,1,"With shooters’ prevalence in the global esports scene, not only do we have a CS team, but also multiple Valorant teams. They'll be battling it out within the dutch Valorant esports scene. Below you can find our competitive Valorant teams."
+CS2,Counter-Strike 2,counter-strike-2,#e8842a,2,"With shooters’ prevalence in the global esports scene, Blueshell Esports's CS2 teams are trying to climb up the charts with those sweet headshots! Below you can find our competitive CS2 team(s)."
+LEAGUE_OF_LEGENDS,League of Legends,league-of-legends,#c8963c,3,"As it is around the globe, League of Legends as a competitive ground holds a special place in Blueshell Esports. Below you can find our competitive League of Legends team(s)."
+ROCKET_LEAGUE,Rocket League,rocketleague,#1183d6,4,This year we have another new game Blueshell will compete in. A new rocket league team has been created! They will be joining tournaments representing Blueshell and compete in DSL.
+GEOGUESSR,GeoGuessr,geoguessr,#6cbf3f,5,"Geoguessr is one of Blueshell Esports' newest competitive titles. Our players test their geographical knowledge and quick decision-making in community events and tournaments, proudly representing Blueshell esports."
+TRACKMANIA,Trackmania,trackmania,,6,"We have two players playing under the Blueshell banner for multiple Trackmania tournaments, most notably in the regionals of the Trackmania World Tour circuit. Aside from that we have multiple players sporting our club tag, competing in whatever tournament happens to be active."
+CSGO,CS:GO,counter-strike-global-offensive,#e8842a,7,
+SMASH,Super Smash Bros.,super-smash-bros,,8,

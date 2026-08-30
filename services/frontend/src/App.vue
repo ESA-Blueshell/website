@@ -102,7 +102,7 @@
               Competitive scene
             </v-list-item>
             <v-list-item
-              v-for="game in fieldedGames"
+              v-for="game in currentGames"
               :key="game.game"
               :to="`/esports/${game.slug}`"
             >
@@ -334,7 +334,7 @@
             Competitive scene
           </v-list-item>
           <v-list-item
-            v-for="game in fieldedGames"
+            v-for="game in currentGames"
             :key="game.game"
             :to="`/esports/${game.slug}`"
           >
@@ -513,7 +513,7 @@ const {
  * The esports menu lists the games the association currently fields, as their records report
  * them. It used to list five by hand, which is why Trackmania had a page nothing linked to.
  */
-const {fielded: fieldedGames} = useGames()
+const {current: currentGames} = useGames()
 
 // Composables
 const store = useStore()

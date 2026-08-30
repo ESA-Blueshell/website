@@ -44,7 +44,6 @@ const colour = ref("")
 const icon = ref<EsportsImage | null>(null)
 const banner = ref<EsportsImage | null>(null)
 const sortIndex = ref(0)
-const fielded = ref(true)
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
@@ -61,7 +60,6 @@ watch(
     icon.value = game?.icon ?? null
     banner.value = game?.banner ?? null
     sortIndex.value = game?.sortIndex ?? 0
-    fielded.value = game?.fielded ?? true
     failure.value = null
   },
   {immediate: true},
@@ -114,8 +112,8 @@ const question = computed(() => {
   }
   return `${game.name} holds ${countOf(held.teams, "team", "teams")} and `
     + `${countOf(held.players, "roster place", "roster places")}, so it cannot be removed. `
-    + "Untick \"still fielded\" instead: it stops being offered as current and everything it "
-    + "played stays readable."
+    + "Everything it played stays readable, and it leaves the pages that show what the "
+    + "association plays by not being entered in a season."
 })
 
 const removeGame = async () => {
@@ -155,7 +153,6 @@ const submit = async () => {
       banner: banner.value?.path ?? null,
       icon: icon.value?.path ?? null,
       sortIndex: sortIndex.value,
-      fielded: fielded.value,
     })
     if (!result.ok) {
       failure.value = result.reason
@@ -263,20 +260,6 @@ const submit = async () => {
         testid="game-dialog-icon"
         @update:picture="icon = $event"
       />
-
-      <label class="game-form__check">
-        <input
-          v-model="fielded"
-          data-testid="game-dialog-fielded"
-          type="checkbox"
-        >
-        <span>
-          Still fielded
-          <span class="game-form__hint">
-            Unticking it stops the game being offered as current. Everything it played stays readable.
-          </span>
-        </span>
-      </label>
 
       <p
         v-if="failure"

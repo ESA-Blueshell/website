@@ -61,8 +61,8 @@ class EsportsPageQueryService(
 
         val byTeam = entries.groupBy { it.teamId }
         val teams = squads
-            .map { squad -> squad.team }
-            .map { team ->
+            .map { squad ->
+                val team = squad.team
                 TeamView(
                     id = team.id!!,
                     name = team.name,
@@ -76,7 +76,7 @@ class EsportsPageQueryService(
                             icon = entry.icon?.asImage(),
                         )
                     },
-                    banner = team.banner?.asImage(),
+                    banner = squad.banner?.asImage(),
                     icon = team.icon?.asImage(),
                 )
             }

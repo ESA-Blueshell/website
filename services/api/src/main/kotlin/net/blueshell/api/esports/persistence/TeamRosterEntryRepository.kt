@@ -19,7 +19,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         JOIN FETCH ts.team t
         JOIN FETCH ts.season s
         LEFT JOIN FETCH e.icon
-        WHERE t.game = :game AND s.id = :seasonId
+        WHERE ts.game = :game AND s.id = :seasonId
         ORDER BY t.name ASC, e.teamRole ASC, e.sortIndex ASC
         """,
     )
@@ -36,12 +36,13 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         JOIN FETCH ts.team t
         JOIN FETCH ts.season s
         LEFT JOIN FETCH e.icon
-        WHERE t.id = :teamId AND s.id = :seasonId
+        WHERE t.id = :teamId AND ts.game = :game AND s.id = :seasonId
         ORDER BY e.teamRole ASC, e.sortIndex ASC
         """,
     )
     fun findAllByTeamAndSeason(
         @Param("teamId") teamId: Long,
+        @Param("game") game: String,
         @Param("seasonId") seasonId: Long,
     ): List<TeamRosterEntry>
 
@@ -50,9 +51,8 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         """
         SELECT DISTINCT s.id FROM TeamRosterEntry e
         JOIN e.teamSeason ts
-        JOIN ts.team t
         JOIN ts.season s
-        WHERE t.game = :game
+        WHERE ts.game = :game
         ORDER BY s.id DESC
         """,
     )
@@ -96,13 +96,14 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         SELECT s.id FROM TeamRosterEntry e
         JOIN e.teamSeason ts
         JOIN ts.season s
-        WHERE ts.team.id = :teamId AND s.id <> :ignoring
+        WHERE ts.team.id = :teamId AND ts.game = :game AND s.id <> :ignoring
         GROUP BY s.id, s.startDate
         ORDER BY s.startDate DESC
         """,
     )
     fun findSeasonIdsWithLineup(
         @Param("teamId") teamId: Long,
+        @Param("game") game: String,
         @Param("ignoring") ignoring: Long,
     ): List<Long>
 
@@ -132,7 +133,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         SELECT COUNT(*) FROM team_roster_entry e
         JOIN team_season ts ON ts.id = e.team_season_id
         JOIN team t ON t.id = ts.team_id
-        WHERE t.game = :game
+        WHERE ts.game = :game
           AND e.deleted_at = '9999-12-31 23:59:59.000000'
           AND t.deleted_at = '9999-12-31 23:59:59.000000'
         """,

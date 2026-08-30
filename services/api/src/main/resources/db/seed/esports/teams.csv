@@ -1,28 +1,28 @@
-game,name,banner
-CS2,BS HyperS,cs2-2
-CS2,BS PepeDS,cs2-3
-CSGO,BS HyperS,csgo-3
-CSGO,BS Revenge,csgo-1
-GEOGUESSR,Geoguessr,geoguessr-1
-LEAGUE_OF_LEGENDS,BS Fristi Fighters,lol-2
-LEAGUE_OF_LEGENDS,BS Housecats,lol-3
-LEAGUE_OF_LEGENDS,BS Pandora,lol-4
-LEAGUE_OF_LEGENDS,BS Primus,lol-5
-LEAGUE_OF_LEGENDS,BS Roestige Ridders,lol-6
-LEAGUE_OF_LEGENDS,BS Scaling,lol-7
-LEAGUE_OF_LEGENDS,BS Street Rats,lol-8
-LEAGUE_OF_LEGENDS,Blueshell Goombastompers,lol-1
-ROCKET_LEAGUE,BS Oogway,rocket-league-2
-ROCKET_LEAGUE,BS Squirtles,rocket-league-3
-ROCKET_LEAGUE,BS Tadpole,rocket-league-1
-ROCKET_LEAGUE,BS Turtles,rocket-league-2
-ROCKET_LEAGUE,Blueshell Tortoises,rocket-league-3
-SMASH,Smash,smash-2
-TRACKMANIA,[ESABS],trackmania-2
-VALORANT,BS G.G.C. Yaptown,valorant-1
-VALORANT,BS Huge,valorant-2
-VALORANT,BS IcyWater,valorant-3
-VALORANT,BS SpicyWater,valorant-4
-VALORANT,BS Tempra,valorant-5
-VALORANT,BS Valorant,valorant-6
-VALORANT,BS Waterboarders,valorant-7
+name,game,banner
+BS HyperS,CS2,cs2-2
+BS PepeDS,CS2,cs2-3
+BS HyperS,CSGO,csgo-3
+BS Revenge,CSGO,csgo-1
+Geoguessr,GEOGUESSR,geoguessr-1
+BS Fristi Fighters,LEAGUE_OF_LEGENDS,lol-2
+BS Housecats,LEAGUE_OF_LEGENDS,lol-3
+BS Pandora,LEAGUE_OF_LEGENDS,lol-4
+BS Primus,LEAGUE_OF_LEGENDS,lol-5
+BS Roestige Ridders,LEAGUE_OF_LEGENDS,lol-6
+BS Scaling,LEAGUE_OF_LEGENDS,lol-7
+BS Street Rats,LEAGUE_OF_LEGENDS,lol-8
+Blueshell Goombastompers,LEAGUE_OF_LEGENDS,lol-1
+BS Oogway,ROCKET_LEAGUE,rocket-league-2
+BS Squirtles,ROCKET_LEAGUE,rocket-league-3
+BS Tadpole,ROCKET_LEAGUE,rocket-league-1
+BS Turtles,ROCKET_LEAGUE,rocket-league-2
+Blueshell Tortoises,ROCKET_LEAGUE,rocket-league-3
+Smash,SMASH,smash-2
+[ESABS],TRACKMANIA,trackmania-2
+BS G.G.C. Yaptown,VALORANT,valorant-1
+BS Huge,VALORANT,valorant-2
+BS IcyWater,VALORANT,valorant-3
+BS SpicyWater,VALORANT,valorant-4
+BS Tempra,VALORANT,valorant-5
+BS Valorant,VALORANT,valorant-6
+BS Waterboarders,VALORANT,valorant-7

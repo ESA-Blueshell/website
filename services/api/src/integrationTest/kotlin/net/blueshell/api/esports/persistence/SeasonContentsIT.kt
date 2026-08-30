@@ -17,6 +17,9 @@ import net.blueshell.api.esports.domain.TeamSeasonService
  */
 @SpringBootTest
 class SeasonContentsIT : UserTestSupport() {
+    /** These fixtures all play one game; the fielding names it now. */
+    private val GAME = "TRACKMANIA"
+
     @Autowired private lateinit var fielded: TeamSeasonService
 
     @Autowired private lateinit var rosters: TeamRosterService
@@ -38,16 +41,16 @@ class SeasonContentsIT : UserTestSupport() {
         )
     }
 
-    private fun team(): Team = teams.save(Team(game = "TRACKMANIA", name = "BS Count ${System.nanoTime()}"))
+    private fun team(): Team = teams.save(Team(name = "BS Count ${System.nanoTime()}"))
 
     @Test
     fun `a season says how many teams and players it holds`() {
         val season = season()
         val first = team()
         val second = team()
-        rosters.add(first.id!!, season.id!!, "one", TeamRole.PLAYER, null, null)
-        rosters.add(first.id!!, season.id!!, "two", TeamRole.SUBSTITUTE, null, null)
-        rosters.add(second.id!!, season.id!!, "three", TeamRole.PLAYER, null, null)
+        rosters.add(first.id!!, GAME, season.id!!, "one", TeamRole.PLAYER, null, null)
+        rosters.add(first.id!!, GAME, season.id!!, "two", TeamRole.SUBSTITUTE, null, null)
+        rosters.add(second.id!!, GAME, season.id!!, "three", TeamRole.PLAYER, null, null)
 
         val (teamCount, playerCount) = fielded.contentsOf(season.id!!)
 
@@ -66,9 +69,9 @@ class SeasonContentsIT : UserTestSupport() {
     fun `a team dropped from a season is no longer counted in it`() {
         val season = season()
         val team = team()
-        fielded.field(team.id!!, season.id!!)
+        fielded.field(team.id!!, GAME, season.id!!)
 
-        fielded.unfield(team.id!!, season.id!!)
+        fielded.unfield(team.id!!, GAME, season.id!!)
 
         assertThat(fielded.contentsOf(season.id!!).first).isEqualTo(0)
     }
@@ -78,13 +81,13 @@ class SeasonContentsIT : UserTestSupport() {
         val kept = season()
         val dropped = season()
         val team = team()
-        rosters.add(team.id!!, kept.id!!, "stays", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, dropped.id!!, "goes", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, GAME, kept.id!!, "stays", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, GAME, dropped.id!!, "goes", TeamRole.PLAYER, null, null)
 
-        fielded.unfield(team.id!!, dropped.id!!)
+        fielded.unfield(team.id!!, GAME, dropped.id!!)
 
         // The team played the other season, and still did.
-        assertThat(fielded.isFielded(team.id!!, kept.id!!)).isTrue()
+        assertThat(fielded.isFielded(team.id!!, GAME, kept.id!!)).isTrue()
         assertThat(teams.findById(team.id!!)).isPresent()
         assertThat(page(kept.id!!)).contains(team.name)
         assertThat(page(dropped.id!!)).doesNotContain(team.name)

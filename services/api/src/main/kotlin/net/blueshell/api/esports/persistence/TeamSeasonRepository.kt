@@ -16,8 +16,9 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         """
         SELECT ts FROM TeamSeason ts
         JOIN FETCH ts.team t
-        LEFT JOIN FETCH t.banner
-        WHERE t.game = :game AND ts.season.id = :seasonId
+        LEFT JOIN FETCH ts.banner
+        LEFT JOIN FETCH t.icon
+        WHERE ts.game = :game AND ts.season.id = :seasonId
         ORDER BY t.name ASC
         """,
     )
@@ -30,21 +31,49 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
     @Query(
         """
         SELECT DISTINCT s.id FROM TeamSeason ts
-        JOIN ts.team t
         JOIN ts.season s
-        WHERE t.game = :game
+        WHERE ts.game = :game
         ORDER BY s.id DESC
         """,
     )
     fun findSeasonIdsFielded(@Param("game") game: String): List<Long>
 
-    fun findByTeamIdAndSeasonId(teamId: Long, seasonId: Long): TeamSeason?
+    fun findByTeamIdAndGameAndSeasonId(teamId: Long, game: String, seasonId: Long): TeamSeason?
 
     fun countBySeasonId(seasonId: Long): Long
 
     /** The seasons one team was fielded in, newest first. */
     @Query("SELECT ts FROM TeamSeason ts JOIN FETCH ts.season s WHERE ts.team.id = :teamId ORDER BY s.startDate DESC")
     fun findAllByTeamId(@Param("teamId") teamId: Long): List<TeamSeason>
+
+    /**
+     * How many of the association's teams have ever been fielded in a game.
+     *
+     * Counted through the fielding because a team no longer belongs to a game: what a game holds
+     * is the teams that played it, which is a question about fieldings rather than about teams.
+     */
+    @Query("SELECT COUNT(DISTINCT ts.team.id) FROM TeamSeason ts WHERE ts.game = :game")
+    fun countTeamsByGame(@Param("game") game: String): Long
+
+    /**
+     * The art this team was last drawn with in this game, so fielding it again carries it across.
+     *
+     * Newest first by the season's own start rather than by id, because a season added late is
+     * still the season it covers.
+     */
+    @Query(
+        """
+        SELECT ts FROM TeamSeason ts
+        LEFT JOIN FETCH ts.banner
+        WHERE ts.team.id = :teamId AND ts.game = :game AND ts.season.id <> :ignoring
+        ORDER BY ts.season.startDate DESC
+        """,
+    )
+    fun findPreviousInGame(
+        @Param("teamId") teamId: Long,
+        @Param("game") game: String,
+        @Param("ignoring") ignoring: Long,
+    ): List<TeamSeason>
 
     /**
      * A fielding for this team and season that was dropped, most recently dropped first.
@@ -58,12 +87,16 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         nativeQuery = true,
         value = """
         SELECT id FROM team_season
-        WHERE team_id = :teamId AND season_id = :seasonId
+        WHERE team_id = :teamId AND game = :game AND season_id = :seasonId
           AND deleted_at <> '9999-12-31 23:59:59.000000'
         ORDER BY deleted_at DESC LIMIT 1
         """,
     )
-    fun findDroppedId(@Param("teamId") teamId: Long, @Param("seasonId") seasonId: Long): Long?
+    fun findDroppedId(
+        @Param("teamId") teamId: Long,
+        @Param("game") game: String,
+        @Param("seasonId") seasonId: Long,
+    ): Long?
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(

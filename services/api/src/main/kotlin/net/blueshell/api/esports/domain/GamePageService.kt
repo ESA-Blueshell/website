@@ -2,7 +2,7 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.GamePage
 import net.blueshell.api.esports.persistence.GamePageRepository
-import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.http.HttpStatus
@@ -23,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException
 @Service
 class GamePageService(
     private val pages: GamePageRepository,
-    private val teams: TeamRepository,
+    private val fielded: TeamSeasonRepository,
     private val entries: TeamRosterEntryRepository,
     private val pictures: EsportsPictures,
 ) {
@@ -121,7 +121,7 @@ class GamePageService(
     @Transactional(readOnly = true)
     fun contentsOf(game: String): Pair<Long, Long> {
         val code = requireGame(game).game
-        return teams.countByGame(code) to entries.countByGame(code)
+        return fielded.countTeamsByGame(code) to entries.countByGame(code)
     }
 
     /**

@@ -27,9 +27,7 @@ fun SeasonView.asResponse() = SeasonResponse(
 
 fun Team.asResponse() = TeamResponse(
     id = id!!,
-    game = game,
     name = name,
-    banner = banner?.asImage(),
     icon = icon?.asImage(),
 )
 

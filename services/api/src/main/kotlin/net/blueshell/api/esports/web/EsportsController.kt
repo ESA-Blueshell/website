@@ -7,6 +7,7 @@ import net.blueshell.api.esports.domain.EsportsPageQueryService
 import net.blueshell.api.esports.domain.GamePageService
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.api.TeamRosterService
+import net.blueshell.api.file.api.asImage
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import org.springframework.http.HttpStatus
@@ -127,23 +128,28 @@ class EsportsController(
         seasons.delete(id)
     }
 
+    /**
+     * Every team the association has.
+     *
+     * Not scoped by game: the pool is shared, so a team that has only ever played one game is
+     * still one the board can field in another.
+     */
     @GetMapping("/teams")
     @PermitAll
-    fun findTeams(@RequestParam game: String): List<TeamResponse> =
-        teams.findAllByGame(game).map { it.asResponse() }
+    fun findTeams(): List<TeamResponse> = teams.pool().map { it.asResponse() }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/teams")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTeam(@Valid @RequestBody request: CreateTeamRequest): TeamResponse =
-        teams.create(request.game, request.name, request.banner, request.icon).asResponse()
+        teams.create(request.name, request.icon).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/teams/{id}")
     fun updateTeam(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateTeamRequest,
-    ): TeamResponse = teams.update(id, request.name, request.banner, request.icon).asResponse()
+    ): TeamResponse = teams.update(id, request.name, request.icon).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/teams/{id}")
@@ -164,12 +170,14 @@ class EsportsController(
     fun fieldTeam(
         @PathVariable seasonId: Long,
         @PathVariable teamId: Long,
-        @RequestBody(required = false) request: FieldTeamRequest?,
+        @Valid @RequestBody request: FieldTeamRequest,
     ): FieldedTeamResponse {
-        val fieldedTeam = rosters.fieldWithLineup(teamId, seasonId, request?.carryLineup == true)
+        val fieldedTeam = rosters.fieldWithLineup(teamId, request.game, seasonId, request.carryLineup, request.banner)
         return FieldedTeamResponse(
             team = fieldedTeam.team.asResponse(),
+            game = fieldedTeam.fielding.game,
             season = fieldedTeam.season.asResponse(),
+            banner = fieldedTeam.fielding.banner?.asImage(),
             carried = fieldedTeam.carried.map { it.asResponse() },
         )
     }
@@ -181,24 +189,32 @@ class EsportsController(
     fun unfieldTeam(
         @PathVariable seasonId: Long,
         @PathVariable teamId: Long,
+        @RequestParam game: String,
     ) {
-        fielded.unfield(teamId, seasonId)
+        fielded.unfield(teamId, game, seasonId)
     }
 
-    /** Which seasons a team was fielded in, newest first. Public, as the pages show it. */
+    /**
+     * The line-ups a team has, newest first: which game, which season. Public, as the pages
+     * show it.
+     *
+     * Each is a fielding rather than a season, because a team that played two games in one
+     * season has two of them, with a line-up in each.
+     */
     @PermitAll
     @GetMapping("/teams/{teamId}/seasons")
-    fun findTeamSeasons(@PathVariable teamId: Long): List<SeasonResponse> =
-        fielded.seasonsOf(teamId).map { it.season.asResponse() }
+    fun findTeamSeasons(@PathVariable teamId: Long): List<FieldingResponse> =
+        fielded.seasonsOf(teamId).map { FieldingResponse(game = it.game, season = it.season.asResponse()) }
 
     /** The admin view of a roster: the same rows the page shows, with the names attached. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/teams/{teamId}/roster")
     fun findRoster(
         @PathVariable teamId: Long,
+        @RequestParam game: String,
         @RequestParam seasonId: Long,
     ): List<RosterEntryResponse> =
-        rosters.findByTeamAndSeason(teamId, seasonId).map { it.asResponse() }
+        rosters.findByTeamAndSeason(teamId, game, seasonId).map { it.asResponse() }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/teams/{teamId}/roster")
@@ -208,6 +224,7 @@ class EsportsController(
         @Valid @RequestBody request: AddRosterEntryRequest,
     ): RosterEntryResponse = rosters.add(
         teamId = teamId,
+        game = request.game,
         seasonId = request.seasonId,
         handle = request.handle,
         role = request.role,

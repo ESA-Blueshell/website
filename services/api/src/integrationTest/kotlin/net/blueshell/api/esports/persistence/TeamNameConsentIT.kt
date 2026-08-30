@@ -45,13 +45,20 @@ class TeamNameConsentIT : UserTestSupport() {
         ),
     )
 
-    private fun team(game: String): Team =
-        teams.save(Team(game = game, name = "Team ${System.nanoTime()}"))
+    /**
+     * A team and the game it is fielded in. The team no longer names one — the fielding does.
+     */
+    private data class Squad(val team: Team, val game: String) {
+        val name: String get() = team.name
+    }
 
-    private fun seat(team: Team, season: Season, handle: String, userId: Long?): TeamRosterEntry {
+    private fun team(game: String): Squad =
+        Squad(teams.save(Team(name = "Team ${System.nanoTime()}")), game)
+
+    private fun seat(squad: Squad, season: Season, handle: String, userId: Long?): TeamRosterEntry {
         // A line-up hangs off the fielding, so the fielding is what the entry is written
         // against — there is nothing to attach one to until it exists.
-        val fielding = fielded.field(team.id!!, season.id!!)
+        val fielding = fielded.field(squad.team.id!!, squad.game, season.id!!)
         return entries.save(
             TeamRosterEntry(
                 teamSeason = fielding,

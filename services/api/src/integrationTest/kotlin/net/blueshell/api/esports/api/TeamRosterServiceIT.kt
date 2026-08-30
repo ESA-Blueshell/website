@@ -41,10 +41,10 @@ class TeamRosterServiceIT : UserTestSupport() {
         seasons.save(Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = to))
 
     private fun rosterEntry(season: Season, userId: Long?, handle: String = "handle${System.nanoTime()}"): TeamRosterEntry {
-        val team = teams.save(Team(game = "VALORANT", name = "Team ${System.nanoTime()}"))
+        val team = teams.save(Team(name = "Team ${System.nanoTime()}"))
         return entries.save(
             TeamRosterEntry(
-                teamSeason = fielded.field(team.id!!, season.id!!),
+                teamSeason = fielded.field(team.id!!, "VALORANT", season.id!!),
                 handle = handle,
                 teamRole = TeamRole.PLAYER,
                 userId = userId,
@@ -83,15 +83,15 @@ class TeamRosterServiceIT : UserTestSupport() {
 
     @Test
     fun `the same team fields a different roster each season`() {
-        val team = teams.save(Team(game = "CS2", name = "Team ${System.nanoTime()}"))
+        val team = teams.save(Team(name = "Team ${System.nanoTime()}"))
         val first = season(LocalDate.of(2024, 9, 1), LocalDate.of(2025, 1, 31))
         val second = season(LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
-        entries.save(TeamRosterEntry(teamSeason = fielded.field(team.id!!, first.id!!), handle = "veteran"))
-        entries.save(TeamRosterEntry(teamSeason = fielded.field(team.id!!, second.id!!), handle = "newcomer"))
+        entries.save(TeamRosterEntry(teamSeason = fielded.field(team.id!!, "CS2", first.id!!), handle = "veteran"))
+        entries.save(TeamRosterEntry(teamSeason = fielded.field(team.id!!, "CS2", second.id!!), handle = "newcomer"))
 
-        assertThat(rosters.findByTeamAndSeason(team.id!!, first.id!!).map { it.handle })
+        assertThat(rosters.findByTeamAndSeason(team.id!!, "CS2", first.id!!).map { it.handle })
             .containsExactly("veteran")
-        assertThat(rosters.findByTeamAndSeason(team.id!!, second.id!!).map { it.handle })
+        assertThat(rosters.findByTeamAndSeason(team.id!!, "CS2", second.id!!).map { it.handle })
             .containsExactly("newcomer")
     }
 }

@@ -18,6 +18,9 @@ import net.blueshell.api.esports.domain.TeamSeasonService
  */
 @SpringBootTest
 class TeamFieldedInSeasonIT : UserTestSupport() {
+    /** These fixtures all play one game; the fielding names it now. */
+    private val GAME = "TRACKMANIA"
+
     @Autowired private lateinit var fielded: TeamSeasonService
 
     @Autowired private lateinit var rosters: TeamRosterService
@@ -38,14 +41,14 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     }
 
     private fun team(name: String = "Team ${System.nanoTime()}"): Team =
-        teams.save(Team(game = "TRACKMANIA", name = name))
+        teams.save(Team(name = name))
 
     @Test
     fun `a team can be fielded before anybody is named to it, and shows with an empty roster`() {
         val season = season()
         val team = team("BS Nobody Yet")
 
-        fielded.field(team.id!!, season.id!!)
+        fielded.field(team.id!!, GAME, season.id!!)
 
         val view = page.page("TRACKMANIA", season.id)
         assertThat(view.teams).extracting<String> { it.name }.contains("BS Nobody Yet")
@@ -57,10 +60,10 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val season = season()
         val team = team()
 
-        rosters.add(team.id!!, season.id!!, "Handle", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, GAME, season.id!!, "Handle", TeamRole.PLAYER, null, null)
 
         // Nobody said the team was being fielded; putting a player on it said it for them.
-        assertThat(fielded.isFielded(team.id!!, season.id!!)).isTrue()
+        assertThat(fielded.isFielded(team.id!!, GAME, season.id!!)).isTrue()
     }
 
     @Test
@@ -68,8 +71,8 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val season = season()
         val team = team()
 
-        val first = fielded.field(team.id!!, season.id!!)
-        val again = fielded.field(team.id!!, season.id!!)
+        val first = fielded.field(team.id!!, GAME, season.id!!)
+        val again = fielded.field(team.id!!, GAME, season.id!!)
 
         assertThat(again.id).isEqualTo(first.id)
         assertThat(page.page("TRACKMANIA", season.id).teams).hasSize(1)
@@ -80,9 +83,9 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val played = season(LocalDate.of(2030, 9, 1))
         val other = season(LocalDate.of(2031, 9, 1))
         val team = team("BS One Season")
-        fielded.field(team.id!!, played.id!!)
+        fielded.field(team.id!!, GAME, played.id!!)
         // A team of its own, so the other season is one this game genuinely played in.
-        fielded.field(team("BS The Other Lot").id!!, other.id!!)
+        fielded.field(team("BS The Other Lot").id!!, GAME, other.id!!)
 
         assertThat(page.page("TRACKMANIA", played.id).teams).extracting<String> { it.name }
             .contains("BS One Season")
@@ -93,7 +96,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     @Test
     fun `a season asked for by name is answered about, even where this game fielded nobody`() {
         val played = season(LocalDate.of(2030, 9, 1))
-        fielded.field(team("BS Somebody").id!!, played.id!!)
+        fielded.field(team("BS Somebody").id!!, GAME, played.id!!)
         val empty = season(LocalDate.of(2032, 9, 1))
 
         val view = page.page("TRACKMANIA", empty.id)
@@ -110,13 +113,13 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val kept = season(LocalDate.of(2030, 9, 1))
         val dropped = season(LocalDate.of(2031, 9, 1))
         val team = team("BS Two Seasons")
-        fielded.field(team.id!!, kept.id!!)
-        fielded.field(team.id!!, dropped.id!!)
+        fielded.field(team.id!!, GAME, kept.id!!)
+        fielded.field(team.id!!, GAME, dropped.id!!)
 
-        fielded.unfield(team.id!!, dropped.id!!)
+        fielded.unfield(team.id!!, GAME, dropped.id!!)
 
-        assertThat(fielded.isFielded(team.id!!, dropped.id!!)).isFalse()
-        assertThat(fielded.isFielded(team.id!!, kept.id!!)).isTrue()
+        assertThat(fielded.isFielded(team.id!!, GAME, dropped.id!!)).isFalse()
+        assertThat(fielded.isFielded(team.id!!, GAME, kept.id!!)).isTrue()
         assertThat(teams.findById(team.id!!)).isPresent()
     }
 
@@ -124,15 +127,15 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     fun `a team fielded again in a season it was dropped from brings its line-up back`() {
         val season = season()
         val team = team("BS Dropped And Restored")
-        rosters.add(team.id!!, season.id!!, "returns", TeamRole.PLAYER, null, null)
-        fielded.unfield(team.id!!, season.id!!)
+        rosters.add(team.id!!, GAME, season.id!!, "returns", TeamRole.PLAYER, null, null)
+        fielded.unfield(team.id!!, GAME, season.id!!)
 
-        fielded.field(team.id!!, season.id!!)
+        fielded.field(team.id!!, GAME, season.id!!)
 
         // The line-up hangs off the fielding, so a second fielding would leave it attached to
         // the dropped one: present in the table, reachable by nothing, and silently gone from
         // the season it was played in.
-        assertThat(rosters.findByTeamAndSeason(team.id!!, season.id!!).map { it.handle })
+        assertThat(rosters.findByTeamAndSeason(team.id!!, GAME, season.id!!).map { it.handle })
             .containsExactly("returns")
     }
 
@@ -142,7 +145,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val before = page.page("TRACKMANIA").seasons.map { it.id }
         assertThat(before).doesNotContain(season.id)
 
-        fielded.field(team().id!!, season.id!!)
+        fielded.field(team().id!!, GAME, season.id!!)
 
         assertThat(page.page("TRACKMANIA").seasons.map { it.id }).contains(season.id)
     }
@@ -153,7 +156,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         // rendered before the change renders the same after it.
         val season = season()
         val team = team("BS Carried Across")
-        rosters.add(team.id!!, season.id!!, "Handle", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, GAME, season.id!!, "Handle", TeamRole.PLAYER, null, null)
 
         val view = page.page("TRACKMANIA", season.id)
 

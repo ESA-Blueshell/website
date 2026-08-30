@@ -46,11 +46,19 @@ class EsportsControllerIT : UserTestSupport() {
     private fun season(name: String, from: LocalDate, to: LocalDate): Season =
         seasons.save(Season(name = name, startDate = from, endDate = to))
 
-    private fun team(game: String, name: String): Team =
-        teams.save(Team(game = game, name = name))
+    /**
+     * A team and the game it is fielded in. The team no longer names one — the fielding does —
+     * so a fixture that means "this team, playing this game" carries both.
+     */
+    private data class Squad(val team: Team, val game: String) {
+        val name: String get() = team.name
+    }
+
+    private fun team(game: String, name: String): Squad =
+        Squad(teams.save(Team(name = name)), game)
 
     private fun entry(
-        team: Team,
+        squad: Squad,
         season: Season,
         handle: String,
         role: TeamRole = TeamRole.PLAYER,
@@ -59,7 +67,7 @@ class EsportsControllerIT : UserTestSupport() {
     ): TeamRosterEntry {
         // A line-up hangs off the fielding, so the fielding is what the entry is written
         // against — there is nothing to attach one to until it exists.
-        val fielding = fielded.field(team.id!!, season.id!!)
+        val fielding = fielded.field(squad.team.id!!, squad.game, season.id!!)
         return entries.save(
             TeamRosterEntry(
                 teamSeason = fielding,
@@ -139,56 +147,62 @@ class EsportsControllerIT : UserTestSupport() {
     @Nested
     inner class TeamArt {
         @Test
-        fun `a team is added with a banner and an icon, and keeps both`() {
+        fun `a team is added with an icon, and drawn with the art of the season it is fielded in`() {
             val board = createUserWithRole(Role.BOARD)
             val banner = storedPicture(board, FileType.TEAM_BANNER)
             val icon = storedPicture(board, FileType.TEAM_ICON)
+            val playing = season("Drawn ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
 
-            mvc.perform(
+            // The logo is the team's: it is who they are, wherever they play.
+            val created = mvc.perform(
                 post("/esports/teams")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"game":"VALORANT","name":"BS Drawn ${System.nanoTime()}",
-                         "banner":"$banner","icon":"$icon"}
-                        """.trimIndent(),
-                    ),
+                    .content("""{"name":"BS Drawn ${System.nanoTime()}","icon":"$icon"}"""),
             )
                 .andExpect(status().isCreated)
-                .andExpect(jsonPath("$.banner.path").value(banner))
                 .andExpect(jsonPath("$.icon.path").value(icon))
-        }
+                .andReturn().response.contentAsString
+            val teamId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
 
-        @Test
-        fun `a save that names another picture replaces the team's art`() {
-            val board = createUserWithRole(Role.BOARD)
-            val team = teams.save(Team(game = "VALORANT", name = "BS Redrawn ${System.nanoTime()}"))
-            val banner = storedPicture(board, FileType.TEAM_BANNER)
-            val icon = storedPicture(board, FileType.TEAM_ICON)
-
+            // The banner is the fielding's, because the art is game-flavoured and this team
+            // may be drawn differently in a game it also plays.
             mvc.perform(
-                put("/esports/teams/{id}", team.id)
+                put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"${team.name}","banner":"$banner","icon":"$icon"}"""),
+                    .content("""{"game":"VALORANT","banner":"$banner"}"""),
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.banner.path").value(banner))
+        }
+
+        @Test
+        fun `a save that names another picture replaces the team's logo`() {
+            val board = createUserWithRole(Role.BOARD)
+            val team = teams.save(Team(name = "BS Redrawn ${System.nanoTime()}"))
+            val icon = storedPicture(board, FileType.TEAM_ICON)
+
+            mvc.perform(
+                put("/esports/teams/{id}", team.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"${team.name}","icon":"$icon"}"""),
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.icon.path").value(icon))
         }
 
         @Test
-        fun `a save that names no picture takes the team's art away`() {
+        fun `a save that names no picture takes the team's logo away`() {
             val board = createUserWithRole(Role.BOARD)
-            val team = teams.save(Team(game = "VALORANT", name = "BS Undrawn ${System.nanoTime()}"))
-            val banner = storedPicture(board, FileType.TEAM_BANNER)
+            val team = teams.save(Team(name = "BS Undrawn ${System.nanoTime()}"))
             val icon = storedPicture(board, FileType.TEAM_ICON)
             mvc.perform(
                 put("/esports/teams/{id}", team.id)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"${team.name}","banner":"$banner","icon":"$icon"}"""),
+                    .content("""{"name":"${team.name}","icon":"$icon"}"""),
             ).andExpect(status().isOk)
 
             mvc.perform(
@@ -198,7 +212,6 @@ class EsportsControllerIT : UserTestSupport() {
                     .content("""{"name":"${team.name}"}"""),
             )
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.banner").doesNotExist())
                 .andExpect(jsonPath("$.icon").doesNotExist())
         }
 
@@ -207,8 +220,8 @@ class EsportsControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val icon = storedPicture(board, FileType.TEAM_ICON)
             val playing = season("Drawn ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
-            val team = teams.save(Team(game = "VALORANT", name = "BS Shown ${System.nanoTime()}"))
-            fielded.field(team.id!!, playing.id!!)
+            val team = teams.save(Team(name = "BS Shown ${System.nanoTime()}"))
+            fielded.field(team.id!!, "VALORANT", playing.id!!)
             mvc.perform(
                 put("/esports/teams/{id}", team.id)
                     .with(bearer(board))
@@ -258,7 +271,7 @@ class EsportsControllerIT : UserTestSupport() {
                 post("/esports/teams/{teamId}/roster", teamId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"seasonId":${playing.id},"handle":"newcomer","role":"PLAYER"}"""),
+                    .content("""{"game":"VALORANT","seasonId":${playing.id},"handle":"newcomer","role":"PLAYER"}"""),
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.handle").value("newcomer"))

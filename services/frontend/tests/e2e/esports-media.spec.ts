@@ -285,6 +285,30 @@ test.describe("banners and icons", () => {
     await expect(page.getByTestId("lineup-team-icon-empty")).toBeVisible()
   })
 
+  /**
+   * A team carries an icon only once somebody uploads one, and none ships, so the game's own
+   * logo is the only one this page has. Without it the page a slice leads to shows nothing of
+   * the game the slice named — which is what removing it from the header did.
+   */
+  test("the game's own page is identified by the game's logo", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports")
+
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await choose(page, "game-dialog-icon")
+    await page.getByTestId("game-dialog-save").click()
+    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+
+    await page.goto(GAME_PAGE)
+
+    const logo = page.getByTestId("esports-game-icon")
+    await expect.poll(() => decoded(logo)).toBe(true)
+    await expect(logo).toHaveAttribute("src", /\/files\/public\/game-icons\/[^/]+\.webp/)
+    await expect(logo).toHaveAttribute("srcset", /128w/)
+  })
+
   test("the game's own page draws no picture behind its header", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())

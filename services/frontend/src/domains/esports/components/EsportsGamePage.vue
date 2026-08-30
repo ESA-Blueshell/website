@@ -316,11 +316,21 @@ const seasonSaved = (saved: Season) => {
           </button>
 
           <!--
-            The header is the accent and the words, as it has been since the picture behind it
-            went. A game's icon belongs to its slice on the index, beside the name it names,
-            rather than to the page that slice leads to.
+            The picture behind this header went with the banners and stays gone. The game's own
+            logo is a different thing: it identifies the page rather than decorating it, and it
+            is the only logo here — a team carries one only once somebody uploads it, so without
+            this the page a slice leads to shows nothing of the game the slice named.
           -->
           <div class="flex items-center gap-4">
+            <img
+              v-if="identity.icon"
+              alt=""
+              class="h-10 w-10 object-contain sm:h-12 sm:w-12"
+              data-testid="esports-game-icon"
+              sizes="48px"
+              :src="identity.icon"
+              :srcset="identity.iconSrcset"
+            >
             <div>
               <p class="font-body text-[11px] tracking-[0.28em] text-ash uppercase">
                 Blueshell Esports

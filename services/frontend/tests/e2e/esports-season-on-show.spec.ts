@@ -4,9 +4,13 @@ import {installApiMocks} from "./mocks"
 /**
  * The season a page opens on, and that it is the same season everything on it describes.
  *
- * Runs in the deterministic projects, which emulate reduced motion — none of this is about the
- * movement between seasons, only about which season is arrived at. The movement itself is in
+ * Runs in the deterministic projects — none of this is about the movement between seasons, only
+ * about which season is arrived at. The movement itself is in
  * `esports-season-swipe.motion.spec.ts`.
+ *
+ * Those projects are meant to emulate reduced motion and do not: see #852. So nothing here may
+ * assume the choreography is switched off, and the one test below that is about the preference
+ * sets it for itself.
  *
  * CS:GO is the game that makes these assertions mean something: it played the older of the two
  * seasons and nothing since, so a page that lets the api pick a season per game shows it, and
@@ -110,8 +114,9 @@ test.describe("the season a page opens on", () => {
     // `use.reducedMotion: "reduce"` is set on every project but the motion one, and on
     // Playwright 1.60 it does not reach the page: `matchMedia("(prefers-reduced-motion:
     // reduce)")` answers false throughout the deterministic suites. That is a fault in the
-    // harness rather than in this behaviour, and it is not this spec's to fix — but a test of
-    // what a visitor with the preference gets has to actually be one.
+    // harness rather than in this behaviour — #852 — and it is not this spec's to fix, but a
+    // test of what a visitor with the preference gets has to actually be one. Once #852 is
+    // fixed this line is what should go.
     await page.emulateMedia({reducedMotion: "reduce"})
     await installApiMocks(page)
 

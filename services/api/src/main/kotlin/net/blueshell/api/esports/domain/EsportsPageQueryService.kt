@@ -59,7 +59,7 @@ class EsportsPageQueryService(
             .mapNotNull { user -> user.id?.let { it to user.fullName } }
             .toMap()
 
-        val byTeam = entries.groupBy { it.teamSeason.team.id }
+        val byTeam = entries.groupBy { it.teamId }
         val teams = squads
             .map { squad -> squad.team }
             .map { team ->

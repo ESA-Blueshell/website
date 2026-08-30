@@ -106,13 +106,36 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         @Param("ignoring") ignoring: Long,
     ): List<Long>
 
-    fun findAllByUserId(userId: Long): List<TeamRosterEntry>
-
-    /** Roster places held in one season, for a removal to say before it happens. */
-    @Query("SELECT COUNT(e) FROM TeamRosterEntry e WHERE e.teamSeason.season.id = :seasonId")
+    /**
+     * Roster places held in one season, for a removal to say before it happens.
+     *
+     * Native, and so are the two below it, because a line-up outlives the dropping of the team
+     * that played it: the entries stay, the fielding is soft-deleted, and a Hibernate join
+     * through it would drop exactly those rows from the count. What a season holds is what is
+     * written down against it, which is the same question this answered before the entries
+     * hung off the fielding.
+     */
+    @Query(
+        nativeQuery = true,
+        value = """
+        SELECT COUNT(*) FROM team_roster_entry e
+        JOIN team_season ts ON ts.id = e.team_season_id
+        WHERE ts.season_id = :seasonId AND e.deleted_at = '9999-12-31 23:59:59.000000'
+        """,
+    )
     fun countBySeasonId(@Param("seasonId") seasonId: Long): Long
 
     /** Roster places held across every team of one game, for a removal to say before it happens. */
-    @Query("SELECT COUNT(e) FROM TeamRosterEntry e WHERE e.teamSeason.team.game = :game")
+    @Query(
+        nativeQuery = true,
+        value = """
+        SELECT COUNT(*) FROM team_roster_entry e
+        JOIN team_season ts ON ts.id = e.team_season_id
+        JOIN team t ON t.id = ts.team_id
+        WHERE t.game = :game
+          AND e.deleted_at = '9999-12-31 23:59:59.000000'
+          AND t.deleted_at = '9999-12-31 23:59:59.000000'
+        """,
+    )
     fun countByGame(@Param("game") game: String): Long
 }

@@ -139,6 +139,45 @@ class EsportsSeedLoadIT : UserTestSupport() {
     }
 
     @Test
+    fun `a team dropped from a season is not fielded again by the next run`() {
+        runLoader()
+        val fielding = jdbc.queryForMap(
+            "SELECT ts.id, ts.team_id, ts.season_id FROM team_season ts JOIN team t ON t.id = ts.team_id" +
+                " WHERE t.game = 'SMASH' AND ts.deleted_at = '9999-12-31 23:59:59' ORDER BY ts.id LIMIT 1",
+        )
+        val teamId = fielding.getValue("team_id") as Long
+        val seasonId = fielding.getValue("season_id") as Long
+        val played = rosterPlaces(teamId, seasonId)
+        jdbc.update("UPDATE team_season SET deleted_at = NOW(6) WHERE id = ?", fielding.getValue("id"))
+
+        runLoader()
+
+        // The files still list the season the team played. Dropping it is the later decision,
+        // and the next run must not undo it -- nor write a second fielding, which would carry
+        // a second copy of a line-up the first one already holds.
+        assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM team_season WHERE team_id = ? AND season_id = ?" +
+                    " AND deleted_at = '9999-12-31 23:59:59'",
+                Int::class.java,
+                teamId,
+                seasonId,
+            ),
+        ).isZero()
+        assertThat(rosterPlaces(teamId, seasonId)).isEqualTo(played)
+    }
+
+    /** Every line-up place written for a team in a season, whichever fielding holds it. */
+    private fun rosterPlaces(teamId: Long, seasonId: Long): Int =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM team_roster_entry e JOIN team_season ts ON ts.id = e.team_season_id" +
+                " WHERE ts.team_id = ? AND ts.season_id = ? AND e.deleted_at = '9999-12-31 23:59:59'",
+            Int::class.java,
+            teamId,
+            seasonId,
+        )!!
+
+    @Test
     fun `a corrected row is applied on the next run`() {
         runLoader()
         val entryId = jdbc.queryForObject(

@@ -183,15 +183,21 @@ class R__Esports_seed : BaseJavaMigration() {
         val role = row.getValue("role")
         val displayName = row.getValue("display_name").ifBlank { null }
         val sortIndex = row.getValue("sort_index").toInt()
-        // The fielding is written before the line-up rather than after it: the entry hangs off
-        // it, so there is nothing to attach one to until it exists. A seeded team would
-        // otherwise exist and show nowhere, since the pages read the fielding.
-        val fieldingId = fieldTeam(connection, teamId, seasonId)
-        val find = "SELECT id FROM team_roster_entry WHERE team_season_id = ? AND handle = ?"
+        // Found through whatever fielding holds it, dropped or not, because this asks whether
+        // the association ever wrote this person down for this team in this season -- which is
+        // the question the entry's own team and season used to answer directly. Looking only
+        // under a live fielding would miss the line-up of a team the board has dropped, and
+        // the row below would write it a second time.
+        val find = """
+            SELECT e.id FROM team_roster_entry e
+            JOIN team_season ts ON ts.id = e.team_season_id
+            WHERE ts.team_id = ? AND ts.season_id = ? AND e.handle = ?
+        """.trimIndent()
 
-        connection.prepareStatement("$find AND $ACTIVE").use { statement ->
-            statement.setLong(1, fieldingId)
-            statement.setString(2, handle)
+        connection.prepareStatement("$find AND e.$ACTIVE").use { statement ->
+            statement.setLong(1, teamId)
+            statement.setLong(2, seasonId)
+            statement.setString(3, handle)
             statement.executeQuery().use { rows ->
                 if (rows.next()) {
                     val id = rows.getLong(1)
@@ -216,11 +222,15 @@ class R__Esports_seed : BaseJavaMigration() {
                 }
             }
         }
-        connection.prepareStatement("$find AND NOT $ACTIVE").use { statement ->
-            statement.setLong(1, fieldingId)
-            statement.setString(2, handle)
+        connection.prepareStatement("$find AND NOT e.$ACTIVE").use { statement ->
+            statement.setLong(1, teamId)
+            statement.setLong(2, seasonId)
+            statement.setString(3, handle)
             statement.executeQuery().use { rows -> if (rows.next()) return false }
         }
+        // Only now, on the path that actually writes somebody down. Fielding the team before
+        // this point would field it on every run, undoing a board that dropped it.
+        val fieldingId = fieldTeam(connection, teamId, seasonId)
         connection.prepareStatement(
             """
             INSERT INTO team_roster_entry (team_season_id, handle, team_role, display_name, sort_index)
@@ -257,7 +267,7 @@ class R__Esports_seed : BaseJavaMigration() {
             statement.setLong(2, seasonId)
             statement.executeUpdate()
             statement.generatedKeys.use { keys ->
-                keys.next()
+                check(keys.next()) { "Fielding team $teamId in season $seasonId returned no id" }
                 return keys.getLong(1)
             }
         }

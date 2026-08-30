@@ -97,4 +97,14 @@ class TeamRosterEntry(
     /** The order the page lists them in, which is the order they were written in. */
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,
-) : AuditedAutoIdEntity()
+) : AuditedAutoIdEntity() {
+    /**
+     * The team and the season this entry was played under, which the fielding already names.
+     *
+     * Computed rather than stored, the way every other id beside a reference here is: the
+     * fielding is the single source of truth and these save every reader walking to it.
+     */
+    val teamId: Long? get() = teamSeason.team.id
+
+    val seasonId: Long? get() = teamSeason.season.id
+}

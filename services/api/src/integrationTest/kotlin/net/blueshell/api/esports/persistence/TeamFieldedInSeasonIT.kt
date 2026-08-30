@@ -121,6 +121,22 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     }
 
     @Test
+    fun `a team fielded again in a season it was dropped from brings its line-up back`() {
+        val season = season()
+        val team = team("BS Dropped And Restored")
+        rosters.add(team.id!!, season.id!!, "returns", TeamRole.PLAYER, null, null)
+        fielded.unfield(team.id!!, season.id!!)
+
+        fielded.field(team.id!!, season.id!!)
+
+        // The line-up hangs off the fielding, so a second fielding would leave it attached to
+        // the dropped one: present in the table, reachable by nothing, and silently gone from
+        // the season it was played in.
+        assertThat(rosters.findByTeamAndSeason(team.id!!, season.id!!).map { it.handle })
+            .containsExactly("returns")
+    }
+
+    @Test
     fun `a season only offers itself once the game has a team in it`() {
         val season = season()
         val before = page.page("TRACKMANIA").seasons.map { it.id }

@@ -7,6 +7,7 @@ import {
   addToRoster,
   dropRosterEntry,
   dropTeam,
+  saveTeamOrReason,
   fieldTeamInSeason,
   linkRosterMember,
   loadMembers,
@@ -147,8 +148,16 @@ const stageIcon = (index: number, picture: EsportsImage | null) => {
   if (row) row.icon = picture
 }
 
+/**
+ * Making a team rather than correcting one, which is what having no team to open on means.
+ *
+ * The same editor either way: a squad is published as one answer, and that is as true of the
+ * first answer as of the ones after it.
+ */
+const adding = computed(() => props.teamId == null)
+
 watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open, teamId, seasonId]) => {
-  if (!open || teamId == null || seasonId == null) return
+  if (!open || seasonId == null) return
   loading.value = true
   failure.value = null
   removed.value = []
@@ -158,19 +167,25 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   icon.value = props.teamIcon ?? null
   playedIn.value = null
   try {
-    const entries = await loadRoster(teamId, props.game, seasonId)
-    rows.value = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
+    // Nothing to read for a team that does not exist yet: it opens on an empty form and one
+    // empty row, so the first thing to do is the obvious thing.
+    rows.value = teamId == null
+      ? [emptyRow()]
+      : (await loadRoster(teamId, props.game, seasonId))
+        .slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
     if (members.value.length === 0) members.value = await loadMembers()
   } finally {
     loading.value = false
   }
 }, {immediate: true})
 
+const emptyRow = (): Row => ({
+  id: null, handle: "", role: TeamRoleEnum.PLAYER, roleTitle: "", description: "", userId: null,
+  displayName: "", icon: null,
+})
+
 const add = () => {
-  rows.value = [...rows.value, {
-    id: null, handle: "", role: TeamRoleEnum.PLAYER, roleTitle: "", description: "", userId: null,
-    displayName: "", icon: null,
-  }]
+  rows.value = [...rows.value, emptyRow()]
 }
 
 const dropping = ref<number | null>(null)
@@ -224,8 +239,18 @@ const attach = (index: number, userId: number | null) => {
   memberSearch.value = {...memberSearch.value, [index]: ""}
 }
 
+/**
+ * A team being made may be published with nobody on it -- fielding it and settling the squad
+ * are the two decisions this whole feature exists to separate -- so an empty row is not an
+ * unfinished one. A row somebody typed into has to name somebody.
+ */
 const complete = computed(() =>
-  draftName.value.trim() !== "" && rows.value.every(row => row.handle.trim() !== ""))
+  draftName.value.trim() !== ""
+  && rows.value.every(row => row.handle.trim() !== "" || (adding.value && isBlank(row))))
+
+const isBlank = (row: Row) =>
+  row.handle.trim() === "" && row.displayName.trim() === "" && row.roleTitle.trim() === ""
+  && row.description.trim() === "" && row.userId == null && row.icon == null
 
 
 /** How many seasons the team played, so removing it altogether can say what that means. */
@@ -299,20 +324,28 @@ const reasonFrom = (error: unknown): string => {
 }
 
 const submit = async () => {
-  const teamId = props.teamId
   const seasonId = props.season?.id
-  if (!complete.value || saving.value || teamId == null || seasonId == null) return
+  if (!complete.value || saving.value || seasonId == null) return
   saving.value = true
   failure.value = null
   try {
     // The team itself first — its name and its logo. A line-up written against a team that
-    // was meant to be renamed would leave the rename half-applied if anything after it failed.
-    const saved = await saveTeamAs(teamId, {
-      name: draftName.value.trim(),
-      icon: icon.value?.path ?? null,
-    })
+    // was meant to be renamed would leave the rename half-applied if anything after it failed;
+    // a team being made has to exist before anything can be written against it at all, which
+    // is why nothing above this point writes.
+    const saved = props.teamId == null
+      ? await saveTeamOrReason({name: draftName.value.trim(), icon: icon.value?.path ?? null})
+      : await saveTeamAs(props.teamId, {
+        name: draftName.value.trim(),
+        icon: icon.value?.path ?? null,
+      })
     if (!saved.ok) {
       failure.value = saved.reason
+      return
+    }
+    const teamId = props.teamId ?? saved.team?.id
+    if (teamId == null) {
+      failure.value = "The team could not be saved."
       return
     }
 
@@ -331,6 +364,7 @@ const submit = async () => {
         sortIndex: index,
         icon: row.icon?.path ?? null,
       }
+      if (isBlank(row)) continue
       if (row.id == null) {
         await addToRoster(teamId, {
           game: props.game,
@@ -360,7 +394,9 @@ const submit = async () => {
     :accent="accent"
     :open="open"
     testid="lineup-dialog"
-    :title="season ? `${teamName} in ${season.name}` : teamName"
+    :title="adding
+      ? (season ? `A new team in ${season.name}` : 'A new team')
+      : (season ? `${teamName} in ${season.name}` : teamName)"
     @update:open="emit('update:open', $event)"
   >
     <div
@@ -599,8 +635,13 @@ const submit = async () => {
       </p>
 
       <div class="lineup__actions">
-        <!-- The lesser removal first: it is the one asked for more often, and the one meant. -->
-        <div class="lineup__group">
+        <!-- The lesser removal first: it is the one asked for more often, and the one meant.
+             Neither is offered while a team is being made: there is nothing yet to drop from
+             a season or to remove, and Cancel is what leaves without writing. -->
+        <div
+          v-if="!adding"
+          class="lineup__group"
+        >
           <button
             v-if="season"
             class="lineup__button lineup__button--drop"
@@ -635,7 +676,7 @@ const submit = async () => {
             type="button"
             @click="submit"
           >
-            {{ saving ? "Saving" : "Save" }}
+            {{ saving ? "Saving" : adding ? "Create" : "Save" }}
           </button>
         </div>
       </div>

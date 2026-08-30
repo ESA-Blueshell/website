@@ -15,7 +15,13 @@ spring:
         default_schema: blueshell
 
   datasource:
-    url: jdbc:h2:mem:openapi;MODE=LEGACY;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    # INIT=CREATE SCHEMA IF NOT EXISTS blueshell\; pre-creates the schema
+    # that Hibernate's default_schema points at. Without it, every DDL
+    # statement fails with "Schema \"blueshell\" not found" because H2
+    # does not auto-create schemas. The trailing \; is the JDBC URL
+    # parser's escape for the parameter separator, so Spring Boot
+    # hands H2 a single INIT value terminated by a real semicolon.
+    url: jdbc:h2:mem:openapi;MODE=LEGACY;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;INIT=CREATE SCHEMA IF NOT EXISTS blueshell\;
     driver-class-name: org.h2.Driver
     username: sa
     password: openapi

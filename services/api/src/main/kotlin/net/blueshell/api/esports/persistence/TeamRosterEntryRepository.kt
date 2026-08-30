@@ -9,14 +9,15 @@ import java.time.LocalDate
 @Repository
 interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     /**
-     * A whole game's rosters for one season, teams and seasons fetched with them: the page
-     * draws every team at once, and lazy loading them would be one query per team.
+     * A whole game's rosters for one season, the fielding and what it names fetched with them:
+     * the page draws every team at once, and lazy loading them would be one query per team.
      */
     @Query(
         """
         SELECT e FROM TeamRosterEntry e
-        JOIN FETCH e.team t
-        JOIN FETCH e.season s
+        JOIN FETCH e.teamSeason ts
+        JOIN FETCH ts.team t
+        JOIN FETCH ts.season s
         LEFT JOIN FETCH e.icon
         WHERE t.game = :game AND s.id = :seasonId
         ORDER BY t.name ASC, e.teamRole ASC, e.sortIndex ASC
@@ -31,8 +32,9 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     @Query(
         """
         SELECT e FROM TeamRosterEntry e
-        JOIN FETCH e.team t
-        JOIN FETCH e.season s
+        JOIN FETCH e.teamSeason ts
+        JOIN FETCH ts.team t
+        JOIN FETCH ts.season s
         LEFT JOIN FETCH e.icon
         WHERE t.id = :teamId AND s.id = :seasonId
         ORDER BY e.teamRole ASC, e.sortIndex ASC
@@ -47,8 +49,9 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     @Query(
         """
         SELECT DISTINCT s.id FROM TeamRosterEntry e
-        JOIN e.team t
-        JOIN e.season s
+        JOIN e.teamSeason ts
+        JOIN ts.team t
+        JOIN ts.season s
         WHERE t.game = :game
         ORDER BY s.id DESC
         """,
@@ -62,7 +65,8 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     @Query(
         """
         SELECT COUNT(e) > 0 FROM TeamRosterEntry e
-        JOIN e.season s
+        JOIN e.teamSeason ts
+        JOIN ts.season s
         WHERE e.userId = :userId AND s.startDate <= :to AND s.endDate >= :from
         """,
     )
@@ -76,7 +80,8 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     @Query(
         """
         SELECT DISTINCT e.userId FROM TeamRosterEntry e
-        JOIN e.season s
+        JOIN e.teamSeason ts
+        JOIN ts.season s
         WHERE e.userId IS NOT NULL AND s.startDate <= :to AND s.endDate >= :from
         """,
     )
@@ -89,8 +94,9 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     @Query(
         """
         SELECT s.id FROM TeamRosterEntry e
-        JOIN e.season s
-        WHERE e.team.id = :teamId AND s.id <> :ignoring
+        JOIN e.teamSeason ts
+        JOIN ts.season s
+        WHERE ts.team.id = :teamId AND s.id <> :ignoring
         GROUP BY s.id, s.startDate
         ORDER BY s.startDate DESC
         """,
@@ -102,9 +108,11 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
 
     fun findAllByUserId(userId: Long): List<TeamRosterEntry>
 
-    fun countBySeasonId(seasonId: Long): Long
+    /** Roster places held in one season, for a removal to say before it happens. */
+    @Query("SELECT COUNT(e) FROM TeamRosterEntry e WHERE e.teamSeason.season.id = :seasonId")
+    fun countBySeasonId(@Param("seasonId") seasonId: Long): Long
 
     /** Roster places held across every team of one game, for a removal to say before it happens. */
-    @Query("SELECT COUNT(e) FROM TeamRosterEntry e WHERE e.team.game = :game")
+    @Query("SELECT COUNT(e) FROM TeamRosterEntry e WHERE e.teamSeason.team.game = :game")
     fun countByGame(@Param("game") game: String): Long
 }

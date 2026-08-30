@@ -57,13 +57,12 @@ class EsportsControllerIT : UserTestSupport() {
         userId: Long? = null,
         displayName: String? = null,
     ): TeamRosterEntry {
-        // Naming somebody to a team says it is fielded that season, which is what the page
-        // reads; a row written straight to the repository has to say so itself.
-        fielded.field(team.id!!, season.id!!)
+        // A line-up hangs off the fielding, so the fielding is what the entry is written
+        // against — there is nothing to attach one to until it exists.
+        val fielding = fielded.field(team.id!!, season.id!!)
         return entries.save(
             TeamRosterEntry(
-                team = team,
-                season = season,
+                teamSeason = fielding,
                 handle = handle,
                 teamRole = role,
                 userId = userId,

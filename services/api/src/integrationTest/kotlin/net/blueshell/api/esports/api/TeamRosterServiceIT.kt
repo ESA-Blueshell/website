@@ -1,5 +1,6 @@
 package net.blueshell.api.esports.api
 
+import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
@@ -33,6 +34,9 @@ class TeamRosterServiceIT : UserTestSupport() {
     @Autowired
     private lateinit var entries: TeamRosterEntryRepository
 
+    @Autowired
+    private lateinit var fielded: TeamSeasonService
+
     private fun season(from: LocalDate, to: LocalDate): Season =
         seasons.save(Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = to))
 
@@ -40,8 +44,7 @@ class TeamRosterServiceIT : UserTestSupport() {
         val team = teams.save(Team(game = "VALORANT", name = "Team ${System.nanoTime()}"))
         return entries.save(
             TeamRosterEntry(
-                team = team,
-                season = season,
+                teamSeason = fielded.field(team.id!!, season.id!!),
                 handle = handle,
                 teamRole = TeamRole.PLAYER,
                 userId = userId,
@@ -83,8 +86,8 @@ class TeamRosterServiceIT : UserTestSupport() {
         val team = teams.save(Team(game = "CS2", name = "Team ${System.nanoTime()}"))
         val first = season(LocalDate.of(2024, 9, 1), LocalDate.of(2025, 1, 31))
         val second = season(LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
-        entries.save(TeamRosterEntry(team = team, season = first, handle = "veteran"))
-        entries.save(TeamRosterEntry(team = team, season = second, handle = "newcomer"))
+        entries.save(TeamRosterEntry(teamSeason = fielded.field(team.id!!, first.id!!), handle = "veteran"))
+        entries.save(TeamRosterEntry(teamSeason = fielded.field(team.id!!, second.id!!), handle = "newcomer"))
 
         assertThat(rosters.findByTeamAndSeason(team.id!!, first.id!!).map { it.handle })
             .containsExactly("veteran")

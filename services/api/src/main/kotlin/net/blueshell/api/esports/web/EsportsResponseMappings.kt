@@ -60,8 +60,8 @@ fun EsportsPageView.asResponse() = EsportsPageResponse(
 /** The admin view of an entry, which unlike the public one carries the real name. */
 fun TeamRosterEntry.asResponse() = RosterEntryResponse(
     id = id!!,
-    teamId = team.id!!,
-    seasonId = season.id!!,
+    teamId = teamSeason.team.id!!,
+    seasonId = teamSeason.season.id!!,
     role = teamRole,
     handle = handle,
     displayName = displayName,

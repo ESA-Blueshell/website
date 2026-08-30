@@ -17,7 +17,12 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * One person on one team for one season.
+ * One person on one team for one season, hung off the fielding that says the team played it.
+ *
+ * The team and the season come with [teamSeason] rather than being named again here. Naming
+ * them again would be the same fact written twice and able to disagree with itself, and it
+ * would leave a line-up for a team nobody fielded writable — a state the pages have no way to
+ * draw and no reason to hold. It is unrepresentable instead of merely discouraged.
  *
  * `userId` is nullable and a plain Long. Nullable because most of the recovered history is a
  * handle and nothing else, and an entry nobody can attribute is still the roster that played;
@@ -34,11 +39,11 @@ import org.hibernate.annotations.SQLRestriction
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_roster_entry",
-            columnNames = ["team_id", "season_id", "handle", "deleted_at"],
+            columnNames = ["team_season_id", "handle", "deleted_at"],
         ),
     ],
     indexes = [
-        Index(name = "idx_roster_entry_season", columnList = "season_id, deleted_at"),
+        Index(name = "idx_roster_entry_fielding", columnList = "team_season_id, deleted_at"),
         Index(name = "idx_roster_entry_user", columnList = "user_id, deleted_at"),
         Index(name = "idx_roster_entry_deleted_at", columnList = "deleted_at"),
     ],
@@ -49,12 +54,8 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class TeamRosterEntry(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "team_id", nullable = false)
-    var team: Team,
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "season_id", nullable = false)
-    var season: Season,
+    @JoinColumn(name = "team_season_id", nullable = false)
+    var teamSeason: TeamSeason,
 
     @Column(name = "handle", nullable = false, length = 128)
     var handle: String,

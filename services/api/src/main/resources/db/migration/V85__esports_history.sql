@@ -578,14 +578,29 @@ SELECT DISTINCT i.game, i.team
 FROM esports_import i
 WHERE NOT EXISTS (SELECT 1 FROM team t WHERE t.game = i.game AND t.name = i.team AND t.deleted_at = '9999-12-31 23:59:59.000000');
 
-INSERT INTO team_roster_entry (team_id, season_id, handle, team_role, display_name, sort_index)
-SELECT t.id, s.id, i.handle, i.team_role, i.display_name, i.sort_index
+-- The fielding comes before the line-up, because the line-up hangs off it. Every team named
+-- in the recovered rows for a season was fielded in that season by the fact of having played
+-- it, so the two are written from the same staging table in the one order they can be.
+INSERT INTO team_season (team_id, season_id)
+SELECT DISTINCT t.id, s.id
 FROM esports_import i
 JOIN team t ON t.game = i.game AND t.name = i.team AND t.deleted_at = '9999-12-31 23:59:59.000000'
 JOIN season s ON s.name = i.season AND s.deleted_at = '9999-12-31 23:59:59.000000'
 WHERE NOT EXISTS (
+    SELECT 1 FROM team_season ts
+    WHERE ts.team_id = t.id AND ts.season_id = s.id
+      AND ts.deleted_at = '9999-12-31 23:59:59.000000');
+
+INSERT INTO team_roster_entry (team_season_id, handle, team_role, display_name, sort_index)
+SELECT ts.id, i.handle, i.team_role, i.display_name, i.sort_index
+FROM esports_import i
+JOIN team t ON t.game = i.game AND t.name = i.team AND t.deleted_at = '9999-12-31 23:59:59.000000'
+JOIN season s ON s.name = i.season AND s.deleted_at = '9999-12-31 23:59:59.000000'
+JOIN team_season ts ON ts.team_id = t.id AND ts.season_id = s.id
+    AND ts.deleted_at = '9999-12-31 23:59:59.000000'
+WHERE NOT EXISTS (
     SELECT 1 FROM team_roster_entry e
-    WHERE e.team_id = t.id AND e.season_id = s.id AND e.handle = i.handle
+    WHERE e.team_season_id = ts.id AND e.handle = i.handle
       AND e.deleted_at = '9999-12-31 23:59:59.000000');
 
 DROP TEMPORARY TABLE esports_import;
@@ -615,8 +630,9 @@ FROM (
                PARTITION BY e.user_id, t.game ORDER BY s.start_date DESC, e.id DESC
            ) AS rn
     FROM team_roster_entry e
-    JOIN team t ON t.id = e.team_id
-    JOIN season s ON s.id = e.season_id
+    JOIN team_season ts ON ts.id = e.team_season_id
+    JOIN team t ON t.id = ts.team_id
+    JOIN season s ON s.id = ts.season_id
     WHERE e.user_id IS NOT NULL AND e.deleted_at = '9999-12-31 23:59:59.000000'
 ) x
 WHERE x.rn = 1

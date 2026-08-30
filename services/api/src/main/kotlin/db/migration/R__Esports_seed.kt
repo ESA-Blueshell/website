@@ -6,6 +6,7 @@ import org.flywaydb.core.api.migration.Context
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.Date
+import java.sql.Statement
 
 /**
  * Loads the recovered esports history from the seed files.
@@ -182,12 +183,15 @@ class R__Esports_seed : BaseJavaMigration() {
         val role = row.getValue("role")
         val displayName = row.getValue("display_name").ifBlank { null }
         val sortIndex = row.getValue("sort_index").toInt()
-        val find = "SELECT id FROM team_roster_entry WHERE team_id = ? AND season_id = ? AND handle = ?"
+        // The fielding is written before the line-up rather than after it: the entry hangs off
+        // it, so there is nothing to attach one to until it exists. A seeded team would
+        // otherwise exist and show nowhere, since the pages read the fielding.
+        val fieldingId = fieldTeam(connection, teamId, seasonId)
+        val find = "SELECT id FROM team_roster_entry WHERE team_season_id = ? AND handle = ?"
 
         connection.prepareStatement("$find AND $ACTIVE").use { statement ->
-            statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
-            statement.setString(3, handle)
+            statement.setLong(1, fieldingId)
+            statement.setString(2, handle)
             statement.executeQuery().use { rows ->
                 if (rows.next()) {
                     val id = rows.getLong(1)
@@ -213,45 +217,49 @@ class R__Esports_seed : BaseJavaMigration() {
             }
         }
         connection.prepareStatement("$find AND NOT $ACTIVE").use { statement ->
-            statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
-            statement.setString(3, handle)
+            statement.setLong(1, fieldingId)
+            statement.setString(2, handle)
             statement.executeQuery().use { rows -> if (rows.next()) return false }
         }
-        // A roster entry says the team was fielded that season, so the link is written with it.
-        // Without this a seeded team would exist and show nowhere, since the pages read the
-        // link rather than inferring one from the roster.
-        fieldTeam(connection, teamId, seasonId)
         connection.prepareStatement(
             """
-            INSERT INTO team_roster_entry (team_id, season_id, handle, team_role, display_name, sort_index)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO team_roster_entry (team_season_id, handle, team_role, display_name, sort_index)
+            VALUES (?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
-            statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
-            statement.setString(3, handle)
-            statement.setString(4, role)
-            statement.setString(5, displayName)
-            statement.setInt(6, sortIndex)
+            statement.setLong(1, fieldingId)
+            statement.setString(2, handle)
+            statement.setString(3, role)
+            statement.setString(4, displayName)
+            statement.setInt(5, sortIndex)
             statement.executeUpdate()
         }
         return true
     }
 
-    /** Records that a team was fielded in a season, unless it already says so. */
-    private fun fieldTeam(connection: Connection, teamId: Long, seasonId: Long) {
+    /**
+     * Records that a team was fielded in a season, unless it already says so, and answers with
+     * the fielding either way — a line-up is written against it.
+     */
+    private fun fieldTeam(connection: Connection, teamId: Long, seasonId: Long): Long {
         connection.prepareStatement(
             "SELECT id FROM team_season WHERE team_id = ? AND season_id = ? AND $ACTIVE",
         ).use { statement ->
             statement.setLong(1, teamId)
             statement.setLong(2, seasonId)
-            statement.executeQuery().use { rows -> if (rows.next()) return }
+            statement.executeQuery().use { rows -> if (rows.next()) return rows.getLong(1) }
         }
-        connection.prepareStatement("INSERT INTO team_season (team_id, season_id) VALUES (?, ?)").use { statement ->
+        connection.prepareStatement(
+            "INSERT INTO team_season (team_id, season_id) VALUES (?, ?)",
+            Statement.RETURN_GENERATED_KEYS,
+        ).use { statement ->
             statement.setLong(1, teamId)
             statement.setLong(2, seasonId)
             statement.executeUpdate()
+            statement.generatedKeys.use { keys ->
+                keys.next()
+                return keys.getLong(1)
+            }
         }
     }
 

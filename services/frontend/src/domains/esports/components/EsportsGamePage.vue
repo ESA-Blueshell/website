@@ -387,9 +387,16 @@ const seasonSaved = (saved: Season) => {
             data-testid="esports-loading"
           />
 
+          <!--
+            Said whether or not the band follows it. A season this game sat out still needs a
+            way to put the first team into it, and the way in lives at the end of the band --
+            so a reader who may edit is given the sentence and the band, and a visitor just the
+            sentence, since there is nothing for them to do about it.
+          -->
           <div
             v-else-if="!hasRosters"
-            class="flex min-h-[22rem] w-full flex-col items-center justify-center gap-2 bg-surface px-5 text-center font-body text-sm text-ash"
+            class="flex w-full flex-col items-center justify-center gap-2 bg-surface px-5 py-16 text-center font-body text-sm text-ash"
+            :class="{'min-h-[22rem]': !mayEdit}"
             data-testid="esports-empty"
           >
             <p>No teams recorded for {{ season?.name ?? "this season" }} yet.</p>
@@ -414,7 +421,7 @@ const seasonSaved = (saved: Season) => {
             Within one season the band still updates in place, and only what changed moves.
           -->
           <Motion
-            v-else
+            v-if="hasRosters || mayEdit"
             v-bind="entrance(0)"
           >
             <banner-slices

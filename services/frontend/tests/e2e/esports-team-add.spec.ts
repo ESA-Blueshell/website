@@ -206,4 +206,24 @@ test.describe("adding a team to the season on show", () => {
     await expect(page.getByTestId("lineup-remove-team")).toHaveCount(0)
     await expect(page.getByTestId("lineup-drop-from-season")).toHaveCount(0)
   })
+
+  test("a season this game sat out still offers the way to put a team into it", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+
+    // CS:GO played the older season and nothing since, so the newer one is empty for it.
+    await page.goto("/esports/counter-strike-global-offensive?season=20")
+    await expect(page.getByTestId("esports-empty")).toBeVisible()
+
+    await expect(page.getByTestId("team-roster-add")).toBeVisible()
+  })
+
+  test("a visitor reading a season it sat out is offered no way in", async ({page}) => {
+    await installApiMocks(page)
+
+    await page.goto("/esports/counter-strike-global-offensive?season=20")
+    await expect(page.getByTestId("esports-empty")).toBeVisible()
+
+    await expect(page.getByTestId("team-roster-add")).toHaveCount(0)
+  })
 })

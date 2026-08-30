@@ -280,9 +280,16 @@ const seasonSaved = (saved: Season) => {
             data-testid="esports-index-loading"
           />
 
+          <!--
+            Said whether or not the band follows it. A season nothing ran in still needs a way
+            to put the first game into it, and the way in lives at the end of the band -- so a
+            reader who may edit is given the sentence and the band, and a visitor just the
+            sentence, since there is nothing for them to do about it.
+          -->
           <p
             v-else-if="!fielded"
-            class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
+            class="flex w-full items-center justify-center bg-surface py-16 text-center font-body text-sm text-ash"
+            :class="{'min-h-[22rem]': !mayEdit}"
             data-testid="esports-index-empty"
           >
             No teams were fielded in {{ seasonName || "this season" }}.
@@ -295,7 +302,7 @@ const seasonSaved = (saved: Season) => {
             Within one season the band still updates in place, and only what changed moves.
           -->
           <Motion
-            v-else
+            v-if="fielded || mayEdit"
             v-bind="entrance"
           >
             <banner-slices

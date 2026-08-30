@@ -218,4 +218,25 @@ test.describe("adding a game", () => {
     await expect(slice).toBeVisible()
     await expect(slice).not.toHaveAttribute("style", /--slice-accent:\s*#/)
   })
+
+  test("a season nothing ran in still offers the way to put a game into it", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+
+    // The empty season is the one nothing was fielded in, which is exactly where a board
+    // needs to start. Saying so and offering nothing to do about it is a dead end.
+    await page.goto(`${INDEX}?season=41`)
+    await expect(page.getByTestId("esports-index-empty")).toBeVisible()
+
+    await expect(page.getByTestId("esports-game-add")).toBeVisible()
+  })
+
+  test("a visitor reading an empty season is offered no way in", async ({page}) => {
+    await installApiMocks(page)
+
+    await page.goto(`${INDEX}?season=41`)
+    await expect(page.getByTestId("esports-index-empty")).toBeVisible()
+
+    await expect(page.getByTestId("esports-game-add")).toHaveCount(0)
+  })
 })

@@ -4,6 +4,7 @@ import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.shared.enums.FileType
+import java.time.LocalDate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -78,6 +79,31 @@ class TeamSeasonService(
                 banner = fielded.findPreviousInGame(teamId, game, seasonId).firstOrNull()?.banner,
             ),
         )
+    }
+
+    /**
+     * The games the association currently plays: what was fielded in the season we are in, and
+     * in the season before it.
+     *
+     * A union rather than the newest season alone. A season is set up a game at a time, so a
+     * list that followed only the newest would collapse to whichever game the board entered
+     * first and refill as they worked — a half-finished season, in public, every changeover.
+     * The cost is accepted and known: a game the association has genuinely stopped playing
+     * stays listed for one more season, which is a far smaller lie than the association
+     * playing one game.
+     *
+     * Fielded, not merely entered: a game is public in a season once a team plays it, which is
+     * the same rule the pages themselves answer to.
+     */
+    @Transactional(readOnly = true)
+    fun currentlyPlayed(on: LocalDate = LocalDate.now()): Set<String> {
+        val ordered = seasons.findAll()
+        // Where no season covers today — a gap between them — the most recent one that has
+        // started is the one we are in for this purpose.
+        val current = seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
+            ?: return emptySet()
+        val previous = ordered.firstOrNull { it.startDate.isBefore(current.startDate) }
+        return fielded.gamesFieldedIn(listOfNotNull(current.id, previous?.id)).toSet()
     }
 
     /** The art this team is drawn with in this game this season. */

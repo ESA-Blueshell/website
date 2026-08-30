@@ -91,21 +91,6 @@ test.describe("changing a game", () => {
     await expect(page.getByTestId("game-dialog-slug")).toHaveValue("geoguessr")
   })
 
-  test("a game marked no longer fielded leaves the navigation and keeps its page", async ({page, context}) => {
-    await installApiMocks(page)
-    await loginAsBoard(context)
-
-    await page.goto("/esports/trackmania")
-    await openGameEditor(page)
-    await page.getByTestId("game-dialog-fielded").uncheck()
-    await page.getByTestId("game-dialog-save").click()
-    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
-
-    // Its history stays readable at the address it always had.
-    await expect(page.getByRole("heading", {level: 1})).toHaveText("Trackmania")
-    await expect(page.locator("a[href='/esports/trackmania']")).toHaveCount(0)
-  })
-
   test("a game is corrected from the band as well as from its own page", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)

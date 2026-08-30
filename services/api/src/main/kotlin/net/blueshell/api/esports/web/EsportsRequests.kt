@@ -176,6 +176,4 @@ data class UpdateGamePageRequest(
     @field:Schema(description = "Where the game's banner is stored; nothing takes the banner away")
     val banner: String? = null,
     val sortIndex: Int = 0,
-    @field:Schema(description = "Whether the association still fields a team in it")
-    val fielded: Boolean = true,
 )

@@ -39,7 +39,7 @@ test.describe("a game as its record has it", () => {
     await installApiMocks(page, {
       esportsGames: [
         {game: "VALORANT", name: "Valorant", slug: "valorant", accent: null, banner: null, icon: null,
-          intro: "Nothing drawn for it.", sortIndex: 1, fielded: true},
+          intro: "Nothing drawn for it.", sortIndex: 1, current: true},
       ],
     })
 
@@ -58,7 +58,7 @@ test.describe("a game as its record has it", () => {
     await installApiMocks(page, {
       esportsGames: [
         {game: "VALORANT", name: "Valorant Reborn", slug: "valorant", accent: "#ff4655",
-          banner: null, icon: null, intro: "Renamed.", sortIndex: 1, fielded: true},
+          banner: null, icon: null, intro: "Renamed.", sortIndex: 1, current: true},
       ],
     })
 

@@ -89,7 +89,7 @@ class R__Esports_seed : BaseJavaMigration() {
 
     /**
      * A game as the file has it: what it is called, the address its page answers to, the art it
-     * carries and whether a team is still fielded in it.
+     * carries. Whether the association still plays it is derived from the seasons, not recorded here.
      *
      * The code is the identity and is never rewritten. Unlike the rest of the seed a deleted game
      * is not left deleted: a game is what a team points at, so a row in the file is the statement
@@ -101,23 +101,22 @@ class R__Esports_seed : BaseJavaMigration() {
         val slug = row.getValue("slug")
         val accent = row.getValue("accent").ifBlank { null }
         val sortIndex = row.getValue("sort_index").toInt()
-        val fielded = row.getValue("fielded").toBoolean()
         val intro = row.getValue("intro").ifBlank { null }
 
         // Found whether or not it is deleted: a code is unique across every row, so there is no
         // second row to insert beside a deleted one. A game the file lists exists, so a deleted
         // row is brought back rather than duplicated.
         val existing = activeId(connection, "SELECT id FROM game_page WHERE game = ?", code)
-        val fields = listOf<Any?>(name, slug, accent, sortIndex, fielded, intro)
+        val fields = listOf<Any?>(name, slug, accent, sortIndex, intro)
         if (existing != null) {
             connection.prepareStatement(
                 """
                 UPDATE game_page
-                SET name = ?, slug = ?, accent = ?, sort_index = ?, fielded = ?, intro = ?,
+                SET name = ?, slug = ?, accent = ?, sort_index = ?, intro = ?,
                     deleted_at = '9999-12-31 23:59:59'
                 WHERE id = ?
                   AND NOT (name <=> ? AND slug <=> ? AND accent <=> ?
-                           AND sort_index <=> ? AND fielded <=> ? AND intro <=> ? AND $ACTIVE)
+                           AND sort_index <=> ? AND intro <=> ? AND $ACTIVE)
                 """.trimIndent(),
             ).use { statement ->
                 fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
@@ -129,8 +128,8 @@ class R__Esports_seed : BaseJavaMigration() {
         }
         connection.prepareStatement(
             """
-            INSERT INTO game_page (game, name, slug, accent, sort_index, fielded, intro)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO game_page (game, name, slug, accent, sort_index, intro)
+            VALUES (?, ?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
             (listOf<Any?>(code) + fields)

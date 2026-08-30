@@ -26,7 +26,7 @@ const motion = useMotionAllowed()
 
 // Which games exist, what each is called and the art each carries are the records' answer;
 // the index keeps no list of its own.
-const {games: allGames, fielded: playedGames, ready, identityOf, recordOf, refresh: refreshGames} = useGames()
+const {games: allGames, current: playedGames, ready, identityOf, recordOf, refresh: refreshGames} = useGames()
 
 // Every game, not only the ones still fielded. `fielded` says whether a game is offered as
 // current, which is what the menu and the add-a-team dialog want; the band below is about what

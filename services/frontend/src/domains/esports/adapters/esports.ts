@@ -123,7 +123,6 @@ export async function saveGameOrReason(
     banner: string | null
     icon: string | null
     sortIndex: number
-    fielded: boolean
   },
 ): Promise<GameSaved | Refused> {
   const res = await updateGamePage({
@@ -136,7 +135,6 @@ export async function saveGameOrReason(
       banner: game.banner ?? undefined,
       icon: game.icon ?? undefined,
       sortIndex: game.sortIndex,
-      fielded: game.fielded,
     },
   })
   if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be saved.")}

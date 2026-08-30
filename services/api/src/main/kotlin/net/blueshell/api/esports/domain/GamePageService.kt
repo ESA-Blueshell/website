@@ -80,8 +80,9 @@ class GamePageService(
      * A game corrected. Everything about it is editable except its code, which is the identity
      * a team, a roster and a member's handle already point at.
      *
-     * Marking it no longer fielded is the soft act: it stops being offered as current and keeps
-     * every team, season and roster place it holds.
+     * Whether the association still plays it is not among them: that is derived from the
+     * seasons now, and a game stops being current by not being entered rather than by being
+     * marked.
      */
     @Transactional
     @Suppress("LongParameterList")
@@ -94,7 +95,6 @@ class GamePageService(
         banner: String?,
         icon: String?,
         sortIndex: Int,
-        fielded: Boolean,
     ): GamePage {
         val page = findByGame(game)
         val called = name.trim()
@@ -109,7 +109,6 @@ class GamePageService(
         page.banner = pictures.of(banner, FileType.GAME_BANNER)
         page.icon = pictures.of(icon, FileType.GAME_ICON)
         page.sortIndex = sortIndex
-        page.fielded = fielded
         return pages.save(page)
     }
 
@@ -127,10 +126,12 @@ class GamePageService(
     /**
      * A game added by mistake, taken off the site.
      *
-     * A game that carries history cannot go: it is refused, and marking it no longer fielded is
-     * the act that fits — everything it played stays readable. What is left is a game holding
-     * nothing, which has no history to keep, so it is removed rather than hidden. Its code is
-     * unique across every row, and a hidden row would hold that code for good.
+     * A game that carries history cannot go: it is refused, and everything it played stays
+     * readable. There is no softer act to offer any more — a game leaves the front of the site
+     * by not being entered in a season, which is a thing that happens rather than a thing
+     * somebody does. What is left is a game holding nothing, which has no history to keep, so
+     * it is removed rather than hidden. Its code is unique across every row, and a hidden row
+     * would hold that code for good.
      */
     @Transactional
     fun delete(game: String) {
@@ -141,7 +142,8 @@ class GamePageService(
                 HttpStatus.CONFLICT,
                 "${page.name} holds $held team${if (held == 1L) "" else "s"} and " +
                     "$players roster place${if (players == 1L) "" else "s"}. " +
-                    "Mark it as no longer fielded instead, and everything it played stays readable.",
+                    "Everything it played stays readable, and it leaves the pages that show what " +
+                    "the association plays by not being entered in a season.",
             )
         }
         pages.delete(page)

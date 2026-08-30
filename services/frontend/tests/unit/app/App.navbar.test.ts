@@ -102,13 +102,13 @@ vi.mock("@/services/api", () => ({
   findUserById: mockFindUserById,
 }))
 
-// The esports menu lists what the records report as fielded, so a navbar case has to say
+// The esports menu lists what the records report as currently played, so a navbar case has to say
 // which games there are.
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadGames: vi.fn(async () => [
-    {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: null, banner: null, icon: null, intro: null, sortIndex: 5, fielded: true},
-    {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: null, sortIndex: 6, fielded: true},
-    {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: null, banner: null, icon: null, intro: null, sortIndex: 7, fielded: false},
+    {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: null, banner: null, icon: null, intro: null, sortIndex: 5, current: true},
+    {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: null, sortIndex: 6, current: true},
+    {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: null, banner: null, icon: null, intro: null, sortIndex: 7, current: false},
   ]),
 }))
 
@@ -169,7 +169,7 @@ describe("App navbar behavior", () => {
     expect(wrapper.find('[to="/login"]').exists()).toBe(false)
 
     expect(wrapper.find('[to="/esports/geoguessr"]').exists()).toBe(true)
-    // Trackmania is fielded and is offered; CS:GO is history and is not.
+    // Trackmania was played this season or last and is offered; CS:GO is history and is not.
     expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(true)
     expect(wrapper.find('[to="/esports/counter-strike-global-offensive"]').exists()).toBe(false)
     expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)

@@ -913,9 +913,9 @@ export type GamePageResponse = {
      */
     banner?: Image | null;
     /**
-     * Whether the association still fields a team in it
+     * Whether the association currently plays it: a team played it this season or last
      */
-    fielded: boolean;
+    current: boolean;
     game: string;
     /**
      * The game's own icon, drawn in that slice beside the name
@@ -1685,10 +1685,6 @@ export type UpdateGamePageRequest = {
      * Where the game's banner is stored; nothing takes the banner away
      */
     banner?: string | null;
-    /**
-     * Whether the association still fields a team in it
-     */
-    fielded: boolean;
     /**
      * Where the game's icon is stored; nothing takes the icon away
      */

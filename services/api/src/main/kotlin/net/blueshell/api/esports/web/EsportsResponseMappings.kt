@@ -77,7 +77,7 @@ fun UserGameAccount.asResponse() = GameAccountResponse(
     handle = handle,
 )
 
-fun GamePage.asResponse(): GamePageResponse = GamePageResponse(
+fun GamePage.asResponse(current: Boolean = false): GamePageResponse = GamePageResponse(
     game = game,
     name = name,
     slug = slug,
@@ -86,6 +86,6 @@ fun GamePage.asResponse(): GamePageResponse = GamePageResponse(
     icon = icon?.asImage(),
     intro = intro,
     sortIndex = sortIndex,
-    fielded = fielded,
+    current = current,
 )
 

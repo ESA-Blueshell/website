@@ -48,14 +48,14 @@ const brevoTargets = [
  * answers to, and the art it is drawn with. The pages read every one of these from here.
  */
 const esportsGames = [
-  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, fielded: true},
-  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, fielded: true},
-  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, fielded: true},
-  {game: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, fielded: true},
-  {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, fielded: true},
+  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true},
+  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true},
+  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, current: true},
+  {game: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, current: true},
+  {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, current: true},
   // No accent has ever been written for Trackmania: it reads on the island's own blue.
-  {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, fielded: true},
-  {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, fielded: false},
+  {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true},
+  {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false},
 ]
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
@@ -776,7 +776,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
       const made = {
         game: code, name: String(body.name ?? ""), slug, accent: null, banner: null, icon: null,
-        intro: null, sortIndex: known.length + 1, fielded: true,
+        intro: null, sortIndex: known.length + 1, current: true,
       }
       gamesMade.push(made)
       return fulfillJson(route, made, 201)
@@ -825,7 +825,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         banner: pictureNamed(body.banner) ?? null,
         icon: pictureNamed(body.icon) ?? null,
         sortIndex: body.sortIndex ?? was?.sortIndex ?? 0,
-        fielded: body.fielded ?? true,
+        // Derived by the api from the seasons rather than set here, so a save carries it
+        // through unchanged rather than inventing an answer.
+        current: was?.current ?? true,
       } as Record<string, unknown>
       gamesEdited.set(code, now)
       return fulfillJson(route, now)

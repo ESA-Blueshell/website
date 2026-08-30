@@ -113,11 +113,15 @@ class GamePageIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game no longer fielded says so, and keeps its page`() {
+    fun `a game nobody has played is not current, and keeps its page`() {
+        // Derived rather than declared, and this suite starts from a database with no seasons
+        // and no fieldings in it: nothing has been played, so nothing is current, and every
+        // game still has its page. What the rule answers once games have been played is
+        // asserted in CurrentlyPlayedIT, which builds the seasons it needs.
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'CSGO')].fielded").value(false))
-            .andExpect(jsonPath("$[?(@.game == 'SMASH')].fielded").value(false))
-            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].fielded").value(true))
+            .andExpect(jsonPath("$[?(@.game == 'CSGO')].current").value(false))
+            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].current").value(false))
+            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].name").value("Valorant"))
     }
 
     @Test
@@ -268,7 +272,9 @@ class GamePageIT : UserTestSupport() {
             .andExpect(jsonPath("$.game").value("ROCKET_LEAGUE_2"))
             // Nobody has drawn it anything, so it reads on the island's own colour.
             .andExpect(jsonPath("$.accent").doesNotExist())
-            .andExpect(jsonPath("$.fielded").value(true))
+            // Nobody has played it, so it is not among the games the association currently
+            // plays. It becomes one by having a team fielded in it, not by being created.
+            .andExpect(jsonPath("$.current").value(false))
 
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.slug == 'rocket-league-2')].name").value("Rocket League 2"))
@@ -437,27 +443,17 @@ class GamePageIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game marked no longer fielded keeps everything it holds`() {
-        val board = createUserWithRole(Role.BOARD)
-        mvc.perform(
-            post("/esports/teams").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"VALORANT","name":"BS Retiring"}"""),
-        ).andExpect(status().isCreated)
+    fun `a game the association stops entering keeps everything it holds`() {
+        // There is no act that retires a game any more. It stops being current by not being
+        // entered, and everything it ever played stays exactly where it was.
+        mvc.perform(get("/esports/games"))
+            .andExpect(jsonPath("$[?(@.game == 'CSGO')].current").value(false))
+            .andExpect(jsonPath("$[?(@.game == 'CSGO')].name").value("CS:GO"))
+            .andExpect(jsonPath("$[?(@.game == 'CSGO')].slug").value("counter-strike-global-offensive"))
 
-        mvc.perform(
-            put("/esports/games/{game}", "VALORANT")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Valorant","slug":"valorant","sortIndex":1,"fielded":false}"""),
-        )
+        // Its teams are still there to read, which is the whole reason it keeps its page.
+        mvc.perform(get("/esports/games/{game}", "CSGO"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.fielded").value(false))
-
-        // The soft act: it stops being current and its history stays readable.
-        mvc.perform(get("/esports/teams").param("game", "VALORANT"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[?(@.name == 'BS Retiring')]").exists())
     }
 
     @Test
@@ -507,7 +503,7 @@ class GamePageIT : UserTestSupport() {
 
         mvc.perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
             .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("no longer fielded")))
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("stays readable")))
 
         // Nothing went: the game and its team are both still there.
         mvc.perform(get("/esports/games"))

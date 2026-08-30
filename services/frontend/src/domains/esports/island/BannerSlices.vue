@@ -64,6 +64,15 @@ const emit = defineEmits<{
   (event: "edit", id: SliceItem["id"]): void
   (event: "drop", id: SliceItem["id"]): void
   (event: "go", item: SliceItem): void
+  /**
+   * Which slice is open, whenever that changes.
+   *
+   * The band settles this for itself — a hover, a tap, a scroll — and until now nobody
+   * outside needed to know. A season change rebuilds the band, and the page is the only thing
+   * that outlives it: it holds what was open and hands it back through [openId], so switching
+   * season does not also change which game is being read.
+   */
+  (event: "open", id: SliceItem["id"] | null): void
 }>()
 
 const motion = useMotionAllowed()
@@ -187,6 +196,12 @@ watch([() => props.openId, () => props.items], () => {
   open.value = named
   if (stacked()) tapped.value = named
 }, {flush: "post"})
+
+// Said by id rather than by position: the page holding it hands it to a different band, where
+// the same game or team rarely sits in the same place.
+watch(open, (index) => {
+  emit("open", index == null ? null : props.items[index]?.id ?? null)
+})
 </script>
 
 <template>

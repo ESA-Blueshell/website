@@ -1,18 +1,19 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
+import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {loadSeasons} from "@/domains/esports/adapters/esports"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
+import {useSeasons} from "@/domains/esports/island/useSeasons"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import type {Game, GameRecord, Season, Team} from "@/domains/esports/adapters/esports"
@@ -37,7 +38,7 @@ const urlOf = (game: string) => {
   return record ? `/esports/${record.slug}` : "/esports"
 }
 
-const {seasons, selected, entries, loading, fielded, show, reload} =
+const {seasons, selected, chosen, entries, loading, fielded, show, reload} =
   useSeasonLineup(gameCodes, () => seasonInRoute(route), ready)
 
 const seasonName = computed(() =>
@@ -89,11 +90,11 @@ const mayEdit = useMayEditEsports()
 /**
  * A visitor's strip carries the seasons something was fielded in; somebody who may edit sees
  * every season, since a season has to be reachable before a team can be added to it.
+ *
+ * The whole list is already read to settle which season is newest, so the editor's strip is
+ * the same answer put to a second use rather than a second read of it.
  */
-const allSeasons = ref<Season[]>([])
-watch(mayEdit, async (may) => {
-  if (may && allSeasons.value.length === 0) allSeasons.value = await loadSeasons()
-}, {immediate: true})
+const {seasons: allSeasons} = useSeasons()
 
 const stripSeasons = computed<Season[]>(() =>
   (mayEdit.value && allSeasons.value.length > 0 ? allSeasons.value : seasons.value))
@@ -145,6 +146,13 @@ const gameSaved = async () => {
 const adding = ref(false)
 /** The game the team just added belongs to, which is the slice to look at. */
 const justAdded = ref<Game | null>(null)
+
+/**
+ * The game whose slice is open, held here because the band that holds it does not outlive a
+ * season change. Handed to whichever band comes next, so somebody reading about Valorant in
+ * one season is reading about Valorant in the next — where it was fielded in that one.
+ */
+const carried = ref<Game | null>(null)
 
 /** The season on show, with whatever game the team was added to now among its slices. */
 const seasonOnShow = computed<Season | null>(() =>
@@ -215,7 +223,7 @@ const seasonSaved = (saved: Season) => {
           accent="var(--color-brand)"
           :may-edit="mayEdit"
           :seasons="stripSeasons"
-          :selected-id="selected"
+          :selected-id="chosen"
           @add="addSeason"
           @edit="editSeason"
           @select="chooseSeason"
@@ -233,71 +241,80 @@ const seasonSaved = (saved: Season) => {
 
       <section class="w-full">
         <!--
-          Only while there is nothing to show: a season switch keeps the band it has until the
-          next answer lands, rather than blinking through a pulsing block.
+          What the season holds travels as one thing, the band and the word that there is no
+          band alike: a season with nothing in it is that season's answer, and it arrives the
+          way an answer does rather than by the band vanishing where it stood.
         -->
-        <div
-          v-if="loading && !fielded"
-          class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
-          data-testid="esports-index-loading"
-        />
+        <season-swipe :season="seasonOnShow">
+          <!--
+            Only while there is nothing to show: a season switch keeps the band it has until
+            the next answer lands, rather than blinking through a pulsing block.
+          -->
+          <div
+            v-if="loading && !fielded"
+            class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+            data-testid="esports-index-loading"
+          />
 
-        <p
-          v-else-if="!fielded"
-          class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
-          data-testid="esports-index-empty"
-        >
-          No teams were fielded in {{ seasonName || "this season" }}.
-        </p>
-
-        <!--
-          Not keyed on the season: a key would rebuild the band on every switch, and the
-          entrance would play again for a set of slices that is largely the same one. The
-          band updates in place instead, and only what actually changed moves.
-        -->
-        <Motion
-          v-else
-          v-bind="entrance"
-        >
-          <banner-slices
-            accent="var(--color-brand)"
-            add-label="Add a game"
-            :items="slices"
-            :may-add="mayEdit"
-            :open-id="justAdded"
-            :may-edit="mayEdit"
-            testid-prefix="esports-game"
-            @go="item => item.href && router.push(item.href)"
-            @add="adding = true"
-            @edit="id => editGame(String(id))"
+          <p
+            v-else-if="!fielded"
+            class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
+            data-testid="esports-index-empty"
           >
-            <template #details="{item}">
-              <span class="team-slice__group">
-                <span class="team-slice__group-label">
-                  {{ seasonName }}
-                </span>
-                <span class="team-slice__members">
-                  <span
-                    v-for="team in teamsOf(String(item.id))"
-                    :key="team.id"
-                    class="team-slice__member"
-                  >
-                    <span class="team-slice__handle">{{ team.name }}</span>
-                    <span class="team-slice__member-name">
-                      {{ team.members.length }} on the roster
+            No teams were fielded in {{ seasonName || "this season" }}.
+          </p>
+
+          <!--
+            The band is rebuilt on a season change, because the change is now something the
+            visitor watches happen — but which game they were reading is carried across it, so
+            the movement is the season travelling and not the subject changing under them.
+            Within one season the band still updates in place, and only what changed moves.
+          -->
+          <Motion
+            v-else
+            v-bind="entrance"
+          >
+            <banner-slices
+              accent="var(--color-brand)"
+              add-label="Add a game"
+              :items="slices"
+              :may-add="mayEdit"
+              :open-id="justAdded ?? carried"
+              :may-edit="mayEdit"
+              testid-prefix="esports-game"
+              @go="item => item.href && router.push(item.href)"
+              @add="adding = true"
+              @edit="id => editGame(String(id))"
+              @open="id => carried = id == null ? null : String(id)"
+            >
+              <template #details="{item}">
+                <span class="team-slice__group">
+                  <span class="team-slice__group-label">
+                    {{ seasonName }}
+                  </span>
+                  <span class="team-slice__members">
+                    <span
+                      v-for="team in teamsOf(String(item.id))"
+                      :key="team.id"
+                      class="team-slice__member"
+                    >
+                      <span class="team-slice__handle">{{ team.name }}</span>
+                      <span class="team-slice__member-name">
+                        {{ team.members.length }} on the roster
+                      </span>
                     </span>
                   </span>
                 </span>
-              </span>
-              <router-link
-                class="team-slice__link"
-                :to="onSeason(urlOf(String(item.id)))"
-              >
-                {{ seasonName ? `${item.title} in ${seasonName}` : `Every season of ${item.title}` }} →
-              </router-link>
-            </template>
-          </banner-slices>
-        </Motion>
+                <router-link
+                  class="team-slice__link"
+                  :to="onSeason(urlOf(String(item.id)))"
+                >
+                  {{ seasonName ? `${item.title} in ${seasonName}` : `Every season of ${item.title}` }} →
+                </router-link>
+              </template>
+            </banner-slices>
+          </Motion>
+        </season-swipe>
 
         <game-dialog
           accent="var(--color-brand)"

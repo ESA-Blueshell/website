@@ -1,5 +1,13 @@
 import {describe, expect, it} from "vitest"
-import {litAt, seasonBands, seasonStrip, STRIP} from "@/domains/esports/island/seasonAxis"
+import {
+  directionBetween,
+  litAt,
+  newestSeason,
+  seasonBands,
+  seasonStrip,
+  seasonsIncluding,
+  STRIP,
+} from "@/domains/esports/island/seasonAxis"
 
 const season = (id: number, name: string, startDate: string) =>
   ({id, name, startDate, endDate: startDate}) as never
@@ -182,5 +190,91 @@ describe("seasonStrip", () => {
 
     expect(strip.path).toBe("")
     expect(strip.nodes).toEqual([])
+  })
+})
+
+describe("newestSeason", () => {
+  it("answers with the season that starts last, however the list was ordered", () => {
+    const newest = newestSeason([
+      season(1, "Autumn 2024/25", "2024-09-01"),
+      season(3, "Autumn 2025/26", "2025-09-01"),
+      season(2, "Spring 2024/25", "2025-02-01"),
+    ])
+
+    expect(newest?.id).toBe(3)
+  })
+
+  it("counts a season nobody has played yet, because it is still the season it is", () => {
+    const newest = newestSeason([
+      season(1, "Autumn 2025/26", "2025-09-01"),
+      season(2, "Spring 2026/27", "2026-02-01"),
+    ])
+
+    expect(newest?.id).toBe(2)
+  })
+
+  it("separates two seasons that start on the same day by the order they were written down", () => {
+    const newest = newestSeason([
+      season(7, "Autumn 2025/26", "2025-09-01"),
+      season(9, "Autumn 2025/26 again", "2025-09-01"),
+    ])
+
+    expect(newest?.id).toBe(9)
+  })
+
+  it("has no answer where there are no seasons", () => {
+    expect(newestSeason([])).toBeNull()
+  })
+})
+
+describe("directionBetween", () => {
+  const older = season(1, "Autumn 2019/20", "2019-09-01")
+  const newer = season(2, "Autumn 2025/26", "2025-09-01")
+
+  it("travels to the past towards a season that started earlier", () => {
+    expect(directionBetween(newer, older)).toBe("past")
+  })
+
+  it("travels to the future towards a season that started later", () => {
+    expect(directionBetween(older, newer)).toBe("future")
+  })
+
+  it("goes nowhere between a season and itself", () => {
+    expect(directionBetween(newer, newer)).toBe("same")
+  })
+
+  // A page arriving has no season to have come from, so there is nothing for it to travel.
+  it("goes nowhere when either end is missing", () => {
+    expect(directionBetween(null, newer)).toBe("same")
+    expect(directionBetween(older, null)).toBe("same")
+  })
+})
+
+describe("seasonsIncluding", () => {
+  const played = [
+    season(1, "Autumn 2019/20", "2019-09-01"),
+    season(2, "Spring 2019/20", "2020-02-01"),
+  ]
+
+  it("adds the season being read where the list does not carry it", () => {
+    const strip = seasonsIncluding(played, season(9, "Autumn 2025/26", "2025-09-01"))
+
+    expect(strip.map(one => one.id)).toEqual([1, 2, 9])
+  })
+
+  it("puts it where it belongs in time, not on the end", () => {
+    const strip = seasonsIncluding(played, season(9, "Autumn 2018/19", "2018-09-01"))
+
+    expect(strip.map(one => one.id)).toEqual([9, 1, 2])
+  })
+
+  it("leaves a list that already carries it alone", () => {
+    const strip = seasonsIncluding(played, played[1])
+
+    expect(strip.map(one => one.id)).toEqual([1, 2])
+  })
+
+  it("reads a list on its own where no season is being shown", () => {
+    expect(seasonsIncluding(played, null).map(one => one.id)).toEqual([1, 2])
   })
 })

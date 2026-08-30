@@ -130,7 +130,6 @@ test.describe("moving around the esports pages", () => {
     await page.mouse.move(10, 10)
 
     await expect(pencil).toBeHidden()
-    await expect(page.getByTestId("team-roster-drop-1")).toBeHidden()
   })
 
   test("a keyboard arriving at a slice reveals its affordances", async ({page}, info) => {

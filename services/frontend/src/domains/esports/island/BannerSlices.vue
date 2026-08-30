@@ -51,22 +51,13 @@ const props = withDefaults(defineProps<{
   openId?: SliceItem["id"] | null
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
-  /** Whether each slice offers a way to take it out of what is on show. */
-  mayDrop?: boolean
-  /**
-   * The slice being edited, which gives its body over to the editor slot and takes the room
-   * of the band to do it. Editing happens in the band rather than over it: what is being
-   * changed is the thing on the page, and it stays the thing on the page while it changes.
-   */
-  editingId?: SliceItem["id"] | null
 }>(), {
-  mayAdd: false, addLabel: "Add", openId: null, mayEdit: false, mayDrop: false, editingId: null,
+  mayAdd: false, addLabel: "Add", openId: null, mayEdit: false,
 })
 
 const emit = defineEmits<{
   (event: "add"): void
   (event: "edit", id: SliceItem["id"]): void
-  (event: "drop", id: SliceItem["id"]): void
   (event: "go", item: SliceItem): void
   /**
    * Which slice is open, whenever that changes.
@@ -223,7 +214,6 @@ watch(open, (index) => {
         'team-slice--open': index === open,
         'team-slice--first': index === 0,
         'team-slice--last': index === items.length - 1 && !mayAdd,
-        'team-slice--editing': item.id === editingId,
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
       :style="item.accent ? {'--accent': item.accent} : undefined"
@@ -235,7 +225,7 @@ watch(open, (index) => {
         Where there is a pointer it waits for one; where there is not, it stands.
       -->
       <button
-        v-if="mayEdit && item.id !== editingId"
+        v-if="mayEdit"
         :aria-label="`Edit ${item.title}`"
         class="team-slice__edit"
         :data-testid="`${testidPrefix}-edit-${item.id}`"
@@ -252,8 +242,6 @@ watch(open, (index) => {
           <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
         </svg>
       </button>
-
-      <!-- Deletion affordance removed per design request -->
 
       <!--
         The slice is the full width of the band on a phone and half of it from there up, which
@@ -278,18 +266,7 @@ watch(open, (index) => {
         class="team-slice__scrim"
       />
 
-      <div
-        v-if="item.id === editingId"
-        class="team-slice__editor"
-      >
-        <slot
-          :item="item"
-          name="editor"
-        />
-      </div>
-
       <button
-        v-else
         class="team-slice__body"
         :aria-expanded="index === open"
         type="button"
@@ -395,44 +372,6 @@ watch(open, (index) => {
   transition: flex-grow 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/*
- * A slice being edited takes the band. A form squeezed into a share of a row is not a form,
- * and the others hold their seam and go narrow rather than disappearing, so the band still
- * reads as the band while one of them is being worked on.
- */
-.team-slice--editing {
-  flex: 1 1 100%;
-  z-index: 4;
-  background-color: var(--color-void);
-}
-
-/* The photograph is what a slice says at rest. Behind a form it is only noise. */
-.team-slice--editing .team-slice__banner,
-.team-slice--editing .team-slice__scrim {
-  display: none;
-}
-
-.team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) {
-  flex: 0 1 7%;
-}
-
-/* A name broken across four lines in a sliver says less than no name at all. */
-.team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) .team-slice__heading {
-  opacity: 0;
-}
-
-.team-slice__editor {
-  position: relative;
-  width: 100%;
-  max-height: 34rem;
-  overflow-y: auto;
-  padding: 1rem 1rem 1rem calc(var(--cut) + 1rem);
-}
-
-.team-slice--first .team-slice__editor {
-  padding-left: 1rem;
-}
-
 .team-slice--first {
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: 0;
@@ -458,16 +397,6 @@ watch(open, (index) => {
   border: 0;
   color: var(--color-chalk);
   cursor: pointer;
-}
-
-/* Beside the edit, not on top of it: two affordances on one slice read as a pair. */
-.team-slice__drop {
-  right: 58px;
-}
-
-.team-slice__drop:hover,
-.team-slice__drop:focus-visible {
-  color: #ff9d9d;
 }
 
 .team-slice__edit svg {
@@ -795,24 +724,6 @@ watch(open, (index) => {
   .team-slice--add {
     flex: 0 0 auto;
     min-height: 7rem;
-  }
-
-  /* Stacked, an editor takes the height it needs and the others keep theirs. */
-  .team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) {
-    flex: 0 0 auto;
-  }
-
-  .team-slices:has(.team-slice--editing) .team-slice:not(.team-slice--editing) .team-slice__heading {
-    opacity: 1;
-  }
-
-  .team-slice--editing {
-    min-height: 0;
-  }
-
-  .team-slice__editor {
-    max-height: none;
-    padding: 0.85rem;
   }
 
   .team-slice__plus {

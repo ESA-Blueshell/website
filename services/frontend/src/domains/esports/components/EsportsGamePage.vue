@@ -8,12 +8,11 @@ import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {unfieldTeamFromSeason, type EsportsImage} from "../adapters/esports"
+import {type EsportsImage} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
-import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
@@ -225,43 +224,6 @@ const lineupSaved = async () => {
   }
 }
 
-const dropping = ref<{id: number; name: string; players: number} | null>(null)
-const dropFailure = ref<string | null>(null)
-const droppingNow = ref(false)
-
-const askToDrop = (teamId: number | string) => {
-  const team = teams.value.find(one => one.id === teamId)
-  if (!team) return
-  dropFailure.value = null
-  dropping.value = {id: team.id, name: team.name, players: team.members.length}
-}
-
-const dropQuestion = computed(() => {
-  const team = dropping.value
-  if (!team || !season.value) return ""
-  const players = team.players === 1 ? "1 roster place" : `${team.players} roster places`
-  return `${team.name} played ${season.value.name} with ${players}. Dropping it from this season `
-    + "leaves the team, and the other seasons it played, as they are."
-})
-
-const dropTeamFromSeason = async () => {
-  const team = dropping.value
-  const seasonId = season.value?.id
-  if (!team || seasonId == null || droppingNow.value) return
-  droppingNow.value = true
-  dropFailure.value = null
-  try {
-    await unfieldTeamFromSeason(team.id, props.game, seasonId)
-    dropping.value = null
-    await reload(seasonId)
-  } catch (error) {
-    const body = (error as {detail?: string; title?: string})
-    dropFailure.value = body?.detail || body?.title || "The team could not be dropped."
-  } finally {
-    droppingNow.value = false
-  }
-}
-
 // The strip and the labels under it both read from the loaded page, so the saved season is
 // written back into it rather than fetched again.
 const seasonSaved = (saved: Season) => {
@@ -389,20 +351,6 @@ const seasonSaved = (saved: Season) => {
           @update:open="closeEditor"
         />
 
-        <confirm-dialog
-          :accent="identity.accent"
-          confirm-label="Drop from this season"
-          :failure="dropFailure"
-          :open="dropping !== null"
-          :question="dropQuestion"
-          testid="team-drop-dialog"
-          title="Drop this team from the season?"
-          :working="droppingNow"
-          @confirm="dropTeamFromSeason"
-          @update:open="dropping = $event ? dropping : null"
-        />
-
-
         <add-team-dialog
           :accent="identity.accent"
           :fielded-team-ids="teams.map(one => one.id)"
@@ -468,31 +416,13 @@ const seasonSaved = (saved: Season) => {
               add-label="Add a team"
               :items="slices"
               :may-add="mayEdit"
-              :editing-id="lineupOpen ? editingTeam?.id ?? null : null"
-              :may-drop="mayEdit"
               :may-edit="mayEdit"
               :open-id="justAdded ?? carried"
               testid-prefix="team-roster"
               @add="adding = true"
-              @drop="askToDrop"
               @edit="editLineup"
               @open="id => carried = id == null ? null : Number(id)"
             >
-              <template #editor="{item}">
-                <lineup-editor
-                  :accent="identity.accent"
-                  :game="props.game"
-                  :open="lineupOpen && item.id === editingTeam?.id"
-                  :season="season"
-                  :team-id="editingTeam?.id ?? null"
-                  :team-banner="editingTeam?.banner ?? null"
-                  :team-icon="editingTeam?.icon ?? null"
-                  :team-name="editingTeam?.name ?? ''"
-                  @removed="lineupSaved"
-                  @saved="lineupSaved"
-                  @update:open="lineupOpen = $event"
-                />
-              </template>
               <template #details="{item}">
                 <span
                   v-for="group in rosterOf(item.id as number)"
@@ -532,6 +462,25 @@ const seasonSaved = (saved: Season) => {
             </banner-slices>
           </Motion>
         </season-swipe>
+
+        <!--
+          Over the page, the same as adding a team and editing a season. A line-up is a form,
+          and the band rearranging itself around one read as the page coming apart rather than
+          as something being filled in.
+        -->
+        <lineup-editor
+          :accent="identity.accent"
+          :game="props.game"
+          :open="lineupOpen"
+          :season="season"
+          :team-id="editingTeam?.id ?? null"
+          :team-banner="editingTeam?.banner ?? null"
+          :team-icon="editingTeam?.icon ?? null"
+          :team-name="editingTeam?.name ?? ''"
+          @removed="lineupSaved"
+          @saved="lineupSaved"
+          @update:open="lineupOpen = $event"
+        />
       </section>
 
       <join-band />

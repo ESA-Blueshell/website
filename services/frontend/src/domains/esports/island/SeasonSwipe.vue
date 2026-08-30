@@ -146,20 +146,28 @@ const ghost = (el: HTMLElement) => {
  * leaving are taken out of the flow the moment they start to travel, so without it the page
  * below would jump to the new height at the start of a pass and sit there while it played out.
  */
-const carry = async () => {
+const carry = async (travelling: boolean) => {
   const el = shell.value
   if (!el) return
   sizing?.cancel()
   const from = el.offsetHeight
-  el.style.height = `${from}px`
+  // Only while a season is actually travelling. The season object is answered afresh every
+  // time the page re-asks about it — a team added, a line-up saved, a game corrected — and
+  // holding the height through those would animate the band growing to fit an editor that
+  // had just opened, which is a change the visitor made and can already see.
+  if (travelling) el.style.height = `${from}px`
 
   await nextTick()
   // Straight after the swap, before the browser has had a chance to paint either of them, so
   // there is no moment in which the page shows two of the same slice under the same name.
+  // Only ever with two on the page: with one, the one is the live one.
   const live = arriving.value
-  Array.from(el.children).forEach(child => {
-    if (live && !child.contains(live)) ghost(child as HTMLElement)
-  })
+  if (el.children.length > 1) {
+    Array.from(el.children).forEach(child => {
+      if (live && !child.contains(live)) ghost(child as HTMLElement)
+    })
+  }
+  if (!travelling) return
 
   await frame()
   const to = live?.offsetHeight ?? 0
@@ -190,8 +198,10 @@ watch(() => props.season, (next) => {
   const to = next ?? null
   direction.value = directionBetween(shown, to)
   shown = to
-  // Whatever the direction — the season leaving has to be seen off even when it goes at once.
-  void carry()
+  // A season that is not going anywhere still has to see off whatever was on the page before
+  // it — the first one to arrive replaces the loading block — but it holds no height while it
+  // does, because nothing is travelling.
+  void carry(direction.value !== "same")
 })
 </script>
 

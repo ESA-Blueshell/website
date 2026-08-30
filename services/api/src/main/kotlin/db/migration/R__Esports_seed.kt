@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.Date
 import java.sql.Statement
+import java.sql.Types
 
 /**
  * Loads the recovered esports history from the seed files.
@@ -24,8 +25,15 @@ import java.sql.Statement
  * than the import, and resurrecting it on the next edit anywhere in the file would be a
  * surprise. Removing the row from the file is how it leaves for good.
  *
- * A roster entry's link to a member is not seeded. The recovered data has handles, not
- * accounts; the links that exist were matched once on import and are an admin's to maintain.
+ * These files are the only record of this history: the migration that first imported it wrote
+ * the same seasons, teams and line-ups from a staging table of its own, and two importers of one
+ * history is one of them disagreeing with the other eventually.
+ *
+ * A place is matched to the member who played it as it is written, and never again. The recovered
+ * data carries a real name beside each handle; the one member who answers to that name exactly is
+ * attached to the place the first and only time the place is created. Attribution afterwards is
+ * an admin's: detaching somebody says who they are not, and a step that re-matched on the next
+ * start would undo that every time the application came up.
  */
 @Suppress("unused", "ClassNaming")
 class R__Esports_seed : BaseJavaMigration() {
@@ -62,6 +70,10 @@ class R__Esports_seed : BaseJavaMigration() {
             }
             if (upsertEntry(connection, teamId, seasonId, row)) written += 1 else skipped += 1
         }
+        // Only where places were written: whoever was just attached to one is the only member
+        // who can have a handle to take up.
+        val handles = if (written > 0) adoptHandlesPlayedUnder(connection) else 0
+        if (handles > 0) log.info("[esports-seed] {} members took up the handle they last played under", handles)
         log.info(
             "[esports-seed] {} games, {} seasons, {} teams, {} roster entries applied ({} left to their deletion)",
             games.size,
@@ -233,8 +245,9 @@ class R__Esports_seed : BaseJavaMigration() {
         val fieldingId = fieldTeam(connection, teamId, seasonId)
         connection.prepareStatement(
             """
-            INSERT INTO team_roster_entry (team_season_id, handle, team_role, display_name, sort_index)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO team_roster_entry
+                (team_season_id, handle, team_role, display_name, sort_index, user_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
             statement.setLong(1, fieldingId)
@@ -242,10 +255,70 @@ class R__Esports_seed : BaseJavaMigration() {
             statement.setString(3, role)
             statement.setString(4, displayName)
             statement.setInt(5, sortIndex)
+            // Attached as the place is created, which is the only moment this can be settled
+            // without overruling somebody. See the note on attribution in the header.
+            val memberId = displayName?.let { memberNamed(connection, it) }
+            if (memberId == null) statement.setNull(6, Types.BIGINT) else statement.setLong(6, memberId)
             statement.executeUpdate()
         }
         return true
     }
+
+    /**
+     * The one member who answers to a name exactly, or nobody.
+     *
+     * Built the way the site writes a name, prefix and all. A name matching nobody, or more than
+     * one person, leaves the place standing under its handle for an admin to resolve: guessing
+     * between two people is worse than leaving it.
+     */
+    private fun memberNamed(connection: Connection, name: String): Long? =
+        connection.prepareStatement(
+            """
+            SELECT MIN(u.id) FROM users u
+            WHERE TRIM(CONCAT_WS(' ', u.first_name, u.prefix, u.last_name)) = ? AND u.$ACTIVE
+            HAVING COUNT(*) = 1
+            """.trimIndent(),
+        ).use { statement ->
+            statement.setString(1, name)
+            statement.executeQuery().use { rows ->
+                if (!rows.next()) return null
+                val id = rows.getLong(1)
+                if (rows.wasNull()) null else id
+            }
+        }
+
+    /**
+     * Gives a member just attached to a place the handle they last played that game under.
+     *
+     * A member's handle for a game is what every season of it renders them by, so a rename lands
+     * on all of them at once; the most recent season they played is the one that names them. A
+     * handle somebody has already set is left alone — that is a decision they made about
+     * themselves, and this one is older.
+     *
+     * Run only where places were written, so a start that changed nothing writes nothing.
+     */
+    private fun adoptHandlesPlayedUnder(connection: Connection): Int =
+        connection.prepareStatement(
+            """
+            INSERT INTO user_game_account (user_id, game, handle)
+            SELECT x.user_id, x.game, x.handle
+            FROM (
+                SELECT e.user_id, t.game, e.handle,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY e.user_id, t.game ORDER BY s.start_date DESC, e.id DESC
+                       ) AS rn
+                FROM team_roster_entry e
+                JOIN team_season ts ON ts.id = e.team_season_id
+                JOIN team t ON t.id = ts.team_id
+                JOIN season s ON s.id = ts.season_id
+                WHERE e.user_id IS NOT NULL AND e.$ACTIVE
+            ) x
+            WHERE x.rn = 1
+              AND NOT EXISTS (
+                SELECT 1 FROM user_game_account a
+                WHERE a.user_id = x.user_id AND a.game = x.game AND a.$ACTIVE)
+            """.trimIndent(),
+        ).use { statement -> statement.executeUpdate() }
 
     /**
      * Records that a team was fielded in a season, unless it already says so, and answers with

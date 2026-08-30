@@ -6,6 +6,7 @@ import {
   addToRoster,
   dropRosterEntry,
   dropTeam,
+  fieldTeamInSeason,
   linkRosterMember,
   loadMembers,
   loadRoster,
@@ -13,6 +14,7 @@ import {
   saveRosterEntry,
   saveTeamAs,
   type EsportsImage,
+  type Game,
   type Member,
   type RosterEntry,
   type Season,
@@ -63,6 +65,8 @@ interface Row {
 
 const props = defineProps<{
   open: boolean
+  /** The game this line-up was played in, which the fielding names rather than the team. */
+  game: Game
   teamId: number | null
   teamName: string
   /** Where the team's banner is served, so the same dialog can replace it. */
@@ -142,7 +146,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   icon.value = props.teamIcon ?? null
   playedIn.value = null
   try {
-    const entries = await loadRoster(teamId, seasonId)
+    const entries = await loadRoster(teamId, props.game, seasonId)
     rows.value = entries.slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
     if (members.value.length === 0) members.value = await loadMembers()
   } finally {
@@ -257,18 +261,20 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    // The team itself first — its name and its pictures. A line-up written against a team
-    // that was meant to be renamed would leave the rename half-applied if anything after it
-    // failed.
+    // The team itself first — its name and its logo. A line-up written against a team that
+    // was meant to be renamed would leave the rename half-applied if anything after it failed.
     const saved = await saveTeamAs(teamId, {
       name: draftName.value.trim(),
-      banner: banner.value?.path ?? null,
       icon: icon.value?.path ?? null,
     })
     if (!saved.ok) {
       failure.value = saved.reason
       return
     }
+
+    // The art belongs to this season's fielding rather than to the team, so it is written
+    // there — the same team is drawn with its own picture in every other game it plays.
+    await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
 
     for (const id of removed.value) await dropRosterEntry(id)
 
@@ -283,7 +289,11 @@ const submit = async () => {
       }
       if (row.id == null) {
         await addToRoster(teamId, {
-          seasonId, ...shared, userId: row.userId, displayName: row.displayName.trim() || null,
+          game: props.game,
+          seasonId,
+          ...shared,
+          userId: row.userId,
+          displayName: row.displayName.trim() || null,
         })
       } else {
         await saveRosterEntry(row.id, {...shared, displayName: row.displayName.trim() || null})

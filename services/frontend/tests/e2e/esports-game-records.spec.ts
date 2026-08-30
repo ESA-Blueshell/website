@@ -2,7 +2,7 @@ import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
 /**
- * What a game is called, the colour it carries, its mark and its banner all come from its
+ * What a game is called, the colour it carries, its icon and its banner all come from its
  * record. They used to be written into the frontend, in two files, so the pages and the
  * database could disagree about a game and nothing would say so.
  */
@@ -38,15 +38,15 @@ test.describe("a game as its record has it", () => {
   test("draws a game nobody has chosen art for on the island's own colour", async ({page}) => {
     await installApiMocks(page, {
       esportsGames: [
-        {game: "VALORANT", name: "Valorant", slug: "valorant", accent: null, mark: null,
-          banner: null, intro: "Nothing drawn for it.", sortIndex: 1, fielded: true},
+        {game: "VALORANT", name: "Valorant", slug: "valorant", accent: null, banner: null, icon: null,
+          intro: "Nothing drawn for it.", sortIndex: 1, fielded: true},
       ],
     })
 
     await page.goto("/esports/valorant")
     await page.getByTestId("esports-island").waitFor()
 
-    // Its name and copy still read; there is simply no mark and no colour of its own.
+    // Its name and copy still read; there is simply no icon and no colour of its own.
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant")
     await expect(page.getByTestId("esports-game-intro")).toContainText("Nothing drawn for it.")
     const painted = await page.evaluate(() =>
@@ -58,7 +58,7 @@ test.describe("a game as its record has it", () => {
     await installApiMocks(page, {
       esportsGames: [
         {game: "VALORANT", name: "Valorant Reborn", slug: "valorant", accent: "#ff4655",
-          mark: "valorant.png", banner: null, intro: "Renamed.", sortIndex: 1, fielded: true},
+          banner: null, icon: null, intro: "Renamed.", sortIndex: 1, fielded: true},
       ],
     })
 

@@ -32,6 +32,10 @@ data class CreateTeamRequest(
     @Schema(description = "Where the team's banner is stored; nothing leaves the team without one")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val banner: String? = null,
+
+    @Schema(description = "Where the team's icon is stored; nothing leaves the team without one")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val icon: String? = null,
 )
 
 @Schema(description = "Rename a team or change the pictures it is drawn with")
@@ -43,6 +47,10 @@ data class UpdateTeamRequest(
     @Schema(description = "Where the team's banner is stored; nothing takes the banner away")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val banner: String? = null,
+
+    @Schema(description = "Where the team's icon is stored; nothing takes the icon away")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val icon: String? = null,
 )
 
 @Schema(description = "Field a team in a season, with or without the line-up it last had")
@@ -150,8 +158,8 @@ data class UpdateGamePageRequest(
     @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
     val accent: String? = null,
     @field:Size(max = 255)
-    @field:Schema(description = "Asset file name for the game's own mark")
-    val mark: String? = null,
+    @field:Schema(description = "Where the game's icon is stored; nothing takes the icon away")
+    val icon: String? = null,
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's banner is stored; nothing takes the banner away")
     val banner: String? = null,

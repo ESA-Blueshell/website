@@ -83,6 +83,67 @@ class ShippedArtIT : UserTestSupport() {
     }
 
     @Test
+    fun `a game the file gives an icon to has one of its own`() {
+        art.apply()
+
+        val page = games.findByGame("VALORANT")
+        assertThat(page?.icon).isNotNull
+        assertThat(page?.icon?.type).isEqualTo(FileType.GAME_ICON)
+    }
+
+    @Test
+    fun `an icon is stored at the widths an icon of its kind is served at`() {
+        art.apply()
+
+        val icon = games.findByGame("VALORANT")?.icon!!
+        // The art is 256 wide, so the ladder stops there rather than inventing a 512.
+        assertThat(icon.width).isEqualTo(256)
+        assertThat(icon.renditions.mapNotNull { it.renditionWidth }).containsExactly(128, 256)
+        assertThat(files.findPublicImage(icon.path, FileType.GAME_ICON)).isNotNull
+    }
+
+    /**
+     * Every game, including the two whose teams are history.
+     *
+     * A logo existed in the frontend for all eight, and which of them the pages drew was a
+     * separate question from which of them had one — the game record named a file for six of
+     * them and the other two were simply never wired up. All eight are wired up here.
+     */
+    @Test
+    fun `every game the file names carries an icon`() {
+        art.apply()
+
+        val without = listOf(
+            "VALORANT", "CS2", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE",
+            "GEOGUESSR", "TRACKMANIA", "CSGO", "SMASH",
+        ).filter { games.findByGame(it)?.icon == null }
+
+        assertThat(without).describedAs("games the shipped icons did not reach").isEmpty()
+    }
+
+    @Test
+    fun `a game keeps its own icon rather than its predecessor's`() {
+        art.apply()
+
+        // CS:GO and CS2 are one history to a reader and two logos on a page.
+        assertThat(games.findByGame("CSGO")?.icon?.path)
+            .isNotEqualTo(games.findByGame("CS2")?.icon?.path)
+    }
+
+    @Test
+    fun `an icon somebody chose is not replaced either`() {
+        art.apply()
+        val chosen = games.findByGame("VALORANT")?.icon!!
+        val page = games.findByGame("GEOGUESSR")!!
+        page.icon = chosen
+        games.save(page)
+
+        art.apply()
+
+        assertThat(games.findByGame("GEOGUESSR")?.icon?.path).isEqualTo(chosen.path)
+    }
+
+    @Test
     fun `two teams given the same picture share one stored file`() {
         art.apply()
 
@@ -98,9 +159,9 @@ class ShippedArtIT : UserTestSupport() {
 
         val second = art.apply()
 
-        assertThat(first.teams).isGreaterThan(0)
-        assertThat(first.games).isGreaterThan(0)
-        assertThat(second).isEqualTo(ShippedArt.Applied(teams = 0, games = 0))
+        assertThat(first.teamPictures).isGreaterThan(0)
+        assertThat(first.gamePictures).isGreaterThan(0)
+        assertThat(second).isEqualTo(ShippedArt.Applied(teamPictures = 0, gamePictures = 0))
     }
 
     @Test
@@ -116,6 +177,21 @@ class ShippedArtIT : UserTestSupport() {
         // cached, which only holds because the art is stored whether or not a slot wants it.
         assertThat(Files.exists(bytes)).isTrue()
         assertThat(teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner?.path).isEqualTo(banner.path)
+    }
+
+    @Test
+    fun `an icon whose bytes have gone missing is written again at the address it had`() {
+        art.apply()
+        val icon = games.findByGame("VALORANT")?.icon!!
+        val bytes = Paths.get(storageLocation).resolve(icon.path)
+        Files.delete(bytes)
+
+        art.apply()
+
+        // Asked of an icon as well as a banner because the two are stored by separate steps,
+        // and a volume that repairs half of itself leaves every page half drawn.
+        assertThat(Files.exists(bytes)).isTrue()
+        assertThat(games.findByGame("VALORANT")?.icon?.path).isEqualTo(icon.path)
     }
 
     @Test

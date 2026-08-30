@@ -18,7 +18,7 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
  * still fielded in it.
  *
  * Everything that makes a game itself is here. The name was a label on a compiled enum and the
- * accent, the mark and the banner were written into the frontend, so a game could not be added
+ * accent, the icon and the banner were written into the frontend, so a game could not be added
  * without a deploy however complete its row was.
  *
  * Removal is real rather than soft, unlike everything else on these pages. A game holding a team
@@ -62,19 +62,26 @@ class GamePage(
     @Column(name = "accent", length = 32)
     var accent: String? = null,
 
-    /** Filename of the game's icon in the frontend's assets, if it has one. */
-    @Column(name = "mark", length = 255)
-    var mark: String? = null,
-
     /**
      * The game's own image, drawn in the slice for it on the esports index.
      *
-     * The only picture a game carries besides its mark, and the only place either is drawn is a
-     * slice: the index header and the game's own page are the accent and nothing else.
+     * The only place either of a game's pictures is drawn is a slice: the index header and the
+     * game's own page are the accent and nothing else.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "banner_file_id")
     var banner: File? = null,
+
+    /**
+     * The game's logo, drawn in that same slice beside the name.
+     *
+     * It was a filename naming a file bundled into the frontend, so the only logos a game could
+     * carry were the ones a developer had shipped and a name matching nothing drew nothing while
+     * saying so to nobody. It is an upload like every other picture on these pages now.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "icon_file_id")
+    var icon: File? = null,
 
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,

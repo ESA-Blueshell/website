@@ -599,6 +599,10 @@ export type CreateTeamRequest = {
      */
     banner?: string | null;
     game: string;
+    /**
+     * Where the team's icon is stored; nothing leaves the team without one
+     */
+    icon?: string | null;
     name: string;
 };
 
@@ -836,8 +840,9 @@ export enum FileType {
     EVENT_PICTURE = 'EVENT_PICTURE',
     SPONSOR_PICTURE = 'SPONSOR_PICTURE',
     GAME_BANNER = 'GAME_BANNER',
-    GAME_MARK = 'GAME_MARK',
+    GAME_ICON = 'GAME_ICON',
     TEAM_BANNER = 'TEAM_BANNER',
+    TEAM_ICON = 'TEAM_ICON',
     ROSTER_ICON = 'ROSTER_ICON'
 }
 
@@ -890,13 +895,13 @@ export type GamePageResponse = {
     fielded: boolean;
     game: string;
     /**
+     * The game's own icon, drawn in that slice beside the name
+     */
+    icon?: Image | null;
+    /**
      * What the page says about the game, where anything is said
      */
     intro?: string | null;
-    /**
-     * Asset file name for the game's own mark, where it has one
-     */
-    mark?: string | null;
     /**
      * What the pages print for this game
      */
@@ -1521,6 +1526,10 @@ export type TeamResponse = {
      */
     banner?: Image | null;
     game: string;
+    /**
+     * The team's own icon, drawn in that slice beside the name
+     */
+    icon?: Image | null;
     id: number;
     name: string;
 };
@@ -1539,6 +1548,10 @@ export type TeamRosterResponse = {
      * The team's own banner, drawn in the slice for it
      */
     banner?: Image | null;
+    /**
+     * The team's own icon, drawn in that slice beside the name
+     */
+    icon?: Image | null;
     id: number;
     members: Array<RosterMemberResponse>;
     name: string;
@@ -1658,11 +1671,11 @@ export type UpdateGamePageRequest = {
      * Whether the association still fields a team in it
      */
     fielded: boolean;
-    intro?: string | null;
     /**
-     * Asset file name for the game's own mark
+     * Where the game's icon is stored; nothing takes the icon away
      */
-    mark?: string | null;
+    icon?: string | null;
+    intro?: string | null;
     /**
      * What the pages print for this game. Its code is not editable
      */
@@ -1733,6 +1746,10 @@ export type UpdateTeamRequest = {
      * Where the team's banner is stored; nothing takes the banner away
      */
     banner?: string | null;
+    /**
+     * Where the team's icon is stored; nothing takes the icon away
+     */
+    icon?: string | null;
     name: string;
 };
 

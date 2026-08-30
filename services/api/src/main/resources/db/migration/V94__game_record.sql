@@ -2,8 +2,12 @@
 -- game's own row.
 --
 -- The name lived in a compiled enum's label and again in a table in the index page; the accent,
--- the mark and the banner lived only in the frontend, three of them in two different files. A
+-- the icon and the banner lived only in the frontend, three of them in two different files. A
 -- game could therefore not be added without a deploy, however complete its row was.
+--
+-- The pictures are not here. Both of a game's are uploads addressed by their contents, so they
+-- are file references established with the rest of the esports media rather than names in this
+-- table.
 --
 -- Only the shape is here. What each game is called and how it is drawn is in the seed files with
 -- the seasons, teams and rosters, so correcting a name or an accent is an edit to a file somebody
@@ -14,9 +18,8 @@
 -- was told nothing.
 
 ALTER TABLE game_page
-    ADD COLUMN name   VARCHAR(64)  NOT NULL DEFAULT '' AFTER game,
-    ADD COLUMN accent VARCHAR(32)  NULL AFTER intro,
-    ADD COLUMN mark   VARCHAR(255) NULL AFTER accent;
+    ADD COLUMN name   VARCHAR(64) NOT NULL DEFAULT '' AFTER game,
+    ADD COLUMN accent VARCHAR(32) NULL AFTER intro;
 
 -- A code identifies a game for the whole life of the site, so it is unique across every row
 -- rather than only among the ones still present. That is also what lets the two ties below

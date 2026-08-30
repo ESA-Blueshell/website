@@ -37,6 +37,8 @@ data class TeamView(
     val members: List<RosterMemberView>,
     /** The team's own banner, drawn in the slice for it. */
     val banner: Image? = null,
+    /** The team's own icon, drawn in that slice beside the name. */
+    val icon: Image? = null,
 )
 
 /** A whole game page: the season being shown, the ones that can be, and that season's teams. */

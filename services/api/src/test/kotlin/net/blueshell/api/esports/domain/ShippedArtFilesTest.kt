@@ -20,7 +20,8 @@ class ShippedArtFilesTest {
 
     private val named: Set<String> =
         (SeedCsv.parse(SeedCsv.read("teams.csv")).mapNotNull { it["banner"]?.ifBlank { null } } +
-            SeedCsv.parse(SeedCsv.read("banners.csv")).map { it.getValue("banner") })
+            SeedCsv.parse(SeedCsv.read("banners.csv")).map { it.getValue("banner") } +
+            SeedCsv.parse(SeedCsv.read("icons.csv")).map { it.getValue("icon") })
             .toSet()
 
     @Test
@@ -28,7 +29,7 @@ class ShippedArtFilesTest {
         val missing = named.filterNot { exists(it) }.sorted()
 
         assertThat(missing)
-            .describedAs("art named by teams.csv or banners.csv but not committed under %s/art", SeedCsv.DIRECTORY)
+            .describedAs("art a seed file names but nobody committed under %s/art", SeedCsv.DIRECTORY)
             .isEmpty()
     }
 

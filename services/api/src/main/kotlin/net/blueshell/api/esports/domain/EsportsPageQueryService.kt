@@ -77,6 +77,7 @@ class EsportsPageQueryService(
                         )
                     },
                     banner = team.banner?.asImage(),
+                    icon = team.icon?.asImage(),
                 )
             }
             .sortedBy { it.name }

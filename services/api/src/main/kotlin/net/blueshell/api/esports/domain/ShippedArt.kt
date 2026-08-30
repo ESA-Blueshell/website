@@ -17,7 +17,9 @@ import org.springframework.transaction.support.TransactionTemplate
  * Puts the art the repository ships onto the games and teams the seed files name.
  *
  * The pictures under `db/seed/esports/art` are the association's default art, and the `banner`
- * column of `teams.csv` and the rows of `banners.csv` say which record each of them belongs to.
+ * column of `teams.csv` and the rows of `banners.csv` and `icons.csv` say which record each of
+ * them belongs to. Only games ship an icon: a game's logo existed in the frontend and moved here,
+ * a team's never existed at all, so a team gains one when somebody uploads it.
  * Every picture is stored the way an upload is — converted where it needs converting, addressed
  * by its contents, written at the ladder of widths its kind lists — and credited to the site's
  * own account, because nobody chose it.
@@ -46,8 +48,8 @@ class ShippedArt(
     private val games: GamePageRepository,
     private val transactions: TransactionTemplate,
 ) {
-    /** What a run changed, which is nothing at all on every start after the first. */
-    data class Applied(val teams: Int, val games: Int)
+    /** The pictures a run put on records, which is none at all on every start after the first. */
+    data class Applied(val teamPictures: Int, val gamePictures: Int)
 
     fun apply(): Applied {
         val owner = siteAccount() ?: return Applied(0, 0)
@@ -58,6 +60,8 @@ class ShippedArt(
             }
         val gameArt = SeedCsv.parse(SeedCsv.read(BANNERS))
             .map { row -> row.getValue("game") to row.getValue(BANNER) }
+        val gameIcons = SeedCsv.parse(SeedCsv.read(ICONS))
+            .map { row -> row.getValue("game") to row.getValue(ICON) }
 
         // Every picture first, so one that is waiting for nothing is still put back where it
         // was. One picture may belong to two records — a game fields more teams than it has
@@ -69,18 +73,27 @@ class ShippedArt(
         gameArt.forEach { (game, art) ->
             attempt("the picture for $game") { store(art, FileType.GAME_BANNER, owner, stored); 0 }
         }
+        gameIcons.forEach { (game, art) ->
+            attempt("the icon for $game") { store(art, FileType.GAME_ICON, owner, stored); 0 }
+        }
 
         val teamsDrawn = teamArt.sumOf { (game, team, art) ->
             attempt("the banner of $team") { teamBanner(game, team, art, owner, stored) }
         }
         val gamesDrawn = gameArt.sumOf { (game, art) ->
             attempt("the banner of $game") { gameBanner(game, art, owner, stored) }
+        } + gameIcons.sumOf { (game, art) ->
+            attempt("the icon of $game") { gameIcon(game, art, owner, stored) }
         }
 
         if (teamsDrawn > 0 || gamesDrawn > 0) {
-            log.info("[shipped-art] {} teams and {} games now carry the art that ships", teamsDrawn, gamesDrawn)
+            log.info(
+                "[shipped-art] {} team and {} game pictures now come from the art that ships",
+                teamsDrawn,
+                gamesDrawn,
+            )
         }
-        return Applied(teamsDrawn, gamesDrawn)
+        return Applied(teamPictures = teamsDrawn, gamePictures = gamesDrawn)
     }
 
     /**
@@ -113,6 +126,20 @@ class ShippedArt(
         val page = games.findByGame(game) ?: return@execute 0
         if (page.banner != null) return@execute 0
         page.banner = store(art, FileType.GAME_BANNER, owner, stored)
+        games.save(page)
+        1
+    }
+
+    /** The game's own icon, where the game has none. */
+    private fun gameIcon(
+        game: String,
+        art: String,
+        owner: User,
+        stored: MutableMap<Pair<String, FileType>, String>,
+    ): Int = transactions.execute {
+        val page = games.findByGame(game) ?: return@execute 0
+        if (page.icon != null) return@execute 0
+        page.icon = store(art, FileType.GAME_ICON, owner, stored)
         games.save(page)
         1
     }
@@ -169,7 +196,9 @@ class ShippedArt(
         val log = LoggerFactory.getLogger(ShippedArt::class.java)
         const val TEAMS = "teams.csv"
         const val BANNERS = "banners.csv"
+        const val ICONS = "icons.csv"
         const val BANNER = "banner"
+        const val ICON = "icon"
         const val WEBP = "image/webp"
         const val SITE_ACCOUNT = "system"
     }

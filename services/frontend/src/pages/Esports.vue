@@ -67,6 +67,8 @@ const slices = computed(() =>
       srcset: identity.srcset,
       width: identity.width,
       height: identity.height,
+      icon: identity.icon,
+      iconSrcset: identity.iconSrcset,
       accent: identity.accent,
     }
   }),

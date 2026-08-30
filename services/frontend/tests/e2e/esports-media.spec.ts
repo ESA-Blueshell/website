@@ -190,6 +190,129 @@ test.describe("banners and icons", () => {
     }
   })
 
+  test("a game's icon is chosen on the index and is drawn beside its name", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports")
+
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await expect(page.getByTestId("game-dialog")).toBeVisible()
+
+    await expect(page.getByTestId("game-dialog-icon-empty")).toBeVisible()
+    await choose(page, "game-dialog-icon")
+    await expect(page.getByTestId("game-dialog-icon-preview")).toBeVisible()
+    await page.getByTestId("game-dialog-save").click()
+    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+
+    // Drawn, not merely present. The icon is the only picture this game has, so it is the one
+    // image in the slice; a url the frontend failed to resolve would still set an `src`.
+    const icon = page.getByTestId("esports-game-VALORANT").locator("img").first()
+    await expect.poll(() => decoded(icon)).toBe(true)
+    await expect(icon).toHaveAttribute("src", /\/files\/public\/game-icons\/[^/]+\.webp/)
+
+    // The widths an icon is stored at, which are not the widths a banner is stored at: 128
+    // and 256 rather than 320 and 640. Naming a banner's here would pass against a stub that
+    // hands every kind the same ladder and fail against the api.
+    const srcset = await icon.getAttribute("srcset")
+    expect(srcset).toContain("128w")
+    expect(srcset).toContain("256w")
+    expect(srcset).not.toContain("320w")
+    for (const entry of (srcset ?? "").split(",")) {
+      expect(entry.trim()).toMatch(/^http.*\/files\/public\/game-icons\/.* \d+w$/)
+    }
+  })
+
+  test("a team's icon is chosen in the line-up and is drawn beside its name", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await openLineup(page)
+
+    await expect(page.getByTestId("lineup-team-icon-empty")).toBeVisible()
+    await choose(page, "lineup-team-icon")
+    await expect(page.getByTestId("lineup-team-icon-preview")).toBeVisible()
+
+    await page.getByTestId("lineup-save").click()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+
+    const icon = page.getByTestId("team-roster-1").locator("img").first()
+    await expect.poll(() => decoded(icon)).toBe(true)
+    await expect(icon).toHaveAttribute("src", /\/files\/public\/team-icons\/[^/]+\.webp/)
+    await expect(icon).toHaveAttribute("srcset", /128w/)
+    await expect(icon).toHaveAttribute("srcset", /256w/)
+  })
+
+  test("a game's chosen icon is discarded when the dialog is cancelled", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports")
+
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await choose(page, "game-dialog-icon")
+    await expect(page.getByTestId("game-dialog-icon-preview")).toBeVisible()
+
+    await page.getByTestId("game-dialog-cancel").click()
+    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await expect(page.getByTestId("game-dialog-icon-empty")).toBeVisible()
+  })
+
+  /**
+   * A team's icon is optional and nothing ships one, so the ordinary case is a slice with a
+   * name and no logo beside it. A broken image here would be the failure this replaces.
+   */
+  test("a team nobody has given an icon draws none", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto(GAME_PAGE)
+
+    await expect(page.getByTestId("team-roster-1")).toBeVisible()
+    await expect(page.getByTestId("team-roster-1").locator("img")).toHaveCount(0)
+  })
+
+  test("a chosen icon is discarded along with the rest when the dialog is cancelled", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await openLineup(page)
+
+    await choose(page, "lineup-team-icon")
+    await expect(page.getByTestId("lineup-team-icon-preview")).toBeVisible()
+
+    await page.getByTestId("lineup-cancel").click()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+
+    await openLineup(page)
+    await expect(page.getByTestId("lineup-team-icon-empty")).toBeVisible()
+  })
+
+  /**
+   * A team carries an icon only once somebody uploads one, and none ships, so the game's own
+   * logo is the only one this page has. Without it the page a slice leads to shows nothing of
+   * the game the slice named — which is what removing it from the header did.
+   */
+  test("the game's own page is identified by the game's logo", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports")
+
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await choose(page, "game-dialog-icon")
+    await page.getByTestId("game-dialog-save").click()
+    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+
+    await page.goto(GAME_PAGE)
+
+    const logo = page.getByTestId("esports-game-icon")
+    await expect.poll(() => decoded(logo)).toBe(true)
+    await expect(logo).toHaveAttribute("src", /\/files\/public\/game-icons\/[^/]+\.webp/)
+    await expect(logo).toHaveAttribute("srcset", /128w/)
+  })
+
   test("the game's own page draws no picture behind its header", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())

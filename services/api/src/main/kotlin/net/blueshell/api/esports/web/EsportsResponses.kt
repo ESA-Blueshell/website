@@ -20,6 +20,8 @@ data class TeamResponse(
     val name: String,
     @Schema(description = "The team's own banner, drawn in the slice for it")
     val banner: Image? = null,
+    @Schema(description = "The team's own icon, drawn in that slice beside the name")
+    val icon: Image? = null,
 )
 
 @Schema(description = "A game: what it is called, the art it is drawn with, and how its page presents it")
@@ -31,10 +33,10 @@ data class GamePageResponse(
     val slug: String,
     @Schema(description = "The colour that carries this game, where one has been chosen")
     val accent: String?,
-    @Schema(description = "Asset file name for the game's own mark, where it has one")
-    val mark: String?,
     @Schema(description = "The game's own image, drawn in the slice for it on the esports index")
     val banner: Image? = null,
+    @Schema(description = "The game's own icon, drawn in that slice beside the name")
+    val icon: Image? = null,
     @Schema(description = "What the page says about the game, where anything is said")
     val intro: String?,
     @Schema(description = "Where the game sits among the others")
@@ -65,6 +67,8 @@ data class TeamRosterResponse(
     val members: List<RosterMemberResponse>,
     @Schema(description = "The team's own banner, drawn in the slice for it")
     val banner: Image? = null,
+    @Schema(description = "The team's own icon, drawn in that slice beside the name")
+    val icon: Image? = null,
 )
 
 @Schema(description = "A game's teams for one season, and the seasons that can be shown")

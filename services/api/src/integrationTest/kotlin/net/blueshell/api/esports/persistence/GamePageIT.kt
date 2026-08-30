@@ -1,24 +1,19 @@
 package net.blueshell.api.esports.persistence
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import com.jayway.jsonpath.JsonPath
-import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.shared.enums.FileType
-import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
 
 /**
  * A game's own record: what it is called, the art it is drawn with, the address it answers to,
@@ -95,11 +90,15 @@ class GamePageIT : UserTestSupport() {
             .andExpect(jsonPath("$[?(@.game == 'SMASH')].name").value("Super Smash Bros."))
     }
 
+    /**
+     * The pictures are file references, which the suite's clean-up blanks rather than restores,
+     * so what a game carries here is its colour. That the shipped art reaches a game is asserted
+     * where the step that puts it there is, in `ShippedArtIT`.
+     */
     @Test
-    fun `a game carries the art it is drawn with`() {
+    fun `a game carries the colour it is drawn with`() {
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.game == 'VALORANT')].accent").value("#ff4655"))
-            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].mark").value("valorant.png"))
     }
 
     @Test
@@ -108,7 +107,8 @@ class GamePageIT : UserTestSupport() {
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].name").value("Trackmania"))
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].accent").doesNotExist())
-            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].mark").doesNotExist())
+            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].icon").doesNotExist())
+            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].banner").doesNotExist())
     }
 
     /**
@@ -306,16 +306,10 @@ class GamePageIT : UserTestSupport() {
     @Test
     fun `the board corrects a game's name, colour and art where it is shown`() {
         val board = createUserWithRole(Role.BOARD)
-        // The banner names a picture already in storage: choosing one stores it, and the save
+        // Both pictures name something already in storage: choosing one stores it, and the save
         // is what puts it on the game.
-        val stored = mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(picture())
-                .param("type", FileType.GAME_BANNER.name)
-                .with(bearer(board)).with(csrfToken()),
-        )
-            .andExpect(status().isCreated)
-            .andReturn().response.contentAsString
-        val path = JsonPath.read<String>(stored, "$.path")
+        val banner = storedPicture(board, FileType.GAME_BANNER)
+        val icon = storedPicture(board, FileType.GAME_ICON)
 
         mvc.perform(
             put("/esports/games/{game}", "TRACKMANIA")
@@ -324,7 +318,7 @@ class GamePageIT : UserTestSupport() {
                 .content(
                     """
                     {"name":"TrackMania","slug":"trackmania","intro":"Driving, fast.",
-                     "accent":"#22d3ee","mark":"valorant.png","banner":"$path",
+                     "accent":"#22d3ee","banner":"$banner","icon":"$icon",
                      "sortIndex":6,"fielded":true}
                     """.trimIndent(),
                 ),
@@ -332,17 +326,32 @@ class GamePageIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.name").value("TrackMania"))
             .andExpect(jsonPath("$.accent").value("#22d3ee"))
-            .andExpect(jsonPath("$.mark").value("valorant.png"))
-            .andExpect(jsonPath("$.banner.path").value(path))
+            .andExpect(jsonPath("$.banner.path").value(banner))
+            .andExpect(jsonPath("$.icon.path").value(icon))
             // The code is the identity everything else points at, and is not the request's to set.
             .andExpect(jsonPath("$.game").value("TRACKMANIA"))
     }
 
-    /** A picture the converter will accept, which is the smallest thing that really is one. */
-    private fun picture(): MockMultipartFile {
-        val image = BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB)
-        val bytes = java.io.ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
-        return MockMultipartFile("file", "banner.png", MediaType.IMAGE_PNG_VALUE, bytes)
+    /**
+     * A game's icon is an upload rather than a name, so a path naming nothing is refused where a
+     * filename that matched no bundled file used to be accepted and silently draw nothing.
+     */
+    @Test
+    fun `an icon naming nothing in storage is refused rather than quietly drawn as nothing`() {
+        val board = createUserWithRole(Role.BOARD)
+
+        mvc.perform(
+            put("/esports/games/{game}", "TRACKMANIA")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"name":"Trackmania","slug":"trackmania","accent":"#22d3ee",
+                     "icon":"game-icons/nothing-is-stored-here.webp","sortIndex":6,"fielded":true}
+                    """.trimIndent(),
+                ),
+        )
+            .andExpect(status().isBadRequest)
     }
 
     @Test
@@ -353,11 +362,14 @@ class GamePageIT : UserTestSupport() {
             put("/esports/games/{game}", "VALORANT")
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Valorant","slug":"valorant","accent":"","mark":"","sortIndex":1,"fielded":true}"""),
+                .content(
+                    """{"name":"Valorant","slug":"valorant","accent":"","banner":"","icon":"","sortIndex":1,"fielded":true}""",
+                ),
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.accent").doesNotExist())
-            .andExpect(jsonPath("$.mark").doesNotExist())
+            .andExpect(jsonPath("$.banner").doesNotExist())
+            .andExpect(jsonPath("$.icon").doesNotExist())
     }
 
     @Test

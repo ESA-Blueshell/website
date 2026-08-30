@@ -1,5 +1,4 @@
 import {computed, ref, type ComputedRef, type Ref} from "vue"
-import {$require} from "@/plugins/require.js"
 import {loadGames, type Game, type GameRecord} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
 
@@ -8,8 +7,10 @@ export interface GameIdentity {
   name: string
   /** The accent that carries this game across the island. */
   accent: string
-  /** The game's own mark, where one has been chosen for it. */
-  mark: string | null
+  /** The game's own icon, where one has been chosen for it. */
+  icon: string | null
+  /** The widths that icon is stored at, ready for a `srcset`. */
+  iconSrcset?: string
   /** The picture in the game's slice on the index, where one has been chosen for it. */
   banner: string | null
   /** The widths that picture is stored at, ready for a `srcset`. */
@@ -20,20 +21,16 @@ export interface GameIdentity {
 }
 
 /**
- * A game nobody has drawn art for reads on the association's own blue and shows no mark. Its
+ * A game nobody has drawn art for reads on the association's own blue and shows no icon. Its
  * name still comes from its record; there is no game without one.
  */
-const UNDRAWN = {accent: "var(--color-brand)", mark: null, banner: null}
-
-// $require answers with an empty string for an asset that is not bundled, which reads the same
-// as a game that never named one: no mark rather than a broken image.
-const asset = (file: string | null | undefined): string | null =>
-  (file ? $require(`@/assets/${file}`) || null : null)
+const UNDRAWN = {accent: "var(--color-brand)", icon: null, banner: null}
 
 const identify = (record: GameRecord): GameIdentity => ({
   name: record.name,
   accent: record.accent || UNDRAWN.accent,
-  mark: asset(record.mark),
+  icon: record.icon?.url ?? null,
+  iconSrcset: srcsetOf(record.icon),
   banner: record.banner?.url ?? null,
   srcset: srcsetOf(record.banner),
   ...sizeOf(record.banner),

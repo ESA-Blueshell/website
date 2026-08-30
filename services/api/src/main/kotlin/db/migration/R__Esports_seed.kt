@@ -84,7 +84,6 @@ class R__Esports_seed : BaseJavaMigration() {
         val name = row.getValue("name")
         val slug = row.getValue("slug")
         val accent = row.getValue("accent").ifBlank { null }
-        val mark = row.getValue("mark").ifBlank { null }
         val sortIndex = row.getValue("sort_index").toInt()
         val fielded = row.getValue("fielded").toBoolean()
         val intro = row.getValue("intro").ifBlank { null }
@@ -93,15 +92,15 @@ class R__Esports_seed : BaseJavaMigration() {
         // second row to insert beside a deleted one. A game the file lists exists, so a deleted
         // row is brought back rather than duplicated.
         val existing = activeId(connection, "SELECT id FROM game_page WHERE game = ?", code)
-        val fields = listOf<Any?>(name, slug, accent, mark, sortIndex, fielded, intro)
+        val fields = listOf<Any?>(name, slug, accent, sortIndex, fielded, intro)
         if (existing != null) {
             connection.prepareStatement(
                 """
                 UPDATE game_page
-                SET name = ?, slug = ?, accent = ?, mark = ?, sort_index = ?, fielded = ?, intro = ?,
+                SET name = ?, slug = ?, accent = ?, sort_index = ?, fielded = ?, intro = ?,
                     deleted_at = '9999-12-31 23:59:59'
                 WHERE id = ?
-                  AND NOT (name <=> ? AND slug <=> ? AND accent <=> ? AND mark <=> ?
+                  AND NOT (name <=> ? AND slug <=> ? AND accent <=> ?
                            AND sort_index <=> ? AND fielded <=> ? AND intro <=> ? AND $ACTIVE)
                 """.trimIndent(),
             ).use { statement ->
@@ -114,8 +113,8 @@ class R__Esports_seed : BaseJavaMigration() {
         }
         connection.prepareStatement(
             """
-            INSERT INTO game_page (game, name, slug, accent, mark, sort_index, fielded, intro)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO game_page (game, name, slug, accent, sort_index, fielded, intro)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
             (listOf<Any?>(code) + fields)

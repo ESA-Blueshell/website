@@ -49,4 +49,15 @@ class Team(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "banner_file_id")
     var banner: File? = null,
+
+    /**
+     * The team's logo, drawn in that same slice beside the name.
+     *
+     * Optional, and shipped with nothing: a game's logo existed in the frontend and moved here,
+     * a team's never existed at all. A team without one is drawn as its name over its banner,
+     * which is every team on the day this ships.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "icon_file_id")
+    var icon: File? = null,
 ) : AuditedAutoIdEntity()

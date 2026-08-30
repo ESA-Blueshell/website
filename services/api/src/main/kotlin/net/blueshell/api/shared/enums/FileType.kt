@@ -50,9 +50,9 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
-    /** A game's logo or mark. Lossless keeps flat colour and alpha edges sharp. */
-    GAME_MARK(
-        "game-marks",
+    /** A game's logo, drawn in its slice beside the name. Lossless keeps flat colour and alpha edges sharp. */
+    GAME_ICON(
+        "game-icons",
         publiclyReadable = true,
         maxBytes = 5 * MB,
         allowedMediaTypes = IMAGE,
@@ -70,6 +70,17 @@ enum class FileType(
         maxImageEdge = 2560,
         webpQuality = 82,
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
+    ),
+
+    /** A team's own logo, drawn in its slice beside the name. Lossless, for the same reason a game's is. */
+    TEAM_ICON(
+        "team-icons",
+        publiclyReadable = true,
+        maxBytes = 5 * MB,
+        allowedMediaTypes = IMAGE,
+        maxImageEdge = 512,
+        webpLossless = true,
+        renditionWidths = ICON_WIDTHS,
     ),
 
     /** A player's picture on one roster, which may differ from the account's own portrait. */

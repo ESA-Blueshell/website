@@ -91,8 +91,8 @@ class GamePageService(
         slug: String,
         intro: String?,
         accent: String?,
-        mark: String?,
         banner: String?,
+        icon: String?,
         sortIndex: Int,
         fielded: Boolean,
     ): GamePage {
@@ -105,9 +105,9 @@ class GamePageService(
         page.slug = wanted
         page.intro = intro?.trim()?.ifBlank { null }
         page.accent = accent?.trim()?.ifBlank { null }
-        page.mark = mark?.trim()?.ifBlank { null }
-        // The picture was stored when it was chosen; the save is what puts it on the game.
+        // The pictures were stored when they were chosen; the save is what puts them on the game.
         page.banner = pictures.of(banner, FileType.GAME_BANNER)
+        page.icon = pictures.of(icon, FileType.GAME_ICON)
         page.sortIndex = sortIndex
         page.fielded = fielded
         return pages.save(page)

@@ -30,6 +30,7 @@ fun Team.asResponse() = TeamResponse(
     game = game,
     name = name,
     banner = banner?.asImage(),
+    icon = icon?.asImage(),
 )
 
 fun RosterMemberView.asResponse() = RosterMemberResponse(
@@ -46,6 +47,7 @@ fun TeamView.asResponse() = TeamRosterResponse(
     name = name,
     members = members.map { it.asResponse() },
     banner = banner,
+    icon = icon,
 )
 
 fun EsportsPageView.asResponse() = EsportsPageResponse(
@@ -82,8 +84,8 @@ fun GamePage.asResponse(): GamePageResponse = GamePageResponse(
     name = name,
     slug = slug,
     accent = accent,
-    mark = mark,
     banner = banner?.asImage(),
+    icon = icon?.asImage(),
     intro = intro,
     sortIndex = sortIndex,
     fielded = fielded,

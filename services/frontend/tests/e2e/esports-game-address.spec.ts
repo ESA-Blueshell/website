@@ -43,7 +43,7 @@ test.describe("a game's page, by its address", () => {
   test("a game gains a page by having a record, with no route written for it", async ({page}) => {
     await installApiMocks(page, {
       esportsGames: [
-        {game: "PONG", name: "Pong", slug: "pong", accent: null, mark: null, banner: null,
+        {game: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
           intro: "Two paddles and a ball.", sortIndex: 1, fielded: true},
       ],
     })

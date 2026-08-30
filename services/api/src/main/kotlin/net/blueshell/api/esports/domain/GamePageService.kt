@@ -4,6 +4,7 @@ import net.blueshell.api.esports.persistence.GamePage
 import net.blueshell.api.esports.persistence.GamePageRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
+import net.blueshell.api.shared.enums.FileType
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,6 +25,7 @@ class GamePageService(
     private val pages: GamePageRepository,
     private val teams: TeamRepository,
     private val entries: TeamRosterEntryRepository,
+    private val pictures: EsportsPictures,
 ) {
     @Transactional(readOnly = true)
     fun findAll(): List<GamePage> = pages.findAllByOrderBySortIndexAsc()
@@ -104,7 +106,8 @@ class GamePageService(
         page.intro = intro?.trim()?.ifBlank { null }
         page.accent = accent?.trim()?.ifBlank { null }
         page.mark = mark?.trim()?.ifBlank { null }
-        page.banner = banner?.trim()?.ifBlank { null }
+        // The picture was stored when it was chosen; the save is what puts it on the game.
+        page.banner = pictures.of(banner, FileType.GAME_BANNER)
         page.sortIndex = sortIndex
         page.fielded = fielded
         return pages.save(page)

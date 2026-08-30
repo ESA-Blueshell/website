@@ -57,7 +57,7 @@ class PublicImageUploadIT : UserTestSupport() {
 
         mvc.perform(
             multipart(PublicFileUrls.UPLOAD).file(jpegOf(1000, 400))
-                .param("type", FileType.TEAM_POSTER.name)
+                .param("type", FileType.TEAM_BANNER.name)
                 .with(bearer(admin)).with(csrfToken()),
         )
             .andExpect(status().isCreated)
@@ -72,12 +72,12 @@ class PublicImageUploadIT : UserTestSupport() {
 
         val result = mvc.perform(
             multipart(PublicFileUrls.UPLOAD).file(png())
-                .param("type", FileType.TEAM_POSTER.name)
+                .param("type", FileType.TEAM_BANNER.name)
                 .with(bearer(admin)).with(csrfToken()),
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.path").value(org.hamcrest.Matchers.startsWith("team-posters/")))
-            .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.startsWith("/files/public/team-posters/")))
+            .andExpect(jsonPath("$.path").value(org.hamcrest.Matchers.startsWith("team-banners/")))
+            .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.startsWith("/files/public/team-banners/")))
             .andReturn()
 
         // Where it says it is, is where it is: the picture can be fetched straight away, by
@@ -110,7 +110,7 @@ class PublicImageUploadIT : UserTestSupport() {
 
         mvc.perform(
             multipart(PublicFileUrls.UPLOAD).file(png())
-                .param("type", FileType.TEAM_POSTER.name)
+                .param("type", FileType.TEAM_BANNER.name)
                 .with(bearer(member)).with(csrfToken()),
         ).andExpect(status().isForbidden)
     }
@@ -119,7 +119,7 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `a visitor who is not signed in is refused`() {
         mvc.perform(
             multipart(PublicFileUrls.UPLOAD).file(png())
-                .param("type", FileType.TEAM_POSTER.name)
+                .param("type", FileType.TEAM_BANNER.name)
                 .with(csrfToken()),
         ).andExpect(status().isUnauthorized)
     }
@@ -131,7 +131,7 @@ class PublicImageUploadIT : UserTestSupport() {
 
         mvc.perform(
             multipart(PublicFileUrls.UPLOAD).file(pdf)
-                .param("type", FileType.TEAM_POSTER.name)
+                .param("type", FileType.TEAM_BANNER.name)
                 .with(bearer(admin)).with(csrfToken()),
         ).andExpect(status().isUnsupportedMediaType)
     }
@@ -141,15 +141,13 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `the per-record upload endpoints are gone`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        for (path in listOf("/esports/teams/1/poster", "/esports/roster/1/icon")) {
+        // The banner endpoints went with the per-season banners they existed to manage. A
+        // game's picture and a team's are now fields of the writes that save the game and the
+        // team, and both name a picture the one upload endpoint already stored.
+        val gone = listOf("/esports/teams/1/poster", "/esports/roster/1/icon", "/esports/banners")
+        for (path in gone) {
             mvc.perform(multipart(path).file(png()).with(bearer(admin)).with(csrfToken()))
                 .andExpect(status().isNotFound)
         }
-        // The banner endpoint is still there, but it names a stored picture rather than
-        // carrying one, so a multipart body is no longer something it knows how to read.
-        mvc.perform(
-            multipart("/esports/banners").file(png()).param("game", "VALORANT")
-                .with(bearer(admin)).with(csrfToken()),
-        ).andExpect(status().isUnsupportedMediaType)
     }
 }

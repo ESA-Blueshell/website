@@ -1,7 +1,7 @@
 package net.blueshell.api.esports.domain
 
 import db.migration.R__Esports_seed
-import net.blueshell.api.esports.persistence.EsportsBannerRepository
+import net.blueshell.api.esports.persistence.GamePageRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.FileType
@@ -37,7 +37,7 @@ class ShippedArtIT : UserTestSupport() {
 
     @Autowired private lateinit var teams: TeamRepository
 
-    @Autowired private lateinit var banners: EsportsBannerRepository
+    @Autowired private lateinit var games: GamePageRepository
 
     @Autowired private lateinit var files: FileService
 
@@ -55,31 +55,31 @@ class ShippedArtIT : UserTestSupport() {
     }
 
     @Test
-    fun `a team the file gives art to has a poster`() {
+    fun `a team the file gives art to has a banner`() {
         art.apply()
 
         val team = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")
-        assertThat(team?.poster).isNotNull
-        assertThat(team?.poster?.type).isEqualTo(FileType.TEAM_POSTER)
+        assertThat(team?.banner).isNotNull
+        assertThat(team?.banner?.type).isEqualTo(FileType.TEAM_BANNER)
     }
 
     @Test
-    fun `a poster is stored at the widths a picture of its kind is served at`() {
+    fun `a banner is stored at the widths a picture of its kind is served at`() {
         art.apply()
 
-        val poster = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.poster!!
+        val banner = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner!!
         // The art is 2560 wide, which is every width the kind lists.
-        assertThat(poster.width).isEqualTo(2560)
-        assertThat(files.findPublicImage(poster.path, FileType.TEAM_POSTER)).isNotNull
+        assertThat(banner.width).isEqualTo(2560)
+        assertThat(files.findPublicImage(banner.path, FileType.TEAM_BANNER)).isNotNull
     }
 
     @Test
-    fun `a game the file gives art to has a banner set for the game as a whole`() {
+    fun `a game the file gives art to has a banner of its own`() {
         art.apply()
 
-        val forGame = banners.findAllByGame("VALORANT").filter { it.seasonId == null && it.teamId == null }
-        assertThat(forGame).hasSize(1)
-        assertThat(forGame.single().file.type).isEqualTo(FileType.ESPORTS_BANNER)
+        val page = games.findByGame("VALORANT")
+        assertThat(page?.banner).isNotNull
+        assertThat(page?.banner?.type).isEqualTo(FileType.GAME_BANNER)
     }
 
     @Test
@@ -87,8 +87,8 @@ class ShippedArtIT : UserTestSupport() {
         art.apply()
 
         // Rocket League fields more teams than it has art, so a picture carries two of them.
-        val oogway = teams.findByGameAndNameIgnoreCase("ROCKET_LEAGUE", "BS Oogway")?.poster
-        val turtles = teams.findByGameAndNameIgnoreCase("ROCKET_LEAGUE", "BS Turtles")?.poster
+        val oogway = teams.findByGameAndNameIgnoreCase("ROCKET_LEAGUE", "BS Oogway")?.banner
+        val turtles = teams.findByGameAndNameIgnoreCase("ROCKET_LEAGUE", "BS Turtles")?.banner
         assertThat(oogway?.path).isEqualTo(turtles?.path)
     }
 
@@ -98,16 +98,16 @@ class ShippedArtIT : UserTestSupport() {
 
         val second = art.apply()
 
-        assertThat(first.posters).isGreaterThan(0)
-        assertThat(first.banners).isGreaterThan(0)
-        assertThat(second).isEqualTo(ShippedArt.Applied(posters = 0, banners = 0))
+        assertThat(first.teams).isGreaterThan(0)
+        assertThat(first.games).isGreaterThan(0)
+        assertThat(second).isEqualTo(ShippedArt.Applied(teams = 0, games = 0))
     }
 
     @Test
     fun `bytes that have gone missing are written again at the address they had`() {
         art.apply()
-        val poster = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.poster!!
-        val bytes = Paths.get(storageLocation).resolve(poster.path)
+        val banner = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner!!
+        val bytes = Paths.get(storageLocation).resolve(banner.path)
         Files.delete(bytes)
 
         art.apply()
@@ -115,37 +115,36 @@ class ShippedArtIT : UserTestSupport() {
         // A lost storage volume repairs itself rather than invalidating every url anybody
         // cached, which only holds because the art is stored whether or not a slot wants it.
         assertThat(Files.exists(bytes)).isTrue()
-        assertThat(teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.poster?.path).isEqualTo(poster.path)
+        assertThat(teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner?.path).isEqualTo(banner.path)
     }
 
     @Test
-    fun `a poster somebody chose is not replaced by the one the file names`() {
+    fun `a banner somebody chose is not replaced by the one the file names`() {
         val chosen = files.store(
             content = ByteArrayInputStream(pngOf()),
             originalName = "chosen.png",
             declaredMediaType = "image/png",
-            type = FileType.TEAM_POSTER,
+            type = FileType.TEAM_BANNER,
             uploader = createUserWithRole(Role.ADMIN),
         )
         val team = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")!!
-        team.poster = chosen
+        team.banner = chosen
         teams.save(team)
 
         art.apply()
 
         // An admin's choice is later than the import, so the import leaves it alone.
-        assertThat(teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.poster?.path).isEqualTo(chosen.path)
+        assertThat(teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner?.path).isEqualTo(chosen.path)
     }
 
     @Test
-    fun `a banner somebody set for the game is not replaced`() {
+    fun `a game banner somebody chose is not replaced either`() {
         art.apply()
-        val before = banners.findAllByGame("CS2").single { it.seasonId == null && it.teamId == null }.file.path
+        val before = games.findByGame("CS2")?.banner?.path
 
         art.apply()
 
-        assertThat(banners.findAllByGame("CS2").single { it.seasonId == null && it.teamId == null }.file.path)
-            .isEqualTo(before)
+        assertThat(games.findByGame("CS2")?.banner?.path).isEqualTo(before)
     }
 
     private fun pngOf(): ByteArray {

@@ -1,28 +1,28 @@
-game,name,image,poster
-CS2,BS HyperS,csgoesports2.jpg,cs2-2
-CS2,BS PepeDS,csgoesports1.jpg,cs2-3
-CSGO,BS HyperS,csgoesports1.jpg,csgo-3
-CSGO,BS Revenge,csgoesports2.jpg,csgo-1
-GEOGUESSR,Geoguessr,geoguessr1.jpg,geoguessr-1
-LEAGUE_OF_LEGENDS,BS Fristi Fighters,leagueesportsbg2.jpg,lol-2
-LEAGUE_OF_LEGENDS,BS Housecats,leagueesportsbg2.jpg,lol-3
-LEAGUE_OF_LEGENDS,BS Pandora,leagueesportsbg2.jpg,lol-4
-LEAGUE_OF_LEGENDS,BS Primus,leagueesportsbg1.jpg,lol-5
-LEAGUE_OF_LEGENDS,BS Roestige Ridders,leagueesportsbg1.jpg,lol-6
-LEAGUE_OF_LEGENDS,BS Scaling,leagueesportsbg1.jpg,lol-7
-LEAGUE_OF_LEGENDS,BS Street Rats,leagueesportsbg1.jpg,lol-8
-LEAGUE_OF_LEGENDS,Blueshell Goombastompers,leagueesportsbg1.jpg,lol-1
-ROCKET_LEAGUE,BS Oogway,rocketleagueesports.jpg,rocket-league-2
-ROCKET_LEAGUE,BS Squirtles,rocketleagueesports.jpg,rocket-league-3
-ROCKET_LEAGUE,BS Tadpole,rocketleagueesports2.jpg,rocket-league-1
-ROCKET_LEAGUE,BS Turtles,rocketleagueesports2.jpg,rocket-league-2
-ROCKET_LEAGUE,Blueshell Tortoises,rocketleagueesports2.jpg,rocket-league-3
-SMASH,Smash,,smash-2
-TRACKMANIA,[ESABS],trackmaniabg.jpg,trackmania-2
-VALORANT,BS G.G.C. Yaptown,valorantesports1.jpg,valorant-1
-VALORANT,BS Huge,valorantesports1.jpg,valorant-2
-VALORANT,BS IcyWater,valorantesports1.jpg,valorant-3
-VALORANT,BS SpicyWater,valorantesports2.jpg,valorant-4
-VALORANT,BS Tempra,valorantesports1.jpg,valorant-5
-VALORANT,BS Valorant,valorantesports1.jpg,valorant-6
-VALORANT,BS Waterboarders,valorantesports1.jpg,valorant-7
+game,name,banner
+CS2,BS HyperS,cs2-2
+CS2,BS PepeDS,cs2-3
+CSGO,BS HyperS,csgo-3
+CSGO,BS Revenge,csgo-1
+GEOGUESSR,Geoguessr,geoguessr-1
+LEAGUE_OF_LEGENDS,BS Fristi Fighters,lol-2
+LEAGUE_OF_LEGENDS,BS Housecats,lol-3
+LEAGUE_OF_LEGENDS,BS Pandora,lol-4
+LEAGUE_OF_LEGENDS,BS Primus,lol-5
+LEAGUE_OF_LEGENDS,BS Roestige Ridders,lol-6
+LEAGUE_OF_LEGENDS,BS Scaling,lol-7
+LEAGUE_OF_LEGENDS,BS Street Rats,lol-8
+LEAGUE_OF_LEGENDS,Blueshell Goombastompers,lol-1
+ROCKET_LEAGUE,BS Oogway,rocket-league-2
+ROCKET_LEAGUE,BS Squirtles,rocket-league-3
+ROCKET_LEAGUE,BS Tadpole,rocket-league-1
+ROCKET_LEAGUE,BS Turtles,rocket-league-2
+ROCKET_LEAGUE,Blueshell Tortoises,rocket-league-3
+SMASH,Smash,smash-2
+TRACKMANIA,[ESABS],trackmania-2
+VALORANT,BS G.G.C. Yaptown,valorant-1
+VALORANT,BS Huge,valorant-2
+VALORANT,BS IcyWater,valorant-3
+VALORANT,BS SpicyWater,valorant-4
+VALORANT,BS Tempra,valorant-5
+VALORANT,BS Valorant,valorant-6
+VALORANT,BS Waterboarders,valorant-7

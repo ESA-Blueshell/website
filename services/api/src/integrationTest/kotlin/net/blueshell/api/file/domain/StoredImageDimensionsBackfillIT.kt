@@ -44,7 +44,7 @@ class StoredImageDimensionsBackfillIT : UserTestSupport() {
         val posted = mvc.perform(
             multipart(PublicFileUrls.UPLOAD)
                 .file(MockMultipartFile("file", "poster.png", MediaType.IMAGE_PNG_VALUE, pngOf(width, height)))
-                .param("type", FileType.TEAM_POSTER.name)
+                .param("type", FileType.TEAM_BANNER.name)
                 .with(bearer(admin)).with(csrfToken()),
         ).andExpect(status().isCreated).andReturn()
         val path = mapper.readTree(posted.response.contentAsString)["path"].asText()

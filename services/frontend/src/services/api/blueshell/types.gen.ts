@@ -594,13 +594,12 @@ export type CreateTargetRequest = {
  * Create a team for a game
  */
 export type CreateTeamRequest = {
-    game: string;
-    image?: string | null;
-    name: string;
     /**
-     * Where the team's poster is stored; nothing leaves the team without one
+     * Where the team's banner is stored; nothing leaves the team without one
      */
-    poster?: string | null;
+    banner?: string | null;
+    game: string;
+    name: string;
 };
 
 export type CreateTelemetryRequest = {
@@ -684,33 +683,9 @@ export type EnqueueJobRequest = {
 };
 
 /**
- * A banner and how narrowly it was set, as an admin manages them
- */
-export type EsportsBannerResponse = {
-    game: string;
-    id: number;
-    /**
-     * The image itself
-     */
-    image: Image;
-    /**
-     * The season it is set for; absent when it carries every season
-     */
-    seasonId?: number | null;
-    /**
-     * The team it is set for; absent when it carries every team
-     */
-    teamId?: number | null;
-};
-
-/**
  * A game's teams for one season, and the seasons that can be shown
  */
 export type EsportsPageResponse = {
-    /**
-     * The banner for the game and season shown, absent when none is set anywhere
-     */
-    banner?: Image | null;
     game: string;
     /**
      * The season being shown; absent when the game has no rosters yet
@@ -862,8 +837,7 @@ export enum FileType {
     SPONSOR_PICTURE = 'SPONSOR_PICTURE',
     GAME_BANNER = 'GAME_BANNER',
     GAME_MARK = 'GAME_MARK',
-    TEAM_POSTER = 'TEAM_POSTER',
-    ESPORTS_BANNER = 'ESPORTS_BANNER',
+    TEAM_BANNER = 'TEAM_BANNER',
     ROSTER_ICON = 'ROSTER_ICON'
 }
 
@@ -907,9 +881,9 @@ export type GamePageResponse = {
      */
     accent?: string | null;
     /**
-     * Asset file name for the image behind the game on the index
+     * The game's own image, drawn in the slice for it on the esports index
      */
-    banner?: string | null;
+    banner?: Image | null;
     /**
      * Whether the association still fields a team in it
      */
@@ -1454,25 +1428,6 @@ export type ServiceEntry = {
     url: string;
 };
 
-/**
- * The picture behind one game, season or team
- */
-export type SetBannerRequest = {
-    game: string;
-    /**
-     * Where the picture is stored
-     */
-    picture: string;
-    /**
-     * The season it is for; nothing carries every season
-     */
-    seasonId?: number | null;
-    /**
-     * The team it is for; nothing carries every team
-     */
-    teamId?: number | null;
-};
-
 export type SignupAddressRequest = {
     city: string;
     country: string;
@@ -1561,17 +1516,13 @@ export enum TargetSystem {
  * A team the association fields in one game
  */
 export type TeamResponse = {
+    /**
+     * The team's own banner, drawn in the slice for it
+     */
+    banner?: Image | null;
     game: string;
     id: number;
-    /**
-     * Asset file name for the team's background image
-     */
-    image?: string | null;
     name: string;
-    /**
-     * The team's uploaded poster, where one was uploaded
-     */
-    poster?: Image | null;
 };
 
 export enum TeamRole {
@@ -1585,17 +1536,12 @@ export enum TeamRole {
  */
 export type TeamRosterResponse = {
     /**
-     * The banner resolved for this team in the season being shown
+     * The team's own banner, drawn in the slice for it
      */
     banner?: Image | null;
     id: number;
-    image?: string | null;
     members: Array<RosterMemberResponse>;
     name: string;
-    /**
-     * The team's uploaded poster, where one was uploaded
-     */
-    poster?: Image | null;
 };
 
 export type TelemetryResponse = {
@@ -1705,7 +1651,7 @@ export type UpdateGamePageRequest = {
      */
     accent?: string | null;
     /**
-     * Asset file name for the image behind the game on the index
+     * Where the game's banner is stored; nothing takes the banner away
      */
     banner?: string | null;
     /**
@@ -1783,12 +1729,11 @@ export type UpdateSponsorRequest = {
  * Rename a team or change the pictures it is drawn with
  */
 export type UpdateTeamRequest = {
-    image?: string | null;
-    name: string;
     /**
-     * Where the team's poster is stored; nothing takes the poster away
+     * Where the team's banner is stored; nothing takes the banner away
      */
-    poster?: string | null;
+    banner?: string | null;
+    name: string;
 };
 
 export type UpdateUserRequest = {
@@ -3624,133 +3569,6 @@ export type CsrfResponses = {
 };
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
-
-export type FindBannersData = {
-    body?: never;
-    path?: never;
-    query: {
-        game: string;
-    };
-    url: '/esports/banners';
-};
-
-export type FindBannersErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindBannersError = FindBannersErrors[keyof FindBannersErrors];
-
-export type FindBannersResponses = {
-    /**
-     * OK
-     */
-    200: Array<EsportsBannerResponse>;
-};
-
-export type FindBannersResponse = FindBannersResponses[keyof FindBannersResponses];
-
-export type SetBannerData = {
-    body: SetBannerRequest;
-    path?: never;
-    query?: never;
-    url: '/esports/banners';
-};
-
-export type SetBannerErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SetBannerError = SetBannerErrors[keyof SetBannerErrors];
-
-export type SetBannerResponses = {
-    /**
-     * OK
-     */
-    200: EsportsBannerResponse;
-};
-
-export type SetBannerResponse = SetBannerResponses[keyof SetBannerResponses];
-
-export type RemoveBannerData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/esports/banners/{id}';
-};
-
-export type RemoveBannerErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RemoveBannerError = RemoveBannerErrors[keyof RemoveBannerErrors];
-
-export type RemoveBannerResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type RemoveBannerResponse = RemoveBannerResponses[keyof RemoveBannerResponses];
 
 export type FindGamePagesData = {
     body?: never;

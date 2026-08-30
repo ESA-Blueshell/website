@@ -570,8 +570,11 @@ SELECT DISTINCT i.season, i.season_start, i.season_end
 FROM esports_import i
 WHERE NOT EXISTS (SELECT 1 FROM season s WHERE s.name = i.season AND s.deleted_at = '9999-12-31 23:59:59.000000');
 
-INSERT INTO team (game, name, image)
-SELECT DISTINCT i.game, i.team, i.image
+-- The recovered rows carry the filename the old page drew the team on. It is read into the
+-- staging table and goes no further: a team's picture is an upload the site ships, put on the
+-- team once the application is up and there is somewhere to put the bytes.
+INSERT INTO team (game, name)
+SELECT DISTINCT i.game, i.team
 FROM esports_import i
 WHERE NOT EXISTS (SELECT 1 FROM team t WHERE t.game = i.game AND t.name = i.team AND t.deleted_at = '9999-12-31 23:59:59.000000');
 

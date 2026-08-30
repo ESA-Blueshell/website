@@ -10,13 +10,11 @@ import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {loadSeasons, unfieldTeamFromSeason, type EsportsImage} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
-import BannerDialog from "@/domains/esports/island/BannerDialog.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
 import ConfirmDialog from "@/domains/esports/island/ConfirmDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
-import {$require} from "@/plugins/require"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
@@ -76,16 +74,15 @@ const rosterOf = (teamId: number) => {
     .filter(group => group.members.length > 0)
 }
 
-// The uploaded poster where there is one, and the bundled asset until then, so a team that
-// has not been given a picture yet keeps the one the page has always drawn. An upload also
-// carries the widths it is stored at; a bundled file is one file and has none.
+// A team's own banner, which is the only picture it has. A team nobody has given one to draws
+// no picture at all, and the slice reads on the game's accent instead.
 const slices = computed(() => teams.value.map(team => ({
   id: team.id,
   title: team.name,
   meta: `${team.members.length} on the roster`,
-  banner: team.poster?.url || (team.image ? $require(`@/assets/${team.image}`) : ""),
-  srcset: srcsetOf(team.poster),
-  ...sizeOf(team.poster),
+  banner: team.banner?.url ?? "",
+  srcset: srcsetOf(team.banner),
+  ...sizeOf(team.banner),
 })))
 
 const entrance = (index: number) => ({
@@ -144,10 +141,7 @@ const seasonRemoved = async (gone: Season) => {
 }
 
 const adding = ref(false)
-const bannersOpen = ref(false)
 
-/** The banner the api resolved for this game and season, where anything was set. */
-const pageBanner = computed(() => page.value?.banner ?? null)
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
 
@@ -161,7 +155,7 @@ const teamAdded = async (team: Team) => {
   await reload(season.value?.id)
 }
 
-const editingTeam = ref<{id: number; name: string; image: string | null; poster: EsportsImage | null} | null>(null)
+const editingTeam = ref<{id: number; name: string; banner: EsportsImage | null} | null>(null)
 const lineupOpen = ref(false)
 
 const editLineup = (teamId: number | string) => {
@@ -170,8 +164,7 @@ const editLineup = (teamId: number | string) => {
   editingTeam.value = {
     id: team.id,
     name: team.name,
-    image: team.image ?? null,
-    poster: team.poster ?? null,
+    banner: team.banner ?? null,
   }
   lineupOpen.value = true
 }
@@ -179,7 +172,7 @@ const editLineup = (teamId: number | string) => {
 /**
  * What the slice shows is the api's answer, so it is asked again rather than patched here.
  *
- * The team being edited is refreshed from that answer as well. The editor reads its poster
+ * The team being edited is refreshed from that answer as well. The editor reads its banner
  * from this, and reloading rebuilds the props it watches — so leaving this stale would undo
  * an upload on screen a moment after it landed.
  */
@@ -189,7 +182,7 @@ const lineupSaved = async () => {
   if (!open) return
   const fresh = teams.value.find(one => one.id === open.id)
   if (fresh) {
-    editingTeam.value = {...open, image: fresh.image ?? null, poster: fresh.poster ?? null}
+    editingTeam.value = {...open, banner: fresh.banner ?? null}
   }
 }
 
@@ -256,23 +249,6 @@ const seasonSaved = (saved: Season) => {
   <v-main>
     <esports-island>
       <header class="relative isolate overflow-hidden">
-        <!-- The uploaded banner where one was set; the accent wash alone until then. -->
-        <!--
-          Full-bleed behind the header, so the browser is told to pick for the whole viewport.
-          The width and the height are the picture's own: they give the element a ratio, and
-          the stylesheet decides what it is actually drawn at.
-        -->
-        <img
-          v-if="pageBanner"
-          alt=""
-          class="page-banner pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40"
-          data-testid="esports-page-banner"
-          :height="pageBanner.height ?? undefined"
-          sizes="100vw"
-          :src="pageBanner.url"
-          :srcset="srcsetOf(pageBanner)"
-          :width="pageBanner.width ?? undefined"
-        >
         <div
           aria-hidden="true"
           class="pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"
@@ -317,18 +293,6 @@ const seasonSaved = (saved: Season) => {
                 {{ identity.name }}
               </h1>
             </div>
-            <!-- `mr-11` keeps this clear of the edit affordance pinned to the header's corner,
-                 which is permanently visible on a touch device and would otherwise take the tap
-                 meant for this button. Both only appear for somebody who may edit. -->
-            <button
-              v-if="mayEdit"
-              class="mr-11 ml-auto rounded border border-ash/40 px-3 py-1.5 font-body text-xs text-ash transition-colors hover:border-current hover:text-white"
-              data-testid="esports-banners-open"
-              type="button"
-              @click="bannersOpen = true"
-            >
-              Banners
-            </button>
           </div>
           <div
             v-if="intro"
@@ -453,9 +417,8 @@ const seasonSaved = (saved: Season) => {
                 :open="lineupOpen && item.id === editingTeam?.id"
                 :season="season"
                 :team-id="editingTeam?.id ?? null"
-                :team-image="editingTeam?.image ?? null"
+                :team-banner="editingTeam?.banner ?? null"
                 :team-name="editingTeam?.name ?? ''"
-                :team-poster="editingTeam?.poster ?? null"
                 @removed="lineupSaved"
                 @saved="lineupSaved"
                 @update:open="lineupOpen = $event"
@@ -500,16 +463,6 @@ const seasonSaved = (saved: Season) => {
           </banner-slices>
         </Motion>
       </section>
-
-      <banner-dialog
-        :accent="identity.accent"
-        :game="game"
-        :open="bannersOpen"
-        :season="season"
-        :teams="teams.map(one => ({id: one.id, name: one.name}))"
-        @changed="reload(season?.id)"
-        @update:open="bannersOpen = $event"
-      />
 
       <join-band />
     </esports-island>

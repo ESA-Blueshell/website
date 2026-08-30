@@ -65,10 +65,8 @@ const props = defineProps<{
   open: boolean
   teamId: number | null
   teamName: string
-  /** The team's banner asset, so the same dialog can change it. */
-  teamImage?: string | null
-  /** Where the team's uploaded poster is served, so the same dialog can replace it. */
-  teamPoster?: EsportsImage | null
+  /** Where the team's banner is served, so the same dialog can replace it. */
+  teamBanner?: EsportsImage | null
   season: Season | null
   accent?: string
 }>()
@@ -85,7 +83,6 @@ const emit = defineEmits<{
  * what they are so a rename does not read as a change to one season's line-up.
  */
 const draftName = ref("")
-const draftImage = ref("")
 
 const rows = ref<Row[]>([])
 const removed = ref<number[]>([])
@@ -117,14 +114,14 @@ const rowOf = (entry: RosterEntry): Row => ({
 })
 
 /**
- * The team's poster, held like everything else here until the save.
+ * The team's banner, held like everything else here until the save.
  *
  * Choosing one puts it into storage straight away — the picker has to draw it, and it cannot
  * draw bytes nobody has stored — but nothing is on the team until Save. Cancelling therefore
- * leaves the poster as it was along with the name and the line-up, rather than keeping the
+ * leaves the banner as it was along with the name and the line-up, rather than keeping the
  * picture and discarding the rest of the form.
  */
-const poster = ref<EsportsImage | null>(null)
+const banner = ref<EsportsImage | null>(null)
 
 const stageIcon = (index: number, picture: EsportsImage | null) => {
   const row = rows.value[index]
@@ -138,8 +135,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   removed.value = []
   memberSearch.value = {}
   draftName.value = props.teamName
-  draftImage.value = props.teamImage ?? ""
-  poster.value = props.teamPoster ?? null
+  banner.value = props.teamBanner ?? null
   playedIn.value = null
   try {
     const entries = await loadRoster(teamId, seasonId)
@@ -257,13 +253,11 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    // The team itself first — its name, its bundled art and its poster. A line-up written
-    // against a team that was meant to be renamed would leave the rename half-applied if
-    // anything after it failed.
+    // The team itself first — its name and its banner. A line-up written against a team that
+    // was meant to be renamed would leave the rename half-applied if anything after it failed.
     const saved = await saveTeamAs(teamId, {
       name: draftName.value.trim(),
-      image: draftImage.value.trim() || null,
-      poster: poster.value?.path ?? null,
+      banner: banner.value?.path ?? null,
     })
     if (!saved.ok) {
       failure.value = saved.reason
@@ -327,23 +321,14 @@ const submit = async () => {
           placeholder="Team name"
           type="text"
         >
-        <input
-          v-model="draftImage"
-          aria-label="Banner"
-          class="lineup__input"
-          data-testid="lineup-team-image"
-          maxlength="255"
-          placeholder="Banner asset, e.g. valorantesports1.jpg"
-          type="text"
-        >
       </div>
-      <!-- Held until the save, like the two fields above it. -->
+      <!-- Held until the save, like the field above it. -->
       <image-picker
-        :kind="FileType.TEAM_POSTER"
-        label="Poster"
-        :picture="poster"
-        testid="lineup-team-poster"
-        @update:picture="poster = $event"
+        :kind="FileType.TEAM_BANNER"
+        label="Banner"
+        :picture="banner"
+        testid="lineup-team-banner"
+        @update:picture="banner = $event"
       />
       <p
         v-if="teamFailure"

@@ -69,12 +69,11 @@ class EsportsSeedLoadIT : UserTestSupport() {
     fun `a game carries the name and the art the file gives it`() {
         runLoader()
 
-        val row = jdbc.queryForMap("SELECT name, slug, accent, mark, banner FROM game_page WHERE game = 'VALORANT'")
+        val row = jdbc.queryForMap("SELECT name, slug, accent, mark FROM game_page WHERE game = 'VALORANT'")
         assertThat(row["name"]).isEqualTo("Valorant")
         assertThat(row["slug"]).isEqualTo("valorant")
         assertThat(row["accent"]).isEqualTo("#ff4655")
         assertThat(row["mark"]).isEqualTo("valorant.png")
-        assertThat(row["banner"]).isEqualTo("valorantesports1.jpg")
     }
 
     @Test
@@ -83,10 +82,9 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
         // Trackmania has never had an accent or a mark written for it. The island reads such a
         // game on its own colour, which it can only do if the record says there is none.
-        val row = jdbc.queryForMap("SELECT accent, mark, banner FROM game_page WHERE game = 'TRACKMANIA'")
+        val row = jdbc.queryForMap("SELECT accent, mark FROM game_page WHERE game = 'TRACKMANIA'")
         assertThat(row["accent"]).isNull()
         assertThat(row["mark"]).isNull()
-        assertThat(row["banner"]).isNull()
     }
 
     @Test

@@ -1,6 +1,7 @@
 import {computed, ref, type ComputedRef, type Ref} from "vue"
 import {$require} from "@/plugins/require.js"
 import {loadGames, type Game, type GameRecord} from "../adapters/esports"
+import {sizeOf, srcsetOf} from "../pictures"
 
 /** A game as the island draws it: its name, its colour, and the art it carries. */
 export interface GameIdentity {
@@ -9,8 +10,13 @@ export interface GameIdentity {
   accent: string
   /** The game's own mark, where one has been chosen for it. */
   mark: string | null
-  /** The image behind the game on the index, where one has been chosen for it. */
+  /** The picture in the game's slice on the index, where one has been chosen for it. */
   banner: string | null
+  /** The widths that picture is stored at, ready for a `srcset`. */
+  srcset?: string
+  /** Its own dimensions, so the browser reserves its space before the bytes arrive. */
+  width?: number
+  height?: number
 }
 
 /**
@@ -28,7 +34,9 @@ const identify = (record: GameRecord): GameIdentity => ({
   name: record.name,
   accent: record.accent || UNDRAWN.accent,
   mark: asset(record.mark),
-  banner: asset(record.banner),
+  banner: record.banner?.url ?? null,
+  srcset: srcsetOf(record.banner),
+  ...sizeOf(record.banner),
 })
 
 /**

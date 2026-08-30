@@ -16,7 +16,6 @@ import {
   deleteSeason,
   deleteTeam,
   fieldTeam,
-  findBanners,
   findEsportsPage,
   findGameAccounts,
   createGame,
@@ -31,7 +30,6 @@ import {
   findTeams,
   findUsers,
   linkRosterEntry,
-  removeBanner,
   removeRosterEntry,
   setGameAccount,
   updateRosterEntry,
@@ -39,10 +37,8 @@ import {
   updateSeason,
   updateTeam,
   uploadPublicImage,
-  setBanner as setBannerAt,
 } from "@/services/api"
 import type {
-  EsportsBannerResponse,
   FileType,
   EsportsPageResponse,
   Image,
@@ -71,7 +67,6 @@ export type GameAccount = GameAccountResponse
 /** A game itself: what it is called, the art it is drawn with, and how its page presents it. */
 export type GameRecord = GamePageResponse
 export type FieldedTeam = FieldedTeamResponse
-export type EsportsBanner = EsportsBannerResponse
 /** An image a page draws: where it is served, how large it is, and the widths it is stored at. */
 export type EsportsImage = Image
 
@@ -90,7 +85,7 @@ export interface SeasonContents {
  */
 export async function loadGames(): Promise<GameRecord[]> {
   const res = await findGamePages()
-  return Array.isArray(res.data) ? res.data : []
+  return Array.isArray(res.data) ? res.data.map(withBanner) : []
 }
 
 export interface GameSaved {
@@ -109,7 +104,7 @@ export async function addGameOrReason(
 ): Promise<GameSaved | Refused> {
   const res = await createGame({body: {name: game.name, slug: game.slug}})
   if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be added.")}
-  return {ok: true, game: res.data}
+  return {ok: true, game: withBanner(res.data)}
 }
 
 /**
@@ -145,7 +140,7 @@ export async function saveGameOrReason(
     },
   })
   if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be saved.")}
-  return {ok: true, game: res.data}
+  return {ok: true, game: withBanner(res.data)}
 }
 
 /**
@@ -218,15 +213,14 @@ export async function storePicture(
 
 const imageOrNone = (one?: Image | null): Image | null => (one ? image(one) : null)
 
-const withPoster = <T extends {poster?: Image | null}>(team: T): T =>
-  ({...team, poster: imageOrNone(team.poster)})
+const withBanner = <T extends {banner?: Image | null}>(record: T): T =>
+  ({...record, banner: imageOrNone(record.banner)})
 
 const withIcon = <T extends {icon?: Image | null}>(entry: T): T =>
   ({...entry, icon: imageOrNone(entry.icon)})
 
 const withMedia = (team: TeamRoster): TeamRoster => ({
-  ...withPoster(team),
-  banner: imageOrNone(team.banner),
+  ...withBanner(team),
   members: team.members.map(withIcon),
 })
 
@@ -234,7 +228,7 @@ export async function loadEsportsPage(game: Game, seasonId?: number): Promise<Es
   const res = await findEsportsPage({path: {game}, query: seasonId == null ? {} : {seasonId}})
   const page = res.data
   if (!page) return null
-  return {...page, banner: imageOrNone(page.banner), teams: page.teams.map(withMedia)}
+  return {...page, teams: page.teams.map(withMedia)}
 }
 
 export async function loadSeasons(): Promise<Season[]> {
@@ -312,7 +306,7 @@ export async function dropSeason(id: number): Promise<void> {
 
 export async function loadTeams(game: Game): Promise<Team[]> {
   const res = await findTeams({query: {game}})
-  return (res.data ?? []).map(withPoster)
+  return (res.data ?? []).map(withBanner)
 }
 
 export interface TeamSaved {
@@ -322,31 +316,31 @@ export interface TeamSaved {
 
 /** Same reason as a season's: the api answers a refusal with a body, not a thrown error. */
 export async function saveTeamOrReason(
-  team: {game: Game; name: string; image?: string | null},
+  team: {game: Game; name: string; banner?: string | null},
 ): Promise<TeamSaved | Refused> {
-  const res = await createTeam({body: {game: team.game, name: team.name, image: team.image ?? undefined}})
+  const res = await createTeam({body: {game: team.game, name: team.name, banner: team.banner ?? undefined}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be added.")}
   return {ok: true, team: res.data ?? null}
 }
 
 /**
- * The team as it now stands: what it is called, the bundled art it names, and the poster it
- * carries. Its game never changes — a team is of the game it was made for, and moving one
- * between games would be a different team.
+ * The team as it now stands: what it is called and the banner it is drawn on. Its game never
+ * changes — a team is of the game it was made for, and moving one between games would be a
+ * different team.
  *
- * The poster is part of this write rather than something applied when it was chosen, so
+ * The banner is part of this write rather than something applied when it was chosen, so
  * cancelling the dialog leaves the team exactly as it was. Naming no picture takes it away.
  */
 export async function saveTeamAs(
   id: number,
-  team: {name: string; image: string | null; poster: string | null},
+  team: {name: string; banner: string | null},
 ): Promise<TeamSaved | Refused> {
   const res = await updateTeam({
     path: {id},
-    body: {name: team.name, image: team.image ?? undefined, poster: team.poster ?? undefined},
+    body: {name: team.name, banner: team.banner ?? undefined},
   })
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be saved.")}
-  return {ok: true, team: res.data ? withPoster(res.data) : null}
+  return {ok: true, team: res.data ? withBanner(res.data) : null}
 }
 
 export async function dropTeam(id: number): Promise<void> {
@@ -487,35 +481,4 @@ export async function saveGameAccount(
 
 export async function dropGameAccount(userId: number, game: Game): Promise<void> {
   await clearGameAccount({path: {userId, game}})
-}
-
-/**
- * Every banner set for a game, so the levels already covered can be shown before another is added.
- *
- * Resolved with `image` rather than `imageOrNone`: a banner always has one, so there is no
- * absence to carry through.
- */
-export async function loadBanners(game: Game): Promise<EsportsBanner[]> {
-  const res = await findBanners({query: {game}})
-  return (res.data ?? []).map(one => ({...one, image: image(one.image)}))
-}
-
-/**
- * Puts a stored picture behind one combination of game, season and team.
- *
- * Naming neither a season nor a team sets the game's own, which is what every page falls
- * back to. The picture was stored when it was chosen; this is what puts it behind a page.
- */
-export async function setBanner(
-  game: Game,
-  picture: string,
-  seasonId?: number,
-  teamId?: number,
-): Promise<EsportsBanner | null> {
-  const res = await setBannerAt({body: {game, picture, seasonId, teamId}})
-  return res.data ? {...res.data, image: image(res.data.image)} : null
-}
-
-export async function dropBanner(id: number): Promise<void> {
-  await removeBanner({path: {id}})
 }

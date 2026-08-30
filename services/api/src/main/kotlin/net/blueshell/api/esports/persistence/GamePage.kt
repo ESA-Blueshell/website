@@ -2,10 +2,14 @@ package net.blueshell.api.esports.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.Lob
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
 /**
@@ -62,9 +66,15 @@ class GamePage(
     @Column(name = "mark", length = 255)
     var mark: String? = null,
 
-    /** Filename of the background image used on the index, if it has one. */
-    @Column(name = "banner", length = 255)
-    var banner: String? = null,
+    /**
+     * The game's own image, drawn in the slice for it on the esports index.
+     *
+     * The only picture a game carries besides its mark, and the only place either is drawn is a
+     * slice: the index header and the game's own page are the accent and nothing else.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "banner_file_id")
+    var banner: File? = null,
 
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,

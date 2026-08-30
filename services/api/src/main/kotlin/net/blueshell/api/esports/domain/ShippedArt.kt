@@ -1,6 +1,6 @@
 package net.blueshell.api.esports.domain
 
-import net.blueshell.api.esports.persistence.EsportsBannerRepository
+import net.blueshell.api.esports.persistence.GamePageRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
@@ -16,7 +16,7 @@ import org.springframework.transaction.support.TransactionTemplate
 /**
  * Puts the art the repository ships onto the games and teams the seed files name.
  *
- * The pictures under `db/seed/esports/art` are the association's default art, and the `poster`
+ * The pictures under `db/seed/esports/art` are the association's default art, and the `banner`
  * column of `teams.csv` and the rows of `banners.csv` say which record each of them belongs to.
  * Every picture is stored the way an upload is — converted where it needs converting, addressed
  * by its contents, written at the ladder of widths its kind lists — and credited to the site's
@@ -43,54 +43,53 @@ class ShippedArt(
     private val files: FileService,
     private val users: UserService,
     private val teams: TeamRepository,
-    private val banners: EsportsBannerRepository,
-    private val media: EsportsMediaService,
+    private val games: GamePageRepository,
     private val transactions: TransactionTemplate,
 ) {
     /** What a run changed, which is nothing at all on every start after the first. */
-    data class Applied(val posters: Int, val banners: Int)
+    data class Applied(val teams: Int, val games: Int)
 
     fun apply(): Applied {
         val owner = siteAccount() ?: return Applied(0, 0)
         // A team's picture and a game's, each as the record it belongs to and the art it names.
         val teamArt = SeedCsv.parse(SeedCsv.read(TEAMS))
             .mapNotNull { row ->
-                row[POSTER]?.ifBlank { null }?.let { art -> Triple(row.getValue("game"), row.getValue("name"), art) }
+                row[BANNER]?.ifBlank { null }?.let { art -> Triple(row.getValue("game"), row.getValue("name"), art) }
             }
         val gameArt = SeedCsv.parse(SeedCsv.read(BANNERS))
-            .map { row -> row.getValue("game") to row.getValue("art") }
+            .map { row -> row.getValue("game") to row.getValue(BANNER) }
 
         // Every picture first, so one that is waiting for nothing is still put back where it
         // was. One picture may belong to two records — a game fields more teams than it has
         // art — and the addresses remembered here are what stops it being stored twice.
         val stored = mutableMapOf<Pair<String, FileType>, String>()
         teamArt.forEach { (_, team, art) ->
-            attempt("the picture for $team") { store(art, FileType.TEAM_POSTER, owner, stored); 0 }
+            attempt("the picture for $team") { store(art, FileType.TEAM_BANNER, owner, stored); 0 }
         }
         gameArt.forEach { (game, art) ->
-            attempt("the picture for $game") { store(art, FileType.ESPORTS_BANNER, owner, stored); 0 }
+            attempt("the picture for $game") { store(art, FileType.GAME_BANNER, owner, stored); 0 }
         }
 
-        val posters = teamArt.sumOf { (game, team, art) ->
-            attempt("the poster of $team") { poster(game, team, art, owner, stored) }
+        val teamsDrawn = teamArt.sumOf { (game, team, art) ->
+            attempt("the banner of $team") { teamBanner(game, team, art, owner, stored) }
         }
-        val banners = gameArt.sumOf { (game, art) ->
-            attempt("the banner of $game") { banner(game, art, owner, stored) }
+        val gamesDrawn = gameArt.sumOf { (game, art) ->
+            attempt("the banner of $game") { gameBanner(game, art, owner, stored) }
         }
 
-        if (posters > 0 || banners > 0) {
-            log.info("[shipped-art] {} posters and {} banners now carry the art that ships", posters, banners)
+        if (teamsDrawn > 0 || gamesDrawn > 0) {
+            log.info("[shipped-art] {} teams and {} games now carry the art that ships", teamsDrawn, gamesDrawn)
         }
-        return Applied(posters, banners)
+        return Applied(teamsDrawn, gamesDrawn)
     }
 
     /**
-     * The team's poster, where the team is there and has none.
+     * The team's banner, where the team is there and has none.
      *
      * A team the file names and the database does not is not an error here: the seed leaves a
      * team that was removed removed, and its row stays in the file until somebody takes it out.
      */
-    private fun poster(
+    private fun teamBanner(
         game: String,
         name: String,
         art: String,
@@ -98,28 +97,23 @@ class ShippedArt(
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
         val team = teams.findByGameAndNameIgnoreCase(game, name) ?: return@execute 0
-        if (team.poster != null) return@execute 0
-        team.poster = store(art, FileType.TEAM_POSTER, owner, stored)
+        if (team.banner != null) return@execute 0
+        team.banner = store(art, FileType.TEAM_BANNER, owner, stored)
         teams.save(team)
         1
     }
 
-    /**
-     * The game's own banner, where nothing is set for the game as a whole.
-     *
-     * Only the game-wide slot is looked at. A banner an admin set for one team or one season is
-     * a narrower statement that this one does not contradict, and filling the empty slot behind
-     * it leaves that narrower banner winning wherever it applies.
-     */
-    private fun banner(
+    /** The game's own banner, where the game has none. */
+    private fun gameBanner(
         game: String,
         art: String,
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
-        if (banners.findAllByGame(game).any { it.seasonId == null && it.teamId == null }) return@execute 0
-        val picture = store(art, FileType.ESPORTS_BANNER, owner, stored)
-        media.setBanner(game, seasonId = null, teamId = null, picture = picture.path)
+        val page = games.findByGame(game) ?: return@execute 0
+        if (page.banner != null) return@execute 0
+        page.banner = store(art, FileType.GAME_BANNER, owner, stored)
+        games.save(page)
         1
     }
 
@@ -175,7 +169,7 @@ class ShippedArt(
         val log = LoggerFactory.getLogger(ShippedArt::class.java)
         const val TEAMS = "teams.csv"
         const val BANNERS = "banners.csv"
-        const val POSTER = "poster"
+        const val BANNER = "banner"
         const val WEBP = "image/webp"
         const val SITE_ACCOUNT = "system"
     }

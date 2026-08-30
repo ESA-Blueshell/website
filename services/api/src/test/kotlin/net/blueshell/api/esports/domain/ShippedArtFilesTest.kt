@@ -19,8 +19,8 @@ import java.nio.file.Path
 class ShippedArtFilesTest {
 
     private val named: Set<String> =
-        (SeedCsv.parse(SeedCsv.read("teams.csv")).mapNotNull { it["poster"]?.ifBlank { null } } +
-            SeedCsv.parse(SeedCsv.read("banners.csv")).map { it.getValue("art") })
+        (SeedCsv.parse(SeedCsv.read("teams.csv")).mapNotNull { it["banner"]?.ifBlank { null } } +
+            SeedCsv.parse(SeedCsv.read("banners.csv")).map { it.getValue("banner") })
             .toSet()
 
     @Test

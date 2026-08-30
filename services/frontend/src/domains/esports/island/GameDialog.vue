@@ -2,7 +2,15 @@
 import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
-import {dropGameOrReason, loadGameContents, saveGameOrReason, type GameRecord} from "../adapters/esports"
+import ImagePicker from "./ImagePicker.vue"
+import {
+  dropGameOrReason,
+  loadGameContents,
+  saveGameOrReason,
+  type EsportsImage,
+  type GameRecord,
+} from "../adapters/esports"
+import {FileType} from "@/services/api"
 import {useGames} from "./useGames"
 
 /**
@@ -34,7 +42,7 @@ const intro = ref("")
 /** The game's own colour, which is not the island accent this dialog is drawn on. */
 const colour = ref("")
 const mark = ref("")
-const banner = ref("")
+const banner = ref<EsportsImage | null>(null)
 const sortIndex = ref(0)
 const fielded = ref(true)
 const failure = ref<string | null>(null)
@@ -51,7 +59,7 @@ watch(
     intro.value = game?.intro ?? ""
     colour.value = game?.accent ?? ""
     mark.value = game?.mark ?? ""
-    banner.value = game?.banner ?? ""
+    banner.value = game?.banner ?? null
     sortIndex.value = game?.sortIndex ?? 0
     fielded.value = game?.fielded ?? true
     failure.value = null
@@ -145,7 +153,7 @@ const submit = async () => {
       intro: intro.value.trim() || null,
       accent: colour.value.trim() || null,
       mark: mark.value.trim() || null,
-      banner: banner.value.trim() || null,
+      banner: banner.value?.path ?? null,
       sortIndex: sortIndex.value,
       fielded: fielded.value,
     })
@@ -249,18 +257,18 @@ const submit = async () => {
             type="text"
           >
         </label>
-        <label class="game-form__field">
-          <span class="game-form__label">Banner</span>
-          <input
-            v-model="banner"
-            class="game-form__input"
-            data-testid="game-dialog-banner"
-            maxlength="255"
-            placeholder="valorantesports1.jpg"
-            type="text"
-          >
-        </label>
       </div>
+
+      <!-- Held until Save, like every other field here: closing without saving leaves the
+           game drawn on the picture it was drawn on. This is the picture in the game's slice
+           on the index, and the only one a game has. -->
+      <image-picker
+        :kind="FileType.GAME_BANNER"
+        label="Banner"
+        :picture="banner"
+        testid="game-dialog-banner"
+        @update:picture="banner = $event"
+      />
 
       <label class="game-form__check">
         <input

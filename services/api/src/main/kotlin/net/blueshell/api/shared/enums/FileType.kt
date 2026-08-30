@@ -39,7 +39,7 @@ enum class FileType(
     EVENT_PICTURE("event-pictures"),
     SPONSOR_PICTURE("sponsor-pictures"),
 
-    /** A game's own background, uploaded once and reused by pages that fall back to it. */
+    /** A game's own image, drawn in the slice for it on the esports index. */
     GAME_BANNER(
         "game-banners",
         publiclyReadable = true,
@@ -61,20 +61,9 @@ enum class FileType(
         renditionWidths = ICON_WIDTHS,
     ),
 
-    /** A team's own poster, uploaded by an admin rather than bundled into the frontend. */
-    TEAM_POSTER(
-        "team-posters",
-        publiclyReadable = true,
-        maxBytes = 15 * MB,
-        allowedMediaTypes = IMAGE,
-        maxImageEdge = 2560,
-        webpQuality = 82,
-        renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
-    ),
-
-    /** The image behind an esports page, set for a game, a season, a team, or a combination. */
-    ESPORTS_BANNER(
-        "esports-banners",
+    /** A team's own banner, drawn in the slice for it on its game's page. */
+    TEAM_BANNER(
+        "team-banners",
         publiclyReadable = true,
         maxBytes = 15 * MB,
         allowedMediaTypes = IMAGE,

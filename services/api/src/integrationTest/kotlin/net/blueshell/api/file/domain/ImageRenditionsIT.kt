@@ -94,7 +94,7 @@ class ImageRenditionsIT : UserTestSupport() {
 
     @Test
     fun `a poster is stored at each width its kind lists, and at none wider than itself`() {
-        val path = upload(FileType.TEAM_POSTER, 1000, 400)
+        val path = upload(FileType.TEAM_BANNER, 1000, 400)
 
         // 1280 and up are wider than the picture, and nothing is upscaled.
         assertThat(widthsOf(path)).containsExactly(320, 640, 960)
@@ -109,7 +109,7 @@ class ImageRenditionsIT : UserTestSupport() {
 
     @Test
     fun `each width is fetchable and decodes to the width its address claims`() {
-        val path = upload(FileType.TEAM_POSTER, 1000, 400)
+        val path = upload(FileType.TEAM_BANNER, 1000, 400)
 
         val stored = fileRepository.findByPath(path).orElseThrow()
         assertThat(stored.renditions).isNotEmpty
@@ -121,12 +121,12 @@ class ImageRenditionsIT : UserTestSupport() {
     /** The payload carries them, so the pages can compose a `srcset` from what they are given. */
     @Test
     fun `the rendition list reaches the payload, narrowest first`() {
-        val path = upload(FileType.TEAM_POSTER, 1000, 400)
+        val path = upload(FileType.TEAM_BANNER, 1000, 400)
         val image = fileRepository.findByPath(path).orElseThrow().asImage()
 
         assertThat(image.renditions.map { it.width }).containsExactly(320, 640, 960)
         assertThat(image.renditions.map { it.url })
-            .allMatch { it.startsWith("/files/public/team-posters/") }
+            .allMatch { it.startsWith("/files/public/team-banners/") }
     }
 
     /**
@@ -136,7 +136,7 @@ class ImageRenditionsIT : UserTestSupport() {
      */
     @Test
     fun `a width whose bytes have gone missing is written again to the address it had`() {
-        val path = upload(FileType.TEAM_POSTER, 1000, 400)
+        val path = upload(FileType.TEAM_BANNER, 1000, 400)
         val source = fileRepository.findByPath(path).orElseThrow()
         val copy = source.renditions.first()
         val bytes = root.resolve(copy.path).normalize()
@@ -156,7 +156,7 @@ class ImageRenditionsIT : UserTestSupport() {
      */
     @Test
     fun `a picture stored without widths gains them, and a second pass adds none`() {
-        val path = upload(FileType.TEAM_POSTER, 1000, 400)
+        val path = upload(FileType.TEAM_BANNER, 1000, 400)
         val source = fileRepository.findByPath(path).orElseThrow()
 
         // What a picture stored before this existed looks like: the record, the bytes, and no
@@ -178,7 +178,7 @@ class ImageRenditionsIT : UserTestSupport() {
     /** A copy is not a picture somebody uploaded, so it is never given copies of its own. */
     @Test
     fun `a width is not itself stored at widths`() {
-        val path = upload(FileType.TEAM_POSTER, 1000, 400)
+        val path = upload(FileType.TEAM_BANNER, 1000, 400)
         val copy = fileRepository.findByPath(path).orElseThrow().renditions.first()
 
         assertThat(renditions.derive(copy)).isEmpty()

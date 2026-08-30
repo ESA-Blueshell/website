@@ -272,8 +272,8 @@ class FileService @Autowired constructor(
     /**
      * A stored picture of exactly this kind, or nothing.
      *
-     * What a save names when it puts a picture on a record. The kind has to match: a poster
-     * field takes a poster, so that a directory goes on meaning what it says.
+     * What a save names when it puts a picture on a record. The kind has to match: a banner
+     * field takes a banner, so that a directory goes on meaning what it says.
      *
      * Absence is an answer here rather than a failure, because the caller is a write being
      * validated rather than a request for a file, and it has its own words for a save that

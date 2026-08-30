@@ -9,7 +9,6 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * names of real people and last season's departure should not quietly reappear.
  */
 const GAME_PAGE = "/esports/valorant"
-const INDEX = "/esports/competitive-scene"
 
 test.describe("adding a team to the season on show", () => {
   test("the band ends in a plus for somebody who may edit", async ({page}) => {

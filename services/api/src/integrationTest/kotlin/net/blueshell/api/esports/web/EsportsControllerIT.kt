@@ -174,7 +174,12 @@ class EsportsControllerIT : UserTestSupport() {
 
         // One team, two games, one season — and a line-up of its own in each, which is what
         // the pool being shared and the roster not amounts to.
-        mvc.perform(get("/esports/teams/{teamId}/seasons", teamId))
+        //
+        // Asked as the board, which is who asks it: the route carries `@PermitAll`, but the
+        // security config has never whitelisted it, so an anonymous caller is refused. Nothing
+        // public reads it — a game's page reads the page — and squaring that declaration with
+        // the configuration is a change to the security surface rather than to this feature.
+        mvc.perform(get("/esports/teams/{teamId}/seasons", teamId).with(bearer(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[?(@.game == 'VALORANT')]").exists())
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')]").exists())

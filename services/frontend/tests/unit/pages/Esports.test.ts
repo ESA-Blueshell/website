@@ -24,22 +24,43 @@ vi.mock("vue-router", async (importOriginal) => {
 })
 
 const seasons = [
-  {id: 1, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31"},
-  {id: 2, name: "Spring 2025/26", startDate: "2026-02-01", endDate: "2026-08-31"},
+  {id: 1, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31", played: true},
+  {id: 2, name: "Spring 2025/26", startDate: "2026-02-01", endDate: "2026-08-31", played: true},
 ]
 
-/** Written down, but nobody has been fielded in it, so no game's page reports it. */
-const emptySeason = {id: 3, name: "Autumn 2026/27", startDate: "2026-09-01", endDate: "2027-01-31"}
+/**
+ * Written down, but nobody was ever fielded in it, so a visitor's strip does not carry it.
+ *
+ * Older than the two that were played rather than newer. The season on show is always on the
+ * strip -- that is how a reader sees where they are -- so an empty season that is also the
+ * newest would be carried anyway, and the rule this asserts would go untested.
+ */
+const emptySeason = {
+  id: 3, name: "Autumn 2024/25", startDate: "2024-09-01", endDate: "2025-01-31", played: false,
+}
 
-// The index asks each game what it fielded; only two of them answer with a team.
-const pageFor = (game: string) => ({
-  game,
-  season: seasons[0],
-  seasons,
-  teams: game === "VALORANT" || game === "CS2"
-    ? [{id: 1, name: `BS ${game}`, image: null, members: [{role: "PLAYER", handle: "Someone"}]}]
-    : [],
-})
+/**
+ * The band is one read: the games of a season, and what each fielded.
+ *
+ * Which of them come back is the api's answer rather than this page's filtering — a game
+ * entered with nobody in it is answered to somebody who may edit and to nobody else — so the
+ * stub answers with the two that have teams, exactly as the api would for a visitor.
+ */
+const seasonGames = [
+  {
+    game: "VALORANT",
+    teams: [{id: 1, name: "BS VALORANT", members: [{role: "PLAYER", handle: "Someone"}]}],
+    public: true,
+  },
+  {
+    game: "CS2",
+    teams: [{id: 2, name: "BS CS2", members: [{role: "PLAYER", handle: "Someone"}]}],
+    public: true,
+  },
+]
+
+/** The season the page opens on when the url names none: the association's newest. */
+const newest = seasons[1]!
 
 /** The games as their records have them: the index keeps no list of its own to fall back on. */
 const games = [
@@ -49,9 +70,10 @@ const games = [
 ]
 
 vi.mock("@/domains/esports/adapters/esports", () => ({
-  loadEsportsPage: vi.fn(async (game: string) => pageFor(game)),
+  loadSeasonGames: vi.fn(async () => seasonGames),
   loadGames: vi.fn(async () => games),
   saveSeasonOrReason: vi.fn(async () => ({ok: true, season: seasons[0]})),
+  leaveGameInSeason: vi.fn(async () => ({ok: true})),
   // Every season written down, which is more than the games were fielded in.
   loadSeasons: vi.fn(async () => [...seasons, emptySeason]),
 }))
@@ -128,8 +150,8 @@ describe("Esports page", () => {
 
     // Somebody who chose a season and then follows a game wants that game in that season.
     const targets = wrapper.findAll("a[data-to]").map(node => node.attributes("data-to"))
-    expect(targets).toContain(`/esports/valorant?season=${seasons[0]!.id}`)
-    expect(targets).toContain(`/esports/counter-strike-2?season=${seasons[0]!.id}`)
+    expect(targets).toContain(`/esports/valorant?season=${newest.id}`)
+    expect(targets).toContain(`/esports/counter-strike-2?season=${newest.id}`)
   })
 
   it("opens on the season its own url names", async () => {
@@ -137,9 +159,9 @@ describe("Esports page", () => {
     mountPage()
     await flushPromises()
 
-    const {loadEsportsPage} = await import("@/domains/esports/adapters/esports")
-    // Every game asked about that season rather than about whichever one is newest.
-    expect(vi.mocked(loadEsportsPage).mock.calls.every(([, id]) => id === seasons[1]!.id)).toBe(true)
+    const {loadSeasonGames} = await import("@/domains/esports/adapters/esports")
+    // The band is asked about that season rather than about whichever one is newest.
+    expect(vi.mocked(loadSeasonGames).mock.calls.every(([id]) => id === seasons[1]!.id)).toBe(true)
   })
 
   it("offers the seasons it was told about", async () => {

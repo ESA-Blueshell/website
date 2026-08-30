@@ -8,7 +8,10 @@ import net.blueshell.api.esports.domain.GamePageService
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.file.api.asImage
+import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.TeamSeasonService
+import net.blueshell.api.security.SecurityUtils
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.esports.domain.TeamService
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -40,7 +43,16 @@ class EsportsController(
     private val gamePages: GamePageService,
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
+    private val entered: SeasonGameService,
 ) {
+    /**
+     * Whether the caller may edit, which decides what a season's band answers with.
+     *
+     * The same authority the write routes are guarded by. Read rather than declared, because
+     * this route answers everybody and answers them differently.
+     */
+    private fun mayEditEsports(): Boolean = SecurityUtils.hasAuthority(Role.BOARD)
+
     @GetMapping("/games/{game}")
     @PermitAll
     fun findEsportsPage(
@@ -66,7 +78,15 @@ class EsportsController(
     @PostMapping("/games")
     @ResponseStatus(HttpStatus.CREATED)
     fun createGame(@Valid @RequestBody request: CreateGameRequest): GamePageResponse =
-        gamePages.create(request.name, request.slug).asResponse()
+        gamePages.create(
+            name = request.name,
+            slug = request.slug,
+            intro = request.intro,
+            accent = request.accent,
+            banner = request.banner,
+            icon = request.icon,
+            sortIndex = request.sortIndex,
+        ).asResponse(current = false)
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/games/{game}")
@@ -100,9 +120,43 @@ class EsportsController(
         gamePages.delete(game)
     }
 
+    /**
+     * Every game that ran in one season, with what it fielded.
+     *
+     * One read for the band rather than one per game. A game entered with nobody fielded in it
+     * is answered only to somebody who may edit, marked as not public — the rule turns on who
+     * is asking, so it is applied here rather than in the pages.
+     */
+    @PermitAll
+    @GetMapping("/seasons/{seasonId}/games")
+    fun findSeasonGames(@PathVariable seasonId: Long): List<SeasonGameResponse> =
+        page.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
+
+    /** Records that a game runs in a season, before anybody has been fielded in it. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
+    @PutMapping("/seasons/{seasonId}/games/{game}")
+    fun enterGame(@PathVariable seasonId: Long, @PathVariable game: String): SeasonGameResponse {
+        entered.enter(seasonId, game)
+        return page.gamesOf(seasonId, mayEdit = true).first { it.game == game }.asResponse()
+    }
+
+    /** Takes a game out of a season, which is only possible while it holds no teams. */
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
+    @DeleteMapping("/seasons/{seasonId}/games/{game}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun leaveGame(@PathVariable seasonId: Long, @PathVariable game: String) {
+        entered.leave(seasonId, game)
+    }
+
     @GetMapping("/seasons")
     @PermitAll
-    fun findSeasons(): List<SeasonResponse> = seasons.findAll().map { it.asResponse() }
+    fun findSeasons(): List<SeasonResponse> {
+        // Which seasons had something fielded is read once for the whole list: a visitor's
+        // strip carries those, and the board's carries every season, because a season has to
+        // be reachable before a game can be entered in it.
+        val played = fielded.seasonsWithTeams()
+        return seasons.findAll().map { it.asResponse(played.contains(it.id)) }
+    }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/seasons")

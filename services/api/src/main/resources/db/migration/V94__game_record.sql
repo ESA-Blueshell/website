@@ -31,5 +31,7 @@ ALTER TABLE game_page ADD UNIQUE INDEX uk_game_page_code (game);
 -- it plays, so the game it played is a fact about being fielded.
 ALTER TABLE team_season
     ADD CONSTRAINT fk_team_season_game FOREIGN KEY (game) REFERENCES game_page (game);
+ALTER TABLE season_game
+    ADD CONSTRAINT fk_season_game_game FOREIGN KEY (game) REFERENCES game_page (game);
 ALTER TABLE user_game_account
     ADD CONSTRAINT fk_user_game_account_game FOREIGN KEY (game) REFERENCES game_page (game);

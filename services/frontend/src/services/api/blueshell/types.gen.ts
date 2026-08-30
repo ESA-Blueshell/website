@@ -554,11 +554,28 @@ export type CreateEventSignUpRequest = {
  * A game the association has started playing
  */
 export type CreateGameRequest = {
+    /**
+     * The colour that carries this game, or nothing for the island's own
+     */
+    accent?: string | null;
+    /**
+     * Where the game's banner is stored
+     */
+    banner?: string | null;
+    /**
+     * Where the game's icon is stored
+     */
+    icon?: string | null;
+    intro?: string | null;
     name: string;
     /**
      * The address the game's page answers to
      */
     slug: string;
+    /**
+     * Where it sits among the others; left out, it goes at the end
+     */
+    sortIndex?: number | null;
 };
 
 export type CreateGuestRequest = {
@@ -1416,6 +1433,18 @@ export type SeasonContentsResponse = {
 };
 
 /**
+ * A game that ran in a season, with what it fielded
+ */
+export type SeasonGameResponse = {
+    game: string;
+    /**
+     * Whether a visitor sees it: a game is public in a season once a team plays it
+     */
+    public: boolean;
+    teams: Array<TeamRosterResponse>;
+};
+
+/**
  * Create or rename a season
  */
 export type SeasonRequest = {
@@ -1431,6 +1460,10 @@ export type SeasonResponse = {
     endDate: string;
     id: number;
     name: string;
+    /**
+     * Whether anything was fielded in it, which is what a visitor's season strip carries
+     */
+    played: boolean;
     startDate: string;
 };
 
@@ -4192,6 +4225,137 @@ export type FindSeasonContentsResponses = {
 };
 
 export type FindSeasonContentsResponse = FindSeasonContentsResponses[keyof FindSeasonContentsResponses];
+
+export type FindSeasonGamesData = {
+    body?: never;
+    path: {
+        seasonId: number;
+    };
+    query?: never;
+    url: '/esports/seasons/{seasonId}/games';
+};
+
+export type FindSeasonGamesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindSeasonGamesError = FindSeasonGamesErrors[keyof FindSeasonGamesErrors];
+
+export type FindSeasonGamesResponses = {
+    /**
+     * OK
+     */
+    200: Array<SeasonGameResponse>;
+};
+
+export type FindSeasonGamesResponse = FindSeasonGamesResponses[keyof FindSeasonGamesResponses];
+
+export type LeaveGameData = {
+    body?: never;
+    path: {
+        seasonId: number;
+        game: string;
+    };
+    query?: never;
+    url: '/esports/seasons/{seasonId}/games/{game}';
+};
+
+export type LeaveGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LeaveGameError = LeaveGameErrors[keyof LeaveGameErrors];
+
+export type LeaveGameResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type LeaveGameResponse = LeaveGameResponses[keyof LeaveGameResponses];
+
+export type EnterGameData = {
+    body?: never;
+    path: {
+        seasonId: number;
+        game: string;
+    };
+    query?: never;
+    url: '/esports/seasons/{seasonId}/games/{game}';
+};
+
+export type EnterGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EnterGameError = EnterGameErrors[keyof EnterGameErrors];
+
+export type EnterGameResponses = {
+    /**
+     * OK
+     */
+    200: SeasonGameResponse;
+};
+
+export type EnterGameResponse = EnterGameResponses[keyof EnterGameResponses];
 
 export type UnfieldTeamData = {
     body?: never;

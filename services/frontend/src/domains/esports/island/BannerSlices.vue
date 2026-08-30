@@ -36,10 +36,16 @@ const props = withDefaults(defineProps<{
   accent: string
   /** What each slice's data-testid is built from, since the two pages name them differently. */
   testidPrefix: string
-  /** Whether the band ends in a way to add another. */
+  /** Whether the band ends in ways to add another. */
   mayAdd?: boolean
-  /** What the plus is called, since one page adds a team and the other adds one to a game. */
-  addLabel?: string
+  /**
+   * The ways to add, one pane each, in the order they are given.
+   *
+   * A page says what its ways in are rather than the band assuming one: the index offers a
+   * game played before and a new game, and the two are different enough — a click against a
+   * whole editor — that a single pane hiding a choice would be the wrong shape.
+   */
+  adds?: Array<{key: string; label: string}>
   /**
    * One slice to open by name, which wins over opening the first.
    *
@@ -52,11 +58,11 @@ const props = withDefaults(defineProps<{
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
 }>(), {
-  mayAdd: false, addLabel: "Add", openId: null, mayEdit: false,
+  mayAdd: false, adds: () => [], openId: null, mayEdit: false,
 })
 
 const emit = defineEmits<{
-  (event: "add"): void
+  (event: "add", key: string): void
   (event: "edit", id: SliceItem["id"]): void
   (event: "go", item: SliceItem): void
   /**
@@ -311,17 +317,19 @@ watch(open, (index) => {
     <!--
       A pane of its own rather than a control floating over the band: adding belongs to the
       band, and the band is the page. Narrow, because it is a way in rather than a thing to
-      read.
+      read. One pane per way in, so a choice is made by pressing rather than inside a dialog.
     -->
     <section
-      v-if="mayAdd"
-      class="team-slice team-slice--add team-slice--last"
+      v-for="(add, index) in (mayAdd ? adds : [])"
+      :key="add.key"
+      class="team-slice team-slice--add"
+      :class="{'team-slice--last': index === adds.length - 1}"
     >
       <button
         class="team-slice__body team-slice__add"
-        :data-testid="`${testidPrefix}-add`"
+        :data-testid="`${testidPrefix}-add-${add.key}`"
         type="button"
-        @click="emit('add')"
+        @click="emit('add', add.key)"
       >
         <span
           aria-hidden="true"
@@ -340,7 +348,7 @@ watch(open, (index) => {
             aria-hidden="true"
             class="team-slice__tick"
           />
-          <span class="team-slice__name">{{ addLabel }}</span>
+          <span class="team-slice__name">{{ add.label }}</span>
         </span>
       </button>
     </section>

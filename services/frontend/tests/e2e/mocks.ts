@@ -60,8 +60,8 @@ const esportsGames = [
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
 const esportsSeasons = [
-  {id: 20, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31"},
-  {id: 19, name: "Spring 2024/25", startDate: "2025-02-01", endDate: "2025-08-31"},
+  {id: 20, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31", played: true},
+  {id: 19, name: "Spring 2024/25", startDate: "2025-02-01", endDate: "2025-08-31", played: true},
 ]
 
 const esportsPageBySeason: Record<string, Record<string, unknown>> = {
@@ -238,6 +238,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const gamesEdited = new Map<string, Record<string, unknown>>()
   /** Games removed during the test, which the reads then leave out. */
   const gamesGone = new Set<string>()
+  /** Games entered in a season during this test, staffed or not. */
+  const gamesEntered: Array<{seasonId: number; game: string}> = []
   const fieldedNow: Array<{
     seasonId: number
     teamId: number
@@ -499,6 +501,65 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const handleApiRoute = async (route: Route) => {
     const request = route.request()
     const url = new URL(request.url())
+    /**
+     * What one game fielded in one season.
+     *
+     * Shared by a game's own page and by a season's band, because the two answering
+     * differently about the same game in the same season is the bug this would otherwise hide.
+     */
+    const teamsOfGameInSeason = (game: string, seasonId: number): Array<Record<string, unknown>> => {
+      const page = fixtures.esportsPages?.[String(seasonId)] ?? esportsPageBySeason[String(seasonId)]
+      // Teams fielded during this test belong to a season the same way the seeded ones do.
+      // Which game a team played is the fielding's to say, not the team's.
+      const extra = fieldedNow
+        .filter(one => one.seasonId === seasonId && one.game === game)
+        .map(one => ({one, team: teamsMade.find(made => made.id === one.teamId)
+          ?? [{id: 3, name: "BS Old Guard"}].find(known => known.id === one.teamId)}))
+        .filter(row => row.team != null)
+        .map(row => ({
+          id: row.one.teamId,
+          name: row.team!.name,
+          members: row.one.members,
+        }))
+      const fieldsThis = game === "VALORANT" || game === "CS2" || (game === "CSGO" && seasonId === 19)
+      const stillFielded = (team: Record<string, unknown>) =>
+        !dropped.some(one => one.seasonId === seasonId && one.teamId === team.id)
+        && !goneTeams.has(Number(team.id))
+      const named = (team: Record<string, unknown>) => {
+        const change = renamed.get(Number(team.id))
+        return change ? {...team, name: change.name, icon: change.icon} : team
+      }
+      const seeded = (fieldsThis && page ? page.teams as Array<Record<string, unknown>> : [])
+        .filter(stillFielded).map(named).map(team => (
+          team.id === 1
+            ? {...team, members: roster
+              .filter(one => one.teamId === 1 && one.seasonId === seasonId)
+              .sort((a, b) => Number(a.sortIndex) - Number(b.sortIndex))
+              .map(asMember)}
+            : team
+        ))
+      // A team's own two pictures and nothing else: the slice draws both, and there is no
+      // wider banner for either to be resolved against.
+      return [...seeded, ...extra].map(team => ({
+        ...team,
+        banner: teamBanners.get(Number((team as {id: number}).id)) ?? null,
+        icon: teamIcons.get(Number((team as {id: number}).id)) ?? null,
+      }))
+    }
+
+    /** Whether the caller may edit, read from the login the browser is carrying. */
+    const isBoard = (): boolean => {
+      const cookie = request.headers().cookie ?? ""
+      const found = /(?:^|;\s*)login=([^;]*)/.exec(cookie)
+      if (!found?.[1]) return false
+      try {
+        const roles = (JSON.parse(decodeURIComponent(found[1])) as {roles?: string[]}).roles ?? []
+        return roles.includes("BOARD") || roles.includes("ADMIN")
+      } catch {
+        return false
+      }
+    }
+
     const method = request.method()
     const path = url.pathname.startsWith("/api/")
       ? url.pathname.slice(4)
@@ -862,46 +923,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const offered = (page.seasons as Array<{id: number}>)
         .filter(one => !gone.has(one.id))
         .filter(one => game !== "CSGO" || one.id === 19)
-      // Teams fielded during this test belong to the page the same way the seeded ones do.
       const shownSeason = Number((page.season as {id: number} | undefined)?.id ?? requested ?? 20)
-      // Which game a team played is the fielding's to say now, not the team's.
-      const extra = fieldedNow
-        .filter(one => one.seasonId === shownSeason && one.game === game)
-        .map(one => ({one, team: teamsMade.find(made => made.id === one.teamId)
-          ?? [{id: 3, name: "BS Old Guard"}].find(known => known.id === one.teamId)}))
-        .filter(row => row.team != null)
-        .map(row => ({
-          id: row.one.teamId,
-          name: row.team!.name,
-          banner: teamBanners.get(row.one.teamId) ?? null,
-          members: row.one.members,
-        }))
-      const fieldsThis = game === "VALORANT" || game === "CS2" || (game === "CSGO" && shownSeason === 19)
-      // The seeded team's members come from the same line-up the admin edits, so a change
-      // made there is a change here.
-      const stillFielded = (team: Record<string, unknown>) =>
-        !dropped.some(one => one.seasonId === shownSeason && one.teamId === team.id)
-        && !goneTeams.has(Number(team.id))
-      const named = (team: Record<string, unknown>) => {
-        const change = renamed.get(Number(team.id))
-        return change ? {...team, name: change.name, banner: change.banner, icon: change.icon} : team
-      }
-      const seeded = (fieldsThis ? page.teams as Array<Record<string, unknown>> : []).filter(stillFielded).map(named).map(team => (
-        team.id === 1
-          ? {...team, members: roster
-            .filter(one => one.teamId === 1 && one.seasonId === shownSeason)
-            .sort((a, b) => Number(a.sortIndex) - Number(b.sortIndex))
-            .map(asMember)}
-          : team
-      ))
-      // A team's own two pictures and nothing else: the page draws both in the slice for that
-      // team, and there is no wider banner for either to be resolved against.
-      const teams = [...seeded, ...extra].map(team => ({
-        ...team,
-        banner: teamBanners.get(Number((team as {id: number}).id)) ?? null,
-        icon: teamIcons.get(Number((team as {id: number}).id)) ?? null,
-      }))
-      return fulfillJson(route, {...page, game, seasons: offered, teams})
+      return fulfillJson(route, {
+        ...page,
+        game,
+        seasons: offered,
+        teams: teamsOfGameInSeason(String(game), shownSeason),
+      })
     }
     if (method === "POST" && path === "/esports/seasons") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
@@ -933,9 +961,61 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       return fulfillJson(route, {id: Number(path.split("/").pop()), ...body})
     }
+    // The band: the games of one season, and whether a visitor sees each. The rule turns on
+    // who is asking, exactly as the api has it.
+    if (method === "GET" && /^\/esports\/seasons\/\d+\/games$/.test(path)) {
+      const seasonId = Number(path.split("/")[3])
+      const board = isBoard()
+      const codes = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+        .map(one => String(one.game))
+        .filter(code => !gamesGone.has(code))
+      const played = codes
+        .map(code => ({game: code, teams: teamsOfGameInSeason(code, seasonId)}))
+        .filter(one => one.teams.length > 0)
+        .map(one => ({...one, public: true}))
+      if (!board) return fulfillJson(route, played)
+      const shown = new Set(played.map(one => one.game))
+      const quiet = gamesEntered
+        .filter(one => one.seasonId === seasonId && !shown.has(one.game) && !gamesGone.has(one.game))
+        .map(one => ({game: one.game, teams: [] as unknown[], public: false}))
+      return fulfillJson(route, [...played, ...quiet].sort(
+        (a, b) => codes.indexOf(a.game) - codes.indexOf(b.game),
+      ))
+    }
+    if (method === "PUT" && /^\/esports\/seasons\/\d+\/games\/[A-Z0-9_]+$/.test(path)) {
+      const parts = path.split("/")
+      const seasonId = Number(parts[3])
+      const game = String(parts[5])
+      if (!gamesEntered.some(one => one.seasonId === seasonId && one.game === game)) {
+        gamesEntered.push({seasonId, game})
+      }
+      const teams = teamsOfGameInSeason(game, seasonId)
+      return fulfillJson(route, {game, teams, public: teams.length > 0})
+    }
+    if (method === "DELETE" && /^\/esports\/seasons\/\d+\/games\/[A-Z0-9_]+$/.test(path)) {
+      const parts = path.split("/")
+      const seasonId = Number(parts[3])
+      const game = String(parts[5])
+      const held = teamsOfGameInSeason(game, seasonId)
+      if (held.length > 0) {
+        const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
+          .find(one => one.game === game)
+        return fulfillJson(route, {
+          detail: `${known?.name ?? game} still has ${held.length} team${held.length === 1 ? "" : "s"} `
+            + "in this season. Drop them from the season first, and the game can be taken out of it.",
+        }, 409)
+      }
+      const at = gamesEntered.findIndex(one => one.seasonId === seasonId && one.game === game)
+      if (at >= 0) gamesEntered.splice(at, 1)
+      return route.fulfill({status: 204, body: ""})
+    }
     if (method === "GET" && path === "/esports/seasons") {
       const all = [...(fixtures.esportsSeasons ?? esportsSeasons), ...written.values()]
-      return fulfillJson(route, all.filter(one => !gone.has(Number((one as {id: number}).id))))
+      return fulfillJson(route, all
+        .filter(one => !gone.has(Number((one as {id: number}).id)))
+        // Whether anything was played in a season is the api's answer, and a visitor's strip
+        // carries those. A fixture season is one the association played unless it says not.
+        .map(one => ({played: true, ...(one as Record<string, unknown>)})))
     }
     if (method === "POST" && path === "/files/images") {
       return fulfillJson(route, storePicture(url.searchParams.get("type") ?? ""), 201)

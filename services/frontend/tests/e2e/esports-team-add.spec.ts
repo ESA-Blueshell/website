@@ -9,7 +9,6 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * names of real people and last season's departure should not quietly reappear.
  */
 const GAME_PAGE = "/esports/valorant"
-const INDEX = "/esports/competitive-scene"
 
 test.describe("adding a team to the season on show", () => {
   test("the band ends in a plus for somebody who may edit", async ({page}) => {
@@ -17,7 +16,7 @@ test.describe("adding a team to the season on show", () => {
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await expect(page.getByTestId("team-roster-add")).toBeVisible()
+    await expect(page.getByTestId("team-roster-add-team")).toBeVisible()
   })
 
   test("somebody who may not edit is offered no plus", async ({page}) => {
@@ -26,7 +25,7 @@ test.describe("adding a team to the season on show", () => {
     await page.goto(GAME_PAGE)
 
     await expect(page.getByTestId("team-roster-slices")).toBeVisible()
-    await expect(page.getByTestId("team-roster-add")).toHaveCount(0)
+    await expect(page.getByTestId("team-roster-add-team")).toHaveCount(0)
   })
 
   test("a new team is created and fielded in the season on show", async ({page}, testInfo) => {
@@ -34,7 +33,7 @@ test.describe("adding a team to the season on show", () => {
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("team-roster-add-team").click()
     await expect(page.getByTestId("add-team-dialog")).toContainText("Autumn 2025/26")
     await page.getByTestId("add-team-name").fill("BS Newcomers")
     await page.getByTestId("add-team-save").click()
@@ -59,7 +58,7 @@ test.describe("adding a team to the season on show", () => {
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("team-roster-add-team").click()
     await page.getByTestId("add-team-source-existing").click()
 
     const matches = page.getByTestId("add-team-matches").locator("button")
@@ -74,7 +73,7 @@ test.describe("adding a team to the season on show", () => {
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("team-roster-add-team").click()
     await page.getByTestId("add-team-source-existing").click()
 
     // Typing narrows to what was asked for.
@@ -101,7 +100,7 @@ test.describe("adding a team to the season on show", () => {
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("team-roster-add-team").click()
     await page.getByTestId("add-team-source-existing").click()
     await page.getByTestId("add-team-match-3").click()
 
@@ -125,7 +124,7 @@ test.describe("adding a team to the season on show", () => {
       }
     })
 
-    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("team-roster-add-team").click()
     await page.getByTestId("add-team-source-existing").click()
     await page.getByTestId("add-team-match-3").click()
     await page.getByTestId("add-team-player-12").locator("input").uncheck()
@@ -148,7 +147,7 @@ test.describe("adding a team to the season on show", () => {
       }
     })
 
-    await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("team-roster-add-team").click()
     await page.getByTestId("add-team-source-existing").click()
     await page.getByTestId("add-team-match-3").click()
     await page.getByTestId("add-team-player-11").locator("input").uncheck()
@@ -160,50 +159,17 @@ test.describe("adding a team to the season on show", () => {
     await expect(page.getByTestId("team-roster-3")).toBeVisible()
   })
 
-  test("the index offers a game rather than a team, and only games not already there", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsBoard(page.context())
-    await page.goto(INDEX)
-
-    await expect(page.getByTestId("esports-game-add")).toContainText("Add a game")
-    await page.getByTestId("esports-game-add").click()
-
-    // Named for what it does, and asking the game before anything else.
-    await expect(page.getByTestId("add-team-dialog")).toContainText("Add a game")
-    const games = page.getByTestId("add-team-game").locator("option")
-    // Valorant and CS2 already play this season, so there is nothing to add of them.
-    await expect(games.filter({hasText: "Rocket League"})).toHaveCount(1)
-    await expect(games.filter({hasText: "Valorant"})).toHaveCount(0)
-    await expect(games.filter({hasText: "CS2"})).toHaveCount(0)
-  })
-
   test("a game's own page still offers a team", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await expect(page.getByTestId("team-roster-add")).toContainText("Add a team")
-    await page.getByTestId("team-roster-add").click()
+    await expect(page.getByTestId("team-roster-add-team")).toContainText("Add a team")
+    await page.getByTestId("team-roster-add-team").click()
 
     // The game is settled by the page, so it is not asked for.
     await expect(page.getByTestId("add-team-dialog")).toContainText("Add a team")
     await expect(page.getByTestId("add-team-game")).toHaveCount(0)
   })
 
-  test("adding a team in a game with none this season puts that game on the index", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsBoard(page.context())
-    await page.goto(INDEX)
-
-    // Rocket League fields nothing in the fixtures, so it has no slice to begin with.
-    await expect(page.getByTestId("esports-game-ROCKET_LEAGUE")).toHaveCount(0)
-
-    await page.getByTestId("esports-game-add").click()
-    await page.getByTestId("add-team-game").selectOption("ROCKET_LEAGUE")
-    await page.getByTestId("add-team-name").fill("BS Drifters")
-    await page.getByTestId("add-team-save").click()
-
-    await expect(page.getByTestId("add-team-dialog")).toBeHidden()
-    await expect(page.getByTestId("esports-game-ROCKET_LEAGUE")).toBeVisible()
-  })
 })

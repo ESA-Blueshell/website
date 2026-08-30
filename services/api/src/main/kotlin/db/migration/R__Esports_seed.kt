@@ -337,7 +337,25 @@ class R__Esports_seed : BaseJavaMigration() {
      * Records that a team was fielded in a season, unless it already says so, and answers with
      * the fielding either way — a line-up is written against it.
      */
+    /** Records that a game ran in a season, unless it already says so. */
+    private fun enterGame(connection: Connection, game: String, seasonId: Long) {
+        connection.prepareStatement(
+            "SELECT id FROM season_game WHERE season_id = ? AND game = ? AND $ACTIVE",
+        ).use { statement ->
+            statement.setLong(1, seasonId)
+            statement.setString(2, game)
+            statement.executeQuery().use { rows -> if (rows.next()) return }
+        }
+        connection.prepareStatement("INSERT INTO season_game (season_id, game) VALUES (?, ?)").use { statement ->
+            statement.setLong(1, seasonId)
+            statement.setString(2, game)
+            statement.executeUpdate()
+        }
+    }
+
     private fun fieldTeam(connection: Connection, teamId: Long, game: String, seasonId: Long): Long {
+        // A team playing a game in a season says that game ran that season.
+        enterGame(connection, game, seasonId)
         connection.prepareStatement(
             "SELECT id FROM team_season WHERE team_id = ? AND game = ? AND season_id = ? AND $ACTIVE",
         ).use { statement ->

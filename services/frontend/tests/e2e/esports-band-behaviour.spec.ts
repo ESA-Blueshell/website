@@ -1,5 +1,81 @@
-import {expect, test} from "./test"
+import {expect, test, type Page} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
+
+/**
+ * Two seasons of the same size, for the specs about where the reader is left standing.
+ *
+ * The seeded seasons are not the same size — the newer one fields two teams and the older
+ * one fields a single team — and a page that is genuinely shorter than the offset its reader
+ * is standing at is pulled up the window by the browser, which no amount of not scrolling can
+ * prevent. That is a real answer to "there is less to read now" and it is not the movement
+ * these specs are about, so it is designed out rather than tolerated: four squads either way,
+ * of the same shape, named apart only so the season that has arrived can be told from the one
+ * that left.
+ */
+const evenSeasons = [
+  {id: 20, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31"},
+  {id: 19, name: "Spring 2024/25", startDate: "2025-02-01", endDate: "2025-08-31"},
+]
+
+// Never id 1: that team's line-up is answered from the roster the admin specs write, which
+// would make one of the four a different height from the other three.
+const squad = (id: number, name: string) => ({
+  id,
+  name: `BS ${name}`,
+  banner: null,
+  members: [
+    {role: "PLAYER", handle: `${name}One`},
+    {role: "PLAYER", handle: `${name}Two`},
+    {role: "SUBSTITUTE", handle: `${name}Sub`},
+  ],
+})
+
+const evenSeasonFixtures = {
+  esportsSeasons: evenSeasons,
+  esportsPages: {
+    "20": {
+      game: "VALORANT",
+      season: evenSeasons[0],
+      seasons: evenSeasons,
+      teams: [squad(101, "Alpha"), squad(102, "Bravo"), squad(103, "Charlie"), squad(104, "Delta")],
+    },
+    "19": {
+      game: "VALORANT",
+      season: evenSeasons[1],
+      seasons: evenSeasons,
+      teams: [squad(201, "Echo"), squad(202, "Foxtrot"), squad(203, "Golf"), squad(204, "Hotel")],
+    },
+  },
+}
+
+/**
+ * Stands as far down the page as it can be read from with the strip clear of the app bar, and
+ * answers where the window settled.
+ *
+ * Playwright brings an element into view before it clicks it, and that scrolling is the
+ * test's own rather than the router's — so a spec that left anything for it to do would be
+ * asserting against itself. Clear of the bar rather than merely inside the window, because
+ * the bar is fixed: a strip tucked under it is not in view as far as the click is concerned,
+ * and the page is scrolled to the top to free it. What is left is the height of the page's
+ * own header, which is far enough that being thrown back up it is unmistakable.
+ */
+const standBelowTheHeader = async (page: Page) => {
+  await page.getByTestId("esports-season-timeline").waitFor()
+  await page.evaluate(() => {
+    const strip = document.querySelector("[data-testid=\"esports-season-timeline\"]") as HTMLElement
+    const bar = document.querySelector(".v-app-bar")
+    const clear = (bar?.getBoundingClientRect().bottom ?? 0) + 8
+    window.scrollTo(0, window.scrollY + strip.getBoundingClientRect().top - clear)
+  })
+  return page.evaluate(() => window.scrollY)
+}
+
+/** Waits out the pass, so what is asserted is where the reader was left and not a moment in it. */
+const seasonSettled = async (page: Page) => {
+  await expect
+    .poll(() => page.locator("[data-testid=\"season-swipe\"] > *").count())
+    .toBe(1)
+}
 
 /**
  * How the band and the strip behave once a reader is moving around them: what stays open,
@@ -134,5 +210,48 @@ test.describe("moving around the esports pages", () => {
     // Twelve seasons and an offer of another do not squeeze a band into a sliver: the strip
     // keeps a band about a sixth of itself and scrolls the rest.
     expect(measured.band).toBeGreaterThan(measured.strip / 8)
+  })
+
+  /**
+   * Choosing a season writes it into the url, which is a navigation as far as the router is
+   * concerned — and a router that opens every page at the top used to throw the reader back
+   * up the page each time they picked one, away from the very thing they had scrolled down to
+   * read. Asserted on both pages, because the strip is on both and the reader is the same
+   * person either way.
+   */
+  test("choosing a season on the index leaves the reader where they were reading", async ({page}) => {
+    await installApiMocks(page, evenSeasonFixtures)
+    await page.goto("/esports/competitive-scene")
+    await page.getByTestId("esports-game-slices").waitFor()
+
+    const standing = await standBelowTheHeader(page)
+    expect(standing).toBeGreaterThan(0)
+
+    await page.getByTestId("esports-season-node-19").click()
+
+    // The older season is the one CS:GO played, so its slice arriving is the season arriving.
+    await expect(page.getByTestId("esports-game-CSGO")).toBeVisible()
+    await seasonSettled(page)
+
+    await expect(page).toHaveURL(/season=19/)
+    // Within a pixel: on a phone the window's offset is not a whole number of them.
+    expect(Math.abs(await page.evaluate(() => window.scrollY) - standing)).toBeLessThanOrEqual(1)
+  })
+
+  test("choosing a season on a game's page leaves the reader where they were reading", async ({page}) => {
+    await installApiMocks(page, evenSeasonFixtures)
+    await page.goto("/esports/valorant")
+    await page.getByTestId("team-roster-101").waitFor()
+
+    const standing = await standBelowTheHeader(page)
+    expect(standing).toBeGreaterThan(0)
+
+    await page.getByTestId("esports-season-node-19").click()
+
+    await expect(page.getByTestId("team-roster-201")).toBeVisible()
+    await seasonSettled(page)
+
+    await expect(page).toHaveURL(/season=19/)
+    expect(Math.abs(await page.evaluate(() => window.scrollY) - standing)).toBeLessThanOrEqual(1)
   })
 })

@@ -70,7 +70,6 @@ test.describe("changing a game", () => {
     await page.goto("/esports/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-accent").fill("")
-    await page.getByTestId("game-dialog-mark").fill("")
     await page.getByTestId("game-dialog-save").click()
 
     await expect(page.getByTestId("game-dialog")).toHaveCount(0)

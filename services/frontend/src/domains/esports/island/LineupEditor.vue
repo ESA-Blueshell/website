@@ -67,6 +67,8 @@ const props = defineProps<{
   teamName: string
   /** Where the team's banner is served, so the same dialog can replace it. */
   teamBanner?: EsportsImage | null
+  /** Where the team's icon is served, so the same dialog can replace it. */
+  teamIcon?: EsportsImage | null
   season: Season | null
   accent?: string
 }>()
@@ -114,14 +116,15 @@ const rowOf = (entry: RosterEntry): Row => ({
 })
 
 /**
- * The team's banner, held like everything else here until the save.
+ * The team's own two pictures, held like everything else here until the save.
  *
  * Choosing one puts it into storage straight away — the picker has to draw it, and it cannot
  * draw bytes nobody has stored — but nothing is on the team until Save. Cancelling therefore
- * leaves the banner as it was along with the name and the line-up, rather than keeping the
- * picture and discarding the rest of the form.
+ * leaves both as they were along with the name and the line-up, rather than keeping a picture
+ * and discarding the rest of the form.
  */
 const banner = ref<EsportsImage | null>(null)
+const icon = ref<EsportsImage | null>(null)
 
 const stageIcon = (index: number, picture: EsportsImage | null) => {
   const row = rows.value[index]
@@ -136,6 +139,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   memberSearch.value = {}
   draftName.value = props.teamName
   banner.value = props.teamBanner ?? null
+  icon.value = props.teamIcon ?? null
   playedIn.value = null
   try {
     const entries = await loadRoster(teamId, seasonId)
@@ -253,11 +257,13 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    // The team itself first — its name and its banner. A line-up written against a team that
-    // was meant to be renamed would leave the rename half-applied if anything after it failed.
+    // The team itself first — its name and its pictures. A line-up written against a team
+    // that was meant to be renamed would leave the rename half-applied if anything after it
+    // failed.
     const saved = await saveTeamAs(teamId, {
       name: draftName.value.trim(),
       banner: banner.value?.path ?? null,
+      icon: icon.value?.path ?? null,
     })
     if (!saved.ok) {
       failure.value = saved.reason
@@ -322,13 +328,20 @@ const submit = async () => {
           type="text"
         >
       </div>
-      <!-- Held until the save, like the field above it. -->
+      <!-- Both held until the save, like the field above them. -->
       <image-picker
         :kind="FileType.TEAM_BANNER"
         label="Banner"
         :picture="banner"
         testid="lineup-team-banner"
         @update:picture="banner = $event"
+      />
+      <image-picker
+        :kind="FileType.TEAM_ICON"
+        label="Icon"
+        :picture="icon"
+        testid="lineup-team-icon"
+        @update:picture="icon = $event"
       />
       <p
         v-if="teamFailure"

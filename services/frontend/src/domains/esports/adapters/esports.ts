@@ -85,7 +85,7 @@ export interface SeasonContents {
  */
 export async function loadGames(): Promise<GameRecord[]> {
   const res = await findGamePages()
-  return Array.isArray(res.data) ? res.data.map(withBanner) : []
+  return Array.isArray(res.data) ? res.data.map(withArt) : []
 }
 
 export interface GameSaved {
@@ -120,8 +120,8 @@ export async function saveGameOrReason(
     slug: string
     intro: string | null
     accent: string | null
-    mark: string | null
     banner: string | null
+    icon: string | null
     sortIndex: number
     fielded: boolean
   },
@@ -133,8 +133,8 @@ export async function saveGameOrReason(
       slug: game.slug,
       intro: game.intro ?? undefined,
       accent: game.accent ?? undefined,
-      mark: game.mark ?? undefined,
       banner: game.banner ?? undefined,
+      icon: game.icon ?? undefined,
       sortIndex: game.sortIndex,
       fielded: game.fielded,
     },
@@ -219,8 +219,17 @@ const withBanner = <T extends {banner?: Image | null}>(record: T): T =>
 const withIcon = <T extends {icon?: Image | null}>(entry: T): T =>
   ({...entry, icon: imageOrNone(entry.icon)})
 
+/**
+ * Both of a record's pictures, resolved against the api.
+ *
+ * A game and a team each carry a banner and an icon, so what used to be one helper on one field
+ * is one helper on the pair. Every url an image carries is resolved here and nowhere else.
+ */
+const withArt = <T extends {banner?: Image | null; icon?: Image | null}>(record: T): T =>
+  withIcon(withBanner(record))
+
 const withMedia = (team: TeamRoster): TeamRoster => ({
-  ...withBanner(team),
+  ...withArt(team),
   members: team.members.map(withIcon),
 })
 
@@ -306,7 +315,7 @@ export async function dropSeason(id: number): Promise<void> {
 
 export async function loadTeams(game: Game): Promise<Team[]> {
   const res = await findTeams({query: {game}})
-  return (res.data ?? []).map(withBanner)
+  return (res.data ?? []).map(withArt)
 }
 
 export interface TeamSaved {
@@ -316,31 +325,38 @@ export interface TeamSaved {
 
 /** Same reason as a season's: the api answers a refusal with a body, not a thrown error. */
 export async function saveTeamOrReason(
-  team: {game: Game; name: string; banner?: string | null},
+  team: {game: Game; name: string; banner?: string | null; icon?: string | null},
 ): Promise<TeamSaved | Refused> {
-  const res = await createTeam({body: {game: team.game, name: team.name, banner: team.banner ?? undefined}})
+  const res = await createTeam({
+    body: {
+      game: team.game,
+      name: team.name,
+      banner: team.banner ?? undefined,
+      icon: team.icon ?? undefined,
+    },
+  })
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be added.")}
-  return {ok: true, team: res.data ?? null}
+  return {ok: true, team: res.data ? withArt(res.data) : null}
 }
 
 /**
- * The team as it now stands: what it is called and the banner it is drawn on. Its game never
- * changes — a team is of the game it was made for, and moving one between games would be a
- * different team.
+ * The team as it now stands: what it is called, the banner it is drawn on and the icon it is
+ * known by. Its game never changes — a team is of the game it was made for, and moving one
+ * between games would be a different team.
  *
- * The banner is part of this write rather than something applied when it was chosen, so
+ * Both pictures are part of this write rather than something applied when they were chosen, so
  * cancelling the dialog leaves the team exactly as it was. Naming no picture takes it away.
  */
 export async function saveTeamAs(
   id: number,
-  team: {name: string; banner: string | null},
+  team: {name: string; banner: string | null; icon: string | null},
 ): Promise<TeamSaved | Refused> {
   const res = await updateTeam({
     path: {id},
-    body: {name: team.name, banner: team.banner ?? undefined},
+    body: {name: team.name, banner: team.banner ?? undefined, icon: team.icon ?? undefined},
   })
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be saved.")}
-  return {ok: true, team: res.data ? withBanner(res.data) : null}
+  return {ok: true, team: res.data ? withArt(res.data) : null}
 }
 
 export async function dropTeam(id: number): Promise<void> {

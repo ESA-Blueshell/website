@@ -51,6 +51,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import java.time.Instant
 import java.time.LocalDate
+import javax.imageio.ImageIO
+import java.io.ByteArrayOutputStream
+import java.awt.image.BufferedImage
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
+import org.springframework.http.MediaType
+import org.springframework.mock.web.MockMultipartFile
+import net.blueshell.api.file.api.PublicFileUrls
+import com.jayway.jsonpath.JsonPath
 
 abstract class UserTestSupport : ServiceTestSupport() {
 
@@ -321,5 +330,34 @@ abstract class UserTestSupport : ServiceTestSupport() {
         assertThat(email.htmlContent)
             .describedAs("Email body should contain: $bodyContains")
             .contains(bodyContains)
+    }
+
+    /**
+     * A picture the converter will accept, which is the smallest thing that really is one.
+     *
+     * Here rather than in one suite because every test that needs a stored picture needs the
+     * same one, and the encoder is real in these tests rather than doubled.
+     */
+    protected fun picture(name: String = "picture.png"): MockMultipartFile {
+        val image = BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB)
+        val bytes = ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
+        return MockMultipartFile("file", name, MediaType.IMAGE_PNG_VALUE, bytes)
+    }
+
+    /**
+     * A picture of the given kind, stored the way a picker stores one, and where it landed.
+     *
+     * Goes through the upload endpoint rather than the service behind it: what a caller can
+     * observe is a stored path, and a save later names exactly that.
+     */
+    protected fun storedPicture(uploader: User, kind: FileType): String {
+        val stored = mvc.perform(
+            multipart(PublicFileUrls.UPLOAD).file(picture())
+                .param("type", kind.name)
+                .with(bearer(uploader)).with(csrfToken()),
+        )
+            .andExpect(status().isCreated)
+            .andReturn().response.contentAsString
+        return JsonPath.read<String>(stored, "$.path")
     }
 }

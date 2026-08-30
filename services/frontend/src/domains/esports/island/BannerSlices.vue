@@ -23,6 +23,10 @@ export interface SliceItem {
   /** Its own dimensions, so the browser reserves its space before the bytes arrive. */
   width?: number
   height?: number
+  /** The logo identifying the thing itself, drawn beside the title, where there is one. */
+  icon?: string | null
+  /** The widths that logo is stored at, ready for a `srcset`. */
+  iconSrcset?: string
   /** Its own colour, where it has one; otherwise the band's accent is used. */
   accent?: string
 }
@@ -313,7 +317,25 @@ watch(open, (index) => {
             aria-hidden="true"
             class="team-slice__tick"
           />
-          <span class="team-slice__name">{{ item.title }}</span>
+          <span class="team-slice__titles">
+            <!--
+              Decorative: the name is right beside it and says the same thing, so a reader who
+              cannot see the logo is told nothing twice.
+
+              One `sizes` for both states rather than a viewport query: the logo grows when the
+              slice opens, which no media query describes, so the browser is told the largest
+              it is ever drawn and picks a candidate that is enough either way.
+            -->
+            <img
+              v-if="item.icon"
+              alt=""
+              class="team-slice__icon"
+              sizes="40px"
+              :src="item.icon"
+              :srcset="item.iconSrcset"
+            >
+            <span class="team-slice__name">{{ item.title }}</span>
+          </span>
           <span class="team-slice__count">{{ item.meta }}</span>
         </span>
 
@@ -625,6 +647,27 @@ watch(open, (index) => {
   scale: 1;
 }
 
+/* The logo and the name read as one line, so they sit on a row and grow together. */
+.team-slice__titles {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.team-slice__icon {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  transition: width 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.team-slice--open .team-slice__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
 .team-slice__name {
   font-family: var(--font-display);
   font-size: 1rem;
@@ -823,6 +866,7 @@ watch(open, (index) => {
 @media (prefers-reduced-motion: reduce) {
   .team-slice,
   .team-slice__banner,
+  .team-slice__icon,
   .team-slice__tick,
   .team-slice__roster {
     transition: none;

@@ -41,7 +41,7 @@ const slug = ref("")
 const intro = ref("")
 /** The game's own colour, which is not the island accent this dialog is drawn on. */
 const colour = ref("")
-const mark = ref("")
+const icon = ref<EsportsImage | null>(null)
 const banner = ref<EsportsImage | null>(null)
 const sortIndex = ref(0)
 const fielded = ref(true)
@@ -58,7 +58,7 @@ watch(
     slug.value = game?.slug ?? ""
     intro.value = game?.intro ?? ""
     colour.value = game?.accent ?? ""
-    mark.value = game?.mark ?? ""
+    icon.value = game?.icon ?? null
     banner.value = game?.banner ?? null
     sortIndex.value = game?.sortIndex ?? 0
     fielded.value = game?.fielded ?? true
@@ -152,8 +152,8 @@ const submit = async () => {
       slug: slug.value.trim(),
       intro: intro.value.trim() || null,
       accent: colour.value.trim() || null,
-      mark: mark.value.trim() || null,
       banner: banner.value?.path ?? null,
+      icon: icon.value?.path ?? null,
       sortIndex: sortIndex.value,
       fielded: fielded.value,
     })
@@ -245,29 +245,23 @@ const submit = async () => {
         </label>
       </div>
 
-      <div class="game-form__row">
-        <label class="game-form__field">
-          <span class="game-form__label">Mark</span>
-          <input
-            v-model="mark"
-            class="game-form__input"
-            data-testid="game-dialog-mark"
-            maxlength="255"
-            placeholder="valorant.png"
-            type="text"
-          >
-        </label>
-      </div>
-
-      <!-- Held until Save, like every other field here: closing without saving leaves the
-           game drawn on the picture it was drawn on. This is the picture in the game's slice
-           on the index, and the only one a game has. -->
+      <!-- Both held until Save, like every other field here: closing without saving leaves
+           the game drawn on the pictures it was drawn on. They are the picture in the game's
+           slice on the index and the logo beside its name there, and a game has no others. -->
       <image-picker
         :kind="FileType.GAME_BANNER"
         label="Banner"
         :picture="banner"
         testid="game-dialog-banner"
         @update:picture="banner = $event"
+      />
+
+      <image-picker
+        :kind="FileType.GAME_ICON"
+        label="Icon"
+        :picture="icon"
+        testid="game-dialog-icon"
+        @update:picture="icon = $event"
       />
 
       <label class="game-form__check">

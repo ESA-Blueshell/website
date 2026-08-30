@@ -173,11 +173,11 @@ class TestCleanUpListener : TestExecutionListener {
         /**
          * Columns put back as null rather than as they were.
          *
-         * A game points at the banner the start-up step stored for it, and the wipe takes every
-         * file with it. Restoring the reference as read would name a file that is no longer
-         * there, and restoring the files instead would put thirty-odd pictures into every test
-         * that counts them. The game comes back without its picture, which is what a game that
-         * nobody has given one looks like.
+         * A game points at the banner and the icon the start-up step stored for it, and the wipe
+         * takes every file with it. Restoring the references as read would name files that are no
+         * longer there, and restoring the files instead would put thirty-odd pictures into every
+         * test that counts them. The game comes back without its pictures, which is what a game
+         * nobody has given any looks like.
          */
         val blanked: Set<String> = emptySet(),
     )
@@ -195,7 +195,7 @@ class TestCleanUpListener : TestExecutionListener {
          * test writes — so accounts a test creates still do not leak into the next one.
          */
         val REFERENCE_TABLES = listOf(
-            Reference("game_page", "1 = 1", blanked = setOf("banner_file_id")),
+            Reference("game_page", "1 = 1", blanked = setOf("banner_file_id", "icon_file_id")),
             Reference("users", "id IN (SELECT user_id FROM authorities WHERE authority = 'SYSTEM')"),
             Reference("authorities", "authority = 'SYSTEM'"),
         )

@@ -25,12 +25,13 @@ class TeamService(
 
     /** A team belongs to a game, so a code naming none is refused before anything is written. */
     @Transactional
-    fun create(game: String, name: String, banner: String? = null): Team =
+    fun create(game: String, name: String, banner: String? = null, icon: String? = null): Team =
         teams.save(
             Team(
                 game = games.requireGame(game).game,
                 name = name.trim(),
                 banner = pictures.of(banner, FileType.TEAM_BANNER),
+                icon = pictures.of(icon, FileType.TEAM_ICON),
             ),
         )
 
@@ -47,10 +48,11 @@ class TeamService(
      * take the other's away with it.
      */
     @Transactional
-    fun update(id: Long, name: String, banner: String? = null): Team {
+    fun update(id: Long, name: String, banner: String? = null, icon: String? = null): Team {
         val team = findById(id)
         team.name = name.trim()
         team.banner = pictures.of(banner, FileType.TEAM_BANNER)
+        team.icon = pictures.of(icon, FileType.TEAM_ICON)
         return teams.save(team)
     }
 

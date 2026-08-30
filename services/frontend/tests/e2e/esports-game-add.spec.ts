@@ -87,7 +87,7 @@ test.describe("adding a game", () => {
     await page.getByTestId("add-team-save").click()
     await page.getByTestId("esports-game-PONG").waitFor()
 
-    // Its page answers straight away, on the association's blue and with no mark.
+    // Its page answers straight away, on the association's blue and with no icon.
     await page.goto("/esports/pong")
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Pong")
   })

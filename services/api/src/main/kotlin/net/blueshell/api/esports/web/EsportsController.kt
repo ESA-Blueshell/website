@@ -74,8 +74,8 @@ class EsportsController(
             slug = request.slug,
             intro = request.intro,
             accent = request.accent,
-            mark = request.mark,
             banner = request.banner,
+            icon = request.icon,
             sortIndex = request.sortIndex,
             fielded = request.fielded,
         ).asResponse()
@@ -136,14 +136,14 @@ class EsportsController(
     @PostMapping("/teams")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTeam(@Valid @RequestBody request: CreateTeamRequest): TeamResponse =
-        teams.create(request.game, request.name, request.banner).asResponse()
+        teams.create(request.game, request.name, request.banner, request.icon).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/teams/{id}")
     fun updateTeam(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateTeamRequest,
-    ): TeamResponse = teams.update(id, request.name, request.banner).asResponse()
+    ): TeamResponse = teams.update(id, request.name, request.banner, request.icon).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/teams/{id}")

@@ -65,26 +65,29 @@ class EsportsSeedLoadIT : UserTestSupport() {
         ).isGreaterThan(0)
     }
 
+    /**
+     * The colour, not the pictures. Both of a game's are uploads addressed by their contents,
+     * so the migration writes the record and the start-up step puts the art on it — which is
+     * asserted where that step is, in `ShippedArtIT`.
+     */
     @Test
-    fun `a game carries the name and the art the file gives it`() {
+    fun `a game carries the name and the colour the file gives it`() {
         runLoader()
 
-        val row = jdbc.queryForMap("SELECT name, slug, accent, mark FROM game_page WHERE game = 'VALORANT'")
+        val row = jdbc.queryForMap("SELECT name, slug, accent FROM game_page WHERE game = 'VALORANT'")
         assertThat(row["name"]).isEqualTo("Valorant")
         assertThat(row["slug"]).isEqualTo("valorant")
         assertThat(row["accent"]).isEqualTo("#ff4655")
-        assertThat(row["mark"]).isEqualTo("valorant.png")
     }
 
     @Test
     fun `a game nobody has drawn art for carries none rather than something invented`() {
         runLoader()
 
-        // Trackmania has never had an accent or a mark written for it. The island reads such a
-        // game on its own colour, which it can only do if the record says there is none.
-        val row = jdbc.queryForMap("SELECT accent, mark FROM game_page WHERE game = 'TRACKMANIA'")
+        // Trackmania has never had an accent written for it. The island reads such a game on
+        // its own colour, which it can only do if the record says there is none.
+        val row = jdbc.queryForMap("SELECT accent FROM game_page WHERE game = 'TRACKMANIA'")
         assertThat(row["accent"]).isNull()
-        assertThat(row["mark"]).isNull()
     }
 
     @Test

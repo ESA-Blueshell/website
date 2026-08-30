@@ -31,8 +31,8 @@ const props = defineProps<{game: Game}>()
 const route = useRoute()
 const router = useRouter()
 const motion = useMotionAllowed()
-// What the game is called, the colour it carries and its mark are its record's answer, as is
-// what this page says about it.
+// What the game is called and the colour it carries are its record's answer, as is what this
+// page says about it.
 const {identityOf, recordOf, refresh: refreshGames} = useGames()
 const identity = computed(() => identityOf(props.game))
 const intro = computed(() => recordOf(props.game)?.intro ?? "")
@@ -75,8 +75,8 @@ const rosterOf = (teamId: number) => {
     .filter(group => group.members.length > 0)
 }
 
-// A team's own banner, which is the only picture it has. A team nobody has given one to draws
-// no picture at all, and the slice reads on the game's accent instead.
+// A team's own two pictures: the banner behind its slice and the icon beside its name. A team
+// nobody has given either to draws neither, and the slice reads on the game's accent instead.
 const slices = computed(() => teams.value.map(team => ({
   id: team.id,
   title: team.name,
@@ -84,6 +84,8 @@ const slices = computed(() => teams.value.map(team => ({
   banner: team.banner?.url ?? "",
   srcset: srcsetOf(team.banner),
   ...sizeOf(team.banner),
+  icon: team.icon?.url ?? null,
+  iconSrcset: srcsetOf(team.icon),
 })))
 
 const entrance = (index: number) => ({
@@ -186,7 +188,12 @@ const teamAdded = async (team: Team) => {
   await reload(season.value?.id)
 }
 
-const editingTeam = ref<{id: number; name: string; banner: EsportsImage | null} | null>(null)
+const editingTeam = ref<{
+  id: number
+  name: string
+  banner: EsportsImage | null
+  icon: EsportsImage | null
+} | null>(null)
 const lineupOpen = ref(false)
 
 const editLineup = (teamId: number | string) => {
@@ -196,6 +203,7 @@ const editLineup = (teamId: number | string) => {
     id: team.id,
     name: team.name,
     banner: team.banner ?? null,
+    icon: team.icon ?? null,
   }
   lineupOpen.value = true
 }
@@ -203,7 +211,7 @@ const editLineup = (teamId: number | string) => {
 /**
  * What the slice shows is the api's answer, so it is asked again rather than patched here.
  *
- * The team being edited is refreshed from that answer as well. The editor reads its banner
+ * The team being edited is refreshed from that answer as well. The editor reads its pictures
  * from this, and reloading rebuilds the props it watches — so leaving this stale would undo
  * an upload on screen a moment after it landed.
  */
@@ -213,7 +221,7 @@ const lineupSaved = async () => {
   if (!open) return
   const fresh = teams.value.find(one => one.id === open.id)
   if (fresh) {
-    editingTeam.value = {...open, banner: fresh.banner ?? null}
+    editingTeam.value = {...open, banner: fresh.banner ?? null, icon: fresh.icon ?? null}
   }
 }
 
@@ -307,13 +315,12 @@ const seasonSaved = (saved: Season) => {
             </svg>
           </button>
 
+          <!--
+            The header is the accent and the words, as it has been since the picture behind it
+            went. A game's icon belongs to its slice on the index, beside the name it names,
+            rather than to the page that slice leads to.
+          -->
           <div class="flex items-center gap-4">
-            <img
-              v-if="identity.mark"
-              alt=""
-              class="h-10 w-10 object-contain sm:h-12 sm:w-12"
-              :src="identity.mark"
-            >
             <div>
               <p class="font-body text-[11px] tracking-[0.28em] text-ash uppercase">
                 Blueshell Esports
@@ -468,6 +475,7 @@ const seasonSaved = (saved: Season) => {
                   :season="season"
                   :team-id="editingTeam?.id ?? null"
                   :team-banner="editingTeam?.banner ?? null"
+                  :team-icon="editingTeam?.icon ?? null"
                   :team-name="editingTeam?.name ?? ''"
                   @removed="lineupSaved"
                   @saved="lineupSaved"

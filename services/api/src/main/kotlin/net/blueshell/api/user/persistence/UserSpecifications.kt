@@ -61,7 +61,7 @@ object UserSpecifications {
             // only for `findAll`, which supplies one for the selection and for the count. A
             // caller that somehow had none would get every account, so it is worth knowing
             // that the one path here is the one that reads the listing.
-            val held = query?.subquery(Long::class.java)
+            val held = query.subquery(Long::class.java)
                 ?: return@Specification cb.conjunction()
             val roles = held.correlate(root).join<User, Role>("roles", JoinType.INNER)
             held.select(cb.literal(1L)).where(roles.`in`(EnumSet.of(Role.SYSTEM)))

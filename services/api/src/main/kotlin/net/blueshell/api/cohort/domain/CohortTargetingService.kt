@@ -72,13 +72,13 @@ class CohortTargetingService(
             requireNoExistingMapping(subjectId, system)
         }
 
-        val target = outsideTransaction.execute { strategies.require(system).create(label, folderHint) }!!
+        val target = outsideTransaction.execute { strategies.require(system).create(label, folderHint) }
 
         return writeTransaction.execute {
             val cohort = cohortRepo.save(newCohort(system, label, folder = folderHint, subjectId = subjectId))
             targetIds.record(cohort, target.externalId)
             CohortMappingRow(cohort, target.externalId)
-        }!!
+        }
     }
 
     override fun switchTarget(
@@ -91,7 +91,7 @@ class CohortTargetingService(
         val prep = writeTransaction.execute {
             val cohort = requireOwnedCohort(subjectId, cohortId)
             TargetSystem.valueOf(cohort.system)
-        }!!
+        }
         resolveTarget(prep, externalId)
 
         val switched = writeTransaction.execute {
@@ -100,7 +100,7 @@ class CohortTargetingService(
             val previousExternalId = targetIds.find(cohort)
             targetIds.record(cohort, externalId)
             Switched(cohort, system, previousExternalId)
-        }!!
+        }
 
         if (deletePrevious && switched.previousExternalId != null && switched.previousExternalId != externalId) {
             jobs.runAsync(
@@ -122,7 +122,7 @@ class CohortTargetingService(
                 NonRetryableJobException("Cohort $cohortId not found")
             }
             MaterializePrep(TargetSystem.valueOf(cohort.system), cohort.label, cohort.folder, targetIds.find(cohort))
-        }!!
+        }
         prep.existingExternalId?.let { return CohortTargetRef(cohortId, it) }
 
         throw NonRetryableJobException(

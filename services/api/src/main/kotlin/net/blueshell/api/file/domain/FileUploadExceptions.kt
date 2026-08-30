@@ -18,7 +18,7 @@ class UnsupportedMediaTypeException(type: FileType, mediaType: String) :
 
 class FileTooLargeException(type: FileType, maxBytes: Long) :
     ResponseStatusException(
-        HttpStatus.PAYLOAD_TOO_LARGE,
+        HttpStatus.CONTENT_TOO_LARGE,
         "A ${type.name.lowercase().replace('_', ' ')} may be at most ${maxBytes / (1024 * 1024)} MB",
     )
 

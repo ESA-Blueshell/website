@@ -28,20 +28,20 @@ class RecoveryController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
     fun setPassword(@Valid @RequestBody request: PasswordResetRequest) {
-        useCases.setPassword(request.token!!, request.password!!)
+        useCases.setPassword(request.token, request.password)
     }
 
     @PostMapping("/user/activate")
     @PermitAll
     fun userActivate(@Valid @RequestBody request: UserActivationRequest): ActivationResponse {
-        val outcome = useCases.activateUser(request.token!!)
+        val outcome = useCases.activateUser(request.token)
         return ActivationResponse(outcome.membershipStarted)
     }
 
     @PostMapping("/member/activate")
     @PermitAll
     fun memberActivate(@Valid @RequestBody request: MemberActivationRequest): RedirectResponse {
-        useCases.activateMember(request.token!!, request.username!!, request.password!!)
+        useCases.activateMember(request.token, request.username, request.password)
         return RedirectResponse("/")
     }
 

@@ -75,7 +75,7 @@ class CohortReconciliationService(
                     }
                 }
                 ids
-            }!!
+            }
             if (page.isEmpty()) break
             afterId = page.last()
             total += page.size

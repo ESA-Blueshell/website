@@ -29,13 +29,13 @@ class MemberProfileController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createMemberProfile(@Valid @RequestBody request: CreateMemberProfileRequest): MemberProfileResponse {
         val memberProfile = useCases.create(
-            userId = request.userId!!,
-            dateOfBirth = Date.valueOf(request.dateOfBirth!!),
+            userId = request.userId,
+            dateOfBirth = Date.valueOf(request.dateOfBirth),
             studentNumber = request.studentNumber,
             gender = request.gender,
-            nationality = request.nationality!!,
-            bhv = request.bhv!!,
-            ehbo = request.ehbo!!,
+            nationality = request.nationality,
+            bhv = request.bhv,
+            ehbo = request.ehbo,
             nameOnTeamPages = request.nameOnTeamPages,
         )
         return memberProfile.asResponse()
@@ -49,14 +49,14 @@ class MemberProfileController(
     ): MemberProfileResponse {
         val memberProfile = useCases.update(
             userId = userId,
-            dateOfBirth = Date.valueOf(request.dateOfBirth!!),
+            dateOfBirth = Date.valueOf(request.dateOfBirth),
             studentNumber = request.studentNumber,
             gender = request.gender,
-            nationality = request.nationality!!,
-            bhv = request.bhv!!,
-            ehbo = request.ehbo!!,
+            nationality = request.nationality,
+            bhv = request.bhv,
+            ehbo = request.ehbo,
             nameOnTeamPages = request.nameOnTeamPages,
-            version = request.version!!,
+            version = request.version,
         )
         return memberProfile.asResponse()
     }

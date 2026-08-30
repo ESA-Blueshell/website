@@ -22,12 +22,12 @@ class AddressController(
     )
     fun createAddress(@Valid @RequestBody request: CreateAddressRequest): AddressResponse {
         val address = useCases.create(
-            userId = request.userId!!,
-            country = request.country!!,
-            city = request.city!!,
-            street = request.street!!,
-            houseNumber = request.houseNumber!!,
-            zipCode = request.zipCode!!,
+            userId = request.userId,
+            country = request.country,
+            city = request.city,
+            street = request.street,
+            houseNumber = request.houseNumber,
+            zipCode = request.zipCode,
         )
         return address.asResponse()
     }
@@ -37,12 +37,12 @@ class AddressController(
     fun updateAddress(@PathVariable id: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
         val address = useCases.update(
             id = id,
-            country = request.country!!,
-            city = request.city!!,
-            street = request.street!!,
-            houseNumber = request.houseNumber!!,
-            zipCode = request.zipCode!!,
-            version = request.version!!,
+            country = request.country,
+            city = request.city,
+            street = request.street,
+            houseNumber = request.houseNumber,
+            zipCode = request.zipCode,
+            version = request.version,
         )
         return address.asResponse()
     }

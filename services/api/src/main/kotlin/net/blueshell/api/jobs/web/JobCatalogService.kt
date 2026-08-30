@@ -93,14 +93,14 @@ class JobCatalogService(
 
     companion object {
         private val PRIMITIVE_WRAPPERS: Set<Class<*>> = setOf(
-            java.lang.Long::class.java,
-            java.lang.Integer::class.java,
-            java.lang.Short::class.java,
-            java.lang.Double::class.java,
-            java.lang.Float::class.java,
-            java.lang.Boolean::class.java,
-            java.lang.Byte::class.java,
-            java.lang.Character::class.java,
+            Long::class.javaObjectType,
+            Int::class.javaObjectType,
+            Short::class.javaObjectType,
+            Double::class.javaObjectType,
+            Float::class.javaObjectType,
+            Boolean::class.javaObjectType,
+            Byte::class.javaObjectType,
+            Char::class.javaObjectType,
         )
     }
 }

@@ -29,7 +29,33 @@ class EsportsPageQueryService(
     private val profiles: MemberProfileService,
     private val users: UserService,
     private val games: GamePageService,
+    private val entered: SeasonGameService,
 ) {
+    /**
+     * Every game that ran in one season, with what it fielded.
+     *
+     * One read for the whole band rather than one per game, and the place the rule about what
+     * is public in a season is applied: a game is public once a team plays it. A game entered
+     * with nobody fielded is answered only where [mayEdit], marked as not public, so the board
+     * can see what it has not finished and a visitor sees a season that is not half-built.
+     *
+     * The rule is here rather than in the pages because it turns on who is asking, and a rule
+     * that turns on who is asking cannot be a condition in a template.
+     */
+    @Transactional(readOnly = true)
+    fun gamesOf(seasonId: Long, mayEdit: Boolean): List<SeasonGameView> {
+        val played = games.codes().mapNotNull { code ->
+            val teams = teamsOf(code, seasonId)
+            if (teams.isEmpty()) null else SeasonGameView(code, teams, public = true)
+        }
+        if (!mayEdit) return played
+        val shown = played.map { it.game }.toSet()
+        val quiet = entered.gamesIn(seasonId)
+            .filter { it !in shown }
+            .map { SeasonGameView(it, emptyList(), public = false) }
+        return (played + quiet).sortedBy { view -> games.codes().indexOf(view.game) }
+    }
+
     @Transactional(readOnly = true)
     fun page(game: String, seasonId: Long? = null): EsportsPageView {
         // A code naming no game is refused rather than answered with an empty page.
@@ -48,10 +74,20 @@ class EsportsPageQueryService(
         } ?: available.firstOrNull()
         if (season == null) return EsportsPageView(game, null, available, emptyList())
 
-        // The teams are the ones fielded; the roster entries only say who played for them,
-        // and a team announced before its line-up was settled has none yet.
-        val squads = fielded.findByGameAndSeason(game, season.id)
-        val entries = rosters.findByGameAndSeason(game, season.id)
+        return EsportsPageView(game, season, available, teamsOf(game, season.id))
+    }
+
+    /**
+     * What one game fielded in one season: the teams, and who played for each.
+     *
+     * The teams are the ones fielded; the roster entries only say who played for them, and a
+     * team announced before its line-up was settled has none yet. Shared by the read for one
+     * game's page and the read for a whole season's band, so both answer the same thing.
+     */
+    private fun teamsOf(game: String, seasonId: Long): List<TeamView> {
+        val squads = fielded.findByGameAndSeason(game, seasonId)
+        if (squads.isEmpty()) return emptyList()
+        val entries = rosters.findByGameAndSeason(game, seasonId)
         val linked = entries.mapNotNull { it.userId }.toSet()
         val handles = accounts.handlesFor(game, linked)
         val consenting = profiles.consentingToNameOnTeamPages(linked)
@@ -60,7 +96,7 @@ class EsportsPageQueryService(
             .toMap()
 
         val byTeam = entries.groupBy { it.teamId }
-        val teams = squads
+        return squads
             .map { squad ->
                 val team = squad.team
                 TeamView(
@@ -81,8 +117,6 @@ class EsportsPageQueryService(
                 )
             }
             .sortedBy { it.name }
-
-        return EsportsPageView(game, season, available, teams)
     }
 
     private fun Season.asView() =

@@ -88,6 +88,33 @@ CREATE TABLE team_season (
     CONSTRAINT fk_team_season_updated    FOREIGN KEY (updated_by_id) REFERENCES users  (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- That a game ran in a season is its own row, separate from any team fielded in it.
+--
+-- The two are decided weeks apart: the board enters a game when the season is planned and the
+-- squads settle over the weeks after. Inferring it from the fieldings made the ordinary sequence
+-- impossible to record -- "we are playing League of Legends this season, the team is still
+-- forming" had nowhere to live -- and left the board no way to see what they had not finished.
+--
+-- A visitor never sees one of these on its own: a game is public in a season once a team plays
+-- it. This is what the board sees and the visitor does not, which is why it is a record rather
+-- than something derived from the fieldings that already exist.
+CREATE TABLE season_game (
+    id            BIGINT      AUTO_INCREMENT PRIMARY KEY,
+    season_id     BIGINT      NOT NULL,
+    game          VARCHAR(32) NOT NULL,
+    version       BIGINT      NOT NULL DEFAULT 0,
+    created_at    DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    created_by_id BIGINT      NULL,
+    updated_at    DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_by_id BIGINT      NULL,
+    deleted_at    DATETIME(6) NOT NULL DEFAULT '9999-12-31 23:59:59.000000',
+    UNIQUE INDEX uk_season_game           (season_id, game, deleted_at),
+    INDEX idx_season_game_deleted_at      (deleted_at),
+    CONSTRAINT fk_season_game_season      FOREIGN KEY (season_id)     REFERENCES season (id),
+    CONSTRAINT fk_season_game_created     FOREIGN KEY (created_by_id) REFERENCES users  (id),
+    CONSTRAINT fk_season_game_updated     FOREIGN KEY (updated_by_id) REFERENCES users  (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE team_roster_entry (
     id             BIGINT      AUTO_INCREMENT PRIMARY KEY,
     team_season_id BIGINT      NOT NULL,

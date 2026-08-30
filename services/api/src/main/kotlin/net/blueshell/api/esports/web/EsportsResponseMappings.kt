@@ -2,6 +2,7 @@ package net.blueshell.api.esports.web
 
 import net.blueshell.api.esports.domain.EsportsPageView
 import net.blueshell.api.esports.domain.RosterMemberView
+import net.blueshell.api.esports.domain.SeasonGameView
 import net.blueshell.api.esports.domain.SeasonView
 import net.blueshell.api.esports.domain.TeamView
 import net.blueshell.api.esports.persistence.GamePage
@@ -11,18 +12,21 @@ import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.UserGameAccount
 import net.blueshell.api.file.api.asImage
 
-fun Season.asResponse() = SeasonResponse(
+fun Season.asResponse(played: Boolean = false) = SeasonResponse(
     id = id!!,
     name = name,
     startDate = startDate,
     endDate = endDate,
+    played = played,
 )
 
+// A season named inside a game's own page is one that game played, so it says so.
 fun SeasonView.asResponse() = SeasonResponse(
     id = id,
     name = name,
     startDate = startDate,
     endDate = endDate,
+    played = true,
 )
 
 fun Team.asResponse() = TeamResponse(
@@ -89,3 +93,9 @@ fun GamePage.asResponse(current: Boolean = false): GamePageResponse = GamePageRe
     current = current,
 )
 
+
+fun SeasonGameView.asResponse() = SeasonGameResponse(
+    game = game,
+    teams = teams.map { it.asResponse() },
+    public = public,
+)

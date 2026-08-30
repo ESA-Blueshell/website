@@ -48,3 +48,16 @@ data class EsportsPageView(
     val seasons: List<SeasonView>,
     val teams: List<TeamView>,
 )
+
+/**
+ * A game that ran in one season, with what it fielded.
+ *
+ * [public] is what a visitor would see: a game is public in a season once a team plays it. A
+ * game entered with nobody fielded is answered only to somebody who may edit, and is marked so
+ * the pages can say it is not public yet rather than quietly showing it as though it were.
+ */
+data class SeasonGameView(
+    val game: String,
+    val teams: List<TeamView>,
+    val public: Boolean,
+)

@@ -152,6 +152,24 @@ data class CreateGameRequest(
     @field:Size(min = 1, max = 64, message = "Address must be 1-64 characters")
     @field:Schema(description = "The address the game's page answers to")
     val slug: String,
+
+    @field:Size(max = 4000)
+    val intro: String? = null,
+
+    @field:Size(max = 32)
+    @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
+    val accent: String? = null,
+
+    @field:Size(max = 255)
+    @field:Schema(description = "Where the game's banner is stored")
+    val banner: String? = null,
+
+    @field:Size(max = 255)
+    @field:Schema(description = "Where the game's icon is stored")
+    val icon: String? = null,
+
+    @field:Schema(description = "Where it sits among the others; left out, it goes at the end")
+    val sortIndex: Int? = null,
 )
 
 @Schema(name = "UpdateGamePageRequest", description = "How a game presents itself")

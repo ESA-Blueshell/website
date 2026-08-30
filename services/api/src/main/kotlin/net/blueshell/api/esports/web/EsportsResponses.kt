@@ -11,6 +11,16 @@ data class SeasonResponse(
     val name: String,
     val startDate: LocalDate,
     val endDate: LocalDate,
+    @Schema(description = "Whether anything was fielded in it, which is what a visitor's season strip carries")
+    val played: Boolean = false,
+)
+
+@Schema(description = "A game that ran in a season, with what it fielded")
+data class SeasonGameResponse(
+    val game: String,
+    val teams: List<TeamRosterResponse>,
+    @Schema(description = "Whether a visitor sees it: a game is public in a season once a team plays it")
+    val public: Boolean,
 )
 
 @Schema(description = "A team the association fields in one game")

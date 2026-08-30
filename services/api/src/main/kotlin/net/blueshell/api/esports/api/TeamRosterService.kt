@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import net.blueshell.api.esports.domain.EsportsPictures
 import net.blueshell.api.esports.domain.SeasonService
+import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 
@@ -30,6 +31,7 @@ class TeamRosterService(
     private val teams: TeamService,
     private val seasons: SeasonService,
     private val fielded: TeamSeasonService,
+    private val entered: SeasonGameService,
     private val pictures: EsportsPictures,
 ) {
     @Transactional(readOnly = true)
@@ -75,6 +77,9 @@ class TeamRosterService(
         // Naming somebody to a team in a season says the team is fielded there, whether or
         // not anybody said so first. The entry hangs off that fielding, so this is what it is
         // written against rather than something done alongside it.
+        // Fielding a team in a game says that game ran that season, whether or not anybody
+        // entered it first — and it stays entered when the last team is dropped again.
+        entered.enter(seasonId, game)
         val fielding = fielded.field(teamId, game, seasonId)
         // Appended rather than inserted: the page lists a roster in the order it was written.
         val next = entries.findAllByTeamAndSeason(teamId, game, seasonId).size
@@ -112,6 +117,7 @@ class TeamRosterService(
     ): FieldedTeam {
         val team = teams.findById(teamId)
         val season = seasons.findById(seasonId)
+        entered.enter(seasonId, game)
         val fielding = fielded.field(teamId, game, seasonId)
         if (banner != null) fielded.draw(fielding, banner)
         if (!carryLineup || entries.findAllByTeamAndSeason(teamId, game, seasonId).isNotEmpty()) {

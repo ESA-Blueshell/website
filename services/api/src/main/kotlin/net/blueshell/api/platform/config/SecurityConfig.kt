@@ -165,6 +165,10 @@ class SecurityConfig(
                 "/esports/games",
                 "/esports/games/*",
                 "/esports/seasons",
+                // A season's band. It answers everybody and answers them differently: a
+                // visitor gets the games with a team in them, the board also gets the ones
+                // entered with nobody fielded yet.
+                "/esports/seasons/*/games",
                 "/esports/teams",
                 "/committees/**",
                 "/contributionPeriods/current",

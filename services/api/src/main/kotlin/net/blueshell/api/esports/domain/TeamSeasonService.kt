@@ -106,6 +106,10 @@ class TeamSeasonService(
         return fielded.gamesFieldedIn(listOfNotNull(current.id, previous?.id)).toSet()
     }
 
+    /** The seasons that had a team fielded in them, whichever game it played. */
+    @Transactional(readOnly = true)
+    fun seasonsWithTeams(): Set<Long> = fielded.seasonIdsWithTeams().toSet()
+
     /** The art this team is drawn with in this game this season. */
     @Transactional
     fun draw(fielding: TeamSeason, banner: String): TeamSeason {

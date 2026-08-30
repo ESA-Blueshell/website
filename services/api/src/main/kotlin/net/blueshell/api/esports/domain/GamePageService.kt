@@ -60,7 +60,16 @@ class GamePageService(
      * twice. Art can wait: a game with none reads on the island's own colour.
      */
     @Transactional
-    fun create(name: String, slug: String): GamePage {
+    @Suppress("LongParameterList")
+    fun create(
+        name: String,
+        slug: String,
+        intro: String? = null,
+        accent: String? = null,
+        banner: String? = null,
+        icon: String? = null,
+        sortIndex: Int? = null,
+    ): GamePage {
         val called = name.trim()
         if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name")
         val code = codeFor(called)
@@ -72,8 +81,21 @@ class GamePageService(
         }
         val address = addressFor(slug)
         claimed(address, null)
+        // Where nobody says where it goes, it goes at the end. A game added mid-season is the
+        // newest thing the association plays, and the order is the board\'s to change after.
         val last = pages.findAllByOrderBySortIndexAsc().lastOrNull()?.sortIndex ?: 0
-        return pages.save(GamePage(game = code, name = called, slug = address, sortIndex = last + 1))
+        return pages.save(
+            GamePage(
+                game = code,
+                name = called,
+                slug = address,
+                intro = intro?.trim()?.ifBlank { null },
+                accent = accent?.trim()?.ifBlank { null },
+                banner = pictures.of(banner, FileType.GAME_BANNER),
+                icon = pictures.of(icon, FileType.GAME_ICON),
+                sortIndex = sortIndex ?: (last + 1),
+            ),
+        )
     }
 
     /**

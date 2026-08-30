@@ -47,11 +47,21 @@ class TeamSeasonService(
     /**
      * Records that a team is fielded in a season. Saying so twice says the same thing, so a
      * repeat is the existing link rather than a second one or an error.
+     *
+     * A team fielded again in a season it was dropped from revives the fielding it had rather
+     * than writing a second one. The line-up hangs off the fielding, so a second row would
+     * leave last time's line-up attached to the dropped one -- present in the table, reachable
+     * by nothing, and silently absent from the season it was played in.
      */
     @Transactional
-    fun field(teamId: Long, seasonId: Long): TeamSeason =
-        fielded.findByTeamIdAndSeasonId(teamId, seasonId)
-            ?: fielded.save(TeamSeason(team = teams.findById(teamId), season = seasons.findById(seasonId)))
+    fun field(teamId: Long, seasonId: Long): TeamSeason {
+        fielded.findByTeamIdAndSeasonId(teamId, seasonId)?.let { return it }
+        fielded.findDroppedId(teamId, seasonId)?.let { dropped ->
+            fielded.revive(dropped)
+            fielded.findByTeamIdAndSeasonId(teamId, seasonId)?.let { return it }
+        }
+        return fielded.save(TeamSeason(team = teams.findById(teamId), season = seasons.findById(seasonId)))
+    }
 
     /**
      * Stops a team being fielded in a season. The team, and its other seasons, are untouched:

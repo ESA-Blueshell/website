@@ -63,19 +63,17 @@ class TeamRosterService(
         description: String? = null,
         icon: String? = null,
     ): TeamRosterEntry {
-        val team = teams.findById(teamId)
-        val season = seasons.findById(seasonId)
         val trimmed = handle.trim()
         require(trimmed.isNotBlank()) { "A roster entry needs a handle" }
         // Naming somebody to a team in a season says the team is fielded there, whether or
-        // not anybody said so first.
-        fielded.field(teamId, seasonId)
+        // not anybody said so first. The entry hangs off that fielding, so this is what it is
+        // written against rather than something done alongside it.
+        val fielding = fielded.field(teamId, seasonId)
         // Appended rather than inserted: the page lists a roster in the order it was written.
         val next = entries.findAllByTeamAndSeason(teamId, seasonId).size
         return entries.save(
             TeamRosterEntry(
-                team = team,
-                season = season,
+                teamSeason = fielding,
                 handle = trimmed,
                 teamRole = role,
                 userId = userId,
@@ -101,7 +99,7 @@ class TeamRosterService(
     fun fieldWithLineup(teamId: Long, seasonId: Long, carryLineup: Boolean): FieldedTeam {
         val team = teams.findById(teamId)
         val season = seasons.findById(seasonId)
-        fielded.field(teamId, seasonId)
+        val fielding = fielded.field(teamId, seasonId)
         if (!carryLineup || entries.findAllByTeamAndSeason(teamId, seasonId).isNotEmpty()) {
             return FieldedTeam(team, season, emptyList())
         }
@@ -110,8 +108,7 @@ class TeamRosterService(
         val carried = entries.findAllByTeamAndSeason(teamId, last).map { previous ->
             entries.save(
                 TeamRosterEntry(
-                    team = team,
-                    season = season,
+                    teamSeason = fielding,
                     handle = previous.handle,
                     teamRole = previous.teamRole,
                     userId = previous.userId,

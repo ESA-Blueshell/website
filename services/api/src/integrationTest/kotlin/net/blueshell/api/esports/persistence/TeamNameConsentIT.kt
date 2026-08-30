@@ -49,13 +49,12 @@ class TeamNameConsentIT : UserTestSupport() {
         teams.save(Team(game = game, name = "Team ${System.nanoTime()}"))
 
     private fun seat(team: Team, season: Season, handle: String, userId: Long?): TeamRosterEntry {
-        // Naming somebody to a team says it is fielded that season, which is what the page
-        // reads; a row written straight to the repository has to say so itself.
-        fielded.field(team.id!!, season.id!!)
+        // A line-up hangs off the fielding, so the fielding is what the entry is written
+        // against — there is nothing to attach one to until it exists.
+        val fielding = fielded.field(team.id!!, season.id!!)
         return entries.save(
             TeamRosterEntry(
-                team = team,
-                season = season,
+                teamSeason = fielding,
                 handle = handle,
                 teamRole = TeamRole.PLAYER,
                 userId = userId,

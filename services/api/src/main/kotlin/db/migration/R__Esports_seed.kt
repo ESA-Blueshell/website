@@ -6,6 +6,7 @@ import org.flywaydb.core.api.migration.Context
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.Date
+import java.sql.Statement
 
 /**
  * Loads the recovered esports history from the seed files.
@@ -182,9 +183,18 @@ class R__Esports_seed : BaseJavaMigration() {
         val role = row.getValue("role")
         val displayName = row.getValue("display_name").ifBlank { null }
         val sortIndex = row.getValue("sort_index").toInt()
-        val find = "SELECT id FROM team_roster_entry WHERE team_id = ? AND season_id = ? AND handle = ?"
+        // Found through whatever fielding holds it, dropped or not, because this asks whether
+        // the association ever wrote this person down for this team in this season -- which is
+        // the question the entry's own team and season used to answer directly. Looking only
+        // under a live fielding would miss the line-up of a team the board has dropped, and
+        // the row below would write it a second time.
+        val find = """
+            SELECT e.id FROM team_roster_entry e
+            JOIN team_season ts ON ts.id = e.team_season_id
+            WHERE ts.team_id = ? AND ts.season_id = ? AND e.handle = ?
+        """.trimIndent()
 
-        connection.prepareStatement("$find AND $ACTIVE").use { statement ->
+        connection.prepareStatement("$find AND e.$ACTIVE").use { statement ->
             statement.setLong(1, teamId)
             statement.setLong(2, seasonId)
             statement.setString(3, handle)
@@ -212,46 +222,54 @@ class R__Esports_seed : BaseJavaMigration() {
                 }
             }
         }
-        connection.prepareStatement("$find AND NOT $ACTIVE").use { statement ->
+        connection.prepareStatement("$find AND NOT e.$ACTIVE").use { statement ->
             statement.setLong(1, teamId)
             statement.setLong(2, seasonId)
             statement.setString(3, handle)
             statement.executeQuery().use { rows -> if (rows.next()) return false }
         }
-        // A roster entry says the team was fielded that season, so the link is written with it.
-        // Without this a seeded team would exist and show nowhere, since the pages read the
-        // link rather than inferring one from the roster.
-        fieldTeam(connection, teamId, seasonId)
+        // Only now, on the path that actually writes somebody down. Fielding the team before
+        // this point would field it on every run, undoing a board that dropped it.
+        val fieldingId = fieldTeam(connection, teamId, seasonId)
         connection.prepareStatement(
             """
-            INSERT INTO team_roster_entry (team_id, season_id, handle, team_role, display_name, sort_index)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO team_roster_entry (team_season_id, handle, team_role, display_name, sort_index)
+            VALUES (?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
-            statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
-            statement.setString(3, handle)
-            statement.setString(4, role)
-            statement.setString(5, displayName)
-            statement.setInt(6, sortIndex)
+            statement.setLong(1, fieldingId)
+            statement.setString(2, handle)
+            statement.setString(3, role)
+            statement.setString(4, displayName)
+            statement.setInt(5, sortIndex)
             statement.executeUpdate()
         }
         return true
     }
 
-    /** Records that a team was fielded in a season, unless it already says so. */
-    private fun fieldTeam(connection: Connection, teamId: Long, seasonId: Long) {
+    /**
+     * Records that a team was fielded in a season, unless it already says so, and answers with
+     * the fielding either way — a line-up is written against it.
+     */
+    private fun fieldTeam(connection: Connection, teamId: Long, seasonId: Long): Long {
         connection.prepareStatement(
             "SELECT id FROM team_season WHERE team_id = ? AND season_id = ? AND $ACTIVE",
         ).use { statement ->
             statement.setLong(1, teamId)
             statement.setLong(2, seasonId)
-            statement.executeQuery().use { rows -> if (rows.next()) return }
+            statement.executeQuery().use { rows -> if (rows.next()) return rows.getLong(1) }
         }
-        connection.prepareStatement("INSERT INTO team_season (team_id, season_id) VALUES (?, ?)").use { statement ->
+        connection.prepareStatement(
+            "INSERT INTO team_season (team_id, season_id) VALUES (?, ?)",
+            Statement.RETURN_GENERATED_KEYS,
+        ).use { statement ->
             statement.setLong(1, teamId)
             statement.setLong(2, seasonId)
             statement.executeUpdate()
+            statement.generatedKeys.use { keys ->
+                check(keys.next()) { "Fielding team $teamId in season $seasonId returned no id" }
+                return keys.getLong(1)
+            }
         }
     }
 

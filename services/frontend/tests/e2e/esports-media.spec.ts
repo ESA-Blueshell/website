@@ -49,6 +49,10 @@ const openLineup = async (page: import("@playwright/test").Page) => {
   await page.getByTestId("team-roster-1").hover()
   await page.getByTestId("team-roster-edit-1").click()
   await expect(page.getByTestId("lineup-editor")).toBeVisible()
+  // The editor is on screen before it knows what it is editing: it says it is reading the
+  // line-up, and the rows arrive when the roster does. A test that counts rows the moment the
+  // editor appears is counting a page that has not finished answering.
+  await expect(page.getByTestId("lineup-loading")).toHaveCount(0)
 }
 
 test.describe("banners and icons", () => {

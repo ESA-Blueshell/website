@@ -342,6 +342,7 @@ const submit = async () => {
     <p
       v-if="loading"
       class="lineup__note"
+      data-testid="lineup-loading"
     >
       Reading the line-up…
     </p>

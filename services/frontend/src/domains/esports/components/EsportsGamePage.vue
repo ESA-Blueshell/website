@@ -11,7 +11,7 @@ import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {type EsportsImage} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
-import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
+import FieldTeamDialog from "@/domains/esports/island/FieldTeamDialog.vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
@@ -165,7 +165,25 @@ const seasonRemoved = async (gone: Season) => {
   else await reload()
 }
 
-const adding = ref(false)
+/** Which way in was pressed: a team that played before, or one being made here. */
+const fieldingExisting = ref(false)
+const addingTeam = ref(false)
+
+const openWayIn = (key: string) => {
+  if (key === "played-before") fieldingExisting.value = true
+  else addingTeam.value = true
+}
+
+/**
+ * The two ways a team arrives in a season, in the order they are pressed most.
+ *
+ * Two panes rather than one with a choice inside it: picking a team that played before is a
+ * press, and making one is a whole line-up. A single pane would put both behind the same one.
+ */
+const waysIn = [
+  {key: "played-before", label: "A team that played before"},
+  {key: "new-team", label: "A new team"},
+]
 
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
@@ -185,6 +203,19 @@ const carried = ref<number | null>(null)
 const teamAdded = async (team: Team) => {
   justAdded.value = team.id
   await reload(season.value?.id)
+}
+
+/**
+ * A team made here, which the page learns about by asking again.
+ *
+ * Which one it is comes from the answer rather than from what was typed: the editor writes the
+ * team, fields it and its line-up in turn, and the slice to look at is the one that was not
+ * there before.
+ */
+const teamMade = async () => {
+  const before = new Set(teams.value.map(one => one.id))
+  await reload(season.value?.id)
+  justAdded.value = teams.value.find(one => !before.has(one.id))?.id ?? null
 }
 
 const editingTeam = ref<{
@@ -351,14 +382,27 @@ const seasonSaved = (saved: Season) => {
           @update:open="closeEditor"
         />
 
-        <add-team-dialog
+        <field-team-dialog
           :accent="identity.accent"
-          :fielded-team-ids="teams.map(one => one.id)"
+          :already-fielded="teams.map(one => one.id)"
           :game="game"
-          :open="adding"
+          :open="fieldingExisting"
           :season="season"
-          @added="teamAdded"
-          @update:open="adding = $event"
+          @fielded="teamAdded"
+          @update:open="fieldingExisting = $event"
+        />
+
+        <!-- The same editor a line-up is corrected in, opened on nothing: a team is made
+             described in full, and nothing is written until Create. -->
+        <lineup-editor
+          :accent="identity.accent"
+          :game="game"
+          :open="addingTeam"
+          :season="season"
+          :team-id="null"
+          team-name=""
+          @saved="teamMade"
+          @update:open="addingTeam = $event"
         />
       </section>
 
@@ -413,13 +457,13 @@ const seasonSaved = (saved: Season) => {
           >
             <banner-slices
               :accent="identity.accent"
-              :adds="[{key: 'team', label: 'Add a team'}]"
+              :adds="waysIn"
               :items="slices"
               :may-add="mayEdit"
               :may-edit="mayEdit"
               :open-id="justAdded ?? carried"
               testid-prefix="team-roster"
-              @add="adding = true"
+              @add="openWayIn"
               @edit="editLineup"
               @open="id => carried = id == null ? null : Number(id)"
             >

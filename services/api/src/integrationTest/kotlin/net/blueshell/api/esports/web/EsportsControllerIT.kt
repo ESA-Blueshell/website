@@ -144,6 +144,42 @@ class EsportsControllerIT : UserTestSupport() {
      * them, so what these ask is that a path a caller hands in comes back on the team, that a
      * save naming none takes them away, and that the icon reaches the page the game draws.
      */
+    @Test
+    fun `a team made for one game is fielded in another it already plays`() {
+        val board = createUserWithRole(Role.BOARD)
+        val unique = System.nanoTime()
+        val playing = season("Both $unique", LocalDate.of(2033, 9, 1), LocalDate.of(2034, 1, 31))
+
+        // Created naming no game: a team is the association's, and the game arrives when it is
+        // fielded. This is the whole of what the shared pool buys the board.
+        val created = mvc.perform(
+            post("/esports/teams").with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"BS Both Ways $unique"}"""),
+        )
+            .andExpect(status().isCreated)
+            .andReturn().response.contentAsString
+        val teamId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
+
+        listOf("VALORANT", "TRACKMANIA").forEach { game ->
+            mvc.perform(
+                put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"game":"$game"}"""),
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.game").value(game))
+        }
+
+        // One team, two games, one season — and a line-up of its own in each, which is what
+        // the pool being shared and the roster not amounts to.
+        mvc.perform(get("/esports/teams/{teamId}/seasons", teamId))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.game == 'VALORANT')]").exists())
+            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')]").exists())
+    }
+
     @Nested
     inner class TeamArt {
         @Test

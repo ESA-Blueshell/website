@@ -53,6 +53,16 @@ data class FieldTeamRequest(
     val carryLineup: Boolean = false,
 
     /**
+     * A line-up of this team's to copy across, named rather than assumed.
+     *
+     * A team that spans games has more than one "last line-up", and a team coming back after a
+     * gap usually means the squad before the gap rather than the stragglers of it. Named, it
+     * wins over [carryLineup]; left out, [carryLineup] still means the most recent in this game.
+     */
+    @Schema(description = "Which of this team's line-ups to copy across; wins over carryLineup")
+    val carryFrom: LineupSourceRequest? = null,
+
+    /**
      * The art this team is drawn with in this game this season.
      *
      * Applied when it is named and left alone when it is not, which is not the rule the other
@@ -64,6 +74,16 @@ data class FieldTeamRequest(
     @Schema(description = "Where the art for this fielding is stored; nothing leaves what it has")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val banner: String? = null,
+)
+
+@Schema(description = "One line-up of a team's: which game it was played in, and which season")
+data class LineupSourceRequest(
+    @field:NotBlank(message = "Game is required")
+    @field:Size(min = 1, max = 32)
+    val game: String,
+
+    @field:NotNull(message = "Season id is required")
+    val seasonId: Long,
 )
 
 @Schema(description = "Put somebody on a team's roster for a season")

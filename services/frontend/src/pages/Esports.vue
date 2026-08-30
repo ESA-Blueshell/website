@@ -6,7 +6,6 @@ import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
-import EnterGameDialog from "@/domains/esports/island/EnterGameDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
@@ -150,22 +149,9 @@ const gameSaved = async () => {
   await reload(selected.value ?? undefined)
 }
 
-/** Which way in was pressed: a game played before, or a new one described in full. */
-const entering = ref(false)
 const addingGame = ref(false)
 /** The game just put into the season, which is the slice to look at. */
 const justAdded = ref<Game | null>(null)
-
-const openWayIn = (key: string) => {
-  if (key === "played-before") entering.value = true
-  else addingGame.value = true
-}
-
-/** The two ways a game arrives in a season, in the order they are pressed most. */
-const waysIn = [
-  {key: "played-before", label: "A game we played before"},
-  {key: "new-game", label: "A game we have started playing"},
-]
 
 /** Which games are already in the season on show, so the picker does not offer them again. */
 const gamesInSeason = computed<Game[]>(() => entries.value.map(entry => entry.game))
@@ -314,14 +300,14 @@ const seasonSaved = (saved: Season) => {
           >
             <banner-slices
               accent="var(--color-brand)"
-              :adds="waysIn"
+              add-label="Add a game"
               :items="slices"
               :may-add="mayEdit"
               :open-id="justAdded ?? carried"
               :may-edit="mayEdit"
               testid-prefix="esports-game"
               @go="item => item.href && router.push(item.href)"
-              @add="openWayIn"
+              @add="addingGame = true"
               @edit="id => editGame(String(id))"
               @open="id => carried = id == null ? null : String(id)"
             >
@@ -394,19 +380,11 @@ const seasonSaved = (saved: Season) => {
           @update:open="gameEditorOpen = $event"
         />
 
-        <enter-game-dialog
-          accent="var(--color-brand)"
-          :already-in="gamesInSeason"
-          :open="entering"
-          :season="seasonOnShow"
-          @entered="gameEntered"
-          @update:open="entering = $event"
-        />
-
-        <!-- The same editor a game is corrected in, opened on nothing: a game is added
-             described in full rather than as a name to be finished somewhere else. -->
+        <!-- The same dialog a game is corrected in, opened on nothing: it asks first which
+             kind of adding this is, and is a picker or the whole editor accordingly. -->
         <game-dialog
           accent="var(--color-brand)"
+          :already-in="gamesInSeason"
           :enter-in="seasonOnShow"
           :game="null"
           :open="addingGame"

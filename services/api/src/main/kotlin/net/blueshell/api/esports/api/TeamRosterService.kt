@@ -107,27 +107,35 @@ class TeamRosterService(
      * already holds a line-up for the team keeps it, since carrying into it would either
      * duplicate the roster or overwrite an edit somebody made on purpose.
      */
+    /** One line-up of a team's: which game it was played in, and which season. */
+    data class LineupSource(val game: String, val seasonId: Long)
+
     @Transactional
+    @Suppress("LongParameterList")
     fun fieldWithLineup(
         teamId: Long,
         game: String,
         seasonId: Long,
         carryLineup: Boolean,
         banner: String? = null,
+        carryFrom: LineupSource? = null,
     ): FieldedTeam {
         val team = teams.findById(teamId)
         val season = seasons.findById(seasonId)
         entered.enter(seasonId, game)
         val fielding = fielded.field(teamId, game, seasonId)
         if (banner != null) fielded.draw(fielding, banner)
-        if (!carryLineup || entries.findAllByTeamAndSeason(teamId, game, seasonId).isNotEmpty()) {
+        val asked = carryFrom != null || carryLineup
+        if (!asked || entries.findAllByTeamAndSeason(teamId, game, seasonId).isNotEmpty()) {
             return FieldedTeam(fielding, team, season, emptyList())
         }
-        // The line-up carried is the one this team last had in this game. A team that also plays
-        // another game has a line-up there too, and it is not this one.
-        val last = entries.findSeasonIdsWithLineup(teamId, game, seasonId).firstOrNull()
+        // A named line-up is the one meant. Unnamed, it is the one this team last had in this
+        // game -- a team that also plays another has a line-up there too, and it is not this one.
+        val from = carryFrom
+            ?: entries.findSeasonIdsWithLineup(teamId, game, seasonId).firstOrNull()
+                ?.let { LineupSource(game, it) }
             ?: return FieldedTeam(fielding, team, season, emptyList())
-        val carried = entries.findAllByTeamAndSeason(teamId, game, last).map { previous ->
+        val carried = entries.findAllByTeamAndSeason(teamId, from.game, from.seasonId).map { previous ->
             entries.save(
                 TeamRosterEntry(
                     teamSeason = fielding,

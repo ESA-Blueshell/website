@@ -464,12 +464,14 @@ export async function fieldTeamInSeason(
   seasonId: number,
   carryLineup: boolean,
   banner?: string | null,
+  /** Which of the team's line-ups to bring, where one was chosen rather than assumed. */
+  carryFrom?: {game: Game; seasonId: number} | null,
 ): Promise<FieldedTeam | null> {
   const res = await fieldTeam({
     path: {seasonId, teamId},
     // Naming no banner leaves the art alone rather than taking it away: a team is re-fielded
     // to say it plays this season as often as to change its picture.
-    body: {game, carryLineup, banner: banner ?? undefined},
+    body: {game, carryLineup, banner: banner ?? undefined, carryFrom: carryFrom ?? undefined},
   })
   return res.data ?? null
 }

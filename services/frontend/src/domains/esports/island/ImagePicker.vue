@@ -45,6 +45,19 @@ const ACCEPT = "image/png,image/jpeg,image/webp"
 const MAX_BYTES = 15 * 1024 * 1024
 
 const has = computed(() => Boolean(props.picture))
+
+/**
+ * The shape the picture is drawn in, taken from what it is for.
+ *
+ * A banner is the wide art behind a slice and an icon is a logo, so a square frame for one and
+ * a letterbox for the other is not decoration: it is the only way the preview tells the truth
+ * about what was uploaded before anybody sees it on a page.
+ */
+const icony = computed(() => String(props.kind).includes("ICON"))
+const ratio = computed(() => (icony.value ? "1 / 1" : "16 / 9"))
+
+/** Small enough to sit beside the fields it belongs to rather than dominate the form. */
+const width = computed(() => (icony.value ? "4.5rem" : "9rem"))
 const working = computed(() => props.busy || uploading.value)
 const srcset = computed(() => srcsetOf(props.picture))
 
@@ -86,52 +99,61 @@ const clear = () => {
   >
     <span class="picker__label">{{ label }}</span>
 
-    <div class="picker__body">
+    <!--
+      The frame is the control. Pressing it is how a picture arrives and how it is replaced,
+      because the picture is the thing being decided and a button beside it is one more place
+      to look. Taking it away is the cross in the corner, away from the press that replaces it,
+      so the two are not the same gesture a pixel apart.
+    -->
+    <div
+      class="picker__frame"
+      :class="{'picker__frame--busy': working}"
+      :style="{aspectRatio: ratio, width}"
+    >
       <img
         v-if="picture"
         alt=""
         class="picker__preview"
         :data-testid="`${testid}-preview`"
-        :height="picture.height ?? undefined"
-        sizes="6rem"
+        sizes="(max-width: 40rem) 90vw, 18rem"
         :src="picture.url"
         :srcset="srcset"
-        :width="picture.width ?? undefined"
       >
-      <span
-        v-else
-        class="picker__empty"
-        :data-testid="`${testid}-empty`"
-      >Nothing uploaded</span>
 
-      <div class="picker__actions">
-        <label
-          class="picker__button"
-          :class="{'picker__button--busy': working}"
+      <label
+        class="picker__press"
+        :data-testid="`${testid}-press`"
+      >
+        <!-- Named for what it says: an empty frame says so, and a full one offers the
+             replacement. The words are the state, so they carry the name of it. -->
+        <span
+          class="picker__say"
+          :data-testid="has ? `${testid}-replace` : `${testid}-empty`"
         >
-          {{ has ? "Replace" : "Upload" }}
-          <input
-            ref="input"
-            :accept="ACCEPT"
-            class="picker__file"
-            :data-testid="`${testid}-file`"
-            :disabled="working"
-            type="file"
-            @change="choose"
-          >
-        </label>
-
-        <button
-          v-if="has && mayClear"
-          class="picker__button picker__button--quiet"
-          :data-testid="`${testid}-clear`"
+          {{ working ? "Uploading…" : has ? "Replace" : "Add a picture" }}
+        </span>
+        <input
+          ref="input"
+          :accept="ACCEPT"
+          class="picker__file"
+          :data-testid="`${testid}-file`"
           :disabled="working"
-          type="button"
-          @click="clear"
+          type="file"
+          @change="choose"
         >
-          Remove
-        </button>
-      </div>
+      </label>
+
+      <button
+        v-if="has && mayClear"
+        :aria-label="`Remove the ${label.toLowerCase()}`"
+        class="picker__cross"
+        :data-testid="`${testid}-clear`"
+        :disabled="working"
+        type="button"
+        @click="clear"
+      >
+        &times;
+      </button>
     </div>
 
     <p
@@ -147,96 +169,115 @@ const clear = () => {
 <style scoped>
 .picker {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
+  min-width: 0;
 }
 
 .picker__label {
-  font-family: var(--font-body);
-  font-size: 0.66rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
   color: var(--color-ash);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.picker__body {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+/*
+ * Cut on the island's diagonal, and sized by what the picture is for rather than by a fixed
+ * box: a banner previewed square would look nothing like the banner it becomes.
+ */
+/* Square-cornered, unlike the buttons: the diagonal is for things that are pressed along a
+   band, and a picture cut on it would be a picture with a corner missing. */
+.picker__frame {
+  position: relative;
+  overflow: hidden;
+  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
+}
+
+.picker__frame--busy {
+  opacity: 0.7;
 }
 
 .picker__preview {
-  width: 6rem;
-  height: 3.375rem;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 0.25rem;
-  background-color: var(--color-surface);
 }
 
-.picker__empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 6rem;
-  height: 3.375rem;
-  border: 1px dashed color-mix(in srgb, var(--color-ash) 40%, transparent);
-  border-radius: 0.25rem;
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  text-align: center;
-  color: var(--color-ash);
-}
-
-.picker__actions {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.picker__button {
+/* The whole frame, so the picture is what is pressed. */
+.picker__press {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   cursor: pointer;
-  padding: 0.3rem 0.7rem;
-  border: 1px solid color-mix(in srgb, var(--color-ash) 40%, transparent);
-  border-radius: 0.25rem;
-  background: none;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  color: inherit;
-  transition: border-color 160ms ease, color 160ms ease;
 }
 
-.picker__button:hover,
-.picker__button:focus-visible {
-  border-color: currentcolor;
+.picker__say {
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  color: var(--color-chalk);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background-color: color-mix(in oklab, var(--color-void) 62%, transparent);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 200ms ease;
 }
 
-.picker__button--busy {
-  opacity: 0.6;
-  cursor: progress;
+/* Said all the time while the frame is empty; only on approach once it holds a picture, so
+   the picture is what is looked at rather than the words over it. */
+.picker__frame:not(:has(.picker__preview)) .picker__say,
+.picker__press:hover .picker__say,
+.picker__press:focus-within .picker__say {
+  opacity: 1;
 }
 
-.picker__button--quiet {
-  color: var(--color-ash);
-}
-
-/* The label is the control; the input itself is only the file dialog behind it. */
 .picker__file {
   position: absolute;
   width: 1px;
   height: 1px;
-  padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
-  white-space: nowrap;
+}
+
+/* In the corner and away from the press that replaces: two different acts, two places. */
+.picker__cross {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  display: grid;
+  width: 1.1rem;
+  height: 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--color-chalk);
+  cursor: pointer;
+  background-color: color-mix(in oklab, var(--color-void) 68%, transparent);
+  border: 0;
+  border-radius: 50%;
+  place-items: center;
+}
+
+.picker__cross:hover:not(:disabled) {
+  color: var(--color-void);
+  background-color: var(--color-brand);
 }
 
 .picker__failure {
+  margin: 0;
   font-family: var(--font-body);
-  font-size: 0.72rem;
-  color: var(--color-warning, #ff8a80);
+  font-size: 0.78rem;
+  color: var(--color-danger, #ff6b6b);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .picker__button {
+  .picker__say {
     transition: none;
   }
 }

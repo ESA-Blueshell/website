@@ -86,7 +86,8 @@ test.describe("removing a game", () => {
     await loginAsBoard(context)
 
     await page.goto("/esports/competitive-scene")
-    await page.getByTestId("esports-game-add-new-game").click()
+    await page.getByTestId("esports-game-add").click()
+    await page.getByTestId("game-dialog-kind-new-game").click()
     await page.getByTestId("game-dialog-name").fill("Pong")
     await page.getByTestId("game-dialog-slug").fill("pong")
     await page.getByTestId("game-dialog-save").click()

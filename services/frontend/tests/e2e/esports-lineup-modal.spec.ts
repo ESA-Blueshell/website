@@ -68,9 +68,9 @@ test.describe("editing a line-up over the page", () => {
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await page.getByTestId("team-roster-add-played-before").click()
+    await page.getByTestId("team-roster-add").click()
 
-    await expect(page.getByTestId("field-team-dialog")).toBeVisible()
+    await expect(page.getByTestId("lineup-dialog")).toBeVisible()
     await expect(page.locator(".island-dialog__scrim")).toHaveCount(1)
   })
 

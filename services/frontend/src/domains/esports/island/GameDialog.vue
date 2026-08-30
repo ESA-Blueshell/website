@@ -3,6 +3,8 @@ import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
 import ImagePicker from "./ImagePicker.vue"
+import IslandChoice from "./IslandChoice.vue"
+import IslandPicker from "./IslandPicker.vue"
 import {
   addGameOrReason,
   enterGameInSeason,
@@ -17,8 +19,14 @@ import {FileType} from "@/services/api"
 import {useGames} from "./useGames"
 
 /**
- * Correcting a game from wherever it is shown: what it is called, what its page answers to and
- * says, where it sits among the others, and the art it is drawn with.
+ * A game, corrected or added: what it is called, what its page answers to and says, where it
+ * sits among the others, and the art it is drawn with.
+ *
+ * Adding one asks first which kind of adding it is, at the top, where the answer changes what
+ * the rest of the dialog is: a game the association has played before is picked out of the ones
+ * it knows, and a game it has just started playing is described here in full. One way in from
+ * the band and the choice made inside it — two plusses on the band would read as two different
+ * things to do, when they are one intention answered two ways.
  *
  * A refusal keeps what was typed, the way the season dialog does. Losing an address because
  * another game claimed it would mean typing it again to find out what the objection was.
@@ -37,6 +45,8 @@ const props = defineProps<{
    * decision, and would leave a game behind if the second half failed.
    */
   enterIn?: Season | null
+  /** The games already in that season, which there is nothing to add. */
+  alreadyIn?: string[]
   accent?: string
 }>()
 
@@ -48,6 +58,39 @@ const emit = defineEmits<{
 
 /** Adding rather than correcting, which is the whole of what changes about this dialog. */
 const adding = computed(() => props.game == null)
+
+/** Which kind of adding, asked at the top because it decides what the rest of this is. */
+type Kind = "played-before" | "new-game"
+const kind = ref<Kind>("played-before")
+
+const {games: allGames} = useGames()
+
+/** Every game the association knows that is not already in the season being added to. */
+const offered = computed(() =>
+  allGames.value.filter(one => !(props.alreadyIn ?? []).includes(one.game)))
+
+const entering = ref<string | null>(null)
+
+/** A game it has played before is already described; what is being recorded is that it runs again. */
+const enter = async (game: string) => {
+  const season = props.enterIn
+  if (!season || entering.value != null) return
+  entering.value = game
+  failure.value = null
+  try {
+    const added = await enterGameInSeason(season.id, game)
+    if (!added) {
+      failure.value = "That game could not be put into the season."
+      return
+    }
+    await refreshGames()
+    const record = allGames.value.find(one => one.game === game)
+    if (record) emit("saved", record)
+    emit("update:open", false)
+  } finally {
+    entering.value = null
+  }
+}
 
 const {refresh: refreshGames} = useGames()
 
@@ -76,6 +119,7 @@ watch(
     banner.value = game?.banner ?? null
     sortIndex.value = game?.sortIndex ?? 0
     failure.value = null
+    kind.value = game == null ? "played-before" : "new-game"
   },
   {immediate: true},
 )
@@ -220,10 +264,49 @@ const add = async () => {
     :accent="colour || props.accent"
     :open="open"
     testid="game-dialog"
-    :title="adding ? 'A game we have started playing' : `Edit ${game?.name}`"
+    :title="adding ? 'Add a game to the season' : `Edit ${game?.name}`"
     @update:open="emit('update:open', $event)"
   >
+    <!--
+      Asked first, because the answer decides what the rest of this dialog is. One way in from
+      the band and the choice made here: two plusses on the band would read as two different
+      things to do, when they are one intention answered two ways.
+    -->
+    <island-choice
+      v-if="adding"
+      v-model="kind"
+      :options="[
+        {key: 'played-before', label: 'An existing game'},
+        {key: 'new-game', label: 'A new game'},
+      ]"
+      testid-prefix="game-dialog-kind"
+    />
+
+    <div
+      v-if="adding && kind === 'played-before'"
+      class="game-form"
+    >
+      <island-picker
+        :disabled="entering != null"
+        empty-note="Every game the association knows is already in this season."
+        :options="offered.map(one => ({key: one.game, label: one.name}))"
+        placeholder="Search every game"
+        testid-prefix="game-dialog-known"
+        @pick="enter"
+      />
+
+      <p
+        v-if="failure"
+        class="game-form__failure"
+        data-testid="game-dialog-failure"
+        role="alert"
+      >
+        {{ failure }}
+      </p>
+    </div>
+
     <form
+      v-else
       class="game-form"
       @submit.prevent="submit"
     >
@@ -300,21 +383,25 @@ const add = async () => {
       <!-- Both held until Save, like every other field here: closing without saving leaves
            the game drawn on the pictures it was drawn on. They are the picture in the game's
            slice on the index and the logo beside its name there, and a game has no others. -->
-      <image-picker
-        :kind="FileType.GAME_BANNER"
-        label="Banner"
-        :picture="banner"
-        testid="game-dialog-banner"
-        @update:picture="banner = $event"
-      />
+      <!-- Side by side, because they are decided together and are the two halves of how a
+           game is drawn. They wrap onto their own lines where there is no room for both. -->
+      <div class="game-form__pictures">
+        <image-picker
+          :kind="FileType.GAME_BANNER"
+          label="Banner"
+          :picture="banner"
+          testid="game-dialog-banner"
+          @update:picture="banner = $event"
+        />
 
-      <image-picker
-        :kind="FileType.GAME_ICON"
-        label="Icon"
-        :picture="icon"
-        testid="game-dialog-icon"
-        @update:picture="icon = $event"
-      />
+        <image-picker
+          :kind="FileType.GAME_ICON"
+          label="Icon"
+          :picture="icon"
+          testid="game-dialog-icon"
+          @update:picture="icon = $event"
+        />
+      </div>
 
       <p
         v-if="failure"
@@ -435,6 +522,12 @@ const add = async () => {
 
 .game-form__check .game-form__hint {
   display: block;
+}
+
+.game-form__pictures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
 }
 
 .game-form__failure {

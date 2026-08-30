@@ -39,13 +39,13 @@ const props = withDefaults(defineProps<{
   /** Whether the band ends in ways to add another. */
   mayAdd?: boolean
   /**
-   * The ways to add, one pane each, in the order they are given.
+   * What the plus is called, since one page adds a game and the other adds a team.
    *
-   * A page says what its ways in are rather than the band assuming one: the index offers a
-   * game played before and a new game, and the two are different enough — a click against a
-   * whole editor — that a single pane hiding a choice would be the wrong shape.
+   * One pane, not one per way in. Adding a game the association has played before and adding
+   * one it has just started are the same intention answered two ways, and two plusses side by
+   * side read as two different things to do. The choice is made in the dialog the pane opens.
    */
-  adds?: Array<{key: string; label: string}>
+  addLabel?: string
   /**
    * One slice to open by name, which wins over opening the first.
    *
@@ -58,11 +58,11 @@ const props = withDefaults(defineProps<{
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
 }>(), {
-  mayAdd: false, adds: () => [], openId: null, mayEdit: false,
+  mayAdd: false, addLabel: "Add", openId: null, mayEdit: false,
 })
 
 const emit = defineEmits<{
-  (event: "add", key: string): void
+  (event: "add"): void
   (event: "edit", id: SliceItem["id"]): void
   (event: "go", item: SliceItem): void
   /**
@@ -320,16 +320,14 @@ watch(open, (index) => {
       read. One pane per way in, so a choice is made by pressing rather than inside a dialog.
     -->
     <section
-      v-for="(add, index) in (mayAdd ? adds : [])"
-      :key="add.key"
-      class="team-slice team-slice--add"
-      :class="{'team-slice--last': index === adds.length - 1}"
+      v-if="mayAdd"
+      class="team-slice team-slice--add team-slice--last"
     >
       <button
         class="team-slice__body team-slice__add"
-        :data-testid="`${testidPrefix}-add-${add.key}`"
+        :data-testid="`${testidPrefix}-add`"
         type="button"
-        @click="emit('add', add.key)"
+        @click="emit('add')"
       >
         <span
           aria-hidden="true"
@@ -348,7 +346,7 @@ watch(open, (index) => {
             aria-hidden="true"
             class="team-slice__tick"
           />
-          <span class="team-slice__name">{{ add.label }}</span>
+          <span class="team-slice__name">{{ addLabel }}</span>
         </span>
       </button>
     </section>

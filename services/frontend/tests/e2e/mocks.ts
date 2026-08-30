@@ -1088,9 +1088,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       // The art is the fielding's, and naming none leaves what it has.
       const banner = pictureNamed(body.banner)
       if (banner) teamBanners.set(teamId, banner)
-      const carried = body.carryLineup === true && teamId === 3
-        ? [{role: "PLAYER", handle: "veteran", name: null}]
-        : []
+      // What comes across is the line-up that was asked for, read from the same rows the
+      // picker reads. A named source wins over "the most recent in this game"; carrying a
+      // line-up the picker showed and a different one arriving is the bug this would hide.
+      const from = body.carryFrom as {game?: string; seasonId?: number} | undefined
+      const source = from?.seasonId != null
+        ? roster.filter(one => one.teamId === teamId && one.seasonId === from.seasonId)
+        : body.carryLineup === true
+          ? roster.filter(one => one.teamId === teamId && one.seasonId !== seasonId)
+          : []
+      const carried = source.map(asMember)
       fieldedNow.push({seasonId, teamId, game: String(body.game ?? "VALORANT"), members: carried})
       return fulfillJson(route, {
         team,

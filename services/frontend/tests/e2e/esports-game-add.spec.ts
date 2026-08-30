@@ -106,6 +106,9 @@ test.describe("adding a game", () => {
     await page.getByTestId("esports-game-add-played-before").click()
     await page.getByTestId("enter-game-ROCKET_LEAGUE").click()
     await expect(page.getByTestId("esports-game-ROCKET_LEAGUE")).toBeVisible()
+    // The band rearranges around the slice that just arrived, and the way out of the season is
+    // inside it. Waiting for what it says means waiting for it to have stopped moving.
+    await expect(page.getByTestId("esports-quiet-ROCKET_LEAGUE")).toBeVisible()
 
     await page.getByTestId("esports-take-out-ROCKET_LEAGUE").click()
 

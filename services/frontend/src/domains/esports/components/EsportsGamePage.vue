@@ -1,13 +1,14 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
+import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {loadSeasons, unfieldTeamFromSeason, type EsportsImage} from "../adapters/esports"
+import {unfieldTeamFromSeason, type EsportsImage} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
@@ -17,6 +18,8 @@ import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
+import {useSeasons} from "@/domains/esports/island/useSeasons"
+import {newestSeason, seasonsIncluding} from "@/domains/esports/island/seasonAxis"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
 import type {Game, Season, Team} from "../adapters/esports"
@@ -51,13 +54,11 @@ const rememberSeason = (id: number) => {
   void router.replace({query: {...route.query, season: String(id)}})
 }
 
-const {page, loading, teams, seasons, season, hasRosters, showSeason, reload} = useEsportsPage(
+const {page, loading, teams, seasons, season, chosen, hasRosters, showSeason, reload} = useEsportsPage(
   props.game,
   seasonFromRoute,
   rememberSeason,
 )
-
-const currentSeasonId = computed<number | null>(() => season.value?.id ?? null)
 
 /** The roster as the pages have always read it: players, then substitutes, then coaches. */
 const GROUPS = [
@@ -102,14 +103,35 @@ const mayEdit = useMayEditEsports()
  * one it sat out. Somebody who may edit sees every season, because a season has to be
  * reachable before a team can be added to it — and a season just written down has nobody in
  * it by definition.
+ *
+ * The whole list is already read to settle which season is newest, so the editor's strip is
+ * that answer put to a second use rather than a second read of it.
  */
-const allSeasons = ref<Season[]>([])
-watch(mayEdit, async (may) => {
-  if (may && allSeasons.value.length === 0) allSeasons.value = await loadSeasons()
-}, {immediate: true})
+const {seasons: allSeasons} = useSeasons()
 
-const stripSeasons = computed<Season[]>(() =>
-  (mayEdit.value && allSeasons.value.length > 0 ? allSeasons.value : seasons.value))
+/**
+ * And the season being read is on the strip whether this game played it or not.
+ *
+ * The page opens on the association's newest season, which a game that has not been fielded
+ * lately never played. An unlit strip would leave the visitor standing nowhere; a node for it
+ * says where they are, with the seasons this game did play laid out either side of it.
+ */
+const stripSeasons = computed<Season[]>(() => seasonsIncluding(
+  mayEdit.value && allSeasons.value.length > 0 ? allSeasons.value : seasons.value,
+  season.value,
+))
+
+/**
+ * The newest season this game was actually fielded in, where the one on show is not it.
+ *
+ * A page that opens on a season this game sat out has nothing to show and, without this,
+ * nothing to offer either. The seasons it played are part of its own answer, so naming the
+ * last of them costs nothing and turns an empty page into a way back to a full one.
+ */
+const lastPlayed = computed<Season | null>(() => {
+  const played = newestSeason(seasons.value)
+  return played && played.id !== season.value?.id ? played : null
+})
 const editing = ref<Season | null>(null)
 const editorOpen = ref(false)
 
@@ -135,7 +157,9 @@ const seasonRemoved = async (gone: Season) => {
   if (current) {
     page.value = {...current, seasons: current.seasons.filter(one => one.id !== gone.id)}
   }
-  const next = (stripSeasons.value[0] ?? null)
+  // Never the season just removed: the strip carries the season being read whether it is
+  // listed or not, and for one more moment that is still this one.
+  const next = stripSeasons.value.find(one => one.id !== gone.id) ?? null
   if (next) await reload(next.id)
   else await reload()
 }
@@ -144,6 +168,13 @@ const adding = ref(false)
 
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
+
+/**
+ * The team whose slice is open, held here because the band that holds it does not outlive a
+ * season change. Handed to whichever band comes next, so a team fielded in both seasons is
+ * still the one being read after the page has travelled.
+ */
+const carried = ref<number | null>(null)
 
 /**
  * The season is asked about again rather than patched here: what a team looks like on the
@@ -326,7 +357,7 @@ const seasonSaved = (saved: Season) => {
           :accent="identity.accent"
           :may-edit="mayEdit"
           :seasons="stripSeasons"
-          :selected-id="currentSeasonId"
+          :selected-id="chosen"
           @add="addSeason"
           @edit="editSeason"
           @select="showSeason"
@@ -369,99 +400,119 @@ const seasonSaved = (saved: Season) => {
       <!-- Full width, edge to edge: the teams are the page, not a card grid inside it. -->
       <section class="w-full">
         <!--
-          Only while there is nothing to show. A season switch has the season before it on
-          screen and keeps it there until the next answer lands: swapping the band for a
-          pulsing block and back again is the blink, and it says nothing a visitor needs.
+          What the season holds travels as one thing, the band and the word that there is no
+          band alike: a season this game sat out is still that season's answer, and it arrives
+          the way an answer does rather than by the band vanishing where it stood.
         -->
-        <div
-          v-if="loading && !hasRosters"
-          class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
-          data-testid="esports-loading"
-        />
+        <season-swipe :season="season">
+          <!--
+            Only while there is nothing to show. A season switch has the season before it on
+            screen and keeps it there until the next answer lands: swapping the band for a
+            pulsing block and back again is the blink, and it says nothing a visitor needs.
+          -->
+          <div
+            v-if="loading && !hasRosters"
+            class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+            data-testid="esports-loading"
+          />
 
-        <p
-          v-else-if="!hasRosters"
-          class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
-          data-testid="esports-empty"
-        >
-          No teams recorded for this season yet.
-        </p>
-
-        <!--
-          Not keyed on the season: a key would rebuild the band on every switch, and the
-          entrance would play again for a set of slices that is largely the same one — which
-          is the blink, and the reason the slice just clicked was the one that moved. The band
-          updates in place instead, and only what actually changed moves.
-        -->
-        <Motion
-          v-else
-          v-bind="entrance(0)"
-        >
-          <banner-slices
-            :accent="identity.accent"
-            add-label="Add a team"
-            :items="slices"
-            :may-add="mayEdit"
-            :editing-id="lineupOpen ? editingTeam?.id ?? null : null"
-            :may-drop="mayEdit"
-            :may-edit="mayEdit"
-            :open-id="justAdded"
-            testid-prefix="team-roster"
-            @add="adding = true"
-            @drop="askToDrop"
-            @edit="editLineup"
+          <div
+            v-else-if="!hasRosters"
+            class="flex min-h-[22rem] w-full flex-col items-center justify-center gap-2 bg-surface px-5 text-center font-body text-sm text-ash"
+            data-testid="esports-empty"
           >
-            <template #editor="{item}">
-              <lineup-editor
-                :accent="identity.accent"
-                :open="lineupOpen && item.id === editingTeam?.id"
-                :season="season"
-                :team-id="editingTeam?.id ?? null"
-                :team-banner="editingTeam?.banner ?? null"
-                :team-name="editingTeam?.name ?? ''"
-                @removed="lineupSaved"
-                @saved="lineupSaved"
-                @update:open="lineupOpen = $event"
-              />
-            </template>
-            <template #details="{item}">
-              <span
-                v-for="group in rosterOf(item.id as number)"
-                :key="group.role"
-                class="team-slice__group"
-              >
-                <span class="team-slice__group-label">
-                  {{ group.members.length === 1 ? group.one : group.many }}
-                </span>
-                <span class="team-slice__members">
-                  <span
-                    v-for="member in group.members"
-                    :key="member.handle"
-                    class="team-slice__member"
-                  >
-                    <span class="team-slice__handle">{{ member.handle }}</span>
-                    <!-- What they did in the team's own words, beside the part they played. -->
+            <p>No teams recorded for {{ season?.name ?? "this season" }} yet.</p>
+            <!--
+              A page opening on a season this game sat out is not a dead end: the last season
+              it did play is one click away, and named so the click is worth making.
+            -->
+            <router-link
+              v-if="lastPlayed"
+              class="team-slice__link"
+              data-testid="esports-empty-last-played"
+              :to="`${route.path}?season=${lastPlayed.id}`"
+            >
+              {{ identity.name }} last played {{ lastPlayed.name }} →
+            </router-link>
+          </div>
+
+          <!--
+            The band is rebuilt on a season change, because the change is now something the
+            visitor watches happen — but which team they were reading is carried across it, so
+            the movement is the season travelling and not the subject changing under them.
+            Within one season the band still updates in place, and only what changed moves.
+          -->
+          <Motion
+            v-else
+            v-bind="entrance(0)"
+          >
+            <banner-slices
+              :accent="identity.accent"
+              add-label="Add a team"
+              :items="slices"
+              :may-add="mayEdit"
+              :editing-id="lineupOpen ? editingTeam?.id ?? null : null"
+              :may-drop="mayEdit"
+              :may-edit="mayEdit"
+              :open-id="justAdded ?? carried"
+              testid-prefix="team-roster"
+              @add="adding = true"
+              @drop="askToDrop"
+              @edit="editLineup"
+              @open="id => carried = id == null ? null : Number(id)"
+            >
+              <template #editor="{item}">
+                <lineup-editor
+                  :accent="identity.accent"
+                  :open="lineupOpen && item.id === editingTeam?.id"
+                  :season="season"
+                  :team-id="editingTeam?.id ?? null"
+                  :team-banner="editingTeam?.banner ?? null"
+                  :team-name="editingTeam?.name ?? ''"
+                  @removed="lineupSaved"
+                  @saved="lineupSaved"
+                  @update:open="lineupOpen = $event"
+                />
+              </template>
+              <template #details="{item}">
+                <span
+                  v-for="group in rosterOf(item.id as number)"
+                  :key="group.role"
+                  class="team-slice__group"
+                >
+                  <span class="team-slice__group-label">
+                    {{ group.members.length === 1 ? group.one : group.many }}
+                  </span>
+                  <span class="team-slice__members">
                     <span
-                      v-if="member.roleTitle"
-                      class="team-slice__member-role"
-                    >{{ member.roleTitle }}</span>
-                    <!-- Only ever present for a member who said their name may be shown. -->
-                    <span
-                      v-if="member.name"
-                      class="team-slice__member-name"
-                    >{{ member.name }}</span>
-                    <!-- Written by an admin, but read on a public page, so it is sanitised. -->
-                    <span
-                      v-if="member.description"
-                      class="team-slice__member-note"
-                      v-html="$markdownToHtml(member.description)"
-                    />
+                      v-for="member in group.members"
+                      :key="member.handle"
+                      class="team-slice__member"
+                    >
+                      <span class="team-slice__handle">{{ member.handle }}</span>
+                      <!-- What they did in the team's own words, beside the part they played. -->
+                      <span
+                        v-if="member.roleTitle"
+                        class="team-slice__member-role"
+                      >{{ member.roleTitle }}</span>
+                      <!-- Only ever present for a member who said their name may be shown. -->
+                      <span
+                        v-if="member.name"
+                        class="team-slice__member-name"
+                      >{{ member.name }}</span>
+                      <!-- Written by an admin, but read on a public page, so it is sanitised. -->
+                      <span
+                        v-if="member.description"
+                        class="team-slice__member-note"
+                        v-html="$markdownToHtml(member.description)"
+                      />
+                    </span>
                   </span>
                 </span>
-              </span>
-            </template>
-          </banner-slices>
-        </Motion>
+              </template>
+            </banner-slices>
+          </Motion>
+        </season-swipe>
       </section>
 
       <join-band />

@@ -813,19 +813,26 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // CS2 is one. With the digit excluded this route never matched, so every CS2
     // page in the suite silently rendered as having no teams.
     if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
+      const game = path.split("/").pop()
       const requested = url.searchParams.get("seasonId")
       const fresh = requested != null ? written.get(Number(requested)) : undefined
       if (fresh) {
         // Nobody has been fielded in it yet, which is the answer rather than a reason to
         // show a different season's teams.
-        return fulfillJson(route, {game: path.split("/").pop(), season: fresh, seasons: esportsSeasons, teams: []})
+        return fulfillJson(route, {game, season: fresh, seasons: esportsSeasons, teams: []})
       }
-      const page = fixtures.esportsPages?.[requested ?? "20"]
-        ?? esportsPageBySeason[requested ?? "20"]
+      // Asked about no season in particular, the api answers with the newest season *this
+      // game* was fielded in — which is a different season per game, and the whole reason a
+      // page has to name the season it means. CS:GO is what proves it: it played the older
+      // of the two seasons and has played nothing since.
+      const ownNewest = game === "CSGO" ? "19" : "20"
+      const page = fixtures.esportsPages?.[requested ?? ownNewest]
+        ?? esportsPageBySeason[requested ?? ownNewest]
         ?? esportsPageBySeason["20"]
-      const offered = (page.seasons as Array<{id: number}>).filter(one => !gone.has(one.id))
+      const offered = (page.seasons as Array<{id: number}>)
+        .filter(one => !gone.has(one.id))
+        .filter(one => game !== "CSGO" || one.id === 19)
       // Teams fielded during this test belong to the page the same way the seeded ones do.
-      const game = path.split("/").pop()
       const shownSeason = Number((page.season as {id: number} | undefined)?.id ?? requested ?? 20)
       const extra = fieldedNow
         .filter(one => one.seasonId === shownSeason)
@@ -833,7 +840,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           ?? [{id: 3, game: "VALORANT", name: "BS Old Guard", banner: null}].find(known => known.id === one.teamId)}))
         .filter(row => row.team != null && row.team.game === game)
         .map(row => ({id: row.one.teamId, name: row.team!.name, banner: row.team!.banner ?? null, members: row.one.members}))
-      const fieldsThis = game === "VALORANT" || game === "CS2"
+      const fieldsThis = game === "VALORANT" || game === "CS2" || (game === "CSGO" && shownSeason === 19)
       // The seeded team's members come from the same line-up the admin edits, so a change
       // made there is a change here.
       const stillFielded = (team: Record<string, unknown>) =>

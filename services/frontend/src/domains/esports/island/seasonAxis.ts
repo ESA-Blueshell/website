@@ -16,6 +16,61 @@ export interface SeasonBand {
 
 const NAME = /^(\p{L}+)\s+(\d{4}\/\d{2,4})$/u
 
+/** Which way one season lies from another along the strip. */
+export type SeasonDirection = "past" | "future" | "same"
+
+/**
+ * The order seasons read in: oldest first, by the date they start.
+ *
+ * One comparator for the whole module, because the strip's left-to-right order and the
+ * direction a season change travels in are the same question asked twice. Two seasons that
+ * start on the same day are ordered by id, so a strip drawn twice is drawn the same way.
+ */
+const byAge = (a: Season, b: Season): number =>
+  a.startDate.localeCompare(b.startDate) || a.id - b.id
+
+/**
+ * The newest of a set of seasons, or null where there are none.
+ *
+ * Newest by start date, whatever was fielded in it. A season written down ahead of time is
+ * the association's current season the moment it exists: the pages say what season it is,
+ * and answer separately whether anybody played in it.
+ */
+export function newestSeason(seasons: Season[]): Season | null {
+  return seasons.reduce<Season | null>(
+    (newest, season) => (newest == null || byAge(season, newest) > 0 ? season : newest),
+    null,
+  )
+}
+
+/**
+ * Which way [to] lies from [from]: back down the strip, or on up it.
+ *
+ * The strip runs oldest to newest from left to right, so this is also which way the page
+ * travels when the season changes. Either end being absent is "same": there is no direction
+ * to travel from nowhere, which is what a page arriving for the first time does.
+ */
+export function directionBetween(from: Season | null, to: Season | null): SeasonDirection {
+  if (!from || !to) return "same"
+  const order = byAge(to, from)
+  if (order < 0) return "past"
+  if (order > 0) return "future"
+  return "same"
+}
+
+/**
+ * [seasons] with [onShow] among them, in the order the strip draws them.
+ *
+ * A page can be standing on a season that is not in its own list — a game's page opens on the
+ * association's newest season whether or not that game played it. The season being read has
+ * to have a node on the strip regardless: a strip with nothing lit says the visitor is
+ * nowhere, and the seasons that do hold something are what they are being offered instead.
+ */
+export function seasonsIncluding(seasons: Season[], onShow: Season | null): Season[] {
+  const listed = onShow == null || seasons.some(one => one.id === onShow.id)
+  return (listed ? [...seasons] : [...seasons, onShow]).sort(byAge)
+}
+
 /**
  * The seasons as bands across a strip, oldest first.
  *
@@ -32,7 +87,7 @@ const NAME = /^(\p{L}+)\s+(\d{4}\/\d{2,4})$/u
  * what keeps every node in the middle of its own band.
  */
 export function seasonBands(seasons: Season[], trailing = 0): SeasonBand[] {
-  const ordered = [...seasons].sort((a, b) => a.startDate.localeCompare(b.startDate))
+  const ordered = [...seasons].sort(byAge)
   const share = 1 / Math.max(ordered.length + trailing, 1)
 
   return ordered.map((season, index) => {

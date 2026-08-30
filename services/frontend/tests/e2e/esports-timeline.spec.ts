@@ -39,24 +39,24 @@ test.describe("the season strip", () => {
     expect(await scrolledTo(page)).toBe(before)
   })
 
-  test("changes the teams in place rather than rebuilding the band", async ({page}) => {
+  test("leaves one band on the page while a season is travelling, not two", async ({page}) => {
     await installApiMocks(page, fixtures)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
     await expect(page.getByTestId("team-roster-51")).toBeVisible()
 
-    // Marked on the element itself: a mark that survives is the same element, and an element
-    // that survives has not been thrown away and built again — which is what made the band
-    // blink and replay its entrance on every switch.
-    const band = page.getByTestId("team-roster-slices")
-    await band.evaluate(el => {
-      (el as HTMLElement & {dataset: Record<string, string>}).dataset.survived = "yes"
-    })
-
+    // The band is built again on a season change now, because the change is something the
+    // visitor watches happen rather than something that has quietly already happened: for the
+    // length of a pass both seasons are on the page at once. What used to stop the switch
+    // reading as a page rebuilding itself was the band surviving it; what does that now is the
+    // travel, and the game being read carrying across it.
     await page.getByTestId("esports-season-node-64").click()
-
     await expect(page.getByTestId("team-roster-52")).toBeVisible()
-    await expect(band).toHaveAttribute("data-survived", "yes")
+
+    // The season leaving is a picture of a season by then, still on screen while it goes but
+    // out of the tab order, out of what is read aloud, and no longer answering to its name.
+    await expect(page.getByTestId("team-roster-slices")).toHaveCount(1)
+    await expect(page.getByTestId("team-roster-51")).toHaveCount(0)
   })
 
   test("keeps the season on screen while the next one is being asked about", async ({page}) => {

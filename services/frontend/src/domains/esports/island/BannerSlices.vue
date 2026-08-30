@@ -253,24 +253,7 @@ watch(open, (index) => {
         </svg>
       </button>
 
-      <button
-        v-if="mayDrop && item.id !== editingId"
-        :aria-label="`Remove ${item.title}`"
-        class="team-slice__edit team-slice__drop"
-        :data-testid="`${testidPrefix}-drop-${item.id}`"
-        type="button"
-        @click.stop="emit('drop', item.id)"
-      >
-        <svg
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-        >
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </button>
+      <!-- Deletion affordance removed per design request -->
 
       <!--
         The slice is the full width of the band on a phone and half of it from there up, which

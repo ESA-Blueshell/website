@@ -25,34 +25,32 @@ class TeamService(
 
     /** A team belongs to a game, so a code naming none is refused before anything is written. */
     @Transactional
-    fun create(game: String, name: String, image: String?, poster: String? = null): Team =
+    fun create(game: String, name: String, banner: String? = null): Team =
         teams.save(
             Team(
                 game = games.requireGame(game).game,
                 name = name.trim(),
-                image = image?.trim()?.ifBlank { null },
-                poster = pictures.of(poster, FileType.TEAM_POSTER),
+                banner = pictures.of(banner, FileType.TEAM_BANNER),
             ),
         )
 
     /**
      * The team as the dialog that edits it now says it stands.
      *
-     * The poster is part of the save rather than something applied the moment it was chosen,
+     * The banner is part of the save rather than something applied the moment it was chosen,
      * so cancelling that dialog leaves the team exactly as it was. Naming no picture takes the
-     * poster away, which is what the picker's Remove does: the write says what the team is,
+     * banner away, which is what the picker's Remove does: the write says what the team is,
      * not what changed about it.
      *
-     * Taking a poster away leaves the stored file alone. Files are addressed by content, so
-     * the row may be another team's poster too, and deleting it on behalf of one of them would
+     * Taking a banner away leaves the stored file alone. Files are addressed by content, so
+     * the row may be another team's banner too, and deleting it on behalf of one of them would
      * take the other's away with it.
      */
     @Transactional
-    fun update(id: Long, name: String, image: String?, poster: String? = null): Team {
+    fun update(id: Long, name: String, banner: String? = null): Team {
         val team = findById(id)
         team.name = name.trim()
-        team.image = image?.trim()?.ifBlank { null }
-        team.poster = pictures.of(poster, FileType.TEAM_POSTER)
+        team.banner = pictures.of(banner, FileType.TEAM_BANNER)
         return teams.save(team)
     }
 

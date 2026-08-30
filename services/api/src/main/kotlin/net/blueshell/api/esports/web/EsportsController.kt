@@ -3,7 +3,6 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.esports.domain.EsportsMediaService
 import net.blueshell.api.esports.domain.EsportsPageQueryService
 import net.blueshell.api.esports.domain.GamePageService
 import net.blueshell.api.esports.domain.SeasonService
@@ -40,7 +39,6 @@ class EsportsController(
     private val gamePages: GamePageService,
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
-    private val media: EsportsMediaService,
 ) {
     @GetMapping("/games/{game}")
     @PermitAll
@@ -129,36 +127,6 @@ class EsportsController(
         seasons.delete(id)
     }
 
-    /** Every banner set for a game, so the levels already covered can be seen before another is added. */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @GetMapping("/banners")
-    fun findBanners(@RequestParam game: String): List<EsportsBannerResponse> =
-        media.findBanners(game).map { it.asResponse() }
-
-    /**
-     * Sets the banner for one combination of game, season and team.
-     *
-     * Naming neither a season nor a team sets the game's own, which is the one every page
-     * falls back to. Setting one against a combination that already has one replaces it: a
-     * combination has one banner, and the database says so too.
-     *
-     * It names a stored picture rather than carrying one. The picture was stored when it was
-     * chosen; this is what puts it behind a page.
-     */
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
-    @PostMapping("/banners")
-    fun setBanner(
-        @Valid @RequestBody request: SetBannerRequest,
-    ): EsportsBannerResponse =
-        media.setBanner(request.game, request.seasonId, request.teamId, request.picture).asResponse()
-
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
-    @DeleteMapping("/banners/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun removeBanner(@PathVariable id: Long) {
-        media.removeBanner(id)
-    }
-
     @GetMapping("/teams")
     @PermitAll
     fun findTeams(@RequestParam game: String): List<TeamResponse> =
@@ -168,14 +136,14 @@ class EsportsController(
     @PostMapping("/teams")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTeam(@Valid @RequestBody request: CreateTeamRequest): TeamResponse =
-        teams.create(request.game, request.name, request.image, request.poster).asResponse()
+        teams.create(request.game, request.name, request.banner).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/teams/{id}")
     fun updateTeam(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateTeamRequest,
-    ): TeamResponse = teams.update(id, request.name, request.image, request.poster).asResponse()
+    ): TeamResponse = teams.update(id, request.name, request.banner).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/teams/{id}")

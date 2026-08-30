@@ -76,9 +76,12 @@ class TestCleanUpListener : TestExecutionListener {
                     for (table in tables) {
                         st.execute("DELETE FROM `$TEST_SCHEMA`.`$table`")
                     }
-                    st.execute("SET FOREIGN_KEY_CHECKS = 1")
                 }
+                // Restored with the checks still off, so the reference tables need not be listed
+                // in dependency order and a self-referencing one — a file and the widths derived
+                // from it — can go back in whatever order it was read.
                 reference.forEach { (table, rows) -> restore(conn, table, rows) }
+                conn.createStatement().use { st -> st.execute("SET FOREIGN_KEY_CHECKS = 1") }
                 conn.commit()
             } catch (e: Exception) {
                 runCatching { conn.rollback() }
@@ -99,9 +102,10 @@ class TestCleanUpListener : TestExecutionListener {
             conn.createStatement().use { st ->
                 st.executeQuery("SELECT * FROM `$TEST_SCHEMA`.`${reference.table}` WHERE ${reference.rows}").use { rs ->
                     val columns = (1..rs.metaData.columnCount).map { rs.metaData.getColumnName(it) }
+                    val blanked = columns.indices.filter { columns[it] in reference.blanked }.toSet()
                     val rows = mutableListOf<List<Any?>>()
                     while (rs.next()) {
-                        rows.add(columns.indices.map { rs.getObject(it + 1) })
+                        rows.add(columns.indices.map { if (it in blanked) null else rs.getObject(it + 1) })
                     }
                     Snapshot(columns, rows)
                 }
@@ -163,7 +167,20 @@ class TestCleanUpListener : TestExecutionListener {
     private data class Snapshot(val columns: List<String>, val rows: List<List<Any?>>)
 
     /** A table the migrations seed, and which of its rows the migrations are responsible for. */
-    private data class Reference(val table: String, val rows: String)
+    private data class Reference(
+        val table: String,
+        val rows: String,
+        /**
+         * Columns put back as null rather than as they were.
+         *
+         * A game points at the banner the start-up step stored for it, and the wipe takes every
+         * file with it. Restoring the reference as read would name a file that is no longer
+         * there, and restoring the files instead would put thirty-odd pictures into every test
+         * that counts them. The game comes back without its picture, which is what a game that
+         * nobody has given one looks like.
+         */
+        val blanked: Set<String> = emptySet(),
+    )
 
     private companion object {
         /**
@@ -178,7 +195,7 @@ class TestCleanUpListener : TestExecutionListener {
          * test writes — so accounts a test creates still do not leak into the next one.
          */
         val REFERENCE_TABLES = listOf(
-            Reference("game_page", "1 = 1"),
+            Reference("game_page", "1 = 1", blanked = setOf("banner_file_id")),
             Reference("users", "id IN (SELECT user_id FROM authorities WHERE authority = 'SYSTEM')"),
             Reference("authorities", "authority = 'SYSTEM'"),
         )

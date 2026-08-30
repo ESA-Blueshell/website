@@ -7,11 +7,18 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import com.jayway.jsonpath.JsonPath
+import net.blueshell.api.file.api.PublicFileUrls
+import net.blueshell.api.shared.enums.FileType
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
 
 /**
  * A game's own record: what it is called, the art it is drawn with, the address it answers to,
@@ -93,7 +100,6 @@ class GamePageIT : UserTestSupport() {
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.game == 'VALORANT')].accent").value("#ff4655"))
             .andExpect(jsonPath("$[?(@.game == 'VALORANT')].mark").value("valorant.png"))
-            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].banner").value("valorantesports1.jpg"))
     }
 
     @Test
@@ -300,6 +306,16 @@ class GamePageIT : UserTestSupport() {
     @Test
     fun `the board corrects a game's name, colour and art where it is shown`() {
         val board = createUserWithRole(Role.BOARD)
+        // The banner names a picture already in storage: choosing one stores it, and the save
+        // is what puts it on the game.
+        val stored = mvc.perform(
+            multipart(PublicFileUrls.UPLOAD).file(picture())
+                .param("type", FileType.GAME_BANNER.name)
+                .with(bearer(board)).with(csrfToken()),
+        )
+            .andExpect(status().isCreated)
+            .andReturn().response.contentAsString
+        val path = JsonPath.read<String>(stored, "$.path")
 
         mvc.perform(
             put("/esports/games/{game}", "TRACKMANIA")
@@ -308,7 +324,7 @@ class GamePageIT : UserTestSupport() {
                 .content(
                     """
                     {"name":"TrackMania","slug":"trackmania","intro":"Driving, fast.",
-                     "accent":"#22d3ee","mark":"valorant.png","banner":"valorantesports1.jpg",
+                     "accent":"#22d3ee","mark":"valorant.png","banner":"$path",
                      "sortIndex":6,"fielded":true}
                     """.trimIndent(),
                 ),
@@ -317,8 +333,16 @@ class GamePageIT : UserTestSupport() {
             .andExpect(jsonPath("$.name").value("TrackMania"))
             .andExpect(jsonPath("$.accent").value("#22d3ee"))
             .andExpect(jsonPath("$.mark").value("valorant.png"))
+            .andExpect(jsonPath("$.banner.path").value(path))
             // The code is the identity everything else points at, and is not the request's to set.
             .andExpect(jsonPath("$.game").value("TRACKMANIA"))
+    }
+
+    /** A picture the converter will accept, which is the smallest thing that really is one. */
+    private fun picture(): MockMultipartFile {
+        val image = BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB)
+        val bytes = java.io.ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
+        return MockMultipartFile("file", "banner.png", MediaType.IMAGE_PNG_VALUE, bytes)
     }
 
     @Test

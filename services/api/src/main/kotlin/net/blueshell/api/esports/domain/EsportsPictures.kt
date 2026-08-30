@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  * Pictures are uploaded on their own and put on a record when the dialog that chose them is
  * saved, so what a write carries is where a picture is stored rather than its bytes. This
  * turns that back into the file, and refuses anything that is not a picture of the kind the
- * field expects — a poster field takes a poster, and a path that names nothing names nothing.
+ * field expects — a banner field takes a banner, and a path that names nothing names nothing.
  */
 @Component
 class EsportsPictures(

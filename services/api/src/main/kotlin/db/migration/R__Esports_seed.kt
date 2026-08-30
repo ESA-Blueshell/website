@@ -1,5 +1,6 @@
 package db.migration
 
+import net.blueshell.api.esports.domain.SeedCsv
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import org.slf4j.LoggerFactory
@@ -84,7 +85,6 @@ class R__Esports_seed : BaseJavaMigration() {
         val slug = row.getValue("slug")
         val accent = row.getValue("accent").ifBlank { null }
         val mark = row.getValue("mark").ifBlank { null }
-        val banner = row.getValue("banner").ifBlank { null }
         val sortIndex = row.getValue("sort_index").toInt()
         val fielded = row.getValue("fielded").toBoolean()
         val intro = row.getValue("intro").ifBlank { null }
@@ -93,15 +93,15 @@ class R__Esports_seed : BaseJavaMigration() {
         // second row to insert beside a deleted one. A game the file lists exists, so a deleted
         // row is brought back rather than duplicated.
         val existing = activeId(connection, "SELECT id FROM game_page WHERE game = ?", code)
-        val fields = listOf<Any?>(name, slug, accent, mark, banner, sortIndex, fielded, intro)
+        val fields = listOf<Any?>(name, slug, accent, mark, sortIndex, fielded, intro)
         if (existing != null) {
             connection.prepareStatement(
                 """
                 UPDATE game_page
-                SET name = ?, slug = ?, accent = ?, mark = ?, banner = ?, sort_index = ?, fielded = ?, intro = ?,
+                SET name = ?, slug = ?, accent = ?, mark = ?, sort_index = ?, fielded = ?, intro = ?,
                     deleted_at = '9999-12-31 23:59:59'
                 WHERE id = ?
-                  AND NOT (name <=> ? AND slug <=> ? AND accent <=> ? AND mark <=> ? AND banner <=> ?
+                  AND NOT (name <=> ? AND slug <=> ? AND accent <=> ? AND mark <=> ?
                            AND sort_index <=> ? AND fielded <=> ? AND intro <=> ? AND $ACTIVE)
                 """.trimIndent(),
             ).use { statement ->
@@ -114,8 +114,8 @@ class R__Esports_seed : BaseJavaMigration() {
         }
         connection.prepareStatement(
             """
-            INSERT INTO game_page (game, name, slug, accent, mark, banner, sort_index, fielded, intro)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO game_page (game, name, slug, accent, mark, sort_index, fielded, intro)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
             (listOf<Any?>(code) + fields)
@@ -154,26 +154,24 @@ class R__Esports_seed : BaseJavaMigration() {
         return activeId(connection, "SELECT id FROM season WHERE name = ? AND $ACTIVE", name)
     }
 
+    /**
+     * A team as the file has it, which is its game and its name.
+     *
+     * The picture the `banner` column points at is not written here. It is a file reference now,
+     * and putting a picture into storage needs the storage volume and the converter that a
+     * migration runner has neither of; the start-up step that does have them reads the same
+     * column and puts the art on the team once it is up.
+     */
     private fun upsertTeam(connection: Connection, row: Map<String, String>): Long? {
         val game = row.getValue("game")
         val name = row.getValue("name")
-        val image = row.getValue("image").ifBlank { null }
         val find = "SELECT id FROM team WHERE game = ? AND name = ?"
         val existing = activeId(connection, "$find AND $ACTIVE", game, name)
         if (existing == null && isDeleted(connection, "$find AND NOT $ACTIVE", game, name)) return null
-        if (existing != null) {
-            connection.prepareStatement("UPDATE team SET image = ? WHERE id = ? AND NOT (image <=> ?)").use { statement ->
-                statement.setString(1, image)
-                statement.setLong(2, existing)
-                statement.setString(3, image)
-                statement.executeUpdate()
-            }
-            return existing
-        }
-        connection.prepareStatement("INSERT INTO team (game, name, image) VALUES (?, ?, ?)").use { statement ->
+        if (existing != null) return existing
+        connection.prepareStatement("INSERT INTO team (game, name) VALUES (?, ?)").use { statement ->
             statement.setString(1, game)
             statement.setString(2, name)
-            statement.setString(3, image)
             statement.executeUpdate()
         }
         return activeId(connection, "$find AND $ACTIVE", game, name)
@@ -267,10 +265,7 @@ class R__Esports_seed : BaseJavaMigration() {
     private fun isDeleted(connection: Connection, sql: String, vararg args: String): Boolean =
         activeId(connection, sql, *args) != null
 
-    private fun read(name: String): String =
-        R__Esports_seed::class.java.classLoader.getResourceAsStream("db/seed/esports/$name")
-            ?.use { it.readBytes().toString(Charsets.UTF_8) }
-            ?: error("Seed file db/seed/esports/$name is missing")
+    private fun read(name: String): String = SeedCsv.read(name)
 
     companion object {
         private val log = LoggerFactory.getLogger(R__Esports_seed::class.java)
@@ -280,42 +275,11 @@ class R__Esports_seed : BaseJavaMigration() {
         private const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"
 
         /**
-         * Reads a comma-separated file with a header, quoting a field only where it has to.
-         * A team called "BS Ohm, Sweet Ohm" is one field, not two.
+         * The rows of one seed file.
+         *
+         * Delegates to [SeedCsv], which the start-up step that puts the art on these records
+         * reads the same files with. Kept here as the name the migration's own tests call.
          */
-        fun parse(content: String): List<Map<String, String>> {
-            val rows = splitRows(content).filter { row -> row.any { it.isNotBlank() } }
-            if (rows.isEmpty()) return emptyList()
-            val header = rows.first()
-            return rows.drop(1).map { cells ->
-                require(cells.size == header.size) { "Row has ${cells.size} fields, header has ${header.size}: $cells" }
-                header.zip(cells).toMap()
-            }
-        }
-
-        private fun splitRows(content: String): List<List<String>> {
-            val rows = mutableListOf<List<String>>()
-            var cells = mutableListOf<String>()
-            val cell = StringBuilder()
-            var quoted = false
-            var index = 0
-            while (index < content.length) {
-                val char = content[index]
-                when {
-                    quoted && char == '"' && content.getOrNull(index + 1) == '"' -> { cell.append('"'); index += 1 }
-                    char == '"' -> quoted = !quoted
-                    !quoted && char == ',' -> { cells.add(cell.toString()); cell.clear() }
-                    !quoted && (char == '\n' || char == '\r') -> {
-                        if (char == '\r' && content.getOrNull(index + 1) == '\n') index += 1
-                        cells.add(cell.toString()); cell.clear()
-                        rows.add(cells); cells = mutableListOf()
-                    }
-                    else -> cell.append(char)
-                }
-                index += 1
-            }
-            if (cell.isNotEmpty() || cells.isNotEmpty()) { cells.add(cell.toString()); rows.add(cells) }
-            return rows
-        }
+        fun parse(content: String): List<Map<String, String>> = SeedCsv.parse(content)
     }
 }

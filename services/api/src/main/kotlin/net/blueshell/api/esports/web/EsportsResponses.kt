@@ -18,10 +18,8 @@ data class TeamResponse(
     val id: Long,
     val game: String,
     val name: String,
-    @Schema(description = "Asset file name for the team's background image")
-    val image: String?,
-    @Schema(description = "The team's uploaded poster, where one was uploaded")
-    val poster: Image? = null,
+    @Schema(description = "The team's own banner, drawn in the slice for it")
+    val banner: Image? = null,
 )
 
 @Schema(description = "A game: what it is called, the art it is drawn with, and how its page presents it")
@@ -35,8 +33,8 @@ data class GamePageResponse(
     val accent: String?,
     @Schema(description = "Asset file name for the game's own mark, where it has one")
     val mark: String?,
-    @Schema(description = "Asset file name for the image behind the game on the index")
-    val banner: String?,
+    @Schema(description = "The game's own image, drawn in the slice for it on the esports index")
+    val banner: Image? = null,
     @Schema(description = "What the page says about the game, where anything is said")
     val intro: String?,
     @Schema(description = "Where the game sits among the others")
@@ -64,11 +62,8 @@ data class RosterMemberResponse(
 data class TeamRosterResponse(
     val id: Long,
     val name: String,
-    val image: String?,
     val members: List<RosterMemberResponse>,
-    @Schema(description = "The team's uploaded poster, where one was uploaded")
-    val poster: Image? = null,
-    @Schema(description = "The banner resolved for this team in the season being shown")
+    @Schema(description = "The team's own banner, drawn in the slice for it")
     val banner: Image? = null,
 )
 
@@ -79,8 +74,6 @@ data class EsportsPageResponse(
     val season: SeasonResponse?,
     val seasons: List<SeasonResponse>,
     val teams: List<TeamRosterResponse>,
-    @Schema(description = "The banner for the game and season shown, absent when none is set anywhere")
-    val banner: Image? = null,
 )
 
 @Schema(description = "What a game holds, for a removal to say before it happens")
@@ -135,14 +128,3 @@ data class GameAccountResponse(
     val handle: String,
 )
 
-@Schema(description = "A banner and how narrowly it was set, as an admin manages them")
-data class EsportsBannerResponse(
-    val id: Long,
-    val game: String,
-    @Schema(description = "The season it is set for; absent when it carries every season")
-    val seasonId: Long? = null,
-    @Schema(description = "The team it is set for; absent when it carries every team")
-    val teamId: Long? = null,
-    @Schema(description = "The image itself")
-    val image: Image,
-)

@@ -24,7 +24,9 @@ test.describe("changing the team, not just its line-up", () => {
     await openLineup(page)
 
     await expect(page.getByTestId("lineup-team-name")).toHaveValue("BS Waterboarders")
-    await expect(page.getByTestId("lineup-team-image")).toHaveValue("valorantesports1.jpg")
+    // One control for the picture rather than a filename beside a picker, and the team the
+    // mocks seed carries none, so it opens on the empty state.
+    await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
     // Said plainly, because a rename is not a change to the season on show.
     await expect(page.getByTestId("lineup-editor")).toContainText("The team, in every season")
   })

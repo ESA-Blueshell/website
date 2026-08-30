@@ -34,7 +34,6 @@ CREATE TABLE team (
     id            BIGINT       AUTO_INCREMENT PRIMARY KEY,
     game          VARCHAR(32)  NOT NULL,
     name          VARCHAR(128) NOT NULL,
-    image         VARCHAR(255) NULL,
     version       BIGINT       NOT NULL DEFAULT 0,
     created_at    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     created_by_id BIGINT       NULL,

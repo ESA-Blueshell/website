@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.io.IOException
+import java.io.InputStream
 import java.io.OutputStream
 import java.net.MalformedURLException
 import java.nio.file.*
@@ -84,15 +85,41 @@ class FileService @Autowired constructor(
             ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "No authenticated user")
         val uploader = users.findById(currentUserId)
 
+        return store(
+            content = multipart.inputStream,
+            originalName = multipart.originalFilename ?: "file",
+            declaredMediaType = multipart.contentType ?: "",
+            type = type,
+            uploader = uploader,
+        )
+    }
+
+    /**
+     * Stores bytes that arrived as something other than an upload, credited to [uploader].
+     *
+     * The art the repository ships is read off the classpath when the application starts. There
+     * is no request behind it, so there is no principal to take an uploader from and no
+     * multipart to take a name from, and both are therefore the caller's to say. Everything
+     * after that is an upload's: the same conversion, the same content address, the same widths.
+     *
+     * [content] is read once and closed here.
+     */
+    @Transactional
+    fun store(
+        content: InputStream,
+        originalName: String,
+        declaredMediaType: String,
+        type: FileType,
+        uploader: User,
+    ): File {
         try {
             Files.createDirectories(rootLocation.resolve(type.directory))
 
-            val originalName = multipart.originalFilename ?: "file"
             val source = Files.createTempFile(rootLocation, "upload-", ".tmp")
             var toStore: Path? = null
 
             try {
-                multipart.inputStream.use { `in` ->
+                content.use { `in` ->
                     Files.newOutputStream(source, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)
                         .use { out ->
                             `in`.transferTo(out)
@@ -115,7 +142,7 @@ class FileService @Autowired constructor(
                 val path = type.directory + "/" + hashedFilename
                 val fullPath = rootLocation.resolve(path).normalize()
                 val mediaType = preparedImage?.mediaType
-                    ?: resolveMediaType(hashedFilename, toStore, multipart.contentType ?: "")
+                    ?: resolveMediaType(hashedFilename, toStore, declaredMediaType)
 
                 log.info("Storing {} at {}", sanitizeForLog(originalName), sanitizeForLog(fullPath))
 
@@ -245,8 +272,8 @@ class FileService @Autowired constructor(
     /**
      * A stored picture of exactly this kind, or nothing.
      *
-     * What a save names when it puts a picture on a record. The kind has to match: a poster
-     * field takes a poster, so that a directory goes on meaning what it says.
+     * What a save names when it puts a picture on a record. The kind has to match: a banner
+     * field takes a banner, so that a directory goes on meaning what it says.
      *
      * Absence is an answer here rather than a failure, because the caller is a write being
      * validated rather than a request for a file, and it has its own words for a save that

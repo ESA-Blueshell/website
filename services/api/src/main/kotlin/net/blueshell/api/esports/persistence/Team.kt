@@ -39,17 +39,14 @@ class Team(
     @Column(name = "name", nullable = false, length = 128)
     var name: String,
 
-    /** Asset file name for the page's background, as the pages have always referenced it. */
-    @Column(name = "image", nullable = true, length = 255)
-    var image: String? = null,
-
     /**
-     * The team's own poster, where one has been uploaded.
+     * The team's own banner, drawn in the slice for it on its game's page.
      *
-     * Sits beside [image] rather than replacing it: a team without a poster still falls back
-     * to the file the frontend bundles, so the pages keep rendering while the uploads catch up.
+     * The only picture a team has. It was a filename in the frontend's assets directory with an
+     * upload beside it, which meant two fields meaning the same thing; the site ships its own
+     * art now, so every team has an upload and the filename had nothing left to fall back to.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "poster_file_id")
-    var poster: File? = null,
+    @JoinColumn(name = "banner_file_id")
+    var banner: File? = null,
 ) : AuditedAutoIdEntity()

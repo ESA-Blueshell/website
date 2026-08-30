@@ -45,7 +45,7 @@ class EsportsControllerIT : UserTestSupport() {
         seasons.save(Season(name = name, startDate = from, endDate = to))
 
     private fun team(game: String, name: String): Team =
-        teams.save(Team(game = game, name = name, image = "$name.jpg"))
+        teams.save(Team(game = game, name = name))
 
     private fun entry(
         team: Team,

@@ -48,10 +48,10 @@ const brevoTargets = [
  * answers to, and the art it is drawn with. The pages read every one of these from here.
  */
 const esportsGames = [
-  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", mark: "valorant.png", banner: "valorantesports1.jpg", intro: "Shooters, and plenty of them.", sortIndex: 1, fielded: true},
-  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", mark: "cs2.png", banner: "csgoesports2.jpg", intro: "Those sweet headshots.", sortIndex: 2, fielded: true},
-  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", mark: "league.png", banner: "leagueesportsbg1.jpg", intro: "A special place.", sortIndex: 3, fielded: true},
-  {game: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", mark: "rocketleague.png", banner: "rocketleagueesports.jpg", intro: "Football, with rocket cars.", sortIndex: 4, fielded: true},
+  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", mark: "valorant.png", banner: null, intro: "Shooters, and plenty of them.", sortIndex: 1, fielded: true},
+  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", mark: "cs2.png", banner: null, intro: "Those sweet headshots.", sortIndex: 2, fielded: true},
+  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", mark: "league.png", banner: null, intro: "A special place.", sortIndex: 3, fielded: true},
+  {game: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", mark: "rocketleague.png", banner: null, intro: "Football, with rocket cars.", sortIndex: 4, fielded: true},
   {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", mark: "geoguessrlogo.webp", banner: null, intro: "Guessing where.", sortIndex: 5, fielded: true},
   // No accent or mark has ever been written for Trackmania: it reads on the island's own blue.
   {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, mark: null, banner: null, intro: "Driving, fast.", sortIndex: 6, fielded: true},
@@ -73,7 +73,7 @@ const esportsPageBySeason: Record<string, Record<string, unknown>> = {
       {
         id: 1,
         name: "BS Waterboarders",
-        image: "valorantesports1.jpg",
+        banner: null,
         members: [
           {role: "PLAYER", handle: "AriosFury", name: "Viktor Petrov", roleTitle: "Captain", description: "Holds the **middle** together."},
           {role: "PLAYER", handle: "Loafine"},
@@ -83,7 +83,7 @@ const esportsPageBySeason: Record<string, Record<string, unknown>> = {
       {
         id: 2,
         name: "BS SpicyWater",
-        image: "valorantesports2.jpg",
+        banner: null,
         members: [{role: "PLAYER", handle: "Sony"}],
       },
     ],
@@ -96,7 +96,7 @@ const esportsPageBySeason: Record<string, Record<string, unknown>> = {
       {
         id: 3,
         name: "BS Tempra",
-        image: "valorantesports1.jpg",
+        banner: null,
         members: [{role: "PLAYER", handle: "fetabass"}],
       },
     ],
@@ -154,9 +154,8 @@ const boardFixtures = [
 /** An image as the api describes one: where it is served, how large it is, and its widths. */
 /** Where a kind of picture is stored, as the api's own directories name them. */
 const DIRECTORY_OF: Record<string, string> = {
-  TEAM_POSTER: "team-posters",
+  TEAM_BANNER: "team-banners",
   ROSTER_ICON: "roster-icons",
-  ESPORTS_BANNER: "esports-banners",
   GAME_MARK: "game-marks",
   GAME_BANNER: "game-banners",
 }
@@ -219,7 +218,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   /** Games added during the test, which every read then reports as one of the games. */
   const gamesMade: Array<Record<string, string | number | boolean | null>> = []
   /** Games corrected during the test, which every read then reports as corrected. */
-  const gamesEdited = new Map<string, Record<string, string | number | boolean | null>>()
+  const gamesEdited = new Map<string, Record<string, unknown>>()
   /** Games removed during the test, which the reads then leave out. */
   const gamesGone = new Set<string>()
   const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
@@ -229,7 +228,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const gone = new Set<number>()
   const dropped: Array<{seasonId: number; teamId: number}> = []
   /** Teams renamed or removed during the test, which the reads then reflect. */
-  const renamed = new Map<number, {name: unknown; image: unknown}>()
+  const renamed = new Map<number, {name: unknown; banner: unknown}>()
   const goneTeams = new Set<number>()
   /**
    * The uploaded images, held as the api holds them: a reference per owner rather than bytes.
@@ -238,12 +237,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    * Storing is separate from applying, exactly as the api has it: a picture goes into `stored`
    * when it is uploaded and reaches a poster or an icon only when a save names its path.
    */
-  const posters = new Map<number, MockImage>()
+  const teamBanners = new Map<number, MockImage>()
   const icons = new Map<number, MockImage>()
   const stored = new Map<string, MockImage>()
-  const banners: Array<{id: number; game: string; seasonId: number | null; teamId: number | null; image: MockImage}> = []
   let nextFileId = 500
-  let nextBannerId = 90
   /**
    * An image as the api describes one. The size is that of the picture actually served below,
    * so a page reserving an image's space reserves the right amount of it.
@@ -263,7 +260,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
   /** The one endpoint that stores a picture. What it ends up on is a later save's business. */
   const storePicture = (kind: string): MockImage => {
-    const made = nextImage(DIRECTORY_OF[kind] ?? "team-posters")
+    const made = nextImage(DIRECTORY_OF[kind] ?? "team-banners")
     stored.set(made.path, made)
     return made
   }
@@ -797,10 +794,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         intro: body.intro ?? null,
         accent: body.accent ?? null,
         mark: body.mark ?? null,
-        banner: body.banner ?? null,
+        // Named by where it is stored and answered as the picture itself, the way the api does.
+        banner: pictureNamed(body.banner) ?? null,
         sortIndex: body.sortIndex ?? was?.sortIndex ?? 0,
         fielded: body.fielded ?? true,
-      } as Record<string, string | number | boolean | null>
+      } as Record<string, unknown>
       gamesEdited.set(code, now)
       return fulfillJson(route, now)
     }
@@ -832,9 +830,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const extra = fieldedNow
         .filter(one => one.seasonId === shownSeason)
         .map(one => ({one, team: teamsMade.find(made => made.id === one.teamId)
-          ?? [{id: 3, game: "VALORANT", name: "BS Old Guard", image: null}].find(known => known.id === one.teamId)}))
+          ?? [{id: 3, game: "VALORANT", name: "BS Old Guard", banner: null}].find(known => known.id === one.teamId)}))
         .filter(row => row.team != null && row.team.game === game)
-        .map(row => ({id: row.one.teamId, name: row.team!.name, image: row.team!.image ?? null, members: row.one.members}))
+        .map(row => ({id: row.one.teamId, name: row.team!.name, banner: row.team!.banner ?? null, members: row.one.members}))
       const fieldsThis = game === "VALORANT" || game === "CS2"
       // The seeded team's members come from the same line-up the admin edits, so a change
       // made there is a change here.
@@ -843,7 +841,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         && !goneTeams.has(Number(team.id))
       const named = (team: Record<string, unknown>) => {
         const change = renamed.get(Number(team.id))
-        return change ? {...team, name: change.name, image: change.image} : team
+        return change ? {...team, name: change.name, banner: change.banner} : team
       }
       const seeded = (fieldsThis ? page.teams as Array<Record<string, unknown>> : []).filter(stillFielded).map(named).map(team => (
         team.id === 1
@@ -853,20 +851,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             .map(asMember)}
           : team
       ))
-      // Most specific first, as the api resolves it: the team's own, then the season's,
-      // then the game's.
-      const bannerFor = (teamId: number | null) =>
-        banners.find(one => one.teamId === teamId && one.seasonId === shownSeason)?.image
-        ?? banners.find(one => one.teamId === teamId && one.seasonId === null)?.image
-        ?? banners.find(one => one.teamId === null && one.seasonId === shownSeason)?.image
-        ?? banners.find(one => one.teamId === null && one.seasonId === null)?.image
-        ?? null
+      // A team's own picture and nothing else: the page draws it in the slice for that team,
+      // and there is no wider banner for it to be resolved against.
       const teams = [...seeded, ...extra].map(team => ({
         ...team,
-        poster: posters.get(Number((team as {id: number}).id)) ?? null,
-        banner: bannerFor(Number((team as {id: number}).id)),
+        banner: teamBanners.get(Number((team as {id: number}).id)) ?? null,
       }))
-      return fulfillJson(route, {...page, game, seasons: offered, teams, banner: bannerFor(null)})
+      return fulfillJson(route, {...page, game, seasons: offered, teams})
     }
     if (method === "POST" && path === "/esports/seasons") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
@@ -917,40 +908,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         ),
       })
     }
-    if (method === "GET" && path === "/esports/banners") {
-      return fulfillJson(route, banners)
-    }
-    if (method === "POST" && path === "/esports/banners") {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const picture = pictureNamed(body.picture)
-      if (!picture) return fulfillJson(route, {detail: "That picture is not in storage"}, 400)
-      const level = {
-        game: (body.game as string) ?? "VALORANT",
-        seasonId: body.seasonId == null ? null : Number(body.seasonId),
-        teamId: body.teamId == null ? null : Number(body.teamId),
-      }
-      const existing = banners.find(one => one.seasonId === level.seasonId && one.teamId === level.teamId)
-      if (existing) {
-        existing.image = picture
-        return fulfillJson(route, existing)
-      }
-      nextBannerId += 1
-      const made = {id: nextBannerId, ...level, image: picture}
-      banners.push(made)
-      return fulfillJson(route, made)
-    }
-    if (method === "DELETE" && /^\/esports\/banners\/\d+$/.test(path)) {
-      const id = Number(path.split("/").pop())
-      const at = banners.findIndex(one => one.id === id)
-      if (at >= 0) banners.splice(at, 1)
-      return route.fulfill({status: 204, body: ""})
-    }
     if (method === "GET" && path === "/esports/teams") {
       const forGame = url.searchParams.get("game")
       const known = fixtures.esportsTeams ?? [
-        {id: 1, game: "VALORANT", name: "BS Waterboarders", image: "valorantesports1.jpg"},
-        {id: 2, game: "VALORANT", name: "BS SpicyWater", image: "valorantesports2.jpg"},
-        {id: 3, game: "VALORANT", name: "BS Old Guard", image: null},
+        {id: 1, game: "VALORANT", name: "BS Waterboarders", banner: null},
+        {id: 2, game: "VALORANT", name: "BS SpicyWater", banner: null},
+        {id: 3, game: "VALORANT", name: "BS Old Guard", banner: null},
       ]
       const all = [...known, ...teamsMade]
       return fulfillJson(route, forGame ? all.filter(team => team.game === forGame) : all)
@@ -958,22 +921,22 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "POST" && path === "/esports/teams") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       nextTeamId += 1
-      const team = {id: nextTeamId, game: body.game, name: body.name, image: body.image ?? null}
+      const banner = pictureNamed(body.banner)
+      const team = {id: nextTeamId, game: body.game, name: body.name, banner: banner ?? null}
       teamsMade.push(team)
-      const poster = pictureNamed(body.poster)
-      if (poster) posters.set(nextTeamId, poster)
-      return fulfillJson(route, {...team, poster}, 201)
+      if (banner) teamBanners.set(nextTeamId, banner)
+      return fulfillJson(route, team, 201)
     }
-    // The poster is part of this write, so a save with none takes the team's away — which is
+    // The banner is part of this write, so a save with none takes the team's away — which is
     // what the picker's Remove means once the dialog around it is saved.
     if (method === "PUT" && /^\/esports\/teams\/\d+$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       const id = Number(path.split("/").pop())
-      renamed.set(id, {name: body.name, image: body.image ?? null})
-      const poster = pictureNamed(body.poster)
-      if (poster) posters.set(id, poster)
-      else posters.delete(id)
-      return fulfillJson(route, {id, game: "VALORANT", name: body.name, image: body.image ?? null, poster})
+      const banner = pictureNamed(body.banner)
+      renamed.set(id, {name: body.name, banner: banner ?? null})
+      if (banner) teamBanners.set(id, banner)
+      else teamBanners.delete(id)
+      return fulfillJson(route, {id, game: "VALORANT", name: body.name, banner: banner ?? null})
     }
     if (method === "DELETE" && /^\/esports\/teams\/\d+$/.test(path)) {
       goneTeams.add(Number(path.split("/").pop()))

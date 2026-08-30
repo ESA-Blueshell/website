@@ -34,11 +34,8 @@ data class RosterMemberView(
 data class TeamView(
     val id: Long,
     val name: String,
-    val image: String?,
     val members: List<RosterMemberView>,
-    /** The team's own poster, where one was uploaded. */
-    val poster: Image? = null,
-    /** The banner resolved for this team in the season being shown. */
+    /** The team's own banner, drawn in the slice for it. */
     val banner: Image? = null,
 )
 
@@ -48,6 +45,4 @@ data class EsportsPageView(
     val season: SeasonView?,
     val seasons: List<SeasonView>,
     val teams: List<TeamView>,
-    /** The banner resolved for the game and the season being shown, before any team narrows it. */
-    val banner: Image? = null,
 )

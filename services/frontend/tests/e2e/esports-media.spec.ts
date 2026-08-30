@@ -5,13 +5,14 @@ import {installApiMocks, loginAsBoard} from "./mocks"
 /**
  * Putting pictures on the pages without a deploy.
  *
- * The point of the upload work is that a poster, an icon and a banner reach the public page
- * from a file chooser rather than from the frontend's assets directory, so each test here
- * ends by reading the page a visitor would see rather than the form that changed it.
+ * The point of the upload work is that a banner and an icon reach the public page from a file
+ * chooser rather than from the frontend's assets directory, so each test here ends by reading
+ * the page a visitor would see rather than the form that changed it.
  *
- * Choosing a picture stores it; the dialog's Save is what puts it on the team or the person.
- * That is why the poster and icon tests save before they look, and why there is a test that
- * cancels instead.
+ * Pictures are drawn in the slices and nowhere else: a game's in its slice on the index, a
+ * team's in its slice on the game's page. Choosing one stores it; the dialog's Save is what
+ * puts it on the record. That is why these tests save before they look, and why there is a
+ * test that cancels instead.
  */
 const GAME_PAGE = "/esports/valorant"
 
@@ -23,7 +24,7 @@ const PNG = Buffer.from(
 
 const choose = async (page: import("@playwright/test").Page, testid: string) => {
   await page.getByTestId(`${testid}-file`).setInputFiles({
-    name: "poster.png",
+    name: "banner.png",
     mimeType: "image/png",
     buffer: PNG,
   })
@@ -50,25 +51,25 @@ const openLineup = async (page: import("@playwright/test").Page) => {
   await expect(page.getByTestId("lineup-editor")).toBeVisible()
 }
 
-test.describe("posters, icons and banners", () => {
-  test("a team's poster is chosen, saved and shows without a deploy", async ({page}) => {
+test.describe("banners and icons", () => {
+  test("a team's banner is chosen, saved and shows without a deploy", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await expect(page.getByTestId("lineup-team-poster-empty")).toBeVisible()
-    await choose(page, "lineup-team-poster")
+    await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
+    await choose(page, "lineup-team-banner")
 
-    const preview = page.getByTestId("lineup-team-poster-preview")
-    await expect(preview).toHaveAttribute("src", /\/files\/public\/team-posters\/[^/]+\.webp/)
-    await expect.poll(() => loaded(page, "lineup-team-poster-preview")).toBe(true)
+    const preview = page.getByTestId("lineup-team-banner-preview")
+    await expect(preview).toHaveAttribute("src", /\/files\/public\/team-banners\/[^/]+\.webp/)
+    await expect.poll(() => loaded(page, "lineup-team-banner-preview")).toBe(true)
 
     await page.getByTestId("lineup-save").click()
     await expect(page.getByTestId("lineup-editor")).toBeHidden()
 
     // The page a visitor reads, rather than the form that changed it. The slice behind the
-    // team draws the poster, and is offered the widths it is stored at. Reached through the
+    // team draws the banner, and is offered the widths it is stored at. Reached through the
     // slice rather than by a testid of its own: the slices are found by a prefix selector, and
     // an image named from the same prefix would be caught by it.
     const behind = page.getByTestId("team-roster-1").locator("img")
@@ -77,7 +78,7 @@ test.describe("posters, icons and banners", () => {
     await expect(behind).toHaveAttribute("width", "640")
 
     await openLineup(page)
-    await expect.poll(() => loaded(page, "lineup-team-poster-preview")).toBe(true)
+    await expect.poll(() => loaded(page, "lineup-team-banner-preview")).toBe(true)
   })
 
   /**
@@ -85,37 +86,37 @@ test.describe("posters, icons and banners", () => {
    * everything else, rather than leaving a picture applied and the rest of the form thrown
    * away.
    */
-  test("a chosen poster is discarded along with the rest when the dialog is cancelled", async ({page}) => {
+  test("a chosen banner is discarded along with the rest when the dialog is cancelled", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
     await page.getByTestId("lineup-team-name").fill("A name nobody keeps")
-    await choose(page, "lineup-team-poster")
-    await expect(page.getByTestId("lineup-team-poster-preview")).toBeVisible()
+    await choose(page, "lineup-team-banner")
+    await expect(page.getByTestId("lineup-team-banner-preview")).toBeVisible()
 
     await page.getByTestId("lineup-cancel").click()
     await expect(page.getByTestId("lineup-editor")).toBeHidden()
 
     await openLineup(page)
-    await expect(page.getByTestId("lineup-team-poster-empty")).toBeVisible()
+    await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
     await expect(page.getByTestId("lineup-team-name")).toHaveValue("BS Waterboarders")
   })
 
-  test("a chosen poster is taken away again before it is ever saved", async ({page}) => {
+  test("a chosen banner is taken away again before it is ever saved", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await choose(page, "lineup-team-poster")
-    await expect(page.getByTestId("lineup-team-poster-preview")).toBeVisible()
+    await choose(page, "lineup-team-banner")
+    await expect(page.getByTestId("lineup-team-banner-preview")).toBeVisible()
 
-    await page.getByTestId("lineup-team-poster-clear").click()
+    await page.getByTestId("lineup-team-banner-clear").click()
 
-    await expect(page.getByTestId("lineup-team-poster-empty")).toBeVisible()
-    await expect(page.getByTestId("lineup-team-poster-preview")).toBeHidden()
+    await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
+    await expect(page.getByTestId("lineup-team-banner-preview")).toBeHidden()
   })
 
   test("a roster entry carries its own picture", async ({page}) => {
@@ -157,98 +158,48 @@ test.describe("posters, icons and banners", () => {
     await expect.poll(() => loaded(page, `lineup-icon-${before}-preview`)).toBe(true)
   })
 
-  test("a banner set for the game reaches the page behind the header", async ({page}) => {
+  test("a game's banner is chosen on the index and reaches the slice it is drawn in", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto(GAME_PAGE)
+    await page.goto("/esports")
 
-    await expect(page.getByTestId("esports-page-banner")).toBeHidden()
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await expect(page.getByTestId("game-dialog")).toBeVisible()
 
-    await page.getByTestId("esports-banners-open").click()
-    await expect(page.getByTestId("banner-dialog")).toBeVisible()
-    await choose(page, "banner-game")
-
-    await expect(page.getByTestId("banner-game-preview")).toBeVisible()
-    await page.keyboard.press("Escape")
+    await expect(page.getByTestId("game-dialog-banner-empty")).toBeVisible()
+    await choose(page, "game-dialog-banner")
+    await expect(page.getByTestId("game-dialog-banner-preview")).toBeVisible()
+    await page.getByTestId("game-dialog-save").click()
 
     // Drawn, not merely present: the api answers on another origin than the page, so a url
     // the frontend failed to resolve still sets an `src` and still renders nothing.
-    await expect.poll(() => loaded(page, "esports-page-banner")).toBe(true)
+    const slice = page.getByTestId("esports-game-VALORANT").locator("img").first()
+    await expect.poll(() => decoded(slice)).toBe(true)
 
-    // The widths it is stored at reach the markup, and every one of them is resolved against
-    // the api rather than the page — a `srcset` entry pointing at the frontend draws nothing.
-    const srcset = await page.getByTestId("esports-page-banner").getAttribute("srcset")
+    // Every width is resolved against the api rather than the page — a `srcset` entry
+    // pointing at the frontend draws nothing.
+    const srcset = await slice.getAttribute("srcset")
     expect(srcset).toContain("320w")
-    expect(srcset).toContain("640w")
     for (const entry of (srcset ?? "").split(",")) {
-      expect(entry.trim()).toMatch(/^http.*\/files\/public\/esports-banners\/.* \d+w$/)
+      expect(entry.trim()).toMatch(/^http.*\/files\/public\/game-banners\/.* \d+w$/)
     }
   })
 
-  /** The page does not shift under a reader's finger while the picture arrives. */
-  test("a banner reserves its space before its bytes arrive", async ({page}) => {
+  test("the game's own page draws no picture behind its header", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
-    await page.getByTestId("esports-banners-open").click()
-    await choose(page, "banner-game")
-    await expect(page.getByTestId("banner-game-preview")).toBeVisible()
-    await page.keyboard.press("Escape")
-
-    const banner = page.getByTestId("esports-page-banner")
-    await expect(banner).toHaveAttribute("width", "640")
-    await expect(banner).toHaveAttribute("height", "360")
-  })
-
-  test("the banner fades out rather than stopping in a line above the strip", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsBoard(page.context())
-    await page.goto(GAME_PAGE)
-
-    await page.getByTestId("esports-banners-open").click()
-    await expect(page.getByTestId("banner-dialog")).toBeVisible()
-    await choose(page, "banner-game")
-    await expect(page.getByTestId("banner-game-preview")).toBeVisible()
-    await page.keyboard.press("Escape")
-
-    const banner = page.getByTestId("esports-page-banner")
-    await expect(banner).toBeVisible()
-
-    // Carried to nothing before the header's own edge, so the header and the strip below it
-    // meet without a line between them.
-    const mask = await banner.evaluate(el => getComputedStyle(el).maskImage)
-    expect(mask).toContain("gradient")
-    expect(mask).toContain("rgba(0, 0, 0, 0)")
-  })
-
-  test("the banner levels read least specific first, so which one wins is legible", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsBoard(page.context())
-    await page.goto(GAME_PAGE)
-    await page.getByTestId("esports-banners-open").click()
-    await expect(page.getByTestId("banner-dialog")).toBeVisible()
-
-    const levels = await page.locator(".banners__level > .picker").evaluateAll(
-      nodes => nodes.map(node => node.getAttribute("data-testid")),
-    )
-
-    // The game first, then the season, then each team and that team within the season:
-    // the order the api resolves them in, so the list explains which one wins.
-    expect(levels).toEqual([
-      "banner-game",
-      "banner-season-20",
-      "banner-team-1",
-      "banner-team-1-season-20",
-      "banner-team-2",
-      "banner-team-2-season-20",
-    ])
+    // The header is the accent and nothing else; pictures belong to the slices.
+    await expect(page.getByTestId("esports-page-banner")).toHaveCount(0)
+    await expect(page.getByTestId("esports-banners-open")).toHaveCount(0)
   })
 
   test("a visitor is offered none of this", async ({page}) => {
     await installApiMocks(page)
-    await page.goto(GAME_PAGE)
+    await page.goto("/esports")
 
-    await expect(page.getByTestId("esports-banners-open")).toBeHidden()
+    await expect(page.getByTestId("esports-game-edit-VALORANT")).toBeHidden()
   })
 })

@@ -16,8 +16,7 @@
 ALTER TABLE game_page
     ADD COLUMN name   VARCHAR(64)  NOT NULL DEFAULT '' AFTER game,
     ADD COLUMN accent VARCHAR(32)  NULL AFTER intro,
-    ADD COLUMN mark   VARCHAR(255) NULL AFTER accent,
-    ADD COLUMN banner VARCHAR(255) NULL AFTER mark;
+    ADD COLUMN mark   VARCHAR(255) NULL AFTER accent;
 
 -- A code identifies a game for the whole life of the site, so it is unique across every row
 -- rather than only among the ones still present. That is also what lets the two ties below

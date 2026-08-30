@@ -15,7 +15,7 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         """
         SELECT ts FROM TeamSeason ts
         JOIN FETCH ts.team t
-        LEFT JOIN FETCH t.poster
+        LEFT JOIN FETCH t.banner
         WHERE t.game = :game AND ts.season.id = :seasonId
         ORDER BY t.name ASC
         """,

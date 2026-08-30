@@ -63,6 +63,9 @@ const slices = computed(() =>
       title: identity.name,
       meta: `${teams} team${teams === 1 ? "" : "s"} this season`,
       banner: identity.banner ?? "",
+      srcset: identity.srcset,
+      width: identity.width,
+      height: identity.height,
       accent: identity.accent,
     }
   }),

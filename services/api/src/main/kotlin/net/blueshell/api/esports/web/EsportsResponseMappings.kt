@@ -4,7 +4,6 @@ import net.blueshell.api.esports.domain.EsportsPageView
 import net.blueshell.api.esports.domain.RosterMemberView
 import net.blueshell.api.esports.domain.SeasonView
 import net.blueshell.api.esports.domain.TeamView
-import net.blueshell.api.esports.persistence.EsportsBanner
 import net.blueshell.api.esports.persistence.GamePage
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
@@ -30,8 +29,7 @@ fun Team.asResponse() = TeamResponse(
     id = id!!,
     game = game,
     name = name,
-    image = image,
-    poster = poster?.asImage(),
+    banner = banner?.asImage(),
 )
 
 fun RosterMemberView.asResponse() = RosterMemberResponse(
@@ -46,9 +44,7 @@ fun RosterMemberView.asResponse() = RosterMemberResponse(
 fun TeamView.asResponse() = TeamRosterResponse(
     id = id,
     name = name,
-    image = image,
     members = members.map { it.asResponse() },
-    poster = poster,
     banner = banner,
 )
 
@@ -57,7 +53,6 @@ fun EsportsPageView.asResponse() = EsportsPageResponse(
     season = season?.asResponse(),
     seasons = seasons.map { it.asResponse() },
     teams = teams.map { it.asResponse() },
-    banner = banner,
 )
 
 /** The admin view of an entry, which unlike the public one carries the real name. */
@@ -88,16 +83,9 @@ fun GamePage.asResponse(): GamePageResponse = GamePageResponse(
     slug = slug,
     accent = accent,
     mark = mark,
-    banner = banner,
+    banner = banner?.asImage(),
     intro = intro,
     sortIndex = sortIndex,
     fielded = fielded,
 )
 
-fun EsportsBanner.asResponse() = EsportsBannerResponse(
-    id = id!!,
-    game = game,
-    seasonId = seasonId,
-    teamId = teamId,
-    image = file.asImage(),
-)

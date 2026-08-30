@@ -29,7 +29,6 @@ class EsportsPageQueryService(
     private val profiles: MemberProfileService,
     private val users: UserService,
     private val games: GamePageService,
-    private val banners: BannerResolutionService,
 ) {
     @Transactional(readOnly = true)
     fun page(game: String, seasonId: Long? = null): EsportsPageView {
@@ -47,9 +46,7 @@ class EsportsPageQueryService(
             available.firstOrNull { it.id == requested }
                 ?: runCatching { seasons.findById(requested) }.getOrNull()?.asView()
         } ?: available.firstOrNull()
-        if (season == null) {
-            return EsportsPageView(game, null, available, emptyList(), banners.resolve(game)?.asImage())
-        }
+        if (season == null) return EsportsPageView(game, null, available, emptyList())
 
         // The teams are the ones fielded; the roster entries only say who played for them,
         // and a team announced before its line-up was settled has none yet.
@@ -62,12 +59,6 @@ class EsportsPageQueryService(
             .mapNotNull { user -> user.id?.let { it to user.fullName } }
             .toMap()
 
-        // Every team's banner in one go: the set of banners does not change between them, and
-        // resolving each on its own would be a query per team for the same answer.
-        val squadIds = squads.mapNotNull { it.team.id }
-        val teamBanners = banners.resolveForTeams(game, season.id, squadIds)
-        val pageBanner = banners.resolve(game, season.id)
-
         val byTeam = entries.groupBy { it.team.id }
         val teams = squads
             .map { squad -> squad.team }
@@ -75,7 +66,6 @@ class EsportsPageQueryService(
                 TeamView(
                     id = team.id!!,
                     name = team.name,
-                    image = team.image,
                     members = byTeam[team.id].orEmpty().map { entry ->
                         RosterMemberView(
                             role = entry.teamRole,
@@ -86,13 +76,12 @@ class EsportsPageQueryService(
                             icon = entry.icon?.asImage(),
                         )
                     },
-                    poster = team.poster?.asImage(),
-                    banner = teamBanners[team.id]?.asImage(),
+                    banner = team.banner?.asImage(),
                 )
             }
             .sortedBy { it.name }
 
-        return EsportsPageView(game, season, available, teams, pageBanner?.asImage())
+        return EsportsPageView(game, season, available, teams)
     }
 
     private fun Season.asView() =

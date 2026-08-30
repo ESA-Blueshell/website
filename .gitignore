@@ -39,13 +39,12 @@ files/
 files
 data
 /storage/
-# What the esports upload tests write. They run with the api module as their working
-# directory, and the rule above anchors to the repository root, so it misses this.
-services/api/storage/team-posters/
-services/api/storage/esports-banners/
-services/api/storage/roster-icons/
-services/api/storage/game-banners/
-services/api/storage/game-marks/
+# What the upload tests write. They run with the api module as their working directory, and
+# the rule above anchors to the repository root, so it misses this. The whole directory rather
+# than a line per kind of picture: the list was one behind every time a kind was added or
+# renamed, and the only thing that is ever written here is a test's own scratch. The event
+# banners committed under it long before this rule stay tracked, as an ignore never un-tracks.
+services/api/storage/
 private
 **/.yarn
 .playwright
@@ -62,9 +61,11 @@ backups
 # the PR. Proposals stay ignored: they are working documents, not repo record.
 !docs/**/*.md
 docs/proposals/**
-# The game art's credit file. CC BY asks for the attribution to be published
-# wherever the images are, so the row for each file travels with it.
+# The game art's credit file. The attribution is published wherever the images are,
+# so the row for each file travels with it — both beside the shipped masters and
+# beside the working folder the masters are cut from.
 !gameart/CREDITS.md
+!services/api/src/main/resources/db/seed/esports/art/CREDITS.md
 .idea
 *dump.sql*
 

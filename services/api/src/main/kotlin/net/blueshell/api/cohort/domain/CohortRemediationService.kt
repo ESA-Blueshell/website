@@ -82,8 +82,8 @@ class CohortRemediationService(
      * outside any DB transaction.
      */
     override fun verifyCohort(cohortId: Long) {
-        val plan = readOnlyTransaction.execute { loadPlan(cohortId) }!!
-        val remote = outsideTransaction.execute { registry.require(plan.system).listMembers(plan.externalCohortId) }!!
+        val plan = readOnlyTransaction.execute { loadPlan(cohortId) }
+        val remote = outsideTransaction.execute { registry.require(plan.system).listMembers(plan.externalCohortId) }
         writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
     }
 
@@ -102,7 +102,7 @@ class CohortRemediationService(
                 )
             }
             CohortRepairResult(cohortId, rows.size)
-        }!!
+        }
     }
 
     private fun loadPlan(cohortId: Long): ReconcilePlan {

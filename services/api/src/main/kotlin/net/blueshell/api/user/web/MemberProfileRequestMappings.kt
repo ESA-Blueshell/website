@@ -5,12 +5,12 @@ import java.sql.Date
 
 fun UpsertMemberProfileRequest.asCommandData(): UpsertMemberProfileData =
     UpsertMemberProfileData(
-        dateOfBirth = Date.valueOf(this.dateOfBirth!!),
+        dateOfBirth = Date.valueOf(this.dateOfBirth),
         studentNumber = this.studentNumber,
         gender = this.gender,
-        nationality = this.nationality!!,
-        bhv = this.bhv!!,
-        ehbo = this.ehbo!!,
+        nationality = this.nationality,
+        bhv = this.bhv,
+        ehbo = this.ehbo,
         nameOnTeamPages = this.nameOnTeamPages,
         version = this.version
     )

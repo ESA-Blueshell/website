@@ -105,7 +105,7 @@ class SignupController(
         @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
         @Valid @RequestBody request: SignupEmailRequest
     ) {
-        signupUseCases.correctEmail(signupToken = signupToken, email = request.email!!)
+        signupUseCases.correctEmail(signupToken = signupToken, email = request.email)
     }
 
     companion object {

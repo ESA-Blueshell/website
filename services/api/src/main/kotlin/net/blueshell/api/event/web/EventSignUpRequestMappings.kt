@@ -8,7 +8,7 @@ import net.blueshell.api.survey.web.AnswerRequest
 
 private fun AnswerRequest.asData(): AnswerData =
     AnswerData(
-        questionId = this.questionId!!,
+        questionId = this.questionId,
         optionSelections = this.optionSelections?.toList(),
         textResponse = this.textResponse,
         version = null,
@@ -16,9 +16,9 @@ private fun AnswerRequest.asData(): AnswerData =
 
 private fun CreateGuestRequest.asData(): GuestData =
     GuestData(
-        name = this.name!!,
-        discord = this.discord!!,
-        email = this.email!!,
+        name = this.name,
+        discord = this.discord,
+        email = this.email,
         phoneNumber = this.phoneNumber!!,
         accessToken = null,
         version = this.version,

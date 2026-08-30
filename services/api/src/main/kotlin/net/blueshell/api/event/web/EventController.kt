@@ -39,7 +39,7 @@ class EventController(
             id = id,
             data = request.asData(),
             removeExistingSignUps = request.removeExistingSignUps == true,
-            version = request.version!!,
+            version = request.version,
         )
         return event.asResponse()
     }

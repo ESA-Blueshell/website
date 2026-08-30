@@ -185,9 +185,9 @@ class BrevoListAdapter(
                 log.error("Failed to list members of Brevo list id={}", externalListId, e)
                 throw ContactServiceException("Failed to list members", e)
             }
-            val contacts = page.contacts ?: break
+            val contacts = page.contacts
             for (c in contacts) {
-                val id = c.id ?: continue
+                val id = c.id
                 if (seen.add(id)) {
                     result += ContactListMember(id, c.email)
                 }

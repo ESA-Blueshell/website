@@ -31,8 +31,8 @@ class AuthenticationController(
         response: HttpServletResponse
     ): AuthenticationResponse {
         val result = authenticationService.authenticate(
-            authenticationRequest.username!!,
-            authenticationRequest.password!!,
+            authenticationRequest.username,
+            authenticationRequest.password,
         )
         authTokenCookieService.writeAuthCookie(response, result.token, result.expiresAtEpochMs - System.currentTimeMillis())
         return result.asResponse()

@@ -19,7 +19,7 @@ const openLineup = async (page: import("@playwright/test").Page) => {
   await expect(page.getByTestId("lineup-loading")).toHaveCount(0)
 }
 
-test.describe("editing a line-up in place", () => {
+test.describe("editing a line-up", () => {
   test("somebody who may not edit is offered nothing", async ({page}) => {
     await installApiMocks(page)
     await loginAsMember(page.context())

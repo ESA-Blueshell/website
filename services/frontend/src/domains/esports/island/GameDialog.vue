@@ -4,11 +4,14 @@ import IslandDialog from "./IslandDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
 import ImagePicker from "./ImagePicker.vue"
 import {
+  addGameOrReason,
+  enterGameInSeason,
   dropGameOrReason,
   loadGameContents,
   saveGameOrReason,
   type EsportsImage,
   type GameRecord,
+  type Season,
 } from "../adapters/esports"
 import {FileType} from "@/services/api"
 import {useGames} from "./useGames"
@@ -24,7 +27,16 @@ defineOptions({name: "GameDialog"})
 
 const props = defineProps<{
   open: boolean
+  /** The game being corrected, or nothing where one is being added. */
   game: GameRecord | null
+  /**
+   * The season a game added here runs in, where one is being added.
+   *
+   * A game is added because the association has started playing it, so it is entered in the
+   * season on show by the same save. Adding it and then entering it would be two acts for one
+   * decision, and would leave a game behind if the second half failed.
+   */
+  enterIn?: Season | null
   accent?: string
 }>()
 
@@ -33,6 +45,9 @@ const emit = defineEmits<{
   (event: "saved", game: GameRecord): void
   (event: "removed", game: GameRecord): void
 }>()
+
+/** Adding rather than correcting, which is the whole of what changes about this dialog. */
+const adding = computed(() => props.game == null)
 
 const {refresh: refreshGames} = useGames()
 
@@ -140,11 +155,15 @@ const removeGame = async () => {
 }
 
 const submit = async () => {
-  const game = props.game
-  if (!complete.value || saving.value || !game) return
+  if (!complete.value || saving.value) return
   saving.value = true
   failure.value = null
   try {
+    if (adding.value) {
+      await add()
+      return
+    }
+    const game = props.game!
     const result = await saveGameOrReason(game.game, {
       name: name.value.trim(),
       slug: slug.value.trim(),
@@ -166,6 +185,34 @@ const submit = async () => {
     saving.value = false
   }
 }
+
+/**
+ * A game added, described in full and entered in the season on show.
+ *
+ * Two requests behind one Save, because the api records the game and the season it runs in
+ * separately — but a refusal on the first leaves nothing written, and the whole form stands
+ * with what was typed so the address can be corrected without typing it all again.
+ */
+const add = async () => {
+  const made = await addGameOrReason({
+    name: name.value.trim(),
+    slug: slug.value.trim(),
+    intro: intro.value.trim() || null,
+    accent: colour.value.trim() || null,
+    banner: banner.value?.path ?? null,
+    icon: icon.value?.path ?? null,
+    sortIndex: sortIndex.value,
+  })
+  if (!made.ok) {
+    failure.value = made.reason
+    return
+  }
+  const season = props.enterIn
+  if (season) await enterGameInSeason(season.id, made.game.game)
+  await refreshGames()
+  emit("saved", made.game)
+  emit("update:open", false)
+}
 </script>
 
 <template>
@@ -173,7 +220,7 @@ const submit = async () => {
     :accent="colour || props.accent"
     :open="open"
     testid="game-dialog"
-    :title="`Edit ${game?.name ?? 'game'}`"
+    :title="adding ? 'A game we have started playing' : `Edit ${game?.name}`"
     @update:open="emit('update:open', $event)"
   >
     <form
@@ -190,8 +237,16 @@ const submit = async () => {
           required
           type="text"
         >
-        <!-- The code is what a team, a roster and a member's handle already point at. -->
-        <span class="game-form__hint">Known to everything else as {{ game?.game }}, which does not change</span>
+        <!-- The code is what a team, a roster and a member's handle already point at. It is
+             taken from the name when the game is added, and never changes after. -->
+        <span
+          v-if="!adding"
+          class="game-form__hint"
+        >Known to everything else as {{ game?.game }}, which does not change</span>
+        <span
+          v-else
+          class="game-form__hint"
+        >Its name settles what everything else will call it, which never changes after</span>
       </label>
 
       <label class="game-form__field">
@@ -272,6 +327,7 @@ const submit = async () => {
 
       <div class="game-form__actions">
         <button
+          v-if="!adding"
           class="game-form__button game-form__button--drop"
           data-testid="game-dialog-remove"
           type="button"

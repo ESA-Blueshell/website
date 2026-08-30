@@ -34,6 +34,9 @@ import {
   setGameAccount,
   updateRosterEntry,
   unfieldTeam,
+  findSeasonGames,
+  enterGame,
+  leaveGame,
   updateSeason,
   updateTeam,
   uploadPublicImage,
@@ -100,9 +103,27 @@ export interface GameSaved {
  * two people naming the same game must not end up with two of it.
  */
 export async function addGameOrReason(
-  game: {name: string; slug: string},
+  game: {
+    name: string
+    slug: string
+    intro?: string | null
+    accent?: string | null
+    banner?: string | null
+    icon?: string | null
+    sortIndex?: number
+  },
 ): Promise<GameSaved | Refused> {
-  const res = await createGame({body: {name: game.name, slug: game.slug}})
+  const res = await createGame({
+    body: {
+      name: game.name,
+      slug: game.slug,
+      intro: game.intro ?? undefined,
+      accent: game.accent ?? undefined,
+      banner: game.banner ?? undefined,
+      icon: game.icon ?? undefined,
+      sortIndex: game.sortIndex,
+    },
+  })
   if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error, "The game could not be added.")}
   return {ok: true, game: withBanner(res.data)}
 }
@@ -309,6 +330,48 @@ export async function unfieldTeamFromSeason(
 ): Promise<void> {
   const res = await unfieldTeam({path: {seasonId, teamId}, query: {game}})
   if (res.error) throw res.error
+}
+
+/** A game that ran in one season, with what it fielded. */
+export interface SeasonGame {
+  game: Game
+  teams: TeamRoster[]
+  /** Whether a visitor sees it. A game entered with nobody fielded is answered to the board only. */
+  public: boolean
+}
+
+/**
+ * Every game that ran in one season.
+ *
+ * One read for the whole band. What comes back depends on who is asking: the api answers a
+ * visitor with the games that have a team in them, and somebody who may edit with those plus
+ * the ones entered and not yet staffed. The page draws what it is given rather than deciding
+ * who may see what.
+ */
+export async function loadSeasonGames(seasonId: number): Promise<SeasonGame[]> {
+  const res = await findSeasonGames({path: {seasonId}})
+  return (res.data ?? []).map(one => ({
+    game: one.game,
+    teams: one.teams.map(withMedia),
+    public: one.public,
+  }))
+}
+
+/** Records that a game runs in a season, before anybody is fielded in it. */
+export async function enterGameInSeason(seasonId: number, game: Game): Promise<SeasonGame | null> {
+  const res = await enterGame({path: {seasonId, game}})
+  if (res.error || !res.data) return null
+  return {game: res.data.game, teams: [], public: res.data.public}
+}
+
+/** Same reason as the others: a refusal comes back as a body rather than as a thrown error. */
+export async function leaveGameInSeason(
+  seasonId: number,
+  game: Game,
+): Promise<{ok: true} | Refused> {
+  const res = await leaveGame({path: {seasonId, game}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The game could not be taken out.")}
+  return {ok: true}
 }
 
 export async function dropSeason(id: number): Promise<void> {

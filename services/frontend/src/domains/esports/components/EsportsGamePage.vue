@@ -413,7 +413,7 @@ const seasonSaved = (saved: Season) => {
           >
             <banner-slices
               :accent="identity.accent"
-              add-label="Add a team"
+              :adds="[{key: 'team', label: 'Add a team'}]"
               :items="slices"
               :may-add="mayEdit"
               :may-edit="mayEdit"

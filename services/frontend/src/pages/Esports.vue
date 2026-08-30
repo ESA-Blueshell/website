@@ -6,7 +6,7 @@ import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
-import AddTeamDialog from "@/domains/esports/island/AddTeamDialog.vue"
+import EnterGameDialog from "@/domains/esports/island/EnterGameDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
@@ -16,7 +16,8 @@ import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasons} from "@/domains/esports/island/useSeasons"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
-import type {Game, GameRecord, Season, Team} from "@/domains/esports/adapters/esports"
+import {leaveGameInSeason} from "@/domains/esports/adapters/esports"
+import type {Game, GameRecord, Season} from "@/domains/esports/adapters/esports"
 
 defineOptions({name: "EsportsPage"})
 
@@ -26,20 +27,17 @@ const motion = useMotionAllowed()
 
 // Which games exist, what each is called and the art each carries are the records' answer;
 // the index keeps no list of its own.
-const {games: allGames, current: playedGames, ready, identityOf, recordOf, refresh: refreshGames} = useGames()
+const {ready, identityOf, recordOf, refresh: refreshGames} = useGames()
 
-// Every game, not only the ones still fielded. `fielded` says whether a game is offered as
-// current, which is what the menu and the add-a-team dialog want; the band below is about what
-// was fielded in the season on show, and a retired game still played the seasons it played.
-// Asking about all of them is safe: a game that fielded nothing in the season is dropped.
-const gameCodes = computed<Game[]>(() => allGames.value.map(one => one.game))
 const urlOf = (game: string) => {
   const record = recordOf(game)
   return record ? `/esports/${record.slug}` : "/esports"
 }
 
+// The band is one read now: the api answers with the games of the season on show, and with
+// the ones entered and not yet staffed where the reader may edit.
 const {seasons, selected, chosen, entries, loading, fielded, show, reload} =
-  useSeasonLineup(gameCodes, () => seasonInRoute(route), ready)
+  useSeasonLineup(() => seasonInRoute(route), ready)
 
 const seasonName = computed(() =>
   seasons.value.find(s => s.id === selected.value)?.name ?? "",
@@ -62,7 +60,11 @@ const slices = computed(() =>
       id: entry.game,
       href: onSeason(urlOf(entry.game)),
       title: identity.name,
-      meta: `${teams} team${teams === 1 ? "" : "s"} this season`,
+      // A game entered with nobody in it says so, because it is the board's list of what is
+      // left to do and a visitor is not being shown it at all.
+      meta: entry.public
+        ? `${teams} team${teams === 1 ? "" : "s"} this season`
+        : "no teams yet · not public",
       banner: identity.banner ?? "",
       srcset: identity.srcset,
       width: identity.width,
@@ -75,6 +77,9 @@ const slices = computed(() =>
 )
 
 const teamsOf = (game: string) => entries.value.find(e => e.game === game)?.teams ?? []
+
+/** Whether a visitor sees this game in the season on show, which the api decided. */
+const isPublic = (game: string) => entries.value.find(e => e.game === game)?.public !== false
 
 const chooseSeason = (id: number) => {
   void router.replace({query: {...route.query, season: String(id)}})
@@ -145,9 +150,30 @@ const gameSaved = async () => {
   await reload(selected.value ?? undefined)
 }
 
-const adding = ref(false)
-/** The game the team just added belongs to, which is the slice to look at. */
+/** Which way in was pressed: a game played before, or a new one described in full. */
+const entering = ref(false)
+const addingGame = ref(false)
+/** The game just put into the season, which is the slice to look at. */
 const justAdded = ref<Game | null>(null)
+
+const openWayIn = (key: string) => {
+  if (key === "played-before") entering.value = true
+  else addingGame.value = true
+}
+
+/** The two ways a game arrives in a season, in the order they are pressed most. */
+const waysIn = [
+  {key: "played-before", label: "A game we played before"},
+  {key: "new-game", label: "A game we have started playing"},
+]
+
+/** Which games are already in the season on show, so the picker does not offer them again. */
+const gamesInSeason = computed<Game[]>(() => entries.value.map(entry => entry.game))
+
+const gameEntered = async (game: Game) => {
+  await reload(selected.value ?? undefined)
+  justAdded.value = game
+}
 
 /**
  * The game whose slice is open, held here because the band that holds it does not outlive a
@@ -160,15 +186,25 @@ const carried = ref<Game | null>(null)
 const seasonOnShow = computed<Season | null>(() =>
   seasons.value.find(one => one.id === selected.value) ?? null)
 
-/** Ids are unique across games, so one flat list says who is already playing this season. */
-const alreadyFielded = computed<number[]>(() =>
-  entries.value.flatMap(entry => entry.teams.map(team => team.id)))
+/**
+ * Taking a game out of the season on show.
+ *
+ * Its own act rather than something that happens when the last team is dropped: "we entered
+ * this and fielded nobody" is a fact worth keeping, and correcting it is a decision. Refused
+ * while teams are still in it, and the reason says so.
+ */
+const dropFailure = ref<string | null>(null)
 
-const teamAdded = async (team: Team) => {
-  await reload(selected.value ?? undefined)
-  // A game that fielded nothing this season had no slice; it does now, and it is the one to
-  // look at. Which game that is comes from the answer, not from what was asked for.
-  justAdded.value = entries.value.find(entry => entry.teams.some(one => one.id === team.id))?.game ?? null
+const takeOut = async (game: Game) => {
+  const season = selected.value
+  if (season == null) return
+  dropFailure.value = null
+  const result = await leaveGameInSeason(season, game)
+  if (!result.ok) {
+    dropFailure.value = result.reason
+    return
+  }
+  await reload(season)
 }
 
 // The strip reads from this list, so writing the saved season back into it is the whole of
@@ -278,18 +314,31 @@ const seasonSaved = (saved: Season) => {
           >
             <banner-slices
               accent="var(--color-brand)"
-              add-label="Add a game"
+              :adds="waysIn"
               :items="slices"
               :may-add="mayEdit"
               :open-id="justAdded ?? carried"
               :may-edit="mayEdit"
               testid-prefix="esports-game"
               @go="item => item.href && router.push(item.href)"
-              @add="adding = true"
+              @add="openWayIn"
               @edit="id => editGame(String(id))"
               @open="id => carried = id == null ? null : String(id)"
             >
               <template #details="{item}">
+                <!--
+                  A game entered with nobody in it, which only the board is answered with. It
+                  says what it is rather than reading as an empty game, and the way on is the
+                  game's own page for the season on show — where a team is added.
+                -->
+                <p
+                  v-if="!isPublic(String(item.id))"
+                  class="esports-quiet"
+                  :data-testid="`esports-quiet-${item.id}`"
+                >
+                  Nobody is fielded in {{ item.title }} this season, so visitors do not see it
+                  here yet. Add a team on its own page, or take the game out of the season.
+                </p>
                 <span class="team-slice__group">
                   <span class="team-slice__group-label">
                     {{ seasonName }}
@@ -309,10 +358,28 @@ const seasonSaved = (saved: Season) => {
                 </span>
                 <router-link
                   class="team-slice__link"
+                  :data-testid="`esports-link-${item.id}`"
                   :to="onSeason(urlOf(String(item.id)))"
                 >
                   {{ seasonName ? `${item.title} in ${seasonName}` : `Every season of ${item.title}` }} →
                 </router-link>
+                <button
+                  v-if="mayEdit && !isPublic(String(item.id))"
+                  class="esports-quiet__drop"
+                  :data-testid="`esports-take-out-${item.id}`"
+                  type="button"
+                  @click.stop="takeOut(String(item.id))"
+                >
+                  Take {{ item.title }} out of {{ seasonName }}
+                </button>
+                <p
+                  v-if="dropFailure"
+                  class="esports-quiet__failure"
+                  data-testid="esports-game-take-out-failure"
+                  role="alert"
+                >
+                  {{ dropFailure }}
+                </p>
               </template>
             </banner-slices>
           </Motion>
@@ -327,15 +394,24 @@ const seasonSaved = (saved: Season) => {
           @update:open="gameEditorOpen = $event"
         />
 
-        <add-team-dialog
+        <enter-game-dialog
           accent="var(--color-brand)"
-          :fielded-games="entries.map(entry => entry.game)"
-          :fielded-team-ids="alreadyFielded"
-          :games="playedGames.map(one => ({game: one.game, name: one.name}))"
-          :open="adding"
+          :already-in="gamesInSeason"
+          :open="entering"
           :season="seasonOnShow"
-          @added="teamAdded"
-          @update:open="adding = $event"
+          @entered="gameEntered"
+          @update:open="entering = $event"
+        />
+
+        <!-- The same editor a game is corrected in, opened on nothing: a game is added
+             described in full rather than as a name to be finished somewhere else. -->
+        <game-dialog
+          accent="var(--color-brand)"
+          :enter-in="seasonOnShow"
+          :game="null"
+          :open="addingGame"
+          @saved="game => gameEntered(game.game)"
+          @update:open="addingGame = $event"
         />
       </section>
 
@@ -343,3 +419,33 @@ const seasonSaved = (saved: Season) => {
     </esports-island>
   </v-main>
 </template>
+
+<style scoped>
+/* A game the board can see and a visitor cannot, marked so it does not read as a finished one. */
+.esports-quiet {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+.esports-quiet__drop {
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  opacity: 0.85;
+}
+
+.esports-quiet__failure {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-danger, #ff6b6b);
+}
+</style>

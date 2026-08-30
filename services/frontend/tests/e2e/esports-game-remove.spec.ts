@@ -81,26 +81,23 @@ test.describe("removing a game", () => {
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant")
   })
 
-  test("a game added moments ago already holds what was added with it", async ({page, context}) => {
+  test("a game added moments ago holds nothing, so it can go again", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
     await page.goto("/esports/competitive-scene")
-    await page.getByTestId("esports-game-add").click()
-    await page.getByTestId("add-team-game").selectOption("__another__")
-    await page.getByTestId("add-game-name").fill("Pong")
-    await page.getByTestId("add-game-slug").fill("pong")
-    await page.getByTestId("add-team-name").fill("BS Paddlers")
-    await page.getByTestId("add-team-save").click()
+    await page.getByTestId("esports-game-add-new-game").click()
+    await page.getByTestId("game-dialog-name").fill("Pong")
+    await page.getByTestId("game-dialog-slug").fill("pong")
+    await page.getByTestId("game-dialog-save").click()
     await page.getByTestId("esports-game-PONG").waitFor()
 
-    // A game joins a season by having a team fielded in it, so the team added with it counts
-    // against removing it from the moment it exists.
+    // Entering a game is not fielding a team in it, so a game added by mistake holds nothing
+    // and goes without argument -- which is the whole reason removal is real rather than soft.
     await page.goto("/esports/pong")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
-    await expect(page.getByTestId("confirm-question")).toContainText("1 team")
-    await expect(page.getByTestId("confirm-question")).toContainText("cannot be removed")
+    await expect(page.getByTestId("confirm-question")).toContainText("holds no teams")
   })
 
   test("a game added by mistake is removed and its page stops answering", async ({page, context}) => {

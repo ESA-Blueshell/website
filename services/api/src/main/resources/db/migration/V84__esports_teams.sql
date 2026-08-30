@@ -18,6 +18,13 @@
 -- the ordinary sequence impossible to record, because a team nobody was named to yet did not
 -- exist in the season at all.
 --
+-- A team belongs to the association rather than to a game. The same team plays different games,
+-- in the same season or across the years, and the game it played is part of the fielding rather
+-- than part of the team: what is shared is the pool, what is not is the line-up. A team's name is
+-- therefore unique across the association, and its own picture -- the art it is drawn with in a
+-- game's band -- belongs to the fielding too, because that art is game-flavoured and the logo
+-- beside its name is the thing that stays the same wherever it plays.
+--
 -- A roster entry hangs off that fielding rather than naming a team and a season of its own.
 -- The two would otherwise say the same thing twice and could disagree: a line-up for a team
 -- that is not fielded is not a state worth being able to write down, and this is what stops
@@ -43,7 +50,6 @@ CREATE TABLE season (
 
 CREATE TABLE team (
     id            BIGINT       AUTO_INCREMENT PRIMARY KEY,
-    game          VARCHAR(32)  NOT NULL,
     name          VARCHAR(128) NOT NULL,
     version       BIGINT       NOT NULL DEFAULT 0,
     created_at    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -51,8 +57,9 @@ CREATE TABLE team (
     updated_at    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_by_id BIGINT       NULL,
     deleted_at    DATETIME(6)  NOT NULL DEFAULT '9999-12-31 23:59:59.000000',
-    UNIQUE INDEX uk_team_game_name     (game, name, deleted_at),
-    INDEX idx_team_game                (game, deleted_at),
+    -- A name is the association's, not a game's. BS HyperS played CS:GO until 2023 and CS2
+    -- after it, and under a name unique per game that is two teams sharing a name by accident.
+    UNIQUE INDEX uk_team_name          (name, deleted_at),
     INDEX idx_team_deleted_at          (deleted_at),
     CONSTRAINT fk_team_created FOREIGN KEY (created_by_id) REFERENCES users (id),
     CONSTRAINT fk_team_updated FOREIGN KEY (updated_by_id) REFERENCES users (id)
@@ -61,6 +68,7 @@ CREATE TABLE team (
 CREATE TABLE team_season (
     id            BIGINT      AUTO_INCREMENT PRIMARY KEY,
     team_id       BIGINT      NOT NULL,
+    game          VARCHAR(32) NOT NULL,
     season_id     BIGINT      NOT NULL,
     version       BIGINT      NOT NULL DEFAULT 0,
     created_at    DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -68,7 +76,10 @@ CREATE TABLE team_season (
     updated_at    DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_by_id BIGINT      NULL,
     deleted_at    DATETIME(6) NOT NULL DEFAULT '9999-12-31 23:59:59.000000',
-    UNIQUE INDEX uk_team_season          (team_id, season_id, deleted_at),
+    -- One fielding per team per game per season. A team may play two games in the same season
+    -- with two different line-ups, which is what the recovered history already contains.
+    UNIQUE INDEX uk_team_season          (team_id, game, season_id, deleted_at),
+    INDEX idx_team_season_game           (game, season_id, deleted_at),
     INDEX idx_team_season_season         (season_id, deleted_at),
     INDEX idx_team_season_deleted_at     (deleted_at),
     CONSTRAINT fk_team_season_team       FOREIGN KEY (team_id)       REFERENCES team   (id),

@@ -3,6 +3,9 @@ package net.blueshell.api.esports.domain
 import db.migration.R__Esports_seed
 import net.blueshell.api.esports.persistence.GamePageRepository
 import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.esports.persistence.TeamSeason
+import net.blueshell.api.esports.persistence.TeamSeasonRepository
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
@@ -37,6 +40,8 @@ class ShippedArtIT : UserTestSupport() {
 
     @Autowired private lateinit var teams: TeamRepository
 
+    @Autowired private lateinit var fielded: TeamSeasonRepository
+
     @Autowired private lateinit var games: GamePageRepository
 
     @Autowired private lateinit var files: FileService
@@ -54,20 +59,32 @@ class ShippedArtIT : UserTestSupport() {
         }
     }
 
+    /**
+     * The art a team is drawn with in one game, which belongs to the fielding rather than to
+     * the team: the same team plays other games and is drawn differently in each.
+     */
+    private fun bannerOf(game: String, name: String): File? =
+        teams.findByNameIgnoreCase(name)
+            ?.id
+            ?.let { id -> fielded.findAllByTeamId(id).firstOrNull { it.game == game }?.banner }
+
+    private fun fieldingOf(game: String, name: String): TeamSeason =
+        fielded.findAllByTeamId(teams.findByNameIgnoreCase(name)!!.id!!).first { it.game == game }
+
     @Test
     fun `a team the file gives art to has a banner`() {
         art.apply()
 
-        val team = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")
-        assertThat(team?.banner).isNotNull
-        assertThat(team?.banner?.type).isEqualTo(FileType.TEAM_BANNER)
+        val banner = bannerOf("VALORANT", "BS Huge")
+        assertThat(banner).isNotNull
+        assertThat(banner?.type).isEqualTo(FileType.TEAM_BANNER)
     }
 
     @Test
     fun `a banner is stored at the widths a picture of its kind is served at`() {
         art.apply()
 
-        val banner = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner!!
+        val banner = bannerOf("VALORANT", "BS Huge")!!
         // The art is 2560 wide, which is every width the kind lists.
         assertThat(banner.width).isEqualTo(2560)
         assertThat(files.findPublicImage(banner.path, FileType.TEAM_BANNER)).isNotNull
@@ -148,8 +165,8 @@ class ShippedArtIT : UserTestSupport() {
         art.apply()
 
         // Rocket League fields more teams than it has art, so a picture carries two of them.
-        val oogway = teams.findByGameAndNameIgnoreCase("ROCKET_LEAGUE", "BS Oogway")?.banner
-        val turtles = teams.findByGameAndNameIgnoreCase("ROCKET_LEAGUE", "BS Turtles")?.banner
+        val oogway = bannerOf("ROCKET_LEAGUE", "BS Oogway")
+        val turtles = bannerOf("ROCKET_LEAGUE", "BS Turtles")
         assertThat(oogway?.path).isEqualTo(turtles?.path)
     }
 
@@ -167,7 +184,7 @@ class ShippedArtIT : UserTestSupport() {
     @Test
     fun `bytes that have gone missing are written again at the address they had`() {
         art.apply()
-        val banner = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner!!
+        val banner = bannerOf("VALORANT", "BS Huge")!!
         val bytes = Paths.get(storageLocation).resolve(banner.path)
         Files.delete(bytes)
 
@@ -176,7 +193,7 @@ class ShippedArtIT : UserTestSupport() {
         // A lost storage volume repairs itself rather than invalidating every url anybody
         // cached, which only holds because the art is stored whether or not a slot wants it.
         assertThat(Files.exists(bytes)).isTrue()
-        assertThat(teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner?.path).isEqualTo(banner.path)
+        assertThat(bannerOf("VALORANT", "BS Huge")?.path).isEqualTo(banner.path)
     }
 
     @Test
@@ -203,14 +220,14 @@ class ShippedArtIT : UserTestSupport() {
             type = FileType.TEAM_BANNER,
             uploader = createUserWithRole(Role.ADMIN),
         )
-        val team = teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")!!
-        team.banner = chosen
-        teams.save(team)
+        val fielding = fieldingOf("VALORANT", "BS Huge")
+        fielding.banner = chosen
+        fielded.save(fielding)
 
         art.apply()
 
         // An admin's choice is later than the import, so the import leaves it alone.
-        assertThat(teams.findByGameAndNameIgnoreCase("VALORANT", "BS Huge")?.banner?.path).isEqualTo(chosen.path)
+        assertThat(bannerOf("VALORANT", "BS Huge")?.path).isEqualTo(chosen.path)
     }
 
     @Test

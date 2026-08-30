@@ -20,47 +20,59 @@ data class SeasonRequest(
     val endDate: LocalDate,
 )
 
-@Schema(description = "Create a team for a game")
+@Schema(description = "Create a team. A team is the association's rather than a game's, so it names none")
 data class CreateTeamRequest(
-    @field:NotNull(message = "Game is required")
-    val game: String,
-
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
     val name: String,
-
-    @Schema(description = "Where the team's banner is stored; nothing leaves the team without one")
-    @field:Size(max = 255, message = "Picture must be at most 255 characters")
-    val banner: String? = null,
 
     @Schema(description = "Where the team's icon is stored; nothing leaves the team without one")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val icon: String? = null,
 )
 
-@Schema(description = "Rename a team or change the pictures it is drawn with")
+@Schema(description = "Rename a team or change its icon. Its banner belongs to the fielding")
 data class UpdateTeamRequest(
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
     val name: String,
-
-    @Schema(description = "Where the team's banner is stored; nothing takes the banner away")
-    @field:Size(max = 255, message = "Picture must be at most 255 characters")
-    val banner: String? = null,
 
     @Schema(description = "Where the team's icon is stored; nothing takes the icon away")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val icon: String? = null,
 )
 
-@Schema(description = "Field a team in a season, with or without the line-up it last had")
+@Schema(description = "Field a team in a game in a season, with or without the line-up it last had")
 data class FieldTeamRequest(
-    @Schema(description = "Copy the team's most recent line-up into this season")
+    @field:NotBlank(message = "Game is required")
+    @field:Size(min = 1, max = 32)
+    @Schema(description = "The game it is being fielded in. A team may play more than one in a season")
+    val game: String,
+
+    @Schema(description = "Copy the line-up this team last had in this game into this season")
     val carryLineup: Boolean = false,
+
+    /**
+     * The art this team is drawn with in this game this season.
+     *
+     * Applied when it is named and left alone when it is not, which is not the rule the other
+     * saves here follow. Fielding is idempotent and is called to say "this team plays this
+     * season" as often as it is called to change a picture, so treating an unnamed banner as
+     * "take the art away" would strip a season's art every time somebody re-fielded a team.
+     * A fielding that is new takes the art of the last season this team played this game.
+     */
+    @Schema(description = "Where the art for this fielding is stored; nothing leaves what it has")
+    @field:Size(max = 255, message = "Picture must be at most 255 characters")
+    val banner: String? = null,
 )
 
 @Schema(description = "Put somebody on a team's roster for a season")
 data class AddRosterEntryRequest(
+    @field:NotBlank(message = "Game is required")
+    @field:Size(min = 1, max = 32)
+    @Schema(description = "The game the team is fielded in; naming somebody fields it there")
+    val game: String,
+
     @field:NotNull(message = "Season id is required")
     val seasonId: Long,
 

@@ -54,21 +54,24 @@ class R__Esports_seed : BaseJavaMigration() {
         val roster = parse(read("roster.csv"))
 
         val seasonIds = seasons.associate { row -> row.getValue("name") to upsertSeason(connection, row) }
-        val teamIds = teams.associate { row ->
-            (row.getValue("game") to row.getValue("name")) to upsertTeam(connection, row)
-        }
+        // Keyed by name alone: the file lists a team once per game it played, because the art is
+        // per game, but those rows are one team.
+        val teamIds = teams.map { row -> row.getValue("name") }
+            .distinct()
+            .associateWith { name -> upsertTeam(connection, name) }
 
         var written = 0
         var skipped = 0
         roster.forEach { row ->
-            val teamId = teamIds[row.getValue("game") to row.getValue("team")]
+            val teamId = teamIds[row.getValue("team")]
             val seasonId = seasonIds[row.getValue("season")]
             if (teamId == null || seasonId == null) {
                 // The team or season it belongs to is deleted, so the entry has nowhere to go.
                 skipped += 1
                 return@forEach
             }
-            if (upsertEntry(connection, teamId, seasonId, row)) written += 1 else skipped += 1
+            val game = row.getValue("game")
+            if (upsertEntry(connection, teamId, game, seasonId, row)) written += 1 else skipped += 1
         }
         // Only where places were written: whoever was just attached to one is the only member
         // who can have a handle to take up.
@@ -174,23 +177,33 @@ class R__Esports_seed : BaseJavaMigration() {
      * migration runner has neither of; the start-up step that does have them reads the same
      * column and puts the art on the team once it is up.
      */
-    private fun upsertTeam(connection: Connection, row: Map<String, String>): Long? {
-        val game = row.getValue("game")
-        val name = row.getValue("name")
-        val find = "SELECT id FROM team WHERE game = ? AND name = ?"
-        val existing = activeId(connection, "$find AND $ACTIVE", game, name)
-        if (existing == null && isDeleted(connection, "$find AND NOT $ACTIVE", game, name)) return null
+    /**
+     * A team, found or written by name alone.
+     *
+     * The pool is the association's rather than a game's, so a name names one team however many
+     * games it plays: BS HyperS is listed once for CS:GO and once for CS2 in the file, and both
+     * rows mean the same team, drawn with that game's own art.
+     */
+    private fun upsertTeam(connection: Connection, name: String): Long? {
+        val find = "SELECT id FROM team WHERE name = ?"
+        val existing = activeId(connection, "$find AND $ACTIVE", name)
+        if (existing == null && isDeleted(connection, "$find AND NOT $ACTIVE", name)) return null
         if (existing != null) return existing
-        connection.prepareStatement("INSERT INTO team (game, name) VALUES (?, ?)").use { statement ->
-            statement.setString(1, game)
-            statement.setString(2, name)
+        connection.prepareStatement("INSERT INTO team (name) VALUES (?)").use { statement ->
+            statement.setString(1, name)
             statement.executeUpdate()
         }
-        return activeId(connection, "$find AND $ACTIVE", game, name)
+        return activeId(connection, "$find AND $ACTIVE", name)
     }
 
     /** True when the entry now says what the file says; false when it is left to its deletion. */
-    private fun upsertEntry(connection: Connection, teamId: Long, seasonId: Long, row: Map<String, String>): Boolean {
+    private fun upsertEntry(
+        connection: Connection,
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+        row: Map<String, String>,
+    ): Boolean {
         val handle = row.getValue("handle")
         val role = row.getValue("role")
         val displayName = row.getValue("display_name").ifBlank { null }
@@ -203,13 +216,14 @@ class R__Esports_seed : BaseJavaMigration() {
         val find = """
             SELECT e.id FROM team_roster_entry e
             JOIN team_season ts ON ts.id = e.team_season_id
-            WHERE ts.team_id = ? AND ts.season_id = ? AND e.handle = ?
+            WHERE ts.team_id = ? AND ts.game = ? AND ts.season_id = ? AND e.handle = ?
         """.trimIndent()
 
         connection.prepareStatement("$find AND e.$ACTIVE").use { statement ->
             statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
-            statement.setString(3, handle)
+            statement.setString(2, game)
+            statement.setLong(3, seasonId)
+            statement.setString(4, handle)
             statement.executeQuery().use { rows ->
                 if (rows.next()) {
                     val id = rows.getLong(1)
@@ -236,13 +250,14 @@ class R__Esports_seed : BaseJavaMigration() {
         }
         connection.prepareStatement("$find AND NOT e.$ACTIVE").use { statement ->
             statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
-            statement.setString(3, handle)
+            statement.setString(2, game)
+            statement.setLong(3, seasonId)
+            statement.setString(4, handle)
             statement.executeQuery().use { rows -> if (rows.next()) return false }
         }
         // Only now, on the path that actually writes somebody down. Fielding the team before
         // this point would field it on every run, undoing a board that dropped it.
-        val fieldingId = fieldTeam(connection, teamId, seasonId)
+        val fieldingId = fieldTeam(connection, teamId, game, seasonId)
         connection.prepareStatement(
             """
             INSERT INTO team_roster_entry
@@ -303,13 +318,12 @@ class R__Esports_seed : BaseJavaMigration() {
             INSERT INTO user_game_account (user_id, game, handle)
             SELECT x.user_id, x.game, x.handle
             FROM (
-                SELECT e.user_id, t.game, e.handle,
+                SELECT e.user_id, ts.game, e.handle,
                        ROW_NUMBER() OVER (
-                           PARTITION BY e.user_id, t.game ORDER BY s.start_date DESC, e.id DESC
+                           PARTITION BY e.user_id, ts.game ORDER BY s.start_date DESC, e.id DESC
                        ) AS rn
                 FROM team_roster_entry e
                 JOIN team_season ts ON ts.id = e.team_season_id
-                JOIN team t ON t.id = ts.team_id
                 JOIN season s ON s.id = ts.season_id
                 WHERE e.user_id IS NOT NULL AND e.$ACTIVE
             ) x
@@ -324,20 +338,22 @@ class R__Esports_seed : BaseJavaMigration() {
      * Records that a team was fielded in a season, unless it already says so, and answers with
      * the fielding either way — a line-up is written against it.
      */
-    private fun fieldTeam(connection: Connection, teamId: Long, seasonId: Long): Long {
+    private fun fieldTeam(connection: Connection, teamId: Long, game: String, seasonId: Long): Long {
         connection.prepareStatement(
-            "SELECT id FROM team_season WHERE team_id = ? AND season_id = ? AND $ACTIVE",
+            "SELECT id FROM team_season WHERE team_id = ? AND game = ? AND season_id = ? AND $ACTIVE",
         ).use { statement ->
             statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
+            statement.setString(2, game)
+            statement.setLong(3, seasonId)
             statement.executeQuery().use { rows -> if (rows.next()) return rows.getLong(1) }
         }
         connection.prepareStatement(
-            "INSERT INTO team_season (team_id, season_id) VALUES (?, ?)",
+            "INSERT INTO team_season (team_id, game, season_id) VALUES (?, ?, ?)",
             Statement.RETURN_GENERATED_KEYS,
         ).use { statement ->
             statement.setLong(1, teamId)
-            statement.setLong(2, seasonId)
+            statement.setString(2, game)
+            statement.setLong(3, seasonId)
             statement.executeUpdate()
             statement.generatedKeys.use { keys ->
                 check(keys.next()) { "Fielding team $teamId in season $seasonId returned no id" }

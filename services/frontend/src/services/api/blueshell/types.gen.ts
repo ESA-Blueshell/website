@@ -47,6 +47,10 @@ export type AddRosterEntryRequest = {
      */
     description?: string | null;
     displayName?: string | null;
+    /**
+     * The game the team is fielded in; naming somebody fields it there
+     */
+    game: string;
     handle: string;
     /**
      * Where this entry's picture is stored; nothing leaves it without one
@@ -591,14 +595,9 @@ export type CreateTargetRequest = {
 };
 
 /**
- * Create a team for a game
+ * Create a team. A team is the association's rather than a game's, so it names none
  */
 export type CreateTeamRequest = {
-    /**
-     * Where the team's banner is stored; nothing leaves the team without one
-     */
-    banner?: string | null;
-    game: string;
     /**
      * Where the team's icon is stored; nothing leaves the team without one
      */
@@ -770,13 +769,21 @@ export type FailedTargetMove = {
 };
 
 /**
- * Field a team in a season, with or without the line-up it last had
+ * Field a team in a game in a season, with or without the line-up it last had
  */
 export type FieldTeamRequest = {
     /**
-     * Copy the team's most recent line-up into this season
+     * Where the art for this fielding is stored; nothing leaves what it has
+     */
+    banner?: string | null;
+    /**
+     * Copy the line-up this team last had in this game into this season
      */
     carryLineup: boolean;
+    /**
+     * The game it is being fielded in. A team may play more than one in a season
+     */
+    game: string;
 };
 
 /**
@@ -814,11 +821,27 @@ export type FieldValidationError = {
  */
 export type FieldedTeamResponse = {
     /**
+     * The art it is drawn with this season, carried across from the last one it played
+     */
+    banner?: Image | null;
+    /**
      * The entries copied from the team's last season; empty when nothing was carried
      */
     carried: Array<RosterEntryResponse>;
+    /**
+     * The game it was fielded in
+     */
+    game: string;
     season: SeasonResponse;
     team: TeamResponse;
+};
+
+/**
+ * A team fielded in a game in a season, which is where a line-up hangs
+ */
+export type FieldingResponse = {
+    game: string;
+    season: SeasonResponse;
 };
 
 export type FileResponse = {
@@ -1522,12 +1545,7 @@ export enum TargetSystem {
  */
 export type TeamResponse = {
     /**
-     * The team's own banner, drawn in the slice for it
-     */
-    banner?: Image | null;
-    game: string;
-    /**
-     * The team's own icon, drawn in that slice beside the name
+     * The team's own icon, drawn in its slice beside the name. The banner it is drawn on belongs to the fielding, not to the team
      */
     icon?: Image | null;
     id: number;
@@ -1739,13 +1757,9 @@ export type UpdateSponsorRequest = {
 };
 
 /**
- * Rename a team or change the pictures it is drawn with
+ * Rename a team or change its icon. Its banner belongs to the fielding
  */
 export type UpdateTeamRequest = {
-    /**
-     * Where the team's banner is stored; nothing takes the banner away
-     */
-    banner?: string | null;
     /**
      * Where the team's icon is stored; nothing takes the icon away
      */
@@ -4189,7 +4203,9 @@ export type UnfieldTeamData = {
         seasonId: number;
         teamId: number;
     };
-    query?: never;
+    query: {
+        game: string;
+    };
     url: '/esports/seasons/{seasonId}/teams/{teamId}';
 };
 
@@ -4228,7 +4244,7 @@ export type UnfieldTeamResponses = {
 export type UnfieldTeamResponse = UnfieldTeamResponses[keyof UnfieldTeamResponses];
 
 export type FieldTeamData = {
-    body?: FieldTeamRequest;
+    body: FieldTeamRequest;
     path: {
         seasonId: number;
         teamId: number;
@@ -4274,9 +4290,7 @@ export type FieldTeamResponse = FieldTeamResponses[keyof FieldTeamResponses];
 export type FindTeamsData = {
     body?: never;
     path?: never;
-    query: {
-        game: string;
-    };
+    query?: never;
     url: '/esports/teams';
 };
 
@@ -4447,6 +4461,7 @@ export type FindRosterData = {
         teamId: number;
     };
     query: {
+        game: string;
         seasonId: number;
     };
     url: '/esports/teams/{teamId}/roster';
@@ -4567,7 +4582,7 @@ export type FindTeamSeasonsResponses = {
     /**
      * OK
      */
-    200: Array<SeasonResponse>;
+    200: Array<FieldingResponse>;
 };
 
 export type FindTeamSeasonsResponse = FindTeamSeasonsResponses[keyof FindTeamSeasonsResponses];

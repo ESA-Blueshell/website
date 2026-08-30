@@ -36,7 +36,9 @@ class EsportsSeedLoadIT : UserTestSupport() {
         // teams and five hundred and twenty-six appearances.
         assertThat(count("game_page")).isEqualTo(8)
         assertThat(count("season")).isEqualTo(12)
-        assertThat(count("team")).isEqualTo(27)
+        // 26 teams from 27 rows: BS HyperS is listed for CS:GO and for CS2, and is one team
+        // that changed the game it plays rather than two that share a name.
+        assertThat(count("team")).isEqualTo(26)
         assertThat(count("team_roster_entry")).isEqualTo(526)
     }
 
@@ -59,7 +61,8 @@ class EsportsSeedLoadIT : UserTestSupport() {
         assertThat(count("team")).isGreaterThan(0)
         assertThat(
             jdbc.queryForObject(
-                "SELECT COUNT(*) FROM team WHERE game IN ('CSGO', 'SMASH') AND deleted_at = '9999-12-31 23:59:59'",
+                "SELECT COUNT(DISTINCT ts.team_id) FROM team_season ts JOIN team t ON t.id = ts.team_id" +
+                    " WHERE ts.game IN ('CSGO', 'SMASH') AND t.deleted_at = '9999-12-31 23:59:59'",
                 Int::class.java,
             ),
         ).isGreaterThan(0)
@@ -119,7 +122,8 @@ class EsportsSeedLoadIT : UserTestSupport() {
     fun `a deleted team is left deleted rather than resurrected by the next run`() {
         runLoader()
         val teamId = jdbc.queryForObject(
-            "SELECT id FROM team WHERE game = 'SMASH' AND deleted_at = '9999-12-31 23:59:59' ORDER BY id LIMIT 1",
+            "SELECT t.id FROM team t JOIN team_season ts ON ts.team_id = t.id" +
+                " WHERE ts.game = 'SMASH' AND t.deleted_at = '9999-12-31 23:59:59' ORDER BY t.id LIMIT 1",
             Long::class.java,
         )!!
         val name = jdbc.queryForObject("SELECT name FROM team WHERE id = ?", String::class.java, teamId)!!
@@ -131,7 +135,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
         // edit anywhere in the file must not undo it.
         assertThat(
             jdbc.queryForObject(
-                "SELECT COUNT(*) FROM team WHERE game = 'SMASH' AND name = ? AND deleted_at = '9999-12-31 23:59:59'",
+                "SELECT COUNT(*) FROM team WHERE name = ? AND deleted_at = '9999-12-31 23:59:59'",
                 Int::class.java,
                 name,
             ),
@@ -143,7 +147,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
         runLoader()
         val fielding = jdbc.queryForMap(
             "SELECT ts.id, ts.team_id, ts.season_id FROM team_season ts JOIN team t ON t.id = ts.team_id" +
-                " WHERE t.game = 'SMASH' AND ts.deleted_at = '9999-12-31 23:59:59' ORDER BY ts.id LIMIT 1",
+                " WHERE ts.game = 'SMASH' AND ts.deleted_at = '9999-12-31 23:59:59' ORDER BY ts.id LIMIT 1",
         )
         val teamId = fielding.getValue("team_id") as Long
         val seasonId = fielding.getValue("season_id") as Long

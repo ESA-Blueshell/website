@@ -1,10 +1,12 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
@@ -14,6 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.LocalDate
 
 /**
  * A game's own record: what it is called, the art it is drawn with, the address it answers to,
@@ -22,6 +25,30 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class GamePageIT : UserTestSupport() {
+    @Autowired private lateinit var teams: TeamRepository
+
+    @Autowired private lateinit var seasons: SeasonRepository
+
+    @Autowired private lateinit var fielded: TeamSeasonService
+
+    /**
+     * A team fielded in a game, which is what makes a game hold something. A team on its own
+     * holds nothing now: it belongs to the association rather than to a game, and the fielding
+     * is what says which game was played.
+     */
+    private fun fieldATeamIn(game: String): Long {
+        val unique = System.nanoTime()
+        val team = teams.save(Team(name = "BS Holders $unique"))
+        val season = seasons.save(
+            Season(
+                name = "Season $unique",
+                startDate = LocalDate.of(2030, 9, 1),
+                endDate = LocalDate.of(2031, 1, 31),
+            ),
+        )
+        fielded.field(team.id!!, game, season.id!!)
+        return team.id!!
+    }
 
     /**
      * Nothing is seeded here. The games are what the migration established, and the suite's
@@ -45,14 +72,25 @@ class GamePageIT : UserTestSupport() {
     }
 
     @Test
-    fun `a team cannot be written for a game that does not exist`() {
+    fun `a team cannot be fielded in a game that does not exist`() {
         val board = createUserWithRole(Role.BOARD)
+        val unique = System.nanoTime()
+        val team = teams.save(Team(name = "Table Tennis Firsts $unique"))
+        val season = seasons.save(
+            Season(
+                name = "Season $unique",
+                startDate = LocalDate.of(2030, 9, 1),
+                endDate = LocalDate.of(2031, 1, 31),
+            ),
+        )
 
+        // The team itself names no game — it is the association's — so the refusal belongs to
+        // the fielding, which is where a game is named.
         mvc.perform(
-            post("/esports/teams")
+            put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id)
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"PONG","name":"Table Tennis Firsts"}"""),
+                .content("""{"game":"PONG"}"""),
         )
             .andExpect(status().isBadRequest)
     }
@@ -119,11 +157,13 @@ class GamePageIT : UserTestSupport() {
      * rejected one, so a statement that is simply malformed cannot read as the tie holding.
      */
     @Test
-    fun `a team cannot name a game that does not exist`() {
-        insertTeamNamed("VALORANT", "Blueshell Firsts")
+    fun `a fielding cannot name a game that does not exist`() {
+        // The tie is on the fielding rather than on the team: a team is the association's and
+        // plays whatever games it plays, so the game it played is a fact about being fielded.
+        insertFielding("VALORANT")
 
-        assertThatThrownBy { insertTeamNamed("PONG", "Table Tennis Firsts") }
-            .hasMessageContaining("fk_team_game")
+        assertThatThrownBy { insertFielding("PONG") }
+            .hasMessageContaining("fk_team_season_game")
     }
 
     @Test
@@ -135,10 +175,24 @@ class GamePageIT : UserTestSupport() {
             .hasMessageContaining("fk_user_game_account_game")
     }
 
-    private fun insertTeamNamed(game: String, name: String) = transactionTemplate.execute {
-        entityManager.createNativeQuery("INSERT INTO team (game, name) VALUES (:game, :name)")
+    private fun insertFielding(game: String) = transactionTemplate.execute {
+        val unique = System.nanoTime()
+        entityManager.createNativeQuery("INSERT INTO team (name) VALUES (:name)")
+            .setParameter("name", "Blueshell Firsts $unique")
+            .executeUpdate()
+        entityManager.createNativeQuery(
+            "INSERT INTO season (name, start_date, end_date) VALUES (:name, '2030-09-01', '2031-01-31')",
+        ).setParameter("name", "Season $unique").executeUpdate()
+        entityManager.createNativeQuery(
+            """
+            INSERT INTO team_season (team_id, game, season_id)
+            SELECT t.id, :game, s.id FROM team t, season s
+            WHERE t.name = :teamName AND s.name = :seasonName
+            """,
+        )
             .setParameter("game", game)
-            .setParameter("name", name)
+            .setParameter("teamName", "Blueshell Firsts $unique")
+            .setParameter("seasonName", "Season $unique")
             .executeUpdate()
         entityManager.flush()
     }
@@ -230,12 +284,22 @@ class GamePageIT : UserTestSupport() {
         ).andExpect(status().isCreated)
 
         // The code the api answered with is a real game now, which the foreign key agrees with.
-        mvc.perform(
-            post("/esports/teams").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"PONG","name":"BS Paddlers"}"""),
+        val unique = System.nanoTime()
+        val team = teams.save(Team(name = "BS Paddlers $unique"))
+        val season = seasons.save(
+            Season(
+                name = "Season $unique",
+                startDate = LocalDate.of(2030, 9, 1),
+                endDate = LocalDate.of(2031, 1, 31),
+            ),
         )
-            .andExpect(status().isCreated)
+
+        mvc.perform(
+            put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id).with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"game":"PONG"}"""),
+        )
+            .andExpect(status().isOk)
             .andExpect(jsonPath("$.game").value("PONG"))
     }
 
@@ -439,11 +503,7 @@ class GamePageIT : UserTestSupport() {
     @Test
     fun `a game with teams recorded in it is refused, and offered the softer act`() {
         val board = createUserWithRole(Role.BOARD)
-        mvc.perform(
-            post("/esports/teams").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"VALORANT","name":"BS Holders"}"""),
-        ).andExpect(status().isCreated)
+        fieldATeamIn("VALORANT")
 
         mvc.perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
             .andExpect(status().isConflict)
@@ -457,11 +517,7 @@ class GamePageIT : UserTestSupport() {
     @Test
     fun `the reason a removal was refused says how much the game holds`() {
         val board = createUserWithRole(Role.BOARD)
-        mvc.perform(
-            post("/esports/teams").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"GEOGUESSR","name":"BS Guessers"}"""),
-        ).andExpect(status().isCreated)
+        fieldATeamIn("GEOGUESSR")
 
         mvc.perform(delete("/esports/games/{game}", "GEOGUESSR").with(bearer(board)))
             .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("1 team")))

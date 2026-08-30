@@ -251,7 +251,7 @@ const dropTeamFromSeason = async () => {
   droppingNow.value = true
   dropFailure.value = null
   try {
-    await unfieldTeamFromSeason(team.id, seasonId)
+    await unfieldTeamFromSeason(team.id, props.game, seasonId)
     dropping.value = null
     await reload(seasonId)
   } catch (error) {
@@ -481,6 +481,7 @@ const seasonSaved = (saved: Season) => {
               <template #editor="{item}">
                 <lineup-editor
                   :accent="identity.accent"
+                  :game="props.game"
                   :open="lineupOpen && item.id === editingTeam?.id"
                   :season="season"
                   :team-id="editingTeam?.id ?? null"

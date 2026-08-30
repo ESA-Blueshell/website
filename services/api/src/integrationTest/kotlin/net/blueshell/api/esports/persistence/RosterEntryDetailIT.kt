@@ -22,6 +22,9 @@ import net.blueshell.api.esports.domain.EsportsPageQueryService
  */
 @SpringBootTest
 class RosterEntryDetailIT : UserTestSupport() {
+    /** These fixtures all play one game; the fielding names it now. */
+    private val GAME = "TRACKMANIA"
+
     @Autowired private lateinit var rosters: TeamRosterService
 
     @Autowired private lateinit var page: EsportsPageQueryService
@@ -38,7 +41,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         ),
     )
 
-    private fun team(): Team = teams.save(Team(game = "TRACKMANIA", name = "BS Detail ${System.nanoTime()}"))
+    private fun team(): Team = teams.save(Team(name = "BS Detail ${System.nanoTime()}"))
 
     @Test
     fun `a roster entry carries what somebody did and a caption about them`() {
@@ -46,7 +49,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val team = team()
 
         val entry = rosters.add(
-            team.id!!, season.id!!, "driver", TeamRole.PLAYER, null, null,
+            team.id!!, GAME, season.id!!, "driver", TeamRole.PLAYER, null, null,
             roleTitle = "Captain",
             description = "Holds the **middle** together.",
         )
@@ -60,7 +63,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val season = season()
         val team = team()
         rosters.add(
-            team.id!!, season.id!!, "driver", TeamRole.PLAYER, null, null,
+            team.id!!, GAME, season.id!!, "driver", TeamRole.PLAYER, null, null,
             roleTitle = "In-game leader",
             description = "Calls the rounds.",
         )
@@ -79,7 +82,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val team = team()
 
         val entry = rosters.add(
-            team.id!!, season.id!!, "quiet", TeamRole.PLAYER, null, null,
+            team.id!!, GAME, season.id!!, "quiet", TeamRole.PLAYER, null, null,
             roleTitle = "   ",
             description = "",
         )
@@ -100,7 +103,7 @@ class RosterEntryDetailIT : UserTestSupport() {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"seasonId":${season.id},"handle":"windy","role":"PLAYER","description":"${"a".repeat(281)}"}
+                    {"game":"$GAME","seasonId":${season.id},"handle":"windy","role":"PLAYER","description":"${"a".repeat(281)}"}
                     """.trimIndent(),
                 ),
         ).andExpect(status().isBadRequest)
@@ -118,7 +121,7 @@ class RosterEntryDetailIT : UserTestSupport() {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"seasonId":${season.id},"handle":"exact","role":"PLAYER","description":"${"a".repeat(280)}"}
+                    {"game":"$GAME","seasonId":${season.id},"handle":"exact","role":"PLAYER","description":"${"a".repeat(280)}"}
                     """.trimIndent(),
                 ),
         )
@@ -137,8 +140,8 @@ class RosterEntryDetailIT : UserTestSupport() {
             ),
         )
         val team = team()
-        val first = rosters.add(team.id!!, earlier.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Captain")
-        rosters.add(team.id!!, later.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Coach")
+        val first = rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Captain")
+        rosters.add(team.id!!, GAME, later.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Coach")
 
         rosters.update(
             id = first.id!!,
@@ -149,7 +152,7 @@ class RosterEntryDetailIT : UserTestSupport() {
             roleTitle = "Stand-in captain",
         )
 
-        val laterEntry = rosters.findByTeamAndSeason(team.id!!, later.id!!).single()
+        val laterEntry = rosters.findByTeamAndSeason(team.id!!, GAME, later.id!!).single()
         assertThat(laterEntry.roleTitle).isEqualTo("Coach")
     }
 }

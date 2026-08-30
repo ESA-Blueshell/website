@@ -20,11 +20,19 @@ ALTER TABLE game_page
     ADD CONSTRAINT fk_game_page_banner FOREIGN KEY (banner_file_id) REFERENCES files (id),
     ADD CONSTRAINT fk_game_page_icon FOREIGN KEY (icon_file_id) REFERENCES files (id);
 
+-- A team's two pictures have two different lifetimes, so they sit on two different rows. The
+-- icon is the logo beside its name and belongs to the team: it is who they are, and it is the
+-- one thing that ties BS HyperS on a CS:GO page to BS HyperS on a CS2 one. The banner is the
+-- large art behind the slice and belongs to the fielding, because it is game-flavoured -- the
+-- same team keeps its CS:GO art on CS:GO seasons and its CS2 art on CS2 seasons -- and because
+-- a team fielded again carries the last one across rather than being asked for it every season.
 ALTER TABLE team
-    ADD COLUMN banner_file_id BIGINT NULL AFTER name,
-    ADD COLUMN icon_file_id   BIGINT NULL AFTER banner_file_id,
-    ADD CONSTRAINT fk_team_banner FOREIGN KEY (banner_file_id) REFERENCES files (id),
+    ADD COLUMN icon_file_id   BIGINT NULL AFTER name,
     ADD CONSTRAINT fk_team_icon FOREIGN KEY (icon_file_id) REFERENCES files (id);
+
+ALTER TABLE team_season
+    ADD COLUMN banner_file_id BIGINT NULL AFTER season_id,
+    ADD CONSTRAINT fk_team_season_banner FOREIGN KEY (banner_file_id) REFERENCES files (id);
 
 ALTER TABLE team_roster_entry
     ADD COLUMN icon_file_id BIGINT NULL AFTER description,

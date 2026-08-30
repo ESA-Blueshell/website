@@ -2,6 +2,7 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.GamePageRepository
 import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
@@ -45,6 +46,7 @@ class ShippedArt(
     private val files: FileService,
     private val users: UserService,
     private val teams: TeamRepository,
+    private val fielded: TeamSeasonRepository,
     private val games: GamePageRepository,
     private val transactions: TransactionTemplate,
 ) {
@@ -97,7 +99,12 @@ class ShippedArt(
     }
 
     /**
-     * The team's banner, where the team is there and has none.
+     * The team's banner in one game, on every season it played that game without one.
+     *
+     * The art belongs to the fielding rather than to the team, because the same team plays
+     * different games and is drawn with each game's own art. The file names it once per team per
+     * game, and every season of that pairing takes it, which is what makes the art appear on a
+     * season somebody added long after the file was written.
      *
      * A team the file names and the database does not is not an error here: the seed leaves a
      * team that was removed removed, and its row stays in the file until somebody takes it out.
@@ -109,10 +116,14 @@ class ShippedArt(
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
-        val team = teams.findByGameAndNameIgnoreCase(game, name) ?: return@execute 0
-        if (team.banner != null) return@execute 0
-        team.banner = store(art, FileType.TEAM_BANNER, owner, stored)
-        teams.save(team)
+        val team = teams.findByNameIgnoreCase(name) ?: return@execute 0
+        val bare = fielded.findAllByTeamId(team.id!!).filter { it.game == game && it.banner == null }
+        if (bare.isEmpty()) return@execute 0
+        val picture = store(art, FileType.TEAM_BANNER, owner, stored)
+        bare.forEach { fielding ->
+            fielding.banner = picture
+            fielded.save(fielding)
+        }
         1
     }
 

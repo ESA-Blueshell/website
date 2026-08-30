@@ -16,12 +16,15 @@ data class SeasonResponse(
 @Schema(description = "A team the association fields in one game")
 data class TeamResponse(
     val id: Long,
-    val game: String,
     val name: String,
-    @Schema(description = "The team's own banner, drawn in the slice for it")
-    val banner: Image? = null,
-    @Schema(description = "The team's own icon, drawn in that slice beside the name")
+    @Schema(description = "The team's own icon, drawn in its slice beside the name. The banner it is drawn on belongs to the fielding, not to the team")
     val icon: Image? = null,
+)
+
+@Schema(description = "A team fielded in a game in a season, which is where a line-up hangs")
+data class FieldingResponse(
+    val game: String,
+    val season: SeasonResponse,
 )
 
 @Schema(description = "A game: what it is called, the art it is drawn with, and how its page presents it")
@@ -99,7 +102,11 @@ data class SeasonContentsResponse(
 @Schema(description = "A team now fielded in a season, and whatever line-up came across with it")
 data class FieldedTeamResponse(
     val team: TeamResponse,
+    @Schema(description = "The game it was fielded in")
+    val game: String,
     val season: SeasonResponse,
+    @Schema(description = "The art it is drawn with this season, carried across from the last one it played")
+    val banner: Image? = null,
     @Schema(description = "The entries copied from the team's last season; empty when nothing was carried")
     val carried: List<RosterEntryResponse>,
 )

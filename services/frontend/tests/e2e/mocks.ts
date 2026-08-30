@@ -238,7 +238,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const gamesEdited = new Map<string, Record<string, unknown>>()
   /** Games removed during the test, which the reads then leave out. */
   const gamesGone = new Set<string>()
-  const fieldedNow: Array<{seasonId: number; teamId: number; members: Array<Record<string, unknown>>}> = []
+  const fieldedNow: Array<{
+    seasonId: number
+    teamId: number
+    game: string
+    members: Array<Record<string, unknown>>
+  }> = []
   let nextTeamId = 70
   let nextEntryId = 200
   /** Seasons and fieldings taken away during the test, which the reads then leave out. */
@@ -778,20 +783,20 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && /^\/esports\/games\/[A-Z0-9_]+\/contents$/.test(path)) {
       const code = path.split("/")[3] as string
-      const held = [...(fixtures.esportsTeams ?? []), ...teamsMade].filter(one => one.game === code)
+      const held = new Set(fieldedNow.filter(one => one.game === code).map(one => one.teamId))
       const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
-      return fulfillJson(route, {teams: held.length + seeded, players: (held.length + seeded) * 3})
+      return fulfillJson(route, {teams: held.size + seeded, players: (held.size + seeded) * 3})
     }
 
     if (method === "DELETE" && /^\/esports\/games\/[A-Z0-9_]+$/.test(path)) {
       const code = path.split("/").pop() as string
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-      const held = [...(fixtures.esportsTeams ?? []), ...teamsMade].filter(one => one.game === code)
+      const held = new Set(fieldedNow.filter(one => one.game === code).map(one => one.teamId))
       const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
-      if (held.length + seeded > 0) {
+      if (held.size + seeded > 0) {
         const game = known.find(one => one.game === code)
         return fulfillJson(route, {
-          detail: `${game?.name ?? code} holds ${held.length + seeded} teams and 6 roster places. `
+          detail: `${game?.name ?? code} holds ${held.size + seeded} teams and 6 roster places. `
             + "Mark it as no longer fielded instead, and everything it played stays readable.",
         }, 409)
       }
@@ -857,12 +862,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         .filter(one => game !== "CSGO" || one.id === 19)
       // Teams fielded during this test belong to the page the same way the seeded ones do.
       const shownSeason = Number((page.season as {id: number} | undefined)?.id ?? requested ?? 20)
+      // Which game a team played is the fielding's to say now, not the team's.
       const extra = fieldedNow
-        .filter(one => one.seasonId === shownSeason)
+        .filter(one => one.seasonId === shownSeason && one.game === game)
         .map(one => ({one, team: teamsMade.find(made => made.id === one.teamId)
-          ?? [{id: 3, game: "VALORANT", name: "BS Old Guard", banner: null}].find(known => known.id === one.teamId)}))
-        .filter(row => row.team != null && row.team.game === game)
-        .map(row => ({id: row.one.teamId, name: row.team!.name, banner: row.team!.banner ?? null, members: row.one.members}))
+          ?? [{id: 3, name: "BS Old Guard"}].find(known => known.id === one.teamId)}))
+        .filter(row => row.team != null)
+        .map(row => ({
+          id: row.one.teamId,
+          name: row.team!.name,
+          banner: teamBanners.get(row.one.teamId) ?? null,
+          members: row.one.members,
+        }))
       const fieldsThis = game === "VALORANT" || game === "CS2" || (game === "CSGO" && shownSeason === 19)
       // The seeded team's members come from the same line-up the admin edits, so a change
       // made there is a change here.
@@ -939,49 +950,48 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         ),
       })
     }
+    // The pool is the association's rather than a game's, so it is answered whole. A team
+    // that has only ever played another game is still one the board can field in this one.
     if (method === "GET" && path === "/esports/teams") {
-      const forGame = url.searchParams.get("game")
       const known = fixtures.esportsTeams ?? [
-        {id: 1, game: "VALORANT", name: "BS Waterboarders", banner: null, icon: null},
-        {id: 2, game: "VALORANT", name: "BS SpicyWater", banner: null, icon: null},
-        {id: 3, game: "VALORANT", name: "BS Old Guard", banner: null, icon: null},
+        {id: 1, name: "BS Waterboarders", icon: null},
+        {id: 2, name: "BS SpicyWater", icon: null},
+        {id: 3, name: "BS Old Guard", icon: null},
       ]
-      const all = [...known, ...teamsMade]
-      return fulfillJson(route, forGame ? all.filter(team => team.game === forGame) : all)
+      return fulfillJson(route, [...known, ...teamsMade])
     }
     if (method === "POST" && path === "/esports/teams") {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       nextTeamId += 1
       const banner = pictureNamed(body.banner)
       const icon = pictureNamed(body.icon)
-      const team = {id: nextTeamId, game: body.game, name: body.name, banner: banner ?? null, icon: icon ?? null}
+      const team = {id: nextTeamId, name: body.name, icon: icon ?? null}
       teamsMade.push(team)
       if (banner) teamBanners.set(nextTeamId, banner)
       if (icon) teamIcons.set(nextTeamId, icon)
       return fulfillJson(route, team, 201)
     }
-    // Both pictures are part of this write, so a save naming neither takes the team's away —
-    // which is what the picker's Remove means once the dialog around it is saved.
+    // The logo is part of this write, so a save naming none takes the team's away — which is
+    // what the picker's Remove means once the dialog around it is saved. The banner is not
+    // here: it belongs to the fielding, and is written with the season.
     if (method === "PUT" && /^\/esports\/teams\/\d+$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       const id = Number(path.split("/").pop())
-      const banner = pictureNamed(body.banner)
       const icon = pictureNamed(body.icon)
-      renamed.set(id, {name: body.name, banner: banner ?? null, icon: icon ?? null})
-      if (banner) teamBanners.set(id, banner)
-      else teamBanners.delete(id)
+      renamed.set(id, {name: body.name, banner: teamBanners.get(id) ?? null, icon: icon ?? null})
       if (icon) teamIcons.set(id, icon)
       else teamIcons.delete(id)
-      return fulfillJson(route, {id, game: "VALORANT", name: body.name, banner: banner ?? null, icon: icon ?? null})
+      return fulfillJson(route, {id, name: body.name, icon: icon ?? null})
     }
     if (method === "DELETE" && /^\/esports\/teams\/\d+$/.test(path)) {
       goneTeams.add(Number(path.split("/").pop()))
       return route.fulfill({status: 204, body: ""})
     }
     if (method === "GET" && /^\/esports\/teams\/\d+\/seasons$/.test(path)) {
-      // Only the one team in these fixtures has a season behind it to carry from.
+      // Only the one team in these fixtures has a line-up behind it to carry from. A fielding
+      // rather than a season, because a team that played two games in one season has two.
       const teamId = Number(path.split("/")[3])
-      return fulfillJson(route, teamId === 3 ? [esportsSeasons[1]] : [])
+      return fulfillJson(route, teamId === 3 ? [{game: "VALORANT", season: esportsSeasons[1]}] : [])
     }
     if (method === "PUT" && /^\/esports\/seasons\/\d+\/teams\/\d+$/.test(path)) {
       const parts = path.split("/")
@@ -989,16 +999,21 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const teamId = Number(parts[5])
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       const team = [...(fixtures.esportsTeams ?? []), ...teamsMade,
-        {id: 1, game: "VALORANT", name: "BS Waterboarders", image: "valorantesports1.jpg"},
-        {id: 2, game: "VALORANT", name: "BS SpicyWater", image: "valorantesports2.jpg"},
-        {id: 3, game: "VALORANT", name: "BS Old Guard", image: null},
-      ].find(one => one.id === teamId) ?? {id: teamId, game: "VALORANT", name: `Team ${teamId}`, image: null}
+        {id: 1, name: "BS Waterboarders"},
+        {id: 2, name: "BS SpicyWater"},
+        {id: 3, name: "BS Old Guard"},
+      ].find(one => one.id === teamId) ?? {id: teamId, name: `Team ${teamId}`}
+      // The art is the fielding's, and naming none leaves what it has.
+      const banner = pictureNamed(body.banner)
+      if (banner) teamBanners.set(teamId, banner)
       const carried = body.carryLineup === true && teamId === 3
         ? [{role: "PLAYER", handle: "veteran", name: null}]
         : []
-      fieldedNow.push({seasonId, teamId, members: carried})
+      fieldedNow.push({seasonId, teamId, game: String(body.game ?? "VALORANT"), members: carried})
       return fulfillJson(route, {
         team,
+        game: body.game ?? "VALORANT",
+        banner: teamBanners.get(teamId) ?? null,
         season: written.get(seasonId) ?? esportsSeasons.find(one => one.id === seasonId) ?? esportsSeasons[0],
         carried: carried.map((member, index) => ({
           id: 300 + index, teamId, seasonId, role: member.role, handle: member.handle,

@@ -13,7 +13,7 @@
 -- the seasons, teams and rosters, so correcting a name or an accent is an edit to a file somebody
 -- can read rather than another migration.
 --
--- The tie from a team and from a member's game account to its game becomes a real foreign key. It
+-- The tie from a fielding and from a member's game account to its game becomes a real foreign key. It
 -- was previously assumed: the enum made an unknown code unrepresentable in Kotlin and the database
 -- was told nothing.
 
@@ -27,7 +27,9 @@ ALTER TABLE game_page
 ALTER TABLE game_page DROP INDEX uk_game_page_game;
 ALTER TABLE game_page ADD UNIQUE INDEX uk_game_page_code (game);
 
-ALTER TABLE team
-    ADD CONSTRAINT fk_team_game FOREIGN KEY (game) REFERENCES game_page (game);
+-- On the fielding rather than on the team: a team is the association's and plays whatever games
+-- it plays, so the game it played is a fact about being fielded.
+ALTER TABLE team_season
+    ADD CONSTRAINT fk_team_season_game FOREIGN KEY (game) REFERENCES game_page (game);
 ALTER TABLE user_game_account
     ADD CONSTRAINT fk_user_game_account_game FOREIGN KEY (game) REFERENCES game_page (game);

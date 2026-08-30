@@ -422,7 +422,7 @@ export const fieldTeam = <ThrowOnError extends boolean = false>(options: Options
     }
 });
 
-export const findTeams = <ThrowOnError extends boolean = false>(options: Options<FindTeamsData, ThrowOnError>): RequestResult<FindTeamsResponses, FindTeamsErrors, ThrowOnError> => (options.client ?? client).get<FindTeamsResponses, FindTeamsErrors, ThrowOnError>({
+export const findTeams = <ThrowOnError extends boolean = false>(options?: Options<FindTeamsData, ThrowOnError>): RequestResult<FindTeamsResponses, FindTeamsErrors, ThrowOnError> => (options?.client ?? client).get<FindTeamsResponses, FindTeamsErrors, ThrowOnError>({
     responseType: 'json',
     url: '/esports/teams',
     ...options

@@ -5,6 +5,7 @@ import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
+import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
@@ -15,8 +16,13 @@ import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 
-/** A team fielded in a season, with whatever line-up came across with it. */
-data class FieldedTeam(val team: Team, val season: Season, val carried: List<TeamRosterEntry>)
+/** A team fielded in a game in a season, with whatever line-up came across with it. */
+data class FieldedTeam(
+    val fielding: TeamSeason,
+    val team: Team,
+    val season: Season,
+    val carried: List<TeamRosterEntry>,
+)
 
 @Service
 class TeamRosterService(
@@ -27,8 +33,8 @@ class TeamRosterService(
     private val pictures: EsportsPictures,
 ) {
     @Transactional(readOnly = true)
-    fun findByTeamAndSeason(teamId: Long, seasonId: Long): List<TeamRosterEntry> =
-        entries.findAllByTeamAndSeason(teamId, seasonId)
+    fun findByTeamAndSeason(teamId: Long, game: String, seasonId: Long): List<TeamRosterEntry> =
+        entries.findAllByTeamAndSeason(teamId, game, seasonId)
 
     @Transactional(readOnly = true)
     fun findByGameAndSeason(game: String, seasonId: Long): List<TeamRosterEntry> =
@@ -54,6 +60,7 @@ class TeamRosterService(
     @Transactional
     fun add(
         teamId: Long,
+        game: String,
         seasonId: Long,
         handle: String,
         role: TeamRole,
@@ -68,9 +75,9 @@ class TeamRosterService(
         // Naming somebody to a team in a season says the team is fielded there, whether or
         // not anybody said so first. The entry hangs off that fielding, so this is what it is
         // written against rather than something done alongside it.
-        val fielding = fielded.field(teamId, seasonId)
+        val fielding = fielded.field(teamId, game, seasonId)
         // Appended rather than inserted: the page lists a roster in the order it was written.
-        val next = entries.findAllByTeamAndSeason(teamId, seasonId).size
+        val next = entries.findAllByTeamAndSeason(teamId, game, seasonId).size
         return entries.save(
             TeamRosterEntry(
                 teamSeason = fielding,
@@ -96,16 +103,25 @@ class TeamRosterService(
      * duplicate the roster or overwrite an edit somebody made on purpose.
      */
     @Transactional
-    fun fieldWithLineup(teamId: Long, seasonId: Long, carryLineup: Boolean): FieldedTeam {
+    fun fieldWithLineup(
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+        carryLineup: Boolean,
+        banner: String? = null,
+    ): FieldedTeam {
         val team = teams.findById(teamId)
         val season = seasons.findById(seasonId)
-        val fielding = fielded.field(teamId, seasonId)
-        if (!carryLineup || entries.findAllByTeamAndSeason(teamId, seasonId).isNotEmpty()) {
-            return FieldedTeam(team, season, emptyList())
+        val fielding = fielded.field(teamId, game, seasonId)
+        if (banner != null) fielded.draw(fielding, banner)
+        if (!carryLineup || entries.findAllByTeamAndSeason(teamId, game, seasonId).isNotEmpty()) {
+            return FieldedTeam(fielding, team, season, emptyList())
         }
-        val last = entries.findSeasonIdsWithLineup(teamId, seasonId).firstOrNull()
-            ?: return FieldedTeam(team, season, emptyList())
-        val carried = entries.findAllByTeamAndSeason(teamId, last).map { previous ->
+        // The line-up carried is the one this team last had in this game. A team that also plays
+        // another game has a line-up there too, and it is not this one.
+        val last = entries.findSeasonIdsWithLineup(teamId, game, seasonId).firstOrNull()
+            ?: return FieldedTeam(fielding, team, season, emptyList())
+        val carried = entries.findAllByTeamAndSeason(teamId, game, last).map { previous ->
             entries.save(
                 TeamRosterEntry(
                     teamSeason = fielding,
@@ -118,7 +134,7 @@ class TeamRosterService(
                 ),
             )
         }
-        return FieldedTeam(team, season, carried)
+        return FieldedTeam(fielding, team, season, carried)
     }
 
     @Transactional

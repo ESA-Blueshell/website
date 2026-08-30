@@ -162,10 +162,11 @@ watch(() => props.open, (open) => {
   if (open) reset()
 }, {immediate: true})
 
-// The teams to choose from belong to the game, so choosing one asks for them again.
-watch([game, source, () => props.open], async ([forGame, from, open]) => {
-  if (!open || from !== "existing" || forGame == null) return
-  candidates.value = await loadTeams(forGame)
+// The pool is the association's rather than a game's, so it is read once and offers every
+// team — including one that has only ever played another game, which is the point of it.
+watch([source, () => props.open], async ([from, open]) => {
+  if (!open || from !== "existing") return
+  candidates.value = await loadTeams()
 })
 
 // A game nobody has played yet has no team that played before, so only the one path is open.
@@ -185,10 +186,13 @@ watch(chosenTeamId, async (teamId) => {
   dropped.value = new Set()
   if (teamId == null) return
   const played = await loadTeamSeasons(teamId)
-  const previous = played.find(one => one.id !== props.season?.id)
+  // The line-up offered is the one this team last had in the game being added to. A team
+  // that also plays another game has a line-up there too, and it is not this one.
+  const previous = played.find(one => one.game === game.value && one.season.id !== props.season?.id)
+    ?? played.find(one => one.season.id !== props.season?.id)
   if (!previous) return
-  lineupFrom.value = previous
-  lineup.value = await loadRoster(teamId, previous.id)
+  lineupFrom.value = previous.season
+  lineup.value = await loadRoster(teamId, previous.game, previous.season.id)
 })
 
 const drop = (id: number) => {
@@ -232,7 +236,7 @@ const submit = async () => {
 
     let team: Team | null
     if (source.value === "new") {
-      const created = await saveTeamOrReason({game: forGame, name: name.value.trim()})
+      const created = await saveTeamOrReason({name: name.value.trim()})
       if (!created.ok) {
         failure.value = created.reason
         return
@@ -250,7 +254,7 @@ const submit = async () => {
     // so nobody who was dropped is written down and then deleted.
     const carryWhole = source.value === "existing" && lineup.value.length > 0
       && carried.value.length === lineup.value.length
-    const fielded = await fieldTeamInSeason(team.id, season.id, carryWhole)
+    const fielded = await fieldTeamInSeason(team.id, forGame, season.id, carryWhole)
     if (!fielded) {
       failure.value = "The team could not be added."
       return
@@ -258,6 +262,7 @@ const submit = async () => {
     if (!carryWhole) {
       for (const entry of carried.value) {
         await addToRoster(team.id, {
+          game: forGame,
           seasonId: season.id,
           handle: entry.handle,
           role: entry.role,

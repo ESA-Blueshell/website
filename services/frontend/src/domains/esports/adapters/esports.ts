@@ -304,8 +304,12 @@ export async function loadSeasonContents(id: number): Promise<SeasonContents> {
  * Drops a team from one season. The team, and the seasons it played, are untouched: a team
  * fielded in five seasons and dropped from one still played the other four.
  */
-export async function unfieldTeamFromSeason(teamId: number, seasonId: number): Promise<void> {
-  const res = await unfieldTeam({path: {seasonId, teamId}})
+export async function unfieldTeamFromSeason(
+  teamId: number,
+  game: Game,
+  seasonId: number,
+): Promise<void> {
+  const res = await unfieldTeam({path: {seasonId, teamId}, query: {game}})
   if (res.error) throw res.error
 }
 
@@ -313,8 +317,14 @@ export async function dropSeason(id: number): Promise<void> {
   await deleteSeason({path: {id}})
 }
 
-export async function loadTeams(game: Game): Promise<Team[]> {
-  const res = await findTeams({query: {game}})
+/**
+ * Every team the association has, not the teams of one game.
+ *
+ * The pool is shared: a team that has only ever played League of Legends is still one the
+ * board can field in Valorant, which is the whole point of a team being the association's.
+ */
+export async function loadTeams(): Promise<Team[]> {
+  const res = await findTeams()
   return (res.data ?? []).map(withArt)
 }
 
@@ -325,13 +335,11 @@ export interface TeamSaved {
 
 /** Same reason as a season's: the api answers a refusal with a body, not a thrown error. */
 export async function saveTeamOrReason(
-  team: {game: Game; name: string; banner?: string | null; icon?: string | null},
+  team: {name: string; icon?: string | null},
 ): Promise<TeamSaved | Refused> {
   const res = await createTeam({
     body: {
-      game: team.game,
       name: team.name,
-      banner: team.banner ?? undefined,
       icon: team.icon ?? undefined,
     },
   })
@@ -347,13 +355,17 @@ export async function saveTeamOrReason(
  * Both pictures are part of this write rather than something applied when they were chosen, so
  * cancelling the dialog leaves the team exactly as it was. Naming no picture takes it away.
  */
+/**
+ * A team's name and its logo. The art it is drawn with belongs to the fielding, so it is
+ * saved with the season rather than here.
+ */
 export async function saveTeamAs(
   id: number,
-  team: {name: string; banner: string | null; icon: string | null},
+  team: {name: string; icon: string | null},
 ): Promise<TeamSaved | Refused> {
   const res = await updateTeam({
     path: {id},
-    body: {name: team.name, banner: team.banner ?? undefined, icon: team.icon ?? undefined},
+    body: {name: team.name, icon: team.icon ?? undefined},
   })
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be saved.")}
   return {ok: true, team: res.data ? withArt(res.data) : null}
@@ -364,8 +376,18 @@ export async function dropTeam(id: number): Promise<void> {
   if (res.error) throw res.error
 }
 
-/** The seasons a team has been fielded in, newest first. */
-export async function loadTeamSeasons(teamId: number): Promise<Season[]> {
+/**
+ * The line-ups a team has, newest first: which game, in which season.
+ *
+ * A fielding rather than a season, because a team that played two games in one season has
+ * two of them, with a line-up in each.
+ */
+export interface Fielding {
+  game: Game
+  season: Season
+}
+
+export async function loadTeamSeasons(teamId: number): Promise<Fielding[]> {
   const res = await findTeamSeasons({path: {teamId}})
   return res.data ?? []
 }
@@ -377,21 +399,33 @@ export async function loadTeamSeasons(teamId: number): Promise<Season[]> {
  */
 export async function fieldTeamInSeason(
   teamId: number,
+  game: Game,
   seasonId: number,
   carryLineup: boolean,
+  banner?: string | null,
 ): Promise<FieldedTeam | null> {
-  const res = await fieldTeam({path: {seasonId, teamId}, body: {carryLineup}})
+  const res = await fieldTeam({
+    path: {seasonId, teamId},
+    // Naming no banner leaves the art alone rather than taking it away: a team is re-fielded
+    // to say it plays this season as often as to change its picture.
+    body: {game, carryLineup, banner: banner ?? undefined},
+  })
   return res.data ?? null
 }
 
-export async function loadRoster(teamId: number, seasonId: number): Promise<RosterEntry[]> {
-  const res = await findRoster({path: {teamId}, query: {seasonId}})
+export async function loadRoster(
+  teamId: number,
+  game: Game,
+  seasonId: number,
+): Promise<RosterEntry[]> {
+  const res = await findRoster({path: {teamId}, query: {game, seasonId}})
   return (res.data ?? []).map(withIcon)
 }
 
 export async function addToRoster(
   teamId: number,
   entry: {
+    game: Game
     seasonId: number
     handle: string
     role: TeamRole
@@ -405,6 +439,7 @@ export async function addToRoster(
   const res = await addRosterEntry({
     path: {teamId},
     body: {
+      game: entry.game,
       seasonId: entry.seasonId,
       handle: entry.handle,
       role: entry.role,

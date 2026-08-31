@@ -181,6 +181,7 @@ class BulkContributionUseCasesTest {
     private fun period() = ContributionPeriod(
         startDate = LocalDate.of(2024, 1, 1),
         endDate = LocalDate.of(2024, 12, 31),
+        halfYearCutoffDate = LocalDate.of(2024, 7, 1),
     ).apply { setField(this, "id", periodId) }
 
     private fun user(id: Long) = User(

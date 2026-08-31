@@ -17,14 +17,29 @@ import io.swagger.v3.oas.annotations.media.Schema
  */
 @Schema(name = "BulkFeeType", enumAsRef = true)
 enum class BulkFeeType {
-    /** Full-year fee — for REGULAR members who started before the half-year cutoff. */
+    /** Full-year fee — for REGULAR members who started on or before the half-year cutoff. */
     FULL_YEAR_FEE,
 
-    /** Half-year fee — for REGULAR members who started on or after the half-year cutoff. */
+    /** Half-year fee — for REGULAR members who started after the half-year cutoff. */
     HALF_YEAR_FEE,
 
     /** Alumni fee — for ALUMNI members. */
     ALUMNI_FEE,
+}
+
+/**
+ * Which side of the fee cycle a member is on.
+ *
+ * The `incasso` flag on the member's membership decides it, so this is not a choice the
+ * operator makes: one group is told what will be debited, the other is asked to transfer.
+ */
+@Schema(name = "FeeCycleGroup", enumAsRef = true)
+enum class FeeCycleGroup {
+    /** Pays by direct debit, and is told what will be taken and when. */
+    DIRECT_DEBIT,
+
+    /** Pays by transfer, and is asked to pay what is owed by when. */
+    TRANSFER,
 }
 
 /** How a selected user will be treated by a bulk action. */
@@ -49,6 +64,15 @@ enum class BulkRowReason {
     ALREADY_PAID,
     NOT_PAID,
     HONORARY,
+
+    /**
+     * Dead: nothing sets it. It existed because the payment request and the pre-notification
+     * were two independent sends, so a member could be selected for the wrong one. Under the
+     * fee cycle the `incasso` flag decides which side of the partition a member is on, so
+     * there is no wrong one and not having the flag is not a warning. Kept for one release so
+     * a client reading a stored value still recognises it.
+     */
+    @Deprecated("Nothing populates this. The fee-cycle partition replaced it.")
     INCASSO_MISMATCH,
     NO_ACTIVE_MEMBERSHIP,
     STARTED_TODAY,
@@ -57,9 +81,16 @@ enum class BulkRowReason {
      * Email actions (reminder/incasso): the user has no email address on file, so
      * nothing can be sent. Previously the execute handler skipped these silently and
      * the preview never surfaced it — now it is a first-class SKIPPED reason visible
-     * in the preview. See docs/proposals/bulk-actions/REDESIGN.md §3.
+     * in the preview. See docs/flows/fee-cycle/README.md.
      */
     NO_EMAIL,
+    /**
+     * The account has been deleted. Deletion anonymises the address to a placeholder and
+     * keeps the row for a restore window, and it does not end the memberships — so a deleted
+     * account still looks like a member of a period, and an action that reads memberships has
+     * to say so rather than write to it.
+     */
+    DELETED,
     /** Resume/start-new: the user already has an active (endDate=null) membership. */
     ALREADY_ACTIVE,
     /** Resume/start-new: no contribution period exists at all. */

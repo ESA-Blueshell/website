@@ -31,6 +31,14 @@ class ContributionPeriod(
     @Column(name = "end_date")
     var endDate: LocalDate,
 
+    /**
+     * A regular membership starting after this date pays the half-year fee; one starting on
+     * it or before pays the full year. Policy for the year, so it sits beside the three fees
+     * rather than being retyped into a dialog on every send.
+     */
+    @Column(name = "half_year_cutoff_date", nullable = false)
+    var halfYearCutoffDate: LocalDate,
+
     @Column(name = "half_year_fee", nullable = false)
     var halfYearFee: Double = 0.0,
 

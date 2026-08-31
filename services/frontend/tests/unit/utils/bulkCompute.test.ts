@@ -9,7 +9,7 @@ import type {BulkTarget} from "@/utils/bulkTarget"
 /**
  * Test suite for bulk-action row computation functions.
  * The new architecture computes all preview rows client-side from BulkTarget[] props.
- * See docs/proposals/bulk-actions/REDESIGN.md §4 & §5.2.
+ * See docs/flows/bulk-contribution-marking/README.md.
  */
 
 // ── Test fixture builders ──────────────────────────────────────────────

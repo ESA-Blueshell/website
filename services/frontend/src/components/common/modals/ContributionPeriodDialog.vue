@@ -38,6 +38,16 @@
           </v-row>
 
           <VvField
+            v-model="periodForm.halfYearCutoffDate"
+            :component-props="{ type: 'date', 'data-testid': 'contribution-period-half-year-cutoff-field' }"
+            hint="A regular membership starting after this date pays the half-year fee; one starting on it or before pays the full year."
+            label="Half Year Cutoff Date"
+            name="halfYearCutoffDate"
+            persistent-hint
+            rules="required|dateMin:@startDate|dateMax:@endDate"
+          />
+
+          <VvField
             v-model="periodForm.halfYearFee"
             :component-props="{ type: 'number', step: '0.01', inputmode: 'decimal', 'data-testid': 'contribution-period-half-year-fee-field' }"
             :update="(raw: string, handle: HandleChange<number>) => handle(!raw ? 0 : Number(raw))"
@@ -124,6 +134,7 @@ const emit = defineEmits<{
 const emptyPeriod = (): PeriodFormModel => ({
   startDate: "",
   endDate: "",
+  halfYearCutoffDate: "",
   halfYearFee: 0,
   fullYearFee: 0,
   alumniFee: 0,
@@ -173,6 +184,7 @@ const saveContributionPeriod = async () => {
       const payload: UpdateContributionPeriodRequest = {
         startDate: periodForm.startDate,
         endDate: periodForm.endDate,
+        halfYearCutoffDate: periodForm.halfYearCutoffDate,
         halfYearFee: periodForm.halfYearFee,
         fullYearFee: periodForm.fullYearFee,
         alumniFee: periodForm.alumniFee,
@@ -190,6 +202,7 @@ const saveContributionPeriod = async () => {
       const payload: CreateContributionPeriodRequest = {
         startDate: periodForm.startDate,
         endDate: periodForm.endDate,
+        halfYearCutoffDate: periodForm.halfYearCutoffDate,
         halfYearFee: periodForm.halfYearFee,
         fullYearFee: periodForm.fullYearFee,
         alumniFee: periodForm.alumniFee,

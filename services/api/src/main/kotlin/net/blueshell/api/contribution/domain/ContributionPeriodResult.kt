@@ -11,6 +11,7 @@ data class ContributionPeriodResult(
     val id: Long,
     val startDate: LocalDate,
     val endDate: LocalDate,
+    val halfYearCutoffDate: LocalDate,
     val halfYearFee: Double,
     val fullYearFee: Double,
     val alumniFee: Double,

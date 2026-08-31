@@ -34,6 +34,7 @@ export function period(overrides?: Partial<ContributionPeriodResponse>): Contrib
     startDate: "2025-01-01",
     endDate: "2025-12-31",
     fullYearFee: 20.0,
+    halfYearCutoffDate: "2025-07-01",
     halfYearFee: 10.0,
     alumniFee: 5.0,
     createdAt: "2024-01-01T00:00:00Z",

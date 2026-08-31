@@ -7,7 +7,7 @@ import type {BulkActionCounts, BulkRow} from "@/utils/bulkRow"
  * per-row re-include overrides, the derived counts, the computed included-user set
  * (INCLUDED ∪ re-included WARNING rows), and a submit() runner. It NEVER switches on
  * action type; the per-action differences are the loadPreview / onSubmit closures each
- * dialog supplies. See docs/proposals/bulk-actions/REDESIGN.md §5.1.
+ * dialog supplies.
  */
 // Re-exported for existing importers that pulled BulkRow off this composable.
 export type {BulkRow}

@@ -18,4 +18,5 @@ data class BulkRowVocabulary(
     val disposition: BulkRowDisposition,
     val reason: BulkRowReason,
     val feeType: BulkFeeType,
+    val feeCycleGroup: FeeCycleGroup,
 )

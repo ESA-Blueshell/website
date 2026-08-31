@@ -13,6 +13,7 @@ class ContributionPeriodUseCases(
     fun create(
         startDate: LocalDate,
         endDate: LocalDate,
+        halfYearCutoffDate: LocalDate,
         halfYearFee: Double,
         fullYearFee: Double,
         alumniFee: Double,
@@ -22,6 +23,7 @@ class ContributionPeriodUseCases(
             ContributionPeriod(
                 startDate = startDate,
                 endDate = endDate,
+                halfYearCutoffDate = halfYearCutoffDate,
                 halfYearFee = halfYearFee,
                 fullYearFee = fullYearFee,
                 alumniFee = alumniFee,
@@ -33,6 +35,7 @@ class ContributionPeriodUseCases(
         id: Long,
         startDate: LocalDate,
         endDate: LocalDate,
+        halfYearCutoffDate: LocalDate,
         halfYearFee: Double,
         fullYearFee: Double,
         alumniFee: Double,
@@ -42,6 +45,7 @@ class ContributionPeriodUseCases(
         val period = service.findById(id).apply {
             this.startDate = startDate
             this.endDate = endDate
+            this.halfYearCutoffDate = halfYearCutoffDate
             this.halfYearFee = halfYearFee
             this.fullYearFee = fullYearFee
             this.alumniFee = alumniFee

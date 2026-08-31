@@ -22,6 +22,12 @@ object EmailJobs {
         override fun dedupKey(payload: ContributionReminderPayload): String? = null
     }
 
+    object IncassoNotification : JobDefinition<IncassoNotificationPayload> {
+        override val type: String = "email.incasso-notification"
+        override val payloadType: Class<IncassoNotificationPayload> = IncassoNotificationPayload::class.java
+        override fun dedupKey(payload: IncassoNotificationPayload): String? = null
+    }
+
     data class RecoveryPayload(
         val userId: Long,
         val token: String,
@@ -33,9 +39,16 @@ object EmailJobs {
         val guestAccessToken: String
     )
 
+    /**
+     * The ask's own id. A member can be asked for the same period more than once, so the
+     * pair no longer names one row.
+     */
     data class ContributionReminderPayload(
-        val userId: Long,
-        val contributionPeriodId: Long
+        val contributionReminderId: Long
+    )
+
+    data class IncassoNotificationPayload(
+        val incassoNotificationId: Long
     )
 }
 

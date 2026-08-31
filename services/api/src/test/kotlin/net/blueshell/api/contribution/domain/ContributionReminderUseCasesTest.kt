@@ -24,6 +24,7 @@ class ContributionReminderUseCasesTest {
     private fun period() = ContributionPeriod(
         startDate = LocalDate.of(2026, 1, 1),
         endDate = LocalDate.of(2026, 12, 31),
+        halfYearCutoffDate = LocalDate.of(2026, 7, 1),
         halfYearFee = 1.0,
         fullYearFee = 2.0,
         alumniFee = 0.0,
@@ -37,7 +38,7 @@ class ContributionReminderUseCasesTest {
         whenever(periods.findById(9L)).thenReturn(period())
         val captured = argumentCaptor<ContributionReminder>()
         whenever(service.create(captured.capture())).thenAnswer {
-            captured.firstValue.apply { id = ContributionReminder.Id(3L, 9L) }.seededTimestamps()
+            captured.firstValue.seeded(11L)
         }
 
         useCases.send(userId = 3L, contributionPeriodId = 9L)
@@ -56,10 +57,7 @@ class ContributionReminderUseCasesTest {
         whenever(periods.findById(any())).thenReturn(period())
         val captured = argumentCaptor<MutableList<ContributionReminder>>()
         whenever(service.createAll(captured.capture())).thenAnswer {
-            captured.firstValue.onEach { r ->
-                r.id = ContributionReminder.Id(1L, 9L)
-                r.seededTimestamps()
-            }
+            captured.firstValue.onEachIndexed { index, reminder -> reminder.seeded(index + 1L) }
         }
 
         useCases.sendBatch(listOf(1L to 9L, 2L to 9L, 3L to 9L))

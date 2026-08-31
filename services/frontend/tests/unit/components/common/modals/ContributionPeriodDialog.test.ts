@@ -55,12 +55,17 @@ describe("ContributionPeriodDialog", () => {
     }
     ;(createWrapper.vm as any).periodForm.startDate = "2026-01-01"
     ;(createWrapper.vm as any).periodForm.endDate = "2026-06-30"
+    ;(createWrapper.vm as any).periodForm.halfYearCutoffDate = "2026-04-01"
     ;(createWrapper.vm as any).periodForm.halfYearFee = 10
     ;(createWrapper.vm as any).periodForm.fullYearFee = 20
     ;(createWrapper.vm as any).periodForm.alumniFee = 5
 
     await (createWrapper.vm as any).saveContributionPeriod()
-    expect(mockCreateContributionPeriod).toHaveBeenCalled()
+    // The cutoff is set where the fees are set, so it travels with them.
+    expect(mockCreateContributionPeriod).toHaveBeenCalledWith({
+      body: expect.objectContaining({halfYearCutoffDate: "2026-04-01", halfYearFee: 10}),
+      throwOnError: true,
+    })
     expect(createWrapper.emitted("changed")?.[0]).toEqual([{id: 11}])
 
     const updateWrapper = mount(ContributionPeriodDialog, {
@@ -70,6 +75,7 @@ describe("ContributionPeriodDialog", () => {
           id: 22,
           startDate: "2026-01-01",
           endDate: "2026-06-30",
+          halfYearCutoffDate: "2026-04-01",
           halfYearFee: 10,
           fullYearFee: 20,
           alumniFee: 5,
@@ -91,7 +97,7 @@ describe("ContributionPeriodDialog", () => {
 
     await (updateWrapper.vm as any).saveContributionPeriod()
     expect(mockUpdateContributionPeriod).toHaveBeenCalledWith({
-      body: expect.objectContaining({version: 1}),
+      body: expect.objectContaining({version: 1, halfYearCutoffDate: "2026-04-01"}),
       path: {id: 22},
       throwOnError: true,
     })

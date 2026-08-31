@@ -113,6 +113,9 @@ object DevFixtures {
     /** The period contributions are recorded against, spanning today so it is the current one. */
     val PERIOD_START: LocalDate = LocalDate.now().withDayOfYear(1)
     val PERIOD_END: LocalDate = PERIOD_START.plusYears(1).minusDays(1)
+
+    /** Half way through the seeded period, so both fee tiers are reachable in dev. */
+    val PERIOD_HALF_YEAR_CUTOFF: LocalDate = PERIOD_START.plusMonths(6)
     const val FULL_YEAR_FEE: Double = 40.0
     const val HALF_YEAR_FEE: Double = 20.0
     const val ALUMNI_FEE: Double = 15.0

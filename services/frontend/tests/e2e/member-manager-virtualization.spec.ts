@@ -27,7 +27,7 @@ const memberships = users.map((user, i) => ({
 }))
 
 const contributionPeriods = [
-  {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearFee: 15, fullYearFee: 30, alumniFee: 10},
+  {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 15, fullYearFee: 30, alumniFee: 10},
 ]
 
 const renderedRows = (page: import("./test").Page) =>

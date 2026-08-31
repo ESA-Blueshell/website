@@ -17,6 +17,7 @@ tells you what the process is supposed to guarantee.
 | [Membership signup](membership-signup/README.md) | Account creation plus an application; the membership commits on whichever fact lands last |
 | [Recovery emails](recovery-emails/README.md) | The emails that let somebody into an account, and reading one before it is sent |
 | [Bulk contribution marking](bulk-contribution-marking/README.md) | Recording contributions for many users at once; a selection applies whole or not at all |
+| [The fee cycle](fee-cycle/README.md) | Asking every unpaid member of a period for their contribution; one operation over the direct-debit partition |
 
 Account creation is the base flow and membership signup builds on it, so the two
 are read in that order and neither restates the other.

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class ContributionReminderPermission @Autowired constructor(service: ContributionReminderService) :
-    BasePermissionEvaluator<ContributionReminder, ContributionReminder.Id, ContributionReminderService>(service) {
+    BasePermissionEvaluator<ContributionReminder, Long, ContributionReminderService>(service) {
     override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
         if (authentication == null || permission == null) {
             return false
@@ -28,7 +28,7 @@ class ContributionReminderPermission @Autowired constructor(service: Contributio
             return false
         }
         if (id == null) return hasPermission(authentication, null, permission)
-        val reminder = service.findById(id as ContributionReminder.Id)
+        val reminder = service.findById(id as Long)
         return hasPermission(authentication, reminder, permission)
     }
 }

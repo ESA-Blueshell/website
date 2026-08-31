@@ -26,6 +26,7 @@ class ContributionUseCasesTest {
         val period = ContributionPeriod(
             startDate = LocalDate.of(2026, 1, 1),
             endDate = LocalDate.of(2026, 12, 31),
+            halfYearCutoffDate = LocalDate.of(2026, 7, 1),
             halfYearFee = 10.0,
             fullYearFee = 20.0,
             alumniFee = 0.0,

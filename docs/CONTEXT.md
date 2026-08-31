@@ -97,3 +97,66 @@ Four of them exist — a game banner, a game icon, a team banner, a team icon �
 person on a line-up carries a **roster icon**. These five names are used
 identically in the code, in the issues and on screen. Neither picture is a
 "background image", a "mark", a "logo" or a "poster".
+
+## Contributions
+
+### Contribution period
+
+The year a contribution is owed for, carrying the three fees and the **half-year
+cutoff** that selects between them. Every period-relative action in the manager is
+anchored to one, and there is nothing to act on without one.
+
+Not a "season" — that word belongs to esports and means something else.
+
+### Fee type
+
+Which of the period's three fees applies to a member: the **full-year fee**, the
+**half-year fee** or the **alumni fee**. It is the thing chosen; the amount follows
+from it and the period. An amount is never typed and never stored as a choice.
+
+`BulkFeeType` in the code, because it arrived with the bulk vocabulary and the
+generated client publishes it under that name.
+
+### Half-year cutoff
+
+The date on a contribution period that decides between the full-year and half-year
+fee. A regular membership starting **after** it pays the half year; one starting on it
+or before pays the full year. Policy for the year, so it lives on the period rather
+than being retyped on each send.
+
+### Fee cycle
+
+The one operation that asks every member of a period who has not paid for what they
+owe. It is opened for a period, not for a selection: who is asked follows from the
+period, which is what makes "has everybody been asked exactly once" answerable.
+
+Not a "bulk reminder" and not two sends. One cycle, one confirmation.
+
+### The partition
+
+The split of a fee cycle into the two groups that receive different statements,
+decided by the `incasso` flag on the membership each decision is judged against.
+Called a **group** on the wire and in the code — `FeeCycleGroup`, whose values are
+`DIRECT_DEBIT` and `TRANSFER` — and "the partition" only in prose about the pair.
+
+Because the flag decides the side, not having it is not a warning. There is no wrong
+side to be selected for.
+
+### Payment request and pre-notification
+
+The two statements a fee cycle sends. A **payment request** asks a member paying by
+transfer to pay what they owe by a due date. A **pre-notification** tells a member
+paying by direct debit what will be taken and on what date, and asks for nothing.
+
+Different statements, so different records: the treasurer's question is which one a
+member received. Neither quotes an amount without the reason that amount applies.
+
+### Ask
+
+One asking of one member to pay for one period — a payment request or a pre-notification.
+A row each, not one per member and period: the treasurer chases, so a member can be asked
+in September, again in February and again the week after, and each is a thing that
+happened. "Last asked" is the most recent of them.
+
+An **incasso** is the direct debit itself; the record of a pre-notification is an
+`IncassoNotification`, which is the Dutch word the association uses for the mandate.

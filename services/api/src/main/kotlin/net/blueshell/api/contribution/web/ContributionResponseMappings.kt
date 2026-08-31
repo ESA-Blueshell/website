@@ -18,6 +18,7 @@ fun ContributionPeriodResult.asResponse(): ContributionPeriodResponse =
         id = this.id,
         startDate = this.startDate,
         endDate = this.endDate,
+        halfYearCutoffDate = this.halfYearCutoffDate,
         halfYearFee = this.halfYearFee,
         fullYearFee = this.fullYearFee,
         alumniFee = this.alumniFee,
@@ -29,8 +30,13 @@ fun ContributionPeriodResult.asResponse(): ContributionPeriodResponse =
 
 fun ContributionReminderResult.asResponse(): ContributionReminderResponse =
     ContributionReminderResponse(
+        id = this.id,
         userId = this.userId,
         contributionPeriodId = this.contributionPeriodId,
+        askedAt = this.askedAt,
+        feeType = this.feeType,
+        amount = this.amount,
+        paymentDueDate = this.paymentDueDate,
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

@@ -281,15 +281,13 @@ const seasonSaved = (saved: Season) => {
           />
 
           <!--
-            Said whether or not the band follows it. A season nothing ran in still needs a way
-            to put the first game into it, and the way in lives at the end of the band -- so a
-            reader who may edit is given the sentence and the band, and a visitor just the
-            sentence, since there is nothing for them to do about it.
+            A visitor is told and there is nothing for them to do about it. A reader who may
+            edit is told in the band itself, in a slice with the way in beside it, so the two
+            are one row rather than a notice stacked over a band.
           -->
           <p
-            v-else-if="!fielded"
-            class="flex w-full items-center justify-center bg-surface py-16 text-center font-body text-sm text-ash"
-            :class="{'min-h-[22rem]': !mayEdit}"
+            v-else-if="!fielded && !mayEdit"
+            class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
             data-testid="esports-index-empty"
           >
             No teams were fielded in {{ seasonName || "this season" }}.
@@ -308,6 +306,7 @@ const seasonSaved = (saved: Season) => {
             <banner-slices
               accent="var(--color-brand)"
               add-label="Add a game"
+              :empty-label="`No games ran in ${seasonName || 'this season'} yet`"
               :items="slices"
               :may-add="mayEdit"
               :open-id="justAdded ?? carried"

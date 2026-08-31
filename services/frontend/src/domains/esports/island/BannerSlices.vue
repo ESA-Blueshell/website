@@ -39,6 +39,14 @@ const props = withDefaults(defineProps<{
   /** Whether the band ends in ways to add another. */
   mayAdd?: boolean
   /**
+   * What a band with nothing in it says, drawn as a slice of its own.
+   *
+   * A sentence in a bar above the band and the way in at the end of the band read as two
+   * separate things stacked on one another. Said in a slice, with the plus beside it, the
+   * band is one row again and the emptiness is a fact about it rather than a notice over it.
+   */
+  emptyLabel?: string
+  /**
    * What the plus is called, since one page adds a game and the other adds a team.
    *
    * One pane, not one per way in. Adding a game the association has played before and adding
@@ -58,7 +66,7 @@ const props = withDefaults(defineProps<{
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
 }>(), {
-  mayAdd: false, addLabel: "Add", openId: null, mayEdit: false,
+  mayAdd: false, addLabel: "Add", emptyLabel: "", openId: null, mayEdit: false,
 })
 
 const emit = defineEmits<{
@@ -319,6 +327,22 @@ watch(open, (index) => {
       band, and the band is the page. Narrow, because it is a way in rather than a thing to
       read. One pane per way in, so a choice is made by pressing rather than inside a dialog.
     -->
+    <!-- Nothing to show, and a way to change that beside it rather than under it. -->
+    <section
+      v-if="items.length === 0 && emptyLabel"
+      class="team-slice team-slice--empty team-slice--first"
+      :data-testid="`${testidPrefix}-empty-slice`"
+    >
+      <span class="team-slice__body team-slice__nothing">
+        <span class="team-slice__heading">
+          <span class="team-slice__name">{{ emptyLabel }}</span>
+          <!-- Whatever else is worth saying where there is nothing: on a game's page, the
+               last season it did play, which is a way on rather than a dead end. -->
+          <slot name="empty" />
+        </span>
+      </span>
+    </section>
+
     <section
       v-if="mayAdd"
       class="team-slice team-slice--add team-slice--last"
@@ -457,6 +481,21 @@ watch(open, (index) => {
  * plus through the middle instead of a photograph.
  */
 /* Narrower than a team: a way in rather than something to read. */
+/* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
+   not somewhere to go. */
+.team-slice--empty {
+  flex: 2 1 0;
+  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
+}
+
+.team-slice__nothing {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  color: var(--color-ash);
+}
+
 .team-slice--add {
   flex: 0 0 clamp(6.5rem, 11%, 10rem);
   background-color: var(--color-pit);
@@ -727,7 +766,22 @@ watch(open, (index) => {
     min-height: 0;
   }
 
-  .team-slice--add {
+  /* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
+   not somewhere to go. */
+.team-slice--empty {
+  flex: 2 1 0;
+  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
+}
+
+.team-slice__nothing {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  color: var(--color-ash);
+}
+
+.team-slice--add {
     flex: 0 0 auto;
     min-height: 7rem;
   }

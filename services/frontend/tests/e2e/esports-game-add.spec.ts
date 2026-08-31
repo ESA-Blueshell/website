@@ -226,8 +226,9 @@ test.describe("adding a game", () => {
     // The empty season is the one nothing was fielded in, which is exactly where a board
     // needs to start. Saying so and offering nothing to do about it is a dead end.
     await page.goto(`${INDEX}?season=41`)
-    await expect(page.getByTestId("esports-index-empty")).toBeVisible()
 
+    // Said in the band, in a slice, with the way in beside it rather than under it.
+    await expect(page.getByTestId("esports-game-empty-slice")).toContainText("No games ran")
     await expect(page.getByTestId("esports-game-add")).toBeVisible()
   })
 

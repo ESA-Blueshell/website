@@ -388,15 +388,12 @@ const seasonSaved = (saved: Season) => {
           />
 
           <!--
-            Said whether or not the band follows it. A season this game sat out still needs a
-            way to put the first team into it, and the way in lives at the end of the band --
-            so a reader who may edit is given the sentence and the band, and a visitor just the
-            sentence, since there is nothing for them to do about it.
+            A visitor is told, and pointed at the last season this game did play. A reader who
+            may edit is told in the band itself, in a slice with the way in beside it.
           -->
           <div
-            v-else-if="!hasRosters"
-            class="flex w-full flex-col items-center justify-center gap-2 bg-surface px-5 py-16 text-center font-body text-sm text-ash"
-            :class="{'min-h-[22rem]': !mayEdit}"
+            v-else-if="!hasRosters && !mayEdit"
+            class="flex min-h-[22rem] w-full flex-col items-center justify-center gap-2 bg-surface px-5 text-center font-body text-sm text-ash"
             data-testid="esports-empty"
           >
             <p>No teams recorded for {{ season?.name ?? "this season" }} yet.</p>
@@ -427,6 +424,7 @@ const seasonSaved = (saved: Season) => {
             <banner-slices
               :accent="identity.accent"
               add-label="Add a team"
+              :empty-label="`No teams played ${season?.name ?? 'this season'} yet`"
               :items="slices"
               :may-add="mayEdit"
               :may-edit="mayEdit"
@@ -436,6 +434,17 @@ const seasonSaved = (saved: Season) => {
               @edit="editLineup"
               @open="id => carried = id == null ? null : Number(id)"
             >
+              <template #empty>
+                <router-link
+                  v-if="lastPlayed"
+                  class="team-slice__link"
+                  data-testid="esports-empty-last-played"
+                  :to="`${route.path}?season=${lastPlayed.id}`"
+                >
+                  {{ identity.name }} last played {{ lastPlayed.name }} →
+                </router-link>
+              </template>
+
               <template #details="{item}">
                 <span
                   v-for="group in rosterOf(item.id as number)"

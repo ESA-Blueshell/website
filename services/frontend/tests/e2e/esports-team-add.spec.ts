@@ -213,8 +213,11 @@ test.describe("adding a team to the season on show", () => {
 
     // CS:GO played the older season and nothing since, so the newer one is empty for it.
     await page.goto("/esports/counter-strike-global-offensive?season=20")
-    await expect(page.getByTestId("esports-empty")).toBeVisible()
 
+    // Said in the band, in a slice, with the way in beside it rather than under it — and the
+    // way on kept, because a season this game sat out is not a dead end for a board either.
+    await expect(page.getByTestId("team-roster-empty-slice")).toContainText("No teams played")
+    await expect(page.getByTestId("esports-empty-last-played")).toBeVisible()
     await expect(page.getByTestId("team-roster-add")).toBeVisible()
   })
 

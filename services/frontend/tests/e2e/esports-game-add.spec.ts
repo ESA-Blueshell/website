@@ -61,6 +61,7 @@ test.describe("adding a game", () => {
 
     await page.goto(INDEX)
     await page.getByTestId("esports-game-add").click()
+    await page.getByTestId("game-dialog-known-search").click()
 
     // Valorant and CS2 already play this season, so there is nothing to enter of them.
     await expect(page.getByTestId("game-dialog-known-ROCKET_LEAGUE")).toBeVisible()
@@ -78,6 +79,7 @@ test.describe("adding a game", () => {
 
     await page.goto(INDEX)
     await page.getByTestId("esports-game-add").click()
+    await page.getByTestId("game-dialog-known-search").click()
     await page.getByTestId("game-dialog-known-ROCKET_LEAGUE").click()
 
     // The board's list of what is left to do, said rather than left to be inferred from a
@@ -91,6 +93,7 @@ test.describe("adding a game", () => {
     await loginAsBoard(context)
     await page.goto(INDEX)
     await page.getByTestId("esports-game-add").click()
+    await page.getByTestId("game-dialog-known-search").click()
     await page.getByTestId("game-dialog-known-ROCKET_LEAGUE").click()
     await expect(page.getByTestId("esports-game-ROCKET_LEAGUE")).toBeVisible()
 
@@ -108,6 +111,7 @@ test.describe("adding a game", () => {
 
     await page.goto(INDEX)
     await page.getByTestId("esports-game-add").click()
+    await page.getByTestId("game-dialog-known-search").click()
     await page.getByTestId("game-dialog-known-ROCKET_LEAGUE").click()
 
     // Where it leads is the claim; following it would be a fight with whichever slice the
@@ -127,6 +131,7 @@ test.describe("adding a game", () => {
 
     await page.goto(INDEX)
     await page.getByTestId("esports-game-add").click()
+    await page.getByTestId("game-dialog-known-search").click()
     await page.getByTestId("game-dialog-known-ROCKET_LEAGUE").click()
     await expect(page.getByTestId("esports-game-ROCKET_LEAGUE")).toBeVisible()
     // The way out of the season is inside the slice, so the slice has to be the open one. The

@@ -460,12 +460,14 @@ const add = async () => {
 .game-form {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
+  padding-bottom: 0.35rem;
 }
 
 .game-form__row {
   display: flex;
-  gap: 0.7rem;
+  flex-wrap: wrap;
+  gap: 0.9rem;
 }
 
 .game-form__field {
@@ -481,26 +483,33 @@ const add = async () => {
 
 .game-form__label {
   padding: 0;
-  color: #a0a6ac;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  color: var(--color-ash);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .game-form__hint {
-  color: #7d848b;
-  font-size: 0.75rem;
-  word-break: break-all;
+  font-size: 0.72rem;
+  color: color-mix(in oklab, var(--color-ash) 80%, transparent);
+  word-break: break-word;
 }
 
+/* One field style across the island: flat, square, and lit by the focus ring rather than by
+   a border that competes with the labels above it. */
 .game-form__input {
   width: 100%;
-  padding: 0.5rem 0.6rem;
-  background: #1c1c1c;
-  border: 1px solid rgb(255 255 255 / 12%);
-  color: #f2f4f6;
+  padding: 0.55rem 0.75rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  color: var(--color-chalk);
+  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
+  border: 0;
+}
+
+.game-form__input::placeholder {
+  color: var(--color-ash);
 }
 
 .game-form__input--tall {
@@ -524,10 +533,14 @@ const add = async () => {
   display: block;
 }
 
+/* Side by side, because they are decided together and are the two halves of how a game is
+   drawn. Aligned along the bottom so a wide banner and a square logo share a baseline. */
 .game-form__pictures {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.9rem;
+  gap: 1.1rem;
+  align-items: flex-end;
+  padding-top: 0.15rem;
 }
 
 .game-form__failure {

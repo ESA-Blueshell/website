@@ -40,6 +40,7 @@ test.describe("adding a team to the season on show", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("field-team-search").click()
 
     // Every team the association has, including ones that have only played something else.
     // That is what makes fielding a team in a game it has never played reachable at all.
@@ -52,6 +53,7 @@ test.describe("adding a team to the season on show", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("field-team-search").click()
 
     // Team 1 is already fielded in Valorant this season, so there is nothing to add of it.
     await expect(page.getByTestId("field-team-1")).toHaveCount(0)
@@ -75,11 +77,12 @@ test.describe("adding a team to the season on show", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("field-team-search").click()
     await page.getByTestId("field-team-3").click()
 
     // Picked, then who comes with them: the line-up it last had is offered, and everybody on
-    // it is ticked until somebody is not. The picker stays, with the chosen one filled.
-    await expect(page.getByTestId("field-team-3")).toHaveAttribute("aria-pressed", "true")
+    // it is ticked until somebody is not. The list closes, and the field says who is chosen.
+    await expect(page.getByTestId("field-team-search")).toHaveAttribute("placeholder", "BS Old Guard")
     await expect(page.getByTestId("lineup-source-people")).toContainText("AriosFury")
 
     await page.getByTestId("field-team-confirm").click()
@@ -96,6 +99,7 @@ test.describe("adding a team to the season on show", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("field-team-search").click()
     await page.getByTestId("field-team-3").click()
 
     // "Its last line-up" is only useful if the reader can tell which squad that was, and a
@@ -110,6 +114,7 @@ test.describe("adding a team to the season on show", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("team-roster-add").click()
+    await page.getByTestId("field-team-search").click()
     await page.getByTestId("field-team-3").click()
     await page.getByTestId("lineup-source-person-11").locator("input").uncheck()
 
@@ -142,6 +147,7 @@ test.describe("adding a team to the season on show", () => {
 
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("lineup-kind-new-team").click()
+    await page.getByTestId("lineup-source-team-search").click()
     await page.getByTestId("lineup-source-team-search").fill("Old Guard")
     await page.getByTestId("lineup-source-team-3").click()
 

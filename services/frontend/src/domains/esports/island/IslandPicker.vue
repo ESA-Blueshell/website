@@ -41,6 +41,31 @@ const emit = defineEmits<{
 
 const search = ref("")
 
+/**
+ * Whether the list is down.
+ *
+ * A list that is always there pushes everything under it down the dialog and grows the form
+ * as you type. Down only while the field is being used, over what follows rather than through
+ * it, and gone again once something is chosen.
+ */
+const open = ref(false)
+
+const chosen = computed(() =>
+  props.options.find(one => one.key === props.selectedKey)?.label ?? "")
+
+const pick = (key: string) => {
+  open.value = false
+  search.value = ""
+  emit("pick", key)
+}
+
+/** Closes when focus leaves the field and the list together, not when it moves between them. */
+const leave = (event: FocusEvent) => {
+  const next = event.relatedTarget as Node | null
+  if (next && (event.currentTarget as HTMLElement).contains(next)) return
+  open.value = false
+}
+
 const matches = computed(() => {
   const term = search.value.trim().toLowerCase()
   if (term === "") return props.options
@@ -49,14 +74,21 @@ const matches = computed(() => {
 </script>
 
 <template>
-  <div class="picker">
+  <div
+    class="picker"
+    @focusout="leave"
+  >
     <input
       v-model="search"
+      :aria-controls="`${testidPrefix}-list`"
+      aria-haspopup="listbox"
       :aria-label="placeholder"
       class="picker__search"
       :data-testid="`${testidPrefix}-search`"
-      :placeholder="placeholder"
+      :placeholder="chosen || placeholder"
       type="text"
+      @focus="open = true"
+      @input="open = true"
     >
 
     <p
@@ -67,8 +99,13 @@ const matches = computed(() => {
       {{ emptyNote }}
     </p>
 
+    <!--
+      Over what follows rather than through it: a list that took room in the flow grew the
+      form as somebody typed and pushed everything under it down the dialog.
+    -->
     <ul
-      v-else-if="matches.length > 0"
+      v-else-if="open && matches.length > 0"
+      :id="`${testidPrefix}-list`"
       class="picker__list"
       :data-testid="`${testidPrefix}-list`"
     >
@@ -83,7 +120,7 @@ const matches = computed(() => {
           :data-testid="`${testidPrefix}-${one.key}`"
           :disabled="disabled"
           type="button"
-          @click="emit('pick', one.key)"
+          @click="pick(one.key)"
         >
           <span class="picker__label">{{ one.label }}</span>
           <span
@@ -95,8 +132,8 @@ const matches = computed(() => {
     </ul>
 
     <p
-      v-else
-      class="picker__note"
+      v-else-if="open"
+      class="picker__note picker__note--over"
       :data-testid="`${testidPrefix}-no-matches`"
     >
       Nothing answers to that.
@@ -106,6 +143,7 @@ const matches = computed(() => {
 
 <style scoped>
 .picker {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -134,15 +172,34 @@ const matches = computed(() => {
  * Ten rows is about a screenful on a phone and comfortably short of one on a desktop.
  */
 .picker__list {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  left: 0;
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  max-height: 17rem;
-  padding: 0;
+  gap: 0.25rem;
+  max-height: 15rem;
+  padding: 0.35rem;
   margin: 0;
   overflow-y: auto;
   list-style: none;
+  background-color: var(--color-pit);
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 14%, transparent);
+  box-shadow: 0 1rem 2rem rgb(0 0 0 / 45%);
   overscroll-behavior: contain;
+}
+
+.picker__note--over {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  padding: 0.6rem 0.75rem;
+  background-color: var(--color-pit);
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 14%, transparent);
 }
 
 .picker__row {

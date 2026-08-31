@@ -197,15 +197,18 @@ const nameOf = (fielding: Fielding) => `${fielding.game} · ${fielding.season.na
 </template>
 
 <style scoped>
-/* A panel cut on the island's diagonal rather than a rounded box: it sits inside a dialog that
-   is put together that way, and a stray radius reads as a control from somewhere else. */
+/*
+ * Square-edged rather than cut on the island's diagonal, and deliberately: a clip-path cuts
+ * off anything a child paints outside the panel, and the picker inside this one drops a list
+ * over the form below it. The slant would take that list off at the panel's edge.
+ */
 .source {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
   padding: 0.85rem 1rem 1rem;
   background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
-  clip-path: polygon(0.7rem 0, 100% 0, calc(100% - 0.7rem) 100%, 0 100%);
+  border-left: 2px solid color-mix(in oklab, var(--color-brand) 55%, transparent);
 }
 
 .source__heading {

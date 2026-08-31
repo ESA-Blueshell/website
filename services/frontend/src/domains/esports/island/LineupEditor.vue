@@ -912,15 +912,16 @@ const submit = async () => {
 
 .lineup__team {
   margin: 0;
-  padding: 0.55rem;
-  border: 1px solid rgb(255 255 255 / 10%);
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 10%, transparent);
 }
 
 .lineup__legend {
-  padding: 0 0.3rem;
-  color: #a0a6ac;
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
+  padding: 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  color: var(--color-ash);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -932,16 +933,17 @@ const submit = async () => {
 .lineup__row {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.55rem;
-  background: #1c1c1c;
+  gap: 0.45rem;
+  padding: 0.7rem 0.8rem;
+  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
   border-left: 2px solid var(--dialog-accent, #3387fa);
 }
 
 .lineup__line {
   display: flex;
-  gap: 0.4rem;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: flex-end;
 }
 
 .lineup__line--member {
@@ -952,11 +954,11 @@ const submit = async () => {
 .lineup__input {
   flex: 1;
   min-width: 0;
-  padding: 0.35rem 0.45rem;
-  background: #262626;
-  border: 1px solid rgb(255 255 255 / 12%);
-  color: #f2f4f6;
+  padding: 0.5rem 0.7rem;
   font-family: inherit;
+  color: var(--color-chalk);
+  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
+  border: 0;
   font-size: 0.88rem;
 }
 
@@ -1078,11 +1080,13 @@ const submit = async () => {
   color: #ff6b6b;
 }
 
-/* Side by side: they are decided together and are the two halves of how a team is drawn. */
+/* Side by side, aligned along the bottom so a wide banner and a square logo share a baseline. */
 .lineup__pictures {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.9rem;
+  gap: 1.1rem;
+  align-items: flex-end;
+  padding-top: 0.15rem;
 }
 
 .lineup__actions {

@@ -18,8 +18,11 @@ RUN corepack install && yarn install --immutable
 RUN mkdir -p /ms-playwright \
  && yarn playwright install --with-deps chromium
 
+COPY scripts/dev-entrypoint.sh /usr/local/bin/dev-entrypoint.sh
+
 # App/config files
 COPY . .
 
 EXPOSE 3000
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint.sh"]
 CMD ["yarn", "dev", "--host"]

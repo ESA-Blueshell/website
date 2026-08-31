@@ -520,6 +520,12 @@ defineExpose({
   opacity: 0.6;
 }
 
+// Vuetify spells its gap utilities `ga-1`, so this one is the row's own, the same as in
+// the user manager's rows.
+.gap-1 {
+  gap: 4px;
+}
+
 // The house green divider (housestyle.scss) is scoped under
 // `.v-application.v-theme--dark`, which the teleported dialog escapes — so the
 // modal's dividers fall back to grey. Apply the same accent token here so they

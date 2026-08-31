@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {coveredWidth} from "../pictures"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 defineOptions({name: "BannerSlices"})
@@ -142,7 +143,7 @@ const WAY_IN_SHARE = 0.11
 const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
 
 /**
- * The width each banner is fetched at, worked out rather than measured.
+ * How wide a slice's box is, worked out rather than measured.
  *
  * Worked out from the two things that decide it — how many slices share the row and how wide
  * the window is — because measuring means waiting for layout, and because a measurement taken
@@ -150,13 +151,8 @@ const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
  * The arithmetic knows where it is going the moment the pointer arrives.
  *
  * Stacked, a slice is the width of the window and nothing else comes into it.
- *
- * A collapsed slice is asked for its own share and no more, which is less than it is drawn at:
- * a banner covers a slice taller than a collapsed share is wide, so it is scaled up. This used
- * to hide under a grayscale-and-dim filter; the art is shown as uploaded now, so a collapsed
- * banner is a little soft. Raise the share here if that starts to show.
  */
-const wanted = (index: number): number => {
+const boxWidth = (index: number): number => {
   const width = viewport.value
   if (width === 0) return 0
   if (stacked()) return width
@@ -169,6 +165,34 @@ const wanted = (index: number): number => {
   const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
   return Math.ceil((band * share) / units)
 }
+
+/**
+ * The width each banner is fetched at, which is wider than the slice wherever the slice is
+ * tall and narrow.
+ *
+ * A banner covers its slice, so a box taller than it is wide is filled by its height and the
+ * picture is painted well past both edges: a slice sharing a row with seven others is a couple
+ * of hundred pixels across and a good three hundred tall, and a sixteen-by-nine banner covering
+ * it is drawn some six hundred wide. Asked for its own share alone it fetched the bottom of the
+ * ladder for that, and read as mush.
+ *
+ * Height is measured where width is worked out, because it is the one figure the arithmetic
+ * cannot reach: the row is as tall as whatever is in it, and it does not move as a slice opens.
+ * A height of nothing — the first frame, or a page with no layout — leaves the share of the row
+ * standing on its own.
+ *
+ * Both states, not just the slice being read. A collapsed banner used to hide under a
+ * grayscale-and-dim filter, which was the case for asking it for its share and no more; the
+ * art is shown as uploaded now, so a copy stretched four times over is simply soft on the
+ * page. This is the raised share that comment asked for, taken from the height rather than
+ * guessed at.
+ */
+const wanted = (index: number): number => coveredWidth({
+  boxWidth: boxWidth(index),
+  boxHeight: slices.value[index]?.clientHeight ?? 0,
+  imageWidth: props.items[index]?.width,
+  imageHeight: props.items[index]?.height,
+})
 
 /**
  * What each banner has been asked for, never less than it was already asked for.

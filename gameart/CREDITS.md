@@ -39,30 +39,23 @@ where is a choice made at upload.
 
 ## home-page/
 
-The art the home page's competitive tiles were drawn with before they started
-reading the game records. Eight files, kept at their original bytes rather than
-converted, because these are small and already lossy and a re-encode would only
-lose more.
+The backgrounds the home page's competitive tiles were drawn with before they
+started reading the game records. Original bytes rather than converted, because
+these are small and already lossy and a re-encode would only lose more.
 
 | File | Size | Was |
 |------|------|-----|
-| `cs2.png` | 256x256 | Counter-Strike 2 tile logo |
 | `cs2bg.png` | 900x405 | Counter-Strike 2 tile background |
-| `geoguessrlogo.webp` | 224x232 | GeoGuessr tile logo |
 | `geoguessrbg.jpg` | 1280x720 | GeoGuessr tile background |
-| `league.png` | 256x256 | League of Legends tile logo |
 | `leaguebg.jpg` | 620x349 | League of Legends tile background |
-| `rocketleague.png` | 256x256 | Rocket League tile logo |
 | `rocketleaguebg.jpg` | 620x349 | Rocket League tile background |
 
-The four logos survive elsewhere as well: each is pixel-identical to the icon of
-the same game in the seed's art directory, and `geoguessrlogo.webp` is
-byte-identical to `geoguessr-icon.webp`. They are here so the set the home page
-used is complete in one place.
+**These four survive nowhere else.** They are not crops or rescales of anything
+in this directory — the closest original to each is a different picture of the
+same game — so this is the only copy, which is why the folder exists.
 
-**The four backgrounds survive nowhere else.** They are not crops of anything in
-this directory — the closest original to each is a different picture of the same
-game — so this is the only copy, which is the reason this folder exists.
+The four tile logos that went with them are not here: each was pixel-identical to
+the icon of the same game in the seed's art directory, so that is the copy.
 
 ## Rights
 

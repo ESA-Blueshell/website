@@ -12,13 +12,15 @@ import {
 } from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
-const {mockPreviewFeeCycle, mockSendFeeCycle} = vi.hoisted(() => ({
+const {mockPreviewFeeCycle, mockSendFeeCycle, mockPreviewFeeCycleEmail} = vi.hoisted(() => ({
   mockPreviewFeeCycle: vi.fn(),
   mockSendFeeCycle: vi.fn(),
+  mockPreviewFeeCycleEmail: vi.fn(),
 }))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   previewFeeCycle: mockPreviewFeeCycle,
   sendFeeCycle: mockSendFeeCycle,
+  previewFeeCycleEmail: mockPreviewFeeCycleEmail,
 }))
 
 const period: ContributionPeriodResponse = {
@@ -198,5 +200,135 @@ describe("FeeCycleDialog", () => {
     await settle()
 
     expect(mockPreviewFeeCycle).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * The preview stack already on `main`: `useEmailPreview` holds the state and takes the
+ * fetch as a closure, `EmailPreviewDialog` renders it, and the recipient chooser goes in
+ * that dialog's own slot. Nothing new was built for this.
+ */
+describe("FeeCycleDialog reading an email", () => {
+  function givenRenderedEmail(overrides: Record<string, unknown> = {}) {
+    mockPreviewFeeCycleEmail.mockResolvedValue({
+      data: {
+        group: FeeCycleGroup.TRANSFER,
+        feeType: BulkFeeType.FULL_YEAR_FEE,
+        subject: "Please pay your Blueshell contribution (2025/2026)",
+        html: "<p>Amount due: &euro;45,00</p>",
+        recipientEmail: "ann@example.com",
+        recipientName: "Ann Regular",
+        ...overrides,
+      },
+    })
+  }
+
+  async function openWithDates(rows: FeeCycleRowResponse[]) {
+    const wrapper = await openDialog(rows)
+    wrapper.vm.paymentDueDate = "2026-04-01"
+    wrapper.vm.debitDate = "2026-04-15"
+    await settle()
+    return wrapper
+  }
+
+  it("cannot read an email until both dates are given", async () => {
+    const wrapper = await openDialog([apiRow()])
+
+    expect(
+      wrapper.find('[data-testid="fee-cycle-preview-email-btn"]').attributes("disabled"),
+    ).toBeDefined()
+  })
+
+  it("renders the chosen member's email, with the fee type the row shows", async () => {
+    givenRenderedEmail()
+    const wrapper = await openWithDates([apiRow({userId: 1, feeType: BulkFeeType.FULL_YEAR_FEE})])
+
+    await wrapper.find('[data-testid="fee-cycle-preview-email-btn"]').trigger("click")
+    await settle()
+
+    expect(mockPreviewFeeCycleEmail).toHaveBeenCalledWith({
+      query: {
+        contributionPeriodId: 3,
+        userId: 1,
+        paymentDueDate: "2026-04-01",
+        debitDate: "2026-04-15",
+        feeType: BulkFeeType.FULL_YEAR_FEE,
+      },
+    })
+    expect(wrapper.find('[data-testid="email-preview-subject"]').text())
+      .toContain("Please pay your Blueshell contribution")
+  })
+
+  it("offers a member from each side of the partition to read as", async () => {
+    givenRenderedEmail()
+    const wrapper = await openWithDates([
+      apiRow({userId: 1, name: "Ann Transfer", group: FeeCycleGroup.TRANSFER}),
+      apiRow({userId: 2, name: "Ben Debit", group: FeeCycleGroup.DIRECT_DEBIT}),
+    ])
+
+    await wrapper.find('[data-testid="fee-cycle-preview-email-btn"]').trigger("click")
+    await settle()
+
+    expect(wrapper.vm.previewRecipientId).toBe(1)
+    expect(wrapper.vm.previewRecipients).toEqual([
+      {value: 1, title: "Ann Transfer — Transfer"},
+      {value: 2, title: "Ben Debit — Direct debit"},
+    ])
+  })
+
+  it("re-renders when a different member is chosen", async () => {
+    givenRenderedEmail()
+    const wrapper = await openWithDates([
+      apiRow({userId: 1, name: "Ann Transfer", group: FeeCycleGroup.TRANSFER}),
+      apiRow({userId: 2, name: "Ben Debit", group: FeeCycleGroup.DIRECT_DEBIT}),
+    ])
+
+    await wrapper.find('[data-testid="fee-cycle-preview-email-btn"]').trigger("click")
+    await settle()
+    expect(mockPreviewFeeCycleEmail).toHaveBeenCalledTimes(1)
+
+    givenRenderedEmail({
+      group: FeeCycleGroup.DIRECT_DEBIT,
+      subject: "Your Blueshell contribution will be collected automatically (2025/2026)",
+    })
+    wrapper.vm.previewRecipientId = 2
+    await settle()
+
+    expect(mockPreviewFeeCycleEmail).toHaveBeenCalledTimes(2)
+    expect(mockPreviewFeeCycleEmail).toHaveBeenLastCalledWith(
+      expect.objectContaining({query: expect.objectContaining({userId: 2})}),
+    )
+    expect(wrapper.find('[data-testid="email-preview-subject"]').text())
+      .toContain("collected automatically")
+  })
+
+  it("offers no excluded member to read as, because they get no email", async () => {
+    givenRenderedEmail()
+    const wrapper = await openWithDates([
+      apiRow({userId: 1, name: "Ann Transfer"}),
+      apiRow({
+        userId: 4,
+        name: "Cara Honorary",
+        disposition: BulkRowDisposition.EXCLUDED,
+        reason: BulkRowReason.HONORARY,
+        feeType: null,
+        amount: null,
+      }),
+    ])
+
+    await wrapper.find('[data-testid="fee-cycle-preview-email-btn"]').trigger("click")
+    await settle()
+
+    expect(wrapper.vm.previewRecipients).toEqual([{value: 1, title: "Ann Transfer — Transfer"}])
+  })
+
+  it("sends nothing when an email is read", async () => {
+    givenRenderedEmail()
+    const wrapper = await openWithDates([apiRow()])
+
+    await wrapper.find('[data-testid="fee-cycle-preview-email-btn"]').trigger("click")
+    await settle()
+
+    expect(mockSendFeeCycle).not.toHaveBeenCalled()
   })
 })

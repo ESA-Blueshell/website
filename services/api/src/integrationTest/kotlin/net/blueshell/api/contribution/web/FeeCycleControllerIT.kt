@@ -47,13 +47,20 @@ class FeeCycleControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var jsonMapper: ObjectMapper
 
+    private val periodStart = LocalDate.now().minusMonths(2)
+    private val periodEnd = LocalDate.now().plusMonths(6)
+
+    /** The label the emails carry, derived here so the assertions do not pin a calendar year. */
+    private val academicYear =
+        if (periodEnd.year > periodStart.year) "${periodStart.year}/${periodEnd.year}" else "${periodStart.year}"
+
     private val cutoff = LocalDate.now().minusDays(10)
     private val dueDate = LocalDate.now().plusMonths(1)
     private val debitDate = LocalDate.now().plusMonths(1).plusDays(14)
 
     private fun period(): ContributionPeriod = contributionFactory.createPeriod(
-        startDate = LocalDate.now().minusMonths(2),
-        endDate = LocalDate.now().plusMonths(6),
+        startDate = periodStart,
+        endDate = periodEnd,
         halfYearCutoffDate = cutoff,
     )
 
@@ -84,6 +91,17 @@ class FeeCycleControllerIT : UserTestSupport() {
             "feeTypeOverrides" to feeTypeOverrides.mapKeys { it.key.toString() },
         ),
     )
+
+    private fun previewEmail(board: User, periodId: Long?, userId: Long?, feeType: BulkFeeType? = null) =
+        mvc.perform(
+            get("/contributions/fee-cycle/email-preview")
+                .with(bearer(board))
+                .param("contributionPeriodId", "$periodId")
+                .param("userId", "$userId")
+                .param("paymentDueDate", dueDate.toString())
+                .param("debitDate", debitDate.toString())
+                .apply { if (feeType != null) param("feeType", feeType.name) },
+        )
 
     private fun preview(board: User, periodId: Long?) =
         mvc.perform(get("/contributions/fee-cycle").with(bearer(board)).param("contributionPeriodId", "$periodId"))
@@ -379,6 +397,106 @@ class FeeCycleControllerIT : UserTestSupport() {
                 .contains("the full-year fee")
                 .contains(debitDate.dayOfMonth.toString())
                 .doesNotContain("Bank transfer")
+        }
+    }
+
+    /**
+     * Reading one member's email before sending to a hundred. It renders through the shared
+     * preview renderer from the same `EmailContent` the send builds, which is what stops the
+     * two drifting.
+     */
+    @Nested
+    inner class ReadingOneMembersEmail {
+
+        @Test
+        fun `a transfer member reads the payment request`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false, startDate = cutoff.plusDays(1))
+
+            previewEmail(board, period.id, onTransfer.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.group").value("TRANSFER"))
+                .andExpect(jsonPath("$.feeType").value("HALF_YEAR_FEE"))
+                .andExpect(jsonPath("$.recipientEmail").value(onTransfer.email))
+                .andExpect(jsonPath("$.subject").value("Please pay your Blueshell contribution ($academicYear)"))
+        }
+
+        @Test
+        fun `a direct-debit member reads the pre-notification`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onDirectDebit = member(incasso = true, memberType = MemberType.ALUMNI)
+
+            previewEmail(board, period.id, onDirectDebit.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.group").value("DIRECT_DEBIT"))
+                .andExpect(jsonPath("$.feeType").value("ALUMNI_FEE"))
+                .andExpect(
+                    jsonPath("$.subject")
+                        .value("Your Blueshell contribution will be collected automatically ($academicYear)"),
+                )
+        }
+
+        // The hosted images are inlined so the pictures show in a browser that cannot reach
+        // the asset host — which is what going through the shared renderer buys.
+        @Test
+        fun `the rendered body carries the amount, the reason and the images`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false, startDate = cutoff)
+
+            val body = previewEmail(board, period.id, onTransfer.id)
+                .andExpect(status().isOk)
+                .andReturn().response.contentAsString
+            val html = jsonMapper.readTree(body)["html"].asString()
+
+            assertThat(html)
+                .contains("45,00")
+                .contains("the full-year fee")
+                .contains("data:image/png;base64,")
+        }
+
+        @Test
+        fun `an overridden fee type is what the email quotes`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false, startDate = cutoff)
+
+            previewEmail(board, period.id, onTransfer.id, BulkFeeType.ALUMNI_FEE)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.feeType").value("ALUMNI_FEE"))
+        }
+
+        @Test
+        fun `writes no record and queues no email`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false)
+
+            previewEmail(board, period.id, onTransfer.id).andExpect(status().isOk)
+
+            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!)).isEmpty()
+            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!)).isEmpty()
+            assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).isEmpty()
+            assertThat(findJobsByType(EmailJobs.IncassoNotification.type)).isEmpty()
+        }
+
+        @Test
+        fun `refuses a member the cycle is not about`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val stranger = userFactory.createUserWithRole(Role.MEMBER)
+
+            previewEmail(board, period.id, stranger.id).andExpect(status().isNotFound)
+        }
+
+        @Test
+        fun `is refused to a member`() {
+            val period = period()
+            val member = member(incasso = false)
+
+            previewEmail(member, period.id, member.id).andExpect(status().isForbidden)
         }
     }
 }

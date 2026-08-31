@@ -57,3 +57,24 @@ data class FeeCycleResultResponse(
     @field:Schema(description = "Members in the cycle who were not written to.")
     val excluded: Int,
 )
+
+/**
+ * A fee-cycle email as the member would receive it, and which of the two statements it is.
+ *
+ * Rendered through the shared preview renderer from the same `EmailContent` the send path
+ * builds, with hosted images inlined so the pictures show in a browser that cannot reach
+ * the asset host.
+ */
+@Schema(name = "FeeCycleEmailPreviewResponse")
+data class FeeCycleEmailPreviewResponse(
+    @field:Schema(description = "Which statement this member receives, decided by their direct-debit flag.")
+    val group: FeeCycleGroup,
+
+    @field:Schema(description = "The fee type the email states, and the reason it gives.")
+    val feeType: BulkFeeType,
+
+    val subject: String,
+    val html: String,
+    val recipientEmail: String,
+    val recipientName: String,
+)

@@ -793,6 +793,21 @@ export type FailedTargetMove = {
     message: string;
 };
 
+export type FeeCycleEmailPreviewResponse = {
+    /**
+     * The fee type the email states, and the reason it gives.
+     */
+    feeType: BulkFeeType;
+    /**
+     * Which statement this member receives, decided by their direct-debit flag.
+     */
+    group: FeeCycleGroup;
+    html: string;
+    recipientEmail: string;
+    recipientName: string;
+    subject: string;
+};
+
 export enum FeeCycleGroup {
     DIRECT_DEBIT = 'DIRECT_DEBIT',
     TRANSFER = 'TRANSFER'
@@ -3735,6 +3750,53 @@ export type PreviewFeeCycleResponses = {
 };
 
 export type PreviewFeeCycleResponse = PreviewFeeCycleResponses[keyof PreviewFeeCycleResponses];
+
+export type PreviewFeeCycleEmailData = {
+    body?: never;
+    path?: never;
+    query: {
+        contributionPeriodId: number;
+        userId: number;
+        paymentDueDate: string;
+        debitDate: string;
+        feeType?: BulkFeeType;
+    };
+    url: '/contributions/fee-cycle/email-preview';
+};
+
+export type PreviewFeeCycleEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewFeeCycleEmailError = PreviewFeeCycleEmailErrors[keyof PreviewFeeCycleEmailErrors];
+
+export type PreviewFeeCycleEmailResponses = {
+    /**
+     * OK
+     */
+    200: FeeCycleEmailPreviewResponse;
+};
+
+export type PreviewFeeCycleEmailResponse = PreviewFeeCycleEmailResponses[keyof PreviewFeeCycleEmailResponses];
 
 export type SendFeeCycleData = {
     body: SendFeeCycleRequest;

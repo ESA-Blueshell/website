@@ -2,9 +2,11 @@
 import {computed, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import BulkDialogScaffold, {type BulkColumn} from "./BulkDialogScaffold.vue"
+import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
+import {useEmailPreview} from "@/composables/useEmailPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {previewFeeCycle, sendFeeCycle} from "@/services/api"
+import {previewFeeCycle, previewFeeCycleEmail, sendFeeCycle} from "@/services/api"
 import type {ContributionPeriodResponse} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
@@ -39,6 +41,20 @@ const open = computed({
 const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
+
+// The shared preview stack, unchanged: the composable holds the state and takes the fetch as
+// a closure, and the dialog is presentational. Read-only here — the table is what the
+// treasurer confirms, and this is a spot-check of one recipient rather than the send itself.
+const {
+  open: emailPreviewOpen,
+  loading: emailPreviewLoading,
+  error: emailPreviewError,
+  preview: emailPreview,
+  show: showEmailPreview,
+  reset: resetEmailPreview,
+} = useEmailPreview()
+
+const previewRecipientId = ref<number | null>(null)
 
 const paymentDueDate = ref("")
 const debitDate = ref("")
@@ -124,6 +140,63 @@ async function loadCycle() {
   setRows(mapped)
 }
 
+/**
+ * Who can be read for. Only a member the cycle writes to has an email, and both sides of
+ * the partition are offered so each statement can be checked.
+ */
+const previewRecipients = computed(() =>
+  rows.value
+    .filter((row) => row.disposition === "INCLUDED")
+    .map((row) => ({value: row.userId, title: `${row.name} — ${feeCycleSideLabel(row.group)}`})),
+)
+
+/** Both dates reach the email, so neither can be missing when one is read. */
+const canPreviewEmail = computed(() =>
+  previewRecipients.value.length > 0 && !!paymentDueDate.value && !!debitDate.value,
+)
+
+function openEmailPreview() {
+  if (!canPreviewEmail.value) return
+  if (previewRecipientId.value == null) previewRecipientId.value = previewRecipients.value[0]!.value
+  void renderEmailFor(previewRecipientId.value)
+}
+
+/**
+ * The api decides which of the two statements this member gets and builds it with the same
+ * builder the send uses, so what is read here is what goes out.
+ */
+async function renderEmailFor(userId: number) {
+  const periodId = props.period?.id
+  if (periodId == null) return
+  await showEmailPreview(async () => {
+    const {data} = await previewFeeCycleEmail({
+      query: {
+        contributionPeriodId: periodId,
+        userId,
+        paymentDueDate: paymentDueDate.value,
+        debitDate: debitDate.value,
+        feeType: feeTypeSelections.value[userId],
+      },
+    })
+    return data ?? null
+  })
+}
+
+// Changing the recipient re-renders, which is what the dialog's recipient slot is for.
+watch(previewRecipientId, (userId) => {
+  if (userId != null && emailPreviewOpen.value) void renderEmailFor(userId)
+})
+
+// A recipient who dropped out of the cycle cannot stay selected.
+watch(previewRecipients, (options) => {
+  const current = previewRecipientId.value
+  if (options.length === 0) {
+    previewRecipientId.value = null
+  } else if (current == null || !options.some((option) => option.value === current)) {
+    previewRecipientId.value = options[0]!.value
+  }
+})
+
 const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
 async function onConfirm() {
@@ -177,13 +250,23 @@ watch(
       rejection.value = null
       loadError.value = null
       feeTypeSelections.value = {}
+      previewRecipientId.value = null
+      resetEmailPreview()
       reset()
     }
   },
   {immediate: true},
 )
 
-defineExpose({paymentDueDate, debitDate, feeTypeSelections, rowAmount, loadCycle})
+defineExpose({
+  paymentDueDate,
+  debitDate,
+  feeTypeSelections,
+  previewRecipientId,
+  previewRecipients,
+  rowAmount,
+  loadCycle,
+})
 </script>
 
 <template>
@@ -216,6 +299,19 @@ defineExpose({paymentDueDate, debitDate, feeTypeSelections, rowAmount, loadCycle
     @cancel="emit('update:modelValue', false)"
     @confirm="onConfirm"
   >
+    <!-- Reading one member's email before sending to a hundred. -->
+    <template #footer-actions>
+      <v-btn
+        data-testid="fee-cycle-preview-email-btn"
+        :disabled="!canPreviewEmail"
+        prepend-icon="mdi-email-search-outline"
+        variant="text"
+        @click="openEmailPreview"
+      >
+        Read an email
+      </v-btn>
+    </template>
+
     <template #form>
       <div class="mb-4 d-flex fee-cycle-dates">
         <v-text-field
@@ -360,6 +456,31 @@ defineExpose({paymentDueDate, debitDate, feeTypeSelections, rowAmount, loadCycle
       >{{ lastAskedLabel(row.lastSentOn) }}</span>
     </template>
   </bulk-dialog-scaffold>
+
+  <!--
+    The shared preview dialog, read-only: no confirmLabel, because the table above is what
+    the treasurer confirms and this shows one recipient out of a hundred.
+  -->
+  <email-preview-dialog
+    v-model="emailPreviewOpen"
+    :error="emailPreviewError"
+    :loading="emailPreviewLoading"
+    :preview="emailPreview"
+    title="Fee cycle email"
+  >
+    <template #recipient>
+      <v-select
+        v-model="previewRecipientId"
+        data-testid="fee-cycle-preview-recipient"
+        density="compact"
+        hide-details
+        item-title="title"
+        item-value="value"
+        :items="previewRecipients"
+        label="Read as"
+      />
+    </template>
+  </email-preview-dialog>
 </template>
 
 <style lang="scss" scoped>

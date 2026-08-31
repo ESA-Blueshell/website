@@ -344,22 +344,7 @@ test.describe("banners and icons", () => {
  * has been laid out, and the browser fetches a larger copy over the one already showing.
  */
 test.describe("how large a banner is fetched", () => {
-  const sizesOf = (page: import("@playwright/test").Page, testid: string) =>
-    page.getByTestId(testid).locator("img").first().getAttribute("sizes")
 
-  const pxOf = async (page: import("@playwright/test").Page, testid: string) =>
-    Number((await sizesOf(page, testid))!.replace("px", ""))
-
-  /**
-   * The figure a slice has settled on, after opening or shutting one.
-   *
-   * A fixed wait rather than a poll, and deliberately: a slice's share of the row is
-   * transitioned over 620ms and measured again once that is done, so between the two there is
-   * a window in which nothing is measured at all. A poll that watches for the value to stop
-   * changing cannot tell that window from a value that has settled, and reads a slice caught
-   * half way open.
-   */
-  const SETTLE_MS = 1600
 
   /**
    * Nothing the mocks seed carries a banner, so they are put on the way a board would put
@@ -376,6 +361,21 @@ test.describe("how large a banner is fetched", () => {
     await expect(page.getByTestId("lineup-editor")).toBeHidden()
   }
 
+  /**
+   * What each banner in the band is promised, and which slice is being read.
+   *
+   * Read together in one pass, because the comparison is between them: the figure is worked
+   * out from the share of the row a slice has, so the only honest check is the open one against
+   * the shut ones at the same moment. Slices with no picture are not in the list.
+   */
+  const band = (page: import("@playwright/test").Page) => page.evaluate(() =>
+    [...document.querySelectorAll(".team-slice")]
+      .map(slice => ({
+        open: slice.classList.contains("team-slice--open"),
+        sizes: slice.querySelector(".team-slice__banner")?.getAttribute("sizes") ?? "",
+      }))
+      .filter(one => one.sizes !== ""))
+
   test("a banner is asked for its share of the row, and the slice being read for more", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
@@ -383,30 +383,45 @@ test.describe("how large a banner is fetched", () => {
     await giveABanner(page, 1)
     await giveABanner(page, 2)
 
-    // Reloaded, because reaching a slice's edit button means hovering the slice, which opens
-    // it — and a slice that has been open once keeps the wider figure it had open.
+    // Reloaded, and then left alone. Reaching a slice's edit button means hovering it, which
+    // opens it, and a slice that has been open keeps the wider figure it had — so after the
+    // uploads there is no slice left in this band that has only ever been a strip. A fresh
+    // load is a band where exactly one slice has been open: the one it opens itself.
+    //
+    // Which one that is, is not this test's business. It is found rather than named, because
+    // naming it made the test read whichever slice happened to lead as the open one and the
+    // two figures came back the other way round.
     await page.reload()
-    // The pointer stays where the upload left it across a reload, and a slice under the
-    // pointer is the open one — so it is moved off the band and the first slice opens by
-    // itself, which is what this test is about.
-    await page.mouse.move(0, 0)
 
-    // Worked out rather than promised as a fraction of the viewport, so it is a length.
-    await expect.poll(() => sizesOf(page, "team-roster-1")).toMatch(/^\d+px$/)
-    await expect.poll(() => sizesOf(page, "team-roster-2")).toMatch(/^\d+px$/)
+    await expect.poll(
+      async () => {
+        const drawn = await band(page)
+        // Both conditions together: nothing is open for the first frame, by design, so a band
+        // whose figures have all settled may still have no slice open yet.
+        return drawn.length > 1 &&
+          drawn.every(one => /^\d+px$/.test(one.sizes)) &&
+          drawn.filter(one => one.open).length === 1
+      },
+      {timeout: 15_000},
+    ).toBe(true)
 
-    // The first slice opens on its own. Side by side it takes the larger share of the row and
-    // asks for more than the strip beside it; stacked, both are the width of the window.
-    const openly = await pxOf(page, "team-roster-1")
-    const shut = await pxOf(page, "team-roster-2")
+    const slices = await band(page)
+    expect(slices.filter(one => one.open)).toHaveLength(1)
+    const asked = (one: {sizes: string}) => Number(one.sizes.replace("px", ""))
+    const openly = asked(slices.find(one => one.open)!)
+    const others = slices.filter(one => !one.open).map(asked)
+    expect(others.length).toBeGreaterThan(0)
     const window = page.viewportSize()!.width
+
     if (await page.evaluate(() => matchMedia("(max-width: 767px)").matches)) {
+      // Stacked, every slice is the width of the window and the row's shares do not apply.
       expect(openly).toBe(window)
-      expect(shut).toBe(window)
+      others.forEach(one => expect(one).toBe(window))
     } else {
-      expect(openly).toBeGreaterThan(shut)
-      // A share of the row rather than the whole window, which is the saving.
-      expect(shut).toBeLessThan(window)
+      // The slice being read takes the larger share of the row, so it is promised more than
+      // any strip beside it — and a strip is a fraction of the window, which is the saving.
+      expect(openly).toBeGreaterThan(Math.max(...others))
+      others.forEach(one => expect(one).toBeLessThan(window))
     }
   })
 
@@ -426,25 +441,41 @@ test.describe("how large a banner is fetched", () => {
     await page.goto(GAME_PAGE)
     await giveABanner(page, 1)
 
+    // Left for a blank page before anything is counted, rather than reloaded over the top.
+    // Saving the banner re-renders the band, which asks for a wider copy of it, and that
+    // request is still in flight while this test sets up — recorded, it reads as the first
+    // thing the new page asked for. Leaving the page cancels it instead. Emptying the list on
+    // the new document's `domcontentloaded` does not work: the event is delivered
+    // asynchronously and the clear can land after the requests it was meant to precede.
+    await page.goto("about:blank")
+
     const fetched: string[] = []
+    // Only the copies, not the master: a master is `mock-<id>.webp`, which a looser pattern
+    // reads as a copy `<id>` pixels wide.
     page.on("request", request => {
-      const match = /team-banners\/[^/]*-(\d+)\.webp/.exec(request.url())
+      const match = /team-banners\/mock-\d+-(\d+)\.webp/.exec(request.url())
       if (match) fetched.push(match[1])
     })
 
     // A fresh load, so both passes happen from nothing.
-    await page.reload()
-    // Off the band, so the first slice is the open one rather than whichever the pointer was
-    // left over. A shut slice's share is narrow enough that both passes land on the same rung
-    // of the ladder, which is the saving working rather than the second pass failing.
-    await page.mouse.move(0, 0)
+    await page.goto(GAME_PAGE)
 
-    await expect.poll(() => sizesOf(page, "team-roster-1")).toMatch(/^\d+px$/)
-    await page.waitForTimeout(SETTLE_MS)
-
-    // The narrow copy went first, and a wider one followed it.
-    expect(fetched.length).toBeGreaterThan(1)
+    // The first copy arrives on its own, off the understated promise.
+    await expect.poll(() => fetched.length, {timeout: 15_000}).toBeGreaterThan(0)
     const first = Number(fetched[0])
-    expect(Math.max(...fetched.map(Number))).toBeGreaterThan(first)
+
+    // Then the slice is read, which is when a wider copy is worth having: a shut slice's share
+    // of the row is narrow enough that the worked-out figure lands on the same rung the guess
+    // did, so nothing is fetched twice and nothing should be — that is the saving, not a
+    // failure. It is the slice being looked at whose picture is fetched again.
+    await page.getByTestId("team-roster-1").hover()
+
+    // Waited for rather than slept through: a fixed wait for this is too short on a loaded
+    // machine, which is what three workers made of it.
+    await expect.poll(() => Math.max(...fetched.map(Number)), {timeout: 15_000})
+      .toBeGreaterThan(first)
+
+    // And the narrow one really did go first.
+    expect(first).toBe(Math.min(...fetched.map(Number)))
   })
 })

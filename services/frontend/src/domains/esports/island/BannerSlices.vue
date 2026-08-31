@@ -376,12 +376,12 @@ watch(open, (index) => {
         :width="item.width"
         @load="onLoaded(index)"
       >
-      <!-- Only over art: on a slice with no banner there is nothing to read the names off,
-           and the wash sat on the page as shading for its own sake. -->
+      <!-- Only over art, and only under the text and the icon: a wash across the whole
+           picture was filtering the art rather than carrying the names. -->
       <span
         v-if="item.banner"
         aria-hidden="true"
-        class="team-slice__scrim"
+        class="team-slice__glow"
       />
 
       <button
@@ -690,12 +690,18 @@ watch(open, (index) => {
   scale: 1;
 }
 
-.team-slice__scrim {
+.team-slice__glow {
   position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(to top, color-mix(in oklab, var(--color-ground) 92%, transparent) 0%, transparent 62%),
-    linear-gradient(to right, color-mix(in oklab, var(--color-ground) 55%, transparent), transparent 55%);
+  inset: auto 0 -14% 0;
+  height: 72%;
+  background: radial-gradient(
+    64% 118% at 16% 100%,
+    color-mix(in oklab, var(--color-ground) 92%, transparent) 0%,
+    color-mix(in oklab, var(--color-ground) 62%, transparent) 42%,
+    transparent 74%
+  );
+  filter: blur(26px);
+  pointer-events: none;
 }
 
 .team-slice__body {

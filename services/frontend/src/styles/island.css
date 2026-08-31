@@ -102,6 +102,21 @@
   --color-warning: #8a5300;
 }
 
+/* The band is the same in both themes, down to the ink. The dark treatment works, the art is
+   the board's rather than vetted, and a wash that follows the viewer only filters the picture.
+   Stated once here, so nothing inside the band has to know. */
+.esports-island .season-swipe {
+  color: var(--color-chalk);
+
+  --color-ground: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+}
+
 /* The header hands the page's texture down to the strip: grain at the top, the band ground
    at its foot, so the two meet in a blend rather than on a line. The shade is laid in first
    and the blue blob paints over it, which is what gives the top its depth. */

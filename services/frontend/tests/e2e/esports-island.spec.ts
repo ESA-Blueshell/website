@@ -172,7 +172,7 @@ test.describe("the esports island", () => {
     expect(light).not.toBe(dark)
   })
 
-  test("the band of games follows the theme too", async ({page}) => {
+  test("the band of games reads the same in either theme", async ({page}) => {
     await installApiMocks(page)
     await preferLightTheme(page)
     await page.goto("/esports/competitive-scene")
@@ -180,10 +180,10 @@ test.describe("the esports island", () => {
     const slices = page.getByTestId("esports-game-slices")
     await slices.waitFor()
 
-    // Dark ink on a light slice: the band is not pinned to one treatment.
+    // Light ink, under a light theme: the band carries one treatment, not the viewer's.
     const ink = await slices.locator('[data-testid^="esports-game-"]').first()
       .evaluate(el => getComputedStyle(el).color)
-    expect(ink).toBe("rgb(28, 28, 28)")
+    expect(ink).toBe("rgb(242, 244, 246)")
   })
 
   test("a board dialog follows the theme", async ({page, context}) => {

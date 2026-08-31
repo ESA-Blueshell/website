@@ -1,6 +1,6 @@
 package net.blueshell.api.esports.domain
 
-import net.blueshell.api.esports.persistence.GamePageRepository
+import net.blueshell.api.esports.persistence.GameRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
@@ -47,7 +47,7 @@ class ShippedArt(
     private val users: UserService,
     private val teams: TeamRepository,
     private val fielded: TeamSeasonRepository,
-    private val games: GamePageRepository,
+    private val games: GameRepository,
     private val transactions: TransactionTemplate,
 ) {
     /** The pictures a run put on records, which is none at all on every start after the first. */
@@ -134,10 +134,10 @@ class ShippedArt(
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
-        val page = games.findByGame(game) ?: return@execute 0
-        if (page.banner != null) return@execute 0
-        page.banner = store(art, FileType.GAME_BANNER, owner, stored)
-        games.save(page)
+        val record = games.findByCode(game) ?: return@execute 0
+        if (record.banner != null) return@execute 0
+        record.banner = store(art, FileType.GAME_BANNER, owner, stored)
+        games.save(record)
         1
     }
 
@@ -148,10 +148,10 @@ class ShippedArt(
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
-        val page = games.findByGame(game) ?: return@execute 0
-        if (page.icon != null) return@execute 0
-        page.icon = store(art, FileType.GAME_ICON, owner, stored)
-        games.save(page)
+        val record = games.findByCode(game) ?: return@execute 0
+        if (record.icon != null) return@execute 0
+        record.icon = store(art, FileType.GAME_ICON, owner, stored)
+        games.save(record)
         1
     }
 

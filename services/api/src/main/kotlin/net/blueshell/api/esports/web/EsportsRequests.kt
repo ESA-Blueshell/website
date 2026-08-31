@@ -192,8 +192,8 @@ data class CreateGameRequest(
     val sortIndex: Int? = null,
 )
 
-@Schema(name = "UpdateGamePageRequest", description = "How a game presents itself")
-data class UpdateGamePageRequest(
+@Schema(name = "UpdateGameRequest", description = "How a game presents itself")
+data class UpdateGameRequest(
     @field:NotBlank(message = "A game needs a name")
     @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
     @field:Schema(description = "What the pages print for this game. Its code is not editable")

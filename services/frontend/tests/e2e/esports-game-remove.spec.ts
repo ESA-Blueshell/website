@@ -105,9 +105,9 @@ test.describe("removing a game", () => {
   test("a game added by mistake is removed and its page stops answering", async ({page, context}) => {
     await installApiMocks(page, {
       esportsGames: [
-        {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null,
+        {code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null,
           intro: null, sortIndex: 1, current: true},
-        {game: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
+        {code: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
           intro: null, sortIndex: 2, current: true},
       ],
       esportsTeams: [],
@@ -128,9 +128,9 @@ test.describe("removing a game", () => {
   test("the band reflects the removal without a reload", async ({page, context}) => {
     await installApiMocks(page, {
       esportsGames: [
-        {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null,
+        {code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null,
           intro: null, sortIndex: 1, current: true},
-        {game: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
+        {code: "PONG", name: "Pong", slug: "pong", accent: null, banner: null, icon: null,
           intro: null, sortIndex: 2, current: true},
       ],
       esportsTeams: [],

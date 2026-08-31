@@ -1,10 +1,10 @@
 import {computed, onMounted, ref, watch} from "vue"
-import {loadSeasonGames, type Game, type Season, type TeamRoster} from "../adapters/esports"
+import {loadSeasonGames, type GameCode, type Season, type TeamRoster} from "../adapters/esports"
 import {seasonsIncluding} from "./seasonAxis"
 import {useSeasons} from "./useSeasons"
 
 export interface LineupEntry {
-  game: Game
+  game: GameCode
   teams: TeamRoster[]
   /**
    * Whether a visitor sees this game in this season.

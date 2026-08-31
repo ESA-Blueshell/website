@@ -1,5 +1,5 @@
 import {computed, ref, type ComputedRef, type Ref} from "vue"
-import {loadGames, type Game, type GameRecord} from "../adapters/esports"
+import {loadGames, type GameCode, type Game} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
 
 /** A game as the island draws it: its name, its colour, and the art it carries. */
@@ -26,7 +26,7 @@ export interface GameIdentity {
  */
 const UNDRAWN = {accent: "var(--color-brand)", icon: null, banner: null}
 
-const identify = (record: GameRecord): GameIdentity => ({
+const identify = (record: Game): GameIdentity => ({
   name: record.name,
   accent: record.accent || UNDRAWN.accent,
   icon: record.icon?.url ?? null,
@@ -43,17 +43,17 @@ const identify = (record: GameRecord): GameIdentity => ({
  * frontend, so the pages and the database could disagree about both. They are one answer now,
  * and this is where the pages ask for it.
  */
-const records = ref<GameRecord[]>([])
-let asked: Promise<GameRecord[]> | null = null
+const records = ref<Game[]>([])
+let asked: Promise<Game[]> | null = null
 
 export function useGames(): {
-  games: Ref<GameRecord[]>
-  current: ComputedRef<GameRecord[]>
-  ready: Promise<GameRecord[]>
-  identityOf: (game: Game | string) => GameIdentity
-  recordOf: (game: Game | string) => GameRecord | null
-  bySlug: (slug: string) => GameRecord | null
-  refresh: () => Promise<GameRecord[]>
+  games: Ref<Game[]>
+  current: ComputedRef<Game[]>
+  ready: Promise<Game[]>
+  identityOf: (game: GameCode | string) => GameIdentity
+  recordOf: (game: GameCode | string) => Game | null
+  bySlug: (slug: string) => Game | null
+  refresh: () => Promise<Game[]>
 } {
   const refresh = async () => {
     records.value = await loadGames()
@@ -62,7 +62,7 @@ export function useGames(): {
 
   asked ??= refresh()
 
-  const recordOf = (game: Game | string) => records.value.find(one => one.game === game) ?? null
+  const recordOf = (game: GameCode | string) => records.value.find(one => one.code === game) ?? null
 
   return {
     games: records,

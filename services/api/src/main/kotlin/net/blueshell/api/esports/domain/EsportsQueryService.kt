@@ -21,14 +21,14 @@ import net.blueshell.api.esports.api.TeamRosterService
  * Handles, consent and names each resolve once for the whole page rather than per member.
  */
 @Service
-class EsportsPageQueryService(
+class EsportsQueryService(
     private val rosters: TeamRosterService,
     private val seasons: SeasonService,
     private val fielded: TeamSeasonService,
     private val accounts: UserGameAccountService,
     private val profiles: MemberProfileService,
     private val users: UserService,
-    private val games: GamePageService,
+    private val games: GameService,
     private val entered: SeasonGameService,
 ) {
     /**
@@ -57,7 +57,7 @@ class EsportsPageQueryService(
     }
 
     @Transactional(readOnly = true)
-    fun page(game: String, seasonId: Long? = null): EsportsPageView {
+    fun rostersOf(game: String, seasonId: Long? = null): GameRostersView {
         // A code naming no game is refused rather than answered with an empty page.
         games.requireGame(game)
         val available = fielded.findSeasonIdsFielded(game)
@@ -72,9 +72,9 @@ class EsportsPageQueryService(
             available.firstOrNull { it.id == requested }
                 ?: runCatching { seasons.findById(requested) }.getOrNull()?.asView()
         } ?: available.firstOrNull()
-        if (season == null) return EsportsPageView(game, null, available, emptyList())
+        if (season == null) return GameRostersView(game, null, available, emptyList())
 
-        return EsportsPageView(game, season, available, teamsOf(game, season.id))
+        return GameRostersView(game, season, available, teamsOf(game, season.id))
     }
 
     /**

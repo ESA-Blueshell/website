@@ -38,8 +38,9 @@ data class FieldingResponse(
 )
 
 @Schema(description = "A game: what it is called, the art it is drawn with, and how its page presents it")
-data class GamePageResponse(
-    val game: String,
+data class GameResponse(
+    @Schema(description = "The identifier teams, rosters and game accounts reference. Never changes")
+    val code: String,
     @Schema(description = "What the pages print for this game")
     val name: String,
     @Schema(description = "The address the game's page answers to")
@@ -85,7 +86,7 @@ data class TeamRosterResponse(
 )
 
 @Schema(description = "A game's teams for one season, and the seasons that can be shown")
-data class EsportsPageResponse(
+data class GameRostersResponse(
     val game: String,
     @Schema(description = "The season being shown; absent when the game has no rosters yet")
     val season: SeasonResponse?,

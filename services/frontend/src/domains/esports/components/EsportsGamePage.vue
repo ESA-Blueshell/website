@@ -20,11 +20,11 @@ import {useSeasons} from "@/domains/esports/island/useSeasons"
 import {newestSeason, seasonsIncluding} from "@/domains/esports/island/seasonAxis"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
-import type {Game, Season} from "../adapters/esports"
+import type {GameCode, Season} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
-const props = defineProps<{game: Game}>()
+const props = defineProps<{game: GameCode}>()
 
 const route = useRoute()
 const router = useRouter()

@@ -17,21 +17,21 @@
 -- was previously assumed: the enum made an unknown code unrepresentable in Kotlin and the database
 -- was told nothing.
 
-ALTER TABLE game_page
-    ADD COLUMN name   VARCHAR(64) NOT NULL DEFAULT '' AFTER game,
+ALTER TABLE game
+    ADD COLUMN name   VARCHAR(64) NOT NULL DEFAULT '' AFTER code,
     ADD COLUMN accent VARCHAR(32) NULL AFTER intro;
 
 -- A code identifies a game for the whole life of the site, so it is unique across every row
 -- rather than only among the ones still present. That is also what lets the two ties below
 -- reference it: a foreign key needs a key covering the referenced column alone.
-ALTER TABLE game_page DROP INDEX uk_game_page_game;
-ALTER TABLE game_page ADD UNIQUE INDEX uk_game_page_code (game);
+ALTER TABLE game DROP INDEX uk_game_code_active;
+ALTER TABLE game ADD UNIQUE INDEX uk_game_code (code);
 
 -- On the fielding rather than on the team: a team is the association's and plays whatever games
 -- it plays, so the game it played is a fact about being fielded.
 ALTER TABLE team_season
-    ADD CONSTRAINT fk_team_season_game FOREIGN KEY (game) REFERENCES game_page (game);
+    ADD CONSTRAINT fk_team_season_game FOREIGN KEY (game) REFERENCES game (code);
 ALTER TABLE season_game
-    ADD CONSTRAINT fk_season_game_game FOREIGN KEY (game) REFERENCES game_page (game);
+    ADD CONSTRAINT fk_season_game_game FOREIGN KEY (game) REFERENCES game (code);
 ALTER TABLE user_game_account
-    ADD CONSTRAINT fk_user_game_account_game FOREIGN KEY (game) REFERENCES game_page (game);
+    ADD CONSTRAINT fk_user_game_account_game FOREIGN KEY (game) REFERENCES game (code);

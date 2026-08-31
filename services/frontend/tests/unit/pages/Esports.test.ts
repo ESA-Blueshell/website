@@ -64,9 +64,9 @@ const newest = seasons[1]!
 
 /** The games as their records have them: the index keeps no list of its own to fall back on. */
 const games = [
-  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: null, sortIndex: 1, current: true},
-  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 2, current: true},
-  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: null, sortIndex: 3, current: true},
+  {code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: null, sortIndex: 1, current: true},
+  {code: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 2, current: true},
+  {code: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: null, sortIndex: 3, current: true},
 ]
 
 vi.mock("@/domains/esports/adapters/esports", () => ({

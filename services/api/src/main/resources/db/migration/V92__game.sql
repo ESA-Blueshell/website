@@ -9,9 +9,9 @@
 -- The enum stays what a team, a game account and the cohort rules refer to. This is only how a
 -- game is presented.
 
-CREATE TABLE game_page (
+CREATE TABLE game (
     id            BIGINT       AUTO_INCREMENT PRIMARY KEY,
-    game          VARCHAR(32)  NOT NULL,
+    code          VARCHAR(32)  NOT NULL,
     slug          VARCHAR(64)  NOT NULL,
     intro         TEXT         NULL,
     sort_index    INT          NOT NULL DEFAULT 0,
@@ -21,18 +21,18 @@ CREATE TABLE game_page (
     updated_at    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_by_id BIGINT       NULL,
     deleted_at    DATETIME(6)  NOT NULL DEFAULT '9999-12-31 23:59:59.000000',
-    UNIQUE INDEX uk_game_page_game    (game, deleted_at),
-    UNIQUE INDEX uk_game_page_slug    (slug, deleted_at),
-    INDEX idx_game_page_deleted_at    (deleted_at),
-    CONSTRAINT fk_game_page_created FOREIGN KEY (created_by_id) REFERENCES users (id),
-    CONSTRAINT fk_game_page_updated FOREIGN KEY (updated_by_id) REFERENCES users (id)
+    UNIQUE INDEX uk_game_code_active  (code, deleted_at),
+    UNIQUE INDEX uk_game_slug         (slug, deleted_at),
+    INDEX idx_game_deleted_at         (deleted_at),
+    CONSTRAINT fk_game_created FOREIGN KEY (created_by_id) REFERENCES users (id),
+    CONSTRAINT fk_game_updated FOREIGN KEY (updated_by_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- The slugs are the addresses the router already answers to, so every link that exists keeps
 -- working. The copy is what each page already said. Trackmania is given the address it never
 -- had. Whether the association still plays one is not recorded: it is derived from the
 -- seasons, where a team playing it is what says so.
-INSERT INTO game_page (game, slug, sort_index, intro) VALUES
+INSERT INTO game (code, slug, sort_index, intro) VALUES
 ('VALORANT', 'valorant', 1,
  'With shooters'' prevalence in the global esports scene, not only do we have a CS team, but also multiple Valorant teams. They''ll be battling it out within the dutch Valorant esports scene. Below you can find our competitive Valorant teams.'),
 ('CS2', 'counter-strike-2', 2,

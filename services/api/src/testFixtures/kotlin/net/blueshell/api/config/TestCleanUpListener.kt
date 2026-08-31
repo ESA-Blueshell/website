@@ -195,7 +195,7 @@ class TestCleanUpListener : TestExecutionListener {
          * test writes — so accounts a test creates still do not leak into the next one.
          */
         val REFERENCE_TABLES = listOf(
-            Reference("game_page", "1 = 1", blanked = setOf("banner_file_id", "icon_file_id")),
+            Reference("game", "1 = 1", blanked = setOf("banner_file_id", "icon_file_id")),
             Reference("users", "id IN (SELECT user_id FROM authorities WHERE authority = 'SYSTEM')"),
             Reference("authorities", "authority = 'SYSTEM'"),
         )

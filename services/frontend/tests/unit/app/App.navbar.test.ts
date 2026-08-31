@@ -106,9 +106,9 @@ vi.mock("@/services/api", () => ({
 // which games there are.
 vi.mock("@/domains/esports/adapters/esports", () => ({
   loadGames: vi.fn(async () => [
-    {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: null, banner: null, icon: null, intro: null, sortIndex: 5, current: true},
-    {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: null, sortIndex: 6, current: true},
-    {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: null, banner: null, icon: null, intro: null, sortIndex: 7, current: false},
+    {code: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: null, banner: null, icon: null, intro: null, sortIndex: 5, current: true},
+    {code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: null, sortIndex: 6, current: true},
+    {code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: null, banner: null, icon: null, intro: null, sortIndex: 7, current: false},
   ]),
 }))
 

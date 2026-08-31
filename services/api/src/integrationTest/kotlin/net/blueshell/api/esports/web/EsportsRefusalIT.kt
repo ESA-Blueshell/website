@@ -2,7 +2,7 @@ package net.blueshell.api.esports.web
 
 import net.blueshell.api.esports.domain.GameAddressBlank
 import net.blueshell.api.esports.domain.GameNameBlank
-import net.blueshell.api.esports.domain.GamePageService
+import net.blueshell.api.esports.domain.GameService
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.persistence.Season
@@ -34,7 +34,7 @@ class EsportsRefusalIT : UserTestSupport() {
 
     @Autowired private lateinit var entered: SeasonGameService
 
-    @Autowired private lateinit var games: GamePageService
+    @Autowired private lateinit var games: GameService
 
     private fun aSeason(): Season {
         val unique = System.nanoTime()

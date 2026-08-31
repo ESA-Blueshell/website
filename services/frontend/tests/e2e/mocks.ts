@@ -62,14 +62,14 @@ const addressTaken = (gameName: string, address: string) => ({
 })
 
 const esportsGames = [
-  {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true},
-  {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true},
-  {game: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, current: true},
-  {game: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, current: true},
-  {game: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, current: true},
+  {code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true},
+  {code: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true},
+  {code: "LEAGUE_OF_LEGENDS", name: "League of Legends", slug: "league-of-legends", accent: "#c8963c", banner: null, icon: null, intro: "A special place.", sortIndex: 3, current: true},
+  {code: "ROCKET_LEAGUE", name: "Rocket League", slug: "rocketleague", accent: "#1183d6", banner: null, icon: null, intro: "Football, with rocket cars.", sortIndex: 4, current: true},
+  {code: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: "#6cbf3f", banner: null, icon: null, intro: "Guessing where.", sortIndex: 5, current: true},
   // No accent has ever been written for Trackmania: it reads on the island's own blue.
-  {game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true},
-  {game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false},
+  {code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true},
+  {code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false},
 ]
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
@@ -880,7 +880,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
       const made = {
-        game: code, name: String(body.name ?? ""), slug, accent: null, banner: null, icon: null,
+        code, name: String(body.name ?? ""), slug, accent: null, banner: null, icon: null,
         intro: null, sortIndex: known.length + 1, current: true,
       }
       gamesMade.push(made)
@@ -899,7 +899,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const held = new Set(fieldedNow.filter(one => one.game === code).map(one => one.teamId))
       const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
       if (held.size + seeded > 0) {
-        const game = known.find(one => one.game === code)
+        const game = known.find(one => one.code === code)
         return fulfillJson(route, {
           detail: "That game cannot be removed.",
           code: "GameHoldsHistory",
@@ -918,13 +918,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
       const slug = String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-      const held = known.find(one => one.slug === slug && one.game !== code)
+      const held = known.find(one => one.slug === slug && one.code !== code)
       if (held) {
         return fulfillJson(route, addressTaken(held.name, slug), 409)
       }
-      const was = known.find(one => one.game === code)
+      const was = known.find(one => one.code === code)
       const now = {
-        ...(was ?? {game: code}),
+        ...(was ?? {code}),
         name: body.name ?? was?.name ?? code,
         slug,
         intro: body.intro ?? null,
@@ -943,8 +943,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // The api answers in the order the records put the games in, and so does this.
     if (method === "GET" && path === "/esports/games") {
       const all = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-        .filter(one => !gamesGone.has(String(one.game)))
-        .map(one => gamesEdited.get(String(one.game)) ?? one)
+        .filter(one => !gamesGone.has(String(one.code)))
+        .map(one => gamesEdited.get(String(one.code)) ?? one)
       return fulfillJson(route, all)
     }
     // [A-Z0-9_]+ rather than [A-Z_]+: a game's enum name can carry a digit, and
@@ -1014,7 +1014,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const seasonId = Number(path.split("/")[3])
       const board = isBoard()
       const codes = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-        .map(one => String(one.game))
+        .map(one => String(one.code))
         .filter(code => !gamesGone.has(code))
       const played = codes
         .map(code => ({game: code, teams: teamsOfGameInSeason(code, seasonId)}))
@@ -1046,7 +1046,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const held = teamsOfGameInSeason(game, seasonId)
       if (held.length > 0) {
         const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
-          .find(one => one.game === game)
+          .find(one => one.code === game)
         return fulfillJson(route, {
           detail: "That game cannot be taken out of the season.",
           code: "GameFieldedInSeason",

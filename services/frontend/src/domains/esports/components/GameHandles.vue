@@ -5,7 +5,7 @@ import {
   dropGameAccount,
   loadGameAccounts,
   saveGameAccount,
-  type Game,
+  type GameCode,
 } from "../adapters/esports"
 import {useGames} from "@/domains/esports/island/useGames"
 
@@ -19,9 +19,9 @@ const props = defineProps<{
 // What each is called is its record's to say, rather than its code title-cased.
 const {games, identityOf} = useGames()
 
-const GAMES = computed<Game[]>(() => games.value.map(one => one.game))
+const GAMES = computed<GameCode[]>(() => games.value.map(one => one.code))
 
-const gameLabel = (game: Game) => identityOf(game).name || game
+const gameLabel = (game: GameCode) => identityOf(game).name || game
 
 /** What is stored, against what is typed: a row is dirty when the two differ. */
 const stored = ref<Record<string, string>>({})
@@ -29,8 +29,8 @@ const draft = ref<Record<string, string>>({})
 const saving = ref<string | null>(null)
 const loading = ref<boolean>(true)
 
-const dirty = computed<(game: Game) => boolean>(() =>
-  (game: Game) => (draft.value[game] ?? "").trim() !== (stored.value[game] ?? ""),
+const dirty = computed<(game: GameCode) => boolean>(() =>
+  (game: GameCode) => (draft.value[game] ?? "").trim() !== (stored.value[game] ?? ""),
 )
 
 const refresh = async () => {
@@ -46,7 +46,7 @@ const refresh = async () => {
   }
 }
 
-const save = async (game: Game) => {
+const save = async (game: GameCode) => {
   const value = (draft.value[game] ?? "").trim()
   saving.value = game
   try {

@@ -16,13 +16,13 @@ import {
   deleteSeason,
   deleteTeam,
   fieldTeam,
-  findEsportsPage,
+  findGame,
   findGameAccounts,
   createGame,
   deleteGame,
   findGameContents,
-  updateGamePage,
-  findGamePages,
+  updateGame,
+  findGames,
   findRoster,
   findSeasonContents,
   findSeasons,
@@ -43,11 +43,11 @@ import {
 } from "@/services/api"
 import type {
   FileType,
-  EsportsPageResponse,
+  GameRostersResponse,
   Image,
   FieldedTeamResponse,
   GameAccountResponse,
-  GamePageResponse,
+  GameResponse,
   RosterEntryResponse,
   SeasonResponse,
   TeamResponse,
@@ -60,16 +60,16 @@ import {reasonFor} from "@/domains/esports/refusals"
  * A game's code: the identity a team, a roster and a member's handle point at. A plain string
  * because the games that exist are rows rather than a list fixed when the code is built.
  */
-export type Game = string
+export type GameCode = string
 export type TeamRole = ApiTeamRole
-export type EsportsPage = EsportsPageResponse
+export type EsportsPage = GameRostersResponse
 export type Season = SeasonResponse
 export type Team = TeamResponse
 export type TeamRoster = TeamRosterResponse
 export type RosterEntry = RosterEntryResponse
 export type GameAccount = GameAccountResponse
 /** A game itself: what it is called, the art it is drawn with, and how its page presents it. */
-export type GameRecord = GamePageResponse
+export type Game = GameResponse
 export type FieldedTeam = FieldedTeamResponse
 /** An image a page draws: where it is served, how large it is, and the widths it is stored at. */
 export type EsportsImage = Image
@@ -87,14 +87,14 @@ export interface SeasonContents {
  * before the api is reachable, and a body that is not the list it was promised must read as no
  * games rather than take the navigation down with it.
  */
-export async function loadGames(): Promise<GameRecord[]> {
-  const res = await findGamePages()
+export async function loadGames(): Promise<Game[]> {
+  const res = await findGames()
   return Array.isArray(res.data) ? res.data.map(withArt) : []
 }
 
 export interface GameSaved {
   ok: true
-  game: GameRecord
+  game: Game
 }
 
 /**
@@ -136,7 +136,7 @@ export async function addGameOrReason(
  * changing it would be a different game.
  */
 export async function saveGameOrReason(
-  code: Game,
+  code: GameCode,
   game: {
     name: string
     slug: string
@@ -147,7 +147,7 @@ export async function saveGameOrReason(
     sortIndex: number
   },
 ): Promise<GameSaved | Refused> {
-  const res = await updateGamePage({
+  const res = await updateGame({
     path: {game: code},
     body: {
       name: game.name,
@@ -169,7 +169,7 @@ export async function saveGameOrReason(
  * Answers null when the read fails, rather than zero. A failed read is not an empty game, and
  * reporting it as one would offer to remove a game while telling the reader it holds nothing.
  */
-export async function loadGameContents(game: Game): Promise<SeasonContents | null> {
+export async function loadGameContents(game: GameCode): Promise<SeasonContents | null> {
   const res = await findGameContents({path: {game}})
   return res.data ?? null
 }
@@ -181,7 +181,7 @@ export async function loadGameContents(game: Game): Promise<SeasonContents | nul
  * reader can act on. The sdk answers with an error rather than throwing, so a caller that only
  * catches would report a removal that never happened.
  */
-export async function dropGameOrReason(game: Game): Promise<{ok: true} | Refused> {
+export async function dropGameOrReason(game: GameCode): Promise<{ok: true} | Refused> {
   const res = await deleteGame({path: {game}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The game could not be removed.")}
   return {ok: true}
@@ -253,8 +253,8 @@ const withMedia = (team: TeamRoster): TeamRoster => ({
   members: team.members.map(withIcon),
 })
 
-export async function loadEsportsPage(game: Game, seasonId?: number): Promise<EsportsPage | null> {
-  const res = await findEsportsPage({path: {game}, query: seasonId == null ? {} : {seasonId}})
+export async function loadEsportsPage(game: GameCode, seasonId?: number): Promise<EsportsPage | null> {
+  const res = await findGame({path: {game}, query: seasonId == null ? {} : {seasonId}})
   const page = res.data
   if (!page) return null
   return {...page, teams: page.teams.map(withMedia)}
@@ -322,7 +322,7 @@ export async function loadSeasonContents(id: number): Promise<SeasonContents> {
  */
 export async function unfieldTeamFromSeason(
   teamId: number,
-  game: Game,
+  game: GameCode,
   seasonId: number,
 ): Promise<{ok: true} | Refused> {
   const res = await unfieldTeam({path: {seasonId, teamId}, query: {game}})
@@ -334,7 +334,7 @@ export async function unfieldTeamFromSeason(
 
 /** A game that ran in one season, with what it fielded. */
 export interface SeasonGame {
-  game: Game
+  game: GameCode
   teams: TeamRoster[]
   /** Whether a visitor sees it. A game entered with nobody fielded is answered to the board only. */
   public: boolean
@@ -358,7 +358,7 @@ export async function loadSeasonGames(seasonId: number): Promise<SeasonGame[]> {
 }
 
 /** Records that a game runs in a season, before anybody is fielded in it. */
-export async function enterGameInSeason(seasonId: number, game: Game): Promise<SeasonGame | null> {
+export async function enterGameInSeason(seasonId: number, game: GameCode): Promise<SeasonGame | null> {
   const res = await enterGame({path: {seasonId, game}})
   if (res.error || !res.data) return null
   return {game: res.data.game, teams: [], public: res.data.public}
@@ -367,7 +367,7 @@ export async function enterGameInSeason(seasonId: number, game: Game): Promise<S
 /** Same reason as the others: a refusal comes back as a body rather than as a thrown error. */
 export async function leaveGameInSeason(
   seasonId: number,
-  game: Game,
+  game: GameCode,
 ): Promise<{ok: true} | Refused> {
   const res = await leaveGame({path: {seasonId, game}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The game could not be taken out.")}
@@ -448,7 +448,7 @@ export async function dropTeam(id: number): Promise<{ok: true} | Refused> {
  * two of them, with a line-up in each.
  */
 export interface Fielding {
-  game: Game
+  game: GameCode
   season: Season
 }
 
@@ -464,12 +464,12 @@ export async function loadTeamSeasons(teamId: number): Promise<Fielding[]> {
  */
 export async function fieldTeamInSeason(
   teamId: number,
-  game: Game,
+  game: GameCode,
   seasonId: number,
   carryLineup: boolean,
   banner?: string | null,
   /** Which of the team's line-ups to bring, where one was chosen rather than assumed. */
-  carryFrom?: {game: Game; seasonId: number} | null,
+  carryFrom?: {game: GameCode; seasonId: number} | null,
 ): Promise<FieldedTeam | null> {
   const res = await fieldTeam({
     path: {seasonId, teamId},
@@ -482,7 +482,7 @@ export async function fieldTeamInSeason(
 
 export async function loadRoster(
   teamId: number,
-  game: Game,
+  game: GameCode,
   seasonId: number,
 ): Promise<RosterEntry[]> {
   const res = await findRoster({path: {teamId}, query: {game, seasonId}})
@@ -492,7 +492,7 @@ export async function loadRoster(
 export async function addToRoster(
   teamId: number,
   entry: {
-    game: Game
+    game: GameCode
     seasonId: number
     handle: string
     role: TeamRole
@@ -592,13 +592,13 @@ export async function loadGameAccounts(userId: number): Promise<GameAccount[]> {
 
 export async function saveGameAccount(
   userId: number,
-  game: Game,
+  game: GameCode,
   handle: string,
 ): Promise<GameAccount | null> {
   const res = await setGameAccount({path: {userId, game}, body: {handle}})
   return res.data ?? null
 }
 
-export async function dropGameAccount(userId: number, game: Game): Promise<void> {
+export async function dropGameAccount(userId: number, game: GameCode): Promise<void> {
   await clearGameAccount({path: {userId, game}})
 }

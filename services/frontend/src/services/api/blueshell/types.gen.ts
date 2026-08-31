@@ -717,19 +717,6 @@ export type EnqueueJobRequest = {
     } | null;
 };
 
-/**
- * A game's teams for one season, and the seasons that can be shown
- */
-export type EsportsPageResponse = {
-    game: string;
-    /**
-     * The season being shown; absent when the game has no rosters yet
-     */
-    season?: SeasonResponse | null;
-    seasons: Array<SeasonResponse>;
-    teams: Array<TeamRosterResponse>;
-};
-
 export type EventBannerRequest = {
     fileId: number;
     version?: number | null;
@@ -939,7 +926,7 @@ export type GameContentsResponse = {
 /**
  * A game: what it is called, the art it is drawn with, and how its page presents it
  */
-export type GamePageResponse = {
+export type GameResponse = {
     /**
      * The colour that carries this game, where one has been chosen
      */
@@ -949,10 +936,13 @@ export type GamePageResponse = {
      */
     banner?: Image | null;
     /**
+     * The identifier teams, rosters and game accounts reference. Never changes
+     */
+    code: string;
+    /**
      * Whether the association currently plays it: a team played it this season or last
      */
     current: boolean;
-    game: string;
     /**
      * The game's own icon, drawn in that slice beside the name
      */
@@ -973,6 +963,19 @@ export type GamePageResponse = {
      * Where the game sits among the others
      */
     sortIndex: number;
+};
+
+/**
+ * A game's teams for one season, and the seasons that can be shown
+ */
+export type GameRostersResponse = {
+    game: string;
+    /**
+     * The season being shown; absent when the game has no rosters yet
+     */
+    season?: SeasonResponse | null;
+    seasons: Array<SeasonResponse>;
+    teams: Array<TeamRosterResponse>;
 };
 
 export type GuestResponse = {
@@ -1736,7 +1739,7 @@ export type UpdateEventSignUpRequest = {
 /**
  * How a game presents itself
  */
-export type UpdateGamePageRequest = {
+export type UpdateGameRequest = {
     /**
      * The colour that carries this game, or nothing for the island's own
      */
@@ -3657,14 +3660,14 @@ export type CsrfResponses = {
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 
-export type FindGamePagesData = {
+export type FindGamesData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/esports/games';
 };
 
-export type FindGamePagesErrors = {
+export type FindGamesErrors = {
     /**
      * Validation error
      */
@@ -3687,16 +3690,16 @@ export type FindGamePagesErrors = {
     500: ApiError;
 };
 
-export type FindGamePagesError = FindGamePagesErrors[keyof FindGamePagesErrors];
+export type FindGamesError = FindGamesErrors[keyof FindGamesErrors];
 
-export type FindGamePagesResponses = {
+export type FindGamesResponses = {
     /**
      * OK
      */
-    200: Array<GamePageResponse>;
+    200: Array<GameResponse>;
 };
 
-export type FindGamePagesResponse = FindGamePagesResponses[keyof FindGamePagesResponses];
+export type FindGamesResponse = FindGamesResponses[keyof FindGamesResponses];
 
 export type CreateGameData = {
     body: CreateGameRequest;
@@ -3734,7 +3737,7 @@ export type CreateGameResponses = {
     /**
      * Created
      */
-    201: GamePageResponse;
+    201: GameResponse;
 };
 
 export type CreateGameResponse = CreateGameResponses[keyof CreateGameResponses];
@@ -3782,7 +3785,7 @@ export type DeleteGameResponses = {
 
 export type DeleteGameResponse = DeleteGameResponses[keyof DeleteGameResponses];
 
-export type FindEsportsPageData = {
+export type FindGameData = {
     body?: never;
     path: {
         game: string;
@@ -3793,7 +3796,7 @@ export type FindEsportsPageData = {
     url: '/esports/games/{game}';
 };
 
-export type FindEsportsPageErrors = {
+export type FindGameErrors = {
     /**
      * Validation error
      */
@@ -3816,19 +3819,19 @@ export type FindEsportsPageErrors = {
     500: ApiError;
 };
 
-export type FindEsportsPageError = FindEsportsPageErrors[keyof FindEsportsPageErrors];
+export type FindGameError = FindGameErrors[keyof FindGameErrors];
 
-export type FindEsportsPageResponses = {
+export type FindGameResponses = {
     /**
      * OK
      */
-    200: EsportsPageResponse;
+    200: GameRostersResponse;
 };
 
-export type FindEsportsPageResponse = FindEsportsPageResponses[keyof FindEsportsPageResponses];
+export type FindGameResponse = FindGameResponses[keyof FindGameResponses];
 
-export type UpdateGamePageData = {
-    body: UpdateGamePageRequest;
+export type UpdateGameData = {
+    body: UpdateGameRequest;
     path: {
         game: string;
     };
@@ -3836,7 +3839,7 @@ export type UpdateGamePageData = {
     url: '/esports/games/{game}';
 };
 
-export type UpdateGamePageErrors = {
+export type UpdateGameErrors = {
     /**
      * Validation error
      */
@@ -3859,16 +3862,16 @@ export type UpdateGamePageErrors = {
     500: ApiError;
 };
 
-export type UpdateGamePageError = UpdateGamePageErrors[keyof UpdateGamePageErrors];
+export type UpdateGameError = UpdateGameErrors[keyof UpdateGameErrors];
 
-export type UpdateGamePageResponses = {
+export type UpdateGameResponses = {
     /**
      * OK
      */
-    200: GamePageResponse;
+    200: GameResponse;
 };
 
-export type UpdateGamePageResponse = UpdateGamePageResponses[keyof UpdateGamePageResponses];
+export type UpdateGameResponse = UpdateGameResponses[keyof UpdateGameResponses];
 
 export type FindGameContentsData = {
     body?: never;

@@ -22,7 +22,7 @@ import {
   unfieldTeamFromSeason,
   type EsportsImage,
   type Fielding,
-  type Game,
+  type GameCode,
   type Team,
   type Member,
   type RosterEntry,
@@ -78,7 +78,7 @@ interface Row {
 const props = defineProps<{
   open: boolean
   /** The game this line-up was played in, which the fielding names rather than the team. */
-  game: Game
+  game: GameCode
   teamId: number | null
   teamName: string
   /** Teams already fielded in this game this season, which there is nothing to add. */

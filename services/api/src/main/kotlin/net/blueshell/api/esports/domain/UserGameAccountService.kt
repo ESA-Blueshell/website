@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserGameAccountService(
     private val accounts: UserGameAccountRepository,
-    private val games: GamePageService,
+    private val games: GameService,
 ) {
     @Transactional(readOnly = true)
     fun findAllForUser(userId: Long): List<UserGameAccount> = accounts.findAllByUserId(userId)

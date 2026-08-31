@@ -31,8 +31,8 @@ watch(record, (found) => {
 <template>
   <esports-game-page
     v-if="record"
-    :key="record.game"
-    :game="record.game"
+    :key="record.code"
+    :game="record.code"
   />
   <not-found v-else-if="answered" />
 </template>

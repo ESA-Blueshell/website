@@ -39,19 +39,19 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
  */
 @Entity
 @Table(
-    name = "game_page",
+    name = "game",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_game_page_code", columnNames = ["game"]),
-        UniqueConstraint(name = "uk_game_page_slug", columnNames = ["slug", "deleted_at"]),
+        UniqueConstraint(name = "uk_game_code", columnNames = ["code"]),
+        UniqueConstraint(name = "uk_game_slug", columnNames = ["slug", "deleted_at"]),
     ],
-    indexes = [Index(name = "idx_game_page_deleted_at", columnList = "deleted_at")],
+    indexes = [Index(name = "idx_game_deleted_at", columnList = "deleted_at")],
 )
-class GamePage(
+class Game(
     /** The identifier teams, rosters and game accounts reference. Never changes. */
-    @Column(name = "game", nullable = false, length = 32)
-    var game: String,
+    @Column(name = "code", nullable = false, length = 32)
+    var code: String,
 
-    /** The name shown on the pages. Editable, unlike [game]. */
+    /** The name shown on the pages. Editable, unlike [code]. */
     @Column(name = "name", nullable = false, length = 64)
     var name: String,
 

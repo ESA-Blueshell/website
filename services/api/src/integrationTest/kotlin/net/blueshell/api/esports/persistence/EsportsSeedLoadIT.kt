@@ -23,7 +23,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
     @Autowired private lateinit var jdbc: JdbcTemplate
 
-    private val tables = listOf("game_page", "season", "team", "team_roster_entry")
+    private val tables = listOf("game", "season", "team", "team_roster_entry")
 
     private fun count(table: String): Int =
         jdbc.queryForObject("SELECT COUNT(*) FROM $table WHERE deleted_at = '9999-12-31 23:59:59'", Int::class.java)!!
@@ -34,7 +34,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
         // The history the pages published, recovered: eight games, twelve seasons, twenty-seven
         // teams and five hundred and twenty-six appearances.
-        assertThat(count("game_page")).isEqualTo(8)
+        assertThat(count("game")).isEqualTo(8)
         assertThat(count("season")).isEqualTo(12)
         // 26 teams from 27 rows: BS HyperS is listed for CS:GO and for CS2, and is one team
         // that changed the game it plays rather than two that share a name.
@@ -77,7 +77,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
     fun `a game carries the name and the colour the file gives it`() {
         runLoader()
 
-        val row = jdbc.queryForMap("SELECT name, slug, accent FROM game_page WHERE game = 'VALORANT'")
+        val row = jdbc.queryForMap("SELECT name, slug, accent FROM game WHERE code = 'VALORANT'")
         assertThat(row["name"]).isEqualTo("Valorant")
         assertThat(row["slug"]).isEqualTo("valorant")
         assertThat(row["accent"]).isEqualTo("#ff4655")
@@ -89,33 +89,33 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
         // Trackmania has never had an accent written for it. The island reads such a game on
         // its own colour, which it can only do if the record says there is none.
-        val row = jdbc.queryForMap("SELECT accent FROM game_page WHERE game = 'TRACKMANIA'")
+        val row = jdbc.queryForMap("SELECT accent FROM game WHERE code = 'TRACKMANIA'")
         assertThat(row["accent"]).isNull()
     }
 
     @Test
     fun `a game renamed in the file is renamed on the next run`() {
         runLoader()
-        jdbc.update("UPDATE game_page SET name = 'Something Else' WHERE game = 'GEOGUESSR'")
+        jdbc.update("UPDATE game SET name = 'Something Else' WHERE code = 'GEOGUESSR'")
 
         runLoader()
 
         // The files are the reviewed record, the same way they are for a roster entry.
-        assertThat(jdbc.queryForObject("SELECT name FROM game_page WHERE game = 'GEOGUESSR'", String::class.java))
+        assertThat(jdbc.queryForObject("SELECT name FROM game WHERE code = 'GEOGUESSR'", String::class.java))
             .isEqualTo("GeoGuessr")
     }
 
     @Test
     fun `a game the file lists is brought back, unlike everything else the file lists`() {
         runLoader()
-        jdbc.update("UPDATE game_page SET deleted_at = NOW(6) WHERE game = 'SMASH'")
+        jdbc.update("UPDATE game SET deleted_at = NOW(6) WHERE code = 'SMASH'")
 
         runLoader()
 
         // A game is what a team points at, so the file listing one is the statement that it
         // exists. A team or a roster entry is the other way round: removing it is a decision
         // the next run leaves alone.
-        assertThat(count("game_page")).isEqualTo(8)
+        assertThat(count("game")).isEqualTo(8)
     }
 
     @Test

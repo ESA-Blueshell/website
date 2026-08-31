@@ -103,7 +103,7 @@
             </v-list-item>
             <v-list-item
               v-for="game in currentGames"
-              :key="game.game"
+              :key="game.code"
               :to="`/esports/${game.slug}`"
             >
               {{ game.name }}
@@ -335,7 +335,7 @@
           </v-list-item>
           <v-list-item
             v-for="game in currentGames"
-            :key="game.game"
+            :key="game.code"
             :to="`/esports/${game.slug}`"
           >
             {{ game.name }}

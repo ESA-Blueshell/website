@@ -3,8 +3,8 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.esports.domain.EsportsPageQueryService
-import net.blueshell.api.esports.domain.GamePageService
+import net.blueshell.api.esports.domain.EsportsQueryService
+import net.blueshell.api.esports.domain.GameService
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.file.api.asImage
@@ -37,10 +37,10 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/esports")
 @Tag(name = "Esports", description = "Teams, seasons and rosters")
 class EsportsController(
-    private val page: EsportsPageQueryService,
+    private val views: EsportsQueryService,
     private val seasons: SeasonService,
     private val teams: TeamService,
-    private val gamePages: GamePageService,
+    private val games: GameService,
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
     private val entered: SeasonGameService,
@@ -55,10 +55,10 @@ class EsportsController(
 
     @GetMapping("/games/{game}")
     @PermitAll
-    fun findEsportsPage(
+    fun findGame(
         @PathVariable game: String,
         @RequestParam(required = false) seasonId: Long?,
-    ): EsportsPageResponse = page.page(game, seasonId).asResponse()
+    ): GameRostersResponse = views.rostersOf(game, seasonId).asResponse()
 
     /**
      * Every game the association has fielded a team in, present or past, in the order they are
@@ -66,19 +66,19 @@ class EsportsController(
      */
     @PermitAll
     @GetMapping("/games")
-    fun findGamePages(): List<GamePageResponse> {
+    fun findGames(): List<GameResponse> {
         // Which games the association currently plays is derived rather than stored, so it is
         // read once for the whole list rather than asked of each row.
         val played = fielded.currentlyPlayed()
-        return gamePages.findAll().map { it.asResponse(played.contains(it.game)) }
+        return games.findAll().map { it.asResponse(played.contains(it.code)) }
     }
 
     /** A game the association has started playing. Its page answers straight away. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/games")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGame(@Valid @RequestBody request: CreateGameRequest): GamePageResponse =
-        gamePages.create(
+    fun createGame(@Valid @RequestBody request: CreateGameRequest): GameResponse =
+        games.create(
             name = request.name,
             slug = request.slug,
             intro = request.intro,
@@ -90,11 +90,11 @@ class EsportsController(
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/games/{game}")
-    fun updateGamePage(
+    fun updateGame(
         @PathVariable game: String,
-        @Valid @RequestBody request: UpdateGamePageRequest,
-    ): GamePageResponse =
-        gamePages.update(
+        @Valid @RequestBody request: UpdateGameRequest,
+    ): GameResponse =
+        games.update(
             game = game,
             name = request.name,
             slug = request.slug,
@@ -109,7 +109,7 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/games/{game}/contents")
     fun findGameContents(@PathVariable game: String): GameContentsResponse {
-        val (teams, players) = gamePages.contentsOf(game)
+        val (teams, players) = games.contentsOf(game)
         return GameContentsResponse(teams = teams.toInt(), players = players.toInt())
     }
 
@@ -117,7 +117,7 @@ class EsportsController(
     @DeleteMapping("/games/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteGame(@PathVariable game: String) {
-        gamePages.delete(game)
+        games.delete(game)
     }
 
     /**
@@ -130,14 +130,14 @@ class EsportsController(
     @PermitAll
     @GetMapping("/seasons/{seasonId}/games")
     fun findSeasonGames(@PathVariable seasonId: Long): List<SeasonGameResponse> =
-        page.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
+        views.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
 
     /** Records that a game runs in a season, before anybody has been fielded in it. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/seasons/{seasonId}/games/{game}")
     fun enterGame(@PathVariable seasonId: Long, @PathVariable game: String): SeasonGameResponse {
         entered.enter(seasonId, game)
-        return page.gamesOf(seasonId, mayEdit = true).first { it.game == game }.asResponse()
+        return views.gamesOf(seasonId, mayEdit = true).first { it.game == game }.asResponse()
     }
 
     /** Takes a game out of a season, which is only possible while it holds no teams. */

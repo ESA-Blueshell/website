@@ -14,11 +14,11 @@
 -- A roster entry's icon sits beside them, so a player can look different across seasons and an
 -- entry with no account attached can still have a face.
 
-ALTER TABLE game_page
+ALTER TABLE game
     ADD COLUMN banner_file_id BIGINT NULL AFTER accent,
     ADD COLUMN icon_file_id   BIGINT NULL AFTER banner_file_id,
-    ADD CONSTRAINT fk_game_page_banner FOREIGN KEY (banner_file_id) REFERENCES files (id),
-    ADD CONSTRAINT fk_game_page_icon FOREIGN KEY (icon_file_id) REFERENCES files (id);
+    ADD CONSTRAINT fk_game_banner FOREIGN KEY (banner_file_id) REFERENCES files (id),
+    ADD CONSTRAINT fk_game_icon FOREIGN KEY (icon_file_id) REFERENCES files (id);
 
 -- A team's two pictures have two different lifetimes, so they sit on two different rows. The
 -- icon is the logo beside its name and belongs to the team: it is who they are, and it is the

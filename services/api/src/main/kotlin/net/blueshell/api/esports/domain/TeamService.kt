@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class TeamService(
     private val teams: TeamRepository,
-    private val games: GamePageService,
+    private val games: GameService,
     private val pictures: EsportsPictures,
 ) : BaseModelService<Team, Long, TeamRepository>(teams) {
     /** Every team the association has. The pool is shared, so it is not asked per game. */

@@ -24,7 +24,7 @@ import java.time.LocalDate
  * All of it lived in the frontend, where a change to any of it was a deploy.
  */
 @SpringBootTest
-class GamePageIT : UserTestSupport() {
+class GameIT : UserTestSupport() {
     @Autowired private lateinit var teams: TeamRepository
 
     @Autowired private lateinit var seasons: SeasonRepository
@@ -61,7 +61,7 @@ class GamePageIT : UserTestSupport() {
         mvc.perform(get("/esports/games"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(8))
-            .andExpect(jsonPath("$[0].game").value("VALORANT"))
+            .andExpect(jsonPath("$[0].code").value("VALORANT"))
     }
 
     @Test
@@ -99,17 +99,17 @@ class GamePageIT : UserTestSupport() {
     fun `the addresses are the ones the pages already answered to`() {
         // Every link anybody has ever shared keeps working.
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'CS2')].slug").value("counter-strike-2"))
-            .andExpect(jsonPath("$[?(@.game == 'ROCKET_LEAGUE')].slug").value("rocketleague"))
-            .andExpect(jsonPath("$[?(@.game == 'LEAGUE_OF_LEGENDS')].slug").value("league-of-legends"))
+            .andExpect(jsonPath("$[?(@.code == 'CS2')].slug").value("counter-strike-2"))
+            .andExpect(jsonPath("$[?(@.code == 'ROCKET_LEAGUE')].slug").value("rocketleague"))
+            .andExpect(jsonPath("$[?(@.code == 'LEAGUE_OF_LEGENDS')].slug").value("league-of-legends"))
     }
 
     @Test
     fun `a game whose page was never routed to has an address now`() {
         // Trackmania had a component with copy written for it and nothing routing to it.
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].slug").value("trackmania"))
-            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].intro").isNotEmpty)
+            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].slug").value("trackmania"))
+            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].intro").isNotEmpty)
     }
 
     @Test
@@ -119,17 +119,17 @@ class GamePageIT : UserTestSupport() {
         // game still has its page. What the rule answers once games have been played is
         // asserted in CurrentlyPlayedIT, which builds the seasons it needs.
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'CSGO')].current").value(false))
-            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].current").value(false))
-            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].name").value("Valorant"))
+            .andExpect(jsonPath("$[?(@.code == 'CSGO')].current").value(false))
+            .andExpect(jsonPath("$[?(@.code == 'VALORANT')].current").value(false))
+            .andExpect(jsonPath("$[?(@.code == 'VALORANT')].name").value("Valorant"))
     }
 
     @Test
     fun `a game carries the name the pages print`() {
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'LEAGUE_OF_LEGENDS')].name").value("League of Legends"))
-            .andExpect(jsonPath("$[?(@.game == 'CSGO')].name").value("CS:GO"))
-            .andExpect(jsonPath("$[?(@.game == 'SMASH')].name").value("Super Smash Bros."))
+            .andExpect(jsonPath("$[?(@.code == 'LEAGUE_OF_LEGENDS')].name").value("League of Legends"))
+            .andExpect(jsonPath("$[?(@.code == 'CSGO')].name").value("CS:GO"))
+            .andExpect(jsonPath("$[?(@.code == 'SMASH')].name").value("Super Smash Bros."))
     }
 
     /**
@@ -140,17 +140,17 @@ class GamePageIT : UserTestSupport() {
     @Test
     fun `a game carries the colour it is drawn with`() {
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].accent").value("#ff4655"))
+            .andExpect(jsonPath("$[?(@.code == 'VALORANT')].accent").value("#ff4655"))
     }
 
     @Test
     fun `a game nobody has drawn art for says so rather than inventing any`() {
         // The island reads such a game on the association's own colour; it does not go missing.
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].name").value("Trackmania"))
-            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].accent").doesNotExist())
-            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].icon").doesNotExist())
-            .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].banner").doesNotExist())
+            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].name").value("Trackmania"))
+            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].accent").doesNotExist())
+            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].icon").doesNotExist())
+            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].banner").doesNotExist())
     }
 
     /**
@@ -225,7 +225,7 @@ class GamePageIT : UserTestSupport() {
             .andExpect(jsonPath("$.intro").value("Guessing, competitively."))
 
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'GEOGUESSR')].intro").value("Guessing, competitively."))
+            .andExpect(jsonPath("$[?(@.code == 'GEOGUESSR')].intro").value("Guessing, competitively."))
     }
 
     @Test
@@ -269,7 +269,7 @@ class GamePageIT : UserTestSupport() {
             .andExpect(jsonPath("$.name").value("Rocket League 2"))
             .andExpect(jsonPath("$.slug").value("rocket-league-2"))
             // Its code is taken from its name: the identity everything else points at.
-            .andExpect(jsonPath("$.game").value("ROCKET_LEAGUE_2"))
+            .andExpect(jsonPath("$.code").value("ROCKET_LEAGUE_2"))
             // Nobody has drawn it anything, so it reads on the island's own colour.
             .andExpect(jsonPath("$.accent").doesNotExist())
             // Nobody has played it, so it is not among the games the association currently
@@ -347,7 +347,7 @@ class GamePageIT : UserTestSupport() {
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.slug").value("age-of-empires-ii"))
-            .andExpect(jsonPath("$.game").value("AGE_OF_EMPIRES_II"))
+            .andExpect(jsonPath("$.code").value("AGE_OF_EMPIRES_II"))
     }
 
     @Test
@@ -401,7 +401,7 @@ class GamePageIT : UserTestSupport() {
             .andExpect(jsonPath("$.banner.path").value(banner))
             .andExpect(jsonPath("$.icon.path").value(icon))
             // The code is the identity everything else points at, and is not the request's to set.
-            .andExpect(jsonPath("$.game").value("TRACKMANIA"))
+            .andExpect(jsonPath("$.code").value("TRACKMANIA"))
     }
 
     /**
@@ -449,9 +449,9 @@ class GamePageIT : UserTestSupport() {
         // There is no act that retires a game any more. It stops being current by not being
         // entered, and everything it ever played stays exactly where it was.
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'CSGO')].current").value(false))
-            .andExpect(jsonPath("$[?(@.game == 'CSGO')].name").value("CS:GO"))
-            .andExpect(jsonPath("$[?(@.game == 'CSGO')].slug").value("counter-strike-global-offensive"))
+            .andExpect(jsonPath("$[?(@.code == 'CSGO')].current").value(false))
+            .andExpect(jsonPath("$[?(@.code == 'CSGO')].name").value("CS:GO"))
+            .andExpect(jsonPath("$[?(@.code == 'CSGO')].slug").value("counter-strike-global-offensive"))
 
         // Its teams are still there to read, which is the whole reason it keeps its page.
         mvc.perform(get("/esports/games/{game}", "CSGO"))
@@ -495,7 +495,7 @@ class GamePageIT : UserTestSupport() {
 
         mvc.perform(get("/esports/games/{game}", "PONG")).andExpect(status().isBadRequest)
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'PONG')]").doesNotExist())
+            .andExpect(jsonPath("$[?(@.code == 'PONG')]").doesNotExist())
     }
 
     @Test
@@ -509,7 +509,7 @@ class GamePageIT : UserTestSupport() {
 
         // Nothing went: the game and its team are both still there.
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.game == 'VALORANT')].name").value("Valorant"))
+            .andExpect(jsonPath("$[?(@.code == 'VALORANT')].name").value("Valorant"))
     }
 
     @Test

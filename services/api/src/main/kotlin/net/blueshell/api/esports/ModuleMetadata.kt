@@ -24,7 +24,7 @@ import org.springframework.modulith.PackageInfo
         "file :: entities",
         // Players are resolved through UserService and MemberProfileService.
         "user :: api",
-        // DEBT. EsportsPageQueryService reads User rows to name a player. No
+        // DEBT. EsportsQueryService reads User rows to name a player. No
         // esports entity holds an FK into users — the roster stores the id. This
         // wants a player projection published through user :: api.
         "user :: entities",

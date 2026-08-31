@@ -42,7 +42,7 @@ data class TeamView(
 )
 
 /** A whole game page: the season being shown, the ones that can be, and that season's teams. */
-data class EsportsPageView(
+data class GameRostersView(
     val game: String,
     val season: SeasonView?,
     val seasons: List<SeasonView>,

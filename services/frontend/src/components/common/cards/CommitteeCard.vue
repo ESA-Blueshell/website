@@ -61,4 +61,10 @@ const committee = toRef(props, "committee")
 .committee-card {
   min-height: 160px;
 }
+
+// A flex child will not shrink below its content without this, so a long committee name
+// pushed the row wider instead of ellipsing.
+.min-w-0 {
+  min-width: 0;
+}
 </style>

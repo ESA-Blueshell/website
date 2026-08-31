@@ -57,6 +57,10 @@ const vuetifyConfig: VuetifyOptions = {
           primary: "#3387FA",
           accent: "#000000",
           error: "#ff0022",
+          // The bulk dialogs and the job manager mark a row that states a fact rather than a
+          // fault, so it is not error. Amber darkens on a light ground, where the dark half's
+          // #ffb020 reads at under 2:1 — the same pair the esports island settled on.
+          warning: "#8a5300",
           anchor: "#3387FA",
           wallpaper: "#1E1E1E",
         },
@@ -67,6 +71,7 @@ const vuetifyConfig: VuetifyOptions = {
           primary: "#3387FA",
           accent: "#A8FF00",
           error: "#ff0022",
+          warning: "#ffb020",
           anchor: "#3387FA",
           wallpaper: "#343434",
           background: "#1E1E1E",

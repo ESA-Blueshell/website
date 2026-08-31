@@ -235,3 +235,10 @@ a:visited.text-decoration-none {
 .v-input__details {
   align-items: flex-start;
 }
+
+// The stack Tailwind supplied under this name while it was escaping the esports island.
+// Vuetify has no monospace utility, and three managers set ids and timestamps in one so
+// their columns line up digit under digit.
+.font-mono {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}

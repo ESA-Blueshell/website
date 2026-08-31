@@ -1,14 +1,20 @@
 /*
  * Tailwind for the esports pages only, kept off the other hundred-odd components by
- * three rules: no Preflight (the island resets its own subtree at the bottom of this
- * file), utilities inside a cascade layer so they can never beat unlayered Vuetify
- * outside the island, and sources listed explicitly so a Tailwind class written
- * elsewhere generates nothing and fails visibly.
+ * two rules: no Preflight (the island resets its own subtree at the bottom of this
+ * file), and `source(none)`, which makes the three sources below the only ones scanned.
+ *
+ * The layer is not one of the two. It contains nothing against Vuetify 4, which puts its
+ * own utilities in `vuetify-utilities` — declared first, so Tailwind's `utilities` is
+ * declared later and outranks it. Where the two frameworks spell a class the same way,
+ * `order-1` or `mx-2` or `text-center`, Tailwind's wins everywhere on the site. That is
+ * what `source(none)` is really for: the fewer names generated, the smaller that overlap.
+ * Anything that must hold regardless belongs in a component's own scoped stylesheet,
+ * which is unlayered and so beats both.
  */
 @layer theme, island-base, components, utilities;
 
 @import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "../domains/esports";
 @source "../pages/Esports.vue";

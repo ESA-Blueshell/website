@@ -121,7 +121,7 @@ const teamFailure = ref<string | null>(null)
 const removingTeam = ref(false)
 
 /*
- * Dropping the team from the season on show, which is the lesser of the two removals and is
+ * Dropping the team from the shown season, which is the lesser of the two removals and is
  * asked for here rather than from the slice: the band says what a season holds, and it says
  * it without carrying a way to take things out of it.
  */
@@ -371,8 +371,8 @@ const askToRemoveTeam = async () => {
 const teamQuestion = computed(() => {
   const seasons = playedIn.value
   const played = seasons == null || seasons === 1 ? "one season" : `${seasons} seasons`
-  return `${props.teamName} played ${played}. Removing the team takes it out of all of them, `
-    + "which is not the same as dropping it from the season on show."
+  return `${props.teamName} played ${played}. Deleting the team takes it out of all of them, `
+    + "which is not the same as removing it from the shown season."
 })
 
 const removeTeam = async () => {
@@ -402,7 +402,7 @@ const removeTeam = async () => {
 const seasonQuestion = computed(() => {
   const played = rows.value.length === 1 ? "1 roster place" : `${rows.value.length} roster places`
   const season = props.season?.name ?? "this season"
-  return `${props.teamName} played ${season} with ${played}. Dropping it from this season `
+  return `${props.teamName} played ${season} with ${played}. Removing it from this season `
     + "leaves the team, and the other seasons it played, as they are."
 })
 
@@ -550,34 +550,13 @@ const submit = async () => {
           >
             {{ failure }}
           </p>
-          <div class="lineup__actions">
-            <div class="lineup__group">
-              <button
-                class="lineup__button lineup__button--ghost"
-                data-testid="lineup-cancel"
-                type="button"
-                @click="emit('update:open', false)"
-              >
-                Cancel
-              </button>
-              <button
-                class="lineup__button lineup__button--go"
-                data-testid="field-team-confirm"
-                :disabled="fieldingNow"
-                type="button"
-                @click="fieldPicked"
-              >
-                {{ fieldingNow ? "Fielding" : `Field ${picked.name}` }}
-              </button>
-            </div>
-          </div>
         </template>
       </template>
 
       <template v-else>
         <fieldset class="lineup__team">
           <legend class="lineup__legend">
-            The team, in every season
+            The team
           </legend>
           <div class="lineup__line">
             <input
@@ -628,6 +607,15 @@ const submit = async () => {
           @update:carried="startFrom"
         />
 
+        <!-- Named, so that the block above it reading "The team" is plainly about something
+             else: one belongs to the team in every season, this one only to this season. -->
+        <h3
+          class="lineup__legend lineup__legend--heading"
+          data-testid="lineup-season-heading"
+        >
+          This season's line-up
+        </h3>
+
         <p
           v-if="loading"
           class="lineup__note"
@@ -652,7 +640,7 @@ const submit = async () => {
         >
           <image-picker
             :kind="FileType.ROSTER_ICON"
-            label="Picture"
+            label="Icon"
             :picture="row.icon"
             :testid="`lineup-icon-${index}`"
             @update:picture="stageIcon(index, $event)"
@@ -815,8 +803,42 @@ const submit = async () => {
         >
           {{ failure }}
         </p>
+      </template>
+    </div>
 
-        <div class="lineup__actions">
+    <!--
+      Every button that leaves this dialog, in the footer: the removals are the two most
+      consequential things in here and they used to sit in the run of the form, where a long
+      line-up scrolled them past the fields they had nothing to do with.
+    -->
+    <template #footer>
+      <div
+        v-if="!(adding && kind === 'played-before') || picked != null"
+        class="lineup__actions"
+      >
+        <template v-if="adding && kind === 'played-before'">
+          <div class="lineup__group">
+            <button
+              class="lineup__button lineup__button--ghost"
+              data-testid="lineup-cancel"
+              type="button"
+              @click="emit('update:open', false)"
+            >
+              Cancel
+            </button>
+            <button
+              class="lineup__button lineup__button--go"
+              data-testid="field-team-confirm"
+              :disabled="fieldingNow"
+              type="button"
+              @click="fieldPicked"
+            >
+              {{ fieldingNow ? "Fielding" : `Field ${picked!.name}` }}
+            </button>
+          </div>
+        </template>
+
+        <template v-else>
           <!-- The lesser removal first: it is the one asked for more often, and the one meant.
              Neither is offered while a team is being made: there is nothing yet to drop from
              a season or to remove, and Cancel is what leaves without writing. -->
@@ -831,7 +853,7 @@ const submit = async () => {
               type="button"
               @click="droppingFromSeason = true"
             >
-              Drop from this season
+              Remove team
             </button>
             <button
               class="lineup__button lineup__button--drop"
@@ -839,7 +861,7 @@ const submit = async () => {
               type="button"
               @click="askToRemoveTeam"
             >
-              Remove team
+              Delete
             </button>
           </div>
           <div class="lineup__group">
@@ -861,19 +883,19 @@ const submit = async () => {
               {{ saving ? "Saving" : adding ? "Create" : "Save" }}
             </button>
           </div>
-        </div>
-      </template>
-    </div>
+        </template>
+      </div>
+    </template>
   </island-dialog>
 
   <confirm-dialog
     :accent="accent"
-    confirm-label="Drop from this season"
+    confirm-label="Remove from this season"
     :failure="seasonFailure"
     :open="droppingFromSeason"
     :question="seasonQuestion"
     testid="team-drop-dialog"
-    title="Drop this team from the season?"
+    title="Remove this team from the season?"
     :working="leavingSeason"
     @confirm="dropFromSeason"
     @update:open="droppingFromSeason = $event"
@@ -881,12 +903,12 @@ const submit = async () => {
 
   <confirm-dialog
     :accent="accent"
-    confirm-label="Remove the team"
+    confirm-label="Delete the team"
     :failure="teamFailure"
     :open="droppingTeam"
     :question="teamQuestion"
     testid="team-remove-dialog"
-    title="Remove this team altogether?"
+    title="Delete this team altogether?"
     :working="removingTeam"
     @confirm="removeTeam"
     @update:open="droppingTeam = $event"
@@ -930,6 +952,12 @@ const submit = async () => {
   align-items: flex-end;
 }
 
+/* Standing on its own rather than notched into a fieldset's border, so it needs the spacing
+   the border was providing. */
+.lineup__legend--heading {
+  margin: 0.5rem 0 0;
+}
+
 .lineup__legend {
   padding: 0 0.35rem;
   font-family: var(--font-display);
@@ -940,8 +968,13 @@ const submit = async () => {
 }
 
 .lineup__button--drop {
-  background: none;
-  color: #d98080;
+  background: color-mix(in oklab, #e0696c 18%, transparent);
+  color: #eba7a7;
+}
+
+.lineup__button--drop:hover {
+  background: color-mix(in oklab, #e0696c 34%, transparent);
+  color: #fff2f2;
 }
 
 .lineup__row {
@@ -1103,11 +1136,23 @@ const submit = async () => {
   padding-top: 0.15rem;
 }
 
+/*
+ * Its own rule and its own spacing: see the footer in IslandDialog.
+ *
+ * The two removals and the two ways out do not share a line at this width, so the row breaks
+ * between the groups rather than between buttons -- removals on the left of one line, the way
+ * out on the right of the next, which is a shape rather than an overflow.
+ */
 .lineup__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.35rem;
+  gap: 0.55rem;
+  align-items: center;
+  justify-content: space-between;
+  row-gap: 0.55rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
 }
 
 /*

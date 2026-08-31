@@ -122,7 +122,7 @@ const stripSeasons = computed<Season[]>(() => seasonsIncluding(
 ))
 
 /**
- * The newest season this game was actually fielded in, where the one on show is not it.
+ * The newest season this game was actually fielded in, where the shown one is not it.
  *
  * A page that opens on a season this game sat out has nothing to show and, without this,
  * nothing to offer either. The seasons it played are part of its own answer, so naming the

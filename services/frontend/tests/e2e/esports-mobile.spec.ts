@@ -25,7 +25,7 @@ test.describe("esports mobile layout", () => {
     await expect(first.getByRole("button")).toHaveAttribute("aria-expanded", "false")
   })
 
-  test("keeps the seasons on the line, and scrolls to the one on show", async ({page}) => {
+  test("keeps the seasons on the line, and scrolls to the shown one", async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})
 

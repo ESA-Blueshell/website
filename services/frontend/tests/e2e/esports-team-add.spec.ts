@@ -4,14 +4,14 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
 const GAME_PAGE = "/esports/valorant"
 
 /**
- * Putting a team into the season on show, from the band that shows the teams.
+ * Putting a team into the shown season, from the band that shows the teams.
  *
  * Two ways in rather than one, matching the index. A team that played before is picked out of
  * the association's whole pool and brings the line-up it last had in this game; a team that does
  * not exist yet is described in full — name, logo, this season's art, the squad — and nothing is
  * written until Create.
  */
-test.describe("adding a team to the season on show", () => {
+test.describe("adding a team to the shown season", () => {
   test("the band ends in one way in, and it asks which kind", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())

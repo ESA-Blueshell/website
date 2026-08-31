@@ -18,7 +18,7 @@ test.describe("the esports island", () => {
       .toHaveCount(0)
   })
 
-  test("shows the games fielded in the season on show, each linking to its own page", async ({page}) => {
+  test("shows the games fielded in the shown season, each linking to its own page", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/competitive-scene")
 

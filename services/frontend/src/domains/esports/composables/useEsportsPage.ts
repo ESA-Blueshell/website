@@ -4,7 +4,7 @@ import {useSeasons} from "../island/useSeasons"
 import {loadEsportsPage, type EsportsPage, type Game, type Season, type TeamRoster} from "../adapters/esports"
 
 /**
- * One game's page: the season on show, the seasons that can be, and that season's teams.
+ * One game's page: the shown season, the seasons that can be, and that season's teams.
  *
  * The season is part of the url, so a roster can be linked to and a reload keeps its place.
  * Where the url names none, the page opens on the association's newest season rather than on
@@ -58,6 +58,6 @@ export function useEsportsPage(game: Game, seasonFromRoute: () => number | null,
     if (next != null && next !== chosen.value) void load(next)
   })
 
-  // `reload` re-asks about the season already on show, which `showSeason` declines to do.
+  // `reload` re-asks about the season already shown, which `showSeason` declines to do.
   return {page, loading, teams, seasons, season, chosen, hasRosters, showSeason, reload: load}
 }

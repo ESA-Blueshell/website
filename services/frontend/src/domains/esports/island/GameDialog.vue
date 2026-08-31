@@ -41,7 +41,7 @@ const props = defineProps<{
    * The season a game added here runs in, where one is being added.
    *
    * A game is added because the association has started playing it, so it is entered in the
-   * season on show by the same save. Adding it and then entering it would be two acts for one
+   * shown season by the same save. Adding it and then entering it would be two acts for one
    * decision, and would leave a game behind if the second half failed.
    */
   enterIn?: Season | null
@@ -231,7 +231,7 @@ const submit = async () => {
 }
 
 /**
- * A game added, described in full and entered in the season on show.
+ * A game added, described in full and entered in the shown season.
  *
  * Two requests behind one Save, because the api records the game and the season it runs in
  * separately — but a refusal on the first leaves nothing written, and the whole form stands
@@ -307,6 +307,7 @@ const add = async () => {
 
     <form
       v-else
+      id="game-dialog-form"
       class="game-form"
       @submit.prevent="submit"
     >
@@ -411,8 +412,21 @@ const add = async () => {
       >
         {{ failure }}
       </p>
+    </form>
 
-      <div class="game-form__actions">
+    <!--
+      In the footer, like the team dialog's: the way out of a dialog belongs where it was the
+      last time you looked, not at the far end of a form that scrolls. Save names the form it
+      submits rather than sitting inside it, which is what lets it stand out here at all.
+
+      Nothing to put here while an existing game is being picked: choosing one enters it, so
+      there is no answer to confirm.
+    -->
+    <template #footer>
+      <div
+        v-if="!(adding && kind === 'played-before')"
+        class="game-form__actions"
+      >
         <button
           v-if="!adding"
           class="game-form__button game-form__button--drop"
@@ -434,12 +448,13 @@ const add = async () => {
           class="game-form__button game-form__button--go"
           data-testid="game-dialog-save"
           :disabled="!complete || saving"
+          form="game-dialog-form"
           type="submit"
         >
           {{ saving ? "Saving" : "Save" }}
         </button>
       </div>
-    </form>
+    </template>
   </island-dialog>
 
   <confirm-dialog
@@ -549,10 +564,14 @@ const add = async () => {
   font-size: 0.85rem;
 }
 
+/* Its own rule and its own spacing: see the footer in IslandDialog. */
 .game-form__actions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
 }
 
 .game-form__button {
@@ -571,8 +590,13 @@ const add = async () => {
 /* First in the row and set apart, the way the season dialog sets its own removal apart. */
 .game-form__button--drop {
   margin-right: auto;
-  background: transparent;
-  color: #ff9d9d;
+  background: color-mix(in oklab, #e0696c 18%, transparent);
+  color: #eba7a7;
+}
+
+.game-form__button--drop:hover {
+  background: color-mix(in oklab, #e0696c 34%, transparent);
+  color: #fff2f2;
 }
 
 .game-form__button--go {

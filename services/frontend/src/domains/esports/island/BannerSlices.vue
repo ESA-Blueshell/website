@@ -171,10 +171,10 @@ onBeforeUnmount(() => {
   window.removeEventListener("scroll", releaseTap)
 })
 
-// A change of what is on show brings a different set, so the first of those opens in its turn
+// A change of what is shown brings a different set, so the first of those opens in its turn
 // — unless one of them is named, which is the set arriving because that one was just added.
 /**
- * A change of what is on show keeps the slice that was open where the same one is still
+ * A change of what is shown keeps the slice that was open where the same one is still
  * there. Switching season re-answers with much the same band, and reopening the first of them
  * each time made every switch look like a page rebuilding itself.
  */

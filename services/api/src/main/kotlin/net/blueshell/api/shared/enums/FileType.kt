@@ -9,6 +9,9 @@ private val IMAGE = setOf("image/png", "image/jpeg", "image/jpg", "image/webp")
 private val LARGE_PUBLIC_IMAGE_WIDTHS = listOf(320, 640, 960, 1280, 1920, 2560)
 private val ICON_WIDTHS = listOf(128, 256, 512)
 
+/** A player's icon is drawn at about 72px and never larger, so it is capped a step lower. */
+private val PLAYER_ICON_WIDTHS = listOf(128, 256)
+
 /**
  * What an uploaded file is, which decides where it is stored and who may read it back.
  *
@@ -83,15 +86,21 @@ enum class FileType(
         renditionWidths = ICON_WIDTHS,
     ),
 
-    /** A player's picture on one roster, which may differ from the account's own portrait. */
+    /**
+     * A player's picture on one roster, which may differ from the account's own portrait.
+     *
+     * Capped a step below the other icons, at the size a player's picture is shown at in the
+     * games these rosters are for: nothing on the site draws one above about 72px, so a 512
+     * copy was bytes nobody ever fetched.
+     */
     ROSTER_ICON(
         "roster-icons",
         publiclyReadable = true,
         maxBytes = 5 * MB,
         allowedMediaTypes = IMAGE,
-        maxImageEdge = 512,
+        maxImageEdge = 256,
         webpQuality = 85,
-        renditionWidths = ICON_WIDTHS,
+        renditionWidths = PLAYER_ICON_WIDTHS,
     ),
     ;
 }

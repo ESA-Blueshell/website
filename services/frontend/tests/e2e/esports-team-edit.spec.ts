@@ -4,7 +4,7 @@ import {installApiMocks, loginAsBoard} from "./mocks"
 /**
  * The team itself, from the same place its line-up is edited.
  *
- * A name and a banner belong to the team in every season, not to the one on show, so they are
+ * A name and a banner belong to the team in every season, not to the shown one, so they are
  * marked as such. A recorded name is what tells an admin who a handle belongs to; whether it
  * reaches the public page is the api's decision and consent's, not this form's.
  */
@@ -27,8 +27,7 @@ test.describe("changing the team, not just its line-up", () => {
     // One control for the picture rather than a filename beside a picker, and the team the
     // mocks seed carries none, so it opens on the empty state.
     await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
-    // Said plainly, because a rename is not a change to the season on show.
-    await expect(page.getByTestId("lineup-editor")).toContainText("The team, in every season")
+    await expect(page.getByTestId("lineup-editor")).toContainText("The team")
   })
 
   test("renaming the team shows on the page without a reload", async ({page}) => {
@@ -86,7 +85,7 @@ test.describe("changing the team, not just its line-up", () => {
     await expect(page.getByTestId("team-roster-1")).not.toContainText("Sanne Kok")
   })
 
-  test("removing the team altogether asks first, and says it is not the same as dropping it", async ({page}) => {
+  test("deleting the team asks first, and says it is not the same as removing it", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
@@ -97,7 +96,7 @@ test.describe("changing the team, not just its line-up", () => {
     const question = page.getByTestId("confirm-question")
     await expect(question).toContainText("BS Waterboarders")
     await expect(question).toContainText("all of them")
-    await expect(question).toContainText("not the same as dropping it from the season")
+    await expect(question).toContainText("not the same as removing it from the shown season")
   })
 
   test("a removed team leaves every season it played", async ({page}) => {

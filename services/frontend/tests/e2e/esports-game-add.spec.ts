@@ -24,7 +24,7 @@ const stillOnScreen = async (page: Page, testid: string) => {
 }
 
 /**
- * Putting a game into the season on show, from the band where the games are shown.
+ * Putting a game into the shown season, from the band where the games are shown.
  *
  * Two ways in rather than one, because they are two different acts. A game the association has
  * played before already exists and is one click; a game it has just started playing is described
@@ -175,7 +175,7 @@ test.describe("adding a game", () => {
     await expect(page.getByTestId("game-dialog-remove")).toHaveCount(0)
   })
 
-  test("a new game joins the season on show, without a reload", async ({page, context}) => {
+  test("a new game joins the shown season, without a reload", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
 

@@ -31,7 +31,7 @@ const seasons = [
 /**
  * Written down, but nobody was ever fielded in it, so a visitor's strip does not carry it.
  *
- * Older than the two that were played rather than newer. The season on show is always on the
+ * Older than the two that were played rather than newer. The shown season is always on the
  * strip -- that is how a reader sees where they are -- so an empty season that is also the
  * newest would be carried anyway, and the rule this asserts would go untested.
  */
@@ -134,7 +134,7 @@ describe("Esports page", () => {
     expect(wrapper.find(`[data-testid="esports-season-node-${emptySeason.id}"]`).exists()).toBe(true)
   })
 
-  it("shows only the games that fielded a team in the season on show", async () => {
+  it("shows only the games that fielded a team in the shown season", async () => {
     const wrapper = mountPage()
     await flushPromises()
 

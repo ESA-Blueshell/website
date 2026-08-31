@@ -33,7 +33,7 @@ const urlOf = (game: string) => {
   return record ? `/esports/${record.slug}` : "/esports"
 }
 
-// The band is one read now: the api answers with the games of the season on show, and with
+// The band is one read now: the api answers with the games of the shown season, and with
 // the ones entered and not yet staffed where the reader may edit.
 const {seasons, selected, chosen, entries, loading, fielded, show, reload} =
   useSeasonLineup(() => seasonInRoute(route), ready)
@@ -77,7 +77,7 @@ const slices = computed(() =>
 
 const teamsOf = (game: string) => entries.value.find(e => e.game === game)?.teams ?? []
 
-/** Whether a visitor sees this game in the season on show, which the api decided. */
+/** Whether a visitor sees this game in the shown season, which the api decided. */
 const isPublic = (game: string) => entries.value.find(e => e.game === game)?.public !== false
 
 const chooseSeason = (id: number) => {
@@ -153,7 +153,7 @@ const addingGame = ref(false)
 /** The game just put into the season, which is the slice to look at. */
 const justAdded = ref<Game | null>(null)
 
-/** Which games are already in the season on show, so the picker does not offer them again. */
+/** Which games are already in the shown season, so the picker does not offer them again. */
 const gamesInSeason = computed<Game[]>(() => entries.value.map(entry => entry.game))
 
 const gameEntered = async (game: Game) => {
@@ -168,12 +168,12 @@ const gameEntered = async (game: Game) => {
  */
 const carried = ref<Game | null>(null)
 
-/** The season on show, with whatever game the team was added to now among its slices. */
+/** The shown season, with whatever game the team was added to now among its slices. */
 const seasonOnShow = computed<Season | null>(() =>
   seasons.value.find(one => one.id === selected.value) ?? null)
 
 /**
- * Taking a game out of the season on show.
+ * Taking a game out of the shown season.
  *
  * Its own act rather than something that happens when the last team is dropped: "we entered
  * this and fielded nobody" is a fact worth keeping, and correcting it is a decision. Refused
@@ -321,7 +321,7 @@ const seasonSaved = (saved: Season) => {
                 <!--
                   A game entered with nobody in it, which only the board is answered with. It
                   says what it is rather than reading as an empty game, and the way on is the
-                  game's own page for the season on show — where a team is added.
+                  game's own page for the shown season — where a team is added.
                 -->
                 <p
                   v-if="!isPublic(String(item.id))"

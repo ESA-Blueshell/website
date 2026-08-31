@@ -2,24 +2,22 @@ FROM node:26.8.1-bookworm-slim@sha256:367679cf9792759492a486e4aa4b421764d71a9546
 
 WORKDIR /usr/app
 
-# Node 25+ no longer bundles Corepack (the nodejs TSC dropped it from the
-# official distributions), so install it explicitly before enabling.
 RUN npm install -g --force corepack@latest && corepack enable
 ENV CHOKIDAR_USEPOLLING=1
 ENV WATCHPACK_POLLING=true
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# Copy only what's needed for dependency install
 COPY package.json yarn.lock .yarnrc.yml ./
 
 RUN corepack install && yarn install --immutable
 
-# Install Playwright browser + required OS packages at image build time.
 RUN mkdir -p /ms-playwright \
  && yarn playwright install --with-deps chromium
 
-# App/config files
+COPY scripts/dev-entrypoint.sh /usr/local/bin/dev-entrypoint.sh
+
 COPY . .
 
 EXPOSE 3000
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint.sh"]
 CMD ["yarn", "dev", "--host"]

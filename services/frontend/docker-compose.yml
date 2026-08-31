@@ -12,15 +12,8 @@ services:
     volumes:
       - .:/usr/app
       - ../api/openapi.json:/usr/api/openapi.json:ro
-      # Mount at /libs/openapi-specs so the repo-relative path
-      # `../../libs/openapi-specs/<spec>` (from /usr/app) resolves correctly
-      # when the openapi-ts generators run inside the container.
       - ../../libs/openapi-specs:/libs/openapi-specs:ro
       - /usr/app/.yarn
-      # The image installs its own dependencies and they are platform-specific. The frontend
-      # used Yarn PnP, where no node_modules exists to shadow; since it moved to a
-      # node_modules linker a developer's own install mounts over the container's and the
-      # dev server dies on a binding built for the wrong platform.
       - /usr/app/node_modules
     networks:
       - global_network
@@ -32,8 +25,6 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      # node, not wget: the dev image is node-based and ships neither wget nor curl, so a
-      # wget probe fails forever and `up --wait` never succeeds.
       test: [ "CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
       interval: 30s
       timeout: 10s

@@ -167,7 +167,7 @@ const question = computed(() => {
   const held = holds.value
   // `held` is never null here: the question is only put once it has been read.
   if (!held || held.teams === 0) {
-    return `${game.name} holds no teams. Removing it takes it and its page off the site.`
+    return `${game.name} holds no teams. Deleting it takes it and its page off the site.`
   }
   return `${game.name} holds ${countOf(held.teams, "team", "teams")} and `
     + `${countOf(held.players, "roster place", "roster places")}, so it cannot be removed. `
@@ -434,7 +434,7 @@ const add = async () => {
           type="button"
           @click="askToRemove"
         >
-          Remove
+          Delete
         </button>
         <button
           class="game-form__button game-form__button--ghost"
@@ -459,12 +459,14 @@ const add = async () => {
 
   <confirm-dialog
     :accent="colour || props.accent"
+    confirm-label="Delete the game"
     :failure="removalFailure"
     :open="confirming"
     :question="question"
     testid="game-remove-dialog"
-    title="Remove this game?"
+    title="Delete this game?"
     :working="removing"
+    working-label="Deleting"
     @confirm="removeGame"
     @update:open="confirming = $event"
   />

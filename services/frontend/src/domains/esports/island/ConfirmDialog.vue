@@ -15,11 +15,20 @@ withDefaults(defineProps<{
   /** What will go, said plainly enough to decide on. */
   question: string
   confirmLabel?: string
+  /** Said while it runs, because "Removing" is wrong over a button that says Delete. */
+  workingLabel?: string
   failure?: string | null
   working?: boolean
   accent?: string
   testid?: string
-}>(), {confirmLabel: "Remove", failure: null, working: false, accent: undefined, testid: "confirm-dialog"})
+}>(), {
+  confirmLabel: "Remove",
+  workingLabel: "Removing",
+  failure: null,
+  working: false,
+  accent: undefined,
+  testid: "confirm-dialog",
+})
 
 const emit = defineEmits<{
   (event: "update:open", open: boolean): void
@@ -68,7 +77,7 @@ const emit = defineEmits<{
           type="button"
           @click="emit('confirm')"
         >
-          {{ working ? "Removing" : confirmLabel }}
+          {{ working ? workingLabel : confirmLabel }}
         </button>
       </div>
     </div>

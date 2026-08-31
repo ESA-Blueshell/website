@@ -910,6 +910,7 @@ const submit = async () => {
     testid="team-remove-dialog"
     title="Delete this team altogether?"
     :working="removingTeam"
+    working-label="Deleting"
     @confirm="removeTeam"
     @update:open="droppingTeam = $event"
   />

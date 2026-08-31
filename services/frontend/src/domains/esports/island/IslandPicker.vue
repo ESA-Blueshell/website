@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, onBeforeUnmount, nextTick, ref, watch} from "vue"
 
 /**
  * Picking one of a list, in the island's own dress.
@@ -50,6 +50,69 @@ const search = ref("")
  */
 const open = ref(false)
 
+const field = ref<HTMLElement | null>(null)
+const list = ref<HTMLElement | null>(null)
+
+/**
+ * Where the list is drawn, in the page's own coordinates.
+ *
+ * Rendered at the end of the document rather than beside the field, because every ancestor
+ * that scrolls or is cut on the island's diagonal would otherwise clip it — and one of them
+ * always is. Positioned against the field's box instead, and told again whenever anything
+ * moves under it.
+ */
+const box = ref({top: 0, left: 0, width: 0, above: false})
+
+const place = () => {
+  const anchor = field.value?.getBoundingClientRect()
+  if (!anchor) return
+  const room = window.innerHeight - anchor.bottom
+  // Opens upward where there is no room below it, which on a short window there often is not.
+  const above = room < 260 && anchor.top > room
+  box.value = {
+    top: above ? anchor.top - 6 : anchor.bottom + 6,
+    left: anchor.left,
+    width: anchor.width,
+    above,
+  }
+}
+
+/**
+ * A press anywhere but the field and its list is a press elsewhere, so the list goes.
+ *
+ * The list is found by its mark rather than by the ref, because it is drawn at the end of the
+ * document and this has to hold however it got there.
+ */
+const elsewhere = (event: Event) => {
+  const target = event.target as Element | null
+  if (field.value?.parentElement?.contains(target)) return
+  if (target?.closest?.("[data-island-picker-list]")) return
+  open.value = false
+}
+
+const watching = (on: boolean) => {
+  const how = on ? window.addEventListener : window.removeEventListener
+  how("scroll", place, true)
+  how("resize", place)
+  // Bubbling rather than capturing, so the list's own handler can stop a press on itself from
+  // ever reading as a press elsewhere. Capturing would run first and close it under the click.
+  const doc = on ? document.addEventListener : document.removeEventListener
+  doc("pointerdown", elsewhere)
+}
+
+watch(open, async (down) => {
+  if (!down) {
+    watching(false)
+    return
+  }
+  place()
+  await nextTick()
+  place()
+  watching(true)
+})
+
+onBeforeUnmount(() => watching(false))
+
 const chosen = computed(() =>
   props.options.find(one => one.key === props.selectedKey)?.label ?? "")
 
@@ -59,10 +122,18 @@ const pick = (key: string) => {
   emit("pick", key)
 }
 
-/** Closes when focus leaves the field and the list together, not when it moves between them. */
+/**
+ * Closes when focus leaves the field and the list together, not when it moves between them.
+ *
+ * The list counts as part of this control even though it is drawn at the end of the document,
+ * so it is found by its mark rather than by asking whether this element contains it — which it
+ * does not. Without that, pressing a row moves focus out of the field, the list is taken down
+ * between the press and the release, and the press lands on nothing.
+ */
 const leave = (event: FocusEvent) => {
-  const next = event.relatedTarget as Node | null
+  const next = event.relatedTarget as Element | null
   if (next && (event.currentTarget as HTMLElement).contains(next)) return
+  if (next?.closest?.("[data-island-picker-list]")) return
   open.value = false
 }
 
@@ -79,6 +150,7 @@ const matches = computed(() => {
     @focusout="leave"
   >
     <input
+      ref="field"
       v-model="search"
       :aria-controls="`${testidPrefix}-list`"
       aria-haspopup="listbox"
@@ -87,7 +159,7 @@ const matches = computed(() => {
       :data-testid="`${testidPrefix}-search`"
       :placeholder="chosen || placeholder"
       type="text"
-      @focus="open = true"
+      @click="open = true"
       @input="open = true"
     >
 
@@ -100,44 +172,65 @@ const matches = computed(() => {
     </p>
 
     <!--
-      Over what follows rather than through it: a list that took room in the flow grew the
-      form as somebody typed and pushed everything under it down the dialog.
+      Drawn at the end of the document: over everything, and out of reach of the ancestors
+      that scroll or are cut on the island's diagonal, every one of which would clip it.
     -->
-    <ul
-      v-else-if="open && matches.length > 0"
-      :id="`${testidPrefix}-list`"
-      class="picker__list"
-      :data-testid="`${testidPrefix}-list`"
-    >
-      <li
-        v-for="one in matches"
-        :key="one.key"
+    <Teleport to="body">
+      <ul
+        v-if="open && matches.length > 0"
+        :id="`${testidPrefix}-list`"
+        ref="list"
+        class="picker__list"
+        :class="{'picker__list--above': box.above}"
+        data-island-picker-list
+        :data-testid="`${testidPrefix}-list`"
+        :style="{
+          top: `${box.top}px`,
+          left: `${box.left}px`,
+          width: `${box.width}px`,
+        }"
+        @mousedown.stop
+        @pointerdown.stop
       >
-        <button
-          :aria-pressed="one.key === selectedKey"
-          class="picker__row"
-          :class="{'picker__row--on': one.key === selectedKey}"
-          :data-testid="`${testidPrefix}-${one.key}`"
-          :disabled="disabled"
-          type="button"
-          @click="pick(one.key)"
+        <li
+          v-for="one in matches"
+          :key="one.key"
         >
-          <span class="picker__label">{{ one.label }}</span>
-          <span
-            v-if="one.note"
-            class="picker__note-inline"
-          >{{ one.note }}</span>
-        </button>
-      </li>
-    </ul>
+          <button
+            :aria-pressed="one.key === selectedKey"
+            class="picker__row"
+            :class="{'picker__row--on': one.key === selectedKey}"
+            :data-testid="`${testidPrefix}-${one.key}`"
+            :disabled="disabled"
+            type="button"
+            @click="pick(one.key)"
+          >
+            <span class="picker__label">{{ one.label }}</span>
+            <span
+              v-if="one.note"
+              class="picker__note-inline"
+            >{{ one.note }}</span>
+          </button>
+        </li>
+      </ul>
 
-    <p
-      v-else-if="open"
-      class="picker__note picker__note--over"
-      :data-testid="`${testidPrefix}-no-matches`"
-    >
-      Nothing answers to that.
-    </p>
+      <p
+        v-else-if="open && options.length > 0"
+        ref="list"
+        class="picker__note picker__note--over"
+        data-island-picker-list
+        :data-testid="`${testidPrefix}-no-matches`"
+        :style="{
+          top: `${box.top}px`,
+          left: `${box.left}px`,
+          width: `${box.width}px`,
+        }"
+        @mousedown.stop
+        @pointerdown.stop
+      >
+        Nothing answers to that.
+      </p>
+    </Teleport>
   </div>
 </template>
 
@@ -172,11 +265,15 @@ const matches = computed(() => {
  * Ten rows is about a screenful on a phone and comfortably short of one on a desktop.
  */
 .picker__list {
-  position: absolute;
-  top: calc(100% + 0.35rem);
-  right: 0;
-  left: 0;
-  z-index: 30;
+  position: fixed;
+  /* Above the dialog it is opened from, which sits at 2401: a menu belongs over the surface
+     that raised it, the way every other overlay on the site stacks.
+     
+     And taking its own pointer events back. A modal dialog turns them off on the body while it
+     is open, so that everything behind it is inert -- but this is drawn at the end of the body
+     to escape the dialog's clipping, and would be made inert along with the page it is over. */
+  z-index: 2500;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -191,12 +288,16 @@ const matches = computed(() => {
   overscroll-behavior: contain;
 }
 
+/* Anchored by its bottom edge where it opens upward, so it grows away from the field. */
+.picker__list--above {
+  transform: translateY(-100%);
+}
+
 .picker__note--over {
-  position: absolute;
-  top: calc(100% + 0.35rem);
-  right: 0;
-  left: 0;
-  z-index: 30;
+  position: fixed;
+  z-index: 2500;
+  margin: 0;
+  pointer-events: auto;
   padding: 0.6rem 0.75rem;
   background-color: var(--color-pit);
   border: 1px solid color-mix(in oklab, var(--color-chalk) 14%, transparent);

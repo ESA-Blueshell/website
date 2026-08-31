@@ -6,6 +6,7 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
+import net.blueshell.api.shared.dto.bulk.BulkUserSelection
 import net.blueshell.api.shared.enums.MemberType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -58,35 +59,16 @@ class BulkContributionUseCases(
             )
         }
 
-        val unknown = userIds.filterNot { users.existsById(it) }
-        // A deleted user still resolves by id — the erasure snapshot is what distinguishes them.
-        val deleted = userIds.filterNot { it in unknown }.filter { erasure.isDeleted(it) }
+        // Which ids resolve to a live user is the same question every bulk action asks, so
+        // it is asked in one place; only the honorary rule below is this action's own.
+        val selection = BulkUserSelection.classify(userIds, users::existsById, erasure::isDeleted)
         // Only actionable ids are inspected; the others have no membership worth reading.
-        val honorary = userIds.filterNot { it in unknown || it in deleted }.filter { userId ->
+        val honorary = selection.usable.filter { userId ->
             memberships.findByUserId(userId).maxByOrNull { it.startDate }?.memberType == MemberType.HONORARY
         }
 
         val violations = buildList {
-            if (unknown.isNotEmpty()) {
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "userIds",
-                        code = BulkSelectionRejected.UNKNOWN_USERS,
-                        values = unknown,
-                        message = "${unknown.size} of the selected users no longer exist.",
-                    ),
-                )
-            }
-            if (deleted.isNotEmpty()) {
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "userIds",
-                        code = BulkSelectionRejected.DELETED_USERS,
-                        values = deleted,
-                        message = "${deleted.size} of the selected users have been deleted.",
-                    ),
-                )
-            }
+            addAll(selection.violations)
             if (honorary.isNotEmpty()) {
                 add(
                     BulkSelectionRejected.Violation(

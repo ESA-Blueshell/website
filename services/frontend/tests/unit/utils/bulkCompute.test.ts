@@ -113,11 +113,32 @@ describe("computeMarkPaidRows", () => {
     expect(rows[0].memberSince).toBeUndefined()
   })
 
+  /**
+   * The half-year cutoff is measured from the current membership's start, so this column is
+   * how the operator sees which fee a row will be charged. A member who left and came back
+   * in the second half of the year owes the half-year fee, and showing the day they first
+   * joined years ago would say the opposite.
+   */
+  it("shows the current spell's start, not the day a returning member first joined", () => {
+    const rows = computeMarkPaidRows([
+      bulkTarget(1, {
+        memberSince: "2019-09-01",
+        mostRecentMembership: {
+          type: MemberType.REGULAR,
+          startDate: "2025-09-01",
+          endDate: null,
+          incasso: false,
+        },
+      }),
+    ])
+
+    expect(rows[0].memberSince).toBe("2025-09-01")
+  })
+
   it("still populates memberType/memberSince on a SKIPPED (already-paid) row", () => {
     const targets = [
       bulkTarget(1, {
         mostRecentContribution: {paid: true},
-        memberSince: "2023-03-04",
         mostRecentMembership: {
           type: MemberType.ALUMNI,
           startDate: "2023-03-04",

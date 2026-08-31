@@ -106,6 +106,19 @@ describe("MembershipStatusDialog (End membership)", () => {
 
     expect(mockPreviewBulkEnd).not.toHaveBeenCalled()
   })
+
+  it("says the preview did not arrive rather than showing an empty table", async () => {
+    // The generated client answers a failure with an error object rather than throwing, so
+    // an unhandled one would leave the dialog sitting on "working it out" for good.
+    mockPreviewBulkEnd.mockResolvedValue({error: {message: "boom"}, response: {status: 500}})
+
+    const wrapper = mountDialog("end")
+    await settle()
+
+    expect(wrapper.find('[data-testid="bulk-membership-preview-failed"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="bulk-membership-effective-date"]').text())
+      .toContain("could not be loaded")
+  })
 })
 
 describe("MembershipStatusDialog (Start membership)", () => {

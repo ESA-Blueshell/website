@@ -24,9 +24,12 @@ export function computeMarkPaidRows(targets: BulkTarget[]): BulkRow[] {
 
     // Populate membership info for every row regardless of disposition, so even
     // skipped rows show Type + Member-since (only "—" when there is no membership).
+    // The date is the current spell's start, not the earliest across the set: the
+    // half-year cutoff is measured from it, so it is what tells the operator which
+    // fee a row will be charged. See resolveFeeType in the api.
     if (target.mostRecentMembership) {
       row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.memberSince
+      row.memberSince = target.mostRecentMembership.startDate
     }
 
     if (target.isHonorary) {
@@ -56,9 +59,12 @@ export function computeMarkUnpaidRows(targets: BulkTarget[]): BulkRow[] {
 
     // Populate membership info for every row regardless of disposition, so even
     // skipped rows show Type + Member-since (only "—" when there is no membership).
+    // The date is the current spell's start, not the earliest across the set: the
+    // half-year cutoff is measured from it, so it is what tells the operator which
+    // fee a row will be charged. See resolveFeeType in the api.
     if (target.mostRecentMembership) {
       row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.memberSince
+      row.memberSince = target.mostRecentMembership.startDate
     }
 
     if (target.isHonorary) {

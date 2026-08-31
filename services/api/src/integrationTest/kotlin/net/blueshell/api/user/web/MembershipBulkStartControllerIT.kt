@@ -75,10 +75,14 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
             .isEqualTo(LocalDate.now().minusYears(2))
         assertThat(held.minOf { it.startDate }).isEqualTo(LocalDate.now().minusYears(3))
 
-        // The terms carry over: a returning alumnus comes back an alumnus.
+        // The type carries over — a returning alumnus comes back an alumnus — but the
+        // incasso mandate does not: a standing authorisation to take money, given for a
+        // membership that has since ended, is not re-armed on somebody's behalf in a batch.
         val fresh = held.single { it.endDate == null }
         assertThat(fresh.startDate).isEqualTo(LocalDate.now())
         assertThat(fresh.memberType).isEqualTo(MemberType.ALUMNI)
+        assertThat(fresh.incasso).isFalse()
+        assertThat(membershipRepository.findById(old.id!!).orElseThrow().incasso).isTrue()
     }
 
     @Test
@@ -162,8 +166,13 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         assertThat(membershipRepository.findByUser_Id(newcomer.id!!)).isEmpty()
     }
 
+    /**
+     * The property the endpoint pair exists to hold: what the preview said about each row
+     * is what the apply did to it. Counts alone would pass with two verdicts swapped, so
+     * this reads the preview per member and then counts that member's memberships.
+     */
     @Test
-    fun `the preview and the apply agree over the same selection`() {
+    fun `the preview and the apply agree over the same selection, row by row`() {
         val board = createUserWithRole(Role.BOARD)
         val newcomer = createUserWithRole(Role.MEMBER)
         val active = createMembershipFixture()
@@ -179,7 +188,11 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andReturn().response.contentAsString
 
-        val dispositions = Regex("\"disposition\":\"(\\w+)\"").findAll(preview).map { it.groupValues[1] }.toList()
+        val verdicts: Map<Long, String> = mapper.readTree(preview)["rows"]
+            .associate { it["userId"].asLong() to it["disposition"].asString() }
+        assertThat(verdicts.keys).containsExactlyInAnyOrderElementsOf(selection.filterNotNull())
+
+        val before = selection.filterNotNull().associateWith { membershipRepository.findByUser_Id(it).size }
 
         mvc.perform(
             post("/memberships/bulk/start")
@@ -188,8 +201,17 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
                 .content(body(selection)),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.applied").value(dispositions.count { it == "INCLUDED" }))
-            .andExpect(jsonPath("$.skipped").value(dispositions.count { it != "INCLUDED" }))
+            .andExpect(jsonPath("$.applied").value(verdicts.values.count { it == "INCLUDED" }))
+            .andExpect(jsonPath("$.skipped").value(verdicts.values.count { it != "INCLUDED" }))
+
+        for ((userId, disposition) in verdicts) {
+            val after = membershipRepository.findByUser_Id(userId)
+            val expected = if (disposition == "INCLUDED") before.getValue(userId) + 1 else before.getValue(userId)
+            assertThat(after).describedAs("member %s was previewed %s", userId, disposition).hasSize(expected)
+            if (disposition == "INCLUDED") {
+                assertThat(after.single { it.endDate == null }.startDate).isEqualTo(LocalDate.now())
+            }
+        }
     }
 
     @Test

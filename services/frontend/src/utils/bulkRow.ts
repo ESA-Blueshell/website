@@ -31,6 +31,16 @@ export interface BulkRow {
   disposition: BulkDisposition
   reason?: BulkRowReason
   memberType?: MemberType
+  /**
+   * The date the dialog shows under "Member since", which is a different fact per action
+   * because the operator is reading it for a different reason.
+   *
+   * The contribution actions fill it with the current membership's start, because the
+   * half-year cutoff is measured from that and the column is how the operator sees which
+   * fee a row will be charged. The membership actions fill it with the earliest start
+   * across the set, because there the question is when this person first joined — a
+   * returning member keeps their original date.
+   */
   memberSince?: string | null
   amount?: number | null
   recommendedFeeType?: FeeType

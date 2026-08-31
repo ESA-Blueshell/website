@@ -21,6 +21,30 @@ describe("bulkRowsFromPreview", () => {
     ])
   })
 
+  /**
+   * The counterpart of the contribution dialogs' rule: there the column is read for the fee,
+   * so it shows the current spell; here it is read for who this person is, so a member who
+   * left and came back keeps the day they first joined.
+   */
+  it("shows the day a returning member first joined, not the spell they are on", () => {
+    const rows = bulkRowsFromPreview(
+      [
+        target(1, {
+          memberSince: "2019-09-01",
+          mostRecentMembership: {
+            type: MemberType.REGULAR,
+            startDate: "2025-09-01",
+            endDate: null,
+            incasso: false,
+          },
+        }),
+      ],
+      [{userId: 1, disposition: BulkRowDisposition.SKIPPED, reason: BulkRowReason.ALREADY_ACTIVE}],
+    )
+
+    expect(rows[0]!.memberSince).toBe("2019-09-01")
+  })
+
   it("carries the reason through so a skipped row can say why", () => {
     const rows = bulkRowsFromPreview(
       [noMembershipTarget(7)],

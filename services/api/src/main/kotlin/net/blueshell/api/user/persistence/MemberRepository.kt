@@ -15,6 +15,12 @@ interface MemberRepository : BaseRepository<Membership, Long> {
     fun findByUser_Id(userId: Long): MutableList<Membership>
 
     /**
+     * Every membership held by any of these users, in one read. A bulk action decides about
+     * a whole selection at once, and doing so one member at a time is a query per row.
+     */
+    fun findByUser_IdIn(userIds: Collection<Long>): MutableList<Membership>
+
+    /**
      * Everybody whose membership overlapped the window, whatever kind of membership it was.
      * A membership with no end date is still running, so it overlaps anything from its start
      * onwards — including a stretch of time that has not arrived yet.

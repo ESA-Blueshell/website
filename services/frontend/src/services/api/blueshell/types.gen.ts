@@ -203,6 +203,10 @@ export type BulkActionResult = {
     skipped: number;
 };
 
+export type BulkEndMembershipRequest = {
+    userIds: Array<number>;
+};
+
 export enum BulkFeeType {
     FULL_YEAR_FEE = 'FULL_YEAR_FEE',
     HALF_YEAR_FEE = 'HALF_YEAR_FEE',
@@ -217,6 +221,17 @@ export type BulkMarkPaidRequest = {
 export type BulkMarkUnpaidRequest = {
     contributionPeriodId: number | null;
     userIds: Array<number>;
+};
+
+export type BulkMembershipPreview = {
+    effectiveDate: string;
+    rows: Array<BulkMembershipPreviewRow>;
+};
+
+export type BulkMembershipPreviewRow = {
+    disposition: BulkRowDisposition;
+    reason?: BulkRowReason | null;
+    userId: number;
 };
 
 /**
@@ -261,6 +276,10 @@ export type BulkRowVocabulary = {
     disposition: BulkRowDisposition;
     feeType: BulkFeeType;
     reason: BulkRowReason;
+};
+
+export type BulkStartMembershipRequest = {
+    userIds: Array<number>;
 };
 
 /**
@@ -6783,6 +6802,170 @@ export type CreateMembershipResponses = {
 };
 
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
+
+export type EndMembershipsData = {
+    body: BulkEndMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/end';
+};
+
+export type EndMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EndMembershipsError = EndMembershipsErrors[keyof EndMembershipsErrors];
+
+export type EndMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type EndMembershipsResponse = EndMembershipsResponses[keyof EndMembershipsResponses];
+
+export type PreviewBulkEndData = {
+    body: BulkEndMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/end/preview';
+};
+
+export type PreviewBulkEndErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkEndError = PreviewBulkEndErrors[keyof PreviewBulkEndErrors];
+
+export type PreviewBulkEndResponses = {
+    /**
+     * OK
+     */
+    200: BulkMembershipPreview;
+};
+
+export type PreviewBulkEndResponse = PreviewBulkEndResponses[keyof PreviewBulkEndResponses];
+
+export type StartMembershipsData = {
+    body: BulkStartMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/start';
+};
+
+export type StartMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type StartMembershipsError = StartMembershipsErrors[keyof StartMembershipsErrors];
+
+export type StartMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type StartMembershipsResponse = StartMembershipsResponses[keyof StartMembershipsResponses];
+
+export type PreviewBulkStartData = {
+    body: BulkStartMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/start/preview';
+};
+
+export type PreviewBulkStartErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkStartError = PreviewBulkStartErrors[keyof PreviewBulkStartErrors];
+
+export type PreviewBulkStartResponses = {
+    /**
+     * OK
+     */
+    200: BulkMembershipPreview;
+};
+
+export type PreviewBulkStartResponse = PreviewBulkStartResponses[keyof PreviewBulkStartResponses];
 
 export type DeleteMembershipData = {
     body?: never;

@@ -64,7 +64,15 @@ enum class BulkRowReason {
     ALREADY_ACTIVE,
     /** Resume/start-new: no contribution period exists at all. */
     NO_CONTRIBUTION_PERIOD,
-    /** Preview outcome for INCLUDED rows: the most-recent membership will be resumed. */
+    /**
+     * Preview outcome for INCLUDED rows: the most-recent membership will be reopened
+     * rather than a new one started.
+     *
+     * Nothing produces this today. Starting a membership in bulk always opens a fresh
+     * spell, so that a member who left and came back reads as two stays rather than one
+     * long one. Kept because the distinction is a real one the vocabulary should be able
+     * to make, and reopening remains available one membership at a time.
+     */
     WILL_RESUME,
     /** Preview outcome for INCLUDED rows: a new membership will be inserted starting today. */
     WILL_START_NEW,

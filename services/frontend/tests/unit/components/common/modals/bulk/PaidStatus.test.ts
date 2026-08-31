@@ -108,7 +108,6 @@ describe("PaidStatusDialog (Mark as paid)", () => {
         targetState: "paid",
         targets: [
           target(1, {
-            memberSince: "2024-09-15",
             mostRecentMembership: {
               type: MemberType.ALUMNI,
               startDate: "2024-09-15",
@@ -327,7 +326,6 @@ describe("PaidStatusDialog (Mark as unpaid)", () => {
         targetState: "unpaid",
         targets: [
           target(1, {
-            memberSince: "2023-06-01",
             mostRecentMembership: {
               type: MemberType.ALUMNI,
               startDate: "2023-06-01",

@@ -82,15 +82,20 @@ class TeamSeasonService(
     }
 
     /**
-     * The games the association currently plays: what was fielded in the season we are in, and
-     * in the season before it.
+     * The games the association currently plays: what was fielded in the season we are in.
      *
-     * A union rather than the newest season alone. A season is set up a game at a time, so a
-     * list that followed only the newest would collapse to whichever game the board entered
-     * first and refill as they worked — a half-finished season, in public, every changeover.
-     * The cost is accepted and known: a game the association has genuinely stopped playing
-     * stays listed for one more season, which is a far smaller lie than the association
-     * playing one game.
+     * Where nothing is fielded in that season yet, the season before it answers instead. That
+     * fallback is what a season being set up a game at a time costs: a rule that followed the
+     * newest season unconditionally would empty this list at every changeover and refill it as
+     * the board worked, which is a half-finished season in public twice a year.
+     *
+     * Conditional rather than a union, which is what this replaced. A union's cost was a game
+     * the association had genuinely stopped playing staying listed for one more season — visible
+     * on the home page, which reads this. The fallback keeps the protection and drops the cost:
+     * the season before stops contributing the moment one team is fielded in the newest.
+     *
+     * It goes back one season, not through the archive. Two empty seasons in a row means the
+     * association has fielded nobody for a year, and saying so is not a bug.
      *
      * Fielded, not merely entered: a game is public in a season once a team plays it, which is
      * the same rule the pages themselves answer to.
@@ -98,12 +103,15 @@ class TeamSeasonService(
     @Transactional(readOnly = true)
     fun currentlyPlayed(on: LocalDate = LocalDate.now()): Set<String> {
         val ordered = seasons.findAll()
-        // Where no season covers today — a gap between them — the most recent one that has
-        // started is the one we are in for this purpose.
+        // Where no season covers the date — a gap between them, or every season already over —
+        // the most recent one that has started is the one we are in for this purpose.
         val current = seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
             ?: return emptySet()
+        val played = fielded.gamesFieldedIn(listOf(current.id!!))
+        if (played.isNotEmpty()) return played.toSet()
         val previous = ordered.firstOrNull { it.startDate.isBefore(current.startDate) }
-        return fielded.gamesFieldedIn(listOfNotNull(current.id, previous?.id)).toSet()
+            ?: return emptySet()
+        return fielded.gamesFieldedIn(listOf(previous.id!!)).toSet()
     }
 
     /** The seasons that had a team fielded in them, whichever game it played. */

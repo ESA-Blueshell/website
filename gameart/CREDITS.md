@@ -24,9 +24,13 @@ until it does.
 
 ## Sizes
 
-Most are 2560 wide. Six are smaller, because their originals were and nothing is
-upscaled: `csgo-1`, `lol-4`, `lol-7`, `lol-8`, `geoguessr-1` and `geoguessr-2` all
-still clear 1500 pixels.
+These are the originals, at whatever size they came in — up to 8889x5000. What the
+site ships is cut from them and fitted inside 2560x1440; the sizes of those masters
+are recorded beside them, in the art directory's own credit file.
+
+Four games have an original the shipped art cannot reach 2560 from, because the
+original itself is narrower: `GeoGuessr.jpeg` at 1536x1024, `lol4.jpg` at 1920x1149,
+and `lol7.png` and `lol8.jpg` at 1920x1080.
 
 `rocket-league-4` is the exception at 460x215. It is a logo rather than a
 photograph and its original is that size, so it is fine as a small tile and too

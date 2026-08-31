@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * Ends memberships for a whole selection at once, board-only.
+ * Ends and starts memberships for a whole selection at once, board-only.
  *
- * The preview and the apply are the same decision read twice, so the dialog can name every
- * selected member and say what will happen to them before anything is written. Neither is
- * tied to a contribution period: members leave on their own schedule.
+ * Each preview and its apply are the same decision read twice, so the dialog can name every
+ * selected member and say what will happen to them before anything is written. Neither
+ * action is tied to a contribution period: members leave and return on their own schedule.
  */
 @RestController
 @Tag(name = "Memberships")
@@ -33,4 +33,14 @@ class MembershipBulkController(
     @PostMapping("/memberships/bulk/end")
     fun endMemberships(@Valid @RequestBody request: BulkEndMembershipRequest): BulkActionResult =
         useCases.execute(request.userIds, BulkMembershipOperation.END)
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
+    @PostMapping("/memberships/bulk/start/preview")
+    fun previewBulkStart(@Valid @RequestBody request: BulkStartMembershipRequest): BulkMembershipPreview =
+        useCases.preview(request.userIds, BulkMembershipOperation.START)
+
+    @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
+    @PostMapping("/memberships/bulk/start")
+    fun startMemberships(@Valid @RequestBody request: BulkStartMembershipRequest): BulkActionResult =
+        useCases.execute(request.userIds, BulkMembershipOperation.START)
 }

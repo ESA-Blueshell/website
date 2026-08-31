@@ -12,3 +12,11 @@ data class BulkEndMembershipRequest(
     @field:Size(max = 1000, message = "Select at most 1000 members at a time.")
     val userIds: List<@Positive Long> = emptyList(),
 )
+
+/** Starts a membership today for every selected member who has none. */
+@Schema(name = "BulkStartMembershipRequest")
+data class BulkStartMembershipRequest(
+    @field:NotEmpty(message = "Select at least one member.")
+    @field:Size(max = 1000, message = "Select at most 1000 members at a time.")
+    val userIds: List<@Positive Long> = emptyList(),
+)

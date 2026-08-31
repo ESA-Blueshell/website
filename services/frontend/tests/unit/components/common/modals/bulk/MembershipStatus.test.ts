@@ -1,17 +1,21 @@
 import {describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import EndMembershipDialog from "@/components/common/modals/bulk/EndMembershipDialog.vue"
+import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
 import {BulkRowDisposition, BulkRowReason} from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
-import {noMembershipTarget, target} from "../../../../helpers/bulkFixtures"
+import {endedMemberTarget, noMembershipTarget, target} from "../../../../helpers/bulkFixtures"
 
-const {mockPreviewBulkEnd, mockEndMemberships} = vi.hoisted(() => ({
+const {mockPreviewBulkEnd, mockEndMemberships, mockPreviewBulkStart, mockStartMemberships} = vi.hoisted(() => ({
   mockPreviewBulkEnd: vi.fn(),
   mockEndMemberships: vi.fn(),
+  mockPreviewBulkStart: vi.fn(),
+  mockStartMemberships: vi.fn(),
 }))
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   previewBulkEnd: mockPreviewBulkEnd,
   endMemberships: mockEndMemberships,
+  previewBulkStart: mockPreviewBulkStart,
+  startMemberships: mockStartMemberships,
 }))
 
 const TODAY = "2026-08-31"
@@ -20,11 +24,11 @@ function previewOf(rows: Array<{userId: number; disposition: BulkRowDisposition;
   return {data: {effectiveDate: TODAY, rows}, response: {status: 200}}
 }
 
-function mountDialog(targets = [target(1)]) {
-  return mount(EndMembershipDialog, {props: {modelValue: true, targets}})
+function mountDialog(targetState: "end" | "start", targets = [target(1)]) {
+  return mount(MembershipStatusDialog, {props: {modelValue: true, targetState, targets}})
 }
 
-describe("EndMembershipDialog", () => {
+describe("MembershipStatusDialog (End membership)", () => {
   it("renders the rows the api decided, not ones it worked out itself", async () => {
     mockPreviewBulkEnd.mockResolvedValue(
       previewOf([
@@ -33,7 +37,7 @@ describe("EndMembershipDialog", () => {
       ]),
     )
 
-    const wrapper = mountDialog([target(1), noMembershipTarget(2)])
+    const wrapper = mountDialog("end", [target(1), noMembershipTarget(2)])
     await settle()
 
     expect(mockPreviewBulkEnd).toHaveBeenCalledWith({body: {userIds: [1, 2]}})
@@ -45,10 +49,11 @@ describe("EndMembershipDialog", () => {
   it("states the api's effective date rather than the browser's", async () => {
     mockPreviewBulkEnd.mockResolvedValue(previewOf([{userId: 1, disposition: BulkRowDisposition.INCLUDED}]))
 
-    const wrapper = mountDialog()
+    const wrapper = mountDialog("end")
     await settle()
 
-    expect(wrapper.find('[data-testid="bulk-membership-effective-date"]').text()).toContain("31/08/2026")
+    const info = wrapper.find('[data-testid="bulk-membership-effective-date"]').text()
+    expect(info).toContain("Memberships end on 31/08/2026")
   })
 
   it("sends the whole previewed selection and reports what came back", async () => {
@@ -60,7 +65,7 @@ describe("EndMembershipDialog", () => {
     )
     mockEndMemberships.mockResolvedValue({data: {applied: 1, skipped: 1, queued: 0}, response: {status: 200}})
 
-    const wrapper = mountDialog([target(1), target(2)])
+    const wrapper = mountDialog("end", [target(1), target(2)])
     await settle()
 
     await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
@@ -85,7 +90,7 @@ describe("EndMembershipDialog", () => {
       response: {status: 409},
     })
 
-    const wrapper = mountDialog([target(1), target(2, {name: "Grace Hopper"})])
+    const wrapper = mountDialog("end", [target(1), target(2, {name: "Grace Hopper"})])
     await settle()
 
     expect(wrapper.emitted("stale")).toHaveLength(1)
@@ -96,9 +101,57 @@ describe("EndMembershipDialog", () => {
   })
 
   it("asks for nothing when the selection is empty", async () => {
-    mountDialog([])
+    mountDialog("end", [])
     await settle()
 
     expect(mockPreviewBulkEnd).not.toHaveBeenCalled()
+  })
+})
+
+describe("MembershipStatusDialog (Start membership)", () => {
+  it("calls the start endpoints rather than the end ones", async () => {
+    mockPreviewBulkStart.mockResolvedValue(
+      previewOf([{userId: 1, disposition: BulkRowDisposition.INCLUDED, reason: BulkRowReason.WILL_START_NEW}]),
+    )
+    mockStartMemberships.mockResolvedValue({data: {applied: 1, skipped: 0, queued: 0}, response: {status: 200}})
+
+    const wrapper = mountDialog("start", [endedMemberTarget(1)])
+    await settle()
+
+    expect(mockPreviewBulkStart).toHaveBeenCalledWith({body: {userIds: [1]}})
+    expect(wrapper.text()).toContain("Start membership")
+    expect(wrapper.find('[data-testid="bulk-membership-effective-date"]').text())
+      .toContain("Memberships start on 31/08/2026")
+
+    await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
+    await settle()
+
+    expect(mockStartMemberships).toHaveBeenCalledWith({body: {userIds: [1]}})
+    expect(mockEndMemberships).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="bulk-membership-result"]').text()).toContain("1 started, 0 skipped")
+  })
+
+  it("shows an already-active member as skipped with the reason", async () => {
+    mockPreviewBulkStart.mockResolvedValue(
+      previewOf([{userId: 1, disposition: BulkRowDisposition.SKIPPED, reason: BulkRowReason.ALREADY_ACTIVE}]),
+    )
+
+    const wrapper = mountDialog("start")
+    await settle()
+
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-1"]').text()).toContain("Skipped")
+    expect(wrapper.find('[data-testid="bulk-preview-note-1"]').text())
+      .toContain("Already has an active membership")
+  })
+
+  it("keeps the joining date the table already shows, not the day the new spell starts", async () => {
+    mockPreviewBulkStart.mockResolvedValue(
+      previewOf([{userId: 1, disposition: BulkRowDisposition.INCLUDED, reason: BulkRowReason.WILL_START_NEW}]),
+    )
+
+    const wrapper = mountDialog("start", [endedMemberTarget(1)])
+    await settle()
+
+    expect(wrapper.find('[data-testid="bulk-preview-member-since-1"]').text()).toContain("01/01/2024")
   })
 })

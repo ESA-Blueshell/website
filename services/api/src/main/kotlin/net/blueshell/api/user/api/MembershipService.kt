@@ -88,6 +88,11 @@ class MembershipService @Autowired constructor(
         return repository.findByUser_Id(userId)
     }
 
+    /** Memberships held by any of these users, grouped per user, in one read. */
+    @Transactional(readOnly = true)
+    fun findByUserIds(userIds: Collection<Long>): Map<Long, List<Membership>> =
+        if (userIds.isEmpty()) emptyMap() else repository.findByUser_IdIn(userIds).groupBy { it.userId }
+
     fun findByQuery(query: MembershipQuery): MutableList<Membership> {
         val spec = MembershipSpecifications.fromQuery(
             query,

@@ -278,6 +278,10 @@ export type BulkRowVocabulary = {
     reason: BulkRowReason;
 };
 
+export type BulkStartMembershipRequest = {
+    userIds: Array<number>;
+};
+
 /**
  * The outcome of moving several targets.
  */
@@ -6880,6 +6884,88 @@ export type PreviewBulkEndResponses = {
 };
 
 export type PreviewBulkEndResponse = PreviewBulkEndResponses[keyof PreviewBulkEndResponses];
+
+export type StartMembershipsData = {
+    body: BulkStartMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/start';
+};
+
+export type StartMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type StartMembershipsError = StartMembershipsErrors[keyof StartMembershipsErrors];
+
+export type StartMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: BulkActionResult;
+};
+
+export type StartMembershipsResponse = StartMembershipsResponses[keyof StartMembershipsResponses];
+
+export type PreviewBulkStartData = {
+    body: BulkStartMembershipRequest;
+    path?: never;
+    query?: never;
+    url: '/memberships/bulk/start/preview';
+};
+
+export type PreviewBulkStartErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkStartError = PreviewBulkStartErrors[keyof PreviewBulkStartErrors];
+
+export type PreviewBulkStartResponses = {
+    /**
+     * OK
+     */
+    200: BulkMembershipPreview;
+};
+
+export type PreviewBulkStartResponse = PreviewBulkStartResponses[keyof PreviewBulkStartResponses];
 
 export type DeleteMembershipData = {
     body?: never;

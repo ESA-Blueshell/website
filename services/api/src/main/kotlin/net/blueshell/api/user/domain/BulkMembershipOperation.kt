@@ -10,4 +10,7 @@ package net.blueshell.api.user.domain
 enum class BulkMembershipOperation {
     /** End every active membership, effective today. */
     END,
+
+    /** Give everybody without an active membership one starting today. */
+    START,
 }

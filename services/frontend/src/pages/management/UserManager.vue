@@ -25,7 +25,7 @@ import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
 import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
 import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
 import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
-import EndMembershipDialog from "@/components/common/modals/bulk/EndMembershipDialog.vue"
+import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
 
 export type {MemberRow}
 
@@ -141,9 +141,10 @@ const {
 
 /**
  * Which bulk dialog is up. The contribution actions are booked against the selected
- * period; ending a membership is not, so the menu offers it whether or not one is picked.
+ * period; the membership ones are not, so the menu offers them whether or not one is
+ * picked.
  */
-type BulkAction = "paid" | "unpaid" | "endMembership"
+type BulkAction = "paid" | "unpaid" | "end" | "start"
 
 const bulkAction = ref<BulkAction | null>(null)
 const bulkDialogOpen = ref(false)
@@ -170,6 +171,11 @@ function openBulkAction(action: BulkAction) {
   bulkAction.value = action
   bulkDialogOpen.value = true
 }
+
+/** The chosen action when it is one the membership dialog handles, else null. */
+const membershipAction = computed<"end" | "start" | null>(() =>
+  bulkAction.value === "end" || bulkAction.value === "start" ? bulkAction.value : null,
+)
 
 /** The action applied, so the rows it touched are refetched and the selection is spent. */
 async function onBulkDone() {
@@ -497,7 +503,8 @@ async function confirmDeleteUser() {
                         @add-user="openAddUser"
                         @mark-paid="openBulkAction('paid')"
                         @mark-unpaid="openBulkAction('unpaid')"
-                        @end-membership="openBulkAction('endMembership')"
+                        @end-membership="openBulkAction('end')"
+                        @start-membership="openBulkAction('start')"
                       />
                     </div>
                   </th>
@@ -645,9 +652,10 @@ async function confirmDeleteUser() {
       @stale="onBulkStale"
     />
     <!-- Mounted only while chosen: opening it is what asks the api for its preview. -->
-    <end-membership-dialog
-      v-if="bulkAction === 'endMembership'"
+    <membership-status-dialog
+      v-if="membershipAction"
       v-model="bulkDialogOpen"
+      :target-state="membershipAction"
       :targets="bulkTargets"
       @done="onBulkDone"
       @stale="onBulkStale"

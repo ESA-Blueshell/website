@@ -3,7 +3,12 @@ import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {endMemberships, previewBulkEnd} from "@/services/api/blueshell/sdk.gen"
+import {
+  endMemberships,
+  previewBulkEnd,
+  previewBulkStart,
+  startMemberships,
+} from "@/services/api/blueshell/sdk.gen"
 import type {BulkActionResult, BulkMembershipPreview} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import {bulkRowsFromPreview} from "@/utils/bulkPreviewRows"
@@ -11,21 +16,25 @@ import type {BulkTarget} from "@/utils/bulkTarget"
 import {formatBulkDate} from "@/utils/bulkDisposition"
 
 /**
- * Ending the memberships of a selection.
+ * Ending or starting the memberships of a selection, driven by `targetState`.
  *
  * Unlike the contribution dialogs, the rows here are the api's decision rather than the
- * browser's: the invariants that say what may be ended live there, and so does the clock
- * the effective date is read from. The dialog asks what would happen, shows it, and then
- * asks for it to happen — the same selection both times, so the api applies the answer the
- * operator confirmed.
+ * browser's: the invariants that say what may be ended or started live there, and so does
+ * the clock the effective date is read from. The dialog asks what would happen, shows it,
+ * and then asks for it to happen — the same selection both times, so the api applies the
+ * answer the operator confirmed.
  *
- * The action is not tied to a contribution period: members leave on their own schedule.
+ * Neither action is tied to a contribution period: members leave and return on their own
+ * schedule.
  */
 
-defineOptions({name: "EndMembershipDialog", inheritAttrs: false})
+defineOptions({name: "MembershipStatusDialog", inheritAttrs: false})
+
+type MembershipAction = "end" | "start"
 
 interface Props {
   modelValue: boolean
+  targetState: MembershipAction
   targets: BulkTarget[]
 }
 
@@ -46,15 +55,60 @@ const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, s
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-const help = {
-  title: "End membership",
-  body:
-    "Ends the active membership of every included member, as of the date shown. Members "
-    + "without an active membership are skipped, and so is anyone whose membership only "
-    + "started today, which has no day to span yet. Ending a membership stops it going "
-    + "forward: it deletes neither the member nor their history, and membership can be "
-    + "started again later.",
+interface DialogConfig {
+  title: string
+  confirmLabel: string
+  icon: string
+  /** How the effective date reads in the info box, e.g. "Memberships end on …". */
+  dateSentence: string
+  /** Past tense for the result line, e.g. "3 ended, 1 skipped". */
+  appliedVerb: string
+  previewApi: typeof previewBulkEnd | typeof previewBulkStart
+  submitApi: typeof endMemberships | typeof startMemberships
+  help: {title: string; body: string}
 }
+
+const configMap: Record<MembershipAction, DialogConfig> = {
+  end: {
+    title: "End membership",
+    confirmLabel: "End membership",
+    icon: "mdi-account-remove",
+    dateSentence: "Memberships end on",
+    appliedVerb: "ended",
+    previewApi: previewBulkEnd,
+    submitApi: endMemberships,
+    help: {
+      title: "End membership",
+      body:
+        "Ends the active membership of every included member, as of the date shown. Members "
+        + "without an active membership are skipped, and so is anyone whose membership only "
+        + "started today, which has no day to span yet. Ending a membership stops it going "
+        + "forward: it deletes neither the member nor their history, and membership can be "
+        + "started again later.",
+    },
+  },
+  start: {
+    title: "Start membership",
+    confirmLabel: "Start membership",
+    icon: "mdi-account-plus",
+    dateSentence: "Memberships start on",
+    appliedVerb: "started",
+    previewApi: previewBulkStart,
+    submitApi: startMemberships,
+    help: {
+      title: "Start membership",
+      body:
+        "Gives every included member a membership beginning on the date shown. Members who "
+        + "are already active are skipped. Somebody who was a member before comes back on a "
+        + "new membership rather than their old one reopened, so their history reads as two "
+        + "stays — and \"member since\" still shows the day they first joined. Their member "
+        + "type and incasso mandate carry over from their last membership.",
+    },
+  },
+}
+
+// targetState is typed as the two keys configMap covers, so this lookup cannot miss.
+const config = computed(() => configMap[props.targetState])
 
 /** The api's today, so the dialog never states a date the browser's clock invented. */
 const effectiveDate = ref<string | null>(null)
@@ -77,7 +131,7 @@ async function loadPreview() {
   }
   loading.value = true
   try {
-    const resp = await previewBulkEnd({body: {userIds}})
+    const resp = await config.value.previewApi({body: {userIds}})
     const refused = parseBulkRejection(resp)
     if (refused) {
       rejection.value = refused
@@ -105,7 +159,7 @@ async function onConfirm() {
   // saw. There are no rows the operator can opt back in here, so the two sets agree.
   const userIds = rows.value.map((row) => row.userId)
   const ok = await submit(async () => {
-    const resp = await endMemberships({body: {userIds}})
+    const resp = await config.value.submitApi({body: {userIds}})
     // A refused selection wrote nothing, so the dialog stays open with the reasons rather
     // than reporting a failure the operator cannot act on.
     const refused = parseBulkRejection(resp)
@@ -148,17 +202,17 @@ watch(
   <bulk-dialog-scaffold
     v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
-    confirm-label="End membership"
+    :confirm-label="config.confirmLabel"
     :counts="counts"
-    :help="help"
-    icon="mdi-account-remove"
+    :help="config.help"
+    :icon="config.icon"
     :included-count="includedUserIds.length"
     info-box-label="Effective date"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
     :submitting="submitting || loading"
-    title="End membership"
+    :title="config.title"
     @cancel="emit('update:modelValue', false)"
     @confirm="onConfirm"
   >
@@ -168,7 +222,7 @@ watch(
         data-testid="bulk-membership-effective-date"
       >
         <template v-if="effectiveDate">
-          Memberships end on {{ formatBulkDate(effectiveDate) }}, the server's date.
+          {{ config.dateSentence }} {{ formatBulkDate(effectiveDate) }}, the server's date.
         </template>
         <template v-else>
           Working out what this would do…
@@ -210,7 +264,7 @@ watch(
         type="success"
         variant="tonal"
       >
-        {{ result.applied }} ended, {{ result.skipped }} skipped.
+        {{ result.applied }} {{ config.appliedVerb }}, {{ result.skipped }} skipped.
       </v-alert>
     </template>
   </bulk-dialog-scaffold>

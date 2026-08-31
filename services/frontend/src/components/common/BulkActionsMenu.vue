@@ -20,6 +20,7 @@ const emit = defineEmits<{
   (e: "markPaid"): void
   (e: "markUnpaid"): void
   (e: "endMembership"): void
+  (e: "startMembership"): void
 }>()
 
 // Marking contributions needs a selection to act on and a period to book them against.
@@ -69,8 +70,8 @@ const bulkDisabled = computed(() => !props.hasSelection || props.noPeriod)
       />
       <v-divider />
       <!--
-        Ending a membership acts on the member rather than on a period, so it needs a
-        selection and nothing else.
+        Membership acts on the member rather than on a period, so these need a selection
+        and nothing else.
       -->
       <v-list-item
         :disabled="!hasSelection"
@@ -78,6 +79,13 @@ const bulkDisabled = computed(() => !props.hasSelection || props.noPeriod)
         prepend-icon="mdi-account-remove"
         title="End membership"
         @click="emit('endMembership')"
+      />
+      <v-list-item
+        :disabled="!hasSelection"
+        data-testid="bulk-action-start-membership"
+        prepend-icon="mdi-account-plus"
+        title="Start membership"
+        @click="emit('startMembership')"
       />
     </v-list>
   </v-menu>

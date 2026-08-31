@@ -263,8 +263,8 @@ const nameOf = (fielding: Fielding) => `${fielding.game} · ${fielding.season.na
   color: inherit;
   text-align: left;
   cursor: pointer;
-  background: rgb(255 255 255 / 4%);
-  border: 1px solid rgb(255 255 255 / 12%);
+  background: color-mix(in oklab, var(--color-chalk) 4%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
   border-radius: 2px;
 }
 

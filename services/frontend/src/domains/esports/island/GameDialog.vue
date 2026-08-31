@@ -531,7 +531,7 @@ const add = async () => {
 }
 
 .game-form__input:focus-visible {
-  border-color: var(--accent, #2f80ed);
+  border-color: var(--accent, var(--color-brand));
   outline: none;
 }
 
@@ -539,7 +539,7 @@ const add = async () => {
   display: flex;
   gap: 0.5rem;
   align-items: flex-start;
-  color: #f2f4f6;
+  color: var(--color-chalk);
   font-size: 0.9rem;
 }
 
@@ -559,7 +559,7 @@ const add = async () => {
 
 .game-form__failure {
   margin: 0;
-  color: #ff6b6b;
+  color: var(--color-danger);
   font-size: 0.85rem;
 }
 
@@ -575,8 +575,8 @@ const add = async () => {
 
 .game-form__button {
   padding: 0.45rem 0.9rem;
-  border: 1px solid rgb(255 255 255 / 16%);
-  color: #f2f4f6;
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 16%, transparent);
+  color: var(--color-chalk);
   cursor: pointer;
   font-family: inherit;
   font-size: 0.85rem;
@@ -589,19 +589,19 @@ const add = async () => {
 /* First in the row and set apart, the way the season dialog sets its own removal apart. */
 .game-form__button--drop {
   margin-right: auto;
-  background: color-mix(in oklab, #e0696c 18%, transparent);
-  color: #eba7a7;
+  background: color-mix(in oklab, var(--color-danger-tint) 18%, transparent);
+  color: var(--color-danger-ink);
 }
 
 .game-form__button--drop:hover {
-  background: color-mix(in oklab, #e0696c 34%, transparent);
-  color: #fff2f2;
+  background: color-mix(in oklab, var(--color-danger-tint) 34%, transparent);
+  color: var(--color-danger-ink-strong);
 }
 
 .game-form__button--go {
-  background: var(--accent, #2f80ed);
+  background: var(--accent, var(--color-brand));
   border-color: transparent;
-  color: #0d0d0d;
+  color: var(--color-void);
 }
 
 .game-form__button--go:disabled {

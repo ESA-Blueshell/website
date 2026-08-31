@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.shared.dto.bulk.BulkActionResult
 import net.blueshell.api.user.domain.BulkMembershipOperation
-import net.blueshell.api.user.domain.BulkMembershipPreview
 import net.blueshell.api.user.domain.BulkMembershipUseCases
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
@@ -26,21 +25,21 @@ class MembershipBulkController(
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
     @PostMapping("/memberships/bulk/end/preview")
-    fun previewBulkEnd(@Valid @RequestBody request: BulkEndMembershipRequest): BulkMembershipPreview =
-        useCases.preview(request.userIds, BulkMembershipOperation.END)
+    fun previewBulkEnd(@Valid @RequestBody request: BulkMembershipRequest): BulkMembershipPreviewResponse =
+        useCases.preview(request.userIds, BulkMembershipOperation.END).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
     @PostMapping("/memberships/bulk/end")
-    fun endMemberships(@Valid @RequestBody request: BulkEndMembershipRequest): BulkActionResult =
+    fun endMemberships(@Valid @RequestBody request: BulkMembershipRequest): BulkActionResult =
         useCases.execute(request.userIds, BulkMembershipOperation.END)
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
     @PostMapping("/memberships/bulk/start/preview")
-    fun previewBulkStart(@Valid @RequestBody request: BulkStartMembershipRequest): BulkMembershipPreview =
-        useCases.preview(request.userIds, BulkMembershipOperation.START)
+    fun previewBulkStart(@Valid @RequestBody request: BulkMembershipRequest): BulkMembershipPreviewResponse =
+        useCases.preview(request.userIds, BulkMembershipOperation.START).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
     @PostMapping("/memberships/bulk/start")
-    fun startMemberships(@Valid @RequestBody request: BulkStartMembershipRequest): BulkActionResult =
+    fun startMemberships(@Valid @RequestBody request: BulkMembershipRequest): BulkActionResult =
         useCases.execute(request.userIds, BulkMembershipOperation.START)
 }

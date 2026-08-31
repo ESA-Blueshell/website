@@ -127,8 +127,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         assertThat(membershipRepository.findById(member.id!!).orElseThrow().endDate).isNull()
     }
 
+    /**
+     * The property the endpoint pair exists to hold: what the preview said about each row
+     * is what the apply did to it. Counts alone would pass with two verdicts swapped, so
+     * this reads the preview per member and then checks that member's memberships.
+     */
     @Test
-    fun `the preview and the apply agree over the same selection`() {
+    fun `the preview and the apply agree over the same selection, row by row`() {
         val board = createUserWithRole(Role.BOARD)
         val active = createMembershipFixture()
         val ended = createMembershipFixture(endDate = LocalDate.now().minusDays(1))
@@ -144,9 +149,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andReturn().response.contentAsString
 
-        val dispositions = Regex("\"disposition\":\"(\\w+)\"").findAll(preview).map { it.groupValues[1] }.toList()
-        val included = dispositions.count { it == "INCLUDED" }
-        val skipped = dispositions.count { it != "INCLUDED" }
+        val verdicts: Map<Long, String> = mapper.readTree(preview)["rows"]
+            .associate { it["userId"].asLong() to it["disposition"].asString() }
+        assertThat(verdicts.keys).containsExactlyInAnyOrderElementsOf(selection)
+
+        val before = selection.associateWith { userId ->
+            membershipRepository.findByUser_Id(userId).associate { it.id!! to it.endDate }
+        }
 
         mvc.perform(
             post("/memberships/bulk/end")
@@ -155,8 +164,19 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
                 .content(body(selection)),
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.applied").value(included))
-            .andExpect(jsonPath("$.skipped").value(skipped))
+            .andExpect(jsonPath("$.applied").value(verdicts.values.count { it == "INCLUDED" }))
+            .andExpect(jsonPath("$.skipped").value(verdicts.values.count { it != "INCLUDED" }))
+
+        for ((userId, disposition) in verdicts) {
+            val after = membershipRepository.findByUser_Id(userId).associate { it.id!! to it.endDate }
+            if (disposition == "INCLUDED") {
+                assertThat(after.values).allSatisfy { assertThat(it).isNotNull() }
+                assertThat(after).describedAs("member %s was previewed INCLUDED", userId).isNotEqualTo(before[userId])
+            } else {
+                assertThat(after).describedAs("member %s was previewed %s", userId, disposition)
+                    .isEqualTo(before[userId])
+            }
+        }
     }
 
     /**

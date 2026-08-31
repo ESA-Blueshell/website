@@ -102,7 +102,8 @@ const configMap: Record<MembershipAction, DialogConfig> = {
         + "are already active are skipped. Somebody who was a member before comes back on a "
         + "new membership rather than their old one reopened, so their history reads as two "
         + "stays — and \"member since\" still shows the day they first joined. Their member "
-        + "type and incasso mandate carry over from their last membership.",
+        + "type carries over from their last membership; incasso does not, and is set per "
+        + "member afterwards.",
     },
   },
 }
@@ -115,6 +116,11 @@ const effectiveDate = ref<string | null>(null)
 const loading = ref(false)
 const rejection = ref<BulkRejection | null>(null)
 const result = ref<BulkActionResult | null>(null)
+/**
+ * The preview did not arrive. Said out loud rather than left as an empty table under
+ * "working it out", which reads as a selection nothing applies to.
+ */
+const previewFailed = ref(false)
 
 /** Names the refused rows where the table still knows them, so ids are a fallback. */
 function namesFor(userIds: number[]): string {
@@ -131,6 +137,8 @@ async function loadPreview() {
   }
   loading.value = true
   try {
+    // The generated client answers a failure with an error object rather than throwing, so
+    // every path out of here is checked rather than assumed to have succeeded.
     const resp = await config.value.previewApi({body: {userIds}})
     const refused = parseBulkRejection(resp)
     if (refused) {
@@ -141,11 +149,15 @@ async function loadPreview() {
     }
     const preview = resp.data as BulkMembershipPreview | undefined
     if (!preview) {
+      previewFailed.value = true
       setRows([])
       return
     }
     effectiveDate.value = preview.effectiveDate
     setRows(bulkRowsFromPreview(props.targets, preview.rows))
+  } catch {
+    previewFailed.value = true
+    setRows([])
   } finally {
     loading.value = false
   }
@@ -154,6 +166,7 @@ async function loadPreview() {
 async function onConfirm() {
   if (submitting.value || includedUserIds.value.length === 0) return
   rejection.value = null
+  previewFailed.value = false
   // The whole previewed selection is sent, not just the included rows: the api applies the
   // decision it previewed, so the counts that come back cover every member the operator
   // saw. There are no rows the operator can opt back in here, so the two sets agree.
@@ -186,10 +199,12 @@ watch(
     if (isOpen) {
       rejection.value = null
       result.value = null
+      previewFailed.value = false
       await loadPreview()
     } else {
       rejection.value = null
       result.value = null
+      previewFailed.value = false
       effectiveDate.value = null
       reset()
     }
@@ -224,10 +239,24 @@ watch(
         <template v-if="effectiveDate">
           {{ config.dateSentence }} {{ formatBulkDate(effectiveDate) }}, the server's date.
         </template>
-        <template v-else>
+        <template v-else-if="previewFailed">
+          The list of what this would do could not be loaded.
+        </template>
+        <template v-else-if="!rejection">
           Working out what this would do…
         </template>
       </div>
+
+      <v-alert
+        v-if="previewFailed"
+        class="mt-2 mb-0"
+        data-testid="bulk-membership-preview-failed"
+        density="compact"
+        type="error"
+        variant="tonal"
+      >
+        Nothing has been changed. Close this and try again.
+      </v-alert>
 
       <v-alert
         v-if="rejection"

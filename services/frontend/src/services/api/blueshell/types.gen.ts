@@ -203,10 +203,6 @@ export type BulkActionResult = {
     skipped: number;
 };
 
-export type BulkEndMembershipRequest = {
-    userIds: Array<number>;
-};
-
 export enum BulkFeeType {
     FULL_YEAR_FEE = 'FULL_YEAR_FEE',
     HALF_YEAR_FEE = 'HALF_YEAR_FEE',
@@ -232,6 +228,10 @@ export type BulkMembershipPreviewRow = {
     disposition: BulkRowDisposition;
     reason?: BulkRowReason | null;
     userId: number;
+};
+
+export type BulkMembershipRequest = {
+    userIds: Array<number>;
 };
 
 /**
@@ -276,10 +276,6 @@ export type BulkRowVocabulary = {
     disposition: BulkRowDisposition;
     feeType: BulkFeeType;
     reason: BulkRowReason;
-};
-
-export type BulkStartMembershipRequest = {
-    userIds: Array<number>;
 };
 
 /**
@@ -6804,7 +6800,7 @@ export type CreateMembershipResponses = {
 export type CreateMembershipResponse = CreateMembershipResponses[keyof CreateMembershipResponses];
 
 export type EndMembershipsData = {
-    body: BulkEndMembershipRequest;
+    body: BulkMembershipRequest;
     path?: never;
     query?: never;
     url: '/memberships/bulk/end';
@@ -6845,7 +6841,7 @@ export type EndMembershipsResponses = {
 export type EndMembershipsResponse = EndMembershipsResponses[keyof EndMembershipsResponses];
 
 export type PreviewBulkEndData = {
-    body: BulkEndMembershipRequest;
+    body: BulkMembershipRequest;
     path?: never;
     query?: never;
     url: '/memberships/bulk/end/preview';
@@ -6886,7 +6882,7 @@ export type PreviewBulkEndResponses = {
 export type PreviewBulkEndResponse = PreviewBulkEndResponses[keyof PreviewBulkEndResponses];
 
 export type StartMembershipsData = {
-    body: BulkStartMembershipRequest;
+    body: BulkMembershipRequest;
     path?: never;
     query?: never;
     url: '/memberships/bulk/start';
@@ -6927,7 +6923,7 @@ export type StartMembershipsResponses = {
 export type StartMembershipsResponse = StartMembershipsResponses[keyof StartMembershipsResponses];
 
 export type PreviewBulkStartData = {
-    body: BulkStartMembershipRequest;
+    body: BulkMembershipRequest;
     path?: never;
     query?: never;
     url: '/memberships/bulk/start/preview';

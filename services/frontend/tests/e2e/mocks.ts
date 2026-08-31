@@ -34,6 +34,13 @@ type Fixtures = {
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
+/**
+ * The date the mocked bulk membership preview says it would act on. Fixed rather than
+ * derived from the clock, because the point of the endpoint is that the browser does not
+ * decide it — a spec asserting today's date would be asserting the wrong thing.
+ */
+export const BULK_MEMBERSHIP_EFFECTIVE_DATE = "2026-08-31"
+
 const brevoTargets = [
   {system: "BREVO", externalId: "7", kind: "LIST", label: "Members 2025-2026", folderLabel: "Contribution periods", path: ["Brevo", "Contribution periods"], memberCount: 2, linkedCohortId: 1},
   {system: "BREVO", externalId: "33", kind: "LIST", label: "Web Cmte", folderLabel: "Committees", path: ["Brevo", "Committees"], memberCount: 1, linkedCohortId: 2},
@@ -624,6 +631,36 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/memberships") {
       return fulfillJson(route, baseMemberships)
+    }
+    // The bulk membership actions ask the api what they would do before doing it, so the
+    // preview decides the rows here the way the server would: a member with an open
+    // membership can be ended and cannot be started, and the reverse.
+    if (method === "POST" && /^\/memberships\/bulk\/(end|start)(\/preview)?$/.test(path)) {
+      const starting = path.startsWith("/memberships/bulk/start")
+      const selected: number[] = (route.request().postDataJSON()?.userIds ?? []) as number[]
+      const isActive = (userId: number) =>
+        baseMemberships.some((m) => m.userId === userId && m.endDate == null)
+      const included = selected.filter((userId) => (starting ? !isActive(userId) : isActive(userId)))
+
+      if (path.endsWith("/preview")) {
+        return fulfillJson(route, {
+          effectiveDate: BULK_MEMBERSHIP_EFFECTIVE_DATE,
+          rows: selected.map((userId) => {
+            const include = included.includes(userId)
+            if (include) return {userId, disposition: "INCLUDED", reason: starting ? "WILL_START_NEW" : null}
+            return {
+              userId,
+              disposition: "SKIPPED",
+              reason: starting ? "ALREADY_ACTIVE" : "NO_ACTIVE_MEMBERSHIP",
+            }
+          }),
+        })
+      }
+      return fulfillJson(route, {
+        applied: included.length,
+        skipped: selected.length - included.length,
+        queued: 0,
+      })
     }
     if (method === "GET" && path === "/contributionPeriods") {
       return fulfillJson(route, basePeriods)

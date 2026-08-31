@@ -6,7 +6,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
-    id("org.graalvm.buildtools.native") version "1.1.9"
+    id("org.graalvm.buildtools.native") version "1.1.10"
     `java-test-fixtures`
 
     val kotlinVersion = "2.4.10"
@@ -135,7 +135,7 @@ dependencies {
     testImplementation("io.rest-assured:spring-mock-mvc:6.0.1")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
     testImplementation("org.springframework.modulith:spring-modulith-core")
-    testImplementation("io.github.classgraph:classgraph:4.8.192")
+    testImplementation("io.github.classgraph:classgraph:4.8.193")
     testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).
     testImplementation("com.h2database:h2:2.4.240")

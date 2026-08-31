@@ -99,7 +99,7 @@ dependencies {
     implementation("jakarta.persistence:jakarta.persistence-api")
 
     implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
-    implementation("org.apache.tika:tika-core:3.3.2")
+    implementation("org.apache.tika:tika-core:4.0.0")
     implementation("com.googlecode.libphonenumber:libphonenumber:9.0.37")
     implementation("com.github.scribejava:scribejava-apis:8.3.3")
     implementation("org.springframework.retry:spring-retry:2.0.13")

@@ -60,9 +60,18 @@ the only place esports refusal copy lives.
   "code": "GameHoldsHistory",
   "gameName": "Valorant",
   "teams": 3,
-  "players": 14
+  "players": 14,
+  "traceId": "a1b2c3"
 }
 ```
+
+`traceId` rides along where the MDC carries one, as it does on a refused bulk selection.
+
+A fact's name is the api's existing word for it wherever there is one: the counts are `teams` and
+`players` because `GET /games/{game}/contents` already answers with those, and a refusal
+disagreeing with the endpoint the dialog reads first would be the drift this is closing. The one
+departure is `UnknownGameCode`, whose fact is `gameCode` rather than `code`, because `code` is the
+refusal's own key.
 
 ### The flat shape, not the `errors` array
 

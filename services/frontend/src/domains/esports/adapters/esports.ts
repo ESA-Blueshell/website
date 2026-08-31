@@ -54,7 +54,7 @@ import type {
   TeamRole as ApiTeamRole,
   TeamRosterResponse,
 } from "@/services/api"
-import {sentenceFor} from "@/domains/esports/refusals"
+import {reasonFor} from "@/domains/esports/refusals"
 
 /**
  * A game's code: the identity a team, a roster and a member's handle point at. A plain string
@@ -298,20 +298,9 @@ export async function saveSeasonOrReason(
   return {ok: true, season: res.data ?? null}
 }
 
-/**
- * Whatever the api said, preferring the specific complaint over the generic one.
- *
- * An esports refusal carries a code and its facts rather than a sentence, so that is read
- * first: `refusals.ts` composes what the reader meets. Behind it, the `errors` array a bean
- * validation failure answers with, then the fixed summary the api ships per code, then the
- * caller's own fallback — so a code this frontend has not been taught still says something.
- */
-function reasonFrom(error: unknown, fallback = "The season could not be saved."): string {
-  const body = (error as {detail?: string; title?: string; errors?: Array<{message?: string}>})
-  const refusal = sentenceFor(error)
-  const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
-  return refusal || fields || body?.detail || body?.title || fallback
-}
+/** Whatever the api said, composed by `refusals.ts` where it named a code. */
+const reasonFrom = (error: unknown, fallback = "The season could not be saved."): string =>
+  reasonFor(error, fallback)
 
 export async function saveSeason(
   season: {id?: number; name: string; startDate: string; endDate: string},
@@ -336,9 +325,12 @@ export async function unfieldTeamFromSeason(
   teamId: number,
   game: Game,
   seasonId: number,
-): Promise<void> {
+): Promise<{ok: true} | Refused> {
   const res = await unfieldTeam({path: {seasonId, teamId}, query: {game}})
-  if (res.error) throw res.error
+  if (res.error) {
+    return {ok: false, reason: reasonFrom(res.error, "The team could not be dropped from the season.")}
+  }
+  return {ok: true}
 }
 
 /** A game that ran in one season, with what it fielded. */
@@ -451,9 +443,10 @@ export async function saveTeamAs(
   return {ok: true, team: res.data ? withArt(res.data) : null}
 }
 
-export async function dropTeam(id: number): Promise<void> {
+export async function dropTeam(id: number): Promise<{ok: true} | Refused> {
   const res = await deleteTeam({path: {id}})
-  if (res.error) throw res.error
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be removed.")}
+  return {ok: true}
 }
 
 /**
@@ -568,8 +561,17 @@ export async function linkRosterMember(id: number, userId: number | null): Promi
   return res.data ?? null
 }
 
-export async function dropRosterEntry(id: number): Promise<void> {
-  await removeRosterEntry({path: {id}})
+/**
+ * Somebody taken off a line-up.
+ *
+ * Answers the refusal rather than discarding it. This ignored `res.error` entirely, so a
+ * refused removal reported success and the row left the line-up while the api still held it —
+ * the same silent success `dropSeasonOrReason` had.
+ */
+export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused> {
+  const res = await removeRosterEntry({path: {id}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "That person could not be taken off.")}
+  return {ok: true}
 }
 
 /** A member as a roster entry needs to name them: who they are, and how to tell two apart. */

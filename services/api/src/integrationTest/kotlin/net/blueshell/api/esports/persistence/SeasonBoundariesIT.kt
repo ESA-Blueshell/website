@@ -1,7 +1,7 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.esports.domain.SeasonDatesReversedException
-import net.blueshell.api.esports.domain.SeasonOverlapException
+import net.blueshell.api.esports.domain.SeasonEndsBeforeStart
+import net.blueshell.api.esports.domain.SeasonDatesOverlap
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -32,11 +32,11 @@ class SeasonBoundariesIT : UserTestSupport() {
         assertThatThrownBy {
             seasons.create("Clashing", LocalDate.of(2040, 11, 1), LocalDate.of(2041, 3, 31))
         }
-            .isInstanceOf(SeasonOverlapException::class.java)
+            .isInstanceOf(SeasonDatesOverlap::class.java)
             // Named, so the objection can be read on the form that caused it. A fact rather
             // than a sentence: the message is the same for every clash, and the frontend
             // composes what the reader sees out of this.
-            .extracting { (it as SeasonOverlapException).facts["seasonName"] }
+            .extracting { (it as SeasonDatesOverlap).facts["seasonName"] }
             .isEqualTo(existing.name)
     }
 
@@ -67,8 +67,8 @@ class SeasonBoundariesIT : UserTestSupport() {
         assertThatThrownBy {
             seasons.update(spring.id!!, spring.name, autumn.startDate, autumn.endDate)
         }
-            .isInstanceOf(SeasonOverlapException::class.java)
-            .extracting { (it as SeasonOverlapException).facts["seasonName"] }
+            .isInstanceOf(SeasonDatesOverlap::class.java)
+            .extracting { (it as SeasonDatesOverlap).facts["seasonName"] }
             .isEqualTo(autumn.name)
     }
 
@@ -76,6 +76,6 @@ class SeasonBoundariesIT : UserTestSupport() {
     fun `a season cannot end before it starts`() {
         assertThatThrownBy {
             seasons.create("Backwards", LocalDate.of(2045, 9, 1), LocalDate.of(2045, 8, 31))
-        }.isInstanceOf(SeasonDatesReversedException::class.java)
+        }.isInstanceOf(SeasonEndsBeforeStart::class.java)
     }
 }

@@ -19,7 +19,7 @@ class EsportsPictures(
 ) {
     fun of(path: String?, kind: FileType): File? {
         val stored = path?.trim()?.ifBlank { null } ?: return null
-        return files.findPublicImage(stored, kind) ?: throw PictureNotStoredException()
+        return files.findPublicImage(stored, kind) ?: throw PictureNotStored()
     }
 }
 

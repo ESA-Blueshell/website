@@ -3,7 +3,7 @@ import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
 import {dropSeasonOrReason, loadSeasonContents, saveSeasonOrReason, type Season} from "../adapters/esports"
-import {countOf} from "../refusals"
+import {countOf} from "../copy"
 
 /**
  * Writing a season down, from wherever the seasons are shown: an existing one to change it,

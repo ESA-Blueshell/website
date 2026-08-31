@@ -29,7 +29,8 @@ import {
   type Season,
   type TeamRole,
 } from "../adapters/esports"
-import {countOf} from "../refusals"
+import {countOf} from "../copy"
+import {reasonFor} from "../refusals"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
 
 /**
@@ -382,13 +383,16 @@ const removeTeam = async () => {
   removingTeam.value = true
   teamFailure.value = null
   try {
-    await dropTeam(teamId)
+    const result = await dropTeam(teamId)
+    if (!result.ok) {
+      // Nothing has gone, so the dialog stands and says why — in the words `refusals.ts`
+      // composes from the api's code, not in the api's own fixed summary.
+      teamFailure.value = result.reason
+      return
+    }
     droppingTeam.value = false
     emit("removed")
     emit("update:open", false)
-  } catch (error) {
-    const body = (error as {detail?: string; title?: string})
-    teamFailure.value = body?.detail || body?.title || "The team could not be removed."
   } finally {
     removingTeam.value = false
   }
@@ -414,22 +418,21 @@ const dropFromSeason = async () => {
   leavingSeason.value = true
   seasonFailure.value = null
   try {
-    await unfieldTeamFromSeason(teamId, props.game, seasonId)
+    const result = await unfieldTeamFromSeason(teamId, props.game, seasonId)
+    if (!result.ok) {
+      seasonFailure.value = result.reason
+      return
+    }
     droppingFromSeason.value = false
     emit("removed")
     emit("update:open", false)
-  } catch (error) {
-    const body = (error as {detail?: string; title?: string})
-    seasonFailure.value = body?.detail || body?.title || "The team could not be dropped."
   } finally {
     leavingSeason.value = false
   }
 }
 
-const reasonFrom = (error: unknown): string => {
-  const body = (error as {detail?: string; title?: string})
-  return body?.detail || body?.title || "The line-up could not be saved."
-}
+const reasonFrom = (error: unknown): string =>
+  reasonFor(error, "The line-up could not be saved.")
 
 const submit = async () => {
   const seasonId = props.season?.id
@@ -461,7 +464,15 @@ const submit = async () => {
     // there — the same team is drawn with its own picture in every other game it plays.
     await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
 
-    for (const id of removed.value) await dropRosterEntry(id)
+    // A refused removal stops the save rather than being swallowed: the rows the reader is
+    // looking at are what the api holds, and reporting otherwise is the one wrong answer.
+    for (const id of removed.value) {
+      const gone = await dropRosterEntry(id)
+      if (!gone.ok) {
+        failure.value = gone.reason
+        return
+      }
+    }
 
     for (const [index, row] of rows.value.entries()) {
       const shared = {

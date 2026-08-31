@@ -11,8 +11,7 @@
  * See ADR-026.
  */
 
-/** How many of a thing, named singly or in the plural. */
-export const countOf = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+import {countOf} from "./copy"
 
 /**
  * What a game holds, said once.
@@ -67,4 +66,19 @@ export function sentenceFor(body: unknown): string | null {
   const code = refusal?.code
   if (!code) return null
   return sentences[code]?.(refusal as RefusalBody) ?? null
+}
+
+/**
+ * What to put in front of somebody when a write was refused.
+ *
+ * In order: the sentence this module composes from the refusal's code, then the `errors` array a
+ * bean validation failure answers with, then the fixed summary the api ships per code, then the
+ * caller's own fallback. One function so every dialog and the adapter say the same thing — they
+ * each had their own copy of the tail, and only some of them learned about codes.
+ */
+export function reasonFor(error: unknown, fallback: string): string {
+  const body = error as {detail?: string; title?: string; errors?: Array<{message?: string}>} | null
+  const composed = sentenceFor(error)
+  const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
+  return composed || fields || body?.detail || body?.title || fallback
 }

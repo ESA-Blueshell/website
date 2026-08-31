@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {flushPromises, shallowMount} from "@vue/test-utils"
+import GamesWePlay from "@/components/base/GamesWePlay.vue"
 import Home from "@/pages/Home.vue"
 import router from "@/plugins/router"
 import {forgetGames} from "@/domains/esports/island/useGames"
@@ -38,18 +39,29 @@ const picture = (url: string, widths: number[]) => ({
   renditions: widths.map(width => ({url: `${url.replace(".webp", "")}-${width}.webp`, width})),
 })
 
+interface Category {
+  categoryName: string
+  titles: Array<Record<string, unknown>>
+}
+
 const mountHome = async () => {
   const wrapper = shallowMount(Home, {
     global: {stubs: {MainBanner: true, DiscordBanner: true, SocialsBanner: true, GamesWePlay: true}},
   })
-  // The records are read once and shared, so the block fills in on the microtask after mount.
-  await new Promise(resolve => setTimeout(resolve, 0))
+  // The records are read once and shared, so the block fills in after the read settles.
+  await flushPromises()
   return wrapper
 }
 
-/** The categories as the page hands them to the block that draws them. */
+/**
+ * The categories as the page hands them to the block that draws them.
+ *
+ * Read off the child's props rather than out of `wrapper.vm`: what this page does with the
+ * records is give them to `GamesWePlay`, and that hand-off is the public surface (testing
+ * ADR-004). A `<script setup>` binding is not exposed and reaching for it would be reflection.
+ */
 const categoriesOf = (wrapper: Awaited<ReturnType<typeof mountHome>>) =>
-  (wrapper.vm as unknown as {games: Array<{categoryName: string; titles: Array<Record<string, unknown>>}>}).games
+  wrapper.findComponent(GamesWePlay).props("games") as Category[]
 
 beforeEach(() => {
   forgetGames()

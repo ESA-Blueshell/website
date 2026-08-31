@@ -113,14 +113,14 @@ class AddressTaken(gameName: String, address: String) : EsportsRefusal(
  * seasons make "which one" unanswerable. The season clashed with is named, so the objection can
  * be read on the form that caused it.
  */
-class SeasonOverlapException(seasonName: String) : EsportsRefusal(
+class SeasonDatesOverlap(seasonName: String) : EsportsRefusal(
     HttpStatus.BAD_REQUEST,
     "SeasonDatesOverlap",
     "Those dates overlap another season.",
     mapOf("seasonName" to seasonName),
 )
 
-class SeasonDatesReversedException : EsportsRefusal(
+class SeasonEndsBeforeStart : EsportsRefusal(
     HttpStatus.BAD_REQUEST,
     "SeasonEndsBeforeStart",
     "A season cannot end before it starts.",
@@ -134,7 +134,7 @@ class SeasonDatesReversedException : EsportsRefusal(
  * that names it, and a save that quietly drops the name leaves whoever chose it looking at a
  * dialog that closed and a record that did not change.
  */
-class PictureNotStoredException : EsportsRefusal(
+class PictureNotStored : EsportsRefusal(
     HttpStatus.BAD_REQUEST,
     "PictureNotStored",
     "That picture is not in storage.",

@@ -84,6 +84,10 @@ member asked whether to remove a game is told it holds three teams and fourteen
 people, because that is what they need to know. "Roster place" is jargon and appears
 nowhere a reader can see.
 
+**On the wire the count of them is `players`.** A third word, kept because it is the
+one the api already answers with: renaming it would put a refusal out of step with the
+endpoint the dialog reads before it asks.
+
 ### Banner and Icon
 
 The two pictures a thing carries. A **banner** is the large picture drawn behind a

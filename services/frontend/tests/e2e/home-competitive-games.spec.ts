@@ -48,9 +48,9 @@ const games = [
   },
 ]
 
-/** The competitive tiles, which the block identifies by the picture each carries. */
+/** A tile's picture, which is a competitive one when it came from a record rather than the bundle. */
 const competitiveIcons = (page: import("@playwright/test").Page) =>
-  page.locator('img[src*="/files/public/game-icons/"]')
+  page.getByTestId("games-we-play-tile").locator('img[src*="/files/public/game-icons/"]')
 
 /**
  * Scrolls the block into view and waits for it.
@@ -85,7 +85,8 @@ test.describe("the home page's competitive games", () => {
     await page.goto("/")
     await openGamesBlock(page)
     // The tile carries the click, not the picture inside it.
-    await page.getByTestId("games-we-play-tile").filter({has: competitiveIcons(page)}).first().click()
+    await page.getByTestId("games-we-play-tile")
+      .filter({has: page.locator('img[src*="/files/public/game-icons/"]')}).first().click()
 
     // No deploy changed this: the link is the record's address.
     await expect(page).toHaveURL(/\/esports\/valorant-two$/)
@@ -104,6 +105,23 @@ test.describe("the home page's competitive games", () => {
     // A logo is drawn in a box of a fixed width, so a phone is told that width rather than a
     // share of the viewport.
     expect(await first.getAttribute("sizes")).toBeTruthy()
+  })
+
+  test("a picture the records named decodes, rather than merely having a src", async ({page}) => {
+    await installApiMocks(page, {esportsGames: games})
+
+    await page.goto("/")
+    await openGamesBlock(page)
+
+    // An attribute assertion is exactly what let #806 ship green: a url that resolves against
+    // the wrong origin still matches a string. This asks the browser whether it got pixels.
+    const decoded = await competitiveIcons(page).first()
+      .evaluate(async (el) => {
+        const img = el as HTMLImageElement
+        await img.decode()
+        return img.naturalWidth
+      })
+    expect(decoded).toBeGreaterThan(0)
   })
 
   test("a game with no art draws a tile rather than a broken picture", async ({page}) => {
@@ -128,7 +146,9 @@ test.describe("the home page's competitive games", () => {
     // Written down in the page rather than read from a record: they are not games the
     // association fields, so nothing about this block changed.
     await expect(page.getByText("Community", {exact: true})).toBeVisible()
-    const bundled = page.locator('img[src*="/assets/"], img[src^="/dota2"], img[src*="dota2"]')
-    await expect(bundled.first()).toBeVisible()
+    // Nine of them, drawn from the bundle: no tile in this block carries a stored picture.
+    const community = page.getByTestId("games-we-play-tile")
+      .filter({hasNot: page.locator('img[src*="/files/public/"]')})
+    await expect(community).toHaveCount(9)
   })
 })

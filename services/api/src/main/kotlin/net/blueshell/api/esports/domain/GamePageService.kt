@@ -128,7 +128,7 @@ class GamePageService(
     }
 
     /**
-     * What a game holds: teams recorded in it, and the roster places those carry.
+     * What a game holds: teams recorded in it, and the people on their line-ups.
      *
      * Read so a removal can say what it would take before it is agreed to, rather than after.
      */

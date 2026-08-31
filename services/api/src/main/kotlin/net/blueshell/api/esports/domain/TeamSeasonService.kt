@@ -107,11 +107,12 @@ class TeamSeasonService(
         // the most recent one that has started is the one we are in for this purpose.
         val current = seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
             ?: return emptySet()
-        val played = fielded.gamesFieldedIn(listOf(current.id!!))
+        val currentId = current.id ?: return emptySet()
+        val played = fielded.gamesFieldedIn(listOf(currentId))
         if (played.isNotEmpty()) return played.toSet()
-        val previous = ordered.firstOrNull { it.startDate.isBefore(current.startDate) }
+        val previous = ordered.firstOrNull { it.startDate.isBefore(current.startDate) }?.id
             ?: return emptySet()
-        return fielded.gamesFieldedIn(listOf(previous.id!!)).toSet()
+        return fielded.gamesFieldedIn(listOf(previous)).toSet()
     }
 
     /** The seasons that had a team fielded in them, whichever game it played. */

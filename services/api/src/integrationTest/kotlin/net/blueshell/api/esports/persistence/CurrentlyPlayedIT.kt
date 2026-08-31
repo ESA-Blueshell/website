@@ -121,16 +121,66 @@ class CurrentlyPlayedIT : UserTestSupport() {
     }
 
     /**
-     * The case that is live rather than hypothetical: the seeded history's last season ends on 31
-     * August 2026 and nothing follows it, so every day after that is a day in no season. The
-     * fallback to the most recent season that started is what keeps the pages answering.
+     * The case that is live rather than hypothetical, on the dates that make it live.
+     *
+     * The seeded history's last season is Spring 2025/26, running to 31 August 2026, and nothing
+     * follows it — so from 1 September 2026 every day is a day in no season and the fallback to
+     * the most recent season that started is the only thing keeping the pages answering. The
+     * seeded rows themselves cannot be leaned on here: the suite wipes `season` and
+     * `team_season` between cases, so the season is rebuilt on its own dates.
      */
     @Test
     fun `a date after every season falls back to the last one that started`() {
-        val last = season(LocalDate.of(2040, 2, 1))
-        fieldOne("ROCKET_LEAGUE", last)
+        val springOf2025 = seasons.save(
+            Season(
+                name = "Spring 2025/26 ${System.nanoTime()}",
+                startDate = LocalDate.of(2026, 2, 1),
+                endDate = LocalDate.of(2026, 8, 31),
+            ),
+        )
+        // The six games that season fields in `roster.csv`.
+        listOf("CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT")
+            .forEach { fieldOne(it, springOf2025) }
 
-        assertThat(fielded.currentlyPlayed(LocalDate.of(2041, 6, 1))).containsExactly("ROCKET_LEAGUE")
+        // The last day it covers, and the first day it does not.
+        assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 8, 31)))
+            .containsExactlyInAnyOrder(
+                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+            )
+        assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 9, 1)))
+            .containsExactlyInAnyOrder(
+                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+            )
+    }
+
+    /**
+     * The shape the seeded history is in, and the difference this change makes to it.
+     *
+     * Spring 2025/26 fields six games in `roster.csv`, which is what both the union and this rule
+     * answer today — so nothing on screen moves the day this ships. What moves is the case below:
+     * a seventh game fielded only in the season before, which the union would still be listing.
+     * That case is constructed rather than seeded — CS:GO was last fielded in Spring 2022/23 —
+     * because the point is the rule, and the suite wipes the seeded fieldings anyway.
+     */
+    @Test
+    fun `a game fielded only in the season before is dropped, where the union kept it`() {
+        val autumn = season(LocalDate.of(2025, 9, 1))
+        fieldOne("CSGO", autumn)
+        val spring = seasons.save(
+            Season(
+                name = "Spring 2025/26 ${System.nanoTime()}",
+                startDate = LocalDate.of(2026, 2, 1),
+                endDate = LocalDate.of(2026, 8, 31),
+            ),
+        )
+        listOf("CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT")
+            .forEach { fieldOne(it, spring) }
+
+        // Six, not seven: CS:GO was fielded last season and the union would still be listing it.
+        assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 6, 1)))
+            .containsExactlyInAnyOrder(
+                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+            )
     }
 
     @Test

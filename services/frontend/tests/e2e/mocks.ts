@@ -47,11 +47,13 @@ const brevoTargets = [
  * The games themselves, as their records hold them: what each is called, the address its page
  * answers to, and the art it is drawn with. The pages read every one of these from here.
  */
-/** A one-pixel PNG, so a mocked picture decodes rather than merely having a `src`. */
-const ONE_PIXEL_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8AAAwAB/wD/9WPGgAAAAABJRU5ErkJggg==",
-  "base64",
-)
+/** The refusal the api answers when a game's address is already another game's. */
+const addressTaken = (gameName: string, address: string) => ({
+  detail: "That address is already used by another game.",
+  code: "AddressTaken",
+  gameName,
+  address,
+})
 
 const esportsGames = [
   {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true},
@@ -838,12 +840,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug)
       if (held) {
-        return fulfillJson(route, {
-          detail: "That address is already used by another game.",
-          code: "AddressTaken",
-          gameName: held.name,
-          address: slug,
-        }, 409)
+        return fulfillJson(route, addressTaken(held.name, slug), 409)
       }
       const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
       const made = {
@@ -889,12 +886,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug && one.game !== code)
       if (held) {
-        return fulfillJson(route, {
-          detail: "That address is already used by another game.",
-          code: "AddressTaken",
-          gameName: held.name,
-          address: slug,
-        }, 409)
+        return fulfillJson(route, addressTaken(held.name, slug), 409)
       }
       const was = known.find(one => one.game === code)
       const now = {
@@ -1046,6 +1038,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
     //
+    // 512 pixels square rather than one pixel. For an `img` with a `srcset`, the browser
+    // divides the bytes' real width by the chosen candidate's density — its `w` descriptor
+    // over `sizes` — to get the intrinsic size. A one-pixel image answering a `128w`
+    // candidate drawn at 69px therefore has an intrinsic size below one pixel, so Chromium
+    // reports `naturalWidth` 0 and lays it out at no height at all: the picture is there and
+    // decodes, and draws as nothing. Anything the ladder actually stores is far larger than
+    // its descriptor implies, so this only ever bit the fixture.
+    //
     // Never cached, because a mock file's address is the same in every test: Chromium will
     // draw a wider copy it already holds in preference to the one a `srcset` asks for, so a
     // copy cached by an earlier load decides what a later load appears to fetch.
@@ -1055,7 +1055,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         contentType: "image/webp",
         headers: {"cache-control": "no-store"},
         body: Buffer.from(
-          "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA",
+          "UklGRi4AAABXRUJQVlA4TCIAAAAv/8F/AAdQs840s/8BgUCyv/cMRfQ/4z//+c9//vOf//wf",
           "base64",
         ),
       })
@@ -1459,18 +1459,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "POST" && /\/recovery\/password\/reset\//.test(path)) {
       return fulfillJson(route, {}, 200)
-    }
-
-    /**
-     * A stored public image, answered with bytes that actually decode.
-     *
-     * Anything unmatched below falls through to an empty JSON body, which a browser will not
-     * decode as a picture — so `v-img` never mounts an `img` at all and a test asserting on one
-     * finds nothing. A one-pixel PNG is enough: what these tests check is that a picture the
-     * records named reaches the page and decodes, not what is in it.
-     */
-    if (method === "GET" && path.startsWith("/files/public/")) {
-      return route.fulfill({status: 200, contentType: "image/png", body: ONE_PIXEL_PNG})
     }
 
     return fulfillJson(route, {}, 200)

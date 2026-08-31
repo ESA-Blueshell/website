@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest"
-import {countOf, gameHoldsHistory, sentenceFor} from "@/domains/esports/refusals"
+import {countOf} from "@/domains/esports/copy"
+import {gameHoldsHistory, sentenceFor} from "@/domains/esports/refusals"
 
 /**
  * The sentences a refused esports write says.

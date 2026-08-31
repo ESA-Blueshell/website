@@ -54,12 +54,12 @@ class SeasonService(
     fun delete(id: Long) = seasons.delete(findById(id))
 
     private fun requireOrdered(startDate: LocalDate, endDate: LocalDate) {
-        if (endDate.isBefore(startDate)) throw SeasonDatesReversedException()
+        if (endDate.isBefore(startDate)) throw SeasonEndsBeforeStart()
     }
 
     /** A season may cover the same ground as itself, and as nothing else. */
     private fun requireClear(startDate: LocalDate, endDate: LocalDate, itself: Long?) {
         val clash = seasons.findAllOverlapping(startDate, endDate).firstOrNull { it.id != itself }
-        if (clash != null) throw SeasonOverlapException(clash.name)
+        if (clash != null) throw SeasonDatesOverlap(clash.name)
     }
 }

@@ -251,7 +251,7 @@ const seasonSaved = (saved: Season) => {
 <template>
   <v-main>
     <esports-island>
-      <header class="relative isolate overflow-hidden">
+      <header class="island-header relative isolate overflow-hidden">
         <div
           aria-hidden="true"
           class="pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"

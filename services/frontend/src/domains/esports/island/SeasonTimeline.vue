@@ -509,6 +509,9 @@ const step = (from: number, by: number) => {
 
   position: relative;
   width: 100%;
+  /* The same band ground as the sign-up bar, so the strip reads as a panel rather
+     than as a stretch of patterned page with a line over it. */
+  background-color: var(--band-ground);
   user-select: none;
 }
 
@@ -660,7 +663,7 @@ const step = (from: number, by: number) => {
   transform: skewX(-7deg);
   background:
     linear-gradient(to bottom, color-mix(in oklab, var(--accent) 10%, transparent), transparent 74%),
-    linear-gradient(to bottom, transparent, color-mix(in oklab, var(--color-void) 60%, transparent));
+    linear-gradient(to bottom, transparent, color-mix(in oklab, var(--color-ground) 60%, transparent));
   opacity: 0.45;
   transition: opacity 320ms ease;
 }
@@ -859,7 +862,7 @@ const step = (from: number, by: number) => {
 .season-strip__pan--back::before {
   left: 0;
   right: -40px;
-  background: linear-gradient(to right, color-mix(in oklab, var(--color-void) 82%, transparent), transparent);
+  background: linear-gradient(to right, color-mix(in oklab, var(--color-ground) 82%, transparent), transparent);
 }
 
 .season-strip__pan--on {
@@ -869,7 +872,7 @@ const step = (from: number, by: number) => {
 .season-strip__pan--on::before {
   left: -40px;
   right: 0;
-  background: linear-gradient(to left, color-mix(in oklab, var(--color-void) 82%, transparent), transparent);
+  background: linear-gradient(to left, color-mix(in oklab, var(--color-ground) 82%, transparent), transparent);
 }
 
 .season-strip__dot {
@@ -878,7 +881,7 @@ const step = (from: number, by: number) => {
   width: 11px;
   translate: -50% -50%;
   border-radius: 9999px;
-  background-color: var(--color-void);
+  background-color: var(--color-ground);
   box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-ash) 60%, transparent);
   pointer-events: none;
   transition: background-color 240ms ease, box-shadow 240ms ease, scale 240ms ease;

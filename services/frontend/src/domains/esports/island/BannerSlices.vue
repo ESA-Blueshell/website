@@ -151,12 +151,10 @@ const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
  *
  * Stacked, a slice is the width of the window and nothing else comes into it.
  *
- * A collapsed slice is asked for its own share and no more, which is less than the picture is
- * strictly drawn at: a banner covers a slice taller than a collapsed share is wide, so it is
- * scaled up. That is deliberate. A collapsed slice is drawn under `grayscale(70%)
- * brightness(0.5)`, which is close enough to a silhouette that the difference cannot be seen,
- * and the slice being read — the one at full brightness and in colour — has a share wide
- * enough to cover itself honestly.
+ * A collapsed slice is asked for its own share and no more, which is less than it is drawn at:
+ * a banner covers a slice taller than a collapsed share is wide, so it is scaled up. This used
+ * to hide under a grayscale-and-dim filter; the art is shown as uploaded now, so a collapsed
+ * banner is a little soft. Raise the share here if that starts to show.
  */
 const wanted = (index: number): number => {
   const width = viewport.value
@@ -378,7 +376,10 @@ watch(open, (index) => {
         :width="item.width"
         @load="onLoaded(index)"
       >
+      <!-- Only over art: on a slice with no banner there is nothing to read the names off,
+           and the wash sat on the page as shading for its own sake. -->
       <span
+        v-if="item.banner"
         aria-hidden="true"
         class="team-slice__scrim"
       />
@@ -505,6 +506,18 @@ watch(open, (index) => {
   transition: flex-grow 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* The cut edge, drawn. Two slices of the same tone meet on an invisible diagonal in light, so
+   the boundary is a sliver clipped to the same geometry — no angle to keep in step with the
+   slice's height. Not on the first: there is nothing to its left to divide it from. */
+.team-slice:not(.team-slice--first)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-hairline);
+  clip-path: polygon(var(--cut) 0, calc(var(--cut) + 1.5px) 0, 1.5px 100%, 0 100%);
+  pointer-events: none;
+}
+
 .team-slice--first {
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: 0;
@@ -599,16 +612,29 @@ watch(open, (index) => {
   color: var(--color-ash);
 }
 
+/* The association's blue, patterned and darkened, which makes the way in the one saturated
+   thing on the page in either theme. */
 .team-slice--add {
   flex: 0 0 clamp(6.5rem, 11%, 10rem);
-  background-color: var(--color-pit);
+
+  --color-chalk: #ffffff;
+
+  background-color: var(--color-brand);
+  /* Taken down a fifth, which is where white on it clears AA, and the pattern still reads. */
+  background-image:
+    linear-gradient(var(--add-tint, transparent), var(--add-tint, transparent)),
+    linear-gradient(oklch(0 0 0 / 22%), oklch(0 0 0 / 22%)),
+    url("../../../assets/bg/shelly-bg-blue.jpg");
+  background-size: auto, auto, 135px 77px;
+  background-repeat: repeat;
 }
 
 .team-slice--add:hover {
-  background-color: color-mix(in oklab, var(--accent) 14%, var(--color-pit));
+  --add-tint: oklch(1 0 0 / 12%);
 }
 
 .team-slice__add {
+  position: relative;
   color: var(--color-chalk);
 }
 
@@ -656,13 +682,11 @@ watch(open, (index) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(70%) brightness(0.5);
   scale: 1.06;
-  transition: filter 620ms ease, scale 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: scale 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .team-slice--open .team-slice__banner {
-  filter: grayscale(0%) brightness(0.72);
   scale: 1;
 }
 
@@ -670,8 +694,8 @@ watch(open, (index) => {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, color-mix(in oklab, var(--color-void) 92%, transparent) 0%, transparent 62%),
-    linear-gradient(to right, color-mix(in oklab, var(--color-void) 55%, transparent), transparent 55%);
+    linear-gradient(to top, color-mix(in oklab, var(--color-ground) 92%, transparent) 0%, transparent 62%),
+    linear-gradient(to right, color-mix(in oklab, var(--color-ground) 55%, transparent), transparent 55%);
 }
 
 .team-slice__body {

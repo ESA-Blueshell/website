@@ -12,7 +12,7 @@ import java.time.LocalDate
 class CohortDefinitionsTest {
 
     private fun period(id: Long, from: LocalDate, to: LocalDate): ContributionPeriod =
-        ContributionPeriod(startDate = from, endDate = to).apply { this.id = id }
+        ContributionPeriod(startDate = from, endDate = to, halfYearCutoffDate = from.plusMonths(6)).apply { this.id = id }
 
     private val year = period(14L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
 

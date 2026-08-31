@@ -121,6 +121,7 @@ class ContributionReminderEmailBuilderTest {
         return ContributionPeriod(
             startDate = startDate,
             endDate = endDate,
+            halfYearCutoffDate = startDate.plusMonths(6),
             halfYearFee = halfYearFee,
             fullYearFee = fullYearFee,
             alumniFee = alumniFee,

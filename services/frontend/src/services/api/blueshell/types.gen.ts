@@ -464,6 +464,7 @@ export type ContributionPeriodResponse = {
     createdAt: string;
     endDate: string;
     fullYearFee: number;
+    halfYearCutoffDate: string;
     halfYearFee: number;
     id: number;
     startDate: string;
@@ -527,6 +528,10 @@ export type CreateContributionPeriodRequest = {
     contactListId?: number | null;
     endDate: string;
     fullYearFee: number;
+    /**
+     * A regular membership starting after this date pays the half-year fee.
+     */
+    halfYearCutoffDate: string;
     halfYearFee: number;
     startDate: string;
 };
@@ -1704,6 +1709,10 @@ export type UpdateContributionPeriodRequest = {
     contactListId?: number | null;
     endDate: string;
     fullYearFee: number;
+    /**
+     * A regular membership starting after this date pays the half-year fee.
+     */
+    halfYearCutoffDate: string;
     halfYearFee: number;
     startDate: string;
     version: number;

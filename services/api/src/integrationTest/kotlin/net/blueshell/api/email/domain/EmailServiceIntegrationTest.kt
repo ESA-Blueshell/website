@@ -253,6 +253,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         val period = ContributionPeriod(
             startDate = LocalDate.of(2024, 1, 1),
             endDate = LocalDate.of(2024, 12, 31),
+            halfYearCutoffDate = LocalDate.of(2024, 7, 1),
             halfYearFee = 25.0,
             fullYearFee = 45.0,
             alumniFee = 10.0,

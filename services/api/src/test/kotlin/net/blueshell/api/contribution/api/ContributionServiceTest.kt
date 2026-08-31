@@ -37,7 +37,7 @@ class ContributionServiceTest {
     @Test
     fun `ensurePaid creates missing contribution row`() {
         val user = mockk<User>()
-        val period = ContributionPeriod(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"))
+        val period = ContributionPeriod(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"), LocalDate.parse("2026-07-01"))
         every { repository.existsById(Contribution.Id(7L, 12L)) } returns false
         every { users.findById(7L) } returns user
         every { periods.findById(12L) } returns period
@@ -59,7 +59,7 @@ class ContributionServiceTest {
     @Test
     fun `ensurePaid treats duplicate create as already paid`() {
         val user = mockk<User>()
-        val period = ContributionPeriod(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"))
+        val period = ContributionPeriod(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"), LocalDate.parse("2026-07-01"))
         every { repository.existsById(Contribution.Id(7L, 12L)) } returnsMany listOf(false, true)
         every { users.findById(7L) } returns user
         every { periods.findById(12L) } returns period

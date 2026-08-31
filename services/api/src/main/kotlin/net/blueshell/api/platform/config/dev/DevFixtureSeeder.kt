@@ -117,6 +117,7 @@ class DevFixtureSeeder(
             ContributionPeriod(
                 startDate = DevFixtures.PERIOD_START,
                 endDate = DevFixtures.PERIOD_END,
+                halfYearCutoffDate = DevFixtures.PERIOD_HALF_YEAR_CUTOFF,
                 halfYearFee = DevFixtures.HALF_YEAR_FEE,
                 fullYearFee = DevFixtures.FULL_YEAR_FEE,
                 alumniFee = DevFixtures.ALUMNI_FEE,

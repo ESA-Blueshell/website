@@ -44,6 +44,7 @@ class ContributionPeriodController @Autowired constructor(
         val contributionPeriod = useCases.create(
             startDate = request.startDate,
             endDate = request.endDate,
+            halfYearCutoffDate = request.halfYearCutoffDate,
             halfYearFee = request.halfYearFee,
             fullYearFee = request.fullYearFee,
             alumniFee = request.alumniFee,
@@ -62,6 +63,7 @@ class ContributionPeriodController @Autowired constructor(
             id = id,
             startDate = request.startDate,
             endDate = request.endDate,
+            halfYearCutoffDate = request.halfYearCutoffDate,
             halfYearFee = request.halfYearFee,
             fullYearFee = request.fullYearFee,
             alumniFee = request.alumniFee,

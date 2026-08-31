@@ -23,6 +23,7 @@ fun ContributionPeriod.toResult(): ContributionPeriodResult = ContributionPeriod
     id = this.id!!,
     startDate = this.startDate,
     endDate = this.endDate,
+    halfYearCutoffDate = this.halfYearCutoffDate,
     halfYearFee = this.halfYearFee,
     fullYearFee = this.fullYearFee,
     alumniFee = this.alumniFee,

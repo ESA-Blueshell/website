@@ -24,6 +24,7 @@ class ContributionReminderUseCasesTest {
     private fun period() = ContributionPeriod(
         startDate = LocalDate.of(2026, 1, 1),
         endDate = LocalDate.of(2026, 12, 31),
+        halfYearCutoffDate = LocalDate.of(2026, 7, 1),
         halfYearFee = 1.0,
         fullYearFee = 2.0,
         alumniFee = 0.0,

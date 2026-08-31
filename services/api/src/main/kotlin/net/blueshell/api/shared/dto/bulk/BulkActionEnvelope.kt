@@ -17,10 +17,10 @@ import io.swagger.v3.oas.annotations.media.Schema
  */
 @Schema(name = "BulkFeeType", enumAsRef = true)
 enum class BulkFeeType {
-    /** Full-year fee — for REGULAR members who started before the half-year cutoff. */
+    /** Full-year fee — for REGULAR members who started on or before the half-year cutoff. */
     FULL_YEAR_FEE,
 
-    /** Half-year fee — for REGULAR members who started on or after the half-year cutoff. */
+    /** Half-year fee — for REGULAR members who started after the half-year cutoff. */
     HALF_YEAR_FEE,
 
     /** Alumni fee — for ALUMNI members. */

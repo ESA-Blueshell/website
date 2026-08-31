@@ -11,11 +11,13 @@ class ContributionFactory(
 ) {
     fun buildPeriod(
         startDate: LocalDate = LocalDate.now().minusMonths(1),
-        endDate: LocalDate = LocalDate.now().plusMonths(1)
+        endDate: LocalDate = LocalDate.now().plusMonths(1),
+        halfYearCutoffDate: LocalDate = startDate.plusMonths(6)
     ): ContributionPeriod {
         return ContributionPeriod(
             startDate = startDate,
             endDate = endDate,
+            halfYearCutoffDate = halfYearCutoffDate,
             halfYearFee = 25.0,
             fullYearFee = 45.0,
             alumniFee = 10.0,
@@ -24,8 +26,9 @@ class ContributionFactory(
 
     fun createPeriod(
         startDate: LocalDate = LocalDate.now().minusMonths(1),
-        endDate: LocalDate = LocalDate.now().plusMonths(1)
+        endDate: LocalDate = LocalDate.now().plusMonths(1),
+        halfYearCutoffDate: LocalDate = startDate.plusMonths(6)
     ): ContributionPeriod {
-        return persistence.persist(buildPeriod(startDate, endDate))
+        return persistence.persist(buildPeriod(startDate, endDate, halfYearCutoffDate))
     }
 }

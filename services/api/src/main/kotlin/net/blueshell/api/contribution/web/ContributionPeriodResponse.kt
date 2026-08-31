@@ -9,6 +9,7 @@ data class ContributionPeriodResponse(
     var id: Long,
     var startDate: LocalDate,
     var endDate: LocalDate,
+    var halfYearCutoffDate: LocalDate,
     var halfYearFee: Double,
     var fullYearFee: Double,
     var alumniFee: Double,

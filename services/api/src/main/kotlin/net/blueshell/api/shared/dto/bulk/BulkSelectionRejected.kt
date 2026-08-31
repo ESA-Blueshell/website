@@ -50,6 +50,13 @@ class BulkSelectionRejected(
         /** The selection names honorary members, who owe no contribution. */
         const val HONORARY_USERS: String = "HonoraryUserIds"
 
+        /**
+         * A fee type was submitted for a member the fee cycle does not write to. The table
+         * the operator was looking at has moved, so the send is refused rather than applied
+         * to the members it still recognises.
+         */
+        const val NON_RECIPIENT_FEE_TYPES: String = "NonRecipientFeeTypeUserIds"
+
         /** The selection names a contribution period that no longer exists. */
         const val UNKNOWN_PERIOD: String = "UnknownContributionPeriodId"
 

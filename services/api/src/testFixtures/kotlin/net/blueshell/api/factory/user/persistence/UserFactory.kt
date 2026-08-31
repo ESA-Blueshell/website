@@ -87,14 +87,15 @@ class UserFactory(
         user: User,
         memberType: MemberType = MemberType.REGULAR,
         startDate: LocalDate = LocalDate.now().minusDays(30),
-        endDate: LocalDate? = null
+        endDate: LocalDate? = null,
+        incasso: Boolean = true
     ): Membership {
         return Membership(
             user = user,
             startDate = startDate,
             endDate = endDate,
             memberType = memberType,
-            incasso = true,
+            incasso = incasso,
         )
     }
 
@@ -102,8 +103,9 @@ class UserFactory(
         user: User,
         memberType: MemberType = MemberType.REGULAR,
         startDate: LocalDate = LocalDate.now().minusDays(30),
-        endDate: LocalDate? = null
+        endDate: LocalDate? = null,
+        incasso: Boolean = true
     ): Membership {
-        return persistence.persist(buildMembership(user, memberType, startDate, endDate))
+        return persistence.persist(buildMembership(user, memberType, startDate, endDate, incasso))
     }
 }

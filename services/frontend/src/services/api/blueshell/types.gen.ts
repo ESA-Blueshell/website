@@ -274,6 +274,7 @@ export enum BulkRowReason {
  */
 export type BulkRowVocabulary = {
     disposition: BulkRowDisposition;
+    feeCycleGroup: FeeCycleGroup;
     feeType: BulkFeeType;
     reason: BulkRowReason;
 };
@@ -790,6 +791,56 @@ export type FailedTargetMove = {
      * What the system said, for an operator to act on rather than a stack trace.
      */
     message: string;
+};
+
+export enum FeeCycleGroup {
+    DIRECT_DEBIT = 'DIRECT_DEBIT',
+    TRANSFER = 'TRANSFER'
+}
+
+export type FeeCyclePreviewResponse = {
+    contributionPeriodId: number;
+    rows: Array<FeeCycleRowResponse>;
+};
+
+export type FeeCycleResultResponse = {
+    /**
+     * Members in the cycle who were not written to.
+     */
+    excluded: number;
+    paymentRequestsQueued: number;
+    preNotificationsQueued: number;
+};
+
+export type FeeCycleRowResponse = {
+    /**
+     * Follows from the fee type and the period. Never typed.
+     */
+    amount?: number | null;
+    disposition: BulkRowDisposition;
+    /**
+     * Absent only for honorary members, who owe nothing.
+     */
+    feeType?: BulkFeeType | null;
+    /**
+     * Decided by the member's direct-debit flag, not by the operator.
+     */
+    group: FeeCycleGroup;
+    /**
+     * When this member was last asked for this period, on this side of the partition.
+     */
+    lastAskedOn?: string | null;
+    /**
+     * Start of the membership every decision on this row was judged against.
+     */
+    memberSince?: string | null;
+    memberType: MemberType;
+    name: string;
+    /**
+     * Why this member is not written to. Absent on an included row.
+     */
+    reason?: BulkRowReason | null;
+    userId: number;
 };
 
 /**
@@ -1500,6 +1551,24 @@ export type SeasonResponse = {
      */
     played: boolean;
     startDate: string;
+};
+
+export type SendFeeCycleRequest = {
+    contributionPeriodId: number | null;
+    /**
+     * The date the direct-debit group is told the money will be taken.
+     */
+    debitDate: string | null;
+    /**
+     * Fee type per member, where the treasurer changed it from the one that applies.
+     */
+    feeTypeOverrides: {
+        [key: string]: BulkFeeType;
+    };
+    /**
+     * The date the transfer group is asked to have paid by.
+     */
+    paymentDueDate: string | null;
 };
 
 export type SentEmailPreview = {
@@ -3623,6 +3692,90 @@ export type MarkUnpaidResponses = {
 };
 
 export type MarkUnpaidResponse = MarkUnpaidResponses[keyof MarkUnpaidResponses];
+
+export type PreviewFeeCycleData = {
+    body?: never;
+    path?: never;
+    query: {
+        contributionPeriodId: number;
+    };
+    url: '/contributions/fee-cycle';
+};
+
+export type PreviewFeeCycleErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewFeeCycleError = PreviewFeeCycleErrors[keyof PreviewFeeCycleErrors];
+
+export type PreviewFeeCycleResponses = {
+    /**
+     * OK
+     */
+    200: FeeCyclePreviewResponse;
+};
+
+export type PreviewFeeCycleResponse = PreviewFeeCycleResponses[keyof PreviewFeeCycleResponses];
+
+export type SendFeeCycleData = {
+    body: SendFeeCycleRequest;
+    path?: never;
+    query?: never;
+    url: '/contributions/fee-cycle/send';
+};
+
+export type SendFeeCycleErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendFeeCycleError = SendFeeCycleErrors[keyof SendFeeCycleErrors];
+
+export type SendFeeCycleResponses = {
+    /**
+     * OK
+     */
+    200: FeeCycleResultResponse;
+};
+
+export type SendFeeCycleResponse = SendFeeCycleResponses[keyof SendFeeCycleResponses];
 
 export type CsrfData = {
     body?: never;

@@ -1,0 +1,114 @@
+package net.blueshell.api.contribution.domain
+
+import net.blueshell.api.contribution.api.ContributionPeriodService
+import net.blueshell.api.contribution.api.ContributionService
+import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
+import net.blueshell.api.shared.dto.bulk.BulkRowReason
+import net.blueshell.api.shared.dto.bulk.FeeCycleGroup
+import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.persistence.Membership
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import java.time.ZoneOffset
+
+/**
+ * Works out who a period's fee cycle is about, and what each of them owes.
+ *
+ * The preview and the send both read this, so they cannot disagree about who is included
+ * or what they owe. Nothing here writes, enqueues or sends.
+ */
+@Service
+class FeeCyclePlanner(
+    private val periods: ContributionPeriodService,
+    private val contributions: ContributionService,
+    private val memberships: MembershipService,
+    private val reminders: ContributionReminderService,
+    private val preNotifications: IncassoNotificationService,
+) {
+    @Transactional(readOnly = true)
+    fun plan(contributionPeriodId: Long): FeeCyclePlan {
+        val period = periods.findById(contributionPeriodId)
+
+        val paid = contributions.findByContributionPeriodId(contributionPeriodId)
+            .map { it.userId }
+            .toSet()
+
+        // The whole population in one query. A member of the period is anyone whose
+        // membership overlapped it, which is the rule the manager's "member in period"
+        // column draws.
+        val judged = memberships.findOverlappingWithMembers(period.startDate, period.endDate)
+            .groupBy { it.userId }
+            .mapValues { (_, held) -> judgedMembership(held) }
+
+        val lastAsked = lastAskedDates(contributionPeriodId)
+
+        val participants = judged
+            .filterKeys { it !in paid }
+            .map { (userId, membership) -> participant(userId, membership, period, lastAsked) }
+            .sortedBy { it.name }
+
+        return FeeCyclePlan(contributionPeriodId = contributionPeriodId, participants = participants)
+    }
+
+    /**
+     * Of the memberships that put this member in the period, the one that started last.
+     *
+     * Judging against the member's newest membership overall would price a past period by a
+     * membership that did not exist during it.
+     */
+    private fun judgedMembership(held: List<Membership>): Membership = held.maxBy { it.startDate }
+
+    private fun participant(
+        userId: Long,
+        membership: Membership,
+        period: ContributionPeriod,
+        lastAsked: Map<FeeCycleGroup, Map<Long, LocalDate>>,
+    ): FeeCycleParticipant {
+        val member = membership.user
+        val feeType = resolveFeeType(membership.memberType, membership.startDate, period)
+        val group = if (membership.incasso) FeeCycleGroup.DIRECT_DEBIT else FeeCycleGroup.TRANSFER
+
+        // Both exclusions are hard. An honorary member owes nothing, and an address that is
+        // not there cannot be written to; neither is a judgement the operator can overrule.
+        val (disposition, reason) = when {
+            membership.memberType == MemberType.HONORARY ->
+                BulkRowDisposition.EXCLUDED to BulkRowReason.HONORARY
+            member.email.isBlank() ->
+                BulkRowDisposition.EXCLUDED to BulkRowReason.NO_EMAIL
+            else -> BulkRowDisposition.INCLUDED to null
+        }
+
+        return FeeCycleParticipant(
+            userId = userId,
+            name = member.fullName,
+            memberType = membership.memberType,
+            memberSince = membership.startDate,
+            group = group,
+            disposition = disposition,
+            reason = reason,
+            feeType = feeType,
+            amount = feeType?.let { resolveFeeAmount(it, period) },
+            lastAskedOn = lastAsked[group]?.get(userId),
+        )
+    }
+
+    /**
+     * When each member was last asked, per side of the partition.
+     *
+     * Read per group rather than pooled: a member moved onto direct debit part way through a
+     * period has been asked by transfer and not yet pre-notified, and saying otherwise would
+     * hide the send the treasurer is about to make.
+     *
+     * The record is one row per member and period, so a repeat send updates it rather than
+     * inserting a second — which makes `updatedAt` the date it was last stated.
+     */
+    private fun lastAskedDates(contributionPeriodId: Long): Map<FeeCycleGroup, Map<Long, LocalDate>> = mapOf(
+        FeeCycleGroup.TRANSFER to reminders.findByContributionPeriodId(contributionPeriodId)
+            .associate { it.userId to it.updatedAt.atZone(ZoneOffset.UTC).toLocalDate() },
+        FeeCycleGroup.DIRECT_DEBIT to preNotifications.findByContributionPeriodId(contributionPeriodId)
+            .associate { it.userId to it.updatedAt.atZone(ZoneOffset.UTC).toLocalDate() },
+    )
+}

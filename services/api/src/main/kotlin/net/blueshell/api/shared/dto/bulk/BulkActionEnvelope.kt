@@ -27,6 +27,21 @@ enum class BulkFeeType {
     ALUMNI_FEE,
 }
 
+/**
+ * Which side of the fee cycle a member is on.
+ *
+ * The `incasso` flag on the member's membership decides it, so this is not a choice the
+ * operator makes: one group is told what will be debited, the other is asked to transfer.
+ */
+@Schema(name = "FeeCycleGroup", enumAsRef = true)
+enum class FeeCycleGroup {
+    /** Pays by direct debit, and is told what will be taken and when. */
+    DIRECT_DEBIT,
+
+    /** Pays by transfer, and is asked to pay what is owed by when. */
+    TRANSFER,
+}
+
 /** How a selected user will be treated by a bulk action. */
 @Schema(name = "BulkRowDisposition", enumAsRef = true)
 enum class BulkRowDisposition {
@@ -49,6 +64,15 @@ enum class BulkRowReason {
     ALREADY_PAID,
     NOT_PAID,
     HONORARY,
+
+    /**
+     * Dead: nothing sets it. It existed because the payment request and the pre-notification
+     * were two independent sends, so a member could be selected for the wrong one. Under the
+     * fee cycle the `incasso` flag decides which side of the partition a member is on, so
+     * there is no wrong one and not having the flag is not a warning. Kept for one release so
+     * a client reading a stored value still recognises it.
+     */
+    @Deprecated("Nothing populates this. The fee-cycle partition replaced it.")
     INCASSO_MISMATCH,
     NO_ACTIVE_MEMBERSHIP,
     STARTED_TODAY,

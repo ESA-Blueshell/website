@@ -37,6 +37,24 @@ interface MemberRepository : BaseRepository<Membership, Long> {
     )
     fun findUserIdsOverlapping(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Long>
 
+    /**
+     * The same overlap rule as [findUserIdsOverlapping], returning the memberships rather
+     * than the ids, with the member fetched alongside.
+     *
+     * The fetches are not an optimisation. `User.memberProfile` is an eager `mappedBy`
+     * one-to-one, so reading a name off a hundred lazily-loaded members costs a query per
+     * member and then a second one per member for the profile.
+     */
+    @Query(
+        """
+        SELECT m FROM Membership m
+        JOIN FETCH m.user u
+        LEFT JOIN FETCH u.memberProfile
+        WHERE m.startDate <= :to AND (m.endDate IS NULL OR m.endDate >= :from)
+        """,
+    )
+    fun findOverlappingWithMembers(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Membership>
+
     @Query(
         """
         SELECT COUNT(m) > 0 FROM Membership m

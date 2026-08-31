@@ -2,42 +2,50 @@ package net.blueshell.api.contribution.persistence
 
 import jakarta.persistence.*
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
+import net.blueshell.api.user.persistence.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 
+/**
+ * A direct-debit pre-notification: the statement that money will be taken, and when.
+ *
+ * Its own record rather than a flag on [ContributionReminder], because a pre-notification
+ * and a payment request are different statements and the treasurer needs to know which a
+ * member received. Modelled on the reminder, which already records a member, a period and
+ * when it was sent.
+ */
 @Entity
 @Table(
-    name = "contribution_reminders",
+    name = "incasso_notifications",
     uniqueConstraints = [
         UniqueConstraint(
-            name = "uk_contribution_reminders_user_period_deleted_at",
+            name = "uk_incasso_notifications_user_period_deleted_at",
             columnNames = ["user_id", "contribution_period_id", "deleted_at"]
         ),
     ],
     indexes = [
-        Index(name = "idx_contribution_reminders_deleted_at", columnList = "deleted_at"),
-        Index(name = "idx_contribution_reminders_created_at", columnList = "created_at"),
-        Index(name = "idx_contribution_reminders_user_id", columnList = "user_id, deleted_at"),
+        Index(name = "idx_incasso_notifications_deleted_at", columnList = "deleted_at"),
+        Index(name = "idx_incasso_notifications_created_at", columnList = "created_at"),
+        Index(name = "idx_incasso_notifications_user_id", columnList = "user_id, deleted_at"),
         Index(
-            name = "idx_contribution_reminders_contribution_period_id",
+            name = "idx_incasso_notifications_contribution_period_id",
             columnList = "contribution_period_id, deleted_at"
         )
     ]
 )
 @SQLDelete(
     sql = """
-      UPDATE contribution_reminders
+      UPDATE incasso_notifications
       SET deleted_at = NOW(), version = version + 1
       WHERE contribution_period_id = ? AND user_id = ? AND version = ?
     """
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
-class ContributionReminder(
+class IncassoNotification(
     @EmbeddedId
     override var id: Id = Id(),
 
@@ -52,19 +60,17 @@ class ContributionReminder(
     var contributionPeriod: ContributionPeriod,
 
     /**
-     * The fee type this request stated, so the email's reason is the true one rather than a
-     * guess recovered from an amount. Null on the rows written before the fee cycle existed,
-     * and by the single-member reminder, which quotes the period's fee options instead of one
-     * amount and therefore states no single reason.
+     * The fee type this pre-notification stated. The amount is not stored: it follows from
+     * the type and the period, so a copy could only ever disagree with them.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "fee_type", length = 32)
-    var feeType: BulkFeeType? = null,
+    @Column(name = "fee_type", nullable = false, length = 32)
+    var feeType: BulkFeeType,
 
-    /** The date this request asked to be paid by. Null wherever [feeType] is. */
-    @Column(name = "payment_due_date")
-    var paymentDueDate: LocalDate? = null,
-) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminder.Id> {
+    /** The date the money was said to be taken on. */
+    @Column(name = "debit_date", nullable = false)
+    var debitDate: LocalDate,
+) : AuditedSoftDeleteEntity(), Identifiable<IncassoNotification.Id> {
 
     val userId: Long
         get() = id.userId ?: user.id ?: 0
@@ -76,7 +82,7 @@ class ContributionReminder(
         if (this === other) return true
         if (other == null) return false
         if (Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-        other as ContributionReminder
+        other as IncassoNotification
         return id == other.id
     }
 
@@ -87,5 +93,4 @@ class ContributionReminder(
         var userId: Long? = null,
         var contributionPeriodId: Long? = null
     ) : java.io.Serializable
-
 }

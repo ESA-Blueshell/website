@@ -1,0 +1,384 @@
+package net.blueshell.api.contribution.web
+
+import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
+import net.blueshell.api.contribution.domain.IncassoNotificationEmailJob
+import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionReminderRepository
+import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
+import net.blueshell.api.shared.dto.bulk.BulkFeeType
+import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import tools.jackson.databind.ObjectMapper
+import java.time.LocalDate
+
+/**
+ * The fee cycle end to end: what the preview says, what the send does, and that the two
+ * agree.
+ */
+@SpringBootTest
+class FeeCycleControllerIT : UserTestSupport() {
+
+    @Autowired
+    private lateinit var reminderRepository: ContributionReminderRepository
+
+    @Autowired
+    private lateinit var preNotificationRepository: IncassoNotificationRepository
+
+    @Autowired
+    private lateinit var reminderEmailJob: ContributionReminderEmailJob
+
+    @Autowired
+    private lateinit var preNotificationEmailJob: IncassoNotificationEmailJob
+
+    @Autowired
+    private lateinit var jsonMapper: ObjectMapper
+
+    private val cutoff = LocalDate.now().minusDays(10)
+    private val dueDate = LocalDate.now().plusMonths(1)
+    private val debitDate = LocalDate.now().plusMonths(1).plusDays(14)
+
+    private fun period(): ContributionPeriod = contributionFactory.createPeriod(
+        startDate = LocalDate.now().minusMonths(2),
+        endDate = LocalDate.now().plusMonths(6),
+        halfYearCutoffDate = cutoff,
+    )
+
+    /** A member of the period, on the side of the partition their flag puts them on. */
+    private fun member(
+        incasso: Boolean,
+        memberType: MemberType = MemberType.REGULAR,
+        startDate: LocalDate = LocalDate.now().minusMonths(1),
+        email: String? = null,
+    ): User {
+        val user = userFactory.createUserWithRole(Role.MEMBER)
+        if (email != null) {
+            user.email = email
+            persist(user)
+        }
+        userFactory.createMembership(user, memberType = memberType, startDate = startDate, incasso = incasso)
+        return user
+    }
+
+    private fun sendBody(
+        periodId: Long?,
+        feeTypeOverrides: Map<Long?, BulkFeeType> = emptyMap(),
+    ): String = jsonMapper.writeValueAsString(
+        mapOf(
+            "contributionPeriodId" to periodId,
+            "paymentDueDate" to dueDate.toString(),
+            "debitDate" to debitDate.toString(),
+            "feeTypeOverrides" to feeTypeOverrides.mapKeys { it.key.toString() },
+        ),
+    )
+
+    private fun preview(board: User, periodId: Long?) =
+        mvc.perform(get("/contributions/fee-cycle").with(bearer(board)).param("contributionPeriodId", "$periodId"))
+
+    private fun send(board: User, body: String) =
+        mvc.perform(
+            post("/contributions/fee-cycle/send")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body),
+        )
+
+    @Nested
+    inner class ThePreview {
+
+        @Test
+        fun `lists every unpaid member of the period, split by the direct-debit flag`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onDirectDebit = member(incasso = true)
+            val onTransfer = member(incasso = false)
+
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.contributionPeriodId").value(period.id))
+                .andExpect(jsonPath("$.rows.length()").value(2))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${onDirectDebit.id})].group").value("DIRECT_DEBIT"))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${onTransfer.id})].group").value("TRANSFER"))
+        }
+
+        @Test
+        fun `leaves out a member who has already paid`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val paid = member(incasso = false)
+            val unpaid = member(incasso = false)
+            persist(Contribution(id = Contribution.Id(paid.id, period.id), user = paid, contributionPeriod = period))
+
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.rows.length()").value(1))
+                .andExpect(jsonPath("$.rows[0].userId").value(unpaid.id))
+        }
+
+        @Test
+        fun `shows an honorary member excluded, owing nothing`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val honorary = member(incasso = false, memberType = MemberType.HONORARY)
+
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.rows[?(@.userId == ${honorary.id})].disposition").value("EXCLUDED"))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${honorary.id})].reason").value("HONORARY"))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${honorary.id})].feeType").isEmpty)
+        }
+
+        @Test
+        fun `shows a member with no email address excluded`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val unreachable = member(incasso = false, email = "")
+
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.rows[?(@.userId == ${unreachable.id})].disposition").value("EXCLUDED"))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${unreachable.id})].reason").value("NO_EMAIL"))
+        }
+
+        @Test
+        fun `prices each row from the period, by the cutoff the period carries`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val startedOnTheCutoff = member(incasso = false, startDate = cutoff)
+            val startedAfterIt = member(incasso = false, startDate = cutoff.plusDays(1))
+
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.rows[?(@.userId == ${startedOnTheCutoff.id})].feeType").value("FULL_YEAR_FEE"))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${startedOnTheCutoff.id})].amount").value(45.0))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${startedAfterIt.id})].feeType").value("HALF_YEAR_FEE"))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${startedAfterIt.id})].amount").value(25.0))
+        }
+
+        @Test
+        fun `is refused to a member`() {
+            val member = userFactory.createUserWithRole(Role.MEMBER)
+            preview(member, period().id).andExpect(status().isForbidden)
+        }
+    }
+
+    @Nested
+    inner class TheSend {
+
+        @Test
+        fun `writes to both sides from one confirmation and reports each separately`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onDirectDebit = member(incasso = true)
+            val onTransfer = member(incasso = false)
+
+            send(board, sendBody(period.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.paymentRequestsQueued").value(1))
+                .andExpect(jsonPath("$.preNotificationsQueued").value(1))
+                .andExpect(jsonPath("$.excluded").value(0))
+
+            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+                .containsExactly(onTransfer.id)
+            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+                .containsExactly(onDirectDebit.id)
+        }
+
+        @Test
+        fun `queues one email per member rather than one request per member`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            member(incasso = false)
+            member(incasso = false)
+            member(incasso = true)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+
+            assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).hasSize(2)
+            assertThat(findJobsByType(EmailJobs.IncassoNotification.type)).hasSize(1)
+        }
+
+        @Test
+        fun `writes to nobody the preview excluded`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            member(incasso = false, memberType = MemberType.HONORARY)
+            member(incasso = true, email = "")
+
+            send(board, sendBody(period.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.paymentRequestsQueued").value(0))
+                .andExpect(jsonPath("$.preNotificationsQueued").value(0))
+                .andExpect(jsonPath("$.excluded").value(2))
+        }
+
+        /**
+         * The acceptance criterion behind sharing one plan: the send writes to exactly the
+         * members the preview said it would, on the side the preview put them on.
+         */
+        @Test
+        fun `writes to exactly the members the preview said it would`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            member(incasso = true)
+            member(incasso = true, memberType = MemberType.ALUMNI)
+            member(incasso = false)
+            member(incasso = false, memberType = MemberType.HONORARY)
+            member(incasso = false, email = "")
+
+            val previewed = jsonMapper.readTree(
+                preview(board, period.id).andExpect(status().isOk).andReturn().response.contentAsString,
+            )["rows"]
+            val expectedTransfer = previewed
+                .filter { it["group"].asString() == "TRANSFER" && it["disposition"].asString() == "INCLUDED" }
+                .map { it["userId"].asLong() }
+            val expectedDirectDebit = previewed
+                .filter { it["group"].asString() == "DIRECT_DEBIT" && it["disposition"].asString() == "INCLUDED" }
+                .map { it["userId"].asLong() }
+
+            send(board, sendBody(period.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.paymentRequestsQueued").value(expectedTransfer.size))
+                .andExpect(jsonPath("$.preNotificationsQueued").value(expectedDirectDebit.size))
+
+            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+                .containsExactlyInAnyOrderElementsOf(expectedTransfer)
+            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+                .containsExactlyInAnyOrderElementsOf(expectedDirectDebit)
+        }
+
+        @Test
+        fun `records what each statement said, so the email quotes the true reason`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false, startDate = cutoff.plusDays(1))
+            val onDirectDebit = member(incasso = true, memberType = MemberType.ALUMNI)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+
+            val reminder = reminderRepository.findByIdContributionPeriodId(period.id!!).single()
+            assertThat(reminder.userId).isEqualTo(onTransfer.id)
+            assertThat(reminder.feeType).isEqualTo(BulkFeeType.HALF_YEAR_FEE)
+            assertThat(reminder.paymentDueDate).isEqualTo(dueDate)
+
+            val preNotification = preNotificationRepository.findByIdContributionPeriodId(period.id!!).single()
+            assertThat(preNotification.userId).isEqualTo(onDirectDebit.id)
+            assertThat(preNotification.feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
+            assertThat(preNotification.debitDate).isEqualTo(debitDate)
+        }
+
+        @Test
+        fun `asking again restates the record rather than adding a second`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+            send(board, sendBody(period.id, mapOf(onTransfer.id to BulkFeeType.ALUMNI_FEE)))
+                .andExpect(status().isOk)
+
+            val reminders = reminderRepository.findByIdContributionPeriodId(period.id!!)
+            assertThat(reminders).hasSize(1)
+            assertThat(reminders.single().feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
+        }
+
+        @Test
+        fun `shows when a member was last asked, on their side of the partition`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false)
+            val onDirectDebit = member(incasso = true)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+
+            val today = LocalDate.now().toString()
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.rows[?(@.userId == ${onTransfer.id})].lastAskedOn").value(today))
+                .andExpect(jsonPath("$.rows[?(@.userId == ${onDirectDebit.id})].lastAskedOn").value(today))
+        }
+
+        @Test
+        fun `refuses a fee type naming a member the cycle does not write to`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            member(incasso = false)
+            val honorary = member(incasso = false, memberType = MemberType.HONORARY)
+
+            send(board, sendBody(period.id, mapOf(honorary.id to BulkFeeType.ALUMNI_FEE)))
+                .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.errors[0].code").value("NonRecipientFeeTypeUserIds"))
+                .andExpect(jsonPath("$.errors[0].values[0]").value(honorary.id))
+
+            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `is refused to a member`() {
+            val member = userFactory.createUserWithRole(Role.MEMBER)
+            send(member, sendBody(period().id)).andExpect(status().isForbidden)
+        }
+    }
+
+    @Nested
+    inner class TheEmailsThatGoOut {
+
+        @Test
+        fun `the payment request states the amount, the reason and the due date`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false, startDate = cutoff.plusDays(1))
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+            emailTransportClient.reset()
+            reminderEmailJob.handle(
+                jsonMapper.writeValueAsString(
+                    EmailJobs.ContributionReminderPayload(onTransfer.id!!, period.id!!),
+                ),
+            )
+
+            val sent = emailTransportClient.sentEmails.single()
+            assertThat(sent.toEmail).isEqualTo(onTransfer.email)
+            assertThat(sent.htmlContent)
+                .contains("25,00")
+                .contains("the half-year fee")
+                .contains(dueDate.dayOfMonth.toString())
+        }
+
+        @Test
+        fun `the pre-notification states the amount, the reason and the debit date`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onDirectDebit = member(incasso = true, startDate = cutoff)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+            emailTransportClient.reset()
+            preNotificationEmailJob.handle(
+                jsonMapper.writeValueAsString(
+                    EmailJobs.IncassoNotificationPayload(onDirectDebit.id!!, period.id!!),
+                ),
+            )
+
+            val sent = emailTransportClient.sentEmails.single()
+            assertThat(sent.toEmail).isEqualTo(onDirectDebit.email)
+            assertThat(sent.htmlContent)
+                .contains("45,00")
+                .contains("the full-year fee")
+                .contains(debitDate.dayOfMonth.toString())
+                .doesNotContain("Bank transfer")
+        }
+    }
+}

@@ -5,16 +5,24 @@ import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
-import org.springframework.beans.factory.annotation.Value
+import net.blueshell.api.platform.config.BankProperties
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
+/**
+ * Renders and sends a recorded payment request.
+ *
+ * Which of the two reminder emails goes out is read off the record rather than decided
+ * here: a request written by the fee cycle carries the fee type it stated and the date it
+ * asked to be paid by, so it quotes one amount and the reason for it. One written from a
+ * single row carries neither, so it lists the period's fee options.
+ */
 @Component
 class ContributionReminderEmailJob(
     objectMapper: ObjectMapper,
     private val reminders: ContributionReminderService,
     private val emails: EmailSenderService,
-    @param:Value($$"${frontend.url}") private val frontendUrl: String,
+    private val bank: BankProperties,
 ) : AbstractJsonJobHandler<EmailJobs.ContributionReminderPayload>(
     objectMapper,
     EmailJobs.ContributionReminder.payloadType,
@@ -25,10 +33,13 @@ class ContributionReminderEmailJob(
         val reminder = requireExists {
             reminders.findById(ContributionReminder.Id(payload.userId, payload.contributionPeriodId))
         }
-        emails.send(
-            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, frontendUrl),
-            "email.contribution-reminder",
-            currentExecutionId,
-        )
+        val feeType = reminder.feeType
+        val dueDate = reminder.paymentDueDate
+        val content = if (feeType != null && dueDate != null) {
+            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, feeType, dueDate, bank)
+        } else {
+            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, bank)
+        }
+        emails.send(content, "email.contribution-reminder", currentExecutionId)
     }
 }

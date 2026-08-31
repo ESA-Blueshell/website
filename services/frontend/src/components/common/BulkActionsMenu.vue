@@ -19,6 +19,7 @@ const emit = defineEmits<{
   (e: "addUser"): void
   (e: "markPaid"): void
   (e: "markUnpaid"): void
+  (e: "feeCycle"): void
   (e: "endMembership"): void
   (e: "startMembership"): void
 }>()
@@ -67,6 +68,18 @@ const bulkDisabled = computed(() => !props.hasSelection || props.noPeriod)
         prepend-icon="mdi-cash-remove"
         title="Mark as unpaid"
         @click="emit('markUnpaid')"
+      />
+      <v-divider />
+      <!--
+        The cycle is over every unpaid member of the period, not over the selection, so it
+        needs a period and nothing else.
+      -->
+      <v-list-item
+        :disabled="noPeriod"
+        data-testid="bulk-action-fee-cycle"
+        prepend-icon="mdi-email-fast"
+        title="Open the fee cycle"
+        @click="emit('feeCycle')"
       />
       <v-divider />
       <!--

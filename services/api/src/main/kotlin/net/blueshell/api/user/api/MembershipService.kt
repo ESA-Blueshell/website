@@ -109,6 +109,14 @@ class MembershipService @Autowired constructor(
     fun findUserIdsOverlapping(from: LocalDate, to: LocalDate): Set<Long> =
         repository.findUserIdsOverlapping(from, to).toSet()
 
+    /**
+     * Every membership that overlapped the window, with its member loaded. The fee cycle
+     * reads its whole population from this rather than a query per member.
+     */
+    @Transactional(readOnly = true)
+    fun findOverlappingWithMembers(from: LocalDate, to: LocalDate): List<Membership> =
+        repository.findOverlappingWithMembers(from, to)
+
     @Transactional(readOnly = true)
     fun heldMembershipBetween(userId: Long, from: LocalDate, to: LocalDate): Boolean =
         repository.existsOverlapping(userId, from, to)

@@ -254,7 +254,7 @@ const seasonSaved = (saved: Season) => {
       <header class="island-header relative isolate overflow-hidden">
         <div
           aria-hidden="true"
-          class="pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"
+          class="island-header__blob pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"
           :style="{backgroundColor: identity.accent}"
         />
         <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">

@@ -662,7 +662,7 @@ const step = (from: number, by: number) => {
   inset: 0;
   transform: skewX(-7deg);
   background:
-    linear-gradient(to bottom, color-mix(in oklab, var(--accent) 10%, transparent), transparent 74%),
+    linear-gradient(to bottom, color-mix(in oklab, var(--accent) var(--band-wash), transparent), transparent 74%),
     linear-gradient(to bottom, transparent, color-mix(in oklab, var(--color-ground) 60%, transparent));
   opacity: 0.45;
   transition: opacity 320ms ease;
@@ -696,8 +696,8 @@ const step = (from: number, by: number) => {
 .season-band--on .season-band__wash {
   opacity: 1;
   background:
-    linear-gradient(to bottom, color-mix(in oklab, var(--accent) 20%, transparent), transparent 70%),
-    linear-gradient(to top, color-mix(in oklab, var(--accent) 8%, transparent), transparent 38%);
+    linear-gradient(to bottom, color-mix(in oklab, var(--accent) var(--band-wash-on), transparent), transparent 70%),
+    linear-gradient(to top, color-mix(in oklab, var(--accent) var(--band-wash-on-foot), transparent), transparent 38%);
 }
 
 /*
@@ -749,13 +749,13 @@ const step = (from: number, by: number) => {
   font-family: var(--font-display);
   font-size: 11px;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--color-ash) 80%, transparent);
+  color: color-mix(in oklab, var(--color-ash) var(--label-mix-half), transparent);
 }
 
 .season-band__label--year {
   font-size: 10px;
   letter-spacing: 0.14em;
-  color: color-mix(in oklab, var(--color-ash) 55%, transparent);
+  color: color-mix(in oklab, var(--color-ash) var(--label-mix), transparent);
 }
 
 .season-band--lit .season-band__label--half,

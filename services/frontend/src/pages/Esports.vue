@@ -215,10 +215,10 @@ const seasonSaved = (saved: Season) => {
       <header class="island-header relative isolate overflow-hidden">
         <div
           aria-hidden="true"
-          class="pointer-events-none absolute -top-32 -left-24 h-80 w-[36rem] rounded-full bg-brand/18 blur-[90px]"
+          class="island-header__blob pointer-events-none absolute -top-32 -left-24 h-80 w-[36rem] rounded-full bg-brand opacity-[0.18] blur-[90px]"
         />
         <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-acid uppercase">
+          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
             Blueshell Esports
           </p>
           <h1 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">

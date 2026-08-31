@@ -73,7 +73,7 @@ const question = computed(() => {
     return `${season.name} holds no teams. Removing it takes it off the strip.`
   }
   return `${season.name} holds ${countOf(held.teams, "team", "teams")} and `
-    + `${countOf(held.players, "roster place", "roster places")}. Removing the season takes them with it.`
+    + `${countOf(held.players, "person", "people")}. Removing the season takes them with it.`
 })
 
 const removeSeason = async () => {

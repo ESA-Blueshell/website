@@ -400,7 +400,7 @@ const removeTeam = async () => {
  * the difference between them is the whole point of asking.
  */
 const seasonQuestion = computed(() => {
-  const played = rows.value.length === 1 ? "1 roster place" : `${rows.value.length} roster places`
+  const played = rows.value.length === 1 ? "1 person" : `${rows.value.length} people`
   const season = props.season?.name ?? "this season"
   return `${props.teamName} played ${season} with ${played}. Removing it from this season `
     + "leaves the team, and the other seasons it played, as they are."

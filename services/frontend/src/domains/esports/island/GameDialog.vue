@@ -170,7 +170,7 @@ const question = computed(() => {
     return `${game.name} holds no teams. Deleting it takes it and its page off the site.`
   }
   return `${game.name} holds ${countOf(held.teams, "team", "teams")} and `
-    + `${countOf(held.players, "roster place", "roster places")}, so it cannot be removed. `
+    + `${countOf(held.players, "person", "people")}, so it cannot be removed. `
     + "Everything it played stays readable, and it leaves the pages that show what the "
     + "association plays by not being entered in a season."
 })
@@ -326,11 +326,12 @@ const add = async () => {
         <span
           v-if="!adding"
           class="game-form__hint"
-        >Known to everything else as {{ game?.game }}, which does not change</span>
+        >Code: {{ game?.game }} — set when the game was added, and never changes</span>
         <span
           v-else
           class="game-form__hint"
-        >Its name settles what everything else will call it, which never changes after</span>
+        >The code everything else files this game under is taken from the name, and never
+          changes after</span>
       </label>
 
       <label class="game-form__field">
@@ -347,7 +348,7 @@ const add = async () => {
       </label>
 
       <label class="game-form__field">
-        <span class="game-form__label">What the page says</span>
+        <span class="game-form__label">Intro text</span>
         <textarea
           v-model="intro"
           class="game-form__input game-form__input--tall"
@@ -368,7 +369,7 @@ const add = async () => {
             placeholder="#ff4655"
             type="text"
           >
-          <span class="game-form__hint">Empty reads on the association's own blue</span>
+          <span class="game-form__hint">Leave empty to use the default blue</span>
         </label>
         <label class="game-form__field game-form__field--narrow">
           <span class="game-form__label">Order</span>

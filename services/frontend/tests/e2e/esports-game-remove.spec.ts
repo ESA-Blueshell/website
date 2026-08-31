@@ -20,7 +20,7 @@ test.describe("removing a game", () => {
     await expect(page.getByTestId("game-dialog-remove")).toHaveCount(0)
   })
 
-  test("the question says how many teams and roster places the game holds", async ({page, context}) => {
+  test("the question says how many teams and people the game holds", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
@@ -30,7 +30,7 @@ test.describe("removing a game", () => {
 
     // Read before the question is put, rather than discovered after it is answered.
     await expect(page.getByTestId("confirm-question")).toContainText("2 teams")
-    await expect(page.getByTestId("confirm-question")).toContainText("roster place")
+    await expect(page.getByTestId("confirm-question")).toContainText("people")
   })
 
   test("a game whose contents cannot be read is not offered for removal", async ({page, context}) => {

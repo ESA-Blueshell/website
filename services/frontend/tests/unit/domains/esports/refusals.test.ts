@@ -52,8 +52,8 @@ describe("sentenceFor", () => {
   })
 
   it("says which season some dates overlap", () => {
-    expect(sentenceFor({code: "SeasonDatesOverlap", seasonName: "Spring 2025/26"}))
-      .toBe("Those dates overlap Spring 2025/26.")
+    expect(sentenceFor({code: "SeasonDatesOverlap", seasonName: "Spring 2026"}))
+      .toBe("Those dates overlap Spring 2026.")
   })
 
   it("says the fixed refusals with no facts to name", () => {

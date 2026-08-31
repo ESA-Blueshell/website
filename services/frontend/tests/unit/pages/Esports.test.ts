@@ -24,8 +24,8 @@ vi.mock("vue-router", async (importOriginal) => {
 })
 
 const seasons = [
-  {id: 1, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31", played: true},
-  {id: 2, name: "Spring 2025/26", startDate: "2026-02-01", endDate: "2026-08-31", played: true},
+  {id: 1, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: true},
+  {id: 2, name: "Spring 2026", startDate: "2026-02-01", endDate: "2026-08-31", played: true},
 ]
 
 /**
@@ -36,7 +36,7 @@ const seasons = [
  * newest would be carried anyway, and the rule this asserts would go untested.
  */
 const emptySeason = {
-  id: 3, name: "Autumn 2024/25", startDate: "2024-09-01", endDate: "2025-01-31", played: false,
+  id: 3, name: "Autumn 2024", startDate: "2024-09-01", endDate: "2025-01-31", played: false,
 }
 
 /**

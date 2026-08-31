@@ -13,8 +13,8 @@ import {installApiMocks, loginAsBoard} from "./mocks"
  * that left.
  */
 const evenSeasons = [
-  {id: 20, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31"},
-  {id: 19, name: "Spring 2024/25", startDate: "2025-02-01", endDate: "2025-08-31"},
+  {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"},
+  {id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31"},
 ]
 
 // Never id 1: that team's line-up is answered from the roster the admin specs write, which

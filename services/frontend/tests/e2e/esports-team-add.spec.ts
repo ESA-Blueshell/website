@@ -105,7 +105,7 @@ test.describe("adding a team to the shown season", () => {
     // "Its last line-up" is only useful if the reader can tell which squad that was, and a
     // team that spans games has more than one answer.
     await expect(page.getByTestId("lineup-source-fielding")).toContainText("VALORANT")
-    await expect(page.getByTestId("lineup-source-fielding")).toContainText("Spring 2024/25")
+    await expect(page.getByTestId("lineup-source-fielding")).toContainText("Spring 2025")
   })
 
   test("anybody offered can be dropped before it is fielded", async ({page}) => {

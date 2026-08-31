@@ -40,7 +40,7 @@ test.describe("the season a page opens on", () => {
     const labels = page.getByTestId("esports-game-slices").locator(".team-slice__group-label")
     const named = await labels.allTextContents()
     expect(named.length).toBeGreaterThan(0)
-    named.forEach(name => expect(name.trim()).toBe("Autumn 2025/26"))
+    named.forEach(name => expect(name.trim()).toBe("Autumn 2025"))
   })
 
   test("opens a game's own page on the newest season, not the game's own newest", async ({page}) => {
@@ -52,7 +52,7 @@ test.describe("the season a page opens on", () => {
 
     // The association's newest season, which this game sat out — said by name, so the page is
     // an answer about a season rather than a blank.
-    await expect(empty).toContainText("Autumn 2025/26")
+    await expect(empty).toContainText("Autumn 2025")
   })
 
   test("offers the season a retired game last played, from the empty page", async ({page}) => {
@@ -62,7 +62,7 @@ test.describe("the season a page opens on", () => {
     const back = page.getByTestId("esports-empty-last-played")
     await back.waitFor()
 
-    await expect(back).toContainText("Spring 2024/25")
+    await expect(back).toContainText("Spring 2025")
     await back.click()
 
     // And it leads somewhere: the season it names, with what it played in it.

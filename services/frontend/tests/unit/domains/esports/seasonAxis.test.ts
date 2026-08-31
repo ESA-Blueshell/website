@@ -15,8 +15,8 @@ const season = (id: number, name: string, startDate: string) =>
 describe("seasonBands", () => {
   it("puts the oldest season at the left of the strip and the newest at the right", () => {
     const bands = seasonBands([
-      season(2, "Spring 2025/26", "2026-02-01"),
-      season(1, "Autumn 2025/26", "2025-09-01"),
+      season(2, "Spring 2026", "2026-02-01"),
+      season(1, "Autumn 2025", "2025-09-01"),
     ])
 
     // Given in whatever order the api felt like; read left to right in time.
@@ -25,10 +25,10 @@ describe("seasonBands", () => {
 
   it("gives every season an equal share of the width", () => {
     const bands = seasonBands([
-      season(1, "Autumn 2024/25", "2024-09-01"),
-      season(2, "Spring 2024/25", "2025-02-01"),
-      season(3, "Autumn 2025/26", "2025-09-01"),
-      season(4, "Spring 2025/26", "2026-02-01"),
+      season(1, "Autumn 2024", "2024-09-01"),
+      season(2, "Spring 2025", "2025-02-01"),
+      season(3, "Autumn 2025", "2025-09-01"),
+      season(4, "Spring 2026", "2026-02-01"),
     ])
 
     expect(bands.map(b => b.from)).toEqual([0, 0.25, 0.5, 0.75])
@@ -37,8 +37,8 @@ describe("seasonBands", () => {
 
   it("sits a node in the middle of its own season, not on its edge", () => {
     const bands = seasonBands([
-      season(1, "Autumn 2024/25", "2024-09-01"),
-      season(2, "Spring 2024/25", "2025-02-01"),
+      season(1, "Autumn 2024", "2024-09-01"),
+      season(2, "Spring 2025", "2025-02-01"),
     ])
 
     expect(bands.map(b => b.at)).toEqual([0.25, 0.75])
@@ -47,7 +47,7 @@ describe("seasonBands", () => {
   })
 
   it("fills the whole strip with a single season", () => {
-    const bands = seasonBands([season(1, "Autumn 2025/26", "2025-09-01")])
+    const bands = seasonBands([season(1, "Autumn 2025", "2025-09-01")])
 
     expect(bands[0].from).toBe(0)
     expect(bands[0].to).toBe(1)
@@ -56,35 +56,35 @@ describe("seasonBands", () => {
 
   it("alternates which side of the middle a node sits, so the line has to bend", () => {
     const bands = seasonBands([
-      season(1, "Autumn 2024/25", "2024-09-01"),
-      season(2, "Spring 2024/25", "2025-02-01"),
-      season(3, "Autumn 2025/26", "2025-09-01"),
+      season(1, "Autumn 2024", "2024-09-01"),
+      season(2, "Spring 2025", "2025-02-01"),
+      season(3, "Autumn 2025", "2025-09-01"),
     ])
 
     expect(bands.map(b => b.high)).toEqual([true, false, true])
   })
 
   it("reads the half and the year out of a season's name", () => {
-    const [band] = seasonBands([season(1, "Autumn 2025/26", "2025-09-01")])
+    const [band] = seasonBands([season(1, "Autumn 2025", "2025-09-01")])
 
     expect(band.half).toBe("Autumn")
-    expect(band.year).toBe("2025/26")
+    expect(band.year).toBe("2025")
   })
 
   it("gives a season named some other way a band, and no year", () => {
-    const [band] = seasonBands([season(1, "Summer cup", "2025-06-01")])
+    const [band] = seasonBands([season(1, "Kick-off cup", "2025-06-01")])
 
-    expect(band.half).toBe("Summer cup")
+    expect(band.half).toBe("Kick-off cup")
     expect(band.year).toBe("")
   })
 })
 
 describe("seasonStrip", () => {
   const four = [
-    season(1, "Autumn 2024/25", "2024-09-01"),
-    season(2, "Spring 2024/25", "2025-02-01"),
-    season(3, "Autumn 2025/26", "2025-09-01"),
-    season(4, "Spring 2025/26", "2026-02-01"),
+    season(1, "Autumn 2024", "2024-09-01"),
+    season(2, "Spring 2025", "2025-02-01"),
+    season(3, "Autumn 2025", "2025-09-01"),
+    season(4, "Spring 2026", "2026-02-01"),
   ]
 
   it("fills the strip's width when the seasons are few", () => {
@@ -173,7 +173,7 @@ describe("seasonStrip", () => {
   })
 
   it("draws a season on its own as one straight run", () => {
-    const strip = seasonStrip([season(1, "Autumn 2025/26", "2025-09-01")], {width: 800, trailing: 0})
+    const strip = seasonStrip([season(1, "Autumn 2025", "2025-09-01")], {width: 800, trailing: 0})
 
     expect(strip.nodes).toHaveLength(1)
     expect(strip.path).toBe(`M ${strip.from},${strip.nodes[0]!.y} L ${strip.to},${strip.nodes[0]!.y}`)
@@ -196,9 +196,9 @@ describe("seasonStrip", () => {
 describe("newestSeason", () => {
   it("answers with the season that starts last, however the list was ordered", () => {
     const newest = newestSeason([
-      season(1, "Autumn 2024/25", "2024-09-01"),
-      season(3, "Autumn 2025/26", "2025-09-01"),
-      season(2, "Spring 2024/25", "2025-02-01"),
+      season(1, "Autumn 2024", "2024-09-01"),
+      season(3, "Autumn 2025", "2025-09-01"),
+      season(2, "Spring 2025", "2025-02-01"),
     ])
 
     expect(newest?.id).toBe(3)
@@ -206,8 +206,8 @@ describe("newestSeason", () => {
 
   it("counts a season nobody has played yet, because it is still the season it is", () => {
     const newest = newestSeason([
-      season(1, "Autumn 2025/26", "2025-09-01"),
-      season(2, "Spring 2026/27", "2026-02-01"),
+      season(1, "Autumn 2025", "2025-09-01"),
+      season(2, "Spring 2027", "2026-02-01"),
     ])
 
     expect(newest?.id).toBe(2)
@@ -215,8 +215,8 @@ describe("newestSeason", () => {
 
   it("separates two seasons that start on the same day by the order they were written down", () => {
     const newest = newestSeason([
-      season(7, "Autumn 2025/26", "2025-09-01"),
-      season(9, "Autumn 2025/26 again", "2025-09-01"),
+      season(7, "Autumn 2025", "2025-09-01"),
+      season(9, "Autumn 2025 again", "2025-09-01"),
     ])
 
     expect(newest?.id).toBe(9)
@@ -228,8 +228,8 @@ describe("newestSeason", () => {
 })
 
 describe("directionBetween", () => {
-  const older = season(1, "Autumn 2019/20", "2019-09-01")
-  const newer = season(2, "Autumn 2025/26", "2025-09-01")
+  const older = season(1, "Autumn 2019", "2019-09-01")
+  const newer = season(2, "Autumn 2025", "2025-09-01")
 
   it("travels to the past towards a season that started earlier", () => {
     expect(directionBetween(newer, older)).toBe("past")
@@ -252,18 +252,18 @@ describe("directionBetween", () => {
 
 describe("seasonsIncluding", () => {
   const played = [
-    season(1, "Autumn 2019/20", "2019-09-01"),
-    season(2, "Spring 2019/20", "2020-02-01"),
+    season(1, "Autumn 2019", "2019-09-01"),
+    season(2, "Spring 2020", "2020-02-01"),
   ]
 
   it("adds the season being read where the list does not carry it", () => {
-    const strip = seasonsIncluding(played, season(9, "Autumn 2025/26", "2025-09-01"))
+    const strip = seasonsIncluding(played, season(9, "Autumn 2025", "2025-09-01"))
 
     expect(strip.map(one => one.id)).toEqual([1, 2, 9])
   })
 
   it("puts it where it belongs in time, not on the end", () => {
-    const strip = seasonsIncluding(played, season(9, "Autumn 2018/19", "2018-09-01"))
+    const strip = seasonsIncluding(played, season(9, "Autumn 2018", "2018-09-01"))
 
     expect(strip.map(one => one.id)).toEqual([9, 1, 2])
   })

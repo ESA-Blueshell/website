@@ -41,7 +41,7 @@ class SeasonBoundariesIT : UserTestSupport() {
     fun `a season that meets another without covering it is allowed`() {
         autumn(2041)
 
-        val spring = seasons.create("Spring 2041/42", LocalDate.of(2042, 2, 1), LocalDate.of(2042, 8, 31))
+        val spring = seasons.create("Spring 2042", LocalDate.of(2042, 2, 1), LocalDate.of(2042, 8, 31))
 
         assertThat(spring.id).isNotNull()
     }
@@ -59,7 +59,7 @@ class SeasonBoundariesIT : UserTestSupport() {
     @Test
     fun `a season moved onto another is refused`() {
         val autumn = autumn(2043)
-        val spring = seasons.create("Spring 2043/44", LocalDate.of(2044, 2, 1), LocalDate.of(2044, 8, 31))
+        val spring = seasons.create("Spring 2044", LocalDate.of(2044, 2, 1), LocalDate.of(2044, 8, 31))
 
         assertThatThrownBy {
             seasons.update(spring.id!!, spring.name, autumn.startDate, autumn.endDate)

@@ -80,7 +80,7 @@ test.describe("what the manager used to do, where it happens now", () => {
 
     await page.goto("/esports/valorant")
 
-    await expect(page.getByTestId("esports-season-node-20")).toContainText("Autumn 2025/26")
+    await expect(page.getByTestId("esports-season-node-20")).toContainText("Autumn 2025")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
   })
 

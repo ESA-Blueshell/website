@@ -48,7 +48,7 @@ test.describe("adding a season from the timeline", () => {
 
     await page.getByTestId("esports-season-add").click()
     // Earlier than both seasons the page already knows, so its place is the front of the line.
-    await page.getByTestId("season-dialog-name").fill("Spring 2023/24")
+    await page.getByTestId("season-dialog-name").fill("Spring 2024")
     await page.getByTestId("season-dialog-start").fill("2024-02-01")
     await page.getByTestId("season-dialog-end").fill("2024-08-31")
     await page.getByTestId("season-dialog-save").click()
@@ -70,7 +70,7 @@ test.describe("adding a season from the timeline", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("esports-season-add").click()
-    await page.getByTestId("season-dialog-name").fill("Spring 2026/27")
+    await page.getByTestId("season-dialog-name").fill("Spring 2027")
     await page.getByTestId("season-dialog-start").fill("2027-02-01")
     await page.getByTestId("season-dialog-end").fill("2027-08-31")
     await page.getByTestId("season-dialog-save").click()
@@ -86,7 +86,7 @@ test.describe("adding a season from the timeline", () => {
       await route.fulfill({
         status: 400,
         contentType: "application/json",
-        body: JSON.stringify({status: 400, title: "Bad Request", detail: "Those dates overlap Autumn 2025/26"}),
+        body: JSON.stringify({status: 400, title: "Bad Request", detail: "Those dates overlap Autumn 2025"}),
       })
     })
     await page.goto(GAME_PAGE)
@@ -97,7 +97,7 @@ test.describe("adding a season from the timeline", () => {
     await page.getByTestId("season-dialog-end").fill("2026-03-31")
     await page.getByTestId("season-dialog-save").click()
 
-    await expect(page.getByTestId("season-dialog-failure")).toHaveText("Those dates overlap Autumn 2025/26")
+    await expect(page.getByTestId("season-dialog-failure")).toHaveText("Those dates overlap Autumn 2025")
     await expect(page.getByTestId("season-dialog")).toBeVisible()
     await expect(page.getByTestId("season-dialog-name")).toHaveValue("Clashing")
     await expect(page.getByTestId("season-dialog-start")).toHaveValue("2025-11-01")

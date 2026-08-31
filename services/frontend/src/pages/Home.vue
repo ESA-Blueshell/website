@@ -98,13 +98,15 @@
 </template>
 
 <script lang="ts" setup>
-import {ref} from "vue"
+import {computed, ref} from "vue"
 
 import MainBanner from "@/components/common/banners/MainBanner.vue"
 import DiscordBanner from "@/components/base/DiscordBanner.vue"
 import SocialsBanner from "@/components/common/banners/SocialsBanner.vue"
 import GamesWePlay from "@/components/base/GamesWePlay.vue"
 
+import {useGames} from "@/domains/esports/island/useGames"
+import {srcsetOf} from "@/domains/esports/pictures"
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"
 import {associationYears} from "@/utils/association"
@@ -113,6 +115,9 @@ interface GameTitle {
   title: string
   bg: string
   icon: string
+  /** The widths each picture is stored at, where it came from a record rather than the bundle. */
+  bgSrcset?: string
+  iconSrcset?: string
   esportsLink?: string
 }
 
@@ -135,42 +140,40 @@ interface Partner {
   url: string
 }
 
-const games = ref<GameCategory[]>([
-  {
-    categoryName: "Competitive",
-    titles: [
-      {
-        title: "League of Legends",
-        bg: $require("@/assets/leaguebg.jpg"),
-        icon: $require("@/assets/league.png"),
-        esportsLink: "/esports/league-of-legends",
-      },
-      {
-        title: "Counter-Strike 2",
-        bg: $require("@/assets/cs2bg.png"),
-        icon: $require("@/assets/cs2.png"),
-        esportsLink: "/esports/counter-strike-2",
-      },
-      {
-        title: "Valorant",
-        bg: $require("@/assets/valorantbg.jpg"),
-        icon: $require("@/assets/valorant.png"),
-        esportsLink: "/esports/valorant",
-      },
-      {
-        title: "Rocket League",
-        bg: $require("@/assets/rocketleaguebg.jpg"),
-        icon: $require("@/assets/rocketleague.png"),
-        esportsLink: "/esports/rocketleague",
-      },
-      {
-        title: "Geoguessr",
-        bg: $require("@/assets/geoguessrbg.jpg"),
-        icon: $require("@/assets/geoguessrlogo.webp"),
-        esportsLink: "/esports/geoguessr",
-      },
-    ],
-  },
+/**
+ * The games the association competes in, from the same records the esports pages draw.
+ *
+ * They were five literals here with bundled art and hardcoded links, so a game the board
+ * renamed or re-addressed through the dialogs did not follow it to the busiest page on the
+ * site, and Trackmania — fielded in the records — was not listed as competitive at all.
+ *
+ * `current` is the api's answer to which games are played now: fielded in the most recent
+ * season, or in the one before it while the newest has nothing fielded yet. Filtering on it
+ * here rather than asking a second endpoint keeps the api shipping the fact and the page
+ * deciding what its Competitive block means.
+ */
+const {current: playedNow} = useGames()
+
+const competitive = computed<GameCategory>(() => ({
+  categoryName: "Competitive",
+  titles: playedNow.value.map(game => ({
+    title: game.name,
+    // Resolved against the api at the esports adapter, so nothing here builds a url.
+    bg: game.banner?.url ?? "",
+    bgSrcset: srcsetOf(game.banner),
+    icon: game.icon?.url ?? "",
+    iconSrcset: srcsetOf(game.icon),
+    esportsLink: `/esports/${game.slug}`,
+  })),
+}))
+
+/**
+ * The games members play together, which are not games the association fields.
+ *
+ * These stay written down here: they have no record, and giving them one is a different piece
+ * of work. So the art they name stays bundled too.
+ */
+const community = ref<GameCategory[]>([
   {
     categoryName: "Community",
     titles: [
@@ -222,6 +225,14 @@ const games = ref<GameCategory[]>([
     ],
   },
 ])
+
+/**
+ * Both blocks, less any that came out empty. An empty Competitive heading is what the records
+ * being unreachable would otherwise look like, and a heading over nothing is worse than no
+ * heading at all.
+ */
+const games = computed<GameCategory[]>(() =>
+  [competitive.value, ...community.value].filter(one => one.titles.length > 0))
 
 const columns = ref<Column[]>([
   {

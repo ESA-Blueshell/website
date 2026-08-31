@@ -34,6 +34,8 @@
             height: $vuetify.display.smAndUp ? '85px' : '70px',
           }"
           class="mx-3 my-2 pa-2"
+          :data-game="game.title"
+          data-testid="games-we-play-tile"
           style="border-radius: 10px;z-index: 3;transition: .3s cubic-bezier(.25,.8,.5,1) !important;"
 
           @click="handleGameClick(game.esportsLink)"
@@ -45,7 +47,13 @@
             :options="{'threshold':0.1}"
             :width="$vuetify.display.smAndUp ? '69px' : '54px'"
           >
-            <v-img :src="game.icon" />
+            <!-- Drawn in a box of a fixed width, so `sizes` is that width rather than a
+                 share of the viewport: a phone takes the 128px copy of a logo, not the 512. -->
+            <v-img
+              :sizes="$vuetify.display.smAndUp ? '69px' : '54px'"
+              :src="game.icon"
+              :srcset="game.iconSrcset"
+            />
           </v-lazy>
         </div>
       </div>
@@ -78,7 +86,9 @@
             <!-- Do NOT wrap in v-lazy here -->
             <v-img
               :src="game.bg"
+              :srcset="game.bgSrcset"
               cover
+              sizes="100vw"
               style="position: absolute;top: 0;height: 100%;width: 100%;z-index: 1;filter: blur(3px);-webkit-filter: blur(3px);"
               transition="fade-transition"
             >
@@ -107,6 +117,13 @@ interface Game {
   title: string;
   icon: string;
   bg: string;
+  /**
+   * The widths each picture is stored at, where it came from a game's record rather than from
+   * the bundle. A bundled picture has one size and gets no attribute, which is what `srcsetOf`
+   * already answers for a picture with no renditions.
+   */
+  iconSrcset?: string;
+  bgSrcset?: string;
   esportsLink?: string;
 }
 

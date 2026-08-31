@@ -47,6 +47,12 @@ const brevoTargets = [
  * The games themselves, as their records hold them: what each is called, the address its page
  * answers to, and the art it is drawn with. The pages read every one of these from here.
  */
+/** A one-pixel PNG, so a mocked picture decodes rather than merely having a `src`. */
+const ONE_PIXEL_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8AAAwAB/wD/9WPGgAAAAABJRU5ErkJggg==",
+  "base64",
+)
+
 const esportsGames = [
   {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true},
   {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true},
@@ -1453,6 +1459,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "POST" && /\/recovery\/password\/reset\//.test(path)) {
       return fulfillJson(route, {}, 200)
+    }
+
+    /**
+     * A stored public image, answered with bytes that actually decode.
+     *
+     * Anything unmatched below falls through to an empty JSON body, which a browser will not
+     * decode as a picture — so `v-img` never mounts an `img` at all and a test asserting on one
+     * finds nothing. A one-pixel PNG is enough: what these tests check is that a picture the
+     * records named reaches the page and decodes, not what is in it.
+     */
+    if (method === "GET" && path.startsWith("/files/public/")) {
+      return route.fulfill({status: 200, contentType: "image/png", body: ONE_PIXEL_PNG})
     }
 
     return fulfillJson(route, {}, 200)

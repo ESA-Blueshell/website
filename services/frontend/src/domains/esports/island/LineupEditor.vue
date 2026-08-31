@@ -29,6 +29,7 @@ import {
   type Season,
   type TeamRole,
 } from "../adapters/esports"
+import {countOf} from "../refusals"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
 
 /**
@@ -400,7 +401,7 @@ const removeTeam = async () => {
  * the difference between them is the whole point of asking.
  */
 const seasonQuestion = computed(() => {
-  const played = rows.value.length === 1 ? "1 person" : `${rows.value.length} people`
+  const played = countOf(rows.value.length, "person", "people")
   const season = props.season?.name ?? "this season"
   return `${props.teamName} played ${season} with ${played}. Removing it from this season `
     + "leaves the team, and the other seasons it played, as they are."

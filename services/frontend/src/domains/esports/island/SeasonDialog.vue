@@ -2,7 +2,8 @@
 import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
-import {dropSeason, loadSeasonContents, saveSeasonOrReason, type Season} from "../adapters/esports"
+import {dropSeasonOrReason, loadSeasonContents, saveSeasonOrReason, type Season} from "../adapters/esports"
+import {countOf} from "../refusals"
 
 /**
  * Writing a season down, from wherever the seasons are shown: an existing one to change it,
@@ -63,8 +64,6 @@ const askToRemove = async () => {
   confirming.value = true
 }
 
-const countOf = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-
 const question = computed(() => {
   const season = props.season
   if (!season) return ""
@@ -82,14 +81,15 @@ const removeSeason = async () => {
   removing.value = true
   removalFailure.value = null
   try {
-    await dropSeason(season.id)
+    const result = await dropSeasonOrReason(season.id)
+    if (!result.ok) {
+      // Nothing has gone, so the dialog stands and says why.
+      removalFailure.value = result.reason
+      return
+    }
     emit("removed", season)
     confirming.value = false
     emit("update:open", false)
-  } catch (error) {
-    // Nothing has gone, so the dialog stands and says why.
-    const body = (error as {detail?: string; title?: string})
-    removalFailure.value = body?.detail || body?.title || "The season could not be removed."
   } finally {
     removing.value = false
   }

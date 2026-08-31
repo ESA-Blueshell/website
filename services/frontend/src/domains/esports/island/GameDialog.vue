@@ -16,6 +16,7 @@ import {
   type Season,
 } from "../adapters/esports"
 import {FileType} from "@/services/api"
+import {gameHoldsHistory} from "../refusals"
 import {useGames} from "./useGames"
 
 /**
@@ -159,8 +160,6 @@ const askToRemove = async () => {
   confirming.value = true
 }
 
-const countOf = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-
 const question = computed(() => {
   const game = props.game
   if (!game) return ""
@@ -169,10 +168,9 @@ const question = computed(() => {
   if (!held || held.teams === 0) {
     return `${game.name} holds no teams. Deleting it takes it and its page off the site.`
   }
-  return `${game.name} holds ${countOf(held.teams, "team", "teams")} and `
-    + `${countOf(held.players, "person", "people")}, so it cannot be removed. `
-    + "Everything it played stays readable, and it leaves the pages that show what the "
-    + "association plays by not being entered in a season."
+  // The same sentence the api's refusal composes, from the one function that writes it: the
+  // question before the act and the answer after it cannot say different things.
+  return gameHoldsHistory(game.name, held.teams, held.players)
 })
 
 const removeGame = async () => {

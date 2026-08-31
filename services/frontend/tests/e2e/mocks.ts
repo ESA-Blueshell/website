@@ -832,7 +832,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug)
       if (held) {
-        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+        return fulfillJson(route, {
+          detail: "That address is already used by another game.",
+          code: "AddressTaken",
+          gameName: held.name,
+          address: slug,
+        }, 409)
       }
       const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
       const made = {
@@ -856,9 +861,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
       if (held.size + seeded > 0) {
         const game = known.find(one => one.game === code)
+        // The api answers a code and the counts, not a sentence: the frontend composes what
+        // the reader meets, in `esports/refusals.ts`.
         return fulfillJson(route, {
-          detail: `${game?.name ?? code} holds ${held.size + seeded} teams and 6 roster places. `
-            + "Mark it as no longer fielded instead, and everything it played stays readable.",
+          detail: "That game cannot be removed.",
+          code: "GameHoldsHistory",
+          gameName: game?.name ?? code,
+          teams: held.size + seeded,
+          players: 6,
         }, 409)
       }
       gamesGone.add(code)
@@ -873,7 +883,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug && one.game !== code)
       if (held) {
-        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+        return fulfillJson(route, {
+          detail: "That address is already used by another game.",
+          code: "AddressTaken",
+          gameName: held.name,
+          address: slug,
+        }, 409)
       }
       const was = known.find(one => one.game === code)
       const now = {
@@ -1001,8 +1016,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
           .find(one => one.game === game)
         return fulfillJson(route, {
-          detail: `${known?.name ?? game} still has ${held.length} team${held.length === 1 ? "" : "s"} `
-            + "in this season. Drop them from the season first, and the game can be taken out of it.",
+          detail: "That game cannot be taken out of the season.",
+          code: "GameFieldedInSeason",
+          gameName: known?.name ?? game,
+          teams: held.length,
         }, 409)
       }
       const at = gamesEntered.findIndex(one => one.seasonId === seasonId && one.game === game)

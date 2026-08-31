@@ -75,7 +75,10 @@ test.describe("removing a game", () => {
     await page.getByTestId("game-dialog-remove").click()
     await page.getByTestId("confirm-go").click()
 
-    await expect(page.getByTestId("confirm-failure")).toContainText("no longer fielded")
+    // The sentence the frontend composes from the refusal's code and counts, which is the
+    // same one the question above put before the act.
+    await expect(page.getByTestId("confirm-failure"))
+      .toContainText("Valorant holds 2 teams and 6 people, so it cannot be removed.")
     // Still here: the refusal is the api's, and the page did not act as though it had gone.
     await page.goto("/esports/valorant")
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant")

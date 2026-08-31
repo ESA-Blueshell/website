@@ -54,6 +54,7 @@ import type {
   TeamRole as ApiTeamRole,
   TeamRosterResponse,
 } from "@/services/api"
+import {sentenceFor} from "@/domains/esports/refusals"
 
 /**
  * A game's code: the identity a team, a roster and a member's handle point at. A plain string
@@ -297,11 +298,19 @@ export async function saveSeasonOrReason(
   return {ok: true, season: res.data ?? null}
 }
 
-/** Whatever the api said, preferring the specific complaint over the generic one. */
+/**
+ * Whatever the api said, preferring the specific complaint over the generic one.
+ *
+ * An esports refusal carries a code and its facts rather than a sentence, so that is read
+ * first: `refusals.ts` composes what the reader meets. Behind it, the `errors` array a bean
+ * validation failure answers with, then the fixed summary the api ships per code, then the
+ * caller's own fallback — so a code this frontend has not been taught still says something.
+ */
 function reasonFrom(error: unknown, fallback = "The season could not be saved."): string {
   const body = (error as {detail?: string; title?: string; errors?: Array<{message?: string}>})
+  const refusal = sentenceFor(error)
   const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
-  return fields || body?.detail || body?.title || fallback
+  return refusal || fields || body?.detail || body?.title || fallback
 }
 
 export async function saveSeason(
@@ -374,8 +383,18 @@ export async function leaveGameInSeason(
   return {ok: true}
 }
 
-export async function dropSeason(id: number): Promise<void> {
-  await deleteSeason({path: {id}})
+/**
+ * A season taken off the strip.
+ *
+ * Answers the refusal rather than discarding it. This returned void and ignored `res.error`,
+ * and the dialog wrapped it in a `try`/`catch` — which caught nothing, because the generated
+ * client answers a refused write with an error object instead of throwing. So a refused removal
+ * reported success and the row left the strip while the api still held it.
+ */
+export async function dropSeasonOrReason(id: number): Promise<{ok: true} | Refused> {
+  const res = await deleteSeason({path: {id}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The season could not be removed.")}
+  return {ok: true}
 }
 
 /**

@@ -33,8 +33,11 @@ class SeasonBoundariesIT : UserTestSupport() {
             seasons.create("Clashing", LocalDate.of(2040, 11, 1), LocalDate.of(2041, 3, 31))
         }
             .isInstanceOf(SeasonOverlapException::class.java)
-            // Named, so the objection can be read on the form that caused it.
-            .hasMessageContaining(existing.name)
+            // Named, so the objection can be read on the form that caused it. A fact rather
+            // than a sentence: the message is the same for every clash, and the frontend
+            // composes what the reader sees out of this.
+            .extracting { (it as SeasonOverlapException).facts["seasonName"] }
+            .isEqualTo(existing.name)
     }
 
     @Test
@@ -65,7 +68,8 @@ class SeasonBoundariesIT : UserTestSupport() {
             seasons.update(spring.id!!, spring.name, autumn.startDate, autumn.endDate)
         }
             .isInstanceOf(SeasonOverlapException::class.java)
-            .hasMessageContaining(autumn.name)
+            .extracting { (it as SeasonOverlapException).facts["seasonName"] }
+            .isEqualTo(autumn.name)
     }
 
     @Test

@@ -319,7 +319,11 @@ class GamePageIT : UserTestSupport() {
                 .content("""{"name":"Valorant Two","slug":"valorant"}"""),
         )
             .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Valorant")))
+            // The game holding the address is a fact on the refusal now, not a word in a
+            // sentence: the frontend writes what the reader meets. See ADR-026.
+            .andExpect(jsonPath("$.code").value("AddressTaken"))
+            .andExpect(jsonPath("$.gameName").value("Valorant"))
+            .andExpect(jsonPath("$.address").value("valorant"))
     }
 
     @Test
@@ -497,13 +501,13 @@ class GamePageIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game with teams recorded in it is refused, and offered the softer act`() {
+    fun `a game with teams recorded in it is refused, and its history stays`() {
         val board = createUserWithRole(Role.BOARD)
         fieldATeamIn("VALORANT")
 
         mvc.perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
             .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("stays readable")))
+            .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
 
         // Nothing went: the game and its team are both still there.
         mvc.perform(get("/esports/games"))
@@ -516,7 +520,9 @@ class GamePageIT : UserTestSupport() {
         fieldATeamIn("GEOGUESSR")
 
         mvc.perform(delete("/esports/games/{game}", "GEOGUESSR").with(bearer(board)))
-            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("1 team")))
+            // Counts, so the singular is the frontend's to get right and is proven there.
+            .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
+            .andExpect(jsonPath("$.teams").value(1))
     }
 
     @Test

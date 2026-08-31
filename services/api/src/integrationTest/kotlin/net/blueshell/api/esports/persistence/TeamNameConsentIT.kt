@@ -76,7 +76,7 @@ class TeamNameConsentIT : UserTestSupport() {
             dateOfBirth = Date.valueOf(LocalDate.of(2000, 1, 1)),
             bhv = false,
             ehbo = false,
-            nameOnTeamPages = consents,
+            nameOnRosters = consents,
         ),
     )
 
@@ -145,7 +145,7 @@ class TeamNameConsentIT : UserTestSupport() {
         mvc.perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").value(member.fullName))
 
-        profile.nameOnTeamPages = false
+        profile.nameOnRosters = false
         profiles.save(profile)
 
         mvc.perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))

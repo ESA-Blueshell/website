@@ -11,16 +11,16 @@ class MemberProfileService(repository: MemberProfileRepository) :
     BaseModelService<MemberProfile, Long, MemberProfileRepository>(repository) {
 
     /**
-     * Which of these members allow their real name on the team pages.
+     * Which of these members allow their real name in a roster.
      *
      * A member who never said so is simply absent from the answer, whether they turned it off
      * or never had a profile to turn it on in.
      */
     @Transactional(readOnly = true)
-    fun consentingToNameOnTeamPages(userIds: Collection<Long>): Set<Long> =
+    fun consentingToNameOnRosters(userIds: Collection<Long>): Set<Long> =
         if (userIds.isEmpty()) {
             emptySet()
         } else {
-            repository.findUserIdsConsentingToNameOnTeamPages(userIds).toSet()
+            repository.findUserIdsConsentingToNameOnRosters(userIds).toSet()
         }
 }

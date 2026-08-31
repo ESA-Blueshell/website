@@ -607,9 +607,9 @@ export type CreateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string | null;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality: string;
     studentNumber?: string | null;
     userId: number;
@@ -1211,9 +1211,9 @@ export type MemberProfileResponse = {
     gender?: string;
     id: number;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality?: string;
     studentNumber?: string;
     updatedAt: string;
@@ -1770,9 +1770,9 @@ export type UpdateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string | null;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality: string;
     studentNumber?: string | null;
     version: number;
@@ -1841,9 +1841,9 @@ export type UpsertMemberProfileRequest = {
     ehbo: boolean;
     gender?: string | null;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality: string;
     studentNumber?: string | null;
     version?: number | null;

@@ -90,7 +90,7 @@ class EsportsQueryService(
         val entries = rosters.findByGameAndSeason(game, seasonId)
         val linked = entries.mapNotNull { it.userId }.toSet()
         val handles = accounts.handlesFor(game, linked)
-        val consenting = profiles.consentingToNameOnTeamPages(linked)
+        val consenting = profiles.consentingToNameOnRosters(linked)
         val names = users.findAllByIds(consenting)
             .mapNotNull { user -> user.id?.let { it to user.fullName } }
             .toMap()

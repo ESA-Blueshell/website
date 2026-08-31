@@ -42,13 +42,13 @@ class MemberProfile(
     var conditionsAcceptedAt: Instant? = null,
 
     /**
-     * Whether this member's real name may be shown beside their handle on the team pages.
+     * Whether this member's real name may be shown beside their handle in a roster.
      *
      * Off unless the member turns it on: their name is held here to identify them, and
      * publishing it is a decision they make for themselves.
      */
-    @Column(name = "name_on_team_pages", nullable = false)
-    var nameOnTeamPages: Boolean = false,
+    @Column(name = "name_on_rosters", nullable = false)
+    var nameOnRosters: Boolean = false,
 
 ) : AuditedCustomIdEntity<Long>() {
     val userId: Long?

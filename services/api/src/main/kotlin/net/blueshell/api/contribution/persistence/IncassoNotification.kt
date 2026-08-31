@@ -8,6 +8,7 @@ import net.blueshell.api.user.persistence.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.time.Instant
 import java.time.LocalDate
 
 /**
@@ -59,17 +60,29 @@ class IncassoNotification(
     @JoinColumn(name = "contribution_period_id", nullable = false)
     var contributionPeriod: ContributionPeriod,
 
-    /**
-     * The fee type this pre-notification stated. The amount is not stored: it follows from
-     * the type and the period, so a copy could only ever disagree with them.
-     */
+    /** The fee type this pre-notification stated, and so the reason its email gave. */
     @Enumerated(EnumType.STRING)
     @Column(name = "fee_type", nullable = false, length = 32)
     var feeType: BulkFeeType,
 
+    /**
+     * The amount this pre-notification said would be taken. Stored rather than derived from
+     * [feeType] and the period, because the period's fees are editable and this is a record
+     * of what the member was told.
+     */
+    @Column(name = "amount", nullable = false)
+    var amount: Double,
+
     /** The date the money was said to be taken on. */
     @Column(name = "debit_date", nullable = false)
     var debitDate: LocalDate,
+
+    /**
+     * When the member was notified. Its own column rather than `updatedAt`, which any later
+     * touch of the row would move.
+     */
+    @Column(name = "asked_at", nullable = false)
+    var askedAt: Instant = Instant.now(),
 ) : AuditedSoftDeleteEntity(), Identifiable<IncassoNotification.Id> {
 
     val userId: Long

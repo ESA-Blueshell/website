@@ -12,7 +12,6 @@ import {BulkFeeType, BulkRowDisposition, BulkRowReason, FeeCycleGroup} from "@/s
 // are re-exported for callers that need the values, e.g. to build a select.
 export type BulkDisposition = `${BulkRowDisposition}`
 export type BulkRowReasonCode = `${BulkRowReason}`
-export type FeeCycleSide = `${FeeCycleGroup}`
 export {BulkFeeType, BulkRowDisposition, BulkRowReason, FeeCycleGroup}
 
 /** Summary counts for the bulk-action confirmation dialog's summary bar. */
@@ -50,5 +49,5 @@ export interface BulkRow {
    * Fee cycle only: which side of the direct-debit partition this member is on. Set by the
    * api from the member's own flag, so the dialog shows it rather than offering it.
    */
-  group?: FeeCycleSide
+  group?: FeeCycleGroup
 }

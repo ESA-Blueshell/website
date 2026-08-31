@@ -16,22 +16,25 @@ import java.time.LocalDate
  *
  * Built as an [EmailContent] like every other email, which is what makes it previewable
  * through `EmailPreviewRenderer` without a second rendering path.
+ *
+ * The amount is passed in rather than priced from [feeType] here: a sent pre-notification
+ * records what it said would be taken, and this quotes that.
  */
 fun createIncassoNotificationEmail(
     recipient: User,
     contributionPeriod: ContributionPeriod,
     feeType: BulkFeeType,
+    amount: Double,
     debitDate: LocalDate,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
-    val amount = resolveFeeAmount(feeType, contributionPeriod)
-    val when0 = formatDate(debitDate)
+    val debitDateText = formatDate(debitDate)
     val markdownContent = buildList {
         add("Dear ${recipient.fullName},")
         add("")
         add(
             "Your contribution for your $academicYear membership of ESA Blueshell will be collected " +
-                "from your bank account on or around **$when0**. Please make sure there are sufficient " +
+                "from your bank account on or around **$debitDateText**. Please make sure there are sufficient " +
                 "funds in your account on that date.",
         )
         add("")
@@ -39,11 +42,11 @@ fun createIncassoNotificationEmail(
         add("")
         add(
             "You do not need to transfer anything yourself. If you wish to end your membership, " +
-                "reply to this email before $when0 so we can take you off the direct-debit list.",
+                "reply to this email before $debitDateText so we can take you off the direct-debit list.",
         )
         add("")
         add("Kind regards,")
-        add("Secretary & Treasurer of ESA Blueshell")
+        add(SIGN_OFF)
     }.joinToString("\n")
 
     return EmailContent(
@@ -51,7 +54,7 @@ fun createIncassoNotificationEmail(
         recipientName = recipient.fullName,
         subject = "Your Blueshell contribution will be collected automatically ($academicYear)",
         markdownContent = markdownContent,
-        senderNameOverride = "Secretary & Treasurer of ESA Blueshell",
-        replyToOverride = "board@blueshell.utwente.nl",
+        senderNameOverride = SIGN_OFF,
+        replyToOverride = REPLY_TO,
     )
 }

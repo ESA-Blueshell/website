@@ -29,13 +29,9 @@ data class CreateContributionPeriodRequest(
 
     var contactListId: Long? = null
 ) {
-    /**
-     * The cutoff is a point inside the year it is policy for. One outside the period would
-     * price every membership the same way, silently.
-     */
     @get:JsonIgnore
     @get:Schema(hidden = true)
     @get:AssertTrue(message = "The half-year cutoff must fall within the contribution period")
-    val cutoffWithinPeriod: Boolean
-        get() = halfYearCutoffDate > startDate && halfYearCutoffDate < endDate
+    val cutoffIsInThePeriod: Boolean
+        get() = cutoffWithinPeriod(halfYearCutoffDate, startDate, endDate)
 }

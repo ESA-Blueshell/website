@@ -54,12 +54,18 @@ class FeeCyclePlanner(
     }
 
     /**
-     * Of the memberships that put this member in the period, the one that started last.
+     * The membership every decision about this member is judged against.
      *
-     * Judging against the member's newest membership overall would price a past period by a
-     * membership that did not exist during it.
+     * Their active one where they have it: the direct-debit flag on a membership that has
+     * ended is not how the member pays now, and sending the wrong statement on a stale flag
+     * costs them money. Where none of the memberships that put them in the period is still
+     * running — which is every member of a period that has closed — the one that started
+     * last stands in, because judging a past period by a membership that did not exist
+     * during it would be worse.
      */
-    private fun judgedMembership(held: List<Membership>): Membership = held.maxBy { it.startDate }
+    private fun judgedMembership(held: List<Membership>): Membership =
+        held.filter { it.endDate == null }.maxByOrNull { it.startDate }
+            ?: held.maxBy { it.startDate }
 
     private fun participant(
         userId: Long,
@@ -102,13 +108,14 @@ class FeeCyclePlanner(
      * period has been asked by transfer and not yet pre-notified, and saying otherwise would
      * hide the send the treasurer is about to make.
      *
-     * The record is one row per member and period, so a repeat send updates it rather than
-     * inserting a second — which makes `updatedAt` the date it was last stated.
+     * The record is one row per member and period, so a repeat send restates it rather than
+     * inserting a second, and `askedAt` is the moment of the most recent ask. Its own column
+     * rather than `updatedAt`, which any later touch of the row would move.
      */
     private fun lastAskedDates(contributionPeriodId: Long): Map<FeeCycleGroup, Map<Long, LocalDate>> = mapOf(
         FeeCycleGroup.TRANSFER to reminders.findByContributionPeriodId(contributionPeriodId)
-            .associate { it.userId to it.updatedAt.atZone(ZoneOffset.UTC).toLocalDate() },
+            .associate { it.userId to it.askedAt.atZone(ZoneOffset.UTC).toLocalDate() },
         FeeCycleGroup.DIRECT_DEBIT to preNotifications.findByContributionPeriodId(contributionPeriodId)
-            .associate { it.userId to it.updatedAt.atZone(ZoneOffset.UTC).toLocalDate() },
+            .associate { it.userId to it.askedAt.atZone(ZoneOffset.UTC).toLocalDate() },
     )
 }

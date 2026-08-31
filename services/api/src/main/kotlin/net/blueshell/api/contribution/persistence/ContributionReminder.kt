@@ -8,6 +8,7 @@ import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.time.Instant
 import java.time.LocalDate
 
 @Entity
@@ -61,9 +62,25 @@ class ContributionReminder(
     @Column(name = "fee_type", length = 32)
     var feeType: BulkFeeType? = null,
 
+    /**
+     * The amount this request asked for. Stored rather than derived from [feeType] and the
+     * period, because the period's fees are editable: deriving it would let a change of next
+     * year's fee rewrite what last year's email is recorded as having said. Null wherever
+     * [feeType] is.
+     */
+    @Column(name = "amount")
+    var amount: Double? = null,
+
     /** The date this request asked to be paid by. Null wherever [feeType] is. */
     @Column(name = "payment_due_date")
     var paymentDueDate: LocalDate? = null,
+
+    /**
+     * When the member was asked. Its own column rather than `updatedAt`, which any later
+     * touch of the row would move, and which would then misreport when the member was asked.
+     */
+    @Column(name = "asked_at", nullable = false)
+    var askedAt: Instant = Instant.now(),
 ) : AuditedSoftDeleteEntity(), Identifiable<ContributionReminder.Id> {
 
     val userId: Long

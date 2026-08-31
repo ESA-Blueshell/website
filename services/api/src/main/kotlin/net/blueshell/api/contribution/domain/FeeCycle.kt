@@ -8,6 +8,19 @@ import net.blueshell.api.shared.enums.MemberType
 import java.time.LocalDate
 
 /**
+ * When each side of the cycle's money moves.
+ *
+ * The two travel together everywhere — the request, the send, the preview — because a cycle
+ * promises both or neither: whichever side a member is on, they are told a date.
+ */
+data class FeeCycleDates(
+    /** The date the transfer group is asked to have paid by. */
+    val paymentDue: LocalDate,
+    /** The date the direct-debit group is told the money will be taken. */
+    val debit: LocalDate,
+)
+
+/**
  * One member's place in a fee cycle: which side of the direct-debit partition they are on,
  * what they owe and why, and whether they will be written to at all.
  *

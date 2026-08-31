@@ -10,7 +10,15 @@ import {previewFeeCycle, previewFeeCycleEmail, sendFeeCycle} from "@/services/ap
 import type {ContributionPeriodResponse} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
-import {changedFeeTypes, countBySide, feeCycleSideLabel, lastAskedLabel, toBulkRows} from "@/utils/feeCycle"
+import {
+  askedAlready,
+  changedFeeTypes,
+  countAskedAlready,
+  countByGroup,
+  feeCycleGroupLabel,
+  lastAskedLabel,
+  toBulkRows,
+} from "@/utils/feeCycle"
 import {effectiveAmount, feeTypeItems, feeTypeLabels} from "@/utils/feePreview"
 
 /**
@@ -88,7 +96,11 @@ const columns: BulkColumn[] = [
   {key: "note", header: "Note"},
 ]
 
-const sideCounts = computed(() => countBySide(rows.value))
+const groupCounts = computed(() => countByGroup(rows.value))
+
+// Asking again is allowed, and warned about rather than blocked: the treasurer chases, and
+// half way through the year every member has already been asked once.
+const askedAlreadyCount = computed(() => countAskedAlready(rows.value))
 
 const periodRange = computed(() => {
   const period = props.period
@@ -147,7 +159,7 @@ async function loadCycle() {
 const previewRecipients = computed(() =>
   rows.value
     .filter((row) => row.disposition === "INCLUDED")
-    .map((row) => ({value: row.userId, title: `${row.name} — ${feeCycleSideLabel(row.group)}`})),
+    .map((row) => ({value: row.userId, title: `${row.name} — ${feeCycleGroupLabel(row.group)}`})),
 )
 
 /** Both dates reach the email, so neither can be missing when one is read. */
@@ -337,6 +349,19 @@ defineExpose({
       </div>
 
       <v-alert
+        v-if="askedAlreadyCount > 0"
+        class="mb-4"
+        data-testid="fee-cycle-asked-already-warning"
+        density="compact"
+        type="warning"
+        variant="tonal"
+      >
+        {{ askedAlreadyCount }} of the members about to be written to
+        {{ askedAlreadyCount === 1 ? "has" : "have" }} already been asked for this period.
+        Sending again is allowed; the Last asked column says when each was.
+      </v-alert>
+
+      <v-alert
         v-if="loadError"
         class="mb-4"
         data-testid="fee-cycle-load-error"
@@ -389,7 +414,7 @@ defineExpose({
           size="small"
           variant="tonal"
         >
-          {{ sideCounts.DIRECT_DEBIT }} by direct debit
+          {{ groupCounts.DIRECT_DEBIT }} by direct debit
         </v-chip>
         <v-chip
           data-testid="fee-cycle-count-transfer"
@@ -397,7 +422,7 @@ defineExpose({
           size="small"
           variant="tonal"
         >
-          {{ sideCounts.TRANSFER }} by transfer
+          {{ groupCounts.TRANSFER }} by transfer
         </v-chip>
         <v-progress-circular
           v-if="loading"
@@ -414,7 +439,7 @@ defineExpose({
       <span
         class="text-caption"
         :data-testid="`fee-cycle-group-${row.userId}`"
-      >{{ feeCycleSideLabel(row.group) }}</span>
+      >{{ feeCycleGroupLabel(row.group) }}</span>
     </template>
 
     <template #cell.fee="{row}">
@@ -451,7 +476,8 @@ defineExpose({
 
     <template #cell.lastAsked="{row}">
       <span
-        class="text-caption text-medium-emphasis"
+        class="text-caption"
+        :class="askedAlready(row) ? 'text-warning' : 'text-medium-emphasis'"
         :data-testid="`fee-cycle-last-asked-${row.userId}`"
       >{{ lastAskedLabel(row.lastSentOn) }}</span>
     </template>

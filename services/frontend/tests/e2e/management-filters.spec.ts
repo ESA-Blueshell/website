@@ -75,7 +75,7 @@ test.describe("management filters", () => {
         {id: 132, userId: 34, startDate: "2025-01-01"},
       ],
       contributionPeriods: [
-        {id: 231, startDate: "2025-01-01", endDate: "2025-12-31", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
+        {id: 231, startDate: "2025-01-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-07-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
       ],
     })
     await loginAsBoard(page.context())

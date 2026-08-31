@@ -31,6 +31,7 @@ class IncassoNotificationEmailBuilderTest {
             member,
             period,
             BulkFeeType.FULL_YEAR_FEE,
+            45.0,
             LocalDate.of(2025, 10, 15),
         )
 
@@ -53,6 +54,7 @@ class IncassoNotificationEmailBuilderTest {
             member("Bob Regular"),
             period(),
             BulkFeeType.FULL_YEAR_FEE,
+            45.0,
             LocalDate.now().plusMonths(1),
         )
 
@@ -70,6 +72,7 @@ class IncassoNotificationEmailBuilderTest {
             member("Carol Regular"),
             period(),
             feeType,
+            12.34,
             LocalDate.now().plusMonths(1),
         )
 
@@ -82,6 +85,7 @@ class IncassoNotificationEmailBuilderTest {
             member("Dave Alumni"),
             period(),
             BulkFeeType.ALUMNI_FEE,
+            10.0,
             LocalDate.now().plusMonths(1),
         )
 
@@ -100,6 +104,7 @@ class IncassoNotificationEmailBuilderTest {
             member("Eve Regular"),
             period(halfYearFee = 12.50),
             BulkFeeType.HALF_YEAR_FEE,
+            12.50,
             LocalDate.now().plusMonths(1),
         )
 

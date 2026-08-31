@@ -364,8 +364,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   ]
 
   const basePeriods = fixtures.contributionPeriods ?? [
-    {id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
-    {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
+    {id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearCutoffDate: "2025-04-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
+    {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
   ]
 
   const baseContributions = fixtures.contributions ?? [

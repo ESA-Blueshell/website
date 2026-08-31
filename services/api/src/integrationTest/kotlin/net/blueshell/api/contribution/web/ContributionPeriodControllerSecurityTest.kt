@@ -21,16 +21,20 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class ContributionPeriodControllerSecurityTest : UserTestSupport() {
     private fun contributionPeriodPayload(
         startDate: String = "2026-01-01",
-        endDate: String = "2026-12-31"
+        endDate: String = "2026-12-31",
+        halfYearCutoffDate: String = "2026-07-01"
     ): String =
-        """{"startDate":"$startDate","endDate":"$endDate","halfYearFee":25.0,"fullYearFee":45.0,"alumniFee":10.0}"""
+        """{"startDate":"$startDate","endDate":"$endDate","halfYearCutoffDate":"$halfYearCutoffDate",""" +
+            """"halfYearFee":25.0,"fullYearFee":45.0,"alumniFee":10.0}"""
 
     private fun updateContributionPeriodPayload(
         version: Long,
         startDate: String = "2026-01-01",
-        endDate: String = "2026-12-31"
+        endDate: String = "2026-12-31",
+        halfYearCutoffDate: String = "2026-07-01"
     ): String =
-        """{"startDate":"$startDate","endDate":"$endDate","halfYearFee":25.0,"fullYearFee":45.0,"alumniFee":10.0,"version":$version}"""
+        """{"startDate":"$startDate","endDate":"$endDate","halfYearCutoffDate":"$halfYearCutoffDate",""" +
+            """"halfYearFee":25.0,"fullYearFee":45.0,"alumniFee":10.0,"version":$version}"""
 
     @Nested
     inner class FindContributionPeriods {

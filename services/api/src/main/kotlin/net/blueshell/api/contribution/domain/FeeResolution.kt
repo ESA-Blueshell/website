@@ -33,6 +33,10 @@ fun resolveFeeType(
 /**
  * Resolves the € amount for a given [BulkFeeType] from the contribution period.
  * This is a pure function with no side effects.
+ *
+ * Mirrored in the browser by `effectiveAmount` in `services/frontend/src/utils/feePreview.ts`,
+ * so a row re-prices as the treasurer changes its fee type without a round trip. Two
+ * implementations of one rule: changing this one means changing that one.
  */
 fun resolveFeeAmount(feeType: BulkFeeType, period: ContributionPeriod): Double = when (feeType) {
     BulkFeeType.FULL_YEAR_FEE -> period.fullYearFee

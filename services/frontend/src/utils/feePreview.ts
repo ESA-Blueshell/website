@@ -7,6 +7,10 @@ import {BulkFeeType} from "@/utils/bulkRow"
  * Type → amount only. Which type *applies* to a member is the api's answer, resolved from
  * the membership's start against the cutoff the period carries; this exists so the amount
  * re-renders the moment the treasurer changes a row's type, without a round trip.
+ *
+ * The same rule as `resolveFeeAmount` in the api's contribution domain, deliberately
+ * implemented twice rather than round-tripped: the api prices what it sends and this prices
+ * what the treasurer is looking at. Changing one means changing the other.
  */
 export function effectiveAmount(
   feeType: BulkFeeType | null | undefined,

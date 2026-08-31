@@ -9,7 +9,7 @@ import net.blueshell.api.shared.dto.bulk.FeeCycleGroup
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
+import java.time.Instant
 
 /**
  * Asking a period's unpaid members for what they owe, in one operation.
@@ -19,7 +19,8 @@ import java.time.LocalDate
  * the `incasso` flag on the membership, not a choice made here.
  *
  * The plan is read once and used for the whole send, so what went out matches what was
- * previewed. A fee type submitted for a member the cycle will not write to is refused
+ * previewed, and one timestamp covers the whole cycle so it reads back as one act rather
+ * than a hundred moments. A fee type submitted for a member the cycle will not write to is refused
  * rather than ignored: it means the operator was looking at a table that has since moved.
  */
 @Service
@@ -36,8 +37,7 @@ class FeeCycleUseCases(
     @Transactional
     fun send(
         contributionPeriodId: Long,
-        paymentDueDate: LocalDate,
-        debitDate: LocalDate,
+        dates: FeeCycleDates,
         feeTypeOverrides: Map<Long, BulkFeeType>,
     ): FeeCycleResult {
         val plan = planner.plan(contributionPeriodId)
@@ -47,10 +47,13 @@ class FeeCycleUseCases(
         var paymentRequests = 0
         var preNotified = 0
 
+        val askedAt = Instant.now()
+
         for (participant in plan.recipients) {
             // A recipient always has a fee type: the only member without one is honorary,
             // and honorary members are excluded before they get here.
             val feeType = feeTypeOverrides[participant.userId] ?: participant.feeType!!
+            val amount = resolveFeeAmount(feeType, period)
             val member = users.findById(participant.userId)
 
             when (participant.group) {
@@ -58,11 +61,15 @@ class FeeCycleUseCases(
                     val id = ContributionReminder.Id(participant.userId, contributionPeriodId)
                     // One row per member and period, so asking again restates the record
                     // rather than adding a second one the treasurer would have to reconcile.
+                    // Every field of the statement is restated, `askedAt` included, so the
+                    // row always describes the most recent ask rather than a mixture.
                     val reminder = if (reminders.existsById(id)) {
                         reminders.update(
                             reminders.findById(id).apply {
                                 this.feeType = feeType
-                                this.paymentDueDate = paymentDueDate
+                                this.amount = amount
+                                this.paymentDueDate = dates.paymentDue
+                                this.askedAt = askedAt
                             },
                         )
                     } else {
@@ -71,7 +78,9 @@ class FeeCycleUseCases(
                                 user = member,
                                 contributionPeriod = period,
                                 feeType = feeType,
-                                paymentDueDate = paymentDueDate,
+                                amount = amount,
+                                paymentDueDate = dates.paymentDue,
+                                askedAt = askedAt,
                             ),
                         )
                     }
@@ -85,7 +94,9 @@ class FeeCycleUseCases(
                         preNotifications.update(
                             preNotifications.findById(id).apply {
                                 this.feeType = feeType
-                                this.debitDate = debitDate
+                                this.amount = amount
+                                this.debitDate = dates.debit
+                                this.askedAt = askedAt
                             },
                         )
                     } else {
@@ -94,7 +105,9 @@ class FeeCycleUseCases(
                                 user = member,
                                 contributionPeriod = period,
                                 feeType = feeType,
-                                debitDate = debitDate,
+                                amount = amount,
+                                debitDate = dates.debit,
+                                askedAt = askedAt,
                             ),
                         )
                     }

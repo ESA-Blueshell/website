@@ -1,7 +1,6 @@
-import {DateTime} from "luxon"
 import type {FeeCycleRowResponse} from "@/services/api"
-import {FeeCycleGroup} from "@/services/api"
-import {BulkFeeType, type BulkRow, type FeeCycleSide} from "@/utils/bulkRow"
+import {formatBulkDate} from "@/utils/bulkDisposition"
+import {BulkFeeType, FeeCycleGroup, type BulkRow} from "@/utils/bulkRow"
 
 /**
  * The fee cycle's rows, as the dialog reads them.
@@ -10,6 +9,12 @@ import {BulkFeeType, type BulkRow, type FeeCycleSide} from "@/utils/bulkRow"
  * every unpaid member of a period rather than over a selection the page already holds, and
  * the api decides it once so the preview and the send cannot disagree. This is the mapping
  * from that answer onto the row shape the shared scaffold renders.
+ *
+ * A straight mapping rather than the join `bulkRowsFromPreview` does for the membership
+ * actions, because the row already carries the member details. `memberSince` in particular
+ * is the start of the membership the api *judged* — the active one where the member has one
+ * — and a browser deriving it would be a second implementation of that rule, free to
+ * disagree with the one that decided the partition.
  */
 
 /** One row, plus the side of the partition, which the scaffold renders as its own column. */
@@ -32,17 +37,17 @@ export function toBulkRows(rows: FeeCycleRowResponse[]): BulkRow[] {
   return rows.map(toBulkRow)
 }
 
-export const feeCycleSideLabels: Record<FeeCycleSide, string> = {
+export const feeCycleGroupLabels: Record<FeeCycleGroup, string> = {
   [FeeCycleGroup.DIRECT_DEBIT]: "Direct debit",
   [FeeCycleGroup.TRANSFER]: "Transfer",
 }
 
-export function feeCycleSideLabel(group: FeeCycleSide | undefined): string {
-  return group ? feeCycleSideLabels[group] : "—"
+export function feeCycleGroupLabel(group: FeeCycleGroup | undefined): string {
+  return group ? feeCycleGroupLabels[group] : "—"
 }
 
-/** Two chips rather than one, because the counts per side are the thing being checked. */
-export function countBySide(rows: BulkRow[]): Record<FeeCycleSide, number> {
+/** Two chips rather than one, because the count per group is the thing being checked. */
+export function countByGroup(rows: BulkRow[]): Record<FeeCycleGroup, number> {
   return {
     DIRECT_DEBIT: rows.filter((row) => row.group === FeeCycleGroup.DIRECT_DEBIT).length,
     TRANSFER: rows.filter((row) => row.group === FeeCycleGroup.TRANSFER).length,
@@ -54,9 +59,26 @@ export function countBySide(rows: BulkRow[]): Record<FeeCycleSide, number> {
  * the ones already asked, so the absence has to be as legible as the date.
  */
 export function lastAskedLabel(iso: string | undefined): string {
-  if (!iso) return "Never"
-  const parsed = DateTime.fromISO(iso)
-  return parsed.isValid ? parsed.toFormat("dd/MM/yyyy") : "Never"
+  const formatted = formatBulkDate(iso)
+  // formatBulkDate is the one date format every bulk dialog uses; only the word for an
+  // absent one differs, because here the absence is the answer rather than missing data.
+  return formatted === "—" ? "Never" : formatted
+}
+
+/**
+ * Whether this member has already been asked for this period on this side of the partition.
+ *
+ * Sending again is allowed — the treasurer chases — so an already-asked member stays
+ * included rather than becoming a row to tick back in. Half way through the year that would
+ * be a hundred ticks. It is warned about instead, which is what the epic asks for.
+ */
+export function askedAlready(row: BulkRow): boolean {
+  return !!row.lastSentOn
+}
+
+/** How many of the members about to be written to have already been asked. */
+export function countAskedAlready(rows: BulkRow[]): number {
+  return rows.filter((row) => row.disposition === "INCLUDED" && askedAlready(row)).length
 }
 
 /**

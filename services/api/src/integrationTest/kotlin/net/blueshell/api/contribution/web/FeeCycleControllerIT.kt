@@ -186,6 +186,28 @@ class FeeCycleControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.rows[?(@.userId == ${startedAfterIt.id})].amount").value(25.0))
         }
 
+        /**
+         * The flag on a membership that has ended is not how the member pays now, and
+         * sending the wrong statement on a stale flag costs them money.
+         */
+        @Test
+        fun `partitions by the active membership, not one that has ended`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val switched = userFactory.createUserWithRole(Role.MEMBER)
+            userFactory.createMembership(
+                switched,
+                startDate = LocalDate.now().minusMonths(2),
+                endDate = LocalDate.now().minusDays(20),
+                incasso = true,
+            )
+            userFactory.createMembership(switched, startDate = LocalDate.now().minusDays(19), incasso = false)
+
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.rows[?(@.userId == ${switched.id})].group").value("TRANSFER"))
+        }
+
         @Test
         fun `is refused to a member`() {
             val member = userFactory.createUserWithRole(Role.MEMBER)
@@ -276,6 +298,25 @@ class FeeCycleControllerIT : UserTestSupport() {
                 .containsExactlyInAnyOrderElementsOf(expectedTransfer)
             assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
                 .containsExactlyInAnyOrderElementsOf(expectedDirectDebit)
+        }
+
+        /**
+         * The period's fees are editable, so a record that only stored the type would let a
+         * change of next year's fee rewrite what last year's email is recorded as saying.
+         */
+        @Test
+        fun `records the amount it stated, not only the type`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            member(incasso = false, startDate = cutoff.plusDays(1))
+            member(incasso = true, startDate = cutoff)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+
+            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!).single().amount)
+                .isEqualTo(25.0)
+            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!).single().amount)
+                .isEqualTo(45.0)
         }
 
         @Test
@@ -480,6 +521,15 @@ class FeeCycleControllerIT : UserTestSupport() {
             assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!)).isEmpty()
             assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).isEmpty()
             assertThat(findJobsByType(EmailJobs.IncassoNotification.type)).isEmpty()
+        }
+
+        @Test
+        fun `refuses a member the cycle sends nothing to`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val honorary = member(incasso = false, memberType = MemberType.HONORARY)
+
+            previewEmail(board, period.id, honorary.id).andExpect(status().isNotFound)
         }
 
         @Test

@@ -67,6 +67,7 @@ function makeContributionPeriod(overrides: Partial<ContributionPeriodResponse> =
     createdAt: "2025-01-01T00:00:00.000Z",
     endDate: "2024-12-31",
     fullYearFee: 20,
+    halfYearCutoffDate: "2024-07-01",
     halfYearFee: 10,
     id: 1,
     startDate: "2024-01-01",

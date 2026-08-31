@@ -140,8 +140,45 @@ class FeeCyclePlannerTest {
             assertThat(rows.getValue("Cara Alumni").amount).isEqualTo(10.0)
         }
 
+        /**
+         * A flag on a membership that has ended is not how the member pays now, and sending
+         * the wrong statement on a stale flag costs them money.
+         */
+        @Test
+        fun `the active membership decides the side, not an older one that ended`() {
+            val member = member(1L, "Ann Switched")
+            given(
+                Membership(
+                    user = member,
+                    startDate = LocalDate.of(2025, 9, 1),
+                    endDate = LocalDate.of(2026, 1, 31),
+                    incasso = true,
+                ),
+                Membership(user = member, startDate = LocalDate.of(2026, 2, 1), incasso = false),
+            )
+
+            assertThat(planner.plan(periodId).participants.single().group)
+                .isEqualTo(FeeCycleGroup.TRANSFER)
+        }
+
+        @Test
+        fun `an ended membership still decides when none is active, as for a closed period`() {
+            val member = member(1L, "Ann Left")
+            given(
+                Membership(
+                    user = member,
+                    startDate = LocalDate.of(2025, 9, 1),
+                    endDate = LocalDate.of(2026, 1, 31),
+                    incasso = true,
+                ),
+            )
+
+            assertThat(planner.plan(periodId).participants.single().group)
+                .isEqualTo(FeeCycleGroup.DIRECT_DEBIT)
+        }
+
         // Pricing a past period by a membership that did not exist during it would be wrong,
-        // so the judged membership is the newest of the ones that overlap.
+        // so where several are active the newest of them is judged.
         @Test
         fun `the newest overlapping membership is the one judged`() {
             val member = member(1L, "Ann Rejoined")
@@ -250,13 +287,16 @@ class FeeCyclePlannerTest {
         id = ContributionReminder.Id(member.id, periodId),
         user = member,
         contributionPeriod = period,
-    ).apply { updatedAt = on.atStartOfDay().toInstant(ZoneOffset.UTC) }
+        askedAt = on.atStartOfDay().toInstant(ZoneOffset.UTC),
+    )
 
     private fun preNotificationFor(member: User, on: LocalDate) = IncassoNotification(
         id = IncassoNotification.Id(member.id, periodId),
         user = member,
         contributionPeriod = period,
         feeType = BulkFeeType.FULL_YEAR_FEE,
+        amount = 45.0,
         debitDate = on,
-    ).apply { updatedAt = on.atStartOfDay().toInstant(ZoneOffset.UTC) }
+        askedAt = on.atStartOfDay().toInstant(ZoneOffset.UTC),
+    )
 }

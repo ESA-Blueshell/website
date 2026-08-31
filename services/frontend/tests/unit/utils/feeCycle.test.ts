@@ -4,8 +4,8 @@ import type {FeeCycleRowResponse} from "@/services/api"
 import type {BulkRow} from "@/utils/bulkRow"
 import {
   changedFeeTypes,
-  countBySide,
-  feeCycleSideLabel,
+  countByGroup,
+  feeCycleGroupLabel,
   lastAskedLabel,
   toBulkRow,
   toBulkRows,
@@ -75,9 +75,9 @@ describe("toBulkRow", () => {
   })
 })
 
-describe("countBySide", () => {
+describe("countByGroup", () => {
   it("counts each side of the partition separately", () => {
-    const counts = countBySide([
+    const counts = countByGroup([
       row({userId: 1, group: FeeCycleGroup.DIRECT_DEBIT}),
       row({userId: 2, group: FeeCycleGroup.DIRECT_DEBIT}),
       row({userId: 3, group: FeeCycleGroup.TRANSFER}),
@@ -87,18 +87,18 @@ describe("countBySide", () => {
   })
 
   it("counts an empty cycle as zero on both sides", () => {
-    expect(countBySide([])).toEqual({DIRECT_DEBIT: 0, TRANSFER: 0})
+    expect(countByGroup([])).toEqual({DIRECT_DEBIT: 0, TRANSFER: 0})
   })
 })
 
-describe("feeCycleSideLabel", () => {
+describe("feeCycleGroupLabel", () => {
   it("names each side in the treasurer's words", () => {
-    expect(feeCycleSideLabel(FeeCycleGroup.DIRECT_DEBIT)).toBe("Direct debit")
-    expect(feeCycleSideLabel(FeeCycleGroup.TRANSFER)).toBe("Transfer")
+    expect(feeCycleGroupLabel(FeeCycleGroup.DIRECT_DEBIT)).toBe("Direct debit")
+    expect(feeCycleGroupLabel(FeeCycleGroup.TRANSFER)).toBe("Transfer")
   })
 
   it("has a dash for a row with no side", () => {
-    expect(feeCycleSideLabel(undefined)).toBe("—")
+    expect(feeCycleGroupLabel(undefined)).toBe("—")
   })
 })
 

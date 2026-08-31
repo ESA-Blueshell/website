@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
-import java.time.LocalDate
 
 /**
  * One member's fee-cycle email, rendered for reading.
@@ -32,25 +31,34 @@ class FeeCycleEmailPreviewService(
     fun preview(
         contributionPeriodId: Long,
         userId: Long,
-        paymentDueDate: LocalDate,
-        debitDate: LocalDate,
+        dates: FeeCycleDates,
         feeType: BulkFeeType?,
     ): FeeCycleEmailPreview {
-        // Through the plan rather than from the member's flag directly: a member the cycle
-        // does not write to has no email to read, and the plan is what decides that.
+        // Through the plan rather than from the member's flag directly: which statement a
+        // member gets, and whether they get one at all, is the plan's answer.
         val participant = planner.plan(contributionPeriodId).byUserId(userId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "That member is not in this period's fee cycle")
-        val effectiveFeeType = feeType ?: participant.feeType
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "That member owes no contribution")
+        // A member the cycle will not write to has no email to read. Refused here rather
+        // than left to the dialog to hide, which would render an honorary member's
+        // statement, or one addressed to nobody.
+        if (!participant.willSend) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "This cycle sends nothing to that member")
+        }
+        // A recipient always has a fee type: the only member without one is honorary, and an
+        // honorary member never gets past the check above.
+        val effectiveFeeType = feeType ?: participant.feeType!!
 
         val member = users.findById(userId)
         val period = periods.findById(contributionPeriodId)
 
+        // Priced here the way the send prices it, because nothing is recorded yet to read
+        // an amount off.
+        val amount = resolveFeeAmount(effectiveFeeType, period)
         val content: EmailContent = when (participant.group) {
             FeeCycleGroup.TRANSFER ->
-                createContributionReminderEmail(member, period, effectiveFeeType, paymentDueDate, bank)
+                createContributionReminderEmail(member, period, effectiveFeeType, amount, dates.paymentDue, bank)
             FeeCycleGroup.DIRECT_DEBIT ->
-                createIncassoNotificationEmail(member, period, effectiveFeeType, debitDate)
+                createIncassoNotificationEmail(member, period, effectiveFeeType, amount, dates.debit)
         }
 
         val rendered = renderer.render(content)

@@ -3,6 +3,7 @@ package net.blueshell.api.contribution.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.contribution.domain.FeeCycleEmailPreview
+import net.blueshell.api.contribution.domain.FeeCycleDates
 import net.blueshell.api.contribution.domain.FeeCycleEmailPreviewService
 import net.blueshell.api.contribution.domain.FeeCyclePlan
 import net.blueshell.api.contribution.domain.FeeCycleResult
@@ -44,8 +45,10 @@ class FeeCycleController(
     fun sendFeeCycle(@Valid @RequestBody request: SendFeeCycleRequest): FeeCycleResultResponse =
         useCases.send(
             contributionPeriodId = requireNotNull(request.contributionPeriodId),
-            paymentDueDate = requireNotNull(request.paymentDueDate),
-            debitDate = requireNotNull(request.debitDate),
+            dates = FeeCycleDates(
+                paymentDue = requireNotNull(request.paymentDueDate),
+                debit = requireNotNull(request.debitDate),
+            ),
             feeTypeOverrides = request.feeTypeOverrides,
         ).asResponse()
 
@@ -66,7 +69,12 @@ class FeeCycleController(
         @RequestParam debitDate: LocalDate,
         @RequestParam(required = false) feeType: BulkFeeType?,
     ): FeeCycleEmailPreviewResponse =
-        emailPreviews.preview(contributionPeriodId, userId, paymentDueDate, debitDate, feeType).asResponse()
+        emailPreviews.preview(
+            contributionPeriodId,
+            userId,
+            FeeCycleDates(paymentDue = paymentDueDate, debit = debitDate),
+            feeType,
+        ).asResponse()
 }
 
 private fun FeeCycleEmailPreview.asResponse(): FeeCycleEmailPreviewResponse = FeeCycleEmailPreviewResponse(

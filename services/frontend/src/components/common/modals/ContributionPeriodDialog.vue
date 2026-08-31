@@ -44,7 +44,7 @@
             label="Half Year Cutoff Date"
             name="halfYearCutoffDate"
             persistent-hint
-            rules="required|dateAfter:@startDate|dateBefore:@endDate"
+            rules="required|dateMin:@startDate|dateMax:@endDate"
           />
 
           <VvField

@@ -57,13 +57,18 @@ Each of these is defended by a test named in the Testing section.
   partition they are on, or what they owe. Both read one plan.
 - No email quotes an amount without stating the reason that amount applies.
 - No amount is ever typed. Every amount is the period's fee for a chosen fee type.
+- A sent statement never changes what it is recorded as having said. Both the amount and
+  the fee type are stored, so editing next year's fee cannot rewrite last year's email.
 - A member on direct debit is never sent a payment request, and a member paying by
   transfer is never sent a pre-notification. Sending the wrong one costs the member
   money: a direct-debit member who transfers pays twice.
 - A fee type naming a member the cycle does not write to is never silently ignored.
 - Asking again never produces a second record for the same member and period.
 - A member's last-asked date is never read from the other side of the partition.
-- Reading an email writes no record and queues no send.
+- A member is never partitioned by the flag on a membership that has ended, where they
+  hold one that has not.
+- Reading an email writes no record and queues no send, and an email is never rendered
+  for a member the cycle will not write to.
 
 ## The journey
 
@@ -90,11 +95,12 @@ flowchart TD
 
 1. The treasurer picks a period and opens the cycle.
 2. The api plans it: every member whose membership overlapped the period, minus those
-   with a contribution recorded for it, each one partitioned by their direct-debit flag
-   and priced by the fee type that applies.
-3. The table shows the partition with counts per side, each member's fee type and the
+   with a contribution recorded for it, each one partitioned by the direct-debit flag on
+   the membership judged for them — their active one where they hold one — and priced by
+   the fee type that applies.
+3. The table shows the partition with counts per group, each member's fee type and the
    amount it prices, and — for a member already asked — the date they were last asked
-   on their own side.
+   on their own side, with a count of them above the table.
 4. The treasurer enters a payment due date for the transfer group and a debit date for
    the direct-debit group. Both must be in the future.
 5. They may change a member's fee type. The amount re-renders from the period without a
@@ -160,8 +166,7 @@ it is gated identically to sending one.
 | Path | `GET /contributions/fee-cycle/email-preview?contributionPeriodId=&userId=&paymentDueDate=&debitDate=&feeType=` |
 | Authorisation | as above |
 | Response 200 | `{group, feeType, subject, html, recipientEmail, recipientName}` |
-| Response 404 | the member is not in this period's cycle |
-| Response 400 | the member owes no contribution, so there is no email to render |
+| Response 404 | the member is not in this period's cycle, or the cycle sends them nothing |
 
 `group` is `TRANSFER` or `DIRECT_DEBIT`. `feeType` is `FULL_YEAR_FEE`, `HALF_YEAR_FEE`
 or `ALUMNI_FEE`; `feeType` on the preview request is optional and defaults to the one
@@ -188,9 +193,11 @@ both dates are given, because both reach the email.
 **The cycle cannot be read.** The dialog says so and shows no rows, so an empty table
 is never mistaken for a period with nobody left to ask.
 
-**Sending twice.** The second send restates each record rather than adding a second,
-and queues the emails again. Re-sending is allowed and the last-asked date is what
-warns about it — the treasurer sometimes has to chase.
+**Sending twice.** The second send restates each record — amount, fee type, date and
+`asked_at` — rather than adding a second, and queues the emails again. Re-sending is
+allowed because the treasurer chases; it is warned about rather than blocked. The dialog
+counts the already-asked members above the table and colours their date, and making them
+rows to tick back in would mean a hundred ticks in the second cycle of the year.
 
 **An email job fails.** The record was written before the send was queued, so a failed
 delivery leaves a record and the job in the outbox rather than silently nothing.
@@ -211,6 +218,7 @@ dates and any changed fee types. Reopening the dialog re-reads the cycle.
 | The pre-notification | `services/api/.../contribution/domain/IncassoNotificationEmailBuilder.kt` |
 | Rendering one for reading | `services/api/.../contribution/domain/FeeCycleEmailPreviewService.kt` |
 | The two records | `services/api/.../contribution/persistence/{ContributionReminder,IncassoNotification}.kt` |
+| The two dates, as one value | `services/api/.../contribution/domain/FeeCycle.kt` |
 | The dialog | `services/frontend/src/components/common/modals/bulk/FeeCycleDialog.vue` |
 | Rows, and only the changed fee types | `services/frontend/src/utils/feeCycle.ts` |
 

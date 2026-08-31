@@ -14,14 +14,20 @@ import java.time.LocalDate
 @SpringBootTest
 class ContributionPeriodControllerIT : UserTestSupport() {
 
+    /** Half way between the two, which is a cutoff inside every period these tests build. */
+    private fun midpoint(startDate: LocalDate, endDate: LocalDate): LocalDate =
+        startDate.plusDays(java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) / 2)
+
     private fun createPayload(
         startDate: LocalDate,
         endDate: LocalDate,
         halfYearFee: Double = 25.0,
         fullYearFee: Double = 45.0,
-        alumniFee: Double = 10.0
+        alumniFee: Double = 10.0,
+        halfYearCutoffDate: LocalDate = midpoint(startDate, endDate)
     ): String =
-        """{"startDate":"$startDate","endDate":"$endDate","halfYearFee":$halfYearFee,"fullYearFee":$fullYearFee,"alumniFee":$alumniFee}"""
+        """{"startDate":"$startDate","endDate":"$endDate","halfYearCutoffDate":"$halfYearCutoffDate",""" +
+            """"halfYearFee":$halfYearFee,"fullYearFee":$fullYearFee,"alumniFee":$alumniFee}"""
 
     private fun updatePayload(
         version: Long,
@@ -29,9 +35,11 @@ class ContributionPeriodControllerIT : UserTestSupport() {
         endDate: LocalDate,
         halfYearFee: Double = 30.0,
         fullYearFee: Double = 50.0,
-        alumniFee: Double = 12.5
+        alumniFee: Double = 12.5,
+        halfYearCutoffDate: LocalDate = midpoint(startDate, endDate)
     ): String =
-        """{"startDate":"$startDate","endDate":"$endDate","halfYearFee":$halfYearFee,"fullYearFee":$fullYearFee,"alumniFee":$alumniFee,"version":$version}"""
+        """{"startDate":"$startDate","endDate":"$endDate","halfYearCutoffDate":"$halfYearCutoffDate",""" +
+            """"halfYearFee":$halfYearFee,"fullYearFee":$fullYearFee,"alumniFee":$alumniFee,"version":$version}"""
 
     @Nested
     inner class FindContributionPeriods {

@@ -922,6 +922,9 @@ object TestHelper {
         halfYearFee: Double = 0.0,
         fullYearFee: Double = 0.0,
         alumniFee: Double = 0.0,
+        // Half way through, so both fee tiers are reachable from a membership start date.
+        halfYearCutoffDate: java.time.LocalDate =
+            startDate.plusDays(java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) / 2),
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
@@ -935,15 +938,16 @@ object TestHelper {
             }
             return conn.prepareStatement(
                 "INSERT INTO contribution_periods " +
-                    "(start_date, end_date, half_year_fee, full_year_fee, alumni_fee) " +
-                    "VALUES (?, ?, ?, ?, ?)",
+                    "(start_date, end_date, half_year_cutoff_date, half_year_fee, full_year_fee, alumni_fee) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)",
                 java.sql.Statement.RETURN_GENERATED_KEYS,
             ).use { stmt ->
                 stmt.setDate(1, java.sql.Date.valueOf(startDate))
                 stmt.setDate(2, java.sql.Date.valueOf(endDate))
-                stmt.setDouble(3, halfYearFee)
-                stmt.setDouble(4, fullYearFee)
-                stmt.setDouble(5, alumniFee)
+                stmt.setDate(3, java.sql.Date.valueOf(halfYearCutoffDate))
+                stmt.setDouble(4, halfYearFee)
+                stmt.setDouble(5, fullYearFee)
+                stmt.setDouble(6, alumniFee)
                 stmt.executeUpdate()
                 val keys = stmt.generatedKeys
                 require(keys.next()) { "INSERT contribution_periods produced no id" }

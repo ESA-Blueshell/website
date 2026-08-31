@@ -6,6 +6,7 @@ import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.platform.config.BankProperties
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
@@ -23,6 +24,7 @@ class ContributionReminderEmailJob(
     private val reminders: ContributionReminderService,
     private val emails: EmailSenderService,
     private val bank: BankProperties,
+    @param:Value($$"${frontend.url}") private val frontendUrl: String,
 ) : AbstractJsonJobHandler<EmailJobs.ContributionReminderPayload>(
     objectMapper,
     EmailJobs.ContributionReminder.payloadType,
@@ -34,11 +36,19 @@ class ContributionReminderEmailJob(
             reminders.findById(ContributionReminder.Id(payload.userId, payload.contributionPeriodId))
         }
         val feeType = reminder.feeType
+        val amount = reminder.amount
         val dueDate = reminder.paymentDueDate
-        val content = if (feeType != null && dueDate != null) {
-            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, feeType, dueDate, bank)
+        val content = if (feeType != null && amount != null && dueDate != null) {
+            createContributionReminderEmail(
+                reminder.user,
+                reminder.contributionPeriod,
+                feeType,
+                amount,
+                dueDate,
+                bank,
+            )
         } else {
-            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, bank)
+            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, frontendUrl)
         }
         emails.send(content, "email.contribution-reminder", currentExecutionId)
     }

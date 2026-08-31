@@ -28,9 +28,10 @@ private val MONEY_LOCALE: Locale = Locale.forLanguageTag("nl-NL")
 
 private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
 
-private const val SIGN_OFF = "Secretary & Treasurer of ESA Blueshell"
+/** Both fee-cycle emails are from the same pair of officers, and answered at the same address. */
+internal const val SIGN_OFF = "Secretary & Treasurer of ESA Blueshell"
 
-private const val REPLY_TO = "board@blueshell.utwente.nl"
+internal const val REPLY_TO = "board@blueshell.utwente.nl"
 
 internal fun formatEuros(amount: Double): String = String.format(MONEY_LOCALE, "%.2f", amount)
 
@@ -58,16 +59,20 @@ private fun bankTransferLines(bank: BankProperties): List<String> = listOf(
  *
  * The reason is never omitted — an amount on its own invites the reply asking why it is
  * that amount, which is the question the cycle exists to answer up front.
+ *
+ * The amount is passed in rather than priced from [feeType] here, because a sent request
+ * records the amount it stated and this has to quote that one, not whatever the period's
+ * fee has since become.
  */
 fun createContributionReminderEmail(
     recipient: User,
     contributionPeriod: ContributionPeriod,
     feeType: BulkFeeType,
+    amount: Double,
     paymentDueDate: LocalDate,
     bank: BankProperties,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
-    val amount = resolveFeeAmount(feeType, contributionPeriod)
     val dueDate = formatDate(paymentDueDate)
     val markdownContent = buildList {
         add("Dear ${recipient.fullName},")
@@ -103,44 +108,38 @@ fun createContributionReminderEmail(
  * Single-member reminder, sent from a row rather than from the cycle.
  *
  * No fee type was chosen here, so the period's three options are listed rather than one
- * amount quoted with a reason that would have to be guessed.
+ * amount quoted with a reason that would have to be guessed. Its copy is untouched by the
+ * fee cycle: the two are different asks, and rewriting this one was not part of the change.
  */
 fun createContributionReminderEmail(
     recipient: User,
     contributionPeriod: ContributionPeriod,
-    bank: BankProperties,
+    frontendUrl: String
 ): EmailContent {
-    val academicYear = academicYearLabel(contributionPeriod)
-    val markdownContent = buildList {
-        add("Dear ${recipient.fullName},")
-        add("")
-        add(
-            "In order to retain your membership you will need to pay the contribution fee for " +
-                "$academicYear. If the payment is not received in time, your membership role in our " +
-                "Discord and on the website will be revoked.",
-        )
-        add("")
-        add("The fee that applies to you is one of the following.")
-        add("")
-        add("**Fee options**")
-        add("- Half year fee: €${formatEuros(contributionPeriod.halfYearFee)}")
-        add("- Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}")
-        add("- Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}")
-        add("")
-        addAll(bankTransferLines(bank))
-        add("")
-        add("If you have already paid, please disregard this message.")
-        add("")
-        add("Kind regards,")
-        add(SIGN_OFF)
-    }.joinToString("\n")
+    val markdownContent = """
+        Dear ${recipient.fullName},
+
+        This is a friendly reminder that your contribution payment for the period ${contributionPeriod.startDate} to ${contributionPeriod.endDate} is due.
+
+        Payment options:
+        - Half year fee: €${formatEuros(contributionPeriod.halfYearFee)}
+        - Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}
+        - Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}
+
+        Please make your payment at your earliest convenience via our [website]($frontendUrl).
+
+        If you have already made your payment, please disregard this message.
+
+        Kind regards,
+        Treasurer of Blueshell Esports
+    """.trimIndent()
 
     return EmailContent(
         recipientEmail = recipient.email,
         recipientName = recipient.fullName,
-        subject = "Please pay your Blueshell contribution ($academicYear)",
+        subject = "Contribution Payment Reminder - Blueshell Esports",
         markdownContent = markdownContent,
-        senderNameOverride = SIGN_OFF,
-        replyToOverride = REPLY_TO,
+        senderNameOverride = "Treasurer of Blueshell",
+        replyToOverride = "board@blueshell.utwente.nl"
     )
 }

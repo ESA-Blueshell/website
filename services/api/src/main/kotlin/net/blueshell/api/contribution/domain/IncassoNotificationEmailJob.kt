@@ -34,6 +34,7 @@ class IncassoNotificationEmailJob(
                 notification.user,
                 notification.contributionPeriod,
                 notification.feeType,
+                notification.amount,
                 notification.debitDate,
             ),
             "email.incasso-notification",

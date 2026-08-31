@@ -29,6 +29,10 @@ class ContributionReminderEmailBuilderTest {
     )
     private val originalLocale: Locale = Locale.getDefault()
 
+    private companion object {
+        const val FRONTEND_URL = "https://test-frontend.com"
+    }
+
     @AfterEach
     fun restoreDefaultLocale() {
         Locale.setDefault(originalLocale)
@@ -49,6 +53,7 @@ class ContributionReminderEmailBuilderTest {
                 user,
                 period,
                 BulkFeeType.HALF_YEAR_FEE,
+                25.0,
                 LocalDate.of(2026, 3, 1),
                 bank,
             )
@@ -75,6 +80,7 @@ class ContributionReminderEmailBuilderTest {
                 createTestUser("test", "test@example.com", "Test", "User"),
                 createTestPeriod(),
                 feeType,
+                12.34,
                 LocalDate.now().plusMonths(1),
                 bank,
             )
@@ -88,7 +94,8 @@ class ContributionReminderEmailBuilderTest {
             val user = createTestUser("test", "test@example.com", "Test", "User")
             val dueDate = LocalDate.now().plusMonths(1)
 
-            val alumni = createContributionReminderEmail(user, period, BulkFeeType.ALUMNI_FEE, dueDate, bank)
+            val alumni =
+                createContributionReminderEmail(user, period, BulkFeeType.ALUMNI_FEE, 10.0, dueDate, bank)
 
             assertThat(alumni.markdownContent)
                 .contains("Amount due: €10,00")
@@ -105,6 +112,7 @@ class ContributionReminderEmailBuilderTest {
                 createTestUser("test", "test@example.com", "Test", "User"),
                 createTestPeriod(fullYearFee = 20.0),
                 BulkFeeType.FULL_YEAR_FEE,
+                20.0,
                 LocalDate.now().plusMonths(1),
                 bank,
             )
@@ -113,24 +121,29 @@ class ContributionReminderEmailBuilderTest {
         }
     }
 
+    /**
+     * Untouched by the fee cycle. Kept here because the fee-cycle change moved the other
+     * overload out from under it, and a rename is the easiest way to break a caller.
+     */
     @Nested
     inner class TheSingleMemberReminder {
 
         @Test
-        fun `lists the period's fee options, because no fee type was chosen`() {
+        fun `lists the period's fee options and points at the website`() {
             val user = createTestUser("jane", "jane@example.com", "Jane", "Smith")
             val period = createTestPeriod(halfYearFee = 25.0, fullYearFee = 45.0, alumniFee = 10.0)
 
-            val email = createContributionReminderEmail(user, period, bank)
+            val email = createContributionReminderEmail(user, period, FRONTEND_URL)
 
+            assertThat(email.subject).isEqualTo("Contribution Payment Reminder - Blueshell Esports")
+            assertThat(email.senderNameOverride).isEqualTo("Treasurer of Blueshell")
             assertThat(email.markdownContent)
                 .contains("Dear Jane Smith")
                 .contains("Half year fee: €25,00")
                 .contains("Full year fee: €45,00")
                 .contains("Alumni fee: €10,00")
-                .contains("If you have already paid, please disregard this message")
-                .contains("Kind regards")
-                .contains("Secretary & Treasurer of ESA Blueshell")
+                .contains(FRONTEND_URL)
+                .contains("Treasurer of Blueshell Esports")
         }
 
         @ParameterizedTest
@@ -141,7 +154,7 @@ class ContributionReminderEmailBuilderTest {
             val email = createContributionReminderEmail(
                 createTestUser("test", "test@example.com", "Test", "User"),
                 createTestPeriod(halfYearFee = 12.50, fullYearFee = 20.00, alumniFee = 5.99),
-                bank,
+                FRONTEND_URL,
             )
 
             assertThat(email.markdownContent)

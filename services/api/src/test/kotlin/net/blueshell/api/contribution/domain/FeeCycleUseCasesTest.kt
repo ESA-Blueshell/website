@@ -33,6 +33,7 @@ class FeeCycleUseCasesTest {
     private val periodId = 7L
     private val dueDate = LocalDate.of(2026, 3, 1)
     private val debitDate = LocalDate.of(2026, 3, 15)
+    private val dates = FeeCycleDates(paymentDue = dueDate, debit = debitDate)
 
     private val period = ContributionPeriod(
         startDate = LocalDate.of(2025, 9, 1),
@@ -62,7 +63,7 @@ class FeeCycleUseCasesTest {
                 participant(3L, "Cara Transfer", FeeCycleGroup.TRANSFER),
             )
 
-            val result = useCases.send(periodId, dueDate, debitDate, emptyMap())
+            val result = useCases.send(periodId, dates, emptyMap())
 
             assertThat(result.paymentRequestsQueued).isEqualTo(2)
             assertThat(result.preNotificationsQueued).isEqualTo(1)
@@ -75,7 +76,7 @@ class FeeCycleUseCasesTest {
             val written = slot<ContributionReminder>()
             every { reminders.create(capture(written)) } answers { written.captured }
 
-            useCases.send(periodId, dueDate, debitDate, emptyMap())
+            useCases.send(periodId, dates, emptyMap())
 
             assertThat(written.captured.feeType).isEqualTo(BulkFeeType.HALF_YEAR_FEE)
             assertThat(written.captured.paymentDueDate).isEqualTo(dueDate)
@@ -87,7 +88,7 @@ class FeeCycleUseCasesTest {
             val written = slot<IncassoNotification>()
             every { preNotifications.create(capture(written)) } answers { written.captured }
 
-            useCases.send(periodId, dueDate, debitDate, emptyMap())
+            useCases.send(periodId, dates, emptyMap())
 
             assertThat(written.captured.feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
             assertThat(written.captured.debitDate).isEqualTo(debitDate)
@@ -106,7 +107,7 @@ class FeeCycleUseCasesTest {
                 ),
             )
 
-            val result = useCases.send(periodId, dueDate, debitDate, emptyMap())
+            val result = useCases.send(periodId, dates, emptyMap())
 
             assertThat(result.paymentRequestsQueued).isEqualTo(0)
             assertThat(result.preNotificationsQueued).isEqualTo(0)
@@ -131,7 +132,7 @@ class FeeCycleUseCasesTest {
             every { reminders.findById(ContributionReminder.Id(2L, periodId)) } returns existing
             every { reminders.update(any()) } answers { firstArg() }
 
-            useCases.send(periodId, dueDate, debitDate, emptyMap())
+            useCases.send(periodId, dates, emptyMap())
 
             assertThat(existing.paymentDueDate).isEqualTo(dueDate)
             verify(exactly = 0) { reminders.create(any()) }
@@ -157,7 +158,7 @@ class FeeCycleUseCasesTest {
             )
 
             assertThatThrownBy {
-                useCases.send(periodId, dueDate, debitDate, mapOf(9L to BulkFeeType.ALUMNI_FEE))
+                useCases.send(periodId, dates, mapOf(9L to BulkFeeType.ALUMNI_FEE))
             }
                 .isInstanceOf(BulkSelectionRejected::class.java)
                 .satisfies({ thrown ->
@@ -176,7 +177,7 @@ class FeeCycleUseCasesTest {
             val written = slot<ContributionReminder>()
             every { reminders.create(capture(written)) } answers { written.captured }
 
-            useCases.send(periodId, dueDate, debitDate, mapOf(2L to BulkFeeType.ALUMNI_FEE))
+            useCases.send(periodId, dates, mapOf(2L to BulkFeeType.ALUMNI_FEE))
 
             assertThat(written.captured.feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
         }

@@ -35,6 +35,7 @@ class FeeCycleEmailPreviewServiceTest {
     private val periodId = 7L
     private val dueDate = LocalDate.of(2026, 3, 1)
     private val debitDate = LocalDate.of(2026, 3, 15)
+    private val dates = FeeCycleDates(paymentDue = dueDate, debit = debitDate)
 
     private val period = ContributionPeriod(
         startDate = LocalDate.of(2025, 9, 1),
@@ -75,7 +76,7 @@ class FeeCycleEmailPreviewServiceTest {
         givenInCycle(FeeCycleGroup.TRANSFER, BulkFeeType.HALF_YEAR_FEE)
         capturingRenderer()
 
-        val preview = service.preview(periodId, 1L, dueDate, debitDate, null)
+        val preview = service.preview(periodId, 1L, dates, null)
 
         assertThat(preview.group).isEqualTo(FeeCycleGroup.TRANSFER)
         assertThat(preview.subject).isEqualTo("Please pay your Blueshell contribution (2025/2026)")
@@ -92,7 +93,7 @@ class FeeCycleEmailPreviewServiceTest {
         givenInCycle(FeeCycleGroup.DIRECT_DEBIT, BulkFeeType.FULL_YEAR_FEE)
         capturingRenderer()
 
-        val preview = service.preview(periodId, 1L, dueDate, debitDate, null)
+        val preview = service.preview(periodId, 1L, dates, null)
 
         assertThat(preview.group).isEqualTo(FeeCycleGroup.DIRECT_DEBIT)
         assertThat(preview.subject)
@@ -109,7 +110,7 @@ class FeeCycleEmailPreviewServiceTest {
         givenInCycle(FeeCycleGroup.TRANSFER, BulkFeeType.FULL_YEAR_FEE)
         capturingRenderer()
 
-        val preview = service.preview(periodId, 1L, dueDate, debitDate, BulkFeeType.ALUMNI_FEE)
+        val preview = service.preview(periodId, 1L, dates, BulkFeeType.ALUMNI_FEE)
 
         assertThat(preview.feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
         assertThat(preview.html).contains("Amount due: €10,00").contains("the alumni fee")
@@ -124,7 +125,7 @@ class FeeCycleEmailPreviewServiceTest {
         givenInCycle(FeeCycleGroup.TRANSFER, BulkFeeType.FULL_YEAR_FEE)
         val handedOver = capturingRenderer()
 
-        val preview = service.preview(periodId, 1L, dueDate, debitDate, null)
+        val preview = service.preview(periodId, 1L, dates, null)
 
         verify(exactly = 1) { renderer.render(any()) }
         assertThat(handedOver.captured.recipientEmail).isEqualTo("alice@example.com")
@@ -135,55 +136,72 @@ class FeeCycleEmailPreviewServiceTest {
     fun `refuses a member the cycle is not about`() {
         every { planner.plan(periodId) } returns FeeCyclePlan(periodId, emptyList())
 
-        assertThatThrownBy { service.preview(periodId, 99L, dueDate, debitDate, null) }
+        assertThatThrownBy { service.preview(periodId, 99L, dates, null) }
             .isInstanceOf(ResponseStatusException::class.java)
             .hasMessageContaining("not in this period's fee cycle")
     }
 
+    /**
+     * Refused in the api rather than hidden by the dialog: an excluded member would otherwise
+     * render an honorary member's statement, or one addressed to nobody.
+     */
     @Test
-    fun `refuses a member who owes nothing`() {
+    fun `refuses a member with no email address`() {
         every { planner.plan(periodId) } returns FeeCyclePlan(
             periodId,
             listOf(
-                FeeCycleParticipant(
-                    userId = 1L,
-                    name = "Alice Regular",
-                    memberType = MemberType.HONORARY,
-                    memberSince = LocalDate.of(2025, 9, 1),
-                    group = FeeCycleGroup.TRANSFER,
+                participant(
+                    disposition = BulkRowDisposition.EXCLUDED,
+                    reason = BulkRowReason.NO_EMAIL,
+                    feeType = BulkFeeType.FULL_YEAR_FEE,
+                ),
+            ),
+        )
+
+        assertThatThrownBy { service.preview(periodId, 1L, dates, null) }
+            .isInstanceOf(ResponseStatusException::class.java)
+            .hasMessageContaining("sends nothing to that member")
+    }
+
+    @Test
+    fun `refuses an honorary member, who owes nothing`() {
+        every { planner.plan(periodId) } returns FeeCyclePlan(
+            periodId,
+            listOf(
+                participant(
                     disposition = BulkRowDisposition.EXCLUDED,
                     reason = BulkRowReason.HONORARY,
                     feeType = null,
-                    amount = null,
-                    lastAskedOn = null,
                 ),
             ),
         )
 
-        assertThatThrownBy { service.preview(periodId, 1L, dueDate, debitDate, null) }
+        assertThatThrownBy { service.preview(periodId, 1L, dates, null) }
             .isInstanceOf(ResponseStatusException::class.java)
-            .hasMessageContaining("owes no contribution")
+            .hasMessageContaining("sends nothing to that member")
     }
 
     private fun givenInCycle(group: FeeCycleGroup, feeType: BulkFeeType) {
-        every { planner.plan(periodId) } returns FeeCyclePlan(
-            periodId,
-            listOf(
-                FeeCycleParticipant(
-                    userId = 1L,
-                    name = "Alice Regular",
-                    memberType = MemberType.REGULAR,
-                    memberSince = LocalDate.of(2025, 9, 1),
-                    group = group,
-                    disposition = BulkRowDisposition.INCLUDED,
-                    reason = null,
-                    feeType = feeType,
-                    amount = resolveFeeAmount(feeType, period),
-                    lastAskedOn = null,
-                ),
-            ),
-        )
+        every { planner.plan(periodId) } returns FeeCyclePlan(periodId, listOf(participant(group, feeType = feeType)))
         every { users.findById(1L) } returns alice
         every { periods.findById(periodId) } returns period
     }
+
+    private fun participant(
+        group: FeeCycleGroup = FeeCycleGroup.TRANSFER,
+        disposition: BulkRowDisposition = BulkRowDisposition.INCLUDED,
+        reason: BulkRowReason? = null,
+        feeType: BulkFeeType? = BulkFeeType.FULL_YEAR_FEE,
+    ) = FeeCycleParticipant(
+        userId = 1L,
+        name = "Alice Regular",
+        memberType = if (reason == BulkRowReason.HONORARY) MemberType.HONORARY else MemberType.REGULAR,
+        memberSince = LocalDate.of(2025, 9, 1),
+        group = group,
+        disposition = disposition,
+        reason = reason,
+        feeType = feeType,
+        amount = feeType?.let { resolveFeeAmount(it, period) },
+        lastAskedOn = null,
+    )
 }

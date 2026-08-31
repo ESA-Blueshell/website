@@ -79,32 +79,29 @@ describe("BannerSlices", () => {
   /**
    * How large a copy of a banner the browser is asked for.
    *
-   * A slice is a tall narrow strip whose banner covers it, so the picture is drawn far wider
-   * than the strip: the strip's own width would fetch something blurred. The figure is asked
-   * for twice — an understated guess that gets a small copy on the screen, then the width the
-   * band was actually laid out at.
+   * Two passes. The first understates so that something is on the screen quickly; the second
+   * is worked out from the two things that decide the width — how many slices share the row
+   * and how wide the window is — and waits for the first copy to arrive rather than racing it.
+   *
+   * jsdom's window is 1024 wide, and the fixture is two slices with the first one open: so the
+   * open slice takes 3.4 of 4.4 shares, which is 792, and the shut one takes 1 of 4.4, 233.
    */
-  it("asks for a small copy before the band has been laid out", () => {
+  it("asks for a small copy until one has arrived", async () => {
     const wrapper = mountSlices()
+    await settled()
 
-    // No layout has happened, so there is nothing to measure and nothing to wait for.
+    // Laid out, opened, and still on the understated promise: nothing has loaded.
     expect(wrapper.find("img").attributes("sizes")).toBe("(min-width: 768px) 200px, 50vw")
   })
 
-  it("asks for the width it is really drawn at once the band has been laid out", async () => {
+  it("asks for the width its share of the row works out to, once a copy has arrived", async () => {
     const wrapper = mountSlices()
-    // jsdom lays nothing out, so the box a slice would have is stood in for here. 200 wide by
-    // 352 tall is a collapsed slice on a desktop band.
-    wrapper.findAll("section").forEach(slice => {
-      slice.element.getBoundingClientRect = () => ({width: 200, height: 352}) as DOMRect
-    })
-
-    await settled()
     await settled()
 
-    // A 16x9 banner covering a 200x352 box is drawn 626 wide, and the open slice is the one
-    // not held at 1.06 — so it asks for the honest 626 rather than the strip's 200.
-    expect(wrapper.find("img").attributes("sizes")).toBe("626px")
+    await wrapper.find("img").trigger("load")
+
+    // The first slice is the open one, so 3.4 shares of 4.4 across a 1024 window.
+    expect(wrapper.find("img").attributes("sizes")).toBe("792px")
   })
 
   it("asks for more as a slice opens, and never for less once it has shut again", async () => {
@@ -120,31 +117,41 @@ describe("BannerSlices", () => {
         testidPrefix: "team-roster",
       },
     })
+    await settled()
     const slices = wrapper.findAll("section")
-    const asked = (index: number) =>
-      Number(slices[index].find("img").attributes("sizes")!.replace("px", ""))
+    const asked = (index: number) => slices[index].find("img").attributes("sizes")
 
-    // The second slice is a narrow strip until it opens, and takes the larger share of the row
-    // when it does. jsdom lays nothing out, so its box is stood in for and grown by hand.
-    let second = 200
-    slices[0].element.getBoundingClientRect = () => ({width: 200, height: 352}) as DOMRect
-    slices[1].element.getBoundingClientRect = () => ({width: second, height: 352}) as DOMRect
+    await slices[1].find("img").trigger("load")
+    // Shut, so one share of 4.4.
+    expect(asked(1)).toBe("233px")
 
-    await settled()
-    await settled()
-    // Held at 1.06 while shut, so a shut slice asks for a little more than the honest 626.
-    expect(asked(1)).toBe(664)
-
-    second = 900
     await slices[1].trigger("mouseenter")
-    await settled()
-    expect(asked(1)).toBe(900)
+    expect(asked(1)).toBe("792px")
 
-    // Shut again, and still asked for the copy it already has: a browser will not swap a
+    // Shut again, and still asking for the copy it already has: a browser will not swap a
     // picture for a smaller one, so asking for less would achieve nothing.
-    second = 200
     await slices[0].trigger("mouseenter")
-    await settled()
-    expect(asked(1)).toBe(900)
+    expect(asked(1)).toBe("792px")
+  })
+
+  /** Stacked, a slice is the width of the window and the row's shares do not come into it. */
+  it("asks for the width of the window where the slices are stacked", async () => {
+    const wide = window.matchMedia
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("max-width: 767px"),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia
+    try {
+      const wrapper = mountSlices()
+      await settled()
+
+      await wrapper.find("img").trigger("load")
+
+      expect(wrapper.find("img").attributes("sizes")).toBe("1024px")
+    } finally {
+      window.matchMedia = wide
+    }
   })
 })

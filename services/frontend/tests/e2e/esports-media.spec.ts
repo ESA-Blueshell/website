@@ -376,24 +376,38 @@ test.describe("how large a banner is fetched", () => {
     await expect(page.getByTestId("lineup-editor")).toBeHidden()
   }
 
-  test("a banner is asked for the width it is drawn at, not the width of its slice", async ({page}) => {
+  test("a banner is asked for its share of the row, and the slice being read for more", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
     await giveABanner(page, 1)
+    await giveABanner(page, 2)
 
-    // Measured off the band, so it is a length rather than a promise about the viewport.
+    // Reloaded, because reaching a slice's edit button means hovering the slice, which opens
+    // it — and a slice that has been open once keeps the wider figure it had open.
+    await page.reload()
+    // The pointer stays where the upload left it across a reload, and a slice under the
+    // pointer is the open one — so it is moved off the band and the first slice opens by
+    // itself, which is what this test is about.
+    await page.mouse.move(0, 0)
+
+    // Worked out rather than promised as a fraction of the viewport, so it is a length.
     await expect.poll(() => sizesOf(page, "team-roster-1")).toMatch(/^\d+px$/)
+    await expect.poll(() => sizesOf(page, "team-roster-2")).toMatch(/^\d+px$/)
 
-    // The figure is the width the picture is drawn at, which is the slice's own width or the
-    // width its height forces on a 16x9 picture, whichever is larger. Side by side the height
-    // decides it and the promise is far wider than the slice; stacked, the slice is the width
-    // of the window and its own width decides it. Both are the same rule.
-    const promised = await pxOf(page, "team-roster-1")
-    const box = (await page.getByTestId("team-roster-1").boundingBox())!
-    // The first slice is the open one, so it is not held at 1.06.
-    expect(promised).toBe(Math.ceil(Math.max(box.width, box.height * (1280 / 720))))
-    expect(promised).toBeGreaterThanOrEqual(box.width)
+    // The first slice opens on its own. Side by side it takes the larger share of the row and
+    // asks for more than the strip beside it; stacked, both are the width of the window.
+    const openly = await pxOf(page, "team-roster-1")
+    const shut = await pxOf(page, "team-roster-2")
+    const window = page.viewportSize()!.width
+    if (await page.evaluate(() => matchMedia("(max-width: 767px)").matches)) {
+      expect(openly).toBe(window)
+      expect(shut).toBe(window)
+    } else {
+      expect(openly).toBeGreaterThan(shut)
+      // A share of the row rather than the whole window, which is the saving.
+      expect(shut).toBeLessThan(window)
+    }
   })
 
   /**
@@ -418,8 +432,13 @@ test.describe("how large a banner is fetched", () => {
       if (match) fetched.push(match[1])
     })
 
-    // A fresh load, so both passes happen with nothing measured to begin with.
+    // A fresh load, so both passes happen from nothing.
     await page.reload()
+    // Off the band, so the first slice is the open one rather than whichever the pointer was
+    // left over. A shut slice's share is narrow enough that both passes land on the same rung
+    // of the ladder, which is the saving working rather than the second pass failing.
+    await page.mouse.move(0, 0)
+
     await expect.poll(() => sizesOf(page, "team-roster-1")).toMatch(/^\d+px$/)
     await page.waitForTimeout(SETTLE_MS)
 

@@ -39,24 +39,3 @@ export function sizeOf(picture?: EsportsImage | null): {width?: number; height?:
   if (!picture?.width || !picture.height) return {}
   return {width: picture.width, height: picture.height}
 }
-
-/**
- * How wide a picture is really drawn, in css pixels, inside a box it is set to cover.
- *
- * `object-fit: cover` scales a picture until it fills the box on both axes, so a wide picture
- * in a tall narrow box is drawn far wider than the box is: a 16x9 banner in a slice 200 wide
- * and 352 tall is drawn at 626, and asking the browser for 200 gets a picture blurred to two
- * and a half times its size. Which is what `sizes` has to be told, since `sizes` is a promise
- * about the drawn width and not about the element's.
- *
- * [zoom] is any scale the picture is held at on top of that. A picture whose own dimensions
- * are unknown is assumed to be 16x9, which every banner on these pages is stored as.
- */
-export function coverWidth(
-  box: {width: number; height: number},
-  picture: {width?: number | null; height?: number | null},
-  zoom = 1,
-): number {
-  const aspect = picture.width && picture.height ? picture.width / picture.height : 16 / 9
-  return Math.ceil(Math.max(box.width, box.height * aspect) * zoom)
-}

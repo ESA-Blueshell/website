@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import {onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useMotionAllowed} from "./useMotionAllowed"
-import {coverWidth} from "../pictures"
 
 defineOptions({name: "BannerSlices"})
 
@@ -130,71 +129,97 @@ const releaseTap = () => {
 }
 
 /**
- * How wide each banner is really drawn, once the band has been laid out.
+ * The share of the row an open slice takes, which is what `flex-grow` gives it.
  *
- * Empty to begin with, and that is the point: the first pass asks for the smallest copy that
- * could plausibly do and gets something on the screen, because measuring means waiting for
- * layout and layout means waiting. What is measured here replaces the guess afterwards.
+ * Kept here as a number because the figure a banner is fetched at is worked out from it: the
+ * stylesheet and this have to say the same thing, and there is no way to ask the stylesheet.
  */
-const drawnAt = ref<number[]>([])
+const OPEN_SHARE = 3.4
+
+/** Roughly what the way-in slice takes out of the row, which is `clamp(6.5rem, 11%, 10rem)`. */
+const WAY_IN_SHARE = 0.11
+
+const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
 
 /**
- * What each banner is drawn at now, never less than it was.
+ * The width each banner is fetched at, worked out rather than measured.
  *
- * Only ever upward, for two reasons: a browser will not swap a picture it has for a smaller
- * one, so asking for less achieves nothing; and a slice that has been opened once has the
- * larger copy in cache already, so asking for it again the next time costs a cache hit rather
- * than a download.
+ * Worked out from the two things that decide it — how many slices share the row and how wide
+ * the window is — because measuring means waiting for layout, and because a measurement taken
+ * as a slice opens reads the box it had shut: its share of the row is transitioned over 620ms.
+ * The arithmetic knows where it is going the moment the pointer arrives.
+ *
+ * Stacked, a slice is the width of the window and nothing else comes into it.
+ *
+ * A collapsed slice is asked for its own share and no more, which is less than the picture is
+ * strictly drawn at: a banner covers a slice taller than a collapsed share is wide, so it is
+ * scaled up. That is deliberate. A collapsed slice is drawn under `grayscale(70%)
+ * brightness(0.5)`, which is close enough to a silhouette that the difference cannot be seen,
+ * and the slice being read — the one at full brightness and in colour — has a share wide
+ * enough to cover itself honestly.
  */
-const measure = () => {
-  const next = slices.value.map((el, index) => {
-    const held = drawnAt.value[index] ?? 0
-    if (!el) return held
-    const box = el.getBoundingClientRect()
-    if (box.width === 0 || box.height === 0) return held
-    // Collapsed slices are held at 1.06 and settle to 1 as they open.
-    const zoom = index === open.value ? 1 : 1.06
-    return Math.max(held, coverWidth(box, props.items[index] ?? {}, zoom))
-  })
-  // Written only when something actually grew, so this can be called freely.
-  if (next.some((width, index) => width !== (drawnAt.value[index] ?? 0))) drawnAt.value = next
+const wanted = (index: number): number => {
+  const width = viewport.value
+  if (width === 0) return 0
+  if (stacked()) return width
+
+  const count = props.items.length
+  if (count === 0) return width
+  // One slice is open, unless nothing is yet.
+  const units = open.value == null ? count : count - 1 + OPEN_SHARE
+  const share = index === open.value ? OPEN_SHARE : 1
+  const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
+  return Math.ceil((band * share) / units)
 }
 
 /**
- * Measured once the band has settled as well as straight away.
+ * What each banner has been asked for, never less than it was already asked for.
  *
- * A slice's share of the row is transitioned over 620ms, so at the moment one opens its box is
- * still the box it had shut. Measuring twice means the slices either side of it are right at
- * once and the one being read is right as soon as it is the size it will be.
+ * Only ever upward, for two reasons: a browser will not swap a picture it has for a smaller
+ * one, so asking for less achieves nothing; and a slice that has been opened once has the
+ * wider copy in cache, so asking for it again is a cache hit rather than a download.
  */
-let settling: ReturnType<typeof setTimeout> | null = null
+const askedFor = ref<number[]>([])
 
-const remeasure = () => {
-  measure()
-  if (settling) clearTimeout(settling)
-  settling = setTimeout(() => {
-    settling = null
-    measure()
-  }, 700)
+const grow = () => {
+  const next = props.items.map((_, index) => Math.max(askedFor.value[index] ?? 0, wanted(index)))
+  if (next.some((width, index) => width !== (askedFor.value[index] ?? 0))) askedFor.value = next
+}
+
+/**
+ * Which banners have had a copy arrive.
+ *
+ * The second fetch waits for the first to land rather than for the next frame. Both at once
+ * puts two copies of every picture on the wire together, which on a slow connection is the one
+ * thing this is meant to avoid — the small copy is there to be quick, and racing it with the
+ * large one spends the saving before it is made.
+ */
+const arrived = ref<Set<number>>(new Set())
+
+const onLoaded = (index: number) => {
+  if (arrived.value.has(index)) return
+  arrived.value = new Set(arrived.value).add(index)
+  grow()
+}
+
+const onResize = () => {
+  viewport.value = window.innerWidth
+  grow()
 }
 
 /**
  * What the browser is promised a banner will be drawn at.
  *
- * Understated on the first pass on purpose, and by a lot: a collapsed slice is drawn under
- * `grayscale(70%) brightness(0.5)`, so the copy that lands first is dimmed almost to a
- * silhouette and a small one is indistinguishable from a large one. 200 css pixels side by
- * side and half the window stacked fetches the bottom of the ladder, which arrives in a
- * fraction of the time the honest figure would.
- *
- * The measured figure replaces it as soon as there is one, and a slice that opens is measured
- * again as it opens — so the picture behind the slice being read is the full-resolution one,
- * and the pictures either side of it are not.
+ * Understated until a copy has arrived, and by a lot: 200 css pixels side by side and half the
+ * window stacked fetches the bottom of the ladder, and a collapsed slice is dimmed almost to a
+ * silhouette anyway. The worked-out figure replaces it once there is a picture on the screen to
+ * replace, and grows again as a slice opens.
  */
 const sizesOf = (index: number): string => {
-  const drawn = drawnAt.value[index]
-  return drawn ? `${drawn}px` : "(min-width: 768px) 200px, 50vw"
+  const asked = arrived.value.has(index) ? askedFor.value[index] : 0
+  return asked ? `${asked}px` : "(min-width: 768px) 200px, 50vw"
 }
+
 
 /**
  * Opening a slice and going to it are the same gesture, one after the other: a slice that is
@@ -232,16 +257,13 @@ onMounted(() => {
   }
   watchScroll()
   window.addEventListener("scroll", releaseTap, {passive: true})
-  window.addEventListener("resize", remeasure)
-  // After the paint, so the small copy is already on its way before anything is measured.
-  requestAnimationFrame(() => requestAnimationFrame(remeasure))
+  window.addEventListener("resize", onResize)
 })
 
 onBeforeUnmount(() => {
   watcher?.disconnect()
   window.removeEventListener("scroll", releaseTap)
-  window.removeEventListener("resize", remeasure)
-  if (settling) clearTimeout(settling)
+  window.removeEventListener("resize", onResize)
 })
 
 // A change of what is shown brings a different set, so the first of those opens in its turn
@@ -253,8 +275,10 @@ onBeforeUnmount(() => {
  */
 watch(() => props.items, (items, before) => {
   slices.value = []
-  // Different pictures, so the figures measured for the last ones say nothing about these.
-  drawnAt.value = []
+  // Different pictures, so neither the figures asked for the last ones nor the fact that they
+  // arrived says anything about these.
+  askedFor.value = []
+  arrived.value = new Set()
   const named = indexOfNamed()
   const held = before?.[open.value ?? -1]?.id
   const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
@@ -264,7 +288,6 @@ watch(() => props.items, (items, before) => {
   open.value = motion.decorative.value && stillThere < 0 && named < 0 ? null : target
   if (open.value === null) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
-  requestAnimationFrame(() => requestAnimationFrame(remeasure))
 })
 
 /**
@@ -286,8 +309,9 @@ watch([() => props.openId, () => props.items], () => {
 // the same game or team rarely sits in the same place.
 watch(open, (index) => {
   emit("open", index == null ? null : props.items[index]?.id ?? null)
-  // The slice being read wants the full-resolution copy; the ones either side no longer do.
-  remeasure()
+  // The slice being read wants the wider copy, and knows how wide without waiting for the
+  // row to finish moving.
+  grow()
 })
 </script>
 
@@ -352,6 +376,7 @@ watch(open, (index) => {
         :src="item.banner"
         :srcset="item.srcset"
         :width="item.width"
+        @load="onLoaded(index)"
       >
       <span
         aria-hidden="true"

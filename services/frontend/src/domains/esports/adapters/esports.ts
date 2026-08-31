@@ -54,6 +54,7 @@ import type {
   TeamRole as ApiTeamRole,
   TeamRosterResponse,
 } from "@/services/api"
+import {reasonFor} from "@/domains/esports/refusals"
 
 /**
  * A game's code: the identity a team, a roster and a member's handle point at. A plain string
@@ -297,12 +298,8 @@ export async function saveSeasonOrReason(
   return {ok: true, season: res.data ?? null}
 }
 
-/** Whatever the api said, preferring the specific complaint over the generic one. */
-function reasonFrom(error: unknown, fallback = "The season could not be saved."): string {
-  const body = (error as {detail?: string; title?: string; errors?: Array<{message?: string}>})
-  const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
-  return fields || body?.detail || body?.title || fallback
-}
+const reasonFrom = (error: unknown, fallback = "The season could not be saved."): string =>
+  reasonFor(error, fallback)
 
 export async function saveSeason(
   season: {id?: number; name: string; startDate: string; endDate: string},
@@ -327,9 +324,12 @@ export async function unfieldTeamFromSeason(
   teamId: number,
   game: Game,
   seasonId: number,
-): Promise<void> {
+): Promise<{ok: true} | Refused> {
   const res = await unfieldTeam({path: {seasonId, teamId}, query: {game}})
-  if (res.error) throw res.error
+  if (res.error) {
+    return {ok: false, reason: reasonFrom(res.error, "The team could not be dropped from the season.")}
+  }
+  return {ok: true}
 }
 
 /** A game that ran in one season, with what it fielded. */
@@ -374,8 +374,11 @@ export async function leaveGameInSeason(
   return {ok: true}
 }
 
-export async function dropSeason(id: number): Promise<void> {
-  await deleteSeason({path: {id}})
+// Answers the refusal: the generated client returns an error object, it does not throw.
+export async function dropSeasonOrReason(id: number): Promise<{ok: true} | Refused> {
+  const res = await deleteSeason({path: {id}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The season could not be removed.")}
+  return {ok: true}
 }
 
 /**
@@ -432,9 +435,10 @@ export async function saveTeamAs(
   return {ok: true, team: res.data ? withArt(res.data) : null}
 }
 
-export async function dropTeam(id: number): Promise<void> {
+export async function dropTeam(id: number): Promise<{ok: true} | Refused> {
   const res = await deleteTeam({path: {id}})
-  if (res.error) throw res.error
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be removed.")}
+  return {ok: true}
 }
 
 /**
@@ -549,8 +553,10 @@ export async function linkRosterMember(id: number, userId: number | null): Promi
   return res.data ?? null
 }
 
-export async function dropRosterEntry(id: number): Promise<void> {
-  await removeRosterEntry({path: {id}})
+export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused> {
+  const res = await removeRosterEntry({path: {id}})
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "That person could not be taken off.")}
+  return {ok: true}
 }
 
 /** A member as a roster entry needs to name them: who they are, and how to tell two apart. */

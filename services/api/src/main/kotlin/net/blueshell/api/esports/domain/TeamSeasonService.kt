@@ -82,28 +82,21 @@ class TeamSeasonService(
     }
 
     /**
-     * The games the association currently plays: what was fielded in the season we are in, and
-     * in the season before it.
-     *
-     * A union rather than the newest season alone. A season is set up a game at a time, so a
-     * list that followed only the newest would collapse to whichever game the board entered
-     * first and refill as they worked — a half-finished season, in public, every changeover.
-     * The cost is accepted and known: a game the association has genuinely stopped playing
-     * stays listed for one more season, which is a far smaller lie than the association
-     * playing one game.
-     *
-     * Fielded, not merely entered: a game is public in a season once a team plays it, which is
-     * the same rule the pages themselves answer to.
+     * The games fielded in the season we are in, falling back to the one before only while that
+     * season has nothing fielded yet — a season is built a game at a time.
      */
     @Transactional(readOnly = true)
     fun currentlyPlayed(on: LocalDate = LocalDate.now()): Set<String> {
         val ordered = seasons.findAll()
-        // Where no season covers today — a gap between them — the most recent one that has
-        // started is the one we are in for this purpose.
+        // No season covers the date — a gap, or every season already over.
         val current = seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
             ?: return emptySet()
-        val previous = ordered.firstOrNull { it.startDate.isBefore(current.startDate) }
-        return fielded.gamesFieldedIn(listOfNotNull(current.id, previous?.id)).toSet()
+        val currentId = current.id ?: return emptySet()
+        val played = fielded.gamesFieldedIn(listOf(currentId))
+        if (played.isNotEmpty()) return played.toSet()
+        val previous = ordered.firstOrNull { it.startDate.isBefore(current.startDate) }?.id
+            ?: return emptySet()
+        return fielded.gamesFieldedIn(listOf(previous)).toSet()
     }
 
     /** The seasons that had a team fielded in them, whichever game it played. */

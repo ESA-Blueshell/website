@@ -32,6 +32,7 @@ the tooling that enforces it has not landed, the ADR carries an
 **Implementation status** section naming the gap.
 
 ## Related Documentation
+- [Glossary](../CONTEXT.md)
 - [Flow documentation](../flows/README.md)
 - [CLAUDE.md](../../CLAUDE.md)
 - [AGENTS.md](../../AGENTS.md)

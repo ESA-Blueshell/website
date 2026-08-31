@@ -29,6 +29,8 @@ import {
   type Season,
   type TeamRole,
 } from "../adapters/esports"
+import {countOf} from "../copy"
+import {reasonFor} from "../refusals"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
 
 /**
@@ -381,13 +383,14 @@ const removeTeam = async () => {
   removingTeam.value = true
   teamFailure.value = null
   try {
-    await dropTeam(teamId)
+    const result = await dropTeam(teamId)
+    if (!result.ok) {
+      teamFailure.value = result.reason
+      return
+    }
     droppingTeam.value = false
     emit("removed")
     emit("update:open", false)
-  } catch (error) {
-    const body = (error as {detail?: string; title?: string})
-    teamFailure.value = body?.detail || body?.title || "The team could not be removed."
   } finally {
     removingTeam.value = false
   }
@@ -400,7 +403,7 @@ const removeTeam = async () => {
  * the difference between them is the whole point of asking.
  */
 const seasonQuestion = computed(() => {
-  const played = rows.value.length === 1 ? "1 roster place" : `${rows.value.length} roster places`
+  const played = countOf(rows.value.length, "person", "people")
   const season = props.season?.name ?? "this season"
   return `${props.teamName} played ${season} with ${played}. Removing it from this season `
     + "leaves the team, and the other seasons it played, as they are."
@@ -413,22 +416,21 @@ const dropFromSeason = async () => {
   leavingSeason.value = true
   seasonFailure.value = null
   try {
-    await unfieldTeamFromSeason(teamId, props.game, seasonId)
+    const result = await unfieldTeamFromSeason(teamId, props.game, seasonId)
+    if (!result.ok) {
+      seasonFailure.value = result.reason
+      return
+    }
     droppingFromSeason.value = false
     emit("removed")
     emit("update:open", false)
-  } catch (error) {
-    const body = (error as {detail?: string; title?: string})
-    seasonFailure.value = body?.detail || body?.title || "The team could not be dropped."
   } finally {
     leavingSeason.value = false
   }
 }
 
-const reasonFrom = (error: unknown): string => {
-  const body = (error as {detail?: string; title?: string})
-  return body?.detail || body?.title || "The line-up could not be saved."
-}
+const reasonFrom = (error: unknown): string =>
+  reasonFor(error, "The line-up could not be saved.")
 
 const submit = async () => {
   const seasonId = props.season?.id
@@ -460,7 +462,13 @@ const submit = async () => {
     // there — the same team is drawn with its own picture in every other game it plays.
     await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
 
-    for (const id of removed.value) await dropRosterEntry(id)
+    for (const id of removed.value) {
+      const gone = await dropRosterEntry(id)
+      if (!gone.ok) {
+        failure.value = gone.reason
+        return
+      }
+    }
 
     for (const [index, row] of rows.value.entries()) {
       const shared = {

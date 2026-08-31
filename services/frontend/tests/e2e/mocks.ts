@@ -47,6 +47,13 @@ const brevoTargets = [
  * The games themselves, as their records hold them: what each is called, the address its page
  * answers to, and the art it is drawn with. The pages read every one of these from here.
  */
+const addressTaken = (gameName: string, address: string) => ({
+  detail: "That address is already used by another game.",
+  code: "AddressTaken",
+  gameName,
+  address,
+})
+
 const esportsGames = [
   {game: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", banner: null, icon: null, intro: "Shooters, and plenty of them.", sortIndex: 1, current: true},
   {game: "CS2", name: "Counter-Strike 2", slug: "counter-strike-2", accent: "#e8842a", banner: null, icon: null, intro: "Those sweet headshots.", sortIndex: 2, current: true},
@@ -832,7 +839,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug)
       if (held) {
-        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+        return fulfillJson(route, addressTaken(held.name, slug), 409)
       }
       const code = String(body.name ?? "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
       const made = {
@@ -857,8 +864,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       if (held.size + seeded > 0) {
         const game = known.find(one => one.game === code)
         return fulfillJson(route, {
-          detail: `${game?.name ?? code} holds ${held.size + seeded} teams and 6 roster places. `
-            + "Mark it as no longer fielded instead, and everything it played stays readable.",
+          detail: "That game cannot be removed.",
+          code: "GameHoldsHistory",
+          gameName: game?.name ?? code,
+          teams: held.size + seeded,
+          players: 6,
         }, 409)
       }
       gamesGone.add(code)
@@ -873,7 +883,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
       const held = known.find(one => one.slug === slug && one.game !== code)
       if (held) {
-        return fulfillJson(route, {detail: `${held.name} already answers to '${slug}'`}, 409)
+        return fulfillJson(route, addressTaken(held.name, slug), 409)
       }
       const was = known.find(one => one.game === code)
       const now = {
@@ -1001,8 +1011,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         const known = [...(fixtures.esportsGames ?? esportsGames), ...gamesMade]
           .find(one => one.game === game)
         return fulfillJson(route, {
-          detail: `${known?.name ?? game} still has ${held.length} team${held.length === 1 ? "" : "s"} `
-            + "in this season. Drop them from the season first, and the game can be taken out of it.",
+          detail: "That game cannot be taken out of the season.",
+          code: "GameFieldedInSeason",
+          gameName: known?.name ?? game,
+          teams: held.length,
         }, 409)
       }
       const at = gamesEntered.findIndex(one => one.seasonId === seasonId && one.game === game)
@@ -1023,6 +1035,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
     //
+    // 512 square, not 1: with a `srcset` the browser divides the bytes' real width by the
+    // chosen candidate's density, so a one-pixel image answering a `128w` candidate has a
+    // sub-pixel intrinsic size and Chromium lays it out at no height at all.
+    //
     // Never cached, because a mock file's address is the same in every test: Chromium will
     // draw a wider copy it already holds in preference to the one a `srcset` asks for, so a
     // copy cached by an earlier load decides what a later load appears to fetch.
@@ -1032,7 +1048,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         contentType: "image/webp",
         headers: {"cache-control": "no-store"},
         body: Buffer.from(
-          "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA",
+          "UklGRi4AAABXRUJQVlA4TCIAAAAv/8F/AAdQs840s/8BgUCyv/cMRfQ/4z//+c9//vOf//wf",
           "base64",
         ),
       })

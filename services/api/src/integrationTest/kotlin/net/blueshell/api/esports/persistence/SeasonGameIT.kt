@@ -108,7 +108,8 @@ class SeasonGameIT : UserTestSupport() {
 
         mvc.perform(delete("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(bearer(board)))
             .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("1 team")))
+            .andExpect(jsonPath("$.code").value("GameFieldedInSeason"))
+            .andExpect(jsonPath("$.teams").value(1))
     }
 
     @Test

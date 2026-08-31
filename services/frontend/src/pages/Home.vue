@@ -98,13 +98,15 @@
 </template>
 
 <script lang="ts" setup>
-import {ref} from "vue"
+import {computed, ref} from "vue"
 
 import MainBanner from "@/components/common/banners/MainBanner.vue"
 import DiscordBanner from "@/components/base/DiscordBanner.vue"
 import SocialsBanner from "@/components/common/banners/SocialsBanner.vue"
 import GamesWePlay from "@/components/base/GamesWePlay.vue"
 
+import {useGames} from "@/domains/esports/island/useGames"
+import {srcsetOf} from "@/domains/esports/pictures"
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"
 import {associationYears} from "@/utils/association"
@@ -113,6 +115,8 @@ interface GameTitle {
   title: string
   bg: string
   icon: string
+  bgSrcset?: string
+  iconSrcset?: string
   esportsLink?: string
 }
 
@@ -135,42 +139,21 @@ interface Partner {
   url: string
 }
 
-const games = ref<GameCategory[]>([
-  {
-    categoryName: "Competitive",
-    titles: [
-      {
-        title: "League of Legends",
-        bg: $require("@/assets/leaguebg.jpg"),
-        icon: $require("@/assets/league.png"),
-        esportsLink: "/esports/league-of-legends",
-      },
-      {
-        title: "Counter-Strike 2",
-        bg: $require("@/assets/cs2bg.png"),
-        icon: $require("@/assets/cs2.png"),
-        esportsLink: "/esports/counter-strike-2",
-      },
-      {
-        title: "Valorant",
-        bg: $require("@/assets/valorantbg.jpg"),
-        icon: $require("@/assets/valorant.png"),
-        esportsLink: "/esports/valorant",
-      },
-      {
-        title: "Rocket League",
-        bg: $require("@/assets/rocketleaguebg.jpg"),
-        icon: $require("@/assets/rocketleague.png"),
-        esportsLink: "/esports/rocketleague",
-      },
-      {
-        title: "Geoguessr",
-        bg: $require("@/assets/geoguessrbg.jpg"),
-        icon: $require("@/assets/geoguessrlogo.webp"),
-        esportsLink: "/esports/geoguessr",
-      },
-    ],
-  },
+const {current: playedNow} = useGames()
+
+const competitive = computed<GameCategory>(() => ({
+  categoryName: "Competitive",
+  titles: playedNow.value.map(game => ({
+    title: game.name,
+    bg: game.banner?.url ?? "",
+    bgSrcset: srcsetOf(game.banner),
+    icon: game.icon?.url ?? "",
+    iconSrcset: srcsetOf(game.icon),
+    esportsLink: `/esports/${game.slug}`,
+  })),
+}))
+
+const community = ref<GameCategory[]>([
   {
     categoryName: "Community",
     titles: [
@@ -222,6 +205,10 @@ const games = ref<GameCategory[]>([
     ],
   },
 ])
+
+// An empty block would be a heading over nothing, which is what an unreachable api looks like.
+const games = computed<GameCategory[]>(() =>
+  [competitive.value, ...community.value].filter(one => one.titles.length > 0))
 
 const columns = ref<Column[]>([
   {

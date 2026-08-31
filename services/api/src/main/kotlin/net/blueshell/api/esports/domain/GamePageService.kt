@@ -5,10 +5,8 @@ import net.blueshell.api.esports.persistence.GamePageRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.shared.enums.FileType
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 
 /**
  * The games the association knows, and how each presents itself.
@@ -41,8 +39,7 @@ class GamePageService(
      */
     @Transactional(readOnly = true)
     fun requireGame(game: String): GamePage =
-        pages.findByGame(game.trim())
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "No game answers to '$game'")
+        pages.findByGame(game.trim()) ?: throw UnknownGameCode(game)
 
     /** The codes of every game there is, for anything that has to offer a choice of one. */
     @Transactional(readOnly = true)
@@ -71,14 +68,10 @@ class GamePageService(
         sortIndex: Int? = null,
     ): GamePage {
         val called = name.trim()
-        if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name")
+        if (called.isBlank()) throw GameNameBlank()
         val code = codeFor(called)
-        if (code.isBlank()) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "'$called' has no letters or digits to name it by")
-        }
-        pages.findByGame(code)?.let { held ->
-            throw ResponseStatusException(HttpStatus.CONFLICT, "${held.name} is already a game")
-        }
+        if (code.isBlank()) throw GameNameUnusable(called)
+        pages.findByGame(code)?.let { held -> throw GameAlreadyExists(held.name) }
         val address = addressFor(slug)
         claimed(address, null)
         // Where nobody says where it goes, it goes at the end. A game added mid-season is the
@@ -120,7 +113,7 @@ class GamePageService(
     ): GamePage {
         val page = findByGame(game)
         val called = name.trim()
-        if (called.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game needs a name")
+        if (called.isBlank()) throw GameNameBlank()
         val wanted = addressFor(slug)
         claimed(wanted, page.id)
         page.name = called
@@ -135,7 +128,7 @@ class GamePageService(
     }
 
     /**
-     * What a game holds: teams recorded in it, and the roster places those carry.
+     * What a game holds: teams recorded in it, and the people on their line-ups.
      *
      * Read so a removal can say what it would take before it is agreed to, rather than after.
      */
@@ -159,15 +152,7 @@ class GamePageService(
     fun delete(game: String) {
         val page = requireGame(game)
         val (held, players) = contentsOf(page.game)
-        if (held > 0) {
-            throw ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "${page.name} holds $held team${if (held == 1L) "" else "s"} and " +
-                    "$players roster place${if (players == 1L) "" else "s"}. " +
-                    "Everything it played stays readable, and it leaves the pages that show what " +
-                    "the association plays by not being entered in a season.",
-            )
-        }
+        if (held > 0) throw GameHoldsHistory(page.name, held, players)
         pages.delete(page)
     }
 
@@ -183,19 +168,15 @@ class GamePageService(
     private fun addressFor(slug: String): String {
         val address = slug.trim().lowercase().map { if (it.isLetterOrDigit()) it else '-' }
             .joinToString("").trim('-').replace(Regex("-+"), "-").take(SLUG_LENGTH)
-        if (address.isBlank()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A game's page needs an address")
-        if (address in RESERVED) {
-            throw ResponseStatusException(HttpStatus.CONFLICT, "'$address' is the esports index's own address")
-        }
+        if (address.isBlank()) throw GameAddressBlank()
+        if (address in RESERVED) throw AddressReserved(address)
         return address
     }
 
     /** An address is how somebody reaches a page; two games cannot share one. */
     private fun claimed(address: String, mine: Long?) {
         pages.findBySlug(address)?.let { held ->
-            if (held.id != mine) {
-                throw ResponseStatusException(HttpStatus.CONFLICT, "${held.name} already answers to '$address'")
-            }
+            if (held.id != mine) throw AddressTaken(held.name, address)
         }
     }
 

@@ -87,7 +87,8 @@ test.describe("changing a game", () => {
     await page.getByTestId("game-dialog-slug").fill("geoguessr")
     await page.getByTestId("game-dialog-save").click()
 
-    await expect(page.getByTestId("game-dialog-failure")).toContainText("already answers to")
+    await expect(page.getByTestId("game-dialog-failure"))
+      .toContainText("The address 'geoguessr' is already used by GeoGuessr.")
     await expect(page.getByTestId("game-dialog-slug")).toHaveValue("geoguessr")
   })
 

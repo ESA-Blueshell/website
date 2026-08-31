@@ -43,7 +43,7 @@ test.describe("taking things off the esports pages", () => {
     const question = page.getByTestId("confirm-question")
     await expect(question).toContainText("BS Waterboarders")
     await expect(question).toContainText("Autumn 2025/26")
-    await expect(question).toContainText("3 roster places")
+    await expect(question).toContainText("3 people")
     // The difference between dropping from a season and removing the team is said plainly.
     await expect(question).toContainText("leaves the team")
   })
@@ -118,7 +118,7 @@ test.describe("taking things off the esports pages", () => {
     const question = page.getByTestId("confirm-question")
     await expect(question).toContainText("Autumn 2025/26")
     await expect(question).toContainText("1 team")
-    await expect(question).toContainText("3 roster places")
+    await expect(question).toContainText("3 people")
   })
 
   test("a removed season leaves the strip", async ({page}) => {

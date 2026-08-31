@@ -20,7 +20,7 @@ test.describe("removing a game", () => {
     await expect(page.getByTestId("game-dialog-remove")).toHaveCount(0)
   })
 
-  test("the question says how many teams and roster places the game holds", async ({page, context}) => {
+  test("the question says how many teams and people the game holds", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
@@ -30,7 +30,7 @@ test.describe("removing a game", () => {
 
     // Read before the question is put, rather than discovered after it is answered.
     await expect(page.getByTestId("confirm-question")).toContainText("2 teams")
-    await expect(page.getByTestId("confirm-question")).toContainText("roster place")
+    await expect(page.getByTestId("confirm-question")).toContainText("people")
   })
 
   test("a game whose contents cannot be read is not offered for removal", async ({page, context}) => {
@@ -75,7 +75,8 @@ test.describe("removing a game", () => {
     await page.getByTestId("game-dialog-remove").click()
     await page.getByTestId("confirm-go").click()
 
-    await expect(page.getByTestId("confirm-failure")).toContainText("no longer fielded")
+    await expect(page.getByTestId("confirm-failure"))
+      .toContainText("Valorant holds 2 teams and 6 people, so it cannot be removed.")
     // Still here: the refusal is the api's, and the page did not act as though it had gone.
     await page.goto("/esports/valorant")
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant")

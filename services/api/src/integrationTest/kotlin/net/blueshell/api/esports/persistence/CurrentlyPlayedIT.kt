@@ -8,16 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
 
-/**
- * Which games the association currently plays, derived from the seasons rather than declared.
- *
- * The union of the season we are in and the one before it is the whole point of this, and the
- * reason is the changeover: a season is set up a game at a time, so a list that followed only the
- * newest season would collapse to whichever game the board entered first and refill as they
- * worked. That is a half-finished season, in public, twice a year. The cost is a game the
- * association has stopped playing lingering for one more season, which is asserted here too so
- * that nobody mistakes it for a defect later.
- */
+// The suite wipes `season` and `team_season`, so every case builds its own.
 @SpringBootTest
 class CurrentlyPlayedIT : UserTestSupport() {
     @Autowired private lateinit var fielded: TeamSeasonService
@@ -44,37 +35,48 @@ class CurrentlyPlayedIT : UserTestSupport() {
     private val inside = LocalDate.of(2040, 10, 1)
 
     @Test
-    fun `a season part-way through being set up does not shrink the list`() {
+    fun `only the games fielded in the most recent season are current`() {
         val last = season(LocalDate.of(2040, 2, 1))
         fieldOne("VALORANT", last)
         fieldOne("CS2", last)
         fieldOne("LEAGUE_OF_LEGENDS", last)
         val now = season(LocalDate.of(2040, 9, 1))
-
-        // The board has entered one game of the new season so far.
         fieldOne("VALORANT", now)
 
-        // The failure this rule exists to prevent: following the newest season alone would answer
-        // with Valorant and nothing else, and the site would say the association plays one game.
-        assertThat(fielded.currentlyPlayed(inside))
-            .contains("VALORANT", "CS2", "LEAGUE_OF_LEGENDS")
+        assertThat(fielded.currentlyPlayed(inside)).containsExactly("VALORANT")
     }
 
     @Test
-    fun `a game dropped this season is still current, and leaves the season after`() {
+    fun `a season with nothing fielded in it yet falls back to the one before`() {
+        val last = season(LocalDate.of(2040, 2, 1))
+        fieldOne("VALORANT", last)
+        fieldOne("CS2", last)
+        season(LocalDate.of(2040, 9, 1))
+
+        assertThat(fielded.currentlyPlayed(inside)).contains("VALORANT", "CS2")
+    }
+
+    @Test
+    fun `the season before stops answering as soon as one team is fielded in the newest`() {
+        val last = season(LocalDate.of(2040, 2, 1))
+        fieldOne("CS2", last)
+        val now = season(LocalDate.of(2040, 9, 1))
+
+        assertThat(fielded.currentlyPlayed(inside)).contains("CS2")
+
+        fieldOne("VALORANT", now)
+
+        assertThat(fielded.currentlyPlayed(inside)).containsExactly("VALORANT")
+    }
+
+    @Test
+    fun `a game dropped this season is no longer current`() {
         val older = season(LocalDate.of(2040, 2, 1))
         fieldOne("TRACKMANIA", older)
         val now = season(LocalDate.of(2040, 9, 1))
         fieldOne("VALORANT", now)
 
-        // The accepted cost, stated out loud: it was played six months ago, so it still counts.
-        assertThat(fielded.currentlyPlayed(inside)).contains("TRACKMANIA")
-
-        val next = season(LocalDate.of(2041, 2, 1))
-        fieldOne("VALORANT", next)
-
-        // A season later it is two seasons back, and it goes.
-        assertThat(fielded.currentlyPlayed(LocalDate.of(2041, 3, 1))).doesNotContain("TRACKMANIA")
+        assertThat(fielded.currentlyPlayed(inside)).doesNotContain("TRACKMANIA")
     }
 
     @Test
@@ -82,8 +84,6 @@ class CurrentlyPlayedIT : UserTestSupport() {
         val now = season(LocalDate.of(2040, 9, 1))
         fieldOne("VALORANT", now)
 
-        // Entering a game is the board saying it intends to play it; a team playing it is what
-        // makes it public, and this answers the same question the pages answer.
         assertThat(fielded.currentlyPlayed(inside)).doesNotContain("GEOGUESSR")
     }
 
@@ -94,9 +94,65 @@ class CurrentlyPlayedIT : UserTestSupport() {
         val now = season(LocalDate.of(2040, 9, 1))
         fieldOne("VALORANT", now)
 
-        // Seasons do not tile the calendar, and a gap between them is not a gap in what the
-        // association plays.
-        assertThat(fielded.currentlyPlayed(LocalDate.of(2040, 8, 15)))
-            .contains("CS2")
+        assertThat(fielded.currentlyPlayed(LocalDate.of(2040, 8, 15))).containsExactly("CS2")
+    }
+
+    @Test
+    // Live from 1 September 2026: the seed's last season ends 31 August 2026 with nothing after.
+    fun `a date after every season falls back to the last one that started`() {
+        val springOf2025 = seasons.save(
+            Season(
+                name = "Spring 2025/26 ${System.nanoTime()}",
+                startDate = LocalDate.of(2026, 2, 1),
+                endDate = LocalDate.of(2026, 8, 31),
+            ),
+        )
+        listOf("CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT")
+            .forEach { fieldOne(it, springOf2025) }
+
+        assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 8, 31)))
+            .containsExactlyInAnyOrder(
+                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+            )
+        assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 9, 1)))
+            .containsExactlyInAnyOrder(
+                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+            )
+    }
+
+    @Test
+    fun `a game fielded only in the season before is dropped, where the union kept it`() {
+        val autumn = season(LocalDate.of(2025, 9, 1))
+        fieldOne("CSGO", autumn)
+        val spring = seasons.save(
+            Season(
+                name = "Spring 2025/26 ${System.nanoTime()}",
+                startDate = LocalDate.of(2026, 2, 1),
+                endDate = LocalDate.of(2026, 8, 31),
+            ),
+        )
+        listOf("CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT")
+            .forEach { fieldOne(it, spring) }
+
+        assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 6, 1)))
+            .containsExactlyInAnyOrder(
+                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+            )
+    }
+
+    @Test
+    fun `a date before any season has started answers nothing`() {
+        val now = season(LocalDate.of(2040, 9, 1))
+        fieldOne("VALORANT", now)
+
+        assertThat(fielded.currentlyPlayed(LocalDate.of(1990, 1, 1))).isEmpty()
+    }
+
+    @Test
+    fun `two seasons with nothing fielded in either answer nothing`() {
+        season(LocalDate.of(2040, 2, 1))
+        season(LocalDate.of(2040, 9, 1))
+
+        assertThat(fielded.currentlyPlayed(inside)).isEmpty()
     }
 }

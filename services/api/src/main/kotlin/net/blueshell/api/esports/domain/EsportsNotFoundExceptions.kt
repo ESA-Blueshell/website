@@ -3,6 +3,7 @@ package net.blueshell.api.esports.domain
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
+// Sentences rather than codes: no dialog can provoke a missing row, so a code would reach no branch.
 class SeasonNotFoundException(id: Long) :
     ResponseStatusException(HttpStatus.NOT_FOUND, "Season with id $id not found")
 
@@ -11,34 +12,3 @@ class TeamNotFoundException(id: Long) :
 
 class RosterEntryNotFoundException(id: Long) :
     ResponseStatusException(HttpStatus.NOT_FOUND, "Roster entry with id $id not found")
-
-/**
- * Two seasons cannot run at once: a roster belongs to the season it played in, and overlapping
- * seasons make "which one" unanswerable. Named rather than numbered, so the objection can be
- * read on the form that caused it.
- */
-class SeasonOverlapException(name: String) :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "Those dates overlap $name")
-
-class SeasonDatesReversedException :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "A season cannot end before it starts")
-
-class BannerNotFoundException(id: Long) :
-    ResponseStatusException(HttpStatus.NOT_FOUND, "Banner with id $id not found")
-
-/**
- * A banner narrowed to a team has to be a banner for that team's own game, or it would be
- * unreachable: nothing ever resolves a banner for a game the team does not play.
- */
-class BannerTeamPlaysAnotherGameException(team: String, game: String) :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "$team does not play ${game}")
-
-/**
- * A save named a picture that is not in storage.
- *
- * Refused rather than ignored: a picture is uploaded on its own and put on a record by the save
- * that names it, and a save that quietly drops the name leaves whoever chose it looking at a
- * dialog that closed and a record that did not change.
- */
-class PictureNotStoredException :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "That picture is not in storage")

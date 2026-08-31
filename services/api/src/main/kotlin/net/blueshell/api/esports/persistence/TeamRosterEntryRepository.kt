@@ -108,7 +108,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     ): List<Long>
 
     /**
-     * Roster places held in one season, for a removal to say before it happens.
+     * People on the line-ups of one season, for a removal to say before it happens.
      *
      * Native, and so are the two below it, because a line-up outlives the dropping of the team
      * that played it: the entries stay, the fielding is soft-deleted, and a Hibernate join
@@ -126,7 +126,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     )
     fun countBySeasonId(@Param("seasonId") seasonId: Long): Long
 
-    /** Roster places held across every team of one game, for a removal to say before it happens. */
+    /** People on the line-ups of every team of one game, for a removal to say before it happens. */
     @Query(
         nativeQuery = true,
         value = """

@@ -203,7 +203,8 @@ test.describe("adding a game", () => {
     await page.getByTestId("game-dialog-save").click()
 
     // Losing the whole form to find out what the objection was would mean typing it again.
-    await expect(page.getByTestId("game-dialog-failure")).toContainText("already answers to")
+    await expect(page.getByTestId("game-dialog-failure"))
+      .toContainText("The address 'valorant' is already used by Valorant.")
     await expect(page.getByTestId("game-dialog-name")).toHaveValue("Valorant Two")
     await expect(page.getByTestId("game-dialog-slug")).toHaveValue("valorant")
   })

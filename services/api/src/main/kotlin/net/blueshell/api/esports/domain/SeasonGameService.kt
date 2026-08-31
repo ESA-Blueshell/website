@@ -2,10 +2,8 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.SeasonGame
 import net.blueshell.api.esports.persistence.SeasonGameRepository
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 
 /**
  * Which games the association ran in which season.
@@ -55,14 +53,7 @@ class SeasonGameService(
     fun leave(seasonId: Long, game: String) {
         val code = games.requireGame(game).game
         val held = fielded.findByGameAndSeason(code, seasonId)
-        if (held.isNotEmpty()) {
-            val name = games.requireGame(code).name
-            throw ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "$name still has ${held.size} team${if (held.size == 1) "" else "s"} in this season. " +
-                    "Drop them from the season first, and the game can be taken out of it.",
-            )
-        }
+        if (held.isNotEmpty()) throw GameFieldedInSeason(games.requireGame(code).name, held.size)
         entered.findBySeasonIdAndGame(seasonId, code)?.let { entered.delete(it) }
     }
 }

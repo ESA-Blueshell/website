@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsAdmin} from "./mocks"
+import {installApiMocks, loginAsAdmin, loginAsBoard, preferLightTheme} from "./mocks"
 
 /**
  * The island is a second styling system inside a Vuetify app. What these assert
@@ -138,16 +138,66 @@ test.describe("the esports island", () => {
     await expect(page.getByTestId("esports-island")).toHaveCount(0)
   })
 
-  test("the island looks the same to a visitor who prefers light", async ({page}) => {
+  test("the island's ground follows the viewer's theme", async ({page}) => {
     await installApiMocks(page)
-    await page.emulateMedia({colorScheme: "light"})
     await page.goto("/esports/competitive-scene")
 
-    // These pages commit to one treatment; there is no light variant to keep.
-    // The value is the island's ground token, which sits a step below the
-    // navigation's own grey rather than being a near-black of its own.
-    const background = await page.getByTestId("esports-island")
+    const ground = () => page.getByTestId("esports-island")
       .evaluate(el => getComputedStyle(el).backgroundColor)
-    expect(background).toBe("rgb(28, 28, 28)")
+
+    // The suite reads as dark.
+    expect(await ground()).toBe("rgb(28, 28, 28)")
+
+    await preferLightTheme(page)
+    await page.goto("/esports/competitive-scene")
+    expect(await ground()).toBe("rgb(252, 252, 252)")
+  })
+
+  test("the shell tile is behind the island, and differs by theme", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/esports/competitive-scene")
+
+    const tile = () => page.getByTestId("esports-island")
+      .evaluate(el => getComputedStyle(el).backgroundImage)
+
+    const dark = await tile()
+    expect(dark).toContain("url(")
+
+    await preferLightTheme(page)
+    await page.goto("/esports/competitive-scene")
+    const light = await tile()
+    expect(light).toContain("url(")
+    // A broken path resolves to none, and one tile serving both themes is the other
+    // way this silently stops working.
+    expect(light).not.toBe(dark)
+  })
+
+  test("the band of games follows the theme too", async ({page}) => {
+    await installApiMocks(page)
+    await preferLightTheme(page)
+    await page.goto("/esports/competitive-scene")
+
+    const slices = page.getByTestId("esports-game-slices")
+    await slices.waitFor()
+
+    // Dark ink on a light slice: the band is not pinned to one treatment.
+    const ink = await slices.locator('[data-testid^="esports-game-"]').first()
+      .evaluate(el => getComputedStyle(el).color)
+    expect(ink).toBe("rgb(28, 28, 28)")
+  })
+
+  test("a board dialog follows the theme", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    await preferLightTheme(page)
+    await page.goto("/esports/competitive-scene")
+    await page.getByTestId("esports-game-slices").waitFor()
+
+    await page.getByTestId("esports-game-add").click()
+
+    // Guards the token substitutions: each of these was a hardcoded dark hex.
+    const panel = await page.getByTestId("game-dialog")
+      .evaluate(el => getComputedStyle(el).backgroundColor)
+    expect(panel).toBe("rgb(255, 255, 255)")
   })
 })

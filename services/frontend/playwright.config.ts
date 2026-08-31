@@ -31,6 +31,9 @@ export default defineConfig({
     // so the suites are deterministic and the reduced-motion path is exercised
     // by every test rather than by one.
     reducedMotion: "reduce",
+    // The theme follows the viewer now, so the suite states one instead of inheriting
+    // Playwright's light default. Light-mode tests emulate it per test.
+    colorScheme: "dark",
   },
   webServer: [
     {

@@ -337,9 +337,17 @@ abstract class UserTestSupport : ServiceTestSupport() {
      *
      * Here rather than in one suite because every test that needs a stored picture needs the
      * same one, and the encoder is real in these tests rather than doubled.
+     *
+     * 64 square by default, and a size is worth asking for only when the test is about the
+     * narrower copies a picture is stored at: nothing is upscaled, so a 64-pixel picture is
+     * stored at no width a banner lists and carries no copies at all.
      */
-    protected fun picture(name: String = "picture.png"): MockMultipartFile {
-        val image = BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB)
+    protected fun picture(
+        name: String = "picture.png",
+        width: Int = 64,
+        height: Int = 64,
+    ): MockMultipartFile {
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         val bytes = ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
         return MockMultipartFile("file", name, MediaType.IMAGE_PNG_VALUE, bytes)
     }
@@ -350,9 +358,14 @@ abstract class UserTestSupport : ServiceTestSupport() {
      * Goes through the upload endpoint rather than the service behind it: what a caller can
      * observe is a stored path, and a save later names exactly that.
      */
-    protected fun storedPicture(uploader: User, kind: FileType): String {
+    protected fun storedPicture(
+        uploader: User,
+        kind: FileType,
+        width: Int = 64,
+        height: Int = 64,
+    ): String {
         val stored = mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(picture())
+            multipart(PublicFileUrls.UPLOAD).file(picture(width = width, height = height))
                 .param("type", kind.name)
                 .with(bearer(uploader)).with(csrfToken()),
         )

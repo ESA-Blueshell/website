@@ -6,6 +6,7 @@ import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
@@ -45,6 +46,8 @@ class ShippedArtIT : UserTestSupport() {
     @Autowired private lateinit var games: GamePageRepository
 
     @Autowired private lateinit var files: FileService
+
+    @Autowired private lateinit var stored: FileRepository
 
     @Value($$"${storage.location}")
     private lateinit var storageLocation: String
@@ -88,6 +91,42 @@ class ShippedArtIT : UserTestSupport() {
         // The art is 2560 wide, which is every width the kind lists.
         assertThat(banner.width).isEqualTo(2560)
         assertThat(files.findPublicImage(banner.path, FileType.TEAM_BANNER)).isNotNull
+        // The widths themselves, which this test only claimed to check before: a master with
+        // no copies beside it is one the pages fall back to at full size, on every screen.
+        assertThat(banner.renditions.mapNotNull { it.renditionWidth })
+            .containsExactly(320, 640, 960, 1280, 1920, 2560)
+    }
+
+    /**
+     * Every picture the loader puts on a record is stored at more than one width.
+     *
+     * The two tests above name one banner and one icon. This is the guarantee itself: the boot
+     * loader is the only thing that puts the shipped art in storage, so a picture it stores at
+     * one width is a picture every page serves at full size for ever. Nothing else would fail —
+     * the page draws, the picture is right, and it is simply many times the weight it should be.
+     *
+     * The ladder stops at the master's own width because nothing is upscaled, so what is
+     * asserted is that there are copies and that none is wider than the picture.
+     */
+    @Test
+    fun `every picture it stores is stored at several widths, and none wider than itself`() {
+        art.apply()
+
+        val masters = stored.findSourcesOfTypes(
+            listOf(FileType.TEAM_BANNER, FileType.GAME_BANNER, FileType.GAME_ICON),
+        )
+        assertThat(masters).isNotEmpty
+
+        val bare = masters.filter { it.renditions.isEmpty() }.map { it.name }.sorted()
+        assertThat(bare).describedAs("shipped pictures stored at one width only").isEmpty()
+
+        val upscaled = masters.flatMap { master ->
+            master.renditions
+                .mapNotNull { it.renditionWidth }
+                .filter { width -> master.width?.let { width > it } ?: false }
+                .map { "${master.name} at ${it}px, wider than ${master.width}" }
+        }.sorted()
+        assertThat(upscaled).describedAs("copies wider than the picture they came from").isEmpty()
     }
 
     @Test

@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {sizeOf, srcsetOf} from "@/domains/esports/pictures"
+import {coverWidth, sizeOf, srcsetOf} from "@/domains/esports/pictures"
 import type {EsportsImage} from "@/domains/esports/adapters/esports"
 
 /**
@@ -62,5 +62,32 @@ describe("sizeOf", () => {
     expect(sizeOf(picture({width: null, height: null}))).toEqual({})
     expect(sizeOf(picture({height: null}))).toEqual({})
     expect(sizeOf(null)).toEqual({})
+  })
+})
+
+/**
+ * What a slice has to promise the browser, which is not the width of the slice.
+ *
+ * These are the cases that decide whether a banner is fetched blurry: a slice is a tall narrow
+ * strip, and a picture set to cover one is drawn far wider than the strip is.
+ */
+describe("coverWidth", () => {
+  it("is driven by the height where the box is narrower than the picture's shape", () => {
+    // A 16x9 banner in a 200x352 slice is drawn 626 wide, not 200.
+    expect(coverWidth({width: 200, height: 352}, {width: 1600, height: 900})).toBe(626)
+  })
+
+  it("is driven by the width where the box is wider than the picture's shape", () => {
+    expect(coverWidth({width: 1200, height: 352}, {width: 1600, height: 900})).toBe(1200)
+  })
+
+  it("multiplies by the scale the picture is held at, so a held picture is not asked for short", () => {
+    expect(coverWidth({width: 200, height: 352}, {width: 1600, height: 900}, 1.06)).toBe(664)
+  })
+
+  /** Every banner these pages store is 16x9, so that is the assumption when nothing is known. */
+  it("assumes 16x9 for a picture whose own size was never read", () => {
+    expect(coverWidth({width: 100, height: 900}, {})).toBe(1600)
+    expect(coverWidth({width: 100, height: 900}, {width: null, height: null})).toBe(1600)
   })
 })

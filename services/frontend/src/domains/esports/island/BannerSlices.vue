@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {useMotionAllowed} from "./useMotionAllowed"
+import {coverWidth} from "../pictures"
 
 defineOptions({name: "BannerSlices"})
 
@@ -129,6 +130,73 @@ const releaseTap = () => {
 }
 
 /**
+ * How wide each banner is really drawn, once the band has been laid out.
+ *
+ * Empty to begin with, and that is the point: the first pass asks for the smallest copy that
+ * could plausibly do and gets something on the screen, because measuring means waiting for
+ * layout and layout means waiting. What is measured here replaces the guess afterwards.
+ */
+const drawnAt = ref<number[]>([])
+
+/**
+ * What each banner is drawn at now, never less than it was.
+ *
+ * Only ever upward, for two reasons: a browser will not swap a picture it has for a smaller
+ * one, so asking for less achieves nothing; and a slice that has been opened once has the
+ * larger copy in cache already, so asking for it again the next time costs a cache hit rather
+ * than a download.
+ */
+const measure = () => {
+  const next = slices.value.map((el, index) => {
+    const held = drawnAt.value[index] ?? 0
+    if (!el) return held
+    const box = el.getBoundingClientRect()
+    if (box.width === 0 || box.height === 0) return held
+    // Collapsed slices are held at 1.06 and settle to 1 as they open.
+    const zoom = index === open.value ? 1 : 1.06
+    return Math.max(held, coverWidth(box, props.items[index] ?? {}, zoom))
+  })
+  // Written only when something actually grew, so this can be called freely.
+  if (next.some((width, index) => width !== (drawnAt.value[index] ?? 0))) drawnAt.value = next
+}
+
+/**
+ * Measured once the band has settled as well as straight away.
+ *
+ * A slice's share of the row is transitioned over 620ms, so at the moment one opens its box is
+ * still the box it had shut. Measuring twice means the slices either side of it are right at
+ * once and the one being read is right as soon as it is the size it will be.
+ */
+let settling: ReturnType<typeof setTimeout> | null = null
+
+const remeasure = () => {
+  measure()
+  if (settling) clearTimeout(settling)
+  settling = setTimeout(() => {
+    settling = null
+    measure()
+  }, 700)
+}
+
+/**
+ * What the browser is promised a banner will be drawn at.
+ *
+ * Understated on the first pass on purpose, and by a lot: a collapsed slice is drawn under
+ * `grayscale(70%) brightness(0.5)`, so the copy that lands first is dimmed almost to a
+ * silhouette and a small one is indistinguishable from a large one. 200 css pixels side by
+ * side and half the window stacked fetches the bottom of the ladder, which arrives in a
+ * fraction of the time the honest figure would.
+ *
+ * The measured figure replaces it as soon as there is one, and a slice that opens is measured
+ * again as it opens — so the picture behind the slice being read is the full-resolution one,
+ * and the pictures either side of it are not.
+ */
+const sizesOf = (index: number): string => {
+  const drawn = drawnAt.value[index]
+  return drawn ? `${drawn}px` : "(min-width: 768px) 200px, 50vw"
+}
+
+/**
  * Opening a slice and going to it are the same gesture, one after the other: a slice that is
  * already showing what it holds has said what it has to say, so the next click follows it.
  * Stacked, that is the second tap; side by side, the pointer has already opened it.
@@ -164,11 +232,16 @@ onMounted(() => {
   }
   watchScroll()
   window.addEventListener("scroll", releaseTap, {passive: true})
+  window.addEventListener("resize", remeasure)
+  // After the paint, so the small copy is already on its way before anything is measured.
+  requestAnimationFrame(() => requestAnimationFrame(remeasure))
 })
 
 onBeforeUnmount(() => {
   watcher?.disconnect()
   window.removeEventListener("scroll", releaseTap)
+  window.removeEventListener("resize", remeasure)
+  if (settling) clearTimeout(settling)
 })
 
 // A change of what is shown brings a different set, so the first of those opens in its turn
@@ -180,6 +253,8 @@ onBeforeUnmount(() => {
  */
 watch(() => props.items, (items, before) => {
   slices.value = []
+  // Different pictures, so the figures measured for the last ones say nothing about these.
+  drawnAt.value = []
   const named = indexOfNamed()
   const held = before?.[open.value ?? -1]?.id
   const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
@@ -189,6 +264,7 @@ watch(() => props.items, (items, before) => {
   open.value = motion.decorative.value && stillThere < 0 && named < 0 ? null : target
   if (open.value === null) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
+  requestAnimationFrame(() => requestAnimationFrame(remeasure))
 })
 
 /**
@@ -210,6 +286,8 @@ watch([() => props.openId, () => props.items], () => {
 // the same game or team rarely sits in the same place.
 watch(open, (index) => {
   emit("open", index == null ? null : props.items[index]?.id ?? null)
+  // The slice being read wants the full-resolution copy; the ones either side no longer do.
+  remeasure()
 })
 </script>
 
@@ -258,8 +336,8 @@ watch(open, (index) => {
       </button>
 
       <!--
-        The slice is the full width of the band on a phone and half of it from there up, which
-        is what `sizes` tells the browser before any layout has happened.
+        `sizes` is a guess before the band has been laid out and a measurement afterwards: see
+        `sizesOf`. The guess understates, so the first picture to arrive is a small one.
       -->
       <!--
         No testid of its own: the specs reach it through the slice, and a testid built from
@@ -270,7 +348,7 @@ watch(open, (index) => {
         alt=""
         class="team-slice__banner"
         :height="item.height"
-        sizes="(min-width: 768px) 50vw, 100vw"
+        :sizes="sizesOf(index)"
         :src="item.banner"
         :srcset="item.srcset"
         :width="item.width"

@@ -170,8 +170,8 @@ const DIRECTORY_OF: Record<string, string> = {
  * width the way the encoder does.
  */
 const LADDER_OF: Record<string, {width: number; height: number; widths: number[]}> = {
-  TEAM_BANNER: {width: 640, height: 360, widths: [320, 640]},
-  GAME_BANNER: {width: 640, height: 360, widths: [320, 640]},
+  TEAM_BANNER: {width: 1280, height: 720, widths: [320, 640, 960, 1280]},
+  GAME_BANNER: {width: 1280, height: 720, widths: [320, 640, 960, 1280]},
   TEAM_ICON: {width: 256, height: 256, widths: [128, 256]},
   GAME_ICON: {width: 256, height: 256, widths: [128, 256]},
   ROSTER_ICON: {width: 256, height: 256, widths: [128, 256]},
@@ -1022,10 +1022,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
+    //
+    // Never cached, because a mock file's address is the same in every test: Chromium will
+    // draw a wider copy it already holds in preference to the one a `srcset` asks for, so a
+    // copy cached by an earlier load decides what a later load appears to fetch.
     if (method === "GET" && /^\/files\/public\/[^/]+\/[^/]+$/.test(path)) {
       return route.fulfill({
         status: 200,
         contentType: "image/webp",
+        headers: {"cache-control": "no-store"},
         body: Buffer.from(
           "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA",
           "base64",

@@ -79,7 +79,7 @@ test.describe("banners and icons", () => {
     const behind = page.getByTestId("team-roster-1").locator("img")
     await expect.poll(() => decoded(behind)).toBe(true)
     await expect(behind).toHaveAttribute("srcset", /320w/)
-    await expect(behind).toHaveAttribute("width", "640")
+    await expect(behind).toHaveAttribute("width", "1280")
 
     await openLineup(page)
     await expect.poll(() => loaded(page, "lineup-team-banner-preview")).toBe(true)
@@ -328,5 +328,104 @@ test.describe("banners and icons", () => {
     await page.goto("/esports")
 
     await expect(page.getByTestId("esports-game-edit-VALORANT")).toBeHidden()
+  })
+})
+
+/**
+ * How large a copy of a banner is fetched, and when.
+ *
+ * A slice is a tall narrow strip and its banner covers it, so the picture is drawn far wider
+ * than the strip is: promising the browser the strip's width fetches something blurred to two
+ * and a half times its size. Promising it the honest figure up front fetches the top of the
+ * ladder before anything is on the screen.
+ *
+ * So it is asked twice. The first promise understates, deliberately, and the picture that
+ * lands is dimmed almost to a silhouette anyway; the second is measured off the band once it
+ * has been laid out, and the browser fetches a larger copy over the one already showing.
+ */
+test.describe("how large a banner is fetched", () => {
+  const sizesOf = (page: import("@playwright/test").Page, testid: string) =>
+    page.getByTestId(testid).locator("img").first().getAttribute("sizes")
+
+  const pxOf = async (page: import("@playwright/test").Page, testid: string) =>
+    Number((await sizesOf(page, testid))!.replace("px", ""))
+
+  /**
+   * The figure a slice has settled on, after opening or shutting one.
+   *
+   * A fixed wait rather than a poll, and deliberately: a slice's share of the row is
+   * transitioned over 620ms and measured again once that is done, so between the two there is
+   * a window in which nothing is measured at all. A poll that watches for the value to stop
+   * changing cannot tell that window from a value that has settled, and reads a slice caught
+   * half way open.
+   */
+  const SETTLE_MS = 1600
+
+  /**
+   * Nothing the mocks seed carries a banner, so they are put on the way a board would put
+   * them and the page is then read as a visitor reads it.
+   */
+  const giveABanner = async (page: import("@playwright/test").Page, team: number) => {
+    await page.getByTestId(`team-roster-${team}`).hover()
+    await page.getByTestId(`team-roster-edit-${team}`).click()
+    await expect(page.getByTestId("lineup-editor")).toBeVisible()
+    await expect(page.getByTestId("lineup-loading")).toHaveCount(0)
+    await choose(page, "lineup-team-banner")
+    await expect(page.getByTestId("lineup-team-banner-preview")).toBeVisible()
+    await page.getByTestId("lineup-save").click()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+  }
+
+  test("a banner is asked for the width it is drawn at, not the width of its slice", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await giveABanner(page, 1)
+
+    // Measured off the band, so it is a length rather than a promise about the viewport.
+    await expect.poll(() => sizesOf(page, "team-roster-1")).toMatch(/^\d+px$/)
+
+    // The figure is the width the picture is drawn at, which is the slice's own width or the
+    // width its height forces on a 16x9 picture, whichever is larger. Side by side the height
+    // decides it and the promise is far wider than the slice; stacked, the slice is the width
+    // of the window and its own width decides it. Both are the same rule.
+    const promised = await pxOf(page, "team-roster-1")
+    const box = (await page.getByTestId("team-roster-1").boundingBox())!
+    // The first slice is the open one, so it is not held at 1.06.
+    expect(promised).toBe(Math.ceil(Math.max(box.width, box.height * (1280 / 720))))
+    expect(promised).toBeGreaterThanOrEqual(box.width)
+  })
+
+  /**
+   * The whole point: something on the screen first, the right thing shortly after.
+   *
+   * Watched as requests rather than as an attribute, because what matters is which file the
+   * browser actually went and got.
+   *
+   * Which widths those are depends on the screen's density — the promise is in css pixels and
+   * the browser multiplies — so this asserts that the first copy is narrower than one that
+   * follows it, rather than naming the two files.
+   */
+  test("a small copy is fetched first and a larger one over it", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await giveABanner(page, 1)
+
+    const fetched: string[] = []
+    page.on("request", request => {
+      const match = /team-banners\/[^/]*-(\d+)\.webp/.exec(request.url())
+      if (match) fetched.push(match[1])
+    })
+
+    // A fresh load, so both passes happen with nothing measured to begin with.
+    await page.reload()
+    await expect.poll(() => sizesOf(page, "team-roster-1")).toMatch(/^\d+px$/)
+    await page.waitForTimeout(SETTLE_MS)
+
+    // The narrow copy went first, and a wider one followed it.
+    expect(fetched.length).toBeGreaterThan(1)
+    const first = Number(fetched[0])
+    expect(Math.max(...fetched.map(Number))).toBeGreaterThan(first)
   })
 })

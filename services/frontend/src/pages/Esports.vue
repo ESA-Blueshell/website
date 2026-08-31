@@ -16,7 +16,7 @@ import {useSeasons} from "@/domains/esports/island/useSeasons"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {leaveGameInSeason} from "@/domains/esports/adapters/esports"
-import type {Game, GameRecord, Season} from "@/domains/esports/adapters/esports"
+import type {GameCode, Game, Season} from "@/domains/esports/adapters/esports"
 
 defineOptions({name: "EsportsPage"})
 
@@ -132,7 +132,7 @@ const seasonRemoved = async (gone: Season) => {
 }
 
 /** The game being corrected, from the slice it is shown on. */
-const editingGame = ref<GameRecord | null>(null)
+const editingGame = ref<Game | null>(null)
 const gameEditorOpen = ref(false)
 
 const editGame = (game: string) => {
@@ -151,12 +151,12 @@ const gameSaved = async () => {
 
 const addingGame = ref(false)
 /** The game just put into the season, which is the slice to look at. */
-const justAdded = ref<Game | null>(null)
+const justAdded = ref<GameCode | null>(null)
 
 /** Which games are already in the shown season, so the picker does not offer them again. */
-const gamesInSeason = computed<Game[]>(() => entries.value.map(entry => entry.game))
+const gamesInSeason = computed<GameCode[]>(() => entries.value.map(entry => entry.game))
 
-const gameEntered = async (game: Game) => {
+const gameEntered = async (game: GameCode) => {
   await reload(selected.value ?? undefined)
   justAdded.value = game
 }
@@ -166,7 +166,7 @@ const gameEntered = async (game: Game) => {
  * season change. Handed to whichever band comes next, so somebody reading about Valorant in
  * one season is reading about Valorant in the next — where it was fielded in that one.
  */
-const carried = ref<Game | null>(null)
+const carried = ref<GameCode | null>(null)
 
 /** The shown season, with whatever game the team was added to now among its slices. */
 const seasonOnShow = computed<Season | null>(() =>
@@ -181,7 +181,7 @@ const seasonOnShow = computed<Season | null>(() =>
  */
 const dropFailure = ref<string | null>(null)
 
-const takeOut = async (game: Game) => {
+const takeOut = async (game: GameCode) => {
   const season = selected.value
   if (season == null) return
   dropFailure.value = null
@@ -394,7 +394,7 @@ const seasonSaved = (saved: Season) => {
           :enter-in="seasonOnShow"
           :game="null"
           :open="addingGame"
-          @saved="game => gameEntered(game.game)"
+          @saved="game => gameEntered(game.code)"
           @update:open="addingGame = $event"
         />
       </section>

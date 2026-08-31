@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class TeamService(
     private val teams: TeamRepository,
-    private val games: GamePageService,
+    private val games: GameService,
     private val pictures: EsportsPictures,
 ) : BaseModelService<Team, Long, TeamRepository>(teams) {
     /** Every team the association has. The pool is shared, so it is not asked per game. */
@@ -33,12 +33,12 @@ class TeamService(
         teams.save(Team(name = name.trim(), icon = pictures.of(icon, FileType.TEAM_ICON)))
 
     /**
-     * The team as the dialog that edits it now says it stands: its name and its logo, which is
+     * The team as the caller that edits it now says it stands: its name and its logo, which is
      * everything a team is once the art it is drawn with belongs to the fielding.
      *
      * The logo is part of the save rather than something applied the moment it was chosen, so
-     * cancelling that dialog leaves the team exactly as it was. Naming no picture takes the logo
-     * away, which is what the picker's Remove does: the write says what the team is, not what
+     * abandoning that edit leaves the team exactly as it was. Naming no picture takes the logo
+     * away, which is what removing it in the frontend does: the write says what the team is, not what
      * changed about it.
      *
      * Taking a logo away leaves the stored file alone. Files are addressed by content, so the

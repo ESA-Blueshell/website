@@ -4,7 +4,7 @@ import net.blueshell.api.file.api.Image
 import net.blueshell.api.shared.enums.TeamRole
 import java.time.LocalDate
 
-/** One season, as a page names it in its switcher. */
+/** One season, as it is named where another can be chosen. */
 data class SeasonView(
     val id: Long,
     val name: String,
@@ -13,11 +13,11 @@ data class SeasonView(
 )
 
 /**
- * One person on a roster, as the public page may show them.
+ * One person on a roster, as the public read may show them.
  *
  * The handle is always there. [name] is present only for a linked member who has said their
  * real name may be published: names are held in the database to identify people, and putting
- * one on a page is a decision each member makes for themselves.
+ * one in public is a decision each member makes for themselves.
  */
 data class RosterMemberView(
     val role: TeamRole,
@@ -35,14 +35,14 @@ data class TeamView(
     val id: Long,
     val name: String,
     val members: List<RosterMemberView>,
-    /** The team's own banner, drawn in the slice for it. */
+    /** The team's own banner. */
     val banner: Image? = null,
-    /** The team's own icon, drawn in that slice beside the name. */
+    /** The team's own icon, shown beside the name. */
     val icon: Image? = null,
 )
 
-/** A whole game page: the season being shown, the ones that can be, and that season's teams. */
-data class EsportsPageView(
+/** A game's rosters: the season being shown, the ones that can be, and that season's teams. */
+data class GameRostersView(
     val game: String,
     val season: SeasonView?,
     val seasons: List<SeasonView>,
@@ -54,7 +54,7 @@ data class EsportsPageView(
  *
  * [public] is what a visitor would see: a game is public in a season once a team plays it. A
  * game entered with nobody fielded is answered only to somebody who may edit, and is marked so
- * the pages can say it is not public yet rather than quietly showing it as though it were.
+ * a caller can say it is not public yet rather than quietly showing it as though it were.
  */
 data class SeasonGameView(
     val game: String,

@@ -12,7 +12,7 @@ import java.sql.Types
 /**
  * Loads the recovered esports history from the seed files.
  *
- * The history was recovered from years of page commits, and the files under `db/seed/esports`
+ * The history was recovered from years of website commits, and the files under `db/seed/esports`
  * are the reviewed record of it: one row per game, season, team and roster entry, in a form
  * somebody who was there can read and correct. This puts what those files say into the database.
  *
@@ -88,7 +88,7 @@ class R__Esports_seed : BaseJavaMigration() {
     }
 
     /**
-     * A game as the file has it: what it is called, the address its page answers to, the art it
+     * A game as the file has it: what it is called, the address it answers to, the art it
      * carries. Whether the association still plays it is derived from the seasons, not recorded here.
      *
      * The code is the identity and is never rewritten. Unlike the rest of the seed a deleted game
@@ -96,7 +96,7 @@ class R__Esports_seed : BaseJavaMigration() {
      * that the game exists.
      */
     private fun upsertGame(connection: Connection, row: Map<String, String>) {
-        val code = row.getValue("game")
+        val code = row.getValue("code")
         val name = row.getValue("name")
         val slug = row.getValue("slug")
         val accent = row.getValue("accent").ifBlank { null }
@@ -106,12 +106,12 @@ class R__Esports_seed : BaseJavaMigration() {
         // Found whether or not it is deleted: a code is unique across every row, so there is no
         // second row to insert beside a deleted one. A game the file lists exists, so a deleted
         // row is brought back rather than duplicated.
-        val existing = activeId(connection, "SELECT id FROM game_page WHERE game = ?", code)
+        val existing = activeId(connection, "SELECT id FROM game WHERE code = ?", code)
         val fields = listOf<Any?>(name, slug, accent, sortIndex, intro)
         if (existing != null) {
             connection.prepareStatement(
                 """
-                UPDATE game_page
+                UPDATE game
                 SET name = ?, slug = ?, accent = ?, sort_index = ?, intro = ?,
                     deleted_at = '9999-12-31 23:59:59'
                 WHERE id = ?
@@ -128,7 +128,7 @@ class R__Esports_seed : BaseJavaMigration() {
         }
         connection.prepareStatement(
             """
-            INSERT INTO game_page (game, name, slug, accent, sort_index, intro)
+            INSERT INTO game (code, name, slug, accent, sort_index, intro)
             VALUES (?, ?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository
 @Repository
 interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
     /**
-     * Every team a game fielded in one season, the team fetched with it: the page draws them
+     * Every team a game fielded in one season, the team fetched with it: one read answers with them
      * all at once and lazy loading would be a query per team.
      */
     @Query(
@@ -27,7 +27,7 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         @Param("seasonId") seasonId: Long,
     ): List<TeamSeason>
 
-    /** The seasons a game fielded a team in, newest first, for the page's season switcher. */
+    /** The seasons a game fielded a team in, newest first, for choosing among them. */
     @Query(
         """
         SELECT DISTINCT s.id FROM TeamSeason ts

@@ -68,7 +68,7 @@ data class FieldTeamRequest(
      * Applied when it is named and left alone when it is not, which is not the rule the other
      * saves here follow. Fielding is idempotent and is called to say "this team plays this
      * season" as often as it is called to change a picture, so treating an unnamed banner as
-     * "take the art away" would strip a season's art every time somebody re-fielded a team.
+     * "take the art away" would clear a season's art every time somebody re-fielded a team.
      * A fielding that is new takes the art of the last season this team played this game.
      */
     @Schema(description = "Where the art for this fielding is stored; nothing leaves what it has")
@@ -170,7 +170,7 @@ data class CreateGameRequest(
 
     @field:NotBlank(message = "A game's page needs an address")
     @field:Size(min = 1, max = 64, message = "Address must be 1-64 characters")
-    @field:Schema(description = "The address the game's page answers to")
+    @field:Schema(description = "The address this game answers to")
     val slug: String,
 
     @field:Size(max = 4000)
@@ -192,15 +192,15 @@ data class CreateGameRequest(
     val sortIndex: Int? = null,
 )
 
-@Schema(name = "UpdateGamePageRequest", description = "How a game presents itself")
-data class UpdateGamePageRequest(
+@Schema(name = "UpdateGameRequest", description = "How a game presents itself")
+data class UpdateGameRequest(
     @field:NotBlank(message = "A game needs a name")
     @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
-    @field:Schema(description = "What the pages print for this game. Its code is not editable")
+    @field:Schema(description = "What this game is called. Its code is not editable")
     val name: String,
     @field:NotBlank
     @field:Size(max = 64)
-    @field:Schema(description = "The address the game's page answers to")
+    @field:Schema(description = "The address this game answers to")
     val slug: String,
     @field:Size(max = 4000)
     val intro: String? = null,

@@ -43,7 +43,7 @@ class Team(
     var name: String,
 
     /**
-     * The team's logo, drawn in that same slice beside the name.
+     * The team's logo, drawn there beside the name.
      *
      * Optional, and shipped with nothing: a game's logo existed in the frontend and moved here,
      * a team's never existed at all. A team without one is drawn as its name over its banner,

@@ -1,7 +1,7 @@
 import {computed, onMounted, ref, watch} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {useSeasons} from "../island/useSeasons"
-import {loadEsportsPage, type EsportsPage, type Game, type Season, type TeamRoster} from "../adapters/esports"
+import {loadEsportsPage, type EsportsPage, type GameCode, type Season, type TeamRoster} from "../adapters/esports"
 
 /**
  * One game's page: the shown season, the seasons that can be, and that season's teams.
@@ -11,7 +11,7 @@ import {loadEsportsPage, type EsportsPage, type Game, type Season, type TeamRost
  * this game's own newest — every esports page agrees about what "now" is, and a game that has
  * not been fielded lately says so instead of quietly showing an old squad as a current one.
  */
-export function useEsportsPage(game: Game, seasonFromRoute: () => number | null, onSeason: (id: number) => void) {
+export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | null, onSeason: (id: number) => void) {
   const {ready: seasonsRead, newest} = useSeasons()
   const page = ref<EsportsPage | null>(null)
   const loading = ref<boolean>(true)

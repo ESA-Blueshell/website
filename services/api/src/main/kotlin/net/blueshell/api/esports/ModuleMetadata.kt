@@ -7,7 +7,7 @@ import org.springframework.modulith.PackageInfo
  * Teams, the seasons they play and the roster entries that place a member in one, plus the
  * per-game accounts members link to themselves.
  *
- * The public esports page is assembled here as a single read model rather than joined together
+ * The public esports read is assembled here as a single read model rather than joined together
  * by the frontend from several endpoints.
  */
 @PackageInfo
@@ -24,7 +24,7 @@ import org.springframework.modulith.PackageInfo
         "file :: entities",
         // Players are resolved through UserService and MemberProfileService.
         "user :: api",
-        // DEBT. EsportsPageQueryService reads User rows to name a player. No
+        // DEBT. EsportsQueryService reads User rows to name a player. No
         // esports entity holds an FK into users — the roster stores the id. This
         // wants a player projection published through user :: api.
         "user :: entities",

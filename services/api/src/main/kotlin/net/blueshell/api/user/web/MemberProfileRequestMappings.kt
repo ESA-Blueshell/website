@@ -11,6 +11,6 @@ fun UpsertMemberProfileRequest.asCommandData(): UpsertMemberProfileData =
         nationality = this.nationality,
         bhv = this.bhv,
         ehbo = this.ehbo,
-        nameOnTeamPages = this.nameOnTeamPages,
+        nameOnRosters = this.nameOnRosters,
         version = this.version
     )

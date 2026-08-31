@@ -13,12 +13,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
 import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.EsportsPageQueryService
+import net.blueshell.api.esports.domain.EsportsQueryService
 
 /**
  * A roster entry said whether somebody was a player, a substitute or a coach, and nothing
- * else. A captain, an in-game leader and a jungler are all PLAYER, so the page had no way to
- * say what any of them actually did, and nowhere to put the sentence a visitor remembers.
+ * else. A captain, an in-game leader and a jungler are all PLAYER, so there was no way to say
+ * what any of them actually did, and nowhere to put the sentence a visitor remembers.
  */
 @SpringBootTest
 class RosterEntryDetailIT : UserTestSupport() {
@@ -27,7 +27,7 @@ class RosterEntryDetailIT : UserTestSupport() {
 
     @Autowired private lateinit var rosters: TeamRosterService
 
-    @Autowired private lateinit var page: EsportsPageQueryService
+    @Autowired private lateinit var views: EsportsQueryService
 
     @Autowired private lateinit var seasons: SeasonRepository
 
@@ -59,7 +59,7 @@ class RosterEntryDetailIT : UserTestSupport() {
     }
 
     @Test
-    fun `both reach the public page, where the roster is read`() {
+    fun `both reach the public read, where the roster is published`() {
         val season = season()
         val team = team()
         rosters.add(
@@ -68,7 +68,7 @@ class RosterEntryDetailIT : UserTestSupport() {
             description = "Calls the rounds.",
         )
 
-        val member = page.page("TRACKMANIA", season.id).teams.single().members.single()
+        val member = views.rostersOf("TRACKMANIA", season.id).teams.single().members.single()
 
         assertThat(member.roleTitle).isEqualTo("In-game leader")
         assertThat(member.description).isEqualTo("Calls the rounds.")

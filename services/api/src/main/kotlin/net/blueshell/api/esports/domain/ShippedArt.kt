@@ -1,6 +1,6 @@
 package net.blueshell.api.esports.domain
 
-import net.blueshell.api.esports.persistence.GamePageRepository
+import net.blueshell.api.esports.persistence.GameRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
@@ -32,12 +32,12 @@ import org.springframework.transaction.support.TransactionTemplate
  *
  * **A picture already chosen is never replaced.** A slot that is filled is somebody's decision
  * and it is later than this one, so only an empty slot is written. Correcting the art of a team
- * that already has some is therefore an edit in the pages rather than an edit in the file — the
+ * that already has some is therefore an edit made through the api rather than in the file — the
  * same rule the seed's own header states for a season, a team or a roster entry that was removed.
  *
  * Storing and applying are separate, and every picture is stored on every start whether or not
  * anything is waiting for it. That is what makes a lost storage volume repair itself: the bytes
- * go back to the address they always had, so the url a page has been serving for a year answers
+ * go back to the address they always had, so a url that has been served for a year answers
  * again. Skipping the ones nothing is waiting for would be faster and would mean the pictures
  * somebody chose are exactly the ones that never come back.
  */
@@ -47,7 +47,7 @@ class ShippedArt(
     private val users: UserService,
     private val teams: TeamRepository,
     private val fielded: TeamSeasonRepository,
-    private val games: GamePageRepository,
+    private val games: GameRepository,
     private val transactions: TransactionTemplate,
 ) {
     /** The pictures a run put on records, which is none at all on every start after the first. */
@@ -134,10 +134,10 @@ class ShippedArt(
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
-        val page = games.findByGame(game) ?: return@execute 0
-        if (page.banner != null) return@execute 0
-        page.banner = store(art, FileType.GAME_BANNER, owner, stored)
-        games.save(page)
+        val record = games.findByCode(game) ?: return@execute 0
+        if (record.banner != null) return@execute 0
+        record.banner = store(art, FileType.GAME_BANNER, owner, stored)
+        games.save(record)
         1
     }
 
@@ -148,10 +148,10 @@ class ShippedArt(
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
-        val page = games.findByGame(game) ?: return@execute 0
-        if (page.icon != null) return@execute 0
-        page.icon = store(art, FileType.GAME_ICON, owner, stored)
-        games.save(page)
+        val record = games.findByCode(game) ?: return@execute 0
+        if (record.icon != null) return@execute 0
+        record.icon = store(art, FileType.GAME_ICON, owner, stored)
+        games.save(record)
         1
     }
 
@@ -221,9 +221,9 @@ class ShippedArt(
  * A separate bean so the work is reached through the proxy, the way the backfills in the file
  * module beside it are arranged.
  *
- * A failure is reported and swallowed. Art that did not land is a page drawn on the picture it
- * was drawn on yesterday, and refusing to start over one would take every page down — which is
- * the exact failure this art is meant to decorate, not cause.
+ * A failure is reported and swallowed. Art that did not land leaves a record pointing at the
+ * picture it pointed at yesterday, and refusing to start over one would take the whole site
+ * down — which is the exact failure this art is meant to decorate, not cause.
  */
 @Component
 class ShippedArtOnStartup(

@@ -22,7 +22,7 @@ class MemberProfileUseCases(
         nationality: String,
         bhv: Boolean,
         ehbo: Boolean,
-        nameOnTeamPages: Boolean = false,
+        nameOnRosters: Boolean = false,
     ): MemberProfile {
         val user = users.findById(userId)
         if (user.memberProfile != null) {
@@ -37,7 +37,7 @@ class MemberProfileUseCases(
                 nationality = nationality,
                 bhv = bhv,
                 ehbo = ehbo,
-                nameOnTeamPages = nameOnTeamPages,
+                nameOnRosters = nameOnRosters,
             ),
         )
         val updated = users.update(user)
@@ -52,7 +52,7 @@ class MemberProfileUseCases(
         nationality: String,
         bhv: Boolean,
         ehbo: Boolean,
-        nameOnTeamPages: Boolean = false,
+        nameOnRosters: Boolean = false,
         version: Long,
     ): MemberProfile {
         val profile = memberProfileService.findById(userId).apply {
@@ -62,7 +62,7 @@ class MemberProfileUseCases(
             this.nationality = nationality
             this.bhv = bhv
             this.ehbo = ehbo
-            this.nameOnTeamPages = nameOnTeamPages
+            this.nameOnRosters = nameOnRosters
             this.version = version
         }
         return memberProfileService.update(profile)

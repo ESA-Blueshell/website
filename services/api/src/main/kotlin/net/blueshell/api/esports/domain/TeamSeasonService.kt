@@ -24,7 +24,7 @@ class TeamSeasonService(
     private val entries: TeamRosterEntryRepository,
     private val teams: TeamService,
     private val seasons: SeasonService,
-    private val games: GamePageService,
+    private val games: GameService,
     private val pictures: EsportsPictures,
 ) {
     @Transactional(readOnly = true)
@@ -71,7 +71,7 @@ class TeamSeasonService(
         return fielded.save(
             TeamSeason(
                 team = teams.findById(teamId),
-                game = games.requireGame(game).game,
+                game = games.requireGame(game).code,
                 season = seasons.findById(seasonId),
                 // The art a team was last drawn with in this game comes across, so a season is
                 // only asked for a picture when the picture should change. A team playing a game

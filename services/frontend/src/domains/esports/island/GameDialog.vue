@@ -12,7 +12,7 @@ import {
   loadGameContents,
   saveGameOrReason,
   type EsportsImage,
-  type GameRecord,
+  type Game,
   type Season,
 } from "../adapters/esports"
 import {FileType} from "@/services/api"
@@ -37,7 +37,7 @@ defineOptions({name: "GameDialog"})
 const props = defineProps<{
   open: boolean
   /** The game being corrected, or nothing where one is being added. */
-  game: GameRecord | null
+  game: Game | null
   /**
    * The season a game added here runs in, where one is being added.
    *
@@ -53,8 +53,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: "update:open", open: boolean): void
-  (event: "saved", game: GameRecord): void
-  (event: "removed", game: GameRecord): void
+  (event: "saved", game: Game): void
+  (event: "removed", game: Game): void
 }>()
 
 /** Adding rather than correcting, which is the whole of what changes about this dialog. */
@@ -68,7 +68,7 @@ const {games: allGames} = useGames()
 
 /** Every game the association knows that is not already in the season being added to. */
 const offered = computed(() =>
-  allGames.value.filter(one => !(props.alreadyIn ?? []).includes(one.game)))
+  allGames.value.filter(one => !(props.alreadyIn ?? []).includes(one.code)))
 
 const entering = ref<string | null>(null)
 
@@ -85,7 +85,7 @@ const enter = async (game: string) => {
       return
     }
     await refreshGames()
-    const record = allGames.value.find(one => one.game === game)
+    const record = allGames.value.find(one => one.code === game)
     if (record) emit("saved", record)
     emit("update:open", false)
   } finally {
@@ -127,7 +127,7 @@ watch(
 
 /**
  * The address as it will be stored, so what is typed and what is reachable are the same thing.
- * GamePageService.addressFor is the rule; this shows it rather than deciding it.
+ * GameService.addressFor is the rule; this shows it rather than deciding it.
  */
 const addressPreview = computed(() =>
   slug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))
@@ -148,7 +148,7 @@ const askToRemove = async () => {
   if (!game) return
   removalFailure.value = null
   failure.value = null
-  const held = await loadGameContents(game.game)
+  const held = await loadGameContents(game.code)
   if (held == null) {
     // No question is put on a guess. Offering to remove a game while saying it holds nothing,
     // when what it holds could not be read, is the one wrong thing this dialog could say here.
@@ -177,7 +177,7 @@ const removeGame = async () => {
   removing.value = true
   removalFailure.value = null
   try {
-    const result = await dropGameOrReason(game.game)
+    const result = await dropGameOrReason(game.code)
     if (!result.ok) {
       // Nothing has gone, so the dialog stands and says why.
       removalFailure.value = result.reason
@@ -204,7 +204,7 @@ const submit = async () => {
       return
     }
     const game = props.game!
-    const result = await saveGameOrReason(game.game, {
+    const result = await saveGameOrReason(game.code, {
       name: name.value.trim(),
       slug: slug.value.trim(),
       intro: intro.value.trim() || null,
@@ -248,7 +248,7 @@ const add = async () => {
     return
   }
   const season = props.enterIn
-  if (season) await enterGameInSeason(season.id, made.game.game)
+  if (season) await enterGameInSeason(season.id, made.game.code)
   await refreshGames()
   emit("saved", made.game)
   emit("update:open", false)
@@ -285,7 +285,7 @@ const add = async () => {
       <island-picker
         :disabled="entering != null"
         empty-note="Every game the association knows is already in this season."
-        :options="offered.map(one => ({key: one.game, label: one.name}))"
+        :options="offered.map(one => ({key: one.code, label: one.name}))"
         placeholder="Search every game"
         testid-prefix="game-dialog-known"
         @pick="enter"
@@ -322,7 +322,7 @@ const add = async () => {
         <span
           v-if="!adding"
           class="game-form__hint"
-        >Code: {{ game?.game }} — set when the game was added, and never changes</span>
+        >Code: {{ game?.code }} — set when the game was added, and never changes</span>
         <span
           v-else
           class="game-form__hint"

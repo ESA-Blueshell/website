@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
  *
  * One evaluator for the whole of it — seasons, teams and rosters are edited together by the
  * same people, and splitting them into three would say the same thing three times. Reading is
- * public because the teams are on the public pages.
+ * public because the teams are published.
  */
 @Component
 class TeamPermission(service: TeamService) :

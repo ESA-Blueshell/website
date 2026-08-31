@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 class SeasonGameService(
     private val entered: SeasonGameRepository,
     private val seasons: SeasonService,
-    private val games: GamePageService,
+    private val games: GameService,
     private val fielded: TeamSeasonService,
 ) {
     @Transactional(readOnly = true)
@@ -32,7 +32,7 @@ class SeasonGameService(
      */
     @Transactional
     fun enter(seasonId: Long, game: String): SeasonGame {
-        val code = games.requireGame(game).game
+        val code = games.requireGame(game).code
         entered.findBySeasonIdAndGame(seasonId, code)?.let { return it }
         entered.findDroppedId(seasonId, code)?.let { dropped ->
             entered.revive(dropped)
@@ -51,7 +51,7 @@ class SeasonGameService(
      */
     @Transactional
     fun leave(seasonId: Long, game: String) {
-        val code = games.requireGame(game).game
+        val code = games.requireGame(game).code
         val held = fielded.findByGameAndSeason(code, seasonId)
         if (held.isNotEmpty()) throw GameFieldedInSeason(games.requireGame(code).name, held.size)
         entered.findBySeasonIdAndGame(seasonId, code)?.let { entered.delete(it) }

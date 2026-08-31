@@ -1,7 +1,7 @@
 package net.blueshell.api.esports.domain
 
-import net.blueshell.api.esports.persistence.GamePage
-import net.blueshell.api.esports.persistence.GamePageRepository
+import net.blueshell.api.esports.persistence.Game
+import net.blueshell.api.esports.persistence.GameRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.shared.enums.FileType
@@ -11,25 +11,25 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * The games the association knows, and how each presents itself.
  *
- * Every game has a page whether or not a team is still fielded in it, because a retired game
- * keeps its history and somebody may still link to it.
+ * Every game is answered for whether or not a team is still fielded in it, because a retired
+ * game keeps its history and somebody may still link to it.
  *
  * A game's code used to be a compiled constant, so a request naming one that did not exist could
  * not be built. It is a row now, so the codes that exist are whatever the rows say, and a request
  * naming something else has to be refused here.
  */
 @Service
-class GamePageService(
-    private val pages: GamePageRepository,
+class GameService(
+    private val games: GameRepository,
     private val fielded: TeamSeasonRepository,
     private val entries: TeamRosterEntryRepository,
     private val pictures: EsportsPictures,
 ) {
     @Transactional(readOnly = true)
-    fun findAll(): List<GamePage> = pages.findAllByOrderBySortIndexAsc()
+    fun findAll(): List<Game> = games.findAllByOrderBySortIndexAsc()
 
     @Transactional(readOnly = true)
-    fun findByGame(game: String): GamePage = requireGame(game)
+    fun findByCode(code: String): Game = requireGame(code)
 
     /**
      * The game a code names, refused with a reason where none does.
@@ -38,21 +38,21 @@ class GamePageService(
      * used to get, when the framework could not turn it into one.
      */
     @Transactional(readOnly = true)
-    fun requireGame(game: String): GamePage =
-        pages.findByGame(game.trim()) ?: throw UnknownGameCode(game)
+    fun requireGame(code: String): Game =
+        games.findByCode(code.trim()) ?: throw UnknownGameCode(code)
 
     /** The codes of every game there is, for anything that has to offer a choice of one. */
     @Transactional(readOnly = true)
-    fun codes(): List<String> = pages.findAllByOrderBySortIndexAsc().map { it.game }
+    fun codes(): List<String> = games.findAllByOrderBySortIndexAsc().map { it.code }
 
     /** The game an address belongs to, or nothing where no game answers to it. */
     @Transactional(readOnly = true)
-    fun findBySlug(slug: String): GamePage? = pages.findBySlug(slug.trim().lowercase())
+    fun findBySlug(slug: String): Game? = games.findBySlug(slug.trim().lowercase())
 
     /**
      * A game the association has started playing.
      *
-     * The caller says what it is called and what its page answers to; its code is taken from the
+     * The caller says what it is called and what address it answers to; its code is taken from the
      * name, because a code is the identity everything else points at and is nobody's to choose
      * twice. Art can wait: a game with none reads on the island's own colour.
      */
@@ -66,20 +66,20 @@ class GamePageService(
         banner: String? = null,
         icon: String? = null,
         sortIndex: Int? = null,
-    ): GamePage {
+    ): Game {
         val called = name.trim()
         if (called.isBlank()) throw GameNameBlank()
         val code = codeFor(called)
         if (code.isBlank()) throw GameNameUnusable(called)
-        pages.findByGame(code)?.let { held -> throw GameAlreadyExists(held.name) }
+        games.findByCode(code)?.let { held -> throw GameAlreadyExists(held.name) }
         val address = addressFor(slug)
         claimed(address, null)
         // Where nobody says where it goes, it goes at the end. A game added mid-season is the
         // newest thing the association plays, and the order is the board\'s to change after.
-        val last = pages.findAllByOrderBySortIndexAsc().lastOrNull()?.sortIndex ?: 0
-        return pages.save(
-            GamePage(
-                game = code,
+        val last = games.findAllByOrderBySortIndexAsc().lastOrNull()?.sortIndex ?: 0
+        return games.save(
+            Game(
+                code = code,
                 name = called,
                 slug = address,
                 intro = intro?.trim()?.ifBlank { null },
@@ -110,21 +110,21 @@ class GamePageService(
         banner: String?,
         icon: String?,
         sortIndex: Int,
-    ): GamePage {
-        val page = findByGame(game)
+    ): Game {
+        val existing = findByCode(game)
         val called = name.trim()
         if (called.isBlank()) throw GameNameBlank()
         val wanted = addressFor(slug)
-        claimed(wanted, page.id)
-        page.name = called
-        page.slug = wanted
-        page.intro = intro?.trim()?.ifBlank { null }
-        page.accent = accent?.trim()?.ifBlank { null }
+        claimed(wanted, existing.id)
+        existing.name = called
+        existing.slug = wanted
+        existing.intro = intro?.trim()?.ifBlank { null }
+        existing.accent = accent?.trim()?.ifBlank { null }
         // The pictures were stored when they were chosen; the save is what puts them on the game.
-        page.banner = pictures.of(banner, FileType.GAME_BANNER)
-        page.icon = pictures.of(icon, FileType.GAME_ICON)
-        page.sortIndex = sortIndex
-        return pages.save(page)
+        existing.banner = pictures.of(banner, FileType.GAME_BANNER)
+        existing.icon = pictures.of(icon, FileType.GAME_ICON)
+        existing.sortIndex = sortIndex
+        return games.save(existing)
     }
 
     /**
@@ -134,7 +134,7 @@ class GamePageService(
      */
     @Transactional(readOnly = true)
     fun contentsOf(game: String): Pair<Long, Long> {
-        val code = requireGame(game).game
+        val code = requireGame(game).code
         return fielded.countTeamsByGame(code) to entries.countByGame(code)
     }
 
@@ -150,10 +150,10 @@ class GamePageService(
      */
     @Transactional
     fun delete(game: String) {
-        val page = requireGame(game)
-        val (held, players) = contentsOf(page.game)
-        if (held > 0) throw GameHoldsHistory(page.name, held, players)
-        pages.delete(page)
+        val existing = requireGame(game)
+        val (held, players) = contentsOf(existing.code)
+        if (held > 0) throw GameHoldsHistory(existing.name, held, players)
+        games.delete(existing)
     }
 
     /**
@@ -173,9 +173,9 @@ class GamePageService(
         return address
     }
 
-    /** An address is how somebody reaches a page; two games cannot share one. */
+    /** An address is how somebody reaches a game; two games cannot share one. */
     private fun claimed(address: String, mine: Long?) {
-        pages.findBySlug(address)?.let { held ->
+        games.findBySlug(address)?.let { held ->
             if (held.id != mine) throw AddressTaken(held.name, address)
         }
     }

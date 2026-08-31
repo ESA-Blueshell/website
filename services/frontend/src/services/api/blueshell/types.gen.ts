@@ -584,7 +584,7 @@ export type CreateGameRequest = {
     intro?: string | null;
     name: string;
     /**
-     * The address the game's page answers to
+     * The address this game answers to
      */
     slug: string;
     /**
@@ -607,9 +607,9 @@ export type CreateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string | null;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality: string;
     studentNumber?: string | null;
     userId: number;
@@ -715,19 +715,6 @@ export type EnqueueJobRequest = {
     payload?: {
         [key: string]: unknown;
     } | null;
-};
-
-/**
- * A game's teams for one season, and the seasons that can be shown
- */
-export type EsportsPageResponse = {
-    game: string;
-    /**
-     * The season being shown; absent when the game has no rosters yet
-     */
-    season?: SeasonResponse | null;
-    seasons: Array<SeasonResponse>;
-    teams: Array<TeamRosterResponse>;
 };
 
 export type EventBannerRequest = {
@@ -937,42 +924,58 @@ export type GameContentsResponse = {
 };
 
 /**
- * A game: what it is called, the art it is drawn with, and how its page presents it
+ * A game: what it is called, the art it is drawn with, and how it is presented
  */
-export type GamePageResponse = {
+export type GameResponse = {
     /**
      * The colour that carries this game, where one has been chosen
      */
     accent?: string | null;
     /**
-     * The game's own image, drawn in the slice for it on the esports index
+     * The game's own image
      */
     banner?: Image | null;
+    /**
+     * The identifier teams, rosters and game accounts reference. Never changes
+     */
+    code: string;
     /**
      * Whether the association currently plays it: a team played it this season or last
      */
     current: boolean;
-    game: string;
     /**
-     * The game's own icon, drawn in that slice beside the name
+     * The game's own icon
      */
     icon?: Image | null;
     /**
-     * What the page says about the game, where anything is said
+     * What is said about the game, where anything is said
      */
     intro?: string | null;
     /**
-     * What the pages print for this game
+     * What this game is called
      */
     name: string;
     /**
-     * The address the game's page answers to
+     * The address this game answers to
      */
     slug: string;
     /**
      * Where the game sits among the others
      */
     sortIndex: number;
+};
+
+/**
+ * A game's teams for one season, and the seasons that can be shown
+ */
+export type GameRostersResponse = {
+    game: string;
+    /**
+     * The season being shown; absent when the game has no rosters yet
+     */
+    season?: SeasonResponse | null;
+    seasons: Array<SeasonResponse>;
+    teams: Array<TeamRosterResponse>;
 };
 
 export type GuestResponse = {
@@ -1208,9 +1211,9 @@ export type MemberProfileResponse = {
     gender?: string;
     id: number;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality?: string;
     studentNumber?: string;
     updatedAt: string;
@@ -1419,7 +1422,7 @@ export type RosterEntryResponse = {
 };
 
 /**
- * One person on a team's roster, as the public pages show them
+ * One person on a team's roster, as the public read has them
  */
 export type RosterMemberResponse = {
     /**
@@ -1488,7 +1491,7 @@ export type SeasonResponse = {
     id: number;
     name: string;
     /**
-     * Whether anything was fielded in it, which is what a visitor's season strip carries
+     * Whether anything was fielded in it, which is which seasons a visitor is offered
      */
     played: boolean;
     startDate: string;
@@ -1605,7 +1608,7 @@ export enum TargetSystem {
  */
 export type TeamResponse = {
     /**
-     * The team's own icon, drawn in its slice beside the name. The banner it is drawn on belongs to the fielding, not to the team
+     * The team's own icon, drawn beside the name. The banner it is drawn on belongs to the fielding, not to the team
      */
     icon?: Image | null;
     id: number;
@@ -1623,11 +1626,11 @@ export enum TeamRole {
  */
 export type TeamRosterResponse = {
     /**
-     * The team's own banner, drawn in the slice for it
+     * The team's own banner
      */
     banner?: Image | null;
     /**
-     * The team's own icon, drawn in that slice beside the name
+     * The team's own icon, shown beside the name
      */
     icon?: Image | null;
     id: number;
@@ -1736,7 +1739,7 @@ export type UpdateEventSignUpRequest = {
 /**
  * How a game presents itself
  */
-export type UpdateGamePageRequest = {
+export type UpdateGameRequest = {
     /**
      * The colour that carries this game, or nothing for the island's own
      */
@@ -1751,11 +1754,11 @@ export type UpdateGamePageRequest = {
     icon?: string | null;
     intro?: string | null;
     /**
-     * What the pages print for this game. Its code is not editable
+     * What this game is called. Its code is not editable
      */
     name: string;
     /**
-     * The address the game's page answers to
+     * The address this game answers to
      */
     slug: string;
     sortIndex: number;
@@ -1767,9 +1770,9 @@ export type UpdateMemberProfileRequest = {
     ehbo: boolean;
     gender?: string | null;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality: string;
     studentNumber?: string | null;
     version: number;
@@ -1838,9 +1841,9 @@ export type UpsertMemberProfileRequest = {
     ehbo: boolean;
     gender?: string | null;
     /**
-     * Whether this member's real name may appear on the team pages
+     * Whether this member's real name may appear in a roster
      */
-    nameOnTeamPages: boolean;
+    nameOnRosters: boolean;
     nationality: string;
     studentNumber?: string | null;
     version?: number | null;
@@ -3657,14 +3660,14 @@ export type CsrfResponses = {
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 
-export type FindGamePagesData = {
+export type FindGamesData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/esports/games';
 };
 
-export type FindGamePagesErrors = {
+export type FindGamesErrors = {
     /**
      * Validation error
      */
@@ -3687,16 +3690,16 @@ export type FindGamePagesErrors = {
     500: ApiError;
 };
 
-export type FindGamePagesError = FindGamePagesErrors[keyof FindGamePagesErrors];
+export type FindGamesError = FindGamesErrors[keyof FindGamesErrors];
 
-export type FindGamePagesResponses = {
+export type FindGamesResponses = {
     /**
      * OK
      */
-    200: Array<GamePageResponse>;
+    200: Array<GameResponse>;
 };
 
-export type FindGamePagesResponse = FindGamePagesResponses[keyof FindGamePagesResponses];
+export type FindGamesResponse = FindGamesResponses[keyof FindGamesResponses];
 
 export type CreateGameData = {
     body: CreateGameRequest;
@@ -3734,7 +3737,7 @@ export type CreateGameResponses = {
     /**
      * Created
      */
-    201: GamePageResponse;
+    201: GameResponse;
 };
 
 export type CreateGameResponse = CreateGameResponses[keyof CreateGameResponses];
@@ -3782,7 +3785,7 @@ export type DeleteGameResponses = {
 
 export type DeleteGameResponse = DeleteGameResponses[keyof DeleteGameResponses];
 
-export type FindEsportsPageData = {
+export type FindGameData = {
     body?: never;
     path: {
         game: string;
@@ -3793,7 +3796,7 @@ export type FindEsportsPageData = {
     url: '/esports/games/{game}';
 };
 
-export type FindEsportsPageErrors = {
+export type FindGameErrors = {
     /**
      * Validation error
      */
@@ -3816,19 +3819,19 @@ export type FindEsportsPageErrors = {
     500: ApiError;
 };
 
-export type FindEsportsPageError = FindEsportsPageErrors[keyof FindEsportsPageErrors];
+export type FindGameError = FindGameErrors[keyof FindGameErrors];
 
-export type FindEsportsPageResponses = {
+export type FindGameResponses = {
     /**
      * OK
      */
-    200: EsportsPageResponse;
+    200: GameRostersResponse;
 };
 
-export type FindEsportsPageResponse = FindEsportsPageResponses[keyof FindEsportsPageResponses];
+export type FindGameResponse = FindGameResponses[keyof FindGameResponses];
 
-export type UpdateGamePageData = {
-    body: UpdateGamePageRequest;
+export type UpdateGameData = {
+    body: UpdateGameRequest;
     path: {
         game: string;
     };
@@ -3836,7 +3839,7 @@ export type UpdateGamePageData = {
     url: '/esports/games/{game}';
 };
 
-export type UpdateGamePageErrors = {
+export type UpdateGameErrors = {
     /**
      * Validation error
      */
@@ -3859,16 +3862,16 @@ export type UpdateGamePageErrors = {
     500: ApiError;
 };
 
-export type UpdateGamePageError = UpdateGamePageErrors[keyof UpdateGamePageErrors];
+export type UpdateGameError = UpdateGameErrors[keyof UpdateGameErrors];
 
-export type UpdateGamePageResponses = {
+export type UpdateGameResponses = {
     /**
      * OK
      */
-    200: GamePageResponse;
+    200: GameResponse;
 };
 
-export type UpdateGamePageResponse = UpdateGamePageResponses[keyof UpdateGamePageResponses];
+export type UpdateGameResponse = UpdateGameResponses[keyof UpdateGameResponses];
 
 export type FindGameContentsData = {
     body?: never;

@@ -14,8 +14,8 @@ data class MemberProfileResponse(
     var nationality: String?,
     var bhv: Boolean,
     var ehbo: Boolean,
-    @Schema(description = "Whether this member's real name may appear on the team pages")
-    var nameOnTeamPages: Boolean,
+    @Schema(description = "Whether this member's real name may appear in a roster")
+    var nameOnRosters: Boolean,
     var conditionsAcceptedAt: Instant?,
     var version: Long,
     val createdAt: Instant,

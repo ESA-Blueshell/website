@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
 import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.EsportsPageQueryService
+import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.esports.domain.TeamSeasonService
 
 /**
@@ -25,7 +25,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
 
     @Autowired private lateinit var rosters: TeamRosterService
 
-    @Autowired private lateinit var page: EsportsPageQueryService
+    @Autowired private lateinit var views: EsportsQueryService
 
     @Autowired private lateinit var seasons: SeasonRepository
 
@@ -50,7 +50,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
 
         fielded.field(team.id!!, GAME, season.id!!)
 
-        val view = page.page("TRACKMANIA", season.id)
+        val view = views.rostersOf("TRACKMANIA", season.id)
         assertThat(view.teams).extracting<String> { it.name }.contains("BS Nobody Yet")
         assertThat(view.teams.single { it.name == "BS Nobody Yet" }.members).isEmpty()
     }
@@ -75,7 +75,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         val again = fielded.field(team.id!!, GAME, season.id!!)
 
         assertThat(again.id).isEqualTo(first.id)
-        assertThat(page.page("TRACKMANIA", season.id).teams).hasSize(1)
+        assertThat(views.rostersOf("TRACKMANIA", season.id).teams).hasSize(1)
     }
 
     @Test
@@ -87,9 +87,9 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         // A team of its own, so the other season is one this game genuinely played in.
         fielded.field(team("BS The Other Lot").id!!, GAME, other.id!!)
 
-        assertThat(page.page("TRACKMANIA", played.id).teams).extracting<String> { it.name }
+        assertThat(views.rostersOf("TRACKMANIA", played.id).teams).extracting<String> { it.name }
             .contains("BS One Season")
-        assertThat(page.page("TRACKMANIA", other.id).teams).extracting<String> { it.name }
+        assertThat(views.rostersOf("TRACKMANIA", other.id).teams).extracting<String> { it.name }
             .doesNotContain("BS One Season")
     }
 
@@ -99,7 +99,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         fielded.field(team("BS Somebody").id!!, GAME, played.id!!)
         val empty = season(LocalDate.of(2032, 9, 1))
 
-        val view = page.page("TRACKMANIA", empty.id)
+        val view = views.rostersOf("TRACKMANIA", empty.id)
 
         // The answer for a season with no teams is that it had none, not another season's.
         assertThat(view.season?.id).isEqualTo(empty.id)
@@ -142,23 +142,23 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
     @Test
     fun `a season only offers itself once the game has a team in it`() {
         val season = season()
-        val before = page.page("TRACKMANIA").seasons.map { it.id }
+        val before = views.rostersOf("TRACKMANIA").seasons.map { it.id }
         assertThat(before).doesNotContain(season.id)
 
         fielded.field(team().id!!, GAME, season.id!!)
 
-        assertThat(page.page("TRACKMANIA").seasons.map { it.id }).contains(season.id)
+        assertThat(views.rostersOf("TRACKMANIA").seasons.map { it.id }).contains(season.id)
     }
 
     @Test
     fun `the history that was already recorded is fielded, without anybody saying so`() {
-        // The migration wrote across every link the roster entries implied, so a page that
+        // The migration wrote across every link the roster entries implied, so a read that
         // rendered before the change renders the same after it.
         val season = season()
         val team = team("BS Carried Across")
         rosters.add(team.id!!, GAME, season.id!!, "Handle", TeamRole.PLAYER, null, null)
 
-        val view = page.page("TRACKMANIA", season.id)
+        val view = views.rostersOf("TRACKMANIA", season.id)
 
         assertThat(view.teams).extracting<String> { it.name }.contains("BS Carried Across")
         assertThat(view.teams.single { it.name == "BS Carried Across" }.members).hasSize(1)

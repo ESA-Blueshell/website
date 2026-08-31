@@ -36,7 +36,7 @@ class MemberProfileController(
             nationality = request.nationality,
             bhv = request.bhv,
             ehbo = request.ehbo,
-            nameOnTeamPages = request.nameOnTeamPages,
+            nameOnRosters = request.nameOnRosters,
         )
         return memberProfile.asResponse()
     }
@@ -55,7 +55,7 @@ class MemberProfileController(
             nationality = request.nationality,
             bhv = request.bhv,
             ehbo = request.ehbo,
-            nameOnTeamPages = request.nameOnTeamPages,
+            nameOnRosters = request.nameOnRosters,
             version = request.version,
         )
         return memberProfile.asResponse()

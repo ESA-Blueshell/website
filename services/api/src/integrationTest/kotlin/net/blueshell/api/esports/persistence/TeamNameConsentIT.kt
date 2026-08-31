@@ -17,8 +17,8 @@ import java.sql.Date
 import java.time.LocalDate
 
 /**
- * Whether a roster shows a real name is the member's own decision, and the page asks that
- * question of every entry it draws.
+ * Whether a roster shows a real name is the member's own decision, and that question is asked
+ * of every entry the public read carries.
  */
 @SpringBootTest
 class TeamNameConsentIT : UserTestSupport() {
@@ -76,7 +76,7 @@ class TeamNameConsentIT : UserTestSupport() {
             dateOfBirth = Date.valueOf(LocalDate.of(2000, 1, 1)),
             bhv = false,
             ehbo = false,
-            nameOnTeamPages = consents,
+            nameOnRosters = consents,
         ),
     )
 
@@ -135,7 +135,7 @@ class TeamNameConsentIT : UserTestSupport() {
     }
 
     @Test
-    fun `revoking it takes the name off the page on the next read`() {
+    fun `revoking it takes the name out of the roster on the next read`() {
         val member = createUserWithRole(Role.MEMBER)
         val profile = profileFor(member, consents = true)
         val playing = season()
@@ -145,7 +145,7 @@ class TeamNameConsentIT : UserTestSupport() {
         mvc.perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").value(member.fullName))
 
-        profile.nameOnTeamPages = false
+        profile.nameOnRosters = false
         profiles.save(profile)
 
         mvc.perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))

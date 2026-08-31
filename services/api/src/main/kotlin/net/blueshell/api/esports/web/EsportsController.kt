@@ -3,8 +3,8 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
-import net.blueshell.api.esports.domain.EsportsPageQueryService
-import net.blueshell.api.esports.domain.GamePageService
+import net.blueshell.api.esports.domain.EsportsQueryService
+import net.blueshell.api.esports.domain.GameService
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.file.api.asImage
@@ -27,9 +27,9 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * The esports pages and the admin surface behind them.
+ * The esports read, and the admin surface behind it.
  *
- * Reading is public — these are the pages anybody can visit — and every write is the board's.
+ * Reading is public — this is what anybody may see — and every write is the board's.
  * The public read returns handles only: a roster's real names are held for identification,
  * and publishing one is the member's own decision.
  */
@@ -37,16 +37,16 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/esports")
 @Tag(name = "Esports", description = "Teams, seasons and rosters")
 class EsportsController(
-    private val page: EsportsPageQueryService,
+    private val views: EsportsQueryService,
     private val seasons: SeasonService,
     private val teams: TeamService,
-    private val gamePages: GamePageService,
+    private val games: GameService,
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
     private val entered: SeasonGameService,
 ) {
     /**
-     * Whether the caller may edit, which decides what a season's band answers with.
+     * Whether the caller may edit, which decides what a season's games answer with.
      *
      * The same authority the write routes are guarded by. Read rather than declared, because
      * this route answers everybody and answers them differently.
@@ -55,30 +55,30 @@ class EsportsController(
 
     @GetMapping("/games/{game}")
     @PermitAll
-    fun findEsportsPage(
+    fun findGame(
         @PathVariable game: String,
         @RequestParam(required = false) seasonId: Long?,
-    ): EsportsPageResponse = page.page(game, seasonId).asResponse()
+    ): GameRostersResponse = views.rostersOf(game, seasonId).asResponse()
 
     /**
      * Every game the association has fielded a team in, present or past, in the order they are
-     * shown. Public: the pages are.
+     * shown. Public, as the games themselves are.
      */
     @PermitAll
     @GetMapping("/games")
-    fun findGamePages(): List<GamePageResponse> {
+    fun findGames(): List<GameResponse> {
         // Which games the association currently plays is derived rather than stored, so it is
         // read once for the whole list rather than asked of each row.
         val played = fielded.currentlyPlayed()
-        return gamePages.findAll().map { it.asResponse(played.contains(it.game)) }
+        return games.findAll().map { it.asResponse(played.contains(it.code)) }
     }
 
-    /** A game the association has started playing. Its page answers straight away. */
+    /** A game the association has started playing. Its address answers straight away. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/games")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGame(@Valid @RequestBody request: CreateGameRequest): GamePageResponse =
-        gamePages.create(
+    fun createGame(@Valid @RequestBody request: CreateGameRequest): GameResponse =
+        games.create(
             name = request.name,
             slug = request.slug,
             intro = request.intro,
@@ -90,11 +90,11 @@ class EsportsController(
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/games/{game}")
-    fun updateGamePage(
+    fun updateGame(
         @PathVariable game: String,
-        @Valid @RequestBody request: UpdateGamePageRequest,
-    ): GamePageResponse =
-        gamePages.update(
+        @Valid @RequestBody request: UpdateGameRequest,
+    ): GameResponse =
+        games.update(
             game = game,
             name = request.name,
             slug = request.slug,
@@ -109,7 +109,7 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/games/{game}/contents")
     fun findGameContents(@PathVariable game: String): GameContentsResponse {
-        val (teams, players) = gamePages.contentsOf(game)
+        val (teams, players) = games.contentsOf(game)
         return GameContentsResponse(teams = teams.toInt(), players = players.toInt())
     }
 
@@ -117,27 +117,27 @@ class EsportsController(
     @DeleteMapping("/games/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteGame(@PathVariable game: String) {
-        gamePages.delete(game)
+        games.delete(game)
     }
 
     /**
      * Every game that ran in one season, with what it fielded.
      *
-     * One read for the band rather than one per game. A game entered with nobody fielded in it
+     * One read for the season rather than one per game. A game entered with nobody fielded in it
      * is answered only to somebody who may edit, marked as not public — the rule turns on who
-     * is asking, so it is applied here rather than in the pages.
+     * is asking, so it is applied here rather than in the frontend.
      */
     @PermitAll
     @GetMapping("/seasons/{seasonId}/games")
     fun findSeasonGames(@PathVariable seasonId: Long): List<SeasonGameResponse> =
-        page.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
+        views.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
 
     /** Records that a game runs in a season, before anybody has been fielded in it. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/seasons/{seasonId}/games/{game}")
     fun enterGame(@PathVariable seasonId: Long, @PathVariable game: String): SeasonGameResponse {
         entered.enter(seasonId, game)
-        return page.gamesOf(seasonId, mayEdit = true).first { it.game == game }.asResponse()
+        return views.gamesOf(seasonId, mayEdit = true).first { it.game == game }.asResponse()
     }
 
     /** Takes a game out of a season, which is only possible while it holds no teams. */
@@ -152,7 +152,7 @@ class EsportsController(
     @PermitAll
     fun findSeasons(): List<SeasonResponse> {
         // Which seasons had something fielded is read once for the whole list: a visitor's
-        // strip carries those, and the board's carries every season, because a season has to
+        // list carries those, and the board's carries every season, because a season has to
         // be reachable before a game can be entered in it.
         val played = fielded.seasonsWithTeams()
         return seasons.findAll().map { it.asResponse(played.contains(it.id)) }
@@ -260,8 +260,8 @@ class EsportsController(
     }
 
     /**
-     * The line-ups a team has, newest first: which game, which season. Public, as the pages
-     * show it.
+     * The line-ups a team has, newest first: which game, which season. Public, as the rosters
+     * themselves are.
      *
      * Each is a fielding rather than a season, because a team that played two games in one
      * season has two of them, with a line-up in each.
@@ -271,7 +271,7 @@ class EsportsController(
     fun findTeamSeasons(@PathVariable teamId: Long): List<FieldingResponse> =
         fielded.seasonsOf(teamId).map { FieldingResponse(game = it.game, season = it.season.asResponse()) }
 
-    /** The admin view of a roster: the same rows the page shows, with the names attached. */
+    /** The admin view of a roster: the same rows the public read has, with the names attached. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/teams/{teamId}/roster")
     fun findRoster(

@@ -10,7 +10,7 @@ import java.time.LocalDate
 interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     /**
      * A whole game's rosters for one season, the fielding and what it names fetched with them:
-     * the page draws every team at once, and lazy loading them would be one query per team.
+     * one read answers with every team at once, and lazy loading them would be one query per team.
      */
     @Query(
         """
@@ -46,7 +46,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         @Param("seasonId") seasonId: Long,
     ): List<TeamRosterEntry>
 
-    /** The seasons a game has rosters for, newest first, for the page's season switcher. */
+    /** The seasons a game has rosters for, newest first, for choosing among them. */
     @Query(
         """
         SELECT DISTINCT s.id FROM TeamRosterEntry e

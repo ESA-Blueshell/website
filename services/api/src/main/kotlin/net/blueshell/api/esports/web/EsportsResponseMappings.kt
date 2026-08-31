@@ -1,11 +1,11 @@
 package net.blueshell.api.esports.web
 
-import net.blueshell.api.esports.domain.EsportsPageView
+import net.blueshell.api.esports.domain.GameRostersView
 import net.blueshell.api.esports.domain.RosterMemberView
 import net.blueshell.api.esports.domain.SeasonGameView
 import net.blueshell.api.esports.domain.SeasonView
 import net.blueshell.api.esports.domain.TeamView
-import net.blueshell.api.esports.persistence.GamePage
+import net.blueshell.api.esports.persistence.Game
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
@@ -20,7 +20,7 @@ fun Season.asResponse(played: Boolean = false) = SeasonResponse(
     played = played,
 )
 
-// A season named inside a game's own page is one that game played, so it says so.
+// A season named inside a game's own read is one that game played, so it says so.
 fun SeasonView.asResponse() = SeasonResponse(
     id = id,
     name = name,
@@ -52,7 +52,7 @@ fun TeamView.asResponse() = TeamRosterResponse(
     icon = icon,
 )
 
-fun EsportsPageView.asResponse() = EsportsPageResponse(
+fun GameRostersView.asResponse() = GameRostersResponse(
     game = game,
     season = season?.asResponse(),
     seasons = seasons.map { it.asResponse() },
@@ -81,8 +81,8 @@ fun UserGameAccount.asResponse() = GameAccountResponse(
     handle = handle,
 )
 
-fun GamePage.asResponse(current: Boolean = false): GamePageResponse = GamePageResponse(
-    game = game,
+fun Game.asResponse(current: Boolean = false): GameResponse = GameResponse(
+    code = code,
     name = name,
     slug = slug,
     accent = accent,

@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
 import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.EsportsPageQueryService
+import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.esports.domain.TeamSeasonService
 
 /**
@@ -89,12 +89,12 @@ class SeasonContentsIT : UserTestSupport() {
         // The team played the other season, and still did.
         assertThat(fielded.isFielded(team.id!!, GAME, kept.id!!)).isTrue()
         assertThat(teams.findById(team.id!!)).isPresent()
-        assertThat(page(kept.id!!)).contains(team.name)
-        assertThat(page(dropped.id!!)).doesNotContain(team.name)
+        assertThat(teamsIn(kept.id!!)).contains(team.name)
+        assertThat(teamsIn(dropped.id!!)).doesNotContain(team.name)
     }
 
-    @Autowired private lateinit var pages: EsportsPageQueryService
+    @Autowired private lateinit var views: EsportsQueryService
 
-    private fun page(seasonId: Long) =
-        pages.page("TRACKMANIA", seasonId).teams.map { it.name }
+    private fun teamsIn(seasonId: Long) =
+        views.rostersOf("TRACKMANIA", seasonId).teams.map { it.name }
 }

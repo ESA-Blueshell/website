@@ -6,7 +6,7 @@ import {
   loadTeamSeasons,
   loadTeams,
   type Fielding,
-  type Game,
+  type GameCode,
   type RosterEntry,
   type Team,
 } from "../adapters/esports"
@@ -28,7 +28,7 @@ defineOptions({name: "LineupSource"})
 
 const props = defineProps<{
   /** The game being filled, which decides which line-up is offered first. */
-  game: Game
+  game: GameCode
   /**
    * The team whose line-ups are offered, where one is already settled.
    *

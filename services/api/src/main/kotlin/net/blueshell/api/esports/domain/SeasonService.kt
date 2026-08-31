@@ -21,8 +21,8 @@ class SeasonService(
     fun findByName(name: String): Season? = seasons.findByNameIgnoreCase(name)
 
     /**
-     * The season a date falls in, or the one before it when the date sits in a gap. A page
-     * asked for "now" between two seasons should show the last roster that played, not
+     * The season a date falls in, or the one before it when the date sits in a gap. A read
+     * asked for "now" between two seasons should answer with the last roster that played, not
      * nothing.
      */
     @Transactional(readOnly = true)

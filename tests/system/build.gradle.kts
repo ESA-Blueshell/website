@@ -21,7 +21,7 @@ dependencies {
     // through localhost:8080. So no project(":services:api") dep, no
     // Spring Boot starters; just an HTTP client, JDBC, Playwright, and
     // IMAP/JSON helpers for assertions.
-    testImplementation("org.springframework.security:spring-security-crypto:7.1.0")
+    testImplementation("org.springframework.security:spring-security-crypto:7.1.1")
     testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
     testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.2")
 

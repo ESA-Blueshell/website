@@ -2,7 +2,7 @@
 #
 # Build context: repo root (see services/api/docker-compose.dev.yml).
 
-FROM eclipse-temurin:25-jdk-noble@sha256:3eb81ed94d8c1a34422f19f8188548bdf02cae69c91d0328afdbb7abed90f617
+FROM eclipse-temurin:25-jdk-noble@sha256:534968c051301957beae735e7ba1db54d99ddecf08746d3b9d4f318cc132dbc3
 
 WORKDIR /src
 

@@ -590,21 +590,25 @@ const submit = async () => {
               type="text"
             >
           </div>
-          <!-- Both held until the save, like the field above them. -->
-          <image-picker
-            :kind="FileType.TEAM_BANNER"
-            label="Banner"
-            :picture="banner"
-            testid="lineup-team-banner"
-            @update:picture="banner = $event"
-          />
-          <image-picker
-            :kind="FileType.TEAM_ICON"
-            label="Icon"
-            :picture="icon"
-            testid="lineup-team-icon"
-            @update:picture="icon = $event"
-          />
+          <!-- Both held until the save, like the field above them. Side by side, because they
+               are decided together and are the two halves of how a team is drawn. They wrap
+               onto their own lines where there is no room for both. -->
+          <div class="lineup__pictures">
+            <image-picker
+              :kind="FileType.TEAM_BANNER"
+              label="Banner"
+              :picture="banner"
+              testid="lineup-team-banner"
+              @update:picture="banner = $event"
+            />
+            <image-picker
+              :kind="FileType.TEAM_ICON"
+              label="Icon"
+              :picture="icon"
+              testid="lineup-team-icon"
+              @update:picture="icon = $event"
+            />
+          </div>
           <p
             v-if="teamFailure"
             class="lineup__failure"
@@ -911,9 +915,19 @@ const submit = async () => {
 }
 
 .lineup__team {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
   margin: 0;
   padding: 0.9rem 1rem 1rem;
   border: 1px solid color-mix(in oklab, var(--color-chalk) 10%, transparent);
+}
+
+.lineup__pictures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  align-items: flex-end;
 }
 
 .lineup__legend {

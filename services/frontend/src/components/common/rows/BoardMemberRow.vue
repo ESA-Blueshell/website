@@ -9,12 +9,12 @@
       no-gutters
     >
       <v-col
-        v-if="!reverse"
-        class="d-flex order-1 order-md-1"
+        :class="['d-flex', 'seat-photo', reverse ? 'seat-photo--end' : 'seat-photo--start']"
         cols="12"
+        data-testid="board-seat-photo"
         md="5"
       >
-        <div :class="['w-100', 'fade-edge', 'img-box', 'round-start']">
+        <div :class="['w-100', 'fade-edge', 'img-box', reverse ? 'reverse' : '', reverse ? 'round-end' : 'round-start']">
           <v-img
             :src="member.image"
             class="w-100"
@@ -25,8 +25,9 @@
       </v-col>
 
       <v-col
-        :class="['order-2', reverse ? 'order-md-1' : 'order-md-2']"
+        :class="['seat-blurb', reverse ? 'seat-blurb--start' : 'seat-blurb--end']"
         cols="12"
+        data-testid="board-seat-blurb"
         md="7"
       >
         <div :class="['pa-2', 'pa-md-2', reverse ? 'text-md-end' : 'text-md-start']">
@@ -39,22 +40,6 @@
           <p>
             {{ member.description }}
           </p>
-        </div>
-      </v-col>
-
-      <v-col
-        v-if="reverse"
-        class="d-flex order-1 order-md-2"
-        cols="12"
-        md="5"
-      >
-        <div :class="['w-100', 'fade-edge', 'reverse', 'img-box', 'round-end']">
-          <v-img
-            :src="member.image"
-            class="w-100"
-            cover
-            eager
-          />
         </div>
       </v-col>
     </v-row>
@@ -93,6 +78,29 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
+// The row places its own columns rather than borrowing Vuetify's `order-md-*`: Tailwind
+// generates `.order-1`/`.order-2` from anything it scans into a later cascade layer, which
+// beats them, and every seat's photograph then sits on the left.
+.seat-photo {
+  order: 1;
+}
+
+.seat-blurb {
+  order: 2;
+}
+
+@media (min-width: 840px) {
+  .seat-photo--start,
+  .seat-blurb--start {
+    order: 1;
+  }
+
+  .seat-photo--end,
+  .seat-blurb--end {
+    order: 2;
+  }
+}
+
 .fade-edge {
   position: relative;
   overflow: hidden;
@@ -131,7 +139,8 @@ defineProps<{
   );
 }
 
-@media (max-width: 960px) {
+// Below md the columns stack, so the photograph fades downwards into the blurb under it.
+@media (max-width: 839.98px) {
   .fade-edge,
   .fade-edge.reverse {
     --fade-start: 78%;
@@ -151,13 +160,6 @@ defineProps<{
   }
 }
 
-@media (max-width: 960px) {
-  .rounded-mobile-top {
-    --radius-lg: var(--v-border-radius-lg, 24px);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-  }
-}
-
 .img-box {
   --radius-lg: var(--v-border-radius-lg, 24px);
   overflow: hidden;
@@ -173,12 +175,10 @@ defineProps<{
   border-end-end-radius: var(--radius-lg);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 839.98px) {
   .round-start,
   .round-end {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
   }
 }
-
 </style>
-

@@ -1,6 +1,27 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsAdmin} from "./mocks"
 
+/** A seat as the api reports one, with a photograph, so the page has sides to alternate. */
+const seatWithPhoto = (id: number, name: string, image: string) => ({
+  id, boardId: 9, userId: null, role: "Chair", name,
+  description: "A blurb.", image,
+  startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
+  createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+})
+
+const boardOfFour = [{
+  id: 9, name: "9th Board", candidate: "9th Board",
+  startDate: "2025-09-01", endDate: "2026-08-31",
+  image: "board9/board9.jpg", version: 0,
+  createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+  members: [
+    seatWithPhoto(91, "Emma Dokter", "board9/Emma.jpg"),
+    seatWithPhoto(92, "Viktor Petrov", "board9/Viktor.jpg"),
+    seatWithPhoto(93, "Boris Boersma", "board9/Boris.jpg"),
+    seatWithPhoto(94, "Sylwia Nowak", "board9/Sylwia.jpg"),
+  ],
+}]
+
 test.describe("board page", () => {
   test("shows the board in office, with its seats and their blurbs", async ({page}) => {
     await installApiMocks(page)
@@ -35,6 +56,42 @@ test.describe("board page", () => {
     await page.getByTestId("board-toggle-1").click()
 
     await expect(older.getByText("Thijs Lieverse")).toBeVisible()
+  })
+
+  // The row used to place its columns with Vuetify's `order-md-*`. Tailwind generates
+  // `.order-1`/`.order-2` from anything it scans into a cascade layer that beats those, so
+  // every photograph sat on the left and the page read as one column of pictures.
+  test("sits each seat's photograph on the side opposite the one before it", async ({page}) => {
+    await page.setViewportSize({width: 1400, height: 1000})
+    await installApiMocks(page, {boards: boardOfFour})
+
+    await page.goto("/board")
+
+    const sitting = page.getByTestId("board-9")
+    await expect(sitting.getByTestId("board-seat-photo")).toHaveCount(4)
+
+    const sides: string[] = []
+    for (let seat = 0; seat < 4; seat++) {
+      const photo = (await sitting.getByTestId("board-seat-photo").nth(seat).boundingBox())!
+      const blurb = (await sitting.getByTestId("board-seat-blurb").nth(seat).boundingBox())!
+      sides.push(photo.x < blurb.x ? "left" : "right")
+    }
+
+    expect(sides).toEqual(["left", "right", "left", "right"])
+  })
+
+  test("stacks a seat's photograph over its blurb on a phone", async ({page}) => {
+    await page.setViewportSize({width: 700, height: 1000})
+    await installApiMocks(page, {boards: boardOfFour})
+
+    await page.goto("/board")
+
+    const sitting = page.getByTestId("board-9")
+    const photo = (await sitting.getByTestId("board-seat-photo").first().boundingBox())!
+    const blurb = (await sitting.getByTestId("board-seat-blurb").first().boundingBox())!
+
+    expect(photo.x).toEqual(blurb.x)
+    expect(photo.y).toBeLessThan(blurb.y)
   })
 })
 

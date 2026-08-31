@@ -103,10 +103,10 @@ const {decorative} = useMotionAllowed()
   overflow: hidden;
   transform: translate(-50%, -50%);
   padding: 1.25rem;
-  background: #262626;
-  border-top: 3px solid var(--dialog-accent, #3387fa);
+  background: var(--color-surface);
+  border-top: 3px solid var(--dialog-accent, var(--color-brand));
   box-shadow: 0 24px 60px rgb(0 0 0 / 55%);
-  color: #f2f4f6;
+  color: var(--color-chalk);
   font-family: "Barlow Semi Condensed", system-ui, sans-serif;
   animation: island-dialog-rise 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -147,7 +147,7 @@ const {decorative} = useMotionAllowed()
   background: none;
   border: 0;
   padding: 0 0.25rem;
-  color: #a0a6ac;
+  color: var(--color-ash);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
@@ -155,7 +155,7 @@ const {decorative} = useMotionAllowed()
 
 .island-dialog__close:hover,
 .island-dialog__close:focus-visible {
-  color: #f2f4f6;
+  color: var(--color-chalk);
 }
 
 @keyframes island-dialog-in {

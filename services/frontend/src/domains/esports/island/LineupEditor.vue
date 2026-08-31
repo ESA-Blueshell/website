@@ -977,13 +977,13 @@ const submit = async () => {
 }
 
 .lineup__button--drop {
-  background: color-mix(in oklab, #e0696c 18%, transparent);
-  color: #eba7a7;
+  background: color-mix(in oklab, var(--color-danger-tint) 18%, transparent);
+  color: var(--color-danger-ink);
 }
 
 .lineup__button--drop:hover {
-  background: color-mix(in oklab, #e0696c 34%, transparent);
-  color: #fff2f2;
+  background: color-mix(in oklab, var(--color-danger-tint) 34%, transparent);
+  color: var(--color-danger-ink-strong);
 }
 
 .lineup__row {
@@ -992,7 +992,7 @@ const submit = async () => {
   gap: 0.45rem;
   padding: 0.7rem 0.8rem;
   background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
-  border-left: 2px solid var(--dialog-accent, #3387fa);
+  border-left: 2px solid var(--dialog-accent, var(--color-brand));
 }
 
 .lineup__line {
@@ -1044,12 +1044,12 @@ const submit = async () => {
   position: absolute;
   right: 0.4rem;
   bottom: 0.3rem;
-  color: #a0a6ac;
+  color: var(--color-ash);
   font-size: 0.68rem;
 }
 
 .lineup__count--full {
-  color: #ffb020;
+  color: var(--color-warning);
 }
 
 .lineup__order {
@@ -1060,9 +1060,9 @@ const submit = async () => {
 .lineup__step {
   width: 1.6rem;
   height: 1.9rem;
-  background: #2e2e2e;
+  background: var(--color-raised);
   border: 0;
-  color: #a0a6ac;
+  color: var(--color-ash);
   cursor: pointer;
   font-size: 0.85rem;
 }
@@ -1073,15 +1073,15 @@ const submit = async () => {
 }
 
 .lineup__step--drop:hover {
-  background: #5b2020;
-  color: #f2f4f6;
+  background: var(--color-danger-ground);
+  color: var(--color-chalk);
 }
 
 .lineup__attached {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: #f2f4f6;
+  color: var(--color-chalk);
   font-size: 0.85rem;
 }
 
@@ -1097,9 +1097,9 @@ const submit = async () => {
 .lineup__match {
   width: 100%;
   padding: 0.3rem 0.45rem;
-  background: #262626;
+  background: var(--color-surface);
   border: 0;
-  color: #f2f4f6;
+  color: var(--color-chalk);
   cursor: pointer;
   font-family: inherit;
   font-size: 0.85rem;
@@ -1108,15 +1108,15 @@ const submit = async () => {
 
 .lineup__match:hover,
 .lineup__match:focus-visible {
-  background: color-mix(in oklab, var(--dialog-accent, #3387fa) 30%, #262626);
+  background: color-mix(in oklab, var(--dialog-accent, var(--color-brand)) 30%, var(--color-surface));
 }
 
 .lineup__add {
   align-self: flex-start;
   padding: 0.35rem 0.7rem;
   background: none;
-  border: 1px dashed rgb(255 255 255 / 22%);
-  color: #a0a6ac;
+  border: 1px dashed color-mix(in oklab, var(--color-chalk) 22%, transparent);
+  color: var(--color-ash);
   cursor: pointer;
   font-family: inherit;
   font-size: 0.82rem;
@@ -1129,11 +1129,11 @@ const submit = async () => {
 }
 
 .lineup__note {
-  color: #a0a6ac;
+  color: var(--color-ash);
 }
 
 .lineup__failure {
-  color: #ff6b6b;
+  color: var(--color-danger);
 }
 
 /* Side by side, aligned along the bottom so a wide banner and a square logo share a baseline. */
@@ -1191,13 +1191,13 @@ const submit = async () => {
 }
 
 .lineup__button--ghost {
-  background: #2e2e2e;
-  color: #a0a6ac;
+  background: var(--color-raised);
+  color: var(--color-ash);
 }
 
 .lineup__button--go {
-  background: var(--dialog-accent, #3387fa);
-  color: #0f1115;
+  background: var(--dialog-accent, var(--color-brand));
+  color: var(--color-void);
 }
 
 .lineup__button:disabled {

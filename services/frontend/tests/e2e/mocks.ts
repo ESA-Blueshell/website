@@ -239,6 +239,11 @@ export async function loginAsAdmin(context: BrowserContext) {
   await loginAsRoles(context, ["ADMIN", "MEMBER"])
 }
 
+/** Reads as a visitor who chose light. Call after installApiMocks, so this one wins. */
+export async function preferLightTheme(page: Page) {
+  await page.addInitScript(() => localStorage.setItem("esa-blueshell.nl:darkMode", "false"))
+}
+
 export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   // Seasons written down during the test. The api shows a season that was asked for even
   // where the game fielded nobody in it, and these are exactly those seasons.
@@ -336,8 +341,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
   await page.addInitScript((params: {cookieConsentStorageKey: string; cookieConsentPayload: string}) => {
     localStorage.setItem(params.cookieConsentStorageKey, params.cookieConsentPayload)
+    // Dark, which is the esports pages' own treatment. Only when unset, so a spec that
+    // wants light seeds it first — or calls preferLightTheme after this.
     if (localStorage.getItem("esa-blueshell.nl:darkMode") == null) {
-      localStorage.setItem("esa-blueshell.nl:darkMode", "false")
+      localStorage.setItem("esa-blueshell.nl:darkMode", "true")
     }
   }, {
     cookieConsentStorageKey: COOKIE_CONSENT_STORAGE_KEY,

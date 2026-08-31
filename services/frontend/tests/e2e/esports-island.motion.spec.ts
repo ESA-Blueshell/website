@@ -25,7 +25,7 @@ test.describe("the esports index, with motion", () => {
     await expect.poll(async () => first.getAttribute("class")).not.toContain("team-slice--open")
   })
 
-  test("brightens a game's banner as its slice opens", async ({page}) => {
+  test("settles a game's banner as its slice opens", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/competitive-scene")
     const slices = page.getByTestId("esports-game-slices")
@@ -35,12 +35,13 @@ test.describe("the esports index, with motion", () => {
     const banner = second.locator("img")
     if (await banner.count() === 0) test.skip()
 
-    const grey = () => banner.evaluate(el => getComputedStyle(el).filter)
-    const shut = await grey()
+    // The art is shown as it was uploaded, so what moves is the scale: held slightly over
+    // its box while shut, and square once the slice is the one being read.
+    const scale = () => banner.evaluate(el => getComputedStyle(el).scale)
+    const shut = await scale()
 
     await second.hover()
 
-    // Shut it is greyed and dimmed; open it is the game's own picture.
-    await expect.poll(grey).not.toBe(shut)
+    await expect.poll(scale).not.toBe(shut)
   })
 })

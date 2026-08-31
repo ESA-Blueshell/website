@@ -366,7 +366,7 @@ const clear = () => {
   margin: 0;
   font-family: var(--font-body);
   font-size: 0.78rem;
-  color: var(--color-danger, #ff6b6b);
+  color: var(--color-danger);
 }
 
 @media (prefers-reduced-motion: reduce) {

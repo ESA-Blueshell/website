@@ -1,22 +1,9 @@
 /*
- * The esports island.
- *
- * Tailwind for the esports pages only. Two rules keep it from touching the
- * other hundred-odd components in this frontend, both enforced here rather
- * than by convention:
- *
- * 1. Preflight is never imported. Tailwind's reset restyles bare elements
- *    globally, which would land on every Vuetify page at once. The island
- *    resets its own subtree instead, at the bottom of this file.
- *
- * 2. Utilities are declared inside a cascade layer. Vuetify's stylesheet is
- *    unlayered, and unlayered rules beat layered ones no matter their order,
- *    so a Tailwind class can never win against Vuetify outside the island.
- *    Inside the island there is no Vuetify left to fight.
- *
- * Sources are listed explicitly, so a Tailwind class written outside the
- * esports pages generates nothing and fails visibly rather than quietly
- * working and spreading.
+ * Tailwind for the esports pages only, kept off the other hundred-odd components by
+ * three rules: no Preflight (the island resets its own subtree at the bottom of this
+ * file), utilities inside a cascade layer so they can never beat unlayered Vuetify
+ * outside the island, and sources listed explicitly so a Tailwind class written
+ * elsewhere generates nothing and fails visibly.
  */
 @layer theme, island-base, components, utilities;
 
@@ -28,14 +15,25 @@
 @source "../pages/esports";
 
 @theme {
-  /* The island is dark whatever the viewer's theme asks for, so these are not
-     paired with a light set.
-     
-     They are the site's own greys rather than a deeper set of its own. The
-     navigation and footer are #212121 and sit directly above and below these
-     pages: a near-black ground under them read as two different sites meeting
-     rather than one page. The ground is a step below the chrome, panels a step
-     above it, and nothing here is tinted. */
+  /* The dark half is the base; light overrides it below. The greys are the site's
+     own, a step either side of the #212121 chrome above and below these pages. */
+
+  /* The ground, and the only neutral that follows the theme. Back to the original
+     near-black: the tile's own lighter ground flattened the shading on top of it. */
+  --color-ground: #1c1c1c;
+  /* How much of the ground is laid back over the tile. Higher hides more of it. */
+  --tile-veil: oklch(0.21 0 0 / 76%);
+  /* The depth under the header's blue. */
+  --header-shade: oklch(0 0 0 / 58%);
+  /* How much of a game's accent fills a band on the strip, and how far its labels are
+     diluted. Both carry further on a dark ground than on a light one. */
+  --band-wash: 10%;
+  --band-wash-on: 20%;
+  --band-wash-on-foot: 8%;
+  --label-mix: 55%;
+  --label-mix-half: 80%;
+  /* Near-black in both themes: ink on a bright fill, and the scrims over
+     photography. Ground cannot do this job once it flips. */
   --color-void: #1c1c1c;
   --color-pit: #202020;
   --color-surface: #262626;
@@ -44,11 +42,27 @@
   --color-chalk: #f2f4f6;
   --color-ash: #a0a6ac;
 
-  /* The association's own two, unchanged: the blue everything is built on and
-     the acid green the dark theme already uses as its accent. */
+  /* Destructive, in the two shapes the editors use: a solid button, and a
+     translucent tint that deepens on hover. #b03434 needs no light counterpart —
+     it clears contrast as ink on white and as a fill under near-white. */
+  --color-danger: #ff6b6b;
+  --color-danger-fill: #b03434;
+  --color-danger-on-fill: #f2f4f6;
+  --color-danger-tint: #e0696c;
+  --color-danger-ink: #eba7a7;
+  --color-danger-ink-strong: #fff2f2;
+  --color-danger-ground: #5b2020;
+
+  /* A full roster states a fact rather than a fault, so it is not danger. */
+  --color-warning: #ffb020;
+
+  /* Acid is 1.2:1 on white, so light resolves the accent to blue instead — which
+     is what the site's own light theme already does. */
   --color-brand: #3387fa;
   --color-brand-lit: #6aa8ff;
   --color-acid: #a8ff00;
+  /* The accent where it is read rather than washed: acid is 1.2:1 on white. */
+  --color-eyebrow: #a8ff00;
 
   /* One accent per game. A recognisable colour carries a game further than a
      photograph of somebody else's tournament, and unlike stock imagery it is
@@ -66,6 +80,77 @@
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* The light half: values only, keyed off the document theme that plugins/theme sets.
+   Elevation inverts — the ground is the tile's near-white, so panels take a hairline. */
+:where([data-theme="light"]) .esports-island {
+  /* A ladder, in perceptual lightness: the page at L*90, bands a step under it, panels a
+     step over. Cool rather than grey, so the tone reads as paper and not as dirt.
+
+     Everything used to sit between L*91 and L*100 — the top tenth of the scale, with two
+     areas at absolute white, which is what read as blown out. */
+  --color-ground: #dce5ee;
+  --color-pit: #d2dbe4;
+  --color-surface: #fbfdff;
+  --color-raised: #eef4fa;
+  --color-chalk: #1c1c1c;
+  --color-ash: #3f4750;
+  /* The tile's own ground is near-white and opaque, so the veil is what sets the page's
+     tone here — a white veil over a white tile was the whole problem. */
+  /* Thin and darker rather than thick and pale: the same page tone either way, but the
+     tile's dark motif survives it. At 88% its contrast was 1.03:1, which is nothing. */
+  --tile-veil: rgb(184 194 204 / 45%);
+  --header-shade: oklch(0.55 0.06 250 / 16%);
+  --color-hairline: oklch(0 0 0 / 18%);
+
+  --color-eyebrow: #1a5cbd;
+
+  --header-blob: 0.45;
+
+  --band-wash: 17%;
+  --band-wash-on: 34%;
+  --band-wash-on-foot: 15%;
+  --label-mix: 100%;
+  --label-mix-half: 100%;
+
+  --color-danger: #b03434;
+  --color-danger-tint: #b03434;
+  --color-danger-ink: #8a2020;
+  --color-danger-ink-strong: #5c1414;
+  --color-danger-ground: #fbe9e9;
+
+  --color-warning: #8a5300;
+}
+
+/* The blue at the head of the page carries further on a dark ground than on a light one, so
+   light fills it in rather than leaving it a pale smudge. */
+:where([data-theme="light"]) .esports-island .island-header__blob {
+  opacity: var(--header-blob);
+}
+
+/* The band is the same in both themes, down to the ink. The dark treatment works, the art is
+   the board's rather than vetted, and a wash that follows the viewer only filters the picture.
+   Stated once here, so nothing inside the band has to know. */
+.esports-island .season-swipe {
+  color: var(--color-chalk);
+
+  --color-ground: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+}
+
+/* The header hands the page's texture down to the strip: grain at the top, the band ground
+   at its foot, so the two meet in a blend rather than on a line. The shade is laid in first
+   and the blue blob paints over it, which is what gives the top its depth. */
+.esports-island .island-header {
+  background:
+    linear-gradient(to bottom, transparent 34%, var(--band-ground)),
+    radial-gradient(72rem 28rem at 88% -12%, var(--header-shade), transparent 72%);
+}
+
 /*
  * The island's reset, in a layer that utilities beat.
  *
@@ -77,11 +162,30 @@
  * outside the island.
  */
 @layer island-base {
+  /* Grain, not a layer of its own: the tile sits at half the size it was drawn and
+     under a veil of the ground, so the washes and the bands' own shading stay the
+     things you see and the shells are texture underneath them. */
   .esports-island {
-    background-color: var(--color-void);
+    /* What a band sits on: a step off the page, not quite opaque, so the texture carries
+       through. Declared here, not in @theme, or its --color-pit resolves on :root and
+       stays dark when the light half overrides pit on this element. */
+    --band-ground: color-mix(in oklab, var(--color-pit) 86%, transparent);
+
+    background-color: var(--color-ground);
+    background-image:
+      linear-gradient(var(--tile-veil), var(--tile-veil)),
+      url("../assets/bg/shelly-bg-black.png");
+    background-size: auto, 135px 77px;
+    background-repeat: repeat;
     color: var(--color-chalk);
     font-family: var(--font-body);
     min-height: 100%;
+  }
+
+  :where([data-theme="light"]) .esports-island {
+    background-image:
+      linear-gradient(var(--tile-veil), var(--tile-veil)),
+      url("../assets/bg/shelly-bg-white.jpg");
   }
 
   .esports-island *,
@@ -155,9 +259,10 @@
     38% 2%, 62% 2%, 62% 38%, 98% 38%, 98% 62%, 62% 62%,
     62% 98%, 38% 98%, 38% 62%, 2% 62%, 2% 38%, 38% 38%
   );
-  background: color-mix(in oklab, var(--color-chalk) 12%, transparent);
-  backdrop-filter: blur(6px);
-  opacity: 0.55;
+  /* Thin enough to read the pattern through, blurred so it reads as glass over it. */
+  background: color-mix(in oklab, var(--color-chalk) 7%, transparent);
+  backdrop-filter: blur(5px);
+  opacity: 0.72;
   transition: opacity 260ms ease, background-color 260ms ease;
 }
 

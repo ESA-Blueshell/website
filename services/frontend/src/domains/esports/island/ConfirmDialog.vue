@@ -94,14 +94,14 @@ const emit = defineEmits<{
 
 .confirm__question {
   margin: 0;
-  color: #f2f4f6;
+  color: var(--color-chalk);
   font-size: 0.95rem;
   line-height: 1.45;
 }
 
 .confirm__failure {
   margin: 0;
-  color: #ff6b6b;
+  color: var(--color-danger);
   font-size: 0.85rem;
 }
 
@@ -124,13 +124,14 @@ const emit = defineEmits<{
 }
 
 .confirm__button--ghost {
-  background: #2e2e2e;
-  color: #a0a6ac;
+  background: var(--color-raised);
+  color: var(--color-ash);
 }
 
+/* The fill does not follow the theme, so its ink must not either. */
 .confirm__button--go {
-  background: #b03434;
-  color: #f2f4f6;
+  background: var(--color-danger-fill);
+  color: var(--color-danger-on-fill);
 }
 
 .confirm__button:disabled {

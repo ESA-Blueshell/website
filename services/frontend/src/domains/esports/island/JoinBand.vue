@@ -63,12 +63,13 @@ const EMAIL = "esports-affairs@blueshell.utwente.nl"
  * Full width and shallow, like the strip above it: this is the last band of the page rather
  * than a card sitting on it.
  */
+/* A band, on the shared band ground: see island.css. */
 .join-band {
+  background-color: var(--band-ground);
   position: relative;
   isolation: isolate;
   width: 100%;
   overflow: hidden;
-  background-color: var(--color-pit);
 }
 
 .join-band__wash {

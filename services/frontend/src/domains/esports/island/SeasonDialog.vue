@@ -249,7 +249,7 @@ const submit = async () => {
 }
 
 .season-form__label {
-  color: #a0a6ac;
+  color: var(--color-ash);
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -258,21 +258,21 @@ const submit = async () => {
 .season-form__input {
   width: 100%;
   padding: 0.5rem 0.6rem;
-  background: #1c1c1c;
-  border: 1px solid rgb(255 255 255 / 12%);
-  color: #f2f4f6;
+  background: var(--color-pit);
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
+  color: var(--color-chalk);
   font-family: inherit;
   font-size: 0.95rem;
 }
 
 .season-form__input:focus-visible {
-  border-color: var(--dialog-accent, #3387fa);
+  border-color: var(--dialog-accent, var(--color-brand));
   outline: none;
 }
 
 .season-form__failure {
   margin: 0;
-  color: #ff6b6b;
+  color: var(--color-danger);
   font-size: 0.85rem;
 }
 
@@ -300,23 +300,23 @@ const submit = async () => {
 
 .season-form__button--drop {
   margin-right: auto;
-  background: color-mix(in oklab, #e0696c 18%, transparent);
-  color: #eba7a7;
+  background: color-mix(in oklab, var(--color-danger-tint) 18%, transparent);
+  color: var(--color-danger-ink);
 }
 
 .season-form__button--drop:hover {
-  background: color-mix(in oklab, #e0696c 34%, transparent);
-  color: #fff2f2;
+  background: color-mix(in oklab, var(--color-danger-tint) 34%, transparent);
+  color: var(--color-danger-ink-strong);
 }
 
 .season-form__button--ghost {
-  background: #2e2e2e;
-  color: #a0a6ac;
+  background: var(--color-raised);
+  color: var(--color-ash);
 }
 
 .season-form__button--go {
-  background: var(--dialog-accent, #3387fa);
-  color: #0f1115;
+  background: var(--dialog-accent, var(--color-brand));
+  color: var(--color-void);
 }
 
 .season-form__button:disabled {

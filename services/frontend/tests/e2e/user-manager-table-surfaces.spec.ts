@@ -18,7 +18,11 @@ async function openDesktopTable(page: import("./test").Page, dark = false): Prom
   await page.setViewportSize({width: 1300, height: 800})
   await installApiMocks(page)
   await loginAsBoard(page.context())
-  if (dark) await page.addInitScript(() => localStorage.setItem("esa-blueshell.nl:darkMode", "true"))
+  // Stated, not inherited: the suite runs dark by default, so the light case has to say so.
+  await page.addInitScript(
+    (value: string) => localStorage.setItem("esa-blueshell.nl:darkMode", value),
+    String(dark),
+  )
   await page.goto("/user-manager")
   await page.getByTestId("member-manager-table").waitFor()
 

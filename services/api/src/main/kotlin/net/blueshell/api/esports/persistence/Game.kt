@@ -13,8 +13,8 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
 /**
- * A game the association plays: what it is called, the art it is drawn with, the address its
- * page answers to, what that page says, where it sits among the others, and whether a team is
+ * A game the association plays: what it is called, the art it is drawn with, the address it
+ * answers to, what is said about it, where it sits among the others, and whether a team is
  * still fielded in it.
  *
  * Everything that makes a game itself is here. The name was a label on a compiled enum and the
@@ -26,7 +26,7 @@ import net.blueshell.api.shared.model.AuditedAutoIdEntity
  * claim drift. It is derived instead: a game is current when a team played it in the season we
  * are in or the one before it.
  *
- * Removal is real rather than soft, unlike everything else on these pages. A game holding a team
+ * Removal is real rather than soft, unlike everything else in this module. A game holding a team
  * cannot be removed at all, so the only game that ever goes is one that holds nothing and has
  * none to keep. Its code is also
  * unique across every row, since that is what a team and a game account point at, and a soft
@@ -51,11 +51,11 @@ class Game(
     @Column(name = "code", nullable = false, length = 32)
     var code: String,
 
-    /** The name shown on the pages. Editable, unlike [code]. */
+    /** The name a reader sees. Editable, unlike [code]. */
     @Column(name = "name", nullable = false, length = 64)
     var name: String,
 
-    /** The URL segment this game's page is served from, e.g. "counter-strike-2". */
+    /** The URL segment this game is served from, e.g. "counter-strike-2". */
     @Column(name = "slug", nullable = false, length = 64)
     var slug: String,
 
@@ -68,21 +68,21 @@ class Game(
     var accent: String? = null,
 
     /**
-     * The game's own image, drawn in the slice for it on the esports index.
+     * The game's own image, drawn where the game is listed among the others.
      *
-     * The only place either of a game's pictures is drawn is a slice: the index header and the
-     * game's own page are the accent and nothing else.
+     * That listing is the only place either of a game's pictures is drawn; a game read on its
+     * own carries the accent and nothing else.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "banner_file_id")
     var banner: File? = null,
 
     /**
-     * The game's logo, drawn in that same slice beside the name.
+     * The game's logo, drawn there beside the name.
      *
      * It was a filename naming a file bundled into the frontend, so the only logos a game could
      * carry were the ones a developer had shipped and a name matching nothing drew nothing while
-     * saying so to nobody. It is an upload like every other picture on these pages now.
+     * saying so to nobody. It is an upload like every other picture here now.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "icon_file_id")

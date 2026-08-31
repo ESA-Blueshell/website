@@ -12,7 +12,7 @@ import java.sql.Types
 /**
  * Loads the recovered esports history from the seed files.
  *
- * The history was recovered from years of page commits, and the files under `db/seed/esports`
+ * The history was recovered from years of website commits, and the files under `db/seed/esports`
  * are the reviewed record of it: one row per game, season, team and roster entry, in a form
  * somebody who was there can read and correct. This puts what those files say into the database.
  *
@@ -88,7 +88,7 @@ class R__Esports_seed : BaseJavaMigration() {
     }
 
     /**
-     * A game as the file has it: what it is called, the address its page answers to, the art it
+     * A game as the file has it: what it is called, the address it answers to, the art it
      * carries. Whether the association still plays it is derived from the seasons, not recorded here.
      *
      * The code is the identity and is never rewritten. Unlike the rest of the seed a deleted game

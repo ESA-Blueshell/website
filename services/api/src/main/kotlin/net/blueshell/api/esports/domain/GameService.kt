@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * The games the association knows, and how each presents itself.
  *
- * Every game has a page whether or not a team is still fielded in it, because a retired game
- * keeps its history and somebody may still link to it.
+ * Every game is answered for whether or not a team is still fielded in it, because a retired
+ * game keeps its history and somebody may still link to it.
  *
  * A game's code used to be a compiled constant, so a request naming one that did not exist could
  * not be built. It is a row now, so the codes that exist are whatever the rows say, and a request
@@ -52,7 +52,7 @@ class GameService(
     /**
      * A game the association has started playing.
      *
-     * The caller says what it is called and what its page answers to; its code is taken from the
+     * The caller says what it is called and what address it answers to; its code is taken from the
      * name, because a code is the identity everything else points at and is nobody's to choose
      * twice. Art can wait: a game with none reads on the island's own colour.
      */
@@ -173,7 +173,7 @@ class GameService(
         return address
     }
 
-    /** An address is how somebody reaches a page; two games cannot share one. */
+    /** An address is how somebody reaches a game; two games cannot share one. */
     private fun claimed(address: String, mine: Long?) {
         games.findBySlug(address)?.let { held ->
             if (held.id != mine) throw AddressTaken(held.name, address)

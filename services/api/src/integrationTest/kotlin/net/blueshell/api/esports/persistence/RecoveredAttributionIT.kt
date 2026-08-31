@@ -14,7 +14,7 @@ import java.sql.Connection
 import javax.sql.DataSource
 
 /**
- * The recovered line-ups are a handle and a real name read off years of pages. The association's
+ * The recovered line-ups are a handle and a real name read off years of the old site. The association's
  * own accounts are matched to them as each place is written, so a member meets their own history.
  *
  * The migration that used to do this ran before the line-ups existed and had no test at all, so
@@ -109,7 +109,7 @@ class RecoveredAttributionIT : UserTestSupport() {
         runLoader()
 
         // The place was written before they had an account, so nothing matched it then and
-        // nothing re-matches it now. Attaching them is an admin's decision, in the pages.
+        // nothing re-matches it now. Attaching them is an admin's decision, made by hand.
         assertThat(placesNaming(late.id!!)).isZero()
     }
 

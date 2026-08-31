@@ -55,14 +55,14 @@ class GameFieldedInSeason(gameName: String, teams: Int) : EsportsRefusal(
 class GameAddressBlank : EsportsRefusal(
     HttpStatus.BAD_REQUEST,
     "GameAddressBlank",
-    "A game's page needs an address.",
+    "A game needs an address.",
     emptyMap(),
 )
 
 class AddressReserved(address: String) : EsportsRefusal(
     HttpStatus.CONFLICT,
     "AddressReserved",
-    "That address belongs to the esports index.",
+    "That address belongs to the esports listing.",
     mapOf("address" to address),
 )
 

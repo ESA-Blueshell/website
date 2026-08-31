@@ -3,8 +3,8 @@
 --
 -- All four lived in the frontend until now. Six components differed only by a paragraph, the
 -- addresses were hand-written in the router with no relation to the game they served, and two
--- games the association fielded teams in had no page at all. Trackmania had a component with
--- copy written for it and no route, so it has been unreachable.
+-- games the association fielded teams in could not be reached at all. Trackmania had a
+-- component with copy written for it and no route, so it has been unreachable.
 --
 -- The enum stays what a team, a game account and the cohort rules refer to. This is only how a
 -- game is presented.
@@ -29,7 +29,7 @@ CREATE TABLE game (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- The slugs are the addresses the router already answers to, so every link that exists keeps
--- working. The copy is what each page already said. Trackmania is given the address it never
+-- working. The copy is what was already written for each. Trackmania is given the address it never
 -- had. Whether the association still plays one is not recorded: it is derived from the
 -- seasons, where a team playing it is what says so.
 INSERT INTO game (code, slug, sort_index, intro) VALUES

@@ -81,7 +81,7 @@ class TeamRosterService(
         // entered it first — and it stays entered when the last team is dropped again.
         entered.enter(seasonId, game)
         val fielding = fielded.field(teamId, game, seasonId)
-        // Appended rather than inserted: the page lists a roster in the order it was written.
+        // Appended rather than inserted: a roster is read in the order it was written.
         val next = entries.findAllByTeamAndSeason(teamId, game, seasonId).size
         return entries.save(
             TeamRosterEntry(

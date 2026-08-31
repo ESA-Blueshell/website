@@ -42,7 +42,7 @@ enum class FileType(
     EVENT_PICTURE("event-pictures"),
     SPONSOR_PICTURE("sponsor-pictures"),
 
-    /** A game's own image, drawn in the slice for it on the esports index. */
+    /** A game's own image, drawn where the game is listed among the others. */
     GAME_BANNER(
         "game-banners",
         publiclyReadable = true,
@@ -53,7 +53,7 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
-    /** A game's logo, drawn in its slice beside the name. Lossless keeps flat colour and alpha edges sharp. */
+    /** A game's logo, drawn beside its name. Lossless keeps flat colour and alpha edges sharp. */
     GAME_ICON(
         "game-icons",
         publiclyReadable = true,
@@ -64,7 +64,7 @@ enum class FileType(
         renditionWidths = ICON_WIDTHS,
     ),
 
-    /** A team's own banner, drawn in the slice for it on its game's page. */
+    /** A team's own banner, drawn where the team is listed under its game. */
     TEAM_BANNER(
         "team-banners",
         publiclyReadable = true,
@@ -75,7 +75,7 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
-    /** A team's own logo, drawn in its slice beside the name. Lossless, for the same reason a game's is. */
+    /** A team's own logo, drawn beside its name. Lossless, for the same reason a game's is. */
     TEAM_ICON(
         "team-icons",
         publiclyReadable = true,

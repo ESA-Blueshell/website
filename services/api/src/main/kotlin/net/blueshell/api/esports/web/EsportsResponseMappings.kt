@@ -20,7 +20,7 @@ fun Season.asResponse(played: Boolean = false) = SeasonResponse(
     played = played,
 )
 
-// A season named inside a game's own page is one that game played, so it says so.
+// A season named inside a game's own read is one that game played, so it says so.
 fun SeasonView.asResponse() = SeasonResponse(
     id = id,
     name = name,

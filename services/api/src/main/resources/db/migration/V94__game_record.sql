@@ -1,7 +1,7 @@
 -- What a game is called and the art it is drawn with, moved out of the frontend and into the
 -- game's own row.
 --
--- The name lived in a compiled enum's label and again in a table in the index page; the accent,
+-- The name lived in a compiled enum's label and again in a table in the frontend; the accent,
 -- the icon and the banner lived only in the frontend, three of them in two different files. A
 -- game could therefore not be added without a deploy, however complete its row was.
 --

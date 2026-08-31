@@ -152,7 +152,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
 
     @Test
     fun `the history that was already recorded is fielded, without anybody saying so`() {
-        // The migration wrote across every link the roster entries implied, so a page that
+        // The migration wrote across every link the roster entries implied, so a read that
         // rendered before the change renders the same after it.
         val season = season()
         val team = team("BS Carried Across")

@@ -89,12 +89,12 @@ class SeasonContentsIT : UserTestSupport() {
         // The team played the other season, and still did.
         assertThat(fielded.isFielded(team.id!!, GAME, kept.id!!)).isTrue()
         assertThat(teams.findById(team.id!!)).isPresent()
-        assertThat(page(kept.id!!)).contains(team.name)
-        assertThat(page(dropped.id!!)).doesNotContain(team.name)
+        assertThat(teamsIn(kept.id!!)).contains(team.name)
+        assertThat(teamsIn(dropped.id!!)).doesNotContain(team.name)
     }
 
     @Autowired private lateinit var views: EsportsQueryService
 
-    private fun page(seasonId: Long) =
+    private fun teamsIn(seasonId: Long) =
         views.rostersOf("TRACKMANIA", seasonId).teams.map { it.name }
 }

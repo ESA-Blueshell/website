@@ -55,7 +55,7 @@ class TeamSeason(
     var season: Season,
 
     /**
-     * The art this team is drawn with in this game's band, in this season.
+     * The art this team is drawn with in this game, in this season.
      *
      * On the fielding rather than on the team: a team playing two games is drawn with each
      * game's own art, and BS HyperS keeps its CS:GO picture on the seasons it played CS:GO.

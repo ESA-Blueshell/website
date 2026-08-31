@@ -28,7 +28,7 @@ import javax.sql.DataSource
  * The art the repository ships lands on the records the seed files name.
  *
  * Run against the real converter and the real storage volume, because the point of the step is
- * that the bytes are there and are served at the widths the pages ask for. What a picture is
+ * that the bytes are there and are served at the widths a caller asks for. What a picture is
  * worth is not assertable; that a team has one, that it is the one the file named and that a
  * second start does not take it away are.
  */
@@ -92,7 +92,7 @@ class ShippedArtIT : UserTestSupport() {
         assertThat(banner.width).isEqualTo(2560)
         assertThat(files.findPublicImage(banner.path, FileType.TEAM_BANNER)).isNotNull
         // The widths themselves, which this test only claimed to check before: a master with
-        // no copies beside it is one the pages fall back to at full size, on every screen.
+        // no copies beside it is one a caller falls back to at full size, on every screen.
         assertThat(banner.renditions.mapNotNull { it.renditionWidth })
             .containsExactly(320, 640, 960, 1280, 1920, 2560)
     }
@@ -102,8 +102,8 @@ class ShippedArtIT : UserTestSupport() {
      *
      * The two tests above name one banner and one icon. This is the guarantee itself: the boot
      * loader is the only thing that puts the shipped art in storage, so a picture it stores at
-     * one width is a picture every page serves at full size for ever. Nothing else would fail —
-     * the page draws, the picture is right, and it is simply many times the weight it should be.
+     * one width is a picture served at full size for ever. Nothing else would fail — it is
+     * drawn, the picture is right, and it is simply many times the weight it should be.
      *
      * The ladder stops at the master's own width because nothing is upscaled, so what is
      * asserted is that there are copies and that none is wider than the picture.
@@ -161,7 +161,7 @@ class ShippedArtIT : UserTestSupport() {
     /**
      * Every game, including the two whose teams are history.
      *
-     * A logo existed in the frontend for all eight, and which of them the pages drew was a
+     * A logo existed in the frontend for all eight, and which of them was drawn was a
      * separate question from which of them had one — the game record named a file for six of
      * them and the other two were simply never wired up. All eight are wired up here.
      */
@@ -181,7 +181,7 @@ class ShippedArtIT : UserTestSupport() {
     fun `a game keeps its own icon rather than its predecessor's`() {
         art.apply()
 
-        // CS:GO and CS2 are one history to a reader and two logos on a page.
+        // CS:GO and CS2 are one history to a reader and two logos to draw.
         assertThat(games.findByCode("CSGO")?.icon?.path)
             .isNotEqualTo(games.findByCode("CS2")?.icon?.path)
     }
@@ -245,7 +245,7 @@ class ShippedArtIT : UserTestSupport() {
         art.apply()
 
         // Asked of an icon as well as a banner because the two are stored by separate steps,
-        // and a volume that repairs half of itself leaves every page half drawn.
+        // and a volume that repairs half of itself leaves the whole site half drawn.
         assertThat(Files.exists(bytes)).isTrue()
         assertThat(games.findByCode("VALORANT")?.icon?.path).isEqualTo(icon.path)
     }

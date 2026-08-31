@@ -17,8 +17,8 @@ import net.blueshell.api.esports.domain.EsportsQueryService
 
 /**
  * A roster entry said whether somebody was a player, a substitute or a coach, and nothing
- * else. A captain, an in-game leader and a jungler are all PLAYER, so the page had no way to
- * say what any of them actually did, and nowhere to put the sentence a visitor remembers.
+ * else. A captain, an in-game leader and a jungler are all PLAYER, so there was no way to say
+ * what any of them actually did, and nowhere to put the sentence a visitor remembers.
  */
 @SpringBootTest
 class RosterEntryDetailIT : UserTestSupport() {
@@ -59,7 +59,7 @@ class RosterEntryDetailIT : UserTestSupport() {
     }
 
     @Test
-    fun `both reach the public page, where the roster is read`() {
+    fun `both reach the public read, where the roster is published`() {
         val season = season()
         val team = team()
         rosters.add(

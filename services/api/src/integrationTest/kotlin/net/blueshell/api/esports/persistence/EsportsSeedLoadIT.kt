@@ -32,7 +32,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
     fun `every record in the files lands`() {
         runLoader()
 
-        // The history the pages published, recovered: eight games, twelve seasons, twenty-seven
+        // The history the association published, recovered: eight games, twelve seasons, twenty-seven
         // teams and five hundred and twenty-six appearances.
         assertThat(count("game")).isEqualTo(8)
         assertThat(count("season")).isEqualTo(12)
@@ -53,7 +53,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game with no page of its own is loaded like any other`() {
+    fun `a game with nothing said about it is loaded like any other`() {
         runLoader()
 
         // CS:GO and Smash are history with nothing rendering them, which is exactly why the

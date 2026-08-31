@@ -21,8 +21,8 @@ import org.hibernate.annotations.SQLRestriction
  *
  * The team and the season come with [teamSeason] rather than being named again here. Naming
  * them again would be the same fact written twice and able to disagree with itself, and it
- * would leave a line-up for a team nobody fielded writable — a state the pages have no way to
- * draw and no reason to hold. It is unrepresentable instead of merely discouraged.
+ * would leave a line-up for a team nobody fielded writable — a state nothing has any way to
+ * publish and no reason to hold. It is unrepresentable instead of merely discouraged.
  *
  * `userId` is nullable and a plain Long. Nullable because most of the recovered history is a
  * handle and nothing else, and an entry nobody can attribute is still the roster that played;
@@ -94,7 +94,7 @@ class TeamRosterEntry(
     @Column(name = "display_name", nullable = true, length = 128)
     var displayName: String? = null,
 
-    /** The order the page lists them in, which is the order they were written in. */
+    /** The order they are listed in, which is the order they were written in. */
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,
 ) : AuditedAutoIdEntity() {

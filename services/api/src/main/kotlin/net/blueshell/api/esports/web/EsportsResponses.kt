@@ -11,7 +11,7 @@ data class SeasonResponse(
     val name: String,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    @Schema(description = "Whether anything was fielded in it, which is what a visitor's season strip carries")
+    @Schema(description = "Whether anything was fielded in it, which is which seasons a visitor is offered")
     val played: Boolean = false,
 )
 
@@ -27,7 +27,7 @@ data class SeasonGameResponse(
 data class TeamResponse(
     val id: Long,
     val name: String,
-    @Schema(description = "The team's own icon, drawn in its slice beside the name. The banner it is drawn on belongs to the fielding, not to the team")
+    @Schema(description = "The team's own icon, drawn beside the name. The banner it is drawn on belongs to the fielding, not to the team")
     val icon: Image? = null,
 )
 
@@ -37,21 +37,21 @@ data class FieldingResponse(
     val season: SeasonResponse,
 )
 
-@Schema(description = "A game: what it is called, the art it is drawn with, and how its page presents it")
+@Schema(description = "A game: what it is called, the art it is drawn with, and how it is presented")
 data class GameResponse(
     @Schema(description = "The identifier teams, rosters and game accounts reference. Never changes")
     val code: String,
-    @Schema(description = "What the pages print for this game")
+    @Schema(description = "What this game is called")
     val name: String,
-    @Schema(description = "The address the game's page answers to")
+    @Schema(description = "The address this game answers to")
     val slug: String,
     @Schema(description = "The colour that carries this game, where one has been chosen")
     val accent: String?,
-    @Schema(description = "The game's own image, drawn in the slice for it on the esports index")
+    @Schema(description = "The game's own image")
     val banner: Image? = null,
-    @Schema(description = "The game's own icon, drawn in that slice beside the name")
+    @Schema(description = "The game's own icon")
     val icon: Image? = null,
-    @Schema(description = "What the page says about the game, where anything is said")
+    @Schema(description = "What is said about the game, where anything is said")
     val intro: String?,
     @Schema(description = "Where the game sits among the others")
     val sortIndex: Int,
@@ -59,7 +59,7 @@ data class GameResponse(
     val current: Boolean,
 )
 
-@Schema(description = "One person on a team's roster, as the public pages show them")
+@Schema(description = "One person on a team's roster, as the public read has them")
 data class RosterMemberResponse(
     val role: TeamRole,
     @Schema(description = "What this member is called in the game")
@@ -79,9 +79,9 @@ data class TeamRosterResponse(
     val id: Long,
     val name: String,
     val members: List<RosterMemberResponse>,
-    @Schema(description = "The team's own banner, drawn in the slice for it")
+    @Schema(description = "The team's own banner")
     val banner: Image? = null,
-    @Schema(description = "The team's own icon, drawn in that slice beside the name")
+    @Schema(description = "The team's own icon, shown beside the name")
     val icon: Image? = null,
 )
 

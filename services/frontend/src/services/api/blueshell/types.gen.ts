@@ -584,7 +584,7 @@ export type CreateGameRequest = {
     intro?: string | null;
     name: string;
     /**
-     * The address the game's page answers to
+     * The address this game answers to
      */
     slug: string;
     /**
@@ -924,7 +924,7 @@ export type GameContentsResponse = {
 };
 
 /**
- * A game: what it is called, the art it is drawn with, and how its page presents it
+ * A game: what it is called, the art it is drawn with, and how it is presented
  */
 export type GameResponse = {
     /**
@@ -932,7 +932,7 @@ export type GameResponse = {
      */
     accent?: string | null;
     /**
-     * The game's own image, drawn in the slice for it on the esports index
+     * The game's own image
      */
     banner?: Image | null;
     /**
@@ -944,19 +944,19 @@ export type GameResponse = {
      */
     current: boolean;
     /**
-     * The game's own icon, drawn in that slice beside the name
+     * The game's own icon
      */
     icon?: Image | null;
     /**
-     * What the page says about the game, where anything is said
+     * What is said about the game, where anything is said
      */
     intro?: string | null;
     /**
-     * What the pages print for this game
+     * What this game is called
      */
     name: string;
     /**
-     * The address the game's page answers to
+     * The address this game answers to
      */
     slug: string;
     /**
@@ -1422,7 +1422,7 @@ export type RosterEntryResponse = {
 };
 
 /**
- * One person on a team's roster, as the public pages show them
+ * One person on a team's roster, as the public read has them
  */
 export type RosterMemberResponse = {
     /**
@@ -1491,7 +1491,7 @@ export type SeasonResponse = {
     id: number;
     name: string;
     /**
-     * Whether anything was fielded in it, which is what a visitor's season strip carries
+     * Whether anything was fielded in it, which is which seasons a visitor is offered
      */
     played: boolean;
     startDate: string;
@@ -1608,7 +1608,7 @@ export enum TargetSystem {
  */
 export type TeamResponse = {
     /**
-     * The team's own icon, drawn in its slice beside the name. The banner it is drawn on belongs to the fielding, not to the team
+     * The team's own icon, drawn beside the name. The banner it is drawn on belongs to the fielding, not to the team
      */
     icon?: Image | null;
     id: number;
@@ -1626,11 +1626,11 @@ export enum TeamRole {
  */
 export type TeamRosterResponse = {
     /**
-     * The team's own banner, drawn in the slice for it
+     * The team's own banner
      */
     banner?: Image | null;
     /**
-     * The team's own icon, drawn in that slice beside the name
+     * The team's own icon, shown beside the name
      */
     icon?: Image | null;
     id: number;
@@ -1754,11 +1754,11 @@ export type UpdateGameRequest = {
     icon?: string | null;
     intro?: string | null;
     /**
-     * What the pages print for this game. Its code is not editable
+     * What this game is called. Its code is not editable
      */
     name: string;
     /**
-     * The address the game's page answers to
+     * The address this game answers to
      */
     slug: string;
     sortIndex: number;

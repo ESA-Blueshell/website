@@ -56,7 +56,7 @@ class GameIT : UserTestSupport() {
      * game account point at one.
      */
     @Test
-    fun `every game has a page, in the order they are shown`() {
+    fun `every game is answered for, in the order they are shown`() {
         // Eight games: the six still fielded and the two whose teams are history.
         mvc.perform(get("/esports/games"))
             .andExpect(status().isOk)
@@ -96,7 +96,7 @@ class GameIT : UserTestSupport() {
     }
 
     @Test
-    fun `the addresses are the ones the pages already answered to`() {
+    fun `the addresses are the ones already answered to`() {
         // Every link anybody has ever shared keeps working.
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'CS2')].slug").value("counter-strike-2"))
@@ -105,7 +105,7 @@ class GameIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game whose page was never routed to has an address now`() {
+    fun `a game that was never routed to has an address now`() {
         // Trackmania had a component with copy written for it and nothing routing to it.
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].slug").value("trackmania"))
@@ -113,10 +113,10 @@ class GameIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game nobody has played is not current, and keeps its page`() {
+    fun `a game nobody has played is not current, and is still answered for`() {
         // Derived rather than declared, and this suite starts from a database with no seasons
         // and no fieldings in it: nothing has been played, so nothing is current, and every
-        // game still has its page. What the rule answers once games have been played is
+        // game is still answered for. What the rule answers once games have been played is
         // asserted in CurrentlyPlayedIT, which builds the seasons it needs.
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].current").value(false))
@@ -125,7 +125,7 @@ class GameIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game carries the name the pages print`() {
+    fun `a game carries the name a reader sees`() {
         mvc.perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'LEAGUE_OF_LEGENDS')].name").value("League of Legends"))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].name").value("CS:GO"))
@@ -354,7 +354,7 @@ class GameIT : UserTestSupport() {
     fun `a game cannot claim the index's own address`() {
         val board = createUserWithRole(Role.BOARD)
 
-        // It would have a record and no page, because that address is the index's.
+        // It would have a record nothing could reach, because that address is taken.
         mvc.perform(
             post("/esports/games").with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -453,7 +453,7 @@ class GameIT : UserTestSupport() {
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].name").value("CS:GO"))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].slug").value("counter-strike-global-offensive"))
 
-        // Its teams are still there to read, which is the whole reason it keeps its page.
+        // Its teams are still there to read, which is the whole reason it is kept.
         mvc.perform(get("/esports/games/{game}", "CSGO"))
             .andExpect(status().isOk)
     }
@@ -482,7 +482,7 @@ class GameIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game holding nothing is removed, and its page stops answering`() {
+    fun `a game holding nothing is removed, and its address stops answering`() {
         val board = createUserWithRole(Role.BOARD)
         mvc.perform(
             post("/esports/games").with(bearer(board))
@@ -539,7 +539,7 @@ class GameIT : UserTestSupport() {
     }
 
     @Test
-    fun `a member cannot rewrite a game's page`() {
+    fun `a member cannot rewrite a game`() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc.perform(
@@ -552,7 +552,7 @@ class GameIT : UserTestSupport() {
     }
 
     @Test
-    fun `an anonymous visitor may read the pages but not change one`() {
+    fun `an anonymous visitor may read the games but not change one`() {
         mvc.perform(get("/esports/games")).andExpect(status().isOk)
         mvc.perform(
             put("/esports/games/{game}", "VALORANT")

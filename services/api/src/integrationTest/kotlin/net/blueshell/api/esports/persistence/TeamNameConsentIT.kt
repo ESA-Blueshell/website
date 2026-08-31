@@ -17,8 +17,8 @@ import java.sql.Date
 import java.time.LocalDate
 
 /**
- * Whether a roster shows a real name is the member's own decision, and the page asks that
- * question of every entry it draws.
+ * Whether a roster shows a real name is the member's own decision, and that question is asked
+ * of every entry the public read carries.
  */
 @SpringBootTest
 class TeamNameConsentIT : UserTestSupport() {
@@ -135,7 +135,7 @@ class TeamNameConsentIT : UserTestSupport() {
     }
 
     @Test
-    fun `revoking it takes the name off the page on the next read`() {
+    fun `revoking it takes the name out of the roster on the next read`() {
         val member = createUserWithRole(Role.MEMBER)
         val profile = profileFor(member, consents = true)
         val playing = season()

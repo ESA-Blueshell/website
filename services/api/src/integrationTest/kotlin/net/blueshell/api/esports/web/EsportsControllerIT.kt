@@ -80,7 +80,7 @@ class EsportsControllerIT : UserTestSupport() {
     }
 
     @Nested
-    inner class PublicPage {
+    inner class PublicRead {
         @Test
         fun `shows the newest season's roster when none is asked for`() {
             val older = season("Older ${System.nanoTime()}", LocalDate.of(2021, 9, 1), LocalDate.of(2022, 1, 31))
@@ -142,7 +142,7 @@ class EsportsControllerIT : UserTestSupport() {
      *
      * Both of a team's pictures are staged by a picker and committed by the save that names
      * them, so what these ask is that a path a caller hands in comes back on the team, that a
-     * save naming none takes them away, and that the icon reaches the page the game draws.
+     * save naming none takes them away, and that the icon reaches the read the game answers.
      */
     @Test
     fun `a team made for one game is fielded in another it already plays`() {
@@ -177,7 +177,7 @@ class EsportsControllerIT : UserTestSupport() {
         //
         // Asked as the board, which is who asks it: the route carries `@PermitAll`, but the
         // security config has never whitelisted it, so an anonymous caller is refused. Nothing
-        // public reads it — a game's page reads the page — and squaring that declaration with
+        // public reads it — a game's own read answers it — and squaring that declaration with
         // the configuration is a change to the security surface rather than to this feature.
         mvc.perform(get("/esports/teams/{teamId}/seasons", teamId).with(bearer(board)))
             .andExpect(status().isOk)
@@ -219,12 +219,12 @@ class EsportsControllerIT : UserTestSupport() {
         }
 
         /**
-         * The payload names the narrower copies, which is how a page asks for one of them.
+         * The payload names the narrower copies, which is how a caller asks for one of them.
          *
          * Nothing asserted this before, and its failure is invisible: a payload that carried
-         * only the full-size picture would draw every page correctly and at several times the
-         * weight, on every screen, for ever. The pages compose a `srcset` out of exactly this
-         * list, and an empty one means they fall back to the master.
+         * only the full-size picture would draw correctly and at several times the weight, on
+         * every screen, for ever. A caller composes a `srcset` out of exactly this list, and an
+         * empty one means it falls back to the master.
          */
         @Test
         fun `the payload carries the widths a banner is stored at`() {
@@ -297,7 +297,7 @@ class EsportsControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `a team's icon reaches the page its game draws`() {
+        fun `a team's icon reaches the read its game answers`() {
             val board = createUserWithRole(Role.BOARD)
             val icon = storedPicture(board, FileType.TEAM_ICON)
             val playing = season("Drawn ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))

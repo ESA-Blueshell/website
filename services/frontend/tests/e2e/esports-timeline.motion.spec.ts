@@ -19,7 +19,7 @@ test.describe("the season timeline, with motion", () => {
       el => Number.parseFloat(getComputedStyle(el).getPropertyValue("--lit")),
     )
 
-    // At rest it runs as far as the season on show, which is the newest.
+    // At rest it runs as far as the shown season, which is the newest.
     const atRest = await lit()
     expect(atRest).toBeGreaterThan(50)
 

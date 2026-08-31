@@ -85,7 +85,7 @@ const nodes = computed(() => axis.value.nodes)
 const track = computed(() => axis.value.track)
 
 /**
- * How far the line is lit: to the pointer, or to the season on show at rest.
+ * How far the line is lit: to the pointer, or to the shown season at rest.
  *
  * A share of the track, because that is the box the layer drawing it occupies — so the lit
  * stretch ends on the middle of the node however many seasons there are and whether or not
@@ -98,7 +98,7 @@ const litFraction = computed<number>(() => {
 })
 
 /**
- * The season on show was chosen here, on a node in front of the visitor.
+ * The shown season was chosen here, on a node in front of the visitor.
  *
  * The strip opens on the season being shown, which is right when that season arrives from
  * somewhere the visitor cannot see — a shared link, the back button, a season just written
@@ -682,7 +682,7 @@ const step = (from: number, by: number) => {
 }
 
 /*
- * The season on show, which is the first thing the strip is asked.
+ * The shown season, which is the first thing the strip is asked.
  *
  * Its wash, and nothing else: deeper in the game's own colour than a band under the pointer
  * can go, and washed up from the foot as well as down from the head, so it reads as lit from

@@ -54,7 +54,19 @@ const {decorative} = useMotionAllowed()
           </dialog-close>
         </div>
 
-        <slot />
+        <div class="island-dialog__body">
+          <slot />
+        </div>
+
+        <!--
+          Pinned under the form rather than scrolling with it, so the way out of a dialog is
+          where it was the last time you looked. The bar draws its own rule and its own
+          spacing, because a footer that drew them would draw them around nothing on the
+          dialogs that have no buttons to put here yet.
+        -->
+        <div class="island-dialog__foot">
+          <slot name="footer" />
+        </div>
       </dialog-content>
     </dialog-portal>
   </dialog-root>
@@ -84,7 +96,11 @@ const {decorative} = useMotionAllowed()
      this the dialog stands the full height of the screen. */
   min-height: 0;
   height: fit-content;
-  overflow-y: auto;
+  /* The head and the foot hold their ground and the form between them takes the scrolling, so
+     the root itself never scrolls. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   transform: translate(-50%, -50%);
   padding: 1.25rem;
   background: #262626;
@@ -98,6 +114,16 @@ const {decorative} = useMotionAllowed()
 .island-dialog__scrim--still,
 .island-dialog--still {
   animation: none;
+}
+
+.island-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.island-dialog__foot {
+  flex: 0 0 auto;
 }
 
 .island-dialog__head {

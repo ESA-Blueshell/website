@@ -11,7 +11,6 @@ import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {type EsportsImage} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
-import FieldTeamDialog from "@/domains/esports/island/FieldTeamDialog.vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
@@ -21,7 +20,7 @@ import {useSeasons} from "@/domains/esports/island/useSeasons"
 import {newestSeason, seasonsIncluding} from "@/domains/esports/island/seasonAxis"
 import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
 import {useEsportsPage} from "../composables/useEsportsPage"
-import type {Game, Season, Team} from "../adapters/esports"
+import type {Game, Season} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
@@ -123,7 +122,7 @@ const stripSeasons = computed<Season[]>(() => seasonsIncluding(
 ))
 
 /**
- * The newest season this game was actually fielded in, where the one on show is not it.
+ * The newest season this game was actually fielded in, where the shown one is not it.
  *
  * A page that opens on a season this game sat out has nothing to show and, without this,
  * nothing to offer either. The seasons it played are part of its own answer, so naming the
@@ -165,25 +164,7 @@ const seasonRemoved = async (gone: Season) => {
   else await reload()
 }
 
-/** Which way in was pressed: a team that played before, or one being made here. */
-const fieldingExisting = ref(false)
 const addingTeam = ref(false)
-
-const openWayIn = (key: string) => {
-  if (key === "played-before") fieldingExisting.value = true
-  else addingTeam.value = true
-}
-
-/**
- * The two ways a team arrives in a season, in the order they are pressed most.
- *
- * Two panes rather than one with a choice inside it: picking a team that played before is a
- * press, and making one is a whole line-up. A single pane would put both behind the same one.
- */
-const waysIn = [
-  {key: "played-before", label: "A team that played before"},
-  {key: "new-team", label: "A new team"},
-]
 
 /** The team just added, which is the one to look at when the band comes back. */
 const justAdded = ref<number | null>(null)
@@ -196,21 +177,11 @@ const justAdded = ref<number | null>(null)
 const carried = ref<number | null>(null)
 
 /**
- * The season is asked about again rather than patched here: what a team looks like on the
- * page is the api's answer, roster and all, and a team just added has a roster only because
- * something was written on the other side.
- */
-const teamAdded = async (team: Team) => {
-  justAdded.value = team.id
-  await reload(season.value?.id)
-}
-
-/**
- * A team made here, which the page learns about by asking again.
+ * A team added here, which the page learns about by asking again.
  *
- * Which one it is comes from the answer rather than from what was typed: the editor writes the
+ * Which one it is comes from the answer rather than from what was typed: the dialog writes the
  * team, fields it and its line-up in turn, and the slice to look at is the one that was not
- * there before.
+ * there before. That holds whether it was picked out of the pool or made here.
  */
 const teamMade = async () => {
   const before = new Set(teams.value.map(one => one.id))
@@ -382,20 +353,11 @@ const seasonSaved = (saved: Season) => {
           @update:open="closeEditor"
         />
 
-        <field-team-dialog
-          :accent="identity.accent"
-          :already-fielded="teams.map(one => one.id)"
-          :game="game"
-          :open="fieldingExisting"
-          :season="season"
-          @fielded="teamAdded"
-          @update:open="fieldingExisting = $event"
-        />
-
-        <!-- The same editor a line-up is corrected in, opened on nothing: a team is made
-             described in full, and nothing is written until Create. -->
+        <!-- The same editor a line-up is corrected in, opened on nothing: it asks first which
+             kind of adding this is, and is a picker or the whole form accordingly. -->
         <lineup-editor
           :accent="identity.accent"
+          :already-fielded="teams.map(one => one.id)"
           :game="game"
           :open="addingTeam"
           :season="season"
@@ -425,8 +387,12 @@ const seasonSaved = (saved: Season) => {
             data-testid="esports-loading"
           />
 
+          <!--
+            A visitor is told, and pointed at the last season this game did play. A reader who
+            may edit is told in the band itself, in a slice with the way in beside it.
+          -->
           <div
-            v-else-if="!hasRosters"
+            v-else-if="!hasRosters && !mayEdit"
             class="flex min-h-[22rem] w-full flex-col items-center justify-center gap-2 bg-surface px-5 text-center font-body text-sm text-ash"
             data-testid="esports-empty"
           >
@@ -452,21 +418,33 @@ const seasonSaved = (saved: Season) => {
             Within one season the band still updates in place, and only what changed moves.
           -->
           <Motion
-            v-else
+            v-if="hasRosters || mayEdit"
             v-bind="entrance(0)"
           >
             <banner-slices
               :accent="identity.accent"
-              :adds="waysIn"
+              add-label="Add a team"
+              :empty-label="`No teams played ${season?.name ?? 'this season'} yet`"
               :items="slices"
               :may-add="mayEdit"
               :may-edit="mayEdit"
               :open-id="justAdded ?? carried"
               testid-prefix="team-roster"
-              @add="openWayIn"
+              @add="addingTeam = true"
               @edit="editLineup"
               @open="id => carried = id == null ? null : Number(id)"
             >
+              <template #empty>
+                <router-link
+                  v-if="lastPlayed"
+                  class="team-slice__link"
+                  data-testid="esports-empty-last-played"
+                  :to="`${route.path}?season=${lastPlayed.id}`"
+                >
+                  {{ identity.name }} last played {{ lastPlayed.name }} →
+                </router-link>
+              </template>
+
               <template #details="{item}">
                 <span
                   v-for="group in rosterOf(item.id as number)"

@@ -131,9 +131,11 @@
     padding: 0;
   }
 
-  /* Focus must stay visible: the island's own reset is not licence to lose it. */
+  /* Focus must stay visible: the island's own reset is not licence to lose it. Drawn in the
+     association's own blue rather than the acid green, which at #a8ff00 shouts over every
+     field it rings and reads as a warning rather than as "you are here". */
   .esports-island :focus-visible {
-    outline: 2px solid var(--color-acid);
+    outline: 2px solid var(--color-brand);
     outline-offset: 2px;
   }
 }

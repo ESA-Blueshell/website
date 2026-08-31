@@ -9,7 +9,7 @@ defineOptions({name: "SeasonSwipe"})
 
 const props = defineProps<{
   /**
-   * The season whose contents are on show.
+   * The season whose contents are shown.
    *
    * The season that has *arrived*, not the one that was clicked. The strip answers a click at
    * once; the band waits, and then moves once. A band half way across the screen while a

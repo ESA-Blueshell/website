@@ -6,7 +6,6 @@ import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
 import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
-import EnterGameDialog from "@/domains/esports/island/EnterGameDialog.vue"
 import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
@@ -34,7 +33,7 @@ const urlOf = (game: string) => {
   return record ? `/esports/${record.slug}` : "/esports"
 }
 
-// The band is one read now: the api answers with the games of the season on show, and with
+// The band is one read now: the api answers with the games of the shown season, and with
 // the ones entered and not yet staffed where the reader may edit.
 const {seasons, selected, chosen, entries, loading, fielded, show, reload} =
   useSeasonLineup(() => seasonInRoute(route), ready)
@@ -78,7 +77,7 @@ const slices = computed(() =>
 
 const teamsOf = (game: string) => entries.value.find(e => e.game === game)?.teams ?? []
 
-/** Whether a visitor sees this game in the season on show, which the api decided. */
+/** Whether a visitor sees this game in the shown season, which the api decided. */
 const isPublic = (game: string) => entries.value.find(e => e.game === game)?.public !== false
 
 const chooseSeason = (id: number) => {
@@ -150,24 +149,11 @@ const gameSaved = async () => {
   await reload(selected.value ?? undefined)
 }
 
-/** Which way in was pressed: a game played before, or a new one described in full. */
-const entering = ref(false)
 const addingGame = ref(false)
 /** The game just put into the season, which is the slice to look at. */
 const justAdded = ref<Game | null>(null)
 
-const openWayIn = (key: string) => {
-  if (key === "played-before") entering.value = true
-  else addingGame.value = true
-}
-
-/** The two ways a game arrives in a season, in the order they are pressed most. */
-const waysIn = [
-  {key: "played-before", label: "A game we played before"},
-  {key: "new-game", label: "A game we have started playing"},
-]
-
-/** Which games are already in the season on show, so the picker does not offer them again. */
+/** Which games are already in the shown season, so the picker does not offer them again. */
 const gamesInSeason = computed<Game[]>(() => entries.value.map(entry => entry.game))
 
 const gameEntered = async (game: Game) => {
@@ -182,12 +168,12 @@ const gameEntered = async (game: Game) => {
  */
 const carried = ref<Game | null>(null)
 
-/** The season on show, with whatever game the team was added to now among its slices. */
+/** The shown season, with whatever game the team was added to now among its slices. */
 const seasonOnShow = computed<Season | null>(() =>
   seasons.value.find(one => one.id === selected.value) ?? null)
 
 /**
- * Taking a game out of the season on show.
+ * Taking a game out of the shown season.
  *
  * Its own act rather than something that happens when the last team is dropped: "we entered
  * this and fielded nobody" is a fact worth keeping, and correcting it is a decision. Refused
@@ -294,8 +280,13 @@ const seasonSaved = (saved: Season) => {
             data-testid="esports-index-loading"
           />
 
+          <!--
+            A visitor is told and there is nothing for them to do about it. A reader who may
+            edit is told in the band itself, in a slice with the way in beside it, so the two
+            are one row rather than a notice stacked over a band.
+          -->
           <p
-            v-else-if="!fielded"
+            v-else-if="!fielded && !mayEdit"
             class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
             data-testid="esports-index-empty"
           >
@@ -309,19 +300,20 @@ const seasonSaved = (saved: Season) => {
             Within one season the band still updates in place, and only what changed moves.
           -->
           <Motion
-            v-else
+            v-if="fielded || mayEdit"
             v-bind="entrance"
           >
             <banner-slices
               accent="var(--color-brand)"
-              :adds="waysIn"
+              add-label="Add a game"
+              :empty-label="`No games ran in ${seasonName || 'this season'} yet`"
               :items="slices"
               :may-add="mayEdit"
               :open-id="justAdded ?? carried"
               :may-edit="mayEdit"
               testid-prefix="esports-game"
               @go="item => item.href && router.push(item.href)"
-              @add="openWayIn"
+              @add="addingGame = true"
               @edit="id => editGame(String(id))"
               @open="id => carried = id == null ? null : String(id)"
             >
@@ -329,7 +321,7 @@ const seasonSaved = (saved: Season) => {
                 <!--
                   A game entered with nobody in it, which only the board is answered with. It
                   says what it is rather than reading as an empty game, and the way on is the
-                  game's own page for the season on show — where a team is added.
+                  game's own page for the shown season — where a team is added.
                 -->
                 <p
                   v-if="!isPublic(String(item.id))"
@@ -394,19 +386,11 @@ const seasonSaved = (saved: Season) => {
           @update:open="gameEditorOpen = $event"
         />
 
-        <enter-game-dialog
-          accent="var(--color-brand)"
-          :already-in="gamesInSeason"
-          :open="entering"
-          :season="seasonOnShow"
-          @entered="gameEntered"
-          @update:open="entering = $event"
-        />
-
-        <!-- The same editor a game is corrected in, opened on nothing: a game is added
-             described in full rather than as a name to be finished somewhere else. -->
+        <!-- The same dialog a game is corrected in, opened on nothing: it asks first which
+             kind of adding this is, and is a picker or the whole editor accordingly. -->
         <game-dialog
           accent="var(--color-brand)"
+          :already-in="gamesInSeason"
           :enter-in="seasonOnShow"
           :game="null"
           :open="addingGame"

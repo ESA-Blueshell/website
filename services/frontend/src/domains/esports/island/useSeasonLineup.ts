@@ -98,7 +98,7 @@ export function useSeasonLineup(
     if (next != null && next !== chosen.value) void load(next)
   })
 
-  // `reload` re-asks about the season already on show, which `show` declines to do.
+  // `reload` re-asks about the season already shown, which `show` declines to do.
   return {
     seasons, selected, chosen, entries, loading, show, reload: load,
     fielded: computed(() => entries.value.length > 0),

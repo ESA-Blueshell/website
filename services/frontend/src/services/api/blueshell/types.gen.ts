@@ -794,6 +794,10 @@ export type FieldTeamRequest = {
      */
     banner?: string | null;
     /**
+     * Which of this team's line-ups to copy across; wins over carryLineup
+     */
+    carryFrom?: LineupSourceRequest | null;
+    /**
      * Copy the line-up this team last had in this game into this season
      */
     carryLineup: boolean;
@@ -1124,6 +1128,14 @@ export type JobTypeDescriptor = {
 export type JwtRequest = {
     password: string;
     username: string;
+};
+
+/**
+ * One line-up of a team's: which game it was played in, and which season
+ */
+export type LineupSourceRequest = {
+    game: string;
+    seasonId: number;
 };
 
 export type LinkBoardMemberRequest = {

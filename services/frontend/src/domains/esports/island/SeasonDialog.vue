@@ -129,6 +129,7 @@ const submit = async () => {
     @update:open="emit('update:open', $event)"
   >
     <form
+      id="season-dialog-form"
       class="season-form"
       @submit.prevent="submit"
     >
@@ -178,7 +179,11 @@ const submit = async () => {
       >
         {{ failure }}
       </p>
+    </form>
 
+    <!-- In the footer, like the other dialogs on the island. Save names the form it submits
+         rather than sitting inside it, which is what lets it stand out here. -->
+    <template #footer>
       <div class="season-form__actions">
         <button
           v-if="season"
@@ -201,12 +206,13 @@ const submit = async () => {
           class="season-form__button season-form__button--go"
           data-testid="season-dialog-save"
           :disabled="!complete || saving"
+          form="season-dialog-form"
           type="submit"
         >
           {{ saving ? "Saving" : "Save" }}
         </button>
       </div>
-    </form>
+    </template>
   </island-dialog>
 
   <confirm-dialog
@@ -271,11 +277,14 @@ const submit = async () => {
   font-size: 0.85rem;
 }
 
+/* Its own rule and its own spacing: see the footer in IslandDialog. */
 .season-form__actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
-  margin-top: 0.35rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
 }
 
 .season-form__button {
@@ -292,8 +301,13 @@ const submit = async () => {
 
 .season-form__button--drop {
   margin-right: auto;
-  background: none;
-  color: #d98080;
+  background: color-mix(in oklab, #e0696c 18%, transparent);
+  color: #eba7a7;
+}
+
+.season-form__button--drop:hover {
+  background: color-mix(in oklab, #e0696c 34%, transparent);
+  color: #fff2f2;
 }
 
 .season-form__button--ghost {

@@ -230,7 +230,14 @@ class EsportsController(
         @PathVariable teamId: Long,
         @Valid @RequestBody request: FieldTeamRequest,
     ): FieldedTeamResponse {
-        val fieldedTeam = rosters.fieldWithLineup(teamId, request.game, seasonId, request.carryLineup, request.banner)
+        val fieldedTeam = rosters.fieldWithLineup(
+            teamId = teamId,
+            game = request.game,
+            seasonId = seasonId,
+            carryLineup = request.carryLineup,
+            banner = request.banner,
+            carryFrom = request.carryFrom?.let { TeamRosterService.LineupSource(it.game, it.seasonId) },
+        )
         return FieldedTeamResponse(
             team = fieldedTeam.team.asResponse(),
             game = fieldedTeam.fielding.game,

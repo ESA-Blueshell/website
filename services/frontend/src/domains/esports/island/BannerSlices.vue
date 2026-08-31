@@ -39,13 +39,21 @@ const props = withDefaults(defineProps<{
   /** Whether the band ends in ways to add another. */
   mayAdd?: boolean
   /**
-   * The ways to add, one pane each, in the order they are given.
+   * What a band with nothing in it says, drawn as a slice of its own.
    *
-   * A page says what its ways in are rather than the band assuming one: the index offers a
-   * game played before and a new game, and the two are different enough — a click against a
-   * whole editor — that a single pane hiding a choice would be the wrong shape.
+   * A sentence in a bar above the band and the way in at the end of the band read as two
+   * separate things stacked on one another. Said in a slice, with the plus beside it, the
+   * band is one row again and the emptiness is a fact about it rather than a notice over it.
    */
-  adds?: Array<{key: string; label: string}>
+  emptyLabel?: string
+  /**
+   * What the plus is called, since one page adds a game and the other adds a team.
+   *
+   * One pane, not one per way in. Adding a game the association has played before and adding
+   * one it has just started are the same intention answered two ways, and two plusses side by
+   * side read as two different things to do. The choice is made in the dialog the pane opens.
+   */
+  addLabel?: string
   /**
    * One slice to open by name, which wins over opening the first.
    *
@@ -58,11 +66,11 @@ const props = withDefaults(defineProps<{
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
 }>(), {
-  mayAdd: false, adds: () => [], openId: null, mayEdit: false,
+  mayAdd: false, addLabel: "Add", emptyLabel: "", openId: null, mayEdit: false,
 })
 
 const emit = defineEmits<{
-  (event: "add", key: string): void
+  (event: "add"): void
   (event: "edit", id: SliceItem["id"]): void
   (event: "go", item: SliceItem): void
   /**
@@ -121,6 +129,99 @@ const releaseTap = () => {
 }
 
 /**
+ * The share of the row an open slice takes, which is what `flex-grow` gives it.
+ *
+ * Kept here as a number because the figure a banner is fetched at is worked out from it: the
+ * stylesheet and this have to say the same thing, and there is no way to ask the stylesheet.
+ */
+const OPEN_SHARE = 3.4
+
+/** Roughly what the way-in slice takes out of the row, which is `clamp(6.5rem, 11%, 10rem)`. */
+const WAY_IN_SHARE = 0.11
+
+const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
+
+/**
+ * The width each banner is fetched at, worked out rather than measured.
+ *
+ * Worked out from the two things that decide it — how many slices share the row and how wide
+ * the window is — because measuring means waiting for layout, and because a measurement taken
+ * as a slice opens reads the box it had shut: its share of the row is transitioned over 620ms.
+ * The arithmetic knows where it is going the moment the pointer arrives.
+ *
+ * Stacked, a slice is the width of the window and nothing else comes into it.
+ *
+ * A collapsed slice is asked for its own share and no more, which is less than the picture is
+ * strictly drawn at: a banner covers a slice taller than a collapsed share is wide, so it is
+ * scaled up. That is deliberate. A collapsed slice is drawn under `grayscale(70%)
+ * brightness(0.5)`, which is close enough to a silhouette that the difference cannot be seen,
+ * and the slice being read — the one at full brightness and in colour — has a share wide
+ * enough to cover itself honestly.
+ */
+const wanted = (index: number): number => {
+  const width = viewport.value
+  if (width === 0) return 0
+  if (stacked()) return width
+
+  const count = props.items.length
+  if (count === 0) return width
+  // One slice is open, unless nothing is yet.
+  const units = open.value == null ? count : count - 1 + OPEN_SHARE
+  const share = index === open.value ? OPEN_SHARE : 1
+  const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
+  return Math.ceil((band * share) / units)
+}
+
+/**
+ * What each banner has been asked for, never less than it was already asked for.
+ *
+ * Only ever upward, for two reasons: a browser will not swap a picture it has for a smaller
+ * one, so asking for less achieves nothing; and a slice that has been opened once has the
+ * wider copy in cache, so asking for it again is a cache hit rather than a download.
+ */
+const askedFor = ref<number[]>([])
+
+const grow = () => {
+  const next = props.items.map((_, index) => Math.max(askedFor.value[index] ?? 0, wanted(index)))
+  if (next.some((width, index) => width !== (askedFor.value[index] ?? 0))) askedFor.value = next
+}
+
+/**
+ * Which banners have had a copy arrive.
+ *
+ * The second fetch waits for the first to land rather than for the next frame. Both at once
+ * puts two copies of every picture on the wire together, which on a slow connection is the one
+ * thing this is meant to avoid — the small copy is there to be quick, and racing it with the
+ * large one spends the saving before it is made.
+ */
+const arrived = ref<Set<number>>(new Set())
+
+const onLoaded = (index: number) => {
+  if (arrived.value.has(index)) return
+  arrived.value = new Set(arrived.value).add(index)
+  grow()
+}
+
+const onResize = () => {
+  viewport.value = window.innerWidth
+  grow()
+}
+
+/**
+ * What the browser is promised a banner will be drawn at.
+ *
+ * Understated until a copy has arrived, and by a lot: 200 css pixels side by side and half the
+ * window stacked fetches the bottom of the ladder, and a collapsed slice is dimmed almost to a
+ * silhouette anyway. The worked-out figure replaces it once there is a picture on the screen to
+ * replace, and grows again as a slice opens.
+ */
+const sizesOf = (index: number): string => {
+  const asked = arrived.value.has(index) ? askedFor.value[index] : 0
+  return asked ? `${asked}px` : "(min-width: 768px) 200px, 50vw"
+}
+
+
+/**
  * Opening a slice and going to it are the same gesture, one after the other: a slice that is
  * already showing what it holds has said what it has to say, so the next click follows it.
  * Stacked, that is the second tap; side by side, the pointer has already opened it.
@@ -156,22 +257,28 @@ onMounted(() => {
   }
   watchScroll()
   window.addEventListener("scroll", releaseTap, {passive: true})
+  window.addEventListener("resize", onResize)
 })
 
 onBeforeUnmount(() => {
   watcher?.disconnect()
   window.removeEventListener("scroll", releaseTap)
+  window.removeEventListener("resize", onResize)
 })
 
-// A change of what is on show brings a different set, so the first of those opens in its turn
+// A change of what is shown brings a different set, so the first of those opens in its turn
 // — unless one of them is named, which is the set arriving because that one was just added.
 /**
- * A change of what is on show keeps the slice that was open where the same one is still
+ * A change of what is shown keeps the slice that was open where the same one is still
  * there. Switching season re-answers with much the same band, and reopening the first of them
  * each time made every switch look like a page rebuilding itself.
  */
 watch(() => props.items, (items, before) => {
   slices.value = []
+  // Different pictures, so neither the figures asked for the last ones nor the fact that they
+  // arrived says anything about these.
+  askedFor.value = []
+  arrived.value = new Set()
   const named = indexOfNamed()
   const held = before?.[open.value ?? -1]?.id
   const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
@@ -202,6 +309,9 @@ watch([() => props.openId, () => props.items], () => {
 // the same game or team rarely sits in the same place.
 watch(open, (index) => {
   emit("open", index == null ? null : props.items[index]?.id ?? null)
+  // The slice being read wants the wider copy, and knows how wide without waiting for the
+  // row to finish moving.
+  grow()
 })
 </script>
 
@@ -250,8 +360,8 @@ watch(open, (index) => {
       </button>
 
       <!--
-        The slice is the full width of the band on a phone and half of it from there up, which
-        is what `sizes` tells the browser before any layout has happened.
+        `sizes` is a guess before the band has been laid out and a measurement afterwards: see
+        `sizesOf`. The guess understates, so the first picture to arrive is a small one.
       -->
       <!--
         No testid of its own: the specs reach it through the slice, and a testid built from
@@ -262,10 +372,11 @@ watch(open, (index) => {
         alt=""
         class="team-slice__banner"
         :height="item.height"
-        sizes="(min-width: 768px) 50vw, 100vw"
+        :sizes="sizesOf(index)"
         :src="item.banner"
         :srcset="item.srcset"
         :width="item.width"
+        @load="onLoaded(index)"
       >
       <span
         aria-hidden="true"
@@ -319,17 +430,31 @@ watch(open, (index) => {
       band, and the band is the page. Narrow, because it is a way in rather than a thing to
       read. One pane per way in, so a choice is made by pressing rather than inside a dialog.
     -->
+    <!-- Nothing to show, and a way to change that beside it rather than under it. -->
     <section
-      v-for="(add, index) in (mayAdd ? adds : [])"
-      :key="add.key"
-      class="team-slice team-slice--add"
-      :class="{'team-slice--last': index === adds.length - 1}"
+      v-if="items.length === 0 && emptyLabel"
+      class="team-slice team-slice--empty team-slice--first"
+      :data-testid="`${testidPrefix}-empty-slice`"
+    >
+      <span class="team-slice__body team-slice__nothing">
+        <span class="team-slice__heading">
+          <span class="team-slice__name">{{ emptyLabel }}</span>
+          <!-- Whatever else is worth saying where there is nothing: on a game's page, the
+               last season it did play, which is a way on rather than a dead end. -->
+          <slot name="empty" />
+        </span>
+      </span>
+    </section>
+
+    <section
+      v-if="mayAdd"
+      class="team-slice team-slice--add team-slice--last"
     >
       <button
         class="team-slice__body team-slice__add"
-        :data-testid="`${testidPrefix}-add-${add.key}`"
+        :data-testid="`${testidPrefix}-add`"
         type="button"
-        @click="emit('add', add.key)"
+        @click="emit('add')"
       >
         <span
           aria-hidden="true"
@@ -348,7 +473,7 @@ watch(open, (index) => {
             aria-hidden="true"
             class="team-slice__tick"
           />
-          <span class="team-slice__name">{{ add.label }}</span>
+          <span class="team-slice__name">{{ addLabel }}</span>
         </span>
       </button>
     </section>
@@ -459,6 +584,21 @@ watch(open, (index) => {
  * plus through the middle instead of a photograph.
  */
 /* Narrower than a team: a way in rather than something to read. */
+/* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
+   not somewhere to go. */
+.team-slice--empty {
+  flex: 2 1 0;
+  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
+}
+
+.team-slice__nothing {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  color: var(--color-ash);
+}
+
 .team-slice--add {
   flex: 0 0 clamp(6.5rem, 11%, 10rem);
   background-color: var(--color-pit);
@@ -729,7 +869,22 @@ watch(open, (index) => {
     min-height: 0;
   }
 
-  .team-slice--add {
+  /* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
+   not somewhere to go. */
+.team-slice--empty {
+  flex: 2 1 0;
+  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
+}
+
+.team-slice__nothing {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  color: var(--color-ash);
+}
+
+.team-slice--add {
     flex: 0 0 auto;
     min-height: 7rem;
   }

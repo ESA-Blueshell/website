@@ -176,4 +176,81 @@ class FieldTeamWithLineupIT : UserTestSupport() {
 
         assertThat(fielded.isFielded(team.id!!, GAME, later.id!!)).isFalse()
     }
+
+    @Test
+    fun `a named line-up is the one carried, not merely the most recent`() {
+        val older = season(LocalDate.of(2035, 2, 1))
+        val recent = season(LocalDate.of(2035, 9, 1))
+        val filling = season(LocalDate.of(2036, 2, 1))
+        val team = team()
+        rosters.add(team.id!!, GAME, older.id!!, "whoWeMean", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, GAME, recent.id!!, "straggler", TeamRole.PLAYER, null, null)
+
+        val result = rosters.fieldWithLineup(
+            teamId = team.id!!,
+            game = GAME,
+            seasonId = filling.id!!,
+            carryLineup = false,
+            carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
+        )
+
+        // A team coming back after a gap means the squad before the gap, not the last few who
+        // were left. Naming it is the only way to say so.
+        assertThat(result.carried.map { it.handle }).containsExactly("whoWeMean")
+    }
+
+    @Test
+    fun `a line-up from another game is carried where it is the one named`() {
+        val played = season(LocalDate.of(2035, 2, 1))
+        val filling = season(LocalDate.of(2035, 9, 1))
+        val team = team()
+        rosters.add(team.id!!, "VALORANT", played.id!!, "crossOver", TeamRole.PLAYER, null, null)
+
+        val result = rosters.fieldWithLineup(
+            teamId = team.id!!,
+            game = GAME,
+            seasonId = filling.id!!,
+            carryLineup = false,
+            carryFrom = TeamRosterService.LineupSource("VALORANT", played.id!!),
+        )
+
+        // The pool is shared, so a team's people come with it into a game it has never played.
+        assertThat(result.carried.map { it.handle }).containsExactly("crossOver")
+    }
+
+    @Test
+    fun `naming a line-up wins over carrying the most recent`() {
+        val older = season(LocalDate.of(2035, 2, 1))
+        val recent = season(LocalDate.of(2035, 9, 1))
+        val filling = season(LocalDate.of(2036, 2, 1))
+        val team = team()
+        rosters.add(team.id!!, GAME, older.id!!, "named", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, GAME, recent.id!!, "mostRecent", TeamRole.PLAYER, null, null)
+
+        val result = rosters.fieldWithLineup(
+            teamId = team.id!!,
+            game = GAME,
+            seasonId = filling.id!!,
+            carryLineup = true,
+            carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
+        )
+
+        assertThat(result.carried.map { it.handle }).containsExactly("named")
+    }
+
+    @Test
+    fun `a team's line-ups are listed by game and season, newest first`() {
+        val older = season(LocalDate.of(2035, 2, 1))
+        val newer = season(LocalDate.of(2035, 9, 1))
+        val team = team()
+        rosters.add(team.id!!, "VALORANT", older.id!!, "back-then", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, GAME, newer.id!!, "right-now", TeamRole.PLAYER, null, null)
+
+        val played = fielded.seasonsOf(team.id!!)
+
+        // "Its last line-up" is only useful if the reader can tell which squad that was, and a
+        // team spanning games has more than one answer.
+        assertThat(played.map { it.game to it.season.id })
+            .containsExactly(GAME to newer.id, "VALORANT" to older.id)
+    }
 }

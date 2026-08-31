@@ -77,7 +77,7 @@ test.describe("swiping between seasons", () => {
     const swipe = page.getByTestId("season-swipe")
     await swipe.waitFor()
 
-    // The season already on show. Nothing has changed, so nothing should move.
+    // The season already shown. Nothing has changed, so nothing should move.
     await page.getByTestId(`esports-season-node-${NEWEST}`).click()
 
     await expect(swipe).toHaveAttribute("data-swipe", "same")

@@ -3,6 +3,8 @@ import {computed, ref, watch} from "vue"
 import IslandDialog from "./IslandDialog.vue"
 import ConfirmDialog from "./ConfirmDialog.vue"
 import ImagePicker from "./ImagePicker.vue"
+import IslandChoice from "./IslandChoice.vue"
+import IslandPicker from "./IslandPicker.vue"
 import {
   addGameOrReason,
   enterGameInSeason,
@@ -17,8 +19,14 @@ import {FileType} from "@/services/api"
 import {useGames} from "./useGames"
 
 /**
- * Correcting a game from wherever it is shown: what it is called, what its page answers to and
- * says, where it sits among the others, and the art it is drawn with.
+ * A game, corrected or added: what it is called, what its page answers to and says, where it
+ * sits among the others, and the art it is drawn with.
+ *
+ * Adding one asks first which kind of adding it is, at the top, where the answer changes what
+ * the rest of the dialog is: a game the association has played before is picked out of the ones
+ * it knows, and a game it has just started playing is described here in full. One way in from
+ * the band and the choice made inside it — two plusses on the band would read as two different
+ * things to do, when they are one intention answered two ways.
  *
  * A refusal keeps what was typed, the way the season dialog does. Losing an address because
  * another game claimed it would mean typing it again to find out what the objection was.
@@ -33,10 +41,12 @@ const props = defineProps<{
    * The season a game added here runs in, where one is being added.
    *
    * A game is added because the association has started playing it, so it is entered in the
-   * season on show by the same save. Adding it and then entering it would be two acts for one
+   * shown season by the same save. Adding it and then entering it would be two acts for one
    * decision, and would leave a game behind if the second half failed.
    */
   enterIn?: Season | null
+  /** The games already in that season, which there is nothing to add. */
+  alreadyIn?: string[]
   accent?: string
 }>()
 
@@ -48,6 +58,39 @@ const emit = defineEmits<{
 
 /** Adding rather than correcting, which is the whole of what changes about this dialog. */
 const adding = computed(() => props.game == null)
+
+/** Which kind of adding, asked at the top because it decides what the rest of this is. */
+type Kind = "played-before" | "new-game"
+const kind = ref<Kind>("played-before")
+
+const {games: allGames} = useGames()
+
+/** Every game the association knows that is not already in the season being added to. */
+const offered = computed(() =>
+  allGames.value.filter(one => !(props.alreadyIn ?? []).includes(one.game)))
+
+const entering = ref<string | null>(null)
+
+/** A game it has played before is already described; what is being recorded is that it runs again. */
+const enter = async (game: string) => {
+  const season = props.enterIn
+  if (!season || entering.value != null) return
+  entering.value = game
+  failure.value = null
+  try {
+    const added = await enterGameInSeason(season.id, game)
+    if (!added) {
+      failure.value = "That game could not be put into the season."
+      return
+    }
+    await refreshGames()
+    const record = allGames.value.find(one => one.game === game)
+    if (record) emit("saved", record)
+    emit("update:open", false)
+  } finally {
+    entering.value = null
+  }
+}
 
 const {refresh: refreshGames} = useGames()
 
@@ -76,6 +119,7 @@ watch(
     banner.value = game?.banner ?? null
     sortIndex.value = game?.sortIndex ?? 0
     failure.value = null
+    kind.value = game == null ? "played-before" : "new-game"
   },
   {immediate: true},
 )
@@ -123,7 +167,7 @@ const question = computed(() => {
   const held = holds.value
   // `held` is never null here: the question is only put once it has been read.
   if (!held || held.teams === 0) {
-    return `${game.name} holds no teams. Removing it takes it and its page off the site.`
+    return `${game.name} holds no teams. Deleting it takes it and its page off the site.`
   }
   return `${game.name} holds ${countOf(held.teams, "team", "teams")} and `
     + `${countOf(held.players, "roster place", "roster places")}, so it cannot be removed. `
@@ -187,7 +231,7 @@ const submit = async () => {
 }
 
 /**
- * A game added, described in full and entered in the season on show.
+ * A game added, described in full and entered in the shown season.
  *
  * Two requests behind one Save, because the api records the game and the season it runs in
  * separately — but a refusal on the first leaves nothing written, and the whole form stands
@@ -220,10 +264,50 @@ const add = async () => {
     :accent="colour || props.accent"
     :open="open"
     testid="game-dialog"
-    :title="adding ? 'A game we have started playing' : `Edit ${game?.name}`"
+    :title="adding ? 'Add a game to the season' : `Edit ${game?.name}`"
     @update:open="emit('update:open', $event)"
   >
+    <!--
+      Asked first, because the answer decides what the rest of this dialog is. One way in from
+      the band and the choice made here: two plusses on the band would read as two different
+      things to do, when they are one intention answered two ways.
+    -->
+    <island-choice
+      v-if="adding"
+      v-model="kind"
+      :options="[
+        {key: 'played-before', label: 'An existing game'},
+        {key: 'new-game', label: 'A new game'},
+      ]"
+      testid-prefix="game-dialog-kind"
+    />
+
+    <div
+      v-if="adding && kind === 'played-before'"
+      class="game-form"
+    >
+      <island-picker
+        :disabled="entering != null"
+        empty-note="Every game the association knows is already in this season."
+        :options="offered.map(one => ({key: one.game, label: one.name}))"
+        placeholder="Search every game"
+        testid-prefix="game-dialog-known"
+        @pick="enter"
+      />
+
+      <p
+        v-if="failure"
+        class="game-form__failure"
+        data-testid="game-dialog-failure"
+        role="alert"
+      >
+        {{ failure }}
+      </p>
+    </div>
+
     <form
+      v-else
+      id="game-dialog-form"
       class="game-form"
       @submit.prevent="submit"
     >
@@ -300,21 +384,25 @@ const add = async () => {
       <!-- Both held until Save, like every other field here: closing without saving leaves
            the game drawn on the pictures it was drawn on. They are the picture in the game's
            slice on the index and the logo beside its name there, and a game has no others. -->
-      <image-picker
-        :kind="FileType.GAME_BANNER"
-        label="Banner"
-        :picture="banner"
-        testid="game-dialog-banner"
-        @update:picture="banner = $event"
-      />
+      <!-- Side by side, because they are decided together and are the two halves of how a
+           game is drawn. They wrap onto their own lines where there is no room for both. -->
+      <div class="game-form__pictures">
+        <image-picker
+          :kind="FileType.GAME_BANNER"
+          label="Banner"
+          :picture="banner"
+          testid="game-dialog-banner"
+          @update:picture="banner = $event"
+        />
 
-      <image-picker
-        :kind="FileType.GAME_ICON"
-        label="Icon"
-        :picture="icon"
-        testid="game-dialog-icon"
-        @update:picture="icon = $event"
-      />
+        <image-picker
+          :kind="FileType.GAME_ICON"
+          label="Icon"
+          :picture="icon"
+          testid="game-dialog-icon"
+          @update:picture="icon = $event"
+        />
+      </div>
 
       <p
         v-if="failure"
@@ -324,8 +412,21 @@ const add = async () => {
       >
         {{ failure }}
       </p>
+    </form>
 
-      <div class="game-form__actions">
+    <!--
+      In the footer, like the team dialog's: the way out of a dialog belongs where it was the
+      last time you looked, not at the far end of a form that scrolls. Save names the form it
+      submits rather than sitting inside it, which is what lets it stand out here at all.
+
+      Nothing to put here while an existing game is being picked: choosing one enters it, so
+      there is no answer to confirm.
+    -->
+    <template #footer>
+      <div
+        v-if="!(adding && kind === 'played-before')"
+        class="game-form__actions"
+      >
         <button
           v-if="!adding"
           class="game-form__button game-form__button--drop"
@@ -333,7 +434,7 @@ const add = async () => {
           type="button"
           @click="askToRemove"
         >
-          Remove
+          Delete
         </button>
         <button
           class="game-form__button game-form__button--ghost"
@@ -347,22 +448,25 @@ const add = async () => {
           class="game-form__button game-form__button--go"
           data-testid="game-dialog-save"
           :disabled="!complete || saving"
+          form="game-dialog-form"
           type="submit"
         >
           {{ saving ? "Saving" : "Save" }}
         </button>
       </div>
-    </form>
+    </template>
   </island-dialog>
 
   <confirm-dialog
     :accent="colour || props.accent"
+    confirm-label="Delete the game"
     :failure="removalFailure"
     :open="confirming"
     :question="question"
     testid="game-remove-dialog"
-    title="Remove this game?"
+    title="Delete this game?"
     :working="removing"
+    working-label="Deleting"
     @confirm="removeGame"
     @update:open="confirming = $event"
   />
@@ -373,12 +477,14 @@ const add = async () => {
 .game-form {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
+  padding-bottom: 0.35rem;
 }
 
 .game-form__row {
   display: flex;
-  gap: 0.7rem;
+  flex-wrap: wrap;
+  gap: 0.9rem;
 }
 
 .game-form__field {
@@ -394,26 +500,33 @@ const add = async () => {
 
 .game-form__label {
   padding: 0;
-  color: #a0a6ac;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  color: var(--color-ash);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .game-form__hint {
-  color: #7d848b;
-  font-size: 0.75rem;
-  word-break: break-all;
+  font-size: 0.72rem;
+  color: color-mix(in oklab, var(--color-ash) 80%, transparent);
+  word-break: break-word;
 }
 
+/* One field style across the island: flat, square, and lit by the focus ring rather than by
+   a border that competes with the labels above it. */
 .game-form__input {
   width: 100%;
-  padding: 0.5rem 0.6rem;
-  background: #1c1c1c;
-  border: 1px solid rgb(255 255 255 / 12%);
-  color: #f2f4f6;
+  padding: 0.55rem 0.75rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  color: var(--color-chalk);
+  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
+  border: 0;
+}
+
+.game-form__input::placeholder {
+  color: var(--color-ash);
 }
 
 .game-form__input--tall {
@@ -437,16 +550,30 @@ const add = async () => {
   display: block;
 }
 
+/* Side by side, because they are decided together and are the two halves of how a game is
+   drawn. Aligned along the bottom so a wide banner and a square logo share a baseline. */
+.game-form__pictures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  align-items: flex-end;
+  padding-top: 0.15rem;
+}
+
 .game-form__failure {
   margin: 0;
   color: #ff6b6b;
   font-size: 0.85rem;
 }
 
+/* Its own rule and its own spacing: see the footer in IslandDialog. */
 .game-form__actions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
 }
 
 .game-form__button {
@@ -465,8 +592,13 @@ const add = async () => {
 /* First in the row and set apart, the way the season dialog sets its own removal apart. */
 .game-form__button--drop {
   margin-right: auto;
-  background: transparent;
-  color: #ff9d9d;
+  background: color-mix(in oklab, #e0696c 18%, transparent);
+  color: #eba7a7;
+}
+
+.game-form__button--drop:hover {
+  background: color-mix(in oklab, #e0696c 34%, transparent);
+  color: #fff2f2;
 }
 
 .game-form__button--go {

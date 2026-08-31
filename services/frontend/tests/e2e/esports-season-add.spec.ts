@@ -64,7 +64,7 @@ test.describe("adding a season from the timeline", () => {
     expect(order).toEqual(["esports-season-node-41", "esports-season-node-19", "esports-season-node-20"])
   })
 
-  test("the season that was added is the one on show", async ({page}) => {
+  test("the season that was added is the shown one", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)

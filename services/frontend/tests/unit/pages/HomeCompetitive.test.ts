@@ -6,13 +6,6 @@ import router from "@/plugins/router"
 import {forgetGames} from "@/domains/esports/island/useGames"
 import type {GameRecord} from "@/domains/esports/adapters/esports"
 
-/**
- * The home page's competitive block, which reads the game records rather than naming its own.
- *
- * Five titles used to be literals here with bundled art and hardcoded links, so a game the
- * board renamed or re-addressed through the dialogs did not follow it to the busiest page on the
- * site. These assert that it does now, and that a game nobody currently fields is not listed.
- */
 const mockLoadGames = vi.hoisted(() => vi.fn())
 
 vi.mock("@/plugins/goto", () => ({$goto: vi.fn()}))
@@ -48,18 +41,11 @@ const mountHome = async () => {
   const wrapper = shallowMount(Home, {
     global: {stubs: {MainBanner: true, DiscordBanner: true, SocialsBanner: true, GamesWePlay: true}},
   })
-  // The records are read once and shared, so the block fills in after the read settles.
   await flushPromises()
   return wrapper
 }
 
-/**
- * The categories as the page hands them to the block that draws them.
- *
- * Read off the child's props rather than out of `wrapper.vm`: what this page does with the
- * records is give them to `GamesWePlay`, and that hand-off is the public surface (testing
- * ADR-004). A `<script setup>` binding is not exposed and reaching for it would be reflection.
- */
+// The child's props are the public surface; a `<script setup>` binding is not exposed.
 const categoriesOf = (wrapper: Awaited<ReturnType<typeof mountHome>>) =>
   wrapper.findComponent(GamesWePlay).props("games") as Category[]
 
@@ -87,7 +73,6 @@ describe("the home page's competitive block", () => {
 
     const competitive = categoriesOf(await mountHome()).find(one => one.categoryName === "Competitive")
 
-    // The link is the record's address, so changing it in the dialog changes this.
     expect(competitive?.titles[0]?.esportsLink).toBe("/esports/valorant-two")
   })
 
@@ -135,7 +120,6 @@ describe("the home page's competitive block", () => {
     const names = categoriesOf(await mountHome()).map(one => one.categoryName)
 
     expect(names).not.toContain("Competitive")
-    // The community block is written down here and is unaffected by the api being unreachable.
     expect(names).toContain("Community")
   })
 
@@ -145,7 +129,6 @@ describe("the home page's competitive block", () => {
     const community = categoriesOf(await mountHome()).find(one => one.categoryName === "Community")
 
     expect(community?.titles.map(one => one.title)).toContain("Minecraft")
-    // Bundled, so no widths: these games have no record to be stored at several sizes.
     expect(community?.titles.every(one => one.bgSrcset === undefined)).toBe(true)
   })
 

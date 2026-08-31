@@ -24,14 +24,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
 
-/**
- * What a refused esports write answers with.
- *
- * The api used to answer a finished English sentence, which the frontend printed. It answers a
- * code and the facts about the refusal now, and the frontend composes the sentence — so these
- * assert the code and the properties rather than `detail`, which is fixed per code and is the
- * part no client reads. See ADR-026.
- */
 @SpringBootTest
 class EsportsRefusalIT : UserTestSupport() {
     @Autowired private lateinit var teams: TeamRepository
@@ -61,17 +53,11 @@ class EsportsRefusalIT : UserTestSupport() {
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.code").value("UnknownGameCode"))
             .andExpect(jsonPath("$.gameCode").value("PONG"))
-            // Fixed per code: it names no game, so it is the same sentence every time.
             .andExpect(jsonPath("$.detail").value("No game has that code."))
     }
 
-    /**
-     * At the service rather than over http, because `@NotBlank` on the request refuses a blank
-     * name before the service sees it. The guard behind it is not dead — it is what answers a
-     * caller that is not the controller — but no dialog can reach it, so no reader meets its
-     * copy and the contract test belongs at the seam that can be provoked.
-     */
     @Test
+    // At the service: `@NotBlank` on the request refuses this before the service is reached.
     fun `a game with no name is refused at the service, behind the request's own validation`() {
         assertThatThrownBy { games.create(name = "   ", slug = "pong") }
             .isInstanceOf(GameNameBlank::class.java)
@@ -112,8 +98,6 @@ class EsportsRefusalIT : UserTestSupport() {
     @Test
     fun `a game holding history answers GameHoldsHistory and the counts, not a sentence`() {
         val board = createUserWithRole(Role.BOARD)
-        // The suite blanks the fieldings between cases, so the history is made here rather
-        // than leaned on: a game holds something because a team plays it.
         val season = aSeason()
         val team = teams.save(Team(name = "BS Historic ${System.nanoTime()}"))
         entered.enter(season.id!!, "VALORANT")
@@ -123,7 +107,6 @@ class EsportsRefusalIT : UserTestSupport() {
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
             .andExpect(jsonPath("$.gameName").value("Valorant"))
-            // Counts, so how they are pluralised and joined stays the frontend's.
             .andExpect(jsonPath("$.teams").isNumber)
             .andExpect(jsonPath("$.players").isNumber)
             .andExpect(jsonPath("$.detail").value("That game cannot be removed."))
@@ -147,7 +130,6 @@ class EsportsRefusalIT : UserTestSupport() {
             .andExpect(jsonPath("$.teams").value(1))
     }
 
-    /** Behind `@NotBlank` on the request too, for the same reason as a blank name. */
     @Test
     fun `a page with no address is refused at the service`() {
         assertThatThrownBy { games.create(name = "Pong", slug = "   ") }
@@ -244,8 +226,6 @@ class EsportsRefusalIT : UserTestSupport() {
     fun `a row that is not there keeps its sentence and carries no code`() {
         val board = createUserWithRole(Role.BOARD)
 
-        // A dialog cannot provoke this: reaching it takes a hand-built request naming a row
-        // that does not exist, so there is no copy for a reader to meet.
         mvc.perform(delete("/esports/seasons/{id}", 9_999_999L).with(bearer(board)))
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.code").doesNotExist())

@@ -168,8 +168,6 @@ const question = computed(() => {
   if (!held || held.teams === 0) {
     return `${game.name} holds no teams. Deleting it takes it and its page off the site.`
   }
-  // The same sentence the api's refusal composes, from the one function that writes it: the
-  // question before the act and the answer after it cannot say different things.
   return gameHoldsHistory(game.name, held.teams, held.players)
 })
 

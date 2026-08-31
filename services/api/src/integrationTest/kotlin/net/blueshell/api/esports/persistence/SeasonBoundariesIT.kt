@@ -33,9 +33,6 @@ class SeasonBoundariesIT : UserTestSupport() {
             seasons.create("Clashing", LocalDate.of(2040, 11, 1), LocalDate.of(2041, 3, 31))
         }
             .isInstanceOf(SeasonDatesOverlap::class.java)
-            // Named, so the objection can be read on the form that caused it. A fact rather
-            // than a sentence: the message is the same for every clash, and the frontend
-            // composes what the reader sees out of this.
             .extracting { (it as SeasonDatesOverlap).facts["seasonName"] }
             .isEqualTo(existing.name)
     }

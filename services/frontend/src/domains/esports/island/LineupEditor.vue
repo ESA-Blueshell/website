@@ -385,8 +385,6 @@ const removeTeam = async () => {
   try {
     const result = await dropTeam(teamId)
     if (!result.ok) {
-      // Nothing has gone, so the dialog stands and says why — in the words `refusals.ts`
-      // composes from the api's code, not in the api's own fixed summary.
       teamFailure.value = result.reason
       return
     }
@@ -464,8 +462,6 @@ const submit = async () => {
     // there — the same team is drawn with its own picture in every other game it plays.
     await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
 
-    // A refused removal stops the save rather than being swallowed: the rows the reader is
-    // looking at are what the api holds, and reporting otherwise is the one wrong answer.
     for (const id of removed.value) {
       const gone = await dropRosterEntry(id)
       if (!gone.ok) {

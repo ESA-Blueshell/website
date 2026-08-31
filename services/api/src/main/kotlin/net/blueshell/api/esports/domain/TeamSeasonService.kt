@@ -82,29 +82,13 @@ class TeamSeasonService(
     }
 
     /**
-     * The games the association currently plays: what was fielded in the season we are in.
-     *
-     * Where nothing is fielded in that season yet, the season before it answers instead. That
-     * fallback is what a season being set up a game at a time costs: a rule that followed the
-     * newest season unconditionally would empty this list at every changeover and refill it as
-     * the board worked, which is a half-finished season in public twice a year.
-     *
-     * Conditional rather than a union, which is what this replaced. A union's cost was a game
-     * the association had genuinely stopped playing staying listed for one more season — visible
-     * on the home page, which reads this. The fallback keeps the protection and drops the cost:
-     * the season before stops contributing the moment one team is fielded in the newest.
-     *
-     * It goes back one season, not through the archive. Two empty seasons in a row means the
-     * association has fielded nobody for a year, and saying so is not a bug.
-     *
-     * Fielded, not merely entered: a game is public in a season once a team plays it, which is
-     * the same rule the pages themselves answer to.
+     * The games fielded in the season we are in, falling back to the one before only while that
+     * season has nothing fielded yet — a season is built a game at a time.
      */
     @Transactional(readOnly = true)
     fun currentlyPlayed(on: LocalDate = LocalDate.now()): Set<String> {
         val ordered = seasons.findAll()
-        // Where no season covers the date — a gap between them, or every season already over —
-        // the most recent one that has started is the one we are in for this purpose.
+        // No season covers the date — a gap, or every season already over.
         val current = seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
             ?: return emptySet()
         val currentId = current.id ?: return emptySet()

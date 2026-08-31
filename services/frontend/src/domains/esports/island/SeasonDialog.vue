@@ -83,7 +83,6 @@ const removeSeason = async () => {
   try {
     const result = await dropSeasonOrReason(season.id)
     if (!result.ok) {
-      // Nothing has gone, so the dialog stands and says why.
       removalFailure.value = result.reason
       return
     }

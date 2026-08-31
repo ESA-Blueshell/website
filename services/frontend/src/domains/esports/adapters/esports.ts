@@ -298,7 +298,6 @@ export async function saveSeasonOrReason(
   return {ok: true, season: res.data ?? null}
 }
 
-/** Whatever the api said, composed by `refusals.ts` where it named a code. */
 const reasonFrom = (error: unknown, fallback = "The season could not be saved."): string =>
   reasonFor(error, fallback)
 
@@ -375,14 +374,7 @@ export async function leaveGameInSeason(
   return {ok: true}
 }
 
-/**
- * A season taken off the strip.
- *
- * Answers the refusal rather than discarding it. This returned void and ignored `res.error`,
- * and the dialog wrapped it in a `try`/`catch` — which caught nothing, because the generated
- * client answers a refused write with an error object instead of throwing. So a refused removal
- * reported success and the row left the strip while the api still held it.
- */
+// Answers the refusal: the generated client returns an error object, it does not throw.
 export async function dropSeasonOrReason(id: number): Promise<{ok: true} | Refused> {
   const res = await deleteSeason({path: {id}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "The season could not be removed.")}
@@ -561,13 +553,6 @@ export async function linkRosterMember(id: number, userId: number | null): Promi
   return res.data ?? null
 }
 
-/**
- * Somebody taken off a line-up.
- *
- * Answers the refusal rather than discarding it. This ignored `res.error` entirely, so a
- * refused removal reported success and the row left the line-up while the api still held it —
- * the same silent success `dropSeasonOrReason` had.
- */
 export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused> {
   const res = await removeRosterEntry({path: {id}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "That person could not be taken off.")}

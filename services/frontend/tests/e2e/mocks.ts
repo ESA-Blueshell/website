@@ -47,7 +47,6 @@ const brevoTargets = [
  * The games themselves, as their records hold them: what each is called, the address its page
  * answers to, and the art it is drawn with. The pages read every one of these from here.
  */
-/** The refusal the api answers when a game's address is already another game's. */
 const addressTaken = (gameName: string, address: string) => ({
   detail: "That address is already used by another game.",
   code: "AddressTaken",
@@ -864,8 +863,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const seeded = code === "VALORANT" && !fixtures.esportsTeams ? 2 : 0
       if (held.size + seeded > 0) {
         const game = known.find(one => one.game === code)
-        // The api answers a code and the counts, not a sentence: the frontend composes what
-        // the reader meets, in `esports/refusals.ts`.
         return fulfillJson(route, {
           detail: "That game cannot be removed.",
           code: "GameHoldsHistory",
@@ -1038,13 +1035,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
     //
-    // 512 pixels square rather than one pixel. For an `img` with a `srcset`, the browser
-    // divides the bytes' real width by the chosen candidate's density — its `w` descriptor
-    // over `sizes` — to get the intrinsic size. A one-pixel image answering a `128w`
-    // candidate drawn at 69px therefore has an intrinsic size below one pixel, so Chromium
-    // reports `naturalWidth` 0 and lays it out at no height at all: the picture is there and
-    // decodes, and draws as nothing. Anything the ladder actually stores is far larger than
-    // its descriptor implies, so this only ever bit the fixture.
+    // 512 square, not 1: with a `srcset` the browser divides the bytes' real width by the
+    // chosen candidate's density, so a one-pixel image answering a `128w` candidate has a
+    // sub-pixel intrinsic size and Chromium lays it out at no height at all.
     //
     // Never cached, because a mock file's address is the same in every test: Chromium will
     // draw a wider copy it already holds in preference to the one a `srcset` asks for, so a

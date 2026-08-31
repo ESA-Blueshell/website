@@ -115,7 +115,6 @@ interface GameTitle {
   title: string
   bg: string
   icon: string
-  /** The widths each picture is stored at, where it came from a record rather than the bundle. */
   bgSrcset?: string
   iconSrcset?: string
   esportsLink?: string
@@ -140,25 +139,12 @@ interface Partner {
   url: string
 }
 
-/**
- * The games the association competes in, from the same records the esports pages draw.
- *
- * They were five literals here with bundled art and hardcoded links, so a game the board
- * renamed or re-addressed through the dialogs did not follow it to the busiest page on the
- * site, and Trackmania — fielded in the records — was not listed as competitive at all.
- *
- * `current` is the api's answer to which games are played now: fielded in the most recent
- * season, or in the one before it while the newest has nothing fielded yet. Filtering on it
- * here rather than asking a second endpoint keeps the api shipping the fact and the page
- * deciding what its Competitive block means.
- */
 const {current: playedNow} = useGames()
 
 const competitive = computed<GameCategory>(() => ({
   categoryName: "Competitive",
   titles: playedNow.value.map(game => ({
     title: game.name,
-    // Resolved against the api at the esports adapter, so nothing here builds a url.
     bg: game.banner?.url ?? "",
     bgSrcset: srcsetOf(game.banner),
     icon: game.icon?.url ?? "",
@@ -167,12 +153,6 @@ const competitive = computed<GameCategory>(() => ({
   })),
 }))
 
-/**
- * The games members play together, which are not games the association fields.
- *
- * These stay written down here: they have no record, and giving them one is a different piece
- * of work. So the art they name stays bundled too.
- */
 const community = ref<GameCategory[]>([
   {
     categoryName: "Community",
@@ -226,11 +206,7 @@ const community = ref<GameCategory[]>([
   },
 ])
 
-/**
- * Both blocks, less any that came out empty. An empty Competitive heading is what the records
- * being unreachable would otherwise look like, and a heading over nothing is worse than no
- * heading at all.
- */
+// An empty block would be a heading over nothing, which is what an unreachable api looks like.
 const games = computed<GameCategory[]>(() =>
   [competitive.value, ...community.value].filter(one => one.titles.length > 0))
 

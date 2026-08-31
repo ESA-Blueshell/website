@@ -3,13 +3,7 @@ package net.blueshell.api.esports.domain
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
-/**
- * A row somebody named that is not there.
- *
- * These keep their sentences rather than becoming codes like the refusals in [EsportsRefusal]. A
- * dialog cannot provoke one: reaching it takes a hand-built request naming a row that does not
- * exist, so there is no copy for a reader to meet and no frontend branch a code would reach.
- */
+// Sentences rather than codes: no dialog can provoke a missing row, so a code would reach no branch.
 class SeasonNotFoundException(id: Long) :
     ResponseStatusException(HttpStatus.NOT_FOUND, "Season with id $id not found")
 

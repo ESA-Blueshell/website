@@ -1,32 +1,13 @@
-/**
- * What a refused esports write says to the person who asked for it.
- *
- * The api used to write these sentences and the frontend printed them, which put pluralisation
- * and joining words in Kotlin — and left the removal paragraph implemented twice, once here for
- * the question asked before the act and once there for the refusal after it. The api answers a
- * code and the facts now, and this is the only place the wording lives.
- *
- * TWIN: `esports/domain/EsportsRefusal.kt` declares these codes and the facts each carries.
- * A code added there needs a sentence here, or the reader falls back to the api's own summary.
- * See ADR-026.
- */
+// TWIN: `esports/domain/EsportsRefusal.kt` declares the codes and their facts. See ADR-026.
 
 import {countOf} from "./copy"
 
-/**
- * What a game holds, said once.
- *
- * Shared by the question the dialog asks before a removal — which reads the counts from
- * `GET /games/{game}/contents` — and the refusal the api answers after one. They said the same
- * thing in two places before, and drifted the moment either was edited.
- */
 export const gameHoldsHistory = (gameName: string, teams: number, players: number) =>
   `${gameName} holds ${countOf(teams, "team", "teams")} and `
   + `${countOf(players, "person", "people")}, so it cannot be removed. `
   + "Everything it played stays readable, and it leaves the pages that show what the "
   + "association plays by not being entered in a season."
 
-/** The facts a refusal carries, as the api's problem detail holds them. */
 interface RefusalBody {
   code?: string
   gameCode?: string
@@ -55,12 +36,6 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   PictureNotStored: () => "That picture is not in storage.",
 }
 
-/**
- * The sentence for a refusal, or nothing where the api named a code this does not know.
- *
- * Nothing rather than a guess: the caller falls back to the api's own summary, which is a fixed
- * sentence per code and is still true, just less specific than one written here.
- */
 export function sentenceFor(body: unknown): string | null {
   const refusal = body as RefusalBody | null | undefined
   const code = refusal?.code
@@ -68,14 +43,7 @@ export function sentenceFor(body: unknown): string | null {
   return sentences[code]?.(refusal as RefusalBody) ?? null
 }
 
-/**
- * What to put in front of somebody when a write was refused.
- *
- * In order: the sentence this module composes from the refusal's code, then the `errors` array a
- * bean validation failure answers with, then the fixed summary the api ships per code, then the
- * caller's own fallback. One function so every dialog and the adapter say the same thing — they
- * each had their own copy of the tail, and only some of them learned about codes.
- */
+// Composed sentence, then validation errors, then the api's fixed summary, then the fallback.
 export function reasonFor(error: unknown, fallback: string): string {
   const body = error as {detail?: string; title?: string; errors?: Array<{message?: string}>} | null
   const composed = sentenceFor(error)

@@ -1,15 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 
-/**
- * The home page's competitive block, drawn from the game records.
- *
- * Five titles were literals in `Home.vue` with bundled art and hardcoded links, so a game the
- * board renamed or re-addressed through the dialogs did not follow it here — and Trackmania,
- * fielded in the records, was listed only as a community game. These go through the browser
- * because what is being asserted is what a visitor meets: the tiles that exist, where they lead,
- * and that a picture actually decodes rather than that its attribute matches a string.
- */
 const banner = (name: string) => ({
   url: `/files/public/game-banners/${name}.webp`,
   path: `game-banners/${name}.webp`,
@@ -41,24 +32,16 @@ const games = [
     game: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null,
     banner: banner("trackmania"), icon: icon("trackmania"), intro: null, sortIndex: 2, current: true,
   },
-  // Retired: its history stays readable, and the home page stops saying it is played.
   {
     game: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a",
     banner: banner("csgo"), icon: icon("csgo"), intro: null, sortIndex: 3, current: false,
   },
 ]
 
-/** A tile's picture, which is a competitive one when it came from a record rather than the bundle. */
 const competitiveIcons = (page: import("@playwright/test").Page) =>
   page.getByTestId("games-we-play-tile").locator('img[src*="/files/public/game-icons/"]')
 
-/**
- * Scrolls the block into view and waits for it.
- *
- * The tiles sit inside `v-lazy`, so nothing below the fold mounts an `img` at all until it
- * intersects. A test that asserted without scrolling would find no pictures and read that as
- * the records not arriving.
- */
+// The tiles sit inside `v-lazy`: nothing below the fold mounts an `img` until it intersects.
 const openGamesBlock = async (page: import("@playwright/test").Page) => {
   const heading = page.getByText("Games we play")
   await heading.waitFor()
@@ -84,11 +67,9 @@ test.describe("the home page's competitive games", () => {
 
     await page.goto("/")
     await openGamesBlock(page)
-    // The tile carries the click, not the picture inside it.
     await page.getByTestId("games-we-play-tile")
       .filter({has: page.locator('img[src*="/files/public/game-icons/"]')}).first().click()
 
-    // No deploy changed this: the link is the record's address.
     await expect(page).toHaveURL(/\/esports\/valorant-two$/)
   })
 
@@ -102,8 +83,6 @@ test.describe("the home page's competitive games", () => {
     const srcset = await first.getAttribute("srcset")
     expect(srcset).toContain("game-icons/valorant-128.webp 128w")
     expect(srcset).toContain("256w")
-    // A logo is drawn in a box of a fixed width, so a phone is told that width rather than a
-    // share of the viewport.
     expect(await first.getAttribute("sizes")).toBeTruthy()
   })
 
@@ -113,8 +92,6 @@ test.describe("the home page's competitive games", () => {
     await page.goto("/")
     await openGamesBlock(page)
 
-    // An attribute assertion is exactly what let #806 ship green: a url that resolves against
-    // the wrong origin still matches a string. This asks the browser whether it got pixels.
     const decoded = await competitiveIcons(page).first()
       .evaluate(async (el) => {
         const img = el as HTMLImageElement
@@ -132,7 +109,6 @@ test.describe("the home page's competitive games", () => {
     await page.goto("/")
     await openGamesBlock(page)
 
-    // No record, no picture — and nothing pointing at a bundled file that may not be there.
     await expect(competitiveIcons(page)).toHaveCount(0)
     await expect(page.getByText("Competitive", {exact: true})).toBeVisible()
   })
@@ -143,10 +119,7 @@ test.describe("the home page's competitive games", () => {
     await page.goto("/")
     await openGamesBlock(page)
 
-    // Written down in the page rather than read from a record: they are not games the
-    // association fields, so nothing about this block changed.
     await expect(page.getByText("Community", {exact: true})).toBeVisible()
-    // Nine of them, drawn from the bundle: no tile in this block carries a stored picture.
     const community = page.getByTestId("games-we-play-tile")
       .filter({hasNot: page.locator('img[src*="/files/public/"]')})
     await expect(community).toHaveCount(9)

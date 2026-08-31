@@ -2,14 +2,6 @@ import {describe, expect, it} from "vitest"
 import {countOf} from "@/domains/esports/copy"
 import {gameHoldsHistory, sentenceFor} from "@/domains/esports/refusals"
 
-/**
- * The sentences a refused esports write says.
- *
- * The api answers a code and the facts; this module is the only place the wording lives. Both
- * plural branches matter: a game holding one team read "1 teams" for as long as the api was the
- * one writing this, and the whole point of moving it here is that the branch is now testable
- * without a database.
- */
 describe("countOf", () => {
   it("names one thing singly", () => {
     expect(countOf(1, "team", "teams")).toBe("1 team")
@@ -71,7 +63,6 @@ describe("sentenceFor", () => {
   })
 
   it("answers nothing for a code it has not been taught, so the caller falls back", () => {
-    // Nothing rather than a guess: the api's own summary is fixed per code and still true.
     expect(sentenceFor({code: "SomethingAddedLater", detail: "Refused."})).toBeNull()
   })
 

@@ -319,8 +319,6 @@ class GamePageIT : UserTestSupport() {
                 .content("""{"name":"Valorant Two","slug":"valorant"}"""),
         )
             .andExpect(status().isConflict)
-            // The game holding the address is a fact on the refusal now, not a word in a
-            // sentence: the frontend writes what the reader meets. See ADR-026.
             .andExpect(jsonPath("$.code").value("AddressTaken"))
             .andExpect(jsonPath("$.gameName").value("Valorant"))
             .andExpect(jsonPath("$.address").value("valorant"))
@@ -520,7 +518,6 @@ class GamePageIT : UserTestSupport() {
         fieldATeamIn("GEOGUESSR")
 
         mvc.perform(delete("/esports/games/{game}", "GEOGUESSR").with(bearer(board)))
-            // Counts, so the singular is the frontend's to get right and is proven there.
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
             .andExpect(jsonPath("$.teams").value(1))
     }

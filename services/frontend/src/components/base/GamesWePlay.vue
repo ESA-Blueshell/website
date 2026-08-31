@@ -47,8 +47,6 @@
             :options="{'threshold':0.1}"
             :width="$vuetify.display.smAndUp ? '69px' : '54px'"
           >
-            <!-- Drawn in a box of a fixed width, so `sizes` is that width rather than a
-                 share of the viewport: a phone takes the 128px copy of a logo, not the 512. -->
             <v-img
               :sizes="$vuetify.display.smAndUp ? '69px' : '54px'"
               :src="game.icon"
@@ -117,11 +115,6 @@ interface Game {
   title: string;
   icon: string;
   bg: string;
-  /**
-   * The widths each picture is stored at, where it came from a game's record rather than from
-   * the bundle. A bundled picture has one size and gets no attribute, which is what `srcsetOf`
-   * already answers for a picture with no renditions.
-   */
   iconSrcset?: string;
   bgSrcset?: string;
   esportsLink?: string;

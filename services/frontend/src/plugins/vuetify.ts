@@ -7,6 +7,26 @@ import * as directives from "vuetify/directives"
 
 import {aliases as mdiAliases, mdi} from "vuetify/iconsets/mdi"
 import {customAliases, customIconSet} from "@/plugins/icons/custom"
+import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/theme"
+
+const storedTheme = (): string | null => {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+const osPrefersDark = (): boolean => {
+  try {
+    return globalThis.matchMedia("(prefers-color-scheme: dark)").matches
+  } catch {
+    return false
+  }
+}
+
+const startingTheme = initialThemeName(storedTheme(), osPrefersDark())
+markDocumentTheme(startingTheme)
 
 const vuetifyConfig: VuetifyOptions = {
   locale: {
@@ -24,6 +44,7 @@ const vuetifyConfig: VuetifyOptions = {
     },
   },
   theme: {
+    defaultTheme: startingTheme,
     variations: {
       colors: ["primary"],
       lighten: 1,

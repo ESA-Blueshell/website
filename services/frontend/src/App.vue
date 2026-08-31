@@ -494,6 +494,7 @@ import {useDisplay, useTheme} from "vuetify"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/theme"
 import {useCookiePolicyConsent} from "@/composables/useCookiePolicyConsent"
 import {useGames} from "@/domains/esports/island/useGames"
 import DOMPurify from "dompurify"
@@ -571,22 +572,23 @@ const login = computed(() => store.getters.getLogin)
 
 const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 
+// The island's stylesheet reads the theme off the document element: see plugins/theme.
+watch(isDarkMode, dark => markDocumentTheme(dark ? "dark" : "light"))
+
 const resolveApiBaseUrl = (): string => {
   if (import.meta.env.VITE_APP_URL) return import.meta.env.VITE_APP_URL
   return `${globalThis.location.origin}/api`
 }
 
 // Methods
-const checkPrefersColorScheme = (): void => {
-  if (globalThis.matchMedia("(prefers-color-scheme: dark)").matches) {
-    setDarkMode(true)
-  } else if (globalThis.matchMedia("(prefers-color-scheme: light)").matches) {
-    setDarkMode(false)
-  }
+/** An OS change reaches a visitor who has never chosen; a choice of theirs outlives it. */
+const followOsTheme = (): void => {
+  if (localStorage.getItem(THEME_STORAGE_KEY) !== null) return
+  theme.change(initialThemeName(null, globalThis.matchMedia("(prefers-color-scheme: dark)").matches))
 }
 
 const setDarkMode = (dark: boolean): void => {
-  localStorage.setItem("esa-blueshell.nl:darkMode", dark.toString())
+  localStorage.setItem(THEME_STORAGE_KEY, dark.toString())
   theme.change(dark ? "dark" : "light")
 }
 
@@ -645,14 +647,8 @@ onMounted(async () => {
     }
   })
 
-  if (!localStorage.getItem("esa-blueshell.nl:darkMode")) {
-    checkPrefersColorScheme()
-  }
-
-  globalThis.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => checkPrefersColorScheme())
-
-  const savedTheme = localStorage.getItem("esa-blueshell.nl:darkMode")
-  theme.change(savedTheme === "true" ? "dark" : "light")
+  // The theme itself is settled before Vuetify is created, in plugins/theme.
+  globalThis.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", followOsTheme)
 })
 </script>
 

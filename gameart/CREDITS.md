@@ -37,6 +37,33 @@ photograph and its original is that size, so it is fine as a small tile and too
 small for a hero. Left here rather than dropped, because which of these is used
 where is a choice made at upload.
 
+## home-page/
+
+The art the home page's competitive tiles were drawn with before they started
+reading the game records. Eight files, kept at their original bytes rather than
+converted, because these are small and already lossy and a re-encode would only
+lose more.
+
+| File | Size | Was |
+|------|------|-----|
+| `cs2.png` | 256x256 | Counter-Strike 2 tile logo |
+| `cs2bg.png` | 900x405 | Counter-Strike 2 tile background |
+| `geoguessrlogo.webp` | 224x232 | GeoGuessr tile logo |
+| `geoguessrbg.jpg` | 1280x720 | GeoGuessr tile background |
+| `league.png` | 256x256 | League of Legends tile logo |
+| `leaguebg.jpg` | 620x349 | League of Legends tile background |
+| `rocketleague.png` | 256x256 | Rocket League tile logo |
+| `rocketleaguebg.jpg` | 620x349 | Rocket League tile background |
+
+The four logos survive elsewhere as well: each is pixel-identical to the icon of
+the same game in the seed's art directory, and `geoguessrlogo.webp` is
+byte-identical to `geoguessr-icon.webp`. They are here so the set the home page
+used is complete in one place.
+
+**The four backgrounds survive nowhere else.** They are not crops of anything in
+this directory — the closest original to each is a different picture of the same
+game — so this is the only copy, which is the reason this folder exists.
+
 ## Rights
 
 This is publisher art. Valorant and League of Legends art is Riot Games';

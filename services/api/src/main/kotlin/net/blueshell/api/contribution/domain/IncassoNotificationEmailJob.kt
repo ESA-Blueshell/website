@@ -1,6 +1,5 @@
 package net.blueshell.api.contribution.domain
 
-import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
@@ -26,9 +25,7 @@ class IncassoNotificationEmailJob(
     override val jobType: String = EmailJobs.IncassoNotification.type
 
     override fun handlePayload(payload: EmailJobs.IncassoNotificationPayload) {
-        val notification = requireExists {
-            notifications.findById(IncassoNotification.Id(payload.userId, payload.contributionPeriodId))
-        }
+        val notification = requireExists { notifications.findById(payload.incassoNotificationId) }
         emails.send(
             createIncassoNotificationEmail(
                 notification.user,

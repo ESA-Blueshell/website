@@ -151,5 +151,12 @@ paying by direct debit what will be taken and on what date, and asks for nothing
 Different statements, so different records: the treasurer's question is which one a
 member received. Neither quotes an amount without the reason that amount applies.
 
+### Ask
+
+One asking of one member to pay for one period — a payment request or a pre-notification.
+A row each, not one per member and period: the treasurer chases, so a member can be asked
+in September, again in February and again the week after, and each is a thing that
+happened. "Last asked" is the most recent of them.
+
 An **incasso** is the direct debit itself; the record of a pre-notification is an
 `IncassoNotification`, which is the Dutch word the association uses for the mandate.

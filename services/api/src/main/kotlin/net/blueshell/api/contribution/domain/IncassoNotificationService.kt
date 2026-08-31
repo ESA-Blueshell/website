@@ -15,19 +15,19 @@ class IncassoNotificationService(
     repository: IncassoNotificationRepository,
     private val periodService: ContributionPeriodService,
     private val jobs: TrackedJobDispatcher,
-) : BaseModelService<IncassoNotification, IncassoNotification.Id, IncassoNotificationRepository>(repository) {
+) : BaseModelService<IncassoNotification, Long, IncassoNotificationRepository>(repository) {
 
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<IncassoNotification> {
         periodService.findById(contributionPeriodId)
-        return repository.findByIdContributionPeriodId(contributionPeriodId)
+        return repository.findByContributionPeriod_Id(contributionPeriodId)
     }
 
+    /** The job carries the notification's own id, so it sends the one it wrote. */
     fun sendNotification(notification: IncassoNotification) {
-        val id = notification.id
         jobs.runAsync(
             EmailJobs.IncassoNotification,
-            EmailJobs.IncassoNotificationPayload(id.userId!!, id.contributionPeriodId!!),
+            EmailJobs.IncassoNotificationPayload(requireNotNull(notification.id)),
         )
     }
 }

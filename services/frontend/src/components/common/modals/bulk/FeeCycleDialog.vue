@@ -298,7 +298,8 @@ defineExpose({
         + 'their direct-debit flag, so it is not a choice here. Honorary members and members with no '
         + 'email address are shown but never written to. You can change a member\'s fee type and the '
         + 'amount follows from the period; there is no field for typing an amount. One confirmation '
-        + 'sends both statements, and each send is recorded.',
+        + 'sends both statements. The cycle can be run over the same period as often as you need '
+        + 'to chase: every run records its own asks, so the history says who was asked and when.',
     }"
     icon="mdi-email-fast"
     :included-count="includedUserIds.length"
@@ -358,7 +359,8 @@ defineExpose({
       >
         {{ askedAlreadyCount }} of the members about to be written to
         {{ askedAlreadyCount === 1 ? "has" : "have" }} already been asked for this period.
-        Sending again is allowed; the Last asked column says when each was.
+        Sending again is allowed as often as you need; each ask is recorded on its own, and
+        the Last asked column shows the most recent.
       </v-alert>
 
       <v-alert

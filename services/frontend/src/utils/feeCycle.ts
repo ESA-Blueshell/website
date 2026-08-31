@@ -68,9 +68,10 @@ export function lastAskedLabel(iso: string | undefined): string {
 /**
  * Whether this member has already been asked for this period on this side of the partition.
  *
- * Sending again is allowed — the treasurer chases — so an already-asked member stays
- * included rather than becoming a row to tick back in. Half way through the year that would
- * be a hundred ticks. It is warned about instead, which is what the epic asks for.
+ * Sending again is allowed, as often as the treasurer needs, so an already-asked member
+ * stays included rather than becoming a row to tick back in — half way through the year that
+ * would be a hundred ticks. It is warned about instead, and each ask is its own record, so
+ * the warning is a note about history rather than a constraint.
  */
 export function askedAlready(row: BulkRow): boolean {
   return !!row.lastSentOn

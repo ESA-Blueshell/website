@@ -120,23 +120,35 @@ class FeeCycleUseCasesTest {
     @Nested
     inner class AskingAgain {
 
+        /**
+         * The treasurer chases: a member asked in September and again in February has been
+         * asked twice, and a record that only remembers the second cannot say so.
+         */
         @Test
-        fun `restates the existing record rather than adding a second one`() {
+        fun `writes another ask rather than overwriting the last one`() {
             plan(participant(2L, "Ben Transfer", FeeCycleGroup.TRANSFER))
-            val existing = ContributionReminder(
-                id = ContributionReminder.Id(2L, periodId),
-                user = member(2L, "Ben Transfer"),
-                contributionPeriod = period,
-            )
-            every { reminders.existsById(ContributionReminder.Id(2L, periodId)) } returns true
-            every { reminders.findById(ContributionReminder.Id(2L, periodId)) } returns existing
-            every { reminders.update(any()) } answers { firstArg() }
+            val written = mutableListOf<ContributionReminder>()
+            every { reminders.create(capture(written)) } answers { firstArg<ContributionReminder>().seeded(1L) }
 
             useCases.send(periodId, dates, emptyMap())
+            useCases.send(periodId, dates, emptyMap())
 
-            assertThat(existing.paymentDueDate).isEqualTo(dueDate)
-            verify(exactly = 0) { reminders.create(any()) }
-            verify(exactly = 1) { reminders.update(existing) }
+            assertThat(written).hasSize(2)
+            verify(exactly = 0) { reminders.update(any()) }
+        }
+
+        @Test
+        fun `writes another pre-notification too, so a moved debit date can be re-told`() {
+            plan(participant(1L, "Ann Debit", FeeCycleGroup.DIRECT_DEBIT))
+            val written = mutableListOf<IncassoNotification>()
+            every { preNotifications.create(capture(written)) } answers { firstArg<IncassoNotification>().seeded(1L) }
+
+            useCases.send(periodId, dates, emptyMap())
+            useCases.send(periodId, FeeCycleDates(paymentDue = dueDate, debit = debitDate.plusDays(7)), emptyMap())
+
+            assertThat(written).hasSize(2)
+            assertThat(written.map { it.debitDate }).containsExactly(debitDate, debitDate.plusDays(7))
+            verify(exactly = 0) { preNotifications.update(any()) }
         }
     }
 
@@ -189,12 +201,11 @@ class FeeCycleUseCasesTest {
         every { planner.plan(periodId) } returns FeeCyclePlan(periodId, participants.toList())
         every { periods.findById(periodId) } returns period
         participants.forEach { every { users.findById(it.userId) } returns member(it.userId, it.name) }
-        every { reminders.existsById(any()) } returns false
-        every { preNotifications.existsById(any()) } returns false
-        // A relaxed mock answers create() with a generic stub, which the send path then
-        // reads an id off. Echo the argument so the record it wrote is the record it sends.
-        every { reminders.create(any()) } answers { firstArg() }
-        every { preNotifications.create(any()) } answers { firstArg() }
+        // A relaxed mock answers create() with a generic stub, which the send path then reads
+        // an id off. Echo the argument, seeded with an id, so the record it wrote is the
+        // record it sends.
+        every { reminders.create(any()) } answers { firstArg<ContributionReminder>().seeded(1L) }
+        every { preNotifications.create(any()) } answers { firstArg<IncassoNotification>().seeded(1L) }
     }
 
     private fun participant(

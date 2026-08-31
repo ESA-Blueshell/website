@@ -263,6 +263,7 @@ export enum BulkRowReason {
     NO_ACTIVE_MEMBERSHIP = 'NO_ACTIVE_MEMBERSHIP',
     STARTED_TODAY = 'STARTED_TODAY',
     NO_EMAIL = 'NO_EMAIL',
+    DELETED = 'DELETED',
     ALREADY_ACTIVE = 'ALREADY_ACTIVE',
     NO_CONTRIBUTION_PERIOD = 'NO_CONTRIBUTION_PERIOD',
     WILL_RESUME = 'WILL_RESUME',
@@ -474,9 +475,25 @@ export type ContributionPeriodResponse = {
 };
 
 export type ContributionReminderResponse = {
+    /**
+     * The amount this ask asked for, as stated. Absent wherever the fee type is.
+     */
+    amount?: number | null;
+    /**
+     * When the member was asked.
+     */
+    askedAt: string;
     contributionPeriodId: number;
     createdAt: string;
-    remindedAt?: string | null;
+    /**
+     * The fee type this ask stated. Absent when it quoted the period's options instead.
+     */
+    feeType?: BulkFeeType | null;
+    id: number;
+    /**
+     * The date this ask asked to be paid by. Absent wherever the fee type is.
+     */
+    paymentDueDate?: string | null;
     updatedAt: string;
     userId: number;
     version: number;

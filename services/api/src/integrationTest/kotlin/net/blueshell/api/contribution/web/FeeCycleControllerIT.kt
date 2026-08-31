@@ -4,6 +4,7 @@ import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
 import net.blueshell.api.contribution.domain.IncassoNotificationEmailJob
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 /**
  * The fee cycle end to end: what the preview says, what the send does, and that the two
@@ -231,9 +233,9 @@ class FeeCycleControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.preNotificationsQueued").value(1))
                 .andExpect(jsonPath("$.excluded").value(0))
 
-            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!).map { it.userId })
                 .containsExactly(onTransfer.id)
-            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+            assertThat(preNotificationRepository.findByContributionPeriod_Id(period.id!!).map { it.userId })
                 .containsExactly(onDirectDebit.id)
         }
 
@@ -294,9 +296,9 @@ class FeeCycleControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.paymentRequestsQueued").value(expectedTransfer.size))
                 .andExpect(jsonPath("$.preNotificationsQueued").value(expectedDirectDebit.size))
 
-            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!).map { it.userId })
                 .containsExactlyInAnyOrderElementsOf(expectedTransfer)
-            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!).map { it.userId })
+            assertThat(preNotificationRepository.findByContributionPeriod_Id(period.id!!).map { it.userId })
                 .containsExactlyInAnyOrderElementsOf(expectedDirectDebit)
         }
 
@@ -313,9 +315,9 @@ class FeeCycleControllerIT : UserTestSupport() {
 
             send(board, sendBody(period.id)).andExpect(status().isOk)
 
-            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!).single().amount)
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!).single().amount)
                 .isEqualTo(25.0)
-            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!).single().amount)
+            assertThat(preNotificationRepository.findByContributionPeriod_Id(period.id!!).single().amount)
                 .isEqualTo(45.0)
         }
 
@@ -328,19 +330,24 @@ class FeeCycleControllerIT : UserTestSupport() {
 
             send(board, sendBody(period.id)).andExpect(status().isOk)
 
-            val reminder = reminderRepository.findByIdContributionPeriodId(period.id!!).single()
+            val reminder = reminderRepository.findByContributionPeriod_Id(period.id!!).single()
             assertThat(reminder.userId).isEqualTo(onTransfer.id)
             assertThat(reminder.feeType).isEqualTo(BulkFeeType.HALF_YEAR_FEE)
             assertThat(reminder.paymentDueDate).isEqualTo(dueDate)
 
-            val preNotification = preNotificationRepository.findByIdContributionPeriodId(period.id!!).single()
+            val preNotification = preNotificationRepository.findByContributionPeriod_Id(period.id!!).single()
             assertThat(preNotification.userId).isEqualTo(onDirectDebit.id)
             assertThat(preNotification.feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
             assertThat(preNotification.debitDate).isEqualTo(debitDate)
         }
 
+        /**
+         * The treasurer chases, and may run the cycle over a period as often as they need.
+         * Each run is its own ask, so a member asked three times reads as three asks rather
+         * than one row that only remembers the last.
+         */
         @Test
-        fun `asking again restates the record rather than adding a second`() {
+        fun `asking again writes another ask, as often as it is done`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
             val period = period()
             val onTransfer = member(incasso = false)
@@ -348,10 +355,61 @@ class FeeCycleControllerIT : UserTestSupport() {
             send(board, sendBody(period.id)).andExpect(status().isOk)
             send(board, sendBody(period.id, mapOf(onTransfer.id to BulkFeeType.ALUMNI_FEE)))
                 .andExpect(status().isOk)
+            send(board, sendBody(period.id)).andExpect(status().isOk)
 
-            val reminders = reminderRepository.findByIdContributionPeriodId(period.id!!)
-            assertThat(reminders).hasSize(1)
-            assertThat(reminders.single().feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
+            val asks = reminderRepository.findByContributionPeriod_Id(period.id!!)
+            assertThat(asks).hasSize(3)
+            assertThat(asks.map { it.userId }.distinct()).containsExactly(onTransfer.id)
+            assertThat(asks.map { it.feeType })
+                .containsExactly(BulkFeeType.FULL_YEAR_FEE, BulkFeeType.ALUMNI_FEE, BulkFeeType.FULL_YEAR_FEE)
+        }
+
+        @Test
+        fun `notifying again writes another pre-notification, so a moved debit date can be re-told`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            member(incasso = true)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+
+            assertThat(preNotificationRepository.findByContributionPeriod_Id(period.id!!)).hasSize(2)
+        }
+
+        @Test
+        fun `each ask queues its own email`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            member(incasso = false)
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+
+            assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).hasSize(2)
+        }
+
+        @Test
+        fun `shows the most recent of a member's asks`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val onTransfer = member(incasso = false)
+            persist(
+                ContributionReminder(
+                    user = onTransfer,
+                    contributionPeriod = period,
+                    askedAt = LocalDate.now().minusMonths(3).atStartOfDay().toInstant(ZoneOffset.UTC),
+                ),
+            )
+
+            send(board, sendBody(period.id)).andExpect(status().isOk)
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).hasSize(2)
+            preview(board, period.id)
+                .andExpect(status().isOk)
+                .andExpect(
+                    jsonPath("$.rows[?(@.userId == ${onTransfer.id})].lastAskedOn")
+                        .value(LocalDate.now().toString()),
+                )
         }
 
         @Test
@@ -382,7 +440,7 @@ class FeeCycleControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.errors[0].code").value("NonRecipientFeeTypeUserIds"))
                 .andExpect(jsonPath("$.errors[0].values[0]").value(honorary.id))
 
-            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!)).isEmpty()
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
         }
 
         @Test
@@ -403,10 +461,9 @@ class FeeCycleControllerIT : UserTestSupport() {
 
             send(board, sendBody(period.id)).andExpect(status().isOk)
             emailTransportClient.reset()
+            val ask = reminderRepository.findByContributionPeriod_Id(period.id!!).single()
             reminderEmailJob.handle(
-                jsonMapper.writeValueAsString(
-                    EmailJobs.ContributionReminderPayload(onTransfer.id!!, period.id!!),
-                ),
+                jsonMapper.writeValueAsString(EmailJobs.ContributionReminderPayload(ask.id!!)),
             )
 
             val sent = emailTransportClient.sentEmails.single()
@@ -425,10 +482,9 @@ class FeeCycleControllerIT : UserTestSupport() {
 
             send(board, sendBody(period.id)).andExpect(status().isOk)
             emailTransportClient.reset()
+            val notification = preNotificationRepository.findByContributionPeriod_Id(period.id!!).single()
             preNotificationEmailJob.handle(
-                jsonMapper.writeValueAsString(
-                    EmailJobs.IncassoNotificationPayload(onDirectDebit.id!!, period.id!!),
-                ),
+                jsonMapper.writeValueAsString(EmailJobs.IncassoNotificationPayload(notification.id!!)),
             )
 
             val sent = emailTransportClient.sentEmails.single()
@@ -517,8 +573,8 @@ class FeeCycleControllerIT : UserTestSupport() {
 
             previewEmail(board, period.id, onTransfer.id).andExpect(status().isOk)
 
-            assertThat(reminderRepository.findByIdContributionPeriodId(period.id!!)).isEmpty()
-            assertThat(preNotificationRepository.findByIdContributionPeriodId(period.id!!)).isEmpty()
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+            assertThat(preNotificationRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
             assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).isEmpty()
             assertThat(findJobsByType(EmailJobs.IncassoNotification.type)).isEmpty()
         }

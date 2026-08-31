@@ -21,7 +21,7 @@ import {
  * column-driven preview table. It knows nothing about action type: the dialog hands it
  * rows + a `columns` descriptor and supplies custom cell content via `#cell.<key>` slots
  * (falling back to a built-in renderer for the standard keys). Re-include is driven via
- * the `reincludeOverrides` v-model. See docs/proposals/bulk-actions/REDESIGN.md §5.1.
+ * the `reincludeOverrides` v-model.
  */
 
 defineOptions({name: "BulkDialogScaffold"})

@@ -43,12 +43,11 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
             .describedAs("Should schedule contribution reminder email job")
             .hasSize(1)
 
-        // And: Job has correct payload
-        val jobPayload = jobs.first().payload
-        assertThat(jobPayload)
-            .describedAs("Job should contain userId and contributionPeriodId")
-            .contains("\"userId\":${user.id}")
-            .contains("\"contributionPeriodId\":${period.id}")
+        // And: the job names the ask it was written for, not the pair — a member can be
+        // asked for the same period more than once, so the pair no longer names one row.
+        assertThat(jobs.first().payload)
+            .describedAs("Job should name the reminder it sends")
+            .contains("\"contributionReminderId\":${savedReminder.id}")
     }
 
     @Test
@@ -77,10 +76,6 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
 
     private fun createContributionReminder(user: User, period: ContributionPeriod): ContributionReminder {
         return ContributionReminder(
-            id = ContributionReminder.Id(
-                userId = user.id,
-                contributionPeriodId = period.id
-            ),
             user = user,
             contributionPeriod = period,
         )

@@ -1,12 +1,14 @@
 package net.blueshell.api.contribution.web
 
 import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -15,6 +17,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class ContributionReminderControllerIT : UserTestSupport() {
+
+    @Autowired
+    private lateinit var reminderRepository: ContributionReminderRepository
 
     private fun payload(userId: Long, periodId: Long): String =
         """{"userId":$userId,"contributionPeriodId":$periodId}"""
@@ -43,9 +48,34 @@ class ContributionReminderControllerIT : UserTestSupport() {
 
             val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
             assertThat(jobs).hasSize(1)
-            assertThat(jobs.first().payload)
-                .contains("\"userId\":${user.id}")
-                .contains("\"contributionPeriodId\":${period.id}")
+            // The job names the ask, because a member can be asked for the same period more
+            // than once and the pair no longer names one row.
+            val ask = reminderRepository.findByContributionPeriod_Id(period.id!!).single()
+            assertThat(jobs.first().payload).contains("\"contributionReminderId\":${ask.id}")
+        }
+
+        /**
+         * The treasurer chases one member as well as a hundred, so the same member and period
+         * can be asked again — and each ask is its own row and its own email.
+         */
+        @Test
+        fun `asking the same member again records another ask`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER)
+            val period = createContributionPeriodFixture()
+
+            repeat(3) {
+                mvc.perform(
+                    post("/contributionReminders")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload(user.id!!, period.id!!))
+                )
+                    .andExpect(status().isCreated)
+            }
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).hasSize(3)
+            assertThat(findJobsByType(EmailJobs.ContributionReminder.type)).hasSize(3)
         }
 
         @Test
@@ -99,8 +129,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             persist(
                 ContributionReminder(
-                    id = ContributionReminder.Id(user.id, period.id),
-                    user = user,
+                user = user,
                     contributionPeriod = period,
                 )
             )

@@ -8,9 +8,11 @@ import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.dto.bulk.FeeCycleGroup
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.persistence.Membership
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -27,6 +29,7 @@ class FeeCyclePlanner(
     private val memberships: MembershipService,
     private val reminders: ContributionReminderService,
     private val preNotifications: IncassoNotificationService,
+    private val erasure: UserErasureService,
 ) {
     @Transactional(readOnly = true)
     fun plan(contributionPeriodId: Long): FeeCyclePlan {
@@ -77,11 +80,19 @@ class FeeCyclePlanner(
         val feeType = resolveFeeType(membership.memberType, membership.startDate, period)
         val group = if (membership.incasso) FeeCycleGroup.DIRECT_DEBIT else FeeCycleGroup.TRANSFER
 
-        // Both exclusions are hard. An honorary member owes nothing, and an address that is
-        // not there cannot be written to; neither is a judgement the operator can overrule.
+        // Every exclusion here is hard: an honorary member owes nothing, a deleted account is
+        // nobody to write to, and an address that is not there cannot be written to. None of
+        // the three is a judgement the operator can overrule.
+        //
+        // Deletion is asked of the erasure snapshot rather than read off the address, which it
+        // anonymises to a placeholder that would pass an is-it-blank test and bounce. It does
+        // not end the memberships either, so without this a deleted account stays a member of
+        // the period and the cycle would write to it.
         val (disposition, reason) = when {
             membership.memberType == MemberType.HONORARY ->
                 BulkRowDisposition.EXCLUDED to BulkRowReason.HONORARY
+            erasure.isDeleted(userId) ->
+                BulkRowDisposition.EXCLUDED to BulkRowReason.DELETED
             member.email.isBlank() ->
                 BulkRowDisposition.EXCLUDED to BulkRowReason.NO_EMAIL
             else -> BulkRowDisposition.INCLUDED to null
@@ -108,14 +119,19 @@ class FeeCyclePlanner(
      * period has been asked by transfer and not yet pre-notified, and saying otherwise would
      * hide the send the treasurer is about to make.
      *
-     * The record is one row per member and period, so a repeat send restates it rather than
-     * inserting a second, and `askedAt` is the moment of the most recent ask. Its own column
-     * rather than `updatedAt`, which any later touch of the row would move.
+     * The latest of a member's asks, because there can be several — the treasurer chases, and
+     * each chase is its own row.
      */
     private fun lastAskedDates(contributionPeriodId: Long): Map<FeeCycleGroup, Map<Long, LocalDate>> = mapOf(
-        FeeCycleGroup.TRANSFER to reminders.findByContributionPeriodId(contributionPeriodId)
-            .associate { it.userId to it.askedAt.atZone(ZoneOffset.UTC).toLocalDate() },
-        FeeCycleGroup.DIRECT_DEBIT to preNotifications.findByContributionPeriodId(contributionPeriodId)
-            .associate { it.userId to it.askedAt.atZone(ZoneOffset.UTC).toLocalDate() },
+        FeeCycleGroup.TRANSFER to latestAskPerMember(
+            reminders.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
+        ),
+        FeeCycleGroup.DIRECT_DEBIT to latestAskPerMember(
+            preNotifications.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
+        ),
     )
+
+    private fun latestAskPerMember(asks: List<Pair<Long, Instant>>): Map<Long, LocalDate> = asks
+        .groupBy { (userId, _) -> userId }
+        .mapValues { (_, theirs) -> theirs.maxOf { (_, askedAt) -> askedAt }.atZone(ZoneOffset.UTC).toLocalDate() }
 }

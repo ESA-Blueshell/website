@@ -37,8 +37,13 @@ fun ContributionPeriod.toResult(): ContributionPeriodResult = ContributionPeriod
 fun List<ContributionPeriod>.toContributionPeriodResults(): List<ContributionPeriodResult> = this.map { it.toResult() }
 
 fun ContributionReminder.toResult(): ContributionReminderResult = ContributionReminderResult(
-    userId = this.id.userId!!,
-    contributionPeriodId = this.id.contributionPeriodId!!,
+    id = this.id!!,
+    userId = this.userId,
+    contributionPeriodId = this.contributionPeriodId,
+    feeType = this.feeType,
+    amount = this.amount,
+    paymentDueDate = this.paymentDueDate,
+    askedAt = this.askedAt,
     version = this.version,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt,

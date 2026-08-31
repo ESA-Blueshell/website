@@ -15,18 +15,18 @@ class ContributionReminderService @Autowired constructor(
     repository: ContributionReminderRepository,
     private val periodService: ContributionPeriodService,
     private val jobs: TrackedJobDispatcher
-) : BaseModelService<ContributionReminder, ContributionReminder.Id, ContributionReminderRepository>(repository) {
+) : BaseModelService<ContributionReminder, Long, ContributionReminderRepository>(repository) {
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<ContributionReminder> {
         periodService.findById(contributionPeriodId)
-        return repository.findByIdContributionPeriodId(contributionPeriodId)
+        return repository.findByContributionPeriod_Id(contributionPeriodId)
     }
 
+    /** The job carries the ask's own id, so a repeat ask sends the email it wrote, not an earlier one. */
     fun sendReminder(reminder: ContributionReminder) {
-        val reminderId = reminder.id
         jobs.runAsync(
             EmailJobs.ContributionReminder,
-            EmailJobs.ContributionReminderPayload(reminderId.userId!!, reminderId.contributionPeriodId!!)
+            EmailJobs.ContributionReminderPayload(requireNotNull(reminder.id)),
         )
     }
 

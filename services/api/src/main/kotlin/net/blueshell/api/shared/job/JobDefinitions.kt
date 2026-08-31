@@ -39,14 +39,16 @@ object EmailJobs {
         val guestAccessToken: String
     )
 
+    /**
+     * The ask's own id. A member can be asked for the same period more than once, so the
+     * pair no longer names one row.
+     */
     data class ContributionReminderPayload(
-        val userId: Long,
-        val contributionPeriodId: Long
+        val contributionReminderId: Long
     )
 
     data class IncassoNotificationPayload(
-        val userId: Long,
-        val contributionPeriodId: Long
+        val incassoNotificationId: Long
     )
 }
 

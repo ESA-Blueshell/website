@@ -60,9 +60,9 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
     private fun sendRecovery(userId: Long, token: String, purpose: TokenPurpose) =
         recoveryEmailJob.handle(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
 
-    private fun sendContributionReminder(userId: Long, periodId: Long) =
+    private fun sendContributionReminder(reminderId: Long) =
         contributionReminderEmailJob.handle(
-            objectMapper.writeValueAsString(EmailJobs.ContributionReminderPayload(userId, periodId)),
+            objectMapper.writeValueAsString(EmailJobs.ContributionReminderPayload(reminderId)),
         )
 
     private fun sendEventSignup(signUpId: Long, guestAccessToken: String) =
@@ -132,7 +132,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             val period = createAndSavePeriod()
             val reminder = createAndSaveReminder(user, period)
 
-            sendContributionReminder(user.id!!, period.id!!)
+            sendContributionReminder(reminder.id!!)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -263,7 +263,6 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
 
     private fun createAndSaveReminder(user: User, period: ContributionPeriod): ContributionReminder {
         val reminder = ContributionReminder(
-            id = ContributionReminder.Id(user.id, period.id),
             user = user,
             contributionPeriod = period,
         )

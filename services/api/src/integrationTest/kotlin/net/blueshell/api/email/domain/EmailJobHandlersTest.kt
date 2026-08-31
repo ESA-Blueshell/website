@@ -153,12 +153,9 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         fun `processes contribution reminder job and sends email`() {
             val user = createAndSaveUser("contributor", "contributor@example.com")
             val period = createAndSavePeriod()
-            createAndSaveReminder(user, period)
+            val reminder = createAndSaveReminder(user, period)
 
-            val payload = EmailJobs.ContributionReminderPayload(
-                userId = user.id!!,
-                contributionPeriodId = period.id!!
-            )
+            val payload = EmailJobs.ContributionReminderPayload(contributionReminderId = reminder.id!!)
             val jobExecution = createJobExecution(EmailJobs.ContributionReminder.type, payload)
 
             contributionReminderEmailJob.handle(jobExecution.payload)
@@ -226,12 +223,11 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         fun `ContributionReminderEmailJob parses JSON payload correctly`() {
             val user = createAndSaveUser("reminder.test", "reminder@example.com")
             val period = createAndSavePeriod()
-            createAndSaveReminder(user, period)
+            val reminder = createAndSaveReminder(user, period)
 
             val payloadJson = """
                 {
-                    "userId": ${user.id},
-                    "contributionPeriodId": ${period.id}
+                    "contributionReminderId": ${reminder.id}
                 }
             """.trimIndent()
             val jobExecution = JobExecution().apply {
@@ -284,7 +280,6 @@ class EmailJobHandlersTest : ServiceTestSupport() {
 
     private fun createAndSaveReminder(user: User, period: ContributionPeriod): ContributionReminder {
         val reminder = ContributionReminder(
-            id = ContributionReminder.Id(user.id, period.id),
             user = user,
             contributionPeriod = period,
         )

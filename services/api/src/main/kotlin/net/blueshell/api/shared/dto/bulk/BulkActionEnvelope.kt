@@ -81,9 +81,16 @@ enum class BulkRowReason {
      * Email actions (reminder/incasso): the user has no email address on file, so
      * nothing can be sent. Previously the execute handler skipped these silently and
      * the preview never surfaced it — now it is a first-class SKIPPED reason visible
-     * in the preview. See docs/proposals/bulk-actions/REDESIGN.md §3.
+     * in the preview. See docs/flows/fee-cycle/README.md.
      */
     NO_EMAIL,
+    /**
+     * The account has been deleted. Deletion anonymises the address to a placeholder and
+     * keeps the row for a restore window, and it does not end the memberships — so a deleted
+     * account still looks like a member of a period, and an action that reads memberships has
+     * to say so rather than write to it.
+     */
+    DELETED,
     /** Resume/start-new: the user already has an active (endDate=null) membership. */
     ALREADY_ACTIVE,
     /** Resume/start-new: no contribution period exists at all. */

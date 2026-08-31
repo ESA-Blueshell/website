@@ -1,6 +1,5 @@
 package net.blueshell.api.contribution.domain
 
-import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
@@ -32,9 +31,7 @@ class ContributionReminderEmailJob(
     override val jobType: String = EmailJobs.ContributionReminder.type
 
     override fun handlePayload(payload: EmailJobs.ContributionReminderPayload) {
-        val reminder = requireExists {
-            reminders.findById(ContributionReminder.Id(payload.userId, payload.contributionPeriodId))
-        }
+        val reminder = requireExists { reminders.findById(payload.contributionReminderId) }
         val feeType = reminder.feeType
         val amount = reminder.amount
         val dueDate = reminder.paymentDueDate

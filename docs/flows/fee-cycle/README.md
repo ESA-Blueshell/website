@@ -33,8 +33,8 @@ stateDiagram-v2
     [*] --> Transfer: unpaid · no direct-debit flag
     [*] --> DirectDebit: unpaid · direct-debit flag
     [*] --> Excluded: unpaid · honorary or no email address
-    Transfer --> Transfer: asked again, the record is restated
-    DirectDebit --> DirectDebit: asked again, the record is restated
+    Transfer --> Transfer: asked again, another ask recorded
+    DirectDebit --> DirectDebit: notified again, another notification recorded
     Transfer --> NotInTheCycle: contribution recorded
     DirectDebit --> NotInTheCycle: contribution recorded
 ```
@@ -43,8 +43,12 @@ Which of `Transfer` and `DirectDebit` a member is in is the `incasso` flag on th
 membership that put them in the period. It is not a choice the treasurer makes, which
 is why not having the flag is not a warning.
 
-`Excluded` is not overridable. An honorary member owes nothing and an address that is
-not on file cannot be written to, and neither is a judgement an operator can overrule.
+`Excluded` is not overridable. An honorary member owes nothing, a deleted account is nobody
+to write to, and an address that is not on file cannot be written to; none of the three is a
+judgement an operator can overrule.
+
+Nothing here forbids a repeat. The cycle can be run over a period as often as the treasurer
+needs, and each run adds an ask rather than replacing the last.
 
 ## Invariants
 
@@ -52,6 +56,7 @@ Each of these is defended by a test named in the Testing section.
 
 - An honorary member is never emailed by the cycle, and cannot be included.
 - A member with no email address is never emailed, and never counted as sent to.
+- A deleted account is never emailed.
 - A member who has paid for the period is never asked for it.
 - The preview and the send never disagree about who is included, which side of the
   partition they are on, or what they owe. Both read one plan.
@@ -63,12 +68,17 @@ Each of these is defended by a test named in the Testing section.
   transfer is never sent a pre-notification. Sending the wrong one costs the member
   money: a direct-debit member who transfers pays twice.
 - A fee type naming a member the cycle does not write to is never silently ignored.
-- Asking again never produces a second record for the same member and period.
-- A member's last-asked date is never read from the other side of the partition.
+- An ask is never lost to a later one. A member can be asked for the same period as often
+  as the treasurer needs — twice in the same half of the year, or more — and each ask is its
+  own record with its own moment.
+- A member's last-asked date is never read from the other side of the partition, and is
+  always the most recent of their asks on that side.
 - A member is never partitioned by the flag on a membership that has ended, where they
   hold one that has not.
 - Reading an email writes no record and queues no send, and an email is never rendered
   for a member the cycle will not write to.
+- A deleted account is never written to. Deletion anonymises the address to a placeholder
+  and does not end the memberships, so it would otherwise still look like a member.
 
 ## The journey
 
@@ -107,7 +117,8 @@ flowchart TD
    round trip; there is no field for an amount.
 6. They may read one member's email. Which of the two statements comes back is that
    member's own side of the partition, and it is built by the builder the send uses.
-7. Sending re-reads the plan, writes one record per recipient and queues one email each.
+7. Sending re-reads the plan, writes one record per recipient — a new one each run — and
+   queues one email each.
 8. The result reports each side separately, and how many members were excluded.
 
 ## Alternative orderings
@@ -193,11 +204,15 @@ both dates are given, because both reach the email.
 **The cycle cannot be read.** The dialog says so and shows no rows, so an empty table
 is never mistaken for a period with nobody left to ask.
 
-**Sending twice.** The second send restates each record — amount, fee type, date and
-`asked_at` — rather than adding a second, and queues the emails again. Re-sending is
-allowed because the treasurer chases; it is warned about rather than blocked. The dialog
-counts the already-asked members above the table and colours their date, and making them
-rows to tick back in would mean a hundred ticks in the second cycle of the year.
+**Sending twice, or five times.** Each send writes its own ask and queues its own email.
+Re-sending is allowed as often as the treasurer needs — the same period, the same half of
+the year, the same week — because chasing is the job; it is warned about rather than
+blocked. The dialog counts the already-asked members above the table and colours their
+date, and making them rows to tick back in would mean a hundred ticks in the second cycle
+of the year.
+
+`contribution_reminders` and `incasso_notifications` therefore hold a row per ask rather
+than per member and period, and the preview reads the most recent of a member's asks.
 
 **An email job fails.** The record was written before the send was queued, so a failed
 delivery leaves a record and the job in the outbox rather than silently nothing.
@@ -217,7 +232,7 @@ dates and any changed fee types. Reopening the dialog re-reads the cycle.
 | The payment request | `services/api/.../contribution/domain/ContributionReminderEmailBuilder.kt` |
 | The pre-notification | `services/api/.../contribution/domain/IncassoNotificationEmailBuilder.kt` |
 | Rendering one for reading | `services/api/.../contribution/domain/FeeCycleEmailPreviewService.kt` |
-| The two records | `services/api/.../contribution/persistence/{ContributionReminder,IncassoNotification}.kt` |
+| The two records, one row per ask | `services/api/.../contribution/persistence/{ContributionReminder,IncassoNotification}.kt` |
 | The two dates, as one value | `services/api/.../contribution/domain/FeeCycle.kt` |
 | The dialog | `services/frontend/src/components/common/modals/bulk/FeeCycleDialog.vue` |
 | Rows, and only the changed fee types | `services/frontend/src/utils/feeCycle.ts` |

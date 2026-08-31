@@ -5,7 +5,13 @@ import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import net.blueshell.api.contribution.api.ContributionPeriodService
 
-/** A reminder is persisted before it is sent, so a send failure leaves a record. */
+/**
+ * Asking one member, from a row rather than from the fee cycle.
+ *
+ * A reminder is persisted before it is sent, so a send failure leaves a record. Each call
+ * writes its own ask: calling twice records two, which is what a treasurer chasing a member
+ * has actually done.
+ */
 @Service
 class ContributionReminderUseCases(
     private val service: ContributionReminderService,

@@ -4,6 +4,8 @@ import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface IncassoNotificationRepository : BaseRepository<IncassoNotification, IncassoNotification.Id> {
-    fun findByIdContributionPeriodId(contributionPeriodId: Long): MutableList<IncassoNotification>
+@Suppress("FunctionName")
+interface IncassoNotificationRepository : BaseRepository<IncassoNotification, Long> {
+    /** Every notification sent for this period. A member may appear more than once. */
+    fun findByContributionPeriod_Id(contributionPeriodId: Long): MutableList<IncassoNotification>
 }

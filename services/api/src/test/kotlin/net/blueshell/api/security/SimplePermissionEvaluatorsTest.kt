@@ -131,7 +131,7 @@ class SimplePermissionEvaluatorsTest {
 
         @Test
         fun `hasPermissionId resolves reminder by id`() {
-            val id = ContributionReminder.Id(userId = 1L, contributionPeriodId = 2L)
+            val id = 7L
             val reminder = mock<ContributionReminder>()
             whenever(service.findById(id)).thenReturn(reminder)
 

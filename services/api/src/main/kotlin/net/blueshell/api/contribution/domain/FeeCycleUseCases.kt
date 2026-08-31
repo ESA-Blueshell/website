@@ -20,7 +20,11 @@ import java.time.Instant
  *
  * The plan is read once and used for the whole send, so what went out matches what was
  * previewed, and one timestamp covers the whole cycle so it reads back as one act rather
- * than a hundred moments. A fee type submitted for a member the cycle will not write to is refused
+ * than a hundred moments.
+ *
+ * A cycle can be run over the same period as often as the treasurer needs: each run writes
+ * its own records, so asking a member in September and again in February leaves two asks
+ * rather than one row that only remembers the second. A fee type submitted for a member the cycle will not write to is refused
  * rather than ignored: it means the operator was looking at a table that has since moved.
  */
 @Service
@@ -58,59 +62,33 @@ class FeeCycleUseCases(
 
             when (participant.group) {
                 FeeCycleGroup.TRANSFER -> {
-                    val id = ContributionReminder.Id(participant.userId, contributionPeriodId)
-                    // One row per member and period, so asking again restates the record
-                    // rather than adding a second one the treasurer would have to reconcile.
-                    // Every field of the statement is restated, `askedAt` included, so the
-                    // row always describes the most recent ask rather than a mixture.
-                    val reminder = if (reminders.existsById(id)) {
-                        reminders.update(
-                            reminders.findById(id).apply {
-                                this.feeType = feeType
-                                this.amount = amount
-                                this.paymentDueDate = dates.paymentDue
-                                this.askedAt = askedAt
-                            },
-                        )
-                    } else {
-                        reminders.create(
-                            ContributionReminder(
-                                user = member,
-                                contributionPeriod = period,
-                                feeType = feeType,
-                                amount = amount,
-                                paymentDueDate = dates.paymentDue,
-                                askedAt = askedAt,
-                            ),
-                        )
-                    }
+                    // A row per ask. The treasurer chases, so asking again is a new record
+                    // rather than an overwrite of the last one.
+                    val reminder = reminders.create(
+                        ContributionReminder(
+                            user = member,
+                            contributionPeriod = period,
+                            feeType = feeType,
+                            amount = amount,
+                            paymentDueDate = dates.paymentDue,
+                            askedAt = askedAt,
+                        ),
+                    )
                     reminders.sendReminder(reminder)
                     paymentRequests++
                 }
 
                 FeeCycleGroup.DIRECT_DEBIT -> {
-                    val id = IncassoNotification.Id(participant.userId, contributionPeriodId)
-                    val notification = if (preNotifications.existsById(id)) {
-                        preNotifications.update(
-                            preNotifications.findById(id).apply {
-                                this.feeType = feeType
-                                this.amount = amount
-                                this.debitDate = dates.debit
-                                this.askedAt = askedAt
-                            },
-                        )
-                    } else {
-                        preNotifications.create(
-                            IncassoNotification(
-                                user = member,
-                                contributionPeriod = period,
-                                feeType = feeType,
-                                amount = amount,
-                                debitDate = dates.debit,
-                                askedAt = askedAt,
-                            ),
-                        )
-                    }
+                    val notification = preNotifications.create(
+                        IncassoNotification(
+                            user = member,
+                            contributionPeriod = period,
+                            feeType = feeType,
+                            amount = amount,
+                            debitDate = dates.debit,
+                            askedAt = askedAt,
+                        ),
+                    )
                     preNotifications.sendNotification(notification)
                     preNotified++
                 }

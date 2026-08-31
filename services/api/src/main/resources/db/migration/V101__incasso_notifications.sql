@@ -3,8 +3,12 @@
 -- Two tables rather than one with a kind column: the treasurer's question is which
 -- statement a member received, and a member can receive both in the same period if their
 -- direct-debit flag changed part way through it.
+--
+-- One row per notification, not per member and period: a debit date that moves has to be
+-- re-notified, and each telling is a thing that happened.
 CREATE TABLE incasso_notifications
 (
+    id                     BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id                BIGINT                                 NOT NULL,
     contribution_period_id BIGINT                                 NOT NULL,
     fee_type               VARCHAR(32)                            NOT NULL,
@@ -16,13 +20,8 @@ CREATE TABLE incasso_notifications
     updated_at             datetime DEFAULT CURRENT_TIMESTAMP     NOT NULL,
     version                BIGINT   DEFAULT 0                     NOT NULL,
     created_by_id          BIGINT                                 NULL,
-    updated_by_id          BIGINT                                 NULL,
-    CONSTRAINT PRIMARY KEY (user_id, contribution_period_id)
+    updated_by_id          BIGINT                                 NULL
 );
-
-ALTER TABLE incasso_notifications
-    ADD CONSTRAINT uk_incasso_notifications_user_period_deleted_at
-        UNIQUE (user_id, contribution_period_id, deleted_at);
 
 ALTER TABLE incasso_notifications
     ADD CONSTRAINT fk_incasso_notifications_user_id
@@ -45,3 +44,5 @@ CREATE INDEX idx_incasso_notifications_created_at ON incasso_notifications (crea
 CREATE INDEX idx_incasso_notifications_user_id ON incasso_notifications (user_id, deleted_at);
 CREATE INDEX idx_incasso_notifications_contribution_period_id
     ON incasso_notifications (contribution_period_id, deleted_at);
+CREATE INDEX idx_incasso_notifications_user_period_asked
+    ON incasso_notifications (user_id, contribution_period_id, asked_at);

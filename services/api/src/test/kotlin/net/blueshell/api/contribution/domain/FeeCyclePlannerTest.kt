@@ -14,6 +14,7 @@ import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.dto.bulk.FeeCycleGroup
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -48,8 +49,10 @@ class FeeCyclePlannerTest {
     private val memberships: MembershipService = mockk()
     private val reminders: ContributionReminderService = mockk()
     private val preNotifications: IncassoNotificationService = mockk()
+    private val erasure: UserErasureService = mockk()
 
-    private val planner = FeeCyclePlanner(periods, contributions, memberships, reminders, preNotifications)
+    private val planner =
+        FeeCyclePlanner(periods, contributions, memberships, reminders, preNotifications, erasure)
 
     @Nested
     inner class ThePartition {
@@ -104,6 +107,22 @@ class FeeCyclePlannerTest {
             assertThat(row.reason).isEqualTo(BulkRowReason.HONORARY)
             assertThat(row.feeType).isNull()
             assertThat(row.amount).isNull()
+            assertThat(row.willSend).isFalse()
+        }
+
+        /**
+         * Deletion anonymises the address to a placeholder that would pass an is-it-blank
+         * test, and it does not end the memberships — so without this the cycle would write
+         * to a deleted account.
+         */
+        @Test
+        fun `a deleted account is listed, excluded and never written to`() {
+            given(membership(1L, "Ann Deleted", incasso = false), deleted = true)
+
+            val row = planner.plan(periodId).participants.single()
+
+            assertThat(row.disposition).isEqualTo(BulkRowDisposition.EXCLUDED)
+            assertThat(row.reason).isEqualTo(BulkRowReason.DELETED)
             assertThat(row.willSend).isFalse()
         }
 
@@ -243,6 +262,7 @@ class FeeCyclePlannerTest {
     private fun given(
         vararg held: Membership,
         paid: Set<Long> = emptySet(),
+        deleted: Boolean = false,
         sentReminders: List<ContributionReminder> = emptyList(),
         sentPreNotifications: List<IncassoNotification> = emptyList(),
     ) {
@@ -252,6 +272,7 @@ class FeeCyclePlannerTest {
                 .toMutableList()
         every { memberships.findOverlappingWithMembers(period.startDate, period.endDate) } returns held.toList()
         every { reminders.findByContributionPeriodId(periodId) } returns sentReminders.toMutableList()
+        every { erasure.isDeleted(any()) } returns deleted
         every { preNotifications.findByContributionPeriodId(periodId) } returns sentPreNotifications.toMutableList()
     }
 
@@ -284,19 +305,17 @@ class FeeCyclePlannerTest {
     }
 
     private fun reminderFor(member: User, on: LocalDate) = ContributionReminder(
-        id = ContributionReminder.Id(member.id, periodId),
         user = member,
         contributionPeriod = period,
         askedAt = on.atStartOfDay().toInstant(ZoneOffset.UTC),
-    )
+    ).seeded(member.id!!)
 
     private fun preNotificationFor(member: User, on: LocalDate) = IncassoNotification(
-        id = IncassoNotification.Id(member.id, periodId),
         user = member,
         contributionPeriod = period,
         feeType = BulkFeeType.FULL_YEAR_FEE,
         amount = 45.0,
         debitDate = on,
         askedAt = on.atStartOfDay().toInstant(ZoneOffset.UTC),
-    )
+    ).seeded(member.id!!)
 }

@@ -10,6 +10,7 @@ export function target(userId: number, overrides?: Partial<BulkTarget>): BulkTar
     userId,
     name: `User ${userId}`,
     email: `user${userId}@example.com`,
+    memberSince: "2024-01-01",
     mostRecentMembership: {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
@@ -20,7 +21,6 @@ export function target(userId: number, overrides?: Partial<BulkTarget>): BulkTar
       paid: false,
     },
     isHonorary: false,
-    highestRole: null,
     ...overrides,
   }
 }
@@ -91,7 +91,6 @@ export function noEmailTarget(userId: number, incasso = false): BulkTarget {
 export function honoraryTarget(userId: number): BulkTarget {
   return target(userId, {
     isHonorary: true,
-    highestRole: null,
     mostRecentMembership: {
       type: MemberType.HONORARY,
       startDate: "2024-01-01",
@@ -128,7 +127,7 @@ export function alreadyPaidTarget(userId: number, incasso = false): BulkTarget {
 
 /** Member with no membership record. */
 export function noMembershipTarget(userId: number): BulkTarget {
-  return target(userId, {mostRecentMembership: null})
+  return target(userId, {mostRecentMembership: null, memberSince: null})
 }
 
 /**

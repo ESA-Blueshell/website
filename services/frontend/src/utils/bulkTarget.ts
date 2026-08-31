@@ -1,4 +1,5 @@
 import {MemberType, type MembershipResponse} from "@/services/api"
+import {deriveMemberSince} from "@/composables/useUserRows"
 
 /**
  * A selected user, with everything a bulk contribution preview needs already worked out.
@@ -11,6 +12,12 @@ export interface BulkTarget {
   userId: number
   name: string
   email: string | null
+  /**
+   * The earliest start across every membership, which is what the manager table means by
+   * "member since". A member who left and came back keeps the date they first joined, so
+   * the dialogs and the table behind them cannot disagree about it.
+   */
+  memberSince: string | null
   mostRecentMembership: {
     type: MemberType
     startDate: string
@@ -39,12 +46,14 @@ export function computeBulkTargets(
 ): BulkTarget[] {
   return selectedIds.map((userId) => {
     const user = usersById.get(userId)
-    const latest = deriveLatestMembership(membershipsByUserId.get(userId) ?? [])
+    const held = membershipsByUserId.get(userId) ?? []
+    const latest = deriveLatestMembership(held)
 
     return {
       userId,
       name: user?.fullName ?? String(userId),
       email: user?.email ?? null,
+      memberSince: deriveMemberSince(held),
       mostRecentMembership: latest
         ? {
             type: latest.memberType,

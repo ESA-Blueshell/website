@@ -25,6 +25,7 @@ import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
 import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
 import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
 import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
+import EndMembershipDialog from "@/components/common/modals/bulk/EndMembershipDialog.vue"
 
 export type {MemberRow}
 
@@ -138,7 +139,13 @@ const {
   clear: clearSelection,
 } = useUserSelection(displayedIds)
 
-const bulkAction = ref<"paid" | "unpaid" | null>(null)
+/**
+ * Which bulk dialog is up. The contribution actions are booked against the selected
+ * period; ending a membership is not, so the menu offers it whether or not one is picked.
+ */
+type BulkAction = "paid" | "unpaid" | "endMembership"
+
+const bulkAction = ref<BulkAction | null>(null)
 const bulkDialogOpen = ref(false)
 
 const membershipsByUserId = computed(() => {
@@ -159,7 +166,7 @@ const bulkTargets = computed(() =>
   computeBulkTargets(selectedIdsArray.value, membershipsByUserId.value, paidUserIds.value, usersById.value),
 )
 
-function openBulkAction(action: "paid" | "unpaid") {
+function openBulkAction(action: BulkAction) {
   bulkAction.value = action
   bulkDialogOpen.value = true
 }
@@ -490,6 +497,7 @@ async function confirmDeleteUser() {
                         @add-user="openAddUser"
                         @mark-paid="openBulkAction('paid')"
                         @mark-unpaid="openBulkAction('unpaid')"
+                        @end-membership="openBulkAction('endMembership')"
                       />
                     </div>
                   </th>
@@ -628,9 +636,18 @@ async function confirmDeleteUser() {
       @changed="onMembershipChanged"
     />
     <paid-status-dialog
+      v-if="bulkAction === 'paid' || bulkAction === 'unpaid'"
       v-model="bulkDialogOpen"
       :contribution-period-id="selectedPeriod?.id ?? null"
-      :target-state="bulkAction ?? 'paid'"
+      :target-state="bulkAction"
+      :targets="bulkTargets"
+      @done="onBulkDone"
+      @stale="onBulkStale"
+    />
+    <!-- Mounted only while chosen: opening it is what asks the api for its preview. -->
+    <end-membership-dialog
+      v-if="bulkAction === 'endMembership'"
+      v-model="bulkDialogOpen"
       :targets="bulkTargets"
       @done="onBulkDone"
       @stale="onBulkStale"

@@ -26,7 +26,7 @@ export function computeMarkPaidRows(targets: BulkTarget[]): BulkRow[] {
     // skipped rows show Type + Member-since (only "—" when there is no membership).
     if (target.mostRecentMembership) {
       row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.mostRecentMembership.startDate
+      row.memberSince = target.memberSince
     }
 
     if (target.isHonorary) {
@@ -58,7 +58,7 @@ export function computeMarkUnpaidRows(targets: BulkTarget[]): BulkRow[] {
     // skipped rows show Type + Member-since (only "—" when there is no membership).
     if (target.mostRecentMembership) {
       row.memberType = target.mostRecentMembership.type
-      row.memberSince = target.mostRecentMembership.startDate
+      row.memberSince = target.memberSince
     }
 
     if (target.isHonorary) {

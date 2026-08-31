@@ -32,7 +32,7 @@ function bulkTarget(
       paid: false,
     },
     isHonorary: false,
-    highestRole: null,
+    memberSince: "2024-01-01",
     ...overrides,
   }
 }
@@ -70,7 +70,6 @@ describe("computeMarkPaidRows", () => {
     const targets = [
       bulkTarget(1, {
         isHonorary: true,
-        highestRole: null,
         mostRecentMembership: {
           type: MemberType.HONORARY,
           startDate: "2023-01-01",
@@ -118,6 +117,7 @@ describe("computeMarkPaidRows", () => {
     const targets = [
       bulkTarget(1, {
         mostRecentContribution: {paid: true},
+        memberSince: "2023-03-04",
         mostRecentMembership: {
           type: MemberType.ALUMNI,
           startDate: "2023-03-04",

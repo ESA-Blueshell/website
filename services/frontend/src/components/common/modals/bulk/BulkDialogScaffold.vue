@@ -10,7 +10,7 @@ import {
   dispositionColor,
   dispositionLabel,
   effectiveDisposition,
-  formatMemberSince,
+  formatBulkDate,
   reasonLabel,
   rowColorClass,
 } from "@/utils/bulkDisposition"
@@ -393,7 +393,7 @@ defineExpose({validate})
                 <span
                   class="text-caption text-medium-emphasis"
                   :data-testid="`bulk-preview-member-since-${row.userId}`"
-                >{{ formatMemberSince(row.memberSince) }}</span>
+                >{{ formatBulkDate(row.memberSince) }}</span>
               </template>
               <template v-else-if="col.key === 'note'">
                 <span

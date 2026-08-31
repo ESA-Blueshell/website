@@ -64,7 +64,8 @@ export function reasonLabel(reason: BulkRowReason | undefined | null): string {
   return REASON_LABELS[reason] ?? String(reason).replace(/_/g, " ")
 }
 
-export function formatMemberSince(dateStr: string | undefined | null): string {
+/** Every date a bulk dialog shows, in the day-first form the rest of the manager uses. */
+export function formatBulkDate(dateStr: string | undefined | null): string {
   if (!dateStr) return "—"
   const dt = DateTime.fromISO(dateStr)
   return dt.isValid ? dt.toFormat("dd/MM/yyyy") : "—"

@@ -8,13 +8,13 @@ export interface SeasonBand {
   at: number
   /** "Autumn" or "Spring" where the name says so, otherwise the whole name. */
   half: string
-  /** "2025/26" where the name says so, otherwise empty. */
+  /** "2025" where the name says so, otherwise empty. */
   year: string
   /** True when this season's node sits above the middle of the strip. */
   high: boolean
 }
 
-const NAME = /^(\p{L}+)\s+(\d{4}\/\d{2,4})$/u
+const NAME = /^(\p{L}+)\s+(\d{4})$/u
 
 /** Which way one season lies from another along the strip. */
 export type SeasonDirection = "past" | "future" | "same"
@@ -78,9 +78,9 @@ export function seasonsIncluding(seasons: Season[], onShow: Season | null): Seas
  * middle of its own season and the division between two seasons falls halfway between their
  * nodes — which is where the teams below divide too.
  *
- * A season is named for the half of a board year it covers, "Autumn 2025/26", so a band
- * carries two readings. Anything named some other way still gets a band; it simply has no
- * year to group under.
+ * A season is named for its half of the year and the year it falls in, "Autumn 2025", so a
+ * band carries two readings. Anything named some other way still gets a band; it simply has
+ * no year to group under.
  *
  * [trailing] reserves shares at the end for bands that are not seasons — the one offering to
  * add another. Reserved here rather than taken out of the width afterwards, because that is

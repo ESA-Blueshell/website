@@ -60,7 +60,7 @@ test.describe("the esports island", () => {
     const link = page.locator('a[href="/esports/valorant?season=19"]')
     await expect(link).toHaveCount(1)
     // It goes to one season, so it says which rather than promising all of them.
-    await expect(link).toContainText("Valorant in Spring 2024/25")
+    await expect(link).toContainText("Valorant in Spring 2025")
   })
 
   test("the way back is the index on the season that was chosen", async ({page}, info) => {

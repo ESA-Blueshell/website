@@ -100,15 +100,15 @@ class CurrentlyPlayedIT : UserTestSupport() {
     @Test
     // Live from 1 September 2026: the seed's last season ends 31 August 2026 with nothing after.
     fun `a date after every season falls back to the last one that started`() {
-        val springOf2025 = seasons.save(
+        val springOf2026 = seasons.save(
             Season(
-                name = "Spring 2025/26 ${System.nanoTime()}",
+                name = "Spring 2026 ${System.nanoTime()}",
                 startDate = LocalDate.of(2026, 2, 1),
                 endDate = LocalDate.of(2026, 8, 31),
             ),
         )
         listOf("CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT")
-            .forEach { fieldOne(it, springOf2025) }
+            .forEach { fieldOne(it, springOf2026) }
 
         assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 8, 31)))
             .containsExactlyInAnyOrder(
@@ -126,7 +126,7 @@ class CurrentlyPlayedIT : UserTestSupport() {
         fieldOne("CSGO", autumn)
         val spring = seasons.save(
             Season(
-                name = "Spring 2025/26 ${System.nanoTime()}",
+                name = "Spring 2026 ${System.nanoTime()}",
                 startDate = LocalDate.of(2026, 2, 1),
                 endDate = LocalDate.of(2026, 8, 31),
             ),

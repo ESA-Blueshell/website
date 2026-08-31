@@ -36,7 +36,7 @@ test.describe("editing a line-up over the page", () => {
 
     const dialog = page.getByTestId("lineup-dialog")
     await expect(dialog).toContainText("BS Waterboarders")
-    await expect(dialog).toContainText("Autumn 2025/26")
+    await expect(dialog).toContainText("Autumn 2025")
   })
 
   test("the band is left as it was underneath", async ({page}) => {

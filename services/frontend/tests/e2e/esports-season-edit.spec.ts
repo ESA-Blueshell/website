@@ -121,16 +121,16 @@ test.describe("editing a season where it is shown", () => {
     await openEditor(page, 20)
     const dialog = page.getByTestId("season-dialog")
     await expect(dialog).toBeVisible()
-    await expect(page.getByTestId("season-dialog-name")).toHaveValue("Autumn 2025/26")
+    await expect(page.getByTestId("season-dialog-name")).toHaveValue("Autumn 2025")
     await expect(page.getByTestId("season-dialog-start")).toHaveValue("2025-09-01")
     await expect(page.getByTestId("season-dialog-end")).toHaveValue("2026-01-31")
 
-    await page.getByTestId("season-dialog-name").fill("Winter 2025/26")
+    await page.getByTestId("season-dialog-name").fill("Autumn 2026")
     await page.getByTestId("season-dialog-save").click()
 
     await expect(dialog).toBeHidden()
     // The strip says the new name without the page being fetched again.
-    await expect(page.getByTestId("esports-season-node-20")).toContainText("Winter 2025/26")
+    await expect(page.getByTestId("esports-season-node-20")).toContainText("Autumn 2026")
   })
 
   test("a refused save says why and keeps what was typed", async ({page}) => {
@@ -142,7 +142,7 @@ test.describe("editing a season where it is shown", () => {
       await route.fulfill({
         status: 400,
         contentType: "application/json",
-        body: JSON.stringify({status: 400, title: "Bad Request", detail: "That overlaps Spring 2024/25."}),
+        body: JSON.stringify({status: 400, title: "Bad Request", detail: "That overlaps Spring 2025."}),
       })
     })
     await page.goto(GAME_PAGE)
@@ -151,7 +151,7 @@ test.describe("editing a season where it is shown", () => {
     await page.getByTestId("season-dialog-name").fill("Overlapping")
     await page.getByTestId("season-dialog-save").click()
 
-    await expect(page.getByTestId("season-dialog-failure")).toHaveText("That overlaps Spring 2024/25.")
+    await expect(page.getByTestId("season-dialog-failure")).toHaveText("That overlaps Spring 2025.")
     await expect(page.getByTestId("season-dialog")).toBeVisible()
     await expect(page.getByTestId("season-dialog-name")).toHaveValue("Overlapping")
   })

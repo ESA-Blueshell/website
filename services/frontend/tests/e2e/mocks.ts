@@ -74,8 +74,8 @@ const esportsGames = [
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
 const esportsSeasons = [
-  {id: 20, name: "Autumn 2025/26", startDate: "2025-09-01", endDate: "2026-01-31", played: true},
-  {id: 19, name: "Spring 2024/25", startDate: "2025-02-01", endDate: "2025-08-31", played: true},
+  {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31", played: true},
+  {id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31", played: true},
 ]
 
 const esportsPageBySeason: Record<string, Record<string, unknown>> = {

@@ -8,10 +8,10 @@ class EsportsSeedParsingTest {
 
     @Test
     fun `reads a row against the header rather than by position`() {
-        val rows = R__Esports_seed.parse("name,start_date,end_date\nAutumn 2020/21,2020-09-01,2021-01-31\n")
+        val rows = R__Esports_seed.parse("name,start_date,end_date\nAutumn 2020,2020-09-01,2021-01-31\n")
 
         assertThat(rows).singleElement().isEqualTo(
-            mapOf("name" to "Autumn 2020/21", "start_date" to "2020-09-01", "end_date" to "2021-01-31"),
+            mapOf("name" to "Autumn 2020", "start_date" to "2020-09-01", "end_date" to "2021-01-31"),
         )
     }
 
@@ -44,7 +44,7 @@ class EsportsSeedParsingTest {
 
     @Test
     fun `a blank line is not a record`() {
-        val rows = R__Esports_seed.parse("name\nAutumn 2020/21\n\n")
+        val rows = R__Esports_seed.parse("name\nAutumn 2020\n\n")
 
         assertThat(rows).hasSize(1)
     }

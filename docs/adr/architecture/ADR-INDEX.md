@@ -14,6 +14,7 @@ stack.
 | [001](ADR-001-application-modules-replace-layers.md) | Application Modules Replace Layers | Accepted | Feature modules verified by Spring Modulith; `shared` and `security` open, fourteen cycles closed; layer rules inside a module become convention |
 | [003](ADR-003-package-topology-and-placement-rules.md) | Package Topology and Placement Rules | Accepted | Twenty flat modules, four folders and two named interfaces inside each, six rules for where a file goes |
 | [007](ADR-007-authorization-lives-with-its-aggregate.md) | Authorization Lives With Its Aggregate | Accepted | Domain permission evaluators move to their module; the dispatch mechanism stays |
+| [008](ADR-008-the-backend-does-not-borrow-the-frontends-vocabulary.md) | The Backend Does Not Borrow the Frontend's Vocabulary | Accepted | Records are named for what they are, not where they appear; identity is `code` and the human name is `name`; comments name the act or the caller, never the widget |
 
 ### Execution
 

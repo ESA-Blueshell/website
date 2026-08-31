@@ -218,6 +218,46 @@ class EsportsControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.banner.path").value(banner))
         }
 
+        /**
+         * The payload names the narrower copies, which is how a page asks for one of them.
+         *
+         * Nothing asserted this before, and its failure is invisible: a payload that carried
+         * only the full-size picture would draw every page correctly and at several times the
+         * weight, on every screen, for ever. The pages compose a `srcset` out of exactly this
+         * list, and an empty one means they fall back to the master.
+         */
+        @Test
+        fun `the payload carries the widths a banner is stored at`() {
+            val board = createUserWithRole(Role.BOARD)
+            // Wide enough to have copies at all: the ladder for a banner starts at 320 and
+            // nothing is upscaled.
+            val banner = storedPicture(board, FileType.TEAM_BANNER, width = 700, height = 394)
+            val playing = season("Widths ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
+
+            val created = mvc.perform(
+                post("/esports/teams")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"BS Widths ${System.nanoTime()}"}"""),
+            )
+                .andExpect(status().isCreated)
+                .andReturn().response.contentAsString
+            val teamId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
+
+            mvc.perform(
+                put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"game":"VALORANT","banner":"$banner"}"""),
+            )
+                .andExpect(status().isOk)
+                // 960 and up are wider than the picture, so they do not exist to be named.
+                .andExpect(jsonPath("$.banner.renditions.length()").value(2))
+                .andExpect(jsonPath("$.banner.renditions[0].width").value(320))
+                .andExpect(jsonPath("$.banner.renditions[1].width").value(640))
+                .andExpect(jsonPath("$.banner.renditions[0].url").exists())
+        }
+
         @Test
         fun `a save that names another picture replaces the team's logo`() {
             val board = createUserWithRole(Role.BOARD)

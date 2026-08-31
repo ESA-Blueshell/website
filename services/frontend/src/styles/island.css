@@ -74,19 +74,24 @@
 /* The light half: values only, keyed off the document theme that plugins/theme sets.
    Elevation inverts — the ground is the tile's near-white, so panels take a hairline. */
 :where([data-theme="light"]) .esports-island {
-  /* Toned, not near-white: panels are the white things here, and a page that is already
-     white leaves them nothing to stand on. */
-  --color-ground: #f4f6f8;
-  --tile-veil: oklch(1 0 0 / 70%);
-  --header-shade: oklch(0.55 0.03 250 / 12%);
-  --color-pit: #e8ecf1;
-  --color-surface: #ffffff;
-  --color-raised: #f6f8fa;
-  --color-hairline: oklch(0 0 0 / 12%);
-  --color-chalk: #1c1c1c;
-  --color-ash: #5c636b;
+  /* A ladder, in perceptual lightness: the page at L*90, bands a step under it, panels a
+     step over. Cool rather than grey, so the tone reads as paper and not as dirt.
 
-  --color-acid: #1f6fe0;
+     Everything used to sit between L*91 and L*100 — the top tenth of the scale, with two
+     areas at absolute white, which is what read as blown out. */
+  --color-ground: #dce5ee;
+  --color-pit: #d2dbe4;
+  --color-surface: #fbfdff;
+  --color-raised: #eef4fa;
+  --color-chalk: #1c1c1c;
+  --color-ash: #4f565e;
+  /* The tile's own ground is near-white and opaque, so the veil is what sets the page's
+     tone here — a white veil over a white tile was the whole problem. */
+  --tile-veil: rgb(220 229 238 / 88%);
+  --header-shade: oklch(0.55 0.06 250 / 16%);
+  --color-hairline: oklch(0 0 0 / 18%);
+
+  --color-acid: #1a5cbd;
 
   --color-danger: #b03434;
   --color-danger-tint: #b03434;

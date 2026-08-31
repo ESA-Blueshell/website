@@ -150,7 +150,7 @@ test.describe("the esports island", () => {
 
     await preferLightTheme(page)
     await page.goto("/esports/competitive-scene")
-    expect(await ground()).toBe("rgb(252, 252, 252)")
+    expect(await ground()).toBe("rgb(220, 229, 238)")
   })
 
   test("the shell tile is behind the island, and differs by theme", async ({page}) => {
@@ -198,6 +198,6 @@ test.describe("the esports island", () => {
     // Guards the token substitutions: each of these was a hardcoded dark hex.
     const panel = await page.getByTestId("game-dialog")
       .evaluate(el => getComputedStyle(el).backgroundColor)
-    expect(panel).toBe("rgb(255, 255, 255)")
+    expect(panel).toBe("rgb(251, 253, 255)")
   })
 })

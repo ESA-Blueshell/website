@@ -2,6 +2,7 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.stereotype.Service
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 class TeamService(
     private val teams: TeamRepository,
     private val games: GameService,
-    private val pictures: EsportsPictures,
+    private val pictures: StoredPictures,
 ) : BaseModelService<Team, Long, TeamRepository>(teams) {
     /** Every team the association has. The pool is shared, so it is not asked per game. */
     @Transactional(readOnly = true)

@@ -4,6 +4,7 @@ import net.blueshell.api.esports.persistence.Game
 import net.blueshell.api.esports.persistence.GameRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
+import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,7 +24,7 @@ class GameService(
     private val games: GameRepository,
     private val fielded: TeamSeasonRepository,
     private val entries: TeamRosterEntryRepository,
-    private val pictures: EsportsPictures,
+    private val pictures: StoredPictures,
 ) {
     @Transactional(readOnly = true)
     fun findAll(): List<Game> = games.findAllByOrderBySortIndexAsc()

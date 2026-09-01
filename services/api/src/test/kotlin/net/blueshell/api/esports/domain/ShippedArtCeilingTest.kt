@@ -87,7 +87,7 @@ class ShippedArtCeilingTest {
      */
     private fun art(): List<Path> {
         val directory = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
-            .map { it.resolve("src/main/resources/${SeedCsv.DIRECTORY}/art") }
+            .map { it.resolve("src/main/resources/${EsportsSeed.files.directory}/art") }
             .firstOrNull { Files.isDirectory(it) }
             ?: error("The shipped art directory is not below ${Path.of("").toAbsolutePath()}")
         return Files.list(directory).use { entries ->

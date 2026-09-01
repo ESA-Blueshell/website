@@ -1,6 +1,7 @@
 package db.migration
 
-import net.blueshell.api.esports.domain.SeedCsv
+import net.blueshell.api.esports.domain.EsportsSeed
+import net.blueshell.api.shared.seed.SeedCsv
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import org.slf4j.LoggerFactory
@@ -388,7 +389,7 @@ class R__Esports_seed : BaseJavaMigration() {
     private fun isDeleted(connection: Connection, sql: String, vararg args: String): Boolean =
         activeId(connection, sql, *args) != null
 
-    private fun read(name: String): String = SeedCsv.read(name)
+    private fun read(name: String): String = EsportsSeed.files.read(name)
 
     companion object {
         private val log = LoggerFactory.getLogger(R__Esports_seed::class.java)

@@ -56,13 +56,13 @@ class ShippedArt(
     fun apply(): Applied {
         val owner = siteAccount() ?: return Applied(0, 0)
         // A team's picture and a game's, each as the record it belongs to and the art it names.
-        val teamArt = SeedCsv.parse(SeedCsv.read(TEAMS))
+        val teamArt = EsportsSeed.files.rows(TEAMS)
             .mapNotNull { row ->
                 row[BANNER]?.ifBlank { null }?.let { art -> Triple(row.getValue("game"), row.getValue("name"), art) }
             }
-        val gameArt = SeedCsv.parse(SeedCsv.read(BANNERS))
+        val gameArt = EsportsSeed.files.rows(BANNERS)
             .map { row -> row.getValue("game") to row.getValue(BANNER) }
-        val gameIcons = SeedCsv.parse(SeedCsv.read(ICONS))
+        val gameIcons = EsportsSeed.files.rows(ICONS)
             .map { row -> row.getValue("game") to row.getValue(ICON) }
 
         // Every picture first, so one that is waiting for nothing is still put back where it
@@ -171,7 +171,7 @@ class ShippedArt(
     ): File {
         stored[art to kind]?.let { path -> files.findPublicImage(path, kind)?.let { return it } }
         val name = "$art.webp"
-        val resource = "${SeedCsv.DIRECTORY}/art/$name"
+        val resource = "${EsportsSeed.files.directory}/art/$name"
         val bytes = javaClass.classLoader.getResourceAsStream(resource)
             ?: error("Shipped art $resource is missing")
         val file = files.store(bytes, name, WEBP, kind, owner)

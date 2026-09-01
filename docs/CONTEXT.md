@@ -160,3 +160,106 @@ happened. "Last asked" is the most recent of them.
 
 An **incasso** is the direct debit itself; the record of a pre-notification is an
 `IncassoNotification`, which is the Dutch word the association uses for the mandate.
+
+## Boards
+
+### Board
+
+The group that runs the association for one academic year. One board a year,
+changing in the autumn, and boards do not overlap — so they are a line rather
+than a set, and the association's own history is counted in them.
+
+### Number
+
+A board's ordinal in that line: the ninth board is number 9. A reader sees it as
+a Roman numeral, `IX`, so that a board reads as one of a line rather than as a
+row in a list.
+
+**Number, not ID.** A board also has a numeric database key, so "ID" would name
+two different values — the same trap a game's **code** exists to avoid. On screen
+and in conversation a board is identified by its number.
+
+### Academic year
+
+The stretch a board runs, written `2025-2026`. Two calendar years, because a
+board takes office in the autumn and hands over in the autumn after.
+
+Derived, never stored. The year follows from the board's dates, so correcting the
+dates corrects the year everywhere it is written.
+
+### Name
+
+The board's own name, the one it chose for itself: the third board is Drieden
+Board, the seventh Overcooked, the eighth Wasted, the ninth Eeveelutions.
+
+Not every board has a recorded name. A board with none is named from its number,
+so no board reads as nameless.
+
+### Cheer
+
+The board's shouted line: the seventh board's "Krijg de tering!", the eighth's
+"RNG, Be With Me!". Not every board has a recorded one, and an unrecorded cheer
+is usually a forgotten one rather than a board that had none.
+
+Not a motto, not a slogan, not a tagline. A cheer is the thing a board shouts
+together, which is why it is never folded into the prose a board writes about
+itself.
+
+### Seat
+
+One person's place on one board, with the role they held. The role is written in
+the board's own words — "Secretary and Commissioner of the Esports Lounge" —
+rather than chosen from a fixed list, because the association has renamed and
+combined its roles across nine years.
+
+**A seat is not a person.** The same member may hold several across the years, so
+the two cannot be equated. Most of the people who have held a seat never had an
+account here either, and such a seat stands under its own recorded name.
+
+**"Seat" is the word.** The code's class is `BoardMember`, and the board module's
+own comments have said "seat" beside it since a seat became storable without an
+account. The divergence is the line-up and roster one again: the word the
+association uses against the word the class has always carried, and renaming
+either would cost more than the inconsistency does.
+
+### Nickname
+
+The name a seat is known by, and the seat's own rather than the member's:
+`SkyeWolf` in `Roos "SkyeWolf" Kruk`. Most of this history is written in
+nicknames, which is why they are recorded at all.
+
+A nickname sits beside the name rather than inside it, the way a roster entry's
+**handle** sits beside a member's name — the same grain, belonging to the place
+somebody held rather than to the person. A reader sees the two together, quoted.
+
+### Board photo and portrait
+
+The two pictures a board carries. A **board photo** is the group photograph of
+the whole board, drawn as the band across the top of its page; a **portrait** is
+the picture beside one seat's name.
+
+These join the five picture names in **Banner and Icon** above, and are used the
+same way in the code, in the issues and on screen. A board photo is not a "group
+shot", and a portrait is not an "avatar" or a "headshot".
+
+### In office
+
+The board running the association now: the one whose dates today falls inside. At
+most one board is in office at a time.
+
+Derived, never a flag. A board leaves office by the calendar rather than by
+somebody unticking it — the same rule as **currently played**, where a state that
+follows from the records is read rather than written.
+
+## User interface
+
+### Island
+
+The site's own design layer: its own reset, its own theme and the diagonal
+geometry its bands are cut on, all scoped to a root class so that none of it
+reaches the rest of the site.
+
+**Not an esports term.** The island began on the esports pages and was named for
+them, and the name has outlived the ownership: it is the site's now, and more
+than the esports pages sit on it. It is filed here rather than under a domain
+because it names how a page is built rather than anything the association does.

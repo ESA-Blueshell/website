@@ -3,6 +3,8 @@ package db.migration
 import net.blueshell.api.board.domain.BoardSeed
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.LocalDate
 
 /**
@@ -86,6 +88,48 @@ class BoardSeedParsingTest {
 
         assertThat(seat.getValue("nickname")).isEqualTo("SkyeWolf")
         assertThat(seats.none { it.getValue("name").contains('"') }).isTrue()
+    }
+
+    /**
+     * Every picture the files name, as the art directory would spell it.
+     *
+     * The rule is one substitution: the master for a row is that row's own `image` with
+     * `.webp` for an extension. There is no lookup table to fall out of step.
+     */
+    private fun artNamed(rows: List<Map<String, String>>): List<String> =
+        rows.map { it.getValue("image") }
+            .filter { it.isNotBlank() }
+            .map { "db/seed/boards/art/" + it.substringBeforeLast('.') + ".webp" }
+
+    @Test
+    fun `every picture the files name ships beside them`() {
+        // The photographs are still asset names the frontend loads, and they are also the
+        // masters the api will store. Naming one that is not here would be a board drawn
+        // blank on a fresh database, which no test further down the stack would catch.
+        val missing = (artNamed(boards) + artNamed(seats))
+            .filter { javaClass.classLoader.getResource(it) == null }
+
+        assertThat(missing).isEmpty()
+    }
+
+    @Test
+    fun `the art directory holds nothing the files do not name`() {
+        // The other direction: a picture nobody points at is megabytes nobody notices. Read
+        // off the source tree rather than the classpath, because the packaged resources are
+        // inside a jar by the time a test runs and a jar is not a directory to walk.
+        val art = Path.of("src/main/resources/db/seed/boards/art")
+        assertThat(Files.isDirectory(art))
+            .describedAs("the shipped board art at %s", art.toAbsolutePath())
+            .isTrue()
+
+        val named = (artNamed(boards) + artNamed(seats)).toSet()
+        val shipped = Files.walk(art).use { paths ->
+            paths.filter { it.fileName.toString().endsWith(".webp") }
+                .map { "db/seed/boards/art/${it.parent.fileName}/${it.fileName}" }
+                .toList()
+        }
+
+        assertThat(shipped).hasSize(26).allMatch { it in named }
     }
 
     @Test

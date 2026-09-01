@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test
  * the reason, so the rule still bites for every other package and for every
  * package added later.
  *
- * Thirteen packages under `shared` hold types. Twelve clear the threshold, from
- * `shared/dto/bulk` at three consumer modules up to `shared/enums` at 22; one is
+ * Fourteen packages under `shared` hold types. Twelve clear the threshold, from
+ * `shared/dto/bulk` at three consumer modules up to `shared/enums` at 22; two are
  * pinned below it.
  */
 class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
@@ -40,6 +40,10 @@ class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
             // is application-root wiring under ADR-003 rule 6 rather than a module,
             // so `survey` is the only module that reaches it.
             "shared/hibernate" to 1,
+            // The seed reader. Its other reader is the repeatable migration in
+            // `db.migration`, which Flyway loads from outside the module structure,
+            // so `esports` is the only module reaching it until the board seed lands.
+            "shared/seed" to 1,
         )
     }
 

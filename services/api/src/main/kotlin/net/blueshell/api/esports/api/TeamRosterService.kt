@@ -6,12 +6,12 @@ import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeason
+import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import net.blueshell.api.esports.domain.EsportsPictures
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.TeamSeasonService
@@ -32,7 +32,7 @@ class TeamRosterService(
     private val seasons: SeasonService,
     private val fielded: TeamSeasonService,
     private val entered: SeasonGameService,
-    private val pictures: EsportsPictures,
+    private val pictures: StoredPictures,
 ) {
     @Transactional(readOnly = true)
     fun findByTeamAndSeason(teamId: Long, game: String, seasonId: Long): List<TeamRosterEntry> =

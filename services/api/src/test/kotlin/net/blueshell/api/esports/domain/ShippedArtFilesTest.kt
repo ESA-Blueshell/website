@@ -19,9 +19,9 @@ import java.nio.file.Path
 class ShippedArtFilesTest {
 
     private val named: Set<String> =
-        (SeedCsv.parse(SeedCsv.read("teams.csv")).mapNotNull { it["banner"]?.ifBlank { null } } +
-            SeedCsv.parse(SeedCsv.read("banners.csv")).map { it.getValue("banner") } +
-            SeedCsv.parse(SeedCsv.read("icons.csv")).map { it.getValue("icon") })
+        (EsportsSeed.files.rows("teams.csv").mapNotNull { it["banner"]?.ifBlank { null } } +
+            EsportsSeed.files.rows("banners.csv").map { it.getValue("banner") } +
+            EsportsSeed.files.rows("icons.csv").map { it.getValue("icon") })
             .toSet()
 
     @Test
@@ -29,7 +29,7 @@ class ShippedArtFilesTest {
         val missing = named.filterNot { exists(it) }.sorted()
 
         assertThat(missing)
-            .describedAs("art a seed file names but nobody committed under %s/art", SeedCsv.DIRECTORY)
+            .describedAs("art a seed file names but nobody committed under %s/art", EsportsSeed.files.directory)
             .isEmpty()
     }
 
@@ -40,7 +40,7 @@ class ShippedArtFilesTest {
         assertThat(orphans)
             .describedAs(
                 "art committed under %s/art that no row names; bind it or hold it in gameart/",
-                SeedCsv.DIRECTORY,
+                EsportsSeed.files.directory,
             )
             .isEmpty()
     }
@@ -52,7 +52,7 @@ class ShippedArtFilesTest {
     }
 
     private fun exists(art: String): Boolean =
-        javaClass.classLoader.getResource("${SeedCsv.DIRECTORY}/art/$art.webp") != null
+        javaClass.classLoader.getResource("${EsportsSeed.files.directory}/art/$art.webp") != null
 
     /**
      * The committed pictures, read off the source tree rather than the classpath.
@@ -63,7 +63,7 @@ class ShippedArtFilesTest {
      */
     private fun shipped(): List<String> {
         val directory = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
-            .map { it.resolve("src/main/resources/${SeedCsv.DIRECTORY}/art") }
+            .map { it.resolve("src/main/resources/${EsportsSeed.files.directory}/art") }
             .firstOrNull { Files.isDirectory(it) }
             ?: error("The shipped art directory is not below ${Path.of("").toAbsolutePath()}")
         return Files.list(directory).use { entries ->

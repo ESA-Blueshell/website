@@ -87,9 +87,3 @@ class SeasonEndsBeforeStart : EsportsRefusal(
     emptyMap(),
 )
 
-class PictureNotStored : EsportsRefusal(
-    HttpStatus.BAD_REQUEST,
-    "PictureNotStored",
-    "That picture is not in storage.",
-    emptyMap(),
-)

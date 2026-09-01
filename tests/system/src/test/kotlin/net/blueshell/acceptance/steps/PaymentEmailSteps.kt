@@ -136,7 +136,7 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
 
     @Then("no incasso notification is recorded")
     fun noNotifications() {
-        assertThat(recipients(NOTIFICATIONS)).isEmpty()
+        assertThat(recipientsAmongSelected(NOTIFICATIONS)).isEmpty()
     }
 
     @Then("the honorary member is sent nothing")
@@ -146,10 +146,10 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
         assertThat(recipients(NOTIFICATIONS)).doesNotContain(id)
     }
 
-    @Then("nothing is recorded for the period")
+    @Then("nothing is recorded for the members it names")
     fun nothingRecorded() {
-        assertThat(recipients(REMINDERS)).isEmpty()
-        assertThat(recipients(NOTIFICATIONS)).isEmpty()
+        assertThat(recipientsAmongSelected(REMINDERS)).isEmpty()
+        assertThat(recipientsAmongSelected(NOTIFICATIONS)).isEmpty()
     }
 
     @Then("that member has {int} contribution reminders recorded")
@@ -233,6 +233,13 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
     private fun rows(table: String) = TestHelper.findPaymentEmails(table, requireNotNull(periodId))
 
     private fun recipients(table: String): List<Long> = rows(table).map { it.userId }
+
+    /**
+     * A period with the same dates is reused across scenarios, so a row written by an
+     * earlier one is still there. Only this scenario's own members answer for it.
+     */
+    private fun recipientsAmongSelected(table: String): List<Long> =
+        recipients(table).filter { it in selection }
 
     private fun body(): JsonPath = JsonPath.from(requireNotNull(world.lastResponseBody))
 }

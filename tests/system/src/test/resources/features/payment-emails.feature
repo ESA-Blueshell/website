@@ -70,7 +70,7 @@ Feature: Payment emails
     When they send the payment emails charging the honorary member the alumni fee
     Then the request is refused as a conflict
     And the refusal reports "NonRecipientFeeTypeUserIds" against "feeTypeOverrides"
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
 
   Scenario: An email chosen for somebody the send skips refuses the whole thing
     Given a member who pays by transfer
@@ -78,7 +78,7 @@ Feature: Payment emails
     When they move the honorary member onto the contribution reminder and send
     Then the request is refused as a conflict
     And the refusal reports "NonRecipientEmailKindUserIds" against "kindOverrides"
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
 
   Scenario: An id naming nobody is refused rather than dropped
     Given a member who pays by transfer
@@ -86,42 +86,42 @@ Feature: Payment emails
     Then the request is refused as a conflict
     And the refusal reports "UnknownUserIds" against "userIds"
     And the refusal names the id that was never a user
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
 
   Scenario: Naming the same member twice is refused
     Given a member who pays by transfer
     When they send the payment emails naming that member twice
     Then the request is refused as a conflict
     And the refusal reports "DuplicateUserIds" against "userIds"
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
 
   Scenario: Ticking back in somebody who is not in the selection is refused
     Given a member who pays by transfer
     When they tick back in an id that is not in the selection and send
     Then the request is refused as a conflict
     And the refusal reports "UnknownForcedUserIds" against "forciblyIncludedUserIds"
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
 
   Scenario: A payment request is refused without the date it promises
     Given a member who pays by transfer
     When they send the payment emails without a payment due date
     Then the request is refused as invalid
     And the refusal reports "DateRequired" against "paymentDueDate"
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
 
   Scenario: A date that has already passed is refused against its own field
     Given a member who pays by transfer
     When they send the payment emails with a payment due date that has passed
     Then the request is refused as invalid
     And the refusal reports "Future" against "paymentDueDate"
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
 
   Scenario: A date far beyond the period is refused, one shortly after it is not
     Given a member who pays by transfer
     When they send the payment emails with a payment due date long after the period
     Then the request is refused as invalid
     And the refusal reports "DateOutsideContributionPeriod" against "paymentDueDate"
-    And nothing is recorded for the period
+    And nothing is recorded for the members it names
     When they send the payment emails with a payment due date shortly after the period
     Then the request succeeds
     And 1 contribution reminder and 0 incasso notifications are reported

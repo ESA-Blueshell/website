@@ -172,11 +172,14 @@ abstract class UserTestSupport : ServiceTestSupport() {
     }
 
     protected fun createBoardFixture(
-        name: String = "Board ${System.currentTimeMillis()}",
+        name: String? = "Board ${System.currentTimeMillis()}",
         candidate: String = "Candidate",
-        startDate: LocalDate = LocalDate.now().minusDays(1)
+        startDate: LocalDate = LocalDate.now().minusDays(1),
+        number: Int? = null,
     ): Board {
-        return boardFactory.create(name, candidate, startDate)
+        return number
+            ?.let { boardFactory.create(name, candidate, startDate, it) }
+            ?: boardFactory.create(name, candidate, startDate)
     }
 
     protected fun addBoardMember(board: Board, user: User, role: String = "CHAIR"): Board {

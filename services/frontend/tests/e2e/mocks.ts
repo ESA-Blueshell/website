@@ -121,8 +121,12 @@ const esportsPageBySeason: Record<string, Record<string, unknown>> = {
 const boardFixtures = [
   {
     id: 9,
+    number: 9,
     name: "9th Board",
     candidate: "9th Board",
+    cheer: "RNG, Be With Me!",
+    accent: null,
+    description: null,
     startDate: "2025-09-01",
     endDate: "2026-08-31",
     image: "board9/board9.jpg",
@@ -131,13 +135,13 @@ const boardFixtures = [
     updatedAt: "2026-01-01T00:00:00Z",
     members: [
       {
-        id: 91, boardId: 9, userId: 1, role: "Chair", name: "Emma Dokter",
+        id: 91, boardId: 9, userId: 1, role: "Chair", name: "Emma Dokter", nickname: null,
         description: "Chairing the ninth board.", image: "board9/Emma.jpg",
         startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
       },
       {
-        id: 92, boardId: 9, userId: null, role: "Secretary", name: "Viktor Petrov",
+        id: 92, boardId: 9, userId: null, role: "Secretary", name: "Viktor Petrov", nickname: null,
         description: null, image: null,
         startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
@@ -146,8 +150,12 @@ const boardFixtures = [
   },
   {
     id: 1,
+    number: 1,
     name: "1st Board",
     candidate: "1st Board",
+    cheer: null,
+    accent: null,
+    description: null,
     startDate: "2017-09-01",
     endDate: "2018-08-31",
     image: null,
@@ -156,7 +164,7 @@ const boardFixtures = [
     updatedAt: "2026-01-01T00:00:00Z",
     members: [
       {
-        id: 11, boardId: 1, userId: null, role: "Chairman", name: "Thijs Lieverse",
+        id: 11, boardId: 1, userId: null, role: "Chairman", name: "Thijs Lieverse", nickname: null,
         description: null, image: null,
         startDate: "2017-09-01", endDate: "2018-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
@@ -912,9 +920,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const board = (fixtures.boards ?? boardFixtures).find((b) => b.id === id)
       return fulfillJson(route, board ?? {}, board ? 200 : 404)
     }
+    if (method === "PUT" && /^\/boards\/\d+$/.test(path)) {
+      const id = Number(path.split("/")[2])
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const board = (fixtures.boards ?? boardFixtures).find((b) => b.id === id)
+      return fulfillJson(route, {...(board ?? {}), ...body, id, version: 1})
+    }
     if (method === "POST" && /^\/boards\/\d+\/members$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      return fulfillJson(route, {id: 99, boardId: Number(path.split("/")[2]), userId: body.userId ?? null, role: body.role, name: body.displayName ?? null, description: body.description ?? null, image: body.image ?? null, startDate: body.startDate, endDate: body.endDate ?? null, version: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"}, 201)
+      return fulfillJson(route, {id: 99, boardId: Number(path.split("/")[2]), userId: body.userId ?? null, role: body.role, name: body.displayName ?? null, nickname: body.nickname ?? null, description: body.description ?? null, image: body.image ?? null, startDate: body.startDate, endDate: body.endDate ?? null, version: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"}, 201)
     }
     if (method === "PUT" && /^\/boards\/\d+\/members\/\d+\/member$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>

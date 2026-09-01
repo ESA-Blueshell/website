@@ -14,6 +14,8 @@ data class BoardMemberResponse(
     var role: String,
     @Schema(description = "Who held the seat: the linked member's name, or the recorded one")
     var name: String? = null,
+    @Schema(description = "The name the seat was known by, beside the name rather than inside it")
+    var nickname: String? = null,
     @Schema(description = "The personal note the board page shows beside a member")
     var description: String? = null,
     @Schema(description = "Asset file name of the member's portrait")

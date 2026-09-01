@@ -39,6 +39,7 @@ class BoardUseCasesTest {
             whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
             val result = useCases.create(
+                number = 10,
                 name = "Board 2026",
                 candidate = "Candidate",
                 startDate = LocalDate.of(2026, 1, 1),
@@ -46,12 +47,50 @@ class BoardUseCasesTest {
                 pictureId = null,
             )
 
+            assertThat(result.number).isEqualTo(10)
             assertThat(result.name).isEqualTo("Board 2026")
             assertThat(result.candidate).isEqualTo("Candidate")
             assertThat(result.startDate).isEqualTo(LocalDate.of(2026, 1, 1))
             assertThat(result.endDate).isEqualTo(LocalDate.of(2026, 12, 31))
             assertThat(result.picture).isNull()
             verify(fileService, never()).findById(any())
+        }
+
+        @Test
+        fun `a board with no name of its own keeps something in the column that duplicates it`() {
+            val boardCaptor = argumentCaptor<Board>()
+            whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
+
+            val result = useCases.create(
+                number = 4,
+                name = "",
+                candidate = null,
+                startDate = LocalDate.of(2020, 9, 1),
+                endDate = LocalDate.of(2021, 8, 31),
+                pictureId = null,
+            )
+
+            // A board is free to have no name recorded, and `candidate` is NOT NULL.
+            assertThat(result.name).isNull()
+            assertThat(result.candidate).isEqualTo("Board 4")
+        }
+
+        @Test
+        fun `refuses a number another board already holds`() {
+            whenever(boardService.findByNumber(9)).thenReturn(boardEntity())
+
+            assertThrows<DuplicateBoardException> {
+                useCases.create(
+                    number = 9,
+                    name = "Eeveelutions",
+                    candidate = null,
+                    startDate = LocalDate.of(2025, 9, 1),
+                    endDate = null,
+                    pictureId = null,
+                )
+            }
+
+            verify(boardService, never()).create(any())
         }
 
         @Test
@@ -62,6 +101,7 @@ class BoardUseCasesTest {
             whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
             val result = useCases.create(
+                number = 10,
                 name = "Board 2026",
                 candidate = "Candidate",
                 startDate = LocalDate.of(2026, 1, 1),
@@ -87,6 +127,7 @@ class BoardUseCasesTest {
 
             val result = useCases.update(
                     id = 7L,
+                    number = 10,
                     name = "Updated Board",
                     candidate = "Updated Candidate",
                     startDate = LocalDate.of(2026, 2, 1),
@@ -110,6 +151,7 @@ class BoardUseCasesTest {
 
             val result = useCases.update(
                     id = 7L,
+                    number = 10,
                     name = "Updated Board",
                     candidate = "Updated Candidate",
                     startDate = LocalDate.of(2026, 2, 1),
@@ -169,6 +211,26 @@ class BoardUseCasesTest {
             assertThat(result.name).isEqualTo("Thijs Lieverse")
             // Nobody to look up, so no account is fetched to seat them.
             verify(userService, never()).findById(any())
+        }
+
+        @Test
+        fun `records the nickname beside the name rather than inside it`() {
+            whenever(boardService.findById(9L)).thenReturn(boardEntity())
+            val memberCaptor = argumentCaptor<BoardMember>()
+            whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
+
+            val result = useCases.addMember(
+                boardId = 9L,
+                userId = null,
+                role = "Commissioner of Internal Affairs",
+                startDate = LocalDate.of(2022, 9, 1),
+                endDate = null,
+                displayName = "Roos Kruk",
+                nickname = "SkyeWolf",
+            )
+
+            assertThat(result.displayName).isEqualTo("Roos Kruk")
+            assertThat(result.nickname).isEqualTo("SkyeWolf")
         }
 
         @Test
@@ -265,6 +327,7 @@ class BoardUseCasesTest {
     )
 
     private fun boardEntity(): Board = Board(
+        number = 10,
         candidate = "Candidate",
         startDate = LocalDate.of(2026, 1, 1),
         name = "Board",

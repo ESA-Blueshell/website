@@ -17,6 +17,23 @@ import type {BoardMemberResponse, BoardResponse} from "@/services/api"
 export type Board = BoardResponse
 export type BoardSeat = BoardMemberResponse
 
+/** What a board is called: its own name, or its number where it has none recorded. */
+export function boardTitle(board: Board): string {
+  return board.name ?? `Board ${board.number}`
+}
+
+/**
+ * A seat's name with its nickname back in the middle of it, the way the history was written:
+ * `Roos "SkyeWolf" Kruk`. The two are recorded apart so anything can ask for either.
+ */
+export function seatTitle(seat: BoardSeat): string {
+  const name = seat.name ?? ""
+  if (!seat.nickname) return name
+  const [first, ...rest] = name.split(" ")
+  const quoted = `${first} "${seat.nickname}"`
+  return rest.length === 0 ? quoted : `${quoted} ${rest.join(" ")}`
+}
+
 /** Newest board first, which is the order the page reads them in. */
 export async function loadBoards(): Promise<Board[]> {
   const res = await findAllBoards()
@@ -24,11 +41,27 @@ export async function loadBoards(): Promise<Board[]> {
 }
 
 export async function saveBoard(
-  board: {id?: number; name: string; candidate: string; startDate: string; endDate?: string | null; image?: string | null; version?: number},
+  board: {
+    id?: number
+    number: number
+    name?: string | null
+    candidate?: string | null
+    cheer?: string | null
+    accent?: string | null
+    description?: string | null
+    startDate: string
+    endDate?: string | null
+    image?: string | null
+    version?: number
+  },
 ): Promise<Board | null> {
   const body = {
-    name: board.name,
-    candidate: board.candidate,
+    number: board.number,
+    name: board.name ?? undefined,
+    candidate: board.candidate ?? undefined,
+    cheer: board.cheer ?? undefined,
+    accent: board.accent ?? undefined,
+    description: board.description ?? undefined,
     startDate: board.startDate,
     endDate: board.endDate ?? undefined,
     image: board.image ?? undefined,
@@ -45,7 +78,16 @@ export async function dropBoard(id: number): Promise<void> {
 
 export async function addSeat(
   boardId: number,
-  seat: {role: string; startDate: string; endDate?: string | null; userId?: number | null; displayName?: string | null; description?: string | null; image?: string | null},
+  seat: {
+    role: string
+    startDate: string
+    endDate?: string | null
+    userId?: number | null
+    displayName?: string | null
+    nickname?: string | null
+    description?: string | null
+    image?: string | null
+  },
 ): Promise<BoardSeat | null> {
   const res = await addMember({
     path: {boardId},
@@ -55,6 +97,7 @@ export async function addSeat(
       endDate: seat.endDate ?? undefined,
       userId: seat.userId ?? undefined,
       displayName: seat.displayName ?? undefined,
+      nickname: seat.nickname ?? undefined,
       description: seat.description ?? undefined,
       image: seat.image ?? undefined,
     },
@@ -65,7 +108,15 @@ export async function addSeat(
 export async function saveSeat(
   boardId: number,
   id: number,
-  seat: {role: string; startDate: string; endDate?: string | null; displayName?: string | null; description?: string | null; image?: string | null},
+  seat: {
+    role: string
+    startDate: string
+    endDate?: string | null
+    displayName?: string | null
+    nickname?: string | null
+    description?: string | null
+    image?: string | null
+  },
 ): Promise<BoardSeat | null> {
   const res = await updateMember({
     path: {boardId, id},
@@ -74,6 +125,7 @@ export async function saveSeat(
       startDate: seat.startDate,
       endDate: seat.endDate ?? undefined,
       displayName: seat.displayName ?? undefined,
+      nickname: seat.nickname ?? undefined,
       description: seat.description ?? undefined,
       image: seat.image ?? undefined,
     },

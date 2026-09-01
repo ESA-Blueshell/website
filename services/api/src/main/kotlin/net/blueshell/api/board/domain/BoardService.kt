@@ -19,6 +19,10 @@ class BoardService @Autowired constructor(
             .orElseThrow { BoardNotFoundException(id) }
     }
 
+    /** The board holding this number, or nobody. */
+    @Transactional(readOnly = true)
+    fun findByNumber(number: Int): Board? = repository.findByNumber(number).orElse(null)
+
     @Transactional
     fun addMember(board: Board, member: BoardMember) {
         board.addMember(member)

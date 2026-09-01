@@ -6,8 +6,12 @@ import net.blueshell.api.board.persistence.BoardMember
 fun Board.asResponse(): BoardResponse =
     BoardResponse(
         id = this.id!!,
+        number = this.number,
         name = this.name,
         candidate = this.candidate,
+        cheer = this.cheer,
+        accent = this.accent,
+        description = this.description,
         startDate = this.startDate,
         endDate = this.endDate,
         pictureId = this.pictureId,
@@ -25,6 +29,7 @@ fun BoardMember.asResponse(): BoardMemberResponse =
         boardId = this.boardId,
         role = this.role,
         name = this.name,
+        nickname = this.nickname,
         description = this.description,
         image = this.image,
         startDate = this.startDate,

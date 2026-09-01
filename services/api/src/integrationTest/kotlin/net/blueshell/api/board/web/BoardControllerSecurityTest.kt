@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Security tests for BoardController.
@@ -19,11 +20,21 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class BoardControllerSecurityTest : UserTestSupport() {
-    private fun createBoardPayload(name: String = "New Board"): String =
-        """{"name":"$name","candidate":"Test Candidate","startDate":"2026-01-01"}"""
 
-    private fun updateBoardPayload(version: Long, name: String = "Updated Board"): String =
-        """{"name":"$name","candidate":"Updated Candidate","startDate":"2026-01-01","version":$version}"""
+    private companion object {
+        /** Numbers this suite's own payloads claim, well clear of the fixtures' own. */
+        val numbers = AtomicInteger(9000)
+    }
+
+    /** A number no fixture in this suite holds, so a payload never clashes with one. */
+    private fun freeNumber(): Int = numbers.incrementAndGet()
+
+    private fun createBoardPayload(name: String = "New Board", number: Int = freeNumber()): String =
+        """{"number":$number,"name":"$name","candidate":"Test Candidate","startDate":"2026-01-01"}"""
+
+    private fun updateBoardPayload(version: Long, name: String = "Updated Board", number: Int = freeNumber()): String =
+        """{"number":$number,"name":"$name","candidate":"Updated Candidate",""" +
+            """"startDate":"2026-01-01","version":$version}"""
 
     private fun addBoardMemberPayload(userId: Long): String =
         """{"userId":$userId,"role":"CHAIR","startDate":"2026-01-01"}"""

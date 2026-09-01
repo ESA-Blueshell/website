@@ -10,6 +10,9 @@ import java.util.*
 interface BoardRepository : BaseRepository<Board, Long> {
     fun findByName(name: String): Optional<Board>
 
+    /** The board holding this number, among the boards that exist. */
+    fun findByNumber(number: Int): Optional<Board>
+
     @Query("SELECT b FROM Board b WHERE b.startDate <= :date AND (b.endDate IS NULL OR b.endDate >= :date)")
     fun findActiveBoard(date: LocalDate): Optional<Board>
 

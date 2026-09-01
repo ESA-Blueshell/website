@@ -21,11 +21,15 @@ class BoardController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createBoard(@Valid @RequestBody request: CreateBoardRequest): BoardResponse {
         val board = useCases.create(
+            number = request.number,
             name = request.name,
             candidate = request.candidate,
             startDate = request.startDate,
             endDate = request.endDate,
             pictureId = request.pictureId,
+            cheer = request.cheer,
+            accent = request.accent,
+            description = request.description,
             image = request.image,
         )
         return board.asResponse()
@@ -51,11 +55,15 @@ class BoardController(
     ): BoardResponse {
         val board = useCases.update(
             id = id,
+            number = request.number,
             name = request.name,
             candidate = request.candidate,
             startDate = request.startDate,
             endDate = request.endDate,
             pictureId = request.pictureId,
+            cheer = request.cheer,
+            accent = request.accent,
+            description = request.description,
             image = request.image,
         )
         return board.asResponse()
@@ -83,6 +91,7 @@ class BoardController(
             startDate = request.startDate,
             endDate = request.endDate,
             displayName = request.displayName,
+            nickname = request.nickname,
             description = request.description,
             image = request.image,
         )
@@ -102,6 +111,7 @@ class BoardController(
             startDate = request.startDate,
             endDate = request.endDate,
             displayName = request.displayName,
+            nickname = request.nickname,
             description = request.description,
             image = request.image,
         )

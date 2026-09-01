@@ -50,7 +50,7 @@ test.describe("sending payment emails", () => {
     await expect(page.getByTestId("payment-emails-count-reminders")).toContainText("1 contribution reminder")
     await expect(page.getByTestId("payment-emails-count-notifications"))
       .toContainText("1 incasso notification")
-    await expect(page.getByTestId("payment-emails-count-excluded")).toContainText("1 not written to")
+    await expect(page.getByTestId("payment-emails-count-excluded")).toContainText("1 get no email")
   })
 
   test("switching a member's email moves the counts and flags the row", async ({page}) => {
@@ -112,7 +112,7 @@ test.describe("sending payment emails", () => {
     await expect(page.getByTestId("payment-emails-confirm-reminders")).toContainText("1")
     await expect(page.getByTestId("payment-emails-confirm-notifications")).toContainText("1")
     await expect(page.getByTestId("payment-emails-confirm-not-written-to"))
-      .toContainText("1 selected member is not written to")
+      .toContainText("1 member will not have an email sent to them")
 
     // The table is still there behind it; nothing has been sent.
     await expect(page.getByTestId("bulk-action-dialog")).toBeVisible()

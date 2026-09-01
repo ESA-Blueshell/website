@@ -249,13 +249,39 @@ const sendSummary = computed(() =>
   summarise(rows.value, kindSelections.value, feeTypeSelections.value, reincludeOverrides.value),
 )
 
+interface SummaryDate {
+  label: string
+  value: string
+  icon: string
+  testid: string
+}
+
 /** The dates that reach somebody, as the confirmation restates them. */
-const summaryDates = computed(() => {
+const summaryDates = computed<SummaryDate[]>(() => {
   const format = (iso: string) => (iso ? DateTime.fromISO(iso).toFormat("dd/MM/yyyy") : "—")
   return [
-    sendsReminders.value ? {label: "Pay by", value: format(paymentDueDate.value)} : null,
-    sendsNotifications.value ? {label: "Debited on", value: format(debitDate.value)} : null,
-  ].filter((entry): entry is {label: string; value: string} => entry !== null)
+    sendsReminders.value
+      ? {
+          label: "Pay by",
+          value: format(paymentDueDate.value),
+          icon: "mdi-calendar",
+          testid: "payment-emails-confirm-pay-by",
+        }
+      : null,
+    sendsNotifications.value
+      ? {
+          label: "Debited on",
+          value: format(debitDate.value),
+          icon: "mdi-calendar-arrow-right",
+          testid: "payment-emails-confirm-debited-on",
+        }
+      : null,
+  ].filter((entry): entry is SummaryDate => entry !== null)
+})
+
+const hasOverrides = computed(() => {
+  const {forced, switched, reCharged, alreadySent} = sendSummary.value
+  return forced + switched + reCharged + alreadySent > 0
 })
 
 /**
@@ -491,11 +517,11 @@ defineExpose({
           v-if="counts.excluded > 0"
           color="error"
           data-testid="payment-emails-count-excluded"
-          prepend-icon="mdi-close-circle-outline"
+          prepend-icon="mdi-account-off-outline"
           size="small"
           variant="tonal"
         >
-          {{ counts.excluded }} not written to
+          {{ counts.excluded }} get no email
         </v-chip>
         <v-progress-circular
           v-if="loading"
@@ -613,70 +639,92 @@ defineExpose({
     @save="onFinalSend"
   >
     <div data-testid="payment-emails-confirm-summary">
-      <ul class="payment-email-summary">
-        <li v-if="sendSummary.reminders > 0">
-          <strong data-testid="payment-emails-confirm-reminders">{{ sendSummary.reminders }}</strong>
-          contribution {{ sendSummary.reminders === 1 ? "reminder" : "reminders" }}
-        </li>
-        <li v-if="sendSummary.incassoNotifications > 0">
-          <strong data-testid="payment-emails-confirm-notifications">
-            {{ sendSummary.incassoNotifications }}
-          </strong>
-          incasso {{ sendSummary.incassoNotifications === 1 ? "notification" : "notifications" }}
-        </li>
-        <li
+      <div class="d-flex flex-wrap ga-2">
+        <v-chip
+          v-if="sendSummary.reminders > 0"
+          color="primary"
+          data-testid="payment-emails-confirm-reminders"
+          prepend-icon="mdi-email-fast"
+          variant="tonal"
+        >
+          {{ sendSummary.reminders }} contribution
+          {{ sendSummary.reminders === 1 ? "reminder" : "reminders" }}
+        </v-chip>
+        <v-chip
+          v-if="sendSummary.incassoNotifications > 0"
+          color="primary"
+          data-testid="payment-emails-confirm-notifications"
+          prepend-icon="mdi-bank-transfer-out"
+          variant="tonal"
+        >
+          {{ sendSummary.incassoNotifications }} incasso
+          {{ sendSummary.incassoNotifications === 1 ? "notification" : "notifications" }}
+        </v-chip>
+        <v-chip
           v-for="date in summaryDates"
           :key="date.label"
-          class="text-medium-emphasis"
+          :data-testid="date.testid"
+          :prepend-icon="date.icon"
+          variant="tonal"
         >
-          {{ date.label }} <strong>{{ date.value }}</strong>
-        </li>
-      </ul>
-
-      <v-divider class="my-3" />
-
-      <ul class="payment-email-summary">
-        <li
+          {{ date.label }} {{ date.value }}
+        </v-chip>
+        <v-chip
           v-if="sendSummary.notWrittenTo > 0"
-          class="text-medium-emphasis"
           data-testid="payment-emails-confirm-not-written-to"
+          prepend-icon="mdi-account-off-outline"
+          variant="tonal"
         >
-          {{ sendSummary.notWrittenTo }} selected
-          {{ sendSummary.notWrittenTo === 1 ? "member is" : "members are" }} not written to
-        </li>
-        <li
-          v-if="sendSummary.forced > 0"
-          class="text-warning"
-          data-testid="payment-emails-confirm-forced"
-        >
-          {{ sendSummary.forced }} forcibly included despite a warning
-        </li>
-        <li
-          v-if="sendSummary.switched > 0"
-          class="text-warning"
-          data-testid="payment-emails-confirm-switched"
-        >
-          {{ sendSummary.switched }} moved off the email their direct-debit flag chose
-        </li>
-        <li
-          v-if="sendSummary.reCharged > 0"
-          class="text-warning"
-          data-testid="payment-emails-confirm-recharged"
-        >
-          {{ sendSummary.reCharged }} charged a fee type other than the one that applies
-        </li>
-        <li
-          v-if="sendSummary.alreadySent > 0"
-          class="text-warning"
-          data-testid="payment-emails-confirm-already-sent"
-        >
-          {{ sendSummary.alreadySent }} already had this email for this period
-        </li>
-      </ul>
+          {{ sendSummary.notWrittenTo }}
+          {{ sendSummary.notWrittenTo === 1 ? "member" : "members" }} will not have an email
+          sent to them
+        </v-chip>
+      </div>
 
-      <p class="text-caption text-medium-emphasis mt-3 mb-0">
-        Sending queues the emails immediately and records an ask against each member. It
-        cannot be undone.
+      <!-- Each line is somewhere the operator overruled something; grouped so they read as
+           one thing to check rather than four loose sentences. -->
+      <v-alert
+        v-if="hasOverrides"
+        class="mt-4"
+        data-testid="payment-emails-confirm-overrides"
+        density="compact"
+        icon="mdi-alert-outline"
+        type="warning"
+        variant="tonal"
+      >
+        <div class="text-body-2 font-weight-medium mb-1">
+          Worth checking before you send
+        </div>
+        <ul class="payment-email-overrides text-body-2">
+          <li
+            v-if="sendSummary.forced > 0"
+            data-testid="payment-emails-confirm-forced"
+          >
+            {{ sendSummary.forced }} forcibly included despite a warning
+          </li>
+          <li
+            v-if="sendSummary.switched > 0"
+            data-testid="payment-emails-confirm-switched"
+          >
+            {{ sendSummary.switched }} moved off the email their direct-debit flag chose
+          </li>
+          <li
+            v-if="sendSummary.reCharged > 0"
+            data-testid="payment-emails-confirm-recharged"
+          >
+            {{ sendSummary.reCharged }} charged a fee type other than the one that applies
+          </li>
+          <li
+            v-if="sendSummary.alreadySent > 0"
+            data-testid="payment-emails-confirm-already-sent"
+          >
+            {{ sendSummary.alreadySent }} already had this email for this period
+          </li>
+        </ul>
+      </v-alert>
+
+      <p class="text-caption text-medium-emphasis mt-4 mb-0">
+        Sending the emails will happen immediately and cannot be undone.
       </p>
     </div>
   </base-modal>
@@ -712,13 +760,14 @@ defineExpose({
 // that lands on the two pickers, which are the cells that cannot afford it: a wrapped
 // "Incasso notification" is unreadable, where a wrapped member name is fine. Asking for
 // their content width makes the wrappable columns give way instead.
-.payment-email-summary {
-  list-style: none;
-  padding: 0;
+// Inside a v-alert, so the marker sits in the alert's own padding rather than outdenting.
+.payment-email-overrides {
+  list-style: disc;
+  padding-left: 18px;
   margin: 0;
 
   li + li {
-    margin-top: 4px;
+    margin-top: 2px;
   }
 }
 

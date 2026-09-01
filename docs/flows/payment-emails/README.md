@@ -124,9 +124,10 @@ flowchart TD
    round trip; there is no field for an amount.
 7. They may read one member's email, built by the builder the send uses, for whichever email
    that row is currently set to.
-8. Send does not send. It opens a summary: how many of each email, the dates they carry, and
-   a line per override — forcibly included, switched, charged another fee type, already sent
-   this before. Back returns to the table.
+8. Send does not send. It opens a summary: chips for how many of each email, the dates they
+   carry and how many members get none, then the overrides grouped into one warning —
+   forcibly included, switched, charged another fee type, already sent this before. Back
+   returns to the table.
 9. Confirming re-reads the plan, writes one record per recipient — a new one each time — and
    queues one email each.
 10. The result reports each kind separately, and how many were not written to.

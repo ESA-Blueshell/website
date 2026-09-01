@@ -79,6 +79,8 @@ Each of these is defended by a test named in the Testing section.
   being told when the money moves.
 - Reading an email writes no record and queues no send, and an email is never rendered for a
   member the send will not write to.
+- Nothing is ever sent from the table alone. The summary stands between Send and the request,
+  and backing out of it sends nothing.
 
 ## The journey
 
@@ -94,7 +96,9 @@ flowchart TD
     H --> I[the same EmailContent the send builds, rendered]
     I --> E
     G -- no --> J[Send]
-    J --> K[POST /contributions/bulk/email/send]
+    J --> J2[summary · counts, dates, every override]
+    J2 -- Back --> E
+    J2 -- Send --> K[POST /contributions/bulk/email/send]
     K --> L{statements all name recipients?}
     L -- no --> M[409 · the ids at fault]
     L -- yes --> N{dates cover both kinds sent?}
@@ -120,9 +124,12 @@ flowchart TD
    round trip; there is no field for an amount.
 7. They may read one member's email, built by the builder the send uses, for whichever email
    that row is currently set to.
-8. Sending re-reads the plan, writes one record per recipient — a new one each time — and
+8. Send does not send. It opens a summary: how many of each email, the dates they carry, and
+   a line per override — forcibly included, switched, charged another fee type, already sent
+   this before. Back returns to the table.
+9. Confirming re-reads the plan, writes one record per recipient — a new one each time — and
    queues one email each.
-9. The result reports each kind separately, and how many were not written to.
+10. The result reports each kind separately, and how many were not written to.
 
 ## Alternative orderings
 
@@ -223,6 +230,9 @@ member and period, and the table reads the most recent of them.
 **An email job fails.** The record was written before the send was queued, so a failed
 delivery leaves a record and the job in the outbox rather than silently nothing.
 
+**The operator changes their mind at the summary.** Back returns to the table with every
+choice intact. Nothing was sent, because nothing is sent until the summary is confirmed.
+
 **The client loses its state mid-action.** Nothing is held client-side but the two dates and
 any switched rows or changed fee types. Reopening the dialog re-reads the table.
 
@@ -252,7 +262,7 @@ any switched rows or changed fee types. Reopening the dialog re-reads the table.
 | `ContributionReminderEmailBuilderTest`, `IncassoNotificationEmailBuilderTest` | The rendered bodies: the amount, the reason, the date, and that the notification asks for no transfer |
 | `ContributionEmailMessageServiceTest` | Each kind renders its own email, a switched row reads the one it will get, an override is quoted, and the render goes through the shared renderer |
 | `BulkContributionEmailControllerIT` | All three endpoints end to end, the 409 and 400 bodies, the authorisation, and that the send writes to exactly the members the table named |
-| `ContributionEmail.test.ts`, `contributionEmail.test.ts` | The dialog: routing shown and switchable, live counts and re-pricing, last sent following the switch, only changed statements sent, a refusal reported rather than closed on |
+| `ContributionEmail.test.ts`, `contributionEmail.test.ts` | The dialog: routing shown and switchable, live counts and re-pricing, last sent following the switch, the summary gate and its counts, only changed statements sent, a refusal reported rather than closed on |
 | `user-manager-payment-emails.spec.ts` | The journey in a browser, against mocks |
 | `payment-emails.feature` | The rules above, over HTTP against the running stack |
 

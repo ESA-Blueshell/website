@@ -12,6 +12,14 @@ import {
 } from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
+/** Send opens the summary; the summary sends. Both steps, for the tests that reach the api. */
+async function confirmAndSend(wrapper: Awaited<ReturnType<typeof openDialog>>) {
+  await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
+  await settle()
+  await wrapper.find('[data-testid="payment-emails-confirm-send-btn"]').trigger("click")
+  await settle()
+}
+
 const {mockPreview, mockSend, mockReadEmail} = vi.hoisted(() => ({
   mockPreview: vi.fn(),
   mockSend: vi.fn(),
@@ -205,8 +213,7 @@ describe("ContributionEmailDialog", () => {
     wrapper.vm.kindSelections[2] = ContributionEmailKind.REMINDER
     wrapper.vm.feeTypeSelections[2] = BulkFeeType.ALUMNI_FEE
     await settle()
-    await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
-    await settle()
+    await confirmAndSend(wrapper)
 
     expect(mockSend).toHaveBeenCalledWith({
       body: {
@@ -245,12 +252,81 @@ describe("ContributionEmailDialog", () => {
     await wrapper.findComponent({name: "BulkDialogScaffold"})
       .vm.$emit("update:reincludeOverrides", {2: true})
     await settle()
-    await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
-    await settle()
+    await confirmAndSend(wrapper)
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({body: expect.objectContaining({forciblyIncludedUserIds: [2]})}),
     )
+  })
+
+  it("opens the summary rather than sending, and sends nothing until it is confirmed", async () => {
+    mockSend.mockResolvedValue({data: {remindersSent: 1, incassoNotificationsSent: 0, notWrittenTo: 0}})
+    const wrapper = await openDialog([apiRow()])
+    wrapper.vm.paymentDueDate = "2026-04-01"
+    await settle()
+
+    await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
+    await settle()
+
+    expect(wrapper.vm.confirmOpen).toBe(true)
+    expect(mockSend).not.toHaveBeenCalled()
+
+    await wrapper.find('[data-testid="payment-emails-confirm-send-btn"]').trigger("click")
+    await settle()
+
+    expect(mockSend).toHaveBeenCalledTimes(1)
+  })
+
+  it("backing out of the summary sends nothing", async () => {
+    const wrapper = await openDialog([apiRow()])
+    wrapper.vm.paymentDueDate = "2026-04-01"
+    await settle()
+    await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
+    await settle()
+
+    wrapper.vm.confirmOpen = false
+    await settle()
+
+    expect(mockSend).not.toHaveBeenCalled()
+    expect(wrapper.emitted("done")).toBeUndefined()
+  })
+
+  it("the summary counts what is about to happen, warnings included", async () => {
+    const wrapper = await openDialog([
+      apiRow({userId: 1, lastRemindedOn: "2026-01-05"}),
+      apiRow({userId: 2, name: "Ben Debit", defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION}),
+      apiRow({
+        userId: 3,
+        name: "Cara Paid",
+        disposition: BulkRowDisposition.WARNING,
+        reason: BulkRowReason.ALREADY_PAID,
+      }),
+      apiRow({
+        userId: 4,
+        name: "Dan Honorary",
+        disposition: BulkRowDisposition.EXCLUDED,
+        reason: BulkRowReason.HONORARY,
+        feeType: null,
+        amount: null,
+      }),
+    ])
+
+    await wrapper.findComponent({name: "BulkDialogScaffold"})
+      .vm.$emit("update:reincludeOverrides", {3: true})
+    wrapper.vm.kindSelections[2] = ContributionEmailKind.REMINDER
+    wrapper.vm.feeTypeSelections[1] = BulkFeeType.ALUMNI_FEE
+    await settle()
+
+    expect(wrapper.vm.sendSummary).toMatchObject({
+      reminders: 3,
+      incassoNotifications: 0,
+      total: 3,
+      notWrittenTo: 1,
+      forced: 1,
+      switched: 1,
+      reCharged: 1,
+      alreadySent: 1,
+    })
   })
 
   /** The generated client hands a refusal back rather than throwing. */
@@ -272,8 +348,7 @@ describe("ContributionEmailDialog", () => {
 
     wrapper.vm.paymentDueDate = "2026-04-01"
     await settle()
-    await wrapper.find('[data-testid="bulk-action-confirm-btn"]').trigger("click")
-    await settle()
+    await confirmAndSend(wrapper)
 
     const refusal = wrapper.find('[data-testid="payment-emails-rejection"]')
     expect(refusal.exists()).toBe(true)

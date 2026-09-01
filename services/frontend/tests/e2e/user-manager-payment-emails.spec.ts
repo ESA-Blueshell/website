@@ -100,14 +100,40 @@ test.describe("sending payment emails", () => {
     await expect(page.getByTestId("email-preview-frame")).toBeVisible()
   })
 
-  test("sends, and closes on success", async ({page}) => {
+  test("Send opens a summary, and nothing goes out until it is confirmed", async ({page}) => {
     await openPaymentEmails(page)
 
     await page.getByTestId("payment-emails-payment-due-date").locator("input").fill("2026-12-01")
     await page.getByTestId("payment-emails-debit-date").locator("input").fill("2026-12-15")
     await page.getByTestId("bulk-action-confirm-btn").click()
 
+    const summary = page.getByTestId("payment-emails-confirm-summary")
+    await expect(summary).toBeVisible()
+    await expect(page.getByTestId("payment-emails-confirm-reminders")).toContainText("1")
+    await expect(page.getByTestId("payment-emails-confirm-notifications")).toContainText("1")
+    await expect(page.getByTestId("payment-emails-confirm-not-written-to"))
+      .toContainText("1 selected member is not written to")
+
+    // The table is still there behind it; nothing has been sent.
+    await expect(page.getByTestId("bulk-action-dialog")).toBeVisible()
+
+    await page.getByTestId("payment-emails-confirm-send-btn").click()
+
     await expect(page.getByTestId("bulk-action-dialog")).toBeHidden({timeout: 5000})
+  })
+
+  test("backing out of the summary returns to the table", async ({page}) => {
+    await openPaymentEmails(page)
+
+    await page.getByTestId("payment-emails-payment-due-date").locator("input").fill("2026-12-01")
+    await page.getByTestId("payment-emails-debit-date").locator("input").fill("2026-12-15")
+    await page.getByTestId("bulk-action-confirm-btn").click()
+    await expect(page.getByTestId("payment-emails-confirm-summary")).toBeVisible()
+
+    await page.getByTestId("payment-emails-confirm-back-btn").click()
+
+    await expect(page.getByTestId("payment-emails-confirm-summary")).toBeHidden()
+    await expect(page.getByTestId("bulk-action-dialog")).toBeVisible()
   })
 
   test("will not send without the dates the batch needs", async ({page}) => {
@@ -128,6 +154,7 @@ test.describe("sending payment emails", () => {
 
     await page.getByTestId("payment-emails-payment-due-date").locator("input").fill("2026-12-01")
     await page.getByTestId("bulk-action-confirm-btn").click()
+    await page.getByTestId("payment-emails-confirm-send-btn").click()
 
     await expect(page.getByTestId("bulk-action-dialog")).toBeHidden({timeout: 5000})
   })

@@ -91,6 +91,45 @@ export function countByKind(
   return counts
 }
 
+/** What the send is about to do, for the confirmation that stands in front of it. */
+export interface PaymentEmailSummary {
+  reminders: number
+  incassoNotifications: number
+  total: number
+  notWrittenTo: number
+  /** Warned rows the operator ticked back in. */
+  forced: number
+  /** Rows moved off the email their direct-debit flag chose. */
+  switched: number
+  /** Rows charged a fee type other than the one that applies. */
+  reCharged: number
+  /** Recipients who have had this same email for this period before. */
+  alreadySent: number
+}
+
+export function summarise(
+  rows: BulkRow[],
+  kinds: Record<number, ContributionEmailKind>,
+  fees: Record<number, BulkFeeType>,
+  forciblyIncluded: Record<number, boolean>,
+): PaymentEmailSummary {
+  const recipients = rows.filter((row) => willSend(row, forciblyIncluded))
+  const counts = countByKind(rows, kinds, forciblyIncluded)
+  return {
+    reminders: counts[ContributionEmailKind.REMINDER],
+    incassoNotifications: counts[ContributionEmailKind.INCASSO_NOTIFICATION],
+    total: recipients.length,
+    notWrittenTo: rows.length - recipients.length,
+    forced: recipients.filter((row) => row.disposition === "WARNING").length,
+    switched: recipients.filter((row) => isSwitched(row, kinds)).length,
+    reCharged: recipients.filter((row) => {
+      const chosen = fees[row.userId]
+      return !!chosen && chosen !== row.recommendedFeeType
+    }).length,
+    alreadySent: recipients.filter((row) => !!lastSentOn(row, kinds)).length,
+  }
+}
+
 /** Only the rows the treasurer moved off the email their flag chose. */
 export function changedKinds(
   rows: BulkRow[],

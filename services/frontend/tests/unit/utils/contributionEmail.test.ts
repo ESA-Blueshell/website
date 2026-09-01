@@ -16,6 +16,7 @@ import {
   kindFor,
   lastSentLabel,
   lastSentOn,
+  summarise,
   switchedNote,
   toBulkRow,
   toBulkRows,
@@ -168,6 +169,52 @@ describe("countByKind", () => {
 
     expect(countByKind(rows, {2: ContributionEmailKind.REMINDER}, {}))
       .toEqual({REMINDER: 1, INCASSO_NOTIFICATION: 0})
+  })
+})
+
+describe("summarise", () => {
+  const rows = [
+    row({userId: 1, lastRemindedOn: "2026-01-05"}),
+    row({userId: 2, defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION}),
+    row({userId: 3, disposition: "WARNING", reason: BulkRowReason.ALREADY_PAID}),
+    row({userId: 4, disposition: "EXCLUDED", reason: BulkRowReason.HONORARY}),
+  ]
+
+  it("counts what the send would do, before it does it", () => {
+    expect(summarise(rows, {}, {}, {})).toEqual({
+      reminders: 1,
+      incassoNotifications: 1,
+      total: 2,
+      notWrittenTo: 2,
+      forced: 0,
+      switched: 0,
+      reCharged: 0,
+      alreadySent: 1,
+    })
+  })
+
+  it("counts each override the operator made", () => {
+    const summary = summarise(
+      rows,
+      {2: ContributionEmailKind.REMINDER},
+      {1: BulkFeeType.ALUMNI_FEE},
+      {3: true},
+    )
+
+    expect(summary).toMatchObject({
+      reminders: 3,
+      incassoNotifications: 0,
+      total: 3,
+      notWrittenTo: 1,
+      forced: 1,
+      switched: 1,
+      reCharged: 1,
+    })
+  })
+
+  // A hard exclusion is never a recipient, so it never reaches any of the override counts.
+  it("never counts a hard-excluded row as sent, whatever is ticked", () => {
+    expect(summarise(rows, {}, {}, {3: true, 4: true})).toMatchObject({total: 3, notWrittenTo: 1})
   })
 })
 

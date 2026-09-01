@@ -2,6 +2,7 @@
 import {computed, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import BulkDialogScaffold, {type BulkColumn} from "./BulkDialogScaffold.vue"
+import BaseModal from "@/components/common/modals/BaseModal.vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useEmailPreview} from "@/composables/useEmailPreview"
@@ -26,6 +27,7 @@ import {
   kindFor,
   lastSentLabel,
   lastSentOn,
+  summarise,
   switchedNote,
   toBulkRows,
 } from "@/utils/contributionEmail"
@@ -78,6 +80,7 @@ const kindSelections = ref<Record<number, ContributionEmailKind>>({})
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const rejection = ref<BulkRejection | null>(null)
+const confirmOpen = ref(false)
 
 const today = DateTime.now().toFormat("yyyy-MM-dd")
 
@@ -242,10 +245,32 @@ const forciblyIncludedUserIds = computed(() =>
     .map((row) => row.userId),
 )
 
-async function onConfirm() {
+const sendSummary = computed(() =>
+  summarise(rows.value, kindSelections.value, feeTypeSelections.value, reincludeOverrides.value),
+)
+
+/** The dates that reach somebody, as the confirmation restates them. */
+const summaryDates = computed(() => {
+  const format = (iso: string) => (iso ? DateTime.fromISO(iso).toFormat("dd/MM/yyyy") : "—")
+  return [
+    sendsReminders.value ? {label: "Pay by", value: format(paymentDueDate.value)} : null,
+    sendsNotifications.value ? {label: "Debited on", value: format(debitDate.value)} : null,
+  ].filter((entry): entry is {label: string; value: string} => entry !== null)
+})
+
+/**
+ * Send opens the summary rather than sending. Nothing here can be undone once the jobs are
+ * queued, and the table is long enough that its totals are not read off it by eye.
+ */
+function onConfirm() {
+  if (!canConfirm.value || props.period?.id == null) return
+  rejection.value = null
+  confirmOpen.value = true
+}
+
+async function onFinalSend() {
   const periodId = props.period?.id
   if (!canConfirm.value || periodId == null) return
-  rejection.value = null
   const ok = await submit(async () => {
     const response = await sendPaymentEmails({
       body: {
@@ -262,6 +287,8 @@ async function onConfirm() {
     const refused = parseBulkRejection(response)
     if (refused) {
       rejection.value = refused
+      // Back to the table: the refusal names rows, and the summary cannot show them.
+      confirmOpen.value = false
       await loadRows()
       return false
     }
@@ -269,6 +296,7 @@ async function onConfirm() {
   })
   setSubmitResult(ok)
   if (ok) {
+    confirmOpen.value = false
     setTimeout(() => {
       emit("update:modelValue", false)
       emit("done")
@@ -312,6 +340,8 @@ defineExpose({
   previewRecipients,
   forciblyIncludedUserIds,
   kindCounts,
+  confirmOpen,
+  sendSummary,
   rowAmount,
   loadRows,
 })
@@ -560,6 +590,97 @@ defineExpose({
     </template>
   </bulk-dialog-scaffold>
 
+  <!--
+    The last stop before a hundred emails leave. Everything here is a count the operator
+    would otherwise have to take off a long table by eye.
+  -->
+  <base-modal
+    v-model="confirmOpen"
+    cancel-label="Back"
+    cancel-testid="payment-emails-confirm-back-btn"
+    max-width="520"
+    save-icon="mdi-email-fast"
+    :save-label="`Send ${sendSummary.total} ${sendSummary.total === 1 ? 'email' : 'emails'}`"
+    :save-loading="submitting"
+    save-testid="payment-emails-confirm-send-btn"
+    :save-show-status="showSubmitStatus"
+    :save-submit-state="submitState"
+    show-cancel
+    show-save
+    testid="payment-emails-confirm-dialog"
+    title="Send these emails?"
+    @cancel="confirmOpen = false"
+    @save="onFinalSend"
+  >
+    <div data-testid="payment-emails-confirm-summary">
+      <ul class="payment-email-summary">
+        <li v-if="sendSummary.reminders > 0">
+          <strong data-testid="payment-emails-confirm-reminders">{{ sendSummary.reminders }}</strong>
+          contribution {{ sendSummary.reminders === 1 ? "reminder" : "reminders" }}
+        </li>
+        <li v-if="sendSummary.incassoNotifications > 0">
+          <strong data-testid="payment-emails-confirm-notifications">
+            {{ sendSummary.incassoNotifications }}
+          </strong>
+          incasso {{ sendSummary.incassoNotifications === 1 ? "notification" : "notifications" }}
+        </li>
+        <li
+          v-for="date in summaryDates"
+          :key="date.label"
+          class="text-medium-emphasis"
+        >
+          {{ date.label }} <strong>{{ date.value }}</strong>
+        </li>
+      </ul>
+
+      <v-divider class="my-3" />
+
+      <ul class="payment-email-summary">
+        <li
+          v-if="sendSummary.notWrittenTo > 0"
+          class="text-medium-emphasis"
+          data-testid="payment-emails-confirm-not-written-to"
+        >
+          {{ sendSummary.notWrittenTo }} selected
+          {{ sendSummary.notWrittenTo === 1 ? "member is" : "members are" }} not written to
+        </li>
+        <li
+          v-if="sendSummary.forced > 0"
+          class="text-warning"
+          data-testid="payment-emails-confirm-forced"
+        >
+          {{ sendSummary.forced }} forcibly included despite a warning
+        </li>
+        <li
+          v-if="sendSummary.switched > 0"
+          class="text-warning"
+          data-testid="payment-emails-confirm-switched"
+        >
+          {{ sendSummary.switched }} moved off the email their direct-debit flag chose
+        </li>
+        <li
+          v-if="sendSummary.reCharged > 0"
+          class="text-warning"
+          data-testid="payment-emails-confirm-recharged"
+        >
+          {{ sendSummary.reCharged }} charged a fee type other than the one that applies
+        </li>
+        <li
+          v-if="sendSummary.alreadySent > 0"
+          class="text-warning"
+          data-testid="payment-emails-confirm-already-sent"
+        >
+          {{ sendSummary.alreadySent }} already had this email for this period
+        </li>
+      </ul>
+
+      <p class="text-caption text-medium-emphasis mt-3 mb-0">
+        Sending queues the emails immediately and records an ask against each member. It
+        cannot be undone.
+      </p>
+    </div>
+  </base-modal>
+
   <email-preview-dialog
     v-model="emailPreviewOpen"
     :error="emailPreviewError"
@@ -591,6 +712,16 @@ defineExpose({
 // that lands on the two pickers, which are the cells that cannot afford it: a wrapped
 // "Incasso notification" is unreadable, where a wrapped member name is fine. Asking for
 // their content width makes the wrappable columns give way instead.
+.payment-email-summary {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li + li {
+    margin-top: 4px;
+  }
+}
+
 .payment-email-kind-select,
 .payment-email-feetype-select {
   min-width: max-content;

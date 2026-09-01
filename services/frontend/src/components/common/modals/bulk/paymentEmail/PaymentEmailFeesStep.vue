@@ -4,6 +4,7 @@ import {ContributionEmailKind, type ContributionPeriodResponse} from "@/services
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
 import {
   contributionEmailItems,
+  isReCharged,
   isSwitched,
   kindFor,
   lastSentLabel,
@@ -37,12 +38,7 @@ const switchedNames = computed(() =>
 )
 
 const reChargedNames = computed(() =>
-  props.rows
-    .filter((row) => {
-      const chosen = props.fees[row.userId]
-      return !!chosen && chosen !== row.recommendedFeeType
-    })
-    .map((row) => row.name),
+  props.rows.filter((row) => isReCharged(row, props.fees)).map((row) => row.name),
 )
 
 function rowAmount(row: BulkRow): number | null {
@@ -200,14 +196,9 @@ function setFee(userId: number, fee: BulkFeeType) {
 </template>
 
 <style lang="scss" scoped>
-.payment-email-table {
-  :deep(thead th) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background-color: rgb(var(--v-theme-surface));
-  }
-}
+@use '@/styles/payment-email' as paymentEmail;
+
+@include paymentEmail.sticky-table-header;
 
 // The two pickers are the cells that cannot afford to be compressed: a wrapped
 // "Incasso notification" is unreadable where a wrapped member name is fine.

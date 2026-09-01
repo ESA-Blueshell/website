@@ -4,7 +4,7 @@ import type {BulkDisposition, BulkRow, BulkRowReason} from "@/utils/bulkRow"
 /**
  * Pure display helpers for bulk-action preview rows, lifted verbatim out of the old
  * BulkActionConfirmDialog monolith. Shared by every per-action dialog via the scaffold.
- * See docs/flows/bulk-contribution-emails/README.md and docs/flows/bulk-contribution-marking/README.md.
+ * See docs/flows/payment-emails/README.md and docs/flows/bulk-contribution-marking/README.md.
  */
 
 // Re-exported for existing importers that pulled these off bulkDisposition.

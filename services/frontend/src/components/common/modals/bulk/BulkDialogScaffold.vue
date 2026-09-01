@@ -70,8 +70,6 @@ interface Props {
   getRowAmount?: (row: BulkRow) => number | null
   /** Label for the WARNING re-include column (e.g. "Include" or "Forcibly include"). */
   includeLabel?: string
-  /** Widen past the default for a dialog carrying more columns than the others. */
-  maxWidth?: string
   /** Optional help panel content rendered behind a "?" icon button in the header. */
   help?: {title: string; body: string}
   /** Label for the optional #info-box slot's labelled box (e.g. "Contribution period"). */
@@ -93,7 +91,6 @@ const props = withDefaults(defineProps<Props>(), {
   columns: undefined,
   getRowAmount: undefined,
   includeLabel: "Include",
-  maxWidth: "1200",
   help: undefined,
   infoBoxLabel: "Info",
 })
@@ -207,7 +204,7 @@ defineExpose({validate})
     :save-submit-state="submitState"
     :title="title"
     data-testid="bulk-action-dialog"
-    :max-width="maxWidth"
+    max-width="1200"
     save-testid="bulk-action-confirm-btn"
     scrollable
     show-cancel

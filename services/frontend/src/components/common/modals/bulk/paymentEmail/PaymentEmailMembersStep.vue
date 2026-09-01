@@ -127,14 +127,9 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
 </template>
 
 <style lang="scss" scoped>
-.payment-email-table {
-  :deep(thead th) {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background-color: rgb(var(--v-theme-surface));
-  }
-}
+@use '@/styles/payment-email' as paymentEmail;
+
+@include paymentEmail.sticky-table-header;
 
 .bulk-row--excluded td {
   background-color: rgba(var(--v-theme-error), 0.08);

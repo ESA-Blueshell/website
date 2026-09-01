@@ -249,6 +249,10 @@ export type BulkContributionEmailPreviewRequest = {
 export type BulkContributionEmailPreviewResponse = {
     contributionPeriodId: number;
     rows: Array<BulkContributionEmailRowResponse>;
+    /**
+     * Selected ids that resolve to nobody. No row is drawn, and the send refuses them.
+     */
+    unknownUserIds: Array<number>;
 };
 
 export type BulkContributionEmailRowResponse = {
@@ -1660,7 +1664,7 @@ export type SendPaymentEmailsRequest = {
         [key: string]: BulkFeeType;
     };
     /**
-     * Warned members the operator ticked back in. Every one of them must be in the selection and must be somebody the send writes to.
+     * Warned members this request overrules. Every one of them must be in the selection and must be somebody the send writes to.
      */
     forciblyIncludedUserIds: Array<number>;
     /**

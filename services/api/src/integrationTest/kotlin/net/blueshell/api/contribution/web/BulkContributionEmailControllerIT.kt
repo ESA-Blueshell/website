@@ -170,6 +170,19 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `an id naming nobody is named rather than left out of the count`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val selected = member(incasso = false)
+
+            preview(board, period.id, selected.id, 9_999_999L)
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.rows.length()").value(1))
+                .andExpect(jsonPath("$.unknownUserIds.length()").value(1))
+                .andExpect(jsonPath("$.unknownUserIds[0]").value(9_999_999L))
+        }
+
+        @Test
         fun `an honorary member is hard-excluded, owing nothing`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
             val period = period()

@@ -378,7 +378,12 @@ class BulkContributionEmailUseCasesTest {
 
     private fun plan(vararg rows: ContributionEmailRow) {
         planned = rows.toList()
-        every { planner.plan(periodId, any()) } returns ContributionEmailPlan(periodId, planned)
+        // As the planner does: an id no row was drawn for is named on the plan, not lost.
+        every { planner.plan(periodId, any()) } answers {
+            val known = planned.map { it.userId }.toSet()
+            val unknown = secondArg<Collection<Long>>().distinct().filterNot { it in known }.sorted()
+            ContributionEmailPlan(periodId, planned, unknown)
+        }
         every { periods.findById(periodId) } returns period
         every { users.findById(any()) } answers { member(firstArg()) }
         // `create` is generic, so a relaxed mock returns a stand-in of the erased type.

@@ -172,11 +172,21 @@ class ContributionEmailPlannerTest {
         }
 
         @Test
-        fun `an id naming nobody is not a row`() {
+        fun `an id naming nobody is named on the plan rather than dropped`() {
             given(membership(1L, "Ann One", incasso = false))
             every { users.existsById(99L) } returns false
 
-            assertThat(planner.plan(periodId, listOf(1L, 99L)).rows.map { it.userId }).containsExactly(1L)
+            val plan = planner.plan(periodId, listOf(1L, 99L))
+
+            assertThat(plan.rows.map { it.userId }).containsExactly(1L)
+            assertThat(plan.unknownUserIds).containsExactly(99L)
+        }
+
+        @Test
+        fun `a selection that resolves whole names nobody as unknown`() {
+            given(membership(1L, "Ann One", incasso = false))
+
+            assertThat(planner.plan(periodId, listOf(1L)).unknownUserIds).isEmpty()
         }
     }
 

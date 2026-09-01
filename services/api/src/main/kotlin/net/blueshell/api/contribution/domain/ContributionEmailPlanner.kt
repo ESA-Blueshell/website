@@ -18,7 +18,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 
 /**
- * What the payment emails would do to a selection. Read by both the table and the send, so
+ * What the payment emails would do to a selection. Read by both the preview and the send, so
  * they cannot disagree. Nothing here writes, enqueues or sends.
  */
 @Service
@@ -45,18 +45,19 @@ class ContributionEmailPlanner(
             preNotifications.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
         )
 
-        val rows = selected
-            .mapNotNull { userId ->
+        // The membership read already fetched the member; only somebody holding none costs a
+        // lookup. An id naming nobody is no row, so the plan names it instead of losing it.
+        val (known, unknown) = selected.partition { held.containsKey(it) || users.existsById(it) }
+
+        val rows = known
+            .map { userId ->
                 val theirs = held[userId] ?: emptyList()
-                // The membership read already fetched the member; only somebody holding none
-                // costs a lookup. An id naming nobody is not a row.
-                val member = theirs.firstOrNull()?.user
-                    ?: if (users.existsById(userId)) users.findById(userId) else return@mapNotNull null
+                val member = theirs.firstOrNull()?.user ?: users.findById(userId)
                 row(userId, member, theirs, period, userId in paid, lastReminded[userId], lastNotified[userId])
             }
             .sortedBy { it.name }
 
-        return ContributionEmailPlan(contributionPeriodId, rows)
+        return ContributionEmailPlan(contributionPeriodId, rows, unknown.sorted())
     }
 
     private fun row(
@@ -92,7 +93,7 @@ class ContributionEmailPlanner(
         )
     }
 
-    /** Hard exclusions first — no tick box overrules them — then the two warnings. */
+    /** Hard exclusions first — nothing overrules them — then the two warnings. */
     private fun decide(
         userId: Long,
         member: User,
@@ -129,6 +130,6 @@ class ContributionEmailPlanner(
         .mapValues { (_, theirs) -> theirs.maxOf { (_, at) -> at }.atZone(ZoneOffset.UTC).toLocalDate() }
 }
 
-/** The rule the manager's "member in period" column draws; see `overlapsContributionPeriod`. */
+/** A membership running during the period. Mirrored by `overlapsContributionPeriod` in the frontend. */
 private fun Membership.overlaps(period: ContributionPeriod): Boolean =
     startDate <= period.endDate && (endDate == null || endDate!! >= period.startDate)

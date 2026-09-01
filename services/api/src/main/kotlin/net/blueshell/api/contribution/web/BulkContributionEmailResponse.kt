@@ -40,6 +40,9 @@ data class BulkContributionEmailRowResponse(
 data class BulkContributionEmailPreviewResponse(
     val contributionPeriodId: Long,
     val rows: List<BulkContributionEmailRowResponse>,
+
+    @field:Schema(description = "Selected ids that resolve to nobody. No row is drawn, and the send refuses them.")
+    val unknownUserIds: List<Long>,
 )
 
 @Schema(name = "ContributionEmailMessageResponse")

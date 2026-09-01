@@ -36,7 +36,7 @@ data class ContributionEmailRow(
 ) {
     val isHardExcluded: Boolean get() = disposition == BulkRowDisposition.EXCLUDED
 
-    /** A warning is a default the operator can overrule; a hard exclusion is not. */
+    /** A warning is a default the caller can overrule; a hard exclusion is not. */
     fun willSend(forciblyIncluded: Set<Long>): Boolean = when (disposition) {
         BulkRowDisposition.INCLUDED -> true
         BulkRowDisposition.WARNING -> userId in forciblyIncluded
@@ -45,12 +45,14 @@ data class ContributionEmailRow(
 }
 
 /**
- * What one send would do to one selection. The table and the send read the same plan, so
+ * What one send would do to one selection. The preview and the send read the same plan, so
  * they cannot disagree about who is written to or what they owe.
  */
 data class ContributionEmailPlan(
     val contributionPeriodId: Long,
     val rows: List<ContributionEmailRow>,
+    /** Selected ids resolving to nobody. No row can be drawn for them, and the send refuses them. */
+    val unknownUserIds: List<Long> = emptyList(),
 ) {
     fun byUserId(userId: Long): ContributionEmailRow? = rows.firstOrNull { it.userId == userId }
 

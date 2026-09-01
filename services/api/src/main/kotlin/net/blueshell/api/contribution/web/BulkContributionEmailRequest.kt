@@ -39,8 +39,8 @@ data class SendPaymentEmailsRequest(
 
     @field:Size(max = MAX_SELECTION, message = "Tick at most $MAX_SELECTION members back in.")
     @field:Schema(
-        description = "Warned members the operator ticked back in. Every one of them must be " +
-            "in the selection and must be somebody the send writes to.",
+        description = "Warned members this request overrules. Every one of them must be in the " +
+            "selection and must be somebody the send writes to.",
     )
     val forciblyIncludedUserIds: List<@Positive Long> = emptyList(),
 

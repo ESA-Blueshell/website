@@ -86,6 +86,7 @@ private fun ContributionEmailPlan.asResponse() = BulkContributionEmailPreviewRes
             lastNotifiedOn = row.lastNotifiedOn,
         )
     },
+    unknownUserIds = unknownUserIds,
 )
 
 private fun ContributionEmailMessage.asResponse() = ContributionEmailMessageResponse(

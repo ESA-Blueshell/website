@@ -5,7 +5,7 @@ package net.blueshell.api.shared.dto.bulk
  * a bean constraint.
  *
  * 400 rather than the 409 [BulkSelectionRejected] carries: the request is wrong rather than
- * stale, so the operator corrects the field instead of reloading the table. The reasons
+ * stale, so the caller corrects the field instead of re-reading the selection. The reasons
  * travel in the same `errors` shape bean validation produces, so one client-side handler
  * covers every refusal in a flow.
  */

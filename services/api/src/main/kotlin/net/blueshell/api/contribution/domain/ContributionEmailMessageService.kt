@@ -35,8 +35,8 @@ class ContributionEmailMessageService(
     ): ContributionEmailMessage {
         val row = planner.plan(contributionPeriodId, listOf(userId)).byUserId(userId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "That member could not be read")
-        // A warned member may yet be ticked back in, so theirs is readable; a hard-excluded
-        // one has no email at all.
+        // A warned member may yet be overruled, so theirs is readable; a hard-excluded one
+        // has no email at all.
         if (row.isHardExcluded) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "This send writes nothing to that member")
         }

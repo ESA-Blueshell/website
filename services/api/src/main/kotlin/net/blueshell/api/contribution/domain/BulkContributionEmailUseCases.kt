@@ -7,6 +7,7 @@ import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.dto.bulk.BulkFieldRejected
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
+import net.blueshell.api.shared.dto.bulk.BulkUserSelection
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,6 +19,10 @@ import java.time.LocalDate
  * direct-debit members are told what will be taken, the rest are asked to transfer.
  *
  * Each send writes its own records, so chasing a member twice leaves two asks.
+ *
+ * A refusal's `message` is fixed per code and interpolates nothing, per ADR-026: it is what a
+ * log or a direct caller reads. The browser composes its own from the code, in
+ * `COMPOSED_MESSAGES` in `services/frontend/src/utils/bulkRejection.ts`.
  */
 @Service
 class BulkContributionEmailUseCases(
@@ -105,15 +110,14 @@ class BulkContributionEmailUseCases(
 
     /**
      * The selection has to describe itself before anything reads it: an id naming nobody,
-     * an id named twice, or somebody ticked back in who was never selected all mean the
-     * table the operator was looking at and the one the api holds have parted company.
+     * an id named twice, or a forced id that was never selected all mean the selection the
+     * caller holds and the one the api holds have parted company.
      */
     private fun rejectIncoherentSelection(
         userIds: Collection<Long>,
         forciblyIncluded: Set<Long>,
         plan: ContributionEmailPlan,
     ) {
-        val known = plan.rows.map { it.userId }.toSet()
         val violations = buildList {
             userIds.groupBy { it }.filterValues { it.size > 1 }.keys.sorted().ifEmpty { null }?.let { repeated ->
                 add(
@@ -121,29 +125,18 @@ class BulkContributionEmailUseCases(
                         field = "userIds",
                         code = BulkSelectionRejected.DUPLICATE_USERS,
                         values = repeated,
-                        message = "The selection names the same member more than once.",
+                        message = "The selection names a user more than once.",
                     ),
                 )
             }
-            // The planner drops an id that resolves to nobody, so the rows it kept name
-            // everybody who exists.
-            strayIds(userIds.toSet(), known)?.let { unknown ->
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "userIds",
-                        code = BulkSelectionRejected.UNKNOWN_USERS,
-                        values = unknown,
-                        message = "${unknown.size} of the selected users no longer exist.",
-                    ),
-                )
-            }
+            plan.unknownUserIds.ifEmpty { null }?.let { add(BulkUserSelection.unknownUsers(it)) }
             strayIds(forciblyIncluded, userIds.toSet())?.let { stray ->
                 add(
                     BulkSelectionRejected.Violation(
                         field = "forciblyIncludedUserIds",
                         code = BulkSelectionRejected.UNKNOWN_FORCED,
                         values = stray,
-                        message = "Some of the members ticked back in are not in the selection.",
+                        message = "A forced id is not in the selection.",
                     ),
                 )
             }
@@ -153,8 +146,8 @@ class BulkContributionEmailUseCases(
     }
 
     /**
-     * A statement about somebody the send skips means the table has moved. Refused whole,
-     * rather than leaving the operator believing they changed something they did not.
+     * A statement about somebody the send skips means the selection has moved on. Refused
+     * whole, rather than leaving the caller believing they changed something they did not.
      */
     private fun rejectStatementsForNonRecipients(
         recipients: List<ContributionEmailRow>,
@@ -170,7 +163,7 @@ class BulkContributionEmailUseCases(
                         field = "forciblyIncludedUserIds",
                         code = BulkSelectionRejected.NON_RECIPIENT_FORCED,
                         values = stray,
-                        message = "Some of the members ticked back in are ones this send does not write to.",
+                        message = "A forced id names a user this send does not write to.",
                     ),
                 )
             }
@@ -233,7 +226,7 @@ class BulkContributionEmailUseCases(
                     BulkFieldRejected.Violation(
                         field = field,
                         code = BulkFieldRejected.DATE_REQUIRED,
-                        message = "A date is required: somebody in this batch gets an email that states one.",
+                        message = "The date is required, because an email in this batch states it.",
                     ),
                 )
             } else {
@@ -244,7 +237,7 @@ class BulkContributionEmailUseCases(
             BulkFieldRejected.Violation(
                 field = field,
                 code = BulkFieldRejected.DATE_OUTSIDE_PERIOD,
-                message = "A date must fall within the contribution period, or shortly after it ends.",
+                message = "The date falls outside the contribution period.",
             ),
         )
 

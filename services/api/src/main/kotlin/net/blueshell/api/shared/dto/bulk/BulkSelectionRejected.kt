@@ -56,10 +56,10 @@ class BulkSelectionRejected(
          */
         const val DUPLICATE_USERS: String = "DuplicateUserIds"
 
-        /** A user was ticked back in that the action still does not write to. */
+        /** A forced id naming a user the action still does not write to. */
         const val NON_RECIPIENT_FORCED: String = "NonRecipientForcedUserIds"
 
-        /** A user was ticked back in that the selection does not name at all. */
+        /** A forced id the selection does not name at all. */
         const val UNKNOWN_FORCED: String = "UnknownForcedUserIds"
 
         /**

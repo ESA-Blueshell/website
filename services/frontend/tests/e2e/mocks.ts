@@ -724,7 +724,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           lastNotifiedOn: null,
         }
       })
-      return fulfillJson(route, {contributionPeriodId: body.contributionPeriodId, rows})
+      return fulfillJson(route, {contributionPeriodId: body.contributionPeriodId, rows, unknownUserIds: []})
     }
     if (method === "GET" && path === "/contributions/bulk/email/message") {
       const params = new URL(route.request().url()).searchParams

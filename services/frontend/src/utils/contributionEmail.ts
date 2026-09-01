@@ -51,6 +51,12 @@ export function isSwitched(row: BulkRow, chosen: Record<number, ContributionEmai
   return !!row.defaultKind && kindFor(row, chosen) !== row.defaultKind
 }
 
+/** A fee the treasurer moved off the one the row's membership works out to. */
+export function isReCharged(row: BulkRow, fees: Record<number, BulkFeeType>): boolean {
+  const chosen = fees[row.userId]
+  return !!chosen && chosen !== row.recommendedFeeType
+}
+
 /** Why switching this row is worth flagging: the flag says the other thing. */
 export function switchedNote(row: BulkRow): string {
   return row.defaultKind === ContributionEmailKind.INCASSO_NOTIFICATION
@@ -91,6 +97,51 @@ export function seedSendTo(rows: BulkRow[]): Record<number, boolean> {
   return sendTo
 }
 
+/** The three per-member choices the wizard holds, so a re-read can put them back. */
+export interface PaymentEmailChoices {
+  sendTo: Record<number, boolean>
+  fees: Record<number, BulkFeeType>
+  kinds: Record<number, ContributionEmailKind>
+}
+
+/** What a freshly read plan proposes before the treasurer has touched anything. */
+export function seedChoices(rows: BulkRow[]): PaymentEmailChoices {
+  const fees: Record<number, BulkFeeType> = {}
+  const kinds: Record<number, ContributionEmailKind> = {}
+  for (const row of rows) {
+    if (row.recommendedFeeType) fees[row.userId] = row.recommendedFeeType
+    if (row.defaultKind) kinds[row.userId] = row.defaultKind
+  }
+  return {sendTo: seedSendTo(rows), fees, kinds}
+}
+
+/**
+ * The choices already made, carried onto a plan that has just been read again. A member the
+ * refusal named keeps the new plan's answer instead: the api has contradicted what was chosen
+ * for them. So does a member the plan no longer offers a box to.
+ */
+export function reapplyChoices(
+  rows: BulkRow[],
+  seeded: PaymentEmailChoices,
+  made: PaymentEmailChoices,
+  contradicted: number[],
+): PaymentEmailChoices {
+  const lost = new Set(contradicted)
+  const next: PaymentEmailChoices = {
+    sendTo: {...seeded.sendTo},
+    fees: {...seeded.fees},
+    kinds: {...seeded.kinds},
+  }
+  for (const row of rows) {
+    const userId = row.userId
+    if (lost.has(userId) || !isSelectable(row)) continue
+    if (made.sendTo[userId] !== undefined) next.sendTo[userId] = made.sendTo[userId]
+    if (made.fees[userId] !== undefined) next.fees[userId] = made.fees[userId]
+    if (made.kinds[userId] !== undefined) next.kinds[userId] = made.kinds[userId]
+  }
+  return next
+}
+
 /** The Send-to box is the selection: a row sends when it is ticked, and only then. */
 export function willSend(row: BulkRow, sendTo: Record<number, boolean>): boolean {
   return isSelectable(row) && !!sendTo[row.userId]
@@ -129,8 +180,8 @@ export function periodDateWindow(
  *
  * The api enforces the same rules on send — `@Future` on the field, then `dateViolations`
  * in `BulkContributionEmailUseCases` for the bounds — mirrored here the way `effectiveAmount`
- * and `resolveFeeAmount` name each other. Both sides judge every date that is given, not only
- * the ones a recipient needs. Changing one means changing the other.
+ * and `resolveFeeAmount` name each other. Both sides judge every date that is sent; a date no
+ * recipient needs is left out of the request. Changing one means changing the other.
  */
 export function paymentDateProblem(
   iso: string,
@@ -195,10 +246,7 @@ export function summarise(
     notEmailed: rows.length - recipients.length,
     forced: recipients.filter((row) => row.disposition === "WARNING").length,
     switched: recipients.filter((row) => isSwitched(row, kinds)).length,
-    reCharged: recipients.filter((row) => {
-      const chosen = fees[row.userId]
-      return !!chosen && chosen !== row.recommendedFeeType
-    }).length,
+    reCharged: recipients.filter((row) => isReCharged(row, fees)).length,
     alreadySent: recipients.filter((row) => !!lastSentOn(row, kinds)).length,
   }
 }
@@ -226,7 +274,7 @@ export function changedFeeTypes(
   const changed: Record<string, BulkFeeType> = {}
   for (const row of rows) {
     const chosen = selections[row.userId]
-    if (chosen && chosen !== row.recommendedFeeType) changed[String(row.userId)] = chosen
+    if (chosen && isReCharged(row, selections)) changed[String(row.userId)] = chosen
   }
   return changed
 }

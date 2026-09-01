@@ -26,10 +26,12 @@ import {
   isSelectable,
   kindFor,
   paymentDateProblem,
-  seedSendTo,
+  reapplyChoices,
+  seedChoices,
   summarise,
   toBulkRows,
   willSend,
+  type PaymentEmailChoices,
 } from "@/utils/contributionEmail"
 
 /**
@@ -75,17 +77,22 @@ const STEPS = [
   {value: 3, title: "What will be sent"},
 ] as const
 
-/** Which step owns each request field, so a refusal lands where it can be corrected. */
-const FIELD_STEPS: Record<string, number> = {
-  userIds: 1,
-  forciblyIncludedUserIds: 1,
-  kindOverrides: 2,
-  feeTypeOverrides: 2,
-  paymentDueDate: 3,
-  debitDate: 3,
-}
+/** Which request fields each step owns, so a refusal lands where it can be corrected. */
+const STEP_FIELDS = {
+  1: ["userIds", "forciblyIncludedUserIds"],
+  2: ["kindOverrides", "feeTypeOverrides"],
+  3: ["paymentDueDate", "debitDate"],
+} as const
 
-type DateField = "paymentDueDate" | "debitDate"
+const FIELD_STEPS: Record<string, number> = Object.fromEntries(
+  Object.entries(STEP_FIELDS).flatMap(([owner, fields]) => fields.map((field) => [field, Number(owner)])),
+)
+
+type DateField = (typeof STEP_FIELDS)[3][number]
+
+function isDateField(field: string): field is DateField {
+  return (STEP_FIELDS[3] as readonly string[]).includes(field)
+}
 
 const NO_DATE_REFUSALS: Record<DateField, string | null> = {paymentDueDate: null, debitDate: null}
 
@@ -93,6 +100,8 @@ const step = ref(1)
 /** The furthest step reached, which is how far back the header stays clickable. */
 const reached = ref(1)
 const rows = ref<BulkRow[]>([])
+/** Selected ids the api drew no row for, so the counts still add up to the selection. */
+const unknownUserIds = ref<number[]>([])
 const sendTo = ref<Record<number, boolean>>({})
 const feeTypeSelections = ref<Record<number, BulkFeeType>>({})
 const kindSelections = ref<Record<number, ContributionEmailKind>>({})
@@ -131,7 +140,9 @@ const dateProblems = computed(() => ({
 function dateProblem(field: DateField, iso: string, needed: boolean, noun: string): string | null {
   const refused = refusedDates.value[field]
   if (refused) return refused
-  if (needed && !iso) return `A ${noun} is required.`
+  // A date nobody needs is left out of the request, so there is nothing to judge.
+  if (!needed) return null
+  if (!iso) return `A ${noun} is required.`
   return paymentDateProblem(iso, props.period, today)
 }
 
@@ -157,19 +168,21 @@ const periodRange = computed(() => {
   return `${format(period.startDate)} – ${format(period.endDate)}`
 })
 
-function seedSelections(next: BulkRow[]) {
-  const fees: Record<number, BulkFeeType> = {}
-  const kinds: Record<number, ContributionEmailKind> = {}
-  for (const row of next) {
-    if (row.recommendedFeeType) fees[row.userId] = row.recommendedFeeType
-    if (row.defaultKind) kinds[row.userId] = row.defaultKind
-  }
-  feeTypeSelections.value = fees
-  kindSelections.value = kinds
-  sendTo.value = seedSendTo(next)
+function currentChoices(): PaymentEmailChoices {
+  return {sendTo: sendTo.value, fees: feeTypeSelections.value, kinds: kindSelections.value}
 }
 
-async function loadRows() {
+function applyChoices(choices: PaymentEmailChoices) {
+  sendTo.value = choices.sendTo
+  feeTypeSelections.value = choices.fees
+  kindSelections.value = choices.kinds
+}
+
+/**
+ * Reads the plan. `carry` puts the choices already made back onto the rows that came back,
+ * which is what stops a refusal costing the treasurer the work that led up to it.
+ */
+async function loadRows(carry?: {made: PaymentEmailChoices; contradicted: number[]}) {
   const periodId = props.period?.id
   if (periodId == null || props.userIds.length === 0) return
   loading.value = true
@@ -181,12 +194,15 @@ async function loadRows() {
   if (!data) {
     loadError.value = "The selection could not be read."
     rows.value = []
-    seedSelections([])
+    unknownUserIds.value = []
+    applyChoices(seedChoices([]))
     return
   }
   const mapped = toBulkRows(data.rows)
-  seedSelections(mapped)
+  const seeded = seedChoices(mapped)
+  applyChoices(carry ? reapplyChoices(mapped, seeded, carry.made, carry.contradicted) : seeded)
   rows.value = mapped
+  unknownUserIds.value = data.unknownUserIds
 }
 
 function goTo(next: number) {
@@ -225,9 +241,7 @@ function routeRefusal(refused: BulkRejection) {
     if (owner == null) continue
     landing = landing == null ? owner : Math.min(landing, owner)
     if (owner === 1) for (const id of reason.userIds) rows[id] = reason.message
-    if (reason.field === "paymentDueDate" || reason.field === "debitDate") {
-      dates[reason.field] = reason.message
-    }
+    if (isDateField(reason.field)) dates[reason.field] = reason.message
   }
 
   refusedRows.value = rows
@@ -294,10 +308,13 @@ const summaryDates = computed<SummaryDate[]>(() => {
   ].filter((entry): entry is SummaryDate => entry !== null)
 })
 
+/** Only what the treasurer overruled. Having had this email before is history, not a choice. */
 const hasOverrides = computed(() => {
-  const {forced, switched, reCharged, alreadySent} = sendSummary.value
-  return forced + switched + reCharged + alreadySent > 0
+  const {forced, switched, reCharged} = sendSummary.value
+  return forced + switched + reCharged > 0
 })
+
+const hasChecks = computed(() => hasOverrides.value || sendSummary.value.alreadySent > 0)
 
 async function onFinalSend() {
   const periodId = props.period?.id
@@ -322,8 +339,11 @@ async function onFinalSend() {
       rejection.value = refused
       // The refusal is about the batch, and the summary cannot show it.
       confirmOpen.value = false
-      // A conflict means the table has moved, so it is read again before it is marked.
-      if (refused.status === 409) await loadRows()
+      // A conflict means the plan has moved, so it is read again — with every choice the
+      // refusal did not contradict put back on the rows that survived it.
+      if (refused.status === 409) {
+        await loadRows({made: currentChoices(), contradicted: refused.namedUserIds})
+      }
       routeRefusal(refused)
     } else {
       ok = response.data != null
@@ -359,6 +379,7 @@ watch(
     step.value = 1
     reached.value = 1
     rows.value = []
+    unknownUserIds.value = []
     sendTo.value = {}
     feeTypeSelections.value = {}
     kindSelections.value = {}
@@ -508,6 +529,17 @@ watch(
             {{ kindCounts.INCASSO_NOTIFICATION === 1 ? "notification" : "notifications" }}
           </v-chip>
           <v-chip
+            v-if="unknownUserIds.length > 0"
+            color="error"
+            data-testid="payment-emails-count-unknown"
+            prepend-icon="mdi-account-question-outline"
+            size="small"
+            variant="tonal"
+          >
+            {{ unknownUserIds.length }} no longer
+            {{ unknownUserIds.length === 1 ? "exists" : "exist" }}
+          </v-chip>
+          <v-chip
             v-if="unreachable > 0"
             color="error"
             data-testid="payment-emails-count-excluded"
@@ -651,7 +683,7 @@ watch(
       <!-- Each line is somewhere the treasurer overruled something; grouped so they read as
            one thing to check rather than four loose sentences. -->
       <v-alert
-        v-if="hasOverrides"
+        v-if="hasChecks"
         class="mt-4"
         data-testid="payment-emails-confirm-overrides"
         density="compact"

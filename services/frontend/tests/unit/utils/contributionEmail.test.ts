@@ -13,12 +13,15 @@ import {
   changedKinds,
   countByKind,
   forcedUserIds,
+  isReCharged,
   isSwitched,
   kindFor,
   lastSentLabel,
   lastSentOn,
   paymentDateProblem,
   periodDateWindow,
+  reapplyChoices,
+  seedChoices,
   seedSendTo,
   summarise,
   switchedNote,
@@ -155,6 +158,69 @@ describe("the selection", () => {
   it("names the warned rows the treasurer ticked back in", () => {
     expect(forcedUserIds(rows, {1: true, 2: true, 3: true})).toEqual([2])
     expect(forcedUserIds(rows, {1: true})).toEqual([])
+  })
+})
+
+describe("isReCharged", () => {
+  const priced = row({userId: 1, recommendedFeeType: BulkFeeType.FULL_YEAR_FEE})
+
+  it("is false while the row is on the fee its membership works out to", () => {
+    expect(isReCharged(priced, {})).toBe(false)
+    expect(isReCharged(priced, {1: BulkFeeType.FULL_YEAR_FEE})).toBe(false)
+  })
+
+  it("is true once the treasurer picks another fee", () => {
+    expect(isReCharged(priced, {1: BulkFeeType.ALUMNI_FEE})).toBe(true)
+  })
+})
+
+describe("carrying choices onto a plan that was read again", () => {
+  const rows = [
+    row({userId: 1, disposition: "INCLUDED"}),
+    row({userId: 2, disposition: "INCLUDED"}),
+    row({userId: 3, disposition: "WARNING", reason: BulkRowReason.ALREADY_PAID}),
+    row({userId: 4, disposition: "EXCLUDED", reason: BulkRowReason.HONORARY}),
+  ]
+
+  const made = {
+    sendTo: {1: false, 2: true, 3: true},
+    fees: {1: BulkFeeType.ALUMNI_FEE, 2: BulkFeeType.ALUMNI_FEE, 3: BulkFeeType.ALUMNI_FEE},
+    kinds: {2: ContributionEmailKind.INCASSO_NOTIFICATION},
+  }
+
+  it("seeds a plan the way the api proposes it", () => {
+    expect(seedChoices(rows).sendTo).toEqual({1: true, 2: true, 3: false})
+    expect(seedChoices(rows).fees[1]).toBe(BulkFeeType.FULL_YEAR_FEE)
+    expect(seedChoices(rows).kinds[1]).toBe(ContributionEmailKind.REMINDER)
+  })
+
+  it("puts back every choice the refusal did not name", () => {
+    const next = reapplyChoices(rows, seedChoices(rows), made, [])
+
+    expect(next.sendTo).toEqual({1: false, 2: true, 3: true})
+    expect(next.fees[2]).toBe(BulkFeeType.ALUMNI_FEE)
+    expect(next.kinds[2]).toBe(ContributionEmailKind.INCASSO_NOTIFICATION)
+  })
+
+  it("gives a member the refusal named the new plan's answer instead", () => {
+    const next = reapplyChoices(rows, seedChoices(rows), made, [2])
+
+    expect(next.sendTo[2]).toBe(true)
+    expect(next.fees[2]).toBe(BulkFeeType.FULL_YEAR_FEE)
+    expect(next.kinds[2]).toBe(ContributionEmailKind.REMINDER)
+  })
+
+  it("leaves a member the plan can no longer reach out of the selection", () => {
+    const next = reapplyChoices(rows, seedChoices(rows), {...made, sendTo: {4: true}}, [])
+
+    expect(next.sendTo[4]).toBeUndefined()
+  })
+
+  it("forgets a choice for somebody the new plan does not list", () => {
+    const next = reapplyChoices([rows[0]!], seedChoices([rows[0]!]), made, [])
+
+    expect(next.fees[2]).toBeUndefined()
+    expect(next.sendTo[2]).toBeUndefined()
   })
 })
 

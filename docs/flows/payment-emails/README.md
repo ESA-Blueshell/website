@@ -154,7 +154,9 @@ flowchart TD
 
 Every refusal carries the request field it is about, and the wizard routes on that field
 alone. The confirmation closes on any refusal; a 409 re-reads the plan first, because it
-means the table has moved.
+means the plan has moved. Re-reading keeps every tick, fee type and email kind whose member
+is still in the new plan and still reachable — a member the refusal named loses theirs,
+because the plan has just contradicted it.
 
 | Field | Step | Codes |
 |---|---|---|
@@ -168,8 +170,9 @@ A refusal naming more than one field lands on the earliest step of them, because
 that is what the later ones are read against.
 
 Per ADR-026 the sentence the operator reads for a new code is composed in the browser from
-the code, not taken from the api's `message`. The older codes keep the message the api
-composes for them; rewriting those would touch four other dialogs for no benefit here.
+the code, not taken from the api's `message`, and the api's `message` for those codes is
+fixed per code and interpolates nothing. The older codes keep the message the api composes
+for them; rewriting those would touch four other dialogs for no benefit here.
 
 ## Alternative orderings
 
@@ -252,8 +255,10 @@ sent. The wizard re-reads the plan, returns to the step that owns the field, and
 rows at fault.
 
 **An id in the selection is not a user, or is named twice.** 409 against `userIds`. Back to
-step 1 with those rows marked. Both mean the client's table and the api's have parted
-company, so the plan is re-read before the marks are shown.
+step 1 with those rows marked. Both mean the selection the client holds and the one the api
+holds have parted company, so the plan is re-read before the marks are shown. The read names
+such an id too, in `unknownUserIds`, so the counts add up to the selection before Send rather
+than after it.
 
 **A member ticked back in is one the send still will not write to.** 409 against
 `forciblyIncludedUserIds`. Back to step 1. The wizard cannot produce this itself — a

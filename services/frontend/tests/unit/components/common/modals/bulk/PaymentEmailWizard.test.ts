@@ -97,11 +97,18 @@ function apiRow(
 
 type Wizard = VueWrapper<InstanceType<typeof PaymentEmailWizard>>
 
-async function openWizard(rows: BulkContributionEmailRowResponse[]): Promise<Wizard> {
-  mockPreview.mockResolvedValue({data: {contributionPeriodId: period.id, rows}})
+async function openWizard(
+  rows: BulkContributionEmailRowResponse[],
+  unknownUserIds: number[] = [],
+): Promise<Wizard> {
+  mockPreview.mockResolvedValue({data: {contributionPeriodId: period.id, rows, unknownUserIds}})
   const wrapper = mount(PaymentEmailWizard, {
     global: {stubs},
-    props: {modelValue: true, period, userIds: rows.map((row) => row.userId)},
+    props: {
+      modelValue: true,
+      period,
+      userIds: [...rows.map((row) => row.userId), ...unknownUserIds],
+    },
   })
   await settle()
   return wrapper
@@ -206,6 +213,13 @@ describe("PaymentEmailWizard step 1, the members", () => {
 
     expect(wrapper.find('[data-testid="payment-emails-count-excluded"]').text())
       .toContain("1 cannot be emailed")
+  })
+
+  it("counts an id that is no longer a user rather than losing it", async () => {
+    const wrapper = await openWizard([apiRow({userId: 1})], [77])
+
+    expect(wrapper.find('[data-testid="payment-emails-count-unknown"]').text())
+      .toContain("1 no longer exists")
   })
 
   it("drops an unticked member from the batch", async () => {
@@ -498,6 +512,38 @@ describe("PaymentEmailWizard sending", () => {
       .toContain("cannot be undone")
   })
 
+  it("lists an email already sent without calling it an override", async () => {
+    const wrapper = await openWizard([apiRow({userId: 1, lastRemindedOn: "2026-01-05"})])
+
+    await next(wrapper)
+    await next(wrapper)
+    await typeDate(wrapper, "payment-emails-payment-due-date", soon)
+    await next(wrapper)
+
+    const overrides = wrapper.find('[data-testid="payment-emails-confirm-overrides"]')
+    expect(overrides.text()).toContain("1 already had this email for this period")
+    expect(wrapper.find('[data-testid="payment-emails-confirm-forced"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="payment-emails-confirm-switched"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="payment-emails-confirm-recharged"]').exists()).toBe(false)
+  })
+
+  it("does not block on a date the request leaves out", async () => {
+    mockSend.mockResolvedValue({data: {remindersSent: 1, incassoNotificationsSent: 0}})
+    const wrapper = await openWizard([apiRow({userId: 1})])
+
+    await next(wrapper)
+    await next(wrapper)
+    await typeDate(wrapper, "payment-emails-payment-due-date", soon)
+    // Nobody is on direct debit, so this one is stripped from the request.
+    await typeDate(wrapper, "payment-emails-debit-date", "1999-01-01")
+    await sendFromSummary(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-debit-date"] .field-error').text()).toBe("")
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({body: expect.objectContaining({debitDate: undefined})}),
+    )
+  })
+
   it("backing out of the summary sends nothing and keeps the batch intact", async () => {
     const wrapper = await openWizard([apiRow({userId: 1})])
     await next(wrapper)
@@ -644,6 +690,48 @@ describe("PaymentEmailWizard a refused send", () => {
     expect(wrapper.find('[data-testid="payment-emails-rejection"]').text())
       .toContain("Nothing was sent")
     expect(wrapper.emitted("done")).toBeUndefined()
+  })
+
+  it("keeps the choices a conflict did not contradict, and drops the ones it did", async () => {
+    mockSend.mockResolvedValue(refusal(409, [{
+      code: "UnknownUserIds",
+      field: "userIds",
+      message: "1 of the selected users no longer exist.",
+      values: [2],
+    }]))
+    const wrapper = await openWizard([
+      apiRow({userId: 1}),
+      apiRow({userId: 2, name: "Ben Gone"}),
+      apiRow({
+        userId: 3,
+        name: "Cara Paid",
+        disposition: BulkRowDisposition.WARNING,
+        reason: BulkRowReason.ALREADY_PAID,
+      }),
+    ])
+    await tick(wrapper, 3)
+    await next(wrapper)
+    await chooseFee(wrapper, 1, BulkFeeType.ALUMNI_FEE)
+    await chooseFee(wrapper, 2, BulkFeeType.ALUMNI_FEE)
+    await next(wrapper)
+    await typeDate(wrapper, "payment-emails-payment-due-date", soon)
+    await sendFromSummary(wrapper)
+
+    mockSend.mockResolvedValue({data: {remindersSent: 3, incassoNotificationsSent: 0}})
+    await next(wrapper)
+    await next(wrapper)
+    await sendFromSummary(wrapper)
+
+    expect(mockSend).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          userIds: [1, 2, 3],
+          forciblyIncludedUserIds: [3],
+          // Ann and Cara keep what was chosen; Ben was named by the refusal and does not.
+          feeTypeOverrides: {"1": BulkFeeType.ALUMNI_FEE},
+        }),
+      }),
+    )
   })
 
   // A conflict means the plan the send read is not the one the table shows.

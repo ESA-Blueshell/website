@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper
  * Renders and sends a recorded payment request.
  *
  * Which of the two reminder emails goes out is read off the record rather than decided
- * here: a request written by the fee cycle carries the fee type it stated and the date it
+ * here: a request written by a bulk send carries the fee type it stated and the date it
  * asked to be paid by, so it quotes one amount and the reason for it. One written from a
  * single row carries neither, so it lists the period's fee options.
  */

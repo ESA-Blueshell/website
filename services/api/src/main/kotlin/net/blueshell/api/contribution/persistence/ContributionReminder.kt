@@ -47,9 +47,9 @@ class ContributionReminder(
 
     /**
      * The fee type this request stated, so the email's reason is the true one rather than a
-     * guess recovered from an amount. Null on the rows written before the fee cycle existed,
-     * and by the single-member reminder, which quotes the period's fee options instead of one
-     * amount and therefore states no single reason.
+     * guess recovered from an amount. Null on rows written before the type was stored, and by
+     * the single-member reminder, which quotes the period's fee options instead of one amount
+     * and therefore states no single reason.
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "fee_type", length = 32)

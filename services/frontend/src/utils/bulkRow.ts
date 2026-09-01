@@ -1,5 +1,5 @@
 import type {MemberType} from "@/services/api"
-import {BulkFeeType, BulkRowDisposition, BulkRowReason, FeeCycleGroup} from "@/services/api"
+import {BulkFeeType, BulkRowDisposition, BulkRowReason, ContributionEmailKind} from "@/services/api"
 
 /**
  * Local FE model for bulk-action rows. Rows are computed client-side (bulkCompute.ts),
@@ -12,7 +12,7 @@ import {BulkFeeType, BulkRowDisposition, BulkRowReason, FeeCycleGroup} from "@/s
 // are re-exported for callers that need the values, e.g. to build a select.
 export type BulkDisposition = `${BulkRowDisposition}`
 export type BulkRowReasonCode = `${BulkRowReason}`
-export {BulkFeeType, BulkRowDisposition, BulkRowReason, FeeCycleGroup}
+export {BulkFeeType, BulkRowDisposition, BulkRowReason, ContributionEmailKind}
 
 /** Summary counts for the bulk-action confirmation dialog's summary bar. */
 export interface BulkActionCounts {
@@ -43,11 +43,9 @@ export interface BulkRow {
   memberSince?: string | null
   amount?: number | null
   recommendedFeeType?: BulkFeeType
-  /** Email actions only: when the last reminder/incasso was sent, if known. */
-  lastSentOn?: string
-  /**
-   * Fee cycle only: which side of the direct-debit partition this member is on. Set by the
-   * api from the member's own flag, so the dialog shows it rather than offering it.
-   */
-  group?: FeeCycleGroup
+  /** Payment emails only: which of the two this member's direct-debit flag chose. */
+  defaultKind?: ContributionEmailKind
+  // Per kind, so a member sent a payment request does not read as having been pre-notified.
+  lastRemindedOn?: string
+  lastNotifiedOn?: string
 }

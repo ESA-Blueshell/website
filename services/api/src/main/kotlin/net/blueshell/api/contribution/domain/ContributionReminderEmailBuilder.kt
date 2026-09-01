@@ -28,7 +28,7 @@ private val MONEY_LOCALE: Locale = Locale.forLanguageTag("nl-NL")
 
 private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
 
-/** Both fee-cycle emails are from the same pair of officers, and answered at the same address. */
+/** Both bulk contribution emails are from the same pair of officers, and answered at the same address. */
 internal const val SIGN_OFF = "Secretary & Treasurer of ESA Blueshell"
 
 internal const val REPLY_TO = "board@blueshell.utwente.nl"
@@ -55,7 +55,7 @@ private fun bankTransferLines(bank: BankProperties): List<String> = listOf(
 )
 
 /**
- * Fee-cycle payment request: one amount, the reason it applies, and the date it is due.
+ * The bulk payment request: one amount, the reason it applies, and the date it is due.
  *
  * The reason is never omitted — an amount on its own invites the reply asking why it is
  * that amount, which is the question the cycle exists to answer up front.
@@ -105,11 +105,11 @@ fun createContributionReminderEmail(
 }
 
 /**
- * Single-member reminder, sent from a row rather than from the cycle.
+ * Single-member reminder, sent from a row rather than in bulk.
  *
  * No fee type was chosen here, so the period's three options are listed rather than one
- * amount quoted with a reason that would have to be guessed. Its copy is untouched by the
- * fee cycle: the two are different asks, and rewriting this one was not part of the change.
+ * amount quoted with a reason that would have to be guessed. The two are different asks, and
+ * this one's copy has stayed as it was.
  */
 fun createContributionReminderEmail(
     recipient: User,

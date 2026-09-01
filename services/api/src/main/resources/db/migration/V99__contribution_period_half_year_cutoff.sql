@@ -1,7 +1,7 @@
 -- The half-year cutoff becomes policy for the year rather than an input retyped on every send.
 --
 -- A regular membership starting after this date pays the half-year fee; one starting on it or
--- before pays the full year. Living on the period is what stops a fee cycle in February and one
+-- before pays the full year. Living on the period is what stops a send made in February and one
 -- in June from silently applying different cutoffs.
 ALTER TABLE contribution_periods
     ADD COLUMN half_year_cutoff_date DATE NULL AFTER end_date;

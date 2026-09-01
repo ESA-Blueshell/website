@@ -241,6 +241,45 @@ export type BulkActionResult = {
     skipped: number;
 };
 
+export type BulkContributionEmailPreviewRequest = {
+    contributionPeriodId: number | null;
+    userIds: Array<number>;
+};
+
+export type BulkContributionEmailPreviewResponse = {
+    contributionPeriodId: number;
+    rows: Array<BulkContributionEmailRowResponse>;
+};
+
+export type BulkContributionEmailRowResponse = {
+    /**
+     * Follows from the fee type and the period. Never typed.
+     */
+    amount?: number | null;
+    /**
+     * The email this member gets unless the treasurer switches it.
+     */
+    defaultKind: ContributionEmailKind;
+    disposition: BulkRowDisposition;
+    /**
+     * Absent only for honorary members, who owe nothing.
+     */
+    feeType?: BulkFeeType | null;
+    lastNotifiedOn?: string | null;
+    lastRemindedOn?: string | null;
+    /**
+     * Start of the membership every decision on this row was judged against.
+     */
+    memberSince?: string | null;
+    memberType: MemberType;
+    name: string;
+    /**
+     * Why this member is warned about or not written to.
+     */
+    reason?: BulkRowReason | null;
+    userId: number;
+};
+
 export enum BulkFeeType {
     FULL_YEAR_FEE = 'FULL_YEAR_FEE',
     HALF_YEAR_FEE = 'HALF_YEAR_FEE',
@@ -299,6 +338,7 @@ export enum BulkRowReason {
     HONORARY = 'HONORARY',
     INCASSO_MISMATCH = 'INCASSO_MISMATCH',
     NO_ACTIVE_MEMBERSHIP = 'NO_ACTIVE_MEMBERSHIP',
+    NOT_MEMBER_IN_PERIOD = 'NOT_MEMBER_IN_PERIOD',
     STARTED_TODAY = 'STARTED_TODAY',
     NO_EMAIL = 'NO_EMAIL',
     DELETED = 'DELETED',
@@ -313,7 +353,6 @@ export enum BulkRowReason {
  */
 export type BulkRowVocabulary = {
     disposition: BulkRowDisposition;
-    feeCycleGroup: FeeCycleGroup;
     feeType: BulkFeeType;
     reason: BulkRowReason;
 };
@@ -497,6 +536,20 @@ export type CommitteeResponse = unknown;
 export enum ContactSystem {
     BREVO = 'BREVO'
 }
+
+export enum ContributionEmailKind {
+    REMINDER = 'REMINDER',
+    INCASSO_NOTIFICATION = 'INCASSO_NOTIFICATION'
+}
+
+export type ContributionEmailMessageResponse = {
+    feeType: BulkFeeType;
+    html: string;
+    kind: ContributionEmailKind;
+    recipientEmail: string;
+    recipientName: string;
+    subject: string;
+};
 
 export type ContributionPeriodResponse = {
     alumniFee: number;
@@ -871,71 +924,6 @@ export type FailedTargetMove = {
      * What the system said, for an operator to act on rather than a stack trace.
      */
     message: string;
-};
-
-export type FeeCycleEmailPreviewResponse = {
-    /**
-     * The fee type the email states, and the reason it gives.
-     */
-    feeType: BulkFeeType;
-    /**
-     * Which statement this member receives, decided by their direct-debit flag.
-     */
-    group: FeeCycleGroup;
-    html: string;
-    recipientEmail: string;
-    recipientName: string;
-    subject: string;
-};
-
-export enum FeeCycleGroup {
-    DIRECT_DEBIT = 'DIRECT_DEBIT',
-    TRANSFER = 'TRANSFER'
-}
-
-export type FeeCyclePreviewResponse = {
-    contributionPeriodId: number;
-    rows: Array<FeeCycleRowResponse>;
-};
-
-export type FeeCycleResultResponse = {
-    /**
-     * Members in the cycle who were not written to.
-     */
-    excluded: number;
-    paymentRequestsQueued: number;
-    preNotificationsQueued: number;
-};
-
-export type FeeCycleRowResponse = {
-    /**
-     * Follows from the fee type and the period. Never typed.
-     */
-    amount?: number | null;
-    disposition: BulkRowDisposition;
-    /**
-     * Absent only for honorary members, who owe nothing.
-     */
-    feeType?: BulkFeeType | null;
-    /**
-     * Decided by the member's direct-debit flag, not by the operator.
-     */
-    group: FeeCycleGroup;
-    /**
-     * When this member was last asked for this period, on this side of the partition.
-     */
-    lastAskedOn?: string | null;
-    /**
-     * Start of the membership every decision on this row was judged against.
-     */
-    memberSince?: string | null;
-    memberType: MemberType;
-    name: string;
-    /**
-     * Why this member is not written to. Absent on an included row.
-     */
-    reason?: BulkRowReason | null;
-    userId: number;
 };
 
 /**
@@ -1439,6 +1427,15 @@ export type PasswordResetRequest = {
     token: string;
 };
 
+export type PaymentEmailsResultResponse = {
+    incassoNotificationsSent: number;
+    /**
+     * Members in the selection who were not written to.
+     */
+    notWrittenTo: number;
+    remindersSent: number;
+};
+
 /**
  * The activation email an account that has not been activated takes.
  */
@@ -1650,22 +1647,33 @@ export type SeasonResponse = {
     startDate: string;
 };
 
-export type SendFeeCycleRequest = {
+export type SendPaymentEmailsRequest = {
     contributionPeriodId: number | null;
     /**
-     * The date the direct-debit group is told the money will be taken.
+     * Required exactly when somebody here is getting a pre-notification.
      */
-    debitDate: string | null;
+    debitDate?: string | null;
     /**
-     * Fee type per member, where the treasurer changed it from the one that applies.
+     * Fee type per member, where the treasurer changed it.
      */
     feeTypeOverrides: {
         [key: string]: BulkFeeType;
     };
     /**
-     * The date the transfer group is asked to have paid by.
+     * Warned members the operator ticked back in. A hard-excluded member named here is still not written to.
      */
-    paymentDueDate: string | null;
+    forciblyIncludedUserIds: Array<number>;
+    /**
+     * Members moved off the email their direct-debit flag chose.
+     */
+    kindOverrides: {
+        [key: string]: ContributionEmailKind;
+    };
+    /**
+     * Required exactly when somebody here is getting a payment request.
+     */
+    paymentDueDate?: string | null;
+    userIds: Array<number>;
 };
 
 export type SentEmailPreview = {
@@ -3741,6 +3749,135 @@ export type CreateContributionResponses = {
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
 
+export type ReadContributionEmailData = {
+    body?: never;
+    path?: never;
+    query: {
+        kind: ContributionEmailKind;
+        contributionPeriodId: number;
+        userId: number;
+        date: string;
+        feeType?: BulkFeeType;
+    };
+    url: '/contributions/bulk/email/message';
+};
+
+export type ReadContributionEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReadContributionEmailError = ReadContributionEmailErrors[keyof ReadContributionEmailErrors];
+
+export type ReadContributionEmailResponses = {
+    /**
+     * OK
+     */
+    200: ContributionEmailMessageResponse;
+};
+
+export type ReadContributionEmailResponse = ReadContributionEmailResponses[keyof ReadContributionEmailResponses];
+
+export type PreviewBulkContributionEmailData = {
+    body: BulkContributionEmailPreviewRequest;
+    path?: never;
+    query?: never;
+    url: '/contributions/bulk/email/preview';
+};
+
+export type PreviewBulkContributionEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewBulkContributionEmailError = PreviewBulkContributionEmailErrors[keyof PreviewBulkContributionEmailErrors];
+
+export type PreviewBulkContributionEmailResponses = {
+    /**
+     * OK
+     */
+    200: BulkContributionEmailPreviewResponse;
+};
+
+export type PreviewBulkContributionEmailResponse = PreviewBulkContributionEmailResponses[keyof PreviewBulkContributionEmailResponses];
+
+export type SendPaymentEmailsData = {
+    body: SendPaymentEmailsRequest;
+    path?: never;
+    query?: never;
+    url: '/contributions/bulk/email/send';
+};
+
+export type SendPaymentEmailsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendPaymentEmailsError = SendPaymentEmailsErrors[keyof SendPaymentEmailsErrors];
+
+export type SendPaymentEmailsResponses = {
+    /**
+     * OK
+     */
+    200: PaymentEmailsResultResponse;
+};
+
+export type SendPaymentEmailsResponse = SendPaymentEmailsResponses[keyof SendPaymentEmailsResponses];
+
 export type MarkPaidData = {
     body: BulkMarkPaidRequest;
     path?: never;
@@ -3822,137 +3959,6 @@ export type MarkUnpaidResponses = {
 };
 
 export type MarkUnpaidResponse = MarkUnpaidResponses[keyof MarkUnpaidResponses];
-
-export type PreviewFeeCycleData = {
-    body?: never;
-    path?: never;
-    query: {
-        contributionPeriodId: number;
-    };
-    url: '/contributions/fee-cycle';
-};
-
-export type PreviewFeeCycleErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PreviewFeeCycleError = PreviewFeeCycleErrors[keyof PreviewFeeCycleErrors];
-
-export type PreviewFeeCycleResponses = {
-    /**
-     * OK
-     */
-    200: FeeCyclePreviewResponse;
-};
-
-export type PreviewFeeCycleResponse = PreviewFeeCycleResponses[keyof PreviewFeeCycleResponses];
-
-export type PreviewFeeCycleEmailData = {
-    body?: never;
-    path?: never;
-    query: {
-        contributionPeriodId: number;
-        userId: number;
-        paymentDueDate: string;
-        debitDate: string;
-        feeType?: BulkFeeType;
-    };
-    url: '/contributions/fee-cycle/email-preview';
-};
-
-export type PreviewFeeCycleEmailErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PreviewFeeCycleEmailError = PreviewFeeCycleEmailErrors[keyof PreviewFeeCycleEmailErrors];
-
-export type PreviewFeeCycleEmailResponses = {
-    /**
-     * OK
-     */
-    200: FeeCycleEmailPreviewResponse;
-};
-
-export type PreviewFeeCycleEmailResponse = PreviewFeeCycleEmailResponses[keyof PreviewFeeCycleEmailResponses];
-
-export type SendFeeCycleData = {
-    body: SendFeeCycleRequest;
-    path?: never;
-    query?: never;
-    url: '/contributions/fee-cycle/send';
-};
-
-export type SendFeeCycleErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SendFeeCycleError = SendFeeCycleErrors[keyof SendFeeCycleErrors];
-
-export type SendFeeCycleResponses = {
-    /**
-     * OK
-     */
-    200: FeeCycleResultResponse;
-};
-
-export type SendFeeCycleResponse = SendFeeCycleResponses[keyof SendFeeCycleResponses];
 
 export type CsrfData = {
     body?: never;

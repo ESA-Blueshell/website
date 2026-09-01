@@ -6,33 +6,45 @@ import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vu
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {previewFeeCycle, previewFeeCycleEmail, sendFeeCycle} from "@/services/api"
+import {
+  ContributionEmailKind,
+  previewBulkContributionEmail,
+  readContributionEmail,
+  sendPaymentEmails,
+} from "@/services/api"
 import type {ContributionPeriodResponse} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
+import {reasonLabel} from "@/utils/bulkDisposition"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
 import {
-  askedAlready,
   changedFeeTypes,
-  countAskedAlready,
-  countByGroup,
-  feeCycleGroupLabel,
-  lastAskedLabel,
+  changedKinds,
+  contributionEmailItems,
+  contributionEmailLabels,
+  countByKind,
+  isSwitched,
+  kindFor,
+  lastSentLabel,
+  lastSentOn,
+  switchedNote,
   toBulkRows,
-} from "@/utils/feeCycle"
+} from "@/utils/contributionEmail"
 import {effectiveAmount, feeTypeItems, feeTypeLabels} from "@/utils/feePreview"
 
 /**
- * The fee cycle for one contribution period: ask every unpaid member for what they owe.
+ * Sending a period's payment emails to the members selected in the manager.
  *
- * One operation over a partition rather than two sends. The rows come from the api, which
- * decides them once so the preview and the send cannot disagree; the treasurer supplies the
- * two dates and may change a member's fee *type*, never an amount.
+ * One send, two statements: each row shows which email that member gets, chosen by their
+ * direct-debit flag and switchable per row. The rows come from the api, which decides them
+ * once so what is confirmed is what is sent.
  */
-defineOptions({name: "FeeCycleDialog", inheritAttrs: false})
+defineOptions({name: "ContributionEmailDialog", inheritAttrs: false})
 
 interface Props {
   modelValue: boolean
   period: ContributionPeriodResponse | null
+  /** The ids ticked in the manager. This action is over the selection, nothing more. */
+  userIds: number[]
 }
 
 const props = defineProps<Props>()
@@ -49,10 +61,6 @@ const open = computed({
 const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
-
-// The shared preview stack, unchanged: the composable holds the state and takes the fetch as
-// a closure, and the dialog is presentational. Read-only here — the table is what the
-// treasurer confirms, and this is a spot-check of one recipient rather than the send itself.
 const {
   open: emailPreviewOpen,
   loading: emailPreviewLoading,
@@ -63,44 +71,45 @@ const {
 } = useEmailPreview()
 
 const previewRecipientId = ref<number | null>(null)
-
 const paymentDueDate = ref("")
 const debitDate = ref("")
 const feeTypeSelections = ref<Record<number, BulkFeeType>>({})
+const kindSelections = ref<Record<number, ContributionEmailKind>>({})
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const rejection = ref<BulkRejection | null>(null)
 
 const today = DateTime.now().toFormat("yyyy-MM-dd")
 
-// The two dates are the only free inputs. Both are in the future because both are a promise
-// about something that has not happened yet.
-const paymentDueRules = [
-  (v: string) => !!v || "A payment due date is required.",
+const kindCounts = computed(() =>
+  countByKind(rows.value, kindSelections.value, reincludeOverrides.value),
+)
+const sendsReminders = computed(() => kindCounts.value[ContributionEmailKind.REMINDER] > 0)
+const sendsNotifications = computed(
+  () => kindCounts.value[ContributionEmailKind.INCASSO_NOTIFICATION] > 0,
+)
+
+// Each date is required only when some row is getting that email.
+const paymentDueRules = computed(() => [
+  (v: string) => !sendsReminders.value || !!v || "A payment due date is required.",
   (v: string) => !v || v > today || "The payment due date must be after today.",
-]
-const debitDateRules = [
-  (v: string) => !!v || "A debit date is required.",
+])
+const debitDateRules = computed(() => [
+  (v: string) => !sendsNotifications.value || !!v || "A debit date is required.",
   (v: string) => !v || v > today || "The debit date must be after today.",
-]
+])
 
 const columns: BulkColumn[] = [
   {key: "name", header: "Member", sortable: true},
   {key: "memberType", header: "Type", sortable: true},
-  {key: "group", header: "Pays by", sortable: true, width: "110px"},
   {key: "disposition", header: "Status", sortable: true},
   {key: "memberSince", header: "Member since", sortable: true},
-  {key: "fee", header: "Fee type", width: "180px"},
+  {key: "kind", header: "Gets", width: "190px"},
+  {key: "fee", header: "Fee type", width: "170px"},
   {key: "amount", header: "Amount", align: "end", sortable: true, width: "90px"},
-  {key: "lastAsked", header: "Last asked", align: "center", width: "110px"},
+  {key: "lastSent", header: "Last sent", align: "center", width: "105px"},
   {key: "note", header: "Note"},
 ]
-
-const groupCounts = computed(() => countByGroup(rows.value))
-
-// Asking again is allowed, and warned about rather than blocked: the treasurer chases, and
-// half way through the year every member has already been asked once.
-const askedAlreadyCount = computed(() => countAskedAlready(rows.value))
 
 const periodRange = computed(() => {
   const period = props.period
@@ -109,62 +118,81 @@ const periodRange = computed(() => {
   return `${format(period.startDate)} – ${format(period.endDate)}`
 })
 
-/** The live amount for a row, following whichever fee type is selected for it. */
 function rowAmount(row: BulkRow): number | null {
   return effectiveAmount(feeTypeSelections.value[row.userId] ?? row.recommendedFeeType, props.period)
 }
 
-/** Only a member the cycle will write to has a fee type worth changing. */
+/** A member this send will never write to has nothing worth changing. */
 function isEditable(row: BulkRow): boolean {
-  return row.disposition === "INCLUDED"
+  return row.disposition !== "EXCLUDED"
 }
 
 function feeLabel(row: BulkRow): string {
   return row.recommendedFeeType ? feeTypeLabels[row.recommendedFeeType] : "—"
 }
 
-function seedFeeSelections(next: BulkRow[]) {
-  const selections: Record<number, BulkFeeType> = {}
-  for (const row of next) {
-    if (row.recommendedFeeType) selections[row.userId] = row.recommendedFeeType
-  }
-  feeTypeSelections.value = selections
+function rowKind(row: BulkRow): ContributionEmailKind {
+  return kindFor(row, kindSelections.value)
 }
 
-/**
- * The cycle is read from the api rather than computed here: it is over every unpaid member
- * of the period, not over a selection this page holds.
- */
-async function loadCycle() {
+function rowSwitched(row: BulkRow): boolean {
+  return isSwitched(row, kindSelections.value)
+}
+
+function rowLastSent(row: BulkRow): string {
+  return lastSentLabel(lastSentOn(row, kindSelections.value))
+}
+
+function seedSelections(next: BulkRow[]) {
+  const fees: Record<number, BulkFeeType> = {}
+  const kinds: Record<number, ContributionEmailKind> = {}
+  for (const row of next) {
+    if (row.recommendedFeeType) fees[row.userId] = row.recommendedFeeType
+    if (row.defaultKind) kinds[row.userId] = row.defaultKind
+  }
+  feeTypeSelections.value = fees
+  kindSelections.value = kinds
+}
+
+async function loadRows() {
   const periodId = props.period?.id
-  if (periodId == null) return
+  if (periodId == null || props.userIds.length === 0) return
   loading.value = true
   loadError.value = null
-  const {data} = await previewFeeCycle({query: {contributionPeriodId: periodId}})
+  const {data} = await previewBulkContributionEmail({
+    body: {contributionPeriodId: periodId, userIds: props.userIds},
+  })
   loading.value = false
   if (!data) {
-    loadError.value = "The fee cycle could not be read."
+    loadError.value = "The selection could not be read."
     setRows([])
     return
   }
   const mapped = toBulkRows(data.rows)
-  seedFeeSelections(mapped)
+  seedSelections(mapped)
   setRows(mapped)
 }
 
-/**
- * Who can be read for. Only a member the cycle writes to has an email, and both sides of
- * the partition are offered so each statement can be checked.
- */
+/** A warned member may yet be ticked back in, so their email is readable too. */
 const previewRecipients = computed(() =>
   rows.value
-    .filter((row) => row.disposition === "INCLUDED")
-    .map((row) => ({value: row.userId, title: `${row.name} — ${feeCycleGroupLabel(row.group)}`})),
+    .filter((row) => row.disposition !== "EXCLUDED")
+    .map((row) => ({
+      value: row.userId,
+      title: `${row.name} — ${contributionEmailLabels[rowKind(row)]}`,
+    })),
 )
 
-/** Both dates reach the email, so neither can be missing when one is read. */
-const canPreviewEmail = computed(() =>
-  previewRecipients.value.length > 0 && !!paymentDueDate.value && !!debitDate.value,
+/** The date reaches the email, so the one this member needs cannot be missing. */
+function dateFor(userId: number): string {
+  const row = rows.value.find((r) => r.userId === userId)
+  if (!row) return ""
+  return rowKind(row) === ContributionEmailKind.INCASSO_NOTIFICATION ? debitDate.value : paymentDueDate.value
+}
+
+const canPreviewEmail = computed(
+  () => previewRecipients.value.length > 0
+    && !!dateFor(previewRecipientId.value ?? previewRecipients.value[0]!.value),
 )
 
 function openEmailPreview() {
@@ -173,20 +201,17 @@ function openEmailPreview() {
   void renderEmailFor(previewRecipientId.value)
 }
 
-/**
- * The api decides which of the two statements this member gets and builds it with the same
- * builder the send uses, so what is read here is what goes out.
- */
 async function renderEmailFor(userId: number) {
   const periodId = props.period?.id
-  if (periodId == null) return
+  const row = rows.value.find((r) => r.userId === userId)
+  if (periodId == null || !row) return
   await showEmailPreview(async () => {
-    const {data} = await previewFeeCycleEmail({
+    const {data} = await readContributionEmail({
       query: {
+        kind: rowKind(row),
         contributionPeriodId: periodId,
         userId,
-        paymentDueDate: paymentDueDate.value,
-        debitDate: debitDate.value,
+        date: dateFor(userId),
         feeType: feeTypeSelections.value[userId],
       },
     })
@@ -194,12 +219,10 @@ async function renderEmailFor(userId: number) {
   })
 }
 
-// Changing the recipient re-renders, which is what the dialog's recipient slot is for.
 watch(previewRecipientId, (userId) => {
   if (userId != null && emailPreviewOpen.value) void renderEmailFor(userId)
 })
 
-// A recipient who dropped out of the cycle cannot stay selected.
 watch(previewRecipients, (options) => {
   const current = previewRecipientId.value
   if (options.length === 0) {
@@ -211,25 +234,33 @@ watch(previewRecipients, (options) => {
 
 const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
 
+const forciblyIncludedUserIds = computed(() =>
+  rows.value
+    .filter((row) => row.disposition === "WARNING" && reincludeOverrides.value[row.userId])
+    .map((row) => row.userId),
+)
+
 async function onConfirm() {
   const periodId = props.period?.id
   if (!canConfirm.value || periodId == null) return
   rejection.value = null
   const ok = await submit(async () => {
-    const response = await sendFeeCycle({
+    const response = await sendPaymentEmails({
       body: {
         contributionPeriodId: periodId,
-        paymentDueDate: paymentDueDate.value,
-        debitDate: debitDate.value,
+        userIds: props.userIds,
+        forciblyIncludedUserIds: forciblyIncludedUserIds.value,
+        kindOverrides: changedKinds(rows.value, kindSelections.value),
+        paymentDueDate: sendsReminders.value ? paymentDueDate.value : undefined,
+        debitDate: sendsNotifications.value ? debitDate.value : undefined,
         feeTypeOverrides: changedFeeTypes(rows.value, feeTypeSelections.value),
       },
     })
-    // The generated client returns a refusal rather than throwing, so a try/catch here
-    // would report success on a send that wrote nothing.
+    // The generated client returns a refusal rather than throwing.
     const refused = parseBulkRejection(response)
     if (refused) {
       rejection.value = refused
-      await loadCycle()
+      await loadRows()
       return false
     }
     return response.data != null
@@ -243,7 +274,6 @@ async function onConfirm() {
   }
 }
 
-/** Names the refused rows where the table still knows them, so ids are a fallback. */
 function namesFor(userIds: number[]): string {
   return userIds
     .map((id) => rows.value.find((row) => row.userId === id)?.name ?? `#${id}`)
@@ -257,11 +287,12 @@ watch(
       paymentDueDate.value = ""
       debitDate.value = ""
       rejection.value = null
-      void loadCycle()
+      void loadRows()
     } else {
       rejection.value = null
       loadError.value = null
       feeTypeSelections.value = {}
+      kindSelections.value = {}
       previewRecipientId.value = null
       resetEmailPreview()
       reset()
@@ -274,10 +305,13 @@ defineExpose({
   paymentDueDate,
   debitDate,
   feeTypeSelections,
+  kindSelections,
   previewRecipientId,
   previewRecipients,
+  forciblyIncludedUserIds,
+  kindCounts,
   rowAmount,
-  loadCycle,
+  loadRows,
 })
 </script>
 
@@ -290,48 +324,52 @@ defineExpose({
     :counts="counts"
     :get-row-amount="rowAmount"
     :help="{
-      title: 'Open the fee cycle',
+      title: 'Send payment emails',
       body:
-        'Asks every member of the selected period who has not paid for this year\'s contribution. '
-        + 'Members who pay by direct debit are told what will be debited and when; the rest are asked '
-        + 'to transfer what they owe by the due date. Which of the two a member receives follows from '
-        + 'their direct-debit flag, so it is not a choice here. Honorary members and members with no '
-        + 'email address are shown but never written to. You can change a member\'s fee type and the '
-        + 'amount follows from the period; there is no field for typing an amount. One confirmation '
-        + 'sends both statements. The cycle can be run over the same period as often as you need '
-        + 'to chase: every run records its own asks, so the history says who was asked and when.',
+        'Asks the selected members for what they owe for the chosen contribution period. '
+        + 'Members on direct debit are told what will be taken and when; everybody else is '
+        + 'asked to transfer by the due date. Which one a member gets follows from their '
+        + 'direct-debit flag and can be changed per row — a switched row is flagged in its '
+        + 'note. Members who have already paid, or who were not members during the period, '
+        + 'are left out by default; tick Forcibly include to send anyway. Honorary members, '
+        + 'deleted accounts and members with no email address are shown but never written to. '
+        + 'You can change a member\'s fee type and the amount follows from the period; there '
+        + 'is no field for typing an amount. Sending again is allowed as often as you need to '
+        + 'chase: every send is recorded on its own.',
     }"
     icon="mdi-email-fast"
+    include-label="Forcibly include"
     :included-count="includedUserIds.length"
     info-box-label="Contribution period"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
     :submitting="submitting"
-    title="Fee cycle"
+    title="Send payment emails"
     @cancel="emit('update:modelValue', false)"
     @confirm="onConfirm"
   >
-    <!-- Reading one member's email before sending to a hundred. -->
     <template #footer-actions>
       <v-btn
-        data-testid="fee-cycle-preview-email-btn"
+        data-testid="payment-emails-preview-btn"
         :disabled="!canPreviewEmail"
         prepend-icon="mdi-email-search-outline"
         variant="text"
         @click="openEmailPreview"
       >
-        Read an email
+        Preview email
       </v-btn>
     </template>
 
     <template #form>
-      <div class="mb-4 d-flex fee-cycle-dates">
+      <div class="mb-4 d-flex payment-email-dates">
         <v-text-field
           v-model="paymentDueDate"
-          data-testid="fee-cycle-payment-due-date"
+          data-testid="payment-emails-payment-due-date"
+          :hint="sendsReminders ? undefined : 'Nobody in this selection is being asked to transfer.'"
           hide-details="auto"
           label="Payment due date"
+          persistent-hint
           placeholder="YYYY-MM-DD"
           prepend-inner-icon="mdi-calendar"
           :rules="paymentDueRules"
@@ -339,9 +377,11 @@ defineExpose({
         />
         <v-text-field
           v-model="debitDate"
-          data-testid="fee-cycle-debit-date"
+          data-testid="payment-emails-debit-date"
+          :hint="sendsNotifications ? undefined : 'Nobody in this selection is on direct debit.'"
           hide-details="auto"
           label="Debit date"
+          persistent-hint
           placeholder="YYYY-MM-DD"
           prepend-inner-icon="mdi-calendar-arrow-right"
           :rules="debitDateRules"
@@ -350,23 +390,9 @@ defineExpose({
       </div>
 
       <v-alert
-        v-if="askedAlreadyCount > 0"
-        class="mb-4"
-        data-testid="fee-cycle-asked-already-warning"
-        density="compact"
-        type="warning"
-        variant="tonal"
-      >
-        {{ askedAlreadyCount }} of the members about to be written to
-        {{ askedAlreadyCount === 1 ? "has" : "have" }} already been asked for this period.
-        Sending again is allowed as often as you need; each ask is recorded on its own, and
-        the Last asked column shows the most recent.
-      </v-alert>
-
-      <v-alert
         v-if="loadError"
         class="mb-4"
-        data-testid="fee-cycle-load-error"
+        data-testid="payment-emails-load-error"
         density="compact"
         type="error"
         variant="tonal"
@@ -377,7 +403,7 @@ defineExpose({
       <v-alert
         v-if="rejection"
         class="mb-4"
-        data-testid="fee-cycle-rejection"
+        data-testid="payment-emails-rejection"
         density="compact"
         type="warning"
         variant="tonal"
@@ -399,7 +425,7 @@ defineExpose({
     <template #info-box>
       <div
         class="d-flex flex-wrap ga-2 align-center"
-        data-testid="fee-cycle-period-info"
+        data-testid="payment-emails-period-info"
       >
         <v-chip
           v-if="periodRange"
@@ -411,24 +437,36 @@ defineExpose({
           {{ periodRange }}
         </v-chip>
         <v-chip
-          data-testid="fee-cycle-count-direct-debit"
+          data-testid="payment-emails-count-reminders"
+          prepend-icon="mdi-email-fast"
+          size="small"
+          variant="tonal"
+        >
+          {{ kindCounts.REMINDER }} contribution
+          {{ kindCounts.REMINDER === 1 ? "reminder" : "reminders" }}
+        </v-chip>
+        <v-chip
+          data-testid="payment-emails-count-notifications"
           prepend-icon="mdi-bank-transfer-out"
           size="small"
           variant="tonal"
         >
-          {{ groupCounts.DIRECT_DEBIT }} by direct debit
+          {{ kindCounts.INCASSO_NOTIFICATION }} incasso
+          {{ kindCounts.INCASSO_NOTIFICATION === 1 ? "notification" : "notifications" }}
         </v-chip>
         <v-chip
-          data-testid="fee-cycle-count-transfer"
-          prepend-icon="mdi-bank-transfer-in"
+          v-if="counts.excluded > 0"
+          color="error"
+          data-testid="payment-emails-count-excluded"
+          prepend-icon="mdi-close-circle-outline"
           size="small"
           variant="tonal"
         >
-          {{ groupCounts.TRANSFER }} by transfer
+          {{ counts.excluded }} not written to
         </v-chip>
         <v-progress-circular
           v-if="loading"
-          data-testid="fee-cycle-loading"
+          data-testid="payment-emails-loading"
           indeterminate
           size="18"
           width="2"
@@ -436,20 +474,31 @@ defineExpose({
       </div>
     </template>
 
-    <!-- Which statement a member receives, not a choice: the flag decides it. -->
-    <template #cell.group="{row}">
+    <template #cell.kind="{row}">
+      <v-select
+        v-if="isEditable(row)"
+        v-model="kindSelections[row.userId]"
+        class="payment-email-kind-select"
+        :data-testid="`payment-emails-kind-${row.userId}`"
+        density="compact"
+        hide-details
+        item-title="title"
+        item-value="value"
+        :items="contributionEmailItems"
+        variant="plain"
+      />
       <span
-        class="text-caption"
-        :data-testid="`fee-cycle-group-${row.userId}`"
-      >{{ feeCycleGroupLabel(row.group) }}</span>
+        v-else
+        class="text-medium-emphasis"
+      >—</span>
     </template>
 
     <template #cell.fee="{row}">
       <v-select
         v-if="isEditable(row)"
         v-model="feeTypeSelections[row.userId]"
-        class="fee-cycle-feetype-select"
-        :data-testid="`fee-cycle-feetype-${row.userId}`"
+        class="payment-email-feetype-select"
+        :data-testid="`payment-emails-feetype-${row.userId}`"
         density="compact"
         hide-details
         item-title="title"
@@ -460,7 +509,7 @@ defineExpose({
       <span
         v-else
         class="text-caption text-medium-emphasis"
-        :data-testid="`fee-cycle-feetype-fixed-${row.userId}`"
+        :data-testid="`payment-emails-feetype-fixed-${row.userId}`"
       >{{ feeLabel(row) }}</span>
     </template>
 
@@ -468,7 +517,7 @@ defineExpose({
       <span
         v-if="rowAmount(row) != null"
         class="text-caption"
-        :data-testid="`fee-cycle-amount-${row.userId}`"
+        :data-testid="`payment-emails-amount-${row.userId}`"
       >€ {{ rowAmount(row)!.toFixed(2) }}</span>
       <span
         v-else
@@ -476,44 +525,61 @@ defineExpose({
       >—</span>
     </template>
 
-    <template #cell.lastAsked="{row}">
+    <template #cell.lastSent="{row}">
       <span
         class="text-caption"
-        :class="askedAlready(row) ? 'text-warning' : 'text-medium-emphasis'"
-        :data-testid="`fee-cycle-last-asked-${row.userId}`"
-      >{{ lastAskedLabel(row.lastSentOn) }}</span>
+        :class="lastSentOn(row, kindSelections) ? 'text-warning' : 'text-medium-emphasis'"
+        :data-testid="`payment-emails-last-sent-${row.userId}`"
+      >{{ rowLastSent(row) }}</span>
+    </template>
+
+    <!-- The warning and the switch share the column; the switch takes a second line. -->
+    <template #cell.note="{row}">
+      <div
+        v-if="row.reason"
+        class="text-caption"
+        :data-testid="`bulk-preview-note-${row.userId}`"
+      >
+        {{ reasonLabel(row.reason) }}
+      </div>
+      <div
+        v-if="rowSwitched(row)"
+        class="text-caption text-warning d-flex align-center ga-1"
+        :data-testid="`payment-emails-switched-${row.userId}`"
+      >
+        <v-icon
+          icon="mdi-alert-outline"
+          size="14"
+        />
+        Switched — {{ switchedNote(row) }}
+      </div>
     </template>
   </bulk-dialog-scaffold>
 
-  <!--
-    The shared preview dialog, read-only: no confirmLabel, because the table above is what
-    the treasurer confirms and this shows one recipient out of a hundred.
-  -->
   <email-preview-dialog
     v-model="emailPreviewOpen"
     :error="emailPreviewError"
     :loading="emailPreviewLoading"
     :preview="emailPreview"
-    title="Fee cycle email"
+    title="Payment email"
   >
     <template #recipient>
       <v-select
         v-model="previewRecipientId"
-        data-testid="fee-cycle-preview-recipient"
+        data-testid="payment-emails-preview-recipient"
         density="compact"
         hide-details
         item-title="title"
         item-value="value"
         :items="previewRecipients"
-        label="Read as"
+        label="Preview as"
       />
     </template>
   </email-preview-dialog>
 </template>
 
 <style lang="scss" scoped>
-// The two dates share the row, as one statement about when money moves.
-.fee-cycle-dates {
+.payment-email-dates {
   gap: 12px;
 }
 </style>

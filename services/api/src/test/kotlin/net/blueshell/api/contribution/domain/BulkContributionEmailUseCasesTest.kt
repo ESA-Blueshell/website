@@ -9,6 +9,7 @@ import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
+import net.blueshell.api.shared.dto.bulk.BulkFieldRejected
 import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
@@ -19,7 +20,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 
 /** What a payment-email send does with the plan it is handed. */
@@ -156,17 +156,65 @@ class BulkContributionEmailUseCasesTest {
                 row(4L, "Dan Honorary", ContributionEmailKind.REMINDER, BulkRowDisposition.EXCLUDED, BulkRowReason.HONORARY),
             )
 
-            val result = send(forciblyIncluded = setOf(4L))
+            val result = send()
 
             assertThat(result.remindersSent).isEqualTo(1)
             assertThat(result.notWrittenTo).isEqualTo(1)
         }
+    }
+
+    @Nested
+    inner class WhenTheSelectionDoesNotAddUp {
 
         @Test
-        fun `an id the plan no longer knows counts among those not written to`() {
+        fun `an id naming nobody is refused rather than dropped`() {
             plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
 
-            assertThat(send(userIds = listOf(1L, 98L, 99L)).notWrittenTo).isEqualTo(2)
+            assertRefusal(
+                { send(userIds = listOf(1L, 99L)) },
+                BulkSelectionRejected.UNKNOWN_USERS,
+                "userIds",
+                99L,
+            )
+        }
+
+        @Test
+        fun `naming the same member twice is refused`() {
+            plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
+
+            assertRefusal(
+                { send(userIds = listOf(1L, 1L)) },
+                BulkSelectionRejected.DUPLICATE_USERS,
+                "userIds",
+                1L,
+            )
+        }
+
+        @Test
+        fun `ticking back in somebody who is not in the selection is refused`() {
+            plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
+
+            assertRefusal(
+                { send(forciblyIncluded = setOf(99L)) },
+                BulkSelectionRejected.UNKNOWN_FORCED,
+                "forciblyIncludedUserIds",
+                99L,
+            )
+        }
+
+        @Test
+        fun `ticking back in somebody the send still will not write to is refused`() {
+            plan(
+                row(1L, "Ann Transfer", ContributionEmailKind.REMINDER),
+                row(4L, "Dan Honorary", ContributionEmailKind.REMINDER, BulkRowDisposition.EXCLUDED, BulkRowReason.HONORARY),
+            )
+
+            assertRefusal(
+                { send(forciblyIncluded = setOf(4L)) },
+                BulkSelectionRejected.NON_RECIPIENT_FORCED,
+                "forciblyIncludedUserIds",
+                4L,
+            )
         }
     }
 
@@ -212,32 +260,102 @@ class BulkContributionEmailUseCasesTest {
         fun `a payment request is refused without the date it promises`() {
             plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
 
-            assertThatThrownBy { send(paymentDueDate = null) }
-                .isInstanceOf(ResponseStatusException::class.java)
-                .hasMessageContaining("payment due date")
+            assertDateRefusal(
+                { send(paymentDueDate = null) },
+                BulkFieldRejected.DATE_REQUIRED,
+                "paymentDueDate",
+            )
         }
 
         @Test
         fun `a pre-notification is refused without the date it announces`() {
             plan(row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION))
 
-            assertThatThrownBy { send(debitDate = null) }
-                .isInstanceOf(ResponseStatusException::class.java)
-                .hasMessageContaining("debit date")
+            assertDateRefusal({ send(debitDate = null) }, BulkFieldRejected.DATE_REQUIRED, "debitDate")
         }
 
         @Test
         fun `switching a member onto the other email makes that email's date required`() {
             plan(row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION))
 
-            assertThatThrownBy {
-                send(kindOverrides = mapOf(1L to ContributionEmailKind.REMINDER), paymentDueDate = null)
-            }.isInstanceOf(ResponseStatusException::class.java)
-                .hasMessageContaining("payment due date")
+            assertDateRefusal(
+                { send(kindOverrides = mapOf(1L to ContributionEmailKind.REMINDER), paymentDueDate = null) },
+                BulkFieldRejected.DATE_REQUIRED,
+                "paymentDueDate",
+            )
+        }
+    }
+
+    @Nested
+    inner class TheDatesAPeriodAllows {
+
+        @Test
+        fun `a due date before the period starts is refused`() {
+            plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
+
+            assertDateRefusal(
+                { send(paymentDueDate = period.startDate.minusDays(1)) },
+                BulkFieldRejected.DATE_OUTSIDE_PERIOD,
+                "paymentDueDate",
+            )
+        }
+
+        @Test
+        fun `a due date shortly after the period ends still chases the last unpaid members`() {
+            plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
+
+            assertThat(send(paymentDueDate = period.endDate.plusMonths(3)).remindersSent).isEqualTo(1)
+        }
+
+        @Test
+        fun `a due date further than three months past the period is refused`() {
+            plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
+
+            assertDateRefusal(
+                { send(paymentDueDate = period.endDate.plusMonths(3).plusDays(1)) },
+                BulkFieldRejected.DATE_OUTSIDE_PERIOD,
+                "paymentDueDate",
+            )
+        }
+
+        @Test
+        fun `a debit date outside the period is refused against its own field`() {
+            plan(row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION))
+
+            assertDateRefusal(
+                { send(debitDate = period.endDate.plusYears(1)) },
+                BulkFieldRejected.DATE_OUTSIDE_PERIOD,
+                "debitDate",
+            )
         }
     }
 
     // ── Fixture ──────────────────────────────────────────────────────────────
+
+    /** A refusal names its code, its field and the ids at fault, and writes nothing. */
+    private fun assertRefusal(send: () -> Unit, code: String, field: String, vararg values: Long) {
+        assertThatThrownBy(send)
+            .isInstanceOf(BulkSelectionRejected::class.java)
+            .satisfies({
+                val violation = (it as BulkSelectionRejected).violations.single { v -> v.code == code }
+                assertThat(violation.field).isEqualTo(field)
+                assertThat(violation.values).containsExactly(*values.toTypedArray())
+            })
+        verify(exactly = 0) { reminders.create(any()) }
+        verify(exactly = 0) { preNotifications.create(any()) }
+    }
+
+    private fun assertDateRefusal(send: () -> Unit, code: String, field: String) {
+        assertThatThrownBy(send)
+            .isInstanceOf(BulkFieldRejected::class.java)
+            .satisfies({
+                val violation = (it as BulkFieldRejected).violations.single()
+                assertThat(violation.code).isEqualTo(code)
+                assertThat(violation.field).isEqualTo(field)
+            })
+        verify(exactly = 0) { reminders.create(any()) }
+        verify(exactly = 0) { preNotifications.create(any()) }
+    }
 
     private fun send(
         userIds: List<Long>? = null,

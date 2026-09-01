@@ -6,6 +6,7 @@ import UserPicker from "@/components/form/fields/UserPicker.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   addSeat,
+  boardTitle,
   dropBoard,
   dropSeat,
   linkSeatMember,
@@ -21,14 +22,43 @@ defineOptions({name: "BoardManagerPage"})
 const boards = ref<Board[]>([])
 const boardId = ref<number | null>(null)
 
-const boardDialog = ref<boolean>(false)
-const boardDraft = ref<{id?: number; name: string; candidate: string; startDate: string; endDate: string; image: string; version?: number}>({
-  name: "", candidate: "", startDate: "", endDate: "", image: "",
+type BoardDraft = {
+  id?: number
+  number: number
+  name: string
+  candidate: string
+  cheer: string
+  accent: string
+  description: string
+  startDate: string
+  endDate: string
+  image: string
+  version?: number
+}
+
+type SeatDraft = {
+  id?: number
+  role: string
+  startDate: string
+  endDate: string
+  displayName: string
+  nickname: string
+  description: string
+  image: string
+}
+
+const blankBoard = (): BoardDraft => ({
+  number: (boards.value[0]?.number ?? 0) + 1,
+  name: "", candidate: "", cheer: "", accent: "", description: "",
+  startDate: "", endDate: "", image: "",
 })
 
+const boardDialog = ref<boolean>(false)
+const boardDraft = ref<BoardDraft>(blankBoard())
+
 const seatDialog = ref<boolean>(false)
-const seatDraft = ref<{id?: number; role: string; startDate: string; endDate: string; displayName: string; description: string; image: string}>({
-  role: "", startDate: "", endDate: "", displayName: "", description: "", image: "",
+const seatDraft = ref<SeatDraft>({
+  role: "", startDate: "", endDate: "", displayName: "", nickname: "", description: "", image: "",
 })
 
 const linkDialog = ref<boolean>(false)
@@ -54,21 +84,34 @@ const openBoard = (board?: Board) => {
   boardDraft.value = board
     ? {
       id: board.id,
-      name: board.name,
+      number: board.number,
+      name: board.name ?? "",
       candidate: board.candidate,
+      cheer: board.cheer ?? "",
+      accent: board.accent ?? "",
+      description: board.description ?? "",
       startDate: board.startDate,
       endDate: board.endDate ?? "",
       image: board.image ?? "",
       version: board.version,
     }
-    : {name: "", candidate: "", startDate: "", endDate: "", image: ""}
+    : blankBoard()
   boardDialog.value = true
 }
 
 const submitBoard = async () => {
   try {
     const draft = boardDraft.value
-    await saveBoard({...draft, endDate: draft.endDate || null, image: draft.image || null})
+    await saveBoard({
+      ...draft,
+      name: draft.name || null,
+      candidate: draft.candidate || null,
+      cheer: draft.cheer || null,
+      accent: draft.accent || null,
+      description: draft.description || null,
+      endDate: draft.endDate || null,
+      image: draft.image || null,
+    })
     boardDialog.value = false
     await refresh()
   } catch (error) {
@@ -94,6 +137,7 @@ const openSeat = (seat?: BoardSeat) => {
       startDate: seat.startDate,
       endDate: seat.endDate ?? "",
       displayName: seat.name ?? "",
+      nickname: seat.nickname ?? "",
       description: seat.description ?? "",
       image: seat.image ?? "",
     }
@@ -102,6 +146,7 @@ const openSeat = (seat?: BoardSeat) => {
       startDate: board?.startDate ?? "",
       endDate: board?.endDate ?? "",
       displayName: "",
+      nickname: "",
       description: "",
       image: "",
     }
@@ -118,6 +163,7 @@ const submitSeat = async () => {
       startDate: draft.startDate,
       endDate: draft.endDate || null,
       displayName: draft.displayName || null,
+      nickname: draft.nickname || null,
       description: draft.description || null,
       image: draft.image || null,
     }
@@ -202,19 +248,22 @@ onMounted(refresh)
           >
             <thead>
               <tr>
-                <th style="width: 34%">
+                <th style="width: 8%">
+                  No.
+                </th>
+                <th style="width: 28%">
                   Board
                 </th>
-                <th style="width: 22%">
+                <th style="width: 20%">
                   Starts
                 </th>
-                <th style="width: 22%">
+                <th style="width: 20%">
                   Ends
                 </th>
                 <th style="width: 12%">
                   Seats
                 </th>
-                <th style="width: 10%" />
+                <th style="width: 12%" />
               </tr>
             </thead>
             <tbody>
@@ -226,8 +275,11 @@ onMounted(refresh)
                 :data-testid="`board-row-${board.id}`"
                 @click="boardId = board.id"
               >
+                <td class="text-medium-emphasis">
+                  {{ board.number }}
+                </td>
                 <td class="font-weight-medium">
-                  {{ board.name }}
+                  {{ boardTitle(board) }}
                 </td>
                 <td class="text-medium-emphasis">
                   {{ board.startDate }}
@@ -243,7 +295,8 @@ onMounted(refresh)
                     <template #activator="{props: menuProps}">
                       <v-btn
                         v-bind="menuProps"
-                        :aria-label="`${board.name} actions`"
+                        :aria-label="`${boardTitle(board)} actions`"
+                        :data-testid="`board-menu-${board.id}`"
                         icon="mdi-dots-vertical"
                         size="small"
                         variant="text"
@@ -252,6 +305,7 @@ onMounted(refresh)
                     </template>
                     <v-list density="compact">
                       <v-list-item
+                        :data-testid="`board-edit-${board.id}`"
                         prepend-icon="mdi-pencil"
                         title="Edit"
                         @click="openBoard(board)"
@@ -270,7 +324,7 @@ onMounted(refresh)
         </manager-card>
 
         <manager-card
-          :eyebrow="selected ? `${selected.name} seats` : 'Seats'"
+          :eyebrow="selected ? `${boardTitle(selected)} seats` : 'Seats'"
           flush
           testid="board-seats"
         >
@@ -403,13 +457,43 @@ onMounted(refresh)
         <v-card-title>{{ boardDraft.id == null ? "Add board" : "Edit board" }}</v-card-title>
         <v-card-text>
           <v-text-field
+            v-model.number="boardDraft.number"
+            data-testid="board-number"
+            hint="The board's place in the line; the ninth board is 9"
+            label="Number"
+            persistent-hint
+            type="number"
+          />
+          <v-text-field
             v-model="boardDraft.name"
             data-testid="board-name"
+            hint="The name the board chose for itself; blank for a board with none recorded"
             label="Name"
+            persistent-hint
+          />
+          <v-text-field
+            v-model="boardDraft.cheer"
+            data-testid="board-cheer"
+            hint="The line the board shouts"
+            label="Cheer"
+            persistent-hint
+          />
+          <v-text-field
+            v-model="boardDraft.accent"
+            data-testid="board-accent"
+            hint="The board's own colour; blank means the association's blue"
+            label="Colour"
+            persistent-hint
+          />
+          <v-textarea
+            v-model="boardDraft.description"
+            data-testid="board-description"
+            label="Description"
+            rows="3"
           />
           <v-text-field
             v-model="boardDraft.candidate"
-            hint="The name the board went by while it was a candidate board"
+            hint="Kept for the column behind it; the board's own name is used when blank"
             label="Candidate"
             persistent-hint
           />
@@ -459,6 +543,13 @@ onMounted(refresh)
             data-testid="board-seat-name"
             hint="Who held the seat; a linked member's own name is shown instead"
             label="Name"
+            persistent-hint
+          />
+          <v-text-field
+            v-model="seatDraft.nickname"
+            data-testid="board-seat-nickname"
+            hint="The name the seat was known by, without the quotes around it"
+            label="Nickname"
             persistent-hint
           />
           <v-text-field

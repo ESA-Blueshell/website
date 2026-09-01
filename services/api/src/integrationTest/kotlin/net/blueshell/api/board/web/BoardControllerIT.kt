@@ -1,5 +1,6 @@
 package net.blueshell.api.board.web
 
+import com.jayway.jsonpath.JsonPath
 import net.blueshell.api.board.persistence.BoardMemberRepository
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.shared.enums.Role
@@ -14,9 +15,15 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicInteger
 
 @SpringBootTest
 class BoardControllerIT : UserTestSupport() {
+
+    private companion object {
+        /** Numbers this suite's own payloads claim, well clear of the fixtures' own. */
+        val numbers = AtomicInteger(5000)
+    }
 
     @Autowired
     private lateinit var boardRepository: BoardRepository
@@ -24,18 +31,24 @@ class BoardControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var boardMemberRepository: BoardMemberRepository
 
+    /** A number no fixture in this suite holds, so a payload never clashes with one. */
+    private fun freeNumber(): Int = numbers.incrementAndGet()
+
     private fun createBoardPayload(
         name: String = "Board ${System.currentTimeMillis()}",
-        startDate: LocalDate = LocalDate.now().minusDays(1)
+        startDate: LocalDate = LocalDate.now().minusDays(1),
+        number: Int = freeNumber()
     ): String =
-        """{"name":"$name","candidate":"Candidate","startDate":"$startDate"}"""
+        """{"number":$number,"name":"$name","candidate":"Candidate","startDate":"$startDate"}"""
 
     private fun updateBoardPayload(
         version: Long,
         name: String = "Updated Board ${System.currentTimeMillis()}",
-        startDate: LocalDate = LocalDate.now().minusDays(2)
+        startDate: LocalDate = LocalDate.now().minusDays(2),
+        number: Int = freeNumber()
     ): String =
-        """{"name":"$name","candidate":"Updated Candidate","startDate":"$startDate","version":$version}"""
+        """{"number":$number,"name":"$name","candidate":"Updated Candidate",""" +
+            """"startDate":"$startDate","version":$version}"""
 
     private fun addMemberPayload(
         userId: Long,
@@ -67,13 +80,71 @@ class BoardControllerIT : UserTestSupport() {
         fun `returns bad request for invalid create payload`() {
             val boardUser = createUserWithRole(Role.BOARD)
 
+            // A board with no number is not a board: the number is what identifies one.
             mvc.perform(
                 post("/boards")
                     .with(bearer(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"","candidate":"Candidate","startDate":"${LocalDate.now().minusDays(1)}"}""")
+                    .content("""{"number":0,"name":"Board","startDate":"${LocalDate.now().minusDays(1)}"}""")
             )
                 .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `creates a board with its number, its cheer, its colour and its description`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val number = freeNumber()
+
+            mvc.perform(
+                post("/boards")
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"number":$number,"name":"Wasted","cheer":"RNG, Be With Me!",
+                         "accent":"#7b2ff7","description":"The year of the lounge.",
+                         "startDate":"2024-09-01","endDate":"2025-08-31"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.number").value(number))
+                .andExpect(jsonPath("$.name").value("Wasted"))
+                .andExpect(jsonPath("$.cheer").value("RNG, Be With Me!"))
+                .andExpect(jsonPath("$.accent").value("#7b2ff7"))
+                .andExpect(jsonPath("$.description").value("The year of the lounge."))
+                // Nothing reads `candidate`, and it is NOT NULL, so a write fills it.
+                .andExpect(jsonPath("$.candidate").value("Wasted"))
+        }
+
+        @Test
+        fun `creates a board that has no name of its own`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val number = freeNumber()
+
+            mvc.perform(
+                post("/boards")
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"number":$number,"startDate":"2017-09-01","endDate":"2018-08-31"}""")
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.name").doesNotExist())
+                .andExpect(jsonPath("$.candidate").value("Board $number"))
+        }
+
+        @Test
+        fun `refuses a number a board already holds`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val taken = createBoardFixture().number
+
+            mvc.perform(
+                post("/boards")
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(createBoardPayload(number = taken))
+            )
+                .andExpect(status().isConflict)
         }
     }
 
@@ -135,6 +206,90 @@ class BoardControllerIT : UserTestSupport() {
             val updated = boardRepository.findById(board.id!!).orElseThrow()
             assertThat(updated.name).isEqualTo(newName)
             assertThat(updated.candidate).isEqualTo("Updated Candidate")
+        }
+
+        @Test
+        fun `corrects the number, the cheer, the colour and the description`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+            val number = freeNumber()
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"number":$number,"name":"Overcooked","cheer":"Krijg de tering!",
+                         "accent":"#12a4a4","description":"The seventh year.",
+                         "startDate":"2023-09-01","endDate":"2024-08-31","version":${board.version}}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.number").value(number))
+                .andExpect(jsonPath("$.cheer").value("Krijg de tering!"))
+                .andExpect(jsonPath("$.accent").value("#12a4a4"))
+                .andExpect(jsonPath("$.description").value("The seventh year."))
+
+            val updated = boardRepository.findById(board.id!!).orElseThrow()
+            assertThat(updated.number).isEqualTo(number)
+            assertThat(updated.cheer).isEqualTo("Krijg de tering!")
+            assertThat(updated.accent).isEqualTo("#12a4a4")
+            assertThat(updated.description).isEqualTo("The seventh year.")
+        }
+
+        @Test
+        fun `a blank colour means the association's own, not an empty string`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"number":${board.number},"name":"","cheer":"","accent":"","description":"",
+                         "startDate":"${board.startDate}","version":${board.version}}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.name").doesNotExist())
+                .andExpect(jsonPath("$.cheer").doesNotExist())
+                .andExpect(jsonPath("$.accent").doesNotExist())
+                .andExpect(jsonPath("$.description").doesNotExist())
+        }
+
+        @Test
+        fun `refuses a number another board already holds`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+            val taken = createBoardFixture().number
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updateBoardPayload(board.version, number = taken))
+            )
+                .andExpect(status().isConflict)
+        }
+
+        @Test
+        fun `keeps its own number rather than refusing itself`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updateBoardPayload(board.version, number = board.number))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.number").value(board.number))
         }
 
         @Test
@@ -298,6 +453,48 @@ class BoardControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `a seat carries its nickname beside the name, and both round-trip`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+
+            val created = mvc.perform(
+                post("/boards/{boardId}/members", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"role":"Commissioner of Internal Affairs","startDate":"2022-09-01",
+                         "displayName":"Roos Kruk","nickname":"SkyeWolf"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.name").value("Roos Kruk"))
+                .andExpect(jsonPath("$.nickname").value("SkyeWolf"))
+                .andReturn()
+
+            val seatId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
+
+            mvc.perform(
+                put("/boards/{boardId}/members/{id}", board.id, seatId)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"role":"Commissioner of Internal Affairs","startDate":"2022-09-01",
+                         "displayName":"Roos Kruk","nickname":"Skye"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.nickname").value("Skye"))
+
+            mvc.perform(get("/boards/{id}", board.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.members[0].nickname").value("Skye"))
+        }
+
+        @Test
         fun `a linked seat is named by the member, not by what was recorded`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
@@ -338,7 +535,7 @@ class BoardControllerIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
-                        {"name":"${board.name}","candidate":"${board.candidate}",
+                        {"number":${board.number},"name":"${board.name}","candidate":"${board.candidate}",
                          "startDate":"${board.startDate}","image":"board1/board1.jpg",
                          "version":${board.version}}
                         """.trimIndent(),

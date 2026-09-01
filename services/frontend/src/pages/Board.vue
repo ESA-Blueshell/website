@@ -4,7 +4,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import BoardMemberRow from "@/components/common/rows/BoardMemberRow.vue"
 import {$require} from "@/plugins/require"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {loadBoards, type Board} from "@/domains/boards/adapters/boards"
+import {boardTitle, loadBoards, seatTitle, type Board} from "@/domains/boards/adapters/boards"
 
 defineOptions({name: "BoardPage"})
 
@@ -20,7 +20,7 @@ const asset = (image?: string | null) => (image ? $require(`@/assets/${image}`) 
 
 const seatsOf = (board: Board) =>
   board.members.map((seat) => ({
-    name: seat.name ?? "",
+    name: seatTitle(seat),
     title: seat.role,
     description: seat.description ?? undefined,
     image: asset(seat.image),
@@ -71,7 +71,7 @@ onMounted(async () => {
           :data-testid="`board-${sitting.id}`"
         >
           <h1 class="text-center">
-            {{ sitting.name }}
+            {{ boardTitle(sitting) }}
           </h1>
 
           <v-img
@@ -105,7 +105,7 @@ onMounted(async () => {
             role="button"
             @click="toggleBoard(board.id)"
           >
-            <h2>{{ board.name }}</h2>
+            <h2>{{ boardTitle(board) }}</h2>
             <v-icon
               class="board-chevron"
               :class="{'board-chevron--open': expandedBoards[board.id]}"

@@ -30,6 +30,10 @@ export type AddBoardMemberRequest = {
      * Asset file name of the member's portrait
      */
     image?: string | null;
+    /**
+     * The name the seat was known by, without the quotes around it
+     */
+    nickname?: string | null;
     role: string;
     startDate: string;
     /**
@@ -170,6 +174,10 @@ export type BoardMemberResponse = {
      * Who held the seat: the linked member's name, or the recorded one
      */
     name?: string | null;
+    /**
+     * The name the seat was known by, beside the name rather than inside it
+     */
+    nickname?: string | null;
     role: string;
     startDate: string;
     updatedAt: string;
@@ -181,8 +189,20 @@ export type BoardMemberResponse = {
 };
 
 export type BoardResponse = {
+    /**
+     * The board's own colour; absent means the association's blue
+     */
+    accent?: string | null;
     candidate: string;
+    /**
+     * The board's shouted line
+     */
+    cheer?: string | null;
     createdAt: string;
+    /**
+     * What the year was about, in the board's own words
+     */
+    description?: string | null;
     endDate?: string | null;
     id: number;
     /**
@@ -190,7 +210,14 @@ export type BoardResponse = {
      */
     image?: string | null;
     members: Array<BoardMemberResponse>;
-    name: string;
+    /**
+     * The name the board chose for itself, where one is recorded
+     */
+    name?: string | null;
+    /**
+     * The board's place in the line, unique among the boards that exist
+     */
+    number: number;
     pictureId?: number | null;
     startDate: string;
     updatedAt: string;
@@ -524,13 +551,35 @@ export type CreateBlogRequest = {
 };
 
 export type CreateBoardRequest = {
-    candidate: string;
+    /**
+     * The board's own colour; blank means the association's blue
+     */
+    accent?: string | null;
+    /**
+     * Kept for the column behind it; the board's own name is used when blank
+     */
+    candidate?: string | null;
+    /**
+     * The board's shouted line
+     */
+    cheer?: string | null;
+    /**
+     * What the year was about, in the board's own words
+     */
+    description?: string | null;
     endDate?: string | null;
     /**
      * Asset file name of the board's photograph
      */
     image?: string | null;
-    name: string;
+    /**
+     * The name the board chose for itself; blank for a board with none
+     */
+    name?: string | null;
+    /**
+     * The board's place in the line; the ninth board is 9
+     */
+    number: number;
     pictureId?: number | null;
     startDate: string;
 };
@@ -1781,18 +1830,44 @@ export type UpdateBoardMemberRequest = {
     displayName?: string | null;
     endDate?: string | null;
     image?: string | null;
+    /**
+     * The name the seat was known by, without the quotes around it
+     */
+    nickname?: string | null;
     role: string;
     startDate: string;
 };
 
 export type UpdateBoardRequest = {
-    candidate: string;
+    /**
+     * The board's own colour; blank means the association's blue
+     */
+    accent?: string | null;
+    /**
+     * Kept for the column behind it; the board's own name is used when blank
+     */
+    candidate?: string | null;
+    /**
+     * The board's shouted line
+     */
+    cheer?: string | null;
+    /**
+     * What the year was about, in the board's own words
+     */
+    description?: string | null;
     endDate?: string | null;
     /**
      * Asset file name of the board's photograph
      */
     image?: string | null;
-    name: string;
+    /**
+     * The name the board chose for itself; blank for a board with none
+     */
+    name?: string | null;
+    /**
+     * The board's place in the line; the ninth board is 9
+     */
+    number: number;
     pictureId?: number | null;
     startDate: string;
     version: number;

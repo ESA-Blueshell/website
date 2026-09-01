@@ -3,14 +3,15 @@ import {installApiMocks, loginAsAdmin} from "./mocks"
 
 /** A seat as the api reports one, with a photograph, so the page has sides to alternate. */
 const seatWithPhoto = (id: number, name: string, image: string) => ({
-  id, boardId: 9, userId: null, role: "Chair", name,
+  id, boardId: 9, userId: null, role: "Chair", name, nickname: null,
   description: "A blurb.", image,
   startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
 })
 
 const boardOfFour = [{
-  id: 9, name: "9th Board", candidate: "9th Board",
+  id: 9, number: 9, name: "9th Board", candidate: "9th Board",
+  cheer: null, accent: null, description: null,
   startDate: "2025-09-01", endDate: "2026-08-31",
   image: "board9/board9.jpg", version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
@@ -20,6 +21,21 @@ const boardOfFour = [{
     seatWithPhoto(93, "Boris Boersma", "board9/Boris.jpg"),
     seatWithPhoto(94, "Sylwia Nowak", "board9/Sylwia.jpg"),
   ],
+}]
+
+/** A board with no name recorded and a seat whose nickname is its own field. */
+const namelessBoard = [{
+  id: 6, number: 6, name: null, candidate: "Board 6",
+  cheer: null, accent: null, description: null,
+  startDate: "2022-09-01", endDate: "2023-08-31",
+  image: null, version: 0,
+  createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+  members: [{
+    id: 61, boardId: 6, userId: null, role: "Commissioner of Internal Affairs",
+    name: "Roos Kruk", nickname: "SkyeWolf", description: null, image: null,
+    startDate: "2022-09-01", endDate: "2023-08-31", version: 0,
+    createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+  }],
 }]
 
 test.describe("board page", () => {
@@ -42,6 +58,24 @@ test.describe("board page", () => {
 
     // Viktor's seat carries no account; the page cannot tell, and neither should a reader.
     await expect(page.getByTestId("board-9")).toContainText("Viktor Petrov")
+  })
+
+  test("names a board with no recorded name from its number", async ({page}) => {
+    await installApiMocks(page, {boards: namelessBoard})
+
+    await page.goto("/board")
+
+    // A board's name may never have been written down, and no board reads as blank.
+    await expect(page.getByTestId("board-6")).toContainText("Board 6")
+  })
+
+  test("puts a seat's nickname back between the name it sits inside", async ({page}) => {
+    await installApiMocks(page, {boards: namelessBoard})
+
+    await page.goto("/board")
+
+    // The name and the nickname are two fields now. A reader still sees the one string.
+    await expect(page.getByTestId("board-6")).toContainText('Roos "SkyeWolf" Kruk')
   })
 
   test("keeps an older board behind its own heading until it is opened", async ({page}) => {
@@ -96,7 +130,7 @@ test.describe("board page", () => {
 })
 
 test.describe("board manager", () => {
-  test("lists every board with how many seats it holds", async ({page}) => {
+  test("lists every board with its number and how many seats it holds", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
 
@@ -105,6 +139,51 @@ test.describe("board manager", () => {
     await expect(page.getByTestId("board-row-9")).toContainText("9th Board")
     await expect(page.getByTestId("board-row-9")).toContainText("2")
     await expect(page.getByTestId("board-row-1")).toContainText("1st Board")
+  })
+
+  test("sends a board's number, cheer and colour when it is corrected", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+
+    await page.goto("/management/boards")
+    await page.getByTestId("board-row-9").click()
+    await page.getByTestId("board-menu-9").click()
+    await page.getByTestId("board-edit-9").click()
+
+    await expect(page.getByTestId("board-cheer")).toBeVisible()
+    await page.getByTestId("board-accent").locator("input").fill("#7b2ff7")
+
+    const saved = page.waitForRequest(
+      (request) => request.method() === "PUT" && /\/boards\/9$/.test(new URL(request.url()).pathname),
+    )
+    await page.getByTestId("board-save").click()
+
+    const body = JSON.parse((await saved).postData() ?? "{}")
+    expect(body).toMatchObject({number: 9, cheer: "RNG, Be With Me!", accent: "#7b2ff7"})
+  })
+
+  test("sends a seat's nickname beside its name", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsAdmin(page.context())
+
+    await page.goto("/management/boards")
+    await page.getByTestId("board-row-9").click()
+    await page.getByTestId("board-add-seat").click()
+
+    await expect(page.getByTestId("board-seat-nickname")).toBeVisible()
+    await page.getByTestId("board-seat-name").locator("input").fill("Roos Kruk")
+    await page.getByTestId("board-seat-nickname").locator("input").fill("SkyeWolf")
+    await page.getByTestId("board-seat-role").locator("input").fill("Commissioner of Internal Affairs")
+
+    const created = page.waitForRequest(
+      (request) => request.method() === "POST" && /\/boards\/\d+\/members$/.test(new URL(request.url()).pathname),
+    )
+    await page.getByTestId("board-seat-save").click()
+
+    expect(JSON.parse((await created).postData() ?? "{}")).toMatchObject({
+      displayName: "Roos Kruk",
+      nickname: "SkyeWolf",
+    })
   })
 
   test("shows a board's seats, and marks the ones nobody is linked to", async ({page}) => {

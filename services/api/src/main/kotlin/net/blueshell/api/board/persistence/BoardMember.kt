@@ -17,6 +17,9 @@ import java.time.LocalDate
  * held the seat when nobody can be linked to it. A seat that is linked is what membership
  * questions read; a seat that is not is still the board that sat.
  *
+ * [nickname] sits beside the name rather than inside it: most of this history is written in
+ * nicknames, and `Roos "SkyeWolf" Kruk` used to be one string nothing could take apart.
+ *
  * [image] names an asset the frontend ships, the way a team's image does. [picture] stays for
  * a portrait uploaded through the file service.
  */
@@ -69,6 +72,15 @@ class BoardMember(
     /** Who held the seat, for a seat no account can be attached to. */
     @Column(name = "display_name", length = 128)
     var displayName: String? = null,
+
+    /**
+     * The name the seat was known by: `SkyeWolf` in `Roos "SkyeWolf" Kruk`.
+     *
+     * The seat's rather than the member's, the way a roster entry's handle is, because the same
+     * person may be known by different names in different years.
+     */
+    @Column(name = "nickname", length = 128)
+    var nickname: String? = null,
 
     /** The personal note the board page has always shown beside a member. */
     @Column(name = "description", columnDefinition = "TEXT")

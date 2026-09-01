@@ -22,18 +22,28 @@ class BoardUseCases(
 ) {
     @Transactional
     fun create(
-        name: String,
-        candidate: String,
+        number: Int,
+        name: String?,
+        candidate: String?,
         startDate: LocalDate,
         endDate: LocalDate?,
         pictureId: Long?,
+        cheer: String? = null,
+        accent: String? = null,
+        description: String? = null,
         image: String? = null,
     ): Board {
+        if (boardService.findByNumber(number) != null) throw DuplicateBoardException(number)
+        val recorded = name?.ifBlank { null }
         val board = Board(
-            candidate = candidate,
+            number = number,
+            candidate = candidateFor(candidate, recorded, number),
             startDate = startDate,
-            name = name,
+            name = recorded,
             endDate = endDate,
+            cheer = cheer?.ifBlank { null },
+            accent = accent?.ifBlank { null },
+            description = description?.ifBlank { null },
             image = image,
         )
         pictureId?.let { board.replacePicture(fileService.findById(it)) }
@@ -45,22 +55,43 @@ class BoardUseCases(
     @Transactional
     fun update(
         id: Long,
-        name: String,
-        candidate: String,
+        number: Int,
+        name: String?,
+        candidate: String?,
         startDate: LocalDate,
         endDate: LocalDate?,
         pictureId: Long?,
+        cheer: String? = null,
+        accent: String? = null,
+        description: String? = null,
         image: String? = null,
     ): Board {
         val board = boardService.findById(id)
-        board.name = name
-        board.candidate = candidate
+        val holder = boardService.findByNumber(number)
+        if (holder != null && holder.id != id) throw DuplicateBoardException(number)
+        val recorded = name?.ifBlank { null }
+        board.number = number
+        board.name = recorded
+        board.candidate = candidateFor(candidate, recorded, number)
         board.startDate = startDate
         board.endDate = endDate
+        board.cheer = cheer?.ifBlank { null }
+        board.accent = accent?.ifBlank { null }
+        board.description = description?.ifBlank { null }
         board.image = image
         board.replacePicture(pictureId?.let { fileService.findById(it) })
         return boardService.update(board)
     }
+
+    /**
+     * What goes into `candidate`, which is `NOT NULL` and which nothing reads.
+     *
+     * The column duplicates the name and is kept by decision, so a write that carries no
+     * candidate of its own fills it with the board's name — or with its number, since a board
+     * is free to have no name at all.
+     */
+    private fun candidateFor(candidate: String?, name: String?, number: Int): String =
+        candidate?.ifBlank { null } ?: name ?: "Board $number"
 
     /**
      * Seats somebody on a board. [userId] is absent for the people most of the history is
@@ -77,6 +108,7 @@ class BoardUseCases(
         startDate: LocalDate,
         endDate: LocalDate?,
         displayName: String? = null,
+        nickname: String? = null,
         description: String? = null,
         image: String? = null,
     ): BoardMember {
@@ -89,6 +121,7 @@ class BoardUseCases(
             existing.startDate = startDate
             existing.endDate = endDate
             existing.displayName = displayName
+            existing.nickname = nickname
             existing.description = description
             existing.image = image
             return boardMemberService.update(existing)
@@ -102,6 +135,7 @@ class BoardUseCases(
                 startDate = startDate,
                 endDate = endDate,
                 displayName = displayName,
+                nickname = nickname,
                 description = description,
                 image = image,
             ),
@@ -115,6 +149,7 @@ class BoardUseCases(
         startDate: LocalDate,
         endDate: LocalDate?,
         displayName: String? = null,
+        nickname: String? = null,
         description: String? = null,
         image: String? = null,
     ): BoardMember {
@@ -123,6 +158,7 @@ class BoardUseCases(
         seat.startDate = startDate
         seat.endDate = endDate
         seat.displayName = displayName
+        seat.nickname = nickname
         seat.description = description
         seat.image = image
         return boardMemberService.update(seat)

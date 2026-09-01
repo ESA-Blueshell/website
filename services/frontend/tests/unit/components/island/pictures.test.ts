@@ -1,15 +1,14 @@
 import {describe, expect, it} from "vitest"
-import {coveredWidth, sizeOf, srcsetOf} from "@/domains/esports/pictures"
-import type {EsportsImage} from "@/domains/esports/adapters/esports"
+import {coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 
 /**
- * The one display string this domain composes from what the api answers.
+ * The display strings the island composes from what the api answers.
  *
- * It lives here rather than in the payload because which widths a browser is offered is a
+ * They live here rather than in the payload because which widths a browser is offered is a
  * display decision, and the cases below are the ones that decide whether a browser reads the
  * attribute at all.
  */
-const picture = (over: Partial<EsportsImage> = {}): EsportsImage => ({
+const picture = (over: Partial<Picture> = {}): Picture => ({
   url: "/files/public/team-posters/abc.webp",
   path: "team-posters/abc.webp",
   width: 1000,

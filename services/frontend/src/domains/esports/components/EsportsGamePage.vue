@@ -11,8 +11,7 @@ import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {type EsportsImage} from "../adapters/esports"
-import {sizeOf, srcsetOf} from "../pictures"
+import {sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
@@ -196,8 +195,8 @@ const teamMade = async () => {
 const editingTeam = ref<{
   id: number
   name: string
-  banner: EsportsImage | null
-  icon: EsportsImage | null
+  banner: Picture | null
+  icon: Picture | null
 } | null>(null)
 const lineupOpen = ref(false)
 

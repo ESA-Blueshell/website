@@ -53,6 +53,7 @@ import type {
   TeamRole as ApiTeamRole,
   TeamRosterResponse,
 } from "@/services/api"
+import type {Picture} from "@/components/island/pictures"
 import {reasonFor} from "@/domains/esports/refusals"
 
 /**
@@ -70,8 +71,6 @@ export type GameAccount = GameAccountResponse
 /** A game itself: what it is called, the art it is drawn with, and how its page presents it. */
 export type Game = GameResponse
 export type FieldedTeam = FieldedTeamResponse
-/** An image a page draws: where it is served, how large it is, and the widths it is stored at. */
-export type EsportsImage = Image
 
 /** What a season holds, so an offer to remove it can say what goes with it. */
 export interface SeasonContents {
@@ -204,7 +203,7 @@ const image = (one: Image): Image => ({
 
 export interface PictureStored {
   ok: true
-  picture: EsportsImage
+  picture: Picture
 }
 
 /**
@@ -218,6 +217,9 @@ export interface PictureStored {
  * A refusal comes back in the api's own words. A picture the converter cannot read is the one
  * thing whoever chose it can act on, and "something went wrong" does not tell them to pick
  * another.
+ *
+ * Owned here rather than by the picker: the picker is shared UI and takes this as a prop, so
+ * the kind of picture and the endpoint that takes it stay with the domain that knows both.
  */
 export async function storePicture(
   file: File,

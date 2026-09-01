@@ -1,6 +1,6 @@
 import {computed, ref, type ComputedRef, type Ref} from "vue"
 import {loadGames, type GameCode, type Game} from "../adapters/esports"
-import {sizeOf, srcsetOf} from "../pictures"
+import {sizeOf, srcsetOf} from "@/components/island/pictures"
 
 /** A game as the island draws it: its name, its colour, and the art it carries. */
 export interface GameIdentity {

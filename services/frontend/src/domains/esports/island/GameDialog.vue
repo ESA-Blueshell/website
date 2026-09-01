@@ -3,6 +3,7 @@ import {computed, ref, watch} from "vue"
 import IslandDialog from "@/components/island/IslandDialog.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
+import type {Picture} from "@/components/island/pictures"
 import IslandChoice from "@/components/island/IslandChoice.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 import {
@@ -11,7 +12,7 @@ import {
   dropGameOrReason,
   loadGameContents,
   saveGameOrReason,
-  type EsportsImage,
+  storePicture,
   type Game,
   type Season,
 } from "../adapters/esports"
@@ -100,9 +101,12 @@ const slug = ref("")
 const intro = ref("")
 /** The game's own colour, which is not the island accent this dialog is drawn on. */
 const colour = ref("")
-const icon = ref<EsportsImage | null>(null)
-const banner = ref<EsportsImage | null>(null)
+const icon = ref<Picture | null>(null)
+const banner = ref<Picture | null>(null)
 const sortIndex = ref(0)
+/** Which kind of picture each frame stores, which is the game domain's to say rather than the picker's. */
+const storeBanner = (file: File) => storePicture(file, FileType.GAME_BANNER)
+const storeIcon = (file: File) => storePicture(file, FileType.GAME_ICON)
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
@@ -385,17 +389,18 @@ const add = async () => {
            game is drawn. They wrap onto their own lines where there is no room for both. -->
       <div class="game-form__pictures">
         <image-picker
-          :kind="FileType.GAME_BANNER"
           label="Banner"
           :picture="banner"
+          :store="storeBanner"
           testid="game-dialog-banner"
           @update:picture="banner = $event"
         />
 
         <image-picker
-          :kind="FileType.GAME_ICON"
           label="Icon"
           :picture="icon"
+          shape="icon"
+          :store="storeIcon"
           testid="game-dialog-icon"
           @update:picture="icon = $event"
         />

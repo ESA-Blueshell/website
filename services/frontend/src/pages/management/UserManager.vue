@@ -26,7 +26,7 @@ import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.
 import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
 import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
 import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
-import ContributionEmailDialog from "@/components/common/modals/bulk/ContributionEmailDialog.vue"
+import PaymentEmailWizard from "@/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue"
 
 export type {MemberRow}
 
@@ -664,7 +664,7 @@ async function confirmDeleteUser() {
       @done="onBulkDone"
       @stale="onBulkStale"
     />
-    <contribution-email-dialog
+    <payment-email-wizard
       v-model="paymentEmailsOpen"
       :period="selectedPeriod"
       :user-ids="selectedIdsArray"

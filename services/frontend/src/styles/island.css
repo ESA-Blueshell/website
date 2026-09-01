@@ -17,7 +17,9 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "../components/island";
+@source "../domains/boards";
 @source "../domains/esports";
+@source "../pages/Board.vue";
 @source "../pages/Esports.vue";
 @source "../pages/esports";
 

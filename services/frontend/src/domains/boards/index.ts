@@ -4,15 +4,27 @@
  * `domains/user/index.ts` set: the domain's own files import each other directly, anything
  * outside it comes through here.
  *
- * Only the reading rules so far, which is the point of them: how a board's number, year and seats
- * read is knowledge about boards, so it belongs to this domain rather than to a page — and it
- * cannot live under `src/components/`, where a shared component may not know about a domain at
- * all. The adapter is not listed because nothing outside the domain has needed the wire yet, and
- * a public API is a promise rather than an index.
+ * The reading rules, which is the point of them: how a board's number, year and seats read, and
+ * where a board stands today, is knowledge about boards, so it belongs to this domain rather than
+ * to a page — and it cannot live under `src/components/`, where a shared component may not know
+ * about a domain at all.
+ *
+ * The wire is not listed. A page reaches the adapter at its own path, the way the esports pages
+ * do, because what a page needs of it changes with the page and a public API is a promise rather
+ * than an index.
  *
  * Re-exported by name rather than with `export *`, because the list of names is the promise.
  */
 export {academicYear, boardEyebrow, boardName, romanNumeral} from "./reading"
+export {boardStops, type Stopped} from "./boardAxis"
+export {boardInRoute} from "./boardInRoute"
+export {
+  type BoardStanding,
+  boardInOffice,
+  isCandidate,
+  standingOf,
+  type Termed,
+} from "./standing"
 export {
   bySeatRank,
   SEAT_OFFICES,

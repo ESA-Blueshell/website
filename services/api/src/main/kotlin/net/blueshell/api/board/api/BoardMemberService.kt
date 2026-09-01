@@ -23,6 +23,10 @@ class BoardMemberService(
     @Transactional(readOnly = true)
     fun findByBoard(boardId: Long): List<BoardMember> = repository.findByBoardId(boardId)
 
+    /** How many seats a board still has. Counted rather than listed: only the number is asked for. */
+    @Transactional(readOnly = true)
+    fun seatsOn(boardId: Long): Long = repository.countByBoardId(boardId)
+
     /**
      * Whether a member held a board seat overlapping the window. The board year is the unit
      * the association thinks in, so this is what "was on the board that year" reduces to.

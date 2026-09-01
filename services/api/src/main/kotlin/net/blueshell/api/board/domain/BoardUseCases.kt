@@ -10,8 +10,8 @@ import java.time.LocalDate
 import net.blueshell.api.board.api.BoardMemberService
 
 /**
- * Board operations that touch more than one collaborator. Reads and deletes go
- * straight to [BoardService], whose base class already carries the transaction.
+ * Board operations that touch more than one collaborator. Reads go straight to
+ * [BoardService], whose base class already carries the transaction.
  */
 @Service
 class BoardUseCases(
@@ -170,6 +170,21 @@ class BoardUseCases(
         val seat = boardMemberService.findSeat(id)
         seat.user = userId?.let { userService.findById(it) }
         return boardMemberService.update(seat)
+    }
+
+    /**
+     * Removes a board, and refuses one that still has seats.
+     *
+     * A board cascades every write to its seats, so a plain delete soft-deletes a whole year of
+     * people along with it. Refused with the count, so a caller is told what is in the way and
+     * a board added by mistake still goes in one gesture.
+     */
+    @Transactional
+    fun remove(id: Long) {
+        val board = boardService.findById(id)
+        val seats = boardMemberService.seatsOn(id)
+        if (seats > 0) throw BoardHoldsSeats(board.number, seats)
+        boardService.deleteById(id)
     }
 
     @Transactional

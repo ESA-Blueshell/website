@@ -73,7 +73,7 @@ class BoardController(
     @PreAuthorize("hasPermission(#id, 'Board', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteBoard(@PathVariable id: Long) {
-        service.deleteById(id)
+        useCases.remove(id)
     }
 
     // Board Member endpoints

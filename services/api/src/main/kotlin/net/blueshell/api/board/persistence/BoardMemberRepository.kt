@@ -18,6 +18,10 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
     @Query("SELECT bm FROM BoardMember bm WHERE bm.board.id = :boardId")
     fun findByBoardId(@Param("boardId") boardId: Long): List<BoardMember>
 
+    /** How many seats a board still has, which is what stands in the way of removing it. */
+    @Query("SELECT COUNT(bm) FROM BoardMember bm WHERE bm.board.id = :boardId")
+    fun countByBoardId(@Param("boardId") boardId: Long): Long
+
     /**
      * Whether a member held a board seat overlapping the window — a board runs from its own
      * start to its own end, so the seat's dates are what the question asks about.

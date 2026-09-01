@@ -46,9 +46,9 @@ export function dispositionColor(disposition: BulkDisposition): string {
 }
 
 const REASON_LABELS: Record<BulkRowReason, string> = {
-  INCASSO_MISMATCH: "Not marked for direct debit",
-  ALREADY_PAID: "Already paid",
-  HONORARY: "Honorary (no contribution needed)",
+  INCASSO_MISMATCH: "No direct-debit mandate",
+  ALREADY_PAID: "Already paid this contribution",
+  HONORARY: "Owes no contribution",
   NOT_PAID: "Not paid",
   NO_ACTIVE_MEMBERSHIP: "No active membership",
   NOT_MEMBER_IN_PERIOD: "Not a member during this period",

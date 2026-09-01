@@ -12,10 +12,14 @@ import {
   changedFeeTypes,
   changedKinds,
   countByKind,
+  forcedUserIds,
   isSwitched,
   kindFor,
   lastSentLabel,
   lastSentOn,
+  paymentDateProblem,
+  periodDateWindow,
+  seedSendTo,
   summarise,
   switchedNote,
   toBulkRow,
@@ -103,7 +107,7 @@ describe("kindFor and isSwitched", () => {
     expect(switchedNote(row({defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION})))
       .toBe("Pays by direct debit")
     expect(switchedNote(row({defaultKind: ContributionEmailKind.REMINDER})))
-      .toBe("Not marked for direct debit")
+      .toBe("No direct-debit mandate")
   })
 })
 
@@ -127,22 +131,68 @@ describe("lastSentOn", () => {
   })
 })
 
-describe("willSend", () => {
-  it("includes an included row whatever the overrides say", () => {
-    expect(willSend(row({disposition: "INCLUDED"}), {})).toBe(true)
+describe("the selection", () => {
+  const rows = [
+    row({userId: 1, disposition: "INCLUDED"}),
+    row({userId: 2, disposition: "WARNING", reason: BulkRowReason.ALREADY_PAID}),
+    row({userId: 3, disposition: "EXCLUDED", reason: BulkRowReason.HONORARY}),
+  ]
+
+  it("starts a warned member unticked and gives an unreachable one no box at all", () => {
+    expect(seedSendTo(rows)).toEqual({1: true, 2: false})
   })
 
-  it("leaves a warned row out until it is ticked back in", () => {
-    const warned = row({userId: 2, disposition: "WARNING", reason: BulkRowReason.ALREADY_PAID})
-
-    expect(willSend(warned, {})).toBe(false)
-    expect(willSend(warned, {2: true})).toBe(true)
+  it("sends to a row only while it is ticked", () => {
+    expect(willSend(rows[0]!, {1: true})).toBe(true)
+    expect(willSend(rows[0]!, {1: false})).toBe(false)
+    expect(willSend(rows[1]!, {2: true})).toBe(true)
   })
 
-  it("never includes a hard-excluded row", () => {
-    const excluded = row({userId: 3, disposition: "EXCLUDED", reason: BulkRowReason.HONORARY})
+  it("never sends to a member it cannot reach, whatever is ticked", () => {
+    expect(willSend(rows[2]!, {3: true})).toBe(false)
+  })
 
-    expect(willSend(excluded, {3: true})).toBe(false)
+  it("names the warned rows the treasurer ticked back in", () => {
+    expect(forcedUserIds(rows, {1: true, 2: true, 3: true})).toEqual([2])
+    expect(forcedUserIds(rows, {1: true})).toEqual([])
+  })
+})
+
+describe("paymentDateProblem", () => {
+  const period = {startDate: "2025-09-01", endDate: "2026-08-31"}
+  const today = "2026-03-01"
+
+  it("accepts a date inside the period", () => {
+    expect(paymentDateProblem("2026-04-01", period, today)).toBeNull()
+  })
+
+  it("says nothing about a date nobody has entered yet", () => {
+    expect(paymentDateProblem("", period, today)).toBeNull()
+  })
+
+  it("refuses today and anything before it", () => {
+    expect(paymentDateProblem(today, period, today)).toBe("The date must be after today.")
+    expect(paymentDateProblem("2026-02-28", period, today)).toBe("The date must be after today.")
+  })
+
+  it("refuses a date before the period starts", () => {
+    expect(paymentDateProblem("2025-08-31", period, "2025-01-01"))
+      .toBe("The date must fall between 01/09/2025 and 30/11/2026.")
+  })
+
+  // Chasing the last unpaid members near the end of a period has to stay possible.
+  it("allows three months past the end of the period, and refuses the day after", () => {
+    expect(paymentDateProblem("2026-11-30", period, today)).toBeNull()
+    expect(paymentDateProblem("2026-12-01", period, today)).not.toBeNull()
+  })
+
+  it("has nothing to say without a period", () => {
+    expect(paymentDateProblem("2030-01-01", null, today)).toBeNull()
+  })
+
+  it("states the window the api will accept", () => {
+    expect(periodDateWindow(period)).toEqual({from: "2025-09-01", until: "2026-11-30"})
+    expect(periodDateWindow(null)).toBeNull()
   })
 })
 
@@ -160,14 +210,16 @@ describe("countByKind", () => {
       row({userId: 4, defaultKind: ContributionEmailKind.REMINDER, disposition: "EXCLUDED"}),
     ]
 
-    expect(countByKind(rows, {}, {})).toEqual({REMINDER: 1, INCASSO_NOTIFICATION: 1})
-    expect(countByKind(rows, {}, {3: true})).toEqual({REMINDER: 2, INCASSO_NOTIFICATION: 1})
+    expect(countByKind(rows, {}, {1: true, 2: true, 4: true}))
+      .toEqual({REMINDER: 1, INCASSO_NOTIFICATION: 1})
+    expect(countByKind(rows, {}, {1: true, 2: true, 3: true}))
+      .toEqual({REMINDER: 2, INCASSO_NOTIFICATION: 1})
   })
 
   it("follows a switched row to the other count", () => {
     const rows = [row({userId: 2, defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION})]
 
-    expect(countByKind(rows, {2: ContributionEmailKind.REMINDER}, {}))
+    expect(countByKind(rows, {2: ContributionEmailKind.REMINDER}, {2: true}))
       .toEqual({REMINDER: 1, INCASSO_NOTIFICATION: 0})
   })
 })
@@ -181,11 +233,11 @@ describe("summarise", () => {
   ]
 
   it("counts what the send would do, before it does it", () => {
-    expect(summarise(rows, {}, {}, {})).toEqual({
+    expect(summarise(rows, {}, {}, seedSendTo(rows))).toEqual({
       reminders: 1,
       incassoNotifications: 1,
       total: 2,
-      notWrittenTo: 2,
+      notEmailed: 2,
       forced: 0,
       switched: 0,
       reCharged: 0,
@@ -198,14 +250,14 @@ describe("summarise", () => {
       rows,
       {2: ContributionEmailKind.REMINDER},
       {1: BulkFeeType.ALUMNI_FEE},
-      {3: true},
+      {1: true, 2: true, 3: true},
     )
 
     expect(summary).toMatchObject({
       reminders: 3,
       incassoNotifications: 0,
       total: 3,
-      notWrittenTo: 1,
+      notEmailed: 1,
       forced: 1,
       switched: 1,
       reCharged: 1,
@@ -214,7 +266,12 @@ describe("summarise", () => {
 
   // A hard exclusion is never a recipient, so it never reaches any of the override counts.
   it("never counts a hard-excluded row as sent, whatever is ticked", () => {
-    expect(summarise(rows, {}, {}, {3: true, 4: true})).toMatchObject({total: 3, notWrittenTo: 1})
+    expect(summarise(rows, {}, {}, {1: true, 2: true, 3: true, 4: true}))
+      .toMatchObject({total: 3, notEmailed: 1})
+  })
+
+  it("drops a member the treasurer unticked", () => {
+    expect(summarise(rows, {}, {}, {1: true})).toMatchObject({total: 1, notEmailed: 3})
   })
 })
 

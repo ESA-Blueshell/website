@@ -1,9 +1,14 @@
-import {ContributionEmailKind, type BulkContributionEmailRowResponse} from "@/services/api"
+import {DateTime} from "luxon"
+import {
+  ContributionEmailKind,
+  type BulkContributionEmailRowResponse,
+  type ContributionPeriodResponse,
+} from "@/services/api"
 import {formatBulkDate} from "@/utils/bulkDisposition"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
 
 /**
- * The payment-email rows, as the dialog reads them.
+ * The payment-email rows, as the wizard reads them.
  *
  * Decided by the api rather than the browser: whether a member is warned about turns on
  * facts this page does not hold, and the send re-reads the same answer.
@@ -50,7 +55,7 @@ export function isSwitched(row: BulkRow, chosen: Record<number, ContributionEmai
 export function switchedNote(row: BulkRow): string {
   return row.defaultKind === ContributionEmailKind.INCASSO_NOTIFICATION
     ? "Pays by direct debit"
-    : "Not marked for direct debit"
+    : "No direct-debit mandate"
 }
 
 /** When this member last got the email they are getting now. */
@@ -69,24 +74,87 @@ export function lastSentLabel(iso: string | undefined): string {
   return formatted === "—" ? "Never" : formatted
 }
 
-/** The same rule the api applies on send: a warning is overridable, a hard exclusion is not. */
-export function willSend(row: BulkRow, forciblyIncluded: Record<number, boolean>): boolean {
-  if (row.disposition === "INCLUDED") return true
-  return row.disposition === "WARNING" && !!forciblyIncluded[row.userId]
+/** A member this send can reach at all, so the wizard offers them a Send-to box. */
+export function isSelectable(row: BulkRow): boolean {
+  return row.disposition !== "EXCLUDED"
+}
+
+/**
+ * Which rows the wizard starts ticked. A warned row starts unticked, so the safe choice is
+ * the one the treasurer gets by doing nothing; a member it cannot reach has no box at all.
+ */
+export function seedSendTo(rows: BulkRow[]): Record<number, boolean> {
+  const sendTo: Record<number, boolean> = {}
+  for (const row of rows) {
+    if (isSelectable(row)) sendTo[row.userId] = row.disposition === "INCLUDED"
+  }
+  return sendTo
+}
+
+/** The Send-to box is the selection: a row sends when it is ticked, and only then. */
+export function willSend(row: BulkRow, sendTo: Record<number, boolean>): boolean {
+  return isSelectable(row) && !!sendTo[row.userId]
+}
+
+/** Ticked rows the api warned about. It re-decides on send, so it is told to overrule. */
+export function forcedUserIds(rows: BulkRow[], sendTo: Record<number, boolean>): number[] {
+  return rows
+    .filter((row) => row.disposition === "WARNING" && willSend(row, sendTo))
+    .map((row) => row.userId)
+}
+
+/** A payment date may run this far past the period's end, so August chasing stays possible. */
+export const PERIOD_OVERHANG_MONTHS = 3
+
+type PeriodDates = Pick<ContributionPeriodResponse, "startDate" | "endDate">
+
+/** The window a payment due date or debit date may fall in. */
+export function periodDateWindow(
+  period: PeriodDates | null | undefined,
+): {from: string; until: string} | null {
+  if (!period) return null
+  return {
+    from: period.startDate,
+    until: DateTime.fromISO(period.endDate)
+      .plus({months: PERIOD_OVERHANG_MONTHS})
+      .toFormat("yyyy-MM-dd"),
+  }
+}
+
+/**
+ * Why this date cannot be sent, or null when it can.
+ *
+ * The api enforces the same rule on send — its copy is the period-bounds check in
+ * `BulkContributionEmailUseCases`, mirrored here the way `effectiveAmount` and
+ * `resolveFeeAmount` name each other. Changing one means changing the other.
+ */
+export function paymentDateProblem(
+  iso: string,
+  period: PeriodDates | null | undefined,
+  today: string,
+): string | null {
+  if (!iso) return null
+  if (iso <= today) return "The date must be after today."
+  const window = periodDateWindow(period)
+  if (!window) return null
+  if (iso < window.from || iso > window.until) {
+    return `The date must fall between ${formatBulkDate(window.from)} and ${formatBulkDate(window.until)}.`
+  }
+  return null
 }
 
 /** How many of each email this send would put out. */
 export function countByKind(
   rows: BulkRow[],
   chosen: Record<number, ContributionEmailKind>,
-  forciblyIncluded: Record<number, boolean>,
+  sendTo: Record<number, boolean>,
 ): Record<ContributionEmailKind, number> {
   const counts = {
     [ContributionEmailKind.REMINDER]: 0,
     [ContributionEmailKind.INCASSO_NOTIFICATION]: 0,
   }
   for (const row of rows) {
-    if (willSend(row, forciblyIncluded)) counts[kindFor(row, chosen)]++
+    if (willSend(row, sendTo)) counts[kindFor(row, chosen)]++
   }
   return counts
 }
@@ -96,7 +164,8 @@ export interface PaymentEmailSummary {
   reminders: number
   incassoNotifications: number
   total: number
-  notWrittenTo: number
+  /** Selected members the batch leaves alone, whether unticked or never reachable. */
+  notEmailed: number
   /** Warned rows the operator ticked back in. */
   forced: number
   /** Rows moved off the email their direct-debit flag chose. */
@@ -111,15 +180,15 @@ export function summarise(
   rows: BulkRow[],
   kinds: Record<number, ContributionEmailKind>,
   fees: Record<number, BulkFeeType>,
-  forciblyIncluded: Record<number, boolean>,
+  sendTo: Record<number, boolean>,
 ): PaymentEmailSummary {
-  const recipients = rows.filter((row) => willSend(row, forciblyIncluded))
-  const counts = countByKind(rows, kinds, forciblyIncluded)
+  const recipients = rows.filter((row) => willSend(row, sendTo))
+  const counts = countByKind(rows, kinds, sendTo)
   return {
     reminders: counts[ContributionEmailKind.REMINDER],
     incassoNotifications: counts[ContributionEmailKind.INCASSO_NOTIFICATION],
     total: recipients.length,
-    notWrittenTo: rows.length - recipients.length,
+    notEmailed: rows.length - recipients.length,
     forced: recipients.filter((row) => row.disposition === "WARNING").length,
     switched: recipients.filter((row) => isSwitched(row, kinds)).length,
     reCharged: recipients.filter((row) => {

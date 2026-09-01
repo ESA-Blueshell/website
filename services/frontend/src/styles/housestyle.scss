@@ -139,6 +139,17 @@ CSS MOMENT
   font-family: "Fugaz One", sans-serif !important;
 }
 
+// A name is not a heading, whatever size it is set at: Fugaz One has no İ, ı, ş or Ş, so
+// `İlayda Hotamiş` in a text-h1 or text-h2 loses two letters to a fallback mid-word, or to
+// tofu. Put this class beside the size class and the size ladder survives, the family does
+// not. The token is declared next to --font-display in island.css, which lands it on :root
+// for the whole document; the literal is the fallback for the case where Tailwind prunes it,
+// housestyle.scss not being one of the sources it scans. Last of the family rules on
+// purpose — every one of them is !important at the same specificity, so order settles it.
+.v-application .font-name {
+  font-family: var(--font-name, "Barlow Semi Condensed", sans-serif) !important;
+}
+
 
 .v-application {
   font-family: "Barlow Semi Condensed", sans-serif;

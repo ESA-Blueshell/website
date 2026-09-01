@@ -31,7 +31,7 @@
         md="7"
       >
         <div :class="['pa-2', 'pa-md-2', reverse ? 'text-md-end' : 'text-md-start']">
-          <p class="text-h2">
+          <p class="text-h2 font-name">
             {{ member.name }}
           </p>
           <p class="text-subtitle-1 mt-n6">
@@ -51,7 +51,7 @@
   >
     <div class="mx-auto">
       <div :class="['pa-2', 'pa-md-2', 'text-end', reverse ? 'text-md-end' : 'text-md-start']">
-        <p class="text-h2">
+        <p class="text-h2 font-name">
           {{ member.name }}
         </p>
         <p class="text-subtitle-1 mt-n6">

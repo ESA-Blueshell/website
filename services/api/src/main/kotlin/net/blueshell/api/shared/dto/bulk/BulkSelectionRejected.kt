@@ -51,6 +51,18 @@ class BulkSelectionRejected(
         const val HONORARY_USERS: String = "HonoraryUserIds"
 
         /**
+         * The selection names the same user twice. Refused rather than collapsed, so a
+         * client that has lost count of its own rows says so instead of being absorbed.
+         */
+        const val DUPLICATE_USERS: String = "DuplicateUserIds"
+
+        /** A user was ticked back in that the action still does not write to. */
+        const val NON_RECIPIENT_FORCED: String = "NonRecipientForcedUserIds"
+
+        /** A user was ticked back in that the selection does not name at all. */
+        const val UNKNOWN_FORCED: String = "UnknownForcedUserIds"
+
+        /**
          * A fee type was submitted for a member the send does not write to. The table
          * the operator was looking at has moved, so the send is refused rather than applied
          * to the members it still recognises.

@@ -108,9 +108,9 @@ describe("kindFor and isSwitched", () => {
 
   it("names the flag the switch contradicts", () => {
     expect(switchedNote(row({defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION})))
-      .toBe("Pays by direct debit")
+      .toContain("Pays by direct debit")
     expect(switchedNote(row({defaultKind: ContributionEmailKind.REMINDER})))
-      .toBe("No direct-debit mandate")
+      .toContain("No direct-debit mandate")
   })
 })
 
@@ -307,7 +307,7 @@ describe("summarise", () => {
       forced: [],
       switched: [],
       reCharged: [],
-      alreadySent: [{userId: 1, name: "Ann Regular", note: undefined}],
+      alreadySent: [{userId: 1, name: "Ann Regular", note: "last sent 05/01/2026"}],
     })
   })
 

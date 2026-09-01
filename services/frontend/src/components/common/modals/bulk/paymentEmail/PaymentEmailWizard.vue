@@ -675,8 +675,8 @@ watch(
           prepend-icon="mdi-account-off-outline"
           variant="tonal"
         >
-          {{ sendSummary.notEmailed }} of the selected
-          {{ sendSummary.notEmailed === 1 ? "members is" : "members are" }} left alone
+          {{ sendSummary.notEmailed }} selected
+          {{ sendSummary.notEmailed === 1 ? "member gets" : "members get" }} no email
         </v-chip>
       </div>
 
@@ -707,7 +707,7 @@ watch(
                 v-for="member in sendSummary.forced"
                 :key="member.userId"
               >
-                {{ member.name }}<span v-if="member.note">: {{ member.note }}</span>
+                {{ member.name }}: {{ member.note.toLowerCase() }}
               </li>
             </ul>
           </li>
@@ -717,13 +717,13 @@ watch(
           >
             {{ sendSummary.switched.length }}
             {{ sendSummary.switched.length === 1 ? "member gets" : "members get" }}
-            a different email than their direct-debit flag says
+            the email their direct-debit flag does not call for
             <ul class="payment-email-people">
               <li
                 v-for="member in sendSummary.switched"
                 :key="member.userId"
               >
-                {{ member.name }}
+                {{ member.note }}
               </li>
             </ul>
           </li>
@@ -739,7 +739,7 @@ watch(
                 v-for="member in sendSummary.reCharged"
                 :key="member.userId"
               >
-                {{ member.name }}
+                {{ member.note }}
               </li>
             </ul>
           </li>
@@ -748,14 +748,14 @@ watch(
             data-testid="payment-emails-confirm-already-sent"
           >
             {{ sendSummary.alreadySent.length }}
-            {{ sendSummary.alreadySent.length === 1 ? "member" : "members" }}
-            already had this email for this period
+            {{ sendSummary.alreadySent.length === 1 ? "member has" : "members have" }}
+            had this same email for this period before
             <ul class="payment-email-people">
               <li
                 v-for="member in sendSummary.alreadySent"
                 :key="member.userId"
               >
-                {{ member.name }}
+                {{ member.name }}, {{ member.note }}
               </li>
             </ul>
           </li>

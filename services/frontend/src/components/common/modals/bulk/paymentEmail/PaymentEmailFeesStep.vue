@@ -6,6 +6,8 @@ import {
   contributionEmailItems,
   isReCharged,
   isSwitched,
+  reChargedDescription,
+  switchedDescription,
   kindFor,
   lastSentLabel,
   lastSentOn,
@@ -33,12 +35,16 @@ const emit = defineEmits<{
   (e: "update:fees", value: Record<number, BulkFeeType>): void
 }>()
 
-const switchedNames = computed(() =>
-  props.rows.filter((row) => isSwitched(row, props.kinds)).map((row) => row.name),
+const switchedLines = computed(() =>
+  props.rows
+    .filter((row) => isSwitched(row, props.kinds))
+    .map((row) => ({userId: row.userId, text: switchedDescription(row, props.kinds)})),
 )
 
-const reChargedNames = computed(() =>
-  props.rows.filter((row) => isReCharged(row, props.fees)).map((row) => row.name),
+const reChargedLines = computed(() =>
+  props.rows
+    .filter((row) => isReCharged(row, props.fees))
+    .map((row) => ({userId: row.userId, text: reChargedDescription(row, props.fees)})),
 )
 
 /** Whether the association collects from this member, which is what chose their email. */
@@ -100,7 +106,7 @@ function setFee(userId: number, fee: BulkFeeType) {
               icon="mdi-alert-outline"
               size="14"
             />
-            Switched. {{ switchedNote(row) }}
+            {{ switchedNote(row) }}
           </div>
         </td>
         <td class="text-center">
@@ -168,7 +174,7 @@ function setFee(userId: number, fee: BulkFeeType) {
   </v-table>
 
   <v-alert
-    v-if="switchedNames.length"
+    v-if="switchedLines.length"
     class="mt-3"
     data-testid="payment-emails-kind-warning"
     density="compact"
@@ -177,13 +183,18 @@ function setFee(userId: number, fee: BulkFeeType) {
     variant="tonal"
   >
     <div class="text-body-2 font-weight-medium">
-      {{ switchedNames.length }}
-      {{ switchedNames.length === 1 ? "member gets" : "members get" }}
-      a different email than their direct-debit flag says
+      {{ switchedLines.length }}
+      {{ switchedLines.length === 1 ? "member gets" : "members get" }}
+      the email their direct-debit flag does not call for
     </div>
-    <div class="text-body-2">
-      {{ switchedNames.join(", ") }}
-    </div>
+    <ul class="payment-email-lines text-body-2">
+      <li
+        v-for="line in switchedLines"
+        :key="line.userId"
+      >
+        {{ line.text }}
+      </li>
+    </ul>
     <div class="text-body-2 mt-1">
       An incasso notification says money is taken. A contribution reminder asks for a
       transfer. Sending the wrong one can make a member pay twice.
@@ -191,7 +202,7 @@ function setFee(userId: number, fee: BulkFeeType) {
   </v-alert>
 
   <v-alert
-    v-if="reChargedNames.length"
+    v-if="reChargedLines.length"
     class="mt-3"
     data-testid="payment-emails-fee-warning"
     density="compact"
@@ -200,16 +211,18 @@ function setFee(userId: number, fee: BulkFeeType) {
     variant="tonal"
   >
     <div class="text-body-2 font-weight-medium">
-      {{ reChargedNames.length }}
-      {{ reChargedNames.length === 1 ? "member is" : "members are" }}
+      {{ reChargedLines.length }}
+      {{ reChargedLines.length === 1 ? "member is" : "members are" }}
       charged a fee that does not apply to them
     </div>
-    <div class="text-body-2">
-      {{ reChargedNames.join(", ") }}
-    </div>
-    <div class="text-body-2 mt-1">
-      They are billed what that fee sets, not what their membership works out to.
-    </div>
+    <ul class="payment-email-lines text-body-2">
+      <li
+        v-for="line in reChargedLines"
+        :key="line.userId"
+      >
+        {{ line.text }}
+      </li>
+    </ul>
   </v-alert>
 
   <p
@@ -223,6 +236,13 @@ function setFee(userId: number, fee: BulkFeeType) {
 
 <style lang="scss" scoped>
 @use '@/styles/payment-email' as paymentEmail;
+
+// A sentence per member, inside the alert's own padding.
+.payment-email-lines {
+  list-style: none;
+  padding-left: 0;
+  margin: 2px 0 0;
+}
 
 @include paymentEmail.sticky-table-header;
 

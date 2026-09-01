@@ -5,7 +5,8 @@ import {
   type ContributionPeriodResponse,
 } from "@/services/api"
 import {formatBulkDate, reasonLabel} from "@/utils/bulkDisposition"
-import {BulkFeeType, type BulkRow, type BulkRowReason} from "@/utils/bulkRow"
+import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
+import {feeTypeLabels} from "@/utils/feePreview"
 
 /**
  * The payment-email rows, as the wizard reads them.
@@ -60,8 +61,32 @@ export function isReCharged(row: BulkRow, fees: Record<number, BulkFeeType>): bo
 /** Why switching this row is worth flagging: the flag says the other thing. */
 export function switchedNote(row: BulkRow): string {
   return row.defaultKind === ContributionEmailKind.INCASSO_NOTIFICATION
-    ? "Pays by direct debit"
-    : "No direct-debit mandate"
+    ? "Pays by direct debit, so a reminder asks for money that is taken anyway"
+    : "No direct-debit mandate, so nothing will be taken on the debit date"
+}
+
+/**
+ * What is happening to this member, both halves of it. A line that only says the flag
+ * disagrees leaves the reader to work out which way round it is.
+ */
+export function switchedDescription(
+  row: BulkRow,
+  chosen: Record<number, ContributionEmailKind>,
+): string {
+  const getting = contributionEmailLabels[kindFor(row, chosen)].toLowerCase()
+  return row.defaultKind === ContributionEmailKind.INCASSO_NOTIFICATION
+    ? `${row.name} pays by direct debit but is getting a ${getting}`
+    : `${row.name} has no direct-debit mandate but is getting an ${getting}`
+}
+
+/** Which fee is charged instead of the one the membership works out to. */
+export function reChargedDescription(
+  row: BulkRow,
+  fees: Record<number, BulkFeeType>,
+): string {
+  const charged = feeTypeLabels[fees[row.userId]!].toLowerCase()
+  const applies = row.recommendedFeeType ? feeTypeLabels[row.recommendedFeeType].toLowerCase() : "none"
+  return `${row.name} is charged the ${charged} instead of the ${applies} that applies`
 }
 
 /** When this member last got the email they are getting now. */
@@ -219,8 +244,8 @@ export function countByKind(
 export interface FlaggedMember {
   userId: number
   name: string
-  /** What the api warned about, where there was a warning. */
-  note?: string
+  /** What is true of this member, stated in full so the line needs no decoding. */
+  note: string
 }
 
 export interface PaymentEmailSummary {
@@ -239,14 +264,6 @@ export interface PaymentEmailSummary {
   alreadySent: FlaggedMember[]
 }
 
-function flag(rows: BulkRow[], note?: (reason: BulkRowReason | undefined) => string): FlaggedMember[] {
-  return rows.map((row) => ({
-    userId: row.userId,
-    name: row.name,
-    note: note?.(row.reason) || undefined,
-  }))
-}
-
 export function summarise(
   rows: BulkRow[],
   kinds: Record<number, ContributionEmailKind>,
@@ -260,10 +277,22 @@ export function summarise(
     incassoNotifications: counts[ContributionEmailKind.INCASSO_NOTIFICATION],
     total: recipients.length,
     notEmailed: rows.length - recipients.length,
-    forced: flag(recipients.filter((row) => row.disposition === "WARNING"), reasonLabel),
-    switched: flag(recipients.filter((row) => isSwitched(row, kinds))),
-    reCharged: flag(recipients.filter((row) => isReCharged(row, fees))),
-    alreadySent: flag(recipients.filter((row) => !!lastSentOn(row, kinds))),
+    forced: recipients
+      .filter((row) => row.disposition === "WARNING")
+      .map((row) => ({userId: row.userId, name: row.name, note: reasonLabel(row.reason)})),
+    switched: recipients
+      .filter((row) => isSwitched(row, kinds))
+      .map((row) => ({userId: row.userId, name: row.name, note: switchedDescription(row, kinds)})),
+    reCharged: recipients
+      .filter((row) => isReCharged(row, fees))
+      .map((row) => ({userId: row.userId, name: row.name, note: reChargedDescription(row, fees)})),
+    alreadySent: recipients
+      .filter((row) => !!lastSentOn(row, kinds))
+      .map((row) => ({
+        userId: row.userId,
+        name: row.name,
+        note: `last sent ${lastSentLabel(lastSentOn(row, kinds))}`,
+      })),
   }
 }
 

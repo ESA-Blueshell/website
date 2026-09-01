@@ -216,7 +216,7 @@ test.describe("the confirmation", () => {
     await expect(page.getByTestId("payment-emails-confirm-reminders")).toContainText("1")
     await expect(page.getByTestId("payment-emails-confirm-notifications")).toContainText("1")
     await expect(page.getByTestId("payment-emails-confirm-not-emailed"))
-      .toContainText("2 of the selected members are left alone")
+      .toContainText("2 selected members get no email")
 
     await page.getByTestId("payment-emails-confirm-send-btn").click()
 

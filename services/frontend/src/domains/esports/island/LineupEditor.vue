@@ -13,7 +13,6 @@ import {
   saveTeamOrReason,
   fieldTeamInSeason,
   linkRosterMember,
-  loadMembers,
   loadRoster,
   loadTeamSeasons,
   loadTeams,
@@ -24,11 +23,11 @@ import {
   type Fielding,
   type GameCode,
   type Team,
-  type Member,
   type RosterEntry,
   type Season,
   type TeamRole,
 } from "../adapters/esports"
+import {loadMembers, type Member} from "@/domains/user"
 import {countOf} from "../copy"
 import {reasonFor} from "../refusals"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"

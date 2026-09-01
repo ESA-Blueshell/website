@@ -28,7 +28,6 @@ import {
   findSeasons,
   findTeamSeasons,
   findTeams,
-  findUsers,
   linkRosterEntry,
   removeRosterEntry,
   setGameAccount,
@@ -557,32 +556,6 @@ export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused>
   const res = await removeRosterEntry({path: {id}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "That person could not be taken off.")}
   return {ok: true}
-}
-
-/** A member as a roster entry needs to name them: who they are, and how to tell two apart. */
-export interface Member {
-  id: number
-  name: string
-  email: string | null
-}
-
-/**
- * The members an entry can be attached to.
- *
- * Asked for once and filtered where it is used, the way the rest of the site's member pickers
- * work. Attaching a roster entry is rare enough that a search round trip per keystroke would
- * buy nothing.
- */
-export async function loadMembers(): Promise<Member[]> {
-  const res = await findUsers({query: {size: 500}})
-  return (res.data?.content ?? [])
-    .filter(user => user.id != null)
-    .map(user => ({
-      id: user.id as number,
-      name: user.fullName ?? user.email ?? `Member ${user.id}`,
-      email: user.email ?? null,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export async function loadGameAccounts(userId: number): Promise<GameAccount[]> {

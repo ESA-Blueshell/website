@@ -99,15 +99,17 @@ const debitDateRules = computed(() => [
   (v: string) => !v || v > today || "The debit date must be after today.",
 ])
 
+// No widths: the columns take what their content needs, which is the only thing that knows
+// how long "Incasso notification" is.
 const columns: BulkColumn[] = [
   {key: "name", header: "Member", sortable: true},
   {key: "memberType", header: "Type", sortable: true},
   {key: "disposition", header: "Status", sortable: true},
   {key: "memberSince", header: "Member since", sortable: true},
-  {key: "kind", header: "Gets", width: "190px"},
-  {key: "fee", header: "Fee type", width: "170px"},
-  {key: "amount", header: "Amount", align: "end", sortable: true, width: "90px"},
-  {key: "lastSent", header: "Last sent", align: "center", width: "105px"},
+  {key: "kind", header: "Gets"},
+  {key: "fee", header: "Fee type"},
+  {key: "amount", header: "Amount", align: "end", sortable: true},
+  {key: "lastSent", header: "Last sent", align: "center"},
   {key: "note", header: "Note"},
 ]
 
@@ -341,6 +343,7 @@ defineExpose({
     include-label="Forcibly include"
     :included-count="includedUserIds.length"
     info-box-label="Contribution period"
+    max-width="1700"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
@@ -538,6 +541,7 @@ defineExpose({
       <div
         v-if="row.reason"
         class="text-caption"
+        :class="row.disposition === 'EXCLUDED' ? 'text-error' : 'text-warning'"
         :data-testid="`bulk-preview-note-${row.userId}`"
       >
         {{ reasonLabel(row.reason) }}
@@ -581,5 +585,18 @@ defineExpose({
 <style lang="scss" scoped>
 .payment-email-dates {
   gap: 12px;
+}
+
+// The table lays out automatically, so it compresses whatever it can to fit. Left alone
+// that lands on the two pickers, which are the cells that cannot afford it: a wrapped
+// "Incasso notification" is unreadable, where a wrapped member name is fine. Asking for
+// their content width makes the wrappable columns give way instead.
+.payment-email-kind-select,
+.payment-email-feetype-select {
+  min-width: max-content;
+
+  :deep(.v-field__input) {
+    white-space: nowrap;
+  }
 }
 </style>

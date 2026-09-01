@@ -70,6 +70,8 @@ interface Props {
   getRowAmount?: (row: BulkRow) => number | null
   /** Label for the WARNING re-include column (e.g. "Include" or "Forcibly include"). */
   includeLabel?: string
+  /** Widen past the default for a dialog carrying more columns than the others. */
+  maxWidth?: string
   /** Optional help panel content rendered behind a "?" icon button in the header. */
   help?: {title: string; body: string}
   /** Label for the optional #info-box slot's labelled box (e.g. "Contribution period"). */
@@ -91,6 +93,7 @@ const props = withDefaults(defineProps<Props>(), {
   columns: undefined,
   getRowAmount: undefined,
   includeLabel: "Include",
+  maxWidth: "1200",
   help: undefined,
   infoBoxLabel: "Info",
 })
@@ -149,6 +152,11 @@ function effective(row: BulkRow) {
   return effectiveDisposition(row, props.reincludeOverrides)
 }
 
+/** Ticked back in by the operator. It sends, and it is still the row that was flagged. */
+function isForced(row: BulkRow): boolean {
+  return row.disposition === "WARNING" && !!props.reincludeOverrides[row.userId]
+}
+
 function setReinclude(userId: number, value: boolean) {
   emit("update:reincludeOverrides", {...props.reincludeOverrides, [userId]: value})
 }
@@ -199,7 +207,7 @@ defineExpose({validate})
     :save-submit-state="submitState"
     :title="title"
     data-testid="bulk-action-dialog"
-    max-width="1200"
+    :max-width="maxWidth"
     save-testid="bulk-action-confirm-btn"
     scrollable
     show-cancel
@@ -358,7 +366,7 @@ defineExpose({validate})
         <tr
           v-for="row in sortedRows"
           :key="row.userId"
-          :class="rowColorClass(effective(row))"
+          :class="rowColorClass(row.disposition)"
           :data-testid="`bulk-preview-row-${row.userId}`"
         >
           <td
@@ -379,14 +387,16 @@ defineExpose({validate})
               <template v-else-if="col.key === 'memberType'">
                 <span class="text-caption text-medium-emphasis">{{ memberTypeLabel(row.memberType) }}</span>
               </template>
+              <!-- A forced row reads as sending and as flagged: both facts, one chip. -->
               <template v-else-if="col.key === 'disposition'">
                 <v-chip
-                  :color="dispositionColor(effective(row))"
+                  :color="isForced(row) ? 'warning' : dispositionColor(effective(row))"
                   :data-testid="`bulk-preview-disposition-${row.userId}`"
+                  :prepend-icon="isForced(row) ? 'mdi-alert-outline' : undefined"
                   size="x-small"
                   variant="tonal"
                 >
-                  {{ dispositionLabel(effective(row)) }}
+                  {{ isForced(row) ? "Forced" : dispositionLabel(effective(row)) }}
                 </v-chip>
               </template>
               <template v-else-if="col.key === 'memberSince'">

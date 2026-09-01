@@ -162,6 +162,27 @@ describe("ContributionEmailDialog", () => {
     expect(wrapper.find('[data-testid="payment-emails-feetype-2"]').exists()).toBe(true)
   })
 
+  // Forcing a row sends it; it is still the row that was flagged, and stays legible as one.
+  it("keeps the warning visible on a forcibly included row", async () => {
+    const wrapper = await openDialog([
+      apiRow({
+        userId: 2,
+        name: "Ben Paid",
+        disposition: BulkRowDisposition.WARNING,
+        reason: BulkRowReason.ALREADY_PAID,
+      }),
+    ])
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-2"]').text()).toContain("Warning")
+
+    await wrapper.findComponent({name: "BulkDialogScaffold"})
+      .vm.$emit("update:reincludeOverrides", {2: true})
+    await settle()
+
+    expect(wrapper.find('[data-testid="bulk-preview-disposition-2"]').text()).toContain("Forced")
+    expect(wrapper.find('[data-testid="bulk-preview-note-2"]').text()).toContain("Already paid")
+    expect(wrapper.find('[data-testid="bulk-preview-note-2"]').classes()).toContain("text-warning")
+  })
+
   it("re-prices a row when its fee type changes, without asking the api again", async () => {
     const wrapper = await openDialog([apiRow({feeType: BulkFeeType.FULL_YEAR_FEE, amount: 45})])
     expect(wrapper.find('[data-testid="payment-emails-amount-1"]').text()).toContain("45.00")

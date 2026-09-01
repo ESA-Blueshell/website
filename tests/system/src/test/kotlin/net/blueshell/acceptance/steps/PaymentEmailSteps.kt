@@ -59,7 +59,7 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
         paidUserId = addMember(incasso = false, paid = true)
     }
 
-    @Given("an honorary member in the selection")
+    @Given("an honorary member among the selected")
     fun anHonoraryMember() {
         honoraryUserId = addMember(incasso = false, memberType = "HONORARY")
     }

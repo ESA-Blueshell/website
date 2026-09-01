@@ -29,7 +29,7 @@ Feature: Payment emails
 
   Scenario: An honorary member is never written to
     Given a member who pays by transfer
-    And an honorary member in the selection
+    And an honorary member among the selected
     When they send the payment emails
     Then the request succeeds
     And the honorary member is sent nothing
@@ -45,7 +45,7 @@ Feature: Payment emails
     And 1 contribution reminder and 0 incasso notifications are reported
 
   Scenario: Ticking back in somebody the send still will not write to is refused
-    Given an honorary member in the selection
+    Given an honorary member among the selected
     When they forcibly include that member and send
     Then the request is refused as a conflict
     And the refusal reports "NonRecipientForcedUserIds" against "forciblyIncludedUserIds"
@@ -66,7 +66,7 @@ Feature: Payment emails
 
   Scenario: A fee type naming somebody the send skips refuses the whole thing
     Given a member who pays by transfer
-    And an honorary member in the selection
+    And an honorary member among the selected
     When they send the payment emails charging the honorary member the alumni fee
     Then the request is refused as a conflict
     And the refusal reports "NonRecipientFeeTypeUserIds" against "feeTypeOverrides"
@@ -74,7 +74,7 @@ Feature: Payment emails
 
   Scenario: An email chosen for somebody the send skips refuses the whole thing
     Given a member who pays by transfer
-    And an honorary member in the selection
+    And an honorary member among the selected
     When they move the honorary member onto the contribution reminder and send
     Then the request is refused as a conflict
     And the refusal reports "NonRecipientEmailKindUserIds" against "kindOverrides"

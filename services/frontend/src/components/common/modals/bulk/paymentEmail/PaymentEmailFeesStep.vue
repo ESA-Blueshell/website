@@ -41,6 +41,11 @@ const reChargedNames = computed(() =>
   props.rows.filter((row) => isReCharged(row, props.fees)).map((row) => row.name),
 )
 
+/** Whether the association collects from this member, which is what chose their email. */
+function paysByDirectDebit(row: BulkRow): boolean {
+  return row.defaultKind === ContributionEmailKind.INCASSO_NOTIFICATION
+}
+
 function rowAmount(row: BulkRow): number | null {
   return effectiveAmount(props.fees[row.userId] ?? row.recommendedFeeType, props.period)
 }
@@ -55,47 +60,6 @@ function setFee(userId: number, fee: BulkFeeType) {
 </script>
 
 <template>
-  <v-alert
-    v-if="switchedNames.length"
-    class="mb-3"
-    data-testid="payment-emails-kind-warning"
-    density="compact"
-    icon="mdi-email-sync-outline"
-    type="warning"
-    variant="tonal"
-  >
-    <div class="text-body-2 font-weight-medium">
-      {{ switchedNames.length }}
-      {{ switchedNames.length === 1 ? "member is" : "members are" }}
-      moved off the email their direct-debit flag chose
-    </div>
-    <div class="text-body-2">
-      {{ switchedNames.join(", ") }} — an incasso notification says money is taken, a
-      contribution reminder asks for a transfer. Sending the wrong one can make a member pay
-      twice.
-    </div>
-  </v-alert>
-
-  <v-alert
-    v-if="reChargedNames.length"
-    class="mb-3"
-    data-testid="payment-emails-fee-warning"
-    density="compact"
-    icon="mdi-cash-sync"
-    type="warning"
-    variant="tonal"
-  >
-    <div class="text-body-2 font-weight-medium">
-      {{ reChargedNames.length }}
-      {{ reChargedNames.length === 1 ? "member is" : "members are" }}
-      charged a fee type other than the one that applies
-    </div>
-    <div class="text-body-2">
-      {{ reChargedNames.join(", ") }} — they are billed the amount that fee sets, not the one
-      their membership works out to.
-    </div>
-  </v-alert>
-
   <v-table
     class="payment-email-table"
     data-testid="payment-emails-fees-table"
@@ -104,6 +68,9 @@ function setFee(userId: number, fee: BulkFeeType) {
     <thead>
       <tr>
         <th>Member</th>
+        <th class="text-center">
+          Direct debit
+        </th>
         <th>Email type</th>
         <th>Fee type</th>
         <th class="text-end">
@@ -133,8 +100,22 @@ function setFee(userId: number, fee: BulkFeeType) {
               icon="mdi-alert-outline"
               size="14"
             />
-            Switched — {{ switchedNote(row) }}
+            Switched. {{ switchedNote(row) }}
           </div>
+        </td>
+        <td class="text-center">
+          <v-icon
+            v-if="paysByDirectDebit(row)"
+            color="primary"
+            :data-testid="`payment-emails-mandate-${row.userId}`"
+            icon="mdi-check-circle-outline"
+            size="18"
+          />
+          <span
+            v-else
+            class="text-medium-emphasis"
+            :data-testid="`payment-emails-mandate-${row.userId}`"
+          >—</span>
         </td>
         <td>
           <v-select
@@ -185,6 +166,51 @@ function setFee(userId: number, fee: BulkFeeType) {
       </tr>
     </tbody>
   </v-table>
+
+  <v-alert
+    v-if="switchedNames.length"
+    class="mt-3"
+    data-testid="payment-emails-kind-warning"
+    density="compact"
+    icon="mdi-email-sync-outline"
+    type="warning"
+    variant="tonal"
+  >
+    <div class="text-body-2 font-weight-medium">
+      {{ switchedNames.length }}
+      {{ switchedNames.length === 1 ? "member gets" : "members get" }}
+      a different email than their direct-debit flag says
+    </div>
+    <div class="text-body-2">
+      {{ switchedNames.join(", ") }}
+    </div>
+    <div class="text-body-2 mt-1">
+      An incasso notification says money is taken. A contribution reminder asks for a
+      transfer. Sending the wrong one can make a member pay twice.
+    </div>
+  </v-alert>
+
+  <v-alert
+    v-if="reChargedNames.length"
+    class="mt-3"
+    data-testid="payment-emails-fee-warning"
+    density="compact"
+    icon="mdi-cash-sync"
+    type="warning"
+    variant="tonal"
+  >
+    <div class="text-body-2 font-weight-medium">
+      {{ reChargedNames.length }}
+      {{ reChargedNames.length === 1 ? "member is" : "members are" }}
+      charged a fee that does not apply to them
+    </div>
+    <div class="text-body-2">
+      {{ reChargedNames.join(", ") }}
+    </div>
+    <div class="text-body-2 mt-1">
+      They are billed what that fee sets, not what their membership works out to.
+    </div>
+  </v-alert>
 
   <p
     v-if="rows.length === 0"

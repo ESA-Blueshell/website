@@ -304,10 +304,10 @@ describe("summarise", () => {
       incassoNotifications: 1,
       total: 2,
       notEmailed: 2,
-      forced: 0,
-      switched: 0,
-      reCharged: 0,
-      alreadySent: 1,
+      forced: [],
+      switched: [],
+      reCharged: [],
+      alreadySent: [{userId: 1, name: "Ann Regular", note: undefined}],
     })
   })
 
@@ -324,10 +324,13 @@ describe("summarise", () => {
       incassoNotifications: 0,
       total: 3,
       notEmailed: 1,
-      forced: 1,
-      switched: 1,
-      reCharged: 1,
     })
+    // Named, not just counted: the confirmation shows who, and what was overruled.
+    expect(summary.forced).toEqual([
+      {userId: 3, name: "Ann Regular", note: "Already paid this contribution"},
+    ])
+    expect(summary.switched.map((m) => m.userId)).toEqual([2])
+    expect(summary.reCharged.map((m) => m.userId)).toEqual([1])
   })
 
   // A hard exclusion is never a recipient, so it never reaches any of the override counts.

@@ -54,77 +54,106 @@ function canPreview(row: BulkRow): boolean {
 </script>
 
 <template>
-  <div class="d-flex ga-3 mb-4">
-    <v-text-field
-      data-testid="payment-emails-payment-due-date"
-      :error-messages="dateProblems.paymentDueDate ?? undefined"
-      hide-details="auto"
-      :hint="sendsReminders
-        ? undefined
-        : 'Optional — nobody in this batch is being asked to transfer.'"
-      label="Payment due date"
-      :model-value="paymentDueDate"
-      persistent-hint
-      placeholder="YYYY-MM-DD"
-      prepend-inner-icon="mdi-calendar"
-      type="date"
-      @update:model-value="(v) => emit('update:paymentDueDate', v)"
-    />
-    <v-text-field
-      data-testid="payment-emails-debit-date"
-      :error-messages="dateProblems.debitDate ?? undefined"
-      hide-details="auto"
-      :hint="sendsNotifications
-        ? undefined
-        : 'Optional — nobody in this batch is on direct debit.'"
-      label="Debit date"
-      :model-value="debitDate"
-      persistent-hint
-      placeholder="YYYY-MM-DD"
-      prepend-inner-icon="mdi-calendar-arrow-right"
-      type="date"
-      @update:model-value="(v) => emit('update:debitDate', v)"
-    />
-  </div>
-
-  <div
-    v-for="row in rows"
-    :key="row.userId"
-    class="payment-email-recipient d-flex align-center ga-3 py-2"
-    :data-testid="`payment-emails-recipient-${row.userId}`"
+  <!--
+    A column each, so a message under one date does not stretch the other: a flex row
+    stretches its children to the tallest, a grid column does not.
+  -->
+  <v-row
+    align="start"
+    class="mb-2"
+    dense
   >
-    <div class="font-weight-medium payment-email-recipient__name">
-      {{ row.name }}
-    </div>
-    <div class="text-body-2">
-      {{ kindLabel(row) }}
-    </div>
-    <div class="text-body-2 text-medium-emphasis">
-      {{ feeLabel(row) }}
-    </div>
-    <div class="text-body-2">
-      {{ amountLabel(row) }}
-    </div>
-    <v-spacer />
-    <v-btn
-      :data-testid="`payment-emails-preview-${row.userId}`"
-      :disabled="!canPreview(row)"
-      prepend-icon="mdi-email-search-outline"
-      size="small"
-      variant="text"
-      @click="emit('preview', row.userId)"
+    <v-col
+      cols="12"
+      sm="6"
     >
-      Preview
-    </v-btn>
-  </div>
+      <v-text-field
+        data-testid="payment-emails-payment-due-date"
+        :error-messages="dateProblems.paymentDueDate ?? undefined"
+        hide-details="auto"
+        :hint="sendsReminders ? undefined : 'Optional. Nobody here is asked to transfer.'"
+        label="Payment due date"
+        :model-value="paymentDueDate"
+        persistent-hint
+        placeholder="YYYY-MM-DD"
+        prepend-inner-icon="mdi-calendar"
+        type="date"
+        @update:model-value="(v) => emit('update:paymentDueDate', v)"
+      />
+    </v-col>
+    <v-col
+      cols="12"
+      sm="6"
+    >
+      <v-text-field
+        data-testid="payment-emails-debit-date"
+        :error-messages="dateProblems.debitDate ?? undefined"
+        hide-details="auto"
+        :hint="sendsNotifications ? undefined : 'Optional. Nobody here is on direct debit.'"
+        label="Debit date"
+        :model-value="debitDate"
+        persistent-hint
+        placeholder="YYYY-MM-DD"
+        prepend-inner-icon="mdi-calendar-arrow-right"
+        type="date"
+        @update:model-value="(v) => emit('update:debitDate', v)"
+      />
+    </v-col>
+  </v-row>
+
+  <v-table
+    class="payment-email-table"
+    data-testid="payment-emails-review-table"
+    density="compact"
+  >
+    <thead>
+      <tr>
+        <th>Member</th>
+        <th>Email type</th>
+        <th>Fee type</th>
+        <th class="text-end">
+          Amount
+        </th>
+        <th class="text-end">
+          Email
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        v-for="row in rows"
+        :key="row.userId"
+        :data-testid="`payment-emails-recipient-${row.userId}`"
+      >
+        <td class="font-weight-medium">
+          {{ row.name }}
+        </td>
+        <td>{{ kindLabel(row) }}</td>
+        <td class="text-medium-emphasis">
+          {{ feeLabel(row) }}
+        </td>
+        <td class="text-end">
+          {{ amountLabel(row) }}
+        </td>
+        <td class="text-end">
+          <v-btn
+            :data-testid="`payment-emails-preview-${row.userId}`"
+            :disabled="!canPreview(row)"
+            prepend-icon="mdi-email-search-outline"
+            size="small"
+            variant="text"
+            @click="emit('preview', row.userId)"
+          >
+            Preview
+          </v-btn>
+        </td>
+      </tr>
+    </tbody>
+  </v-table>
 </template>
 
 <style lang="scss" scoped>
-.payment-email-recipient + .payment-email-recipient {
-  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
+@use '@/styles/payment-email' as paymentEmail;
 
-.payment-email-recipient__name {
-  min-width: 200px;
-}
+@include paymentEmail.sticky-table-header;
 </style>

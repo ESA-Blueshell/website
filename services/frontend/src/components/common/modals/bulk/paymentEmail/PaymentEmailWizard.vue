@@ -311,10 +311,10 @@ const summaryDates = computed<SummaryDate[]>(() => {
 /** Only what the treasurer overruled. Having had this email before is history, not a choice. */
 const hasOverrides = computed(() => {
   const {forced, switched, reCharged} = sendSummary.value
-  return forced + switched + reCharged > 0
+  return forced.length + switched.length + reCharged.length > 0
 })
 
-const hasChecks = computed(() => hasOverrides.value || sendSummary.value.alreadySent > 0)
+const hasChecks = computed(() => hasOverrides.value || sendSummary.value.alreadySent.length > 0)
 
 async function onFinalSend() {
   const periodId = props.period?.id
@@ -696,28 +696,68 @@ watch(
         </div>
         <ul class="payment-email-overrides text-body-2">
           <li
-            v-if="sendSummary.forced > 0"
+            v-if="sendSummary.forced.length"
             data-testid="payment-emails-confirm-forced"
           >
-            {{ sendSummary.forced }} ticked back in despite a warning
+            {{ sendSummary.forced.length }}
+            {{ sendSummary.forced.length === 1 ? "member is" : "members are" }}
+            included despite a warning
+            <ul class="payment-email-people">
+              <li
+                v-for="member in sendSummary.forced"
+                :key="member.userId"
+              >
+                {{ member.name }}<span v-if="member.note">: {{ member.note }}</span>
+              </li>
+            </ul>
           </li>
           <li
-            v-if="sendSummary.switched > 0"
+            v-if="sendSummary.switched.length"
             data-testid="payment-emails-confirm-switched"
           >
-            {{ sendSummary.switched }} moved off the email their direct-debit flag chose
+            {{ sendSummary.switched.length }}
+            {{ sendSummary.switched.length === 1 ? "member gets" : "members get" }}
+            a different email than their direct-debit flag says
+            <ul class="payment-email-people">
+              <li
+                v-for="member in sendSummary.switched"
+                :key="member.userId"
+              >
+                {{ member.name }}
+              </li>
+            </ul>
           </li>
           <li
-            v-if="sendSummary.reCharged > 0"
+            v-if="sendSummary.reCharged.length"
             data-testid="payment-emails-confirm-recharged"
           >
-            {{ sendSummary.reCharged }} charged a fee type other than the one that applies
+            {{ sendSummary.reCharged.length }}
+            {{ sendSummary.reCharged.length === 1 ? "member is" : "members are" }}
+            charged a fee that does not apply to them
+            <ul class="payment-email-people">
+              <li
+                v-for="member in sendSummary.reCharged"
+                :key="member.userId"
+              >
+                {{ member.name }}
+              </li>
+            </ul>
           </li>
           <li
-            v-if="sendSummary.alreadySent > 0"
+            v-if="sendSummary.alreadySent.length"
             data-testid="payment-emails-confirm-already-sent"
           >
-            {{ sendSummary.alreadySent }} already had this email for this period
+            {{ sendSummary.alreadySent.length }}
+            {{ sendSummary.alreadySent.length === 1 ? "member" : "members" }}
+            already had this email for this period
+            <ul class="payment-email-people">
+              <li
+                v-for="member in sendSummary.alreadySent"
+                :key="member.userId"
+              >
+                {{ member.name }}
+              </li>
+            </ul>
           </li>
         </ul>
       </v-alert>
@@ -738,9 +778,25 @@ watch(
 </template>
 
 <style lang="scss" scoped>
-// The stepper is here for its header alone, so it brings no surface of its own.
+// The stepper is here for its header alone; the step bodies render in the scrolling
+// region below it.
 .payment-email-stepper {
   background: transparent;
+
+  :deep(.v-stepper-header) {
+    box-shadow: none;
+  }
+}
+
+// A person under the line that counts them.
+.payment-email-people {
+  list-style: none;
+  padding-left: 0;
+  margin: 2px 0 0;
+
+  li {
+    color: rgba(var(--v-theme-on-surface), 0.8);
+  }
 }
 
 // Inside a v-alert, so the marker sits in the alert's own padding rather than outdenting.

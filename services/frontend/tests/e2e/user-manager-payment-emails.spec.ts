@@ -194,7 +194,7 @@ test.describe("step 3, what will be sent", () => {
     await goToTheLastStep(page)
 
     await expect(page.getByTestId("payment-emails-debit-date"))
-      .toContainText("nobody in this batch is on direct debit")
+      .toContainText("Nobody here is on direct debit")
 
     await page.getByTestId("payment-emails-payment-due-date").locator("input").fill(DUE_DATE)
     await next(page)

@@ -336,7 +336,7 @@ describe("PaymentEmailWizard step 3, what will be sent", () => {
     await next(wrapper)
 
     expect(wrapper.find('[data-testid="payment-emails-debit-date"]').text())
-      .toContain("nobody in this batch is on direct debit")
+      .toContain("Nobody here is on direct debit")
   })
 
   it("marks a date the api would refuse", async () => {
@@ -505,9 +505,9 @@ describe("PaymentEmailWizard sending", () => {
 
     expect(mockSend).not.toHaveBeenCalled()
     const overrides = wrapper.find('[data-testid="payment-emails-confirm-overrides"]')
-    expect(overrides.text()).toContain("1 ticked back in despite a warning")
-    expect(overrides.text()).toContain("1 charged a fee type other than the one that applies")
-    expect(overrides.text()).toContain("1 already had this email for this period")
+    expect(overrides.text()).toContain("1 member is included despite a warning")
+    expect(overrides.text()).toContain("1 member is charged a fee that does not apply to them")
+    expect(overrides.text()).toContain("1 member already had this email for this period")
     expect(wrapper.find('[data-testid="payment-emails-confirm-summary"]').text())
       .toContain("cannot be undone")
   })
@@ -521,7 +521,7 @@ describe("PaymentEmailWizard sending", () => {
     await next(wrapper)
 
     const overrides = wrapper.find('[data-testid="payment-emails-confirm-overrides"]')
-    expect(overrides.text()).toContain("1 already had this email for this period")
+    expect(overrides.text()).toContain("1 member already had this email for this period")
     expect(wrapper.find('[data-testid="payment-emails-confirm-forced"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="payment-emails-confirm-switched"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="payment-emails-confirm-recharged"]').exists()).toBe(false)

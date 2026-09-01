@@ -4,8 +4,8 @@ import {
   type BulkContributionEmailRowResponse,
   type ContributionPeriodResponse,
 } from "@/services/api"
-import {formatBulkDate} from "@/utils/bulkDisposition"
-import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
+import {formatBulkDate, reasonLabel} from "@/utils/bulkDisposition"
+import {BulkFeeType, type BulkRow, type BulkRowReason} from "@/utils/bulkRow"
 
 /**
  * The payment-email rows, as the wizard reads them.
@@ -215,20 +215,36 @@ export function countByKind(
 }
 
 /** What the send is about to do, for the confirmation that stands in front of it. */
+/** One member behind a line in the summary, so the confirmation can name them. */
+export interface FlaggedMember {
+  userId: number
+  name: string
+  /** What the api warned about, where there was a warning. */
+  note?: string
+}
+
 export interface PaymentEmailSummary {
   reminders: number
   incassoNotifications: number
   total: number
   /** Selected members the batch leaves alone, whether unticked or never reachable. */
   notEmailed: number
-  /** Warned rows the operator ticked back in. */
-  forced: number
-  /** Rows moved off the email their direct-debit flag chose. */
-  switched: number
-  /** Rows charged a fee type other than the one that applies. */
-  reCharged: number
+  /** Warned members the treasurer included anyway, each with the warning they overruled. */
+  forced: FlaggedMember[]
+  /** Members moved off the email their direct-debit flag chose. */
+  switched: FlaggedMember[]
+  /** Members charged a fee type other than the one that applies. */
+  reCharged: FlaggedMember[]
   /** Recipients who have had this same email for this period before. */
-  alreadySent: number
+  alreadySent: FlaggedMember[]
+}
+
+function flag(rows: BulkRow[], note?: (reason: BulkRowReason | undefined) => string): FlaggedMember[] {
+  return rows.map((row) => ({
+    userId: row.userId,
+    name: row.name,
+    note: note?.(row.reason) || undefined,
+  }))
 }
 
 export function summarise(
@@ -244,10 +260,10 @@ export function summarise(
     incassoNotifications: counts[ContributionEmailKind.INCASSO_NOTIFICATION],
     total: recipients.length,
     notEmailed: rows.length - recipients.length,
-    forced: recipients.filter((row) => row.disposition === "WARNING").length,
-    switched: recipients.filter((row) => isSwitched(row, kinds)).length,
-    reCharged: recipients.filter((row) => isReCharged(row, fees)).length,
-    alreadySent: recipients.filter((row) => !!lastSentOn(row, kinds)).length,
+    forced: flag(recipients.filter((row) => row.disposition === "WARNING"), reasonLabel),
+    switched: flag(recipients.filter((row) => isSwitched(row, kinds))),
+    reCharged: flag(recipients.filter((row) => isReCharged(row, fees))),
+    alreadySent: flag(recipients.filter((row) => !!lastSentOn(row, kinds))),
   }
 }
 

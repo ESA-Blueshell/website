@@ -13,6 +13,7 @@ import {
   updateMember,
 } from "@/services/api"
 import type {BoardMemberResponse, BoardResponse} from "@/services/api"
+import {reasonFor} from "../refusals"
 
 export type Board = BoardResponse
 export type BoardSeat = BoardMemberResponse
@@ -72,8 +73,22 @@ export async function saveBoard(
   return res.data ?? null
 }
 
-export async function dropBoard(id: number): Promise<void> {
-  await deleteBoard({path: {id}})
+/**
+ * A write the api refused, in its own words.
+ *
+ * The sdk hands a refusal back as a body rather than throwing, so a caller that only reads
+ * `data` cannot tell a rejection from a success and a `try/catch` catches nothing.
+ */
+export interface Refused {
+  ok: false
+  reason: string
+}
+
+/** A board with seats on it is refused, and the refusal says how many are in the way. */
+export async function dropBoard(id: number): Promise<{ok: true} | Refused> {
+  const res = await deleteBoard({path: {id}})
+  if (res.error) return {ok: false, reason: reasonFor(res.error, "The board could not be removed.")}
+  return {ok: true}
 }
 
 export async function addSeat(

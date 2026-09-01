@@ -62,31 +62,30 @@ class R__Boards_seed : BaseJavaMigration() {
         val boardRows = boards.associateBy { row -> row.getValue("number") }
         val boardIds = boards.associate { row -> row.getValue("number") to upsertBoard(connection, row) }
 
-        var written = 0
-        var attached = 0
-        var skipped = 0
-        seats.forEach { row ->
+        // Counted from what came back rather than tallied as it goes: a var written inside a
+        // lambda is a boxed reference the reader has to hold in their head, and static analysis
+        // reads it as a local that is never assigned at all.
+        val outcomes = seats.map { row ->
             val number = row.getValue("board")
             val boardId = boardIds[number]
             val boardRow = boardRows[number]
+            // Absent where the board it sits on is deleted, or where the file names a board
+            // that has no row of its own.
             if (boardId == null || boardRow == null) {
-                // The board it sits on is deleted, or the file names one that has no row at all.
-                skipped += 1
-                return@forEach
-            }
-            when (upsertSeat(connection, boardId, boardRow, row)) {
-                Seat.ATTACHED -> { written += 1; attached += 1 }
-                Seat.WRITTEN -> written += 1
-                Seat.LEFT_DELETED -> skipped += 1
+                Seat.LEFT_DELETED
+            } else {
+                upsertSeat(connection, boardId, boardRow, row)
             }
         }
 
+        val attached = outcomes.count { it == Seat.ATTACHED }
+        val written = outcomes.count { it != Seat.LEFT_DELETED }
         if (attached > 0) log.info("[boards-seed] {} seats found the account they were recorded under", attached)
         log.info(
             "[boards-seed] {} boards and {} seats applied ({} left to their deletion)",
             boardIds.values.count { it != null },
             written,
-            skipped,
+            outcomes.size - written,
         )
     }
 

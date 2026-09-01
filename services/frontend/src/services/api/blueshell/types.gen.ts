@@ -1660,7 +1660,7 @@ export type SendPaymentEmailsRequest = {
         [key: string]: BulkFeeType;
     };
     /**
-     * Warned members the operator ticked back in. A hard-excluded member named here is still not written to.
+     * Warned members the operator ticked back in. Every one of them must be in the selection and must be somebody the send writes to.
      */
     forciblyIncludedUserIds: Array<number>;
     /**

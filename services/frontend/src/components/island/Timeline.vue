@@ -1,22 +1,36 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, useId, watch} from "vue"
-import {litAt, seasonStrip, STRIP} from "./seasonAxis"
+import {litAt, STRIP, stripAxis, type Stop} from "./stripAxis"
 import {useMotionAllowed} from "./useMotionAllowed"
-import type {Season} from "../adapters/esports"
 
-defineOptions({name: "SeasonTimeline"})
+defineOptions({name: "IslandTimeline"})
 
 const props = withDefaults(defineProps<{
-  seasons: Season[]
+  /** What the strip runs through, in the order it reads them: left is first, right is last. */
+  stops: Stop[]
+  /** The stop being read, which is where the line is lit to at rest. */
   selectedId: number | null
   accent: string
   /** Whether to offer the edit affordance. Decided by the page, which knows who is reading. */
   mayEdit?: boolean
-}>(), {mayEdit: false})
+  /** What a spec names this strip and everything on it by. */
+  testidPrefix?: string
+  /** What the block at the end of the line offers, in whatever a stop is called here. */
+  addLabel?: string
+  /** The two ways along the strip, named for what lies that way. */
+  panBackLabel?: string
+  panOnLabel?: string
+}>(), {
+  mayEdit: false,
+  testidPrefix: "island",
+  addLabel: "Add",
+  panBackLabel: "Show what came before",
+  panOnLabel: "Show what came after",
+})
 
 const emit = defineEmits<{
   (event: "select", id: number): void
-  (event: "edit", season: Season): void
+  (event: "edit", id: number): void
   (event: "add"): void
 }>()
 
@@ -32,7 +46,7 @@ const PAN_STEP = 0.8
  *
  * The side answers the pointer, but only the chevron answers a click: a band under a fade is
  * still a band to be clicked, and a control the width of this zone would have taken the
- * seasons at both ends out of reach. The share matters on a narrow strip, where two zones of
+ * stops at both ends out of reach. The share matters on a narrow strip, where two zones of
  * a fixed width would between them be most of it.
  */
 const PAN_ZONE = 84
@@ -43,9 +57,9 @@ const scroller = ref<HTMLElement | null>(null)
 const width = ref(0)
 const hovered = ref<number | null>(null)
 /**
- * The season whose affordance was last taken up.
+ * The stop whose affordance was last taken up.
  *
- * It stays visible until the pointer goes to another season. Opening the dialog moves focus
+ * It stays visible until the pointer goes to another stop. Opening the dialog moves focus
  * into it, which means the affordance is neither hovered nor focused while it is open — and
  * a hidden element cannot be given focus back when it closes. Pinning it is what gives the
  * dialog somewhere to return to, and does not depend on anything happening in time.
@@ -73,22 +87,22 @@ onBeforeUnmount(() => {
 })
 
 /**
- * The block offering another season is a band like the rest, so it takes a share of the strip
+ * The block offering another stop is a band like the rest, so it takes a share of the strip
  * rather than floating over the end of it.
  */
 const trailing = computed(() => (props.mayEdit ? 1 : 0))
 
 /** Where everything on the strip sits, in pixels: the bands, the nodes and the line. */
-const axis = computed(() => seasonStrip(props.seasons, {width: width.value, trailing: trailing.value}))
+const axis = computed(() => stripAxis(props.stops, {width: width.value, trailing: trailing.value}))
 const bands = computed(() => axis.value.bands)
 const nodes = computed(() => axis.value.nodes)
 const track = computed(() => axis.value.track)
 
 /**
- * How far the line is lit: to the pointer, or to the shown season at rest.
+ * How far the line is lit: to the pointer, or to the stop being read at rest.
  *
  * A share of the track, because that is the box the layer drawing it occupies — so the lit
- * stretch ends on the middle of the node however many seasons there are and whether or not
+ * stretch ends on the middle of the node however many stops there are and whether or not
  * the strip reserves a band for adding one.
  */
 const litFraction = computed<number>(() => {
@@ -98,17 +112,17 @@ const litFraction = computed<number>(() => {
 })
 
 /**
- * The shown season was chosen here, on a node in front of the visitor.
+ * The stop being read was chosen here, on a node in front of the visitor.
  *
- * The strip opens on the season being shown, which is right when that season arrives from
- * somewhere the visitor cannot see — a shared link, the back button, a season just written
+ * The strip opens on the stop being read, which is right when that stop arrives from
+ * somewhere the visitor cannot see — a shared link, the back button, one just written
  * down. It is wrong after a click: the node they aimed at would slide out from under the
  * pointer, and whichever band slid into its place would light the line instead.
  *
  * The id rather than a flag, because a click is not a promise. Where the page declines to
  * follow one — a refused read, a parent that ignores it — a flag would sit set and swallow
- * the next season that did arrive from elsewhere, and the back button would stop centring.
- * An id only ever holds back the scroll for the one season it names.
+ * the next stop that did arrive from elsewhere, and the back button would stop centring.
+ * An id only ever holds back the scroll for the one stop it names.
  */
 const chosenHere = ref<number | null>(null)
 
@@ -117,7 +131,7 @@ const choose = (id: number) => {
   emit("select", id)
 }
 
-/** A strip wider than its window opens on the season being shown, not at the far past. */
+/** A strip wider than its window opens on the stop being read, not at the far past. */
 watch([() => props.selectedId, track, width], ([id], [before]) => {
   const claimed = chosenHere.value
   chosenHere.value = null
@@ -131,7 +145,7 @@ watch([() => props.selectedId, track, width], ([id], [before]) => {
 /**
  * Whether there is anything further to see each way.
  *
- * The scrollbar is hidden and the ends fade rather than cutting, so without this the seasons
+ * The scrollbar is hidden and the ends fade rather than cutting, so without this the stops
  * off the end of the window are simply not found.
  */
 const canPanBack = ref(false)
@@ -223,7 +237,7 @@ const enter = (id: number) => {
 
 const step = (from: number, by: number) => {
   const next = bands.value[from + by]
-  if (next) emit("select", next.season.id)
+  if (next) emit("select", next.stop.id)
 }
 </script>
 
@@ -231,7 +245,7 @@ const step = (from: number, by: number) => {
   <div
     ref="strip"
     class="season-strip"
-    data-testid="esports-season-timeline"
+    :data-testid="`${testidPrefix}-timeline`"
     :style="{
       '--accent': accent,
       '--lit': `${litFraction * 100}%`,
@@ -248,36 +262,36 @@ const step = (from: number, by: number) => {
     >
       <div class="season-strip__track">
         <!--
-          One band per season, tiled exactly so a node can sit in the middle of its own
-          season and the division between two bands falls halfway between their nodes — which
-          is where the teams below divide too. Hovering highlights a band and lights the line
-          as far as its node; changing season takes a click, so a pointer crossing the strip
-          changes nothing.
+          One band per stop, tiled exactly so a node can sit in the middle of its own
+          stop and the division between two bands falls halfway between their nodes — which
+          is where whatever the strip governs divides too. Hovering highlights a band and
+          lights the line as far as its node; changing stop takes a click, so a pointer
+          crossing the strip changes nothing.
         -->
         <div class="season-strip__bands">
           <div
             v-for="(band, index) in bands"
-            :key="band.season.id"
+            :key="band.stop.id"
             class="season-slot"
-            :class="{'season-slot--editing': band.season.id === pinned}"
-            @mouseenter="enter(band.season.id)"
+            :class="{'season-slot--editing': band.stop.id === pinned}"
+            @mouseenter="enter(band.stop.id)"
           >
             <button
               class="season-band"
               :class="{
-                'season-band--on': band.season.id === selectedId,
-                'season-band--lit': band.season.id === hovered,
+                'season-band--on': band.stop.id === selectedId,
+                'season-band--lit': band.stop.id === hovered,
                 'season-band--last': index === bands.length - 1 && !mayEdit,
               }"
-              :aria-current="band.season.id === selectedId ? 'true' : undefined"
-              :data-testid="`esports-season-node-${band.season.id}`"
+              :aria-current="band.stop.id === selectedId ? 'true' : undefined"
+              :data-testid="`${testidPrefix}-node-${band.stop.id}`"
               type="button"
-              @click="choose(band.season.id)"
-              @focus="hovered = band.season.id"
+              @click="choose(band.stop.id)"
+              @focus="hovered = band.stop.id"
               @keydown.left.prevent="step(index, -1)"
               @keydown.right.prevent="step(index, 1)"
             >
-              <span class="sr-only">{{ band.season.name }}</span>
+              <span class="sr-only">{{ band.stop.name }}</span>
               <span
                 aria-hidden="true"
                 class="season-band__wash"
@@ -285,27 +299,27 @@ const step = (from: number, by: number) => {
               <span
                 aria-hidden="true"
                 class="season-band__label season-band__label--half"
-                :style="{top: band.high ? `${yOf(band.season.id) + 18}px` : `${yOf(band.season.id) - 34}px`}"
-              >{{ band.half }}</span>
+                :style="{top: band.high ? `${yOf(band.stop.id) + 18}px` : `${yOf(band.stop.id) - 34}px`}"
+              >{{ band.stop.label }}</span>
               <span
                 aria-hidden="true"
                 class="season-band__label season-band__label--year"
-                :style="{top: band.high ? `${yOf(band.season.id) + 32}px` : `${yOf(band.season.id) - 20}px`}"
-              >{{ band.year }}</span>
+                :style="{top: band.high ? `${yOf(band.stop.id) + 32}px` : `${yOf(band.stop.id) - 20}px`}"
+              >{{ band.stop.sublabel }}</span>
             </button>
 
             <!--
               Offered only to somebody who may take it up. Where there is a pointer it belongs
-              to the season being pointed at; where there is not, there is nothing to hover
+              to the stop being pointed at; where there is not, there is nothing to hover
               with, so it simply stands.
             -->
             <button
               v-if="mayEdit"
-              :aria-label="`Edit ${band.season.name}`"
+              :aria-label="`Edit ${band.stop.name}`"
               class="season-slot__edit"
-              :data-testid="`esports-season-edit-${band.season.id}`"
+              :data-testid="`${testidPrefix}-edit-${band.stop.id}`"
               type="button"
-              @click="pinned = band.season.id; emit('edit', band.season)"
+              @click="pinned = band.stop.id; emit('edit', band.stop.id)"
             >
               <svg
                 aria-hidden="true"
@@ -320,19 +334,19 @@ const step = (from: number, by: number) => {
           </div>
 
           <!--
-            Seasons are added twice a year and always at the end, which is where their absence
-            is noticed — so the offer is a band at the end of the line rather than a control
-            floating over it. It stands rather than waiting to be hovered: there is no season
-            under the pointer for it to belong to.
+            Stops are added at the end of the line, which is where their absence is noticed —
+            so the offer is a band there rather than a control floating over it. It stands
+            rather than waiting to be hovered: there is no stop under the pointer for it to
+            belong to.
           -->
           <div
             v-if="mayEdit"
             class="season-slot season-slot--add"
           >
             <button
-              aria-label="Add a season"
+              :aria-label="addLabel"
               class="season-band season-band--add"
-              data-testid="esports-season-add"
+              :data-testid="`${testidPrefix}-add`"
               type="button"
               @click="emit('add')"
             >
@@ -358,10 +372,10 @@ const step = (from: number, by: number) => {
 
         <!--
           The line, in two layers over the same path: the rule it always is, and the lit
-          stretch as far as the season being read. Two svgs rather than two groups in one,
+          stretch as far as the stop being read. Two svgs rather than two groups in one,
           because the lit one is revealed by clipping its own box — and a box is a thing a
           group does not have, which is what left the lit stretch measured against the
-          bounding box of the path and stopping short of the season it was reporting.
+          bounding box of the path and stopping short of the stop it was reporting.
         -->
         <template v-if="axis.path">
           <svg
@@ -373,9 +387,9 @@ const step = (from: number, by: number) => {
             <defs>
               <!--
                 The line dissolves as it arrives at its end rather than stopping at one. Where
-                the block that adds a season bounds it, its end is in view, and a stub with a
-                cap on it reads as a drawing laid on the strip rather than as the seasons
-                carrying on. Nothing is left over to fall on a block that is not a season.
+                the block that adds a stop bounds it, its end is in view, and a stub with a
+                cap on it reads as a drawing laid on the strip rather than as the stops
+                carrying on. Nothing is left over to fall on a block that is not a stop.
               -->
               <linearGradient
                 :id="fadeId"
@@ -453,16 +467,16 @@ const step = (from: number, by: number) => {
     </div>
 
     <!--
-      Where the strip holds more seasons than fit, the way to the rest of them. Resting the
+      Where the strip holds more stops than fit, the way to the rest of them. Resting the
       pointer on one travels that way; a click moves a screenful, which is what somebody
-      arriving by keyboard gets. Neither changes the season being read.
+      arriving by keyboard gets. Neither changes the stop being read.
     -->
     <button
       v-if="canPanBack"
-      aria-label="Show earlier seasons"
+      :aria-label="panBackLabel"
       class="season-strip__pan season-strip__pan--back"
       :class="{'season-strip__pan--live': travelling === -1}"
-      data-testid="esports-season-pan-back"
+      :data-testid="`${testidPrefix}-pan-back`"
       type="button"
       @click="panBy(-1)"
     >
@@ -481,10 +495,10 @@ const step = (from: number, by: number) => {
 
     <button
       v-if="canPanOn"
-      aria-label="Show later seasons"
+      :aria-label="panOnLabel"
       class="season-strip__pan season-strip__pan--on"
       :class="{'season-strip__pan--live': travelling === 1}"
-      data-testid="esports-season-pan-on"
+      :data-testid="`${testidPrefix}-pan-on`"
       type="button"
       @click="panBy(1)"
     >

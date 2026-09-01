@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, it, vi} from "vitest"
 import {effectScope} from "vue"
-import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
+import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
 type Listener = (event: MediaQueryListEvent) => void
 

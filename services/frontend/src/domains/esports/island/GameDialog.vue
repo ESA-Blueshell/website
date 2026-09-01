@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import IslandDialog from "./IslandDialog.vue"
-import ConfirmDialog from "./ConfirmDialog.vue"
-import ImagePicker from "./ImagePicker.vue"
-import IslandChoice from "./IslandChoice.vue"
-import IslandPicker from "./IslandPicker.vue"
+import IslandDialog from "@/components/island/IslandDialog.vue"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
+import ImagePicker from "@/components/island/ImagePicker.vue"
+import IslandChoice from "@/components/island/IslandChoice.vue"
+import IslandPicker from "@/components/island/IslandPicker.vue"
 import {
   addGameOrReason,
   enterGameInSeason,

@@ -94,7 +94,7 @@ CSS MOMENT
 // apply to a heading inside the island — a heading asking for 1.5rem still
 // rendered at 90px. Excluding the island changes nothing for any other page:
 // the rules are otherwise identical.
-.v-application .text-h1, .v-application h1:not(.esports-island h1) {
+.v-application .text-h1, .v-application h1:not(.island h1) {
   font-family: "Fugaz One", sans-serif !important;
   text-transform: uppercase;
   font-size: 90px;
@@ -102,7 +102,7 @@ CSS MOMENT
   letter-spacing: normal;
 }
 
-.v-application .text-h2, .v-application h2:not(.esports-island h2) {
+.v-application .text-h2, .v-application h2:not(.island h2) {
   font-family: "Fugaz One", sans-serif !important;
   text-transform: uppercase;
   font-size: 38px;
@@ -110,7 +110,7 @@ CSS MOMENT
   letter-spacing: normal;
 }
 
-.v-application .text-h3, .v-application h3:not(.esports-island h3) {
+.v-application .text-h3, .v-application h3:not(.island h3) {
   font-family: "Barlow Semi Condensed", sans-serif !important;
   font-size: 26px;
   line-height: 1.3;
@@ -122,9 +122,9 @@ CSS MOMENT
   text-transform: uppercase;
 }
 
-.v-application .text-h4, .v-application h4:not(.esports-island h4),
-.v-application .text-h5, .v-application h5:not(.esports-island h5),
-.v-application .text-h6, .v-application h6:not(.esports-island h6) {
+.v-application .text-h4, .v-application h4:not(.island h4),
+.v-application .text-h5, .v-application h5:not(.island h5),
+.v-application .text-h6, .v-application h6:not(.island h6) {
   font-family: "Barlow Semi Condensed", sans-serif !important;
   font-weight: bold;
 }
@@ -147,11 +147,11 @@ CSS MOMENT
   // island's own reset whatever it says: every paragraph carried a bottom
   // margin it had not asked for, and every list — including a grid built as
   // one — was indented by 24px.
-  p:not(.esports-island p) {
+  p:not(.island p) {
     margin-bottom: 16px;
   }
 
-  ol:not(.esports-island ol), ul:not(.esports-island ul) {
+  ol:not(.island ol), ul:not(.island ul) {
     padding-left: 24px;
   }
 }
@@ -168,13 +168,13 @@ a:visited.text-decoration-none {
   // The island is excluded for the same reason as the headings above: this rule
   // is unlayered, so the island's own `list-style: none` could never beat it and
   // every grid built as a list wore a bullet beside each tile.
-  ul:not(.v-pagination__list) li:not(.esports-island li) {
+  ul:not(.v-pagination__list) li:not(.island li) {
     list-style-image: url('@/assets/svgs/listitemdark.svg')
   }
 
   // Excluded from the island, which sets its own text colours: this forced
   // every muted line back to full white.
-  p:not(.esports-island p), li:not(.esports-island li) {
+  p:not(.island p), li:not(.island li) {
     color: white;
   }
 
@@ -185,7 +185,7 @@ a:visited.text-decoration-none {
 
 
 .v-application:not(.v-theme--dark) {
-  ul:not(.v-pagination__list) li:not(.esports-island li) {
+  ul:not(.v-pagination__list) li:not(.island li) {
     list-style-image: url('@/assets/svgs/listitemlight.svg')
   }
 }

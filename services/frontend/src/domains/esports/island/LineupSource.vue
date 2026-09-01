@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import IslandPicker from "./IslandPicker.vue"
+import IslandPicker from "@/components/island/IslandPicker.vue"
 import {
   loadRoster,
   loadTeamSeasons,

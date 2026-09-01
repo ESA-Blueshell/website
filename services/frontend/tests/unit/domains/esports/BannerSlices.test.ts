@@ -154,4 +154,36 @@ describe("BannerSlices", () => {
       window.matchMedia = wide
     }
   })
+
+  /**
+   * A banner covers its slice, so a slice taller than its share of the row is wide is filled
+   * by its height and the picture is painted past both edges. jsdom lays nothing out, so the
+   * height every other test reads is nothing at all — which is why they still read the share
+   * of the row, and why this one has to say how tall the row is before it can ask.
+   */
+  it("asks for the width the height demands, where the slice is tall and narrow", async () => {
+    const laid = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight")
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {configurable: true, value: 352})
+    try {
+      const wrapper = mount(BannerSlices, {
+        props: {
+          items: [
+            {id: 1, title: "One", meta: "", banner: "/a.jpg", width: 1920, height: 1080},
+            {id: 2, title: "Two", meta: "", banner: "/b.jpg", width: 1920, height: 1080},
+          ],
+          accent: "#ff4655",
+          testidPrefix: "team-roster",
+        },
+      })
+      await settled()
+      const slices = wrapper.findAll("section")
+
+      await slices[1].find("img").trigger("load")
+
+      // Shut, its share of a 1024 row is 233 — and covering 233 by 352 draws it 626 wide.
+      expect(slices[1].find("img").attributes("sizes")).toBe("626px")
+    } finally {
+      if (laid) Object.defineProperty(HTMLElement.prototype, "clientHeight", laid)
+    }
+  })
 })

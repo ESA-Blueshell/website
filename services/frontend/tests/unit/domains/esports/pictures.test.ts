@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {sizeOf, srcsetOf} from "@/domains/esports/pictures"
+import {coveredWidth, sizeOf, srcsetOf} from "@/domains/esports/pictures"
 import type {EsportsImage} from "@/domains/esports/adapters/esports"
 
 /**
@@ -62,5 +62,39 @@ describe("sizeOf", () => {
     expect(sizeOf(picture({width: null, height: null}))).toEqual({})
     expect(sizeOf(picture({height: null}))).toEqual({})
     expect(sizeOf(null)).toEqual({})
+  })
+})
+
+describe("coveredWidth", () => {
+  it("gives the box's own width where the box is wider than the picture needs", () => {
+    // 16:9 covering a 1200x300 box: the width fills first, so nothing is added.
+    expect(coveredWidth({boxWidth: 1200, boxHeight: 300, imageWidth: 1920, imageHeight: 1080}))
+      .toBe(1200)
+  })
+
+  it("gives the width the height demands where the box is tall and narrow", () => {
+    // The complaint itself: a slice of a band, 123 across and 352 tall, drawn at 626.
+    expect(coveredWidth({boxWidth: 123, boxHeight: 352, imageWidth: 1920, imageHeight: 1080}))
+      .toBe(626)
+  })
+
+  it("scales with the picture's proportions rather than assuming a shape", () => {
+    // The same box, and a wide picture needs three times the width a tall one does.
+    expect(coveredWidth({boxWidth: 100, boxHeight: 300, imageWidth: 300, imageHeight: 100}))
+      .toBe(900)
+    expect(coveredWidth({boxWidth: 100, boxHeight: 300, imageWidth: 100, imageHeight: 300}))
+      .toBe(100)
+  })
+
+  it("falls back to the box where the picture's proportions are not known", () => {
+    expect(coveredWidth({boxWidth: 123, boxHeight: 352})).toBe(123)
+    expect(coveredWidth({boxWidth: 123, boxHeight: 352, imageWidth: 1920, imageHeight: null}))
+      .toBe(123)
+    expect(coveredWidth({boxWidth: 123, boxHeight: 352, imageWidth: 0, imageHeight: 0})).toBe(123)
+  })
+
+  it("falls back to the box where nothing has been laid out yet", () => {
+    expect(coveredWidth({boxWidth: 123, boxHeight: 0, imageWidth: 1920, imageHeight: 1080}))
+      .toBe(123)
   })
 })

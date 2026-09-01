@@ -31,6 +31,8 @@ type Fixtures = {
   esportsGames?: Array<Record<string, unknown>>
   boards?: Array<Record<string, unknown>>
   cohortSubjectDetail?: Record<string, unknown>
+  /** A refusal the payment-email send answers with instead of accepting the batch. */
+  paymentEmailRefusal?: {status: number; errors: Array<Record<string, unknown>>}
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -739,6 +741,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       })
     }
     if (method === "POST" && path === "/contributions/bulk/email/send") {
+      const refusal = fixtures.paymentEmailRefusal
+      if (refusal) {
+        return fulfillJson(
+          route,
+          {status: refusal.status, detail: "The send was refused.", errors: refusal.errors},
+          refusal.status,
+        )
+      }
       const body = route.request().postDataJSON() as {userIds: number[]}
       return fulfillJson(route, {
         remindersSent: body.userIds.length,

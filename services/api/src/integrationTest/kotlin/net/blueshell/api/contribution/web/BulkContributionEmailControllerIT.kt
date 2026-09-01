@@ -29,6 +29,11 @@ import java.time.LocalDate
 @SpringBootTest
 class BulkContributionEmailControllerIT : UserTestSupport() {
 
+    private companion object {
+        /** An id no user has, for the refusals that are about the selection being stale. */
+        const val GONE = 9_999_999L
+    }
+
     @Autowired
     private lateinit var reminderRepository: ContributionReminderRepository
 
@@ -319,12 +324,12 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `a hard-excluded member is not written to however the request is written`() {
+        fun `a hard-excluded member is not written to`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
             val period = period()
             val honorary = member(incasso = false, memberType = MemberType.HONORARY)
 
-            send(board, sendBody(period.id, listOf(honorary.id), forciblyIncluded = listOf(honorary.id)))
+            send(board, sendBody(period.id, listOf(honorary.id)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.remindersSent").value(0))
                 .andExpect(jsonPath("$.notWrittenTo").value(1))
@@ -363,6 +368,11 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
 
     // ── Refusals ─────────────────────────────────────────────────────────────
 
+    /**
+     * Every refusal names the request field it is about and a stable code. Those field
+     * names are what the wizard routes a refusal on, so they are asserted here rather than
+     * left to the client to discover.
+     */
     @Nested
     inner class WhenASendIsRefused {
 
@@ -382,6 +392,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                 ),
             )
                 .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.errors[0].field").value("feeTypeOverrides"))
                 .andExpect(jsonPath("$.errors[0].code").value("NonRecipientFeeTypeUserIds"))
                 .andExpect(jsonPath("$.errors[0].values[0]").value(honorary.id))
 
@@ -404,7 +415,68 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                 ),
             )
                 .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.errors[0].field").value("kindOverrides"))
                 .andExpect(jsonPath("$.errors[0].code").value("NonRecipientEmailKindUserIds"))
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `an id naming nobody is refused rather than dropped`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val member = member(incasso = false)
+
+            send(board, sendBody(period.id, listOf(member.id, GONE)))
+                .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.errors[0].field").value("userIds"))
+                .andExpect(jsonPath("$.errors[0].code").value("UnknownUserIds"))
+                .andExpect(jsonPath("$.errors[0].values[0]").value(GONE))
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `naming the same member twice is refused`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val member = member(incasso = false)
+
+            send(board, sendBody(period.id, listOf(member.id, member.id)))
+                .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.errors[0].field").value("userIds"))
+                .andExpect(jsonPath("$.errors[0].code").value("DuplicateUserIds"))
+                .andExpect(jsonPath("$.errors[0].values[0]").value(member.id))
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `ticking back in somebody the send still will not write to is refused`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val honorary = member(incasso = false, memberType = MemberType.HONORARY)
+
+            send(board, sendBody(period.id, listOf(honorary.id), forciblyIncluded = listOf(honorary.id)))
+                .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.errors[0].field").value("forciblyIncludedUserIds"))
+                .andExpect(jsonPath("$.errors[0].code").value("NonRecipientForcedUserIds"))
+                .andExpect(jsonPath("$.errors[0].values[0]").value(honorary.id))
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `ticking back in somebody who is not in the selection is refused`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val member = member(incasso = false)
+
+            send(board, sendBody(period.id, listOf(member.id), forciblyIncluded = listOf(GONE)))
+                .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.errors[0].field").value("forciblyIncludedUserIds"))
+                .andExpect(jsonPath("$.errors[0].code").value("UnknownForcedUserIds"))
+                .andExpect(jsonPath("$.errors[0].values[0]").value(GONE))
 
             assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
         }
@@ -417,8 +489,112 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
 
             send(board, sendBody(period.id, listOf(member.id), paymentDueDate = null))
                 .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("paymentDueDate"))
+                .andExpect(jsonPath("$.errors[0].code").value("DateRequired"))
 
             assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `a date that has already passed is refused against its own field`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val member = member(incasso = false)
+
+            send(board, sendBody(period.id, listOf(member.id), paymentDueDate = LocalDate.now().minusDays(1)))
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("paymentDueDate"))
+                .andExpect(jsonPath("$.errors[0].code").value("Future"))
+
+            send(board, sendBody(period.id, listOf(member.id), debitDate = LocalDate.now()))
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("debitDate"))
+                .andExpect(jsonPath("$.errors[0].code").value("Future"))
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `a date before the period starts is refused against its own field`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val start = LocalDate.now().plusMonths(2)
+            val period = contributionFactory.createPeriod(
+                startDate = start,
+                endDate = start.plusYears(1),
+                halfYearCutoffDate = start.plusMonths(6),
+            )
+            val member = member(incasso = false, startDate = start)
+
+            send(
+                board,
+                sendBody(
+                    period.id,
+                    listOf(member.id),
+                    paymentDueDate = LocalDate.now().plusDays(1),
+                    debitDate = null,
+                ),
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("paymentDueDate"))
+                .andExpect(jsonPath("$.errors[0].code").value("DateOutsideContributionPeriod"))
+
+            assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
+        }
+
+        @Test
+        fun `a date far beyond the period is refused, one shortly after it is not`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val member = member(incasso = false)
+
+            send(
+                board,
+                sendBody(period.id, listOf(member.id), paymentDueDate = periodEnd.plusMonths(3).plusDays(1)),
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("paymentDueDate"))
+                .andExpect(jsonPath("$.errors[0].code").value("DateOutsideContributionPeriod"))
+
+            send(board, sendBody(period.id, listOf(member.id), paymentDueDate = periodEnd.plusMonths(3)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.remindersSent").value(1))
+        }
+
+        @Test
+        fun `a selection larger than the cap is refused against the field that carries it`() {
+            val board = userFactory.createUserWithRole(Role.BOARD)
+            val period = period()
+            val member = member(incasso = false)
+            val overCap: List<Long?> = (1L..1001L).toList()
+
+            send(board, sendBody(period.id, listOf(member.id), forciblyIncluded = overCap))
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("forciblyIncludedUserIds"))
+                .andExpect(jsonPath("$.errors[0].code").value("Size"))
+
+            send(
+                board,
+                sendBody(
+                    period.id,
+                    listOf(member.id),
+                    kindOverrides = overCap.associateWith { ContributionEmailKind.REMINDER },
+                ),
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("kindOverrides"))
+                .andExpect(jsonPath("$.errors[0].code").value("Size"))
+
+            send(
+                board,
+                sendBody(
+                    period.id,
+                    listOf(member.id),
+                    feeTypeOverrides = overCap.associateWith { BulkFeeType.FULL_YEAR_FEE },
+                ),
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.errors[0].field").value("feeTypeOverrides"))
+                .andExpect(jsonPath("$.errors[0].code").value("Size"))
         }
 
         @Test

@@ -2,11 +2,12 @@
 import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
-import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
-import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
+import Island from "@/components/island/Island.vue"
+import Timeline from "@/components/island/Timeline.vue"
+import BannerSlices from "@/components/island/BannerSlices.vue"
+import CallBand from "@/components/island/CallBand.vue"
+import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
-import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
-import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
@@ -14,7 +15,8 @@ import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasons} from "@/domains/esports/island/useSeasons"
 import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
-import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
+import {seasonStops} from "@/domains/esports/island/seasonAxis"
+import {JOIN_CALL} from "@/domains/esports/island/joinCall"
 import {leaveGameInSeason} from "@/domains/esports/adapters/esports"
 import type {GameCode, Game, Season} from "@/domains/esports/adapters/esports"
 
@@ -104,11 +106,14 @@ const {seasons: allSeasons} = useSeasons()
 
 const stripSeasons = computed<Season[]>(() =>
   (mayEdit.value && allSeasons.value.length > 0 ? allSeasons.value : seasons.value))
+
+/** The strip is about stops on a line; which of them is a season is this page's knowledge. */
+const stripStops = computed(() => seasonStops(stripSeasons.value))
 const editing = ref<Season | null>(null)
 const editorOpen = ref(false)
 
-const editSeason = (season: Season) => {
-  editing.value = season
+const editSeason = (id: number) => {
+  editing.value = stripSeasons.value.find(one => one.id === id) ?? null
   editorOpen.value = true
 }
 
@@ -211,7 +216,7 @@ const seasonSaved = (saved: Season) => {
 
 <template>
   <v-main>
-    <esports-island>
+    <island testid="esports-island">
       <header class="island-header relative isolate overflow-hidden">
         <div
           aria-hidden="true"
@@ -243,11 +248,15 @@ const seasonSaved = (saved: Season) => {
         class="w-full"
         data-testid="esports-index-seasons"
       >
-        <season-timeline
+        <timeline
           accent="var(--color-brand)"
+          add-label="Add a season"
           :may-edit="mayEdit"
-          :seasons="stripSeasons"
+          pan-back-label="Show earlier seasons"
+          pan-on-label="Show later seasons"
           :selected-id="chosen"
+          :stops="stripStops"
+          testid-prefix="esports-season"
           @add="addSeason"
           @edit="editSeason"
           @select="chooseSeason"
@@ -399,8 +408,8 @@ const seasonSaved = (saved: Season) => {
         />
       </section>
 
-      <join-band />
-    </esports-island>
+      <call-band v-bind="JOIN_CALL" />
+    </island>
   </v-main>
 </template>
 

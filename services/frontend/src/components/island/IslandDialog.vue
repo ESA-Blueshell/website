@@ -36,7 +36,7 @@ const {decorative} = useMotionAllowed()
         :class="{'island-dialog__scrim--still': !decorative}"
       />
       <dialog-content
-        class="esports-island island-dialog"
+        class="island island-dialog"
         :class="{'island-dialog--still': !decorative}"
         :data-testid="testid ?? 'island-dialog'"
         :style="accent ? {'--dialog-accent': accent} : undefined"

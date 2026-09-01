@@ -75,24 +75,27 @@ src/
 - **Vite 7.3.1** - Lightning-fast build tool
 
 ### UI & Styling
-- **Vuetify** - Material Design components, everywhere except the esports island
+- **Vuetify** - Material Design components, everywhere except the island
 - **Sass** - CSS preprocessor
 - **@mdi/font** - Material Design Icons
 - **Flag Icons** - Country flags
-- **Tailwind CSS** - the esports island only; see below
+- **Tailwind CSS** - the island only; see below
 - **Reka UI** - headless component behaviour for the island
 - **Motion for Vue** - the island's animation
 
-## The esports island
+## The island
 
-The esports pages are styled with Tailwind rather than Vuetify. They are the
+The pages on the island are styled with Tailwind rather than Vuetify. They are the
 association's shopfront rather than a screen somebody works in: full-bleed, dark
 whatever the viewer's theme says, and animated throughout. The rest of the app is
 Vuetify and stays that way.
 
-The island is `src/domains/esports/island` plus the pages under `src/pages/esports`
-and `src/pages/Esports.vue`. Its root component applies the `.esports-island`
-class, and everything Tailwind-styled sits inside that element.
+The island itself is `src/components/island`: its root, its stylesheet, the
+timeline and the strip arithmetic under it, the banner slices, the dialog shell and
+the pickers. What stands on it is a page's own — `src/domains/esports/island` plus
+the pages under `src/pages/esports` and `src/pages/Esports.vue`. Its root component
+applies the `.island` class, and everything Tailwind-styled sits inside that
+element.
 
 Three things keep it from leaking, all enforced rather than agreed:
 

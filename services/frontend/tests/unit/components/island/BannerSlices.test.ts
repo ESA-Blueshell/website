@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
-import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
+import BannerSlices from "@/components/island/BannerSlices.vue"
 
 const items = [
   {id: 1, title: "BS Waterboarders", meta: "5 on the roster", banner: "/a.jpg"},

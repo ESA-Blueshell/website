@@ -2,23 +2,24 @@
 import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
-import EsportsIsland from "@/domains/esports/island/EsportsIsland.vue"
-import SeasonTimeline from "@/domains/esports/island/SeasonTimeline.vue"
+import Island from "@/components/island/Island.vue"
+import Timeline from "@/components/island/Timeline.vue"
+import BannerSlices from "@/components/island/BannerSlices.vue"
+import CallBand from "@/components/island/CallBand.vue"
+import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {type EsportsImage} from "../adapters/esports"
 import {sizeOf, srcsetOf} from "../pictures"
-import BannerSlices from "@/domains/esports/island/BannerSlices.vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
-import JoinBand from "@/domains/esports/island/JoinBand.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasons} from "@/domains/esports/island/useSeasons"
-import {newestSeason, seasonsIncluding} from "@/domains/esports/island/seasonAxis"
-import {useMotionAllowed} from "@/domains/esports/island/useMotionAllowed"
+import {newestSeason, seasonStops, seasonsIncluding} from "@/domains/esports/island/seasonAxis"
+import {JOIN_CALL} from "@/domains/esports/island/joinCall"
 import {useEsportsPage} from "../composables/useEsportsPage"
 import type {GameCode, Season} from "../adapters/esports"
 
@@ -121,6 +122,9 @@ const stripSeasons = computed<Season[]>(() => seasonsIncluding(
   season.value,
 ))
 
+/** The strip is about stops on a line; which of them is a season is this page's knowledge. */
+const stripStops = computed(() => seasonStops(stripSeasons.value))
+
 /**
  * The newest season this game was actually fielded in, where the shown one is not it.
  *
@@ -135,8 +139,8 @@ const lastPlayed = computed<Season | null>(() => {
 const editing = ref<Season | null>(null)
 const editorOpen = ref(false)
 
-const editSeason = (season: Season) => {
-  editing.value = season
+const editSeason = (id: number) => {
+  editing.value = stripSeasons.value.find(one => one.id === id) ?? null
   editorOpen.value = true
 }
 
@@ -250,7 +254,7 @@ const seasonSaved = (saved: Season) => {
 
 <template>
   <v-main>
-    <esports-island>
+    <island testid="esports-island">
       <header class="island-header relative isolate overflow-hidden">
         <div
           aria-hidden="true"
@@ -334,11 +338,15 @@ const seasonSaved = (saved: Season) => {
         class="w-full"
         data-testid="esports-season-bar"
       >
-        <season-timeline
+        <timeline
           :accent="identity.accent"
+          add-label="Add a season"
           :may-edit="mayEdit"
-          :seasons="stripSeasons"
+          pan-back-label="Show earlier seasons"
+          pan-on-label="Show later seasons"
           :selected-id="chosen"
+          :stops="stripStops"
+          testid-prefix="esports-season"
           @add="addSeason"
           @edit="editSeason"
           @select="showSeason"
@@ -505,8 +513,8 @@ const seasonSaved = (saved: Season) => {
         />
       </section>
 
-      <join-band />
-    </esports-island>
+      <call-band v-bind="JOIN_CALL" />
+    </island>
   </v-main>
 </template>
 

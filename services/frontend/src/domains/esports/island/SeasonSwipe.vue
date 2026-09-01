@@ -2,7 +2,7 @@
 import {computed, nextTick, ref, watch} from "vue"
 import {AnimatePresence, Motion} from "motion-v"
 import {directionBetween, type SeasonDirection} from "./seasonAxis"
-import {useMotionAllowed} from "./useMotionAllowed"
+import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import type {Season} from "../adapters/esports"
 
 defineOptions({name: "SeasonSwipe"})

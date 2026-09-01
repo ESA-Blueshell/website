@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import {storePicture, type EsportsImage} from "../adapters/esports"
-import {srcsetOf} from "../pictures"
+import {storePicture, type EsportsImage} from "@/domains/esports/adapters/esports"
+import {srcsetOf} from "@/domains/esports/pictures"
 import type {FileType} from "@/services/api"
 
 /**

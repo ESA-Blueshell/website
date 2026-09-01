@@ -179,7 +179,8 @@ test.describe("editing a season where it is shown", () => {
     await openEditor(page, 20)
     const dialog = page.getByTestId("season-dialog")
     await expect(dialog).toBeVisible()
-    await expect(dialog).toHaveClass(/esports-island/)
+    // The island's own class, whole: the dialog is portalled out of the island and restates it.
+    await expect(dialog).toHaveClass(/(^|\s)island(\s|$)/)
     await expect(dialog.locator(".v-btn, .v-card, .v-dialog, .v-text-field, .v-overlay")).toHaveCount(0)
   })
 })

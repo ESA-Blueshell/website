@@ -1,7 +1,7 @@
 /*
- * Tailwind for the esports pages only, kept off the other hundred-odd components by
- * two rules: no Preflight (the island resets its own subtree at the bottom of this
- * file), and `source(none)`, which makes the three sources below the only ones scanned.
+ * Tailwind for the island only, kept off the other hundred-odd components by two
+ * rules: no Preflight (the island resets its own subtree at the bottom of this
+ * file), and `source(none)`, which makes the sources below the only ones scanned.
  *
  * The layer is not one of the two. It contains nothing against Vuetify 4, which puts its
  * own utilities in `vuetify-utilities` — declared first, so Tailwind's `utilities` is
@@ -16,6 +16,7 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
+@source "../components/island";
 @source "../domains/esports";
 @source "../pages/Esports.vue";
 @source "../pages/esports";
@@ -88,7 +89,7 @@
 
 /* The light half: values only, keyed off the document theme that plugins/theme sets.
    Elevation inverts — the ground is the tile's near-white, so panels take a hairline. */
-:where([data-theme="light"]) .esports-island {
+:where([data-theme="light"]) .island {
   /* A ladder, in perceptual lightness: the page at L*90, bands a step under it, panels a
      step over. Cool rather than grey, so the tone reads as paper and not as dirt.
 
@@ -129,14 +130,14 @@
 
 /* The blue at the head of the page carries further on a dark ground than on a light one, so
    light fills it in rather than leaving it a pale smudge. */
-:where([data-theme="light"]) .esports-island .island-header__blob {
+:where([data-theme="light"]) .island .island-header__blob {
   opacity: var(--header-blob);
 }
 
 /* The band is the same in both themes, down to the ink. The dark treatment works, the art is
    the board's rather than vetted, and a wash that follows the viewer only filters the picture.
    Stated once here, so nothing inside the band has to know. */
-.esports-island .season-swipe {
+.island .season-swipe {
   color: var(--color-chalk);
 
   --color-ground: #1c1c1c;
@@ -151,7 +152,7 @@
 /* The header hands the page's texture down to the strip: grain at the top, the band ground
    at its foot, so the two meet in a blend rather than on a line. The shade is laid in first
    and the blue blob paints over it, which is what gives the top its depth. */
-.esports-island .island-header {
+.island .island-header {
   background:
     linear-gradient(to bottom, transparent 34%, var(--band-ground)),
     radial-gradient(72rem 28rem at 88% -12%, var(--header-shade), transparent 72%);
@@ -171,7 +172,7 @@
   /* Grain, not a layer of its own: the tile sits at half the size it was drawn and
      under a veil of the ground, so the washes and the bands' own shading stay the
      things you see and the shells are texture underneath them. */
-  .esports-island {
+  .island {
     /* What a band sits on: a step off the page, not quite opaque, so the texture carries
        through. Declared here, not in @theme, or its --color-pit resolves on :root and
        stays dark when the light half overrides pit on this element. */
@@ -188,46 +189,46 @@
     min-height: 100%;
   }
 
-  :where([data-theme="light"]) .esports-island {
+  :where([data-theme="light"]) .island {
     background-image:
       linear-gradient(var(--tile-veil), var(--tile-veil)),
       url("../assets/bg/shelly-bg-white.jpg");
   }
 
-  .esports-island *,
-  .esports-island *::before,
-  .esports-island *::after {
+  .island *,
+  .island *::before,
+  .island *::after {
     box-sizing: border-box;
   }
 
-  .esports-island :is(h1, h2, h3, h4, h5, h6, p, figure, blockquote) {
+  .island :is(h1, h2, h3, h4, h5, h6, p, figure, blockquote) {
     margin: 0;
   }
 
-  .esports-island :is(h1, h2, h3, h4, h5, h6) {
+  .island :is(h1, h2, h3, h4, h5, h6) {
     font-family: var(--font-display);
     font-size: inherit;
     font-weight: inherit;
     letter-spacing: 0.02em;
   }
 
-  .esports-island :is(ul, ol) {
+  .island :is(ul, ol) {
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
-  .esports-island a {
+  .island a {
     color: inherit;
     text-decoration: none;
   }
 
-  .esports-island :is(img, video, svg) {
+  .island :is(img, video, svg) {
     display: block;
     max-width: 100%;
   }
 
-  .esports-island :is(button, input, select, textarea) {
+  .island :is(button, input, select, textarea) {
     color: inherit;
     font: inherit;
   }
@@ -235,7 +236,7 @@
   /* A button carries a background, a border and padding from the browser, and all
      three show through anything built on top of it — a card rendered as a button
      sat inside a grey box until this was here. */
-  .esports-island :is(button, [type="button"]) {
+  .island :is(button, [type="button"]) {
     background: none;
     border: 0;
     padding: 0;
@@ -244,7 +245,7 @@
   /* Focus must stay visible: the island's own reset is not licence to lose it. Drawn in the
      association's own blue rather than the acid green, which at #a8ff00 shouts over every
      field it rings and reads as a warning rather than as "you are here". */
-  .esports-island :focus-visible {
+  .island :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
   }

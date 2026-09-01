@@ -1,5 +1,3 @@
-import type {EsportsImage} from "./adapters/esports"
-
 /**
  * How a picture is handed to the markup that draws it.
  *
@@ -7,7 +5,41 @@ import type {EsportsImage} from "./adapters/esports"
  * which widths a browser is offered is a display decision and belongs where the markup is
  * written. The companion decision — `sizes`, how wide the picture will actually be drawn — is
  * layout knowledge and stays in the component that owns the layout.
+ *
+ * Nothing here knows what the picture is of, so nothing here imports a domain or the generated
+ * client: a banner behind a game, a board's photograph and a portrait of one of its seats are
+ * all the same four numbers and a url (frontend ADR-001).
  */
+
+/**
+ * An image a page draws: where it is served, how large it is, and the widths it is stored at.
+ *
+ * Structural rather than the generated `Image`, so that the island states the shape it needs
+ * and every domain's adapter satisfies it by answering with what the api already sends
+ * (frontend ADR-002).
+ */
+export interface Picture {
+  /** Where it is stored, which is what a save points at to put it on a record. */
+  path: string
+  /** Where the full-size image is served. */
+  url: string
+  /** How wide it is, absent where its size could not be read. */
+  width?: number | null
+  /** How tall it is, absent where its size could not be read. */
+  height?: number | null
+  /** The widths it is stored at, narrowest first. */
+  renditions: {url: string; width: number}[]
+}
+
+/**
+ * How a picker is told to store the bytes somebody chose.
+ *
+ * The picker asks rather than knows: which endpoint takes the file and what kind of picture it
+ * is are the caller's business, and a shared control that reached for either would be a shared
+ * control that belongs to one domain. A refusal comes back in words, because a picture the
+ * converter cannot read is the one thing whoever chose it can act on.
+ */
+export type PictureStore = (file: File) => Promise<{ok: true; picture: Picture} | {ok: false; reason: string}>
 
 /**
  * The `srcset` for a picture, or nothing where there is only one of it.
@@ -20,7 +52,7 @@ import type {EsportsImage} from "./adapters/esports"
  * A picture with no stored widths gets no attribute at all: a one-entry `srcset` says the same
  * thing `src` already does.
  */
-export function srcsetOf(picture?: EsportsImage | null): string | undefined {
+export function srcsetOf(picture?: Picture | null): string | undefined {
   if (!picture || picture.renditions.length === 0) return undefined
   const stored = picture.renditions.map(one => `${one.url} ${one.width}w`)
   const own = picture.width
@@ -35,7 +67,7 @@ export function srcsetOf(picture?: EsportsImage | null): string | undefined {
  * width and a height has an aspect ratio, and the stylesheet decides the rest. A picture whose
  * size could not be read gets neither, and the page moves under it as it always did.
  */
-export function sizeOf(picture?: EsportsImage | null): {width?: number; height?: number} {
+export function sizeOf(picture?: Picture | null): {width?: number; height?: number} {
   if (!picture?.width || !picture.height) return {}
   return {width: picture.width, height: picture.height}
 }

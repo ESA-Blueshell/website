@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import {storePicture, type EsportsImage} from "@/domains/esports/adapters/esports"
-import {srcsetOf} from "@/domains/esports/pictures"
-import type {FileType} from "@/services/api"
+import {srcsetOf, type Picture, type PictureStore} from "./pictures"
 
 /**
  * One picture, and the two things that can be done to it.
@@ -16,24 +14,30 @@ import type {FileType} from "@/services/api"
  * The bytes a cancelled dialog leaves in storage stay. Storage is addressed by content, the
  * pictures are small, and counting who points at a file is a larger mechanism than the
  * problem deserves.
+ *
+ * How the bytes are stored is asked of the caller rather than known here. A game's banner, a
+ * board's photograph and a portrait of one of its seats are stored by three different domains,
+ * and a control shared between them cannot belong to one of them (frontend ADR-001).
  */
 defineOptions({name: "ImagePicker"})
 
 const props = withDefaults(defineProps<{
   /** The picture now held, or nothing where none is. */
-  picture?: EsportsImage | null
+  picture?: Picture | null
   label: string
   testid: string
-  /** What kind of picture this is, which decides how it is scaled and where it is stored. */
-  kind: FileType
+  /** How the chosen bytes are put into storage, which is the caller's to decide. */
+  store: PictureStore
+  /** What is being previewed: a logo, or the wide art a band is drawn on. */
+  shape?: "icon" | "banner"
   /** Whether the control offers to take the picture away, which a required picture does not. */
   mayClear?: boolean
   /** Whether something outside is busy, which is not the same as this control uploading. */
   busy?: boolean
-}>(), {picture: null, mayClear: true, busy: false})
+}>(), {picture: null, shape: "banner", mayClear: true, busy: false})
 
 const emit = defineEmits<{
-  (event: "update:picture", picture: EsportsImage | null): void
+  (event: "update:picture", picture: Picture | null): void
 }>()
 
 const input = ref<HTMLInputElement | null>(null)
@@ -53,8 +57,7 @@ const has = computed(() => Boolean(props.picture))
  * a letterbox for the other is not decoration: it is the only way the preview tells the truth
  * about what was uploaded before anybody sees it on a page.
  */
-const icony = computed(() => String(props.kind).includes("ICON"))
-const ratio = computed(() => (icony.value ? "1 / 1" : "16 / 9"))
+const ratio = computed(() => (props.shape === "icon" ? "1 / 1" : "16 / 9"))
 
 /**
  * One height for every frame, whatever shape it is, so that the width is what the ratio
@@ -82,7 +85,7 @@ const choose = async (event: Event) => {
 
   uploading.value = true
   try {
-    const stored = await storePicture(chosen, props.kind)
+    const stored = await props.store(chosen)
     if (!stored.ok) {
       failure.value = stored.reason
       return

@@ -3,6 +3,7 @@ import {computed, ref, watch} from "vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import IslandDialog from "@/components/island/IslandDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
+import type {Picture} from "@/components/island/pictures"
 import IslandChoice from "@/components/island/IslandChoice.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 import LineupSource from "./LineupSource.vue"
@@ -18,8 +19,8 @@ import {
   loadTeams,
   saveRosterEntry,
   saveTeamAs,
+  storePicture,
   unfieldTeamFromSeason,
-  type EsportsImage,
   type Fielding,
   type GameCode,
   type Team,
@@ -71,7 +72,7 @@ interface Row {
    */
   displayName: string
   /** This entry's picture, or nothing where none was uploaded. */
-  icon: EsportsImage | null
+  icon: Picture | null
 }
 
 const props = defineProps<{
@@ -83,9 +84,9 @@ const props = defineProps<{
   /** Teams already fielded in this game this season, which there is nothing to add. */
   alreadyFielded?: number[]
   /** Where the team's banner is served, so the same dialog can replace it. */
-  teamBanner?: EsportsImage | null
+  teamBanner?: Picture | null
   /** Where the team's icon is served, so the same dialog can replace it. */
-  teamIcon?: EsportsImage | null
+  teamIcon?: Picture | null
   season: Season | null
   accent?: string
 }>()
@@ -149,10 +150,15 @@ const rowOf = (entry: RosterEntry): Row => ({
  * leaves both as they were along with the name and the line-up, rather than keeping a picture
  * and discarding the rest of the form.
  */
-const banner = ref<EsportsImage | null>(null)
-const icon = ref<EsportsImage | null>(null)
+const banner = ref<Picture | null>(null)
+const icon = ref<Picture | null>(null)
 
-const stageIcon = (index: number, picture: EsportsImage | null) => {
+/** Which kind of picture each frame stores, which is this domain's to say rather than the picker's. */
+const storeTeamBanner = (file: File) => storePicture(file, FileType.TEAM_BANNER)
+const storeTeamIcon = (file: File) => storePicture(file, FileType.TEAM_ICON)
+const storeRosterIcon = (file: File) => storePicture(file, FileType.ROSTER_ICON)
+
+const stageIcon = (index: number, picture: Picture | null) => {
   const row = rows.value[index]
   if (row) row.icon = picture
 }
@@ -581,16 +587,17 @@ const submit = async () => {
                onto their own lines where there is no room for both. -->
           <div class="lineup__pictures">
             <image-picker
-              :kind="FileType.TEAM_BANNER"
               label="Banner"
               :picture="banner"
+              :store="storeTeamBanner"
               testid="lineup-team-banner"
               @update:picture="banner = $event"
             />
             <image-picker
-              :kind="FileType.TEAM_ICON"
               label="Icon"
               :picture="icon"
+              shape="icon"
+              :store="storeTeamIcon"
               testid="lineup-team-icon"
               @update:picture="icon = $event"
             />
@@ -646,9 +653,10 @@ const submit = async () => {
           :data-testid="`lineup-row-${row.id ?? `new-${index}`}`"
         >
           <image-picker
-            :kind="FileType.ROSTER_ICON"
             label="Icon"
             :picture="row.icon"
+            shape="icon"
+            :store="storeRosterIcon"
             :testid="`lineup-icon-${index}`"
             @update:picture="stageIcon(index, $event)"
           />

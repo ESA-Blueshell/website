@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {onBeforeUnmount, onMounted, ref, watch} from "vue"
-import {coveredWidth} from "@/domains/esports/pictures"
+import {coveredWidth} from "./pictures"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 defineOptions({name: "BannerSlices"})

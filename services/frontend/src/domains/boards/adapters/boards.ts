@@ -4,19 +4,69 @@
  */
 import {
   addMember,
+  apiUrl,
   createBoard,
   deleteBoard,
+  FileType,
   findAllBoards,
   linkMember,
   removeMember,
   updateBoard,
   updateMember,
+  uploadPublicImage,
 } from "@/services/api"
-import type {BoardMemberResponse, BoardResponse} from "@/services/api"
+import type {BoardMemberResponse, BoardResponse, Image} from "@/services/api"
+import type {PictureStore} from "@/components/island/pictures"
 import {reasonFor} from "../refusals"
 
 export type Board = BoardResponse
 export type BoardSeat = BoardMemberResponse
+
+/**
+ * The pictures the api points at, resolved to where they are actually served.
+ *
+ * Done here rather than at each place one is drawn: the api answers with its own paths, and a
+ * bare path resolves against the frontend's origin instead of the api's. Every width is
+ * resolved, not only the full-size one, so a component can hand the whole set to a `srcset`
+ * without checking which of them are usable.
+ */
+const picture = (one: Image): Image => ({
+  ...one,
+  url: apiUrl(one.url),
+  renditions: one.renditions.map(rendition => ({...rendition, url: apiUrl(rendition.url)})),
+})
+
+const pictureOrNone = (one?: Image | null): Image | null => (one ? picture(one) : null)
+
+/** A board's photograph and every portrait on it, resolved at the one seam they come through. */
+const withPictures = (board: Board): Board => ({
+  ...board,
+  photo: pictureOrNone(board.photo),
+  members: board.members.map(seat => ({...seat, portrait: pictureOrNone(seat.portrait)})),
+})
+
+const withPortrait = (seat: BoardSeat): BoardSeat => ({...seat, portrait: pictureOrNone(seat.portrait)})
+
+/**
+ * The bytes somebody chose, put into storage for a save to name.
+ *
+ * Storing and applying are separate: the dialog that chose the picture is what puts it on the
+ * board or the seat, so cancelling that dialog leaves both as they were. A refusal comes back
+ * in the api's own words, because a picture the converter cannot read is the one thing whoever
+ * chose it can act on.
+ */
+const storePicture = (kind: FileType): PictureStore => async (file: File) => {
+  const res = await uploadPublicImage({query: {type: kind}, body: {file}})
+  if (res.error || !res.data) {
+    const body = res.error as {detail?: string; title?: string} | null
+    return {ok: false, reason: body?.detail || body?.title || "That picture could not be stored."}
+  }
+  return {ok: true, picture: picture(res.data)}
+}
+
+/** A board's group photograph, and one seat's portrait. Two kinds, so two stores. */
+export const storeBoardPhoto: PictureStore = storePicture(FileType.BOARD_PHOTO)
+export const storeSeatPortrait: PictureStore = storePicture(FileType.BOARD_PORTRAIT)
 
 /** What a board is called: its own name, or its number where it has none recorded. */
 export function boardTitle(board: Board): string {
@@ -38,7 +88,9 @@ export function seatTitle(seat: BoardSeat): string {
 /** Newest board first, which is the order the page reads them in. */
 export async function loadBoards(): Promise<Board[]> {
   const res = await findAllBoards()
-  return (res.data ?? []).slice().sort((left, right) => right.startDate.localeCompare(left.startDate))
+  return (res.data ?? [])
+    .map(withPictures)
+    .sort((left, right) => right.startDate.localeCompare(left.startDate))
 }
 
 export async function saveBoard(
@@ -53,6 +105,7 @@ export async function saveBoard(
     startDate: string
     endDate?: string | null
     image?: string | null
+    photo?: string | null
     version?: number
   },
 ): Promise<Board | null> {
@@ -66,11 +119,12 @@ export async function saveBoard(
     startDate: board.startDate,
     endDate: board.endDate ?? undefined,
     image: board.image ?? undefined,
+    photo: board.photo ?? undefined,
   }
   const res = board.id == null
     ? await createBoard({body})
     : await updateBoard({path: {id: board.id}, body: {...body, version: board.version ?? 0}})
-  return res.data ?? null
+  return res.data ? withPictures(res.data) : null
 }
 
 /**
@@ -102,6 +156,7 @@ export async function addSeat(
     nickname?: string | null
     description?: string | null
     image?: string | null
+    portrait?: string | null
   },
 ): Promise<BoardSeat | null> {
   const res = await addMember({
@@ -115,9 +170,10 @@ export async function addSeat(
       nickname: seat.nickname ?? undefined,
       description: seat.description ?? undefined,
       image: seat.image ?? undefined,
+      portrait: seat.portrait ?? undefined,
     },
   })
-  return res.data ?? null
+  return res.data ? withPortrait(res.data) : null
 }
 
 export async function saveSeat(
@@ -131,6 +187,7 @@ export async function saveSeat(
     nickname?: string | null
     description?: string | null
     image?: string | null
+    portrait?: string | null
   },
 ): Promise<BoardSeat | null> {
   const res = await updateMember({
@@ -143,9 +200,10 @@ export async function saveSeat(
       nickname: seat.nickname ?? undefined,
       description: seat.description ?? undefined,
       image: seat.image ?? undefined,
+      portrait: seat.portrait ?? undefined,
     },
   })
-  return res.data ?? null
+  return res.data ? withPortrait(res.data) : null
 }
 
 /** A null member detaches the seat, which keeps standing under its own name. */
@@ -155,7 +213,7 @@ export async function linkSeatMember(
   userId: number | null,
 ): Promise<BoardSeat | null> {
   const res = await linkMember({path: {boardId, id}, body: {userId: userId ?? undefined}})
-  return res.data ?? null
+  return res.data ? withPortrait(res.data) : null
 }
 
 export async function dropSeat(boardId: number, id: number): Promise<void> {

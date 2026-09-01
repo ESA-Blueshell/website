@@ -44,6 +44,13 @@ import java.sql.Types
  *
  * `image` is written from the files. Those photographs ship with the frontend and are named
  * rather than uploaded, so the files are the record of which one belongs to which board.
+ *
+ * The `photo` and `portrait` columns are **not** written here. They name art the repository
+ * ships, and storing a picture needs the storage volume and the converter that a migration
+ * runner has neither of, so `ShippedBoardArt` reads those two columns once the application is
+ * up. Editing them still moves this migration's checksum, which is right: the files are one
+ * reviewed record and a repeatable seed that re-runs over rows it already agrees with changes
+ * nothing.
  */
 @Suppress("unused", "ClassNaming")
 class R__Boards_seed : BaseJavaMigration() {

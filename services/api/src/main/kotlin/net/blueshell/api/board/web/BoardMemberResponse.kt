@@ -1,6 +1,7 @@
 package net.blueshell.api.board.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import net.blueshell.api.file.api.Image
 import java.time.Instant
 import java.time.LocalDate
 
@@ -20,6 +21,8 @@ data class BoardMemberResponse(
     var description: String? = null,
     @Schema(description = "Asset file name of the member's portrait")
     var image: String? = null,
+    @Schema(description = "The seat's portrait, with its size and the widths it is stored at")
+    var portrait: Image? = null,
     var startDate: LocalDate,
     var endDate: LocalDate? = null,
     var version: Long,

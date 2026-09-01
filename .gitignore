@@ -61,11 +61,12 @@ backups
 # the PR. Proposals stay ignored: they are working documents, not repo record.
 !docs/**/*.md
 docs/proposals/**
-# The game art's credit file. The attribution is published wherever the images are,
-# so the row for each file travels with it — both beside the shipped masters and
+# The shipped art's credit files. The attribution is published wherever the images
+# are, so the row for each file travels with it — both beside the shipped masters and
 # beside the working folder the masters are cut from.
 !gameart/CREDITS.md
 !services/api/src/main/resources/db/seed/esports/art/CREDITS.md
+!services/api/src/main/resources/db/seed/boards/art/CREDITS.md
 .idea
 *dump.sql*
 

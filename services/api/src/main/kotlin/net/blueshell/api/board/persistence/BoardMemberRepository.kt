@@ -23,6 +23,14 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
     fun countByBoardId(@Param("boardId") boardId: Long): Long
 
     /**
+     * The seat this stored picture belongs to, or nobody.
+     *
+     * There is at most one: `uk_board_members_picture_deleted_at` says a portrait backs one seat.
+     */
+    @Query("SELECT bm FROM BoardMember bm WHERE bm.picture.id = :pictureId")
+    fun findByPictureId(@Param("pictureId") pictureId: Long): Optional<BoardMember>
+
+    /**
      * Whether a member held a board seat overlapping the window — a board runs from its own
      * start to its own end, so the seat's dates are what the question asks about.
      */

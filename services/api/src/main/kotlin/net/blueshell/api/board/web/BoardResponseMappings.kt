@@ -2,6 +2,7 @@ package net.blueshell.api.board.web
 
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
+import net.blueshell.api.file.api.asImage
 
 fun Board.asResponse(): BoardResponse =
     BoardResponse(
@@ -14,7 +15,7 @@ fun Board.asResponse(): BoardResponse =
         description = this.description,
         startDate = this.startDate,
         endDate = this.endDate,
-        pictureId = this.pictureId,
+        photo = this.picture?.asImage(),
         image = this.image,
         members = this.members.sortedBy { it.id }.map { it.asResponse() },
         version = this.version,
@@ -32,6 +33,7 @@ fun BoardMember.asResponse(): BoardMemberResponse =
         nickname = this.nickname,
         description = this.description,
         image = this.image,
+        portrait = this.picture?.asImage(),
         startDate = this.startDate,
         endDate = this.endDate,
         version = this.version,

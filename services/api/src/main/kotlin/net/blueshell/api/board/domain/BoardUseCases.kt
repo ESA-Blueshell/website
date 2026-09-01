@@ -2,7 +2,8 @@ package net.blueshell.api.board.domain
 
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
-import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.api.StoredPictures
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,7 +18,7 @@ import net.blueshell.api.board.api.BoardMemberService
 class BoardUseCases(
     private val boardService: BoardService,
     private val boardMemberService: BoardMemberService,
-    private val fileService: FileService,
+    private val pictures: StoredPictures,
     private val userService: UserService,
 ) {
     @Transactional
@@ -27,7 +28,7 @@ class BoardUseCases(
         candidate: String?,
         startDate: LocalDate,
         endDate: LocalDate?,
-        pictureId: Long?,
+        photo: String?,
         cheer: String? = null,
         accent: String? = null,
         description: String? = null,
@@ -46,7 +47,7 @@ class BoardUseCases(
             description = description?.ifBlank { null },
             image = image,
         )
-        pictureId?.let { board.replacePicture(fileService.findById(it)) }
+        board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
         return boardService.create(board)
     }
 
@@ -60,7 +61,7 @@ class BoardUseCases(
         candidate: String?,
         startDate: LocalDate,
         endDate: LocalDate?,
-        pictureId: Long?,
+        photo: String?,
         cheer: String? = null,
         accent: String? = null,
         description: String? = null,
@@ -79,7 +80,7 @@ class BoardUseCases(
         board.accent = accent?.ifBlank { null }
         board.description = description?.ifBlank { null }
         board.image = image
-        board.replacePicture(pictureId?.let { fileService.findById(it) })
+        board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
         return boardService.update(board)
     }
 
@@ -111,6 +112,7 @@ class BoardUseCases(
         nickname: String? = null,
         description: String? = null,
         image: String? = null,
+        portrait: String? = null,
     ): BoardMember {
         val board = boardService.findById(boardId)
         val user = userId?.let { userService.findById(it) }
@@ -124,22 +126,23 @@ class BoardUseCases(
             existing.nickname = nickname
             existing.description = description
             existing.image = image
+            existing.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
             return boardMemberService.update(existing)
         }
 
-        return boardMemberService.create(
-            BoardMember(
-                board = board,
-                user = user,
-                role = role,
-                startDate = startDate,
-                endDate = endDate,
-                displayName = displayName,
-                nickname = nickname,
-                description = description,
-                image = image,
-            ),
+        val seat = BoardMember(
+            board = board,
+            user = user,
+            role = role,
+            startDate = startDate,
+            endDate = endDate,
+            displayName = displayName,
+            nickname = nickname,
+            description = description,
+            image = image,
         )
+        seat.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
+        return boardMemberService.create(seat)
     }
 
     @Transactional
@@ -152,6 +155,7 @@ class BoardUseCases(
         nickname: String? = null,
         description: String? = null,
         image: String? = null,
+        portrait: String? = null,
     ): BoardMember {
         val seat = boardMemberService.findSeat(id)
         seat.role = role
@@ -161,6 +165,7 @@ class BoardUseCases(
         seat.nickname = nickname
         seat.description = description
         seat.image = image
+        seat.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
         return boardMemberService.update(seat)
     }
 

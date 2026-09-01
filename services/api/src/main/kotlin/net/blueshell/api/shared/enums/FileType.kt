@@ -13,6 +13,18 @@ private val ICON_WIDTHS = listOf(128, 256, 512)
 private val PLAYER_ICON_WIDTHS = listOf(128, 256)
 
 /**
+ * A portrait is one face, drawn small and enlarged once.
+ *
+ * A board's seat shows a thumbnail of about 96px beside the name and opens to a picture of
+ * about 320px, so 160 covers the thumbnail, 320 covers it on a dense display and covers the
+ * opened picture, and 640 covers the opened picture on a dense display. Nothing draws one
+ * wider, so the ladder stops there — the same argument [FileType.ROSTER_ICON] makes for
+ * capping below the other icons, one rung higher because a portrait is a photograph of a
+ * person rather than a logo and it does get opened.
+ */
+private val PORTRAIT_WIDTHS = listOf(160, 320, 640)
+
+/**
  * What an uploaded file is, which decides where it is stored and who may read it back.
  *
  * [publiclyReadable] is opt-in per kind rather than a property of a single file: these are the
@@ -101,6 +113,36 @@ enum class FileType(
         maxImageEdge = 256,
         webpQuality = 85,
         renditionWidths = PLAYER_ICON_WIDTHS,
+    ),
+
+    /** A board's group photograph, drawn full-bleed across a band. A game banner's twin. */
+    BOARD_PHOTO(
+        "board-photos",
+        publiclyReadable = true,
+        maxBytes = 15 * MB,
+        allowedMediaTypes = IMAGE,
+        maxImageEdge = 2560,
+        webpQuality = 82,
+        renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
+    ),
+
+    /**
+     * One seat's portrait, drawn beside the name and enlarged when the seat opens.
+     *
+     * The ceiling is on the longest edge, and a portrait is taller than it is wide, so 960
+     * there is about 640 across — the widest width [PORTRAIT_WIDTHS] lists. Lossy at 85 rather
+     * than 82, because a face at 160px shows what a group photograph at 1920px hides. Sized
+     * like a photograph rather than like a logo: what arrives is a phone camera's output, and
+     * the ceiling is applied after it is admitted rather than instead of admitting it.
+     */
+    BOARD_PORTRAIT(
+        "board-portraits",
+        publiclyReadable = true,
+        maxBytes = 15 * MB,
+        allowedMediaTypes = IMAGE,
+        maxImageEdge = 960,
+        webpQuality = 85,
+        renditionWidths = PORTRAIT_WIDTHS,
     ),
     ;
 }
